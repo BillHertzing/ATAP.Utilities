@@ -27,18 +27,18 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
         [Fact]
         void TupleToStringInJSONFormat()
         {
-            var x = ("c1","c2")
+            var x = (k1:"k1", k2:"k2");
             var str = SandboxStatic1.SerializeTuple(x);
-            Assert.Equal(1, 1);
+            Assert.Equal("{\"Item1\":\"k1\",\"Item2\":\"k2\"}", str);
 
         }
 
         [Theory]
-        [InlineData("{[{k1:\"1\";k2:\"1\";c1:\"2\";t1:1.11}]}")]
+        [InlineData("{\"Item1\":\"k1\",\"Item2\":\"k2\"}")]
         void StringInJSONFormatToTuple(string _inTestData)
         {
-            (string c1, string c2) r = SandboxStatic1.DeSerializeTuple(_inTestData);
-            Assert.Equal(1, 1);
+            (string k1, string k2) r = SandboxStatic1.DeSerializeTuple(_inTestData);
+            Assert.Equal((k1: "k1", k2: "k2"), r);
 
         }
     }

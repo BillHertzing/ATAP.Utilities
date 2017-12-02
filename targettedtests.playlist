@@ -1,0 +1,1 @@
+<Playlist Version="1.0"><Add Test="ATAP.Utilities.Logging.UnitTests.LoggingUnitTests001.LogTest" /><Add Test="ATAP.Utilities.ZSandbox.UnitTests.ZSandboxUnitTests001.sharedLoggingTest" /></Playlist>

@@ -9,14 +9,9 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
 {
     public class Fixture
     {
-        string hello;
-
         public Fixture()
         {
-            Hello = "Hello";
         }
-
-        public string Hello { get => hello; set => hello = value; }
     }
 
     public class ClassLevelTestData : IEnumerable<(string, string, string, double)[]>, IEnumerable<object[]>
@@ -96,6 +91,7 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
         //public static IEnumerable<(string, string, string, double)[]> GetTestData(int numTests) {
         //    return new(string, string, string, double)[numTests] { TestData.Take(numTests); }
         //    }
+    }
         public class ZSandboxUnitTests001 : IClassFixture<Fixture>
         {
             protected Fixture _fixture;
@@ -120,6 +116,12 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
                 }
                 Assert.Equal(1, 1);
             }
+
+            [Fact]
+            public void sharedLoggingTest()
+            {
+            TestSharedLogging t = new TestSharedLogging();
+            t.TestLogging();
         }
     }
 }

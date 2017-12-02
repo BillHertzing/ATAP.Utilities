@@ -35,6 +35,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ZSandbox.Uni
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.UnitTest.UnitTests", "ATAP.Utilities.UnitTest.UnitTests\ATAP.Utilities.UnitTest.UnitTests.csproj", "{163CFFE9-AB84-46AD-A83A-175F33AF3DB6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Http", "ATAP.Utilities.Http\ATAP.Utilities.Http.csproj", "{10DC5525-66C4-4FC6-8B41-B0C96E94632B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Http.UnitTests", "ATAP.Utilities.Http.UnitTests\ATAP.Utilities.Http.UnitTests.csproj", "{FC73DB9F-64DD-4D44-B68C-F3767AA6A337}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +105,14 @@ Global
 		{163CFFE9-AB84-46AD-A83A-175F33AF3DB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{163CFFE9-AB84-46AD-A83A-175F33AF3DB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{163CFFE9-AB84-46AD-A83A-175F33AF3DB6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10DC5525-66C4-4FC6-8B41-B0C96E94632B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10DC5525-66C4-4FC6-8B41-B0C96E94632B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10DC5525-66C4-4FC6-8B41-B0C96E94632B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10DC5525-66C4-4FC6-8B41-B0C96E94632B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC73DB9F-64DD-4D44-B68C-F3767AA6A337}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC73DB9F-64DD-4D44-B68C-F3767AA6A337}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC73DB9F-64DD-4D44-B68C-F3767AA6A337}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC73DB9F-64DD-4D44-B68C-F3767AA6A337}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

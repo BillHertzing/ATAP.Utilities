@@ -1,33 +1,26 @@
-﻿using NLog;
-using NLog.Config;
-using NLog.Targets;
+﻿
 using System.Reflection;
 using Xunit;
+using ATAP.Utilities.Logging;
+
 
 namespace ATAP.Utilities.Logging.UnitTests
 {
  
     public class Fixture
     {
-        private string hello;
-
         public Fixture()
         {
-            Hello = "Hello";
         }
-
-        public string Hello { get => hello; set => hello = value; }
     }
 public class LoggingUnitTests001 : IClassFixture<Fixture>
 {
         Fixture _fixture;
-        private static Logger logger ;
         public LoggingUnitTests001(Fixture fixture)
         {
             _fixture = fixture;
-            logger = LogManager.GetCurrentClassLogger();
         }
-
+        /*
         [Fact]
          void LogOnceEveryLevel()
         {
@@ -41,6 +34,15 @@ public class LoggingUnitTests001 : IClassFixture<Fixture>
             // alternatively you can call the Log() method
             // and pass log level as the parameter.
             logger.Log(LogLevel.Info, "Sample informational message");
+            Assert.Equal(1, 1);
+
+        }
+        */
+        [Fact]
+        void LogTest()
+        {
+            LoggingTest t = new LoggingTest();
+            LoggingTest.TestLogging();
             Assert.Equal(1, 1);
 
         }

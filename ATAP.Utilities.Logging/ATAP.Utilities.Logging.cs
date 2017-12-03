@@ -1,89 +1,101 @@
 ﻿
 using System;
-using ATAP.Utilities.Logging.Logging;
+using System.Diagnostics;
+using System.Linq;
+using System.Runtime.CompilerServices;
 // brings in LogLib
-using NLog;
+using ATAP.Utilities.Logging.Logging;
 
-namespace ATAP.Utilities.Logging {
-    /*
-    // this example form https://brutaldev.com/post/logging-setup-in-5-minutes-with-nlog
-    public static class Log
+namespace ATAP.Utilities.Logging
+{
+    public static class LoggingUtilities
     {
-    
-    public static Logger Instance { get; private set; }
-    static Log()
-    {
-    #if DEBUG
-    // Setup the logging view for Sentinel - http://sentinel.codeplex.com
-    var sentinalTarget = new NLogViewerTarget()
-    {
-    Name = "sentinal",
-    Address = "udp://127.0.0.1:9999",
-    IncludeNLogData = false
-    };
-    var sentinalRule = new LoggingRule("*", LogLevel.Trace, sentinalTarget);
-    LogManager.Configuration.AddTarget("sentinal", sentinalTarget);
-    LogManager.Configuration.LoggingRules.Add(sentinalRule);
-    
-    // Setup the logging view for Harvester - http://harvester.codeplex.com
-    var harvesterTarget = new OutputDebugStringTarget()
-    {
-    Name = "harvester",
-    Layout = "${log4jxmlevent:includeNLogData=false}"
-    };
-    var harvesterRule = new LoggingRule("*", LogLevel.Trace, harvesterTarget);
-    LogManager.Configuration.AddTarget("harvester", harvesterTarget);
-    LogManager.Configuration.LoggingRules.Add(harvesterRule);
-    #endif
-    
-    LogManager.ReconfigExistingLoggers();
-    
-    Instance = LogManager.GetCurrentClassLogger();
-    }
-    
-    }
-    */
-    /// Experiments with LibLog and NLog
-#region LibLog and Nlog
+        // Internal logger for this class
+        //ToDo figure out how to create an iLog log for a static class
+        // internal static ILog log = LogProvider.For<LoggingUtilities>();
 
-        
-    public  class LoggingTest {
-        internal static ILog iLog;
-        static LoggingTest() {
-            LogManager.Configuration = LogManager.Configuration.Reload();
-            LogManager.ReconfigExistingLoggers();
-        }
-        public LoggingTest()
+        /// <summary>
+        /// Gets the assembly logger.
+        /// </summary>
+        /// <returns>ILog.</returns>
+        static ILog GetAssemblyLogger()
         {
-            iLog = LogProvider.For<LoggingTest>();
+            throw new NotImplementedException();
+            /*
+                        return LogManager.GetLogger(Assembly.GetExecutingAssembly()
+                                                             .GetName()
+                                                             .Name);
+            */
         }
-        public static void TestLogging() {
-            if(iLog.IsDebugEnabled()) {
-                iLog.Debug("hello world");
-            }
-        }
-    }
-    public class SharedLogging<T>
-    {
-        static ILog iLog;
-        static SharedLogging()
+
+        /// <summary>
+        /// Gets the namespace logger.
+        /// </summary>
+        /// <returns>ILog.</returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static ILog GetNamespaceLogger()
         {
-            LogManager.Configuration = LogManager.Configuration.Reload();
-            LogManager.ReconfigExistingLoggers();
+            throw new NotImplementedException();
+            /*
+                        var frame = new StackFrame(1);
+                        var callingMethod = frame.GetMethod();
+                        return LogManager.GetLogger(callingMethod.DeclaringType.Namespace);
+            */
         }
-        public  SharedLogging()
+
+        public static string GetFriendlyName(this Type type)
         {
-            iLog = LogProvider.For<T>();
-        }
-        public static void TestLogging()
-        {
-            if (iLog.IsDebugEnabled())
+            if (type.IsGenericType)
             {
-                iLog.Debug("hello world");
+                return $"{type.Name.Split('`')[0]}<{(string.Join(", ", type.GetGenericArguments().Select(GetFriendlyName)))}>";
+            }
+            else
+            {
+                return type.Name;
             }
         }
-    }
 
-   
-    #endregion
+        public static void Reconfigure()
+        {
+            throw new NotImplementedException();
+            ///Need to figure out how to use LibLog for this instead of NLog directly
+            //LogManager.Configuration = LogManager.Configuration.Reload();
+            //LogManager.ReconfigExistingLoggers();
+        }
+        
+    }
+    public class LoggingUtilitiesLoggingTest
+    {
+        #region Configure this class to use ATAP.Utilities.Logging
+        // Internal class logger for this class
+        private static ILog log;
+        static LoggingUtilitiesLoggingTest()
+        {
+            log = LogProvider.For<LoggingUtilitiesLoggingTest>();
+        }
+        internal static ILog Log { get => log; set => log = value; }
+        #endregion Configure this class to use ATAP.Utilities.Logging
+        public LoggingUtilitiesLoggingTest()
+        {
+
+        }
+
+
+        public void TestLogging()
+        {
+            Log.Trace("Sample trace message");
+            Log.Debug("Sample debug message");
+            Log.Info("Sample informational message");
+            Log.Warn("Sample warning message");
+            Log.Error("Sample error message");
+            Log.Fatal("Sample fatal error message");
+
+            // alternatively you can call the Log() method
+            // and pass log level as the parameter.
+            Log.InfoFormat("Sample informational message from {0} ", "joe");
+        }
+
+    }
 }
+
+

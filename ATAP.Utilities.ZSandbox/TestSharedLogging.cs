@@ -3,36 +3,23 @@ using System.Collections.Generic;
 using System.Text;
 using ATAP.Utilities.Logging;
 using ATAP.Utilities.Logging.Logging;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Linq;
 
 namespace ATAP.Utilities.ZSandbox
 {
-    public class TestSharedLogging
+
+    
+    /*
+    private static class TestThis
     {
-        internal static ILog log;
-
-        public TestSharedLogging()
-        {
-            log = LogProvider.For<TestSharedLogging>();
-        }
+        private static readonly ILog s_logger = LogManager.GetLogger(Assembly.GetExecutingAssembly().GetName().Name);
+        private static readonly ILog s_perfMon = LogManager.GetLogger(Assembly.GetExecutingAssembly().GetName().Name + ".PerfMon");
 
 
-        // Register this class as a logger consumer
-        // get the current configuration, add this logger, update and reload
 
-        public void TestLogging()
-        {
-            log.Trace("Sample trace message");
-            log.Debug("Sample debug message");
-            log.Info("Sample informational message");
-            log.Warn("Sample warning message");
-            log.Error("Sample error message");
-            log.Fatal("Sample fatal error message");
-
-            // alternatively you can call the Log() method
-            // and pass log level as the parameter.
-           log.InfoFormat("Sample informational message from {0} ","joe");
-
-        }
 
     }
+    */
 }

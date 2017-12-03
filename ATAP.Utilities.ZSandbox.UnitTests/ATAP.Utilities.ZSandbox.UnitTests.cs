@@ -117,12 +117,7 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
                 Assert.Equal(1, 1);
             }
 
-            [Fact]
-            public void sharedLoggingTest()
-            {
-            TestSharedLogging t = new TestSharedLogging();
-            t.TestLogging();
-        }
+
     }
 }
 

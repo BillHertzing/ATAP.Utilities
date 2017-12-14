@@ -5,6 +5,7 @@ using Xunit;
 using Xunit.Abstractions;
 using System.Collections.Generic;
 using System.Linq;
+using FluentAssertions;
 
 
 namespace ATAP.Utilities.UnitTest.UnitTests
@@ -134,8 +135,10 @@ namespace ATAP.Utilities.UnitTest.UnitTests
         [InlineData("[{\"Item1\":\"k1\",\"Item2\":\"k1\",\"Item3\":{\"A\":11.0}},{\"Item1\":\"k1\",\"Item2\":\"k2\",\"Item3\":{\"B\":12.0}},{\"Item1\":\"k1\",\"Item2\":\"k3\",\"Item3\":{\"C\":13.0}},{\"Item1\":\"k1\",\"Item2\":\"k4\",\"Item3\":{\"D\":14.0}},{\"Item1\":\"k1\",\"Item2\":\"k5\",\"Item3\":{\"A\":15.0,\"B\":15.1,\"C\":15.2,\"D\":15.3}},{\"Item1\":\"k2\",\"Item2\":\"k2\",\"Item3\":{\"A\":22.0,\"B\":22.1}},{\"Item1\":\"k2\",\"Item2\":\"k3\",\"Item3\":{\"A\":23.0,\"E\":22.4}}]")]
         void SingleInputStringFormattedAsJSONCollectionOfComplexTuples(string inTestData)
         {
-            IEnumerable<(string k1, string k2, IReadOnlyDictionary<string, double> term1)> r = InputMethodsForDealingWithJSONFormattedStrings.DeSerializeSingleInputStringFormattedAsJSONCollectionOfComplexTuples(inTestData);
-            Assert.Equal(7, r.ToList().Count);
+            List<(string k1, string k2, IReadOnlyDictionary<string, double> term1)> r = InputMethodsForDealingWithJSONFormattedStrings.DeSerializeSingleInputStringFormattedAsJSONCollectionOfComplexTuples(inTestData).ToList<(string k1, string k2, IReadOnlyDictionary<string, double> term1)>();
+            r.Should().HaveCount(7);
+            r[0].Should().BeOfType(typeof((string k1, string k2, IReadOnlyDictionary<string, double> term1)));
+            r[0].k1.Should().Be("k1");
         }
     }
 }

@@ -10,15 +10,17 @@
   </PropertyGroup>  
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170628-02" />
+    <PackageReference Include="FluentAssertions" Version="4.19.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
     <PackageReference Include="Moq" Version="4.7.145" />
-    <PackageReference Include="NLog.Config" Version="4.4.12" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
   </ItemGroup>
 
     <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.FileSystem\ATAP.Utilities.FileSystem.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,6 @@
-﻿using System;
+﻿
+using Itenso.TimePeriod;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
@@ -160,61 +162,57 @@ namespace ATAP.Utilities.CryptoCoin
         }
         public double BlockRewardPerBlock { get { return blockRewardPerBlock; } set { blockRewardPerBlock = value; } }
     }
-    public interface ICryptoCoinE
-    {
-        CoinsE Coin { get; set; }
-    }
+    
 
-    public interface IAvgBlockTime
+    public interface ICryptoCoinNetworkInfo
     {
-        TimeSpan AvgBlockTime { get; set; }
-    }
-    public interface ICryptoCoinNetworkInfo : ICryptoCoinE, IDTSandSpan, IHashRate, IAvgBlockTime
-    {
+        CoinsE CoinE { get; set; }
+        TimeBlock AvgBlockTime { get; set; }
+        HashRate HashRate { get; set; }
     }
     public partial class CryptoCoinNetworkInfo : ICryptoCoinNetworkInfo
     {
-        TimeSpan avgBlockTime;
+        TimeBlock avgBlockTime;
         double blockRewardPerBlock;
-        CoinsE coin;
-        DTSandSpan dTSandSpan;
+        CoinsE coinE;
+        TimeBlock timeBlock;
         HashRate hashRate;
-        public CryptoCoinNetworkInfo(CoinsE coin)
+        public CryptoCoinNetworkInfo(CoinsE coinE)
         {
-            this.coin = coin;
+            this.coinE = coinE;
         }
-        public CryptoCoinNetworkInfo(CoinsE coin, DTSandSpan dtss, HashRate hashRate, TimeSpan avgBlockTime, double blockRewardPerBlock)
+        public CryptoCoinNetworkInfo(CoinsE coinE, TimeBlock timeBlock, HashRate hashRate, TimeBlock avgBlockTime, double blockRewardPerBlock)
         {
-            this.coin = coin;
-            dTSandSpan = dtss;
+            this.coinE = coinE;
+            this.timeBlock = timeBlock;
             this.hashRate = hashRate;
             this.avgBlockTime = avgBlockTime;
             this.blockRewardPerBlock = blockRewardPerBlock;
         }
-        public TimeSpan AvgBlockTime { get => avgBlockTime; set => avgBlockTime = value; }
+        public TimeBlock AvgBlockTime { get => avgBlockTime; set => avgBlockTime = value; }
         public double BlockRewardPerBlock { get { return blockRewardPerBlock; } set { blockRewardPerBlock = value; } }
-        public CoinsE Coin
+        public CoinsE CoinE
         {
-            get { return coin; }
-            set { coin = value; }
+            get { return coinE; }
+            set { coinE = value; }
         }
-        public DTSandSpan DTSandSpan { get => dTSandSpan; set => dTSandSpan = value; }
+        public TimeBlock TimeBlock { get => timeBlock; set => timeBlock = value; }
         public HashRate HashRate { get => hashRate; set => hashRate = value; }
 
-        public static double AverageShareOfBlockRewardPerSpanFast(AverageShareOfBlockRewardDT data, TimeSpan timeSpan)
+        public static double AverageShareOfBlockRewardPerSpanFast(AverageShareOfBlockRewardDT data, TimeBlock timeSpan)
         {
-            // normalize into minerHashRateAsAPercentOfTotal the MinerHashRate / NetworkHashRate using the TimeSpan of the Miner
+            // normalize into minerHashRateAsAPercentOfTotal the MinerHashRate / NetworkHashRate using the TimeBlock of the Miner
             HashRate minerHashRateAsAPercentOfTotal = data.MinerHashRate / data.NetworkHashRate;
             // normalize the BlockRewardPerSpan to the same span the Miner HashRate span
             //ToDo Fix this calculation
             // normalize the BlockRewardPerSpan to the same span the network HashRate span
             double normalizedBlockCreationSpan = data.AverageBlockCreationSpan.TotalMilliseconds / data.NetworkHashRate.HashRateTimeSpan.TotalMilliseconds;
             double normalizedBlockRewardPerSpan = data.BlockRewardPerBlock / (data.AverageBlockCreationSpan.TotalMilliseconds * normalizedBlockCreationSpan);
-            // The number of block rewards found, on average, within a given TimeSpan, is number of blocks in the span, times the fraction of the NetworkHashRate contributed by the miner
+            // The number of block rewards found, on average, within a given TimeBlock, is number of blocks in the span, times the fraction of the NetworkHashRate contributed by the miner
             return normalizedBlockRewardPerSpan * (minerHashRateAsAPercentOfTotal.HashRatePerTimeSpan / data.NetworkHashRate.HashRatePerTimeSpan);
 
         }
-        public static double AverageShareOfBlockRewardPerSpanSafe(AverageShareOfBlockRewardDT data, TimeSpan timeSpan)
+        public static double AverageShareOfBlockRewardPerSpanSafe(AverageShareOfBlockRewardDT data, TimeBlock timeSpan)
         {
             // ToDo: Add parameter checking
             return AverageShareOfBlockRewardPerSpanFast(data, timeSpan);
@@ -229,17 +227,17 @@ namespace ATAP.Utilities.CryptoCoin
 
     public class CryptoCoinBuilder
     {
-        TimeSpan avgBlockTime;
+        TimeBlock avgBlockTime;
         double blockRewardPerBlock;
-        CoinsE coin;
-        DTSandSpan dTSandSpan;
+        CoinsE coinE;
+        TimeBlock timeBlock;
         HashRate hashRate;
         public CryptoCoinBuilder() { }
         public static CryptoCoinBuilder CreateNew()
         {
             return new CryptoCoinBuilder();
         }
-        public CryptoCoinBuilder AddAvgBlockTime(TimeSpan avgBlockTime)
+        public CryptoCoinBuilder AddAvgBlockTime(TimeBlock avgBlockTime)
         {
             this.avgBlockTime = avgBlockTime;
             return this;
@@ -249,14 +247,14 @@ namespace ATAP.Utilities.CryptoCoin
             this.blockRewardPerBlock = blockRewardPerBlock;
             return this;
         }
-        public CryptoCoinBuilder AddCoin(CoinsE coin)
+        public CryptoCoinBuilder AddCoin(CoinsE coinE)
         {
-            this.coin = coin;
+            this.coinE = coinE;
             return this;
         }
-        public CryptoCoinBuilder AddDTSAndSpan(DTSandSpan dTSandSpan)
+        public CryptoCoinBuilder AddDTSAndSpan(TimeBlock timeBlock)
         {
-            this.dTSandSpan = dTSandSpan;
+            this.timeBlock = timeBlock;
             return this;
         }
         public CryptoCoinBuilder AddHashRate(HashRate hashRate)
@@ -266,15 +264,11 @@ namespace ATAP.Utilities.CryptoCoin
         }
         public CryptoCoinNetworkInfo Build()
         {
-            return new CryptoCoinNetworkInfo(coin, dTSandSpan, hashRate, avgBlockTime, blockRewardPerBlock);
+            return new CryptoCoinNetworkInfo(coinE, timeBlock, hashRate, avgBlockTime, blockRewardPerBlock);
         }
     }
 
-    public interface IHashRate
-    {
-        HashRate HashRate { get; set; }
-    }
-
+  
     public interface IHashRatesDict
     {
         Dictionary<CoinsE, HashRate> HashRates { get; set; }
@@ -282,14 +276,14 @@ namespace ATAP.Utilities.CryptoCoin
     public class HashRate 
     {
         double hashRatePerTimeSpan;
-        TimeSpan hashRateTimeSpan;
-        public HashRate(double hashRatePerTimeSpan, TimeSpan hashRateSpan)
+        TimeBlock hashRateTimeSpan;
+        public HashRate(double hashRatePerTimeSpan, TimeBlock hashRateSpan)
         {
             this.hashRatePerTimeSpan = hashRatePerTimeSpan;
             this.hashRateTimeSpan = hashRateSpan;
         }
         public double HashRatePerTimeSpan { get { return hashRatePerTimeSpan; } set { hashRatePerTimeSpan = value; } }
-        public TimeSpan HashRateTimeSpan { get { return hashRateTimeSpan; } set { hashRateTimeSpan = value; } }
+        public TimeBlock HashRateTimeSpan { get { return hashRateTimeSpan; } set { hashRateTimeSpan = value; } }
 
         // overload operator +
         public static HashRate operator +(HashRate a, HashRate b)
@@ -360,17 +354,17 @@ namespace ATAP.Utilities.CryptoCoin
 
     public class CryptoCoinNetworkInfoBuilder
     {
-        TimeSpan avgBlockTime;
+        TimeBlock avgBlockTime;
         double blockRewardPerBlock;
-        CoinsE coin;
-        DTSandSpan dTSandSpan;
+        CoinsE coinE;
+        TimeBlock timeBlock;
         HashRate hashRate;
         public CryptoCoinNetworkInfoBuilder() { }
         public static CryptoCoinNetworkInfoBuilder CreateNew()
         {
             return new CryptoCoinNetworkInfoBuilder();
         }
-        public CryptoCoinNetworkInfoBuilder AddAvgBlockTime(TimeSpan avgBlockTime)
+        public CryptoCoinNetworkInfoBuilder AddAvgBlockTime(TimeBlock avgBlockTime)
         {
             this.avgBlockTime = avgBlockTime;
             return this;
@@ -380,14 +374,14 @@ namespace ATAP.Utilities.CryptoCoin
             this.blockRewardPerBlock = blockRewardPerBlock;
             return this;
         }
-        public CryptoCoinNetworkInfoBuilder AddCoin(CoinsE coin)
+        public CryptoCoinNetworkInfoBuilder AddCoin(CoinsE coinE)
         {
-            this.coin = coin;
+            this.coinE = coinE;
             return this;
         }
-        public CryptoCoinNetworkInfoBuilder AddDTSAndSpan(DTSandSpan dTSandSpan)
+        public CryptoCoinNetworkInfoBuilder AddDTSAndSpan(TimeBlock timeBlock)
         {
-            this.dTSandSpan = dTSandSpan;
+            this.timeBlock = timeBlock;
             return this;
         }
         public CryptoCoinNetworkInfoBuilder AddHashRate(HashRate hashRate)
@@ -397,13 +391,13 @@ namespace ATAP.Utilities.CryptoCoin
         }
         public CryptoCoinNetworkInfo Build()
         {
-            return new CryptoCoinNetworkInfo(coin, dTSandSpan, hashRate, avgBlockTime, blockRewardPerBlock);
+            return new CryptoCoinNetworkInfo(coinE, timeBlock, hashRate, avgBlockTime, blockRewardPerBlock);
         }
     }
     public interface IAverageShareOfBlockRewardDT
     {
-        TimeSpan AverageBlockCreationSpan { get; set; }
-        TimeSpan Duration { get; set; }
+        TimeBlock AverageBlockCreationSpan { get; set; }
+        TimeBlock Duration { get; set; }
         HashRate MinerHashRate { get; set; }
         HashRate NetworkHashRate { get; set; }
         double BlockRewardPerBlock { get; set; }
@@ -411,8 +405,8 @@ namespace ATAP.Utilities.CryptoCoin
 
     public interface IROAverageShareOfBlockRewardDT
     {
-        TimeSpan AverageBlockCreationSpan { get; }
-        TimeSpan Duration { get; }
+        TimeBlock AverageBlockCreationSpan { get; }
+        TimeBlock Duration { get; }
         HashRate MinerHashRate { get; }
         HashRate NetworkHashRate { get; }
         double BlockRewardPerBlock { get; }
@@ -421,14 +415,14 @@ namespace ATAP.Utilities.CryptoCoin
     /* the minimum data fields needed to calculate one miners average share of total coins mined in a time period */
     public class AverageShareOfBlockRewardDT : IAverageShareOfBlockRewardDT, IROAverageShareOfBlockRewardDT
     {
-        TimeSpan averageBlockCreationSpan;
-        TimeSpan duration;
+        TimeBlock averageBlockCreationSpan;
+        TimeBlock duration;
         HashRate minerHashRate;
         HashRate networkHashRate;
 
         double blockRewardPerBlock;
 
-        public AverageShareOfBlockRewardDT(TimeSpan averageBlockCreationSpan, TimeSpan duration, HashRate minerHashRate, HashRate networkHashRate, double blockRewardPerBlock)
+        public AverageShareOfBlockRewardDT(TimeBlock averageBlockCreationSpan, TimeBlock duration, HashRate minerHashRate, HashRate networkHashRate, double blockRewardPerBlock)
         {
             this.averageBlockCreationSpan = averageBlockCreationSpan;
             this.duration = duration;
@@ -438,12 +432,12 @@ namespace ATAP.Utilities.CryptoCoin
             this.blockRewardPerBlock = blockRewardPerBlock;
         }
 
-        public TimeSpan AverageBlockCreationSpan
+        public TimeBlock AverageBlockCreationSpan
         {
             get { return averageBlockCreationSpan; }
             set { averageBlockCreationSpan = value; }
         }
-        public TimeSpan Duration
+        public TimeBlock Duration
         {
             get { return duration; }
             set { duration = value; }
@@ -552,19 +546,19 @@ namespace ATAP.Utilities.CryptoCoin
     public class PowerConsumption
     {
         double watts;
-        TimeSpan period;
+        TimeBlock period;
         public PowerConsumption()
         {
             this.watts = default(double);
-            this.period = default(TimeSpan);
+            this.period = default(TimeBlock);
         }
-        public PowerConsumption(double w, TimeSpan period)
+        public PowerConsumption(double w, TimeBlock period)
         {
             this.watts = w;
             this.period = period;
         }
         public double Watts { get => watts; set => watts = value; }
-        public TimeSpan Period { get => period; set => period = value; }
+        public TimeBlock Period { get => period; set => period = value; }
         public override string ToString() { return $"{this.watts}-{this.period}"; }
     }
 
@@ -601,10 +595,10 @@ namespace ATAP.Utilities.CryptoCoin
             if (value is string)
             {
                 double w;
-                TimeSpan period;
-                //ToDo better validation on string to be sure it conforms to  "double:TimeSpan"
+                TimeBlock period;
+                //ToDo better validation on string to be sure it conforms to  "double-TimeBlock"
                 string[] s = ((string)value).Split('-');
-                if (s.Length != 2 || !double.TryParse(s[0], out w) || !TimeSpan.TryParse(s[1], out period)) throw new ArgumentException("Object is not a string of format double:int", "value");
+                if (s.Length != 2 || !double.TryParse(s[0], out w) || !TimeBlock.TryParse(s[1], out period)) throw new ArgumentException("Object is not a string of format double-int", "value");
                 return new PowerConsumption(w, period);
             }
 
@@ -657,7 +651,7 @@ namespace ATAP.Utilities.CryptoCoin
 //{
 //
 //            //Coinname = coinname ?? throw new ArgumentNullException(nameof(coinname));
-//            //Avgblocktime = avgblocktime == TimeSpan.Zero ? throw new ArgumentOutOfRangeException(nameof(avgblocktime)) : avgblocktime;
+//            //Avgblocktime = avgblocktime == TimeBlock.Zero ? throw new ArgumentOutOfRangeException(nameof(avgblocktime)) : avgblocktime;
 //            //Networkhashrate = networkhashrate == Decimal.Zero ? throw new ArgumentOutOfRangeException(nameof(networkhashrate)) : networkhashrate;
 //            //Blockreward = blockreward == Decimal.Zero ? throw new ArgumentOutOfRangeException(nameof(blockreward)) : blockreward;
 //            //Hashrate = hashrate == Decimal.Zero ? throw new ArgumentOutOfRangeException(nameof(hashrate)) : hashrate;
@@ -724,7 +718,7 @@ public sealed class NTSP_AverageShareOfBlockRewardDT : AverageShareOfBlockReward
     //static readonly Lazy<NTSP_NormalizedAverageShareOfEmittedCoins> lazy =
     //new Lazy<NTSP_NormalizedAverageShareOfEmittedCoins>(() => new NTSP_NormalizedAverageShareOfEmittedCoins());
 
-    public NTSP_AverageShareOfBlockRewardDT(TimeSpan averageBlockCreationSpan, TimeSpan duration, HashRate minerHashRate, HashRate networkHashRate, double blockRewardPerBlock) :
+    public NTSP_AverageShareOfBlockRewardDT(TimeBlock averageBlockCreationSpan, TimeBlock duration, HashRate minerHashRate, HashRate networkHashRate, double blockRewardPerBlock) :
       base(averageBlockCreationSpan, duration, minerHashRate, networkHashRate, blockRewardPerBlock)
     {
     }
@@ -779,7 +773,7 @@ public sealed class NTSP_AverageShareOfBlockRewardDT : AverageShareOfBlockReward
 
 //public CryptoCoins.CoinStatsCryptoNote ConvertToCryptoNoteCoinStats()
 //{
-//        CryptoCoins.CoinStatsCryptoNote t = new CryptoCoins.CoinStatsCryptoNote(CoinsE.XMR, DateTime.Now, TimeSpan.Zero, TimeSpan.FromMinutes(1.00), HashRate, Last_reward, Difficulty);
+//        CryptoCoins.CoinStatsCryptoNote t = new CryptoCoins.CoinStatsCryptoNote(CoinsE.XMR, DateTime.Now, TimeBlock.Zero, TimeBlock.FromMinutes(1.00), HashRate, Last_reward, Difficulty);
 //        return t;
 //    }
 

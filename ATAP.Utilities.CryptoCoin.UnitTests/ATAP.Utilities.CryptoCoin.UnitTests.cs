@@ -19,8 +19,9 @@ namespace ATAP.Utilities.CryptoCoin.UnitTests
             this.output = output;
             this._fixture = fixture;
         }
-        [Fact]
-        public void Test1()
+        [Theory]
+        [InlineData("[{\"Item1\":\"k1\",\"Item2\":\"k2\"}]")]
+        public void NetworkInfo1(string _testdatainput)
         {
 
         }

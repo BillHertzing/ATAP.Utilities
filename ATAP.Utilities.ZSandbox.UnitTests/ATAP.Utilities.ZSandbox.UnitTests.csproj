@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentAssertions" Version="4.19.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
     <PackageReference Include="Moq" Version="4.7.145" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
@@ -13,6 +14,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin\ATAP.Utilities.CryptoCoin.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.DateTime\ATAP.Utilities.DateTime.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.FileSystem\ATAP.Utilities.FileSystem.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Http\ATAP.Utilities.Http.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.String\ATAP.Utilities.String.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.UnitTest\ATAP.Utilities.UnitTest.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ZSandbox\ATAP.Utilities.ZSandbox.csproj" />
   </ItemGroup>
 

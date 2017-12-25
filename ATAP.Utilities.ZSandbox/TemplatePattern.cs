@@ -1,113 +1,77 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ATAP.Utilities.CryptoCoin;
+
 
 namespace ATAP.Utilities.ZSandbox {
-    public class Container2 {
-        FT_CN _fT_CN;
-        FT_CU _fT_CU;
-        SolveAndStoreOD_AST1 _solveAndStoreOD_AST1;
 
-        public Container2(SolveAndStoreOD_AST1 solveAndStoreOD_AST1, FT_CN fT_CN, FT_CU fT_CU) {
-            _solveAndStoreOD_AST1 = solveAndStoreOD_AST1;
-            _fT_CN = fT_CN;
-            _fT_CU = fT_CU;
+    public class Container2 {
+        public ChainInfo ChainInfo;
+        public TickerInfo TickerInfo;
+        public SolveAndStoreOD_2T SolveAndStoreOD;
+
+        public Container2(SolveAndStoreOD_2T solveAndStoreOD, ChainInfo chainInfo, TickerInfo tickerInfo) {
+            SolveAndStoreOD = solveAndStoreOD;
+            ChainInfo = chainInfo;
+            TickerInfo = tickerInfo;
             //FT[] _FTColl = { _fT_CN, _fT_CU };
         }
 
-        public FT_CN FT_CN { get => _fT_CN; set => _fT_CN = value; }
 
-        public FT_CU FT_CU { get => _fT_CU; set => _fT_CU = value; }
 
-        public SolveAndStoreOD_AST1 SolveAndStoreOD_AST1 { get => _solveAndStoreOD_AST1; set => _solveAndStoreOD_AST1 =
-            value; }
+        public class SolveAndStoreOD_2T : SolveAndStoreOD<string, decimal> {
+            Container2 _parent;
+            Dictionary<string, decimal> Results;
 
-        public class SolveAndStoreOD_ : SolveAndStoreOD<string, (string, string)> {
-            Container _parent;
-            Dictionary<string, decimal> _results;
-
-            public SolveAndStoreOD_(Container parent, Dictionary<string, decimal> results) {
+            public SolveAndStoreOD_2T(Container2 parent, Dictionary<string, decimal> results) {
                 _parent = parent;
-                _results = results;
+                Results = results;
             }
 
-            public override void SolveAndStore(string store, ((double, TimeSpan), string, string) solve) {
-                var cn = _parent.FT_CN.GetIt(solve.Item2)
+            public override void SolveAndStore(string store, decimal solve) {
+                var cn = _parent.ChainInfo.GetAsync("BTC")
                              .Result;
-                var cu = _parent.FT_CU.GetIt(solve.Item3)
+                var cu = _parent.TickerInfo.GetAsync()
                              .Result;
-                var cfg = solve.Item1;
-                _results[store] =
+                decimal HR;
+
+                decimal PR = decimal.TryParse(cn.hashrate,out HR) ? HR * (decimal)(cu.USD.last) : default;
+                //_results[store] =
             
             }
-
-            public Dictionary<string, decimal> Results { get => _results; set => _results =
-                value; }
         }
     }
 
-    public class FT_CU : FT<string, decimal> {
-        public FT_CU(string uri) : base(uri) {
-        }
-
-        public override Task<decimal> GetIt(string p1) {
-            throw new NotImplementedException();
-        }
-    }
 
     public class Container {
-        FT_CN _fT_CN;
-        SolveAndStoreOD_AST1 _solveAndStoreOD_AST1;
+        public TickerInfo TickerInfo;
+        public SolveAndStoreOD_TickerInfo SolveAndStoreOD_TickerInfo;
 
-        public Container(SolveAndStoreOD_AST1 solveAndStoreOD_AST1, FT_CN fT_CN) {
-            _solveAndStoreOD_AST1 = solveAndStoreOD_AST1;
-            _fT_CN = fT_CN;
+        public Container(SolveAndStoreOD_TickerInfo solveAndStoreOD, TickerInfo tickerInfo) {
+            SolveAndStoreOD_TickerInfo = solveAndStoreOD;
+            TickerInfo = tickerInfo;
         }
 
-        public FT_CN FT_CN { get => _fT_CN; set => _fT_CN = value; }
-
-        public SolveAndStoreOD_AST1 SolveAndStoreOD_AST1 { get => _solveAndStoreOD_AST1; set => _solveAndStoreOD_AST1 =
-            value; }
     }
 
-    public class SolveAndStoreOD_AST1 : SolveAndStoreOD<string, string> {
+    public class SolveAndStoreOD_TickerInfo : SolveAndStoreOD<string, blockChainInfo_ticker> {
         Container _parent;
-        Dictionary<string, (double, double, TimeSpan)> _results;
+        Dictionary<string, blockChainInfo_ticker> Results;
 
-        public SolveAndStoreOD_AST1(Container parent, Dictionary<string, (double, double, TimeSpan)> results) {
+        public SolveAndStoreOD_TickerInfo(Container parent, Dictionary<string, blockChainInfo_ticker> results) {
             _parent = parent;
-            _results = results;
+            Results = results;
         }
 
-        public override void SolveAndStore(string store, string solve) {
-            _results[store] = _parent.FT_CN.GetIt(solve)
+        public override void SolveAndStore(string store, blockChainInfo_ticker solve) {
+            Results[store] = _parent.TickerInfo.GetAsync()
                                   .Result;
         }
 
-        public Dictionary<string, (double, double, TimeSpan)> Results { get => _results; set => _results =
-            value; }
     }
 
-    public class FT_CN : FT<string, (double, double, TimeSpan)> {
-        public FT_CN(string uri) : base(uri) {
-        }
 
-        public override Task<(double, double, TimeSpan)> GetIt(string p1) {
-            throw new NotImplementedException();
-        }
-    }
-
-    public abstract class FT<TFetchIn, TFetchResult> {
-        string _uRI;
-
-        public FT(string uri) {
-            _uRI = uri;
-        }
-
-        public abstract Task<TFetchResult> GetIt(TFetchIn p1);
-
-        public string URI { get => _uRI; set => _uRI = value; }
-    }
 
     public class SolveAndStoreOD_ST2 : SolveAndStoreOD<string, int> {
         Dictionary<string, (string, int)> _results;
@@ -170,9 +134,7 @@ namespace ATAP.Utilities.ZSandbox {
     public abstract class SolveAndStoreOD<TStoreP, TSolveP> {
         public abstract void SolveAndStore(TStoreP store, TSolveP solve);
 
-        public void TemplateMethod() {
-            TStoreP store;
-            TSolveP solve;
+        public void TemplateMethod(TStoreP store, TSolveP solve) {
             SolveAndStore(store, solve);
         }
     }

@@ -1,92 +1,75 @@
 ﻿
-using Itenso.TimePeriod;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using Itenso.TimePeriod;
 using static ATAP.Utilities.CryptoCoin.ExtensionHelpers;
+using static ATAP.Utilities.Enumeration.Utilities;
 
 namespace ATAP.Utilities.CryptoCoin
 {
     /*
-   public class LocalizedDescriptionAttribute : DescriptionAttribute
-   {
-   private readonly string _resourceKey;
-   private readonly ResourceManager _resource;
-   public LocalizedDescriptionAttribute(string resourceKey, Type resourceType)
-   {
-   _resource = new ResourceManager(resourceType);
-   _resourceKey = resourceKey;
-   }
-
-   public override string Description{
-   get {
-   string displayName = _resource.GetString(_resourceKey);
-   return string.IsNullOrEmpty(displayName)
-   ? string.Format("[[{0}]]", _resourceKey)
-   : displayName;
-   }
-   }
-   }
-   */
+    ///ToDO: (far future) localize the application using satellite assemblies for specific languages
+    public class LocalizedDescriptionAttribute : DescriptionAttribute
+    {
+    private readonly string _resourceKey;
+    private readonly ResourceManager _resource;
+    public LocalizedDescriptionAttribute(string resourceKey, Type resourceType)
+    {
+    _resource = new ResourceManager(resourceType);
+    _resourceKey = resourceKey;
+    }
+    
+    public override string Description{
+    get {
+    string displayName = _resource.GetString(_resourceKey);
+    return string.IsNullOrEmpty(displayName)
+    ? string.Format("[[{0}]]", _resourceKey)
+    : displayName;
+    }
+    }
+    }
+    */
     public static class ExtensionHelpers
     {
-        public static CustomAttributeType GetAttributeValue<CustomAttributeName, CustomAttributeType>(this Enum value)
-        {
-            var x =
- // The enumeration value passed as the parameter to the GetSymbol method call
- value
-       // Get the the specific enumeration type
-       .GetType()
-     // Gets the FieldInfo object for this specific  value of the enumeration
-     .GetField(value.ToString())
-       // If the field info object is not null, get a custom attribute of type T from this specific value of the enumeration
-       ?.GetCustomAttributes(typeof(CustomAttributeName), false)
-            .FirstOrDefault();
-            // If the result is not null, return it as CustomAttributeType, else return the default value for that CustomAttributeType
-            if (x == null) { return default(CustomAttributeType); }
-            IAttribute<CustomAttributeType> z = x as IAttribute<CustomAttributeType>;
-            return z.Value;
-        }
-        // The C# V6 way...
-        public static string GetDescription(Enum value)
-        {
-            return
-                value
-                    .GetType()
-                    .GetMember(value.ToString())
-                    .FirstOrDefault()
-                    ?.GetCustomAttribute<DescriptionAttribute>()
-                    ?.Description;
-        }
-        public interface IAttribute<out T>
-        {
-            T Value { get; }
-        }
+        
         public sealed class Symbol : Attribute, IAttribute<string>
         {
-            public Symbol(string value) { Value = value; }
+            public Symbol(string value) {
+                Value = value;
+            }
 
             public static implicit operator string(Symbol v) { return v.Value; }
+
             public string Value { get; }
         }
+        
         public sealed class Algorithm : Attribute, IAttribute<string>
         {
-            public Algorithm(string value) { Value = value; }
+            public Algorithm(string value) {
+                Value = value;
+            }
 
             public static implicit operator string(Algorithm v) { return v.Value; }
+
             public string Value { get; }
         }
+
         public sealed class Proof : Attribute, IAttribute<string>
         {
-            public Proof(string value) { Value = value; }
+            public Proof(string value) {
+                Value = value;
+            }
 
             public static implicit operator string(Proof v) { return v.Value; }
+
             public string Value { get; }
         }
     }
+
     public enum Proofs
     {
         //[LocalizedDescription("Work", typeof(Resource))]
@@ -101,6 +84,7 @@ namespace ATAP.Utilities.CryptoCoin
         [Description("Capacity")]
         Capacity
     }
+
     // ToDo: automate the creation of the Algorithm enumeration and its attributes based on ???
     // ToDo: it will require the DLL version created to be part of versioning
     // RoDo: it require any changes be integrated into version control.
@@ -117,6 +101,7 @@ namespace ATAP.Utilities.CryptoCoin
         [Description("ZeroCoin")]
         ZeroCoin
     }
+
     // ToDo: automate the creation of the enumeration and its attributes based on the data stored in the GIT project https://github.com/crypti/cryptocurrencies.git. Also look at https://stackoverflow.com/questions/725043/dynamic-enum-in-c-sharp for making the list dynamic
     // ToDo: it will require the DLL version created to be part of versioning
     // RoDo: it require any changes be integrated into version control.
@@ -153,48 +138,61 @@ namespace ATAP.Utilities.CryptoCoin
         [Description("ZCoin")]
         ZEC
     }
+
+    // ToDo: continue to add miner SW to this list
+    public enum MinerSW
+    {
+        [Description("Claymore")]
+        Claymore,
+        [Description("ETHminer")]
+        ETHminer,
+        [Description("GENOIL")]
+        GENOIL,
+        [Description("XMRStak ")]
+        XMRStak,
+        [Description("WolfsMiner")]
+        WolfsMiner,
+        [Description("MoneroSpelunker")]
+        MoneroSpelunker
+    }
+
     public class BlockReward
     {
         double blockRewardPerBlock;
+
         public BlockReward(double blockRewardPerBlock)
         {
             this.blockRewardPerBlock = blockRewardPerBlock;
         }
+
         public double BlockRewardPerBlock { get { return blockRewardPerBlock; } set { blockRewardPerBlock = value; } }
     }
-    
 
     public interface ICryptoCoinNetworkInfo
     {
-        Coin Coin { get; set; }
         TimeBlock AvgBlockTime { get; set; }
+        Coin Coin { get; set; }
         HashRate HashRate { get; set; }
     }
+
     public partial class CryptoCoinNetworkInfo : ICryptoCoinNetworkInfo
     {
         TimeBlock avgBlockTime;
         double blockRewardPerBlock;
         Coin coin;
         HashRate hashRate;
+
         public CryptoCoinNetworkInfo(Coin coin)
         {
             this.coin = coin;
         }
-        public CryptoCoinNetworkInfo(Coin coin,  HashRate hashRate, TimeBlock avgBlockTime, double blockRewardPerBlock)
+        public CryptoCoinNetworkInfo(Coin coin, HashRate hashRate, TimeBlock avgBlockTime, double blockRewardPerBlock)
         {
             this.coin = coin;
             this.hashRate = hashRate;
             this.avgBlockTime = avgBlockTime;
             this.blockRewardPerBlock = blockRewardPerBlock;
         }
-        public TimeBlock AvgBlockTime { get => avgBlockTime; set => avgBlockTime = value; }
-        public double BlockRewardPerBlock { get { return blockRewardPerBlock; } set { blockRewardPerBlock = value; } }
-        public Coin Coin
-        {
-            get { return coin; }
-            set { coin = value; }
-        }
-        public HashRate HashRate { get => hashRate; set => hashRate = value; }
 
         public static double AverageShareOfBlockRewardPerSpanFast(AverageShareOfBlockRewardDT data, TimeBlock timeBlock)
         {
@@ -203,11 +201,15 @@ namespace ATAP.Utilities.CryptoCoin
             // normalize the BlockRewardPerSpan to the same span the Miner HashRate span
             //ToDo Fix this calculation
             // normalize the BlockRewardPerSpan to the same span the network HashRate span
-            double normalizedBlockCreationSpan = data.AverageBlockCreationSpan.Duration.Ticks / data.NetworkHashRate.HashRateTimeSpan.Duration.Ticks;
-            double normalizedBlockRewardPerSpan = data.BlockRewardPerBlock / (data.AverageBlockCreationSpan.Duration.Ticks * normalizedBlockCreationSpan);
+            double normalizedBlockCreationSpan = data.AverageBlockCreationSpan.Duration.Ticks /
+                data.NetworkHashRate.HashRateTimeSpan.Duration.Ticks;
+            double normalizedBlockRewardPerSpan = data.BlockRewardPerBlock /
+                (data.AverageBlockCreationSpan.Duration.Ticks *
+                    normalizedBlockCreationSpan);
             // The number of block rewards found, on average, within a given TimeBlock, is number of blocks in the span, times the fraction of the NetworkHashRate contributed by the miner
-            return normalizedBlockRewardPerSpan * (minerHashRateAsAPercentOfTotal.HashRatePerTimeSpan / data.NetworkHashRate.HashRatePerTimeSpan);
-
+            return normalizedBlockRewardPerSpan *
+                (minerHashRateAsAPercentOfTotal.HashRatePerTimeSpan /
+                    data.NetworkHashRate.HashRatePerTimeSpan);
         }
         public static double AverageShareOfBlockRewardPerSpanSafe(AverageShareOfBlockRewardDT data, TimeBlock timeSpan)
         {
@@ -215,86 +217,110 @@ namespace ATAP.Utilities.CryptoCoin
             return AverageShareOfBlockRewardPerSpanFast(data, timeSpan);
         }
 
+        public TimeBlock AvgBlockTime { get => avgBlockTime; set => avgBlockTime = value; }
+        public double BlockRewardPerBlock { get { return blockRewardPerBlock; } set { blockRewardPerBlock = value; } }
+        public Coin Coin {
+            get { return coin; }
+            set { coin = value; }
+        }
+        public HashRate HashRate { get => hashRate; set => hashRate = value; }
     }
 
-
-  
     public interface IHashRatesDict
     {
         Dictionary<Coin, HashRate> HashRates { get; set; }
     }
-    public class HashRate 
+
+    public class HashRate
     {
         double hashRatePerTimeSpan;
         TimeBlock hashRateTimeSpan;
+
         public HashRate(double hashRatePerTimeSpan, TimeBlock hashRateSpan)
         {
             this.hashRatePerTimeSpan = hashRatePerTimeSpan;
             this.hashRateTimeSpan = hashRateSpan;
         }
-        public double HashRatePerTimeSpan { get { return hashRatePerTimeSpan; } set { hashRatePerTimeSpan = value; } }
-        public TimeBlock HashRateTimeSpan { get { return hashRateTimeSpan; } set { hashRateTimeSpan = value; } }
 
-        // overload operator +
-        public static HashRate operator +(HashRate a, HashRate b)
-        {
-            if (a.hashRateTimeSpan == b.hashRateTimeSpan)
-            {
-                return new HashRate(a.hashRatePerTimeSpan + b.hashRatePerTimeSpan, a.hashRateTimeSpan);
-            }
-            else
-            {
-                return new HashRate(a.hashRatePerTimeSpan + (b.hashRatePerTimeSpan * (a.hashRateTimeSpan.Duration.Ticks / b.hashRateTimeSpan.Duration.Ticks)), a.hashRateTimeSpan);
-            }
-
-        }
         // overload operator -
         public static HashRate operator -(HashRate a, HashRate b)
         {
-            if (a.hashRateTimeSpan == b.hashRateTimeSpan)
+            if(a.hashRateTimeSpan == b.hashRateTimeSpan)
             {
                 return new HashRate(a.hashRatePerTimeSpan - b.hashRatePerTimeSpan, a.hashRateTimeSpan);
             }
             else
             {
-                return new HashRate(a.hashRatePerTimeSpan - (b.hashRatePerTimeSpan * (a.hashRateTimeSpan.Duration.Ticks / b.hashRateTimeSpan.Duration.Ticks)), a.hashRateTimeSpan);
+                return new HashRate(a.hashRatePerTimeSpan -
+                    (b.hashRatePerTimeSpan *
+                        (a.hashRateTimeSpan.Duration.Ticks /
+                            b.hashRateTimeSpan.Duration.Ticks)),
+                                    a.hashRateTimeSpan);
             }
-
         }
 
         // overload operator *
         public static HashRate operator *(HashRate a, HashRate b)
         {
-            if (a.hashRateTimeSpan == b.hashRateTimeSpan)
+            if(a.hashRateTimeSpan == b.hashRateTimeSpan)
             {
                 return new HashRate(a.hashRatePerTimeSpan * b.hashRatePerTimeSpan, a.hashRateTimeSpan);
             }
             else
             {
-                return new HashRate(a.hashRatePerTimeSpan * (b.hashRatePerTimeSpan * (a.hashRateTimeSpan.Duration.Ticks / b.hashRateTimeSpan.Duration.Ticks)), a.hashRateTimeSpan);
+                return new HashRate(a.hashRatePerTimeSpan *
+                    (b.hashRatePerTimeSpan *
+                        (a.hashRateTimeSpan.Duration.Ticks /
+                            b.hashRateTimeSpan.Duration.Ticks)),
+                                    a.hashRateTimeSpan);
             }
-
         }
         // overload operator *
         public static HashRate operator /(HashRate a, HashRate b)
         {
-            if (a.hashRateTimeSpan == b.hashRateTimeSpan)
+            if(a.hashRateTimeSpan == b.hashRateTimeSpan)
             {
                 return new HashRate(a.hashRatePerTimeSpan / b.hashRatePerTimeSpan, a.hashRateTimeSpan);
             }
             else
             {
-                return new HashRate(a.hashRatePerTimeSpan / (b.hashRatePerTimeSpan * (a.hashRateTimeSpan.Duration.Ticks / b.hashRateTimeSpan.Duration.Ticks)), a.hashRateTimeSpan);
+                return new HashRate(a.hashRatePerTimeSpan /
+                    (b.hashRatePerTimeSpan *
+                        (a.hashRateTimeSpan.Duration.Ticks /
+                            b.hashRateTimeSpan.Duration.Ticks)),
+                                    a.hashRateTimeSpan);
             }
+        }
 
+        // overload operator +
+        public static HashRate operator +(HashRate a, HashRate b)
+        {
+            if(a.hashRateTimeSpan == b.hashRateTimeSpan)
+            {
+                return new HashRate(a.hashRatePerTimeSpan + b.hashRatePerTimeSpan, a.hashRateTimeSpan);
+            }
+            else
+            {
+                return new HashRate(a.hashRatePerTimeSpan +
+                    (b.hashRatePerTimeSpan *
+                        (a.hashRateTimeSpan.Duration.Ticks /
+                            b.hashRateTimeSpan.Duration.Ticks)),
+                                    a.hashRateTimeSpan);
+            }
         }
 
         public static HashRate ChangeTimeSpan(HashRate a, HashRate b)
         {
             // no parameter checking
             double normalizedTimeSpan = a.HashRateTimeSpan.Duration.Ticks / b.HashRateTimeSpan.Duration.Ticks;
-            return new HashRate(a.hashRatePerTimeSpan * (a.hashRateTimeSpan.Duration.Ticks / b.hashRateTimeSpan.Duration.Ticks), a.hashRateTimeSpan);
+            return new HashRate(a.hashRatePerTimeSpan *
+                (a.hashRateTimeSpan.Duration.Ticks /
+                    b.hashRateTimeSpan.Duration.Ticks),
+                                a.hashRateTimeSpan);
         }
+
+        public double HashRatePerTimeSpan { get { return hashRatePerTimeSpan; } set { hashRatePerTimeSpan = value; } }
+        public TimeBlock HashRateTimeSpan { get { return hashRateTimeSpan; } set { hashRateTimeSpan = value; } }
     }
 
     public interface ICryptoCoinNetworkInfoBuilder
@@ -308,11 +334,10 @@ namespace ATAP.Utilities.CryptoCoin
         double blockRewardPerBlock;
         Coin coin;
         HashRate hashRate;
-        public CryptoCoinNetworkInfoBuilder() { }
-        public static CryptoCoinNetworkInfoBuilder CreateNew()
-        {
-            return new CryptoCoinNetworkInfoBuilder();
+
+        public CryptoCoinNetworkInfoBuilder() {
         }
+
         public CryptoCoinNetworkInfoBuilder AddAvgBlockTime(TimeBlock avgBlockTime)
         {
             this.avgBlockTime = avgBlockTime;
@@ -336,36 +361,41 @@ namespace ATAP.Utilities.CryptoCoin
         }
         public CryptoCoinNetworkInfo Build()
         {
-            return new CryptoCoinNetworkInfo(coin,  hashRate, avgBlockTime, blockRewardPerBlock);
+            return new CryptoCoinNetworkInfo(coin, hashRate, avgBlockTime, blockRewardPerBlock);
+        }
+        public static CryptoCoinNetworkInfoBuilder CreateNew()
+        {
+            return new CryptoCoinNetworkInfoBuilder();
         }
     }
+
     public interface IAverageShareOfBlockRewardDT
     {
         TimeBlock AverageBlockCreationSpan { get; set; }
+        double BlockRewardPerBlock { get; set; }
         TimeBlock Duration { get; set; }
         HashRate MinerHashRate { get; set; }
         HashRate NetworkHashRate { get; set; }
-        double BlockRewardPerBlock { get; set; }
     }
 
     public interface IROAverageShareOfBlockRewardDT
     {
         TimeBlock AverageBlockCreationSpan { get; }
+        double BlockRewardPerBlock { get; }
         TimeBlock Duration { get; }
         HashRate MinerHashRate { get; }
         HashRate NetworkHashRate { get; }
-        double BlockRewardPerBlock { get; }
     }
 
     /* the minimum data fields needed to calculate one miners average share of total coins mined in a time period */
     public class AverageShareOfBlockRewardDT : IAverageShareOfBlockRewardDT, IROAverageShareOfBlockRewardDT
     {
         TimeBlock averageBlockCreationSpan;
+
+        double blockRewardPerBlock;
         TimeBlock duration;
         HashRate minerHashRate;
         HashRate networkHashRate;
-
-        double blockRewardPerBlock;
 
         public AverageShareOfBlockRewardDT(TimeBlock averageBlockCreationSpan, TimeBlock duration, HashRate minerHashRate, HashRate networkHashRate, double blockRewardPerBlock)
         {
@@ -377,39 +407,37 @@ namespace ATAP.Utilities.CryptoCoin
             this.blockRewardPerBlock = blockRewardPerBlock;
         }
 
-        public TimeBlock AverageBlockCreationSpan
-        {
+        public TimeBlock AverageBlockCreationSpan {
             get { return averageBlockCreationSpan; }
             set { averageBlockCreationSpan = value; }
         }
-        public TimeBlock Duration
-        {
-            get { return duration; }
-            set { duration = value; }
-        }
-        public HashRate MinerHashRate
-        {
-            get { return minerHashRate; }
-            set { minerHashRate = value; }
-        }
-        public HashRate NetworkHashRate
-        {
-            get { return networkHashRate; }
-            set { networkHashRate = value; }
-        }
-        public double BlockRewardPerBlock
-        {
+        public double BlockRewardPerBlock {
             get { return blockRewardPerBlock; }
             set { blockRewardPerBlock = value; }
         }
+        public TimeBlock Duration {
+            get { return duration; }
+            set { duration = value; }
+        }
+        public HashRate MinerHashRate {
+            get { return minerHashRate; }
+            set { minerHashRate = value; }
+        }
+        public HashRate NetworkHashRate {
+            get { return networkHashRate; }
+            set { networkHashRate = value; }
+        }
     }
+
     public interface IFees
     {
         Fees Fees { get; set; }
     }
+
     public class Fees
     {
         double feeAsAPercent;
+
         public Fees()
         {
             feeAsAPercent = default(double);
@@ -418,17 +446,20 @@ namespace ATAP.Utilities.CryptoCoin
         {
             this.feeAsAPercent = feeAsAPercent;
         }
+
         public override string ToString()
         {
             return $"{FeeAsAPercent}";
         }
+
         public double FeeAsAPercent { get => feeAsAPercent; set => feeAsAPercent = value; }
     }
+
     public class FeesConverter : ExpandableObjectConverter
     {
         public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
         {
-            if (sourceType == typeof(string))
+            if(sourceType == typeof(string))
             {
                 return true;
             }
@@ -436,7 +467,7 @@ namespace ATAP.Utilities.CryptoCoin
         }
         public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
         {
-            if (destinationType == typeof(string))
+            if(destinationType == typeof(string))
             {
                 return true;
             }
@@ -445,15 +476,15 @@ namespace ATAP.Utilities.CryptoCoin
         public override object ConvertFrom(ITypeDescriptorContext
             context, CultureInfo culture, object value)
         {
-            if (value == null)
+            if(value == null)
             {
                 return new Fees();
             }
 
-            if (value is string)
+            if(value is string)
             {
                 double d;
-                if (!double.TryParse(value as string, out d))
+                if(!double.TryParse(value as string, out d))
                 {
                     throw new ArgumentException("Object is not a string of format double", "value");
                 }
@@ -465,17 +496,17 @@ namespace ATAP.Utilities.CryptoCoin
         }
         public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
         {
-            if (value != null)
+            if(value != null)
             {
-                if (!(value is Fees))
+                if(!(value is Fees))
                 {
                     throw new ArgumentException("Invalid object, is not a Fees", "value");
                 }
             }
 
-            if (destinationType == typeof(string))
+            if(destinationType == typeof(string))
             {
-                if (value == null)
+                if(value == null)
                 {
                     return ((value as Fees).FeeAsAPercent).ToString();
                 }
@@ -483,6 +514,7 @@ namespace ATAP.Utilities.CryptoCoin
             return base.ConvertTo(context, culture, value, destinationType);
         }
     }
+
     public interface IPowerConsumption
     {
         PowerConsumption PowerConsumption { get; set; }
@@ -490,8 +522,9 @@ namespace ATAP.Utilities.CryptoCoin
 
     public class PowerConsumption
     {
-        double watts;
         TimeSpan period;
+        double watts;
+
         public PowerConsumption()
         {
             this.watts = default(double);
@@ -502,9 +535,13 @@ namespace ATAP.Utilities.CryptoCoin
             this.watts = w;
             this.period = period;
         }
-        public double Watts { get => watts; set => watts = value; }
+
+        public override string ToString() {
+            return $"{this.watts}-{this.period}";
+        }
+
         public TimeSpan Period { get => period; set => period = value; }
-        public override string ToString() { return $"{this.watts}-{this.period}"; }
+        public double Watts { get => watts; set => watts = value; }
     }
 
     public class PowerConsumptionConverter : ExpandableObjectConverter
@@ -512,7 +549,7 @@ namespace ATAP.Utilities.CryptoCoin
         public override bool CanConvertFrom(
             ITypeDescriptorContext context, Type sourceType)
         {
-            if (sourceType == typeof(string))
+            if(sourceType == typeof(string))
             {
                 return true;
             }
@@ -522,7 +559,7 @@ namespace ATAP.Utilities.CryptoCoin
         public override bool CanConvertTo(
             ITypeDescriptorContext context, Type destinationType)
         {
-            if (destinationType == typeof(string))
+            if(destinationType == typeof(string))
             {
                 return true;
             }
@@ -532,18 +569,23 @@ namespace ATAP.Utilities.CryptoCoin
         public override object ConvertFrom(ITypeDescriptorContext
             context, CultureInfo culture, object value)
         {
-            if (value == null)
+            if(value == null)
             {
                 return new PowerConsumption();
             }
 
-            if (value is string)
+            if(value is string)
             {
                 double w;
                 TimeSpan period;
                 //ToDo better validation on string to be sure it conforms to  "double-TimeBlock"
                 string[] s = ((string)value).Split('-');
-                if (s.Length != 2 || !double.TryParse(s[0], out w) || !TimeSpan.TryParse(s[1], out period)) throw new ArgumentException("Object is not a string of format double-int", "value");
+                if(s.Length != 2 || !double.TryParse(s[0], out w) || !TimeSpan.TryParse(s[1], out period))
+                {
+                    throw new ArgumentException("Object is not a string of format double-int",
+                                               "value");
+                }
+
                 return new PowerConsumption(w, period);
             }
 
@@ -554,26 +596,27 @@ namespace ATAP.Utilities.CryptoCoin
             ITypeDescriptorContext context,
             CultureInfo culture, object value, Type destinationType)
         {
-            if (value != null)
+            if(value != null)
             {
-                if (!(value is PowerConsumption))
+                if(!(value is PowerConsumption))
                 {
                     throw new ArgumentException("Invalid object, is not a PowerConsumption", "value");
                 }
             }
 
-            if (destinationType == typeof(string))
+            if(destinationType == typeof(string))
             {
-                if (value == null)
+                if(value == null)
                 {
-                    return "";
+                    return string.Empty;
                 }
 
                 PowerConsumption powerConsumption = (PowerConsumption)value;
                 return powerConsumption.ToString();
-
             }
-            return base.ConvertTo(context, culture, value,
+            return base.ConvertTo(context,
+                                  culture,
+                                  value,
                 destinationType);
         }
     }
@@ -589,7 +632,6 @@ namespace ATAP.Utilities.CryptoCoin
 
         public static InterestingCoins Instance { get { return lazy.Value; } }
     }
-
 }
 
 //public class CryptoCoins
@@ -713,7 +755,6 @@ public sealed class NTSP_AverageShareOfBlockRewardDT : AverageShareOfBlockReward
 //        Last_timestamp = 2;
 //        ;
 //    }
-
 
 
 //public CryptoCoins.CoinStatsCryptoNote ConvertToCryptoNoteCoinStats()

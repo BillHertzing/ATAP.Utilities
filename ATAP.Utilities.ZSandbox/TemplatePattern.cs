@@ -36,9 +36,10 @@ namespace ATAP.Utilities.ZSandbox {
                              .Result;
                 decimal HR;
 
-                decimal PR = decimal.TryParse(cn.hashrate,out HR) ? HR * (decimal)(cu.USD.last) : default;
+                decimal PR = decimal.TryParse(cn.hashrate,out HR) ? HR * (decimal)(cu.USD.last) : 0m;
                 //_results[store] =
-            
+
+
             }
         }
     }

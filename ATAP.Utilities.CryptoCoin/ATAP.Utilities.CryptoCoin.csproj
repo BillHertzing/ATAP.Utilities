@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.DateTime\ATAP.Utilities.DateTime.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Http\ATAP.Utilities.Http.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
   </ItemGroup>

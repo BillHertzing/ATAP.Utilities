@@ -32,6 +32,8 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyVersion("0.0.1.0")]
 [assembly: AssemblyFileVersion("0.0.1.0")]
 [assembly: InternalsVisibleTo("ATAP.Utilities.Logging.UnitTests")]
+[assembly: InternalsVisibleTo("ATAP.Utilities.Configuration")]
+[assembly: InternalsVisibleTo("ATAP.Utilities.Configuration.UnitTests")]
 [assembly: InternalsVisibleTo("ATAP.Utilities.CryptoCoin")]
 [assembly: InternalsVisibleTo("ATAP.Utilities.CryptoCoin.UnitTests")]
 [assembly: InternalsVisibleTo("ATAP.Utilities.DateTime")]

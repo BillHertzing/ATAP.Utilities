@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.UnitTest\ATAP.Utilities.UnitTest.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.UnitTest\ATAP.Utilities.Testing.csproj" />
   </ItemGroup>
 
   <ItemGroup>

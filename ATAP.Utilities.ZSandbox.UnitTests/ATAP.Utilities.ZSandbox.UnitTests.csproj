@@ -21,7 +21,7 @@
     <ProjectReference Include="..\ATAP.Utilities.Http\ATAP.Utilities.Http.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.String\ATAP.Utilities.String.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.UnitTest\ATAP.Utilities.UnitTest.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.UnitTest\ATAP.Utilities.Testing.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ZSandbox\ATAP.Utilities.ZSandbox.csproj" />
   </ItemGroup>
 

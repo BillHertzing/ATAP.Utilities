@@ -33,7 +33,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ZSandbox", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ZSandbox.UnitTests", "ATAP.Utilities.ZSandbox.UnitTests\ATAP.Utilities.ZSandbox.UnitTests.csproj", "{0A301C4A-9886-48E9-AA39-085D07E66482}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.UnitTest.UnitTests", "ATAP.Utilities.UnitTest.UnitTests\ATAP.Utilities.UnitTest.UnitTests.csproj", "{163CFFE9-AB84-46AD-A83A-175F33AF3DB6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.UnitTest.UnitTests1", "ATAP.Utilities.UnitTest.UnitTests\ATAP.Utilities.UnitTest.UnitTests1.csproj", "{163CFFE9-AB84-46AD-A83A-175F33AF3DB6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Http", "ATAP.Utilities.Http\ATAP.Utilities.Http.csproj", "{10DC5525-66C4-4FC6-8B41-B0C96E94632B}"
 EndProject
@@ -43,9 +43,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin.UnitTests", "ATAP.Utilities.CryptoCoin.UnitTests\ATAP.Utilities.CryptoCoin.UnitTests.csproj", "{8182B668-322F-4EAE-871B-6B94C042F01C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Configuration", "ATAP.Utilities.Configuration\ATAP.Utilities.Configuration.csproj", "{BA77F91E-3BE9-4F1C-956A-56EE711E002D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration", "ATAP.Utilities.Configuration\ATAP.Utilities.Configuration.csproj", "{BA77F91E-3BE9-4F1C-956A-56EE711E002D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Configuration.UnitTests", "ATAP.Utilities.Configuration.UnitTests\ATAP.Utilities.Configuration.UnitTests.csproj", "{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration.UnitTests", "ATAP.Utilities.Configuration.UnitTests\ATAP.Utilities.Configuration.UnitTests.csproj", "{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

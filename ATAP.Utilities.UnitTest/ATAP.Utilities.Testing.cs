@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using Newtonsoft.Json;
 using System.Collections.Generic;
-namespace ATAP.Utilities.UnitTest
+namespace ATAP.Utilities.Testing
 {
     public sealed class TemporaryFile : IDisposable
     {

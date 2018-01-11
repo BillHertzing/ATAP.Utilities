@@ -8,7 +8,7 @@ using System.Linq;
 using FluentAssertions;
 
 
-namespace ATAP.Utilities.UnitTest.UnitTests
+namespace ATAP.Utilities.Testing.UnitTests
 {
     public class Fixture
     {
@@ -21,12 +21,12 @@ namespace ATAP.Utilities.UnitTest.UnitTests
 
         public string Hello { get => hello; set => hello = value; }
     }
-    public class UnitTestsForUnitTestsUtilities : IClassFixture<Fixture>
+    public class UnitTestsForTestingUtilities : IClassFixture<Fixture>
     {
         protected Fixture _fixture;
         readonly ITestOutputHelper output;
 
-        public UnitTestsForUnitTestsUtilities(ITestOutputHelper output, Fixture fixture)
+        public UnitTestsForTestingUtilities(ITestOutputHelper output, Fixture fixture)
         {
             this.output = output;
             this._fixture = fixture;

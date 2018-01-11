@@ -21,6 +21,7 @@ namespace ATAP.Utilities.CryptoCoin.UnitTests
         [Theory]
         [InlineData("[{\"Item1\":\"k1\",\"Item2\":\"k2\"}]")]
         public void NetworkInfo1(string _testdatainput) {
+            _testdatainput.Should().NotBeNull();
 
         }
 

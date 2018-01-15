@@ -21,5 +21,11 @@
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.String\ATAP.Utilities.String.csproj" />
   </ItemGroup>
+
+    <ItemGroup>
+      <None Update="xunit.runner.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
   
 </Project>

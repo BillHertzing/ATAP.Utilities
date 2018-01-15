@@ -38,7 +38,7 @@ namespace ATAP.Utilities.Tcp.UnitTests
     public class TCPUnitTests001 : IClassFixture<Fixture>
     {
 
-        [Theory]
+        [Theory(Skip = "can not run this on the MyGet build service")]
         [InlineData("[{\"Temp\":20.0,\"FanPct\":0.0},{\"Temp\":50.0,\"FanPct\":50.0},{\"Temp\":85.0,\"FanPct\":100.0}]")]
         public async void claymorestatus(string _testdatainput)
         {

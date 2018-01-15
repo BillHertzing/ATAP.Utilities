@@ -21,4 +21,10 @@
     <ProjectReference Include="..\ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

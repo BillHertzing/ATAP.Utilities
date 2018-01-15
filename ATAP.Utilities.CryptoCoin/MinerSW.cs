@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Itenso.TimePeriod;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Swordfish.NET.Collections;
 using System;
@@ -37,19 +38,23 @@ namespace ATAP.Utilities.CryptoCoin
         NVIDEA
     }
 
+    // Add an enumeration for the known video card mfgrs
 
     public interface IRigConfig { }
     public class RigConfig
     {
+        TimeBlock instantiationMoment;
+        //ToDo make CPUTempAndFan an observable
         public TempAndFan CPUTempAndFan { get; set; }
+        //ToDo make PowerConsumption an observable
         public PowerConsumption PowerConsumption { get; set; }
-        //ToDo make this an observable
         ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins),MinerSW> MinerSWs { get; set; }
         ConcurrentObservableDictionary<int,GPUHW> GPUHWs { get; set; }
-       
+        public TimeBlock InstantiationMoment { get => instantiationMoment;  }
 
         public RigConfig (TempAndFan cPUTempAndFan, PowerConsumption powerConsumption, ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> minerSWs, ConcurrentObservableDictionary<int, GPUHW> gPUHWs)
         {
+            instantiationMoment = new TimeBlock();
             CPUTempAndFan = cPUTempAndFan;
             PowerConsumption = powerConsumption;
             MinerSWs = minerSWs;
@@ -91,7 +96,7 @@ namespace ATAP.Utilities.CryptoCoin
             this.minerSWs = minerSWs;
             return this;
         }
-        public IRigConfigBuilder AddMinerSWs(ConcurrentObservableDictionary<int, GPUHW> gPUHWs)
+        public IRigConfigBuilder AddGPUHWs(ConcurrentObservableDictionary<int, GPUHW> gPUHWs)
         {
             this.gPUHWs = gPUHWs;
             return this;

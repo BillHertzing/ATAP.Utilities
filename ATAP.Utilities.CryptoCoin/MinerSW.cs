@@ -1,4 +1,6 @@
-﻿using Swordfish.NET.Collections;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Swordfish.NET.Collections;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,6 +10,32 @@ using System.Text;
 namespace ATAP.Utilities.CryptoCoin
 {
 
+    // ToDo: continue to add miner SW to this list
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum MinerSWE
+    {
+        [Description("Claymore")]
+        Claymore,
+        [Description("ETHminer")]
+        ETHMiner,
+        [Description("GENOIL")]
+        GENOIL,
+        [Description("XMRStak ")]
+        XMRStak,
+        [Description("WolfsMiner")]
+        WolfsMiner,
+        [Description("MoneroSpelunker")]
+        MoneroSpelunker
+    }
+
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum GPUMfgr
+    {
+        [Description("AMD")]
+        AMD,
+        [Description("NVIDEA")]
+        NVIDEA
+    }
 
 
     public interface IRigConfig { }
@@ -68,22 +96,6 @@ namespace ATAP.Utilities.CryptoCoin
             this.gPUHWs = gPUHWs;
             return this;
         }
-    }
-    // ToDo: continue to add miner SW to this list
-    public enum MinerSWE
-    {
-        [Description("Claymore")]
-        Claymore,
-        [Description("ETHminer")]
-        ETHMiner,
-        [Description("GENOIL")]
-        GENOIL,
-        [Description("XMRStak ")]
-        XMRStak,
-        [Description("WolfsMiner")]
-        WolfsMiner,
-        [Description("MoneroSpelunker")]
-        MoneroSpelunker
     }
 
     public abstract class MinerSW 
@@ -159,43 +171,68 @@ namespace ATAP.Utilities.CryptoCoin
         public TempAndFan[] TempAndFanPerGPU { get; set; }
 
     }
-
-    public enum GPUMfgrE
-    {
-        [Description("AMD")]
-        AMD,
-        [Description("NVIDEA")]
-        NVIDEA
-    }
     public abstract class GPUHW
     {
-        GPUMfgrE kind;
-        String stockBiosVersion;
+        GPUMfgr gPUMfgr;
+        string subVendor;
+        string cardName;
+        string deviceID;
+        String bIOSVersion;
         bool isStrapped;
-        public GPUMfgrE GPUMfgrE { get => kind; }
-        public String StockBiosVersion { get => stockBiosVersion; }
+        ConcurrentObservableDictionary<string, double> bindableDoubles;
+        ConcurrentObservableDictionary<string, double> BindableDoubles { get => bindableDoubles; }
+        public GPUMfgr GPUMfgr { get => gPUMfgr; }
+        public string SubVendor { get => subVendor; }
+        public string CardName { get => cardName; }
+        public string DeviceID { get => deviceID; }
+        public String BIOSVersion { get => bIOSVersion; }
         public bool IsStrapped { get => isStrapped; }
+        public double CoreClock { get; set; }
+        public double MemClock { get; set; }
+        public double CoreVoltage { get; set; }
+        public double PowerLimit { get; set; }
         public ConcurrentObservableDictionary<Coin,HashRate>  HashRatePerCoin { get; set; }
         public PowerConsumption PowerConsumption { get; set; }
         public TempAndFan TempAndFan { get; set; }
         public bool IsRunning { get; set; }
         public GPUHW(
-            GPUMfgrE kind,
-         String stockBiosVersion,
+           
+         GPUMfgr gPUMfgr,
+         string subVendor,
+         string cardName,
+         string deviceID,
+         string bIOSVersion,
          bool isStrapped,
+         double coreClock,
+         double memClock,
+         double coreVoltage,
+         double powerLimit,
          ConcurrentObservableDictionary<Coin, HashRate> hashRatePerCoin,
          PowerConsumption powerConsumption,
          TempAndFan tempAndFan,
         bool isRunning
             )
         {
-            this.kind = kind;
-            this.stockBiosVersion = stockBiosVersion;
+            this.gPUMfgr = gPUMfgr;
+            this.subVendor = subVendor;
+            this.cardName = cardName;
+            this.deviceID = deviceID;
+            this.bIOSVersion = bIOSVersion;
             this.isStrapped = isStrapped;
+            CoreClock = coreClock;
+            MemClock = memClock;
+            CoreVoltage = coreVoltage;
+            PowerLimit = powerLimit;
             HashRatePerCoin = hashRatePerCoin;
             PowerConsumption = powerConsumption;
             TempAndFan = tempAndFan;
             IsRunning = isRunning;
+            bindableDoubles = new ConcurrentObservableDictionary<string, double>(){
+                {"CoreClock", coreClock },
+                {"MemClock", memClock },
+                {"CoreVoltage", coreVoltage },
+                {"PowerLimit", powerLimit },
+            };
         }
     }
 
@@ -248,13 +285,21 @@ namespace ATAP.Utilities.CryptoCoin
     public class AMDGPUHW : GPUHW
     {
         public AMDGPUHW(
-         String stockBiosVersion,
+                  string subVendor,
+         string cardName,
+         string deviceID,
+         string bIOSVersion,
+
          bool isStrapped,
-         ConcurrentObservableDictionary<Coin, HashRate> hashRatePerCoin,
+                  double coreClock,
+         double memClock,
+         double coreVoltage,
+         double powerLimit,
+ConcurrentObservableDictionary<Coin, HashRate> hashRatePerCoin,
          PowerConsumption powerConsumption,
          TempAndFan tempAndFan,
         bool isRunning
-            ) : base(GPUMfgrE.AMD, stockBiosVersion, isStrapped, hashRatePerCoin, powerConsumption, tempAndFan, isRunning) { }
+            ) : base(GPUMfgr.AMD, subVendor, cardName, deviceID, bIOSVersion, isStrapped, coreClock, memClock, coreVoltage, powerLimit, hashRatePerCoin, powerConsumption, tempAndFan, isRunning) { }
     }
     /*
     public class XMRMinerSWBuilder : IMinerSWBuilder

@@ -46,6 +46,8 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("ATAP.Utilities.FileSystem.UnitTests")]
 [assembly: InternalsVisibleTo("ATAP.Utilities.String")]
 [assembly: InternalsVisibleTo("ATAP.Utilities.String.UnitTests")]
+[assembly: InternalsVisibleTo("ATAP.Utilities.Tcp")]
+[assembly: InternalsVisibleTo("ATAP.Utilities.Tcp.UnitTests")]
 [assembly: InternalsVisibleTo("ATAP.Utilities.UnitTest")]
 [assembly: InternalsVisibleTo("ATAP.Utilities.UnitTest.UnitTests")]
 [assembly: InternalsVisibleTo("ATAP.Utilities.ZSandbox")]

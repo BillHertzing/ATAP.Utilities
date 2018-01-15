@@ -38,11 +38,25 @@ namespace ATAP.Utilities.CryptoCoin.UnitTests
             r.USD.symbol.Should().Be("$");
         }
 
+        [Fact]
+        public void TempAndFanToJSON()
+        {
+            TempAndFan tempAndFan = new TempAndFan { Temp = 50, FanPct = 95.5 } ;
+            string str = JsonConvert.SerializeObject(tempAndFan);
+            str.Should().NotBeNull();
+        }
+        [Theory]
+        [InlineData("{\"Temp\":20.0,\"FanPct\":0.0}")]
+        public void TempAndFanFromJSON(string _testdatainput)
+        {
+            var tempAndFan = JsonConvert.DeserializeObject<TempAndFan>(_testdatainput);
+            tempAndFan.Should().NotBeNull();
+        }
         [Theory]
         [InlineData("[{\"Temp\":20.0,\"FanPct\":0.0},{\"Temp\":50.0,\"FanPct\":50.0},{\"Temp\":85.0,\"FanPct\":100.0}]")]
         public void TempAndFanSetAndGet(string _testdatainput)
         {
-            var tempAndFans=    JsonConvert.DeserializeObject<TempAndFan[]>(_testdatainput);
+            var tempAndFans = JsonConvert.DeserializeObject<TempAndFan[]>(_testdatainput);
             tempAndFans.Length.Should().Be(3);
             tempAndFans[0].Temp.Should().Be(20);
             tempAndFans[1].Temp.Should().Be(50);
@@ -69,7 +83,7 @@ namespace ATAP.Utilities.CryptoCoin.UnitTests
         public void AMDGPUHWSetAndGet(string _testdatainput)
         {
             var hrpc = new ConcurrentObservableDictionary<Coin, HashRate>() { { Coin.ETH, new HashRate(20.0, new Itenso.TimePeriod.TimeBlock(System.DateTime.Now)) } };
-            AMDGPUHW g = new AMDGPUHW( "EVGA", "GTX 980 TI", "10DE 17C8 - 3842", "100.00001.02320.00", false, 1140, 1753, 11.13,0.8,hrpc, new PowerConsumption() { Period = new TimeSpan(0, 1, 0), Watts = 1000 }, new TempAndFan() { FanPct = 50.0, Temp = 60 }, false );
+            AMDGPUHW g = new AMDGPUHW("EVGA", "GTX 980 TI", "10DE 17C8 - 3842", "100.00001.02320.00", false, 1140, 1753, 11.13, 0.8, hrpc, new PowerConsumption() { Period = new TimeSpan(0, 1, 0), Watts = 1000 }, new TempAndFan() { FanPct = 50.0, Temp = 60 }, false);
             var str = JsonConvert.SerializeObject(g);
             g.Should().NotBeNull();
             /*
@@ -94,5 +108,31 @@ namespace ATAP.Utilities.CryptoCoin.UnitTests
             */
         }
 
+        [Fact]
+        public void RigConfigBuilderToJSON()
+        {
+            ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> minerSWs = new ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW>();
+            ConcurrentObservableDictionary<int, GPUHW> gPUHWs = new ConcurrentObservableDictionary<int, GPUHW>();
+            PowerConsumption pc = new PowerConsumption() { Period = new TimeSpan(0, 1, 0), Watts = 1000.0 };
+            TempAndFan tf = new TempAndFan { Temp = 50, FanPct = 95.5 };
+
+            RigConfig rc = RigConfigBuilder.CreateNew()
+               .AddMinerSWs(minerSWs)
+               .AddGPUHWs(gPUHWs)
+               .AddPowerConsumption(pc)
+               .AddTempAndFan(tf)
+               .Build();
+            var str = JsonConvert.SerializeObject(rc);
+            str.Should().NotBeNull();
+        }
+        [Theory]
+        [InlineData("{\"Period\":\"00:01:00\",\"Watts\":1000.0}")]
+        public void RigConfigBuilderFromJSON(string _testdatainput)
+        {
+            var rigConfig = JsonConvert.DeserializeObject<RigConfig>(_testdatainput);
+            rigConfig.Should().NotBeNull();
+
+
+        }
     }
 }

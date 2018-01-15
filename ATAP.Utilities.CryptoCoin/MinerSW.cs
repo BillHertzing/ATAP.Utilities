@@ -39,9 +39,14 @@ namespace ATAP.Utilities.CryptoCoin
 
     public interface IRigConfig
     {
+        TempAndFan CPUTempAndFan { get; set; }
+        TimeBlock InstantiationMoment { get; }
+        PowerConsumption PowerConsumption { get; set; }
+        ConcurrentObservableDictionary<int, GPUHW> GPUHWs { get; set; }
+        ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> MinerSWs { get; set; }
     }
 
-    public class RigConfig
+    public class RigConfig : IRigConfig
     {
         TimeBlock instantiationMoment;
 
@@ -54,8 +59,8 @@ namespace ATAP.Utilities.CryptoCoin
             GPUHWs = gPUHWs;
         }
 
-        ConcurrentObservableDictionary<int, GPUHW> GPUHWs { get; set; }
-        ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> MinerSWs { get; set; }
+        public ConcurrentObservableDictionary<int, GPUHW> GPUHWs { get; set; }
+        public ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> MinerSWs { get; set; }
 
         //ToDo make CPUTempAndFan an observable
         public TempAndFan CPUTempAndFan { get; set; }
@@ -76,22 +81,22 @@ namespace ATAP.Utilities.CryptoCoin
         ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> minerSWs;
         PowerConsumption powerConsumption;
 
-        public IRigConfigBuilder AddGPUHWs(ConcurrentObservableDictionary<int, GPUHW> gPUHWs)
+        public RigConfigBuilder AddGPUHWs(ConcurrentObservableDictionary<int, GPUHW> gPUHWs)
         {
             this.gPUHWs = gPUHWs;
             return this;
         }
-        public IRigConfigBuilder AddMinerSWs(ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> minerSWs)
+        public RigConfigBuilder AddMinerSWs(ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> minerSWs)
         {
             this.minerSWs = minerSWs;
             return this;
         }
-        public IRigConfigBuilder AddPowerConsumption(PowerConsumption powerConsumption)
+        public RigConfigBuilder AddPowerConsumption(PowerConsumption powerConsumption)
         {
             this.powerConsumption = powerConsumption;
             return this;
         }
-        public IRigConfigBuilder AddTempAndFan(TempAndFan cPUTempAndFan)
+        public RigConfigBuilder AddTempAndFan(TempAndFan cPUTempAndFan)
         {
             this.cPUTempAndFan = cPUTempAndFan;
             return this;

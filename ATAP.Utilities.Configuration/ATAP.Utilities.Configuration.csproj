@@ -18,4 +18,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="2.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+  </ItemGroup>
+
 </Project>

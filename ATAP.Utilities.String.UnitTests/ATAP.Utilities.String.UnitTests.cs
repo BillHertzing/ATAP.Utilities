@@ -2,7 +2,7 @@
 
 namespace ATAP.Utilities.String.UnitTests
 {
-    public class Class1
+    public class StringUnitTests001
     {
     }
 }

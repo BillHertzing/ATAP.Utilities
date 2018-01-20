@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
+using ATAP.Utilities.ComputerInventory;
 using Itenso.TimePeriod;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -8,6 +10,31 @@ using Swordfish.NET.Collections;
 
 namespace ATAP.Utilities.CryptoCoin
 {
+    public class MinerGPU : VideoCard
+    {
+        public MinerGPU(
+            VideoCardDiscriminatingCharacteristics videoCardDiscriminatingCharacteristics,
+            string deviceID, string bIOSVersion, bool isStrapped, double coreClock, double memClock, double coreVoltage, double powerLimit, PowerConsumption powerConsumption, TempAndFan tempAndFan, ConcurrentObservableDictionary<Coin, HashRate> hashRatePerCoin, bool isRunning) : base(
+                videoCardDiscriminatingCharacteristics,
+                                                                                                                                                                                       
+                                                                                                                                                                                        deviceID,
+                                                                                                                                                                                        bIOSVersion,
+                                                                                                                                                                                        isStrapped,
+                                                                                                                                                                                        coreClock,
+                                                                                                                                                                                        memClock,
+                                                                                                                                                                                        coreVoltage,
+                                                                                                                                                                                        powerLimit,
+                                                                                                                                                                                        powerConsumption,
+                                                                                                                                                                                                                                tempAndFan)
+        {
+            HashRatePerCoin = hashRatePerCoin;
+            IsRunning = isRunning;
+        }
+
+        public ConcurrentObservableDictionary<Coin, HashRate> HashRatePerCoin { get; set; }
+        public bool IsRunning { get; set; }
+    }
+
     // ToDo: continue to add miner SW to this list
     [JsonConverter(typeof(StringEnumConverter))]
     public enum MinerSWE
@@ -26,45 +53,34 @@ namespace ATAP.Utilities.CryptoCoin
         MoneroSpelunker
     }
 
-    [JsonConverter(typeof(StringEnumConverter))]
-    public enum GPUMfgr
-    {
-        [Description("AMD")]
-        AMD,
-        [Description("NVIDEA")]
-        NVIDEA
-    }
-
-    // Add an enumeration for the known video card mfgrs
-
     public interface IRigConfig
     {
         TempAndFan CPUTempAndFan { get; set; }
         TimeBlock InstantiationMoment { get; }
-        PowerConsumption PowerConsumption { get; set; }
-        ConcurrentObservableDictionary<int, GPUHW> GPUHWs { get; set; }
+        ConcurrentObservableDictionary<int, MinerGPU> MinerGPUs { get; set; }
         ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> MinerSWs { get; set; }
+        PowerConsumption PowerConsumption { get; set; }
     }
 
     public class RigConfig : IRigConfig
     {
         TimeBlock instantiationMoment;
 
-        public RigConfig(TempAndFan cPUTempAndFan, PowerConsumption powerConsumption, ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> minerSWs, ConcurrentObservableDictionary<int, GPUHW> gPUHWs)
+        public RigConfig(TempAndFan cPUTempAndFan, PowerConsumption powerConsumption, ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> minerSWs, ConcurrentObservableDictionary<int, MinerGPU> minerGPUs)
         {
             instantiationMoment = new TimeBlock();
             CPUTempAndFan = cPUTempAndFan;
             PowerConsumption = powerConsumption;
             MinerSWs = minerSWs;
-            GPUHWs = gPUHWs;
+            MinerGPUs = minerGPUs;
         }
-
-        public ConcurrentObservableDictionary<int, GPUHW> GPUHWs { get; set; }
-        public ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> MinerSWs { get; set; }
 
         //ToDo make CPUTempAndFan an observable
         public TempAndFan CPUTempAndFan { get; set; }
         public TimeBlock InstantiationMoment { get => instantiationMoment; }
+
+        public ConcurrentObservableDictionary<int, MinerGPU> MinerGPUs { get; set; }
+        public ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> MinerSWs { get; set; }
         //ToDo make PowerConsumption an observable
         public PowerConsumption PowerConsumption { get; set; }
     }
@@ -77,13 +93,13 @@ namespace ATAP.Utilities.CryptoCoin
     public class RigConfigBuilder : IRigConfigBuilder
     {
         TempAndFan cPUTempAndFan;
-        ConcurrentObservableDictionary<int, GPUHW> gPUHWs;
+        ConcurrentObservableDictionary<int, MinerGPU> minerGPUs;
         ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> minerSWs;
         PowerConsumption powerConsumption;
 
-        public RigConfigBuilder AddGPUHWs(ConcurrentObservableDictionary<int, GPUHW> gPUHWs)
+        public RigConfigBuilder AddMinerGPUs(ConcurrentObservableDictionary<int, MinerGPU> minerGPUs)
         {
-            this.gPUHWs = gPUHWs;
+            this.minerGPUs = minerGPUs;
             return this;
         }
         public RigConfigBuilder AddMinerSWs(ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> minerSWs)
@@ -104,12 +120,30 @@ namespace ATAP.Utilities.CryptoCoin
 
         public RigConfig Build()
         {
-            return new RigConfig(cPUTempAndFan, powerConsumption, minerSWs, gPUHWs);
+            return new RigConfig(cPUTempAndFan, powerConsumption, minerSWs, minerGPUs);
         }
         public static RigConfigBuilder CreateNew()
         {
             return new RigConfigBuilder();
         }
+    }
+
+    public class MinerConfigSettings
+    {
+        Coin[] CoinsMined;
+        MinerSWE kind;
+
+        int ApiPort { get; set; }
+        int[][] CoinVideoCardIntensity { get; set; }
+        int CoreClock { get; set; }
+        int MemoryClock { get; set; }
+        int MemoryVoltage { get; set; }
+        int NumVideoCardsToPowerUpInParallel { get; set; }
+        string[] PoolPasswords { get; set; }
+        string[][] Pools { get; set; }
+        string[] PoolWallets { get; set; }
+
+        public MinerSWE Kind { get => kind; }
     }
 
     public abstract class MinerSW
@@ -213,17 +247,17 @@ namespace ATAP.Utilities.CryptoCoin
             ClaymoreMinerStatusDetails details;
             Regex RE1 = new Regex(rEClaymoreMinerStatusReport, RegexOptions.IgnoreCase);
             MatchCollection matches = RE1.Matches(str);
-            if (matches.Count != 1)
+            if(matches.Count != 1)
             {
                 throw new ArgumentException($"Unable to match as a status response {str}");
             }
 
-            foreach (Match match in matches)
+            foreach(Match match in matches)
             {
                 GroupCollection groups = match.Groups;
 
                 // ToDo tighten up security here, make sure it impossible that the "ID" value can be used as an attack vector
-                if (!int.TryParse(groups["ID"].Value, out iD))
+                if(!int.TryParse(groups["ID"].Value, out iD))
                 {
                     throw new ArgumentException($"Unable to match as an integer {groups["ID"].Value}");
                 }
@@ -300,22 +334,22 @@ namespace ATAP.Utilities.CryptoCoin
             string rEClaymoreMinerStatusResultDetails = @"^(?<Version>.*?).*?,";
             Regex RE1 = new Regex(rEClaymoreMinerStatusResultDetails, RegexOptions.IgnoreCase);
             MatchCollection matches = RE1.Matches(str);
-            if (matches.Count == 0)
+            if(matches.Count == 0)
             {
                 throw new ArgumentException($"Unable to match as a status response detailed: {str}");
             }
 
-            foreach (Match match in matches)
+            foreach(Match match in matches)
             {
                 GroupCollection groups = match.Groups;
-                /*
-                var versionCoin = groups["VersionCoin"].Value ?? throw new ArgumentNullException(nameof(VersionCoin));
-                Version = versionCoin;
-
-                // Version = new Regex(@"(\d|\.)+", RegexOptions.IgnoreCase).Matches;
-                // Coin = groups["Version"].Value ?? throw new ArgumentNullException(nameof(Coin));
-                RunningTime = groups["RunningTime"].Value ?? throw new ArgumentNullException(nameof(RunningTime));
-                */
+            /*
+            var versionCoin = groups["VersionCoin"].Value ?? throw new ArgumentNullException(nameof(VersionCoin));
+            Version = versionCoin;
+            
+            // Version = new Regex(@"(\d|\.)+", RegexOptions.IgnoreCase).Matches;
+            // Coin = groups["Version"].Value ?? throw new ArgumentNullException(nameof(Coin));
+            RunningTime = groups["RunningTime"].Value ?? throw new ArgumentNullException(nameof(RunningTime));
+            */
             }
         }
         public ClaymoreMinerStatusDetails(int[][] detailedHashRatePerCoinPerGPU, int[] rejectedSharesPerCoin, string runningTime, TempAndFan[] tempAndFanPerGPU, int[] totalHashRatePerCoin, int[] totalSharesPerCoin, string version)
@@ -329,74 +363,6 @@ namespace ATAP.Utilities.CryptoCoin
                    version)
         {
         }
-    }
-
-    public abstract class GPUHW
-    {
-        ConcurrentObservableDictionary<string, double> bindableDoubles;
-        string bIOSVersion;
-        string cardName;
-        string deviceID;
-        GPUMfgr gPUMfgr;
-        bool isStrapped;
-        string subVendor;
-
-        public GPUHW(
-
-         GPUMfgr gPUMfgr,
-         string subVendor,
-         string cardName,
-         string deviceID,
-         string bIOSVersion,
-         bool isStrapped,
-         double coreClock,
-         double memClock,
-         double coreVoltage,
-         double powerLimit,
-         ConcurrentObservableDictionary<Coin, HashRate> hashRatePerCoin,
-         PowerConsumption powerConsumption,
-         TempAndFan tempAndFan,
-        bool isRunning
-            )
-        {
-            this.gPUMfgr = gPUMfgr;
-            this.subVendor = subVendor;
-            this.cardName = cardName;
-            this.deviceID = deviceID;
-            this.bIOSVersion = bIOSVersion;
-            this.isStrapped = isStrapped;
-            CoreClock = coreClock;
-            MemClock = memClock;
-            CoreVoltage = coreVoltage;
-            PowerLimit = powerLimit;
-            HashRatePerCoin = hashRatePerCoin;
-            PowerConsumption = powerConsumption;
-            TempAndFan = tempAndFan;
-            IsRunning = isRunning;
-            bindableDoubles = new ConcurrentObservableDictionary<string, double>() {
-                {"CoreClock", coreClock },
-                {"MemClock", memClock },
-                {"CoreVoltage", coreVoltage },
-                {"PowerLimit", powerLimit },
-            };
-        }
-
-        ConcurrentObservableDictionary<string, double> BindableDoubles { get => bindableDoubles; }
-
-        public string BIOSVersion { get => bIOSVersion; }
-        public string CardName { get => cardName; }
-        public double CoreClock { get; set; }
-        public double CoreVoltage { get; set; }
-        public string DeviceID { get => deviceID; }
-        public GPUMfgr GPUMfgr { get => gPUMfgr; }
-        public ConcurrentObservableDictionary<Coin, HashRate> HashRatePerCoin { get; set; }
-        public bool IsRunning { get; set; }
-        public bool IsStrapped { get => isStrapped; }
-        public double MemClock { get; set; }
-        public PowerConsumption PowerConsumption { get; set; }
-        public double PowerLimit { get; set; }
-        public string SubVendor { get => subVendor; }
-        public TempAndFan TempAndFan { get; set; }
     }
 
     public abstract class ClaymoreMinerSW : MinerSW
@@ -477,39 +443,9 @@ namespace ATAP.Utilities.CryptoCoin
         }
     }
 
-    public class AMDGPUHW : GPUHW
+    public class TuneMinerGPUsResult
     {
-        public AMDGPUHW(
-                  string subVendor,
-         string cardName,
-         string deviceID,
-         string bIOSVersion,
-
-         bool isStrapped,
-                  double coreClock,
-         double memClock,
-         double coreVoltage,
-         double powerLimit,
-    ConcurrentObservableDictionary<Coin, HashRate> hashRatePerCoin,
-         PowerConsumption powerConsumption,
-         TempAndFan tempAndFan,
-        bool isRunning
-            ) : base(GPUMfgr.AMD,
-                     subVendor,
-                     cardName,
-                     deviceID,
-                     bIOSVersion,
-                     isStrapped,
-                     coreClock,
-                     memClock,
-                     coreVoltage,
-                     powerLimit,
-                     hashRatePerCoin,
-                     powerConsumption,
-                     tempAndFan,
-                     isRunning)
-        {
-        }
+        Dictionary<Coin, HashRate> HashRates { get; set; }
+        PowerConsumption PowerConsumption { get; set; }
     }
-
 }

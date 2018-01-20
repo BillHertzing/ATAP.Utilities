@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2010
+VisualStudioVersion = 15.0.27130.2020
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.DateTime", "ATAP.Utilities.DateTime\ATAP.Utilities.DateTime.csproj", "{9DEDDD4C-B2FB-4BB3-8C2C-26BC2FED4D83}"
 EndProject
@@ -43,13 +43,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin.UnitTests", "ATAP.Utilities.CryptoCoin.UnitTests\ATAP.Utilities.CryptoCoin.UnitTests.csproj", "{8182B668-322F-4EAE-871B-6B94C042F01C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration", "ATAP.Utilities.Configuration\ATAP.Utilities.Configuration.csproj", "{BA77F91E-3BE9-4F1C-956A-56EE711E002D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory", "ATAP.Utilities.ComputerInventory\ATAP.Utilities.ComputerInventory.csproj", "{BA77F91E-3BE9-4F1C-956A-56EE711E002D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration.UnitTests", "ATAP.Utilities.Configuration.UnitTests\ATAP.Utilities.Configuration.UnitTests.csproj", "{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.UnitTests", "ATAP.Utilities.ComputerInventory.UnitTests\ATAP.Utilities.ComputerInventory.UnitTests.csproj", "{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Tcp", "ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj", "{87896186-203D-4A81-A1D9-01552470BB0F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Tcp.UnitTests", "ATAP.Utilities.Tcp.UnitTests\ATAP.Utilities.Tcp.UnitTests.csproj", "{1E2256BE-F4B2-4519-AE66-A314CF7799A8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Tcp.UnitTests", "ATAP.Utilities.Tcp.UnitTests\ATAP.Utilities.Tcp.UnitTests.csproj", "{1E2256BE-F4B2-4519-AE66-A314CF7799A8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

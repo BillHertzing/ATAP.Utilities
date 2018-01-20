@@ -6,6 +6,10 @@ using ATAP.Utilities.Http;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using System.IO;
+using System.Configuration;
+using ATAP.Utilities.Testing;
+using nucs.JsonSettings;
 
 namespace ATAP.Utilities.ZSandbox.UnitTests
 {
@@ -94,7 +98,22 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
         //    return new(string, string, string, double)[numTests] { TestData.Take(numTests); }
         //    }
     }
-        public class ZSandboxUnitTests001 : IClassFixture<Fixture>
+    class MySettings : JsonSettings
+    {
+        public override string FileName { get; set; }  //for loading and saving.
+
+        #region Settings
+
+        public string SomeProperty { get; set; }
+        public int SomeNumberWithDefaultValue { get; set; } = 1;
+
+        #endregion
+        //Step 3: Override parent's constructors
+        public MySettings() { }
+        public MySettings(string fileName) : base(fileName) { }
+    }
+
+    public class ZSandboxUnitTests001 : IClassFixture<Fixture>
         {
             protected Fixture _fixture;
             readonly ITestOutputHelper output;
@@ -118,6 +137,27 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
                 }
                 Assert.Equal(1, 1);
             }
+
+        [Theory]
+        // [MemberData(nameof(Fixture.TestData))]
+        [InlineData("")]
+        //[ClassData(typeof(ClassLevelTestData))]
+        public void ConfigurationSettingsTest(string _testdatainput)
+        {
+            string appConfigFileName = "appConfig.txt";
+            string userConfigFileName = "userConfig.txt";
+            ///string path = Path.Combine(Environment.GetEnvironmentVariable("ProgramData"), "ACE/config.txt");
+            TemporaryFile appConfigFilePath = new TemporaryFile(appConfigFileName);
+            TemporaryFile userConfigFilePath = new TemporaryFile(userConfigFileName);
+            MySettings mySettings = new MySettings();
+            mySettings.FileName = appConfigFilePath;
+
+
+            //config.AppSettings.Settings[key].Value = value;
+            //config.Save();
+            //ConfigurationManager.RefreshSection("appSettings");
+            Assert.Equal(1, 1);
+        }
 
 
 

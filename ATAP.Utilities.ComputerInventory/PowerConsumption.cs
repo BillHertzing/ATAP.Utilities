@@ -4,17 +4,16 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Text;
 
-namespace ATAP.Utilities.CryptoCoin
+namespace ATAP.Utilities.ComputerInventory
 {
- 
     public interface IPowerConsumption : IObservable<PowerConsumption>
     {
-         TimeSpan Period { get ; set ; }
-         double Watts { get; set; }
+        TimeSpan Period { get; set; }
+        double Watts { get; set; }
     }
 
     //ToDo make these thread-safe (concurrent)
-    public class PowerConsumption :  IPowerConsumption
+    public class PowerConsumption : IPowerConsumption
     {
         TimeSpan period;
         double watts;
@@ -119,4 +118,7 @@ namespace ATAP.Utilities.CryptoCoin
                 destinationType);
         }
     }
+
+
+
 }

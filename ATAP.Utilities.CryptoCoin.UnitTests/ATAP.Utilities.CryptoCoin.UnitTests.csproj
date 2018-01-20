@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory\ATAP.Utilities.ComputerInventory.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.CryptoCoin\ATAP.Utilities.CryptoCoin.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
   </ItemGroup>

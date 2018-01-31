@@ -17,11 +17,11 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings { Converters = { new StringEnumConverter()} };
         }
     }
-    public class ConfigurationUnitTests001 : IClassFixture<Fixture>
+    public class ComputerInventoryUnitTests001 : IClassFixture<Fixture>
     {
         protected Fixture _fixture;
         readonly ITestOutputHelper output;
-        public ConfigurationUnitTests001(ITestOutputHelper output, Fixture fixture)
+        public ComputerInventoryUnitTests001(ITestOutputHelper output, Fixture fixture)
         {
             this.output = output;
             this._fixture = fixture;
@@ -82,7 +82,7 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
         [InlineData("{\"BIOSVersion\":\"100.00001.02320.00\",\"CardName\":\"GTX 980 TI\",\"CoreClock\":1140.0,\"CoreVoltage\":11.13,\"DeviceID\":\"10DE 17C8 - 3842\",\"IsStrapped\":false,\"MemClock\":1753.0,\"PowerConsumption\":{\"Period\":\"00:01:00\",\"Watts\":1000.0},\"PowerLimit\":0.8,\"TempAndFan\":{\"Temp\":60.0,\"FanPct\":50.0},\"VideoCardMaker\":\"ASUS\",\"GPUMaker\":\"NVIDEA\"}")]
         internal void VideoCardSerializeToJSON(string _testdatainput)
         {
-            VideoCardDiscriminatingCharacteristics vcdc = KnownVideoCards.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
+            VideoCardDiscriminatingCharacteristics vcdc = VideoCardsKnown.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
     VideoCardMaker.ASUS
     && x.GPUMaker ==
     GPUMaker.NVIDEA)).Single();
@@ -110,5 +110,16 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
             vc.TempAndFan.Temp.Should().Be(60);
             vc.TempAndFan.FanPct.Should().Be(50);
         }
+        [Theory]
+        [InlineData("{\"BIOSVersion\":\"100.00001.02320.00\",\"CardName\":\"GTX 980 TI\",\"CoreClock\":1140.0,\"CoreVoltage\":11.13,\"DeviceID\":\"10DE 17C8 - 3842\",\"IsStrapped\":false,\"MemClock\":1753.0,\"PowerConsumption\":{\"Period\":\"00:01:00\",\"Watts\":1000.0},\"PowerLimit\":0.8,\"TempAndFan\":{\"Temp\":60.0,\"FanPct\":50.0},\"VideoCardMaker\":\"ASUS\",\"GPUMaker\":\"NVIDEA\"}")]
+        internal void ComputerInventorySerializeToJSON(string _testdatainput)
+        {
+            ComputerInventory ci = new ComputerInventory();
+
+
+            string str = JsonConvert.SerializeObject(videoCard);
+        str.Should().NotBeNull();
+        str.Should().Be(_testdatainput);
     }
+}
 }

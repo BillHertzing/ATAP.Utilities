@@ -47,7 +47,7 @@ namespace ATAP.Utilities.CryptoCoin.UnitTests
         internal void MinerGPUSerializeToJSON(string _testdatainput)
         {
             var hrpc = new ConcurrentObservableDictionary<Coin, HashRate>() { { Coin.ETH, new HashRate(20.0, new Itenso.TimePeriod.TimeBlock(System.DateTime.Now)) } };
-            VideoCardDiscriminatingCharacteristics vcdc = KnownVideoCards.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
+            VideoCardDiscriminatingCharacteristics vcdc = VideoCardsKnown.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
     VideoCardMaker.ASUS
     && x.GPUMaker ==
     GPUMaker.NVIDEA)).Single();

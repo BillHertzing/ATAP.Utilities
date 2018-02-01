@@ -34,7 +34,7 @@ namespace ATAP.Utilities.ComputerInventory
             throw new NotImplementedException();
         }
         //ToDo: Implement creating a ComputerInventory object from a set of Configuration Settings
-        public ComputerInventory (Dictionary<string, string>)
+        public ComputerInventory (Dictionary<string, string> configurationSettings)
         {
             
         }

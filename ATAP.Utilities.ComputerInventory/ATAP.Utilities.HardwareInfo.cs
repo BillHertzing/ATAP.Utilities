@@ -275,6 +275,7 @@ namespace ATAP.Utilities.ComputerInventory
         readonly bool isMainboardEnabled;
         readonly bool isCPUsEnabled;
         readonly bool isVideoCardsEnabled;
+        readonly bool isFanControllerEnabled;
         readonly CPU[] cPUs;
         readonly Motherboard motherboard;
         readonly VideoCard[] videoCards;
@@ -284,10 +285,18 @@ namespace ATAP.Utilities.ComputerInventory
             isMainboardEnabled = true;
             isCPUsEnabled = true;
             isVideoCardsEnabled = true;
+            isFanControllerEnabled = true;
             this.cPUs = cPUs;
             this.motherboard = motherboard;
             this.videoCards = videoCards;
             Instantiation = instantiation;
+            this.computer = new Computer
+            {
+                MainboardEnabled = isMainboardEnabled,
+                CPUEnabled = isCPUsEnabled,
+                FanControllerEnabled = isFanControllerEnabled,
+                GPUEnabled = isVideoCardsEnabled
+            };
         }
 
         TimeBlock Instantiation { get; set; }
@@ -311,5 +320,7 @@ namespace ATAP.Utilities.ComputerInventory
         public bool IsCPUsEnabled => isCPUsEnabled;
 
         public bool IsVideoCardsEnabled => isVideoCardsEnabled;
+
+        public bool IsFanControllerEnabled => isFanControllerEnabled;
     }
 }

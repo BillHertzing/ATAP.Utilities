@@ -18,7 +18,8 @@ namespace ATAP.Utilities.Logging.UnitTests
     public class TestSharedLogging
     {
         #region Configure this class to use ATAP.Utilities.Logging
-        internal static ILog log { get; set; }
+        public static ILog log { get; set; }
+
 
         static TestSharedLogging()
         {

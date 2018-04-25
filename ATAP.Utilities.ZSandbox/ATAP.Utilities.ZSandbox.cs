@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 
 namespace ATAP.Utilities.ZSandbox {
-    public static class SandboxStatic1 {
+    public static class JSONSerializeAndDeSerializeTupleExamples {
         
         public static(string k1, string k2) DeSerializeSimpleTuple(string _input) {
             return JsonConvert.DeserializeObject<(string k1, string k2)>(_input);

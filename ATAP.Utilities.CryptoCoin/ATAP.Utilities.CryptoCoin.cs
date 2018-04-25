@@ -11,133 +11,7 @@ using static ATAP.Utilities.Enumeration.Utilities;
 
 namespace ATAP.Utilities.CryptoCoin
 {
-    /*
-    ///ToDO: (far future) localize the application using satellite assemblies for specific languages
-    public class LocalizedDescriptionAttribute : DescriptionAttribute
-    {
-    private readonly string _resourceKey;
-    private readonly ResourceManager _resource;
-    public LocalizedDescriptionAttribute(string resourceKey, Type resourceType)
-    {
-    _resource = new ResourceManager(resourceType);
-    _resourceKey = resourceKey;
-    }
-    
-    public override string Description{
-    get {
-    string displayName = _resource.GetString(_resourceKey);
-    return string.IsNullOrEmpty(displayName)
-    ? string.Format("[[{0}]]", _resourceKey)
-    : displayName;
-    }
-    }
-    }
-    */
-    public static class ExtensionHelpers
-    {
-        
-        public sealed class Symbol : Attribute, IAttribute<string>
-        {
-            public Symbol(string value) {
-                Value = value;
-            }
 
-            public static implicit operator string(Symbol v) { return v.Value; }
-
-            public string Value { get; }
-        }
-        
-        public sealed class Algorithm : Attribute, IAttribute<string>
-        {
-            public Algorithm(string value) {
-                Value = value;
-            }
-
-            public static implicit operator string(Algorithm v) { return v.Value; }
-
-            public string Value { get; }
-        }
-
-        public sealed class Proof : Attribute, IAttribute<string>
-        {
-            public Proof(string value) {
-                Value = value;
-            }
-
-            public static implicit operator string(Proof v) { return v.Value; }
-
-            public string Value { get; }
-        }
-    }
-
-    public enum Proofs
-    {
-        //[LocalizedDescription("Work", typeof(Resource))]
-        [Description("Work")]
-        Work,
-        [Description("Stake")]
-        Stake,
-        [Description("Burn")]
-        Burn,
-        [Description("Activity")]
-        Activity,
-        [Description("Capacity")]
-        Capacity
-    }
-
-    // ToDo: automate the creation of the Algorithm enumeration and its attributes based on ???
-    // ToDo: it will require the DLL version created to be part of versioning
-    // RoDo: it require any changes be integrated into version control.
-    public enum Algorithms
-    {
-        [Description("Casper")]
-        Casper,
-        [Description("CryptoNote")]
-        CryptoNote,
-        [Description("Hashcash")]
-        Hashcash,
-        [Description("Lyra2RE")]
-        Lyra2RE,
-        [Description("ZeroCoin")]
-        ZeroCoin
-    }
-
-    // ToDo: automate the creation of the enumeration and its attributes based on the data stored in the GIT project https://github.com/crypti/cryptocurrencies.git. Also look at https://stackoverflow.com/questions/725043/dynamic-enum-in-c-sharp for making the list dynamic
-    // ToDo: it will require the DLL version created to be part of versioning
-    // RoDo: it require any changes be integrated into version control.
-    // There are over 1500+ different documented coins so far
-    public enum Coin
-    {
-        [Symbol("BCN")]
-        [Description("Bytecoin")]
-        [Proof("Work")]
-        [Algorithm("CryptoNote")]
-        BCN,
-        [Proof("Work")]
-        [Algorithm("Hashcash")]
-        [Symbol("BTC")]
-        [Description("BitCoin")]
-        BTC,
-        [Symbol("ETH")]
-        [Description("Ethereum")]
-        [Proof("Stake")]
-        [Algorithm("Casper")]
-        ETH,
-        [Symbol("DSH")]
-        [Description("Dashcoin ")]
-        [Proof("Work")]
-        [Algorithm("CryptoNote")]
-        DSH,
-        [Symbol("XMR")]
-        [Description("Monero")]
-        [Proof("Work")]
-        [Algorithm("CryptoNote")]
-        XMR,
-        [Algorithm("ZeroCoin")]
-        [Symbol("ZEC")]
-        [Description("ZCoin")]
-        ZEC
-    }
 
  
 
@@ -187,7 +61,7 @@ namespace ATAP.Utilities.CryptoCoin
             //ToDo Fix this calculation
             // normalize the BlockRewardPerSpan to the same span the network HashRate span
             double normalizedBlockCreationSpan = data.AverageBlockCreationSpan.Duration.Ticks /
-                data.NetworkHashRate.HashRateTimeSpan.Duration.Ticks;
+                data.NetworkHashRate.HashRateTimeSpan.Duration().Ticks;
             double normalizedBlockRewardPerSpan = data.BlockRewardPerBlock /
                 (data.AverageBlockCreationSpan.Duration.Ticks *
                     normalizedBlockCreationSpan);
@@ -219,9 +93,9 @@ namespace ATAP.Utilities.CryptoCoin
     public class HashRate
     {
         double hashRatePerTimeSpan;
-        TimeBlock hashRateTimeSpan;
+        TimeSpan hashRateTimeSpan;
 
-        public HashRate(double hashRatePerTimeSpan, TimeBlock hashRateSpan)
+        public HashRate(double hashRatePerTimeSpan, TimeSpan hashRateSpan)
         {
             this.hashRatePerTimeSpan = hashRatePerTimeSpan;
             this.hashRateTimeSpan = hashRateSpan;
@@ -238,8 +112,8 @@ namespace ATAP.Utilities.CryptoCoin
             {
                 return new HashRate(a.hashRatePerTimeSpan -
                     (b.hashRatePerTimeSpan *
-                        (a.hashRateTimeSpan.Duration.Ticks /
-                            b.hashRateTimeSpan.Duration.Ticks)),
+                        (a.hashRateTimeSpan.Duration().Ticks /
+                            b.hashRateTimeSpan.Duration().Ticks)),
                                     a.hashRateTimeSpan);
             }
         }
@@ -255,8 +129,8 @@ namespace ATAP.Utilities.CryptoCoin
             {
                 return new HashRate(a.hashRatePerTimeSpan *
                     (b.hashRatePerTimeSpan *
-                        (a.hashRateTimeSpan.Duration.Ticks /
-                            b.hashRateTimeSpan.Duration.Ticks)),
+                        (a.hashRateTimeSpan.Duration().Ticks /
+                            b.hashRateTimeSpan.Duration().Ticks)),
                                     a.hashRateTimeSpan);
             }
         }
@@ -271,8 +145,8 @@ namespace ATAP.Utilities.CryptoCoin
             {
                 return new HashRate(a.hashRatePerTimeSpan /
                     (b.hashRatePerTimeSpan *
-                        (a.hashRateTimeSpan.Duration.Ticks /
-                            b.hashRateTimeSpan.Duration.Ticks)),
+                        (a.hashRateTimeSpan.Duration().Ticks /
+                            b.hashRateTimeSpan.Duration().Ticks)),
                                     a.hashRateTimeSpan);
             }
         }
@@ -288,8 +162,8 @@ namespace ATAP.Utilities.CryptoCoin
             {
                 return new HashRate(a.hashRatePerTimeSpan +
                     (b.hashRatePerTimeSpan *
-                        (a.hashRateTimeSpan.Duration.Ticks /
-                            b.hashRateTimeSpan.Duration.Ticks)),
+                        (a.hashRateTimeSpan.Duration().Ticks /
+                            b.hashRateTimeSpan.Duration().Ticks)),
                                     a.hashRateTimeSpan);
             }
         }
@@ -297,15 +171,15 @@ namespace ATAP.Utilities.CryptoCoin
         public static HashRate ChangeTimeSpan(HashRate a, HashRate b)
         {
             // no parameter checking
-            double normalizedTimeSpan = a.HashRateTimeSpan.Duration.Ticks / b.HashRateTimeSpan.Duration.Ticks;
+            double normalizedTimeSpan = a.HashRateTimeSpan.Duration().Ticks / b.HashRateTimeSpan.Duration().Ticks;
             return new HashRate(a.hashRatePerTimeSpan *
-                (a.hashRateTimeSpan.Duration.Ticks /
-                    b.hashRateTimeSpan.Duration.Ticks),
+                (a.hashRateTimeSpan.Duration().Ticks /
+                    b.hashRateTimeSpan.Duration().Ticks),
                                 a.hashRateTimeSpan);
         }
 
         public double HashRatePerTimeSpan { get { return hashRatePerTimeSpan; } set { hashRatePerTimeSpan = value; } }
-        public TimeBlock HashRateTimeSpan { get { return hashRateTimeSpan; } set { hashRateTimeSpan = value; } }
+        public TimeSpan HashRateTimeSpan { get { return hashRateTimeSpan; } set { hashRateTimeSpan = value; } }
     }
 
     public interface ICryptoCoinNetworkInfoBuilder

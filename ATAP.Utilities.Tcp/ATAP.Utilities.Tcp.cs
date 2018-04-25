@@ -44,15 +44,23 @@ namespace ATAP.Utilities.Tcp
             return await policy.ExecuteAsync(async() =>
             {
                 // let every exception in this method bubble up
+                //ToDo: Support other encodings?
+                // assume the tcpRequestMessage is an ASCII encoded string, and convert it toa byte array
  var data = Encoding.ASCII.GetBytes(tcpRequestMessage);
+                // In particular, this will thor an exception if there is no listener on this host/port combination
                 var socket = new TcpClient(host, port);
                 var stream = socket.GetStream();
                 // write the request async   
                 await stream.WriteAsync(data, 0, data.Length, cancellationToken);
-                byte[] buffer = new byte[maxResponseBufferSize];
+                // The write has returned at this point, and no exception, so go and await to read the response.
+                byte[] rawReadBuffer = new byte[maxResponseBufferSize];
                 // read the response async   
-                int numBytesRead = await stream.ReadAsync(buffer, 0, maxResponseBufferSize, cancellationToken);
-                return buffer;
+                int numBytesRead = await stream.ReadAsync(rawReadBuffer, 0, maxResponseBufferSize, cancellationToken);
+                // ToDo: figure out how to read responses that are larger than maxResponseBufferSize, or at least indicate to the calling program that tehre may be more data remaining
+                byte[] responseBuffer = new byte[numBytesRead];
+                // return just the number of bytes read from the stream
+                Buffer.BlockCopy(rawReadBuffer, 0, responseBuffer, 0, numBytesRead);
+                return responseBuffer;
             });
         }
     }

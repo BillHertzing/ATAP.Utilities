@@ -4,6 +4,28 @@ using System.Linq;
 using System.Reflection;
 
 namespace ATAP.Utilities.Enumeration {
+    /*
+    ///ToDO: (far future) localize the application using satellite assemblies for specific languages
+    public class LocalizedDescriptionAttribute : DescriptionAttribute
+    {
+        private readonly string _resourceKey;
+        private readonly ResourceManager _resource;
+        public LocalizedDescriptionAttribute(string resourceKey, Type resourceType)
+        {
+            _resource = new ResourceManager(resourceType);
+            _resourceKey = resourceKey;
+        }
+
+        public override string Description{
+            get {
+                string displayName = _resource.GetString(_resourceKey);
+                return string.IsNullOrEmpty(displayName)
+                ? string.Format("[[{0}]]", _resourceKey)
+                : displayName;
+            }
+        }
+    }
+    */
     public static class Utilities {
         public static CustomAttributeType GetAttributeValue<CustomAttributeName, CustomAttributeType>(this Enum value) {
             // The enumeration value passed as the parameter to the GetSymbol method call
@@ -36,6 +58,13 @@ namespace ATAP.Utilities.Enumeration {
 
         public interface IAttribute<out T> {
             T Value { get; }
+        }
+
+        public static T ToEnum<T>(this string value, bool ignoreCase = true)
+        {
+
+                return (T)Enum.Parse(typeof(T), value, ignoreCase);
+           
         }
     }
 }

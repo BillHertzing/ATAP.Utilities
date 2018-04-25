@@ -12,17 +12,21 @@ namespace ATAP.Utilities.ComputerInventory
 
     public class ComputerInventory
     {
-        readonly ComputerHW computerHW;
+        readonly ComputerHardware computerHardware;
         readonly ComputerSoftware computerSoftware;
+        ComputerProcesses computerProcesses;
 
-        public ComputerHW ComputerHW => computerHW;
+        public ComputerHardware ComputerHardware => computerHardware;
 
         public ComputerSoftware ComputerSoftware => computerSoftware;
 
-        public ComputerInventory(ComputerHW computerHW, ComputerSoftware computerSoftware)
+        public ComputerProcesses ComputerProcesses { get => computerProcesses; set => computerProcesses = value; }
+
+        public ComputerInventory(ComputerHardware computerHardware, ComputerSoftware computerSoftware, ComputerProcesses computerProcesses)
         {
-            this.computerHW = computerHW ?? throw new ArgumentNullException(nameof(computerHW));
+            this.computerHardware = computerHardware ?? throw new ArgumentNullException(nameof(computerHardware));
             this.computerSoftware = computerSoftware ?? throw new ArgumentNullException(nameof(computerSoftware));
+            this.computerProcesses = computerProcesses ?? throw new ArgumentNullException(nameof(computerProcesses));
         }
 
         public static ComputerInventory InventoryThisComputer()
@@ -36,55 +40,8 @@ namespace ATAP.Utilities.ComputerInventory
         //ToDo: Implement creating a ComputerInventory object from a set of Configuration Settings
         public ComputerInventory (Dictionary<string, string> configurationSettings)
         {
-            
+            throw new NotImplementedException();
         }
-        // Constructor based on builtin and hostname
-        public ComputerInventory ()
-        {
-            ComputerInventory ci;
-            Motherboard motherboard;
-            CPU[] cPUs;
-            VideoCard vc;
-            int numVideoCards;
-            VideoCard[] videoCards;
-            switch(Environment.GetEnvironmentVariable("COMPUTERNAME"))
-            {
-                case "NCAT016":
-                    motherboard = new Motherboard(MotherboardMaker.ASUS, "ToDo:makeSocketanEnum");
-                    cPUs = new CPU[1] { new CPU(CPUMaker.Intel) };
-                    VideoCardDiscriminatingCharacteristics vcdc = VideoCardsKnown.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
-                        VideoCardMaker.ASUS
-                        && x.GPUMaker ==
-                        GPUMaker.NVIDEA))
-                                                                      .Single();
-                    vc = new VideoCard(vcdc,
-                                       "ToDo:readfromcard",
-                                       "ToDo:readfromcard",
-                                       false,
-                                       -1,
-                                       -1,
-                                       -1,
-                                       -1,
-                                       new PowerConsumption() {
-                    Period =
-                        new TimeSpan(0,
-                                     1,
-                                     0),
-                        Watts = 1000
-                    },
-                                       new TempAndFan() { FanPct = 50.0, Temp = 60 });
-                    numVideoCards = 1;
-                    videoCards = new VideoCard[1] { vc };
-                    ci = new ComputerHW(cPUs, motherboard, videoCards, new TimeBlock(DateTime.UtcNow));
-                    break;
-                default:
-                    throw new ArgumentException("unknown hostname");
-                    //break;
-            }
-           
-        }
-
-       
     }
 
 

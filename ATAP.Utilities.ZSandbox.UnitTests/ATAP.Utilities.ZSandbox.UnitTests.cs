@@ -2,14 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using ATAP.Utilities.Http;
+using ATAP.Utilities.ComputerInventory;
+using ATAP.Utilities.Testing;
 using FluentAssertions;
+using nucs.JsonSettings;
 using Xunit;
 using Xunit.Abstractions;
-using System.IO;
-using System.Configuration;
-using ATAP.Utilities.Testing;
-using nucs.JsonSettings;
+using YamlDotNet.Serialization;
 
 namespace ATAP.Utilities.ZSandbox.UnitTests
 {
@@ -39,7 +38,6 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
         {
             throw new NotImplementedException();
         }
-
 
         public IEnumerator<(string, string, string, double)[]> GetEnumerator()
         {
@@ -89,8 +87,7 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
             }
         };
 
-
-        //public static IEnumerable<(string, string, string, double)[]> GetTestData(int start, int end)
+    //public static IEnumerable<(string, string, string, double)[]> GetTestData(int start, int end)
         //{
         //    return TestData.Take(numTests);
         //}
@@ -98,45 +95,34 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
         //    return new(string, string, string, double)[numTests] { TestData.Take(numTests); }
         //    }
     }
+
     class MySettings : JsonSettings
     {
+        //Step 3: Override parent's constructors
+        public MySettings() {
+        }
+        public MySettings(string fileName) : base(fileName) {
+        }
+
         public override string FileName { get; set; }  //for loading and saving.
 
         #region Settings
 
         public string SomeProperty { get; set; }
         public int SomeNumberWithDefaultValue { get; set; } = 1;
-
         #endregion
-        //Step 3: Override parent's constructors
-        public MySettings() { }
-        public MySettings(string fileName) : base(fileName) { }
     }
 
     public class ZSandboxUnitTests001 : IClassFixture<Fixture>
+    {
+        readonly ITestOutputHelper output;
+        protected Fixture _fixture;
+
+        public ZSandboxUnitTests001(ITestOutputHelper output, Fixture fixture)
         {
-            protected Fixture _fixture;
-            readonly ITestOutputHelper output;
-
-            public ZSandboxUnitTests001(ITestOutputHelper output, Fixture fixture)
-            {
-                this.output = output;
-                this._fixture = fixture;
-            }
-
-            [Theory(Skip = "trying to get an array of test data from the fixture to the test")]
-            // [MemberData(nameof(Fixture.TestData))]
-            //[InlineData(new Tuple<string,string,string,double>("k1=1","k2=1","c1=1",1.11))]
-            [ClassData(typeof(ClassLevelTestData))]
-            public void TestX((string k1, string k2, string c1, double hr)[] _testdatainput)
-            {
-                // _testdatainput.ToList().ForEach(x => output.WriteLine($"{x.k1} : {x.k2}"));
-                foreach (var _indata in _testdatainput)
-                {
-                    output.WriteLine($"{_indata.k1}");
-                }
-                Assert.Equal(1, 1);
-            }
+            this.output = output;
+            this._fixture = fixture;
+        }
 
         [Theory]
         // [MemberData(nameof(Fixture.TestData))]
@@ -152,16 +138,29 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
             MySettings mySettings = new MySettings();
             mySettings.FileName = appConfigFilePath;
 
-
             //config.AppSettings.Settings[key].Value = value;
             //config.Save();
             //ConfigurationManager.RefreshSection("appSettings");
-            Assert.Equal(1, 1);
+            var str = "";
+            str.Should()
+                .Be(_testdatainput);
         }
 
 
+        [Theory(Skip = "trying to get an array of test data from the fixture to the test")]
+        // [MemberData(nameof(Fixture.TestData))]
+        //[InlineData(new Tuple<string,string,string,double>("k1=1","k2=1","c1=1",1.11))]
+        [ClassData(typeof(ClassLevelTestData))]
+        public void TestX((string k1, string k2, string c1, double hr)[] _testdatainput)
+        {
+            // _testdatainput.ToList().ForEach(x => output.WriteLine($"{x.k1} : {x.k2}"));
+            foreach(var _indata in _testdatainput)
+            {
+                output.WriteLine($"{_indata.k1}");
+            }
+            Assert.Equal(1, 1);
+        }
 
     }
 }
-
 

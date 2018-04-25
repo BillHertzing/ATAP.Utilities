@@ -38,7 +38,7 @@ namespace ATAP.Utilities.Tcp.UnitTests
     public class TCPUnitTests001 : IClassFixture<Fixture>
     {
 
-        [Theory(Skip = "can not run this on the MyGet build service")]
+        [Theory]
         [InlineData("[{\"Temp\":20.0,\"FanPct\":0.0},{\"Temp\":50.0,\"FanPct\":50.0},{\"Temp\":85.0,\"FanPct\":100.0}]")]
         public async void claymorestatus(string _testdatainput)
         {
@@ -55,7 +55,8 @@ namespace ATAP.Utilities.Tcp.UnitTests
             // first, assert the response buffer is correct
             responsebuffer[0].Should().BeGreaterThan(0);
             // Then assert on the str
-            str.Length.Should().BeGreaterThan(0);
+            str.Should()
+                .Be(_testdatainput);
         }
     }
 }

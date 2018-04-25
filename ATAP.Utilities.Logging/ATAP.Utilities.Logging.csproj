@@ -2,6 +2,45 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>0.0.1-Alpha001</Version>
+    <Company>ATAP Technology, Inc.</Company>
+    <Authors>William Hertzing</Authors>
+    <PackageTags>Testing ComputerInventory</PackageTags>
+    <PackageReleaseNotes>Initial implementation/test of Nuget package</PackageReleaseNotes>
+    <AssemblyVersion>0.0.1.001</AssemblyVersion>
+    <FileVersion>0.0.1.001</FileVersion>
+    <!-- The following are not editable in the project's properties dialog pages-->
+    <AssemblyInformationalVersion>0.0.1-Alpha001</AssemblyInformationalVersion>
+    <LangVersion>latest</LangVersion>
+    <InternalsVisibleTo>ATAP.Utilities.Logging.UnitTests</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.ComputerInventory</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.ComputerInventory.UnitTests</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.Configuration</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.Configuration.UnitTests</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.CryptoCoin</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.CryptoCoin.UnitTests</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.DateTime</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.DateTime.UnitTests</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.Http</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.Http.UnitTests</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.Enumeration</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.Enumeration.UnitTests</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.FileSystem</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.FileSystem.UnitTests</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.String</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.String.UnitTests</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.Tcp</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.Tcp.UnitTests</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.UnitTest</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.UnitTest.UnitTests</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.ZSandbox</InternalsVisibleTo>
+    <InternalsVisibleTo>ATAP.Utilities.ZSandbox.UnitTests</InternalsVisibleTo>
+    <InternalsVisibleTo>DataFlowExPatterns</InternalsVisibleTo>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -11,15 +50,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DefineConstants>TRACE;RELEASE;NETSTANDARD2_0;LIBLOG_PORTABLE</DefineConstants>
   </PropertyGroup>
-  
-  <PropertyGroup>
-   <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-</PropertyGroup> 
+
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.4.1" />
-    <PackageReference Include="NLog" Version="4.5.0-rc04" />
-    <PackageReference Include="NLog.Config" Version="4.5.0-rc04" />
+    <PackageReference Include="NLog" Version="4.5.3" />
+    <PackageReference Include="NLog.Config" Version="4.5.3" />
     <PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />
   </ItemGroup>
 
@@ -27,6 +63,10 @@
     <None Update="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
 
 </Project>

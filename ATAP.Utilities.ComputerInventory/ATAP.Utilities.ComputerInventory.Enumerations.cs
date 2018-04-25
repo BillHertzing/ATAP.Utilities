@@ -7,6 +7,7 @@ using System.Text;
 
 namespace ATAP.Utilities.ComputerInventory
 {
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum GPUMaker
     {
         //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
@@ -35,7 +36,7 @@ namespace ATAP.Utilities.ComputerInventory
     }
 
     [JsonConverter(typeof(StringEnumConverter))]
-    public enum MotherboardMaker
+    public enum MainBoardMaker
     {
         //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
         [Description("Generic")]
@@ -58,6 +59,7 @@ namespace ATAP.Utilities.ComputerInventory
         AMD
     }
 
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum VideoCardMemoryMaker
     {
         //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]

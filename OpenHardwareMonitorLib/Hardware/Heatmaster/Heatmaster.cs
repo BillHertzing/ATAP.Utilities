@@ -1,4 +1,4 @@
-﻿/*
+/*
  
   This Source Code Form is subject to the terms of the Mozilla Public
   License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -16,8 +16,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-namespace OpenHardwareMonitor.Hardware.Heatmaster {
-  internal class Heatmaster : Hardware, IDisposable {
+namespace OpenHardwareMonitor.Hardware.HeatMaster {
+  internal class HeatMaster : Hardware, IDisposable {
 
     private readonly string portName;
     private SerialPort serialPort;
@@ -107,8 +107,8 @@ namespace OpenHardwareMonitor.Hardware.Heatmaster {
       return WriteField(device, field, '"' + value + '"');
     }
 
-    public Heatmaster(string portName, ISettings settings) 
-      : base("Heatmaster", new Identifier("heatmaster",
+    public HeatMaster(string portName, ISettings settings) 
+      : base("HeatMaster", new Identifier("heatmaster",
         portName.TrimStart(new [] {'/'}).ToLowerInvariant()), settings)
     {
       this.portName = portName;
@@ -243,7 +243,7 @@ namespace OpenHardwareMonitor.Hardware.Heatmaster {
     public override string GetReport() {
       StringBuilder r = new StringBuilder();
 
-      r.AppendLine("Heatmaster");
+      r.AppendLine("HeatMaster");
       r.AppendLine();
       r.Append("Port: ");
       r.AppendLine(portName);

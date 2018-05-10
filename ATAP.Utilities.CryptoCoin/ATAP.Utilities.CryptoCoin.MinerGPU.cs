@@ -1,4 +1,5 @@
-﻿using ATAP.Utilities.ComputerInventory;
+using ATAP.Utilities.ComputerInventory;
+using ATAP.Utilities.ComputerInventory.Models;
 using Swordfish.NET.Collections;
 using System;
 using System.Collections.Generic;

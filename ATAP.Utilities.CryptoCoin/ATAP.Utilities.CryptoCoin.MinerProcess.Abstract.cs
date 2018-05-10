@@ -1,10 +1,12 @@
-﻿using ATAP.Utilities.ComputerInventory;
+using ATAP.Utilities.ComputerInventory;
 using Swordfish.NET.Collections;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using UnitsNet;
+using ATAP.Utilities.ComputerInventory.Enumerations;
+using ATAP.Utilities.ComputerInventory.Models;
 
 namespace ATAP.Utilities.CryptoCoin
 {

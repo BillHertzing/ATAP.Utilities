@@ -11,8 +11,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Management;
 using System.Text;
+#if NETFULL
+using System.Management;
+#endif
 
 namespace OpenHardwareMonitor.Hardware {
 

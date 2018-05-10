@@ -28,6 +28,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities._1ConsoleTestRunner", "ATAP.Utilities.1ConsoleTestRunner\ATAP.Utilities._1ConsoleTestRunner.csproj", "{9293C0CA-6E85-4448-801B-F92600C78787}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4CA2C501-1E47-4C8A-A91B-8E6A869628ED}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ZSandbox", "ATAP.Utilities.ZSandbox\ATAP.Utilities.ZSandbox.csproj", "{2854F171-F406-4731-8C11-137E9284262B}"
 EndProject
@@ -51,7 +55,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Tcp", "ATAP.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Tcp.UnitTests", "ATAP.Utilities.Tcp.UnitTests\ATAP.Utilities.Tcp.UnitTests.csproj", "{1E2256BE-F4B2-4519-AE66-A314CF7799A8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenHardwareMonitorLib", "OpenHardwareMonitorLib\OpenHardwareMonitorLib.csproj", "{B0403790-9BEE-4EC7-979A-5895E151B9BC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenHardwareMonitorLib", "OpenHardwareMonitorLib\OpenHardwareMonitorLib.csproj", "{B0403790-9BEE-4EC7-979A-5895E151B9BC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Models", "ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj", "{916E4C82-9680-4876-B302-A17B82EBF3A5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations", "ATAP.Utilities.ComputerInventory.Enumerations\ATAP.Utilities.ComputerInventory.Enumerations.csproj", "{AA7F491D-1D0B-4B76-AB6E-E34331F8BB4A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -155,6 +163,14 @@ Global
 		{B0403790-9BEE-4EC7-979A-5895E151B9BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B0403790-9BEE-4EC7-979A-5895E151B9BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B0403790-9BEE-4EC7-979A-5895E151B9BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{916E4C82-9680-4876-B302-A17B82EBF3A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{916E4C82-9680-4876-B302-A17B82EBF3A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{916E4C82-9680-4876-B302-A17B82EBF3A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{916E4C82-9680-4876-B302-A17B82EBF3A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA7F491D-1D0B-4B76-AB6E-E34331F8BB4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA7F491D-1D0B-4B76-AB6E-E34331F8BB4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA7F491D-1D0B-4B76-AB6E-E34331F8BB4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA7F491D-1D0B-4B76-AB6E-E34331F8BB4A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

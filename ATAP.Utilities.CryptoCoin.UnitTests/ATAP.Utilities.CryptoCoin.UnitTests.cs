@@ -9,6 +9,8 @@ using Newtonsoft.Json.Converters;
 using Swordfish.NET.Collections;
 using Xunit;
 using Xunit.Abstractions;
+using ATAP.Utilities.ComputerInventory.Enumerations;
+using ATAP.Utilities.ComputerInventory.Models;
 
 namespace ATAP.Utilities.CryptoCoin.UnitTests
 {

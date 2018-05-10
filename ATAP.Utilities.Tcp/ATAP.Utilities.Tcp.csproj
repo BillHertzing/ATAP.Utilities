@@ -1,31 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.0.1-Alpha001</Version>
-    <Company>ATAP Technology, Inc.</Company>
-    <Authors>William Hertzing</Authors>
-    <PackageTags>Testing ComputerInventory</PackageTags>
-    <PackageReleaseNotes>Initial implementation/test of Nuget package</PackageReleaseNotes>
-    <AssemblyVersion>0.0.1.001</AssemblyVersion>
-    <FileVersion>0.0.1.001</FileVersion>
-    <!-- The following are not editable in the project's properties dialog pages-->
-    <AssemblyInformationalVersion>0.0.1-Alpha001</AssemblyInformationalVersion>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <NoWarn>1701;1702;1705,NU1701</NoWarn>
-  </PropertyGroup>
-
-  <!-- .NET Standard 2.0 references, compilation flags and build options -->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
-    <DefineConstants>NETCORE;NETSTANDARD;NETSTANDARD2_0</DefineConstants>
+    <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>netstandard2.0;net47</TargetFrameworks>
+    <RootNamespace>ATAP.Utilities.Tcp</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Polly" Version="5.9.0" />
+    <PackageReference Include="Polly" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>

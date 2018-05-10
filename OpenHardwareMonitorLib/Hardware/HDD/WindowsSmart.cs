@@ -12,7 +12,9 @@
 
 using System;
 using System.Collections.Generic;
+#if NETFULL
 using System.Management;
+#endif
 using System.Runtime.InteropServices;
 
 namespace OpenHardwareMonitor.Hardware.HDD {

@@ -3,6 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4CA2C501-1E47-4C8A-A91B-8E6A869628ED}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.DateTime", "ATAP.Utilities.DateTime\ATAP.Utilities.DateTime.csproj", "{9DEDDD4C-B2FB-4BB3-8C2C-26BC2FED4D83}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.FileSystem", "ATAP.Utilities.FileSystem\ATAP.Utilities.FileSystem.csproj", "{5494A11E-BF9C-47AE-9CBC-8FC301054055}"
@@ -27,12 +33,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Enumeration.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities._1ConsoleTestRunner", "ATAP.Utilities.1ConsoleTestRunner\ATAP.Utilities._1ConsoleTestRunner.csproj", "{9293C0CA-6E85-4448-801B-F92600C78787}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4CA2C501-1E47-4C8A-A91B-8E6A869628ED}"
-	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
-		Directory.Build.props = Directory.Build.props
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ZSandbox", "ATAP.Utilities.ZSandbox\ATAP.Utilities.ZSandbox.csproj", "{2854F171-F406-4731-8C11-137E9284262B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ZSandbox.UnitTests", "ATAP.Utilities.ZSandbox.UnitTests\ATAP.Utilities.ZSandbox.UnitTests.csproj", "{0A301C4A-9886-48E9-AA39-085D07E66482}"
@@ -43,23 +43,37 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Http", "ATAP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Http.UnitTests", "ATAP.Utilities.Http.UnitTests\ATAP.Utilities.Http.UnitTests.csproj", "{FC73DB9F-64DD-4D44-B68C-F3767AA6A337}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin", "ATAP.Utilities.CryptoCoin\ATAP.Utilities.CryptoCoin.csproj", "{8A45D584-0489-4531-90DF-40FFE9F1EC53}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin.UnitTests", "ATAP.Utilities.CryptoCoin.UnitTests\ATAP.Utilities.CryptoCoin.UnitTests.csproj", "{8182B668-322F-4EAE-871B-6B94C042F01C}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory", "ATAP.Utilities.ComputerInventory\ATAP.Utilities.ComputerInventory.csproj", "{BA77F91E-3BE9-4F1C-956A-56EE711E002D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.UnitTests", "ATAP.Utilities.ComputerInventory.UnitTests\ATAP.Utilities.ComputerInventory.UnitTests.csproj", "{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Tcp", "ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj", "{87896186-203D-4A81-A1D9-01552470BB0F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Tcp.UnitTests", "ATAP.Utilities.Tcp.UnitTests\ATAP.Utilities.Tcp.UnitTests.csproj", "{1E2256BE-F4B2-4519-AE66-A314CF7799A8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenHardwareMonitorLib", "OpenHardwareMonitorLib\OpenHardwareMonitorLib.csproj", "{B0403790-9BEE-4EC7-979A-5895E151B9BC}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations", "ATAP.Utilities.ComputerInventory.Enumerations\ATAP.Utilities.ComputerInventory.Enumerations.csproj", "{AA7F491D-1D0B-4B76-AB6E-E34331F8BB4A}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Models", "ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj", "{916E4C82-9680-4876-B302-A17B82EBF3A5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations", "ATAP.Utilities.ComputerInventory.Enumerations\ATAP.Utilities.ComputerInventory.Enumerations.csproj", "{AA7F491D-1D0B-4B76-AB6E-E34331F8BB4A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Extensions", "ATAP.Utilities.ComputerInventory.Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj", "{BA77F91E-3BE9-4F1C-956A-56EE711E002D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.UnitTests", "ATAP.Utilities.ComputerInventory.UnitTests\ATAP.Utilities.ComputerInventory.UnitTests.csproj", "{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin.Enumerations", "ATAP.Utilities.CryptoCoin.Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj", "{5BBC9254-FAB7-4EED-980F-F256387D7D80}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin.Models", "ATAP.Utilities.CryptoCoin.Models\ATAP.Utilities.CryptoCoin.Models.csproj", "{5D10533D-42BE-4C88-A64C-A371D1350000}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin.Extensions", "ATAP.Utilities.CryptoCoin.Extensions\ATAP.Utilities.CryptoCoin.Extensions.csproj", "{8A45D584-0489-4531-90DF-40FFE9F1EC53}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin.UnitTests", "ATAP.Utilities.CryptoCoin.UnitTests\ATAP.Utilities.CryptoCoin.UnitTests.csproj", "{8182B668-322F-4EAE-871B-6B94C042F01C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoMiner.Enumerations", "ATAP.Utilities.CryptoMiner.Enumerations\ATAP.Utilities.CryptoMiner.Enumerations.csproj", "{93F4B3EA-4301-43E7-9462-FEB8DB3B5F1A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoMiner.Models", "ATAP.Utilities.CryptoMiner.Models\ATAP.Utilities.CryptoMiner.Models.csproj", "{1A13A5C1-54D0-43E3-B171-4B5C27940637}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoMiner.Extensions", "ATAP.Utilities.CryptoMiner.Extensions\ATAP.Utilities.CryptoMiner.Extensions.csproj", "{A27F8B9A-CAF3-45D4-94D0-190B29EF58D5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoMiner.UnitTests", "ATAP.Utilities.CryptoMiner.UnitTests\ATAP.Utilities.CryptoMiner.UnitTests.csproj", "{BC39C377-C9A5-43BF-A07C-E8D3462BDDAC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Configuration", "ATAP.Utilities.ComputerInventory.Configuration\ATAP.Utilities.ComputerInventory.Configuration.csproj", "{D4CEE619-BAC8-4797-9277-5055EEBE4DB9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -135,22 +149,6 @@ Global
 		{FC73DB9F-64DD-4D44-B68C-F3767AA6A337}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FC73DB9F-64DD-4D44-B68C-F3767AA6A337}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FC73DB9F-64DD-4D44-B68C-F3767AA6A337}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8A45D584-0489-4531-90DF-40FFE9F1EC53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8A45D584-0489-4531-90DF-40FFE9F1EC53}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8A45D584-0489-4531-90DF-40FFE9F1EC53}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8A45D584-0489-4531-90DF-40FFE9F1EC53}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8182B668-322F-4EAE-871B-6B94C042F01C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8182B668-322F-4EAE-871B-6B94C042F01C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8182B668-322F-4EAE-871B-6B94C042F01C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8182B668-322F-4EAE-871B-6B94C042F01C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BA77F91E-3BE9-4F1C-956A-56EE711E002D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BA77F91E-3BE9-4F1C-956A-56EE711E002D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BA77F91E-3BE9-4F1C-956A-56EE711E002D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BA77F91E-3BE9-4F1C-956A-56EE711E002D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{87896186-203D-4A81-A1D9-01552470BB0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{87896186-203D-4A81-A1D9-01552470BB0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{87896186-203D-4A81-A1D9-01552470BB0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -163,14 +161,58 @@ Global
 		{B0403790-9BEE-4EC7-979A-5895E151B9BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B0403790-9BEE-4EC7-979A-5895E151B9BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B0403790-9BEE-4EC7-979A-5895E151B9BC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{916E4C82-9680-4876-B302-A17B82EBF3A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{916E4C82-9680-4876-B302-A17B82EBF3A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{916E4C82-9680-4876-B302-A17B82EBF3A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{916E4C82-9680-4876-B302-A17B82EBF3A5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AA7F491D-1D0B-4B76-AB6E-E34331F8BB4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AA7F491D-1D0B-4B76-AB6E-E34331F8BB4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AA7F491D-1D0B-4B76-AB6E-E34331F8BB4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA7F491D-1D0B-4B76-AB6E-E34331F8BB4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{916E4C82-9680-4876-B302-A17B82EBF3A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{916E4C82-9680-4876-B302-A17B82EBF3A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{916E4C82-9680-4876-B302-A17B82EBF3A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{916E4C82-9680-4876-B302-A17B82EBF3A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA77F91E-3BE9-4F1C-956A-56EE711E002D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA77F91E-3BE9-4F1C-956A-56EE711E002D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA77F91E-3BE9-4F1C-956A-56EE711E002D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA77F91E-3BE9-4F1C-956A-56EE711E002D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BBC9254-FAB7-4EED-980F-F256387D7D80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BBC9254-FAB7-4EED-980F-F256387D7D80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BBC9254-FAB7-4EED-980F-F256387D7D80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BBC9254-FAB7-4EED-980F-F256387D7D80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D10533D-42BE-4C88-A64C-A371D1350000}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D10533D-42BE-4C88-A64C-A371D1350000}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D10533D-42BE-4C88-A64C-A371D1350000}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D10533D-42BE-4C88-A64C-A371D1350000}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A45D584-0489-4531-90DF-40FFE9F1EC53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A45D584-0489-4531-90DF-40FFE9F1EC53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A45D584-0489-4531-90DF-40FFE9F1EC53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A45D584-0489-4531-90DF-40FFE9F1EC53}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8182B668-322F-4EAE-871B-6B94C042F01C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8182B668-322F-4EAE-871B-6B94C042F01C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8182B668-322F-4EAE-871B-6B94C042F01C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8182B668-322F-4EAE-871B-6B94C042F01C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93F4B3EA-4301-43E7-9462-FEB8DB3B5F1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93F4B3EA-4301-43E7-9462-FEB8DB3B5F1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93F4B3EA-4301-43E7-9462-FEB8DB3B5F1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93F4B3EA-4301-43E7-9462-FEB8DB3B5F1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A13A5C1-54D0-43E3-B171-4B5C27940637}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A13A5C1-54D0-43E3-B171-4B5C27940637}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A13A5C1-54D0-43E3-B171-4B5C27940637}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A13A5C1-54D0-43E3-B171-4B5C27940637}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A27F8B9A-CAF3-45D4-94D0-190B29EF58D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A27F8B9A-CAF3-45D4-94D0-190B29EF58D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A27F8B9A-CAF3-45D4-94D0-190B29EF58D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A27F8B9A-CAF3-45D4-94D0-190B29EF58D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC39C377-C9A5-43BF-A07C-E8D3462BDDAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC39C377-C9A5-43BF-A07C-E8D3462BDDAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC39C377-C9A5-43BF-A07C-E8D3462BDDAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC39C377-C9A5-43BF-A07C-E8D3462BDDAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4CEE619-BAC8-4797-9277-5055EEBE4DB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4CEE619-BAC8-4797-9277-5055EEBE4DB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4CEE619-BAC8-4797-9277-5055EEBE4DB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4CEE619-BAC8-4797-9277-5055EEBE4DB9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

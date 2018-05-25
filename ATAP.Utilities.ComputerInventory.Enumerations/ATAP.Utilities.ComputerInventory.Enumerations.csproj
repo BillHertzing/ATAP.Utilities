@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="ServiceStack.Text" Version="5.1.0" />
+    <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
   </ItemGroup>
 
 </Project>

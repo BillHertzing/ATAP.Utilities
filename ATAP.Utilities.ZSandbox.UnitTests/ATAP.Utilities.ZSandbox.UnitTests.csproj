@@ -25,14 +25,22 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory\ATAP.Utilities.ComputerInventory.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin\ATAP.Utilities.CryptoCoin.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations\ATAP.Utilities.ComputerInventory.Enumerations.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Extensions\ATAP.Utilities.CryptoCoin.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Models\ATAP.Utilities.CryptoCoin.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Enumerations\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Extensions\ATAP.Utilities.CryptoMiner.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Models\ATAP.Utilities.CryptoMiner.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.DateTime\ATAP.Utilities.DateTime.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.FileSystem\ATAP.Utilities.FileSystem.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Http\ATAP.Utilities.Http.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.String\ATAP.Utilities.String.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.UnitTest\ATAP.Utilities.Testing.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ZSandbox\ATAP.Utilities.ZSandbox.csproj" />
   </ItemGroup>

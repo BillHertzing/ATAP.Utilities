@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -10,8 +10,6 @@ using Medallion.Shell;
 using Swordfish.NET.Collections;
 using UnitsNet;
 using Xunit;
-using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Models;
 
 namespace ATAP.Utilities.ZSandbox.UnitTests
 {

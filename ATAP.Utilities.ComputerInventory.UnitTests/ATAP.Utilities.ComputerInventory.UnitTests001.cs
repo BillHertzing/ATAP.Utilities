@@ -9,9 +9,6 @@ using Newtonsoft.Json.Converters;
 using Xunit;
 using Xunit.Abstractions;
 using YamlDotNet.Serialization;
-using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Models;
-
 
 namespace ATAP.Utilities.ComputerInventory.UnitTests
 {

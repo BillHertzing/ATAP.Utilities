@@ -1,4 +1,4 @@
-/*
+﻿/*
  
   This Source Code Form is subject to the terms of the Mozilla Public
   License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -17,10 +17,10 @@ using System.Text;
 using System.Threading;
 using Microsoft.Win32;
 
-namespace OpenHardwareMonitor.Hardware.HeatMaster {
+namespace OpenHardwareMonitor.Hardware.Heatmaster {
   internal class HeatmasterGroup : IGroup {
 
-    private readonly List<HeatMaster> hardware = new List<HeatMaster>();
+    private readonly List<Heatmaster> hardware = new List<Heatmaster>();
     private readonly StringBuilder report = new StringBuilder();
 
     private static string ReadLine(SerialPort port, int timeout) {
@@ -66,11 +66,11 @@ namespace OpenHardwareMonitor.Hardware.HeatMaster {
 
     public HeatmasterGroup(ISettings settings) {
       
-      // No implementation for HeatMaster on Unix systems
+      // No implementation for Heatmaster on Unix systems
       int p = (int)Environment.OSVersion.Platform;
       if ((p == 4) || (p == 128))
         return;
-#if NETSTANDARD
+
       string[] portNames = GetRegistryPortNames();      
       for (int i = 0; i < portNames.Length; i++) {
         bool isValid = false;
@@ -141,11 +141,10 @@ namespace OpenHardwareMonitor.Hardware.HeatMaster {
 
         if (isValid) {
           report.AppendLine("Status: OK");
-          hardware.Add(new HeatMaster(portNames[i], settings));
+          hardware.Add(new Heatmaster(portNames[i], settings));
         }
         report.AppendLine();
       }
-#endif
     }
 
     public IHardware[] Hardware {
@@ -157,7 +156,7 @@ namespace OpenHardwareMonitor.Hardware.HeatMaster {
     public string GetReport() {
       if (report.Length > 0) {
         StringBuilder r = new StringBuilder();
-        r.AppendLine("Serial Port HeatMaster");
+        r.AppendLine("Serial Port Heatmaster");
         r.AppendLine();
         r.Append(report);
         r.AppendLine();
@@ -167,7 +166,7 @@ namespace OpenHardwareMonitor.Hardware.HeatMaster {
     }
 
     public void Close() {
-      foreach (HeatMaster heatmaster in hardware)
+      foreach (Heatmaster heatmaster in hardware)
         heatmaster.Close();
     }
   }

@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using ATAP.Utilities.ComputerInventory;
 using ATAP.Utilities.Testing;
 using FluentAssertions;
+using nucs.JsonSettings;
 using Xunit;
 using Xunit.Abstractions;
 using YamlDotNet.Serialization;
@@ -95,22 +96,22 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
         //    }
     }
 
-    //class MySettings : JsonSettings
-    //{
-    //    //Step 3: Override parent's constructors
-    //    public MySettings() {
-    //    }
-    //    public MySettings(string fileName) : base(fileName) {
-    //    }
+    class MySettings : JsonSettings
+    {
+        //Step 3: Override parent's constructors
+        public MySettings() {
+        }
+        public MySettings(string fileName) : base(fileName) {
+        }
 
-    //    public override string FileName { get; set; }  //for loading and saving.
+        public override string FileName { get; set; }  //for loading and saving.
 
-    //    #region Settings
+        #region Settings
 
-    //    public string SomeProperty { get; set; }
-    //    public int SomeNumberWithDefaultValue { get; set; } = 1;
-    //    #endregion
-    //}
+        public string SomeProperty { get; set; }
+        public int SomeNumberWithDefaultValue { get; set; } = 1;
+        #endregion
+    }
 
     public class ZSandboxUnitTests001 : IClassFixture<Fixture>
     {
@@ -134,8 +135,8 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
             ///string path = Path.Combine(Environment.GetEnvironmentVariable("ProgramData"), "ACE/config.txt");
             TemporaryFile appConfigFilePath = new TemporaryFile(appConfigFileName);
             TemporaryFile userConfigFilePath = new TemporaryFile(userConfigFileName);
-            //Settings mySettings = new MySettings();
-            //Settings.FileName = appConfigFilePath;
+            MySettings mySettings = new MySettings();
+            mySettings.FileName = appConfigFilePath;
 
             //config.AppSettings.Settings[key].Value = value;
             //config.Save();

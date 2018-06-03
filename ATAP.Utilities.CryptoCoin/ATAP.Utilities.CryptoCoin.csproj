@@ -26,9 +26,9 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="Polly" Version="5.9.0" />
+    <PackageReference Include="Polly" Version="6.0.1" />
     <PackageReference Include="Swordfish.NET.CollectionsV3" Version="3.0.0.1" />
-    <PackageReference Include="UnitsNet" Version="3.96.0" />
+    <PackageReference Include="UnitsNet" Version="3.99.0" />
   </ItemGroup>
 
   <ItemGroup>

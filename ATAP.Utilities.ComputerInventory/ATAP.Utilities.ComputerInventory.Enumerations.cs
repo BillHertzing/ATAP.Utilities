@@ -1,16 +1,11 @@
-<<<<<<< HEAD:ATAP.Utilities.ComputerInventory/ATAP.Utilities.ComputerInventory.Enumerations.cs
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-=======
 using ServiceStack.Text;
 using ServiceStack.Text.EnumMemberSerializer;
->>>>>>> RefactorCryptoCurrencyToExtractDTOs:ATAP.Utilities.ComputerInventory.Enumerations/ATAP.Utilities.ComputerInventory.Enumerations.cs
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
 
-namespace ATAP.Utilities.ComputerInventory
+namespace ATAP.Utilities.ComputerInventory.Enumerations
 {
 
 

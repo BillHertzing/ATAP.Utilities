@@ -1,6 +1,3 @@
-<<<<<<< HEAD:ATAP.Utilities.CryptoCoin/ATAP.Utilities.CryptoCoin.MinerGPU.cs
-﻿using ATAP.Utilities.ComputerInventory;
-=======
 using ATAP.Utilities.ComputerInventory;
 using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Models;
@@ -8,7 +5,6 @@ using ATAP.Utilities.CryptoCoin;
 using ATAP.Utilities.CryptoCoin.Models;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoMiner.Enumerations;
->>>>>>> RefactorCryptoCurrencyToExtractDTOs:ATAP.Utilities.CryptoMiner.Models/ATAP.Utilities.CryptoMiner.Models.MinerGPU.cs
 using Swordfish.NET.Collections;
 using System;
 using System.Collections.Generic;

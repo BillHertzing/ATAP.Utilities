@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -10,14 +10,12 @@ using Medallion.Shell;
 using Swordfish.NET.Collections;
 using UnitsNet;
 using Xunit;
-
 using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Models;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoCoin.Models;
 using ATAP.Utilities.CryptoMiner.Enumerations;
 using ATAP.Utilities.CryptoMiner.Models;
-
 
 namespace ATAP.Utilities.ZSandbox.UnitTests
 {

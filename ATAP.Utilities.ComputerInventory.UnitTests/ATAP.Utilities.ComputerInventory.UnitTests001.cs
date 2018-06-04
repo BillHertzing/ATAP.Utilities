@@ -13,7 +13,6 @@ using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Models;
 using ATAP.Utilities.ComputerInventory.Extensions;
 
-
 namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
     public class Fixture

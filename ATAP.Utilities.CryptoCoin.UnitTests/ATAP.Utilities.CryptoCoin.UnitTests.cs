@@ -9,12 +9,9 @@ using Newtonsoft.Json.Converters;
 using Swordfish.NET.Collections;
 using Xunit;
 using Xunit.Abstractions;
-<<<<<<< HEAD
-=======
 using ATAP.Utilities.CryptoCoin.Extensions;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoCoin.Models;
->>>>>>> RefactorCryptoCurrencyToExtractDTOs
 
 namespace ATAP.Utilities.CryptoCoin.UnitTests
 {

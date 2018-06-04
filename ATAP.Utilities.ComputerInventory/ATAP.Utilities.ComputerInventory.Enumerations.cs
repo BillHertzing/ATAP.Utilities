@@ -1,5 +1,10 @@
+<<<<<<< HEAD:ATAP.Utilities.ComputerInventory/ATAP.Utilities.ComputerInventory.Enumerations.cs
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+=======
+using ServiceStack.Text;
+using ServiceStack.Text.EnumMemberSerializer;
+>>>>>>> RefactorCryptoCurrencyToExtractDTOs:ATAP.Utilities.ComputerInventory.Enumerations/ATAP.Utilities.ComputerInventory.Enumerations.cs
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -7,7 +12,8 @@ using System.Text;
 
 namespace ATAP.Utilities.ComputerInventory
 {
-    [JsonConverter(typeof(StringEnumConverter))]
+
+
     public enum GPUMaker
     {
         //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
@@ -19,7 +25,6 @@ namespace ATAP.Utilities.ComputerInventory
         NVIDEA
     }
 
-    [JsonConverter(typeof(StringEnumConverter))]
     public enum VideoCardMaker
     {
         //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
@@ -35,7 +40,6 @@ namespace ATAP.Utilities.ComputerInventory
         PowerColor
     }
 
-    [JsonConverter(typeof(StringEnumConverter))]
     public enum MainBoardMaker
     {
         //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
@@ -47,7 +51,6 @@ namespace ATAP.Utilities.ComputerInventory
         MSI
     }
 
-    [JsonConverter(typeof(StringEnumConverter))]
     public enum CPUMaker
     {
         //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
@@ -59,7 +62,6 @@ namespace ATAP.Utilities.ComputerInventory
         AMD
     }
 
-    [JsonConverter(typeof(StringEnumConverter))]
     public enum VideoCardMemoryMaker
     {
         //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
@@ -72,6 +74,4 @@ namespace ATAP.Utilities.ComputerInventory
         [Description("Samsung")]
         Samsung
     }
-
-
 }

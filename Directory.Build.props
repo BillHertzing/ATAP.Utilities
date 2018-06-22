@@ -1,23 +1,39 @@
 <Project>
+  <!-- Build Rules for all projects in the solution -->
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <Company>ATAP Technology, Inc.</Company>
-    <Copyright>ATAP Technology, Inc.</Copyright>
-    <Authors>William Hertzing</Authors> 
-    <Product>ATAP.Utilities</Product> 
-    <ProductName>ATAP.Utilities</ProductName> 
-    <RepositoryType>repositoryType</RepositoryType>
-    <RepositoryUrl>https://github.com/BillHertzing/ATAP.Utilities</RepositoryUrl>
-    <PackageLicenseUrl>www.license.url</PackageLicenseUrl> 
-    <PackageProjectUrl>www.project.url</PackageProjectUrl> 
-    <PackageIconUrl>www.icon.url</PackageIconUrl>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <PackageTags>Testing, experimental, alpha, ATAP, ATAP.AceCommander</PackageTags> 
-    <PackageReleaseNotes>Initial implementation/test of ATAP.AceCommander Nuget packaging</PackageReleaseNotes> 
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
+  <!-- NuGet Package information for all assemblies in the solution -->
   <PropertyGroup>
-    <LangVersion>latest</LangVersion>
+    <Company>ATAP Technology, Inc.</Company>
+    <Copyright>ATAP Technology, Inc.</Copyright>
+    <Authors>William Hertzing</Authors>
+    <Product>ATAP.Utilities</Product>
+    <ProductName>ATAP.Utilities</ProductName>
+    <RepositoryType>repositoryType</RepositoryType>
+    <RepositoryUrl>https://github.com/BillHertzing/ATAP.Utilities</RepositoryUrl>
+    <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+    <PackageProjectUrl>www.project.url</PackageProjectUrl>
+    <PackageIconUrl>www.icon.url</PackageIconUrl>
+    <PackageTags>Testing, experimental, alpha, ATAP, ATAP.AceCommander</PackageTags>
+    <PackageReleaseNotes>Initial implementation/test of ATAP.AceCommander Nuget packaging</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <!-- MSBump Versioning Rules Debug -->
+  <PropertyGroup Condition="$(Configuration) == 'Debug'">
+    <BumpLabel>dev</BumpLabel>
+    <BumpLabelDigits>4</BumpLabelDigits>
+  </PropertyGroup>
+  <!-- MSBump Versioning Rules Release -->
+  <PropertyGroup Condition="$(Configuration) == 'Release'">
+    <BumpRevision>True</BumpRevision>
+    <BumpResetLabel>dev</BumpResetLabel>
+  </PropertyGroup>
+  
+  <PropertyGroup>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <!--
     <TargetFramework>net47</TargetFramework>

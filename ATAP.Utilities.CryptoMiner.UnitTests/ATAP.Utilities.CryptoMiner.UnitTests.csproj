@@ -8,6 +8,7 @@
     <PackageReference Include="FluentAssertions" Version="5.3.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
     <PackageReference Include="Moq" Version="4.8.3" />
+    <PackageReference Include="MSBump" Version="2.3.2" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
     <PackageReference Include="xunit" Version="2.3.1" />

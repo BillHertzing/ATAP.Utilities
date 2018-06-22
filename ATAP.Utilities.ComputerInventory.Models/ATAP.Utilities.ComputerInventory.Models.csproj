@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="MedallionShell" Version="1.5.1" />
+    <PackageReference Include="MSBump" Version="2.3.2" />
     <PackageReference Include="Swordfish.NET.CollectionsV3" Version="3.0.0.1" />
     <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
     <PackageReference Include="UnitsNet" Version="3.99.0" />

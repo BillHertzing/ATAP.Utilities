@@ -22,17 +22,6 @@
     <PackageReleaseNotes>Initial implementation/test of ATAP.AceCommander Nuget packaging</PackageReleaseNotes>
   </PropertyGroup>
 
-  <!-- MSBump Versioning Rules Debug -->
-  <PropertyGroup Condition="$(Configuration) == 'Debug'">
-    <BumpLabel>dev</BumpLabel>
-    <BumpLabelDigits>4</BumpLabelDigits>
-  </PropertyGroup>
-  <!-- MSBump Versioning Rules Release -->
-  <PropertyGroup Condition="$(Configuration) == 'Release'">
-    <BumpRevision>True</BumpRevision>
-    <BumpResetLabel>dev</BumpResetLabel>
-  </PropertyGroup>
-  
   <PropertyGroup>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <!--

@@ -80,6 +80,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Doc", "Doc", "{9CCE4A2F-811E-4F6E-9639-74C974CC7DED}"
 	ProjectSection(SolutionItems) = preProject
 		Doc\ATTRIBUTION.md = Doc\ATTRIBUTION.md
+		Building.md = Building.md
 	EndProjectSection
 EndProject
 Global

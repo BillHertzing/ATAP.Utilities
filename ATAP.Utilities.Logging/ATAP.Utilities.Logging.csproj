@@ -1,11 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
+    <AssemblyVersion>0.1.1.0</AssemblyVersion>
+    <AssemblyInformationalVersion>0.1.1-alpha001</AssemblyInformationalVersion>
+    <PackageVersion>0.1.1-alpha001</PackageVersion>
+    <Version>0.1.1-alpha001</Version>
   </PropertyGroup>
-
   
   <PropertyGroup>
     <InternalsVisibleTo>ATAP.Utilities.Logging.UnitTests</InternalsVisibleTo>
@@ -33,9 +36,8 @@
     <InternalsVisibleTo>ATAP.Utilities.ZSandbox.UnitTests</InternalsVisibleTo>
     <InternalsVisibleTo>DataFlowExPatterns</InternalsVisibleTo>
   </PropertyGroup>
-  
 
-  <ItemGroup>
+    <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.4.1" />
     <PackageReference Include="NLog" Version="4.5.4" />
     <PackageReference Include="NLog.Config" Version="4.5.4" />

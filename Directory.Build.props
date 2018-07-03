@@ -4,6 +4,14 @@
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <LangVersion>latest</LangVersion>
+    <!--
+    <TargetFramework>net47</TargetFramework>
+    <TargetFramework>net471</TargetFramework>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  	<TargetFrameworks>netcoreapp2.0;net47</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net47</TargetFrameworks>
+	-->
   </PropertyGroup>
 
   <!-- NuGet Package information for all assemblies in the solution -->
@@ -22,21 +30,39 @@
     <PackageReleaseNotes>Initial implementation/test of ATAP.AceCommander Nuget packaging</PackageReleaseNotes>
   </PropertyGroup>
 
+  <!-- NuGet Local Feed location, using an environment variable and fallback -->
+  <PropertyGroup>
+    <DropBoxBaseDir Condition=" '$(DropBoxBaseDir)' == '' "> C:\Dropbox\</DropBoxBaseDir>
+    <NuGetLocalFeedPath Condition=" '$(NuGetLocalFeedPath)' == '' ">$(DropBoxBaseDir)NuGetLocalFeed</NuGetLocalFeedPath> 
+  </PropertyGroup>
+
+   <!-- NuGet Publish target package to local feed after successful package generation-->
+  <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec">
+    <Message Text="DropBoxBaseDir = $(DropBoxBaseDir)" />
+    <Message Text="NuGetLocalFeedPath = $(NuGetLocalFeedPath)" />
+    <Message Text="OutputPath = $(OutputPath)" />
+    <Message Text="AssemblyName = $(AssemblyName)" />
+    <Message Text="PackageVersion = $(PackageVersion)" />
+    <Message Text="packagename = $(PackageId).$(PackageVersion).nupkg" />
+    <Exec WorkingDirectory="$(OutputPath)" Command="NuGet.exe push &quot;$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot;" />
+  </Target>
+
+  <!-- solution-wide items to include in every project -->
   <PropertyGroup>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
-    <!--
-    <TargetFramework>net47</TargetFramework>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
-    <TargetFramework>netstandard2.0</TargetFramework>
-  	<TargetFrameworks>netcoreapp2.0;net47</TargetFrameworks>
-    <TargetFrameworks>netstandard2.0;net47</TargetFrameworks>
-	-->
   </PropertyGroup>
+
+  <!-- solution-wide items to include in every project -->
+  <ItemGroup>
+  </ItemGroup>
+
+  <!-- Release Configuration compilation symbols, flags and build options -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DefineConstants>RELEASE;</DefineConstants>
   </PropertyGroup>
 
+  <!-- Debug Configuration compilation symbols, flags and build options -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -48,6 +74,7 @@
     <DefineConstants>NETCORE;NETSTANDARD;NETSTANDARD2_0</DefineConstants>
   </PropertyGroup>
 
+  <!-- .NET Standard 2.0 solution-wide items to include in every project -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
   </ItemGroup>
 
@@ -56,18 +83,19 @@
     <DefineConstants>NETCORE;</DefineConstants>
   </PropertyGroup>
 
+  <!-- .NET Core 2.0 solution-wide items to include in every project -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">
   </ItemGroup>
 
-  <!-- .NET Full  references, compilation flags and build options -->
+  <!-- .NET 47  references, compilation flags and build options -->
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net47'">
     <DefineConstants>NET47;NETFULL</DefineConstants>
   </PropertyGroup>
 
-  <!-- Common for all TargetFrameworks references, compilation flags and build options -->
-  <ItemGroup>
+  <!-- .NET 47 solution-wide items to include in every project -->
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net47' ">
   </ItemGroup>
-
+  
   <!--
   <ItemGroup>
     <Analyzer Include="..\..\packages\xunit.analyzers.0.7.0\analyzers\dotnet\cs\xunit.analyzers.dll" />

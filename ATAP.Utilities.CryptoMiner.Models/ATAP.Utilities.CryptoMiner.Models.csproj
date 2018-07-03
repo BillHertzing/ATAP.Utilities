@@ -5,6 +5,10 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
+    <AssemblyVersion>0.1.1.0</AssemblyVersion>
+    <AssemblyInformationalVersion>0.1.1-alpha001</AssemblyInformationalVersion>
+    <PackageVersion>0.1.1-alpha001</PackageVersion>
+    <Version>0.1.1-alpha001</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,5 +24,5 @@
     <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Enumerations\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj" />
   </ItemGroup>
-
+ 
 </Project>

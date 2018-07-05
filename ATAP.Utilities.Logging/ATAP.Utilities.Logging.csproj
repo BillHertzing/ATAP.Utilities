@@ -4,10 +4,6 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
-    <AssemblyVersion>0.1.1.0</AssemblyVersion>
-    <AssemblyInformationalVersion>0.1.1-alpha001</AssemblyInformationalVersion>
-    <PackageVersion>0.1.1-alpha001</PackageVersion>
-    <Version>0.1.1-alpha001</Version>
   </PropertyGroup>
   
   <PropertyGroup>
@@ -49,6 +45,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
 
 </Project>

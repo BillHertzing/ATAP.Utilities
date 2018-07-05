@@ -30,19 +30,60 @@
     <PackageReleaseNotes>Initial implementation/test of ATAP.AceCommander Nuget packaging</PackageReleaseNotes>
   </PropertyGroup>
 
+     
   <!-- NuGet Local Feed location, using an environment variable and fallback -->
   <PropertyGroup>
     <DropBoxBaseDir Condition=" '$(DropBoxBaseDir)' == '' "> C:\Dropbox\</DropBoxBaseDir>
     <NuGetLocalFeedPath Condition=" '$(NuGetLocalFeedPath)' == '' ">$(DropBoxBaseDir)NuGetLocalFeed</NuGetLocalFeedPath> 
   </PropertyGroup>
 
+  <Target Name="StateBeforeCoreBuild" AfterTargets="BeforeCoreBuild">
+    <Message Text="AssemblyName = $(AssemblyName)" />
+    <Message Text="AssemblyName = $(AssemblyName)" />
+    <Message Text="PackageVersion = $(PackageVersion)" />
+	<Message Text="Configuration = $(Configuration)" />
+    <Message Text="TargetFrameworks = $(TargetFrameworks)" />
+    <Message Text="TargetFramework = $(TargetFramework)" />
+    <Message Text="Platform = $(Platform)" />
+
+  </Target>
+  
+  <Target Name="StateBeforeBuild" AfterTargets="BeforeBuild">
+    <Message Text="AssemblyName = $(AssemblyName)" />
+    <Message Text="UpdateAssemblyVersion = $(UpdateAssemblyVersion)" />
+    <Message Text="UpdateAssemblyFileVersion = $(UpdateAssemblyFileVersion)" />
+    <Message Text="UpdateAssemblyInfoVersion = $(UpdateAssemblyInfoVersion)" />
+    <Message Text="UpdatePackageVersion = $(UpdatePackageVersion)" />
+  </Target>
+  <Target Name="StateAfterCopyFilesToOutputDirectory" AfterTargets="CopyFilesToOutputDirectory">
+    <Message Text="UpdateAssemblyVersion = $(UpdateAssemblyVersion)" />
+    <Message Text="UpdateAssemblyFileVersion = $(UpdateAssemblyFileVersion)" />
+    <Message Text="UpdateAssemblyInfoVersion = $(UpdateAssemblyInfoVersion)" />
+    <Message Text="UpdatePackageVersion = $(UpdatePackageVersion)" />
+  </Target>
+  <Target Name="StateBeforeGenerateNuspec" BeforeTargets="GenerateNuspec">
+    <Message Text="UpdateAssemblyVersion = $(UpdateAssemblyVersion)" />
+    <Message Text="UpdateAssemblyFileVersion = $(UpdateAssemblyFileVersion)" />
+    <Message Text="UpdateAssemblyInfoVersion = $(UpdateAssemblyInfoVersion)" />
+    <Message Text="UpdatePackageVersion = $(UpdatePackageVersion)" />
+  </Target>
    <!-- NuGet Publish target package to local feed after successful package generation-->
   <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec">
+    <Message Text="MSBuildToolsPath = $(MSBuildToolsPath)" />
     <Message Text="DropBoxBaseDir = $(DropBoxBaseDir)" />
     <Message Text="NuGetLocalFeedPath = $(NuGetLocalFeedPath)" />
     <Message Text="OutputPath = $(OutputPath)" />
     <Message Text="AssemblyName = $(AssemblyName)" />
     <Message Text="PackageVersion = $(PackageVersion)" />
+    <Message Text="Configuration = $(Configuration)" />
+    <Message Text="TargetFramework = $(TargetFramework)" />
+    <Message Text="Platform = $(Platform)" />
+    <Message Text="UpdateAssemblyVersion = $(UpdateAssemblyVersion)" />
+    <Message Text="UpdateAssemblyFileVersion = $(UpdateAssemblyFileVersion)" />
+    <Message Text="UpdateAssemblyInfoVersion = $(UpdateAssemblyInfoVersion)" />
+    <Message Text="UpdatePackageVersion = $(UpdatePackageVersion)" />
+
+
     <Message Text="packagename = $(PackageId).$(PackageVersion).nupkg" />
     <Exec WorkingDirectory="$(OutputPath)" Command="NuGet.exe push &quot;$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot;" />
   </Target>

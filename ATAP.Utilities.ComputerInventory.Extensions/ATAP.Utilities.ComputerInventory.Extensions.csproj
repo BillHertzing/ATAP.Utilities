@@ -5,15 +5,12 @@
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
-    <AssemblyVersion>0.1.1.0</AssemblyVersion>
-    <AssemblyInformationalVersion>0.1.1-alpha001</AssemblyInformationalVersion>
-    <PackageVersion>0.1.1-alpha001</PackageVersion>
-    <Version>0.1.1-alpha001</Version>
   </PropertyGroup>
   
   <ItemGroup>
     <PackageReference Include="MedallionShell" Version="1.5.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="ServiceStack.Text" Version="5.1.0" />
+    <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
     <PackageReference Include="Swordfish.NET.CollectionsV3" Version="3.0.0.1" />
     <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
     <PackageReference Include="UnitsNet" Version="3.99.0" />

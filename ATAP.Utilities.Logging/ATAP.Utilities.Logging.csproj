@@ -32,9 +32,22 @@
     <InternalsVisibleTo>ATAP.Utilities.ZSandbox.UnitTests</InternalsVisibleTo>
     <InternalsVisibleTo>DataFlowExPatterns</InternalsVisibleTo>
   </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+    <ShouldCreateLogs>True</ShouldCreateLogs>
+    <AdvancedSettingsExpanded>False</AdvancedSettingsExpanded>
+    <UpdateAssemblyVersion>False</UpdateAssemblyVersion>
+    <UpdateAssemblyFileVersion>False</UpdateAssemblyFileVersion>
+    <UpdateAssemblyInfoVersion>False</UpdateAssemblyInfoVersion>
+    <UpdatePackageVersion>True</UpdatePackageVersion>
+    <PackageVersionSettings>AssemblyVersion.NoneWithAutoReset.Alpha</PackageVersionSettings>
+    <AssemblyInfoVersionType>SettingsVersion</AssemblyInfoVersionType>
+    <InheritWinAppVersionFrom>None</InheritWinAppVersionFrom>
+  </PropertyGroup>
 
     <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.4.1" />
+    <PackageReference Include="MSBuildTasks" Version="1.5.0.235" />
     <PackageReference Include="NLog" Version="4.5.4" />
     <PackageReference Include="NLog.Config" Version="4.5.4" />
     <PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />

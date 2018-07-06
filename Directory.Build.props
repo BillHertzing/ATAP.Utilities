@@ -14,6 +14,21 @@
 	-->
   </PropertyGroup>
 
+  <!-- bring in the build tasks extensions defined in the MSBuild.Community project-->
+  <PropertyGroup>
+    <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)\.build\</SolutionBuildToolsBaseDir>
+    <MSBuildCommunityTasksPath>$(SolutionBuildToolsBaseDir)MSBuildTasks.1.5.0.235\build</MSBuildCommunityTasksPath>
+    
+  </PropertyGroup>
+  <Import Project="$(MSBuildCommunityTasksPath)\MSBuildTasks.Targets" />
+  
+  <!-- bring in the build tasks extensions defined in the ATAP.Utilities.BuildTooling project-->
+  <PropertyGroup>
+    <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)\.build\</SolutionBuildToolsBaseDir>
+    <ATAPUtilitiesBuildToolingPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.*\build</ATAPUtilitiesBuildToolingPath>
+  </PropertyGroup>
+  <Import Project="$(ATAPUtilitiesBuildToolingPath)\ATAP.Utilities.BuildTooling.Targets" />
+  
   <!-- NuGet Package information for all assemblies in the solution -->
   <PropertyGroup>
     <Company>ATAP Technology, Inc.</Company>
@@ -41,7 +56,7 @@
     <Message Text="AssemblyName = $(AssemblyName)" />
     <Message Text="AssemblyName = $(AssemblyName)" />
     <Message Text="PackageVersion = $(PackageVersion)" />
-	<Message Text="Configuration = $(Configuration)" />
+	  <Message Text="Configuration = $(Configuration)" />
     <Message Text="TargetFrameworks = $(TargetFrameworks)" />
     <Message Text="TargetFramework = $(TargetFramework)" />
     <Message Text="Platform = $(Platform)" />

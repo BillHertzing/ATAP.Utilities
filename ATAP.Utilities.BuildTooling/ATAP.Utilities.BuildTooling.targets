@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Target Name="TestPSIO" Condition=" '$(TestPSIO)'!='false' ">
+  <PropertyGroup>
+    <PowerShellExe Condition=" '$(PowerShellExe)'=='' "> 
+      %WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe
+    </PowerShellExe>
+    <ScriptLocation Condition=" '$(ScriptLocation)'=='' ">
+      C:\Path With Spaces\LogDeploy.ps1
+    </ScriptLocation>
+    <LogFileLocation Condition=" '$(LogFileLocation)'=='' ">
+      C:\Path With Spaces\ContactManagerDeployLog.txt
+    </LogFileLocation>
+  </PropertyGroup>
+  <Exec Command="$(PowerShellExe) -NonInteractive -executionpolicy Unrestricted 
+                 -command &quot;&amp; { 
+                          &amp;&apos;$(ScriptLocation)&apos; 
+                          &apos;$(LogFileLocation)&apos; 
+                          &apos;$(Parameter3)&apos;} &quot;" />
+</Target>
+</Project>

@@ -25,11 +25,18 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <ItemGroup />
   <ItemGroup>
     <Compile Include="BuildTooling.psd1" />
     <Compile Include="BuildTooling.psm1" />
     <Compile Include="BuildTooling.tests.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="tools\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="ATAP.Utilities.BuildTooling.targets" />
+    <Content Include="tools\init.ps1.pp" />
+    <Content Include="tools\install.ps1.pp" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="Build" />

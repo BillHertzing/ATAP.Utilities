@@ -1,5 +1,59 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+ <!-- solution-wide properties to include in every project -->
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <VersionFile Condition=" '$(VersionFile)' == '' ">$(MSBuildProjectDirectory)\properties\AssemblyInfo.cs</VersionFile>
+  </PropertyGroup>
+
+  <Target Name="PrintBuildVariables" AfterTargets="_SetBuildInnerTarget; BeforeBuild; BeforeCoreBuild; GenerateNuspec">
+    <Message Text="MSBuildToolsPath = $(MSBuildToolsPath)" />
+    <Message Text="Configuration = $(Configuration)" />
+    <Message Text="Platform = $(Platform)" />
+    <Message Text="TargetFrameworks = $(TargetFrameworks)" />
+    <Message Text="TargetFramework = $(TargetFramework)" />
+    <Message Text="SolutionMajorVersion = $(SolutionMajorVersion)" />
+    <Message Text="SolutionMinorVersion = $(SolutionMinorVersion)" />
+    <Message Text="SolutionPatchVersion = $(SolutionPatchVersion)" />
+    <Message Text="VersionFile = $(VersionFile)" />
+    <Message Text="MSBuildProjectDirectory = $(MSBuildProjectDirectory)" />
+    <Message Text="MSBuildProjectFullPath = $(MSBuildProjectFullPath)" />
+    <Message Text="AssemblyName = $(AssemblyName)" />
+    <Message Text="AssemblyVersion = $(AssemblyVersion)" />
+    <Message Text="AssemblyFileVersion = $(AssemblyFileVersion)" />
+    <Message Text="AssemblyInfoVersion = $(AssemblyInfoVersion)" />
+    <Message Text="PackageVersion = $(PackageVersion)" />
+    <Message Text="OutDir = $(OutDir)" />
+    <Message Text="OutputPath = $(OutputPath)" />
+    <Message Text="NuGetLocalFeedPath = $(NuGetLocalFeedPath)" />
+    <Message Text="PackageId = $(PackageId)" />
+    <Message Text="PackageVersion = $(PackageVersion)" />
+    <Message Text="PackageName = $(PackageId).$(PackageVersion).nupkg" />
+  </Target>
+
+
+    <Target Name="UpdateVersion" BeforeTargets="DispatchToInnerBuilds" >
+	  <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="VersionFile=$(VersionFile)" Importance="High" />  
+      <ATAP.Utilities.BuildTooling.GetVersion
+			VersionFile="$(VersionFile)">
+			<Output TaskParameter="Major" PropertyName="Major" />
+			<Output TaskParameter="Minor" PropertyName="Minor" />
+			<Output TaskParameter="Patch" PropertyName="Patch" />
+			<Output TaskParameter="Build" PropertyName="Build" />
+			<Output TaskParameter="Revision" PropertyName="Revision" />
+			<Output TaskParameter="PackageVersion" PropertyName="PackageVersion" />
+	  </ATAP.Utilities.BuildTooling.GetVersion>
+	  <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Major=$(Major)" Importance="High" />  
+	  <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Minor=$(Minor)" Importance="High" />  
+	  <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Patch=$(Patch)" Importance="High" />  
+	  <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Build=$(Build)" Importance="High" />  
+	  <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Revision=$(Revision)" Importance="High" />  
+	  <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageVersion=$(PackageVersion)" Importance="High" />  
+  </Target>
+
+  <!-- Work in progress
+  
 <Target Name="TestPSIO" Condition=" '$(TestPSIO)'!='false' ">
   <PropertyGroup>
     <PowerShellExe Condition=" '$(PowerShellExe)'=='' "> 
@@ -18,4 +72,70 @@
                           &apos;$(LogFileLocation)&apos; 
                           &apos;$(Parameter3)&apos;} &quot;" />
 </Target>
+
+<UsingTask TaskName="FindFilesContaining" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >  
+  <ParameterGroup>  
+    <Expression Required="true" />  
+    <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />  
+    <Result ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />  
+  </ParameterGroup>  
+  <Task>  
+    <Using Namespace="System.Text.RegularExpressions"/>  
+    <Code Type="Fragment" Language="cs">  
+<![CDATA[  
+      if (Files.Length > 0)  
+      {  
+        Result = new TaskItem[Files.Length];  
+        for (int i = 0; i < Files.Length; i++)  
+        {  
+          ITaskItem item = Files[i];  
+          string path = item.GetMetadata("FullPath");  
+          using(StreamReader rdr = File.OpenText(path))  
+          {  
+            if (Regex.Match(rdr.ReadToEnd(), Expression).Success)  
+            {  
+              Result[i] = new TaskItem(item.ItemSpec);  
+            }  
+          }  
+        }  
+      }  
+]]>  
+    </Code>  
+  </Task> 
+  
+</UsingTask>    
+  <Target Name="TestFindFilesContaining" BeforeTargets="DispatchToInnerBuilds">  
+  <FindFilesContaining Expression="\[assembly: AssemblyVersion\(.(\d+)\.(\d+)\.(\d+)" Files="$(VersionFile)">  
+    <Output ItemName="MatchedFiles" TaskParameter="Result" />  
+  </FindFilesContaining>  
+  <Message Text="Input files: $(VersionFile)" Importance="High" />  
+  <Message Text="Matched files: @(MatchedFiles)" Importance="High" />  
+</Target>  
+
+  <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <InputFilename ParameterType="System.String" Required="true" />
+      <OutputFilename ParameterType="System.String" Required="true" />
+      <MatchExpression ParameterType="System.String[]" Required="true" />
+      <ReplacementText ParameterType="System.String[]" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Reference Include="System.Core" />
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+            File.WriteAllText(
+                OutputFilename,
+                Regex.Replace(File.ReadAllText(InputFilename), MatchExpression, ReplacementText)
+                );
+          ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+ -->
+
+  
 </Project>

@@ -1,34 +1,47 @@
-<Project>
+<!-- Specify the "UpdateVersionIfNecessary target to be built first-->
+<Project InitialTargets="UpdateVersionIfNecessary">
+
+  <!-- Last publicly released version information for all projects in the solution -->
+  <PropertyGroup>
+    <SolutionMajorVersion>0</SolutionMajorVersion>
+    <SolutionMinorVersion>0</SolutionMinorVersion>
+    <SolutionPatchVersion>0</SolutionPatchVersion>
+    <VersionFile>properties/AssemblyInfo.cs</VersionFile>
+  </PropertyGroup>
+  
   <!-- Build Rules for all projects in the solution -->
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <TargetFrameworks>netstandard2.0;net471</TargetFrameworks>
     <LangVersion>latest</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <!--
     <TargetFramework>net47</TargetFramework>
     <TargetFramework>net471</TargetFramework>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <TargetFramework>netstandard2.0</TargetFramework>
-  	<TargetFrameworks>netcoreapp2.0;net47</TargetFrameworks>
-    <TargetFrameworks>netstandard2.0;net47</TargetFrameworks>
+  	<TargetFrameworks>netcoreapp2.0;net471</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net471</TargetFrameworks>
 	-->
   </PropertyGroup>
 
-  <!-- bring in the build tasks extensions defined in the MSBuild.Community project-->
+  <!-- solution-wide properties to include in every project -->
   <PropertyGroup>
-    <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)\.build\</SolutionBuildToolsBaseDir>
-    <MSBuildCommunityTasksPath>$(SolutionBuildToolsBaseDir)MSBuildTasks.1.5.0.235\build</MSBuildCommunityTasksPath>
-    
+    <!-- root directory of the solution, relative to the location where builds take place -->
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <!-- Directory where all of the custom build tools are stored -->
+    <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir).build\</SolutionBuildToolsBaseDir>
+    <!-- bring in the build tasks extensions defined in the MSBuild.Community project-->
+    <MSBuildCommunityTasksPath>$(SolutionBuildToolsBaseDir)MSBuildTasks.*\build</MSBuildCommunityTasksPath>
+    <!-- bring in the build tasks extensions defined in the ATAP.Utilities.BuildTooling project-->
+    <!-- ATAPBuildToolingConfiguration is normally set to Release; use Debug if developing the BuildTooling assemblies and scripts -->
+	  <ATAPBuildToolingConfiguration>Debug</ATAPBuildToolingConfiguration>
+    <ATAPUtilitiesBuildToolingPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.0.1.0.1\build</ATAPUtilitiesBuildToolingPath>
+    <TaskAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(ATAPUtilitiesBuildToolingPath)\$(ATAPBuildToolingConfiguration)\netstandard*\ATAP.Utilities.BuildTooling.dll</TaskAssembly>
+    <TaskAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(ATAPUtilitiesBuildToolingPath)\$(ATAPBuildToolingConfiguration)\net471\ATAP.Utilities.BuildTooling.dll</TaskAssembly>
   </PropertyGroup>
-  <Import Project="$(MSBuildCommunityTasksPath)\MSBuildTasks.Targets" />
-  
-  <!-- bring in the build tasks extensions defined in the ATAP.Utilities.BuildTooling project-->
-  <PropertyGroup>
-    <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)\.build\</SolutionBuildToolsBaseDir>
-    <ATAPUtilitiesBuildToolingPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.*\build</ATAPUtilitiesBuildToolingPath>
-  </PropertyGroup>
-  <Import Project="$(ATAPUtilitiesBuildToolingPath)\ATAP.Utilities.BuildTooling.Targets" />
-  
+  <UsingTask TaskName="ATAP.Utilities.BuildTooling.GetVersion" AssemblyFile="$(TaskAssembly)" />
+  <UsingTask TaskName="ATAP.Utilities.BuildTooling.SetVersion" AssemblyFile="$(TaskAssembly)" />
+
   <!-- NuGet Package information for all assemblies in the solution -->
   <PropertyGroup>
     <Company>ATAP Technology, Inc.</Company>
@@ -36,81 +49,20 @@
     <Authors>William Hertzing</Authors>
     <Product>ATAP.Utilities</Product>
     <ProductName>ATAP.Utilities</ProductName>
-    <RepositoryType>repositoryType</RepositoryType>
+    <RepositoryType>GitHub</RepositoryType>
     <RepositoryUrl>https://github.com/BillHertzing/ATAP.Utilities</RepositoryUrl>
     <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
     <PackageProjectUrl>www.project.url</PackageProjectUrl>
     <PackageIconUrl>www.icon.url</PackageIconUrl>
-    <PackageTags>Testing, experimental, alpha, ATAP, ATAP.AceCommander</PackageTags>
-    <PackageReleaseNotes>Initial implementation/test of ATAP.AceCommander Nuget packaging</PackageReleaseNotes>
+    <PackageTags>Testing, experimental, alpha, ATAP, ATAP.Utillities</PackageTags>
+    <PackageReleaseNotes>Initial implementation/test of ATAP.Utilities Nuget packaging</PackageReleaseNotes>
   </PropertyGroup>
-
      
   <!-- NuGet Local Feed location, using an environment variable and fallback -->
   <PropertyGroup>
-    <DropBoxBaseDir Condition=" '$(DropBoxBaseDir)' == '' "> C:\Dropbox\</DropBoxBaseDir>
-    <NuGetLocalFeedPath Condition=" '$(NuGetLocalFeedPath)' == '' ">$(DropBoxBaseDir)NuGetLocalFeed</NuGetLocalFeedPath> 
+    <NuGetLocalFeedPath Condition=" '$(NuGetLocalFeedPath)' == '' ">C:\Dropbox\NuGetLocalFeed</NuGetLocalFeedPath> 
   </PropertyGroup>
 
-  <Target Name="StateBeforeCoreBuild" AfterTargets="BeforeCoreBuild">
-    <Message Text="AssemblyName = $(AssemblyName)" />
-    <Message Text="AssemblyName = $(AssemblyName)" />
-    <Message Text="PackageVersion = $(PackageVersion)" />
-	  <Message Text="Configuration = $(Configuration)" />
-    <Message Text="TargetFrameworks = $(TargetFrameworks)" />
-    <Message Text="TargetFramework = $(TargetFramework)" />
-    <Message Text="Platform = $(Platform)" />
-
-  </Target>
-  
-  <Target Name="StateBeforeBuild" AfterTargets="BeforeBuild">
-    <Message Text="AssemblyName = $(AssemblyName)" />
-    <Message Text="UpdateAssemblyVersion = $(UpdateAssemblyVersion)" />
-    <Message Text="UpdateAssemblyFileVersion = $(UpdateAssemblyFileVersion)" />
-    <Message Text="UpdateAssemblyInfoVersion = $(UpdateAssemblyInfoVersion)" />
-    <Message Text="UpdatePackageVersion = $(UpdatePackageVersion)" />
-  </Target>
-  <Target Name="StateAfterCopyFilesToOutputDirectory" AfterTargets="CopyFilesToOutputDirectory">
-    <Message Text="UpdateAssemblyVersion = $(UpdateAssemblyVersion)" />
-    <Message Text="UpdateAssemblyFileVersion = $(UpdateAssemblyFileVersion)" />
-    <Message Text="UpdateAssemblyInfoVersion = $(UpdateAssemblyInfoVersion)" />
-    <Message Text="UpdatePackageVersion = $(UpdatePackageVersion)" />
-  </Target>
-  <Target Name="StateBeforeGenerateNuspec" BeforeTargets="GenerateNuspec">
-    <Message Text="UpdateAssemblyVersion = $(UpdateAssemblyVersion)" />
-    <Message Text="UpdateAssemblyFileVersion = $(UpdateAssemblyFileVersion)" />
-    <Message Text="UpdateAssemblyInfoVersion = $(UpdateAssemblyInfoVersion)" />
-    <Message Text="UpdatePackageVersion = $(UpdatePackageVersion)" />
-  </Target>
-   <!-- NuGet Publish target package to local feed after successful package generation-->
-  <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec">
-    <Message Text="MSBuildToolsPath = $(MSBuildToolsPath)" />
-    <Message Text="DropBoxBaseDir = $(DropBoxBaseDir)" />
-    <Message Text="NuGetLocalFeedPath = $(NuGetLocalFeedPath)" />
-    <Message Text="OutputPath = $(OutputPath)" />
-    <Message Text="AssemblyName = $(AssemblyName)" />
-    <Message Text="PackageVersion = $(PackageVersion)" />
-    <Message Text="Configuration = $(Configuration)" />
-    <Message Text="TargetFramework = $(TargetFramework)" />
-    <Message Text="Platform = $(Platform)" />
-    <Message Text="UpdateAssemblyVersion = $(UpdateAssemblyVersion)" />
-    <Message Text="UpdateAssemblyFileVersion = $(UpdateAssemblyFileVersion)" />
-    <Message Text="UpdateAssemblyInfoVersion = $(UpdateAssemblyInfoVersion)" />
-    <Message Text="UpdatePackageVersion = $(UpdatePackageVersion)" />
-
-
-    <Message Text="packagename = $(PackageId).$(PackageVersion).nupkg" />
-    <Exec WorkingDirectory="$(OutputPath)" Command="NuGet.exe push &quot;$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot;" />
-  </Target>
-
-  <!-- solution-wide items to include in every project -->
-  <PropertyGroup>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
-  </PropertyGroup>
-
-  <!-- solution-wide items to include in every project -->
-  <ItemGroup>
-  </ItemGroup>
 
   <!-- Release Configuration compilation symbols, flags and build options -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

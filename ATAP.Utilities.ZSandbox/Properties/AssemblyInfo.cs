@@ -1,9 +1,7 @@
-﻿using System.Reflection;
+using System.Reflection;
 
-// Used and Set by precision Infinity's Visual Studio extension "Automatic Versions"
-[assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
-[assembly: System.Reflection.AssemblyFileVersionAttribute("0.1.18187.1153")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.0.12")]
-[assembly: System.Reflection.AssemblyVersionAttribute("0.1.18187.1153")]
-
-
+// ATAP.Utilities.BuildTooling.targets will update the build (date), and revision fields each time a new build occurs
+[assembly: AssemblyFileVersion("0.2.1.1")]
+// ATAP.Utilities.BuildTooling.targets will update the AssemblyInformationalVersion field each time a new build occurs
+[assembly: AssemblyInformationalVersion("0.2.1-alpha-02")]
+[assembly: AssemblyVersion("0.2.1.1")]

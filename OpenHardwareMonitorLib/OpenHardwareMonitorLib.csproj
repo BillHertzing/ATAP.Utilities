@@ -4,6 +4,17 @@
     <OutputType>Library</OutputType>
     <TargetFramework>net47</TargetFramework>
     <RootNamespace>OpenHardwareMonitor</RootNamespace>
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly-->
+    <!-- Build and revision are created based on date-->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <!-- Current Lifecycle stage for this assembly-->
+    <PackageLifeCycleStage>dev</PackageLifeCycleStage>
+    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
+    <PackageLabel>alpha</PackageLabel>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,5 +25,5 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="2.0.0-rc1" />
   </ItemGroup>
-
+  
 </Project>

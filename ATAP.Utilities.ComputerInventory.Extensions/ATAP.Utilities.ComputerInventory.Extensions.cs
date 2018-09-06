@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Itenso.TimePeriod;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using Swordfish.NET.Collections;
 using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Models;

@@ -3,6 +3,12 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+## ATAP BuildTooling
+# Where external msbuild .target files and msBuild Task DLLs are stored
+.build/
+# Lock files used when incrementing AssemblyVersions
+*.lock
+
 # User-specific files
 *.suo
 *.user

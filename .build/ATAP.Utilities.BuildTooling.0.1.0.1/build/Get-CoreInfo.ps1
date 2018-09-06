@@ -1,12 +1,14 @@
 Function Get-CoreInfo {
-    if(Test-Path "$env:programfiles/dotnet/"){
+  $pathToDotNet="$env:programW6432/dotnet"
+  Write-Host "pathToDotNet = $pathToDotNet"
+    if(Test-Path $pathToDotNet){
         try{
 
-            [Collections.Generic.List[string]] $info = dotnet
+            [Collections.Generic.List[string]] $info = dotnet --info
 
             $versionLineIndex = $info.FindIndex( {$args[0].ToString().ToLower() -like "*version*:*"} )
 
-            $runtimes = (ls "$env:programfiles/dotnet/shared/Microsoft.NETCore.App").Name | Out-String
+            $runtimes = (ls "$pathToDotNet/shared/Microsoft.NETCore.App").Name | Out-String
 
             $sdkVersion = dotnet --version
 
@@ -21,8 +23,7 @@ Function Get-CoreInfo {
         }
     }
     else{
-    
-        Write-Host 'No SDK installed'
+        Write-Host "No SDK installed at $pathToDotNet"
         return ""
     }
 }

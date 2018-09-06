@@ -1,19 +1,20 @@
-<!-- Specify the "UpdateVersionIfNecessary target to be built first-->
-<Project InitialTargets="UpdateVersionIfNecessary">
+<Project >
 
-  <!-- Last publicly released version information for all projects in the solution -->
+  <!-- Solution wide default location of the version file for all projects in the solution -->
+  <!-- Can be overridden if desired by a property of the same name in a project file for an assembly -->
   <PropertyGroup>
-    <SolutionMajorVersion>0</SolutionMajorVersion>
-    <SolutionMinorVersion>0</SolutionMinorVersion>
-    <SolutionPatchVersion>0</SolutionPatchVersion>
-    <VersionFile>properties/AssemblyInfo.cs</VersionFile>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <!-- Solution wide default location of the version file for all projects in the solution -->
+    <!-- Can be overridden if desired by a property of the same name in a project file for an assembly -->
+    <VersionFile Condition=" '$(VersionFile)' == '' ">$(MSBuildProjectDirectory)\properties\AssemblyInfo.cs</VersionFile>
+    <!-- Solution wide default location of the lock file for the UpdatePackageVersion tasks for all projects in the solution -->
+    <!-- Can be overridden if desired by a property of the same name in a project file for an assembly -->
+    <UpdatePackageVersionLockFilePath Condition=" '$(UpdatePackageVersionLockFilePath)' == '' ">$(MSBuildProjectDirectory)\$(MSBuildProjectName).UpdatePackageVersion.lock</UpdatePackageVersionLockFilePath>
   </PropertyGroup>
-  
-  <!-- Build Rules for all projects in the solution -->
+
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net471</TargetFrameworks>
     <LangVersion>latest</LangVersion>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <!--
     <TargetFramework>net47</TargetFramework>
     <TargetFramework>net471</TargetFramework>
@@ -26,8 +27,11 @@
 
   <!-- solution-wide properties to include in every project -->
   <PropertyGroup>
-    <!-- root directory of the solution, relative to the location where builds take place -->
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <!-- root directory of the solution, relative to the location where current project is found take place -->
+    <!-- when msbuild is run by Visual Studio 15.8.2, ($(MSBuildRuntimeType) != 'Core') the property $(SolutionDir) is already defined at this point, so this line is not executed -->
+    <!-- when msbuild is run by dotnet command, ($(MSBuildRuntimeType) == 'Core') the property $(SolutionDir) is not defined at this point, so this line is executed -->
+    <!-- the result is that the $(SolutionDir) is set properly regardless of the $(MSBuildRuntimeType) -->
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">$(MSBuildProjectDirectory)\..\</SolutionDir>
     <!-- Directory where all of the custom build tools are stored -->
     <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir).build\</SolutionBuildToolsBaseDir>
     <!-- bring in the build tasks extensions defined in the MSBuild.Community project-->
@@ -35,12 +39,14 @@
     <!-- bring in the build tasks extensions defined in the ATAP.Utilities.BuildTooling project-->
     <!-- ATAPBuildToolingConfiguration is normally set to Release; use Debug if developing the BuildTooling assemblies and scripts -->
 	  <ATAPBuildToolingConfiguration>Debug</ATAPBuildToolingConfiguration>
-    <ATAPUtilitiesBuildToolingPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.0.1.0.1\build</ATAPUtilitiesBuildToolingPath>
-    <TaskAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(ATAPUtilitiesBuildToolingPath)\$(ATAPBuildToolingConfiguration)\netstandard*\ATAP.Utilities.BuildTooling.dll</TaskAssembly>
-    <TaskAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(ATAPUtilitiesBuildToolingPath)\$(ATAPBuildToolingConfiguration)\net471\ATAP.Utilities.BuildTooling.dll</TaskAssembly>
+    <!-- ATAPBuildToolingDebugVerbosity controls the level of details the Debug mode logging. If ATAPBuildToolingConfiguration is not Debug, this setting has no effect -->
+    <!-- valid values for ATAPBuildToolingDebugVerbosity are trace -->
+    <ATAPBuildToolingDebugVerbosity>Trace</ATAPBuildToolingDebugVerbosity>
+    <ATAPUtilitiesBuildToolingTargetsPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.0.1.0.1\build\</ATAPUtilitiesBuildToolingTargetsPath>
+    <ATAPUtilitiesBuildToolingTasksPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.0.1.0.1\build</ATAPUtilitiesBuildToolingTasksPath>
+    <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\$(ATAPBuildToolingConfiguration)\netstandard2.0\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
+      <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\$(ATAPBuildToolingConfiguration)\net471\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
   </PropertyGroup>
-  <UsingTask TaskName="ATAP.Utilities.BuildTooling.GetVersion" AssemblyFile="$(TaskAssembly)" />
-  <UsingTask TaskName="ATAP.Utilities.BuildTooling.SetVersion" AssemblyFile="$(TaskAssembly)" />
 
   <!-- NuGet Package information for all assemblies in the solution -->
   <PropertyGroup>
@@ -95,15 +101,23 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">
   </ItemGroup>
 
-  <!-- .NET 47  references, compilation flags and build options -->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net47'">
+  <!-- .NET 471  references, compilation flags and build options -->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net471'">
     <DefineConstants>NET47;NETFULL</DefineConstants>
   </PropertyGroup>
 
-  <!-- .NET 47 solution-wide items to include in every project -->
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net47' ">
+  <!-- .NET 471 solution-wide items to include in every project -->
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net471' ">
   </ItemGroup>
-  
+
+  <!-- Demonstrate the difference between a msbuild run from inside Visual Studio, and a msbuild callled from dotnet CLI
+       Replace Never with Clean -->
+  <Target Name="HighlightDifferencesBetweenMSBuild" BeforeTargets="Never">
+    <Message  Text="MSBuildRuntimeType = $(MSBuildRuntimeType)" />
+    <Message Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'" Text="SolutionDir undefined or null"/>
+    <Message Condition="$(SolutionDir) != '' And $(SolutionDir) != '*Undefined*'" Text="SolutionDir =$(SolutionDir)"/>
+  </Target>
+
   <!--
   <ItemGroup>
     <Analyzer Include="..\..\packages\xunit.analyzers.0.7.0\analyzers\dotnet\cs\xunit.analyzers.dll" />

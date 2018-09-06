@@ -16,6 +16,6 @@
   <UsingTask TaskName="SetVersion" AssemblyFile="$(TaskAssembly)" />
 -->
   <Target Name="Build">
-    <GetVersion VersionFile = "$(VersionFile)"/>
+    <GetVersion VersionFile = "$(VersionFile)" Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'"/>
   </Target>
 </Project>

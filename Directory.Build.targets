@@ -1,43 +1,5 @@
 <Project>
+  <!-- import the non-default targets files -->
   <Import Project="$(MSBuildCommunityTasksPath)\MSBuildTasks.Targets" />
-  <Import Project="$(ATAPUtilitiesBuildToolingPath)\ATAP.Utilities.BuildTooling.Targets" />
-
-  <Target Name="UpdateVersionIfNecessary">
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="VersionFile=$(VersionFile)" Importance="High" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="SolutionMajorVersion=$(SolutionMajorVersion)" Importance="High" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="SolutionMinorVersion=$(SolutionMinorVersion)" Importance="High" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="SolutionPatchVersion=$(SolutionPatchVersion)" Importance="High" />
-    <ATAP.Utilities.BuildTooling.GetVersion
-			VersionFile="$(VersionFile)">
-      <Output TaskParameter="Major" PropertyName="Major" />
-      <Output TaskParameter="Minor" PropertyName="Minor" />
-      <Output TaskParameter="Patch" PropertyName="Patch" />
-      <Output TaskParameter="Build" PropertyName="Build" />
-      <Output TaskParameter="Revision" PropertyName="Revision" />
-      <Output TaskParameter="PackageVersion" PropertyName="PackageVersion" />
-    </ATAP.Utilities.BuildTooling.GetVersion>
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Major=$(Major)" Importance="High" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Minor=$(Minor)" Importance="High" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Patch=$(Patch)" Importance="High" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Build=$(Build)" Importance="High" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Revision=$(Revision)" Importance="High" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageVersion=$(PackageVersion)" Importance="High" />
-    <!-- 
-    <ATAP.Utilities.BuildTooling.SetVersion
-    VersionFile="$(VersionFile)"
-    Major="$(SolutionMajorVersion)"
-    Minor="$(SolutionMinorVersion)"
-    Patch="$(SolutionPatchVersion)"
-    Revision="0"
-    PackageVersion="3.2.1-beta-001"
-    >
-    </ATAP.Utilities.BuildTooling.SetVersion>
-    -->
-  </Target>
-  
-  <!-- NuGet Publish target package to local feed after successful package generation-->
-  <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec">
-    <Exec WorkingDirectory="$(OutputPath)" Command="NuGet.exe push &quot;$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot;" />
-  </Target>
-
+  <Import Project="$(ATAPUtilitiesBuildToolingTargetsPath)\ATAP.Utilities.BuildTooling.Targets" />
   </Project>

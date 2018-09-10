@@ -55,12 +55,12 @@
     <Authors>William Hertzing</Authors>
     <Product>ATAP.Utilities</Product>
     <ProductName>ATAP.Utilities</ProductName>
-    <RepositoryType>GitHub</RepositoryType>
     <RepositoryUrl>https://github.com/BillHertzing/ATAP.Utilities</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
     <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
     <PackageProjectUrl>www.project.url</PackageProjectUrl>
     <PackageIconUrl>www.icon.url</PackageIconUrl>
-    <PackageTags>Testing, experimental, alpha, ATAP, ATAP.Utillities</PackageTags>
+    <PackageTags>Testing, experimental, alpha, ATAP, ATAP.Utilities</PackageTags>
     <PackageReleaseNotes>Initial implementation/test of ATAP.Utilities Nuget packaging</PackageReleaseNotes>
   </PropertyGroup>
      
@@ -101,8 +101,8 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">
   </ItemGroup>
 
-  <!-- .NET 471  references, compilation flags and build options -->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net471'">
+    <!-- .NET 4 or greater references, compilation flags and build options -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('net47'))">
     <DefineConstants>NET47;NETFULL</DefineConstants>
   </PropertyGroup>
 

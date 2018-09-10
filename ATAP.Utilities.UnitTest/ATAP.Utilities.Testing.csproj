@@ -10,9 +10,9 @@
     <MinorVersion>1</MinorVersion>
     <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>dev</PackageLifeCycleStage>
-    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
-    <PackageLabel>alpha</PackageLabel>
+    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
+    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
+    <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
   <ItemGroup>

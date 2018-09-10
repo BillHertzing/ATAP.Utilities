@@ -6,7 +6,7 @@ It includes the default targetframeworks,
 it includes the NuGet packaging and pusking properties and tasks
 Versioning is very difficult problem, the ATAP.Utilities.BuildTools projects contains files that extend the build process and include tasks and functions that perform versioning andpackaging
 ## Visual Studio Extensions
-Precision Infinity's Automatc Versions 1
+
 CodeRush for Roslyn
 GitHub Extensions
 Powershell Tools for Visual Studio
@@ -15,7 +15,7 @@ Microsoft Visual Studio Test Extensions
 
 ## NuGet packages
 ### Solution-wide
-Install the MSBuild tasksa and tooing to support rapid development builds, where each build should propagate to (local) NuGet feed.
+Install the MSBuild tasks and tooing to support rapid development builds, where each build should propagate to (local) NuGet feed.
 Install-Package UtilPack.NuGet.Push.MSBuild
 ### Library Specific
 #### Common to all Unit Test projects
@@ -106,4 +106,18 @@ Utilities.MakePackageVersion (static function) creates a string from the used as
 Utilities.TryParsePackageVersion (static function) returns a boolean, and creates a number of integers and strings that are the individual pieces of a parsed Nuget Package Version
 
 
-The BuildTooling Assembly gets locked by VS IDE when it does a build, the only way to replace/update it is to quit out of VS IDE.
+The BuildTooling Assembly gets locked by VS IDE when it does a build, the only way to replace/update it is to quit out of VS IDE. It is important to build both the debug and release versions together.
+
+Visual Studio 2017 15. 8. 3 create new spec files during a build and pack. If a dependency on another packages found, the Noose Tech file will specify a version of the required package of greater than 1.0.0. but before a package reaches version one while it is under development, the new spec file will not restore the new Subspace Subspace Library .
+
+one way around this dilemma is to always create a version 1.0 as a package and there she was, even if there is only placeholders for functionality.. a better approach, is to put two minimal identifying piece of functionality into version 1.0.0. and includes unit test the test all four combinations of interrogation.
+
+Every solution has a directory wide props and targets file. the targets file simply drains in the community msbuild extensions and VHF utilities buildtooling extensions
+
+Custom tasks written in C sharp that help build Solutions and projects, are found in the project atsp.utilities. buikdtooljng. This is compiled into a dll, and package into a nougat package. Built in Drbug and release mode. is there or issue with Dell to installation, for when building something similar to Bill to him before the first version to ever exist.  CC top targets file has examples on turning on and turning off conditionally calls to the custom task.
+
+ATAP.Utilities.BuildTooling.CSharp 
+C's files contains the code for tasks It demonstrates 3 custom tasks. One task gets the version file information to get the current information. Another tasks knows how to update the version file. A third task, UpdateVersion 
+, Knows how to get version information from the current .csproj file, calls Get version for version information, compares the  two,  decides what the new version information should be, and sets that information into the version file.
+
+The version information is inspected once for each project involved on every build. .

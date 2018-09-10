@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.0;net47</TargetFrameworks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>false</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
@@ -14,18 +13,5 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <PackageLabel>alpha</PackageLabel>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="UtilPack.NuGet.Push.MSBuild" Version="2.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.DateTime\ATAP.Utilities.DateTime.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.FileSystem\ATAP.Utilities.FileSystem.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.String\ATAP.Utilities.String.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.UnitTest\ATAP.Utilities.Testing.csproj" />
-  </ItemGroup>
 
 </Project>

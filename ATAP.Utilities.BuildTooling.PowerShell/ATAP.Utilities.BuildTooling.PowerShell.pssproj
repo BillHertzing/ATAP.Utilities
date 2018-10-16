@@ -42,6 +42,7 @@
     <Compile Include="Get-CoreInfo.ps1" />
     <Compile Include="Initialize-AssemblyInfoFiles.ps1" />
     <Compile Include="Remove-ObjAndBinSubdirs.ps1" />
+    <Compile Include="Remove-VSComponentCache.ps1" />
     <Compile Include="Set-LineEndings.ps1" />
     <Compile Include="Set-PerceivedTypeInRegistryForPreviewPane.ps1" />
   </ItemGroup>

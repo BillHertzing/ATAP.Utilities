@@ -6,7 +6,8 @@
      <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectDirectory = $(MSBuildProjectDirectory)" />
      <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectFullPath = $(MSBuildProjectFullPath)" />
      <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildToolsPath = $(MSBuildToolsPath)" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Configuration = $(Configuration)" />
+     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildBinPath = $(MSBuildBinPath)" />
+     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Configuration = $(Configuration)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Platform = $(Platform)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="TargetFrameworks = $(TargetFrameworks)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="TargetFramework = $(TargetFramework)" />
@@ -37,8 +38,35 @@
   <UsingTask TaskName="ATAP.Utilities.BuildTooling.UpdateVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" />
   <UsingTask TaskName="ATAP.Utilities.BuildTooling.SetVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" />
 
+  <!-- http://blog.casavian.eu/2014/04/23/increment-version-for-changed-assemblies-only-first-part/ -->
+  <!--%Program Files (x86)%\MSBuild\12.0\Bin\Microsoft.CSharp.CurrentVersion.targets  -->
+  <!-- This target is run only if any of the Inputs are more recent than any output -->
+  <Target 
+    Name="BeforeCompile"
+    Inputs="$(MSBuildAllProjects);
+        @(Compile);                               
+        @(_CoreCompileResourceInputs);
+        $(ApplicationIcon);
+        $(AssemblyOriginatorKeyFile);
+        @(ReferencePath);
+        @(CompiledLicenseFile);
+        @(LinkResource);
+        @(EmbeddedDocumentation); 
+        $(Win32Resource);
+        $(Win32Manifest);
+        @(CustomAdditionalCompileInputs)"
+    Outputs="@(DocFileItem);
+         @(IntermediateAssembly);
+         @(_DebugSymbolsIntermediatePath);                 
+         $(NonExistentFile);
+         @(CustomAdditionalCompileOutputs)">
+    <!-- increment task here -->
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="TestForOutputOutOfDate WILL execute" />
+    <CallTarget Targets="UpdatePackageVersionBeforeOuterBuild"/>
+  </Target>
+
 <!-- This is the  target that updates the versioninformation during development for every build -->
-  <Target Name="UpdatePackageVersionBeforeOuterBuild" BeforeTargets="DispatchToInnerBuilds">
+  <Target Name="UpdatePackageVersionBeforeOuterBuild" >
     <!-- during debugging this BuildTooling, send to the output log messages  indicating lockfile will be created -->
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="creating LockFile $(UpdatePackageVersionLockFilePath)" />
     <!-- Start with the creation of a lockfile to ensure version is not incrememnted in every framework when targeting multi-frameworks-->

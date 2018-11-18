@@ -1,9 +1,18 @@
-﻿using System;
+using System;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ATAP.Utilities.ZSandbox {
-    public static class JSONSerializeAndDeSerializeTupleExamples {
+  // Put this into its own utility project/dll someday
+  public static class ObjectUtilities
+  {
+    public static bool ArePropertiesNotNull<T>(this T obj)
+    {
+      return typeof(T).GetProperties().All(propertyInfo => propertyInfo.GetValue(obj) != null);
+    }
+  }
+  public static class JSONSerializeAndDeSerializeTupleExamples {
         
         public static(string k1, string k2) DeSerializeSimpleTuple(string _input) {
             return JsonConvert.DeserializeObject<(string k1, string k2)>(_input);

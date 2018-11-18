@@ -63,6 +63,7 @@
     <PackageTags>Testing, experimental, alpha, ATAP, ATAP.Utilities</PackageTags>
     <PackageReleaseNotes>Initial implementation/test of ATAP.Utilities Nuget packaging</PackageReleaseNotes>
   </PropertyGroup>
+  
      
   <!-- NuGet Local Feed location, using an environment variable and fallback -->
   <PropertyGroup>

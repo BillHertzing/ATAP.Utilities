@@ -60,13 +60,14 @@
          @(_DebugSymbolsIntermediatePath);                 
          $(NonExistentFile);
          @(CustomAdditionalCompileOutputs)">
-    <!-- increment task here -->
+    <!-- Conditionally call increment task here, if UpdatePackageVersionLockFilePath file does not exist -->
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' and !Exists('$(UpdatePackageVersionLockFilePath)')" Text="UpdatePackageVersionBeforeOuterBuild WILL execute becasue $(UpdatePackageVersionLockFilePath) DOES NOT exist" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' and Exists('$(UpdatePackageVersionLockFilePath)')" Text="UpdatePackageVersionBeforeOuterBuild WILL NOT execute becasue $(UpdatePackageVersionLockFilePath) DOES exist" />
     <CallTarget Targets="UpdatePackageVersionBeforeOuterBuild" Condition="!Exists('$(UpdatePackageVersionLockFilePath)')"/>
-
+  </Target>
+  
 <!-- This is the  target that updates the versioninformation during development for every build -->
-  <Target Name="UpdatePackageVersionBeforeOuterBuild" Condition="!Exists('$(UpdatePackageVersionLockFilePath)')">
+  <Target Name="UpdatePackageVersionBeforeOuterBuild" >
     <!-- during debugging this BuildTooling, send to the output log messages  indicating lockfile will be created -->
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="creating LockFile $(UpdatePackageVersionLockFilePath)" />
     <!-- Start with the creation of a lockfile to ensure version is not incrememnted in every framework when targeting multi-frameworks-->

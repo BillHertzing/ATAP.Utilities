@@ -1,4 +1,4 @@
-﻿    using System.ComponentModel;
+    using System.ComponentModel;
     using FluentAssertions;
     using Xunit;
     using YamlDotNet.Serialization;
@@ -31,8 +31,8 @@
         public class ComputerInventoryUnitTests001 {
             [Fact]
             public void CPUDeserializeFromYAMLSO() {
-                Serializer serializer = new SerializerBuilder().Build();
-                Deserializer deserializer = new DeserializerBuilder().Build();
+                Serializer serializer = (Serializer) new SerializerBuilder().Build();
+                Deserializer deserializer = (Deserializer) new DeserializerBuilder().Build();
                 CPU cPU = new CPU(CPUMaker.Intel);
             string str = serializer.Serialize(cPU);
                 CPU cPUAfterRoundTrip = deserializer.Deserialize<CPU>(serializer.Serialize(cPU));

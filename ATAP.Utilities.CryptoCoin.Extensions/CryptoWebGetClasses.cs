@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
@@ -33,7 +33,7 @@ namespace ATAP.Utilities.CryptoCoin
             UriBuilder uriBuilder = new UriBuilder(HttpRequestMessage.RequestUri);
             uriBuilder.Path += coin;
             HttpRequestMessage.RequestUri = uriBuilder.Uri;
-            var httpResponseMessage = await SingletonWebGet.AsyncFetch(Policy, HttpRequestMessage);
+            var httpResponseMessage = await SingletonHttpClient.AsyncFetch(Policy, HttpRequestMessage);
             var data = await httpResponseMessage.Content.ReadAsStringAsync();
             return string.IsNullOrEmpty(data) ?
                             default(chain_so_api_v2_get_info_Data) :
@@ -97,7 +97,7 @@ namespace ATAP.Utilities.CryptoCoin
         public new async Task<blockChainInfo_ticker> GetAsync() {
             UriBuilder uriBuilder = new UriBuilder(HttpRequestMessage.RequestUri);
             HttpRequestMessage.RequestUri = uriBuilder.Uri;
-            var httpResponseMessage = await SingletonWebGet.AsyncFetch(Policy, HttpRequestMessage);
+            var httpResponseMessage = await SingletonHttpClient.AsyncFetch(Policy, HttpRequestMessage);
             var data = await httpResponseMessage.Content.ReadAsStringAsync();
             return string.IsNullOrEmpty(data) ?
                             default(blockChainInfo_ticker) :

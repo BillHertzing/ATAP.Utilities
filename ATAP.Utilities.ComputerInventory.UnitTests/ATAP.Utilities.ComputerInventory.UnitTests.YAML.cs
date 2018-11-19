@@ -37,8 +37,8 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests.YAML {
     }
 
     #region (fields) YAML Serializer/Deserializer
-    readonly Serializer serializer = new SerializerBuilder().Build();
-    readonly Deserializer deserializer = new DeserializerBuilder().Build();
+    readonly Serializer serializer = new SerializerBuilder().Build() as Serializer;
+    readonly Deserializer deserializer = new DeserializerBuilder().Build() as Deserializer;
     #endregion (fields) YAML Serializer/Deserializer
 
 

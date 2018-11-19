@@ -18,8 +18,8 @@
   
     <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Framework" Version="15.1.1012" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.1.1012" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="15.8.166" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.8.166" />
   </ItemGroup>
   <ItemGroup>
     <None Update="ATAP.Utilities.BuildTooling.targets">

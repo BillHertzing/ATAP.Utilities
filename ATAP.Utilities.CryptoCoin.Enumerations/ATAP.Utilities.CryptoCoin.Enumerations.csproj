@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ServiceStack.Text" Version="5.1.0" />
+    <PackageReference Include="ServiceStack.Text" Version="5.4.0" />
     <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
   </ItemGroup>
 

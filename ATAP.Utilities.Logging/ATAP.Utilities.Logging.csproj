@@ -45,9 +45,9 @@
   
 
     <ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" Version="4.4.1" />
-    <PackageReference Include="NLog" Version="4.5.4" />
-    <PackageReference Include="NLog.Config" Version="4.5.4" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
+    <PackageReference Include="NLog" Version="4.5.11" />
+    <PackageReference Include="NLog.Config" Version="4.5.11" />
     <PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />
   </ItemGroup>
 

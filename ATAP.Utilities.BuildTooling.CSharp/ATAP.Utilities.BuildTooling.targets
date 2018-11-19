@@ -61,12 +61,12 @@
          $(NonExistentFile);
          @(CustomAdditionalCompileOutputs)">
     <!-- increment task here -->
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="TestForOutputOutOfDate WILL execute" />
-    <CallTarget Targets="UpdatePackageVersionBeforeOuterBuild"/>
-  </Target>
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' and !Exists('$(UpdatePackageVersionLockFilePath)')" Text="UpdatePackageVersionBeforeOuterBuild WILL execute becasue $(UpdatePackageVersionLockFilePath) DOES NOT exist" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' and Exists('$(UpdatePackageVersionLockFilePath)')" Text="UpdatePackageVersionBeforeOuterBuild WILL NOT execute becasue $(UpdatePackageVersionLockFilePath) DOES exist" />
+    <CallTarget Targets="UpdatePackageVersionBeforeOuterBuild" Condition="!Exists('$(UpdatePackageVersionLockFilePath)')"/>
 
 <!-- This is the  target that updates the versioninformation during development for every build -->
-  <Target Name="UpdatePackageVersionBeforeOuterBuild" >
+  <Target Name="UpdatePackageVersionBeforeOuterBuild" Condition="!Exists('$(UpdatePackageVersionLockFilePath)')">
     <!-- during debugging this BuildTooling, send to the output log messages  indicating lockfile will be created -->
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="creating LockFile $(UpdatePackageVersionLockFilePath)" />
     <!-- Start with the creation of a lockfile to ensure version is not incrememnted in every framework when targeting multi-frameworks-->
@@ -97,7 +97,8 @@
     <!-- During development of this .targets file, use a condition to control if the UpdateVersion task gets run, or not. Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'"-->
     <!-- however there is strange thing happening if there is no condition, it claims the task cannot be loaded from the assembly, so instead, as a workaround, specify the task twise, once for debug and once again for release -->
     <!-- <ATAP.Utilities.BuildTooling.UpdateVersion Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" -->
-    <ATAP.Utilities.BuildTooling.UpdateVersion        ATAPBuildToolingConfiguration="$(ATAPBuildToolingConfiguration)"
+    <ATAP.Utilities.BuildTooling.UpdateVersion
+      ATAPBuildToolingConfiguration="$(ATAPBuildToolingConfiguration)"
       ATAPBuildToolingDebugVerbosity="$(ATAPBuildToolingDebugVerbosity)"
       VersionFile="$(VersionFile)"
       MajorVersion="$(MajorVersion)"

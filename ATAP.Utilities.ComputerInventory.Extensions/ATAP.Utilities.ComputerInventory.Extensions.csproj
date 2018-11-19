@@ -34,7 +34,7 @@
 
   <ItemGroup>
     <None Update="ATAP.Utilities.ComputerInventory.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   

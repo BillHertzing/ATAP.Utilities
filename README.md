@@ -1,6 +1,9 @@
 # ATAP.Utilities
 Collection of projects/assemblies for various helper classes
 
+Documentation for this repository is [here](./ATAP.Utilities.AutoDoc/Docs/RepositoryReadMe.html)
+
+Documentation for this repository's AutoDoc is [here](./ATAP.Utilities.AutoDoc/Docs/ReadMe.html)
 ## Summary of Helper projects and what they provide
 ---
 ##BuildTooling.CSharp [Detailed Doc](./ATAP.Utilities.BuildTooling.CSharp/Doc/ReadMe.md)

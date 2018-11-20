@@ -81,9 +81,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInve
 EndProject
 Project("{F5034706-568F-408A-B7B3-4D38C6DB8A32}") = "ATAP.Utilities.BuildTooling.Chocolatey", "ATAP.Utilities.BuildTooling.Chocolatey\ATAP.Utilities.BuildTooling.Chocolatey.pssproj", "{6CAFC0C6-A428-4D30-A9F9-700E829FEA51}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Doc", "Doc", "{9CCE4A2F-811E-4F6E-9639-74C974CC7DED}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{9CCE4A2F-811E-4F6E-9639-74C974CC7DED}"
 	ProjectSection(SolutionItems) = preProject
-		Doc\ATTRIBUTION.md = Doc\ATTRIBUTION.md
+		Docs\ATTRIBUTION.md = Docs\ATTRIBUTION.md
 		Building.md = Building.md
 	EndProjectSection
 EndProject

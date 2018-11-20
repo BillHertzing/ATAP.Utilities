@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Doc\" />
+    <Folder Include="Docs\" />
   </ItemGroup>
   
     <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->

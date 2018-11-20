@@ -1,0 +1,140 @@
+{
+  "homepages": [],
+  "source_base_path": "C:/Dropbox/whertzing/GitHub/ATAP.Utilities/ATAP.Utilities.BuildTooling.CSharp",
+  "xrefmap": "xrefmap.yml",
+  "files": [
+    {
+      "type": "Conceptual",
+      "source_relative_path": "DocSrc/ReadMeDocSrc.md",
+      "output": {
+        ".html": {
+          "relative_path": "DocSrc/ReadMeDocSrc.html",
+          "hash": "tettMGi7F3osXtrmJNZ73g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "ReadMe.md",
+      "output": {
+        ".html": {
+          "relative_path": "ReadMe.html",
+          "hash": "iC4FTkJDePjnh1hGu+zWTQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.GetVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.BuildTooling.GetVersion.html",
+          "hash": "CpQoPLrzj7O/EfDkMVFEEA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.SetVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.BuildTooling.SetVersion.html",
+          "hash": "wYNM5WuRctx7HwjGqsn/uA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.UpdateVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.BuildTooling.UpdateVersion.html",
+          "hash": "qayw1Wm8FenIQqxGjobjtQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.Utilities.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.BuildTooling.Utilities.html",
+          "hash": "MEhycPJre/rddOUi6Lcwow=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.BuildTooling.html",
+          "hash": "lonkw4NVxwZLQPX/F5aBtQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "obj/temp/docfx/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "toc.html",
+          "hash": "CM6vihOQfxvKWk6CZhPCZQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    }
+  ],
+  "incremental_info": [
+    {
+      "status": {
+        "can_incremental": true,
+        "incrementalPhase": "build"
+      },
+      "processors": {
+        "TocDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build"
+        },
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build"
+        },
+        "ConceptualDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build"
+        }
+      }
+    },
+    {
+      "status": {
+        "can_incremental": true,
+        "details": "Can support incremental post processing.",
+        "incrementalPhase": "postProcessing"
+      },
+      "processors": {}
+    }
+  ],
+  "version_info": {},
+  "groups": [
+    {
+      "xrefmap": "xrefmap.yml"
+    }
+  ]
+}

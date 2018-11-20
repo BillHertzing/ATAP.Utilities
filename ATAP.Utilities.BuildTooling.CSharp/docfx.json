@@ -9,7 +9,10 @@
           "src": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\ATAP.Utilities.BuildTooling.CSharp"
         }
       ],
-      "dest": "api",
+      "dest": "obj/temp/docfx",
+      "properties": {
+        "TargetFramework": "netstandard2.0"
+      },
       "disableGitFeatures": false,
       "disableDefaultFilter": false
     }
@@ -18,30 +21,36 @@
     "content": [
       {
         "files": [
-          "api/**.yml",
-          "api/index.md"
+          "**.yml",
+          "index.md"
+        ],
+        "src": "obj/temp/docfx"
+      },
+      {
+        "files": [
+          "*.md"
         ]
       },
       {
         "files": [
-          "articles/**.md",
-          "articles/**/toc.yml",
-          "toc.yml",
-          "*.md"
+          "DocSrc/articles/**.md",
+          "DocSrc/articles/**/toc.yml",
+          "DocSrc/toc.yml",
+          "DocSrc/*.md"
         ]
       }
     ],
     "resource": [
       {
         "files": [
-          "images/**"
+          "DocSrc/images/**"
         ]
       }
     ],
     "overwrite": [
       {
         "files": [
-          "apidoc/**.md"
+          "obj/temp/docfx/**.md"
         ],
         "exclude": [
           "obj/**",
@@ -49,7 +58,7 @@
         ]
       }
     ],
-    "dest": "_site",
+    "dest": "Docs",
     "globalMetadataFiles": [],
     "fileMetadataFiles": [],
     "template": [

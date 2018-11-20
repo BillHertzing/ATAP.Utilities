@@ -5,7 +5,7 @@ Collection of projects/assemblies for various helper classes
 ---
 ##BuildTooling.CSharp [Detailed Doc](./ATAP.Utilities.BuildTooling.CSharp/Doc/ReadMe.md)
 
-doxfx output (./ATAP.Utilities.BuildTooling.CSharp/_site/index.html)
+doxfx output (ATAP.Utilities.BuildTooling.CSharp/_site/index.html)
 
 Additional tasks and targets for MSBuild extensions
     * additional Targets file

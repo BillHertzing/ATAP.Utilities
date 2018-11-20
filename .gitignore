@@ -8,6 +8,10 @@
 .build/
 # Lock files used when incrementing AssemblyVersions
 *.lock
+# MSBuild Build logging log file
+*.binlog
+# DocFx Documentaion generation log file
+/ATAP.Utilities.AutoDoc/log.txt
 
 # User-specific files
 *.suo
@@ -292,4 +296,3 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
-*.binlog

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)\.build\</SolutionBuildToolsBaseDir>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
@@ -38,8 +38,11 @@
   <ItemGroup>
     <Folder Include="tools\" />
   </ItemGroup>
-
   <ItemGroup>
+    <Folder Include="Doc\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Doc\ReadMe.md" />
     <Content Include="extend-corecompile.proj" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

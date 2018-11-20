@@ -33,9 +33,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="MSBuildTasks" Version="1.5.0.235" />
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="tools\" />
   </ItemGroup>
   <ItemGroup>

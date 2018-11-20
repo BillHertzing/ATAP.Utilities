@@ -6,7 +6,7 @@ using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
 namespace ATAP.Utilities.BuildTooling {
-    /// <summary>
+  /// <summary>
   /// The static class Utilities contains the majority of the executable code. It is possible for one static function to refer to another static function.
   /// however, it is not possible for a class that derives from Task to call another Task-derived function. if you attempt to call an Execute method on a Task class, it produces a run-time error that the Task has not been initialized.
   /// So the design philosophy is to have each Task-derived class call into a static function of the same name.
@@ -23,7 +23,22 @@ namespace ATAP.Utilities.BuildTooling {
       const string strReAssemblyInformationalVersion = @"\[assembly\:\s*AssemblyInformationalVersion(?:Attribute)*\(""\s*(?<PackageVersion>.+)\s*""\s*\)";
       const string strReAssemblyVersion = @"\[assembly\:\s*AssemblyVersion(?:Attribute)*\(""\s*(?<MajorVersion>\d+)\.(?<MinorVersion>\d+)\.(?<PatchVersion>\d+).*""\s*\)";
 
-      public static bool GetVersion(TaskLoggingHelper log, string versionFile, string aTAPBuildToolingConfiguration, string aTAPBuildToolingDebugVerbosity, out int? build, out int? majorVersion, out int? minorVersion, out int? patchVersion, out string packageVersion, out int? revision) {
+    /// <summary>
+    /// Read versionFile and return the current values of the out parameters
+    /// aTAPBuildToolingConfiguration and aTAPBuildToolingDebugVerbosity control the amount of logging to perform whne the function is called
+    /// log is a logger object
+    /// </summary>
+    /// <param name="log">an ILog object</param>
+    /// <param name="versionFile">full path to a file containing assembly information</param>
+    /// <param name="aTAPBuildToolingConfiguration"></param>
+    /// <param name="aTAPBuildToolingDebugVerbosity"></param>
+    /// <param name="build"></param>
+    /// <param name="majorVersion"></param>
+    /// <param name="minorVersion"></param>
+    /// <param name="patchVersion"></param>
+    /// <param name="packageVersion"></param>
+    /// <param name="revision"></param>
+    public static bool GetVersion(TaskLoggingHelper log, string versionFile, string aTAPBuildToolingConfiguration, string aTAPBuildToolingDebugVerbosity, out int? build, out int? majorVersion, out int? minorVersion, out int? patchVersion, out string packageVersion, out int? revision) {
           // Log the method entry if Debug and Trace
           if(string.Equals(aTAPBuildToolingConfiguration, "Debug", StringComparison.OrdinalIgnoreCase)
               && string.Equals(aTAPBuildToolingDebugVerbosity, "Trace", StringComparison.OrdinalIgnoreCase)) {
@@ -130,7 +145,18 @@ namespace ATAP.Utilities.BuildTooling {
           return str;
       }
 
-      public static bool SetVersion(TaskLoggingHelper log, string versionFile, string aTAPBuildToolingConfiguration, string aTAPBuildToolingDebugVerbosity, int build, int majorVersion, int minorVersion, int patchVersion, string packageVersion, int revision) {
+    /// <summary></summary>
+    /// <param name="log"></param>
+    /// <param name="versionFile"></param>
+    /// <param name="aTAPBuildToolingConfiguration"></param>
+    /// <param name="aTAPBuildToolingDebugVerbosity"></param>
+    /// <param name="build"></param>
+    /// <param name="majorVersion"></param>
+    /// <param name="minorVersion"></param>
+    /// <param name="patchVersion"></param>
+    /// <param name="packageVersion"></param>
+    /// <param name="revision"></param>
+    public static bool SetVersion(TaskLoggingHelper log, string versionFile, string aTAPBuildToolingConfiguration, string aTAPBuildToolingDebugVerbosity, int build, int majorVersion, int minorVersion, int patchVersion, string packageVersion, int revision) {
           // Log the method entry if Debug and Trace
           if(string.Equals(aTAPBuildToolingConfiguration, "Debug", StringComparison.OrdinalIgnoreCase)
               && string.Equals(aTAPBuildToolingDebugVerbosity, "Trace", StringComparison.OrdinalIgnoreCase)) {
@@ -202,7 +228,18 @@ namespace ATAP.Utilities.BuildTooling {
           return true;
       }
 
-      public static bool TryParsePackageVersion(TaskLoggingHelper log, string stringPackageVersion, string aTAPBuildToolingConfiguration, string aTAPBuildToolingDebugVerbosity, out bool? isPublicReleasePackage, out int? major, out int? minor, out int? patch, out string label, out int? labelCount) {
+    /// <summary></summary>
+    /// <param name="log"></param>
+    /// <param name="stringPackageVersion"></param>
+    /// <param name="aTAPBuildToolingConfiguration"></param>
+    /// <param name="aTAPBuildToolingDebugVerbosity"></param>
+    /// <param name="isPublicReleasePackage"></param>
+    /// <param name="major"></param>
+    /// <param name="minor"></param>
+    /// <param name="patch"></param>
+    /// <param name="label"></param>
+    /// <param name="labelCount"></param>
+    public static bool TryParsePackageVersion(TaskLoggingHelper log, string stringPackageVersion, string aTAPBuildToolingConfiguration, string aTAPBuildToolingDebugVerbosity, out bool? isPublicReleasePackage, out int? major, out int? minor, out int? patch, out string label, out int? labelCount) {
           // Log the method entry if Debug and Trace
           if(string.Equals(aTAPBuildToolingConfiguration, "Debug", StringComparison.OrdinalIgnoreCase)
               && string.Equals(aTAPBuildToolingDebugVerbosity, "Trace", StringComparison.OrdinalIgnoreCase)) {
@@ -252,8 +289,10 @@ namespace ATAP.Utilities.BuildTooling {
       }
   }
 
-    public class GetVersion : Task {
-        public override bool Execute() {
+  /// <summary></summary>
+  public class GetVersion : Task {
+    /// <summary></summary>
+    public override bool Execute() {
             // Log the method entry if Debug and Trace
             if(string.Equals(ATAPBuildToolingConfiguration, "Debug", StringComparison.OrdinalIgnoreCase)
                 && string.Equals(ATAPBuildToolingDebugVerbosity, "Trace", StringComparison.OrdinalIgnoreCase)) {
@@ -290,31 +329,37 @@ namespace ATAP.Utilities.BuildTooling {
             return true;
         }
 
+    /// <summary>Allowable  values are Dev or Production</summary>
     [Required]
     public string ATAPBuildToolingConfiguration {
         get;
         set;
     }
+    /// <summary></summary>
     [Required]
     public string ATAPBuildToolingDebugVerbosity {
         get;
         set;
     }
+    /// <summary></summary>
     [Output]
     public long Build {
         get;
         set;
     }
+    /// <summary></summary>
     [Output]
     public int MajorVersion {
         get;
         set;
     }
+    /// <summary></summary>
     [Output]
     public int MinorVersion {
         get;
         set;
     }
+    /// <summary></summary>
     [Output]
     public string PackageVersion {
         get;
@@ -342,7 +387,8 @@ namespace ATAP.Utilities.BuildTooling {
   /// </summary>
   /// <seealso cref="Task" />
   public class UpdateVersion : Task {
-      public override bool Execute() {
+    /// <summary></summary>
+    public override bool Execute() {
           // Log the method entry if Debug and Trace
           if(string.Equals(ATAPBuildToolingConfiguration, "Debug", StringComparison.OrdinalIgnoreCase)
               && string.Equals(ATAPBuildToolingDebugVerbosity, "Trace", StringComparison.OrdinalIgnoreCase)) {
@@ -448,11 +494,13 @@ namespace ATAP.Utilities.BuildTooling {
           return setVersionResult;
       }
 
+    /// <summary></summary>
     [Required]
     public string ATAPBuildToolingConfiguration {
         get;
         set;
     }
+    /// <summary>string corresponding to an allowable logging level, e.g. Trace, Debug, Error</summary>
     [Required]
     public string ATAPBuildToolingDebugVerbosity {
         get;
@@ -494,11 +542,13 @@ namespace ATAP.Utilities.BuildTooling {
         get;
         set;
     }
+    /// <summary></summary>
     [Output]
     public int Revision {
         get;
         set;
     }
+    /// <summary></summary>
     [Required]
     public string VersionFile {
         get;
@@ -506,7 +556,8 @@ namespace ATAP.Utilities.BuildTooling {
     }
   }
 
-    public class SetVersion : Task {
+  /// <summary></summary>
+  public class SetVersion : Task {
         public override bool Execute() {
             bool setVersionResult = Utilities.SetVersion(Log,
                                                          VersionFile,

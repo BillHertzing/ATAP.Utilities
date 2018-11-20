@@ -3,16 +3,9 @@
 #
 [CmdletBinding(SupportsShouldProcess=$true)]
 
+# The BuildTooling Module contains all PowerShell code that assists MSBild or Visual Studio tasks
+# The standard place to find it is from the $solutiondir/.build/TBD
+Import-Module ATAP.Utilities.BuildTooling.psm1
 
-
-Function Remove_VSComponentCache {
-    [CmdletBinding(SupportsShouldProcess=$true)]
-
-	write-verbose "starting Remove_VSComponentCache"
-	write-verbose "Removing ($ENV:\AppData)\Local\Microsoft\VisualStudio\15.0\ComponentModelCache"
-			if ($PSCmdlet.ShouldProcess("($ENV:\AppData)\Local\Microsoft\VisualStudio\15.0\ComponentModelCache",'Delete')) {
-				write-host "really would delete ($ENV:\AppData)\Local\Microsoft\VisualStudio\15.0\ComponentModelCache"
-		}
-}
-
+# Call the function of the same name in the module.
 Remove_VSComponentCache 

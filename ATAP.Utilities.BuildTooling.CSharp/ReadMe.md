@@ -8,7 +8,8 @@ This is a .targets file that can be imported into a project, either by inclusion
 
 ### BeforeCompile Tasks
 
-<Stoping point>
+---Stoping point---
+
 Additional tasks and targets for MSBuild extensions
     * additional Targets file
         * Additional BeforeCompile Tasks to evaluate a project's inputs and outputs

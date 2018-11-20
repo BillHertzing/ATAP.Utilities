@@ -5,8 +5,15 @@ Collection of projects/assemblies for various helper classes
 ---
 ##BuildTooling.CSharp [Detailed Doc](./ATAP.Utilities.BuildTooling.CSharp/Doc/ReadMe.md)
 
-doxfx output (ATAP.Utilities.BuildTooling.CSharp/_site/index.html)
-
+[try 1](ATAP.Utilities.BuildTooling.CSharp/Readme.md)
+[try 2](ATAP.Utilities.BuildTooling.CSharp/Docs/index.md)
+[try 5](ATAP.Utilities.BuildTooling.CSharp/Docs/index.html)
+[try 3](ATAP.Utilities.BuildTooling.CSharp/Docs/Readme.md)
+[try 4](ATAP.Utilities.BuildTooling.CSharp/Docs/Readme.html)
+[try 5](ATAP.Utilities.BuildTooling.CSharp/Docs/DocSrc/ReadmeDocSrc.html)
+[try 6](ATAP.Utilities.BuildTooling.CSharp/Docs/DocSrc/ReadmeDocSrc.md)
+[try 7](ATAP.Utilities.BuildTooling.CSharp/Docs/DocSrc/Readme.html)
+[try 8](ATAP.Utilities.BuildTooling.CSharp/Docs/DocSrc/Readme.md)
 Additional tasks and targets for MSBuild extensions
     * additional Targets file
         * Additional BeforeCompile Tasks to evaluate a project's inputs and outputs

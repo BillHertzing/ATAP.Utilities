@@ -25,4 +25,10 @@
     <ProjectReference Include="..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
+    <PackageReference Include="docfx">
+      <Version>2.40.2</Version>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>

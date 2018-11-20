@@ -29,5 +29,11 @@
     <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Models\ATAP.Utilities.CryptoMiner.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Models\ATAP.Utilities.CryptoCoin.Models.csproj" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
+    <PackageReference Include="docfx">
+      <Version>2.40.2</Version>
+    </PackageReference>
+  </ItemGroup>
  
 </Project>

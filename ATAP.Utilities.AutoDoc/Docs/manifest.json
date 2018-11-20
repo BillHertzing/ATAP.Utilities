@@ -1,0 +1,3107 @@
+{
+  "homepages": [],
+  "source_base_path": "C:/Dropbox/whertzing/GitHub/ATAP.Utilities/ATAP.Utilities.AutoDoc",
+  "xrefmap": "xrefmap.yml",
+  "files": [
+    {
+      "type": "Conceptual",
+      "source_relative_path": "ReadMe.md",
+      "output": {
+        ".html": {
+          "relative_path": "ReadMe.html",
+          "hash": "o7B6F4mNgpSc7DnyPyVfNg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "InvalidFileLink"
+      ],
+      "type": "Conceptual",
+      "source_relative_path": "RepositoryReadMe.md",
+      "output": {
+        ".html": {
+          "relative_path": "RepositoryReadMe.html",
+          "hash": "ej8GRlHk6L4cZyf5FCjUIA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.GetVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.BuildTooling.GetVersion.html",
+          "hash": "CpQoPLrzj7O/EfDkMVFEEA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.SetVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.BuildTooling.SetVersion.html",
+          "hash": "wYNM5WuRctx7HwjGqsn/uA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.UpdateVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.BuildTooling.UpdateVersion.html",
+          "hash": "qayw1Wm8FenIQqxGjobjtQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.Utilities.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.BuildTooling.Utilities.html",
+          "hash": "MEhycPJre/rddOUi6Lcwow=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.BuildTooling.html",
+          "hash": "lonkw4NVxwZLQPX/F5aBtQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Configuration.DefaultConfigurationSettings.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Configuration.DefaultConfigurationSettings.html",
+          "hash": "PEsl4QERVnTxgJKu2UIgjw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Configuration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Configuration.html",
+          "hash": "dJ8WgRWUd18rHsaW8bfOfQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Enumerations.CPUMaker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Enumerations.CPUMaker.html",
+          "hash": "SgCjp9WwTS5+VODGVX1y0A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Enumerations.GPUMaker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Enumerations.GPUMaker.html",
+          "hash": "KE8a6LPGIJtd3KvEQCAxrg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Enumerations.MainBoardMaker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Enumerations.MainBoardMaker.html",
+          "hash": "aVJeJCKkRvxWbK+NGCKoGw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Enumerations.VideoCardMaker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Enumerations.VideoCardMaker.html",
+          "hash": "8EdxZEUGBdlcsNKji94ypQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Enumerations.VideoCardMemoryMaker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Enumerations.VideoCardMemoryMaker.html",
+          "hash": "/AvE6TTY/91EWRe5plqlSw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Enumerations.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Enumerations.html",
+          "hash": "69XiQ1f1auTSb++PxXyAWw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Extensions.Extensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Extensions.Extensions.html",
+          "hash": "4JyDfQlPwUxQ3t9I/jrk/A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Extensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Extensions.html",
+          "hash": "iCEVSBnOZY+zOfPZCW042A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.CPU.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.CPU.html",
+          "hash": "WJ72mt/xGZFYQppCMTCitw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerHardware.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerHardware.html",
+          "hash": "1eoc6heUaNKz5xljf3E3mQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerInventory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerInventory.html",
+          "hash": "cqtEz4xUdh/9x7v4lXK5dg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerProcess.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerProcess.html",
+          "hash": "4AZwaCpkClYiSS62lCgxwQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerProcesses.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerProcesses.html",
+          "hash": "NLm8joGrNKuBJd9pSa2dUg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerSoftware.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerSoftware.html",
+          "hash": "kF7osmPjalf1huMP24IgHg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerSoftwareDriver.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerSoftwareDriver.html",
+          "hash": "3KkIfKi7EFhqCKqN/JnP4Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerSoftwareProgram.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerSoftwareProgram.html",
+          "hash": "fCaZRpYrcZTnmHukl9WCOQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.IComputerSoftwareProgram.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.IComputerSoftwareProgram.html",
+          "hash": "DLUx0mlMMR2lbJJrtQT/3g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.IPowerConsumption.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.IPowerConsumption.html",
+          "hash": "OJUulv0XlWibWEmJBHQWfw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ITempAndFan.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ITempAndFan.html",
+          "hash": "Q3iFFHvZjIC8KhTyBWdOnQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.MainBoard.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.MainBoard.html",
+          "hash": "HIOpoe5bo8Sv/yy0LEtoBg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.PowerConsumption.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.PowerConsumption.html",
+          "hash": "UluNvBIyK7sCVPjYVXA3UA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.PowerConsumptionConverter.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.PowerConsumptionConverter.html",
+          "hash": "1SeKqc4XAxP8mC8QPeM1nw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.TempAndFan.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.TempAndFan.html",
+          "hash": "QZRPOjQbi8m81gTNaJQ0IQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.VideoCard.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.VideoCard.html",
+          "hash": "bOBgsRnk5/apQkYcqfaDOw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.VideoCardDiscriminatingCharacteristics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.VideoCardDiscriminatingCharacteristics.html",
+          "hash": "D+nFnz57/Ab6Q7jBAbx6Ww=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.VideoCardSensorData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.VideoCardSensorData.html",
+          "hash": "3kVjkhAilaDK1Jad1p1Nrw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.VideoCardTuningParameters.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.VideoCardTuningParameters.html",
+          "hash": "lldnLXflETAMyZeJyPJUzw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.VideoCardsKnown.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.VideoCardsKnown.html",
+          "hash": "r4OVHgKmMHzeszpS9Bm2KA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.Models.html",
+          "hash": "2vJwrlwmentbU/qgBKuEGQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.ComputerHardwareUnitTests001.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.ComputerHardwareUnitTests001.html",
+          "hash": "w8DXpnexfFe1JEmfm1PfGg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.ComputerInventoryUnitTests001.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.ComputerInventoryUnitTests001.html",
+          "hash": "UiZ339sr3/tqkteLh7qbcA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.Fixture.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.Fixture.html",
+          "hash": "v8dN0id4glCx5+PcDDdVeQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.YAML.ComputerHardwareUnitTestsYAML.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.YAML.ComputerHardwareUnitTestsYAML.html",
+          "hash": "sqE48ay91gCA2fpJIpCz8w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.YAML.ComputerInventoryUnitTestsYAML.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.YAML.ComputerInventoryUnitTestsYAML.html",
+          "hash": "4d83RIPz04Oo/aBnkNkcuQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.YAML.Fixture.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.YAML.Fixture.html",
+          "hash": "0HLV0I+yQnCNW4OLRqdxYg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.YAML.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.YAML.html",
+          "hash": "VAe6QqCvjOxp38OwRvuLgQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.html",
+          "hash": "FkUQIgkIAwhn2AloLBilIA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.AUD.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.AUD.html",
+          "hash": "51YPYrpHVbfs1CVrTTqGBw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.BRL.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.BRL.html",
+          "hash": "Wavwj2LlqOmo7LRHD7pU4Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.CAD.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.CAD.html",
+          "hash": "1+F4YeEQio3UisNv3ArJxw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.CHF.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.CHF.html",
+          "hash": "k3W3QqgwQIcGCrGceQLCfg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.CLP.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.CLP.html",
+          "hash": "OxAhI1SKrSVVDCBYAcnrRw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.CNY.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.CNY.html",
+          "hash": "uO/wWlDV2cMVPvRQhK8czw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.ChainInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.ChainInfo.html",
+          "hash": "+ghwZq6tkl5XBZ58AMWOIw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.DKK.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.DKK.html",
+          "hash": "MgLxQ/LSjkmOXf9xd6QNUA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.EUR.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.EUR.html",
+          "hash": "xjR2Gua3eGCfFCwatQZLuQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.Algorithms.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.Algorithms.html",
+          "hash": "vg9DaSKLA9SAADtYIAfMiw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.Coin.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.Coin.html",
+          "hash": "aWLd5CuIkBnrG+tymWDQyA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Algorithm.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Algorithm.html",
+          "hash": "NDqvSywIzumTNR7eYtBU6w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Proof.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Proof.html",
+          "hash": "Bg69KWe/ZofXy5t8x+YgGg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Symbol.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Symbol.html",
+          "hash": "TA43sfGoe1vrMT+mSXSbiw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.html",
+          "hash": "HV6c+PYmsQBaLgHdhAXHMA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.Proofs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.Proofs.html",
+          "hash": "Jbk5BO4j42C3qXEorUsMIA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.html",
+          "hash": "/z+a6wqsKsC80Xki/Z2FGA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Extensions.CryptoCoinNetworkInfoBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Extensions.CryptoCoinNetworkInfoBuilder.html",
+          "hash": "IMkwoFyWGIvLQfy5RTzVvA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Extensions.FeesConverter.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Extensions.FeesConverter.html",
+          "hash": "DR/untK3jzy04HFq5MaeKQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Extensions.ICryptoCoinNetworkInfoBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Extensions.ICryptoCoinNetworkInfoBuilder.html",
+          "hash": "o2LpGlsBEv2Bu48dZvGYYg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Extensions.InterestingCoins.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Extensions.InterestingCoins.html",
+          "hash": "q5GV5Z0OMOm5ClAq7vBSng=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Extensions.RigConfigBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Extensions.RigConfigBuilder.html",
+          "hash": "4j7JQjFTWaZBBAdMmvbdSw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Extensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Extensions.html",
+          "hash": "oRGA885mKmhWkQmIC9JuVw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.GBP.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.GBP.html",
+          "hash": "DU3KDM/b9yZaMfhmIbUJkw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.HKD.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.HKD.html",
+          "hash": "ZuCJIbI1GAn00v0q6bgWDA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.ISK.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.ISK.html",
+          "hash": "1WsVC7HgdeciCG/j/6b+7w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.JPY.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.JPY.html",
+          "hash": "wuz1dCCRsX7l+uhdw0MemQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.KRW.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.KRW.html",
+          "hash": "FU50cecXADTGix/lHErNLA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.AverageShareOfBlockRewardDT.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Models.AverageShareOfBlockRewardDT.html",
+          "hash": "ElydgtExlT3fP80yOYcDZw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.BlockReward.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Models.BlockReward.html",
+          "hash": "r4/6QZusgT6Gshswhwyf4g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.CryptoCoinNetworkInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Models.CryptoCoinNetworkInfo.html",
+          "hash": "0Ky3hZCyJQutPOXB3yeH2Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.Fees.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Models.Fees.html",
+          "hash": "eHmQN5wml7ef3pmkhtCJgA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.HashRate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Models.HashRate.html",
+          "hash": "bXQdoacl3q5/+4KDLi2RNw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.IAverageShareOfBlockRewardDT.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Models.IAverageShareOfBlockRewardDT.html",
+          "hash": "X0DIudSo18E8MQGE2GzHzQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.ICryptoCoinNetworkInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Models.ICryptoCoinNetworkInfo.html",
+          "hash": "SqdbR8cAz+ubf2Nvo0dCbg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.IFees.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Models.IFees.html",
+          "hash": "MuzAMa14XFl0y69AfqKCWA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.IHashRatesDict.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Models.IHashRatesDict.html",
+          "hash": "D6iIvyPo/+M7am7f4EXgPA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.IROAverageShareOfBlockRewardDT.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Models.IROAverageShareOfBlockRewardDT.html",
+          "hash": "LFzJ90O7wDRJUEwg7MLTKw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.Models.html",
+          "hash": "VOcIjsdkfmMkYZ7XUP4a/g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.NZD.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.NZD.html",
+          "hash": "hOHJWWyKM3EtIqW27JwvNA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.PLN.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.PLN.html",
+          "hash": "tp/ONJe2lWM5NZ49f6ndng=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.RUB.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.RUB.html",
+          "hash": "rGJz95ovVrNMw/5NsPO17w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.SEK.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.SEK.html",
+          "hash": "gOAT6FuOTBZgV++SVzAVVg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.SGD.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.SGD.html",
+          "hash": "QRCt+Ice3egrMbZxJ7hnWQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.THB.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.THB.html",
+          "hash": "/4jZS+HIvCpQbf5Ot3TIdA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.TWD.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.TWD.html",
+          "hash": "YHexereigvGosG7NVAGwJQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.TickerInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.TickerInfo.html",
+          "hash": "zwnwJXu7akw9TsHpcRjMaA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.USD.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.USD.html",
+          "hash": "c+K2cAq+2nYUhTFZfTt7NA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.UnitTests.CryptoCoinUnitTests001.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.UnitTests.CryptoCoinUnitTests001.html",
+          "hash": "Ki6E8xZCE8x1LL8MnI41Fg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.UnitTests.Fixture.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.UnitTests.Fixture.html",
+          "hash": "Ji0EnxzfswELZGCaiehTsQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.UnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.UnitTests.html",
+          "hash": "wFqeKYwOzlQqT0xgFPTrWw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.blockChainInfo_ticker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.blockChainInfo_ticker.html",
+          "hash": "1ado5UnWlUqWbO3ULMkQeQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.chain_so_api_v2_get_info.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.chain_so_api_v2_get_info.html",
+          "hash": "194ywgZRdT77Bc6YJKsjHA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.chain_so_api_v2_get_info_Data.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.chain_so_api_v2_get_info_Data.html",
+          "hash": "pIhtcienyxMHnXiA3OecMA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoCoin.html",
+          "hash": "POchsfyZ41I4FJvLyYDmAw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Enumerations.Class1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Enumerations.Class1.html",
+          "hash": "PJka8wcA37HHXJW4h5Qgng=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Enumerations.MinerSWE.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Enumerations.MinerSWE.html",
+          "hash": "Ov0jvJVjU+w++FMT8JwFCg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Enumerations.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Enumerations.html",
+          "hash": "3c8piQA2I6Drsk7UI7aj2g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Extensions.Extensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Extensions.Extensions.html",
+          "hash": "H29kXsv3my8yO+lpFdhyUg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Extensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Extensions.html",
+          "hash": "4ZKAI2EH7OqYbFTUTHJUPw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreETHDualMinerProcess.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreETHDualMinerProcess.html",
+          "hash": "n+0VtvQpKWo/avPe/7sk0A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreETHDualMinerSW.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreETHDualMinerSW.html",
+          "hash": "Cka7yFb0cXptOP1FZ2Jf/g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerProcess.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerProcess.html",
+          "hash": "mCRiLrZ/BN3X13BhqK06hg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerSW.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerSW.html",
+          "hash": "P3RedH80dUyTPlwhzZlzzw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerStatus.html",
+          "hash": "QSnxkRdUZJgf7gKzX9nDAw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerStatusDetails.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerStatusDetails.html",
+          "hash": "KMGWNYx6fj1m/e3ktKvxdQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreZECMinerProcess.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreZECMinerProcess.html",
+          "hash": "KfuYSOa4nuaTCcSSnUgBNw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreZECMinerSW.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreZECMinerSW.html",
+          "hash": "XzRTehlZXYxq/DxjUnfw+Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.IMinerProcess.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.IMinerProcess.html",
+          "hash": "FQCzdmz4CyukF8EQjhLqMw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.IMinerSWBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.IMinerSWBuilder.html",
+          "hash": "0HNdhETTMv170MCPhCbw9Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.IMinerStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.IMinerStatus.html",
+          "hash": "25wcpyvo4h3CbZgDpo2XLA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.IMinerStatusDetails.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.IMinerStatusDetails.html",
+          "hash": "ArrzM6jOL0+EYbHWVsC1AA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.IRigConfig.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.IRigConfig.html",
+          "hash": "yRoiMscmWr8mcOO/Az8Wnw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.IRigConfigBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.IRigConfigBuilder.html",
+          "hash": "FmWT8Bi1rkwxr8M55uvtGA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ITuneMinerGPUsResult.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ITuneMinerGPUsResult.html",
+          "hash": "gw6yni8en9GKPUIle34YNA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerConfigSettings.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerConfigSettings.html",
+          "hash": "wP5mJ6gRkb0jkB4n7CuObA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerGPU.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerGPU.html",
+          "hash": "oQ8TKudK33RrHdkIrmwQ1w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerProcess.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerProcess.html",
+          "hash": "Q1xiqCdWbNt4qcXZajGV8g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerSW.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerSW.html",
+          "hash": "j3LFyibkoz74HlgeQ1nLBw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerSWToMinerGPU.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerSWToMinerGPU.html",
+          "hash": "1NBr3k1avXfDCGLgLBx/2w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerStatus.html",
+          "hash": "De53H4sFb9dEdp0oGeir6g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerStatusDetails.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerStatusDetails.html",
+          "hash": "Rk43kAhCmFnnGo1BDG/rMg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.RigConfig.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.RigConfig.html",
+          "hash": "ubPgPrXBv6ptvAxQ6WL6LQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.TuneMinerGPUsResult.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.TuneMinerGPUsResult.html",
+          "hash": "r4Rc90YSz6Ib2j43OmoPHQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.Models.html",
+          "hash": "9ZwoAMxlaANwgBx02iY3RQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.UnitTests.ClaymoreETHDualMinerFixture.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.UnitTests.ClaymoreETHDualMinerFixture.html",
+          "hash": "EW7GAmRBUKbdxh84Qve+bg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.UnitTests.ClaymoreMinerProcessUnitTests001.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.UnitTests.ClaymoreMinerProcessUnitTests001.html",
+          "hash": "q3pp0FnNTEYCq++ddYZ5fw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.UnitTests.CryptoCoinUnitTests001.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.UnitTests.CryptoCoinUnitTests001.html",
+          "hash": "k1Ei9LnQ+U3LNFfNh8D6Lw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.UnitTests.Fixture.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.UnitTests.Fixture.html",
+          "hash": "kRV5Vrzrwv6UZMSZl+/Rsg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.UnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.CryptoMiner.UnitTests.html",
+          "hash": "Fo7J/KGPREXFgR3NqegU6g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.DateTime.UnitTests.Class1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.DateTime.UnitTests.Class1.html",
+          "hash": "mmo8vXqcRT28zeTfYZ/TsQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.DateTime.UnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.DateTime.UnitTests.html",
+          "hash": "85sSpzVwusFWzA0mBaelAg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.DateTime.Utilities.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.DateTime.Utilities.html",
+          "hash": "83DBTBRtppd1NMx7hi2kBQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.DateTime.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.DateTime.html",
+          "hash": "zvJiTCfn4l1xctc+52aF4Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Enumeration.UnitTests.Class1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Enumeration.UnitTests.Class1.html",
+          "hash": "Efo1BLQ9mqLCduGUNcTDlg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Enumeration.UnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Enumeration.UnitTests.html",
+          "hash": "Tz1hbz2M/JxRZAbEmYv6zA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Enumeration.Utilities.IAttribute-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Enumeration.Utilities.IAttribute-1.html",
+          "hash": "pOa9Od/Ytr+cUzDgz9zVfA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Enumeration.Utilities.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Enumeration.Utilities.html",
+          "hash": "gPqjC7Pw+elI82y+oG2dhw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Enumeration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Enumeration.html",
+          "hash": "malE/392WAm1crGTqj/lPQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.FileSystem.Class1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.FileSystem.Class1.html",
+          "hash": "apO3noSyTD9tG8ZkS8AvrQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.FileSystem.UnitTests.Class1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.FileSystem.UnitTests.Class1.html",
+          "hash": "JAbRlKbShj6WTV7OiqLfjw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.FileSystem.UnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.FileSystem.UnitTests.html",
+          "hash": "bvzfMAJMnsDfvkSZoP2uEQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.FileSystem.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.FileSystem.html",
+          "hash": "wGm50cgUrHSMzKSx82lI5Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.Gateway.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.Gateway.html",
+          "hash": "KajiUUUW0YQhnYuNuqVVqQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.GatewayBuilder.html",
+          "hash": "Ywat2Tifmbyy26nv2WBjlQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.GatewayEntry.html",
+          "hash": "7eCfuPzC44bod9nphvRZkg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayEntryBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.GatewayEntryBuilder.html",
+          "hash": "gyfLIp6hxO0gY8iQ2ZV4DA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayEntryMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.GatewayEntryMonitor.html",
+          "hash": "QzDx5fYw67fW4bsl2EdB9g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html",
+          "hash": "t6Cpog69EyJgEG05C/4tqQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.GatewayMonitor.html",
+          "hash": "g9YikGWbfutkG3jE0oLbnw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.GatewayMonitorBuilder.html",
+          "hash": "PvEzBN/B4S09leS1ZQLTmA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayMonitors.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.GatewayMonitors.html",
+          "hash": "odOhb83kxDeo/6okpIa+sQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayMonitorsBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.GatewayMonitorsBuilder.html",
+          "hash": "BAlXWiHbSwB8UOurZ44WMw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.Gateways.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.Gateways.html",
+          "hash": "f+UWyjlIT6OJkuCr8qhTaQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GenericWebGet.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.GenericWebGet.html",
+          "hash": "dMBEaaOfRuC00vjsmQ9KbQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.HttpRequestMessageBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.HttpRequestMessageBuilder.html",
+          "hash": "mBX7KqSyy6HEAYvpF9bYBw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGateway.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.IGateway.html",
+          "hash": "6sozrPAPwKZktrXGIJOnsw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.IGatewayBuilder.html",
+          "hash": "iJZu48FkDEOcA3/hoDUXuw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.IGatewayEntry.html",
+          "hash": "gV/IqO183KPUAiH1d9toKg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayEntryBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.IGatewayEntryBuilder.html",
+          "hash": "lXQltrhxR4TD6bmm15CHKQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayEntryMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.IGatewayEntryMonitor.html",
+          "hash": "ct9F3TLzBdrYp67xwRvtpQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.html",
+          "hash": "aMgcOtaq49+c7aVXKHKiDA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.IGatewayMonitor.html",
+          "hash": "mFyyKB4i7ups+NGBDOGACA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.IGatewayMonitorBuilder.html",
+          "hash": "w+CXT56W8wyMI4IoDaz4aA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayMonitors.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.IGatewayMonitors.html",
+          "hash": "/cPTEXIK/Gt9MjkioStDUQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayMonitorsBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.IGatewayMonitorsBuilder.html",
+          "hash": "hLwu7iElbQeID2D7tub19Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGateways.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.IGateways.html",
+          "hash": "XnbKUGCcG+u/bSzODc8F4g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IHttpRequestMessageBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.IHttpRequestMessageBuilder.html",
+          "hash": "DJRx9FYCXXEv0TZMfgP1GA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IMultiGatewaysBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.IMultiGatewaysBuilder.html",
+          "hash": "Xb8+BWVOIraozVwgogbcjQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.MultiGatewaysBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.MultiGatewaysBuilder.html",
+          "hash": "x3U3No27NyZBoOf2Ucmz2w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.SingletonHttpClient.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.SingletonHttpClient.html",
+          "hash": "9c1dfr7TZksDHm86vwnXEw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.UnitTests.Fixture.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.UnitTests.Fixture.html",
+          "hash": "adkADYK0lj3Hoh0nUSq0Bg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.UnitTests.HttpUnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.UnitTests.HttpUnitTests.html",
+          "hash": "LTmwfEJouhbK7jnkUPUs6w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.UnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.UnitTests.html",
+          "hash": "RcJ0V4yPwlTZXiyRr4an8w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.WebGet-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.WebGet-1.html",
+          "hash": "OK7beHfjdKQ++ZHAitR/qw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Http.html",
+          "hash": "hWrSO9EUtpY2T6vEBvY4Cg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.Logging.ILogProvider.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Logging.Logging.ILogProvider.html",
+          "hash": "freB5kN1bVDUkCneZeS5fg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.Logging.LogLevel.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Logging.Logging.LogLevel.html",
+          "hash": "weoSv4MmfBt3vs8Iv09hHQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.Logging.LogProvider.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Logging.Logging.LogProvider.html",
+          "hash": "LzJseGwJGVmQnFkwOvgK+A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.Logging.Logger.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Logging.Logging.Logger.html",
+          "hash": "AcnydSUfjDKOBeleaqM8xg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.Logging.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Logging.Logging.html",
+          "hash": "uoPVMnP2o1ettDl745nu+g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.LoggingUtilities.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Logging.LoggingUtilities.html",
+          "hash": "t6jKMTDx1pIe7P9RWr8CvQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.LoggingUtilitiesLoggingTest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Logging.LoggingUtilitiesLoggingTest.html",
+          "hash": "3TYRh03SpkvTVzMAC2esAA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.UnitTests.Fixture.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Logging.UnitTests.Fixture.html",
+          "hash": "5XZUmp+tr7Pey5Z59asRxQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.UnitTests.LoggingUnitTests001.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Logging.UnitTests.LoggingUnitTests001.html",
+          "hash": "es07hhOAT/daRZ6pHQ+jZw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.UnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Logging.UnitTests.html",
+          "hash": "h8zdKyEqaSObfsTtERzrmA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Logging.html",
+          "hash": "jpzXl+oGYIzUP2d6T0nd9g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.String.Encrypt.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.String.Encrypt.html",
+          "hash": "OalO850DLayKLR+/ToPBBQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.String.UnitTests.StringUnitTests001.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.String.UnitTests.StringUnitTests001.html",
+          "hash": "2kclPX6uSzzd+HQmzQkk3Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.String.UnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.String.UnitTests.html",
+          "hash": "bTqk+1uw57USVxMT/YJNSw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.String.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.String.html",
+          "hash": "rXDFc7UrtI5rK/niK65X7g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Tcp.Tcp.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Tcp.Tcp.html",
+          "hash": "2q/RLn3mwemhx8Ahx+gtEw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Tcp.UnitTests.Fixture.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Tcp.UnitTests.Fixture.html",
+          "hash": "EsqTlSzr1bxvAhcn12XYuA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Tcp.UnitTests.TCPUnitTests001.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Tcp.UnitTests.TCPUnitTests001.html",
+          "hash": "hdPc5hMZPtX98b4e44jJYw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Tcp.UnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Tcp.UnitTests.html",
+          "hash": "iZ3drU1CguAWXAixTbVygw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Tcp.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Tcp.html",
+          "hash": "wUYAXfbWRQigIDXuJy+K+A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Testing.InputMethodsForDealingWithJSONFormattedStrings.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Testing.InputMethodsForDealingWithJSONFormattedStrings.html",
+          "hash": "oxG90ECVw02qTkgwUgD3Ug=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Testing.TemporaryFile.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Testing.TemporaryFile.html",
+          "hash": "qPY3A1uOWLKnBTPVN7ET3Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Testing.UnitTests.Fixture.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Testing.UnitTests.Fixture.html",
+          "hash": "tFnA6PYjpH9n6uW1V1/lDg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Testing.UnitTests.UnitTestsForTestingUtilities.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Testing.UnitTests.UnitTestsForTestingUtilities.html",
+          "hash": "bCLFObWxyyN/eLS6/vF6Hg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Testing.UnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Testing.UnitTests.html",
+          "hash": "721CWwhEUhrhi/28IkuFdg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Testing.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.Testing.html",
+          "hash": "/syZqoMg0XzYy30mh+eG/w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.Container.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.Container.html",
+          "hash": "2eON9dRNLmO/lpNATZRmfw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.Container2.SolveAndStoreOD_2T.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.Container2.SolveAndStoreOD_2T.html",
+          "hash": "uCWd66PdAK9PPRwndoX0Pw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.Container2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.Container2.html",
+          "hash": "VEaKnmke8TOy6gQ39/wVxg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.JSONSerializeAndDeSerializeTupleExamples.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.JSONSerializeAndDeSerializeTupleExamples.html",
+          "hash": "3lPDnCHq+FQ2CElVxtB5nA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.ObjectUtilities.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.ObjectUtilities.html",
+          "hash": "fFjdHy3KgttyT0LgLNRXyQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.SolveAndStoreOD-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.SolveAndStoreOD-2.html",
+          "hash": "+lGBOnpMv/A5P07sBxQSdg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.SolveAndStoreOD_ST1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.SolveAndStoreOD_ST1.html",
+          "hash": "1kcHRsYWtJyLZuYuTPHIUg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.SolveAndStoreOD_ST2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.SolveAndStoreOD_ST2.html",
+          "hash": "oVcmE1EtRdl3i5WNb8aUyQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.SolveAndStoreOD_TickerInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.SolveAndStoreOD_TickerInfo.html",
+          "hash": "cYLuWhbszS+V3gXqMMFuHA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.SolveAndStoreOD_int.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.SolveAndStoreOD_int.html",
+          "hash": "EWagUZjEf9oQbGH7vu/rWA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.SolveAndStoreOD_intAr.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.SolveAndStoreOD_intAr.html",
+          "hash": "WxRa7AksrEky1qvkuVKWIw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.UnitTests.AAMinerTest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.UnitTests.AAMinerTest.html",
+          "hash": "PnjTNX6rZE/eGcAshHgyiQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.UnitTests.ClassLevelTestData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.UnitTests.ClassLevelTestData.html",
+          "hash": "9MZecuaC/dgoz2xRyeCLRg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.UnitTests.Fixture.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.UnitTests.Fixture.html",
+          "hash": "sqHxqXoQUAWkQZ1csLTjGw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.UnitTests.ZSandboxUnitTests001.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.UnitTests.ZSandboxUnitTests001.html",
+          "hash": "V91KK+8TKQoNj2BBVeFZyg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.UnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.UnitTests.html",
+          "hash": "GEdtAxZpWMFmZSrKlNS/1g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.yml",
+      "output": {
+        ".html": {
+          "relative_path": "ATAP.Utilities.ZSandbox.html",
+          "hash": "ZEPdryDWyt3/o43uEK3FCw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Collections.IReadOnlyArray-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Collections.IReadOnlyArray-1.html",
+          "hash": "WpvwXZo/QFXMCsFXjBbXrg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Collections.ListSet-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Collections.ListSet-1.html",
+          "hash": "b9umW8oeDErl7AIZ+Kma2g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Collections.Pair-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Collections.Pair-2.html",
+          "hash": "F3y6WGqgyAdAHvwv/7LmFA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Collections.ReadOnlyArray-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Collections.ReadOnlyArray-1.html",
+          "hash": "2ppvqQFJd5/1ytJSEQaXUQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Collections.RingCollection-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Collections.RingCollection-1.html",
+          "hash": "7xrcDVPeoR0dq+4JHlRWJw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Collections.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Collections.html",
+          "hash": "/TgRrgzkkvqmzkJWxYVSGw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.Computer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.Computer.html",
+          "hash": "+cK9w03IqjMFY1pNGHhGmQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.ControlMode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.ControlMode.html",
+          "hash": "d0fi3Z4fAhyGkiq3re9A0Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.HardwareEventHandler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.HardwareEventHandler.html",
+          "hash": "RRrHajLMWrI28GGJH046DQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.HardwareType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.HardwareType.html",
+          "hash": "gtTwJKrmfadECYPlQegdGg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.IComputer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.IComputer.html",
+          "hash": "VQ+qsB8dR9h7nAHe7MM7EA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.IControl.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.IControl.html",
+          "hash": "CyPwymZ1D4cTc9ud4Vf1WQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.IElement.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.IElement.html",
+          "hash": "tPYOOhTfd6mrgBXlwvVjGg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.IHardware.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.IHardware.html",
+          "hash": "E6qNYk/oh7mqHTz+qzX+Ag=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.IParameter.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.IParameter.html",
+          "hash": "3BywFPnFnqZywvmfcoh4Lg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.ISensor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.ISensor.html",
+          "hash": "nUZVO1T3yeucTHkljvpuVQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.ISettings.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.ISettings.html",
+          "hash": "vV+547JDUTqUpMaM76FpgQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.IVisitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.IVisitor.html",
+          "hash": "knqrKvmHlrQFG0YGBBQn3A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.Identifier.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.Identifier.html",
+          "hash": "TQA4rdpJ4YqVLniphR3R/A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.SensorEventHandler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.SensorEventHandler.html",
+          "hash": "to4v87Zd1I0oSPpKz/Q/0g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.SensorType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.SensorType.html",
+          "hash": "5MeIH5Vp+eht52+DkuHTZQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.SensorValue.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.SensorValue.html",
+          "hash": "wAJp888juh+wlwuf8hPNFA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.SensorVisitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.SensorVisitor.html",
+          "hash": "GGIxYFNVXJcfl1STyyViyQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.yml",
+      "output": {
+        ".html": {
+          "relative_path": "OpenHardwareMonitor.Hardware.html",
+          "hash": "mq27rzQTp7NzkIKh4ymthA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/Utilities.ComputerInventory.CPU.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Utilities.ComputerInventory.CPU.html",
+          "hash": "dP8XxGQ73Ez7/Z9sjjpPmQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/Utilities.ComputerInventory.CPUMaker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Utilities.ComputerInventory.CPUMaker.html",
+          "hash": "7fYJV6MhQXZQ0jVyE0rjYA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/Utilities.ComputerInventory.UnitTests.ComputerInventoryUnitTests001.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Utilities.ComputerInventory.UnitTests.ComputerInventoryUnitTests001.html",
+          "hash": "cxG0gDXKlseLVm0FHOrGbw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/Utilities.ComputerInventory.UnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Utilities.ComputerInventory.UnitTests.html",
+          "hash": "AHxMFAiehxm5WgU+5p6WTA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/temp/docfx/Utilities.ComputerInventory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Utilities.ComputerInventory.html",
+          "hash": "P6juYt+RcYETTOi5ZbcXXQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "obj/temp/docfx/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "toc.html",
+          "hash": "MqB7VasSSuD81FxfkoNjtg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    }
+  ],
+  "incremental_info": [
+    {
+      "status": {
+        "can_incremental": true,
+        "incrementalPhase": "build"
+      },
+      "processors": {
+        "TocDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build"
+        },
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build"
+        },
+        "ConceptualDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build"
+        }
+      }
+    },
+    {
+      "status": {
+        "can_incremental": true,
+        "details": "Can support incremental post processing.",
+        "incrementalPhase": "postProcessing"
+      },
+      "processors": {}
+    }
+  ],
+  "version_info": {},
+  "groups": [
+    {
+      "xrefmap": "xrefmap.yml"
+    }
+  ]
+}

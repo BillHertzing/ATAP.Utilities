@@ -18,6 +18,12 @@
     * use standard installation instructions
 	choco install docfx -y for a machine-wide installation
 
+### The AutoDoc project in a Solution
+This project builds the static documentation website.
+The gh-pages branch of a repository should point to the latest release version of this project.
+The repositoryies ReadMe.md file should contain a prominent link to the Doc directroy of this project
+see also https://dzone.com/articles/generating-documentation-with-docfx-as-part-of-a-v
+
 # Visual Studio Configuration settings
 * tbd
 
@@ -47,6 +53,9 @@
     * create a .build folder under the solution dir
 	* Add the Community Tools NuGet Package
 	
+# How to distribute cross-framework custom tasks via NuGet for cro
+https://natemcmaster.com/blog/2017/07/05/msbuild-task-in-nuget/
+	
 # Custom PowerShell scripts for Visual Studio
 
 
@@ -54,3 +63,16 @@
     * create a .build folder under the solution dir
 	* Add the ATAP.BuildTooling.PPowerShell NuGet Package
 
+# Useful utility programs outside of Visual Studio
+
+## MSbuild Structured log viewer *** Unstable for VS 2018 15.8.9
+MSbuild logging can be turned on for visual studio with the vsix package 
+https://marketplace.visualstudio.com/items?itemName=VisualStudioProductTeam.ProjectSystemTools
+
+MSBuild logs are written to 
+C:\Users\<username>\AppData\Local\Temp AKA %APPDATA%\Local\Temp  (cmd.exe) or "$Env:AppData\Local\Temp" (PowerShell)
+
+### Installation Details
+Use Chocolatey
+https://chocolatey.org/packages/msbuild-structured-log-viewer	
+choco install msbuild-structured-log-viewer

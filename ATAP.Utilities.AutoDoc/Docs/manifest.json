@@ -5,14 +5,62 @@
   "files": [
     {
       "type": "Conceptual",
-      "source_relative_path": "ReadMe.md",
+      "source_relative_path": "../ATAP.Utilities.1ConsoleTestRunner/Docs/ReadMe.md",
       "output": {
         ".html": {
-          "relative_path": "ReadMe.html",
-          "hash": "o7B6F4mNgpSc7DnyPyVfNg=="
+          "relative_path": "Articles/ATAP.Utilities.1ConsoleTestRunner/Docs/ReadMe.html",
+          "hash": "ri/2yTQUg9if77J5wxWSDQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "../ATAP.Utilities.BuildTooling.Chocolatey/Docs/ReadMe.md",
+      "output": {
+        ".html": {
+          "relative_path": "Articles/ATAP.Utilities.BuildTooling.Chocolatey/Docs/ReadMe.html",
+          "hash": "ri/2yTQUg9if77J5wxWSDQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "../Docs/ATTRIBUTION.md",
+      "output": {
+        ".html": {
+          "relative_path": "Articles/Docs/ATTRIBUTION.html",
+          "hash": "JWv81VcDEIMJ7gSa9/rROg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "../Docs/Building.md",
+      "output": {
+        ".html": {
+          "relative_path": "Articles/Docs/Building.html",
+          "hash": "rDPoyO0BJkPpmOtB7nKmHw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "../Docs/VisualStudioExtensions.md",
+      "output": {
+        ".html": {
+          "relative_path": "Articles/Docs/VisualStudioExtensions.html",
+          "hash": "f0Z2r2n1S4PX+/pphuOOQQ=="
+        }
+      },
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -20,3046 +68,3046 @@
         "InvalidFileLink"
       ],
       "type": "Conceptual",
-      "source_relative_path": "RepositoryReadMe.md",
+      "source_relative_path": "../README.md",
       "output": {
         ".html": {
-          "relative_path": "RepositoryReadMe.html",
-          "hash": "ej8GRlHk6L4cZyf5FCjUIA=="
+          "relative_path": "Articles/README.html",
+          "hash": "pocmGB84IrM0gKYsrXBNbg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.GetVersion.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.BuildTooling.GetVersion.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.BuildTooling.GetVersion.html",
-          "hash": "CpQoPLrzj7O/EfDkMVFEEA=="
+          "relative_path": "Api/ATAP.Utilities.BuildTooling.GetVersion.html",
+          "hash": "WziKvvVhGlx/NifGaIbrsA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.SetVersion.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.BuildTooling.SetVersion.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.BuildTooling.SetVersion.html",
-          "hash": "wYNM5WuRctx7HwjGqsn/uA=="
+          "relative_path": "Api/ATAP.Utilities.BuildTooling.SetVersion.html",
+          "hash": "gHp2797M8vt3UAfolBi+ew=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.UpdateVersion.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.BuildTooling.UpdateVersion.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.BuildTooling.UpdateVersion.html",
-          "hash": "qayw1Wm8FenIQqxGjobjtQ=="
+          "relative_path": "Api/ATAP.Utilities.BuildTooling.UpdateVersion.html",
+          "hash": "py86Wdd7GR5ANq516XMlhg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.Utilities.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.BuildTooling.Utilities.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.BuildTooling.Utilities.html",
-          "hash": "MEhycPJre/rddOUi6Lcwow=="
+          "relative_path": "Api/ATAP.Utilities.BuildTooling.Utilities.html",
+          "hash": "inK4JLqIuBab+3NMTKrOSw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.BuildTooling.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.BuildTooling.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.BuildTooling.html",
-          "hash": "lonkw4NVxwZLQPX/F5aBtQ=="
+          "relative_path": "Api/ATAP.Utilities.BuildTooling.html",
+          "hash": "DprnFvikNmY+BB6D8i7lfg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Configuration.DefaultConfigurationSettings.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Configuration.DefaultConfigurationSettings.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Configuration.DefaultConfigurationSettings.html",
-          "hash": "PEsl4QERVnTxgJKu2UIgjw=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Configuration.DefaultConfigurationSettings.html",
+          "hash": "iRE9orNc1gFsl3FulVWRQA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Configuration.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Configuration.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Configuration.html",
-          "hash": "dJ8WgRWUd18rHsaW8bfOfQ=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Configuration.html",
+          "hash": "Wq/MkooDUXquntTDV26Onw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Enumerations.CPUMaker.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Enumerations.CPUMaker.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Enumerations.CPUMaker.html",
-          "hash": "SgCjp9WwTS5+VODGVX1y0A=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Enumerations.CPUMaker.html",
+          "hash": "YgLcdfF7OGp/HS/S7Wn6mw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Enumerations.GPUMaker.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Enumerations.GPUMaker.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Enumerations.GPUMaker.html",
-          "hash": "KE8a6LPGIJtd3KvEQCAxrg=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Enumerations.GPUMaker.html",
+          "hash": "SCn/2rwe6esG3TJNHPdRdA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Enumerations.MainBoardMaker.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Enumerations.MainBoardMaker.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Enumerations.MainBoardMaker.html",
-          "hash": "aVJeJCKkRvxWbK+NGCKoGw=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Enumerations.MainBoardMaker.html",
+          "hash": "io8Fe6CHKL0WiWnjasK2Lw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Enumerations.VideoCardMaker.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Enumerations.VideoCardMaker.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Enumerations.VideoCardMaker.html",
-          "hash": "8EdxZEUGBdlcsNKji94ypQ=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Enumerations.VideoCardMaker.html",
+          "hash": "J1O19SQRMWItH+zCPyP8Pg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Enumerations.VideoCardMemoryMaker.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Enumerations.VideoCardMemoryMaker.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Enumerations.VideoCardMemoryMaker.html",
-          "hash": "/AvE6TTY/91EWRe5plqlSw=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Enumerations.VideoCardMemoryMaker.html",
+          "hash": "fQxA1bVI2to2DUSSqc1KaQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Enumerations.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Enumerations.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Enumerations.html",
-          "hash": "69XiQ1f1auTSb++PxXyAWw=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Enumerations.html",
+          "hash": "FKqg5un9AixaR0SgWuAgpg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Extensions.Extensions.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Extensions.Extensions.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Extensions.Extensions.html",
-          "hash": "4JyDfQlPwUxQ3t9I/jrk/A=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Extensions.Extensions.html",
+          "hash": "9pYA85JgOIt9I/8acfwboA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Extensions.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Extensions.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Extensions.html",
-          "hash": "iCEVSBnOZY+zOfPZCW042A=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Extensions.html",
+          "hash": "D0vpcBCYwnn6SGM/uM+vCQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.CPU.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.CPU.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.CPU.html",
-          "hash": "WJ72mt/xGZFYQppCMTCitw=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.CPU.html",
+          "hash": "zH8sCOlXeLrF/NnAaUBLfw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerHardware.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.ComputerHardware.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerHardware.html",
-          "hash": "1eoc6heUaNKz5xljf3E3mQ=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.ComputerHardware.html",
+          "hash": "QhWUQcuSVE/SKLkgzYWUKQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerInventory.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.ComputerInventory.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerInventory.html",
-          "hash": "cqtEz4xUdh/9x7v4lXK5dg=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.ComputerInventory.html",
+          "hash": "1TrW8U6+oOkUMJDVM/WEhw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerProcess.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.ComputerProcess.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerProcess.html",
-          "hash": "4AZwaCpkClYiSS62lCgxwQ=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.ComputerProcess.html",
+          "hash": "u52a0yWB7r8MdSy2eJGBcw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerProcesses.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.ComputerProcesses.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerProcesses.html",
-          "hash": "NLm8joGrNKuBJd9pSa2dUg=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.ComputerProcesses.html",
+          "hash": "2WRv+ZhrIaZT7/Z6bEbv5Q=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerSoftware.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.ComputerSoftware.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerSoftware.html",
-          "hash": "kF7osmPjalf1huMP24IgHg=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.ComputerSoftware.html",
+          "hash": "5fLEftDjDnJWxUEFf9P6Ug=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerSoftwareDriver.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.ComputerSoftwareDriver.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerSoftwareDriver.html",
-          "hash": "3KkIfKi7EFhqCKqN/JnP4Q=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.ComputerSoftwareDriver.html",
+          "hash": "iNP3d7WY/TJCL01QUMdjug=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ComputerSoftwareProgram.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.ComputerSoftwareProgram.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ComputerSoftwareProgram.html",
-          "hash": "fCaZRpYrcZTnmHukl9WCOQ=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.ComputerSoftwareProgram.html",
+          "hash": "RgEIaPf86iR84iCZWz63lQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.IComputerSoftwareProgram.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.IComputerSoftwareProgram.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.IComputerSoftwareProgram.html",
-          "hash": "DLUx0mlMMR2lbJJrtQT/3g=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.IComputerSoftwareProgram.html",
+          "hash": "6Zse5xCJy6+BdoTTKcJ6Eg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.IPowerConsumption.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.IPowerConsumption.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.IPowerConsumption.html",
-          "hash": "OJUulv0XlWibWEmJBHQWfw=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.IPowerConsumption.html",
+          "hash": "4EDyMkmX7eHo6yu88+Zt2A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.ITempAndFan.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.ITempAndFan.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.ITempAndFan.html",
-          "hash": "Q3iFFHvZjIC8KhTyBWdOnQ=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.ITempAndFan.html",
+          "hash": "WA5IxdSxJY2iw9np0tVe5g=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.MainBoard.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.MainBoard.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.MainBoard.html",
-          "hash": "HIOpoe5bo8Sv/yy0LEtoBg=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.MainBoard.html",
+          "hash": "vHtEdShAg0cyr06dE3R/pw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.PowerConsumption.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.PowerConsumption.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.PowerConsumption.html",
-          "hash": "UluNvBIyK7sCVPjYVXA3UA=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.PowerConsumption.html",
+          "hash": "bzfKgMZ83oI/K78rd2Wo9Q=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.PowerConsumptionConverter.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.PowerConsumptionConverter.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.PowerConsumptionConverter.html",
-          "hash": "1SeKqc4XAxP8mC8QPeM1nw=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.PowerConsumptionConverter.html",
+          "hash": "2Y65NBq7rYTYhIGAYVoFEg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.TempAndFan.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.TempAndFan.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.TempAndFan.html",
-          "hash": "QZRPOjQbi8m81gTNaJQ0IQ=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.TempAndFan.html",
+          "hash": "xYjcqQeEW43vptWA6wQMjg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.VideoCard.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.VideoCard.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.VideoCard.html",
-          "hash": "bOBgsRnk5/apQkYcqfaDOw=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.VideoCard.html",
+          "hash": "UM59w/+8MFaAC3L0FsqTWg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.VideoCardDiscriminatingCharacteristics.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.VideoCardDiscriminatingCharacteristics.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.VideoCardDiscriminatingCharacteristics.html",
-          "hash": "D+nFnz57/Ab6Q7jBAbx6Ww=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.VideoCardDiscriminatingCharacteristics.html",
+          "hash": "CP1M7tjBv3fRuQWsartTvQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.VideoCardSensorData.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.VideoCardSensorData.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.VideoCardSensorData.html",
-          "hash": "3kVjkhAilaDK1Jad1p1Nrw=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.VideoCardSensorData.html",
+          "hash": "ovYgqGo/l5KazCcfnD8Sbw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.VideoCardTuningParameters.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.VideoCardTuningParameters.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.VideoCardTuningParameters.html",
-          "hash": "lldnLXflETAMyZeJyPJUzw=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.VideoCardTuningParameters.html",
+          "hash": "r9y08hjWmR1HA3o9o3DiTQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.VideoCardsKnown.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.VideoCardsKnown.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.VideoCardsKnown.html",
-          "hash": "r4OVHgKmMHzeszpS9Bm2KA=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.VideoCardsKnown.html",
+          "hash": "rIgTKheOM7Y9DdQktYP2yQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.Models.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.Models.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.Models.html",
-          "hash": "2vJwrlwmentbU/qgBKuEGQ=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.Models.html",
+          "hash": "Zp/SgqOPc7+vF51dq9aYEQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.ComputerHardwareUnitTests001.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.UnitTests.ComputerHardwareUnitTests001.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.ComputerHardwareUnitTests001.html",
-          "hash": "w8DXpnexfFe1JEmfm1PfGg=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.UnitTests.ComputerHardwareUnitTests001.html",
+          "hash": "zu+E73ZE9GsHqPjVgM71BQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.ComputerInventoryUnitTests001.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.UnitTests.ComputerInventoryUnitTests001.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.ComputerInventoryUnitTests001.html",
-          "hash": "UiZ339sr3/tqkteLh7qbcA=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.UnitTests.ComputerInventoryUnitTests001.html",
+          "hash": "k1NCafv78ugoJt32NpbxZQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.Fixture.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.UnitTests.Fixture.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.Fixture.html",
-          "hash": "v8dN0id4glCx5+PcDDdVeQ=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.UnitTests.Fixture.html",
+          "hash": "Vyr+3oG1FYOoS53/CRLvmA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.YAML.ComputerHardwareUnitTestsYAML.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.UnitTests.YAML.ComputerHardwareUnitTestsYAML.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.YAML.ComputerHardwareUnitTestsYAML.html",
-          "hash": "sqE48ay91gCA2fpJIpCz8w=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.UnitTests.YAML.ComputerHardwareUnitTestsYAML.html",
+          "hash": "CWN/pkPrE+SIvuu6NNIiKA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.YAML.ComputerInventoryUnitTestsYAML.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.UnitTests.YAML.ComputerInventoryUnitTestsYAML.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.YAML.ComputerInventoryUnitTestsYAML.html",
-          "hash": "4d83RIPz04Oo/aBnkNkcuQ=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.UnitTests.YAML.ComputerInventoryUnitTestsYAML.html",
+          "hash": "+2zPJGPOeM3lZcP52lMOcA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.YAML.Fixture.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.UnitTests.YAML.Fixture.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.YAML.Fixture.html",
-          "hash": "0HLV0I+yQnCNW4OLRqdxYg=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.UnitTests.YAML.Fixture.html",
+          "hash": "BTDQTJD/vY2Gwu1e8pv2jg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.YAML.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.UnitTests.YAML.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.YAML.html",
-          "hash": "VAe6QqCvjOxp38OwRvuLgQ=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.UnitTests.YAML.html",
+          "hash": "+8bBNABqwXpQdr56Oh4ksA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ComputerInventory.UnitTests.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ComputerInventory.UnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ComputerInventory.UnitTests.html",
-          "hash": "FkUQIgkIAwhn2AloLBilIA=="
+          "relative_path": "Api/ATAP.Utilities.ComputerInventory.UnitTests.html",
+          "hash": "OG/yImzdKaffeeOdAfNX5Q=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.AUD.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.AUD.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.AUD.html",
-          "hash": "51YPYrpHVbfs1CVrTTqGBw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.AUD.html",
+          "hash": "aonibC7Pea3jOLuwdRiEBg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.BRL.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.BRL.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.BRL.html",
-          "hash": "Wavwj2LlqOmo7LRHD7pU4Q=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.BRL.html",
+          "hash": "+Thva92pH2M7H8mspqZKQA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.CAD.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.CAD.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.CAD.html",
-          "hash": "1+F4YeEQio3UisNv3ArJxw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.CAD.html",
+          "hash": "+UiWx0zpmmkI5WzBYFxYBw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.CHF.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.CHF.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.CHF.html",
-          "hash": "k3W3QqgwQIcGCrGceQLCfg=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.CHF.html",
+          "hash": "zjKkse4L/tX9naKOzwjF1A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.CLP.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.CLP.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.CLP.html",
-          "hash": "OxAhI1SKrSVVDCBYAcnrRw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.CLP.html",
+          "hash": "81XvqXNrb7M327KsZnGKXw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.CNY.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.CNY.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.CNY.html",
-          "hash": "uO/wWlDV2cMVPvRQhK8czw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.CNY.html",
+          "hash": "nEpbM6quJx8qpjKH6za3Sw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.ChainInfo.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.ChainInfo.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.ChainInfo.html",
-          "hash": "+ghwZq6tkl5XBZ58AMWOIw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.ChainInfo.html",
+          "hash": "Xtd/YKJaJlCLlqYatv5Svw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.DKK.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.DKK.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.DKK.html",
-          "hash": "MgLxQ/LSjkmOXf9xd6QNUA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.DKK.html",
+          "hash": "fu6n6J94VE6xO6fQgiFC+w=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.EUR.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.EUR.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.EUR.html",
-          "hash": "xjR2Gua3eGCfFCwatQZLuQ=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.EUR.html",
+          "hash": "8oAJ5sX+urmHeb7jn7KahQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.Algorithms.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Enumerations.Algorithms.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.Algorithms.html",
-          "hash": "vg9DaSKLA9SAADtYIAfMiw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Enumerations.Algorithms.html",
+          "hash": "7YwEqXmUrcsGbwui6JWVXA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.Coin.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Enumerations.Coin.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.Coin.html",
-          "hash": "aWLd5CuIkBnrG+tymWDQyA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Enumerations.Coin.html",
+          "hash": "pW1pncmI0H603TaOYzbJ2A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Algorithm.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Algorithm.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Algorithm.html",
-          "hash": "NDqvSywIzumTNR7eYtBU6w=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Algorithm.html",
+          "hash": "sfNv19ddvVk6+xnb1F9C3Q=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Proof.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Proof.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Proof.html",
-          "hash": "Bg69KWe/ZofXy5t8x+YgGg=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Proof.html",
+          "hash": "yTWQwovj+NhmLNUhBYhFcg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Symbol.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Symbol.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Symbol.html",
-          "hash": "TA43sfGoe1vrMT+mSXSbiw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.Symbol.html",
+          "hash": "sjXUPxMqtbpUVVXbfpJ2Dw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.html",
-          "hash": "HV6c+PYmsQBaLgHdhAXHMA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers.html",
+          "hash": "8IJAu9plXOxyfH9UZci5lw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.Proofs.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Enumerations.Proofs.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.Proofs.html",
-          "hash": "Jbk5BO4j42C3qXEorUsMIA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Enumerations.Proofs.html",
+          "hash": "voMKjGt+Y2MHEbPW3pMTsg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Enumerations.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Enumerations.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Enumerations.html",
-          "hash": "/z+a6wqsKsC80Xki/Z2FGA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Enumerations.html",
+          "hash": "tCW+Dklqf1XwNmFriyTHew=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Extensions.CryptoCoinNetworkInfoBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Extensions.CryptoCoinNetworkInfoBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Extensions.CryptoCoinNetworkInfoBuilder.html",
-          "hash": "IMkwoFyWGIvLQfy5RTzVvA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Extensions.CryptoCoinNetworkInfoBuilder.html",
+          "hash": "xnOsXNP8kbr5n+CPLBzPSQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Extensions.FeesConverter.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Extensions.FeesConverter.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Extensions.FeesConverter.html",
-          "hash": "DR/untK3jzy04HFq5MaeKQ=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Extensions.FeesConverter.html",
+          "hash": "N37KFj0TrI96OGWRaAKrPw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Extensions.ICryptoCoinNetworkInfoBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Extensions.ICryptoCoinNetworkInfoBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Extensions.ICryptoCoinNetworkInfoBuilder.html",
-          "hash": "o2LpGlsBEv2Bu48dZvGYYg=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Extensions.ICryptoCoinNetworkInfoBuilder.html",
+          "hash": "aCic2AQvXR8ndaMvl4m/bA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Extensions.InterestingCoins.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Extensions.InterestingCoins.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Extensions.InterestingCoins.html",
-          "hash": "q5GV5Z0OMOm5ClAq7vBSng=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Extensions.InterestingCoins.html",
+          "hash": "CETKdLpBQgV45y3UhQvrGQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Extensions.RigConfigBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Extensions.RigConfigBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Extensions.RigConfigBuilder.html",
-          "hash": "4j7JQjFTWaZBBAdMmvbdSw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Extensions.RigConfigBuilder.html",
+          "hash": "SxKE3mN4IBPOiPaWFrKQ+Q=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Extensions.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Extensions.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Extensions.html",
-          "hash": "oRGA885mKmhWkQmIC9JuVw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Extensions.html",
+          "hash": "8BKzhZuRBGpSG29ETXvjGg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.GBP.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.GBP.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.GBP.html",
-          "hash": "DU3KDM/b9yZaMfhmIbUJkw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.GBP.html",
+          "hash": "8t1a1rSBiCoCT1l8btXLBA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.HKD.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.HKD.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.HKD.html",
-          "hash": "ZuCJIbI1GAn00v0q6bgWDA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.HKD.html",
+          "hash": "qxXHaST4T04b2Xr1IL+sZw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.ISK.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.ISK.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.ISK.html",
-          "hash": "1WsVC7HgdeciCG/j/6b+7w=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.ISK.html",
+          "hash": "Qi/lkpsFlhsrB5q1pEApdQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.JPY.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.JPY.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.JPY.html",
-          "hash": "wuz1dCCRsX7l+uhdw0MemQ=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.JPY.html",
+          "hash": "4nJDf7i0TPQ65DLTxEE4eg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.KRW.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.KRW.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.KRW.html",
-          "hash": "FU50cecXADTGix/lHErNLA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.KRW.html",
+          "hash": "Gda9pxfShZrgbfTxlotlUw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.AverageShareOfBlockRewardDT.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Models.AverageShareOfBlockRewardDT.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Models.AverageShareOfBlockRewardDT.html",
-          "hash": "ElydgtExlT3fP80yOYcDZw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Models.AverageShareOfBlockRewardDT.html",
+          "hash": "D5h7Tsi6De+YSTOzyptMCw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.BlockReward.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Models.BlockReward.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Models.BlockReward.html",
-          "hash": "r4/6QZusgT6Gshswhwyf4g=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Models.BlockReward.html",
+          "hash": "wO/AQDgUVH1prADugm4ZBQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.CryptoCoinNetworkInfo.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Models.CryptoCoinNetworkInfo.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Models.CryptoCoinNetworkInfo.html",
-          "hash": "0Ky3hZCyJQutPOXB3yeH2Q=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Models.CryptoCoinNetworkInfo.html",
+          "hash": "WbWsl82KyHuig35yaTtzrg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.Fees.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Models.Fees.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Models.Fees.html",
-          "hash": "eHmQN5wml7ef3pmkhtCJgA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Models.Fees.html",
+          "hash": "EmCgKBdjrsMWN6JA0QygsA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.HashRate.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Models.HashRate.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Models.HashRate.html",
-          "hash": "bXQdoacl3q5/+4KDLi2RNw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Models.HashRate.html",
+          "hash": "Wo+N9s2bPskkXI37irxxOQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.IAverageShareOfBlockRewardDT.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Models.IAverageShareOfBlockRewardDT.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Models.IAverageShareOfBlockRewardDT.html",
-          "hash": "X0DIudSo18E8MQGE2GzHzQ=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Models.IAverageShareOfBlockRewardDT.html",
+          "hash": "pdBYa0B7EPj0L5cy1JvKpQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.ICryptoCoinNetworkInfo.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Models.ICryptoCoinNetworkInfo.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Models.ICryptoCoinNetworkInfo.html",
-          "hash": "SqdbR8cAz+ubf2Nvo0dCbg=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Models.ICryptoCoinNetworkInfo.html",
+          "hash": "ykFGvkuuIQ+0w9NSPzb6wA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.IFees.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Models.IFees.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Models.IFees.html",
-          "hash": "MuzAMa14XFl0y69AfqKCWA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Models.IFees.html",
+          "hash": "kIX/Ly8RJ0dQfx1+PG2Egw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.IHashRatesDict.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Models.IHashRatesDict.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Models.IHashRatesDict.html",
-          "hash": "D6iIvyPo/+M7am7f4EXgPA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Models.IHashRatesDict.html",
+          "hash": "mf9YAEPBNx56UxZsiRroBQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.IROAverageShareOfBlockRewardDT.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Models.IROAverageShareOfBlockRewardDT.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Models.IROAverageShareOfBlockRewardDT.html",
-          "hash": "LFzJ90O7wDRJUEwg7MLTKw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Models.IROAverageShareOfBlockRewardDT.html",
+          "hash": "AtfKJU5hK+N3DtB+O5DWFg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.Models.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.Models.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.Models.html",
-          "hash": "VOcIjsdkfmMkYZ7XUP4a/g=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.Models.html",
+          "hash": "gnJZebgJTWj0H2WGLTDqwA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.NZD.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.NZD.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.NZD.html",
-          "hash": "hOHJWWyKM3EtIqW27JwvNA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.NZD.html",
+          "hash": "AEbhixpnwvxCI4rrVBAsiw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.PLN.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.PLN.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.PLN.html",
-          "hash": "tp/ONJe2lWM5NZ49f6ndng=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.PLN.html",
+          "hash": "CMo/c1JV1npyc/ibvkh5xw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.RUB.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.RUB.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.RUB.html",
-          "hash": "rGJz95ovVrNMw/5NsPO17w=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.RUB.html",
+          "hash": "XzRO3F3ubTlMOJRl4PJEPg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.SEK.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.SEK.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.SEK.html",
-          "hash": "gOAT6FuOTBZgV++SVzAVVg=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.SEK.html",
+          "hash": "VVEBHaLQNQv5+fCAC1xLVg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.SGD.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.SGD.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.SGD.html",
-          "hash": "QRCt+Ice3egrMbZxJ7hnWQ=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.SGD.html",
+          "hash": "PKuUonaDB2tk1BY/ucJnCw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.THB.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.THB.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.THB.html",
-          "hash": "/4jZS+HIvCpQbf5Ot3TIdA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.THB.html",
+          "hash": "D0Fk7QWxnjVQeK3D+khy/A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.TWD.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.TWD.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.TWD.html",
-          "hash": "YHexereigvGosG7NVAGwJQ=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.TWD.html",
+          "hash": "m1LEqSvV2DMzxwnzYC05PA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.TickerInfo.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.TickerInfo.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.TickerInfo.html",
-          "hash": "zwnwJXu7akw9TsHpcRjMaA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.TickerInfo.html",
+          "hash": "WQH+A1YU2+quaBmQMJqKUQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.USD.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.USD.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.USD.html",
-          "hash": "c+K2cAq+2nYUhTFZfTt7NA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.USD.html",
+          "hash": "5K+md3Xqetu/NTYAZhsQ1A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.UnitTests.CryptoCoinUnitTests001.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.UnitTests.CryptoCoinUnitTests001.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.UnitTests.CryptoCoinUnitTests001.html",
-          "hash": "Ki6E8xZCE8x1LL8MnI41Fg=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.UnitTests.CryptoCoinUnitTests001.html",
+          "hash": "1kCrOLFZw2JeMkRvH1Akeg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.UnitTests.Fixture.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.UnitTests.Fixture.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.UnitTests.Fixture.html",
-          "hash": "Ji0EnxzfswELZGCaiehTsQ=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.UnitTests.Fixture.html",
+          "hash": "h6YrRxtX1UWsol6kSfen9A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.UnitTests.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.UnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.UnitTests.html",
-          "hash": "wFqeKYwOzlQqT0xgFPTrWw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.UnitTests.html",
+          "hash": "28Kh9+74koGLJ4/i8Jo83w=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.blockChainInfo_ticker.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.blockChainInfo_ticker.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.blockChainInfo_ticker.html",
-          "hash": "1ado5UnWlUqWbO3ULMkQeQ=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.blockChainInfo_ticker.html",
+          "hash": "1C/it3OJ57Gn9ODugUU7ow=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.chain_so_api_v2_get_info.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.chain_so_api_v2_get_info.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.chain_so_api_v2_get_info.html",
-          "hash": "194ywgZRdT77Bc6YJKsjHA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.chain_so_api_v2_get_info.html",
+          "hash": "Lz2qeHKojT/bLS8fUYmnWQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.chain_so_api_v2_get_info_Data.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.chain_so_api_v2_get_info_Data.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.chain_so_api_v2_get_info_Data.html",
-          "hash": "pIhtcienyxMHnXiA3OecMA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.chain_so_api_v2_get_info_Data.html",
+          "hash": "XEExuYf0x8Vfj7/YgbWYwQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoCoin.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoCoin.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoCoin.html",
-          "hash": "POchsfyZ41I4FJvLyYDmAw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoCoin.html",
+          "hash": "hm0PzNJqVVQB9Ja1SNd2Pg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Enumerations.Class1.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Enumerations.Class1.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Enumerations.Class1.html",
-          "hash": "PJka8wcA37HHXJW4h5Qgng=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Enumerations.Class1.html",
+          "hash": "vXYUmCYFwoW0jJgB1rhnYg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Enumerations.MinerSWE.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Enumerations.MinerSWE.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Enumerations.MinerSWE.html",
-          "hash": "Ov0jvJVjU+w++FMT8JwFCg=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Enumerations.MinerSWE.html",
+          "hash": "7JOIu90R2oecATgeslAbFQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Enumerations.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Enumerations.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Enumerations.html",
-          "hash": "3c8piQA2I6Drsk7UI7aj2g=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Enumerations.html",
+          "hash": "j5gh8antkBUyHwWXubX2ig=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Extensions.Extensions.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Extensions.Extensions.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Extensions.Extensions.html",
-          "hash": "H29kXsv3my8yO+lpFdhyUg=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Extensions.Extensions.html",
+          "hash": "xuStEAOi0AAZvqlA2YR1ZQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Extensions.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Extensions.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Extensions.html",
-          "hash": "4ZKAI2EH7OqYbFTUTHJUPw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Extensions.html",
+          "hash": "cH0uO1gfixCZ5dJrZqN8Mg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreETHDualMinerProcess.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.ClaymoreETHDualMinerProcess.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreETHDualMinerProcess.html",
-          "hash": "n+0VtvQpKWo/avPe/7sk0A=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.ClaymoreETHDualMinerProcess.html",
+          "hash": "MjhOJ5MfrrtaVRQLMRLfxw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreETHDualMinerSW.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.ClaymoreETHDualMinerSW.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreETHDualMinerSW.html",
-          "hash": "Cka7yFb0cXptOP1FZ2Jf/g=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.ClaymoreETHDualMinerSW.html",
+          "hash": "shLvueyAiFpi0Lze5e/ozg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerProcess.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerProcess.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerProcess.html",
-          "hash": "mCRiLrZ/BN3X13BhqK06hg=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerProcess.html",
+          "hash": "97Rg4qWZUAE1tAcEv3aimw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerSW.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerSW.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerSW.html",
-          "hash": "P3RedH80dUyTPlwhzZlzzw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerSW.html",
+          "hash": "r0/amt0vkdgCqfv6Pnewmw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerStatus.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerStatus.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerStatus.html",
-          "hash": "QSnxkRdUZJgf7gKzX9nDAw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerStatus.html",
+          "hash": "ApuHlygU3ms7TjEkzAflAg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerStatusDetails.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerStatusDetails.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerStatusDetails.html",
-          "hash": "KMGWNYx6fj1m/e3ktKvxdQ=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.ClaymoreMinerStatusDetails.html",
+          "hash": "Xy9YfBFUUrpfbRV7v8T9FA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreZECMinerProcess.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.ClaymoreZECMinerProcess.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreZECMinerProcess.html",
-          "hash": "KfuYSOa4nuaTCcSSnUgBNw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.ClaymoreZECMinerProcess.html",
+          "hash": "SsitY7jBan64noMfOCcUXA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ClaymoreZECMinerSW.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.ClaymoreZECMinerSW.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ClaymoreZECMinerSW.html",
-          "hash": "XzRTehlZXYxq/DxjUnfw+Q=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.ClaymoreZECMinerSW.html",
+          "hash": "QRZyqKeLxozwZDZwgsd/fw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.IMinerProcess.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.IMinerProcess.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.IMinerProcess.html",
-          "hash": "FQCzdmz4CyukF8EQjhLqMw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.IMinerProcess.html",
+          "hash": "a9MBys4K6h91TL+JlkeBgw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.IMinerSWBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.IMinerSWBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.IMinerSWBuilder.html",
-          "hash": "0HNdhETTMv170MCPhCbw9Q=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.IMinerSWBuilder.html",
+          "hash": "h2VFfd4D3sDCom4zWbkaEg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.IMinerStatus.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.IMinerStatus.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.IMinerStatus.html",
-          "hash": "25wcpyvo4h3CbZgDpo2XLA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.IMinerStatus.html",
+          "hash": "BsrmvmD9+BoBCw74C5Lpaw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.IMinerStatusDetails.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.IMinerStatusDetails.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.IMinerStatusDetails.html",
-          "hash": "ArrzM6jOL0+EYbHWVsC1AA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.IMinerStatusDetails.html",
+          "hash": "gDI6jF4wPINZTFWJRjj2Zg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.IRigConfig.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.IRigConfig.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.IRigConfig.html",
-          "hash": "yRoiMscmWr8mcOO/Az8Wnw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.IRigConfig.html",
+          "hash": "WSDLQrj4kYpB6TQe3TODhg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.IRigConfigBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.IRigConfigBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.IRigConfigBuilder.html",
-          "hash": "FmWT8Bi1rkwxr8M55uvtGA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.IRigConfigBuilder.html",
+          "hash": "by3ic5hN6qWoxCAvR+uTSg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.ITuneMinerGPUsResult.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.ITuneMinerGPUsResult.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.ITuneMinerGPUsResult.html",
-          "hash": "gw6yni8en9GKPUIle34YNA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.ITuneMinerGPUsResult.html",
+          "hash": "nm+gq9sGq8aUgg+Ts29+mg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerConfigSettings.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.MinerConfigSettings.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerConfigSettings.html",
-          "hash": "wP5mJ6gRkb0jkB4n7CuObA=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.MinerConfigSettings.html",
+          "hash": "FqwWlDBKKuu1F3k1tZTvJA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerGPU.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.MinerGPU.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerGPU.html",
-          "hash": "oQ8TKudK33RrHdkIrmwQ1w=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.MinerGPU.html",
+          "hash": "7hhAkv+nF91Hy7bc0qO2vw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerProcess.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.MinerProcess.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerProcess.html",
-          "hash": "Q1xiqCdWbNt4qcXZajGV8g=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.MinerProcess.html",
+          "hash": "feA1t5KSQ96PgIH9trjuYw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerSW.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.MinerSW.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerSW.html",
-          "hash": "j3LFyibkoz74HlgeQ1nLBw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.MinerSW.html",
+          "hash": "kejGhSz1owLDn96NvJ8Syw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerSWToMinerGPU.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.MinerSWToMinerGPU.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerSWToMinerGPU.html",
-          "hash": "1NBr3k1avXfDCGLgLBx/2w=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.MinerSWToMinerGPU.html",
+          "hash": "sq8xhxAuraa7MQ+R3znneg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerStatus.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.MinerStatus.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerStatus.html",
-          "hash": "De53H4sFb9dEdp0oGeir6g=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.MinerStatus.html",
+          "hash": "WtUxebgZR981BTu3QaJuRg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.MinerStatusDetails.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.MinerStatusDetails.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.MinerStatusDetails.html",
-          "hash": "Rk43kAhCmFnnGo1BDG/rMg=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.MinerStatusDetails.html",
+          "hash": "l2XLklPX6GuNkOKoEzNr2w=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.RigConfig.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.RigConfig.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.RigConfig.html",
-          "hash": "ubPgPrXBv6ptvAxQ6WL6LQ=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.RigConfig.html",
+          "hash": "C8CKzzqI07cXQKFekgupmQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.TuneMinerGPUsResult.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.TuneMinerGPUsResult.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.TuneMinerGPUsResult.html",
-          "hash": "r4Rc90YSz6Ib2j43OmoPHQ=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.TuneMinerGPUsResult.html",
+          "hash": "UmDu4Pk7YPgdvTlg6B5yyw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.Models.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.Models.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.Models.html",
-          "hash": "9ZwoAMxlaANwgBx02iY3RQ=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.Models.html",
+          "hash": "aqi1lehnQR0VkDggnXnUpQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.UnitTests.ClaymoreETHDualMinerFixture.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.UnitTests.ClaymoreETHDualMinerFixture.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.UnitTests.ClaymoreETHDualMinerFixture.html",
-          "hash": "EW7GAmRBUKbdxh84Qve+bg=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.UnitTests.ClaymoreETHDualMinerFixture.html",
+          "hash": "P2sifbrJTNTz6J5ULrLgJQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.UnitTests.ClaymoreMinerProcessUnitTests001.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.UnitTests.ClaymoreMinerProcessUnitTests001.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.UnitTests.ClaymoreMinerProcessUnitTests001.html",
-          "hash": "q3pp0FnNTEYCq++ddYZ5fw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.UnitTests.ClaymoreMinerProcessUnitTests001.html",
+          "hash": "dwBmN3BzFpPjLCEMA4jagw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.UnitTests.CryptoCoinUnitTests001.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.UnitTests.CryptoCoinUnitTests001.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.UnitTests.CryptoCoinUnitTests001.html",
-          "hash": "k1Ei9LnQ+U3LNFfNh8D6Lw=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.UnitTests.CryptoCoinUnitTests001.html",
+          "hash": "tO0C9wMD3BkkKw1fBidhsw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.UnitTests.Fixture.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.UnitTests.Fixture.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.UnitTests.Fixture.html",
-          "hash": "kRV5Vrzrwv6UZMSZl+/Rsg=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.UnitTests.Fixture.html",
+          "hash": "yJwQD0rwVNmq6UPh863Aog=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.CryptoMiner.UnitTests.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.CryptoMiner.UnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.CryptoMiner.UnitTests.html",
-          "hash": "Fo7J/KGPREXFgR3NqegU6g=="
+          "relative_path": "Api/ATAP.Utilities.CryptoMiner.UnitTests.html",
+          "hash": "OH97dpwblDkzreTVwjGSVg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.DateTime.UnitTests.Class1.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.DateTime.UnitTests.Class1.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.DateTime.UnitTests.Class1.html",
-          "hash": "mmo8vXqcRT28zeTfYZ/TsQ=="
+          "relative_path": "Api/ATAP.Utilities.DateTime.UnitTests.Class1.html",
+          "hash": "PoZuuObgMRZmkvENMVc1Wg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.DateTime.UnitTests.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.DateTime.UnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.DateTime.UnitTests.html",
-          "hash": "85sSpzVwusFWzA0mBaelAg=="
+          "relative_path": "Api/ATAP.Utilities.DateTime.UnitTests.html",
+          "hash": "wrc/jYOFs/Zlizjv68zCdw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.DateTime.Utilities.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.DateTime.Utilities.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.DateTime.Utilities.html",
-          "hash": "83DBTBRtppd1NMx7hi2kBQ=="
+          "relative_path": "Api/ATAP.Utilities.DateTime.Utilities.html",
+          "hash": "ZCpfHMbh/fWL/xF0ZUivEA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.DateTime.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.DateTime.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.DateTime.html",
-          "hash": "zvJiTCfn4l1xctc+52aF4Q=="
+          "relative_path": "Api/ATAP.Utilities.DateTime.html",
+          "hash": "IEiKM2bVo7GWa2UwzCXhrA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Enumeration.UnitTests.Class1.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Enumeration.UnitTests.Class1.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Enumeration.UnitTests.Class1.html",
-          "hash": "Efo1BLQ9mqLCduGUNcTDlg=="
+          "relative_path": "Api/ATAP.Utilities.Enumeration.UnitTests.Class1.html",
+          "hash": "JIGjCgXk7VVY9apyr9m17g=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Enumeration.UnitTests.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Enumeration.UnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Enumeration.UnitTests.html",
-          "hash": "Tz1hbz2M/JxRZAbEmYv6zA=="
+          "relative_path": "Api/ATAP.Utilities.Enumeration.UnitTests.html",
+          "hash": "QYBkr/Jhzzyod1b3MmE/Hg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Enumeration.Utilities.IAttribute-1.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Enumeration.Utilities.IAttribute-1.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Enumeration.Utilities.IAttribute-1.html",
-          "hash": "pOa9Od/Ytr+cUzDgz9zVfA=="
+          "relative_path": "Api/ATAP.Utilities.Enumeration.Utilities.IAttribute-1.html",
+          "hash": "jFXr2wj6qtZzsJVm01DIAQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Enumeration.Utilities.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Enumeration.Utilities.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Enumeration.Utilities.html",
-          "hash": "gPqjC7Pw+elI82y+oG2dhw=="
+          "relative_path": "Api/ATAP.Utilities.Enumeration.Utilities.html",
+          "hash": "wV0i3QqHNiVeLJm6N71DyA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Enumeration.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Enumeration.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Enumeration.html",
-          "hash": "malE/392WAm1crGTqj/lPQ=="
+          "relative_path": "Api/ATAP.Utilities.Enumeration.html",
+          "hash": "71LdMrUM9R4aS2eVfYF5WA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.FileSystem.Class1.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.FileSystem.Class1.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.FileSystem.Class1.html",
-          "hash": "apO3noSyTD9tG8ZkS8AvrQ=="
+          "relative_path": "Api/ATAP.Utilities.FileSystem.Class1.html",
+          "hash": "xaKfl2s77gkvfj7GGudYtQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.FileSystem.UnitTests.Class1.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.FileSystem.UnitTests.Class1.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.FileSystem.UnitTests.Class1.html",
-          "hash": "JAbRlKbShj6WTV7OiqLfjw=="
+          "relative_path": "Api/ATAP.Utilities.FileSystem.UnitTests.Class1.html",
+          "hash": "TrcaLXMh1soPdiU+ahnTyA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.FileSystem.UnitTests.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.FileSystem.UnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.FileSystem.UnitTests.html",
-          "hash": "bvzfMAJMnsDfvkSZoP2uEQ=="
+          "relative_path": "Api/ATAP.Utilities.FileSystem.UnitTests.html",
+          "hash": "UxRjvyeLLh5JbcWqpwIbCQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.FileSystem.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.FileSystem.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.FileSystem.html",
-          "hash": "wGm50cgUrHSMzKSx82lI5Q=="
+          "relative_path": "Api/ATAP.Utilities.FileSystem.html",
+          "hash": "hOsiKZQ2s2nBSqb7+xZyoA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.Gateway.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.Gateway.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.Gateway.html",
-          "hash": "KajiUUUW0YQhnYuNuqVVqQ=="
+          "relative_path": "Api/ATAP.Utilities.Http.Gateway.html",
+          "hash": "LOXpGumNI0DkeR+1vz/ZOQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.GatewayBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.GatewayBuilder.html",
-          "hash": "Ywat2Tifmbyy26nv2WBjlQ=="
+          "relative_path": "Api/ATAP.Utilities.Http.GatewayBuilder.html",
+          "hash": "WKQFOtrVQJzs5q6TgFNQ5Q=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayEntry.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.GatewayEntry.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.GatewayEntry.html",
-          "hash": "7eCfuPzC44bod9nphvRZkg=="
+          "relative_path": "Api/ATAP.Utilities.Http.GatewayEntry.html",
+          "hash": "1o0MIe63s+bWcLRsl5VX0g=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayEntryBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.GatewayEntryBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.GatewayEntryBuilder.html",
-          "hash": "gyfLIp6hxO0gY8iQ2ZV4DA=="
+          "relative_path": "Api/ATAP.Utilities.Http.GatewayEntryBuilder.html",
+          "hash": "HNQFMi11BgkJyhj6W02b+Q=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayEntryMonitor.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.GatewayEntryMonitor.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.GatewayEntryMonitor.html",
-          "hash": "QzDx5fYw67fW4bsl2EdB9g=="
+          "relative_path": "Api/ATAP.Utilities.Http.GatewayEntryMonitor.html",
+          "hash": "YxKM8I86ETzalxKJQ0TyBg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html",
-          "hash": "t6Cpog69EyJgEG05C/4tqQ=="
+          "relative_path": "Api/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html",
+          "hash": "tt+Z4epGufB1WcbKTTH9Jg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayMonitor.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.GatewayMonitor.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.GatewayMonitor.html",
-          "hash": "g9YikGWbfutkG3jE0oLbnw=="
+          "relative_path": "Api/ATAP.Utilities.Http.GatewayMonitor.html",
+          "hash": "iHbkyVOyIS/0+j1dDg7q0A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayMonitorBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.GatewayMonitorBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.GatewayMonitorBuilder.html",
-          "hash": "PvEzBN/B4S09leS1ZQLTmA=="
+          "relative_path": "Api/ATAP.Utilities.Http.GatewayMonitorBuilder.html",
+          "hash": "QmWjE80My/TRoDKTwZJZQA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayMonitors.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.GatewayMonitors.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.GatewayMonitors.html",
-          "hash": "odOhb83kxDeo/6okpIa+sQ=="
+          "relative_path": "Api/ATAP.Utilities.Http.GatewayMonitors.html",
+          "hash": "ATRoPgxl2TRRVSKUJAeEHg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GatewayMonitorsBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.GatewayMonitorsBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.GatewayMonitorsBuilder.html",
-          "hash": "BAlXWiHbSwB8UOurZ44WMw=="
+          "relative_path": "Api/ATAP.Utilities.Http.GatewayMonitorsBuilder.html",
+          "hash": "7OPsYxVeAMeZLz6ygIVoCQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.Gateways.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.Gateways.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.Gateways.html",
-          "hash": "f+UWyjlIT6OJkuCr8qhTaQ=="
+          "relative_path": "Api/ATAP.Utilities.Http.Gateways.html",
+          "hash": "zBSEQBJWs4/b08jrYRVAqg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.GenericWebGet.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.GenericWebGet.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.GenericWebGet.html",
-          "hash": "dMBEaaOfRuC00vjsmQ9KbQ=="
+          "relative_path": "Api/ATAP.Utilities.Http.GenericWebGet.html",
+          "hash": "kTktAJMRYBKQgOKRX5tUIg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.HttpRequestMessageBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.HttpRequestMessageBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.HttpRequestMessageBuilder.html",
-          "hash": "mBX7KqSyy6HEAYvpF9bYBw=="
+          "relative_path": "Api/ATAP.Utilities.Http.HttpRequestMessageBuilder.html",
+          "hash": "R7bEs5YFsxEKM7uVh9J5xQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGateway.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.IGateway.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.IGateway.html",
-          "hash": "6sozrPAPwKZktrXGIJOnsw=="
+          "relative_path": "Api/ATAP.Utilities.Http.IGateway.html",
+          "hash": "CLr0mcyaREeApNgBYf3GrA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.IGatewayBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.IGatewayBuilder.html",
-          "hash": "iJZu48FkDEOcA3/hoDUXuw=="
+          "relative_path": "Api/ATAP.Utilities.Http.IGatewayBuilder.html",
+          "hash": "9BndSDuHgZI47k9KxZXlcQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayEntry.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.IGatewayEntry.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.IGatewayEntry.html",
-          "hash": "gV/IqO183KPUAiH1d9toKg=="
+          "relative_path": "Api/ATAP.Utilities.Http.IGatewayEntry.html",
+          "hash": "l6YPy4dsBU0RIU8tZ+jZeg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayEntryBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.IGatewayEntryBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.IGatewayEntryBuilder.html",
-          "hash": "lXQltrhxR4TD6bmm15CHKQ=="
+          "relative_path": "Api/ATAP.Utilities.Http.IGatewayEntryBuilder.html",
+          "hash": "FO3reRmfHGzqCpV2M92Tdg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayEntryMonitor.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.IGatewayEntryMonitor.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.IGatewayEntryMonitor.html",
-          "hash": "ct9F3TLzBdrYp67xwRvtpQ=="
+          "relative_path": "Api/ATAP.Utilities.Http.IGatewayEntryMonitor.html",
+          "hash": "iwK/2w4JfJYPzd55DVUklg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.html",
-          "hash": "aMgcOtaq49+c7aVXKHKiDA=="
+          "relative_path": "Api/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.html",
+          "hash": "rVwxVjzg6+ZN9HcwvpDEIg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayMonitor.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.IGatewayMonitor.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.IGatewayMonitor.html",
-          "hash": "mFyyKB4i7ups+NGBDOGACA=="
+          "relative_path": "Api/ATAP.Utilities.Http.IGatewayMonitor.html",
+          "hash": "7H938SLMrT59PdfFLYbAYg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayMonitorBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.IGatewayMonitorBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.IGatewayMonitorBuilder.html",
-          "hash": "w+CXT56W8wyMI4IoDaz4aA=="
+          "relative_path": "Api/ATAP.Utilities.Http.IGatewayMonitorBuilder.html",
+          "hash": "uRXVJPA2VfEjLcjoK9p4pw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayMonitors.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.IGatewayMonitors.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.IGatewayMonitors.html",
-          "hash": "/cPTEXIK/Gt9MjkioStDUQ=="
+          "relative_path": "Api/ATAP.Utilities.Http.IGatewayMonitors.html",
+          "hash": "QoL47N3WKoFq9wwVoMFuGQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGatewayMonitorsBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.IGatewayMonitorsBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.IGatewayMonitorsBuilder.html",
-          "hash": "hLwu7iElbQeID2D7tub19Q=="
+          "relative_path": "Api/ATAP.Utilities.Http.IGatewayMonitorsBuilder.html",
+          "hash": "l8JEZzOHT9MGVcbKy6cYTg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IGateways.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.IGateways.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.IGateways.html",
-          "hash": "XnbKUGCcG+u/bSzODc8F4g=="
+          "relative_path": "Api/ATAP.Utilities.Http.IGateways.html",
+          "hash": "vhH5dvZgV/BumvYEO+PotA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IHttpRequestMessageBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.IHttpRequestMessageBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.IHttpRequestMessageBuilder.html",
-          "hash": "DJRx9FYCXXEv0TZMfgP1GA=="
+          "relative_path": "Api/ATAP.Utilities.Http.IHttpRequestMessageBuilder.html",
+          "hash": "JmZ/hqYZfRNAD9aREk5i8A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.IMultiGatewaysBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.IMultiGatewaysBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.IMultiGatewaysBuilder.html",
-          "hash": "Xb8+BWVOIraozVwgogbcjQ=="
+          "relative_path": "Api/ATAP.Utilities.Http.IMultiGatewaysBuilder.html",
+          "hash": "+fuNuZgBCfa7I7aPcx+GMA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.MultiGatewaysBuilder.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.MultiGatewaysBuilder.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.MultiGatewaysBuilder.html",
-          "hash": "x3U3No27NyZBoOf2Ucmz2w=="
+          "relative_path": "Api/ATAP.Utilities.Http.MultiGatewaysBuilder.html",
+          "hash": "+Z3pYULcPqJWuc7DknPKVQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.SingletonHttpClient.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.SingletonHttpClient.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.SingletonHttpClient.html",
-          "hash": "9c1dfr7TZksDHm86vwnXEw=="
+          "relative_path": "Api/ATAP.Utilities.Http.SingletonHttpClient.html",
+          "hash": "NGUslX+btvgcLcFNseV0bg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.UnitTests.Fixture.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.UnitTests.Fixture.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.UnitTests.Fixture.html",
-          "hash": "adkADYK0lj3Hoh0nUSq0Bg=="
+          "relative_path": "Api/ATAP.Utilities.Http.UnitTests.Fixture.html",
+          "hash": "O6h9w3nf16Q0qVOIyFxy0A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.UnitTests.HttpUnitTests.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.UnitTests.HttpUnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.UnitTests.HttpUnitTests.html",
-          "hash": "LTmwfEJouhbK7jnkUPUs6w=="
+          "relative_path": "Api/ATAP.Utilities.Http.UnitTests.HttpUnitTests.html",
+          "hash": "Wzky0v+NqO3ReT53D7kuOQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.UnitTests.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.UnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.UnitTests.html",
-          "hash": "RcJ0V4yPwlTZXiyRr4an8w=="
+          "relative_path": "Api/ATAP.Utilities.Http.UnitTests.html",
+          "hash": "KbMMnob8qm2N6MUUJqBtkg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.WebGet-1.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.WebGet-1.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.WebGet-1.html",
-          "hash": "OK7beHfjdKQ++ZHAitR/qw=="
+          "relative_path": "Api/ATAP.Utilities.Http.WebGet-1.html",
+          "hash": "d8CUpj+6qS2i+KtU5bVlbg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Http.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Http.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Http.html",
-          "hash": "hWrSO9EUtpY2T6vEBvY4Cg=="
+          "relative_path": "Api/ATAP.Utilities.Http.html",
+          "hash": "EMjMfdWcN+kFhHmVBgRI/Q=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.Logging.ILogProvider.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Logging.Logging.ILogProvider.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Logging.Logging.ILogProvider.html",
-          "hash": "freB5kN1bVDUkCneZeS5fg=="
+          "relative_path": "Api/ATAP.Utilities.Logging.Logging.ILogProvider.html",
+          "hash": "22o+UjWf9o8yYvW9UtSKNQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.Logging.LogLevel.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Logging.Logging.LogLevel.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Logging.Logging.LogLevel.html",
-          "hash": "weoSv4MmfBt3vs8Iv09hHQ=="
+          "relative_path": "Api/ATAP.Utilities.Logging.Logging.LogLevel.html",
+          "hash": "QnvfWh/aXOSL23EGH2BPBA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.Logging.LogProvider.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Logging.Logging.LogProvider.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Logging.Logging.LogProvider.html",
-          "hash": "LzJseGwJGVmQnFkwOvgK+A=="
+          "relative_path": "Api/ATAP.Utilities.Logging.Logging.LogProvider.html",
+          "hash": "HVb7/u94zIyRZg2OHqlkJQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.Logging.Logger.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Logging.Logging.Logger.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Logging.Logging.Logger.html",
-          "hash": "AcnydSUfjDKOBeleaqM8xg=="
+          "relative_path": "Api/ATAP.Utilities.Logging.Logging.Logger.html",
+          "hash": "eiIfN2XJcVvk24Gt/H/ITw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.Logging.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Logging.Logging.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Logging.Logging.html",
-          "hash": "uoPVMnP2o1ettDl745nu+g=="
+          "relative_path": "Api/ATAP.Utilities.Logging.Logging.html",
+          "hash": "gesIXVnMdEg9IWtneZx8kA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.LoggingUtilities.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Logging.LoggingUtilities.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Logging.LoggingUtilities.html",
-          "hash": "t6jKMTDx1pIe7P9RWr8CvQ=="
+          "relative_path": "Api/ATAP.Utilities.Logging.LoggingUtilities.html",
+          "hash": "ZB5TSpiWIEWuF0ImG2hd0Q=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.LoggingUtilitiesLoggingTest.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Logging.LoggingUtilitiesLoggingTest.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Logging.LoggingUtilitiesLoggingTest.html",
-          "hash": "3TYRh03SpkvTVzMAC2esAA=="
+          "relative_path": "Api/ATAP.Utilities.Logging.LoggingUtilitiesLoggingTest.html",
+          "hash": "qUyh2KvxqcwVwzg3nQiNiQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.UnitTests.Fixture.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Logging.UnitTests.Fixture.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Logging.UnitTests.Fixture.html",
-          "hash": "5XZUmp+tr7Pey5Z59asRxQ=="
+          "relative_path": "Api/ATAP.Utilities.Logging.UnitTests.Fixture.html",
+          "hash": "UM+hSP48y+pOoiNd299KHg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.UnitTests.LoggingUnitTests001.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Logging.UnitTests.LoggingUnitTests001.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Logging.UnitTests.LoggingUnitTests001.html",
-          "hash": "es07hhOAT/daRZ6pHQ+jZw=="
+          "relative_path": "Api/ATAP.Utilities.Logging.UnitTests.LoggingUnitTests001.html",
+          "hash": "zNyM+1bMktnELT7+aOuJww=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.UnitTests.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Logging.UnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Logging.UnitTests.html",
-          "hash": "h8zdKyEqaSObfsTtERzrmA=="
+          "relative_path": "Api/ATAP.Utilities.Logging.UnitTests.html",
+          "hash": "9yf814p24fNpoh/ovZIDRQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Logging.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Logging.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Logging.html",
-          "hash": "jpzXl+oGYIzUP2d6T0nd9g=="
+          "relative_path": "Api/ATAP.Utilities.Logging.html",
+          "hash": "gsUUrCRtt5YuLJjfVlatrA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.String.Encrypt.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.String.Encrypt.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.String.Encrypt.html",
-          "hash": "OalO850DLayKLR+/ToPBBQ=="
+          "relative_path": "Api/ATAP.Utilities.String.Encrypt.html",
+          "hash": "O7Dj4fdisB1xdcWbCbWtcA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.String.UnitTests.StringUnitTests001.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.String.UnitTests.StringUnitTests001.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.String.UnitTests.StringUnitTests001.html",
-          "hash": "2kclPX6uSzzd+HQmzQkk3Q=="
+          "relative_path": "Api/ATAP.Utilities.String.UnitTests.StringUnitTests001.html",
+          "hash": "YejL4U0gixX0UN6BKOMRXw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.String.UnitTests.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.String.UnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.String.UnitTests.html",
-          "hash": "bTqk+1uw57USVxMT/YJNSw=="
+          "relative_path": "Api/ATAP.Utilities.String.UnitTests.html",
+          "hash": "ekwMISJoqbiUsh6Px1JL7A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.String.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.String.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.String.html",
-          "hash": "rXDFc7UrtI5rK/niK65X7g=="
+          "relative_path": "Api/ATAP.Utilities.String.html",
+          "hash": "H3V7KvjGw6AVXp1BDZELTg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Tcp.Tcp.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Tcp.Tcp.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Tcp.Tcp.html",
-          "hash": "2q/RLn3mwemhx8Ahx+gtEw=="
+          "relative_path": "Api/ATAP.Utilities.Tcp.Tcp.html",
+          "hash": "MGT9vNZr/sp5s+ktWB8Bcg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Tcp.UnitTests.Fixture.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Tcp.UnitTests.Fixture.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Tcp.UnitTests.Fixture.html",
-          "hash": "EsqTlSzr1bxvAhcn12XYuA=="
+          "relative_path": "Api/ATAP.Utilities.Tcp.UnitTests.Fixture.html",
+          "hash": "V51NYsu3jGB1xQ7+nqo1Ow=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Tcp.UnitTests.TCPUnitTests001.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Tcp.UnitTests.TCPUnitTests001.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Tcp.UnitTests.TCPUnitTests001.html",
-          "hash": "hdPc5hMZPtX98b4e44jJYw=="
+          "relative_path": "Api/ATAP.Utilities.Tcp.UnitTests.TCPUnitTests001.html",
+          "hash": "PUsyJfYpCwIzGGxZST29fg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Tcp.UnitTests.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Tcp.UnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Tcp.UnitTests.html",
-          "hash": "iZ3drU1CguAWXAixTbVygw=="
+          "relative_path": "Api/ATAP.Utilities.Tcp.UnitTests.html",
+          "hash": "K/sceu54rDbdUAMm4vQKKQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Tcp.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Tcp.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Tcp.html",
-          "hash": "wUYAXfbWRQigIDXuJy+K+A=="
+          "relative_path": "Api/ATAP.Utilities.Tcp.html",
+          "hash": "cAGUi1Vp39Qv1jzGcKzv6w=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Testing.InputMethodsForDealingWithJSONFormattedStrings.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Testing.InputMethodsForDealingWithJSONFormattedStrings.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Testing.InputMethodsForDealingWithJSONFormattedStrings.html",
-          "hash": "oxG90ECVw02qTkgwUgD3Ug=="
+          "relative_path": "Api/ATAP.Utilities.Testing.InputMethodsForDealingWithJSONFormattedStrings.html",
+          "hash": "gGf9880MMRXPjd14BSaVZQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Testing.TemporaryFile.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Testing.TemporaryFile.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Testing.TemporaryFile.html",
-          "hash": "qPY3A1uOWLKnBTPVN7ET3Q=="
+          "relative_path": "Api/ATAP.Utilities.Testing.TemporaryFile.html",
+          "hash": "lLQ7r+/cLTKTgy/ysdvV6A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Testing.UnitTests.Fixture.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Testing.UnitTests.Fixture.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Testing.UnitTests.Fixture.html",
-          "hash": "tFnA6PYjpH9n6uW1V1/lDg=="
+          "relative_path": "Api/ATAP.Utilities.Testing.UnitTests.Fixture.html",
+          "hash": "XWCxkzCJ7B8pfuvHZAZLyw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Testing.UnitTests.UnitTestsForTestingUtilities.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Testing.UnitTests.UnitTestsForTestingUtilities.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Testing.UnitTests.UnitTestsForTestingUtilities.html",
-          "hash": "bCLFObWxyyN/eLS6/vF6Hg=="
+          "relative_path": "Api/ATAP.Utilities.Testing.UnitTests.UnitTestsForTestingUtilities.html",
+          "hash": "uJoIEnvY5gSBC4na+4mH1w=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Testing.UnitTests.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Testing.UnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Testing.UnitTests.html",
-          "hash": "721CWwhEUhrhi/28IkuFdg=="
+          "relative_path": "Api/ATAP.Utilities.Testing.UnitTests.html",
+          "hash": "o41QORtiAnlP3tIou1tOmg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.Testing.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.Testing.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.Testing.html",
-          "hash": "/syZqoMg0XzYy30mh+eG/w=="
+          "relative_path": "Api/ATAP.Utilities.Testing.html",
+          "hash": "8WZkAA0/cAf8KRHD+WsbzQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.Container.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.Container.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.Container.html",
-          "hash": "2eON9dRNLmO/lpNATZRmfw=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.Container.html",
+          "hash": "yKaW518o8lff+K2F1k6huA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.Container2.SolveAndStoreOD_2T.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.Container2.SolveAndStoreOD_2T.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.Container2.SolveAndStoreOD_2T.html",
-          "hash": "uCWd66PdAK9PPRwndoX0Pw=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.Container2.SolveAndStoreOD_2T.html",
+          "hash": "y571vX0WWcwiB7p+vAGw8Q=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.Container2.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.Container2.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.Container2.html",
-          "hash": "VEaKnmke8TOy6gQ39/wVxg=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.Container2.html",
+          "hash": "FgtALH8xbjEEAHh71xjNbQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.JSONSerializeAndDeSerializeTupleExamples.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.JSONSerializeAndDeSerializeTupleExamples.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.JSONSerializeAndDeSerializeTupleExamples.html",
-          "hash": "3lPDnCHq+FQ2CElVxtB5nA=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.JSONSerializeAndDeSerializeTupleExamples.html",
+          "hash": "QGdQAlNVoGN+1/B3WgXjvw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.ObjectUtilities.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.ObjectUtilities.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.ObjectUtilities.html",
-          "hash": "fFjdHy3KgttyT0LgLNRXyQ=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.ObjectUtilities.html",
+          "hash": "D+WmiVovpe260z5Z11k2LQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.SolveAndStoreOD-2.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.SolveAndStoreOD-2.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.SolveAndStoreOD-2.html",
-          "hash": "+lGBOnpMv/A5P07sBxQSdg=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.SolveAndStoreOD-2.html",
+          "hash": "1+NWaWEVIis3MZzqStwyNw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.SolveAndStoreOD_ST1.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.SolveAndStoreOD_ST1.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.SolveAndStoreOD_ST1.html",
-          "hash": "1kcHRsYWtJyLZuYuTPHIUg=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.SolveAndStoreOD_ST1.html",
+          "hash": "ZOVTJhtxCyMSlsfw7Kx6cw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.SolveAndStoreOD_ST2.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.SolveAndStoreOD_ST2.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.SolveAndStoreOD_ST2.html",
-          "hash": "oVcmE1EtRdl3i5WNb8aUyQ=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.SolveAndStoreOD_ST2.html",
+          "hash": "xBF3jxjOGmRHDq022/mP+g=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.SolveAndStoreOD_TickerInfo.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.SolveAndStoreOD_TickerInfo.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.SolveAndStoreOD_TickerInfo.html",
-          "hash": "cYLuWhbszS+V3gXqMMFuHA=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.SolveAndStoreOD_TickerInfo.html",
+          "hash": "pqe3X6apzsE5tsMhZlqVoQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.SolveAndStoreOD_int.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.SolveAndStoreOD_int.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.SolveAndStoreOD_int.html",
-          "hash": "EWagUZjEf9oQbGH7vu/rWA=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.SolveAndStoreOD_int.html",
+          "hash": "2A93qsN3koAMNJO5DR+hHw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.SolveAndStoreOD_intAr.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.SolveAndStoreOD_intAr.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.SolveAndStoreOD_intAr.html",
-          "hash": "WxRa7AksrEky1qvkuVKWIw=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.SolveAndStoreOD_intAr.html",
+          "hash": "faXSqb/QZ0ZX6WaYAwMvXA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.UnitTests.AAMinerTest.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.UnitTests.AAMinerTest.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.UnitTests.AAMinerTest.html",
-          "hash": "PnjTNX6rZE/eGcAshHgyiQ=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.UnitTests.AAMinerTest.html",
+          "hash": "NY5LCbX8XpFfb3xIZ0S3FA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.UnitTests.ClassLevelTestData.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.UnitTests.ClassLevelTestData.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.UnitTests.ClassLevelTestData.html",
-          "hash": "9MZecuaC/dgoz2xRyeCLRg=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.UnitTests.ClassLevelTestData.html",
+          "hash": "6U99DhD7Xx8EGHxibp7qgw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.UnitTests.Fixture.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.UnitTests.Fixture.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.UnitTests.Fixture.html",
-          "hash": "sqHxqXoQUAWkQZ1csLTjGw=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.UnitTests.Fixture.html",
+          "hash": "HYGYPr5Z3Zeuu740tCB5yQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.UnitTests.ZSandboxUnitTests001.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.UnitTests.ZSandboxUnitTests001.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.UnitTests.ZSandboxUnitTests001.html",
-          "hash": "V91KK+8TKQoNj2BBVeFZyg=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.UnitTests.ZSandboxUnitTests001.html",
+          "hash": "m3FSgOwsfUeTbS/+cvxR0A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.UnitTests.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.UnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.UnitTests.html",
-          "hash": "GEdtAxZpWMFmZSrKlNS/1g=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.UnitTests.html",
+          "hash": "Cj9bshg4UK/ZveQ5m8uqIA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/ATAP.Utilities.ZSandbox.yml",
+      "source_relative_path": "obj/docfx/api/ATAP.Utilities.ZSandbox.yml",
       "output": {
         ".html": {
-          "relative_path": "ATAP.Utilities.ZSandbox.html",
-          "hash": "ZEPdryDWyt3/o43uEK3FCw=="
+          "relative_path": "Api/ATAP.Utilities.ZSandbox.html",
+          "hash": "IMjf4A12zBOKHw1kZ5CPZg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Collections.IReadOnlyArray-1.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Collections.IReadOnlyArray-1.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Collections.IReadOnlyArray-1.html",
-          "hash": "WpvwXZo/QFXMCsFXjBbXrg=="
+          "relative_path": "Api/OpenHardwareMonitor.Collections.IReadOnlyArray-1.html",
+          "hash": "0JhFF6jjJe5zNjrwCV9I0w=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Collections.ListSet-1.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Collections.ListSet-1.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Collections.ListSet-1.html",
-          "hash": "b9umW8oeDErl7AIZ+Kma2g=="
+          "relative_path": "Api/OpenHardwareMonitor.Collections.ListSet-1.html",
+          "hash": "ec5CzUe8hMvGLh81aWwWUw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Collections.Pair-2.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Collections.Pair-2.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Collections.Pair-2.html",
-          "hash": "F3y6WGqgyAdAHvwv/7LmFA=="
+          "relative_path": "Api/OpenHardwareMonitor.Collections.Pair-2.html",
+          "hash": "rS94nSS9G0aaYMXCTNgyDg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Collections.ReadOnlyArray-1.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Collections.ReadOnlyArray-1.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Collections.ReadOnlyArray-1.html",
-          "hash": "2ppvqQFJd5/1ytJSEQaXUQ=="
+          "relative_path": "Api/OpenHardwareMonitor.Collections.ReadOnlyArray-1.html",
+          "hash": "Uzhv70rlJVvYajTADKra4g=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Collections.RingCollection-1.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Collections.RingCollection-1.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Collections.RingCollection-1.html",
-          "hash": "7xrcDVPeoR0dq+4JHlRWJw=="
+          "relative_path": "Api/OpenHardwareMonitor.Collections.RingCollection-1.html",
+          "hash": "HmA1NReyXNwAU+orQxI3Dg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Collections.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Collections.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Collections.html",
-          "hash": "/TgRrgzkkvqmzkJWxYVSGw=="
+          "relative_path": "Api/OpenHardwareMonitor.Collections.html",
+          "hash": "NASq3Cze0tTJWgRJ8P95eQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.Computer.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.Computer.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.Computer.html",
-          "hash": "+cK9w03IqjMFY1pNGHhGmQ=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.Computer.html",
+          "hash": "fN5zhwnSlFpP6a8ADp870w=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.ControlMode.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.ControlMode.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.ControlMode.html",
-          "hash": "d0fi3Z4fAhyGkiq3re9A0Q=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.ControlMode.html",
+          "hash": "UuGcqAa3STh2fzXANA35uw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.HardwareEventHandler.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.HardwareEventHandler.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.HardwareEventHandler.html",
-          "hash": "RRrHajLMWrI28GGJH046DQ=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.HardwareEventHandler.html",
+          "hash": "CiyYN2UQftHK05JPFvAUog=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.HardwareType.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.HardwareType.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.HardwareType.html",
-          "hash": "gtTwJKrmfadECYPlQegdGg=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.HardwareType.html",
+          "hash": "aKO5pJJSLkkzHMgVNBoSwQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.IComputer.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.IComputer.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.IComputer.html",
-          "hash": "VQ+qsB8dR9h7nAHe7MM7EA=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.IComputer.html",
+          "hash": "is0W5zX19+xzrsxp5E4SGQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.IControl.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.IControl.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.IControl.html",
-          "hash": "CyPwymZ1D4cTc9ud4Vf1WQ=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.IControl.html",
+          "hash": "pw+mWuav3gojKuEvcRVyOA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.IElement.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.IElement.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.IElement.html",
-          "hash": "tPYOOhTfd6mrgBXlwvVjGg=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.IElement.html",
+          "hash": "FvrorTy9wDE8GljSY8gYxw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.IHardware.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.IHardware.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.IHardware.html",
-          "hash": "E6qNYk/oh7mqHTz+qzX+Ag=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.IHardware.html",
+          "hash": "Er5wBAFJAfK1c4UBzhpDpw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.IParameter.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.IParameter.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.IParameter.html",
-          "hash": "3BywFPnFnqZywvmfcoh4Lg=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.IParameter.html",
+          "hash": "sWdgzj0//XjjdnUus1cefA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.ISensor.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.ISensor.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.ISensor.html",
-          "hash": "nUZVO1T3yeucTHkljvpuVQ=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.ISensor.html",
+          "hash": "cExrBGp034WC19pcl8ouAQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.ISettings.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.ISettings.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.ISettings.html",
-          "hash": "vV+547JDUTqUpMaM76FpgQ=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.ISettings.html",
+          "hash": "LUgmebb6ggYn+hfkQe00bA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.IVisitor.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.IVisitor.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.IVisitor.html",
-          "hash": "knqrKvmHlrQFG0YGBBQn3A=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.IVisitor.html",
+          "hash": "cgPqEsj87fEjzpR/b22uUA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.Identifier.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.Identifier.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.Identifier.html",
-          "hash": "TQA4rdpJ4YqVLniphR3R/A=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.Identifier.html",
+          "hash": "KaxNR0sUJOklhE/uYiKBVA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.SensorEventHandler.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.SensorEventHandler.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.SensorEventHandler.html",
-          "hash": "to4v87Zd1I0oSPpKz/Q/0g=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.SensorEventHandler.html",
+          "hash": "56VFHMc6RtwE5oqcfqdgKg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.SensorType.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.SensorType.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.SensorType.html",
-          "hash": "5MeIH5Vp+eht52+DkuHTZQ=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.SensorType.html",
+          "hash": "l4yFkmFdgPj2Zlu0vEgWmg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.SensorValue.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.SensorValue.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.SensorValue.html",
-          "hash": "wAJp888juh+wlwuf8hPNFA=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.SensorValue.html",
+          "hash": "iFsfc2QzPSy+846sUMoSsg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.SensorVisitor.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.SensorVisitor.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.SensorVisitor.html",
-          "hash": "GGIxYFNVXJcfl1STyyViyQ=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.SensorVisitor.html",
+          "hash": "KKPG7MCSiFR9BW98mTXVEw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/OpenHardwareMonitor.Hardware.yml",
+      "source_relative_path": "obj/docfx/api/OpenHardwareMonitor.Hardware.yml",
       "output": {
         ".html": {
-          "relative_path": "OpenHardwareMonitor.Hardware.html",
-          "hash": "mq27rzQTp7NzkIKh4ymthA=="
+          "relative_path": "Api/OpenHardwareMonitor.Hardware.html",
+          "hash": "0O7P1wPjfKUM/Idc8ud5jA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/Utilities.ComputerInventory.CPU.yml",
+      "source_relative_path": "obj/docfx/api/Utilities.ComputerInventory.CPU.yml",
       "output": {
         ".html": {
-          "relative_path": "Utilities.ComputerInventory.CPU.html",
-          "hash": "dP8XxGQ73Ez7/Z9sjjpPmQ=="
+          "relative_path": "Api/Utilities.ComputerInventory.CPU.html",
+          "hash": "OShU7CgEe3GHWll9yDDoMA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/Utilities.ComputerInventory.CPUMaker.yml",
+      "source_relative_path": "obj/docfx/api/Utilities.ComputerInventory.CPUMaker.yml",
       "output": {
         ".html": {
-          "relative_path": "Utilities.ComputerInventory.CPUMaker.html",
-          "hash": "7fYJV6MhQXZQ0jVyE0rjYA=="
+          "relative_path": "Api/Utilities.ComputerInventory.CPUMaker.html",
+          "hash": "L2x0YWo11hXXDBeRCYqIjg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/Utilities.ComputerInventory.UnitTests.ComputerInventoryUnitTests001.yml",
+      "source_relative_path": "obj/docfx/api/Utilities.ComputerInventory.UnitTests.ComputerInventoryUnitTests001.yml",
       "output": {
         ".html": {
-          "relative_path": "Utilities.ComputerInventory.UnitTests.ComputerInventoryUnitTests001.html",
-          "hash": "cxG0gDXKlseLVm0FHOrGbw=="
+          "relative_path": "Api/Utilities.ComputerInventory.UnitTests.ComputerInventoryUnitTests001.html",
+          "hash": "JbjTVElTRnburOD9+uYDZA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/Utilities.ComputerInventory.UnitTests.yml",
+      "source_relative_path": "obj/docfx/api/Utilities.ComputerInventory.UnitTests.yml",
       "output": {
         ".html": {
-          "relative_path": "Utilities.ComputerInventory.UnitTests.html",
-          "hash": "AHxMFAiehxm5WgU+5p6WTA=="
+          "relative_path": "Api/Utilities.ComputerInventory.UnitTests.html",
+          "hash": "Us7XC1uEevYYukk1ENWIGw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/temp/docfx/Utilities.ComputerInventory.yml",
+      "source_relative_path": "obj/docfx/api/Utilities.ComputerInventory.yml",
       "output": {
         ".html": {
-          "relative_path": "Utilities.ComputerInventory.html",
-          "hash": "P6juYt+RcYETTOi5ZbcXXQ=="
+          "relative_path": "Api/Utilities.ComputerInventory.html",
+          "hash": "PX5wjps5Kgs7BSiPtXHhJA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "Toc",
-      "source_relative_path": "obj/temp/docfx/toc.yml",
+      "source_relative_path": "obj/docfx/api/toc.yml",
       "output": {
         ".html": {
-          "relative_path": "toc.html",
+          "relative_path": "Api/toc.html",
           "hash": "MqB7VasSSuD81FxfkoNjtg=="
         }
       },
@@ -3070,7 +3118,8 @@
   "incremental_info": [
     {
       "status": {
-        "can_incremental": true,
+        "can_incremental": false,
+        "details": "Cannot build incrementally because config changed.",
         "incrementalPhase": "build"
       },
       "processors": {
@@ -3080,11 +3129,11 @@
           "incrementalPhase": "build"
         },
         "ManagedReferenceDocumentProcessor": {
-          "can_incremental": true,
+          "can_incremental": false,
           "incrementalPhase": "build"
         },
         "ConceptualDocumentProcessor": {
-          "can_incremental": true,
+          "can_incremental": false,
           "incrementalPhase": "build"
         }
       }

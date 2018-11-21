@@ -19,6 +19,7 @@
   <ItemGroup>
     <Folder Include="Docs\" />
     <Folder Include="Images\" />
+    <Folder Include="Articles\" />
   </ItemGroup>
   
     <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->

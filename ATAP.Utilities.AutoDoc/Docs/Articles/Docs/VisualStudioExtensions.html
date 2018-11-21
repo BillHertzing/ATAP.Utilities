@@ -1,0 +1,169 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title> Visual Studio settings and Extensions needed to build ATAP.Utilities solution and project | ATAP Utilities </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content=" Visual Studio settings and Extensions needed to build ATAP.Utilities solution and project | ATAP Utilities ">
+    <meta name="generator" content="docfx 2.40.2.0">
+    
+    <link rel="shortcut icon" href="../../favicon.ico">
+    <link rel="stylesheet" href="../../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../../styles/docfx.css">
+    <link rel="stylesheet" href="../../styles/main.css">
+    <meta property="docfx:navrel" content="">
+    <meta property="docfx:tocrel" content="">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../../index.html">
+                <img id="logo" class="svg" src="../../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        <div class="article row grid">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="">
+<h1> Visual Studio settings and Extensions needed to build ATAP.Utilities solution and project</h1>
+
+<h1 id="vsix-extensions">VSIX extensions</h1>
+<h2 id="ghostdoc-community-edition-tbd">GhostDoc Community Edition (tbd)</h2>
+<pre><code>*  Used to create XML documentation inside each .cs file that socuments public classes, fields, methods, and properties.
+*  Machine-wide configuration settings for GhostDoc are stored here: TBD
+*  Solution-wide configuration settings for GhostDoc are stored here: TBD
+*  Project-wide configuration settings for GhostDoc are stored here: TBD
+</code></pre>
+<h3 id="installation-details">Installation Details</h3>
+<pre><code>* use standard installation instructions
+</code></pre>
+<h2 id="docfx-tbd">DocFx (tbd)</h2>
+<pre><code>* used to create a static web site from the XML documentation in the .cs files
+* Templates for the static web site are stored here:
+* additional content (CSS and JS) are stored here:
+* Configuration information to publish the static website to GitHub pages is stored here:
+</code></pre>
+<h3 id="installation-details-1">Installation Details</h3>
+<pre><code>* use standard installation instructions
+choco install docfx -y for a machine-wide installation
+</code></pre>
+<h3 id="the-autodoc-project-in-a-solution">The AutoDoc project in a Solution</h3>
+<p>This project builds the static documentation website.
+The gh-pages branch of a repository should point to the latest release version of this project.
+The repositoryies ReadMe.md file should contain a prominent link to the Doc directroy of this project
+see also <a href="https://dzone.com/articles/generating-documentation-with-docfx-as-part-of-a-v">https://dzone.com/articles/generating-documentation-with-docfx-as-part-of-a-v</a></p>
+<h1 id="visual-studio-configuration-settings">Visual Studio Configuration settings</h1>
+<ul>
+<li>tbd</li>
+</ul>
+<h1 id="msbuild-custom-targets-and-tasks-from-atap">msBuild custom targets and tasks from ATAP</h1>
+<h2 id="targets">Targets</h2>
+<pre><code>* Target that executes if a projects output are invalid with respect to the project's inputs
+* Target that creates a lockfile
+* Target that deletes a lockfile
+* Target that  calls the Task to create a lockfile if project outputs are invalid with respoect to inputs
+</code></pre>
+<p>:TBD</p>
+<h2 id="tasks">Tasks</h2>
+<ul>
+<li>GetVersion: Task to read the Version Information from a specified file</li>
+<li>SetVersion: Task to modify the Version Information in a specified file</li>
+<li>UpdateVersion: Task to produces the new values for ASsembly Version, FileVersion, and AssemblyInformationalVersion attributes</li>
+</ul>
+<h3 id="installation-details-2">Installation Details</h3>
+<pre><code>* create a .build folder under the solution dir
+* Add the ATAP.BuildTooling.CSharp NuGet Package
+</code></pre>
+<h1 id="msbuild-custom-targets-and-tasks-from-msbuild-community-project">msBuild custom targets and tasks from MSBuild Community project</h1>
+<h2 id="tasks-1">Tasks</h2>
+<pre><code>* Create a file (lockfile)
+* Remove a file (lockfile)
+</code></pre>
+<h3 id="installation-details-3">Installation Details</h3>
+<pre><code>* create a .build folder under the solution dir
+* Add the Community Tools NuGet Package
+</code></pre>
+<h1 id="how-to-distribute-cross-framework-custom-tasks-via-nuget-for-cro">How to distribute cross-framework custom tasks via NuGet for cro</h1>
+<p><a href="https://natemcmaster.com/blog/2017/07/05/msbuild-task-in-nuget/">https://natemcmaster.com/blog/2017/07/05/msbuild-task-in-nuget/</a></p>
+<h1 id="custom-powershell-scripts-for-visual-studio">Custom PowerShell scripts for Visual Studio</h1>
+<h3 id="installation-details-4">Installation Details</h3>
+<pre><code>* create a .build folder under the solution dir
+* Add the ATAP.BuildTooling.PPowerShell NuGet Package
+</code></pre>
+<h1 id="useful-utility-programs-outside-of-visual-studio">Useful utility programs outside of Visual Studio</h1>
+<h2 id="msbuild-structured-log-viewer--unstable-for-vs-2018-1589">MSbuild Structured log viewer *** Unstable for VS 2018 15.8.9</h2>
+<p>MSbuild logging can be turned on for visual studio with the vsix package
+<a href="https://marketplace.visualstudio.com/items?itemName=VisualStudioProductTeam.ProjectSystemTools">https://marketplace.visualstudio.com/items?itemName=VisualStudioProductTeam.ProjectSystemTools</a></p>
+<p>MSBuild logs are written to
+C:\Users&lt;username&gt;\AppData\Local\Temp AKA %APPDATA%\Local\Temp  (cmd.exe) or &quot;$Env:AppData\Local\Temp&quot; (PowerShell)</p>
+<h3 id="installation-details-5">Installation Details</h3>
+<p>Use Chocolatey
+<a href="https://chocolatey.org/packages/msbuild-structured-log-viewer">https://chocolatey.org/packages/msbuild-structured-log-viewer</a>	
+choco install msbuild-structured-log-viewer</p>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Code Documentation autogenerated by <strong>GhostDoc Enterprise</strong>, static website generated by <strong>DocFX</strong>, Documentation website hosted by <strong>GitHub Pages</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../../styles/docfx.js"></script>
+    <script type="text/javascript" src="../../styles/main.js"></script>
+  </body>
+</html>

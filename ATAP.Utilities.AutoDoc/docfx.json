@@ -6,12 +6,14 @@
           "files": [
             "**.csproj"
           ],
-          "src": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities"
+          "exclude": [ "**/bin/**", "**/obj/**" ],
+          "src": "../"
         }
       ],
-      "dest": "obj/temp/docfx",
+      "dest": "obj/docfx/api",
       "properties": {
-        "TargetFramework": "netstandard2.0"
+        "TargetFramework": "netstandard2.0",
+        "TargetFramework": "netcoreapp2.0"
       },
       "disableGitFeatures": false,
       "disableDefaultFilter": false
@@ -22,24 +24,40 @@
       {
         "files": [
           "**.yml",
-          "index.md"
+          "index.md",
+          "**/toc.yml",
+          "**/index.md",
+          "toc.md"
         ],
-        "src": "obj/temp/docfx"
+        "src": "obj/docfx/api",
+        "dest": "Api"
+
       },
       {
         "files": [
-          "*.md"
-        ]
+
+          "ReadMe.md",
+          "**/Docs/**/*.md"
+        ],
+        "exclude": [ "**AutoDoc/Docs/**" ],
+        "src": "../",
+        "dest": "Articles"
       }
-      
+
     ],
     "resource": [
       {
         "files": [
-          "DocSrc/images/**"
+          "images/**",
+          "svg/**"
         ]
       }
     ],
+    "globalMetadata": {
+      "_appTitle": "ATAP Utilities",
+      "_disableContribution": true
+
+    },
     "overwrite": [
       {
         "files": [
@@ -55,7 +73,8 @@
     "globalMetadataFiles": [],
     "fileMetadataFiles": [],
     "template": [
-      "default"
+      "default",
+      "templates/AutoDocTemplate01"
     ],
     "postProcessors": [],
     "markdownEngineName": "markdig",

@@ -19,17 +19,13 @@
   <ItemGroup>
     <Folder Include="Docs\" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Framework" Version="15.9.20" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.9.20" />
+  </ItemGroup>
   
     <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->
-  <ItemGroup>
-    
-    <PackageReference Include="docfx.console" Version="2.40.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
-    
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.8.166" />
-  </ItemGroup>
   <ItemGroup>
     <None Update="ATAP.Utilities.BuildTooling.targets">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -1,33 +1,40 @@
-![ATAPLogo](https://base_html/pathtologo.png) --ToDo - AltText for accessibility
+![ATAPLogo](https://base_html/pathtologo.png) --ToDo - AltText:Logo for ATAP Technology, IInc.
 
 I am actively developing this documentation static website, and publishing to the ATAP Utilities GitHub Pages host. Over the course of the next few weeks, the site will be in a constant state of flux, but hopefully will settle down after the automation tools are completed and content is written.
 
 # ATAP.Utilities
-These are a collection of Projects/Assemblies that provide a variety of data structures and algorithms to make programming life easier. Much of the features of ATAP's ACE project and the Blazor-related demos are implemented in these utilities. This repository includes enhancements to Visual Studio, in the form of MSBuild tooling, including MSBuild Tasks, Targets, and properties, along with PowerShell scripts and Modules. The setup and usage instructions for the projects, along with QuickStarts, Guides and Tutorials for these projects and articles on using other 3rd party Open Source Software (OSS) and commercial products to make programming withing Visual Studdio easier are contained in the repository and published to the repository's documentation site, currently hosted in GitHub Pages here: https://billhertzing.github.io/ATAP.Utilities/ATAP.Utilities.AutoDoc/Index.html
+These are a collection of Projects/Assemblies that provide a variety of data structures and algorithms to make programming life easier. Much of the features of ATAP's ACE project and the Blazor-related demos are implemented in these utilities. This repository includes enhancements to Visual Studio, in the form of MSBuild tooling, including MSBuild Tasks, Targets, and properties, along with PowerShell scripts and Modules. The setup and usage instructions for the projects, along with QuickStarts, Guides and Tutorials for these projects and articles on using other 3rd party Open Source Software (OSS) and commercial products to make programming withing Visual Studio easier are contained in the repository and published to the repository's documentation site, currently hosted in GitHub Pages here: https://billhertzing.github.io/ATAP.Utilities/ATAP.Utilities.AutoDoc/Index.html
 
 Documentation specifically on using the AutoDoc project within this repository to help you create a static documentation website for your repository can be found here. [here](./ATAP.Utilities.AutoDoc/Docs/ReadMe.html)
 
 ## Installing / Getting started
+### Forking the repository
 The only way at the moment is to fork the repository, build the packages, and work with your own copy.
-> The following distribution methods are under active development, but not yet released beyond local feed. The extended MSBuild tooling in this Repository is where the development and eventual production code will reside.
->  >The individual assemblies are distributed as NuGet packages. The entire repository can be installed via NuGet. There is a NuGet package dedicated to installing just the MSBuild tooling enhancements. There is a NuGet package dedicated to installing just the  AutoDoc project to a repository. Instructions for adding individual assemblies to your projects via NuGet: (tbd)
+\<insert a reference to instructions on how to Fork a repository in GitHub>
+Once you have forked the repository, attach it to Visual Studio running on you development workstation.
+\<insert a reference to instructions on how to connect a GitHub remote repository to Visual studio on a developers workstation>
+Jump to Initial Configuration
 
->  >In addition to NuGet, the packages are distributed by Chocolatey. Instructions for getting the MSuild tooling enhancements via Chocolatey: (tbd)
+> The following distribution methods are under active development, but not yet released beyond local feed. The extended MSBuild tooling in this Repository is where the development and eventual production code will reside.
+
+>  > ### NuGet 
+>  > The individual assemblies are distributed as NuGet packages. The entire repository can be installed via NuGet. There is a NuGet package dedicated to installing just the MSBuild tooling enhancements. There is a NuGet package dedicated to installing just the  AutoDoc project to a repository. Instructions for adding individual assemblies to your projects via NuGet: (tbd)
+
+>  > ### Chocolatey
+   > In addition to NuGet, the packages are distributed by Chocolatey. Instructions for getting the MSuild tooling enhancements via Chocolatey: (tbd)
 > 
 
-/<placeholder - continue writing repository README from here>
+### Initial Configuration
+Before you can start building the projects in this repository, or using the NuGet projects, some of these projects require some initial configuration steps. <tbd?>
+#### Install the ATAP.Utilities.BuildTooling tools
+The BuildTooling utilities are developed in this project, and they are also used by all projects in this repository. So you will need to install these tools before tryinng to build.
 
 Did you know that there are blogs dedicated to helping you write a ReadMe.md file for a GitHub repository?
 https://github.com/noffle/art-of-readme
 https://github.com/jehna/readme-best-practices
 The content below came from the  template in https://github.com/jehna/readme-best-practices
 
-Here you should say what actually happens when you execute the code above.
-
-### Initial Configuration
-
-Some projects require initial configuration (e.g. access tokens or keys, `npm i`).
-This is the section where you would document those requirements.
+/<placeholder - continue writing repository README from here>
 
 ## Developing
 

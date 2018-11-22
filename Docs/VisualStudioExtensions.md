@@ -21,9 +21,15 @@
 ### The AutoDoc project in a Solution
 This project builds the static documentation website.
 The gh-pages branch of a repository should point to the latest release version of this project.
-The repositoryies ReadMe.md file should contain a prominent link to the Doc directroy of this project
+The repository's ReadMe.md file should contain a prominent link to the Doc directroy of this project
 see also https://dzone.com/articles/generating-documentation-with-docfx-as-part-of-a-v
 
+To speed up development, dot NOT build the AutoDoc project automatically.
+On the menu bar, choose Build > Configuration Manager.
+In the Project contexts table, locate the project you want to exclude from the build.
+In the Build column for the project, clear the check box.
+
+Build the AutoDoc project using the command line and the --serve option to preview your changes. 
 # Visual Studio Configuration settings
 * tbd
 

@@ -32,6 +32,7 @@
     
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.8.166" />
   </ItemGroup>
+  <ProjectExtensions><VisualStudio><UserProperties docfx_1json__JSONSchema="" /></VisualStudio></ProjectExtensions>
 
 
 </Project>

@@ -1,10 +1,12 @@
-# Instructions for building the libraries
+# Building the libraries
+
+I am actively developing this documentation static website, and publishing to the ATAP Utilities GitHub Pages host. Over the course of the next few weeks, the site will be in a constant state of flux, but hopefully will settle down after the automation tools are completed and content is written.
 
 Solution item Directory.Build.props has solution-wide settings for all build tasks
-Solution item Directory.Build.tarhets has solution-wide targets and tasks for all build tasks
+Solution item Directory.Build.targets has solution-wide targets and tasks for all build tasks
 It includes the default targetframeworks,
-*** because TargetFrameworks is being imported from Direcotry.Build.Props, and does not appear in the .csproj file, using the default projet type guid will result in Visual Studio thinking the project is old-style, and attempt an upgrade.
-Ensuring that teh project type guid for .csproj files inthe .sln is {9A19103F-16F7-4668-BE54-9A1E7A4F7556} will tell Visula studio that the .csproj is a new-style project. For example, Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Library3", "Library3.csproj", "{ADFEAAF5-225C-4E13-8B65-77057AAC44B8}"\<EndProject> see also "Project Type GUIDs in the article https://github.com/dotnet/project-system/blob/master/docs/opening-with-new-project-system.md"
+*** because TargetFrameworks is being imported from Directory.Build.Props, and does not appear in the .csproj file, using the default project type GUID will result in Visual Studio thinking the project is old-style, and attempt an upgrade.
+Ensuring that the project type GUID for .csproj files in the .sln is {9A19103F-16F7-4668-BE54-9A1E7A4F7556} will tell Visual studio that the .csproj is a new-style project. For example, Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Library3", "Library3.csproj", "{ADFEAAF5-225C-4E13-8B65-77057AAC44B8}"\<EndProject> see also "Project Type GUIDs in the article https://github.com/dotnet/project-system/blob/master/docs/opening-with-new-project-system.md"
 it includes the NuGet packaging and pusking properties and tasks
 Versioning is very difficult problem, the ATAP.Utilities.BuildTools projects contains files that extend the build process and include tasks and functions that perform versioning andpackaging
 ## Visual Studio Extensions

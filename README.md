@@ -1,11 +1,19 @@
-![ATAPLogo](https://base_html/pathtologo.png) --ToDo - AltText:Logo for ATAP Technology, IInc.
+![ATAPLogo](images/ataplogo1inch.bmp) --ToDo - AltText:Logo for ATAP Technology, Inc.
 
 I am actively developing this documentation static website, and publishing to the ATAP Utilities GitHub Pages host. Over the course of the next few weeks, the site will be in a constant state of flux, but hopefully will settle down after the automation tools are completed and content is written.
 
 # ATAP.Utilities
-These are a collection of Projects/Assemblies that provide a variety of data structures and algorithms to make programming life easier. Much of the features of ATAP's ACE project and the Blazor-related demos are implemented in these utilities. This repository includes enhancements to Visual Studio, in the form of MSBuild tooling, including MSBuild Tasks, Targets, and properties, along with PowerShell scripts and Modules. The setup and usage instructions for the projects, along with QuickStarts, Guides and Tutorials for these projects and articles on using other 3rd party Open Source Software (OSS) and commercial products to make programming withing Visual Studio easier are contained in the repository and published to the repository's documentation site, currently hosted in GitHub Pages here: https://billhertzing.github.io/ATAP.Utilities/ATAP.Utilities.AutoDoc/Index.html
+These are a treasure of Projects/Assemblies (at least I hope they will be eventually) for tools, algorithms and concepts, and data structures to make programming life easier. 
+  * These libraries are the computational and building core of of ATAP's ACE project and the Blazor-related demos. 
+  * This repository includes enhancements to Visual Studio, in the form of MSBuild tooling, including MSBuild Tasks, Targets, and Properties, along with PowerShell Scripts and Modules. 
+  * The ReadMe and User Manual  for the projects, along with QuickStarts, Guides and Tutorials.
+  * Attributions that refer to articles on using other 3rd party Open Source Software (OSS) and commercial products to make programming withing Visual Studio easier.
+  * All the documentation, and the full repository's API, is published via AutoDoc project and DocFx to the repository's documentation site in side the repository and committed to GitHub.
+  * The documentation site is made available to the public via GitHub pages. 
+  
+To see the documentation site for this repository, hosted in GitHub pages, look here:  https://billhertzing.github.io/ATAP.Utilities/ATAP.Utilities.AutoDoc/Index.html
 
-Documentation specifically on using the AutoDoc project within this repository to help you create a static documentation website for your repository can be found here. [here](./ATAP.Utilities.AutoDoc/Docs/ReadMe.html)
+Documentation specifically on using the AutoDoc project within this repository to help you create a static documentation website for your repository can be found here: [ATAP.Utilities.AutoDoc/_site/ReadMe.html](../ATAP.Utilities.AutoDoc/_site/ReadMe.html)
 
 ## Installing / Getting started
 ### Forking the repository
@@ -34,6 +42,7 @@ https://github.com/noffle/art-of-readme
 https://github.com/jehna/readme-best-practices
 The content below came from the  template in https://github.com/jehna/readme-best-practices
 
+I am still in the middle of writing a good ReadMe, and figuring out how to make DocFx a good site generator for my needs. Your patience, Good Reader, is appreciated!
 /<placeholder - continue writing repository README from here>
 
 ## Developing

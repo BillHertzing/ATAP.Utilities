@@ -1,3 +1,4 @@
+![ATAPLogo](images/ataplogo1inch.bmp) --ToDo - AltText:Logo for ATAP Technology, Inc.
 <h1>ATAP Utilities Documentation Site</h1>
 
 Welcome to the documentation site for the ATAP Utilities. This site contains information on building and using the ATAP Utility assemblies. It also has articles on how the utilities are built, and distributed.

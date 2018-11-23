@@ -1,4 +1,6 @@
 <h1> Visual Studio settings and Extensions needed to build ATAP.Utilities solution and project</h1>
+#
+# Visual Studio settings and Extensions needed to build the libraries, tools, and documentation (Repository / Solution level)
 
 # VSIX extensions
 ## GhostDoc Community Edition (tbd)
@@ -19,19 +21,19 @@
 	choco install docfx -y for a machine-wide installation
 
 ### The AutoDoc project in a Solution
-This project builds the static documentation website.
-The gh-pages branch of a repository should point to the latest release version of this project.
-The repository's ReadMe.md file should contain a prominent link to the Doc directroy of this project
-see also https://dzone.com/articles/generating-documentation-with-docfx-as-part-of-a-v
+    * This project builds the static documentation website.
+    * The gh-pages branch of a repository should point to the latest release version of this project.
+    * The repository's ReadMe.md file should contain a prominent link to the Doc directroy of this project
+    * see also https://dzone.com/articles/generating-documentation-with-docfx-as-part-of-a-v
 
-To speed up development, dot NOT build the AutoDoc project automatically.
-On the menu bar, choose Build > Configuration Manager.
-In the Project contexts table, locate the project you want to exclude from the build.
-In the Build column for the project, clear the check box.
+To speed up development, do NOT build the AutoDoc project automatically.
+    * On the VS menu bar, choose Build > Configuration Manager.
+    * In the Project contexts table, locate the project you want to exclude from the build.
+    * In the Build column for the project, clear the check box.
 
 Build the AutoDoc project using the command line and the --serve option to preview your changes. 
 # Visual Studio Configuration settings
-* tbd
+    * tbd
 
 # msBuild custom targets and tasks from ATAP
 ## Targets
@@ -42,9 +44,9 @@ Build the AutoDoc project using the command line and the --serve option to previ
 :TBD
 
 ## Tasks
-* GetVersion: Task to read the Version Information from a specified file
-* SetVersion: Task to modify the Version Information in a specified file
-* UpdateVersion: Task to produces the new values for ASsembly Version, FileVersion, and AssemblyInformationalVersion attributes
+    * GetVersion: Task to read the Version Information from a specified file
+    * SetVersion: Task to modify the Version Information in a specified file
+    * UpdateVersion: Task to produces the new values for ASsembly Version, FileVersion, and AssemblyInformationalVersion attributes
 
 ### Installation Details
     * create a .build folder under the solution dir

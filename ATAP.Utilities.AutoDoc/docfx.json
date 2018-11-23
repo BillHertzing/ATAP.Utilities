@@ -1,63 +1,61 @@
 {
-  "metadata": [
-    {
-      "src": [
+      "metadata": [
         {
-          "files": [
-            "ATAP.Utilities.Http/**.csproj"
+          "src": [
+            {
+              "files": [
+                "ATAP.Utilities.Http/**.csproj"
+              ],
+              "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/_site/**" ],
+              "src": "../"
+            }
           ],
-          "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/_site/**" ],
-          "src": "../"
+          "dest": "obj/docfx/api/netstandard2.0/",
+          "disableGitFeatures": false,
+          "properties": {
+            "TargetFramework": "netstandard2.0"
+          }
+        },
+        {
+          "src": [
+            {
+              "files": [
+                "ATAP.Utilities.Http/**.csproj"
+              ],
+              "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/_site/**" ],
+              "src": "../"
+            }
+          ],
+          "dest": "obj/docfx/api/netcoreapp2.0/",
+          "disableGitFeatures": false,
+          "properties": {
+            "TargetFramework": "netcoreapp2.0"
+          }
         }
       ],
-      "dest": "obj/docfx/api/netstandard2.0/",
-      "disableGitFeatures": false,
-      "properties": {
-        "TargetFramework": "netstandard2.0"
-      }
-    },
-    {
-      "src": [
-        {
-          "files": [
-            "ATAP.Utilities.Http/**.csproj"
-          ],
-          "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/_site/**" ],
-          "src": "../"
-        }
-      ],
-      "dest": "obj/docfx/api/netcoreapp2.0/",
-      "disableGitFeatures": false,
-      "properties": {
-        "TargetFramework": "netcoreapp2.0"
-      }
-    }
-  ],
-  "merge": {
-    "content": [
-      {
-        "files": "*.yml",
-        "src": "obj/docfx/api/netcoreapp2.0"
-      },
-      {
-        "files": "*.yml",
-        "src": "obj/docfx/api/netstandard2.0"
-      }
-    ],
-    "fileMetadata": {
-      "platform": {
-        "obj/docfx/api/netstandard2.0/*.yml": [
-          "netstandard2.0"
+      "merge": {
+        "content": [
+          {
+            "files": "*.yml",
+            "src": "obj/docfx/api/netcoreapp2.0"
+          },
+          {
+            "files": "*.yml",
+            "src": "obj/docfx/api/netstandard2.0"
+          }
         ],
-        "obj/docfx/api/netcoreapp2.0/*.yml": [
-          "netcoreapp2.0"
-        ]
-      }
-    },
-    "dest": "api"
-  },
-
-
+        "fileMetadata": {
+          "platform": {
+            "obj/docfx/api/netstandard2.0/*.yml": [
+              "netstandard2.0"
+            ],
+            "obj/docfx/api/netcoreapp2.0/*.yml": [
+              "netcoreapp2.0"
+            ]
+          }
+        },
+        "dest": "obj/docfx/api/merged"
+      },
       "build": {
         "content": [
           {
@@ -74,7 +72,6 @@
           },
           {
             "files": [
-
               "ReadMe.md",
               "**/Docs/**/*.md"
             ],
@@ -84,9 +81,9 @@
           },
           {
             "files": [
-              "Index.md"
+              "index.md",
+              "toc.yml"
             ]
-
           }
 
         ],
@@ -115,6 +112,15 @@
           {
             "files": [
               "obj/docfx/api/**.md"
+            ],
+            "exclude": [
+              "obj/**",
+              "_site/**"
+            ]
+          },
+          {
+            "files": [
+              "Articles/**.md"
             ],
             "exclude": [
               "obj/**",

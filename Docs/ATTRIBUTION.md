@@ -1,6 +1,7 @@
 
 # Attribution of ideas
-The maintainers and contributors to this repository feel it is important to credit the individuals and organizations who have taken their time to publish ideas and guides. This document provides a place to mention ALL of teh works that have influenced the design and implementation of teh repository's content.
+The maintainers and contributors to this repository feel it is important to credit the individuals and organizations who have taken their time to publish ideas and guides. This document provides a place to mention ALL of teh works that have influenced the design and implementation of the repository's content.
+
 
 ## Documentation
 ### Creation of a repository or project's ReadMe file

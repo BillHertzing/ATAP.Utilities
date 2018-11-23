@@ -14,8 +14,8 @@
     <link rel="stylesheet" href="../../styles/docfx.vendor.css">
     <link rel="stylesheet" href="../../styles/docfx.css">
     <link rel="stylesheet" href="../../styles/main.css">
-    <meta property="docfx:navrel" content="">
-    <meta property="docfx:tocrel" content="">
+    <meta property="docfx:navrel" content="../../toc.html">
+    <meta property="docfx:tocrel" content="../../toc.html">
     
     <meta property="docfx:rel" content="../../">
     <meta property="docfx:newtab" content="true">
@@ -72,6 +72,8 @@
             <article class="content wrap" id="_content" data-uid="">
 <h1> Visual Studio settings and Extensions needed to build ATAP.Utilities solution and project</h1>
 
+#
+# Visual Studio settings and Extensions needed to build the libraries, tools, and documentation (Repository / Solution level)
 <h1 id="vsix-extensions">VSIX extensions</h1>
 <h2 id="ghostdoc-community-edition-tbd">GhostDoc Community Edition (tbd)</h2>
 <pre><code>*  Used to create XML documentation inside each .cs file that socuments public classes, fields, methods, and properties.
@@ -93,19 +95,19 @@
 choco install docfx -y for a machine-wide installation
 </code></pre>
 <h3 id="the-autodoc-project-in-a-solution">The AutoDoc project in a Solution</h3>
-<p>This project builds the static documentation website.
-The gh-pages branch of a repository should point to the latest release version of this project.
-The repository's ReadMe.md file should contain a prominent link to the Doc directroy of this project
-see also <a href="https://dzone.com/articles/generating-documentation-with-docfx-as-part-of-a-v">https://dzone.com/articles/generating-documentation-with-docfx-as-part-of-a-v</a></p>
-<p>To speed up development, dot NOT build the AutoDoc project automatically.
-On the menu bar, choose Build &gt; Configuration Manager.
-In the Project contexts table, locate the project you want to exclude from the build.
-In the Build column for the project, clear the check box.</p>
+<pre><code>* This project builds the static documentation website.
+* The gh-pages branch of a repository should point to the latest release version of this project.
+* The repository's ReadMe.md file should contain a prominent link to the Doc directroy of this project
+* see also https://dzone.com/articles/generating-documentation-with-docfx-as-part-of-a-v
+</code></pre>
+<p>To speed up development, do NOT build the AutoDoc project automatically.
+* On the VS menu bar, choose Build &gt; Configuration Manager.
+* In the Project contexts table, locate the project you want to exclude from the build.
+* In the Build column for the project, clear the check box.</p>
 <p>Build the AutoDoc project using the command line and the --serve option to preview your changes.</p>
 <h1 id="visual-studio-configuration-settings">Visual Studio Configuration settings</h1>
-<ul>
-<li>tbd</li>
-</ul>
+<pre><code>* tbd
+</code></pre>
 <h1 id="msbuild-custom-targets-and-tasks-from-atap">msBuild custom targets and tasks from ATAP</h1>
 <h2 id="targets">Targets</h2>
 <pre><code>* Target that executes if a projects output are invalid with respect to the project's inputs
@@ -115,11 +117,10 @@ In the Build column for the project, clear the check box.</p>
 </code></pre>
 <p>:TBD</p>
 <h2 id="tasks">Tasks</h2>
-<ul>
-<li>GetVersion: Task to read the Version Information from a specified file</li>
-<li>SetVersion: Task to modify the Version Information in a specified file</li>
-<li>UpdateVersion: Task to produces the new values for ASsembly Version, FileVersion, and AssemblyInformationalVersion attributes</li>
-</ul>
+<pre><code>* GetVersion: Task to read the Version Information from a specified file
+* SetVersion: Task to modify the Version Information in a specified file
+* UpdateVersion: Task to produces the new values for ASsembly Version, FileVersion, and AssemblyInformationalVersion attributes
+</code></pre>
 <h3 id="installation-details-2">Installation Details</h3>
 <pre><code>* create a .build folder under the solution dir
 * Add the ATAP.BuildTooling.CSharp NuGet Package

@@ -1,4 +1,4 @@
-# Building the libraries
+# Building the libraries, tools, and documentation (Repository / Solution level)
 
 I am actively developing this documentation static website, and publishing to the ATAP Utilities GitHub Pages host. Over the course of the next few weeks, the site will be in a constant state of flux, but hopefully will settle down after the automation tools are completed and content is written.
 

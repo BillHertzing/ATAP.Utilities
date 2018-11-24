@@ -56,90 +56,91 @@
         },
         "dest": "obj/docfx/api/merged"
       },
-      "build": {
-        "content": [
-          {
-            "files": [
-              "**.yml",
-              "index.md",
-              "**/toc.yml",
-              "**/index.md",
-              "toc.md"
-            ],
-            "src": "obj/docfx/api",
-            "dest": "Api"
-
-          },
-          {
-            "files": [
-              "ReadMe.md",
-              "**/Docs/**/*.md"
-            ],
-            "exclude": [ "**AutoDoc/Docs/**", "**AutoDoc/_site/**" ],
-            "src": "../",
-            "dest": "Articles"
-          },
-          {
-            "files": [
-              "index.md",
-              "toc.yml"
-            ]
-          }
-
+  "build": {
+    "content": [
+      {
+        "files": [
+          "**.yml",
+          "index.md",
+          "**/toc.yml",
+          "**/index.md",
+          "toc.md"
         ],
-        "resource": [
-          {
-            "files": [
-              "images/**",
-              "svg/**"
-            ]
-          }
-        ],
-        "globalMetadata": {
-          "_appTitle": "ATAP Utilities",
+        "src": "obj/docfx/api",
+        "dest": "Api"
 
-          "_appLogoPath": "images/ataplogo1inch.bmp",
-          "_enableSearch": true,
-          "_enableNewTab": true,
-          "_disableNavbar": false,
-          "_disableBreadcrumb": false,
-          "_disableToc": false,
-          "_disableAffix": false,
-          "_disableContribution": false
-
-        },
-        "overwrite": [
-          {
-            "files": [
-              "obj/docfx/api/**.md"
-            ],
-            "exclude": [
-              "obj/**",
-              "_site/**"
-            ]
-          },
-          {
-            "files": [
-              "Articles/**.md"
-            ],
-            "exclude": [
-              "obj/**",
-              "_site/**"
-            ]
-          }
+      },
+      {
+        "files": [
+          "ReadMe.md",
+          "**/Docs/**/*.md"
         ],
-        "dest": "_site",
-        "globalMetadataFiles": [],
-        "fileMetadataFiles": [],
-        "template": [
-          "default",
-          "templates/AutoDocTemplate01"
-        ],
-        "postProcessors": [],
-        "markdownEngineName": "markdig",
-        "noLangKeyword": false,
-        "keepFileLink": false,
-        "cleanupCacheHistory": false,
-        "disableGitFeatures": false
+        "exclude": [ "**AutoDoc/Docs/**", "**AutoDoc/_site/**" ],
+        "src": "../",
+        "dest": "Articles"
+      },
+      {
+        "files": [
+          "index.md",
+          "toc.yml"
+        ]
       }
+
+    ],
+    "resource": [
+      {
+        "files": [
+          "images/**",
+          "svg/**"
+        ]
+      }
+    ],
+    "globalMetadata": {
+      "_appTitle": "ATAP Utilities",
+
+      "_appLogoPath": "images/ataplogo1inch.bmp",
+      "_enableSearch": true,
+      "_enableNewTab": true,
+      "_disableNavbar": false,
+      "_disableBreadcrumb": false,
+      "_disableToc": false,
+      "_disableAffix": false,
+      "_disableContribution": false
+
+    },
+    "overwrite": [
+      {
+        "files": [
+          "obj/docfx/api/**.md"
+        ],
+        "exclude": [
+          "obj/**",
+          "_site/**"
+        ]
+      },
+      {
+        "files": [
+          "Articles/**.md"
+        ],
+        "exclude": [
+          "obj/**",
+          "_site/**"
+        ]
+      }
+    ],
+
+    "globalMetadataFiles": [],
+    "fileMetadataFiles": [],
+    "dest": "_site",
+    "template": [
+      "default",
+      "templates/AutoDocTemplate01"
+    ],
+    "postProcessors": [ "ExtractSearchIndex" ],
+    "markdownEngineName": "markdig",
+    "noLangKeyword": false,
+    "keepFileLink": false,
+    "cleanupCacheHistory": false,
+    "disableGitFeatures": false
+  }
     }

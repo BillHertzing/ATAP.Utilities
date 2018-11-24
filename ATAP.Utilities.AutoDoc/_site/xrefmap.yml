@@ -3,13 +3,13 @@ sorted: true
 references:
 - uid: ATAP.Utilities.Http
   name: ATAP.Utilities.Http
-  href: Api/netstandard2.0/ATAP.Utilities.Http.html
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.html
   commentId: N:ATAP.Utilities.Http
   fullName: ATAP.Utilities.Http
   nameWithType: ATAP.Utilities.Http
 - uid: ATAP.Utilities.Http.Gateway
   name: Gateway
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html
   commentId: T:ATAP.Utilities.Http.Gateway
   fullName: ATAP.Utilities.Http.Gateway
   nameWithType: Gateway
@@ -27,59 +27,59 @@ references:
   nameWithType: Gateway.Gateway(String, Uri)
 - uid: ATAP.Utilities.Http.Gateway.#ctor*
   name: Gateway
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway__ctor_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway__ctor_
   commentId: Overload:ATAP.Utilities.Http.Gateway.#ctor
   isSpec: "True"
   fullName: ATAP.Utilities.Http.Gateway.Gateway
   nameWithType: Gateway.Gateway
 - uid: ATAP.Utilities.Http.Gateway.BaseUri
   name: BaseUri
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_BaseUri
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_BaseUri
   commentId: P:ATAP.Utilities.Http.Gateway.BaseUri
   fullName: ATAP.Utilities.Http.Gateway.BaseUri
   nameWithType: Gateway.BaseUri
 - uid: ATAP.Utilities.Http.Gateway.BaseUri*
   name: BaseUri
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_BaseUri_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_BaseUri_
   commentId: Overload:ATAP.Utilities.Http.Gateway.BaseUri
   isSpec: "True"
   fullName: ATAP.Utilities.Http.Gateway.BaseUri
   nameWithType: Gateway.BaseUri
 - uid: ATAP.Utilities.Http.Gateway.DefaultAPIKey
   name: DefaultAPIKey
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_DefaultAPIKey
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_DefaultAPIKey
   commentId: P:ATAP.Utilities.Http.Gateway.DefaultAPIKey
   fullName: ATAP.Utilities.Http.Gateway.DefaultAPIKey
   nameWithType: Gateway.DefaultAPIKey
 - uid: ATAP.Utilities.Http.Gateway.DefaultAPIKey*
   name: DefaultAPIKey
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_DefaultAPIKey_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_DefaultAPIKey_
   commentId: Overload:ATAP.Utilities.Http.Gateway.DefaultAPIKey
   isSpec: "True"
   fullName: ATAP.Utilities.Http.Gateway.DefaultAPIKey
   nameWithType: Gateway.DefaultAPIKey
 - uid: ATAP.Utilities.Http.Gateway.DefaultPolicy
   name: DefaultPolicy
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_DefaultPolicy
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_DefaultPolicy
   commentId: P:ATAP.Utilities.Http.Gateway.DefaultPolicy
   fullName: ATAP.Utilities.Http.Gateway.DefaultPolicy
   nameWithType: Gateway.DefaultPolicy
 - uid: ATAP.Utilities.Http.Gateway.DefaultPolicy*
   name: DefaultPolicy
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_DefaultPolicy_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_DefaultPolicy_
   commentId: Overload:ATAP.Utilities.Http.Gateway.DefaultPolicy
   isSpec: "True"
   fullName: ATAP.Utilities.Http.Gateway.DefaultPolicy
   nameWithType: Gateway.DefaultPolicy
 - uid: ATAP.Utilities.Http.Gateway.GatewayEntries
   name: GatewayEntries
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_GatewayEntries
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_GatewayEntries
   commentId: P:ATAP.Utilities.Http.Gateway.GatewayEntries
   fullName: ATAP.Utilities.Http.Gateway.GatewayEntries
   nameWithType: Gateway.GatewayEntries
 - uid: ATAP.Utilities.Http.Gateway.GatewayEntries*
   name: GatewayEntries
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_GatewayEntries_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_GatewayEntries_
   commentId: Overload:ATAP.Utilities.Http.Gateway.GatewayEntries
   isSpec: "True"
   fullName: ATAP.Utilities.Http.Gateway.GatewayEntries
@@ -104,20 +104,20 @@ references:
   nameWithType.vb: Gateway.GetJsonFromUrl(IGatewayEntry, Action(Of HttpWebRequest), Action(Of HttpWebResponse))
 - uid: ATAP.Utilities.Http.Gateway.GetJsonFromUrl*
   name: GetJsonFromUrl
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_GetJsonFromUrl_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_GetJsonFromUrl_
   commentId: Overload:ATAP.Utilities.Http.Gateway.GetJsonFromUrl
   isSpec: "True"
   fullName: ATAP.Utilities.Http.Gateway.GetJsonFromUrl
   nameWithType: Gateway.GetJsonFromUrl
 - uid: ATAP.Utilities.Http.Gateway.Name
   name: Name
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_Name
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_Name
   commentId: P:ATAP.Utilities.Http.Gateway.Name
   fullName: ATAP.Utilities.Http.Gateway.Name
   nameWithType: Gateway.Name
 - uid: ATAP.Utilities.Http.Gateway.Name*
   name: Name
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_Name_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_Name_
   commentId: Overload:ATAP.Utilities.Http.Gateway.Name
   isSpec: "True"
   fullName: ATAP.Utilities.Http.Gateway.Name
@@ -142,26 +142,26 @@ references:
   nameWithType.vb: Gateway.PostJsonToUrlAsync(IGatewayEntry, String, Action(Of HttpWebRequest), Action(Of HttpWebResponse))
 - uid: ATAP.Utilities.Http.Gateway.PostJsonToUrlAsync*
   name: PostJsonToUrlAsync
-  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_PostJsonToUrlAsync_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html#ATAP_Utilities_Http_Gateway_PostJsonToUrlAsync_
   commentId: Overload:ATAP.Utilities.Http.Gateway.PostJsonToUrlAsync
   isSpec: "True"
   fullName: ATAP.Utilities.Http.Gateway.PostJsonToUrlAsync
   nameWithType: Gateway.PostJsonToUrlAsync
 - uid: ATAP.Utilities.Http.GatewayBuilder
   name: GatewayBuilder
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html
   commentId: T:ATAP.Utilities.Http.GatewayBuilder
   fullName: ATAP.Utilities.Http.GatewayBuilder
   nameWithType: GatewayBuilder
 - uid: ATAP.Utilities.Http.GatewayBuilder.#ctor
   name: GatewayBuilder()
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder__ctor
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder__ctor
   commentId: M:ATAP.Utilities.Http.GatewayBuilder.#ctor
   fullName: ATAP.Utilities.Http.GatewayBuilder.GatewayBuilder()
   nameWithType: GatewayBuilder.GatewayBuilder()
 - uid: ATAP.Utilities.Http.GatewayBuilder.#ctor*
   name: GatewayBuilder
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder__ctor_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder__ctor_
   commentId: Overload:ATAP.Utilities.Http.GatewayBuilder.#ctor
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayBuilder.GatewayBuilder
@@ -180,20 +180,20 @@ references:
   nameWithType: GatewayBuilder.AddBaseUri(Uri)
 - uid: ATAP.Utilities.Http.GatewayBuilder.AddBaseUri*
   name: AddBaseUri
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddBaseUri_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddBaseUri_
   commentId: Overload:ATAP.Utilities.Http.GatewayBuilder.AddBaseUri
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayBuilder.AddBaseUri
   nameWithType: GatewayBuilder.AddBaseUri
 - uid: ATAP.Utilities.Http.GatewayBuilder.AddDefaultAPIKey(System.String)
   name: AddDefaultAPIKey(String)
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddDefaultAPIKey_System_String_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddDefaultAPIKey_System_String_
   commentId: M:ATAP.Utilities.Http.GatewayBuilder.AddDefaultAPIKey(System.String)
   fullName: ATAP.Utilities.Http.GatewayBuilder.AddDefaultAPIKey(System.String)
   nameWithType: GatewayBuilder.AddDefaultAPIKey(String)
 - uid: ATAP.Utilities.Http.GatewayBuilder.AddDefaultAPIKey*
   name: AddDefaultAPIKey
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddDefaultAPIKey_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddDefaultAPIKey_
   commentId: Overload:ATAP.Utilities.Http.GatewayBuilder.AddDefaultAPIKey
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayBuilder.AddDefaultAPIKey
@@ -212,7 +212,7 @@ references:
   nameWithType: GatewayBuilder.AddDefaultPolicy(Policy)
 - uid: ATAP.Utilities.Http.GatewayBuilder.AddDefaultPolicy*
   name: AddDefaultPolicy
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddDefaultPolicy_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddDefaultPolicy_
   commentId: Overload:ATAP.Utilities.Http.GatewayBuilder.AddDefaultPolicy
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayBuilder.AddDefaultPolicy
@@ -237,188 +237,188 @@ references:
   nameWithType.vb: GatewayBuilder.AddGatewayEntries(Dictionary(Of String, IGatewayEntry))
 - uid: ATAP.Utilities.Http.GatewayBuilder.AddGatewayEntries*
   name: AddGatewayEntries
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddGatewayEntries_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddGatewayEntries_
   commentId: Overload:ATAP.Utilities.Http.GatewayBuilder.AddGatewayEntries
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayBuilder.AddGatewayEntries
   nameWithType: GatewayBuilder.AddGatewayEntries
 - uid: ATAP.Utilities.Http.GatewayBuilder.AddGatewayEntry(ATAP.Utilities.Http.IGatewayEntry)
   name: AddGatewayEntry(IGatewayEntry)
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddGatewayEntry_ATAP_Utilities_Http_IGatewayEntry_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddGatewayEntry_ATAP_Utilities_Http_IGatewayEntry_
   commentId: M:ATAP.Utilities.Http.GatewayBuilder.AddGatewayEntry(ATAP.Utilities.Http.IGatewayEntry)
   fullName: ATAP.Utilities.Http.GatewayBuilder.AddGatewayEntry(ATAP.Utilities.Http.IGatewayEntry)
   nameWithType: GatewayBuilder.AddGatewayEntry(IGatewayEntry)
 - uid: ATAP.Utilities.Http.GatewayBuilder.AddGatewayEntry*
   name: AddGatewayEntry
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddGatewayEntry_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddGatewayEntry_
   commentId: Overload:ATAP.Utilities.Http.GatewayBuilder.AddGatewayEntry
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayBuilder.AddGatewayEntry
   nameWithType: GatewayBuilder.AddGatewayEntry
 - uid: ATAP.Utilities.Http.GatewayBuilder.AddName(System.String)
   name: AddName(String)
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddName_System_String_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddName_System_String_
   commentId: M:ATAP.Utilities.Http.GatewayBuilder.AddName(System.String)
   fullName: ATAP.Utilities.Http.GatewayBuilder.AddName(System.String)
   nameWithType: GatewayBuilder.AddName(String)
 - uid: ATAP.Utilities.Http.GatewayBuilder.AddName*
   name: AddName
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddName_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_AddName_
   commentId: Overload:ATAP.Utilities.Http.GatewayBuilder.AddName
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayBuilder.AddName
   nameWithType: GatewayBuilder.AddName
 - uid: ATAP.Utilities.Http.GatewayBuilder.Build
   name: Build()
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_Build
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_Build
   commentId: M:ATAP.Utilities.Http.GatewayBuilder.Build
   fullName: ATAP.Utilities.Http.GatewayBuilder.Build()
   nameWithType: GatewayBuilder.Build()
 - uid: ATAP.Utilities.Http.GatewayBuilder.Build*
   name: Build
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_Build_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_Build_
   commentId: Overload:ATAP.Utilities.Http.GatewayBuilder.Build
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayBuilder.Build
   nameWithType: GatewayBuilder.Build
 - uid: ATAP.Utilities.Http.GatewayBuilder.CreateNew
   name: CreateNew()
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_CreateNew
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_CreateNew
   commentId: M:ATAP.Utilities.Http.GatewayBuilder.CreateNew
   fullName: ATAP.Utilities.Http.GatewayBuilder.CreateNew()
   nameWithType: GatewayBuilder.CreateNew()
 - uid: ATAP.Utilities.Http.GatewayBuilder.CreateNew*
   name: CreateNew
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_CreateNew_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html#ATAP_Utilities_Http_GatewayBuilder_CreateNew_
   commentId: Overload:ATAP.Utilities.Http.GatewayBuilder.CreateNew
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayBuilder.CreateNew
   nameWithType: GatewayBuilder.CreateNew
 - uid: ATAP.Utilities.Http.GatewayEntry
   name: GatewayEntry
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html
   commentId: T:ATAP.Utilities.Http.GatewayEntry
   fullName: ATAP.Utilities.Http.GatewayEntry
   nameWithType: GatewayEntry
 - uid: ATAP.Utilities.Http.GatewayEntry.#ctor(System.String,System.String)
   name: GatewayEntry(String, String)
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry__ctor_System_String_System_String_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry__ctor_System_String_System_String_
   commentId: M:ATAP.Utilities.Http.GatewayEntry.#ctor(System.String,System.String)
   fullName: ATAP.Utilities.Http.GatewayEntry.GatewayEntry(System.String, System.String)
   nameWithType: GatewayEntry.GatewayEntry(String, String)
 - uid: ATAP.Utilities.Http.GatewayEntry.#ctor*
   name: GatewayEntry
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry__ctor_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry__ctor_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntry.#ctor
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntry.GatewayEntry
   nameWithType: GatewayEntry.GatewayEntry
 - uid: ATAP.Utilities.Http.GatewayEntry.APIKey
   name: APIKey
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_APIKey
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_APIKey
   commentId: P:ATAP.Utilities.Http.GatewayEntry.APIKey
   fullName: ATAP.Utilities.Http.GatewayEntry.APIKey
   nameWithType: GatewayEntry.APIKey
 - uid: ATAP.Utilities.Http.GatewayEntry.APIKey*
   name: APIKey
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_APIKey_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_APIKey_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntry.APIKey
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntry.APIKey
   nameWithType: GatewayEntry.APIKey
 - uid: ATAP.Utilities.Http.GatewayEntry.Name
   name: Name
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_Name
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_Name
   commentId: P:ATAP.Utilities.Http.GatewayEntry.Name
   fullName: ATAP.Utilities.Http.GatewayEntry.Name
   nameWithType: GatewayEntry.Name
 - uid: ATAP.Utilities.Http.GatewayEntry.Name*
   name: Name
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_Name_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_Name_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntry.Name
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntry.Name
   nameWithType: GatewayEntry.Name
 - uid: ATAP.Utilities.Http.GatewayEntry.ReqDataPayloadType
   name: ReqDataPayloadType
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_ReqDataPayloadType
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_ReqDataPayloadType
   commentId: P:ATAP.Utilities.Http.GatewayEntry.ReqDataPayloadType
   fullName: ATAP.Utilities.Http.GatewayEntry.ReqDataPayloadType
   nameWithType: GatewayEntry.ReqDataPayloadType
 - uid: ATAP.Utilities.Http.GatewayEntry.ReqDataPayloadType*
   name: ReqDataPayloadType
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_ReqDataPayloadType_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_ReqDataPayloadType_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntry.ReqDataPayloadType
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntry.ReqDataPayloadType
   nameWithType: GatewayEntry.ReqDataPayloadType
 - uid: ATAP.Utilities.Http.GatewayEntry.RspDataPayloadType
   name: RspDataPayloadType
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_RspDataPayloadType
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_RspDataPayloadType
   commentId: P:ATAP.Utilities.Http.GatewayEntry.RspDataPayloadType
   fullName: ATAP.Utilities.Http.GatewayEntry.RspDataPayloadType
   nameWithType: GatewayEntry.RspDataPayloadType
 - uid: ATAP.Utilities.Http.GatewayEntry.RspDataPayloadType*
   name: RspDataPayloadType
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_RspDataPayloadType_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_RspDataPayloadType_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntry.RspDataPayloadType
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntry.RspDataPayloadType
   nameWithType: GatewayEntry.RspDataPayloadType
 - uid: ATAP.Utilities.Http.GatewayEntry.RUri
   name: RUri
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_RUri
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_RUri
   commentId: P:ATAP.Utilities.Http.GatewayEntry.RUri
   fullName: ATAP.Utilities.Http.GatewayEntry.RUri
   nameWithType: GatewayEntry.RUri
 - uid: ATAP.Utilities.Http.GatewayEntry.RUri*
   name: RUri
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_RUri_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html#ATAP_Utilities_Http_GatewayEntry_RUri_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntry.RUri
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntry.RUri
   nameWithType: GatewayEntry.RUri
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder
   name: GatewayEntryBuilder
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html
   commentId: T:ATAP.Utilities.Http.GatewayEntryBuilder
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder
   nameWithType: GatewayEntryBuilder
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.#ctor
   name: GatewayEntryBuilder()
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder__ctor
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder__ctor
   commentId: M:ATAP.Utilities.Http.GatewayEntryBuilder.#ctor
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.GatewayEntryBuilder()
   nameWithType: GatewayEntryBuilder.GatewayEntryBuilder()
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.#ctor*
   name: GatewayEntryBuilder
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder__ctor_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder__ctor_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryBuilder.#ctor
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.GatewayEntryBuilder
   nameWithType: GatewayEntryBuilder.GatewayEntryBuilder
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.AddAPIKey(System.String)
   name: AddAPIKey(String)
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddAPIKey_System_String_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddAPIKey_System_String_
   commentId: M:ATAP.Utilities.Http.GatewayEntryBuilder.AddAPIKey(System.String)
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.AddAPIKey(System.String)
   nameWithType: GatewayEntryBuilder.AddAPIKey(String)
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.AddAPIKey*
   name: AddAPIKey
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddAPIKey_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddAPIKey_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryBuilder.AddAPIKey
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.AddAPIKey
   nameWithType: GatewayEntryBuilder.AddAPIKey
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.AddName(System.String)
   name: AddName(String)
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddName_System_String_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddName_System_String_
   commentId: M:ATAP.Utilities.Http.GatewayEntryBuilder.AddName(System.String)
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.AddName(System.String)
   nameWithType: GatewayEntryBuilder.AddName(String)
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.AddName*
   name: AddName
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddName_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddName_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryBuilder.AddName
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.AddName
@@ -437,7 +437,7 @@ references:
   nameWithType: GatewayEntryBuilder.AddReqDataPayloadType(Type)
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.AddReqDataPayloadType*
   name: AddReqDataPayloadType
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddReqDataPayloadType_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddReqDataPayloadType_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryBuilder.AddReqDataPayloadType
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.AddReqDataPayloadType
@@ -456,136 +456,136 @@ references:
   nameWithType: GatewayEntryBuilder.AddRspDataPayloadType(Type)
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.AddRspDataPayloadType*
   name: AddRspDataPayloadType
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddRspDataPayloadType_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddRspDataPayloadType_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryBuilder.AddRspDataPayloadType
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.AddRspDataPayloadType
   nameWithType: GatewayEntryBuilder.AddRspDataPayloadType
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.AddRUri(System.String)
   name: AddRUri(String)
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddRUri_System_String_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddRUri_System_String_
   commentId: M:ATAP.Utilities.Http.GatewayEntryBuilder.AddRUri(System.String)
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.AddRUri(System.String)
   nameWithType: GatewayEntryBuilder.AddRUri(String)
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.AddRUri*
   name: AddRUri
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddRUri_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_AddRUri_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryBuilder.AddRUri
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.AddRUri
   nameWithType: GatewayEntryBuilder.AddRUri
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.Build
   name: Build()
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_Build
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_Build
   commentId: M:ATAP.Utilities.Http.GatewayEntryBuilder.Build
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.Build()
   nameWithType: GatewayEntryBuilder.Build()
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.Build*
   name: Build
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_Build_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_Build_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryBuilder.Build
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.Build
   nameWithType: GatewayEntryBuilder.Build
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.CreateNew
   name: CreateNew()
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_CreateNew
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_CreateNew
   commentId: M:ATAP.Utilities.Http.GatewayEntryBuilder.CreateNew
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.CreateNew()
   nameWithType: GatewayEntryBuilder.CreateNew()
 - uid: ATAP.Utilities.Http.GatewayEntryBuilder.CreateNew*
   name: CreateNew
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_CreateNew_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html#ATAP_Utilities_Http_GatewayEntryBuilder_CreateNew_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryBuilder.CreateNew
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryBuilder.CreateNew
   nameWithType: GatewayEntryBuilder.CreateNew
 - uid: ATAP.Utilities.Http.GatewayEntryMonitor
   name: GatewayEntryMonitor
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitor.html
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitor.html
   commentId: T:ATAP.Utilities.Http.GatewayEntryMonitor
   fullName: ATAP.Utilities.Http.GatewayEntryMonitor
   nameWithType: GatewayEntryMonitor
 - uid: ATAP.Utilities.Http.GatewayEntryMonitor.#ctor(System.String)
   name: GatewayEntryMonitor(String)
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitor.html#ATAP_Utilities_Http_GatewayEntryMonitor__ctor_System_String_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitor.html#ATAP_Utilities_Http_GatewayEntryMonitor__ctor_System_String_
   commentId: M:ATAP.Utilities.Http.GatewayEntryMonitor.#ctor(System.String)
   fullName: ATAP.Utilities.Http.GatewayEntryMonitor.GatewayEntryMonitor(System.String)
   nameWithType: GatewayEntryMonitor.GatewayEntryMonitor(String)
 - uid: ATAP.Utilities.Http.GatewayEntryMonitor.#ctor*
   name: GatewayEntryMonitor
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitor.html#ATAP_Utilities_Http_GatewayEntryMonitor__ctor_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitor.html#ATAP_Utilities_Http_GatewayEntryMonitor__ctor_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryMonitor.#ctor
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryMonitor.GatewayEntryMonitor
   nameWithType: GatewayEntryMonitor.GatewayEntryMonitor
 - uid: ATAP.Utilities.Http.GatewayEntryMonitor.Name
   name: Name
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitor.html#ATAP_Utilities_Http_GatewayEntryMonitor_Name
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitor.html#ATAP_Utilities_Http_GatewayEntryMonitor_Name
   commentId: P:ATAP.Utilities.Http.GatewayEntryMonitor.Name
   fullName: ATAP.Utilities.Http.GatewayEntryMonitor.Name
   nameWithType: GatewayEntryMonitor.Name
 - uid: ATAP.Utilities.Http.GatewayEntryMonitor.Name*
   name: Name
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitor.html#ATAP_Utilities_Http_GatewayEntryMonitor_Name_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitor.html#ATAP_Utilities_Http_GatewayEntryMonitor_Name_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryMonitor.Name
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryMonitor.Name
   nameWithType: GatewayEntryMonitor.Name
 - uid: ATAP.Utilities.Http.GatewayEntryMonitorBuilder
   name: GatewayEntryMonitorBuilder
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html
   commentId: T:ATAP.Utilities.Http.GatewayEntryMonitorBuilder
   fullName: ATAP.Utilities.Http.GatewayEntryMonitorBuilder
   nameWithType: GatewayEntryMonitorBuilder
 - uid: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.#ctor
   name: GatewayEntryMonitorBuilder()
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder__ctor
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder__ctor
   commentId: M:ATAP.Utilities.Http.GatewayEntryMonitorBuilder.#ctor
   fullName: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.GatewayEntryMonitorBuilder()
   nameWithType: GatewayEntryMonitorBuilder.GatewayEntryMonitorBuilder()
 - uid: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.#ctor*
   name: GatewayEntryMonitorBuilder
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder__ctor_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder__ctor_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryMonitorBuilder.#ctor
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.GatewayEntryMonitorBuilder
   nameWithType: GatewayEntryMonitorBuilder.GatewayEntryMonitorBuilder
 - uid: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.AddName(System.String)
   name: AddName(String)
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder_AddName_System_String_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder_AddName_System_String_
   commentId: M:ATAP.Utilities.Http.GatewayEntryMonitorBuilder.AddName(System.String)
   fullName: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.AddName(System.String)
   nameWithType: GatewayEntryMonitorBuilder.AddName(String)
 - uid: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.AddName*
   name: AddName
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder_AddName_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder_AddName_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryMonitorBuilder.AddName
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.AddName
   nameWithType: GatewayEntryMonitorBuilder.AddName
 - uid: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.Build
   name: Build()
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder_Build
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder_Build
   commentId: M:ATAP.Utilities.Http.GatewayEntryMonitorBuilder.Build
   fullName: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.Build()
   nameWithType: GatewayEntryMonitorBuilder.Build()
 - uid: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.Build*
   name: Build
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder_Build_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder_Build_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryMonitorBuilder.Build
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.Build
   nameWithType: GatewayEntryMonitorBuilder.Build
 - uid: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.CreateNew
   name: CreateNew()
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder_CreateNew
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder_CreateNew
   commentId: M:ATAP.Utilities.Http.GatewayEntryMonitorBuilder.CreateNew
   fullName: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.CreateNew()
   nameWithType: GatewayEntryMonitorBuilder.CreateNew()
 - uid: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.CreateNew*
   name: CreateNew
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder_CreateNew_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_GatewayEntryMonitorBuilder_CreateNew_
   commentId: Overload:ATAP.Utilities.Http.GatewayEntryMonitorBuilder.CreateNew
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayEntryMonitorBuilder.CreateNew
@@ -708,148 +708,148 @@ references:
   nameWithType: GatewayMonitorBuilder.CreateNew
 - uid: ATAP.Utilities.Http.GatewayMonitors
   name: GatewayMonitors
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitors.html
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitors.html
   commentId: T:ATAP.Utilities.Http.GatewayMonitors
   fullName: ATAP.Utilities.Http.GatewayMonitors
   nameWithType: GatewayMonitors
 - uid: ATAP.Utilities.Http.GatewayMonitors.#ctor(System.String)
   name: GatewayMonitors(String)
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitors.html#ATAP_Utilities_Http_GatewayMonitors__ctor_System_String_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitors.html#ATAP_Utilities_Http_GatewayMonitors__ctor_System_String_
   commentId: M:ATAP.Utilities.Http.GatewayMonitors.#ctor(System.String)
   fullName: ATAP.Utilities.Http.GatewayMonitors.GatewayMonitors(System.String)
   nameWithType: GatewayMonitors.GatewayMonitors(String)
 - uid: ATAP.Utilities.Http.GatewayMonitors.#ctor*
   name: GatewayMonitors
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitors.html#ATAP_Utilities_Http_GatewayMonitors__ctor_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitors.html#ATAP_Utilities_Http_GatewayMonitors__ctor_
   commentId: Overload:ATAP.Utilities.Http.GatewayMonitors.#ctor
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayMonitors.GatewayMonitors
   nameWithType: GatewayMonitors.GatewayMonitors
 - uid: ATAP.Utilities.Http.GatewayMonitors.GatewayMonitorColl
   name: GatewayMonitorColl
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitors.html#ATAP_Utilities_Http_GatewayMonitors_GatewayMonitorColl
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitors.html#ATAP_Utilities_Http_GatewayMonitors_GatewayMonitorColl
   commentId: P:ATAP.Utilities.Http.GatewayMonitors.GatewayMonitorColl
   fullName: ATAP.Utilities.Http.GatewayMonitors.GatewayMonitorColl
   nameWithType: GatewayMonitors.GatewayMonitorColl
 - uid: ATAP.Utilities.Http.GatewayMonitors.GatewayMonitorColl*
   name: GatewayMonitorColl
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitors.html#ATAP_Utilities_Http_GatewayMonitors_GatewayMonitorColl_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitors.html#ATAP_Utilities_Http_GatewayMonitors_GatewayMonitorColl_
   commentId: Overload:ATAP.Utilities.Http.GatewayMonitors.GatewayMonitorColl
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayMonitors.GatewayMonitorColl
   nameWithType: GatewayMonitors.GatewayMonitorColl
 - uid: ATAP.Utilities.Http.GatewayMonitors.Name
   name: Name
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitors.html#ATAP_Utilities_Http_GatewayMonitors_Name
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitors.html#ATAP_Utilities_Http_GatewayMonitors_Name
   commentId: P:ATAP.Utilities.Http.GatewayMonitors.Name
   fullName: ATAP.Utilities.Http.GatewayMonitors.Name
   nameWithType: GatewayMonitors.Name
 - uid: ATAP.Utilities.Http.GatewayMonitors.Name*
   name: Name
-  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitors.html#ATAP_Utilities_Http_GatewayMonitors_Name_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitors.html#ATAP_Utilities_Http_GatewayMonitors_Name_
   commentId: Overload:ATAP.Utilities.Http.GatewayMonitors.Name
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayMonitors.Name
   nameWithType: GatewayMonitors.Name
 - uid: ATAP.Utilities.Http.GatewayMonitorsBuilder
   name: GatewayMonitorsBuilder
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html
   commentId: T:ATAP.Utilities.Http.GatewayMonitorsBuilder
   fullName: ATAP.Utilities.Http.GatewayMonitorsBuilder
   nameWithType: GatewayMonitorsBuilder
 - uid: ATAP.Utilities.Http.GatewayMonitorsBuilder.#ctor(System.String)
   name: GatewayMonitorsBuilder(String)
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder__ctor_System_String_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder__ctor_System_String_
   commentId: M:ATAP.Utilities.Http.GatewayMonitorsBuilder.#ctor(System.String)
   fullName: ATAP.Utilities.Http.GatewayMonitorsBuilder.GatewayMonitorsBuilder(System.String)
   nameWithType: GatewayMonitorsBuilder.GatewayMonitorsBuilder(String)
 - uid: ATAP.Utilities.Http.GatewayMonitorsBuilder.#ctor*
   name: GatewayMonitorsBuilder
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder__ctor_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder__ctor_
   commentId: Overload:ATAP.Utilities.Http.GatewayMonitorsBuilder.#ctor
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayMonitorsBuilder.GatewayMonitorsBuilder
   nameWithType: GatewayMonitorsBuilder.GatewayMonitorsBuilder
 - uid: ATAP.Utilities.Http.GatewayMonitorsBuilder.AddGatewayMonitor(ATAP.Utilities.Http.GatewayMonitor)
   name: AddGatewayMonitor(GatewayMonitor)
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder_AddGatewayMonitor_ATAP_Utilities_Http_GatewayMonitor_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder_AddGatewayMonitor_ATAP_Utilities_Http_GatewayMonitor_
   commentId: M:ATAP.Utilities.Http.GatewayMonitorsBuilder.AddGatewayMonitor(ATAP.Utilities.Http.GatewayMonitor)
   fullName: ATAP.Utilities.Http.GatewayMonitorsBuilder.AddGatewayMonitor(ATAP.Utilities.Http.GatewayMonitor)
   nameWithType: GatewayMonitorsBuilder.AddGatewayMonitor(GatewayMonitor)
 - uid: ATAP.Utilities.Http.GatewayMonitorsBuilder.AddGatewayMonitor*
   name: AddGatewayMonitor
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder_AddGatewayMonitor_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder_AddGatewayMonitor_
   commentId: Overload:ATAP.Utilities.Http.GatewayMonitorsBuilder.AddGatewayMonitor
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayMonitorsBuilder.AddGatewayMonitor
   nameWithType: GatewayMonitorsBuilder.AddGatewayMonitor
 - uid: ATAP.Utilities.Http.GatewayMonitorsBuilder.Build
   name: Build()
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder_Build
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder_Build
   commentId: M:ATAP.Utilities.Http.GatewayMonitorsBuilder.Build
   fullName: ATAP.Utilities.Http.GatewayMonitorsBuilder.Build()
   nameWithType: GatewayMonitorsBuilder.Build()
 - uid: ATAP.Utilities.Http.GatewayMonitorsBuilder.Build*
   name: Build
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder_Build_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder_Build_
   commentId: Overload:ATAP.Utilities.Http.GatewayMonitorsBuilder.Build
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayMonitorsBuilder.Build
   nameWithType: GatewayMonitorsBuilder.Build
 - uid: ATAP.Utilities.Http.GatewayMonitorsBuilder.CreateNew(System.String)
   name: CreateNew(String)
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder_CreateNew_System_String_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder_CreateNew_System_String_
   commentId: M:ATAP.Utilities.Http.GatewayMonitorsBuilder.CreateNew(System.String)
   fullName: ATAP.Utilities.Http.GatewayMonitorsBuilder.CreateNew(System.String)
   nameWithType: GatewayMonitorsBuilder.CreateNew(String)
 - uid: ATAP.Utilities.Http.GatewayMonitorsBuilder.CreateNew*
   name: CreateNew
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder_CreateNew_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html#ATAP_Utilities_Http_GatewayMonitorsBuilder_CreateNew_
   commentId: Overload:ATAP.Utilities.Http.GatewayMonitorsBuilder.CreateNew
   isSpec: "True"
   fullName: ATAP.Utilities.Http.GatewayMonitorsBuilder.CreateNew
   nameWithType: GatewayMonitorsBuilder.CreateNew
 - uid: ATAP.Utilities.Http.Gateways
   name: Gateways
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateways.html
+  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateways.html
   commentId: T:ATAP.Utilities.Http.Gateways
   fullName: ATAP.Utilities.Http.Gateways
   nameWithType: Gateways
 - uid: ATAP.Utilities.Http.Gateways.#ctor
   name: Gateways()
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateways.html#ATAP_Utilities_Http_Gateways__ctor
+  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateways.html#ATAP_Utilities_Http_Gateways__ctor
   commentId: M:ATAP.Utilities.Http.Gateways.#ctor
   fullName: ATAP.Utilities.Http.Gateways.Gateways()
   nameWithType: Gateways.Gateways()
 - uid: ATAP.Utilities.Http.Gateways.#ctor*
   name: Gateways
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateways.html#ATAP_Utilities_Http_Gateways__ctor_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateways.html#ATAP_Utilities_Http_Gateways__ctor_
   commentId: Overload:ATAP.Utilities.Http.Gateways.#ctor
   isSpec: "True"
   fullName: ATAP.Utilities.Http.Gateways.Gateways
   nameWithType: Gateways.Gateways
 - uid: ATAP.Utilities.Http.Gateways.Add(System.String,ATAP.Utilities.Http.IGateway)
   name: Add(String, IGateway)
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateways.html#ATAP_Utilities_Http_Gateways_Add_System_String_ATAP_Utilities_Http_IGateway_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateways.html#ATAP_Utilities_Http_Gateways_Add_System_String_ATAP_Utilities_Http_IGateway_
   commentId: M:ATAP.Utilities.Http.Gateways.Add(System.String,ATAP.Utilities.Http.IGateway)
   fullName: ATAP.Utilities.Http.Gateways.Add(System.String, ATAP.Utilities.Http.IGateway)
   nameWithType: Gateways.Add(String, IGateway)
 - uid: ATAP.Utilities.Http.Gateways.Add*
   name: Add
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateways.html#ATAP_Utilities_Http_Gateways_Add_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateways.html#ATAP_Utilities_Http_Gateways_Add_
   commentId: Overload:ATAP.Utilities.Http.Gateways.Add
   isSpec: "True"
   fullName: ATAP.Utilities.Http.Gateways.Add
   nameWithType: Gateways.Add
 - uid: ATAP.Utilities.Http.Gateways.Get(System.String)
   name: Get(String)
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateways.html#ATAP_Utilities_Http_Gateways_Get_System_String_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateways.html#ATAP_Utilities_Http_Gateways_Get_System_String_
   commentId: M:ATAP.Utilities.Http.Gateways.Get(System.String)
   fullName: ATAP.Utilities.Http.Gateways.Get(System.String)
   nameWithType: Gateways.Get(String)
 - uid: ATAP.Utilities.Http.Gateways.Get*
   name: Get
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.Gateways.html#ATAP_Utilities_Http_Gateways_Get_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.Gateways.html#ATAP_Utilities_Http_Gateways_Get_
   commentId: Overload:ATAP.Utilities.Http.Gateways.Get
   isSpec: "True"
   fullName: ATAP.Utilities.Http.Gateways.Get
@@ -881,45 +881,45 @@ references:
   nameWithType: GenericWebGet.GenericWebGet
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder
   name: HttpRequestMessageBuilder
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html
   commentId: T:ATAP.Utilities.Http.HttpRequestMessageBuilder
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder
   nameWithType: HttpRequestMessageBuilder
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder.#ctor
   name: HttpRequestMessageBuilder()
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder__ctor
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder__ctor
   commentId: M:ATAP.Utilities.Http.HttpRequestMessageBuilder.#ctor
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder.HttpRequestMessageBuilder()
   nameWithType: HttpRequestMessageBuilder.HttpRequestMessageBuilder()
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder.#ctor*
   name: HttpRequestMessageBuilder
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder__ctor_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder__ctor_
   commentId: Overload:ATAP.Utilities.Http.HttpRequestMessageBuilder.#ctor
   isSpec: "True"
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder.HttpRequestMessageBuilder
   nameWithType: HttpRequestMessageBuilder.HttpRequestMessageBuilder
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddAcceptHeader(System.String)
   name: AddAcceptHeader(String)
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddAcceptHeader_System_String_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddAcceptHeader_System_String_
   commentId: M:ATAP.Utilities.Http.HttpRequestMessageBuilder.AddAcceptHeader(System.String)
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddAcceptHeader(System.String)
   nameWithType: HttpRequestMessageBuilder.AddAcceptHeader(String)
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddAcceptHeader*
   name: AddAcceptHeader
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddAcceptHeader_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddAcceptHeader_
   commentId: Overload:ATAP.Utilities.Http.HttpRequestMessageBuilder.AddAcceptHeader
   isSpec: "True"
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddAcceptHeader
   nameWithType: HttpRequestMessageBuilder.AddAcceptHeader
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddBearerToken(System.String)
   name: AddBearerToken(String)
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddBearerToken_System_String_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddBearerToken_System_String_
   commentId: M:ATAP.Utilities.Http.HttpRequestMessageBuilder.AddBearerToken(System.String)
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddBearerToken(System.String)
   nameWithType: HttpRequestMessageBuilder.AddBearerToken(String)
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddBearerToken*
   name: AddBearerToken
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddBearerToken_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddBearerToken_
   commentId: Overload:ATAP.Utilities.Http.HttpRequestMessageBuilder.AddBearerToken
   isSpec: "True"
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddBearerToken
@@ -938,7 +938,7 @@ references:
   nameWithType: HttpRequestMessageBuilder.AddContent(HttpContent)
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddContent*
   name: AddContent
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddContent_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddContent_
   commentId: Overload:ATAP.Utilities.Http.HttpRequestMessageBuilder.AddContent
   isSpec: "True"
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddContent
@@ -957,7 +957,7 @@ references:
   nameWithType: HttpRequestMessageBuilder.AddMethod(HttpMethod)
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddMethod*
   name: AddMethod
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddMethod_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddMethod_
   commentId: Overload:ATAP.Utilities.Http.HttpRequestMessageBuilder.AddMethod
   isSpec: "True"
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddMethod
@@ -976,33 +976,33 @@ references:
   nameWithType: HttpRequestMessageBuilder.AddRequestUri(Uri)
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddRequestUri*
   name: AddRequestUri
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddRequestUri_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_AddRequestUri_
   commentId: Overload:ATAP.Utilities.Http.HttpRequestMessageBuilder.AddRequestUri
   isSpec: "True"
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder.AddRequestUri
   nameWithType: HttpRequestMessageBuilder.AddRequestUri
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder.Build
   name: Build()
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_Build
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_Build
   commentId: M:ATAP.Utilities.Http.HttpRequestMessageBuilder.Build
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder.Build()
   nameWithType: HttpRequestMessageBuilder.Build()
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder.Build*
   name: Build
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_Build_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_Build_
   commentId: Overload:ATAP.Utilities.Http.HttpRequestMessageBuilder.Build
   isSpec: "True"
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder.Build
   nameWithType: HttpRequestMessageBuilder.Build
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder.CreateNew
   name: CreateNew()
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_CreateNew
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_CreateNew
   commentId: M:ATAP.Utilities.Http.HttpRequestMessageBuilder.CreateNew
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder.CreateNew()
   nameWithType: HttpRequestMessageBuilder.CreateNew()
 - uid: ATAP.Utilities.Http.HttpRequestMessageBuilder.CreateNew*
   name: CreateNew
-  href: Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_CreateNew_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html#ATAP_Utilities_Http_HttpRequestMessageBuilder_CreateNew_
   commentId: Overload:ATAP.Utilities.Http.HttpRequestMessageBuilder.CreateNew
   isSpec: "True"
   fullName: ATAP.Utilities.Http.HttpRequestMessageBuilder.CreateNew
@@ -1080,147 +1080,147 @@ references:
   nameWithType: IGateway.Name
 - uid: ATAP.Utilities.Http.IGatewayBuilder
   name: IGatewayBuilder
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayBuilder.html
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayBuilder.html
   commentId: T:ATAP.Utilities.Http.IGatewayBuilder
   fullName: ATAP.Utilities.Http.IGatewayBuilder
   nameWithType: IGatewayBuilder
 - uid: ATAP.Utilities.Http.IGatewayBuilder.Build
   name: Build()
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayBuilder.html#ATAP_Utilities_Http_IGatewayBuilder_Build
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayBuilder.html#ATAP_Utilities_Http_IGatewayBuilder_Build
   commentId: M:ATAP.Utilities.Http.IGatewayBuilder.Build
   fullName: ATAP.Utilities.Http.IGatewayBuilder.Build()
   nameWithType: IGatewayBuilder.Build()
 - uid: ATAP.Utilities.Http.IGatewayBuilder.Build*
   name: Build
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayBuilder.html#ATAP_Utilities_Http_IGatewayBuilder_Build_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayBuilder.html#ATAP_Utilities_Http_IGatewayBuilder_Build_
   commentId: Overload:ATAP.Utilities.Http.IGatewayBuilder.Build
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IGatewayBuilder.Build
   nameWithType: IGatewayBuilder.Build
 - uid: ATAP.Utilities.Http.IGatewayEntry
   name: IGatewayEntry
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntry.html
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntry.html
   commentId: T:ATAP.Utilities.Http.IGatewayEntry
   fullName: ATAP.Utilities.Http.IGatewayEntry
   nameWithType: IGatewayEntry
 - uid: ATAP.Utilities.Http.IGatewayEntry.APIKey
   name: APIKey
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_APIKey
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_APIKey
   commentId: P:ATAP.Utilities.Http.IGatewayEntry.APIKey
   fullName: ATAP.Utilities.Http.IGatewayEntry.APIKey
   nameWithType: IGatewayEntry.APIKey
 - uid: ATAP.Utilities.Http.IGatewayEntry.APIKey*
   name: APIKey
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_APIKey_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_APIKey_
   commentId: Overload:ATAP.Utilities.Http.IGatewayEntry.APIKey
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IGatewayEntry.APIKey
   nameWithType: IGatewayEntry.APIKey
 - uid: ATAP.Utilities.Http.IGatewayEntry.Name
   name: Name
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_Name
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_Name
   commentId: P:ATAP.Utilities.Http.IGatewayEntry.Name
   fullName: ATAP.Utilities.Http.IGatewayEntry.Name
   nameWithType: IGatewayEntry.Name
 - uid: ATAP.Utilities.Http.IGatewayEntry.Name*
   name: Name
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_Name_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_Name_
   commentId: Overload:ATAP.Utilities.Http.IGatewayEntry.Name
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IGatewayEntry.Name
   nameWithType: IGatewayEntry.Name
 - uid: ATAP.Utilities.Http.IGatewayEntry.ReqDataPayloadType
   name: ReqDataPayloadType
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_ReqDataPayloadType
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_ReqDataPayloadType
   commentId: P:ATAP.Utilities.Http.IGatewayEntry.ReqDataPayloadType
   fullName: ATAP.Utilities.Http.IGatewayEntry.ReqDataPayloadType
   nameWithType: IGatewayEntry.ReqDataPayloadType
 - uid: ATAP.Utilities.Http.IGatewayEntry.ReqDataPayloadType*
   name: ReqDataPayloadType
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_ReqDataPayloadType_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_ReqDataPayloadType_
   commentId: Overload:ATAP.Utilities.Http.IGatewayEntry.ReqDataPayloadType
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IGatewayEntry.ReqDataPayloadType
   nameWithType: IGatewayEntry.ReqDataPayloadType
 - uid: ATAP.Utilities.Http.IGatewayEntry.RspDataPayloadType
   name: RspDataPayloadType
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_RspDataPayloadType
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_RspDataPayloadType
   commentId: P:ATAP.Utilities.Http.IGatewayEntry.RspDataPayloadType
   fullName: ATAP.Utilities.Http.IGatewayEntry.RspDataPayloadType
   nameWithType: IGatewayEntry.RspDataPayloadType
 - uid: ATAP.Utilities.Http.IGatewayEntry.RspDataPayloadType*
   name: RspDataPayloadType
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_RspDataPayloadType_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_RspDataPayloadType_
   commentId: Overload:ATAP.Utilities.Http.IGatewayEntry.RspDataPayloadType
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IGatewayEntry.RspDataPayloadType
   nameWithType: IGatewayEntry.RspDataPayloadType
 - uid: ATAP.Utilities.Http.IGatewayEntry.RUri
   name: RUri
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_RUri
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_RUri
   commentId: P:ATAP.Utilities.Http.IGatewayEntry.RUri
   fullName: ATAP.Utilities.Http.IGatewayEntry.RUri
   nameWithType: IGatewayEntry.RUri
 - uid: ATAP.Utilities.Http.IGatewayEntry.RUri*
   name: RUri
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_RUri_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntry.html#ATAP_Utilities_Http_IGatewayEntry_RUri_
   commentId: Overload:ATAP.Utilities.Http.IGatewayEntry.RUri
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IGatewayEntry.RUri
   nameWithType: IGatewayEntry.RUri
 - uid: ATAP.Utilities.Http.IGatewayEntryBuilder
   name: IGatewayEntryBuilder
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryBuilder.html
+  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryBuilder.html
   commentId: T:ATAP.Utilities.Http.IGatewayEntryBuilder
   fullName: ATAP.Utilities.Http.IGatewayEntryBuilder
   nameWithType: IGatewayEntryBuilder
 - uid: ATAP.Utilities.Http.IGatewayEntryBuilder.Build
   name: Build()
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryBuilder.html#ATAP_Utilities_Http_IGatewayEntryBuilder_Build
+  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryBuilder.html#ATAP_Utilities_Http_IGatewayEntryBuilder_Build
   commentId: M:ATAP.Utilities.Http.IGatewayEntryBuilder.Build
   fullName: ATAP.Utilities.Http.IGatewayEntryBuilder.Build()
   nameWithType: IGatewayEntryBuilder.Build()
 - uid: ATAP.Utilities.Http.IGatewayEntryBuilder.Build*
   name: Build
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryBuilder.html#ATAP_Utilities_Http_IGatewayEntryBuilder_Build_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryBuilder.html#ATAP_Utilities_Http_IGatewayEntryBuilder_Build_
   commentId: Overload:ATAP.Utilities.Http.IGatewayEntryBuilder.Build
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IGatewayEntryBuilder.Build
   nameWithType: IGatewayEntryBuilder.Build
 - uid: ATAP.Utilities.Http.IGatewayEntryMonitor
   name: IGatewayEntryMonitor
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryMonitor.html
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryMonitor.html
   commentId: T:ATAP.Utilities.Http.IGatewayEntryMonitor
   fullName: ATAP.Utilities.Http.IGatewayEntryMonitor
   nameWithType: IGatewayEntryMonitor
 - uid: ATAP.Utilities.Http.IGatewayEntryMonitor.Name
   name: Name
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryMonitor.html#ATAP_Utilities_Http_IGatewayEntryMonitor_Name
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryMonitor.html#ATAP_Utilities_Http_IGatewayEntryMonitor_Name
   commentId: P:ATAP.Utilities.Http.IGatewayEntryMonitor.Name
   fullName: ATAP.Utilities.Http.IGatewayEntryMonitor.Name
   nameWithType: IGatewayEntryMonitor.Name
 - uid: ATAP.Utilities.Http.IGatewayEntryMonitor.Name*
   name: Name
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryMonitor.html#ATAP_Utilities_Http_IGatewayEntryMonitor_Name_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryMonitor.html#ATAP_Utilities_Http_IGatewayEntryMonitor_Name_
   commentId: Overload:ATAP.Utilities.Http.IGatewayEntryMonitor.Name
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IGatewayEntryMonitor.Name
   nameWithType: IGatewayEntryMonitor.Name
 - uid: ATAP.Utilities.Http.IGatewayEntryMonitorBuilder
   name: IGatewayEntryMonitorBuilder
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.html
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.html
   commentId: T:ATAP.Utilities.Http.IGatewayEntryMonitorBuilder
   fullName: ATAP.Utilities.Http.IGatewayEntryMonitorBuilder
   nameWithType: IGatewayEntryMonitorBuilder
 - uid: ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.Build
   name: Build()
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_IGatewayEntryMonitorBuilder_Build
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_IGatewayEntryMonitorBuilder_Build
   commentId: M:ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.Build
   fullName: ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.Build()
   nameWithType: IGatewayEntryMonitorBuilder.Build()
 - uid: ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.Build*
   name: Build
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_IGatewayEntryMonitorBuilder_Build_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.html#ATAP_Utilities_Http_IGatewayEntryMonitorBuilder_Build_
   commentId: Overload:ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.Build
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.Build
@@ -1259,45 +1259,45 @@ references:
   nameWithType: IGatewayMonitor.Name
 - uid: ATAP.Utilities.Http.IGatewayMonitorBuilder
   name: IGatewayMonitorBuilder
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html
+  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html
   commentId: T:ATAP.Utilities.Http.IGatewayMonitorBuilder
   fullName: ATAP.Utilities.Http.IGatewayMonitorBuilder
   nameWithType: IGatewayMonitorBuilder
 - uid: ATAP.Utilities.Http.IGatewayMonitorBuilder.AddGatewayEntryMonitor(ATAP.Utilities.Http.GatewayEntryMonitor)
   name: AddGatewayEntryMonitor(GatewayEntryMonitor)
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html#ATAP_Utilities_Http_IGatewayMonitorBuilder_AddGatewayEntryMonitor_ATAP_Utilities_Http_GatewayEntryMonitor_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html#ATAP_Utilities_Http_IGatewayMonitorBuilder_AddGatewayEntryMonitor_ATAP_Utilities_Http_GatewayEntryMonitor_
   commentId: M:ATAP.Utilities.Http.IGatewayMonitorBuilder.AddGatewayEntryMonitor(ATAP.Utilities.Http.GatewayEntryMonitor)
   fullName: ATAP.Utilities.Http.IGatewayMonitorBuilder.AddGatewayEntryMonitor(ATAP.Utilities.Http.GatewayEntryMonitor)
   nameWithType: IGatewayMonitorBuilder.AddGatewayEntryMonitor(GatewayEntryMonitor)
 - uid: ATAP.Utilities.Http.IGatewayMonitorBuilder.AddGatewayEntryMonitor*
   name: AddGatewayEntryMonitor
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html#ATAP_Utilities_Http_IGatewayMonitorBuilder_AddGatewayEntryMonitor_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html#ATAP_Utilities_Http_IGatewayMonitorBuilder_AddGatewayEntryMonitor_
   commentId: Overload:ATAP.Utilities.Http.IGatewayMonitorBuilder.AddGatewayEntryMonitor
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IGatewayMonitorBuilder.AddGatewayEntryMonitor
   nameWithType: IGatewayMonitorBuilder.AddGatewayEntryMonitor
 - uid: ATAP.Utilities.Http.IGatewayMonitorBuilder.AddName(System.String)
   name: AddName(String)
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html#ATAP_Utilities_Http_IGatewayMonitorBuilder_AddName_System_String_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html#ATAP_Utilities_Http_IGatewayMonitorBuilder_AddName_System_String_
   commentId: M:ATAP.Utilities.Http.IGatewayMonitorBuilder.AddName(System.String)
   fullName: ATAP.Utilities.Http.IGatewayMonitorBuilder.AddName(System.String)
   nameWithType: IGatewayMonitorBuilder.AddName(String)
 - uid: ATAP.Utilities.Http.IGatewayMonitorBuilder.AddName*
   name: AddName
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html#ATAP_Utilities_Http_IGatewayMonitorBuilder_AddName_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html#ATAP_Utilities_Http_IGatewayMonitorBuilder_AddName_
   commentId: Overload:ATAP.Utilities.Http.IGatewayMonitorBuilder.AddName
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IGatewayMonitorBuilder.AddName
   nameWithType: IGatewayMonitorBuilder.AddName
 - uid: ATAP.Utilities.Http.IGatewayMonitorBuilder.Build
   name: Build()
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html#ATAP_Utilities_Http_IGatewayMonitorBuilder_Build
+  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html#ATAP_Utilities_Http_IGatewayMonitorBuilder_Build
   commentId: M:ATAP.Utilities.Http.IGatewayMonitorBuilder.Build
   fullName: ATAP.Utilities.Http.IGatewayMonitorBuilder.Build()
   nameWithType: IGatewayMonitorBuilder.Build()
 - uid: ATAP.Utilities.Http.IGatewayMonitorBuilder.Build*
   name: Build
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html#ATAP_Utilities_Http_IGatewayMonitorBuilder_Build_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html#ATAP_Utilities_Http_IGatewayMonitorBuilder_Build_
   commentId: Overload:ATAP.Utilities.Http.IGatewayMonitorBuilder.Build
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IGatewayMonitorBuilder.Build
@@ -1374,38 +1374,38 @@ references:
   nameWithType: IGateways.Get
 - uid: ATAP.Utilities.Http.IHttpRequestMessageBuilder
   name: IHttpRequestMessageBuilder
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IHttpRequestMessageBuilder.html
+  href: Api/netstandard2.0/ATAP.Utilities.Http.IHttpRequestMessageBuilder.html
   commentId: T:ATAP.Utilities.Http.IHttpRequestMessageBuilder
   fullName: ATAP.Utilities.Http.IHttpRequestMessageBuilder
   nameWithType: IHttpRequestMessageBuilder
 - uid: ATAP.Utilities.Http.IHttpRequestMessageBuilder.Build
   name: Build()
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IHttpRequestMessageBuilder.html#ATAP_Utilities_Http_IHttpRequestMessageBuilder_Build
+  href: Api/netstandard2.0/ATAP.Utilities.Http.IHttpRequestMessageBuilder.html#ATAP_Utilities_Http_IHttpRequestMessageBuilder_Build
   commentId: M:ATAP.Utilities.Http.IHttpRequestMessageBuilder.Build
   fullName: ATAP.Utilities.Http.IHttpRequestMessageBuilder.Build()
   nameWithType: IHttpRequestMessageBuilder.Build()
 - uid: ATAP.Utilities.Http.IHttpRequestMessageBuilder.Build*
   name: Build
-  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IHttpRequestMessageBuilder.html#ATAP_Utilities_Http_IHttpRequestMessageBuilder_Build_
+  href: Api/netstandard2.0/ATAP.Utilities.Http.IHttpRequestMessageBuilder.html#ATAP_Utilities_Http_IHttpRequestMessageBuilder_Build_
   commentId: Overload:ATAP.Utilities.Http.IHttpRequestMessageBuilder.Build
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IHttpRequestMessageBuilder.Build
   nameWithType: IHttpRequestMessageBuilder.Build
 - uid: ATAP.Utilities.Http.IMultiGatewaysBuilder
   name: IMultiGatewaysBuilder
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IMultiGatewaysBuilder.html
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IMultiGatewaysBuilder.html
   commentId: T:ATAP.Utilities.Http.IMultiGatewaysBuilder
   fullName: ATAP.Utilities.Http.IMultiGatewaysBuilder
   nameWithType: IMultiGatewaysBuilder
 - uid: ATAP.Utilities.Http.IMultiGatewaysBuilder.Build
   name: Build()
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IMultiGatewaysBuilder.html#ATAP_Utilities_Http_IMultiGatewaysBuilder_Build
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IMultiGatewaysBuilder.html#ATAP_Utilities_Http_IMultiGatewaysBuilder_Build
   commentId: M:ATAP.Utilities.Http.IMultiGatewaysBuilder.Build
   fullName: ATAP.Utilities.Http.IMultiGatewaysBuilder.Build()
   nameWithType: IMultiGatewaysBuilder.Build()
 - uid: ATAP.Utilities.Http.IMultiGatewaysBuilder.Build*
   name: Build
-  href: Api/netstandard2.0/ATAP.Utilities.Http.IMultiGatewaysBuilder.html#ATAP_Utilities_Http_IMultiGatewaysBuilder_Build_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.IMultiGatewaysBuilder.html#ATAP_Utilities_Http_IMultiGatewaysBuilder_Build_
   commentId: Overload:ATAP.Utilities.Http.IMultiGatewaysBuilder.Build
   isSpec: "True"
   fullName: ATAP.Utilities.Http.IMultiGatewaysBuilder.Build
@@ -1526,7 +1526,7 @@ references:
   nameWithType: MultiGatewaysBuilder.CreateNew
 - uid: ATAP.Utilities.Http.SingletonHttpClient
   name: SingletonHttpClient
-  href: Api/netstandard2.0/ATAP.Utilities.Http.SingletonHttpClient.html
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.SingletonHttpClient.html
   commentId: T:ATAP.Utilities.Http.SingletonHttpClient
   fullName: ATAP.Utilities.Http.SingletonHttpClient
   nameWithType: SingletonHttpClient
@@ -1544,7 +1544,7 @@ references:
   nameWithType: SingletonHttpClient.AsyncFetch(Policy, HttpRequestMessage)
 - uid: ATAP.Utilities.Http.SingletonHttpClient.AsyncFetch*
   name: AsyncFetch
-  href: Api/netstandard2.0/ATAP.Utilities.Http.SingletonHttpClient.html#ATAP_Utilities_Http_SingletonHttpClient_AsyncFetch_
+  href: Api/netcoreapp2.0/ATAP.Utilities.Http.SingletonHttpClient.html#ATAP_Utilities_Http_SingletonHttpClient_AsyncFetch_
   commentId: Overload:ATAP.Utilities.Http.SingletonHttpClient.AsyncFetch
   isSpec: "True"
   fullName: ATAP.Utilities.Http.SingletonHttpClient.AsyncFetch

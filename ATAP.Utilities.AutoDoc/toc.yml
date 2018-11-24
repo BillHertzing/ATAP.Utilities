@@ -2,7 +2,7 @@
   href: index.md
 - name: Articles
   href: Articles/
-  homepage: Articles/Docs/GettingStarted.html
+  homepage: Articles/toc.html
 - name: API Documentation
-  href: Api/
-  
+  href: Api/netstandard2.0/
+  homepage: Api/netstandard2.0/toc.html

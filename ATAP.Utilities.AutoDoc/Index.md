@@ -14,4 +14,4 @@ For the high-level overview of the purpose for, and the contents of, this reposi
 
 This documentation website follows the conventions of sites built with the [DocFx tool](https://dotnet.github.io/docfx/). Across the top are major sections, along the left side is a Table Of Contents (TOC) that changes per the major section content, and along the right side is a content-specific TOC that changes according to which document is being viewed.
 
-If you are new to using this repository, please start with the [Getting Started](tbd) guide 
+If you are new to using this repository, please start with the [Getting Started](Articles/Docs/GettingStarted.html) guide.

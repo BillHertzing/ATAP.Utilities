@@ -33,38 +33,16 @@
           }
         }
       ],
-      "merge": {
-        "content": [
-          {
-            "files": "*.yml",
-            "src": "obj/docfx/api/netcoreapp2.0"
-          },
-          {
-            "files": "*.yml",
-            "src": "obj/docfx/api/netstandard2.0"
-          }
-        ],
-        "fileMetadata": {
-          "platform": {
-            "obj/docfx/api/netstandard2.0/*.yml": [
-              "netstandard2.0"
-            ],
-            "obj/docfx/api/netcoreapp2.0/*.yml": [
-              "netcoreapp2.0"
-            ]
-          }
-        },
-        "dest": "obj/docfx/api/merged"
-      },
+
   "build": {
     "content": [
       {
         "files": [
           "**.yml",
           "index.md",
+          "toc.md",
           "**/toc.yml",
-          "**/index.md",
-          "toc.md"
+          "**/index.md"
         ],
         "src": "obj/docfx/api",
         "dest": "Api"
@@ -73,9 +51,10 @@
       {
         "files": [
           "ReadMe.md",
-          "**/Docs/**/*.md"
+          "**/Docs/**/*.md",
+          "**/*.yml"
         ],
-        "exclude": [ "**AutoDoc/Docs/**", "**AutoDoc/_site/**" ],
+        "exclude": [ "**/obj/**", "**/_site/**", "**/_exported_templates/**" ],
         "src": "../",
         "dest": "Articles"
       },
@@ -83,7 +62,8 @@
         "files": [
           "index.md",
           "toc.yml"
-        ]
+        ],
+        "src": "./"
       }
 
     ],
@@ -95,19 +75,6 @@
         ]
       }
     ],
-    "globalMetadata": {
-      "_appTitle": "ATAP Utilities",
-
-      "_appLogoPath": "images/ataplogo1inch.bmp",
-      "_enableSearch": true,
-      "_enableNewTab": true,
-      "_disableNavbar": false,
-      "_disableBreadcrumb": false,
-      "_disableToc": false,
-      "_disableAffix": false,
-      "_disableContribution": false
-
-    },
     "overwrite": [
       {
         "files": [
@@ -128,7 +95,19 @@
         ]
       }
     ],
+    "globalMetadata": {
+      "_appTitle": "ATAP Utilities",
 
+      "_appLogoPath": "images/ataplogo1inch.bmp",
+      "_enableSearch": true,
+      "_enableNewTab": true,
+      "_disableNavbar": false,
+      "_disableBreadcrumb": false,
+      "_disableToc": false,
+      "_disableAffix": false,
+      "_disableContribution": false
+
+    },
     "globalMetadataFiles": [],
     "fileMetadataFiles": [],
     "dest": "_site",
@@ -136,11 +115,34 @@
       "default",
       "templates/AutoDocTemplate01"
     ],
+    "merge": {
+      "content": [
+        {
+          "files": "*.yml",
+          "src": "obj/docfx/api/netcoreapp2.0"
+        },
+        {
+          "files": "*.yml",
+          "src": "obj/docfx/api/netstandard2.0"
+        }
+      ],
+      "fileMetadata": {
+        "platform": {
+          "obj/docfx/api/netstandard2.0/*.yml": [
+            "netstandard2.0"
+          ],
+          "obj/docfx/api/netcoreapp2.0/*.yml": [
+            "netcoreapp2.0"
+          ]
+        }
+      },
+      "dest": "obj/docfx/api/merged"
+    },
     "postProcessors": [ "ExtractSearchIndex" ],
-    "markdownEngineName": "markdig",
+    "markdownEngineName": "dfm-latest",
     "noLangKeyword": false,
     "keepFileLink": false,
     "cleanupCacheHistory": false,
     "disableGitFeatures": false
   }
-    }
+}

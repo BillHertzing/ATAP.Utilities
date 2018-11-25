@@ -44,6 +44,9 @@
     <Compile Include="Set-LineEndings.ps1" />
     <Compile Include="Set-PerceivedTypeInRegistryForPreviewPane.ps1" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="toc.yml" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="Build" />
   <Import Project="$(MSBuildExtensionsPath)\PowerShell Tools for Visual Studio\PowerShellTools.targets" Condition="Exists('$(MSBuildExtensionsPath)\PowerShell Tools for Visual Studio\PowerShellTools.targets')" />

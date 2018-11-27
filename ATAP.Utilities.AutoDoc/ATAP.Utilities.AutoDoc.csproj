@@ -17,8 +17,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Articles\**" />
+    <EmbeddedResource Remove="Articles\**" />
+    <None Remove="Articles\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Images\" />
-    <Folder Include="Articles\" />
   </ItemGroup>
   
     <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->
@@ -31,7 +36,7 @@
     
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.9.20" />
   </ItemGroup>
-  <ProjectExtensions><VisualStudio><UserProperties docfx_1json__JSONSchema="" /></VisualStudio></ProjectExtensions>
+  <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
 
 
 </Project>

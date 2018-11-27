@@ -3,10 +3,8 @@
         {
           "src": [
             {
-              "files": [
-                "ATAP.Utilities.Http/**.csproj"
-              ],
-              "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/_site/**" ],
+              "files": ["ATAP.Utilities.Http/*.csproj","ATAP.Utilities.BuildTooling.*/*.csproj","ATAP.Utilities.AutoDoc/*.csproj"],
+              "exclude": [ "**/bin/**", "**/obj/**"],
               "src": "../"
             }
           ],
@@ -19,10 +17,8 @@
         {
           "src": [
             {
-              "files": [
-                "ATAP.Utilities.Http/**.csproj"
-              ],
-              "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/_site/**" ],
+              "files": ["ATAP.Utilities.Http/*.csproj","ATAP.Utilities.BuildTooling.*/*.csproj","ATAP.Utilities.AutoDoc/*.csproj"],
+              "exclude": [ "**/bin/**", "**/obj/**" ],
               "src": "../"
             }
           ],
@@ -30,6 +26,20 @@
           "disableGitFeatures": false,
           "properties": {
             "TargetFramework": "netcoreapp2.0"
+          }
+        },
+        {
+          "src": [
+            {
+              "files": ["ATAP.Utilities.Http/*.csproj","ATAP.Utilities.BuildTooling.*/*.csproj","ATAP.Utilities.AutoDoc/*.csproj"],
+              "exclude": [ "**/bin/**", "**/obj/**"],
+              "src": "../"
+            }
+          ],
+          "dest": "obj/docfx/api/net471/",
+          "disableGitFeatures": false,
+          "properties": {
+            "TargetFramework": "net471"
           }
         }
       ],
@@ -41,29 +51,34 @@
           "**.yml",
           "index.md",
           "toc.md",
+          "**/*.yml",
           "**/toc.yml",
           "**/index.md"
         ],
         "src": "obj/docfx/api",
-        "dest": "Api"
-
+        "dest": "Api/"
       },
       {
         "files": [
-          "ReadMe.md",
-          "**/Docs/**/*.md",
-          "**/*.yml"
+          "index.md", "toc.yml"
         ],
-        "exclude": [ "**/obj/**", "**/_site/**", "**/_exported_templates/**" ],
         "src": "../",
-        "dest": "Articles"
+        "dest": "./"
       },
       {
         "files": [
-          "index.md",
-          "toc.yml"
+          "ReadMe.md"
         ],
-        "src": "./"
+        "src": "../",
+        "dest": "ReadMes/"
+      },
+      {
+        "files": [
+          "*.md",
+          "*.yml"
+        ],
+        "src": "../Documentation",
+        "dest": "Documentation/"
       }
 
     ],
@@ -80,20 +95,8 @@
         "files": [
           "obj/docfx/api/**.md"
         ],
-        "exclude": [
-          "obj/**",
-          "_site/**"
-        ]
+        "exclude": [ "**/bin/**", "**/obj/**"],
       },
-      {
-        "files": [
-          "Articles/**.md"
-        ],
-        "exclude": [
-          "obj/**",
-          "_site/**"
-        ]
-      }
     ],
     "globalMetadata": {
       "_appTitle": "ATAP Utilities",
@@ -105,18 +108,22 @@
       "_disableBreadcrumb": false,
       "_disableToc": false,
       "_disableAffix": false,
-      "_disableContribution": false
+      "_disableContribution": true
 
     },
     "globalMetadataFiles": [],
     "fileMetadataFiles": [],
-    "dest": "_site",
+    "dest": "../Docs",
     "template": [
       "default",
       "templates/AutoDocTemplate01"
     ],
     "merge": {
       "content": [
+        {
+          "files": "*.yml",
+          "src": "obj/docfx/api/net471"
+        },
         {
           "files": "*.yml",
           "src": "obj/docfx/api/netcoreapp2.0"
@@ -133,10 +140,13 @@
           ],
           "obj/docfx/api/netcoreapp2.0/*.yml": [
             "netcoreapp2.0"
+          ],
+		  "obj/docfx/api/net471/*.yml": [
+            "net471"
           ]
         }
       },
-      "dest": "obj/docfx/api/merged"
+      "dest": "obj/docfx/api/"
     },
     "postProcessors": [ "ExtractSearchIndex" ],
     "markdownEngineName": "dfm-latest",

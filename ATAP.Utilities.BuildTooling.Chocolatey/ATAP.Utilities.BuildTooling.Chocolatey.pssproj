@@ -39,10 +39,10 @@
     <Folder Include="tools\" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Docs\" />
+    <Folder Include="Documentation\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Docs\ReadMe.md" />
+    <Content Include="Documentation\ReadMe.md" />
     <Content Include="extend-corecompile.proj" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

@@ -1,0 +1,1705 @@
+{
+  "homepages": [],
+  "source_base_path": "C:/Dropbox/whertzing/GitHub/ATAP.Utilities/ATAP.Utilities.AutoDoc",
+  "xrefmap": "xrefmap.yml",
+  "files": [
+    {
+      "type": "Resource",
+      "output": {
+        "resource": {
+          "relative_path": "index.json"
+        }
+      },
+      "is_incremental": false
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "../Documentation/ATTRIBUTION.md",
+      "output": {
+        ".html": {
+          "relative_path": "Documentation/ATTRIBUTION.html",
+          "hash": "aT6cC+azdg2kAlIaRxDgIQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "../Documentation/Building.md",
+      "output": {
+        ".html": {
+          "relative_path": "Documentation/Building.html",
+          "hash": "tD/F25BlvYEwBtRzwIEqCA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "../Documentation/GettingStarted.md",
+      "output": {
+        ".html": {
+          "relative_path": "Documentation/GettingStarted.html",
+          "hash": "+WusmzA02lXYcrtiWtRNJw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "../Documentation/VisualStudioExtensions.md",
+      "output": {
+        ".html": {
+          "relative_path": "Documentation/VisualStudioExtensions.html",
+          "hash": "gEeEk6PGI3oTYQBllDNM+A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "../Documentation/index.md",
+      "output": {
+        ".html": {
+          "relative_path": "Documentation/index.html",
+          "hash": "aMSH6hsksBXJbbKuiv9cTw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "../Index.md",
+      "output": {
+        ".html": {
+          "relative_path": "Index.html",
+          "hash": "LW+anUTdJhhGSjM81T/y7Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "InvalidFileLink"
+      ],
+      "type": "Conceptual",
+      "source_relative_path": "../README.md",
+      "output": {
+        ".html": {
+          "relative_path": "Articles/ReadMes/README.html",
+          "hash": "4+OoMpBpzDpCCrYAQ096Iw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "InvalidFileLink"
+      ],
+      "type": "Toc",
+      "source_relative_path": "../toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "toc.html",
+          "hash": "TL1ZUjZ6qdyuGQ+052rmDg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Resource",
+      "source_relative_path": "images/ataplogo - 1 inch high.bmp",
+      "output": {
+        "resource": {
+          "relative_path": "images/ataplogo - 1 inch high.bmp"
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Resource",
+      "source_relative_path": "images/ataplogo.bmp",
+      "output": {
+        "resource": {
+          "relative_path": "images/ataplogo.bmp"
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Resource",
+      "source_relative_path": "images/ataplogo1inch.bmp",
+      "output": {
+        "resource": {
+          "relative_path": "images/ataplogo1inch.bmp"
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.BuildTooling.GetVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.BuildTooling.GetVersion.html",
+          "hash": "wDBeyd+FzdUqzw7mV+DHuw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.BuildTooling.SetVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.BuildTooling.SetVersion.html",
+          "hash": "JEItbvs8LmICQkpciR5rjw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.BuildTooling.UpdateVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.BuildTooling.UpdateVersion.html",
+          "hash": "c8ItPDESEosjnBupqameJw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.BuildTooling.Utilities.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.BuildTooling.Utilities.html",
+          "hash": "9zt+qo7TXIMRbwec2vM8JA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.BuildTooling.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.BuildTooling.html",
+          "hash": "GZ4xCVwgGP9ieQeoQrfmoQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.Gateway.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.Gateway.html",
+          "hash": "3QXenBF1/RvBkRp/nSonYw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.GatewayBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.GatewayBuilder.html",
+          "hash": "KaXZ1LuVx02qfLUiEv8pJQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.GatewayEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.GatewayEntry.html",
+          "hash": "wZ1gWChIllHTIB1RYrorZQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.GatewayEntryBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.GatewayEntryBuilder.html",
+          "hash": "E5mw1fpaJrhI44xMUGqr0A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.GatewayEntryMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.GatewayEntryMonitor.html",
+          "hash": "b2luhx3qTHBl7PikJo79gQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html",
+          "hash": "gaVLDwSHdIt+wG9fxDyWrw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.GatewayMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.GatewayMonitor.html",
+          "hash": "7nGK0wryQdXnauTsiEFJ0A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.GatewayMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.GatewayMonitorBuilder.html",
+          "hash": "mPDCZ6i4C123iP/oMgL/UA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.GatewayMonitors.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.GatewayMonitors.html",
+          "hash": "Dnl0uiKBkcu6WfTV8xq6WA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.GatewayMonitorsBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.GatewayMonitorsBuilder.html",
+          "hash": "ZJA0P+gvqnFfrkpXkn5BbQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.Gateways.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.Gateways.html",
+          "hash": "5Oazd74cfQGszivkl9QMkg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.GenericWebGet.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.GenericWebGet.html",
+          "hash": "c5HFE6J62PiGVLMPANbdQQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.HttpRequestMessageBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.HttpRequestMessageBuilder.html",
+          "hash": "zbExMb2bnPqircM35gDdhw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.IGateway.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.IGateway.html",
+          "hash": "GJPpOLyLrzkqc3DxpPHMOA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.IGatewayBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.IGatewayBuilder.html",
+          "hash": "qt5JjYTKpWtX6lcICPXG5g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.IGatewayEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.IGatewayEntry.html",
+          "hash": "y+YU7aR47VMV78cd+jH4Kw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.IGatewayEntryBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.IGatewayEntryBuilder.html",
+          "hash": "XLls3Nr+753xMkGdKsW5bg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.IGatewayEntryMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.IGatewayEntryMonitor.html",
+          "hash": "jBe0b7xT95r3WdcNIjQ1Bg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.html",
+          "hash": "V0oPaEqraXtR7HlMRmxiuQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.IGatewayMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.IGatewayMonitor.html",
+          "hash": "wNK5q/KKTtmGBcKfoDPgkg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.IGatewayMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.IGatewayMonitorBuilder.html",
+          "hash": "76mUaZx9M0QswcRiwwesGw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.IGatewayMonitors.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.IGatewayMonitors.html",
+          "hash": "RZ9wg4GxvIomU1RAYSCB8A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.IGatewayMonitorsBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.IGatewayMonitorsBuilder.html",
+          "hash": "+FA39KU+Ivuuq9lCLkUI3g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.IGateways.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.IGateways.html",
+          "hash": "RnsacEtA0rCLn+UqOJJgTA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.IHttpRequestMessageBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.IHttpRequestMessageBuilder.html",
+          "hash": "73SdcOPhcFnlmyNuOcDLLQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.IMultiGatewaysBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.IMultiGatewaysBuilder.html",
+          "hash": "OnKd6WKEP+Dm6viCdRdLKA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.MultiGatewaysBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.MultiGatewaysBuilder.html",
+          "hash": "V2VeovMam6TSiz9fM6rqpQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.SingletonHttpClient.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.SingletonHttpClient.html",
+          "hash": "gh4aGsxyyaAoQzwDnpBcIg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.WebGet-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.WebGet-1.html",
+          "hash": "uG8+I+uUjBJ3PEdGaKcs7A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/net471/ATAP.Utilities.Http.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/ATAP.Utilities.Http.html",
+          "hash": "ZJepnRAm4ufuTzhS8pcurA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "obj/docfx/api/net471/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/net471/toc.html",
+          "hash": "K6pOeyHHPDCTSBE86NcZ/w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.BuildTooling.GetVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.BuildTooling.GetVersion.html",
+          "hash": "1CiXzGB/n/2n/I1UO0zkxQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.BuildTooling.SetVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.BuildTooling.SetVersion.html",
+          "hash": "0dQmZt1ne8BZQdwvcU9tLg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.BuildTooling.UpdateVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.BuildTooling.UpdateVersion.html",
+          "hash": "ggBtvPQWfFdPT7cxKokGuw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.BuildTooling.Utilities.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.BuildTooling.Utilities.html",
+          "hash": "uM5KZ9ruMlAF4+rQ1ZGhHg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.BuildTooling.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.BuildTooling.html",
+          "hash": "CT37TXam2XqNm0ezSt9pBg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.Gateway.html",
+          "hash": "yVMOeSY4u8LVufcY+WsBSA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayBuilder.html",
+          "hash": "9Dwr066RVhqD4frIONZawg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntry.html",
+          "hash": "CO3X41wsGXmc+35R4bH4Qg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html",
+          "hash": "HhBdycPsjeLFF+dmn4mY5g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitor.html",
+          "hash": "GQoOIFVmf0Qb7vFJzQsQTw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html",
+          "hash": "alXE1Ad8uE+oz67HQiJHaw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitor.html",
+          "hash": "AqRYiFPViXM+Mj+AKpf3DQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitorBuilder.html",
+          "hash": "//eFwcqif00ctTYEP4jPuQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitors.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitors.html",
+          "hash": "08OW+4HeMrKNh7Ke/8qwkA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html",
+          "hash": "hB5nRXi2aUxDxC65fy9JGw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.Gateways.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.Gateways.html",
+          "hash": "jUBrIfczcSubmIszblx1Ww=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.GenericWebGet.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.GenericWebGet.html",
+          "hash": "YrIKjPWbP++1Mp4UMD1K7A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html",
+          "hash": "soj9oB2BX2ls7SsDWmh+gw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.IGateway.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.IGateway.html",
+          "hash": "F75TAAwr+LhFAm6mqDfcwg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayBuilder.html",
+          "hash": "eqbAGN70tgvCndzk9dDYtQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntry.html",
+          "hash": "qiGRvLhuv/XArOO/WdslYQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryBuilder.html",
+          "hash": "TH++IclfEhNgPJR5feVwbQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryMonitor.html",
+          "hash": "OCmRS10zcw0/JB6a9Eyjvg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.html",
+          "hash": "VqpuUt9qts1SuAHn2/Z6sQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitor.html",
+          "hash": "pYHH5I3r2hCSfTziPFiRvg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html",
+          "hash": "pRFzmx/e7nQoyl4pB8dRYg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitors.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitors.html",
+          "hash": "8Hdr4yRYrHSPO2ZhxnDhYg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitorsBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.IGatewayMonitorsBuilder.html",
+          "hash": "USBRTxP7+L2nHYCGG8JLDQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.IGateways.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.IGateways.html",
+          "hash": "CqFi8sjSmQ02SDBFqtts/A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.IHttpRequestMessageBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.IHttpRequestMessageBuilder.html",
+          "hash": "HGuiq3lT9/4IeX5ZqdQb+A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.IMultiGatewaysBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.IMultiGatewaysBuilder.html",
+          "hash": "F4kSWo4dFoHyAUqfIrdQkw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.MultiGatewaysBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.MultiGatewaysBuilder.html",
+          "hash": "Rx0g/WXP6G2VAvE197eqKA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.SingletonHttpClient.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.SingletonHttpClient.html",
+          "hash": "K+WiXgqr6h/KsAMo6GZx8w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.WebGet-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.WebGet-1.html",
+          "hash": "1H1glveW4fo3dNz+iio6Xg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/ATAP.Utilities.Http.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/ATAP.Utilities.Http.html",
+          "hash": "3DfYTZW9o8dwtMFWaInu1Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "obj/docfx/api/netcoreapp2.0/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netcoreapp2.0/toc.html",
+          "hash": "1yuQwLQ6MmKqH3GpA4Ubgw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.BuildTooling.GetVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.BuildTooling.GetVersion.html",
+          "hash": "d2BSXbBZt0JNt89UMiz/Ug=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.BuildTooling.SetVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.BuildTooling.SetVersion.html",
+          "hash": "FEaXBSbAY8wvlRoQjhT9lw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.BuildTooling.UpdateVersion.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.BuildTooling.UpdateVersion.html",
+          "hash": "y+7i31wkrtmU6+qZBL8FwA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.BuildTooling.Utilities.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.BuildTooling.Utilities.html",
+          "hash": "H2wLntF4TfJWt9VsA2Zi4A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.BuildTooling.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.BuildTooling.html",
+          "hash": "Ov5C/8xCEoYm/2vNS4N0Ww=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.Gateway.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.Gateway.html",
+          "hash": "5gmiUYRVt2gK5bwnZIKmww=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.GatewayBuilder.html",
+          "hash": "0wpujFUNwlatgjNtR5dJ7Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntry.html",
+          "hash": "jD+EsIwqQty+BrzoRXWduQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryBuilder.html",
+          "hash": "YnRGDeO+PAFe1ySU3RsCUg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitor.html",
+          "hash": "YMInDLPWdsSephKQ1yQoEg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.GatewayEntryMonitorBuilder.html",
+          "hash": "JVDZhVCjnMZcJzFCzOE1AA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitor.html",
+          "hash": "0fGaAgR2YOaTGjQxlSx/MQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitorBuilder.html",
+          "hash": "/fSfMkc9juLNvTEdTbMgyw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitors.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitors.html",
+          "hash": "sVpYiUoxOLdb3e1D/6NV8w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.GatewayMonitorsBuilder.html",
+          "hash": "NyUmJmMuo5Ocmu6KVGi7Vw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.Gateways.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.Gateways.html",
+          "hash": "LBdCBfyMWrlLHwft4JsmBw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.GenericWebGet.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.GenericWebGet.html",
+          "hash": "bUBHvwdm/8hhzR1NUjuGQA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.HttpRequestMessageBuilder.html",
+          "hash": "NZhF4G1D/pELID+FeJCVGQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.IGateway.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.IGateway.html",
+          "hash": "kF1iKCuKBrWk6orljxI3Vg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.IGatewayBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.IGatewayBuilder.html",
+          "hash": "DhqOns588BhL7g4FFzzV8g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntry.html",
+          "hash": "w1XVEpFOuLlw0d2fWPmCdw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryBuilder.html",
+          "hash": "Df362g9iiGOHAnTrPiji+w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryMonitor.html",
+          "hash": "OCmRS10zcw0/JB6a9Eyjvg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.IGatewayEntryMonitorBuilder.html",
+          "hash": "8ujtwytKSWfOnT41J2cM2g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitor.html",
+          "hash": "QzSTozM4yT7vWp394d7Nug=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitorBuilder.html",
+          "hash": "XCpcXG9h9C40/kpL4fYbiQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitors.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitors.html",
+          "hash": "kpRoWZ4IQyjRBI3W/WLQUA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitorsBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.IGatewayMonitorsBuilder.html",
+          "hash": "z9Tp/ZjlC7yyPJ4+XaMvWw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.IGateways.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.IGateways.html",
+          "hash": "i+EMC8Njt8HJBgHz38NG7A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.IHttpRequestMessageBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.IHttpRequestMessageBuilder.html",
+          "hash": "ZlY+gaAARKZjyH9Evvabdg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.IMultiGatewaysBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.IMultiGatewaysBuilder.html",
+          "hash": "lUYqpUKxay7ujxzSFQW8gg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.MultiGatewaysBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.MultiGatewaysBuilder.html",
+          "hash": "9mhFEtKkkYNf5peTrnNY/w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.SingletonHttpClient.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.SingletonHttpClient.html",
+          "hash": "toVAfAfsbbNCny/iuRPJGA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.WebGet-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.WebGet-1.html",
+          "hash": "fDR7+8+Geqv0hEStyja7XA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "log_codes": [
+        "DuplicateUids"
+      ],
+      "type": "ManagedReference",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/ATAP.Utilities.Http.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/ATAP.Utilities.Http.html",
+          "hash": "q7JEwOe94DQsh657NDnlTA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "obj/docfx/api/netstandard2.0/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "Api/netstandard2.0/toc.html",
+          "hash": "Wp3J7Q35LJJ542q5WE6PAQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    }
+  ],
+  "incremental_info": [
+    {
+      "status": {
+        "can_incremental": true,
+        "incrementalPhase": "build"
+      },
+      "processors": {
+        "ResourceDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor ResourceDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build"
+        },
+        "TocDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build"
+        },
+        "ConceptualDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build"
+        },
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build"
+        }
+      }
+    },
+    {
+      "status": {
+        "can_incremental": false,
+        "details": "Cannot support incremental post processing, the reason is: should not trace intermediate info.",
+        "incrementalPhase": "postProcessing"
+      },
+      "processors": {}
+    }
+  ],
+  "version_info": {},
+  "groups": [
+    {
+      "xrefmap": "xrefmap.yml"
+    }
+  ]
+}

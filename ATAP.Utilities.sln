@@ -8,8 +8,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
+		Index.md = Index.md
 		LICENSE = LICENSE
 		README.md = README.md
+		toc.yml = toc.yml
 		VersionControl.proj = VersionControl.proj
 	EndProjectSection
 EndProject
@@ -81,10 +83,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInve
 EndProject
 Project("{F5034706-568F-408A-B7B3-4D38C6DB8A32}") = "ATAP.Utilities.BuildTooling.Chocolatey", "ATAP.Utilities.BuildTooling.Chocolatey\ATAP.Utilities.BuildTooling.Chocolatey.pssproj", "{6CAFC0C6-A428-4D30-A9F9-700E829FEA51}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{9CCE4A2F-811E-4F6E-9639-74C974CC7DED}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{9CCE4A2F-811E-4F6E-9639-74C974CC7DED}"
 	ProjectSection(SolutionItems) = preProject
-		Docs\ATTRIBUTION.md = Docs\ATTRIBUTION.md
-		Docs\Building.md = Docs\Building.md
+		Documentation\ATTRIBUTION.md = Documentation\ATTRIBUTION.md
+		Documentation\Building.md = Documentation\Building.md
+		Documentation\GettingStarted.md = Documentation\GettingStarted.md
+		Documentation\index.md = Documentation\index.md
+		Documentation\toc.yml = Documentation\toc.yml
+		Documentation\VisualStudioExtensions.md = Documentation\VisualStudioExtensions.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{0383FC22-0B8D-4D17-B466-E4DBDE7B5F81}"

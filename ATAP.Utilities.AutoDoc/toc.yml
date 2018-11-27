@@ -1,6 +1,5 @@
 - name: Home
-  href: index.md
-- name: Articles
-  href: Articles/index.md
-- name: API Documentation
-  href: Api/netstandard2.0/index.md
+  href: ./index.html
+- name: Conceptual
+  href: Documentation/toc.yml
+  topicHref: Documentation/index.html

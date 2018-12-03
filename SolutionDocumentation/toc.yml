@@ -1,0 +1,12 @@
+- name: ReadMe
+  href: ReadMe.md
+- name: GettingStarted
+  href: GettingStarted.md
+- name: Building
+  href: Building.md
+- name: VisualStudioExtensions
+  href: VisualStudioExtensions.md
+- name: Attribution
+  href: Attribution.md
+- name: Contributing
+  href: ContributingGuidelines.md

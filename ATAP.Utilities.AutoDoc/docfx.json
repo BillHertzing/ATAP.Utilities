@@ -4,7 +4,7 @@
           "src": [
             {
               "files": ["ATAP.Utilities.Http/*.csproj","ATAP.Utilities.BuildTooling.*/*.csproj","ATAP.Utilities.AutoDoc/*.csproj"],
-              "exclude": [ "**/bin/**", "**/obj/**"],
+              "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/**", "Docs/**" ],
               "src": "../"
             }
           ],
@@ -18,7 +18,7 @@
           "src": [
             {
               "files": ["ATAP.Utilities.Http/*.csproj","ATAP.Utilities.BuildTooling.*/*.csproj","ATAP.Utilities.AutoDoc/*.csproj"],
-              "exclude": [ "**/bin/**", "**/obj/**" ],
+              "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/**", "Docs/**" ],
               "src": "../"
             }
           ],
@@ -32,7 +32,7 @@
           "src": [
             {
               "files": ["ATAP.Utilities.Http/*.csproj","ATAP.Utilities.BuildTooling.*/*.csproj","ATAP.Utilities.AutoDoc/*.csproj"],
-              "exclude": [ "**/bin/**", "**/obj/**"],
+              "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/**", "Docs/**" ],
               "src": "../"
             }
           ],
@@ -59,28 +59,17 @@
         "dest": "Api/"
       },
       {
-        "files": [
-          "index.md", "toc.yml"
-        ],
+        "files": [ "*.md", "toc.yml" ],
+        "exclude": [ "**/obj", "**/bin", "**/wwwroot" ],
         "src": "../",
         "dest": "./"
       },
       {
-        "files": [
-          "ReadMe.md"
-        ],
-        "src": "../",
-        "dest": "ReadMes/"
+        "files": [ "**/*.md", "**/index.md", "**/toc.yml" ],
+        "exclude": ["**/obj", "**/bin", "**/wwwroot"],
+        "src": "../SolutionDocumentation",
+        "dest": "./SolutionDocumentation/"
       },
-      {
-        "files": [
-          "*.md",
-          "*.yml"
-        ],
-        "src": "../Documentation",
-        "dest": "Documentation/"
-      }
-
     ],
     "resource": [
       {
@@ -95,8 +84,8 @@
         "files": [
           "obj/docfx/api/**.md"
         ],
-        "exclude": [ "**/bin/**", "**/obj/**"],
-      },
+        "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/**" ]
+      }
     ],
     "globalMetadata": {
       "_appTitle": "ATAP Utilities",
@@ -146,7 +135,7 @@
           ]
         }
       },
-      "dest": "obj/docfx/api/"
+      "dest": "obj/docfx/api/merged"
     },
     "postProcessors": [ "ExtractSearchIndex" ],
     "markdownEngineName": "dfm-latest",

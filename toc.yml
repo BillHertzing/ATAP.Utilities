@@ -1,8 +1,8 @@
 - name: Home
-  href: index.html
+  href: ReadMe.html
 - name: Conceptual
-  href: Documentation/toc.yml
-  topicHref: Documentation/index.html
-- name: API Documentation
-  href: ATAP.Utilities.AutoDoc/obj/docfx/api/net471/toc.yml
-  topicHref: Api/index.html
+  href: SolutionDocumentation/ReadMe.html
+- name: API
+  href: Api/index.html
+- name: Contributing
+  href: SolutionDocumentation/ContributingGuidelines.html  

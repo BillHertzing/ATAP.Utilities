@@ -1,4 +1,5 @@
-<base href="http://localhost:8080/">
+<!-- <base href="http://localhost:8080/">-->
+ <base href="https://BillHertzing.GitHub.io/"> 
 # ATAP.Utilities Conceptual Documentation
 Detailed Documentation for the following topics as they pertain to this repository
 

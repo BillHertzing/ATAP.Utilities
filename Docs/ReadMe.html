@@ -10,14 +10,14 @@
     <meta name="title" content="ATAP.Utilities | ATAP Utilities ">
     <meta name="generator" content="docfx 2.40.2.0">
     
-    <link rel="shortcut icon" href="../../favicon.ico">
-    <link rel="stylesheet" href="../../styles/docfx.vendor.css">
-    <link rel="stylesheet" href="../../styles/docfx.css">
-    <link rel="stylesheet" href="../../styles/main.css">
-    <meta property="docfx:navrel" content="../../toc.html">
-    <meta property="docfx:tocrel" content="../../toc.html">
+    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="stylesheet" href="styles/docfx.vendor.css">
+    <link rel="stylesheet" href="styles/docfx.css">
+    <link rel="stylesheet" href="styles/main.css">
+    <meta property="docfx:navrel" content="toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
     
-    <meta property="docfx:rel" content="../../">
+    <meta property="docfx:rel" content="">
     <meta property="docfx:newtab" content="true">
   </head>
   <body data-spy="scroll" data-target="#affix" data-offset="120">
@@ -34,8 +34,8 @@
                 <span class="icon-bar"></span>
               </button>
               
-              <a class="navbar-brand" href="../../index.html">
-                <img id="logo" class="svg" src="../../images/ataplogo1inch.bmp" alt="Logo For ATAP Technology, Inc.">
+              <a class="navbar-brand" href="index.html">
+                <img id="logo" class="svg" src="images/ataplogo1inch.bmp" alt="Logo For ATAP Technology, Inc.">
               </a>
             </div>
             <div class="collapse navbar-collapse" id="navbar">
@@ -71,8 +71,8 @@
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
 
-<p><img src="images/ataplogo1inch.bmp" alt="ATAPLogo"> --ToDo - AltText:Logo for ATAP Technology, Inc.</p>
-<p>I am actively developing this documentation static website, and publishing to the ATAP Utilities GitHub Pages host. Over the course of the next few weeks, the site will be in a constant state of flux, but hopefully will settle down after the automation tools are completed and content is written.</p>
+<p><img src="images/ATAPlogo1inch.bmp" alt="ATAPLogo">
+<base href="http://localhost:8080/"></p>
 <h1 id="ataputilities">ATAP.Utilities</h1>
 <p>These are a treasure of Projects/Assemblies (at least I hope they will be eventually) for tools, algorithms and concepts, and data structures to make programming life easier. </p>
 <ul>
@@ -83,55 +83,41 @@
 <li>All the documentation, and the full repository&#39;s API, is published via AutoDoc project and DocFx to the repository&#39;s documentation site in side the repository and committed to GitHub.</li>
 <li>The documentation site is made available to the public via GitHub pages. </li>
 </ul>
-<p>To see the documentation site for this repository, hosted in GitHub pages, look here:  <a href="https://billhertzing.github.io/ATAP.Utilities/ATAP.Utilities.AutoDoc/Index.html">https://billhertzing.github.io/ATAP.Utilities/ATAP.Utilities.AutoDoc/Index.html</a></p>
-<p>Documentation specifically on using the AutoDoc project within this repository to help you create a static documentation website for your repository can be found here: <a href="../ATAP.Utilities.AutoDoc/_site/ReadMe.html">ATAP.Utilities.AutoDoc/_site/ReadMe.html</a></p>
-<h2 id="installing--getting-started">Installing / Getting started</h2>
+<p>Further information on the overall contents of this repository can be found in the <a href="./ATAP.Utilities/Documentation/ReadMe.html">detailed documentation for this repository</a></p>
+<p>Other detailed documentation you might be interested are </p>
+<ul>
+<li><a href="">Building a solution from Visual Studio</a></li>
+<li><a href="">Building a solution Using MSBuild via a Command Line Interface (CLI)</a></li>
+<li><a href="">Building a solution using the DotNet build command</a>  * <a href=""></a></li>
+<li><a href="">Using ATAP BuildTooling to manage Version information</a></li>
+<li><a href="">Using ATAP BuildTooling PowerShell scripts with Visual studio</a></li>
+<li><a href="">Using DoxFx to build the ATAP.Utilities documentation website</a></li>
+<li><a href="./API/ReadMe.html">Detailed API Information for the packages in this repository</a></li>
+</ul>
+<h1 id="getting-started">Getting started</h1>
+<h2 id="prerequisites">Prerequisites</h2>
+<ol>
+<li>Visual Studio (VS) 2017 Version 15.8 or newer. All of the following instructions assume you are using a Visual Studio (VS) 2017 IDE for development. More information on suggested settings and on 3rd party tools and extensions that make development easier is in the [Getting Started guide](./Documentation/gettingStarted.html}. If you want to use the ATAP BuildTooling from this repository, see the [ATAP.BuildTooling GettingStarted guide] for additional required Visual Studio extensions and settings. If you want to build the documentation for this repository, or learn more about how the AutoDoc project works, see the [ATAP.Utilities.AutoDoc Getting Started Guide] for instructions. If you are in Building/using these tools outside of Visual Studio, <a href="./Documentation/ReadMe.html#Building">Building</a> provides additional documentation on options for building the demos outside of Visual Studio</li>
+<li>Familiarity with using Git and GitHub in VS.</li>
+</ol>
+<h2 id="getting-the-packages-and-tools">Getting the packages and tools</h2>
+<h3 id="using-nuget-to-add-an-ataputility-package-to-your-projects">Using NuGet to add an ATAP.Utility package to your projects</h3>
+<p>Help Needed, see issue #30</p>
+<h3 id="using-nuget-to-add-the-atapbuildtooling-to-your-solutions">Using NuGet to add the ATAP.BuildTooling to your solutions</h3>
+<p>Help Needed, see issue #31 and issue #32</p>
+<h3 id="using-chocolatey-to-add-the-atapbuildtooling-machine-wide">Using Chocolatey to add the ATAP.BuildTooling machine-wide</h3>
+<p>Help Needed, see issue #33 and issue #34</p>
+<h3 id="getting-the-source-code-and-further-developing-the-packages">Getting the source code and further developing the packages</h3>
 <h3 id="forking-the-repository">Forking the repository</h3>
-<p>The only way at the moment is to fork the repository, build the packages, and work with your own copy.
-&lt;insert a reference to instructions on how to Fork a repository in GitHub&gt;
-Once you have forked the repository, attach it to Visual Studio running on you development workstation.
-&lt;insert a reference to instructions on how to connect a GitHub remote repository to Visual studio on a developers workstation&gt;
-Jump to Initial Configuration</p>
-<blockquote><p>The following distribution methods are under active development, but not yet released beyond local feed. The extended MSBuild tooling in this Repository is where the development and eventual production code will reside.</p>
-</blockquote>
-<blockquote><blockquote><h3 id="nuget">NuGet</h3>
-<p>The individual assemblies are distributed as NuGet packages. The entire repository can be installed via NuGet. There is a NuGet package dedicated to installing just the MSBuild tooling enhancements. There is a NuGet package dedicated to installing just the  AutoDoc project to a repository. Instructions for adding individual assemblies to your projects via NuGet: (tbd)</p>
-</blockquote>
-</blockquote>
-<blockquote><blockquote><h3 id="chocolatey">Chocolatey</h3>
-<p>In addition to NuGet, the packages are distributed by Chocolatey. Instructions for getting the MSuild tooling enhancements via Chocolatey: (tbd)</p>
-</blockquote>
-</blockquote>
-<h3 id="initial-configuration">Initial Configuration</h3>
-<p>Before you can start building the projects in this repository, or using the NuGet projects, some of these projects require some initial configuration steps. &lt;tbd?&gt;</p>
-<h4 id="install-the-ataputilitiesbuildtooling-tools">Install the ATAP.Utilities.BuildTooling tools</h4>
-<p>The BuildTooling utilities are developed in this project, and they are also used by all projects in this repository. So you will need to install these tools before tryinng to build.</p>
-<p>Did you know that there are blogs dedicated to helping you write a ReadMe.md file for a GitHub repository?
-<a href="https://github.com/noffle/art-of-readme">https://github.com/noffle/art-of-readme</a>
-<a href="https://github.com/jehna/readme-best-practices">https://github.com/jehna/readme-best-practices</a>
-The content below came from the  template in <a href="https://github.com/jehna/readme-best-practices">https://github.com/jehna/readme-best-practices</a></p>
-<p>I am still in the middle of writing a good ReadMe, and figuring out how to make DocFx a good site generator for my needs. Your patience, Good Reader, is appreciated!
-/&lt;placeholder - continue writing repository README from here&gt;</p>
-<h2 id="developing">Developing</h2>
-<p>Here&#39;s a brief intro about what a developer must do in order to start developing
-the project further:</p>
-<pre><code class="lang-shell">git clone https://github.com/your/awesome-project.git
-cd awesome-project/
-packagemanager install
-</code></pre><p>And state what happens step-by-step.</p>
-<h3 id="building">Building</h3>
-<p>If your project needs some additional steps for the developer to build the
-project after some code changes, state them here:</p>
-<pre><code class="lang-shell">./configure
-make
-make install
-</code></pre><p>Here again you should state what actually happens when the code above gets
-executed.</p>
-<h3 id="deploying--publishing">Deploying / Publishing</h3>
-<p>In case there&#39;s some step you have to take that publishes this project to a
-server, this is the right time to state it.</p>
-<pre><code class="lang-shell">packagemanager deploy awesome-project -s server.com -u username -p password
-</code></pre><p>And again you&#39;d need to tell what the previous code actually does.</p>
+<p>The only way at the moment to begin working with the source is to fork the repository, build the packages, and work with your own copy. Here are some instructions on <a href="https://help.github.com/articles/fork-a-repo/">how to fork a GitHub repository</a>.
+Once you have forked the repository, attach it to Visual Studio running on your development workstation.
+&lt;insert a reference to instructions on how to connect a GitHub remote repository to Visual studio on a developers workstation&gt;</p>
+<h2 id="using-the-library-packages">Using the Library packages</h2>
+<p><a href="./Documentation/GettingStarted.html#UsingLibraries">Using the ATAP Utility Libraries</a></p>
+<h2 id="using-the-atap-buildtooling">Using the ATAP BuildTooling</h2>
+<p><a href="./Documentation/GettingStarted.html#UsingBuildTooling">Using the ATAP Utility Buildtooling</a></p>
+<h2 id="using-the-atap-autodoc-project">Using the ATAP AutoDoc project</h2>
+<p><a href="./Documentation/GettingStarted.html#UsingAutoDoc">Using the ATAP Utility AutoDoc</a></p>
 <h2 id="features">Features</h2>
 <p>What&#39;s all the bells and whistles this project can perform?</p>
 <ul>
@@ -139,18 +125,6 @@ server, this is the right time to state it.</p>
 <li>You can also do another thing</li>
 <li>If you get really randy, you can even do this</li>
 </ul>
-<h2 id="configuration">Configuration</h2>
-<p>Here you should write what are all of the configurations a user can enter when
-using the project.</p>
-<h4 id="argument-1">Argument 1</h4>
-<p>Type: <code>String</code><br>Default: <code>&#39;default value&#39;</code></p>
-<p>State what an argument does and how you can use it. If needed, you can provide
-an example below.</p>
-<p>Example:</p>
-<pre><code class="lang-bash">awesome-project &quot;Some other value&quot;  # Prints &quot;You&#39;re nailing this readme!&quot;
-</code></pre><h4 id="argument-2">Argument 2</h4>
-<p>Type: <code>Number|Boolean</code><br>Default: 100</p>
-<p>Copy-paste as many of these as you need.</p>
 <h2 id="contributing">Contributing</h2>
 <p>When you publish something open source, one of the greatest motivations is that
 anyone can just jump in and start contributing to your project.</p>
@@ -209,8 +183,8 @@ to improve the security and privacy of this project!</li>
       </footer>
     </div>
     
-    <script type="text/javascript" src="../../styles/docfx.vendor.js"></script>
-    <script type="text/javascript" src="../../styles/docfx.js"></script>
-    <script type="text/javascript" src="../../styles/main.js"></script>
+    <script type="text/javascript" src="styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="styles/docfx.js"></script>
+    <script type="text/javascript" src="styles/main.js"></script>
   </body>
 </html>

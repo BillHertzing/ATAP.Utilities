@@ -1,6 +1,5 @@
-![ATAPLogo](images/ataplogo1inch.bmp) --ToDo - AltText:Logo for ATAP Technology, Inc.
-
-I am actively developing this documentation static website, and publishing to the ATAP Utilities GitHub Pages host. Over the course of the next few weeks, the site will be in a constant state of flux, but hopefully will settle down after the automation tools are completed and content is written.
+![ATAPLogo](images/ATAPlogo1inch.bmp)
+<base href="http://localhost:8080/">
 
 # ATAP.Utilities
 These are a treasure of Projects/Assemblies (at least I hope they will be eventually) for tools, algorithms and concepts, and data structures to make programming life easier. 
@@ -11,77 +10,42 @@ These are a treasure of Projects/Assemblies (at least I hope they will be eventu
   * All the documentation, and the full repository's API, is published via AutoDoc project and DocFx to the repository's documentation site in side the repository and committed to GitHub.
   * The documentation site is made available to the public via GitHub pages. 
   
-To see the documentation site for this repository, hosted in GitHub pages, look here:  https://billhertzing.github.io/ATAP.Utilities/ATAP.Utilities.AutoDoc/Index.html
+Further information on the overall contents of this repository can be found in the [detailed documentation for this repository](./SolutionDocumentation/ReadMe.html)
 
-Documentation specifically on using the AutoDoc project within this repository to help you create a static documentation website for your repository can be found here: [ATAP.Utilities.AutoDoc/_site/ReadMe.html](../ATAP.Utilities.AutoDoc/_site/ReadMe.html)
+Other detailed documentation you might be interested are 
+  * [Building a solution from Visual Studio]()
+  * [Building a solution Using MSBuild via a Command Line Interface (CLI)]()
+  * [Building a solution using the DotNet build command]()  * []()
+  * [Using ATAP BuildTooling to manage Version information]()
+  * [Using ATAP BuildTooling PowerShell scripts with Visual studio]()
+  * [Using DoxFx to build the ATAP.Utilities documentation website]()
+  * [Detailed API Information for the packages in this repository](./API/ReadMe.html)
 
-## Installing / Getting started
+
+# Getting started
+## Prerequisites
+1. Visual Studio (VS) 2017 Version 15.8 or newer. All of the following instructions assume you are using a Visual Studio (VS) 2017 IDE for development. More information on suggested settings and on 3rd party tools and extensions that make development easier is in the [Getting Started guide](./SolutionDocumentation/gettingStarted.html}. If you want to use the ATAP BuildTooling from this repository, see the [ATAP.BuildTooling GettingStarted guide] for additional required Visual Studio extensions and settings. If you want to build the documentation for this repository, or learn more about how the AutoDoc project works, see the [ATAP.Utilities.AutoDoc Getting Started Guide] for instructions. If you are in Building/using these tools outside of Visual Studio, [Building](./SolutionDocumentation/ReadMe.html#Building) provides additional documentation on options for building the demos outside of Visual Studio
+1. Familiarity with using Git and GitHub in VS.
+
+## Getting the packages and tools
+### Using NuGet to add an ATAP.Utility package to your projects
+Help Needed, see issue #30
+### Using NuGet to add the ATAP.BuildTooling to your solutions
+Help Needed, see issue #31 and issue #32
+### Using Chocolatey to add the ATAP.BuildTooling machine-wide
+Help Needed, see issue #33 and issue #34
+### Getting the source code and further developing the packages
 ### Forking the repository
-The only way at the moment is to fork the repository, build the packages, and work with your own copy.
-\<insert a reference to instructions on how to Fork a repository in GitHub>
-Once you have forked the repository, attach it to Visual Studio running on you development workstation.
+The only way at the moment to begin working with the source is to fork the repository, build the packages, and work with your own copy. Here are some instructions on [how to fork a GitHub repository](https://help.github.com/articles/fork-a-repo/).
+Once you have forked the repository, attach it to Visual Studio running on your development workstation.
 \<insert a reference to instructions on how to connect a GitHub remote repository to Visual studio on a developers workstation>
-Jump to Initial Configuration
 
-> The following distribution methods are under active development, but not yet released beyond local feed. The extended MSBuild tooling in this Repository is where the development and eventual production code will reside.
-
->  > ### NuGet 
->  > The individual assemblies are distributed as NuGet packages. The entire repository can be installed via NuGet. There is a NuGet package dedicated to installing just the MSBuild tooling enhancements. There is a NuGet package dedicated to installing just the  AutoDoc project to a repository. Instructions for adding individual assemblies to your projects via NuGet: (tbd)
-
->  > ### Chocolatey
-   > In addition to NuGet, the packages are distributed by Chocolatey. Instructions for getting the MSuild tooling enhancements via Chocolatey: (tbd)
-> 
-
-### Initial Configuration
-Before you can start building the projects in this repository, or using the NuGet projects, some of these projects require some initial configuration steps. <tbd?>
-#### Install the ATAP.Utilities.BuildTooling tools
-The BuildTooling utilities are developed in this project, and they are also used by all projects in this repository. So you will need to install these tools before tryinng to build.
-
-Did you know that there are blogs dedicated to helping you write a ReadMe.md file for a GitHub repository?
-https://github.com/noffle/art-of-readme
-https://github.com/jehna/readme-best-practices
-The content below came from the  template in https://github.com/jehna/readme-best-practices
-
-I am still in the middle of writing a good ReadMe, and figuring out how to make DocFx a good site generator for my needs. Your patience, Good Reader, is appreciated!
-/<placeholder - continue writing repository README from here>
-
-## Developing
-
-Here's a brief intro about what a developer must do in order to start developing
-the project further:
-
-```shell
-git clone https://github.com/your/awesome-project.git
-cd awesome-project/
-packagemanager install
-```
-
-And state what happens step-by-step.
-
-### Building
-
-If your project needs some additional steps for the developer to build the
-project after some code changes, state them here:
-
-```shell
-./configure
-make
-make install
-```
-
-Here again you should state what actually happens when the code above gets
-executed.
-
-### Deploying / Publishing
-
-In case there's some step you have to take that publishes this project to a
-server, this is the right time to state it.
-
-```shell
-packagemanager deploy awesome-project -s server.com -u username -p password
-```
-
-And again you'd need to tell what the previous code actually does.
+## Using the Library packages
+[Using the ATAP Utility Libraries](./SolutionDocumentation/GettingStarted.html#UsingLibraries)
+## Using the ATAP BuildTooling
+[Using the ATAP Utility Buildtooling](./SolutionDocumentation/GettingStarted.html#UsingBuildTooling)
+## Using the ATAP AutoDoc project
+[Using the ATAP Utility AutoDoc](./SolutionDocumentation/GettingStarted.html#UsingAutoDoc)
 
 ## Features
 
@@ -90,28 +54,7 @@ What's all the bells and whistles this project can perform?
 * You can also do another thing
 * If you get really randy, you can even do this
 
-## Configuration
 
-Here you should write what are all of the configurations a user can enter when
-using the project.
-
-#### Argument 1
-Type: `String`  
-Default: `'default value'`
-
-State what an argument does and how you can use it. If needed, you can provide
-an example below.
-
-Example:
-```bash
-awesome-project "Some other value"  # Prints "You're nailing this readme!"
-```
-
-#### Argument 2
-Type: `Number|Boolean`  
-Default: 100
-
-Copy-paste as many of these as you need.
 
 ## Contributing
 

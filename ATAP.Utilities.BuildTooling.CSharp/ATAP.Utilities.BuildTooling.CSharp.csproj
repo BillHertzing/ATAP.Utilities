@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -15,18 +15,17 @@
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Framework" Version="15.9.20" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.9.20" />
+  </ItemGroup>
   
     <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Framework" Version="15.8.166" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.8.166" />
-  </ItemGroup>
   <ItemGroup>
     <None Update="ATAP.Utilities.BuildTooling.targets">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Docs\" />
-  </ItemGroup>
+
 </Project>

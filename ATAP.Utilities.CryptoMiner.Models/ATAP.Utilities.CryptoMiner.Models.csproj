@@ -29,5 +29,11 @@
     <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Enumerations\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
+    <PackageReference Include="docfx">
+      <Version>2.40.2</Version>
+    </PackageReference>
+  </ItemGroup>
  
 </Project>

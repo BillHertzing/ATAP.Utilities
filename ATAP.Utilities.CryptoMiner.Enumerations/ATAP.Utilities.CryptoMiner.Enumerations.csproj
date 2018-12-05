@@ -19,5 +19,11 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
+  
+  <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
+    <PackageReference Include="docfx">
+      <Version>2.40.2</Version>
+    </PackageReference>
+  </ItemGroup>
 
 </Project>

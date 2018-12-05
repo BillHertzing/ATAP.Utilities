@@ -11,31 +11,9 @@ param (
     [string]$projectpath
 )
 
-
-Function remove-objandBin {
-    [CmdletBinding(SupportsShouldProcess=$true)]
-	param (
-		[parameter(mandatory=$true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$itempath
-		,[parameter(mandatory=$true)]
-    [ValidateNotNullOrEmpty()]
-    [string]$solutionpath
-	)
-	write-verbose "$solutionpath $projectpath $itempath "
-	$rootpath = $itempath
-	write-verbose "$rootpath"
-	write-verbose "Removing obj and bin subdirs recursively below $rootpath"
-	$dirsToDelete= 'obj','bin'
-	Get-ChildItem -Recurse -Directory $rootpath | %{$dir = $_;
-		if ($dirsToDelete -Contains $dir.Name) {
-			if ($PSCmdlet.ShouldProcess($dir.Name,'Delete')) {
-				$n= $dir.Fullname
-				write-host "really would delete $n"
-			}
-		}
-	}
-}
+# The BuildTooling Module contains all PowerShell code that assists MSBild or Visual Studio tasks
+# The standard place to find it is from the $solutiondir/.build/TBD
+Import-Module ATAP.Utilities.BuildTooling.psm1
 
 remove-objandBin $itempath $solutionpath
 

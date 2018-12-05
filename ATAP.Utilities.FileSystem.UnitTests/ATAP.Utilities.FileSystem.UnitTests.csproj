@@ -10,9 +10,9 @@
     <MinorVersion>1</MinorVersion>
     <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>dev</PackageLifeCycleStage>
+    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
-    <PackageLabel>alpha</PackageLabel>
+    <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
   
   <ItemGroup>

@@ -1,7 +1,7 @@
-![ATAPLogo](images/ATAPlogo1inch.bmp)
-<base href="http://localhost:8080/">
 
-# ATAP.Utilities
+# ATAP.Utilities ReadMe (at the Solution Item level)
+If you are viewing this ReadMe.md in GitHub, [here is this same ReadMe on the documentation site]()
+
 These are a treasure of Projects/Assemblies (at least I hope they will be eventually) for tools, algorithms and concepts, and data structures to make programming life easier. 
   * These libraries are the computational and building core of of ATAP's ACE project and the Blazor-related demos. 
   * This repository includes enhancements to Visual Studio, in the form of MSBuild tooling, including MSBuild Tasks, Targets, and Properties, along with PowerShell Scripts and Modules. 

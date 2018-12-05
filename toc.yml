@@ -3,6 +3,6 @@
 - name: Conceptual
   href: SolutionDocumentation/ReadMe.html
 - name: API
-  href: Api/index.html
+  href: ApiDocumentation/index.html
 - name: Contributing
   href: SolutionDocumentation/ContributingGuidelines.html  

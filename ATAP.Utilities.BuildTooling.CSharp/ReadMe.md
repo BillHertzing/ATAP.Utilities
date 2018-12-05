@@ -1,4 +1,6 @@
-<h1>ATAP.Utilities.BuildTooling.CSharp</h1>
+# ATAP.Utilities.BuildTooling.CSharp
+If you are viewing this ReadMe.md in GitHub, [here is this same ReadMe on the documentation site]()
+## Introduction
 This project provides:
     an additional Targets file that can be imported in a project's build definition (.csproj)
     a .dll file that contains additional MSBuild Task definitions written in CSharp

@@ -4,7 +4,7 @@
           "src": [
             {
               "files": ["ATAP.Utilities.Http/*.csproj","ATAP.Utilities.BuildTooling.*/*.csproj","ATAP.Utilities.AutoDoc/*.csproj"],
-              "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/**", "Docs/**" ],
+              "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/**", "docs/**" ],
               "src": "../"
             }
           ],
@@ -18,7 +18,7 @@
           "src": [
             {
               "files": ["ATAP.Utilities.Http/*.csproj","ATAP.Utilities.BuildTooling.*/*.csproj","ATAP.Utilities.AutoDoc/*.csproj"],
-              "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/**", "Docs/**" ],
+              "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/**", "docs/**" ],
               "src": "../"
             }
           ],
@@ -32,7 +32,7 @@
           "src": [
             {
               "files": ["ATAP.Utilities.Http/*.csproj","ATAP.Utilities.BuildTooling.*/*.csproj","ATAP.Utilities.AutoDoc/*.csproj"],
-              "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/**", "Docs/**" ],
+              "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/**", "docs/**" ],
               "src": "../"
             }
           ],
@@ -60,13 +60,13 @@
       },
       {
         "files": [ "*.md", "toc.yml" ],
-        "exclude": [ "**/obj", "**/bin", "**/Docs" ],
+        "exclude": [ "**/obj", "**/bin", "**/docs" ],
         "src": "../",
         "dest": "./"
       },
       {
         "files": [ "**/*.md", "**/index.md", "**/toc.yml" ],
-        "exclude": ["**/obj", "**/bin", "**/Docs"],
+        "exclude": ["**/obj", "**/bin", "**/docs"],
         "src": "../SolutionDocumentation",
         "dest": "./SolutionDocumentation/"
       },
@@ -84,7 +84,7 @@
         "files": [
           "obj/docfx/api/**.md"
         ],
-        "exclude": ["**/obj", "**/bin", "**/Docs"],
+        "exclude": ["**/obj", "**/bin", "**/docs"],
       }
     ],
     "globalMetadata": {
@@ -102,7 +102,7 @@
     },
     "globalMetadataFiles": [],
     "fileMetadataFiles": [],
-    "dest": "../Docs",
+    "dest": "../docs",
     "template": [
       "default",
       "templates/AutoDocTemplate01"

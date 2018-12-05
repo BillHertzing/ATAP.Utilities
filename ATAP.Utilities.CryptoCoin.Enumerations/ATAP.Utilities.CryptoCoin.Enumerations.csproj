@@ -7,7 +7,7 @@
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
     <MajorVersion>0</MajorVersion>
-    <MinorVersion>1</MinorVersion>
+    <MinorVersion>2</MinorVersion>
     <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
     <PackageLifeCycleStage>Production</PackageLifeCycleStage>
@@ -23,6 +23,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
+    <PackageReference Include="docfx">
+      <Version>2.40.2</Version>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

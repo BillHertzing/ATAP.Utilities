@@ -1,5 +1,7 @@
 
-# ATAP.Utilities
+# ATAP.Utilities ReadMe (at the Solution Item level)
+If you are viewing this ReadMe.md in GitHub, [here is this same ReadMe on the documentation site]()
+
 These are a treasure of Projects/Assemblies (at least I hope they will be eventually) for tools, algorithms and concepts, and data structures to make programming life easier. 
   * These libraries are the computational and building core of of ATAP's ACE project and the Blazor-related demos. 
   * This repository includes enhancements to Visual Studio, in the form of MSBuild tooling, including MSBuild Tasks, Targets, and Properties, along with PowerShell Scripts and Modules. 
@@ -41,7 +43,7 @@ Once you have forked the repository, attach it to Visual Studio running on your 
 ## Using the Library packages
 [Using the ATAP Utility Libraries](./SolutionDocumentation/GettingStarted.html#UsingLibraries)
 ## Using the ATAP BuildTooling
-doxfx output (./ATAP.Utilities.BuildTooling.CSharp/_site/index.html)
+[Using the ATAP Utility Buildtooling](./SolutionDocumentation/GettingStarted.html#UsingBuildTooling)
 ## Using the ATAP AutoDoc project
 [Using the ATAP Utility AutoDoc](./SolutionDocumentation/GettingStarted.html#UsingAutoDoc)
 

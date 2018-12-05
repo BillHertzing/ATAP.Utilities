@@ -56,17 +56,17 @@
           "**/index.md"
         ],
         "src": "obj/docfx/api",
-        "dest": "Api/"
+        "dest": "./ApiDocumentation/"
       },
       {
         "files": [ "*.md", "toc.yml" ],
-        "exclude": [ "**/obj", "**/bin", "**/wwwroot" ],
+        "exclude": [ "**/obj", "**/bin", "**/Docs" ],
         "src": "../",
         "dest": "./"
       },
       {
         "files": [ "**/*.md", "**/index.md", "**/toc.yml" ],
-        "exclude": ["**/obj", "**/bin", "**/wwwroot"],
+        "exclude": ["**/obj", "**/bin", "**/Docs"],
         "src": "../SolutionDocumentation",
         "dest": "./SolutionDocumentation/"
       },
@@ -84,7 +84,7 @@
         "files": [
           "obj/docfx/api/**.md"
         ],
-        "exclude": [ "**/bin/**", "**/obj/**", "*AutoDoc/**" ]
+        "exclude": ["**/obj", "**/bin", "**/Docs"],
       }
     ],
     "globalMetadata": {

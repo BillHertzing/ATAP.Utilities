@@ -1,6 +1,7 @@
-<!-- <base href="http://localhost:8080/">-->
- <base href="https://BillHertzing.GitHub.io/"> 
+ 
 # ATAP.Utilities Conceptual Documentation
+If you are viewing this ReadMe.md in GitHub, [here is this same ReadMe on the documentation site]()
+## Introduction
 Detailed Documentation for the following topics as they pertain to this repository
 
 There have been many people and organizations whose published insights helped shape this effort. A partial list of these fine folks can be found in the [Attribution document](./Documentation/ATTRIBUTION.html) .

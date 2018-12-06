@@ -8,20 +8,19 @@
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
     <MajorVersion>0</MajorVersion>
-    <MinorVersion>2</MinorVersion>
+    <MinorVersion>3</MinorVersion>
     <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
+    <PackageLifeCycleStage>Dev</PackageLifeCycleStage>
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>NA</PackageLabel>
+    <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
-
+  
+    <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Framework" Version="15.9.20" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.9.20" />
   </ItemGroup>
-  
-    <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->
   <ItemGroup>
     <None Update="ATAP.Utilities.BuildTooling.targets">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

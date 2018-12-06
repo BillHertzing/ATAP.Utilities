@@ -81,7 +81,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoMiner.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Configuration", "ATAP.Utilities.ComputerInventory.Configuration\ATAP.Utilities.ComputerInventory.Configuration.csproj", "{D4CEE619-BAC8-4797-9277-5055EEBE4DB9}"
 EndProject
-Project("{F5034706-568F-408A-B7B3-4D38C6DB8A32}") = "ATAP.Utilities.BuildTooling.Chocolatey", "ATAP.Utilities.BuildTooling.Chocolatey\ATAP.Utilities.BuildTooling.Chocolatey.pssproj", "{6CAFC0C6-A428-4D30-A9F9-700E829FEA51}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.BuildTooling.CSharp", "ATAP.Utilities.BuildTooling.CSharp\ATAP.Utilities.BuildTooling.CSharp.csproj", "{0AC51559-80D3-4C2C-BDA6-495CB26F02FC}"
+EndProject
+Project("{F5034706-568F-408A-B7B3-4D38C6DB8A32}") = "ATAP.Utilities.BuildTooling.PowerShell", "ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.pssproj", "{DBD8663F-C30C-4702-B97A-5365529B4D15}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.AutoDoc", "ATAP.Utilities.AutoDoc\ATAP.Utilities.AutoDoc.csproj", "{DF414E11-E82C-4710-9DDD-9FE741E9C7FC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.RealEstate.Enumerations", "ATAP.Utilities.RealEstate.Enumerations\ATAP.Utilities.RealEstate.Enumerations.csproj", "{A9F0F4DF-94D3-49F4-8A47-7768D9D49950}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.RealEstate.Enumerations.UnitTests", "ATAP.Utilities.RealEstate.Enumerations.UnitTests\ATAP.Utilities.RealEstate.Enumerations.UnitTests.csproj", "{188F4E57-4E95-429E-A844-A3655200A393}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionDocumentation", "SolutionDocumentation", "{9CCE4A2F-811E-4F6E-9639-74C974CC7DED}"
 	ProjectSection(SolutionItems) = preProject
@@ -98,12 +106,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{0383FC
 	ProjectSection(SolutionItems) = preProject
 		.build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Get-CoreInfo.ps1 = .build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Get-CoreInfo.ps1
 	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.BuildTooling.CSharp", "ATAP.Utilities.BuildTooling.CSharp\ATAP.Utilities.BuildTooling.CSharp.csproj", "{0AC51559-80D3-4C2C-BDA6-495CB26F02FC}"
-EndProject
-Project("{F5034706-568F-408A-B7B3-4D38C6DB8A32}") = "ATAP.Utilities.BuildTooling.PowerShell", "ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.pssproj", "{DBD8663F-C30C-4702-B97A-5365529B4D15}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.AutoDoc", "ATAP.Utilities.AutoDoc\ATAP.Utilities.AutoDoc.csproj", "{DF414E11-E82C-4710-9DDD-9FE741E9C7FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -243,10 +245,6 @@ Global
 		{D4CEE619-BAC8-4797-9277-5055EEBE4DB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4CEE619-BAC8-4797-9277-5055EEBE4DB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4CEE619-BAC8-4797-9277-5055EEBE4DB9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6CAFC0C6-A428-4D30-A9F9-700E829FEA51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6CAFC0C6-A428-4D30-A9F9-700E829FEA51}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6CAFC0C6-A428-4D30-A9F9-700E829FEA51}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6CAFC0C6-A428-4D30-A9F9-700E829FEA51}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0AC51559-80D3-4C2C-BDA6-495CB26F02FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0AC51559-80D3-4C2C-BDA6-495CB26F02FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0AC51559-80D3-4C2C-BDA6-495CB26F02FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -258,6 +256,14 @@ Global
 		{DF414E11-E82C-4710-9DDD-9FE741E9C7FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DF414E11-E82C-4710-9DDD-9FE741E9C7FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF414E11-E82C-4710-9DDD-9FE741E9C7FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9F0F4DF-94D3-49F4-8A47-7768D9D49950}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9F0F4DF-94D3-49F4-8A47-7768D9D49950}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9F0F4DF-94D3-49F4-8A47-7768D9D49950}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9F0F4DF-94D3-49F4-8A47-7768D9D49950}.Release|Any CPU.Build.0 = Release|Any CPU
+		{188F4E57-4E95-429E-A844-A3655200A393}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{188F4E57-4E95-429E-A844-A3655200A393}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{188F4E57-4E95-429E-A844-A3655200A393}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{188F4E57-4E95-429E-A844-A3655200A393}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

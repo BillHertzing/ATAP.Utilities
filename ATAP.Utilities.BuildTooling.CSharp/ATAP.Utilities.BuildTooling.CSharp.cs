@@ -42,7 +42,7 @@ namespace ATAP.Utilities.BuildTooling {
           // Log the method entry if Debug and Trace
           if(string.Equals(aTAPBuildToolingConfiguration, "Debug", StringComparison.OrdinalIgnoreCase)
               && string.Equals(aTAPBuildToolingDebugVerbosity, "Trace", StringComparison.OrdinalIgnoreCase)) {
-              log.LogMessage($"  Starting GetVersion, VersionFile = {versionFile}");
+              log.LogMessage($"Starting GetVersion, VersionFile = {versionFile}");
           }
           // Initialize output parameter values
           build = null;
@@ -96,7 +96,7 @@ namespace ATAP.Utilities.BuildTooling {
           // Log the method exit if Debug and Trace
           if(string.Equals(aTAPBuildToolingConfiguration, "Debug", StringComparison.OrdinalIgnoreCase)
               && string.Equals(aTAPBuildToolingDebugVerbosity, "Trace", StringComparison.OrdinalIgnoreCase)) {
-              log.LogMessage($"  Leaving GetVersion:" +
+              log.LogMessage($"Leaving GetVersion:" +
                   $" MajorVersion = {majorVersion}" +
                   $" MinorVersion = {minorVersion}" +
                   $" PatchVersion = {patchVersion}" +
@@ -314,10 +314,15 @@ namespace ATAP.Utilities.BuildTooling {
                 return false;
             }
             if((_packageVersion == null) || (_packageVersion == string.Empty)) {
-                throw new InvalidDataException($"PackageVersion from GetVersion was null or empty");
+                throw new InvalidDataException($"_packageVersion from GetVersion was null or empty");
             }
-            // Log the results if Debug and Trace
-            if(string.Equals(ATAPBuildToolingConfiguration, "Debug", StringComparison.OrdinalIgnoreCase)
+      if (_majorVersion == null){throw new InvalidDataException($"_majorVersion from GetVersion was null");}
+      if (_minorVersion == null) { throw new InvalidDataException($"_minorVersion from GetVersion was null"); }
+      if (_patchVersion == null) { throw new InvalidDataException($"_patchVersion from GetVersion was null"); }
+      if (_build == null) { throw new InvalidDataException($"_build from GetVersion was null"); }
+      if (_revision == null) { throw new InvalidDataException($"_revision from GetVersion was null"); }
+      // Log the results if Debug and Trace
+      if (string.Equals(ATAPBuildToolingConfiguration, "Debug", StringComparison.OrdinalIgnoreCase)
                 && string.Equals(ATAPBuildToolingDebugVerbosity, "Trace", StringComparison.OrdinalIgnoreCase)) {
                 Log.LogMessage($"  GetVersion: _majorVersion = {_majorVersion}" +
                     $" _minorVersion = {_minorVersion}" +
@@ -326,6 +331,13 @@ namespace ATAP.Utilities.BuildTooling {
                     $" _build = {_build}" +
                     $" _revision = {_revision}");
             }
+      // Set the Task output properties
+      MajorVersion = (int) _majorVersion;
+      MinorVersion = (int) _minorVersion;
+      PatchVersion = (int) _patchVersion;
+      PackageVersion = _packageVersion;
+      Build = (int) _build;
+      Revision = (int) _revision;
             return true;
         }
 

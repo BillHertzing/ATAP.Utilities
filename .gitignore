@@ -11,7 +11,7 @@
 # MSBuild Build logging log file
 *.binlog
 # DocFx Documentaion generation log file
-/ATAP.Utilities.AutoDoc/log.txt
+ATAP.Utilities.AutoDoc/log.txt
 
 # User-specific files
 *.suo

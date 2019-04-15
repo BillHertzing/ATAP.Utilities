@@ -60,10 +60,18 @@
          @(_DebugSymbolsIntermediatePath);                 
          $(NonExistentFile);
          @(CustomAdditionalCompileOutputs)">
-    <!-- Conditionally call increment task here, if UpdatePackageVersionLockFilePath file does not exist -->
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' and !Exists('$(UpdatePackageVersionLockFilePath)')" Text="UpdatePackageVersionBeforeOuterBuild WILL execute becasue $(UpdatePackageVersionLockFilePath) DOES NOT exist" />
-    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' and Exists('$(UpdatePackageVersionLockFilePath)')" Text="UpdatePackageVersionBeforeOuterBuild WILL NOT execute becasue $(UpdatePackageVersionLockFilePath) DOES exist" />
-    <CallTarget Targets="UpdatePackageVersionBeforeOuterBuild" Condition="!Exists('$(UpdatePackageVersionLockFilePath)')"/>
+    <!-- Conditionally call version increment task here,
+             if not in a Visual Studio Design Time build, AND
+             if UpdatePackageVersionLockFilePath file does not exist -->
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="DesignTimeBuild = $(DesignTimeBuild)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' AND $(DesignTimeBuild) == true" Text=" Do Not Execute because DesignTimeBuild = true" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' AND Exists($(UpdatePackageVersionLockFilePath))" Text="Do Not Execute because $(UpdatePackageVersionLockFilePath) exists" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' AND $(DesignTimeBuild) != true" Text="DesignTimeBuild != true" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' AND !Exists($(UpdatePackageVersionLockFilePath))" Text="$(UpdatePackageVersionLockFilePath) does not exist" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' AND $(DesignTimeBuild) != true AND !Exists($(UpdatePackageVersionLockFilePath))" Text="Execute because !(DesignTimeBuild != true) AND because $(UpdatePackageVersionLockFilePath) does not exists" />
+    <!-- Don't create a lockfile or update package version during design time builds -->
+    <!-- Conditional below came frorm here: https://github.com/dotnet/project-system/blob/master/docs/design-time-builds.md#diagnosing-design-time-builds -->
+    <CallTarget Targets="UpdatePackageVersionBeforeOuterBuild" Condition="$(DesignTimeBuild) != true AND !Exists($(UpdatePackageVersionLockFilePath))"/>
   </Target>
   
 <!-- This is the  target that updates the versioninformation during development for every build -->

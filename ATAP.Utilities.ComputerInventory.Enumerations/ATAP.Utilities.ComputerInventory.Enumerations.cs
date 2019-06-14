@@ -69,4 +69,29 @@ namespace ATAP.Utilities.ComputerInventory.Enumerations
         [Description("Samsung")]
         Samsung
     }
+
+  public enum DiskDriveMaker {
+    //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
+    [Description("Generic")]
+    Generic,
+    [Description("Samsung")]
+    Samsung,
+    [Description("Seagate")]
+    Seagate,
+    [Description("WesternDigital")]
+    WesternDigital,
+    [Description("Maxtor")]
+    Maxtor,
+    [Description("Hitachi")]
+    Hitachi
+  }
+  public enum DiskDriveType {
+    //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
+    [Description("Generic")]
+    Generic,
+    [Description("SSD")]
+    SSD,
+    [Description("HDD")]
+    HDD
+  }
 }

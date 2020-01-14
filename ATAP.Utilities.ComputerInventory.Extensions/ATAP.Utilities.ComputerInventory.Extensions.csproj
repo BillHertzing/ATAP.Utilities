@@ -17,12 +17,12 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="MedallionShell" Version="1.5.1" />
-    <PackageReference Include="ServiceStack.Text" Version="5.4.0" />
+    <PackageReference Include="MedallionShell" Version="1.6.1" />
+    <PackageReference Include="ServiceStack.Text" Version="5.8.0" />
     <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
     <PackageReference Include="Swordfish.NET.CollectionsV3" Version="3.0.0.1" />
     <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
-    <PackageReference Include="UnitsNet" Version="3.109.0" />
+    <PackageReference Include="UnitsNet" Version="4.43.0" />
   </ItemGroup>
 
   <ItemGroup>

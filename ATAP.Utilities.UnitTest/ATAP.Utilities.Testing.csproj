@@ -6,8 +6,8 @@
     <IsPackable>true</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
-    <MajorVersion>0</MajorVersion>
-    <MinorVersion>2</MinorVersion>
+    <MajorVersion>1</MajorVersion>
+    <MinorVersion>0</MinorVersion>
     <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
     <PackageLifeCycleStage>Production</PackageLifeCycleStage>
@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net471'">

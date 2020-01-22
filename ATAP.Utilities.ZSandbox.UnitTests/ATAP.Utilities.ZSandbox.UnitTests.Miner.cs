@@ -290,7 +290,7 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
                             Process.GetProcessesByName(msw.ProcessName).ToList().ForEach(x => x.Kill());
 
 
-                            powerConsumptionTune = new Power(1);
+              powerConsumptionTune = new Power(1, UnitsNet.Units.PowerUnit.Watt);
                             hashRatePerCoinTune = new ConcurrentObservableDictionary<Coin, HashRate>();
                             foreach (var k in msw.CoinsMined)
                             {

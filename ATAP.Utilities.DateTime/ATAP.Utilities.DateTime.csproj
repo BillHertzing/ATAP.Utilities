@@ -2,18 +2,19 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <!-- Set the  NuGet Package control for this assembly -->
     <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
-    <MajorVersion>0</MajorVersion>
-    <MinorVersion>2</MinorVersion>
-    <PatchVersion>0</PatchVersion>
+    <MajorVersion>1</MajorVersion>
+    <MinorVersion>0</MinorVersion>
+    <PatchVersion>1</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
+    <PackageLifeCycleStage>Dev</PackageLifeCycleStage>
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>NA</PackageLabel>
+    <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net471'">

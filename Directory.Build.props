@@ -13,15 +13,10 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net471</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;netcoreapp3.1</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <!--
-    <TargetFramework>net47</TargetFramework>
-    <TargetFramework>net471</TargetFramework>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
-    <TargetFramework>netstandard2.0</TargetFramework>
-  	<TargetFrameworks>netcoreapp2.0;net471</TargetFrameworks>
-    <TargetFrameworks>netstandard2.0;net471</TargetFrameworks>
+    <TargetFrameworks>net47;netstandard2.1;netcoreapp3.1</TargetFrameworks>
 	-->
   </PropertyGroup>
 
@@ -45,7 +40,7 @@
     <ATAPUtilitiesBuildToolingTargetsPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.0.1.0.1\build\</ATAPUtilitiesBuildToolingTargetsPath>
     <ATAPUtilitiesBuildToolingTasksPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.0.1.0.1\build</ATAPUtilitiesBuildToolingTasksPath>
     <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\$(ATAPBuildToolingConfiguration)\netstandard2.0\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
-      <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\$(ATAPBuildToolingConfiguration)\net471\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
+    <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\$(ATAPBuildToolingConfiguration)\net471\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
   </PropertyGroup>
 
   <!-- NuGet Package information for all assemblies in the solution -->
@@ -57,7 +52,7 @@
     <ProductName>ATAP.Utilities</ProductName>
     <RepositoryUrl>https://github.com/BillHertzing/ATAP.Utilities</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
-    <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>www.project.url</PackageProjectUrl>
     <PackageIconUrl>www.icon.url</PackageIconUrl>
     <PackageTags>Testing, experimental, alpha, ATAP, ATAP.Utilities</PackageTags>
@@ -111,7 +106,7 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'net471' ">
   </ItemGroup>
 
-  <!-- Demonstrate the difference between a msbuild run from inside Visual Studio, and a msbuild callled from dotnet CLI
+  <!-- Demonstrate the difference between a msbuild run from inside Visual Studio, and a msbuild called from dotnet CLI
        Replace Never with Clean -->
   <Target Name="HighlightDifferencesBetweenMSBuild" BeforeTargets="Never">
     <Message  Text="MSBuildRuntimeType = $(MSBuildRuntimeType)" />

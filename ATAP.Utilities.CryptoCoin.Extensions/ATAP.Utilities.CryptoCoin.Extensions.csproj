@@ -6,8 +6,8 @@
     <IsPackable>true</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
-    <MajorVersion>0</MajorVersion>
-    <MinorVersion>2</MinorVersion>
+    <MajorVersion>1</MajorVersion>
+    <MinorVersion>0</MinorVersion>
     <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
     <PackageLifeCycleStage>Production</PackageLifeCycleStage>
@@ -20,17 +20,17 @@
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="Polly" Version="6.1.1" />
     <PackageReference Include="Swordfish.NET.CollectionsV3" Version="3.0.0.1" />
-    <PackageReference Include="UnitsNet" Version="3.109.0" />
+    <PackageReference Include="UnitsNet" Version="4.43.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Models\ATAP.Utilities.CryptoCoin.Models.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.DateTime\ATAP.Utilities.DateTime.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Http\ATAP.Utilities.Http.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj" />
+    <PackageReference Include="ATAP.Utilities.CryptoCoin.Enumerations" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.CryptoCoin.Models" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.DateTime" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.Http" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.Tcp" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.Enumeration" Version="1.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net471'">

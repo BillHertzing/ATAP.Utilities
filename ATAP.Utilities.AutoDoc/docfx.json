@@ -8,10 +8,10 @@
               "src": "../"
             }
           ],
-          "dest": "obj/docfx/api/netstandard2.0/",
+          "dest": "obj/docfx/api/netstandard2.1/",
           "disableGitFeatures": false,
           "properties": {
-            "TargetFramework": "netstandard2.0"
+            "TargetFramework": "netstandard2.1"
           }
         },
         {
@@ -22,10 +22,10 @@
               "src": "../"
             }
           ],
-          "dest": "obj/docfx/api/netcoreapp2.0/",
+          "dest": "obj/docfx/api/netcoreapp3.1/",
           "disableGitFeatures": false,
           "properties": {
-            "TargetFramework": "netcoreapp2.0"
+            "TargetFramework": "netcoreapp3.1"
           }
         },
         {
@@ -115,20 +115,20 @@
         },
         {
           "files": "*.yml",
-          "src": "obj/docfx/api/netcoreapp2.0"
+          "src": "obj/docfx/api/netcoreapp3.1"
         },
         {
           "files": "*.yml",
-          "src": "obj/docfx/api/netstandard2.0"
+          "src": "obj/docfx/api/netstandard2.1"
         }
       ],
       "fileMetadata": {
         "platform": {
-          "obj/docfx/api/netstandard2.0/*.yml": [
-            "netstandard2.0"
+          "obj/docfx/api/netstandard2.1/*.yml": [
+            "netstandard2.1"
           ],
-          "obj/docfx/api/netcoreapp2.0/*.yml": [
-            "netcoreapp2.0"
+          "obj/docfx/api/netcoreapp3.1/*.yml": [
+            "netcoreapp3.1"
           ],
 		  "obj/docfx/api/net471/*.yml": [
             "net471"

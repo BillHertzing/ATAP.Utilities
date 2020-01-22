@@ -8,7 +8,7 @@
     <title>Building the libraries, tools, and documentation (Repository / Solution level) | ATAP Utilities </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Building the libraries, tools, and documentation (Repository / Solution level) | ATAP Utilities ">
-    <meta name="generator" content="docfx 2.40.2.0">
+    <meta name="generator" content="docfx 2.48.1.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -170,8 +170,8 @@ UpdateVersionifNecessary calls the C# function SetVersion (found in $(ATAPUtilit
 Utilities.MakeBuild (static function) creates an integer used as the value of Build
 Utilities.MakePackageVersion (static function) creates a string from the used as the value of NuGet Package Version
 Utilities.TryParsePackageVersion (static function) returns a boolean, and creates a number of integers and strings that are the individual pieces of a parsed Nuget Package Version</p>
-<p>The BuildTooling Assembly gets locked by VS IDE when it does a build, the only way to replace/update it is to quit out of VS IDE. It is important to build both the debug and release versions together.</p>
-<p>Visual Studio 2017 15. 8. 3 create new spec files during a build and pack. If a dependency on another packages found, the Noose Tech file will specify a version of the required package of greater than 1.0.0. but before a package reaches version one while it is under development, the new spec file will not restore the new Subspace Subspace Library .</p>
+<p>The BuildTooling assembly gets locked by VS IDE when it does a build, the only way to replace/update it is to quit out of VS IDE. It is important to build both the debug and release versions together.</p>
+<p>Visual Studio 2017 15. 8. 3 creates a NuSpec file during the packaging task. If a dependency on another package is found, the NuSpec file will specify a version of the required package of greater than 1.0.0. But before a package reaches version one while it is under development, the NuSpec file will not include a reference to restore the pre-V1 version of a file.</p>
 <p>one way around this dilemma is to always create a version 1.0 as a package and there she was, even if there is only placeholders for functionality.. a better approach, is to put two minimal identifying piece of functionality into version 1.0.0. and includes unit test the test all four combinations of interrogation.</p>
 <p>Every solution has a directory wide props and targets file. the targets file simply drains in the community msbuild extensions and VHF utilities buildtooling extensions</p>
 <p>Custom tasks written in C sharp that help build Solutions and projects, are found in the project atsp.utilities. buikdtooljng. This is compiled into a dll, and package into a nougat package. Built in Drbug and release mode. is there or issue with Dell to installation, for when building something similar to Bill to him before the first version to ever exist.  CC top targets file has examples on turning on and turning off conditionally calls to the custom task.</p>

@@ -111,9 +111,9 @@ Utilities.MakePackageVersion (static function) creates a string from the used as
 Utilities.TryParsePackageVersion (static function) returns a boolean, and creates a number of integers and strings that are the individual pieces of a parsed Nuget Package Version
 
 
-The BuildTooling Assembly gets locked by VS IDE when it does a build, the only way to replace/update it is to quit out of VS IDE. It is important to build both the debug and release versions together.
+The BuildTooling assembly gets locked by VS IDE when it does a build, the only way to replace/update it is to quit out of VS IDE. It is important to build both the debug and release versions together.
 
-Visual Studio 2017 15. 8. 3 create new spec files during a build and pack. If a dependency on another packages found, the Noose Tech file will specify a version of the required package of greater than 1.0.0. but before a package reaches version one while it is under development, the new spec file will not restore the new Subspace Subspace Library .
+Visual Studio 2017 15. 8. 3 creates a NuSpec file during the packaging task. If a dependency on another package is found, the NuSpec file will specify a version of the required package of greater than 1.0.0. But before a package reaches version one while it is under development, the NuSpec file will not include a reference to restore the pre-V1 version of a file.
 
 one way around this dilemma is to always create a version 1.0 as a package and there she was, even if there is only placeholders for functionality.. a better approach, is to put two minimal identifying piece of functionality into version 1.0.0. and includes unit test the test all four combinations of interrogation.
 

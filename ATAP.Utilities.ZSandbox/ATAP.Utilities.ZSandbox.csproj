@@ -6,8 +6,8 @@
     <IsPackable>true</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
-    <MajorVersion>0</MajorVersion>
-    <MinorVersion>2</MinorVersion>
+    <MajorVersion>1</MajorVersion>
+    <MinorVersion>0</MinorVersion>
     <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
     <PackageLifeCycleStage>Production</PackageLifeCycleStage>
@@ -21,14 +21,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Extensions\ATAP.Utilities.CryptoCoin.Extensions.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Models\ATAP.Utilities.CryptoCoin.Models.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Enumerations\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Extensions\ATAP.Utilities.CryptoMiner.Extensions.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Models\ATAP.Utilities.CryptoMiner.Models.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Http\ATAP.Utilities.Http.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <PackageReference Include="ATAP.Utilities.CryptoCoin.Enumerations" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.CryptoCoin.Extensions" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.CryptoCoin.Models" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.CryptoMiner.Enumerations" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.CryptoMiner.Extensions" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.CryptoMiner.Models" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.Http" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net471'">

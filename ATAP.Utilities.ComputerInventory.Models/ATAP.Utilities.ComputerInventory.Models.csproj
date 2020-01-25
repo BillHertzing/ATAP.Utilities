@@ -20,12 +20,12 @@
     <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
     <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
     <PackageReference Include="MedallionShell" Version="1.5.1" />
-    <PackageReference Include="Swordfish.NET.CollectionsV3" Version="3.0.0.1" />
     <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
     <PackageReference Include="UnitsNet" Version="4.43.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ATAP.Utilities.ConcurrentObservableCollections" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.ComputerInventory.Enumerations" Version="1.*" />
   </ItemGroup>
 

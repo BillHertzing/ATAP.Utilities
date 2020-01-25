@@ -1,4 +1,4 @@
-using Swordfish.NET.Collections;
+
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -8,6 +8,7 @@ using UnitsNet;
 using ATAP.Utilities.ComputerInventory;
 // using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Models;
+using ATAP.Utilities.ConcurrentObservableCollections;
 using ATAP.Utilities.CryptoCoin.Models;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoMiner.Models;

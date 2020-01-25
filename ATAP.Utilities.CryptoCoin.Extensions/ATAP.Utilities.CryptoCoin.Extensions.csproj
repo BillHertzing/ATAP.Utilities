@@ -19,11 +19,11 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="Polly" Version="6.1.1" />
-    <PackageReference Include="Swordfish.NET.CollectionsV3" Version="3.0.0.1" />
     <PackageReference Include="UnitsNet" Version="4.43.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ATAP.Utilities.ConcurrentObservableCollections" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.CryptoCoin.Enumerations" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.CryptoCoin.Models" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.DateTime" Version="1.*" />

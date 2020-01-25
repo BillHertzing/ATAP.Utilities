@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using ATAP.Utilities.ComputerInventory;
 using ATAP.Utilities.CryptoCoin;
 using Medallion.Shell;
-using Swordfish.NET.Collections;
+using ATAP.Utilities.ConcurrentObservableCollections;
 using UnitsNet;
 using Xunit;
 using ATAP.Utilities.ComputerInventory.Enumerations;

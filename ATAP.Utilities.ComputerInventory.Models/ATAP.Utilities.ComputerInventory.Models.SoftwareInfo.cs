@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using Swordfish.NET.Collections;
+using ATAP.Utilities.ConcurrentObservableCollections;
 using ATAP.Utilities.ComputerInventory.Enumerations;
 
 namespace ATAP.Utilities.ComputerInventory.Models
 {
-
+ 
   public interface IComputerSoftwareProgram
     {
         string ConfigFilePath { get; }
@@ -122,4 +122,5 @@ namespace ATAP.Utilities.ComputerInventory.Models
 
         public List<ComputerSoftwareProgram> ComputerSoftwarePrograms => computerSoftwarePrograms;
     }
+   
 }

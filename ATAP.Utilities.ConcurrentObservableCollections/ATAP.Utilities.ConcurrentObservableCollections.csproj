@@ -1,7 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Property Group for Outpute Type and NuGet Packaging Control -->
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;netstandard2.1</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <!-- Separate Property Group for Version Control -->
@@ -9,25 +12,25 @@
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
     <MajorVersion>1</MajorVersion>
-    <MinorVersion>1</MinorVersion>
+    <MinorVersion>0</MinorVersion>
     <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Dev</PackageLifeCycleStage>
+    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>Alpha</PackageLabel>
-    <PackageVersion>$(MajorVersion).$(MinorVersion).$(PatchVersion)</PackageVersion>
+    <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
-  <!-- Property Group with conditions for Packageversion-->
+  <!-- Property Group with conditions for Packageversion
   <PropertyGroup Condition="'$(PackageLifeCycleStage)' == 'Production'">
     <PackageVersion>$(MajorVersion).$(MinorVersion).$(PatchVersion)</PackageVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(PackageLifeCycleStage)' != 'Production'">
     <PackageVersion>$(MajorVersion).$(MinorVersion).$(PatchVersion)-$(PackageLabel)</PackageVersion>
   </PropertyGroup>
+  -->
   
   <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" Version="1.6.0-preview8.19405.3" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.7.0" />
   </ItemGroup>
 
 </Project>

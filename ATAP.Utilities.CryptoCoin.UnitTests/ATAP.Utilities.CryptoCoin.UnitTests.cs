@@ -6,7 +6,7 @@ using ATAP.Utilities.ComputerInventory;
 using FluentAssertions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using Swordfish.NET.Collections;
+using ATAP.Utilities.ConcurrentObservableCollections;
 using Xunit;
 using Xunit.Abstractions;
 using ATAP.Utilities.CryptoCoin.Extensions;

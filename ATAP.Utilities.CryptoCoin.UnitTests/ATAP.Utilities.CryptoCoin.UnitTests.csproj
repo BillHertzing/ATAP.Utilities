@@ -24,6 +24,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="1.0.1" />
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
   </ItemGroup>
 
@@ -31,6 +32,7 @@
     <PackageReference Include="ATAP.Utilities.ComputerInventory.Enumerations" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.ComputerInventory.Models" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.ComputerInventory.Extensions" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.ConcurrentObservableCollections" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.CryptoCoin.Enumerations" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.CryptoCoin.Models" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.CryptoCoin.Extensions" Version="1.*" />
@@ -39,12 +41,6 @@
     <PackageReference Include="ATAP.Utilities.CryptoCoin.Extensions" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.HTTP" Version="1.*" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="xunit.runner.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

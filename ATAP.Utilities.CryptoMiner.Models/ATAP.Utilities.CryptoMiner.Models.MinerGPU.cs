@@ -5,7 +5,7 @@ using ATAP.Utilities.CryptoCoin;
 using ATAP.Utilities.CryptoCoin.Models;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoMiner.Enumerations;
-using Swordfish.NET.Collections;
+using ATAP.Utilities.ConcurrentObservableCollections;
 using System;
 using System.Collections.Generic;
 using System.Text;

@@ -6,7 +6,7 @@ using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoMiner.Models;
 using ATAP.Utilities.CryptoMiner.Enumerations;
 using Itenso.TimePeriod;
-using Swordfish.NET.Collections;
+using ATAP.Utilities.ConcurrentObservableCollections;
 using System;
 using System.Collections.Generic;
 using System.Text;

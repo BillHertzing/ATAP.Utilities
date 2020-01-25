@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using System.Runtime.Serialization;
 using ATAP.Utilities.ComputerInventory.Enumerations;
-using Swordfish.NET.Collections;
+using ATAP.Utilities.ConcurrentObservableCollections;
 
 namespace ATAP.Utilities.ComputerInventory.Models
 {

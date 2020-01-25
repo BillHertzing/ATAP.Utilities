@@ -2,7 +2,7 @@ using ATAP.Utilities.ComputerInventory.Extensions;
 using ATAP.Utilities.ComputerInventory.Models;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoCoin.Models;
-using Swordfish.NET.Collections;
+using ATAP.Utilities.ConcurrentObservableCollections;
 using System;
 using System.Collections.Generic;
 using System.Net;

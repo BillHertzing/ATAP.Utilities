@@ -5,19 +5,19 @@ using System.Threading;
 using FluentAssertions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using Swordfish.NET.Collections;
 using Xunit;
 using Xunit.Abstractions;
 using ATAP.Utilities.ComputerInventory.Extensions;
 using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Models;
+using ATAP.Utilities.ConcurrentObservableCollections;
+using ATAP.Utilities.CryptoCoin;
 using ATAP.Utilities.CryptoCoin.Extensions;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoCoin.Models;
 using ATAP.Utilities.CryptoMiner.Extensions;
 using ATAP.Utilities.CryptoMiner.Enumerations;
 using ATAP.Utilities.CryptoMiner.Models;
-using ATAP.Utilities.CryptoCoin;
 
 namespace ATAP.Utilities.CryptoMiner.UnitTests
 {

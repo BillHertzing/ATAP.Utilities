@@ -19,10 +19,11 @@
   <ItemGroup>
     <PackageReference Include="Polly" Version="6.1.1" />
     <PackageReference Include="ServiceStack.HttpClient" Version="5.8.1" />
-    <PackageReference Include="Swordfish.NET.CollectionsV3" Version="3.0.0.1" />
+
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ATAP.Utilities.ConcurrentObservableCollections" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
   </ItemGroup>
 

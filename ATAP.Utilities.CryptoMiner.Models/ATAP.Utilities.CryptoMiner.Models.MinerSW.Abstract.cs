@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
 using Itenso.TimePeriod;
-using Swordfish.NET.Collections;
+using ATAP.Utilities.ConcurrentObservableCollections;
 using UnitsNet;
 using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Models;
+
 using ATAP.Utilities.CryptoCoin.Models;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoMiner.Models;
 using ATAP.Utilities.CryptoMiner.Enumerations;
+using ATAP.Utilities.ComputerInventory.Models;
 
 namespace ATAP.Utilities.CryptoMiner.Models
 {

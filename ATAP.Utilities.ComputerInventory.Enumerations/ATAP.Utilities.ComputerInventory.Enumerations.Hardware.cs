@@ -1,14 +1,8 @@
-using ServiceStack.Text;
-using ServiceStack.Text.EnumMemberSerializer;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Text;
+using ATAP.Utilities.Enumeration;
 
 namespace ATAP.Utilities.ComputerInventory.Enumerations
 {
-
-
     public enum GPUMaker
     {
         //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
@@ -46,7 +40,22 @@ namespace ATAP.Utilities.ComputerInventory.Enumerations
         MSI
     }
 
-    public enum CPUMaker
+  public enum CPUSocket
+  {
+    //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
+    [Description("Generic")]
+    Generic,
+    [Description("LGA 1156")]
+    LGA1156,
+    [Description("LGA 1136")]
+    LGA1136,
+    [Description("LGA 1155")]
+    LGA1155,
+    [Description("LGA 775")]
+    LGA775
+  }
+
+  public enum CPUMaker
     {
         //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
         [Description("Generic")]
@@ -69,4 +78,32 @@ namespace ATAP.Utilities.ComputerInventory.Enumerations
         [Description("Samsung")]
         Samsung
     }
+
+  public enum DiskDriveMaker
+  {
+    //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
+    [Description("Generic")]
+    Generic,
+    [Description("Samsung")]
+    Samsung,
+    [Description("Seagate")]
+    Seagate,
+    [Description("WesternDigital")]
+    WesternDigital,
+    [Description("Maxtor")]
+    Maxtor,
+    [Description("Hitachi")]
+    Hitachi
+  }
+  public enum DiskDriveType
+  {
+    //ToDo: Add [LocalizedDescription("Generic", typeof(Resource))]
+    [Description("Generic")]
+    Generic,
+    [Description("SSD")]
+    SSD,
+    [Description("HDD")]
+    HDD
+  }
+
 }

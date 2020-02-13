@@ -1,13 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using Itenso.TimePeriod;
-using ATAP.Utilities.ConcurrentObservableCollections;
-using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Models;
-using System.Globalization;
-using System.Text;
 using Medallion.Shell;
 
 namespace ATAP.Utilities.ComputerInventory.Extensions
@@ -18,7 +11,6 @@ namespace ATAP.Utilities.ComputerInventory.Extensions
     {
       throw new NotImplementedException();
     }
-
 
     //ToDo: Implement writing a ComputerInventory object to a set of Configuration Settings
     public static Dictionary<string, string> ToConfigurationSettings(this ATAP.Utilities.ComputerInventory.Models.ComputerInventory computerInventory)
@@ -78,14 +70,6 @@ namespace ATAP.Utilities.ComputerInventory.Extensions
 #endif
     }
   }
-
-
-
-  // Add an enumeration for the supported cpu names
-  // Add an enumeration for the supported cpu sockets
-  // Add an enumeration for the supported motherboardMemoryMakers
-  // Add an enumeration for the supported Disk makers
-  // Add an enumeration for the supported PowerSupply makers
 
   /*
   Abstract:

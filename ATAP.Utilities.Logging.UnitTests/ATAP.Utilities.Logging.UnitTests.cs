@@ -12,10 +12,10 @@ namespace ATAP.Utilities.Logging.UnitTests {
 
 
     public class LoggingUnitTests001 : IClassFixture<Fixture> {
-        Fixture _fixture;
+        Fixture fixture;
 
         public LoggingUnitTests001(Fixture fixture) {
-      _fixture = fixture;
+      fixture = fixture;
         }
 
 

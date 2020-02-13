@@ -7,5 +7,8 @@ using ATAP.Utilities.ComputerInventory.Models;
 
 namespace ATAP.Utilities.ComputerInventory.Extensions
 {
+  public static partial class Extensions
+  {
+  }
 
 }

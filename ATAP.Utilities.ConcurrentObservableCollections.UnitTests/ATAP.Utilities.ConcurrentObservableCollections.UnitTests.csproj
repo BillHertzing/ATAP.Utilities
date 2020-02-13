@@ -14,8 +14,8 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
-  
-    <ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="5.10.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
     <PackageReference Include="Moq" Version="4.13.1" />
@@ -24,14 +24,13 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
+    <PackageReference Include="YamlDotNet" Version="8.1.0" />
     <PackageReference Include="coverlet.collector" Version="1.0.1" />
+    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
   </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="ATAP.Utilities.Enumeration" Version="1.*" />
-      <PackageReference Include="ATAP.Utilities.RealEstate.Enumerations" Version="1.*" />
+  <ItemGroup>
+    <PackageReference Include="ATAP.Utilities.ConcurrentObservableCollections" Version="1.*" />
   </ItemGroup>
-
 
 </Project>

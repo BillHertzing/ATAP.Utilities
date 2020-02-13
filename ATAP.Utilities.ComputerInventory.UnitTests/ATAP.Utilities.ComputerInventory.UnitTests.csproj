@@ -19,9 +19,6 @@
     <PackageReference Include="FluentAssertions" Version="5.10.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
     <PackageReference Include="Moq" Version="4.13.1" />
-    <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
-    <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
-    <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
       <PrivateAssets>all</PrivateAssets>
@@ -35,6 +32,7 @@
     <PackageReference Include="ATAP.Utilities.ComputerInventory.Enumerations" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.ComputerInventory.Models" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.ComputerInventory.Extensions" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.ComputerInventory.Configuration" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
   </ItemGroup>
 

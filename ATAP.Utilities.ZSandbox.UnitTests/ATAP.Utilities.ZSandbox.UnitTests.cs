@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -116,12 +116,12 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
     public class ZSandboxUnitTests001 : IClassFixture<Fixture>
     {
         readonly ITestOutputHelper output;
-        protected Fixture _fixture;
+        protected Fixture fixture;
 
         public ZSandboxUnitTests001(ITestOutputHelper output, Fixture fixture)
         {
             this.output = output;
-            this._fixture = fixture;
+            this.fixture = fixture;
         }
 
         [Theory]

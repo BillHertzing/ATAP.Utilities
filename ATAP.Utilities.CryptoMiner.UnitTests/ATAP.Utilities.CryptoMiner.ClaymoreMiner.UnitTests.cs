@@ -95,29 +95,29 @@ namespace ATAP.Utilities.CryptoMiner.UnitTests
     public class ClaymoreMinerProcessUnitTests001 : IClassFixture<ClaymoreETHDualMinerFixture>
     {
         readonly ITestOutputHelper output;
-        protected ClaymoreETHDualMinerFixture _fixture;
+        protected ClaymoreETHDualMinerFixture fixture;
 
         public ClaymoreMinerProcessUnitTests001(ITestOutputHelper output, ClaymoreETHDualMinerFixture fixture)
         {
             this.output = output;
-            this._fixture = fixture;
+            this.fixture = fixture;
         }
 
         [Fact]
         public async void ClaymoreStartStop()
         {
-            var pid = _fixture.claymoreETHDualMinerProcess.Start();
-            //var pid = _fixture.computerProcesses.Start(_fixture.claymoreETHDualMinerSW);
+            var pid = fixture.claymoreETHDualMinerProcess.Start();
+            //var pid = fixture.computerProcesses.Start(fixture.claymoreETHDualMinerSW);
             // delay to settle
             Thread.Sleep(5);
             // get a status to prove it is running
-            //ClaymoreETHDualMinerProcess claymoreETHDualMinerProcess =(ClaymoreETHDualMinerProcess) _fixture.computerProcesses.computerProcessDictionary[pid];
+            //ClaymoreETHDualMinerProcess claymoreETHDualMinerProcess =(ClaymoreETHDualMinerProcess) fixture.computerProcesses.computerProcessDictionary[pid];
             // ToDo: Better handling of exceptions
-            var status = await _fixture.claymoreETHDualMinerProcess.StatusFetchAsync();
+            var status = await fixture.claymoreETHDualMinerProcess.StatusFetchAsync();
             status.Should()
                 .NotBeNull();
             // stop it
-            _fixture.claymoreETHDualMinerProcess.Close();
+            fixture.claymoreETHDualMinerProcess.Close();
             // get running processes and ensure the pid is no longer there
             var processes = Process.GetProcesses();
             bool none = processes.Where(p => p.Id == pid)
@@ -131,21 +131,21 @@ namespace ATAP.Utilities.CryptoMiner.UnitTests
         public async void ClaymoreMinerStatusDetails()
         {
             // cleanup ??
-            Process.GetProcessesByName(_fixture.claymoreETHDualMinerProcess.ComputerSoftwareProgram.ProcessName).ToList().ForEach(x => x.Kill());
+            Process.GetProcessesByName(fixture.claymoreETHDualMinerProcess.ComputerSoftwareProgram.ProcessName).ToList().ForEach(x => x.Kill());
             ConcurrentObservableCollection<string> stdErrorLines = new ConcurrentObservableCollection<string>();
             ConcurrentObservableCollection<string> stdOutLines = new ConcurrentObservableCollection<string>();
-            _fixture.claymoreETHDualMinerProcess.Cmd.RedirectStandardErrorTo(stdErrorLines);
-            _fixture.claymoreETHDualMinerProcess.Cmd.RedirectTo(stdOutLines);
-            var pid = _fixture.claymoreETHDualMinerProcess.Start();
+            fixture.claymoreETHDualMinerProcess.Cmd.RedirectStandardErrorTo(stdErrorLines);
+            fixture.claymoreETHDualMinerProcess.Cmd.RedirectTo(stdOutLines);
+            var pid = fixture.claymoreETHDualMinerProcess.Start();
             // delay to settle
             Thread.Sleep(5);
             // get a status to prove it is running
             // ToDo: Better handling of exceptions
-            var status = await _fixture.claymoreETHDualMinerProcess.StatusFetchAsync();
+            var status = await fixture.claymoreETHDualMinerProcess.StatusFetchAsync();
             status.Should()
                 .NotBeNull();
             // stop it
-            _fixture.claymoreETHDualMinerProcess.Close();
+            fixture.claymoreETHDualMinerProcess.Close();
             // get running processes and ensure the pid is no longer there
             var processes = Process.GetProcesses();
             bool none = processes.Where(p => p.Id == pid)

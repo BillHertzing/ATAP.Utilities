@@ -1,11 +1,12 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
+using System.Resources;
 
 namespace ATAP.Utilities.Enumeration {
-    /*
-    ///ToDO: (far future) localize the application using satellite assemblies for specific languages
+
+    ///ToDO: localize the application using satellite assemblies for specific languages
     public class LocalizedDescriptionAttribute : DescriptionAttribute
     {
         private readonly string _resourceKey;
@@ -25,7 +26,7 @@ namespace ATAP.Utilities.Enumeration {
             }
         }
     }
-    */
+
     public static class Utilities {
         public static CustomAttributeType GetAttributeValue<CustomAttributeName, CustomAttributeType>(this Enum value) {
             // The enumeration value passed as the parameter to the GetSymbol method call

@@ -1,19 +1,10 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ATAP.Utilities.Tcp;
 using FluentAssertions;
-using Moq;
-using Newtonsoft.Json;
+using System.Text;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ATAP.Utilities.Tcp.UnitTests
 {
-    public class Fixture
+  public class Fixture
     {
         #region MOQs
         // a MOQ for the async web calls used for Term1

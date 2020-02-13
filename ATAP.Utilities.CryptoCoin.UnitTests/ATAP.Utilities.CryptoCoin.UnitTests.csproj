@@ -29,18 +29,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Extensions" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ConcurrentObservableCollections" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.CryptoCoin.Enumerations" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.CryptoCoin.Models" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.CryptoCoin.Extensions" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoMiner.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoMiner.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Extensions" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.HTTP" Version="1.*" />
   </ItemGroup>
 
 </Project>

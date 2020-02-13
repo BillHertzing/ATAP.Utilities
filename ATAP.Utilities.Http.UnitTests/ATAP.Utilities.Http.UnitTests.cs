@@ -18,13 +18,13 @@ namespace ATAP.Utilities.Http.UnitTests
         }
         public class HttpUnitTests : IClassFixture<Fixture>
         {
-            protected Fixture _fixture;
+            protected Fixture fixture;
             readonly ITestOutputHelper output;
 
             public HttpUnitTests(ITestOutputHelper output, Fixture fixture)
             {
                 this.output = output;
-                this._fixture = fixture;
+                this.fixture = fixture;
             }
         }
 }

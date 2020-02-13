@@ -23,13 +23,13 @@ namespace ATAP.Utilities.Testing.UnitTests
     }
     public class UnitTestsForTestingUtilities : IClassFixture<Fixture>
     {
-        protected Fixture _fixture;
+        protected Fixture fixture;
         readonly ITestOutputHelper output;
 
         public UnitTestsForTestingUtilities(ITestOutputHelper output, Fixture fixture)
         {
             this.output = output;
-            this._fixture = fixture;
+            this.fixture = fixture;
         }
         [Fact]
         void SimpleTupleToStringInJSONFormat()

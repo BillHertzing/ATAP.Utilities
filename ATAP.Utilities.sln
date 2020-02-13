@@ -111,6 +111,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.FileSystem.E
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ConcurrentObservableCollections", "ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj", "{43810099-C65B-413E-B11A-07679830D867}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.ConcurrentObservableCollections.UnitTests", "ATAP.Utilities.ConcurrentObservableCollections.UnitTests\ATAP.Utilities.ConcurrentObservableCollections.UnitTests.csproj", "{7F0F5CA7-50E1-4E9F-8F55-EBE82652E520}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -271,6 +273,10 @@ Global
 		{43810099-C65B-413E-B11A-07679830D867}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{43810099-C65B-413E-B11A-07679830D867}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{43810099-C65B-413E-B11A-07679830D867}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F0F5CA7-50E1-4E9F-8F55-EBE82652E520}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F0F5CA7-50E1-4E9F-8F55-EBE82652E520}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F0F5CA7-50E1-4E9F-8F55-EBE82652E520}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F0F5CA7-50E1-4E9F-8F55-EBE82652E520}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

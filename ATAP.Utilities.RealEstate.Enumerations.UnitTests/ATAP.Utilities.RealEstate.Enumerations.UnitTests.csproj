@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-      <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>false</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
@@ -29,6 +29,7 @@
   </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="ATAP.Utilities.Enumeration" Version="1.*" />
       <PackageReference Include="ATAP.Utilities.RealEstate.Enumerations" Version="1.*" />
   </ItemGroup>
 

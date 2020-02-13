@@ -17,10 +17,8 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
-    <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
+    <PackageReference Include="ATAP.Utilities.Enumeration" Version="1.*" />
   </ItemGroup>
-  
   
   <ItemGroup>
     <Folder Include="Documentation\" />

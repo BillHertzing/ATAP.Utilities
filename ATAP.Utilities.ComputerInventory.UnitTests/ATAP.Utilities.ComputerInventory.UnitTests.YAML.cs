@@ -7,7 +7,7 @@ using Xunit;
 using Xunit.Abstractions;
 using YamlDotNet.Serialization;
 
-namespace ATAP.Utilities.ComputerInventory.UnitTests.YAML {
+namespace ATAP.Utilities.ComputerInventory.YAML.UnitTests {
     public class Fixture {
         public ComputerProcesses computerProcesses;
     public int pidUnderTest;
@@ -81,56 +81,56 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests.YAML {
   public class ComputerInventoryUnitTestsYAML : IClassFixture<Fixture>
   {
     readonly ITestOutputHelper output;
-    protected Fixture _fixture;
+    protected Fixture fixture;
 
     public ComputerInventoryUnitTestsYAML(ITestOutputHelper output, Fixture fixture)
     {
       this.output = output;
-      this._fixture = fixture;
+      this.fixture = fixture;
     }
   }
     public class ComputerHardwareUnitTestsYAML : IClassFixture<Fixture> {
         readonly ITestOutputHelper output;
-      protected Fixture _fixture;
+      protected Fixture fixture;
 
       public ComputerHardwareUnitTestsYAML(ITestOutputHelper output, Fixture fixture) {
           this.output = output;
-        this._fixture = fixture;
+        this.fixture = fixture;
       }
 
       [Theory]
       [InlineData("Computer:\r\n  MainboardEnabled: true\r\n  CPUEnabled: true\r\n  GPUEnabled: true\r\n  FanControllerEnabled: true\r\n  Hardware: &o0 []\r\nCPUs:\r\n- Maker: Intel\r\nMainBoard:\r\n  Maker: ASUS\r\n  Socket: ToDo:makeSocketanEnum\r\nVideoCards:\r\n- BIOSVersion: ToDo:readfromcard\r\n  CoreClock: -1\r\n  CoreVoltage: -1\r\n  DeviceID: ToDo:readfromcard\r\n  MemClock: -1\r\n  PowerConsumption:\r\n    Period: 00:01:00\r\n    Watts: 1000\r\n  PowerLimit: -1\r\n  TempAndFan:\r\n    Temp: 60\r\n    FanPct: 50\r\n  VideoCardDiscriminatingCharacteristics:\r\n    CardName: GTX 980 TI\r\n    GPUMaker: NVIDEA\r\n    VideoCardMaker: ASUS\r\n    VideoMemoryMaker: Samsung\r\n    VideoMemorySize: 6144\r\nIsMainboardEnabled: true\r\nIsCPUsEnabled: true\r\nIsVideoCardsEnabled: true\r\nIsFanControllerEnabled: true\r\nMoment:\r\n  IsReadOnly: true\r\n  IsMoment: true\r\n  HasStart: true\r\n  Start: 2018-02-08T00:40:45.2945614Z\r\n  HasEnd: true\r\n  End: 2018-02-08T00:40:45.2945614Z\r\n  DurationDescription: ''\r\nHardware: *o0\r\n")]
       public void ComputerHardwareSerializeToYAML(string _testdatainput) {
-          var yaml = _fixture.Serializer.Serialize(_fixture.ComputerHardware);
+          var yaml = fixture.Serializer.Serialize(fixture.ComputerHardware);
         yaml.Should()
             .Be(_testdatainput);
       }
 
       [Fact]
       public void CPUDeserializeFromYAML() {
-          CPU cPU = _fixture.Deserializer.Deserialize<CPU>(_fixture.Serializer.Serialize(_fixture.CPU));
+          CPU cPU = fixture.Deserializer.Deserialize<CPU>(fixture.Serializer.Serialize(fixture.CPU));
         cPU.Should()
-            .Be(_fixture.CPU);
+            .Be(fixture.CPU);
       }
       [Fact]
       public void CPUsDeserializeFromYAML() {
-          CPU[] cPUs = _fixture.Deserializer.Deserialize<CPU[]>(_fixture.Serializer.Serialize(_fixture.CPUs));
+          CPU[] cPUs = fixture.Deserializer.Deserialize<CPU[]>(fixture.Serializer.Serialize(fixture.CPUs));
         cPUs.Length.Should()
-            .Be(_fixture.CPUs.Length);
+            .Be(fixture.CPUs.Length);
         cPUs[1].Should()
-            .Be(_fixture.CPUs);
+            .Be(fixture.CPUs);
       }
       [Theory]
       [InlineData("CPUMaker: Intel\r\n")]
       public void CPUSerializeToYAML(string _testdatainput) {
-          var yaml = _fixture.Serializer.Serialize(_fixture.CPU);
+          var yaml = fixture.Serializer.Serialize(fixture.CPU);
         yaml.Should()
             .Be(_testdatainput);
       }
       [Theory]
       [InlineData("- Maker: Intel\r\n")]
       public void CPUsSerializeToYAML(string _testdatainput) {
-          var yaml = _fixture.Serializer.Serialize(_fixture.CPUs);
+          var yaml = fixture.Serializer.Serialize(fixture.CPUs);
         yaml.Should()
             .Be(_testdatainput);
       }
@@ -138,49 +138,49 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests.YAML {
       [Theory]
       [InlineData("Maker: ASUS\r\nSocket: ToDo:makeSocketanEnum\r\n")]
       public void MainBoardSerializeToYAML(string _testdatainput) {
-          var yaml = _fixture.Serializer.Serialize(_fixture.MainBoard);
+          var yaml = fixture.Serializer.Serialize(fixture.MainBoard);
         yaml.Should()
             .Be(_testdatainput);
       }
       [Theory]
       [InlineData("CardName: GTX 980 TI\r\nGPUMaker: NVIDEA\r\nVideoCardMaker: ASUS\r\nVideoMemoryMaker: Samsung\r\nVideoMemorySize: 6144\r\n")]
       public void VideoCardDiscriminatingCharacteristicsSerializeToYAML(string _testdatainput) {
-          var yaml = _fixture.Serializer.Serialize(_fixture.VideoCardDiscriminatingCharacteristics);
+          var yaml = fixture.Serializer.Serialize(fixture.VideoCardDiscriminatingCharacteristics);
         yaml.Should()
             .Be(_testdatainput);
       }
       [Fact]
       public void VideoCardsDeserializeFromYAML() {
-          VideoCard[] videoCards = _fixture.Deserializer.Deserialize<VideoCard[]>(_fixture.Serializer.Serialize(_fixture.VideoCards));
+          VideoCard[] videoCards = fixture.Deserializer.Deserialize<VideoCard[]>(fixture.Serializer.Serialize(fixture.VideoCards));
         videoCards.Length.Should()
             .Be(1);
         videoCards[0].Should()
-            .Be(_fixture.VideoCard);
+            .Be(fixture.VideoCard);
       }
       [Fact]
       public void VideoCardSensorDataDeSerializeFromYAML() {
-          VideoCardSensorData videoCardSensorData = _fixture.Deserializer.Deserialize<VideoCardSensorData>(_fixture.Serializer.Serialize(_fixture.VideoCardSensorData));
+          VideoCardSensorData videoCardSensorData = fixture.Deserializer.Deserialize<VideoCardSensorData>(fixture.Serializer.Serialize(fixture.VideoCardSensorData));
         videoCardSensorData.Should()
-            .Be(_fixture.VideoCardSensorData);
+            .Be(fixture.VideoCardSensorData);
       }
       [Theory]
       [InlineData("CoreClock: 1000\r\nMemClock: 1333\r\nCoreVoltage: 1\r\nPowerLimit: 1\r\nFanRPM: 500\r\nTemp: 85\r\nPowerConsumption: 100\r\n")]
       public void VideoCardSensorDataSerializeToYAML(string _testdatainput) {
-          var yaml = _fixture.Serializer.Serialize(_fixture.VideoCardSensorData);
+          var yaml = fixture.Serializer.Serialize(fixture.VideoCardSensorData);
         yaml.Should()
             .Be(_testdatainput);
       }
       [Theory]
       [InlineData("BIOSVersion: ToDo:readfromcard\r\nCoreClock: -1\r\nCoreVoltage: -1\r\nDeviceID: ToDo:readfromcard\r\nMemClock: -1\r\nPowerLimit: -1\r\nVideoCardDiscriminatingCharacteristics:\r\n  CardName: GTX 980 TI\r\n  GPUMaker: NVIDEA\r\n  VideoCardMaker: ASUS\r\n  VideoMemoryMaker: Samsung\r\n  VideoMemorySize: 6144\r\n")]
       public void VideoCardSerializeToYAML(string _testdatainput) {
-          var yaml = _fixture.Serializer.Serialize(_fixture.VideoCard);
+          var yaml = fixture.Serializer.Serialize(fixture.VideoCard);
         yaml.Should()
             .Be(_testdatainput);
       }
       [Theory]
       [InlineData("- BIOSVersion: ToDo:readfromcard\r\n  CoreClock: -1\r\n  CoreVoltage: -1\r\n  DeviceID: ToDo:readfromcard\r\n  MemClock: -1\r\n  PowerLimit: -1\r\n  VideoCardDiscriminatingCharacteristics:\r\n    CardName: GTX 980 TI\r\n    GPUMaker: NVIDEA\r\n    VideoCardMaker: ASUS\r\n    VideoMemoryMaker: Samsung\r\n    VideoMemorySize: 6144\r\n")]
       public void VideoCardsSerializeToYAML(string _testdatainput) {
-          var yaml = _fixture.Serializer.Serialize(_fixture.VideoCards);
+          var yaml = fixture.Serializer.Serialize(fixture.VideoCards);
         yaml.Should()
             .Be(_testdatainput);
       }

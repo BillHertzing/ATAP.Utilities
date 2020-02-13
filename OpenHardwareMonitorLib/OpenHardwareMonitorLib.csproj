@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net47</TargetFrameworks>
+    <TargetFrameworks>net471</TargetFrameworks>
     <RootNamespace>OpenHardwareMonitor</RootNamespace>
 	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
@@ -25,5 +25,5 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="3.1.0" />
   </ItemGroup>
-  
+
 </Project>

@@ -34,4 +34,10 @@
     <Folder Include="Documentation\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.RuntimePlatformLifetime\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.RuntimePlatformLifetime.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo\ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo.csproj" />
+  </ItemGroup>
+
 </Project>

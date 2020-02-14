@@ -20,4 +20,8 @@
     <Folder Include="Documentation\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
+  </ItemGroup>
+
 </Project>

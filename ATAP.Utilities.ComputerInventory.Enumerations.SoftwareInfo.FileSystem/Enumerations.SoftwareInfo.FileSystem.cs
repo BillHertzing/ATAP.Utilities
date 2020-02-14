@@ -1,6 +1,4 @@
 using System.ComponentModel;
-using ATAP.Utilities.Enumeration;
-
 namespace ATAP.Utilities.ComputerInventory.Enumerations
 {
     public enum HashAlgorithm {

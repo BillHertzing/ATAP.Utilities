@@ -16,4 +16,8 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Documentation\" />
+  </ItemGroup>
+
 </Project>

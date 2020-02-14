@@ -7,22 +7,7 @@ using ATAP.Utilities.ComputerInventory.Enumerations;
 namespace ATAP.Utilities.ComputerInventory.Models
 {
  
-  public interface IComputerSoftwareProgram
-    {
-        string ConfigFilePath { get; }
-        ConcurrentObservableDictionary<string, string> ConfigurationSettings { get; }
-        bool HasAPI { get; }
-        bool HasConfigurationSettings { get; }
-        bool HasERROut { get; }
-        bool HasLogFiles { get; }
-        bool HasSTDOut { get; }
-        string LogFileFnPattern { get; }
-        string LogFileFolder { get; }
-        string ProcessName { get; }
-        string ProcessPath { get; }
-        string ProcessStartPath { get; }
-        string Version { get; }
-    }
+
     [Serializable]
     public class ComputerSoftwareProgram : IComputerSoftwareProgram
     {

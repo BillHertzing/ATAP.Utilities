@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using ATAP.Utilities.ConcurrentObservableCollections;
 using ATAP.Utilities.ComputerInventory.Enumerations;
+using System;
 using System.Runtime.InteropServices;
 
 namespace ATAP.Utilities.ComputerInventory.Models

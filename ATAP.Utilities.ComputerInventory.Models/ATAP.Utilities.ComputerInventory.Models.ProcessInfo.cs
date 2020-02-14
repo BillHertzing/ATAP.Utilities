@@ -3,6 +3,7 @@ using Medallion.Shell;
 using ATAP.Utilities.ConcurrentObservableCollections;
 using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Models;
+using ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo;
 
 namespace ATAP.Utilities.ComputerInventory.Models
 {

@@ -17,8 +17,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.DateTime", "ATAP.Utilities.DateTime\ATAP.Utilities.DateTime.csproj", "{9DEDDD4C-B2FB-4BB3-8C2C-26BC2FED4D83}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.FileSystem", "ATAP.Utilities.FileSystem\ATAP.Utilities.FileSystem.csproj", "{5494A11E-BF9C-47AE-9CBC-8FC301054055}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing", "ATAP.Utilities.UnitTest\ATAP.Utilities.Testing.csproj", "{9D765FA6-44DB-4A1E-8886-D2FEFF8DCA13}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Logging", "ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj", "{B8DDB1DA-F124-4DF3-9497-2927F73B678D}"
@@ -30,8 +28,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.DateTime.UnitTests", "ATAP.Utilities.DateTime.UnitTests\ATAP.Utilities.DateTime.UnitTests.csproj", "{9BCADBFA-9F96-475A-A134-F17C34AEBF6C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Logging.UnitTests", "ATAP.Utilities.Logging.UnitTests\ATAP.Utilities.Logging.UnitTests.csproj", "{37605D6E-FF53-4E67-84EF-C4A02EE322AF}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.FileSystem.UnitTests", "ATAP.Utilities.FileSystem.UnitTests\ATAP.Utilities.FileSystem.UnitTests.csproj", "{1F3584E0-73DA-42D4-AFFA-EBCB9DC6E7F5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Enumeration", "ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj", "{0D9B33E0-65C8-4C22-ADE4-787E37EC632E}"
 EndProject
@@ -107,7 +103,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{0383FC
 		.build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Get-CoreInfo.ps1 = .build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Get-CoreInfo.ps1
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.FileSystem.Enumerations", "ATAP.Utilities.FileSystem.Enumerations\ATAP.Utilities.FileSystem.Enumerations.csproj", "{CAE8E1ED-2B1D-4502-80F9-16E863B75346}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ConcurrentObservableCollections", "ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj", "{43810099-C65B-413E-B11A-07679830D867}"
 EndProject
@@ -147,10 +142,6 @@ Global
 		{9DEDDD4C-B2FB-4BB3-8C2C-26BC2FED4D83}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9DEDDD4C-B2FB-4BB3-8C2C-26BC2FED4D83}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9DEDDD4C-B2FB-4BB3-8C2C-26BC2FED4D83}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5494A11E-BF9C-47AE-9CBC-8FC301054055}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5494A11E-BF9C-47AE-9CBC-8FC301054055}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5494A11E-BF9C-47AE-9CBC-8FC301054055}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5494A11E-BF9C-47AE-9CBC-8FC301054055}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9D765FA6-44DB-4A1E-8886-D2FEFF8DCA13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9D765FA6-44DB-4A1E-8886-D2FEFF8DCA13}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9D765FA6-44DB-4A1E-8886-D2FEFF8DCA13}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -175,10 +166,6 @@ Global
 		{37605D6E-FF53-4E67-84EF-C4A02EE322AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{37605D6E-FF53-4E67-84EF-C4A02EE322AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{37605D6E-FF53-4E67-84EF-C4A02EE322AF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1F3584E0-73DA-42D4-AFFA-EBCB9DC6E7F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1F3584E0-73DA-42D4-AFFA-EBCB9DC6E7F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1F3584E0-73DA-42D4-AFFA-EBCB9DC6E7F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1F3584E0-73DA-42D4-AFFA-EBCB9DC6E7F5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0D9B33E0-65C8-4C22-ADE4-787E37EC632E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0D9B33E0-65C8-4C22-ADE4-787E37EC632E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D9B33E0-65C8-4C22-ADE4-787E37EC632E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -289,10 +276,6 @@ Global
 		{188F4E57-4E95-429E-A844-A3655200A393}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{188F4E57-4E95-429E-A844-A3655200A393}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{188F4E57-4E95-429E-A844-A3655200A393}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CAE8E1ED-2B1D-4502-80F9-16E863B75346}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CAE8E1ED-2B1D-4502-80F9-16E863B75346}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CAE8E1ED-2B1D-4502-80F9-16E863B75346}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CAE8E1ED-2B1D-4502-80F9-16E863B75346}.Release|Any CPU.Build.0 = Release|Any CPU
 		{43810099-C65B-413E-B11A-07679830D867}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{43810099-C65B-413E-B11A-07679830D867}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{43810099-C65B-413E-B11A-07679830D867}.Release|Any CPU.ActiveCfg = Release|Any CPU

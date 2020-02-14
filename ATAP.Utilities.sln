@@ -123,19 +123,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInve
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo.HostBuilder", "ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo.HostBuilder\ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo.HostBuilder.csproj", "{E96C28EB-F4DD-4755-ACAE-E6197C2FB137}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo", "ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo\ATAP.Utilities.ComputerInventory.Interface.HardwareInfo.csproj", "{7EAD405C-7EA3-4FEC-9279-1F17E23DA3AD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo", "ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo\ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo.csproj", "{7EAD405C-7EA3-4FEC-9279-1F17E23DA3AD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.HostBuilder", "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.HostBuilder\ATAP.Utilities.ComputerInventory.Enumeration.SoftwareInfo.HostBuilder.csproj", "{E22EC0F8-954B-486B-95EE-ECEE10549908}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.HostBuilder", "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.HostBuilder\ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.HostBuilder.csproj", "{E22EC0F8-954B-486B-95EE-ECEE10549908}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.FileSystem", "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.FileSystem\ATAP.Utilities.ComputerInventory.Enumeration.SoftwareInfo.FileSystem.csproj", "{2B72A676-863C-4C31-B135-E73467276C6D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.FileSystem", "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.FileSystem\ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.FileSystem.csproj", "{2B72A676-863C-4C31-B135-E73467276C6D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.Database", "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.Database\ATAP.Utilities.ComputerInventory.Enumeration.SoftwareInfo.Database.csproj", "{7F79FF69-FA90-4D71-83FA-526E57919CF1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.Database", "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.Database\ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.Database.csproj", "{7F79FF69-FA90-4D71-83FA-526E57919CF1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.RuntimePlatformLifetime", "ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.RuntimePlatformLifetime\ATAP.Utilities.ComputerInventory.Enumeration.ProcessInfo.RuntimePlatformLifetime.csproj", "{C62B8BDF-6F5D-4ECC-94D0-C227BB7E4697}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.RuntimePlatformLifetime", "ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.RuntimePlatformLifetime\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.RuntimePlatformLifetime.csproj", "{C62B8BDF-6F5D-4ECC-94D0-C227BB7E4697}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo", "ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo\ATAP.Utilities.ComputerInventory.Enumeration.HardwareInfo.csproj", "{22FE1C86-4A0D-47AB-9C4A-85027EFAD18B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo", "ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo.csproj", "{22FE1C86-4A0D-47AB-9C4A-85027EFAD18B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo.DiskDrive", "ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo.DiskDrive\ATAP.Utilities.ComputerInventory.Interface.HardwareInfo.DiskDrive.csproj", "{E95D0C02-149A-4FB5-8BA3-E635474F89A5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo.DiskDrive", "ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo.DiskDrive\ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo.DiskDrive.csproj", "{E95D0C02-149A-4FB5-8BA3-E635474F89A5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

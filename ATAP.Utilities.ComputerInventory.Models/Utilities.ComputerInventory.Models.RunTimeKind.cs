@@ -1,6 +1,6 @@
-using ATAP.Utilities.ComputerInventory.Enumerations;
 using System;
 using System.Runtime.InteropServices;
+using ATAP.Utilities.ComputerInventory.Enumerations;
 
 namespace ATAP.Utilities.ComputerInventory.Models
 {

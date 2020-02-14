@@ -27,6 +27,7 @@
   <ItemGroup>
     <PackageReference Include="ATAP.Utilities.ConcurrentObservableCollections" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.ComputerInventory.Enumerations" Version="1.*" />
+    <PackageReference Include="ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo" Version="1.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net471'">

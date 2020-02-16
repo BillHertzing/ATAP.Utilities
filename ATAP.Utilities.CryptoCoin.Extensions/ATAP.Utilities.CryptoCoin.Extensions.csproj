@@ -22,21 +22,16 @@
     <PackageReference Include="UnitsNet" Version="4.43.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="ATAP.Utilities.ConcurrentObservableCollections" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.DateTime" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.Http" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.Tcp" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.Enumeration" Version="1.*" />
-  </ItemGroup>
-
   <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
     <PackageReference Include="docfx">
       <Version>2.40.2</Version>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Models\ATAP.Utilities.CryptoCoin.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Http\ATAP.Utilities.Http.csproj" />
   </ItemGroup>
   
 </Project>

@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using ATAP.Utilities.Http;
 using Newtonsoft.Json;
@@ -10,7 +8,7 @@ using Polly.Timeout;
 
 namespace ATAP.Utilities.CryptoCoin
 {
-    public class ChainInfo : WebGet<chain_so_api_v2_get_info_Data> {
+  public class ChainInfo : WebGet<chain_so_api_v2_get_info_Data> {
         public ChainInfo() : base(Policy.TimeoutAsync(new TimeSpan(0, 0, 30),
                                               TimeoutStrategy.Optimistic),
                             HttpRequestMessageBuilder.CreateNew()

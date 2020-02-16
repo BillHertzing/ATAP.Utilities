@@ -3,16 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
 using FluentAssertions;
-using Itenso.TimePeriod;
-using ServiceStack.Text;
-using static ServiceStack.Text.JsonSerializer;
 using Xunit;
 using Xunit.Abstractions;
-using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Models;
-using ATAP.Utilities.ComputerInventory.Extensions;
 using System.Collections;
-//using ServiceStack.Text.EnumMemberSerializer;
+using ServiceStack.Text;
+using ATAP.Utilities.ComputerInventory.Enumerations;
+using Itenso.TimePeriod;
 
 namespace ATAP.Utilities.ComputerInventory.Models.UnitTests
 {

@@ -13,9 +13,10 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net47;netstandard2.1</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <!--
+    <TargetFramework>netstandard2.1</TargetFramework>
     <TargetFrameworks>net47;netstandard2.1;netcoreapp3.1</TargetFrameworks>
 	-->
   </PropertyGroup>

@@ -1,4 +1,3 @@
-using ATAP.Utilities.ComputerInventory.Extensions;
 using ATAP.Utilities.ComputerInventory.Models;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoCoin.Models;

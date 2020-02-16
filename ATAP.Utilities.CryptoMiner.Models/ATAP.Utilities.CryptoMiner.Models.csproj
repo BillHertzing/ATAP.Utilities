@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -16,21 +16,19 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Extensions" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ConcurrentObservableCollections" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoMiner.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.Tcp" Version="1.*" />
-  </ItemGroup>
-
   <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
     <PackageReference Include="docfx">
       <Version>2.40.2</Version>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Models\ATAP.Utilities.CryptoCoin.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Enumerations\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj" />
   </ItemGroup>
  
 </Project>

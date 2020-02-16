@@ -20,21 +20,14 @@
     <PackageReference Include="Polly" Version="6.1.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Extensions" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoMiner.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoMiner.Extensions" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoMiner.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.Http" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
-  </ItemGroup>
-
   <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
     <PackageReference Include="docfx">
       <Version>2.40.2</Version>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Extensions\ATAP.Utilities.CryptoCoin.Extensions.csproj" />
   </ItemGroup>
 
 </Project>

@@ -25,11 +25,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ConcurrentObservableCollections" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.Enumeration" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo\ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
   </ItemGroup>
 
   <ItemGroup>

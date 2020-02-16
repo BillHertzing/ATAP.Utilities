@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo;
 using ATAP.Utilities.ComputerInventory.Models;
 using Medallion.Shell;
 

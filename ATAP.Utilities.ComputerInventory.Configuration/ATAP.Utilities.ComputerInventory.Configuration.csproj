@@ -17,10 +17,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Models" Version="1.*" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="ATAP.Utilities.ComputerInventory.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -28,6 +24,10 @@
 
   <ItemGroup>
     <Folder Include="Documentation\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
   </ItemGroup>
 
 </Project>

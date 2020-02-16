@@ -1,13 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Text;
 using static ATAP.Utilities.CryptoCoin.Enumerations.ExtensionHelpers;
 using static ATAP.Utilities.Enumeration.Utilities;
 
 namespace ATAP.Utilities.CryptoCoin.Enumerations
 {
-    public static class ExtensionHelpers
+  public static class ExtensionHelpers
     {
 
         public sealed class Symbol : Attribute, IAttribute<string>

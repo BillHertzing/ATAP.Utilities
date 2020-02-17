@@ -38,6 +38,7 @@
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.RuntimePlatformLifetime\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.RuntimePlatformLifetime.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo\ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
   </ItemGroup>
 
 </Project>

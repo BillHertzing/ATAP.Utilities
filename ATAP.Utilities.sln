@@ -103,7 +103,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{0383FC
 		.build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Get-CoreInfo.ps1 = .build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Get-CoreInfo.ps1
 	EndProjectSection
 EndProject
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ConcurrentObservableCollections", "ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj", "{43810099-C65B-413E-B11A-07679830D867}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ConcurrentObservableCollections.UnitTests", "ATAP.Utilities.ConcurrentObservableCollections.UnitTests\ATAP.Utilities.ConcurrentObservableCollections.UnitTests.csproj", "{7F0F5CA7-50E1-4E9F-8F55-EBE82652E520}"
@@ -131,6 +130,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo", "ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo.csproj", "{22FE1C86-4A0D-47AB-9C4A-85027EFAD18B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo.DiskDrive", "ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo.DiskDrive\ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo.DiskDrive.csproj", "{E95D0C02-149A-4FB5-8BA3-E635474F89A5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.ComputerInventory.Interfaces", "ATAP.Utilities.ComputerInventory.Interfaces\ATAP.Utilities.ComputerInventory.Interfaces.csproj", "{9F1C3881-C34C-4913-B5D6-369F081E9EAC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -332,6 +333,10 @@ Global
 		{E95D0C02-149A-4FB5-8BA3-E635474F89A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E95D0C02-149A-4FB5-8BA3-E635474F89A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E95D0C02-149A-4FB5-8BA3-E635474F89A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F1C3881-C34C-4913-B5D6-369F081E9EAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F1C3881-C34C-4913-B5D6-369F081E9EAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F1C3881-C34C-4913-B5D6-369F081E9EAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F1C3881-C34C-4913-B5D6-369F081E9EAC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

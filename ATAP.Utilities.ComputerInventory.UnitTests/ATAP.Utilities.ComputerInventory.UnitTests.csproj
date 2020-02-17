@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>false</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
@@ -20,18 +20,20 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
     <PackageReference Include="Moq" Version="4.13.1" />
     <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
+    <PackageReference Include="YamlDotNet" Version="8.1.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="YamlDotNet" Version="8.1.0" />
     <PackageReference Include="coverlet.collector" Version="1.0.1" />    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Configuration\ATAP.Utilities.ComputerInventory.Configuration.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj" />
   </ItemGroup>
 
 </Project>

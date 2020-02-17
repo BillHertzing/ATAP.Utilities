@@ -14,7 +14,7 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="5.10.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
@@ -30,20 +30,19 @@
     <PackageReference Include="YamlDotNet" Version="8.1.0" />
   </ItemGroup>
 
-
   <ItemGroup>
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Extensions" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ConcurrentObservableCollections" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Extensions" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoMiner.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoMiner.Extensions" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoMiner.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.HTTP" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations\ATAP.Utilities.ComputerInventory.Enumerations.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Extensions\ATAP.Utilities.CryptoCoin.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Models\ATAP.Utilities.CryptoCoin.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Enumerations\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Extensions\ATAP.Utilities.CryptoMiner.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Models\ATAP.Utilities.CryptoMiner.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.HTTP\ATAP.Utilities.HTTP.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
   </ItemGroup>
 
 </Project>

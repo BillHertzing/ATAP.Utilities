@@ -8,6 +8,8 @@ using Xunit.Abstractions;
 using System.Collections;
 using ServiceStack.Text;
 using ATAP.Utilities.ComputerInventory.Enumerations;
+using ATAP.Utilities.ComputerInventory.Extensions;
+using ATAP.Utilities.ComputerInventory.Models;
 using Itenso.TimePeriod;
 
 namespace ATAP.Utilities.ComputerInventory.Models.UnitTests
@@ -121,7 +123,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.UnitTests
                                                                 false,
                                                                 false,
                                                                 false);
-      str = SerializeToString(computerSoftwareProgram);
+      str = JsonSerializer.SerializeToString(computerSoftwareProgram);
       List<ComputerSoftwareProgram> computerSoftwarePrograms = new List<ComputerSoftwareProgram> {
             computerSoftwareProgram
             };
@@ -135,15 +137,15 @@ namespace ATAP.Utilities.ComputerInventory.Models.UnitTests
                 ComputerSoftwareDriver("NVideaVideoDriver",
                                        "1.0")
             };
-      str = SerializeToString(computerSoftwareDrivers);
+      str = JsonSerializer.SerializeToString(computerSoftwareDrivers);
       // OperatingSystem os = Environment.OSVersion;
-      //str = SerializeToString(os);
+      //str = JsonSerializer.SerializeToString(os);
       computerSoftware = new ComputerSoftware(computerSoftwareDrivers, computerSoftwarePrograms);
-      str = SerializeToString(computerSoftware);
+      str = JsonSerializer.SerializeToString(computerSoftware);
       computerProcesses = new ComputerProcesses();
-      str = SerializeToString(computerProcesses);
+      str = JsonSerializer.SerializeToString(computerProcesses);
       computerInventory = new ATAP.Utilities.ComputerInventory.Models.ComputerInventory(Fixture.ComputerHardware, computerSoftware, computerProcesses);
-      str = SerializeToString(computerInventory);
+      str = JsonSerializer.SerializeToString(computerInventory);
       str.Should()
           .NotBeNull();
       str.Should()
@@ -395,25 +397,25 @@ namespace ATAP.Utilities.ComputerInventory.Models.UnitTests
     [MemberData(nameof(CPUTestDataGenerator.CPUTestData), MemberType = typeof(CPUTestDataGenerator))]
     public void CPUDeserializeFromJSON(CPUTestData inCPUTestData)
     {
-      CPU cPU = DeserializeFromString<CPU>(inCPUTestData.SerializedCPU);
+      CPU cPU = JsonSerializer.DeserializeFromString<CPU>(inCPUTestData.SerializedCPU);
       TestOutput.WriteLine(cPU.Maker.ToString());
-      DeserializeFromString<CPU>(inCPUTestData.SerializedCPU).Should().Be(inCPUTestData.CPU);
+      JsonSerializer.DeserializeFromString<CPU>(inCPUTestData.SerializedCPU).Should().Be(inCPUTestData.CPU);
     }
 
     [Theory]
     [MemberData(nameof(CPUTestDataGenerator.CPUTestData), MemberType = typeof(CPUTestDataGenerator))]
     public void CPUSerializeToJSON(CPUTestData inCPUTestData)
     {
-      string str = SerializeToString(inCPUTestData.CPU);
+      string str = JsonSerializer.SerializeToString(inCPUTestData.CPU);
       TestOutput.WriteLine(str);
-      SerializeToString(inCPUTestData.CPU).Should().Be(inCPUTestData.SerializedCPU);
+      JsonSerializer.SerializeToString(inCPUTestData.CPU).Should().Be(inCPUTestData.SerializedCPU);
     }
 
     [Theory]
     [MemberData(nameof(CPUArrayTestDataGenerator.CPUArrayTestData), MemberType = typeof(CPUArrayTestDataGenerator))]
     public void CPUArrayDeserializeFromJSON(CPUArrayTestData inCPUArrayTestData)
     {
-      CPU[] cPUArray = DeserializeFromString<CPU[]>(inCPUArrayTestData.SerializedCPUArray);
+      CPU[] cPUArray = JsonSerializer.DeserializeFromString<CPU[]>(inCPUArrayTestData.SerializedCPUArray);
       cPUArray.Should().BeEquivalentTo(inCPUArrayTestData.CPUArray);
     }
 
@@ -421,7 +423,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.UnitTests
     [MemberData(nameof(CPUArrayTestDataGenerator.CPUArrayTestData), MemberType = typeof(CPUArrayTestDataGenerator))]
     public void CPUArraySerializeToJSON(CPUArrayTestData inCPUArrayTestData)
     {
-      string str = SerializeToString(inCPUArrayTestData.CPUArray);
+      string str = JsonSerializer.SerializeToString(inCPUArrayTestData.CPUArray);
       str.Should().Be(inCPUArrayTestData.SerializedCPUArray);
     }
 
@@ -429,7 +431,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.UnitTests
     [MemberData(nameof(PowerConsumptionTestDataGenerator.PowerConsumptionTestData), MemberType = typeof(PowerConsumptionTestDataGenerator))]
     public void PowerConsumptionDeserializeFromJSON(PowerConsumptionTestData inPowerConsumptionTestData)
     {
-      PowerConsumption powerConsumption = DeserializeFromString<PowerConsumption>(inPowerConsumptionTestData.SerializedPowerConsumption);
+      PowerConsumption powerConsumption = JsonSerializer.DeserializeFromString<PowerConsumption>(inPowerConsumptionTestData.SerializedPowerConsumption);
       powerConsumption.Should().Be(inPowerConsumptionTestData.PowerConsumption);
     }
 
@@ -437,7 +439,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.UnitTests
     [MemberData(nameof(PowerConsumptionTestDataGenerator.PowerConsumptionTestData), MemberType = typeof(PowerConsumptionTestDataGenerator))]
     public void PowerConsumptionSerializeToJSON(PowerConsumptionTestData inPowerConsumptionTestData)
     {
-      string str = SerializeToString(inPowerConsumptionTestData.SerializedPowerConsumption);
+      string str = JsonSerializer.SerializeToString(inPowerConsumptionTestData.SerializedPowerConsumption);
       str.Should().Be(inPowerConsumptionTestData.SerializedPowerConsumption);
     }
 
@@ -445,7 +447,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.UnitTests
     [MemberData(nameof(TempAndFanTestDataGenerator.TempAndFanTestData), MemberType = typeof(TempAndFanTestDataGenerator))]
     public void TempAndFanDeserializeFromJSON(TempAndFanTestData inTempAndFanTestData)
     {
-      var tempAndFan = DeserializeFromString<TempAndFan>(inTempAndFanTestData.SerializedTempAndFan);
+      var tempAndFan = JsonSerializer.DeserializeFromString<TempAndFan>(inTempAndFanTestData.SerializedTempAndFan);
       tempAndFan.Should().BeEquivalentTo(inTempAndFanTestData.TempAndFan);
     }
 
@@ -453,7 +455,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.UnitTests
     [MemberData(nameof(TempAndFanTestDataGenerator.TempAndFanTestData), MemberType = typeof(TempAndFanTestDataGenerator))]
     public void TempAndFanSerializeToJSON(TempAndFanTestData inTempAndFanTestData)
     {
-      var serializedTempAndFan = SerializeToString<TempAndFan>(inTempAndFanTestData.TempAndFan);
+      var serializedTempAndFan = JsonSerializer.SerializeToString<TempAndFan>(inTempAndFanTestData.TempAndFan);
       serializedTempAndFan.Should().Be(inTempAndFanTestData.SerializedTempAndFan);
     }
 
@@ -461,7 +463,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.UnitTests
     [MemberData(nameof(TempAndFanArrayTestDataGenerator.TempAndFanArrayTestData), MemberType = typeof(TempAndFanArrayTestDataGenerator))]
     public void TempAndFanArrayDeserializeFromJSON(TempAndFanArrayTestData inTempAndFanArrayTestData)
     {
-      var tempAndFanArray = DeserializeFromString<TempAndFan[]>(inTempAndFanArrayTestData.SerializedTempAndFanArray);
+      var tempAndFanArray = JsonSerializer.DeserializeFromString<TempAndFan[]>(inTempAndFanArrayTestData.SerializedTempAndFanArray);
       tempAndFanArray.Should().BeEquivalentTo(inTempAndFanArrayTestData.TempAndFanArray);
     }
 
@@ -471,7 +473,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.UnitTests
     {
       using (JsConfig.With(new Config { TextCase = TextCase.PascalCase }))
       {
-        var serializedTempAndFanArray = SerializeToString<TempAndFan[]>(inTempAndFanArrayTestData.TempAndFanArray);
+        var serializedTempAndFanArray = JsonSerializer.SerializeToString<TempAndFan[]>(inTempAndFanArrayTestData.TempAndFanArray);
         serializedTempAndFanArray.Should().Be(inTempAndFanArrayTestData.SerializedTempAndFanArray);
       }
     }
@@ -480,7 +482,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.UnitTests
     [InlineData("{\"BIOSVersion\":\"100.00001.02320.00\",\"CardName\":\"GTX 980 TI\",\"CoreClock\":1140.0,\"CoreVoltage\":11.13,\"DeviceID\":\"10DE 17C8 - 3842\",\"IsStrapped\":false,\"MemClock\":1753.0,\"PowerConsumption\":{\"Period\":\"00:01:00\",\"Watts\":1000.0},\"PowerLimit\":0.8,\"TempAndFan\":{\"Temp\":60.0,\"FanPct\":50.0},\"VideoCardMaker\":\"ASUS\",\"GPUMaker\":\"NVIDEA\"}")]
     internal void VideoCardDeserializeFromJSON(string _testdatainput)
     {
-      VideoCard vc = DeserializeFromString<VideoCard>(_testdatainput);
+      VideoCard vc = JsonSerializer.DeserializeFromString<VideoCard>(_testdatainput);
       vc.Should()
           .NotBeNull();
       vc.DeviceID.Should()
@@ -517,7 +519,7 @@ GPUMaker.NVIDEA))
                                           1753,
                                           11.13,
                                           0.8);
-      string str = SerializeToString(videoCard);
+      string str = JsonSerializer.SerializeToString(videoCard);
       str.Should()
           .NotBeNull();
       str.Should()
@@ -526,7 +528,7 @@ GPUMaker.NVIDEA))
     [Fact]
     public void MainBoardDeserializeFromJSON()
     {
-      MainBoard mainBoard = DeserializeFromString<MainBoard>(SerializeToString(Fixture.MainBoard));
+      MainBoard mainBoard = JsonSerializer.DeserializeFromString<MainBoard>(JsonSerializer.SerializeToString(Fixture.MainBoard));
       mainBoard.Should()
           .Be(Fixture.MainBoard);
     }

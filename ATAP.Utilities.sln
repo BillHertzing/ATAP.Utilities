@@ -117,7 +117,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInve
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo.HostBuilder", "ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo.HostBuilder\ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo.HostBuilder.csproj", "{E96C28EB-F4DD-4755-ACAE-E6197C2FB137}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo", "ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo\ATAP.Utilities.ComputerInventory.Interfaces.HardwareInfo.csproj", "{7EAD405C-7EA3-4FEC-9279-1F17E23DA3AD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Interfaces.Hardware", "ATAP.Utilities.ComputerInventory.Interfaces.Hardware\ATAP.Utilities.ComputerInventory.Interfaces.Hardware.csproj", "{7EAD405C-7EA3-4FEC-9279-1F17E23DA3AD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.HostBuilder", "ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.HostBuilder\ATAP.Utilities.ComputerInventory.Enumerations.SoftwareInfo.HostBuilder.csproj", "{E22EC0F8-954B-486B-95EE-ECEE10549908}"
 EndProject

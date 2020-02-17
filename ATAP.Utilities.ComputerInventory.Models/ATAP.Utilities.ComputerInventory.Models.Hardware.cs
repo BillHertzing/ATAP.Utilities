@@ -5,58 +5,61 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.ComponentModel;
 using System.Globalization;
+using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
 
-namespace ATAP.Utilities.ComputerInventory.Models{
-  [Serializable]
-  public class MainBoard : ISerializable
-  {
-    readonly MainBoardMaker maker;
+namespace ATAP.Utilities.ComputerInventory.Models.Hardware
+{
 
-    readonly string socket;
-
-    MainBoard(SerializationInfo info, StreamingContext ctxt)
-    {
-      ///ToDo: figure out why the static extension method found in utilities.Enumerations doesn't work
-      //this.maker = MainBoardMaker.ToEnum<MainBoardMaker>(info.GetString("Maker"));
-      this.maker = (MainBoardMaker)Enum.Parse(typeof(MainBoardMaker), info.GetString("Maker"), true);
-      this.socket = info.GetString("Socket");
+    /*
+    public class DiskDrivePartitionDriveLetterIdentifier {
+        public DiskDrivePartitionDriveLetterIdentifier() : { }
+        public DiskDrivePartitionDriveLetterIdentifier(IDictionary<Guid, IDictionary<Guid, string>> diskDrivePartitionInfoGuidsDriveLetterStrings) { DiskDrivePartitionInfoGuidsDriveLetterStrings=diskDrivePartitionInfoGuidsDriveLetterStrings; }
+        public IDictionary<Guid, IDictionary<Guid, string>> DiskDrivePartitionInfoGuidsDriveLetterStrings { get; set; }
     }
+    */
 
-    public MainBoard(MainBoardMaker maker, string socket)
-    {
-      this.maker = maker;
-      this.socket = socket;
+    [Serializable]
+    public class MainBoard : ISerializable {
+
+        public MainBoard() : this(MainBoardMaker.Generic, CPUSocket.Generic) { }
+
+        public MainBoard(MainBoardMaker maker, CPUSocket cPUSocket) {
+            Maker=maker;
+            CPUSocket=cPUSocket;
+        }
+
+        MainBoard(SerializationInfo info, StreamingContext ctxt) {
+            ///ToDo: figure out why the static extension method found in utilities.Enumerations doesn't work
+            //this.maker = MainBoardMaker.ToEnum<MainBoardMaker>(info.GetString("Maker"));
+            Maker=(MainBoardMaker)Enum.Parse(typeof(MainBoardMaker), info.GetString("Maker"), true);
+            CPUSocket=(CPUSocket)Enum.Parse(typeof(CPUSocket), info.GetString("CPUSocket"), true);
+        }
+
+        void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context) {
+            info.AddValue("Maker", Maker.ToString());
+            info.AddValue("CPUSocket", CPUSocket.ToString());
+        }
+
+        public MainBoardMaker Maker { get; set; }
+
+        public CPUSocket CPUSocket { get; set; }
+
+        public override bool Equals(Object obj) {
+            if (obj==null)
+                return false;
+
+            MainBoard id = obj as MainBoard;
+            if (id==null)
+                return false;
+            return (Maker==id.Maker&&CPUSocket==id.CPUSocket);
+        }
+
+        //ToDo: add CPUSocket field, figure out how to hash together two fields
+        public override int GetHashCode() {
+            return Maker.GetHashCode();
+        }
     }
-
-    void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      info.AddValue("Maker", this.Maker.ToString());
-      info.AddValue("Socket", this.Socket);
-    }
-
-    public MainBoardMaker Maker => maker;
-
-    public string Socket => socket;
-
-    public override bool Equals(Object obj)
-    {
-      if (obj == null)
-        return false;
-
-      MainBoard id = obj as MainBoard;
-      if (id == null)
-        return false;
-
-      return (maker == id.Maker);
-    }
-
-    public override int GetHashCode()
-    {
-      return maker.GetHashCode();
-    }
-  }
-
-  [Serializable]
+    [Serializable]
   public class CPU
   {
      CPUMaker maker;
@@ -359,12 +362,6 @@ namespace ATAP.Utilities.ComputerInventory.Models{
     {
       throw new NotImplementedException();
     }
-  }
-
-  public interface IPowerConsumption : IObservable<PowerConsumption>
-  {
-    TimeSpan Period { get; set; }
-    double Watts { get; set; }
   }
 
   //ToDo make these thread-safe (concurrent)

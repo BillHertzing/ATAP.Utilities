@@ -5,7 +5,7 @@ using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Models;
 using ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo;
 
-namespace ATAP.Utilities.ComputerInventory.Models
+namespace ATAP.Utilities.ComputerInventory.Models.ProcessInfo
 {
 
       public class ComputerProcess

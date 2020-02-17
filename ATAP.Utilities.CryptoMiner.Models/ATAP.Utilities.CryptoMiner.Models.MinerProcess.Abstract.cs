@@ -1,15 +1,6 @@
-using ATAP.Utilities.ConcurrentObservableCollections;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using UnitsNet;
-using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Models;
-using ATAP.Utilities.CryptoCoin.Models;
-using ATAP.Utilities.CryptoCoin.Enumerations;
-using ATAP.Utilities.CryptoMiner.Enumerations;
-using ATAP.Utilities.ComputerInventory.Extensions;
 
 namespace ATAP.Utilities.CryptoMiner.Models
 {

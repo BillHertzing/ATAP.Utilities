@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo.csproj" />
   </ItemGroup>
 
 </Project>

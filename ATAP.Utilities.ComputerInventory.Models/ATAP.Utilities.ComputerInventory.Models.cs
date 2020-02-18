@@ -1,11 +1,12 @@
 using System;
-using ATAP.Utilities.ComputerInventory.Models.Hardware;
-using ATAP.Utilities.ComputerInventory.Models.Software;
-using ATAP.Utilities.ComputerInventory.Models.ProcessInfo;
 using ATAP.Utilities.ComputerInventory.Interfaces;
 using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
-using ATAP.Utilities.ComputerInventory.Interfaces.Software;
 using ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo;
+using ATAP.Utilities.ComputerInventory.Interfaces.Software;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
+using ATAP.Utilities.ComputerInventory.Models.ProcessInfo;
+using ATAP.Utilities.ComputerInventory.Models.Software;
+
 using System.Collections.Generic;
 
 namespace ATAP.Utilities.ComputerInventory.Models

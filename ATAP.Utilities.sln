@@ -107,7 +107,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ConcurrentOb
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ConcurrentObservableCollections.UnitTests", "ATAP.Utilities.ConcurrentObservableCollections.UnitTests\ATAP.Utilities.ConcurrentObservableCollections.UnitTests.csproj", "{7F0F5CA7-50E1-4E9F-8F55-EBE82652E520}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo", "ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo\ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo.csproj", "{D56034DA-9345-4694-B91F-1F6E1593DDB8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Interfaces.Software", "ATAP.Utilities.ComputerInventory.Interfaces.Software\ATAP.Utilities.ComputerInventory.Interfaces.Software.csproj", "{D56034DA-9345-4694-B91F-1F6E1593DDB8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo", "ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo\ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo.csproj", "{A70E66F6-5ADF-4663-B8DE-E1BF83F3DEB8}"
 EndProject

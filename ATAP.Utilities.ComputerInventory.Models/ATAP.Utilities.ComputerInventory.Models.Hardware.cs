@@ -59,32 +59,48 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
             return Maker.GetHashCode();
         }
     }
-    [Serializable]
-  public class CPU
+
+
+
+
+  [Serializable]
+  public class CPU : IEquatable<ICPU>, ICPU
   {
-     CPUMaker maker;
-    //public CPU() : this(CPUMaker.Generic) {}
-    public CPU(CPUMaker maker)
+    public CPU()
     {
-      this.maker = maker;
     }
-    public CPUMaker Maker => maker;
 
-    public override bool Equals(Object obj)
+    public CPU(CPUMaker cPUMaker)
     {
-      if (obj == null)
-        return false;
+      CPUMaker = cPUMaker;
+    }
 
-      CPU id = obj as CPU;
-      if (id == null)
-        return false;
+    public CPUMaker CPUMaker { get; }
 
-      return (maker == id.Maker);
+    public override bool Equals(object obj)
+    {
+      return Equals(obj as CPU);
+    }
+
+    public bool Equals(ICPU other)
+    {
+      return other != null &&
+             CPUMaker == other.CPUMaker;
     }
 
     public override int GetHashCode()
     {
-      return maker.GetHashCode();
+      return 1556992827 + CPUMaker.GetHashCode();
+    }
+
+    public static bool operator ==(CPU left, CPU right)
+    {
+      return EqualityComparer<CPU>.Default.Equals(left, right);
+    }
+
+    public static bool operator !=(CPU left, CPU right)
+    {
+      return !(left == right);
     }
   }
 
@@ -345,16 +361,11 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
 
     public static Dictionary<VideoCardDiscriminatingCharacteristics, VideoCardTuningParameters> TuningParameters => tuningParameters;
   }
-  public interface ITempAndFan
-  {
-    double FanPct { get; set; }
-    double Temp { get; set; }
-    //IDisposable Subscribe(IObserver<TempAndFan> observer);
 
-  }
 
   //ToDo make these thread-safe (concurrent)
-  public class TempAndFan : ITempAndFan
+
+  public class TempAndFan : ITempAndFan 
   {
     public double Temp { get; set; }
     public double FanPct { get; set; }
@@ -364,6 +375,94 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     }
   }
 
+  // The IObservable provider class
+  // attribution:  https://docs.microsoft.com/en-us/dotnet/standard/events/how-to-implement-a-provider
+  public class TempAndFanMonitor : IObservable<TempAndFan>
+  {
+    List<IObserver<TempAndFan>> Observers { get; }
+
+    public TempAndFanMonitor()
+    {
+      Observers = new List<IObserver<TempAndFan>>();
+    }
+
+    private class Unsubscriber : IDisposable
+    {
+      private List<IObserver<TempAndFan>> _observers;
+      private IObserver<TempAndFan> _observer;
+
+      public Unsubscriber(List<IObserver<TempAndFan>> observers, IObserver<TempAndFan> observer)
+      {
+        this._observers = observers;
+        this._observer = observer;
+      }
+
+      public void Dispose()
+      {
+        if (!(_observer == null)) _observers.Remove(_observer);
+      }
+    }
+    public IDisposable Subscribe(IObserver<TempAndFan> observer)
+    {
+      if (!Observers.Contains(observer))
+      {
+        Observers.Add(observer);
+      }
+
+      return new Unsubscriber(Observers, observer);
+    }
+
+    public void NotifyObserversOfTempAndFan()
+    {
+      //ToDo implement the method that gets a TempAndFan instance update
+      throw new NotImplementedException("Method NotifyObserversOfTempAndFan has not been implemented");
+      //foreach (var observer in observers)
+      //  observer.OnNext(tempAndFanData); // An event should trigger this, and pass in a TempAndFan instance named tempAndFanData
+      //}
+      //foreach (var observer in observers.ToArray())
+        //if (observer != null) observer.OnCompleted(); // this is the code to use if the instance will never send data again
+      //}
+      //observers.Clear();
+      }
+  }
+  /*  ann example of an observer
+   *  // Attrobution: https://docs.microsoft.com/en-us/dotnet/standard/events/how-to-implement-an-observer
+  public class TempAndFanReporter : IObserver<TempAndFan>
+  {
+    private IDisposable unsubscriber;
+    private bool first = true;
+    private TempAndFan last;
+
+    public virtual void Subscribe(IObservable<TempAndFan> provider)
+    {
+      unsubscriber = provider.Subscribe(this);
+    }
+
+    public virtual void Unsubscribe()
+    {
+      unsubscriber.Dispose();
+    }
+
+    public virtual void OnCompleted()
+    {
+      //ToDo: use the action delegate passed into this class's constructor
+      //Console.WriteLine("Additional TempAndFan data will not be transmitted.");
+      throw new NotImplementedException("TempAndFanReporter OnCompleted handler not implemented yet");
+    }
+
+    public virtual void OnError(Exception error)
+    {
+      // Do nothing.
+    }
+
+    public virtual void OnNext(TempAndFan value)
+    {
+      //ToDo: use the action delegate passed into this class's constructor
+      //Console.WriteLine("{0} value.Temp .");
+      throw new NotImplementedException("TempAndFanReporter OnCompleted OnNext not implemented yet");
+    }
+  }
+  */
   //ToDo make these thread-safe (concurrent)
   public class PowerConsumption : IPowerConsumption
   {
@@ -389,7 +488,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     public TimeSpan Period { get => period; set => period = value; }
     public double Watts { get => watts; set => watts = value; }
 
-    public IDisposable Subscribe(IObserver<PowerConsumption> observer)
+    public IDisposable Subscribe(IObserver<IPowerConsumption> observer)
     {
       throw new NotImplementedException();
     }
@@ -468,6 +567,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
           destinationType);
     }
   }
+
 
   [Serializable]
 #if NETFUL

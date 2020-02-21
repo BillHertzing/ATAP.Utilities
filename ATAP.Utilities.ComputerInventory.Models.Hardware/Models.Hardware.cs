@@ -10,61 +10,71 @@ using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
 namespace ATAP.Utilities.ComputerInventory.Models.Hardware
 {
 
-    /*
-    public class DiskDrivePartitionDriveLetterIdentifier {
-        public DiskDrivePartitionDriveLetterIdentifier() : { }
-        public DiskDrivePartitionDriveLetterIdentifier(IDictionary<Guid, IDictionary<Guid, string>> diskDrivePartitionInfoGuidsDriveLetterStrings) { DiskDrivePartitionInfoGuidsDriveLetterStrings=diskDrivePartitionInfoGuidsDriveLetterStrings; }
-        public IDictionary<Guid, IDictionary<Guid, string>> DiskDrivePartitionInfoGuidsDriveLetterStrings { get; set; }
+  /*
+  public class DiskDrivePartitionDriveLetterIdentifier {
+      public DiskDrivePartitionDriveLetterIdentifier() : { }
+      public DiskDrivePartitionDriveLetterIdentifier(IDictionary<Guid, IDictionary<Guid, string>> diskDrivePartitionInfoGuidsDriveLetterStrings) { DiskDrivePartitionInfoGuidsDriveLetterStrings=diskDrivePartitionInfoGuidsDriveLetterStrings; }
+      public IDictionary<Guid, IDictionary<Guid, string>> DiskDrivePartitionInfoGuidsDriveLetterStrings { get; set; }
+  }
+  */
+
+  [Serializable]
+  public class MainBoard : ISerializable, IMainBoard
+  {
+
+    public MainBoard() : this(MainBoardMaker.Generic, CPUSocket.Generic) { }
+
+    public MainBoard(MainBoardMaker maker, CPUSocket cPUSocket)
+    {
+      Maker = maker;
+      CPUSocket = cPUSocket;
     }
-    */
 
-    [Serializable]
-    public class MainBoard : ISerializable {
-
-        public MainBoard() : this(MainBoardMaker.Generic, CPUSocket.Generic) { }
-
-        public MainBoard(MainBoardMaker maker, CPUSocket cPUSocket) {
-            Maker=maker;
-            CPUSocket=cPUSocket;
-        }
-
-        MainBoard(SerializationInfo info, StreamingContext ctxt) {
-            ///ToDo: figure out why the static extension method found in utilities.Enumerations doesn't work
-            //this.maker = MainBoardMaker.ToEnum<MainBoardMaker>(info.GetString("Maker"));
-            Maker=(MainBoardMaker)Enum.Parse(typeof(MainBoardMaker), info.GetString("Maker"), true);
-            CPUSocket=(CPUSocket)Enum.Parse(typeof(CPUSocket), info.GetString("CPUSocket"), true);
-        }
-
-        void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context) {
-            info.AddValue("Maker", Maker.ToString());
-            info.AddValue("CPUSocket", CPUSocket.ToString());
-        }
-
-        public MainBoardMaker Maker { get; set; }
-
-        public CPUSocket CPUSocket { get; set; }
-
-        public override bool Equals(Object obj) {
-            if (obj==null)
-                return false;
-
-            MainBoard id = obj as MainBoard;
-            if (id==null)
-                return false;
-            return (Maker==id.Maker&&CPUSocket==id.CPUSocket);
-        }
-
-        //ToDo: add CPUSocket field, figure out how to hash together two fields
-        public override int GetHashCode() {
-            return Maker.GetHashCode();
-        }
+    MainBoard(SerializationInfo info, StreamingContext ctxt)
+    {
+      ///ToDo: figure out why the static extension method found in utilities.Enumerations doesn't work
+      //this.maker = MainBoardMaker.ToEnum<MainBoardMaker>(info.GetString("Maker"));
+      Maker = (MainBoardMaker)Enum.Parse(typeof(MainBoardMaker), info.GetString("Maker"), true);
+      CPUSocket = (CPUSocket)Enum.Parse(typeof(CPUSocket), info.GetString("CPUSocket"), true);
     }
+
+    void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      info.AddValue("Maker", Maker.ToString());
+      info.AddValue("CPUSocket", CPUSocket.ToString());
+    }
+
+    public MainBoardMaker Maker { get; }
+
+    public CPUSocket CPUSocket { get;  }
+
+    public override bool Equals(Object obj)
+    {
+      if (obj == null)
+      {
+        return false;
+      }
+
+      if (!(obj is MainBoard id))
+      {
+        return false;
+      }
+
+      return (Maker == id.Maker && CPUSocket == id.CPUSocket);
+    }
+
+    //ToDo: add CPUSocket field, figure out how to hash together two fields
+    public override int GetHashCode()
+    {
+      return Maker.GetHashCode();
+    }
+  }
 
 
 
 
   [Serializable]
-  public class CPU : IEquatable<ICPU>, ICPU
+  public class CPU : IEquatable<CPU>, ICPU
   {
     public CPU()
     {
@@ -82,7 +92,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
       return Equals(obj as CPU);
     }
 
-    public bool Equals(ICPU other)
+    public bool Equals(CPU other)
     {
       return other != null &&
              CPUMaker == other.CPUMaker;
@@ -139,51 +149,39 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     public double Temp { get => temp; set => temp = value; }
   }
 
+
+
   [Serializable]
-  public class VideoCard
+  public class VideoCard : IVideoCard
   {
-    readonly string bIOSVersion;
-    readonly string deviceID;
-    readonly bool isStrapped;
-    readonly VideoCardDiscriminatingCharacteristics videoCardDiscriminatingCharacteristics;
-    public VideoCard() : this(default, default, default, default, default, default, default, default)
+    public VideoCard()
     {
     }
-    public VideoCard(
-     VideoCardDiscriminatingCharacteristics videoCardDiscriminatingCharacteristics,
-     string deviceID,
-     string bIOSVersion,
-     bool isStrapped,
-     double coreClock,
-     double memClock,
-     double coreVoltage,
-     double powerLimit
-        )
+
+    public VideoCard(string bIOSVersion, double coreClock, double coreVoltage, string deviceID, bool isStrapped, double memClock, double powerLimit, IVideoCardDiscriminatingCharacteristics videoCardDiscriminatingCharacteristics)
     {
-      this.videoCardDiscriminatingCharacteristics = videoCardDiscriminatingCharacteristics;
-      this.deviceID = deviceID;
-      this.bIOSVersion = bIOSVersion;
-      this.isStrapped = isStrapped;
+      BIOSVersion = bIOSVersion ?? throw new ArgumentNullException(nameof(bIOSVersion));
       CoreClock = coreClock;
-      MemClock = memClock;
       CoreVoltage = coreVoltage;
+      DeviceID = deviceID ?? throw new ArgumentNullException(nameof(deviceID));
+      IsStrapped = isStrapped;
+      MemClock = memClock;
       PowerLimit = powerLimit;
+      VideoCardDiscriminatingCharacteristics = videoCardDiscriminatingCharacteristics ?? throw new ArgumentNullException(nameof(videoCardDiscriminatingCharacteristics));
     }
 
-    public string BIOSVersion => bIOSVersion;
-
-    public double CoreClock { get; set; }
-    public double CoreVoltage { get; set; }
-    public string DeviceID => deviceID;
-    public bool IsStrapped => isStrapped;
-    public double MemClock { get; set; }
-    public double PowerLimit { get; set; }
-
-    public VideoCardDiscriminatingCharacteristics VideoCardDiscriminatingCharacteristics => videoCardDiscriminatingCharacteristics;
+    public string BIOSVersion { get; }
+    public double CoreClock { get; }
+    public double CoreVoltage { get; }
+    public string DeviceID { get; }
+    public bool IsStrapped { get; }
+    public double MemClock { get; }
+    public double PowerLimit { get; }
+    public IVideoCardDiscriminatingCharacteristics VideoCardDiscriminatingCharacteristics { get; }
   }
 
   [Serializable]
-  public class VideoCardDiscriminatingCharacteristics
+  public class VideoCardDiscriminatingCharacteristics : IVideoCardDiscriminatingCharacteristics
   {
     readonly string cardName;
     readonly GPUMaker gPUMaker;
@@ -367,42 +365,44 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
 
   public class TempAndFan : ITempAndFan 
   {
+    public TempAndFan()
+    {
+    }
+
+    public TempAndFan(double temp, double fanPct, List<IObserver<TempAndFan>> observers)
+    {
+      Temp = temp;
+      FanPct = fanPct;
+      Observers = observers ?? throw new ArgumentNullException(nameof(observers));
+    }
+
     public double Temp { get; set; }
     public double FanPct { get; set; }
-    public IDisposable Subscribe(IObserver<TempAndFan> observer)
-    {
-      throw new NotImplementedException();
-    }
-  }
 
-  // The IObservable provider class
-  // attribution:  https://docs.microsoft.com/en-us/dotnet/standard/events/how-to-implement-a-provider
-  public class TempAndFanMonitor : IObservable<TempAndFan>
-  {
+    // The IObservable provider objects, classes, and methods
+    // attribution:  https://docs.microsoft.com/en-us/dotnet/standard/events/how-to-implement-a-provider
     List<IObserver<TempAndFan>> Observers { get; }
-
-    public TempAndFanMonitor()
-    {
-      Observers = new List<IObserver<TempAndFan>>();
-    }
-
     private class Unsubscriber : IDisposable
     {
-      private List<IObserver<TempAndFan>> _observers;
-      private IObserver<TempAndFan> _observer;
+      List<IObserver<TempAndFan>> Observers { get; }
+      private IObserver<TempAndFan> Observer { get; }
 
       public Unsubscriber(List<IObserver<TempAndFan>> observers, IObserver<TempAndFan> observer)
       {
-        this._observers = observers;
-        this._observer = observer;
+        Observers = observers ?? throw new ArgumentNullException(nameof(observers));
+        Observer = observer ?? throw new ArgumentNullException(nameof(observer));
       }
 
       public void Dispose()
       {
-        if (!(_observer == null)) _observers.Remove(_observer);
+        if (!(Observer == null))
+        {
+          Observers.Remove(Observer);
+        }
       }
     }
-    public IDisposable Subscribe(IObserver<TempAndFan> observer)
+
+    public IDisposable Subscribe(IObserver<ITempAndFan> observer)
     {
       if (!Observers.Contains(observer))
       {
@@ -411,21 +411,23 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
 
       return new Unsubscriber(Observers, observer);
     }
-
-    public void NotifyObserversOfTempAndFan()
+    public void NotifyObservers()
     {
       //ToDo implement the method that gets a TempAndFan instance update
-      throw new NotImplementedException("Method NotifyObserversOfTempAndFan has not been implemented");
+      throw new NotImplementedException();
       //foreach (var observer in observers)
       //  observer.OnNext(tempAndFanData); // An event should trigger this, and pass in a TempAndFan instance named tempAndFanData
       //}
       //foreach (var observer in observers.ToArray())
-        //if (observer != null) observer.OnCompleted(); // this is the code to use if the instance will never send data again
+      //if (observer != null) observer.OnCompleted(); // this is the code to use if the instance will never send data again
       //}
       //observers.Clear();
-      }
+    }
+
+
   }
-  /*  ann example of an observer
+
+  /*  an example of an observer
    *  // Attrobution: https://docs.microsoft.com/en-us/dotnet/standard/events/how-to-implement-an-observer
   public class TempAndFanReporter : IObserver<TempAndFan>
   {
@@ -447,7 +449,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     {
       //ToDo: use the action delegate passed into this class's constructor
       //Console.WriteLine("Additional TempAndFan data will not be transmitted.");
-      throw new NotImplementedException("TempAndFanReporter OnCompleted handler not implemented yet");
+      throw new NotImplementedException();
     }
 
     public virtual void OnError(Exception error)
@@ -459,7 +461,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     {
       //ToDo: use the action delegate passed into this class's constructor
       //Console.WriteLine("{0} value.Temp .");
-      throw new NotImplementedException("TempAndFanReporter OnCompleted OnNext not implemented yet");
+      throw new NotImplementedException();
     }
   }
   */
@@ -488,10 +490,52 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     public TimeSpan Period { get => period; set => period = value; }
     public double Watts { get => watts; set => watts = value; }
 
+    // The IObservable provider objects, classes, and methods
+    // attribution:  https://docs.microsoft.com/en-us/dotnet/standard/events/how-to-implement-a-provider
+    List<IObserver<IPowerConsumption>> Observers { get; }
+    private class Unsubscriber : IDisposable
+    {
+      List<IObserver<IPowerConsumption>> Observers { get; }
+      private IObserver<IPowerConsumption> Observer { get; }
+
+      public Unsubscriber(List<IObserver<IPowerConsumption>> observers, IObserver<IPowerConsumption> observer)
+      {
+        Observers = observers ?? throw new ArgumentNullException(nameof(observers));
+        Observer = observer ?? throw new ArgumentNullException(nameof(observer));
+      }
+
+      public void Dispose()
+      {
+        if (!(Observer == null))
+        {
+          Observers.Remove(Observer);
+        }
+      }
+    }
+
     public IDisposable Subscribe(IObserver<IPowerConsumption> observer)
     {
-      throw new NotImplementedException();
+      if (!Observers.Contains(observer))
+      {
+        Observers.Add(observer);
+      }
+
+      return new Unsubscriber(Observers, observer);
     }
+    public void NotifyObservers()
+    {
+      //ToDo implement the method that gets a TempAndFan instance update
+      throw new NotImplementedException();
+      //foreach (var observer in observers)
+      //  observer.OnNext(tempAndFanData); // An event should trigger this, and pass in a TempAndFan instance named tempAndFanData
+      //}
+      //foreach (var observer in observers.ToArray())
+      //if (observer != null) observer.OnCompleted(); // this is the code to use if the instance will never send data again
+      //}
+      //observers.Clear();
+    }
+
+
   }
   public class PowerConsumptionConverter : ExpandableObjectConverter
   {
@@ -569,16 +613,19 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
   }
 
 
+
   [Serializable]
 #if NETFUL
   public class ComputerHardware : OpenHardwareMonitor.Hardware.Computer {
 #else
-    public class ComputerHardware
+  public class ComputerHardware : IComputerHardware
+
 #endif
   {
 #if NETFUL
         readonly OpenHardwareMonitor.Hardware.Computer computer;
 #endif
+
     readonly CPU[] cPUs;
     readonly bool isCPUsEnabled;
     readonly bool isFanControllerEnabled;
@@ -588,8 +635,9 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     TimeBlock moment;
     readonly VideoCard[] videoCards;
 
-    public ComputerHardware(CPU[] cPUs, MainBoard mainBoard, VideoCard[] videoCards) {
-        isMainboardEnabled = true;
+    public ComputerHardware(CPU[] cPUs, MainBoard mainBoard, VideoCard[] videoCards)
+    {
+      isMainboardEnabled = true;
       isCPUsEnabled = true;
       isVideoCardsEnabled = true;
       isFanControllerEnabled = true;
@@ -632,13 +680,14 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     public MainBoard MainBoard => mainBoard;
 
     public TimeBlock Moment {
-        get => moment; set => moment = value;
+      get => moment; set => moment = value;
     }
 
     public VideoCard[] VideoCards => videoCards;
 
-    public ComputerHardware(CPU[] cPUs, MainBoard mainBoard, VideoCard[] videoCards, TimeBlock moment) {
-        isMainboardEnabled = true;
+    public ComputerHardware(CPU[] cPUs, MainBoard mainBoard, VideoCard[] videoCards, TimeBlock moment)
+    {
+      isMainboardEnabled = true;
       isCPUsEnabled = true;
       isVideoCardsEnabled = true;
       isFanControllerEnabled = true;
@@ -650,5 +699,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
       this.OpenComputer();
 #endif
     }
+
+
   }
 }

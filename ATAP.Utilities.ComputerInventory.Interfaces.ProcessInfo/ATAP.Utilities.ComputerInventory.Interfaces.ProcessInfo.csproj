@@ -16,8 +16,20 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
+  <!-- Documentation generation -->
   <ItemGroup>
+    <PackageReference Include="docfx" Version="2.40.2"/>
     <Folder Include="Documentation\" />
+  </ItemGroup>
+  
+  <ItemGroup>
+  <PackageReference Include="MedallionShell" Version="1.5.1" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Software\ATAP.Utilities.ComputerInventory.Interfaces.Software.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
   </ItemGroup>
 
 </Project>

@@ -16,15 +16,15 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
+  <!-- Documentation generation -->
+  <ItemGroup>
+    <PackageReference Include="docfx" Version="2.40.2"/>
+    <Folder Include="Documentation\" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
     <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
-    <PackageReference Include="docfx">
-      <Version>2.40.2</Version>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

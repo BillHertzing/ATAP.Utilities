@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace ATAP.Utilities.ComputerInventory.Enumerations.WebHostBuilder
+namespace ATAP.Utilities.ComputerInventory.Enumerations
 {
     // Create an enumeration for the kinds of WebHostBuilders this program knows how to support
     public enum SupportedWebHostBuilders {

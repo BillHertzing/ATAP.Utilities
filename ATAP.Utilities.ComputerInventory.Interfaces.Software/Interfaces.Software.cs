@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace ATAP.Utilities.ComputerInventory.Interfaces.Software
 {
 
-  public interface IComputerSoftwareProgram : IObservable<IComputerSoftwareProgram>
+  public interface IComputerSoftwareProgram
   {
     string ConfigFilePath { get; }
     ConcurrentObservableDictionary<string, string> ConfigurationSettings { get; }
@@ -20,27 +20,19 @@ namespace ATAP.Utilities.ComputerInventory.Interfaces.Software
     string ProcessPath { get; }
     string ProcessStartPath { get; }
     string Version { get; }
-    //IDisposable Subscribe(IObserver<IComputerSoftwareProgram> observer);
+    bool Equals(object obj);
+    int GetHashCode();
   }
 
-  public interface IComputerSoftwareDriver : IObservable<IComputerSoftwareDriver>
+  public interface IComputerSoftwareDriver 
   {
     string Name { get; }
     string Version { get; }
-
-    bool Equals(IComputerSoftwareDriver other);
-    bool Equals(object obj);
-    int GetHashCode();
-    //IDisposable Subscribe(IObserver<IComputerSoftwareDriver> observer);
   }
-  public interface IComputerSoftware
+  public interface IComputerSoftware 
   {
     List<IComputerSoftwareDriver> ComputerSoftwareDrivers { get; }
     List<IComputerSoftwareProgram> ComputerSoftwarePrograms { get; }
-
-    bool Equals(IComputerSoftware other);
-    bool Equals(object obj);
-    int GetHashCode();
   }
 
 

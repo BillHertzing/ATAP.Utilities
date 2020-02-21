@@ -16,14 +16,16 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
+  <!-- Documentation generation -->
   <ItemGroup>
+    <PackageReference Include="docfx" Version="2.40.2"/>
     <Folder Include="Documentation\" />
   </ItemGroup>
-
+  
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Hardware\ATAP.Utilities.ComputerInventory.Interfaces.Hardware.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Software\ATAP.Utilities.ComputerInventory.Interfaces.Software.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo\ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo.csproj" />
   </ItemGroup>
 
 </Project>

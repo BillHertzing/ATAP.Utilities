@@ -1,30 +1,21 @@
 using ATAP.Utilities.ComputerInventory.Enumerations;
+using Itenso.TimePeriod;
 using System;
 
 namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
 {
-  public interface ITempAndFan 
+
+  public interface IComputerHardware
   {
-    double FanPct { get; set; }
-    double Temp { get; set; }
-    //IDisposable Subscribe(IObserver<ITempAndFan> observer);
+    ICPU[] CPUs { get; }
+    bool IsCPUsEnabled { get; }
+    bool IsFanControllerEnabled { get; }
+    bool IsMainboardEnabled { get; }
+    bool IsVideoCardsEnabled { get; }
+    IMainBoard MainBoard { get; }
+    TimeBlock Moment { get; set; }
+    IVideoCard[] VideoCards { get; }
   }
 
-
-  public interface IPowerConsumption : IObservable<IPowerConsumption>
-  {
-    TimeSpan Period { get; set; }
-    double Watts { get; set; }
-    //IDisposable Subscribe(IObserver<IPowerConsumption> observer);
-  }
-
-  public interface ICPU
-  {
-    CPUMaker CPUMaker { get; }
-
-    bool Equals(ICPU other);
-    bool Equals(object obj);
-    int GetHashCode();
-  }
 
 }

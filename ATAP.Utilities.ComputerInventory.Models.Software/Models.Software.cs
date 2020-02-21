@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using ATAP.Utilities.ConcurrentObservableCollections;
-using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Interfaces.Software;
 
 namespace ATAP.Utilities.ComputerInventory.Models.Software
@@ -156,7 +155,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Software
       // hashCode = hashCode * -1521134295 + EqualityComparer<List<ComputerSoftwareDriver>>.Default.GetHashCode(IComputerSoftwareDrivers);
       //hashCode = hashCode * -1521134295 + EqualityComparer<List<ComputerSoftwareProgram>>.Default.GetHashCode(IComputerSoftwarePrograms);
       //return hashCode;
-      throw new NotImplementedException("trying to get a hash code for two collections");
+      throw new NotImplementedException();
     }
 
     public static bool operator ==(ComputerSoftware left, ComputerSoftware right)

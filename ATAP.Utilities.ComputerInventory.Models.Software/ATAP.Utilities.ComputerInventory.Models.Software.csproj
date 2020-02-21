@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -23,9 +23,16 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Hardware\ATAP.Utilities.ComputerInventory.Interfaces.Hardware.csproj" />
+    <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
+    <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
+    <PackageReference Include="MedallionShell" Version="1.5.1" />
+    <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
+    <PackageReference Include="UnitsNet" Version="4.43.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Software\ATAP.Utilities.ComputerInventory.Enumerations.Software.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Software\ATAP.Utilities.ComputerInventory.Interfaces.Software.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo\ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo.csproj" />
   </ItemGroup>
 
 </Project>

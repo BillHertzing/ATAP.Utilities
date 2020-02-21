@@ -15,6 +15,12 @@
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
+
+  <!-- Documentation generation -->
+  <ItemGroup>
+    <PackageReference Include="docfx" Version="2.40.2"/>
+    <Folder Include="Documentation\" />
+  </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="MedallionShell" Version="1.5.1" />
@@ -25,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo\ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Software\ATAP.Utilities.ComputerInventory.Interfaces.Software.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
   </ItemGroup>
 
@@ -33,12 +39,6 @@
     <None Update="ATAP.Utilities.ComputerInventory.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
-    <PackageReference Include="docfx">
-      <Version>2.40.2</Version>
-    </PackageReference>
   </ItemGroup>
   
 </Project>

@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.Hardware\ATAP.Utilities.ComputerInventory.Enumerations.Hardware.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Configuration\ATAP.Utilities.ComputerInventory.Configuration.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj" />

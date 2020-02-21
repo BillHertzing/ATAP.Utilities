@@ -16,6 +16,12 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
+  <!-- Documentation generation -->
+  <ItemGroup>
+    <PackageReference Include="docfx" Version="2.40.2"/>
+    <Folder Include="Documentation\" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
     <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
@@ -24,22 +30,14 @@
     <PackageReference Include="UnitsNet" Version="4.43.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
-    <PackageReference Include="docfx">
-      <Version>2.40.2</Version>
-    </PackageReference>
-  </ItemGroup>
-
   <ItemGroup>
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.Hardware\ATAP.Utilities.ComputerInventory.Enumerations.Hardware.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces\ATAP.Utilities.ComputerInventory.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Hardware\ATAP.Utilities.ComputerInventory.Interfaces.Hardware.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo\ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Software\ATAP.Utilities.ComputerInventory.Interfaces.Software.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.RuntimePlatformLifetime\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.RuntimePlatformLifetime.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models.Hardware\ATAP.Utilities.ComputerInventory.Models.Hardware.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
   </ItemGroup>
 

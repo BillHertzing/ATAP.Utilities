@@ -16,8 +16,14 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
+  <!-- Documentation generation -->
   <ItemGroup>
+    <PackageReference Include="docfx" Version="2.40.2"/>
     <Folder Include="Documentation\" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />
   </ItemGroup>
 
 </Project>

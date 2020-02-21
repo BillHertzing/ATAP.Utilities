@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
-using ATAP.Utilities.ComputerInventory.Interfaces.SoftwareInfo;
-using ATAP.Utilities.ComputerInventory.Models;
+using ATAP.Utilities.ComputerInventory.Interfaces.Software;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
+using ATAP.Utilities.ComputerInventory.Models.ProcessInfo;
 using Medallion.Shell;
 
 namespace ATAP.Utilities.ComputerInventory.Extensions
@@ -39,20 +40,20 @@ namespace ATAP.Utilities.ComputerInventory.Extensions
 
     public static int Start(this ComputerProcess computerProcess)
     {
-      computerProcess.Cmd = Command.Run(computerProcess.ComputerSoftwareProgram.ProcessPath, computerProcess.Arguments, options: o => o.DisposeOnExit(false));
-      return computerProcess.Cmd.ProcessId;
+      computerProcess.Command = Command.Run(computerProcess.ComputerSoftwareProgram.ProcessPath, computerProcess.Arguments, options: o => o.DisposeOnExit(false));
+      return computerProcess.Command.ProcessId;
     }
     public static void Kill(this ComputerProcess computerProcess)
     {
-      computerProcess.Cmd.Process.Kill();
+      computerProcess.Command.Process.Kill();
     }
     public static bool CloseMainWindow(this ComputerProcess computerProcess)
     {
-      return computerProcess.Cmd.Process.CloseMainWindow();
+      return computerProcess.Command.Process.CloseMainWindow();
     }
     public static void Close(this ComputerProcess computerProcess)
     {
-      computerProcess.Cmd.Process.Close();
+      computerProcess.Command.Process.Close();
     }
 
     public static void OpenComputer(this ComputerHardware computerHardware)

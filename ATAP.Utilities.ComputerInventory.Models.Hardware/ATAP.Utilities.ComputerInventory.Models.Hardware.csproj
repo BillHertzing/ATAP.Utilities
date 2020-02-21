@@ -16,8 +16,22 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
+  <!-- Documentation generation -->
   <ItemGroup>
+    <PackageReference Include="docfx" Version="2.40.2"/>
     <Folder Include="Documentation\" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
+    <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
+    <PackageReference Include="MedallionShell" Version="1.5.1" />
+    <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
+    <PackageReference Include="UnitsNet" Version="4.43.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Hardware\ATAP.Utilities.ComputerInventory.Interfaces.Hardware.csproj" />
   </ItemGroup>
 
 </Project>

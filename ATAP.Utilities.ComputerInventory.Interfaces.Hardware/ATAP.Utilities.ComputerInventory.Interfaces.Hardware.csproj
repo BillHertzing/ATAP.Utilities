@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -16,12 +16,19 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
+  <!-- Documentation generation -->
   <ItemGroup>
+    <PackageReference Include="docfx" Version="2.40.2"/>
     <Folder Include="Documentation\" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo\ATAP.Utilities.ComputerInventory.Enumerations.HardwareInfo.csproj" />
+  <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
+  <PackageReference Include="UnitsNet" Version="4.43.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.Hardware\ATAP.Utilities.ComputerInventory.Enumerations.Hardware.csproj" />
   </ItemGroup>
 
 </Project>

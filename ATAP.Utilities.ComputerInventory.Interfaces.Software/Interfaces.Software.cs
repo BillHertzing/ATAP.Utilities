@@ -5,6 +5,13 @@ using System.Collections.Generic;
 namespace ATAP.Utilities.ComputerInventory.Interfaces.Software
 {
 
+  public interface IComputerSoftware
+  {
+    List<IComputerSoftwareDriver> ComputerSoftwareDrivers { get; }
+    List<IComputerSoftwareProgram> ComputerSoftwarePrograms { get; }
+    OperatingSystem OperatingSystem { get; }
+  }
+
   public interface IComputerSoftwareProgram
   {
     string ConfigFilePath { get; }
@@ -20,20 +27,15 @@ namespace ATAP.Utilities.ComputerInventory.Interfaces.Software
     string ProcessPath { get; }
     string ProcessStartPath { get; }
     string Version { get; }
-    bool Equals(object obj);
-    int GetHashCode();
   }
+
 
   public interface IComputerSoftwareDriver 
   {
     string Name { get; }
     string Version { get; }
   }
-  public interface IComputerSoftware 
-  {
-    List<IComputerSoftwareDriver> ComputerSoftwareDrivers { get; }
-    List<IComputerSoftwareProgram> ComputerSoftwarePrograms { get; }
-  }
+
 
 
 }

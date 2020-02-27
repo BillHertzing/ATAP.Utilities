@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -18,7 +18,7 @@
 
   <!-- Documentation generation -->
   <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2"/>
+    <PackageReference Include="docfx" Version="2.40.2" />
     <Folder Include="Documentation\" />
   </ItemGroup>
   
@@ -31,7 +31,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo\ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Software\ATAP.Utilities.ComputerInventory.Interfaces.Software.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models.ProcessInfo\ATAP.Utilities.ComputerInventory.Models.ProcessInfo.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
   </ItemGroup>
 

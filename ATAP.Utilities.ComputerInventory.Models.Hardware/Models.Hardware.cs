@@ -6,8 +6,10 @@ using System.Runtime.Serialization;
 using System.ComponentModel;
 using System.Globalization;
 using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
+using UnitsNet;
+using UnitsNet.Units;
 
-namespace ATAP.Utilities.ComputerInventory.Models.Hardware
+namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
 {
 
   /*
@@ -116,49 +118,82 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
 
 
   [Serializable]
-  public class VideoCardSensorData
+  public class VideoCardSensorData : IVideoCardSensorData, IEquatable<VideoCardSensorData>
   {
-    double coreClock;
-    double coreVoltage;
-    double fanRPM;
-    double memClock;
-    double powerConsumption;
-    double powerLimit;
-    double temp;
-
-    public VideoCardSensorData() : this(default, default, default, default, default, default, default)
+    public VideoCardSensorData()
     {
     }
-    public VideoCardSensorData(double coreClock, double memClock, double coreVoltage, double powerLimit, double fanRPM, double temp, double powerConsumption)
+
+    public VideoCardSensorData(double coreClock, double coreVoltage, double fanRPM, double memClock, double powerConsumption, double powerLimit, double temp)
     {
-      this.coreClock = coreClock;
-      this.memClock = memClock;
-      this.coreVoltage = coreVoltage;
-      this.powerLimit = powerLimit;
-      this.fanRPM = fanRPM;
-      this.temp = temp;
-      this.powerConsumption = powerConsumption;
+      CoreClock = coreClock;
+      CoreVoltage = coreVoltage;
+      FanRPM = fanRPM;
+      MemClock = memClock;
+      PowerConsumption = powerConsumption;
+      PowerLimit = powerLimit;
+      Temp = temp;
     }
 
-    public double CoreClock { get => coreClock; set => coreClock = value; }
-    public double CoreVoltage { get => coreVoltage; set => coreVoltage = value; }
-    public double FanRPM { get => fanRPM; set => fanRPM = value; }
-    public double MemClock { get => memClock; set => memClock = value; }
-    public double PowerConsumption { get => powerConsumption; set => powerConsumption = value; }
-    public double PowerLimit { get => powerLimit; set => powerLimit = value; }
-    public double Temp { get => temp; set => temp = value; }
+    public double CoreClock { get; }
+    public double CoreVoltage { get; }
+    public double FanRPM { get; }
+    public double MemClock { get; }
+    public double PowerConsumption { get; }
+    public double PowerLimit { get; }
+    public double Temp { get; }
+
+    public override bool Equals(object obj)
+    {
+      return Equals(obj as VideoCardSensorData);
+    }
+
+    public bool Equals(VideoCardSensorData other)
+    {
+      return other != null &&
+             CoreClock == other.CoreClock &&
+             CoreVoltage == other.CoreVoltage &&
+             FanRPM == other.FanRPM &&
+             MemClock == other.MemClock &&
+             PowerConsumption == other.PowerConsumption &&
+             PowerLimit == other.PowerLimit &&
+             Temp == other.Temp;
+    }
+
+    public override int GetHashCode()
+    {
+      var hashCode = -485759360;
+      hashCode = hashCode * -1521134295 + CoreClock.GetHashCode();
+      hashCode = hashCode * -1521134295 + CoreVoltage.GetHashCode();
+      hashCode = hashCode * -1521134295 + FanRPM.GetHashCode();
+      hashCode = hashCode * -1521134295 + MemClock.GetHashCode();
+      hashCode = hashCode * -1521134295 + PowerConsumption.GetHashCode();
+      hashCode = hashCode * -1521134295 + PowerLimit.GetHashCode();
+      hashCode = hashCode * -1521134295 + Temp.GetHashCode();
+      return hashCode;
+    }
+
+    public static bool operator ==(VideoCardSensorData left, VideoCardSensorData right)
+    {
+      return EqualityComparer<VideoCardSensorData>.Default.Equals(left, right);
+    }
+
+    public static bool operator !=(VideoCardSensorData left, VideoCardSensorData right)
+    {
+      return !(left == right);
+    }
   }
 
 
 
   [Serializable]
-  public class VideoCard : IVideoCard
+  public class VideoCard : IVideoCard, IEquatable<VideoCard>
   {
     public VideoCard()
     {
     }
 
-    public VideoCard(string bIOSVersion, double coreClock, double coreVoltage, string deviceID, bool isStrapped, double memClock, double powerLimit, IVideoCardDiscriminatingCharacteristics videoCardDiscriminatingCharacteristics)
+    public VideoCard(string bIOSVersion, Frequency coreClock, ElectricPotentialDcUnit coreVoltage, string deviceID, bool isStrapped, Frequency memClock, PowerUnit powerLimit, IVideoCardDiscriminatingCharacteristics videoCardDiscriminatingCharacteristics)
     {
       BIOSVersion = bIOSVersion ?? throw new ArgumentNullException(nameof(bIOSVersion));
       CoreClock = coreClock;
@@ -171,195 +206,192 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     }
 
     public string BIOSVersion { get; }
-    public double CoreClock { get; }
-    public double CoreVoltage { get; }
+    public UnitsNet.Frequency CoreClock { get; }
+    public UnitsNet.Units.ElectricPotentialDcUnit CoreVoltage { get; }
     public string DeviceID { get; }
     public bool IsStrapped { get; }
-    public double MemClock { get; }
-    public double PowerLimit { get; }
+    public UnitsNet.Frequency MemClock { get; }
+    public UnitsNet.Units.PowerUnit PowerLimit { get; }
     public IVideoCardDiscriminatingCharacteristics VideoCardDiscriminatingCharacteristics { get; }
+
+    public override bool Equals(object obj)
+    {
+      return Equals(obj as VideoCard);
+    }
+
+    public bool Equals(VideoCard other)
+    {
+      return other != null &&
+             BIOSVersion == other.BIOSVersion &&
+             CoreClock.Equals(other.CoreClock) &&
+             CoreVoltage == other.CoreVoltage &&
+             DeviceID == other.DeviceID &&
+             IsStrapped == other.IsStrapped &&
+             MemClock.Equals(other.MemClock) &&
+             PowerLimit == other.PowerLimit &&
+             EqualityComparer<IVideoCardDiscriminatingCharacteristics>.Default.Equals(VideoCardDiscriminatingCharacteristics, other.VideoCardDiscriminatingCharacteristics);
+    }
+
+    public override int GetHashCode()
+    {
+      var hashCode = -1822004008;
+      hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(BIOSVersion);
+      hashCode = hashCode * -1521134295 + CoreClock.GetHashCode();
+      hashCode = hashCode * -1521134295 + CoreVoltage.GetHashCode();
+      hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(DeviceID);
+      hashCode = hashCode * -1521134295 + IsStrapped.GetHashCode();
+      hashCode = hashCode * -1521134295 + MemClock.GetHashCode();
+      hashCode = hashCode * -1521134295 + PowerLimit.GetHashCode();
+      hashCode = hashCode * -1521134295 + EqualityComparer<IVideoCardDiscriminatingCharacteristics>.Default.GetHashCode(VideoCardDiscriminatingCharacteristics);
+      return hashCode;
+    }
+
+    public static bool operator ==(VideoCard left, VideoCard right)
+    {
+      return EqualityComparer<VideoCard>.Default.Equals(left, right);
+    }
+
+    public static bool operator !=(VideoCard left, VideoCard right)
+    {
+      return !(left == right);
+    }
   }
 
   [Serializable]
-  public class VideoCardDiscriminatingCharacteristics : IVideoCardDiscriminatingCharacteristics
+  public class VideoCardDiscriminatingCharacteristics :IVideoCardDiscriminatingCharacteristics, IEquatable<VideoCardDiscriminatingCharacteristics>
   {
-    readonly string cardName;
-    readonly GPUMaker gPUMaker;
-    readonly VideoCardMaker videoCardMaker;
-    readonly VideoCardMemoryMaker videoMemoryMaker;
-    readonly int videoMemorySize;
+    public string CardName { get; }
+    public GPUMaker GPUMaker { get; }
+    public VideoCardMaker VideoCardMaker { get; }
+    public VideoCardMemoryMaker VideoMemoryMaker { get; }
+    public int VideoMemorySize { get; }
 
-    public VideoCardDiscriminatingCharacteristics(VideoCardMaker videoCardMaker, GPUMaker gPUMaker, string cardName, int videoMemorySize, VideoCardMemoryMaker videoMemoryMaker)
+    public VideoCardDiscriminatingCharacteristics()
     {
-      this.videoCardMaker = videoCardMaker;
-      this.gPUMaker = gPUMaker;
-      this.cardName = cardName;
-      this.videoMemorySize = videoMemorySize;
-      this.videoMemoryMaker = videoMemoryMaker;
     }
 
-    public string CardName => cardName;
+    public VideoCardDiscriminatingCharacteristics(string cardName, GPUMaker gPUMaker, VideoCardMaker videoCardMaker, VideoCardMemoryMaker videoMemoryMaker, int videoMemorySize)
+    {
+      CardName = cardName ?? throw new ArgumentNullException(nameof(cardName));
+      GPUMaker = gPUMaker;
+      VideoCardMaker = videoCardMaker;
+      VideoMemoryMaker = videoMemoryMaker;
+      VideoMemorySize = videoMemorySize;
+    }
 
-    public GPUMaker GPUMaker => gPUMaker;
+    public override bool Equals(object obj)
+    {
+      return Equals(obj as VideoCardDiscriminatingCharacteristics);
+    }
 
-    public VideoCardMaker VideoCardMaker => videoCardMaker;
+    public bool Equals(VideoCardDiscriminatingCharacteristics other)
+    {
+      return other != null &&
+             CardName == other.CardName &&
+             GPUMaker == other.GPUMaker &&
+             VideoCardMaker == other.VideoCardMaker &&
+             VideoMemoryMaker == other.VideoMemoryMaker &&
+             VideoMemorySize == other.VideoMemorySize;
+    }
 
-    public VideoCardMemoryMaker VideoMemoryMaker => videoMemoryMaker;
+    public override int GetHashCode()
+    {
+      var hashCode = 268322596;
+      hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(CardName);
+      hashCode = hashCode * -1521134295 + GPUMaker.GetHashCode();
+      hashCode = hashCode * -1521134295 + VideoCardMaker.GetHashCode();
+      hashCode = hashCode * -1521134295 + VideoMemoryMaker.GetHashCode();
+      hashCode = hashCode * -1521134295 + VideoMemorySize.GetHashCode();
+      return hashCode;
+    }
 
-    public int VideoMemorySize => videoMemorySize;
+    public static bool operator ==(VideoCardDiscriminatingCharacteristics left, VideoCardDiscriminatingCharacteristics right)
+    {
+      return EqualityComparer<VideoCardDiscriminatingCharacteristics>.Default.Equals(left, right);
+    }
+
+    public static bool operator !=(VideoCardDiscriminatingCharacteristics left, VideoCardDiscriminatingCharacteristics right)
+    {
+      return !(left == right);
+    }
   }
 
   [Serializable]
-  public class VideoCardTuningParameters
+  public class VideoCardTuningParameters : IVideoCardTuningParameters, IEquatable<VideoCardTuningParameters>
   {
-    readonly int coreClockDefault;
-    readonly int coreClockMax;
-    readonly int coreClockMin;
-    readonly int memoryClockDefault;
-    readonly int memoryClockMax;
-    readonly int memoryClockMin;
-    readonly double voltageDefault;
-    readonly double voltageMax;
-    readonly double voltageMin;
-
-    public VideoCardTuningParameters(int memoryClockDefault, int memoryClockMin, int memoryClockMax, int coreClockDefault, int coreClockMin, int coreClockMax, double voltageDefault, double voltageMin, double voltageMax)
+    public VideoCardTuningParameters()
     {
-      this.memoryClockDefault = memoryClockDefault;
-      this.memoryClockMin = memoryClockMin;
-      this.memoryClockMax = memoryClockMax;
-      this.coreClockDefault = coreClockDefault;
-      this.coreClockMin = coreClockMin;
-      this.coreClockMax = coreClockMax;
-      this.voltageDefault = voltageDefault;
-      this.voltageMin = voltageMin;
-      this.voltageMax = voltageMax;
     }
 
-    public int CoreClockDefault => coreClockDefault;
-
-    public int CoreClockMax => coreClockMax;
-
-    public int CoreClockMin => coreClockMin;
-
-    public int MemoryClockDefault => memoryClockDefault;
-
-    public int MemoryClockMax => memoryClockMax;
-
-    public int MemoryClockMin => memoryClockMin;
-
-    public double VoltageDefault => voltageDefault;
-
-    public double VoltageMax => voltageMax;
-
-    public double VoltageMin => voltageMin;
-  }
-
-  [Serializable]
-  public static class VideoCardsKnown
-  {
-    static readonly Dictionary<VideoCardDiscriminatingCharacteristics, VideoCardTuningParameters> tuningParameters;
-
-    static VideoCardsKnown()
+    public VideoCardTuningParameters(UnitsNet.Frequency coreClockDefault, UnitsNet.Frequency coreClockMax, UnitsNet.Frequency coreClockMin, UnitsNet.Frequency memoryClockDefault, UnitsNet.Frequency memoryClockMax, UnitsNet.Frequency memoryClockMin, UnitsNet.ElectricPotentialDc voltageDefault, UnitsNet.ElectricPotentialDc voltageMax, UnitsNet.ElectricPotentialDc voltageMin)
     {
-      tuningParameters = new Dictionary<VideoCardDiscriminatingCharacteristics, VideoCardTuningParameters>
-            {
-                { new VideoCardDiscriminatingCharacteristics(VideoCardMaker.ASUS,
-                                                             GPUMaker.NVIDEA,
-                                                             "GTX 980 TI",
-                                                             6144,
-                                                             VideoCardMemoryMaker.Samsung), new VideoCardTuningParameters(810,
-                                                                                                                          800,
-                                                                                                                          820,
-                                                                                                                          405,
-                                                                                                                          400,
-                                                                                                                          410,
-                                                                                                                          0.862,
-                                                                                                                          0.80,
-                                                                                                                          1.024) },
-                { new VideoCardDiscriminatingCharacteristics(VideoCardMaker.MSI,
-                                                             GPUMaker.AMD,
-                                                             "R9 270",
-                                                             2048,
-                                                             VideoCardMemoryMaker.Elpida), new VideoCardTuningParameters(1400,
-                                                                                                                         1300,
-                                                                                                                         1500,
-                                                                                                                         955,
-                                                                                                                         940,
-                                                                                                                         960,
-                                                                                                                         1.0,
-                                                                                                                         0.98,
-                                                                                                                         1.05) },
-                { new VideoCardDiscriminatingCharacteristics(VideoCardMaker.MSI,
-                                                             GPUMaker.AMD,
-                                                             "RX 580",
-                                                             8192,
-                                                             VideoCardMemoryMaker.Hynix), new VideoCardTuningParameters(1400,
-                                                                                                                        1300,
-                                                                                                                        1500,
-                                                                                                                        955,
-                                                                                                                        940,
-                                                                                                                        960,
-                                                                                                                        1.0,
-                                                                                                                        0.98,
-                                                                                                                        1.05) },
-                { new VideoCardDiscriminatingCharacteristics(VideoCardMaker.MSI,
-                                                             GPUMaker.AMD,
-                                                             "RX 580",
-                                                             8192,
-                                                             VideoCardMemoryMaker.Generic), new VideoCardTuningParameters(1400,
-                                                                                                                          1300,
-                                                                                                                          1500,
-                                                                                                                          955,
-                                                                                                                          940,
-                                                                                                                          960,
-                                                                                                                          1.0,
-                                                                                                                          0.98,
-                                                                                                                          1.05) },
-                { new VideoCardDiscriminatingCharacteristics(VideoCardMaker.PowerColor,
-                                                             GPUMaker.AMD,
-                                                             "RX 580",
-                                                             8192,
-                                                             VideoCardMemoryMaker.Hynix), new VideoCardTuningParameters(1400,
-                                                                                                                        1300,
-                                                                                                                        1500,
-                                                                                                                        955,
-                                                                                                                        940,
-                                                                                                                        960,
-                                                                                                                        1.0,
-                                                                                                                        0.98,
-                                                                                                                        1.05) },
-                { new VideoCardDiscriminatingCharacteristics(VideoCardMaker.PowerColor,
-                                                             GPUMaker.AMD,
-                                                             "RX 580",
-                                                             8192,
-                                                             VideoCardMemoryMaker.Samsung), new VideoCardTuningParameters(1400,
-                                                                                                                          1300,
-                                                                                                                          1500,
-                                                                                                                          955,
-                                                                                                                          940,
-                                                                                                                          960,
-                                                                                                                          1.0,
-                                                                                                                          0.98,
-                                                                                                                          1.05) },
-                { new VideoCardDiscriminatingCharacteristics(VideoCardMaker.Generic,
-                                                             GPUMaker.Generic,
-                                                             "Generic",
-                                                             1024,
-                                                             VideoCardMemoryMaker.Generic), new VideoCardTuningParameters(-1,
-                                                                                                                          -1,
-                                                                                                                          -1,
-                                                                                                                          -1,
-                                                                                                                          -1,
-                                                                                                                          -1,
-                                                                                                                          -1,
-                                                                                                                          -1,
-                                                                                                                          -1)}
-            };
+      CoreClockDefault = coreClockDefault;
+      CoreClockMax = coreClockMax;
+      CoreClockMin = coreClockMin;
+      MemoryClockDefault = memoryClockDefault;
+      MemoryClockMax = memoryClockMax;
+      MemoryClockMin = memoryClockMin;
+      VoltageDefault = voltageDefault;
+      VoltageMax = voltageMax;
+      VoltageMin = voltageMin;
     }
 
-    public static Dictionary<VideoCardDiscriminatingCharacteristics, VideoCardTuningParameters> TuningParameters => tuningParameters;
+    public UnitsNet.Frequency CoreClockDefault { get; }
+    public UnitsNet.Frequency CoreClockMax { get; }
+    public UnitsNet.Frequency CoreClockMin { get; }
+    public UnitsNet.Frequency MemoryClockDefault { get; }
+    public UnitsNet.Frequency MemoryClockMax { get; }
+    public UnitsNet.Frequency MemoryClockMin { get; }
+    public UnitsNet.ElectricPotentialDc VoltageDefault { get; }
+    public UnitsNet.ElectricPotentialDc VoltageMax { get; }
+    public UnitsNet.ElectricPotentialDc VoltageMin { get; }
+
+    public override bool Equals(object obj)
+    {
+      return Equals(obj as VideoCardTuningParameters);
+    }
+
+    public bool Equals(VideoCardTuningParameters other)
+    {
+      return other != null &&
+             CoreClockDefault == other.CoreClockDefault &&
+             CoreClockMax == other.CoreClockMax &&
+             CoreClockMin == other.CoreClockMin &&
+             MemoryClockDefault == other.MemoryClockDefault &&
+             MemoryClockMax == other.MemoryClockMax &&
+             MemoryClockMin == other.MemoryClockMin &&
+             VoltageDefault == other.VoltageDefault &&
+             VoltageMax == other.VoltageMax &&
+             VoltageMin == other.VoltageMin;
+    }
+
+    public override int GetHashCode()
+    {
+      var hashCode = 156220204;
+      hashCode = hashCode * -1521134295 + CoreClockDefault.GetHashCode();
+      hashCode = hashCode * -1521134295 + CoreClockMax.GetHashCode();
+      hashCode = hashCode * -1521134295 + CoreClockMin.GetHashCode();
+      hashCode = hashCode * -1521134295 + MemoryClockDefault.GetHashCode();
+      hashCode = hashCode * -1521134295 + MemoryClockMax.GetHashCode();
+      hashCode = hashCode * -1521134295 + MemoryClockMin.GetHashCode();
+      hashCode = hashCode * -1521134295 + VoltageDefault.GetHashCode();
+      hashCode = hashCode * -1521134295 + VoltageMax.GetHashCode();
+      hashCode = hashCode * -1521134295 + VoltageMin.GetHashCode();
+      return hashCode;
+    }
+
+    public static bool operator ==(VideoCardTuningParameters left, VideoCardTuningParameters right)
+    {
+      return EqualityComparer<VideoCardTuningParameters>.Default.Equals(left, right);
+    }
+
+    public static bool operator !=(VideoCardTuningParameters left, VideoCardTuningParameters right)
+    {
+      return !(left == right);
+    }
   }
 
+ 
 
   //ToDo make these thread-safe (concurrent)
 
@@ -369,60 +401,60 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     {
     }
 
-    public TempAndFan(double temp, double fanPct, List<IObserver<TempAndFan>> observers)
+    public TempAndFan(Temperature temp, Ratio fanPct)
     {
       Temp = temp;
       FanPct = fanPct;
-      Observers = observers ?? throw new ArgumentNullException(nameof(observers));
     }
 
-    public double Temp { get; set; }
-    public double FanPct { get; set; }
+    public Temperature Temp { get; set; }
+    public Ratio FanPct { get; set; }
 
     // The IObservable provider objects, classes, and methods
     // attribution:  https://docs.microsoft.com/en-us/dotnet/standard/events/how-to-implement-a-provider
-    List<IObserver<TempAndFan>> Observers { get; }
-    private class Unsubscriber : IDisposable
-    {
-      List<IObserver<TempAndFan>> Observers { get; }
-      private IObserver<TempAndFan> Observer { get; }
+    // Stephen Cleary Concurrent C# recommends using Rx (Reactive) instead of observables
+    //List<IObserver<TempAndFan>> Observers { get; }
+    //private class Unsubscriber : IDisposable
+    //{
+    //  List<IObserver<TempAndFan>> Observers { get; }
+    //  private IObserver<TempAndFan> Observer { get; }
 
-      public Unsubscriber(List<IObserver<TempAndFan>> observers, IObserver<TempAndFan> observer)
-      {
-        Observers = observers ?? throw new ArgumentNullException(nameof(observers));
-        Observer = observer ?? throw new ArgumentNullException(nameof(observer));
-      }
+    //  public Unsubscriber(List<IObserver<TempAndFan>> observers, IObserver<TempAndFan> observer)
+    //  {
+    //    Observers = observers ?? throw new ArgumentNullException(nameof(observers));
+    //    Observer = observer ?? throw new ArgumentNullException(nameof(observer));
+    //  }
 
-      public void Dispose()
-      {
-        if (!(Observer == null))
-        {
-          Observers.Remove(Observer);
-        }
-      }
-    }
+    //  public void Dispose()
+    //  {
+    //    if (!(Observer == null))
+    //    {
+    //      Observers.Remove(Observer);
+    //    }
+    //  }
+    //}
 
-    public IDisposable Subscribe(IObserver<ITempAndFan> observer)
-    {
-      if (!Observers.Contains(observer))
-      {
-        Observers.Add(observer);
-      }
+    //public IDisposable Subscribe(IObserver<ITempAndFan> observer)
+    //{
+    //  if (!Observers.Contains(observer))
+    //  {
+    //    Observers.Add(observer);
+    //  }
 
-      return new Unsubscriber(Observers, observer);
-    }
-    public void NotifyObservers()
-    {
-      //ToDo implement the method that gets a TempAndFan instance update
-      throw new NotImplementedException();
-      //foreach (var observer in observers)
-      //  observer.OnNext(tempAndFanData); // An event should trigger this, and pass in a TempAndFan instance named tempAndFanData
-      //}
-      //foreach (var observer in observers.ToArray())
-      //if (observer != null) observer.OnCompleted(); // this is the code to use if the instance will never send data again
-      //}
-      //observers.Clear();
-    }
+    //  return new Unsubscriber(Observers, observer);
+    //}
+    //public void NotifyObservers()
+    //{
+    //  //ToDo implement the method that gets a TempAndFan instance update
+    //  throw new NotImplementedException();
+    //  //foreach (var observer in observers)
+    //  //  observer.OnNext(tempAndFanData); // An event should trigger this, and pass in a TempAndFan instance named tempAndFanData
+    //  //}
+    //  //foreach (var observer in observers.ToArray())
+    //  //if (observer != null) observer.OnCompleted(); // this is the code to use if the instance will never send data again
+    //  //}
+    //  //observers.Clear();
+    //}
 
 
   }
@@ -612,7 +644,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     }
   }
 
-
+ 
 
   [Serializable]
 #if NETFUL
@@ -620,86 +652,41 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
 #else
   public class ComputerHardware : IComputerHardware
 
+
 #endif
   {
+    public ComputerHardware()
+    {
+    }
+
+    public ComputerHardware(ICPU[] cPUS, bool isCPUsEnabled, bool isFanControllerEnabled, bool isMainboardEnabled, bool isVideoCardsEnabled, IMainBoard mainBoard, TimeBlock moment, IVideoCard[] videoCards)
+    {
+      CPUS = cPUS ?? throw new ArgumentNullException(nameof(cPUS));
+      IsCPUsEnabled = isCPUsEnabled;
+      IsFanControllerEnabled = isFanControllerEnabled;
+      IsMainboardEnabled = isMainboardEnabled;
+      IsVideoCardsEnabled = isVideoCardsEnabled;
+      MainBoard = mainBoard ?? throw new ArgumentNullException(nameof(mainBoard));
+      Moment = moment ?? throw new ArgumentNullException(nameof(moment));
+      VideoCards = videoCards ?? throw new ArgumentNullException(nameof(videoCards));
+    }
 #if NETFUL
         readonly OpenHardwareMonitor.Hardware.Computer computer;
 #endif
 
-    readonly CPU[] cPUs;
-    readonly bool isCPUsEnabled;
-    readonly bool isFanControllerEnabled;
-    readonly bool isMainboardEnabled;
-    readonly bool isVideoCardsEnabled;
-    readonly MainBoard mainBoard;
-    TimeBlock moment;
-    readonly VideoCard[] videoCards;
-
-    public ComputerHardware(CPU[] cPUs, MainBoard mainBoard, VideoCard[] videoCards)
-    {
-      isMainboardEnabled = true;
-      isCPUsEnabled = true;
-      isVideoCardsEnabled = true;
-      isFanControllerEnabled = true;
-      this.cPUs = cPUs;
-      this.mainBoard = mainBoard;
-      this.videoCards = videoCards;
-      this.moment = new TimeBlock(DateTime.UtcNow, true);
-#if NETFUL
-      this.computer = new Computer
-      {
-        MainboardEnabled = isMainboardEnabled,
-        CPUEnabled = isCPUsEnabled,
-        FanControllerEnabled = isFanControllerEnabled,
-        GPUEnabled = isVideoCardsEnabled
-      };
-      // ToDo: Get teh HardwareMonitorLib to work, right now, it throws an exception it can't find system.management dll
-      //computer.Open();
-#endif
-    }
-
-#if NETFULL
-    //public Computer Computer => computer;
-#endif
+    public ICPU[] CPUS { get; }
+    public bool IsCPUsEnabled { get; }
+    public bool IsFanControllerEnabled { get; }
+    public bool IsMainboardEnabled { get; }
+    public bool IsVideoCardsEnabled { get; }
+    public IMainBoard MainBoard { get; }
+    public TimeBlock Moment { get; }
+    public IVideoCard[] VideoCards { get; }
 
     // ToDo: Add field and property for MainBoardMemory
     // ToDo: Add field and property for Disks
     // ToDo: Add field and property for PowerSupply
     // ToDo: Add field and property for USBPorts
-
-    public CPU[] CPUs => cPUs;
-
-    public bool IsCPUsEnabled => isCPUsEnabled;
-
-    public bool IsFanControllerEnabled => isFanControllerEnabled;
-
-    public bool IsMainboardEnabled => isMainboardEnabled;
-
-    public bool IsVideoCardsEnabled => isVideoCardsEnabled;
-
-    public MainBoard MainBoard => mainBoard;
-
-    public TimeBlock Moment {
-      get => moment; set => moment = value;
-    }
-
-    public VideoCard[] VideoCards => videoCards;
-
-    public ComputerHardware(CPU[] cPUs, MainBoard mainBoard, VideoCard[] videoCards, TimeBlock moment)
-    {
-      isMainboardEnabled = true;
-      isCPUsEnabled = true;
-      isVideoCardsEnabled = true;
-      isFanControllerEnabled = true;
-      this.cPUs = cPUs;
-      this.mainBoard = mainBoard;
-      this.videoCards = videoCards;
-      this.moment = moment;
-#if NETFUL
-      this.OpenComputer();
-#endif
-    }
-
 
   }
 }

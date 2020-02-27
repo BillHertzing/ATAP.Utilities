@@ -1,21 +1,21 @@
 using ATAP.Utilities.ComputerInventory.Enumerations;
 using Itenso.TimePeriod;
 using System;
+using System.Collections.Generic;
 
 namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
 {
 
   public interface IComputerHardware
   {
-    ICPU[] CPUs { get; }
+    ICPU[] CPUS { get; }
     bool IsCPUsEnabled { get; }
     bool IsFanControllerEnabled { get; }
     bool IsMainboardEnabled { get; }
     bool IsVideoCardsEnabled { get; }
     IMainBoard MainBoard { get; }
-    TimeBlock Moment { get; set; }
+    TimeBlock Moment { get; }
     IVideoCard[] VideoCards { get; }
   }
-
-
+ 
 }

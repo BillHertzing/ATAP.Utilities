@@ -18,7 +18,7 @@
 
   <!-- Documentation generation -->
   <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2"/>
+    <PackageReference Include="docfx" Version="2.40.2" />
     <Folder Include="Documentation\" />
   </ItemGroup>
   
@@ -31,6 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.Hardware\ATAP.Utilities.ComputerInventory.Enumerations.Hardware.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Hardware\ATAP.Utilities.ComputerInventory.Interfaces.Hardware.csproj" />
   </ItemGroup>
 

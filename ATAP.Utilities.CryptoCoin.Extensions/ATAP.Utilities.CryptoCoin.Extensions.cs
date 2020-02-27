@@ -11,131 +11,132 @@ using ATAP.Utilities.CryptoCoin.Models;
 
 namespace ATAP.Utilities.CryptoCoin.Extensions
 {
- 
- 
-    public interface ICryptoCoinNetworkInfoBuilder
+
+
+  public interface ICryptoCoinNetworkInfoBuilder
+  {
+    CryptoCoinNetworkInfo Build();
+  }
+
+  public class CryptoCoinNetworkInfoBuilder
+  {
+    TimeBlock avgBlockTime;
+    double blockRewardPerBlock;
+    Coin coin;
+    HashRate hashRate;
+
+    public CryptoCoinNetworkInfoBuilder()
     {
-        CryptoCoinNetworkInfo Build();
     }
 
-    public class CryptoCoinNetworkInfoBuilder
+    public CryptoCoinNetworkInfoBuilder AddAvgBlockTime(TimeBlock avgBlockTime)
     {
-        TimeBlock avgBlockTime;
-        double blockRewardPerBlock;
-        Coin coin;
-        HashRate hashRate;
-
-        public CryptoCoinNetworkInfoBuilder() {
-        }
-
-        public CryptoCoinNetworkInfoBuilder AddAvgBlockTime(TimeBlock avgBlockTime)
-        {
-            this.avgBlockTime = avgBlockTime;
-            return this;
-        }
-        public CryptoCoinNetworkInfoBuilder AddBlockReward(double blockRewardPerBlock)
-        {
-            this.blockRewardPerBlock = blockRewardPerBlock;
-            return this;
-        }
-        public CryptoCoinNetworkInfoBuilder AddCoin(Coin coin)
-        {
-            this.coin = coin;
-            return this;
-        }
-
-        public CryptoCoinNetworkInfoBuilder AddHashRate(HashRate hashRate)
-        {
-            this.hashRate = hashRate;
-            return this;
-        }
-        public CryptoCoinNetworkInfo Build()
-        {
-            return new CryptoCoinNetworkInfo(coin, hashRate, avgBlockTime, blockRewardPerBlock);
-        }
-        public static CryptoCoinNetworkInfoBuilder CreateNew()
-        {
-            return new CryptoCoinNetworkInfoBuilder();
-        }
+      this.avgBlockTime = avgBlockTime;
+      return this;
+    }
+    public CryptoCoinNetworkInfoBuilder AddBlockReward(double blockRewardPerBlock)
+    {
+      this.blockRewardPerBlock = blockRewardPerBlock;
+      return this;
+    }
+    public CryptoCoinNetworkInfoBuilder AddCoin(Coin coin)
+    {
+      this.coin = coin;
+      return this;
     }
 
-    
-
- 
-
-    public class FeesConverter : ExpandableObjectConverter
+    public CryptoCoinNetworkInfoBuilder AddHashRate(HashRate hashRate)
     {
-        public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
-        {
-            if(sourceType == typeof(string))
-            {
-                return true;
-            }
-            return base.CanConvertFrom(context, sourceType);
-        }
-        public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
-        {
-            if(destinationType == typeof(string))
-            {
-                return true;
-            }
-            return base.CanConvertTo(context, destinationType);
-        }
-        public override object ConvertFrom(ITypeDescriptorContext
-            context, CultureInfo culture, object value)
-        {
-            if(value == null)
-            {
-                return new Fees();
-            }
+      this.hashRate = hashRate;
+      return this;
+    }
+    public CryptoCoinNetworkInfo Build()
+    {
+      return new CryptoCoinNetworkInfo(avgBlockTime, blockRewardPerBlock, coin, hashRate);
+    }
+    public static CryptoCoinNetworkInfoBuilder CreateNew()
+    {
+      return new CryptoCoinNetworkInfoBuilder();
+    }
+  }
 
-            if(value is string)
-            {
-                double d;
-                if(!double.TryParse(value as string, out d))
-                {
-                    throw new ArgumentException("Object is not a string of format double", "value");
-                }
 
-                return new Fees(d);
-            }
 
-            return base.ConvertFrom(context, culture, value);
-        }
-        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+
+
+  public class FeesConverter : ExpandableObjectConverter
+  {
+    public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
+    {
+      if (sourceType == typeof(string))
+      {
+        return true;
+      }
+      return base.CanConvertFrom(context, sourceType);
+    }
+    public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
+    {
+      if (destinationType == typeof(string))
+      {
+        return true;
+      }
+      return base.CanConvertTo(context, destinationType);
+    }
+    public override object ConvertFrom(ITypeDescriptorContext
+        context, CultureInfo culture, object value)
+    {
+      if (value == null)
+      {
+        return new Fees();
+      }
+
+      if (value is string)
+      {
+        double d;
+        if (!double.TryParse(value as string, out d))
         {
-            if(value != null)
-            {
-                if(!(value is Fees))
-                {
-                    throw new ArgumentException("Invalid object, is not a Fees", "value");
-                }
-            }
-
-            if(destinationType == typeof(string))
-            {
-                if(value == null)
-                {
-                    return ((value as Fees).FeeAsAPercent).ToString();
-                }
-            }
-            return base.ConvertTo(context, culture, value, destinationType);
+          throw new ArgumentException("Object is not a string of format double", "value");
         }
+
+        return new Fees(d);
+      }
+
+      return base.ConvertFrom(context, culture, value);
+    }
+    public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+    {
+      if (value != null)
+      {
+        if (!(value is Fees))
+        {
+          throw new ArgumentException("Invalid object, is not a Fees", "value");
+        }
+      }
+
+      if (destinationType == typeof(string))
+      {
+        if (value == null)
+        {
+          return ((value as Fees).FeeAsAPercent).ToString();
+        }
+      }
+      return base.ConvertTo(context, culture, value, destinationType);
+    }
+  }
+
+
+
+  public sealed class InterestingCoins
+  {
+    static readonly Lazy<InterestingCoins> lazy =
+new Lazy<InterestingCoins>(() => new InterestingCoins());
+
+    public InterestingCoins()
+    {
     }
 
- 
-
-    public sealed class InterestingCoins
-    {
-        static readonly Lazy<InterestingCoins> lazy =
-    new Lazy<InterestingCoins>(() => new InterestingCoins());
-
-        public InterestingCoins()
-        {
-        }
-
-        public static InterestingCoins Instance { get { return lazy.Value; } }
-    }
+    public static InterestingCoins Instance { get { return lazy.Value; } }
+  }
 }
 
 //public class CryptoCoins

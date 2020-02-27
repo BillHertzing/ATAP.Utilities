@@ -11,11 +11,12 @@ using ATAP.Utilities.ConcurrentObservableCollections;
 using UnitsNet;
 using Xunit;
 using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Models;
+
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoCoin.Models;
 using ATAP.Utilities.CryptoMiner.Enumerations;
 using ATAP.Utilities.CryptoMiner.Models;
+using ATAP.Utilities.ComputerInventory.Models;
 
 namespace ATAP.Utilities.ZSandbox.UnitTests
 {

@@ -1,33 +1,36 @@
 using System;
 using System.Collections.Generic;
+using ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo;
 using ATAP.Utilities.ComputerInventory.Interfaces.Software;
-using ATAP.Utilities.ComputerInventory.Models.Hardware;
-using ATAP.Utilities.ComputerInventory.Models.ProcessInfo;
+using ATAP.Utilities.ComputerInventory.Configuration;
+using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
+using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
 using Medallion.Shell;
 
 namespace ATAP.Utilities.ComputerInventory.Extensions
 {
   public static partial class Extensions
   {
-  public static ATAP.Utilities.ComputerInventory.Models.ComputerInventory InventoryThisComputer(this ATAP.Utilities.ComputerInventory.Models.ComputerInventory computerInventory)
+    public static ATAP.Utilities.ComputerInventory.Configuration.ComputerInventory InventoryThisComputer(this ATAP.Utilities.ComputerInventory.Configuration.ComputerInventory computerInventory)
     {
       throw new NotImplementedException();
     }
 
     //ToDo: Implement writing a ComputerInventory object to a set of Configuration Settings
-    public static Dictionary<string, string> ToConfigurationSettings(this ATAP.Utilities.ComputerInventory.Models.ComputerInventory computerInventory)
-    {
-      throw new NotImplementedException();
-    }
-    //ToDo: Implement creating a ComputerInventory object from a set of Configuration Settings
-    public static ATAP.Utilities.ComputerInventory.Models.ComputerInventory FromConfigurationSettings(Dictionary<string, string> configurationSettings)
+    public static Dictionary<string, string> ToConfigurationSettings(this ATAP.Utilities.ComputerInventory.Configuration.ComputerInventory computerInventory)
     {
       throw new NotImplementedException();
     }
 
-    public static int Start(this ComputerProcesses computerProcesses, IComputerSoftwareProgram computerSoftwareProgram, params object[] arguments)
+    //ToDo: Implement creating a ComputerInventory object from a set of Configuration Settings
+    public static ATAP.Utilities.ComputerInventory.Configuration.ComputerInventory FromConfigurationSettings(Dictionary<string, string> configurationSettings)
     {
-      ComputerProcess computerProcess = new ComputerProcess(computerSoftwareProgram, arguments);
+      throw new NotImplementedException();
+    }
+
+    public static int Start(this IComputerProcesses computerProcesses, IComputerSoftwareProgram computerSoftwareProgram, Command command, params object[] arguments)
+    {
+      ComputerProcess computerProcess = new ComputerProcess(computerSoftwareProgram, command, arguments);
       int pid = computerProcess.Start();
       computerProcesses.ComputerProcessDictionary.Add(pid, computerProcess);
       return pid;
@@ -44,6 +47,10 @@ namespace ATAP.Utilities.ComputerInventory.Extensions
       return computerProcess.Command.ProcessId;
     }
     public static void Kill(this ComputerProcess computerProcess)
+    {
+      computerProcess.Command.Process.Kill();
+    }
+    public static void Kill(this IComputerProcess computerProcess)
     {
       computerProcess.Command.Process.Kill();
     }

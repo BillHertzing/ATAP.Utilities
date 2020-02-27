@@ -1,5 +1,5 @@
 using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Models;
+using ATAP.Utilities.ComputerInventory.Configuration;
 using ATAP.Utilities.ConcurrentObservableCollections;
 using ATAP.Utilities.CryptoCoin;
 using ATAP.Utilities.CryptoCoin.Enumerations;
@@ -14,6 +14,9 @@ using System;
 using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
+using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
+using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
+using UnitsNet;
 
 namespace ATAP.Utilities.CryptoMiner.UnitTests
 {
@@ -116,10 +119,11 @@ GPUMaker.NVIDEA))
     [Fact]
     public void RigConfigBuilderToJSON()
     {
-      ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> minerSWs = new ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW>();
+      ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSWAbstract> minerSWs = new ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSWAbstract>();
       ConcurrentObservableDictionary<int, MinerGPU> minerGPUs = new ConcurrentObservableDictionary<int, MinerGPU>();
       PowerConsumption pc = new PowerConsumption() { Period = new TimeSpan(0, 1, 0), Watts = 1000.0 };
-      TempAndFan tf = new TempAndFan { Temp = 50, FanPct = 95.5 };
+      TempAndFan tf = new TempAndFan() { Temp = new Temperature(50, UnitsNet.Units.TemperatureUnit.DegreeFahrenheit), FanPct = new Ratio(95.5, UnitsNet.Units.RatioUnit.Percent) };
+
 
       RigConfig rc = RigConfigBuilder.CreateNew()
          .AddMinerSWs(minerSWs)

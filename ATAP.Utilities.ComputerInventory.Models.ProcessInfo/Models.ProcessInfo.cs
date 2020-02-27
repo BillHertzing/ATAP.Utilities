@@ -5,7 +5,7 @@ using ATAP.Utilities.ConcurrentObservableCollections;
 using ATAP.Utilities.ComputerInventory.Interfaces.Software;
 using ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo;
 
-namespace ATAP.Utilities.ComputerInventory.Models.ProcessInfo
+namespace ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo
 {
 
   public class ComputerProcess : IEquatable<ComputerProcess>, IComputerProcess
@@ -14,7 +14,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.ProcessInfo
     {
     }
 
-    public ComputerProcess(object[] arguments, Command command, IComputerSoftwareProgram computerSoftwareProgram)
+    public ComputerProcess(IComputerSoftwareProgram computerSoftwareProgram, Command command, object[] arguments )
     {
       Arguments = arguments ?? throw new ArgumentNullException(nameof(arguments));
       Command = command ?? throw new ArgumentNullException(nameof(command));

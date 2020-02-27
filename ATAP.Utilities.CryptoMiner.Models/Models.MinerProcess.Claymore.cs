@@ -1,4 +1,4 @@
-using ATAP.Utilities.ComputerInventory.Models;
+using ATAP.Utilities.ComputerInventory.Configuration;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoCoin.Models;
 using ATAP.Utilities.ConcurrentObservableCollections;
@@ -9,17 +9,22 @@ using System.Text;
 using System.Threading.Tasks;
 using UnitsNet;
 using ATAP.Utilities.ComputerInventory.Extensions;
+using Medallion.Shell;
+using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
+using ATAP.Utilities.CryptoMiner.Interfaces;
+using System.Linq;
 
 namespace ATAP.Utilities.CryptoMiner.Models
 {
 
-  public abstract class ClaymoreMinerProcess : MinerProcess
-    {
-        public ClaymoreMinerProcess(ClaymoreMinerSW computerSoftwareProgram, params object[] arguments) : base(computerSoftwareProgram, arguments)
-        {
-        }
+  public abstract class ClaymoreMinerProcessAbstract : MinerProcessAbstract
+  {
 
-    public override async Task<IMinerStatus> StatusFetchAsync()
+    public ClaymoreMinerProcessAbstract(MinerSWAbstract computerSoftwareProgram, Command command, params object[] arguments) : base(computerSoftwareProgram, command, arguments)
+    {
+    }
+
+    public override async Task<IMinerStatusAbstract> StatusFetchAsync()
     {
       //var DUalStr = "{\"id\": 0, \"result\": [\"10.2 - ETH\", \"4258\", \"50033;1249;0\", \"24583;25450\", \"1501011;2571;0\", \"737502;763509\", \"68;100;81;100\", \"eth-us-east1.nanopool.org:9999;sia-us-east1.nanopool.org:7777\", \"0;2;0;2\"], \"error\": null}";
       //var msorigianlZEC = "{\"id\": 0, \"error\": null, \"result\": [\"12.6 - ZEC\", \"1676\", \"352; 1300; 4\", \"175; 177\", \"0; 0; 0\", \"off; off\", \"81; 100\", \"zec - us - east1.nanopool.org:6633\", \"0; 2; 0; 0\"]}";
@@ -54,33 +59,33 @@ namespace ATAP.Utilities.CryptoMiner.Models
       return new ClaymoreMinerStatus(str);
     }
 
-    public async override Task<List<TuneMinerGPUsResult>> TuneMiners()
+    public async override Task<List<ITuneMinerGPUsResult>> TuneMinersAsync()
     {
       bool fine = true;
       //ToDo asking for highest HashRate or most efficient HashRate?
       // create the collection of GPUs to tune
       MinerGPU[] minerGPUsToTune = new MinerGPU[1];
       // create the collection of MinerSWs to tune
-      MinerSW[] minerSWsToTune = new MinerSW[1];
+      MinerSWAbstract[] minerSWsToTune = new MinerSWAbstract[1];
       // create the results
-      List<TuneMinerGPUsResult> tuneMinerGPUsResultList = new List<TuneMinerGPUsResult>();
+      var tuneMinerGPUsResultList = new List<TuneMinerGPUsResult>();
       foreach (var msw in minerSWsToTune)
       {
         foreach (var mg in minerGPUsToTune)
         {
           // Select the tuning strategy for this MinerSW and this VideoCard
           var vcdc = mg.VideoCardDiscriminatingCharacteristics;
-          var vctp = VideoCardsKnown.TuningParameters[vcdc];
+          VideoCardTuningParameters vctp = new VideoCardTuningParameters(); ; //ATAP.Utilities.ComputerInventory.Configuration.DefaultConfigurationSettings.TuningParameters[vcdc];
           // Calculate the step for each parameter
-          int memoryClockStep = (vctp.MemoryClockMax - vctp.MemoryClockMin) / (fine ? 1 : 5);
-          int coreClockStep = (vctp.CoreClockMax - vctp.CoreClockMin) / (fine ? 1 : 5);
-          double voltageStep = (vctp.VoltageMax - vctp.VoltageMin) / (fine ? 0.01 : 0.05);
+          UnitsNet.Frequency memoryClockStep = (vctp.MemoryClockMax - vctp.MemoryClockMin) / (fine ? 1 : 5);
+          UnitsNet.Frequency coreClockStep = (vctp.CoreClockMax - vctp.CoreClockMin) / (fine ? 1 : 5);
+          UnitsNet.ElectricPotentialDc voltageStep = (vctp.VoltageMax - vctp.VoltageMin) / (fine ? 0.01 : 0.05);
           // memoryClock Min, max, step
           // CoreClock Min, max, step
           // memoryVoltage min, max, step
-          int memoryClockTune = vctp.MemoryClockMin;
-          int coreClockTune = vctp.CoreClockMin;
-          double voltageTune = vctp.VoltageMin;
+          UnitsNet.Frequency memoryClockTune = vctp.MemoryClockMin;
+          UnitsNet.Frequency coreClockTune = vctp.CoreClockMin;
+          UnitsNet.ElectricPotentialDc voltageTune = vctp.VoltageMin;
           // initialize the structures that monitor for miner SW stopping, or Rig rebooting
           while (voltageTune <= vctp.VoltageMax)
           {
@@ -107,7 +112,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
                 Power powerConsumptionTune = new Power();
                 // Or Detect a minerSW stoppage or detect a rig reboot
                 // Record the results for this combination of msw,mvc,mClock,cClock,and mVoltage
-                tuneMinerGPUsResultList.Add(new TuneMinerGPUsResult(coreClockTune, memoryClockTune, voltageTune, hashRatesTune, powerConsumptionTune));
+                tuneMinerGPUsResultList.Add(new TuneMinerGPUsResult(coreClockTune, voltageTune, hashRatesTune, memoryClockTune,  powerConsumptionTune));
                 memoryClockTune += memoryClockStep;
                 memoryClockTune = memoryClockTune > vctp.MemoryClockMax ?
                     vctp.MemoryClockMax :
@@ -121,20 +126,21 @@ namespace ATAP.Utilities.CryptoMiner.Models
           }
         }
       }
-      return tuneMinerGPUsResultList;
+      return tuneMinerGPUsResultList.ToList<ITuneMinerGPUsResult>();
     }
 
   }
-  public class ClaymoreZECMinerProcess : ClaymoreMinerProcess
+  public class ClaymoreZECMinerProcess : ClaymoreMinerProcessAbstract
   {
-    public ClaymoreZECMinerProcess(ClaymoreZECMinerSW computerSoftwareProgram, params object[] arguments) : base(computerSoftwareProgram, arguments)
+
+    public ClaymoreZECMinerProcess(MinerSWAbstract computerSoftwareProgram, Command command, params object[] arguments) : base(computerSoftwareProgram, command, arguments)
     {
     }
   }
-    public class ClaymoreETHDualMinerProcess : ClaymoreMinerProcess
+  public class ClaymoreETHDualMinerProcess : ClaymoreMinerProcessAbstract
+  {
+    public ClaymoreETHDualMinerProcess(MinerSWAbstract computerSoftwareProgram, Command command, params object[] arguments) : base(computerSoftwareProgram, command, arguments)
     {
-        public ClaymoreETHDualMinerProcess(ClaymoreETHDualMinerSW computerSoftwareProgram, params object[] arguments) : base(computerSoftwareProgram, arguments)
-        {
-        }
     }
+  }
 }

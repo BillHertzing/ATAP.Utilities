@@ -11,13 +11,17 @@ using Xunit;
 using Xunit.Abstractions;
 using ATAP.Utilities.ComputerInventory.Extensions;
 using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Models;
+using ATAP.Utilities.ComputerInventory.Configuration;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoCoin.Models;
 using ATAP.Utilities.CryptoCoin.Extensions;
 using ATAP.Utilities.CryptoMiner.Enumerations;
 using ATAP.Utilities.CryptoMiner.Models;
 using ATAP.Utilities.CryptoMiner.Extensions;
+using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
+using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
+using UnitsNet;
+
 namespace ATAP.Utilities.CryptoMiner.UnitTests
 {
     public class ClaymoreETHDualMinerFixture
@@ -134,8 +138,8 @@ namespace ATAP.Utilities.CryptoMiner.UnitTests
             Process.GetProcessesByName(fixture.claymoreETHDualMinerProcess.ComputerSoftwareProgram.ProcessName).ToList().ForEach(x => x.Kill());
             ConcurrentObservableCollection<string> stdErrorLines = new ConcurrentObservableCollection<string>();
             ConcurrentObservableCollection<string> stdOutLines = new ConcurrentObservableCollection<string>();
-            fixture.claymoreETHDualMinerProcess.Cmd.RedirectStandardErrorTo(stdErrorLines);
-            fixture.claymoreETHDualMinerProcess.Cmd.RedirectTo(stdOutLines);
+            fixture.claymoreETHDualMinerProcess.Command.RedirectStandardErrorTo(stdErrorLines);
+            fixture.claymoreETHDualMinerProcess.Command.RedirectTo(stdOutLines);
             var pid = fixture.claymoreETHDualMinerProcess.Start();
             // delay to settle
             Thread.Sleep(5);
@@ -168,10 +172,10 @@ namespace ATAP.Utilities.CryptoMiner.UnitTests
     [Fact]
     public void RigConfigBuilderToJSON()
     {
-      ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW> minerSWs = new ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSW>();
+      ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSWAbstract> minerSWs = new ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSWAbstract>();
       ConcurrentObservableDictionary<int, MinerGPU> minerGPUs = new ConcurrentObservableDictionary<int, MinerGPU>();
       PowerConsumption pc = new PowerConsumption() { Period = new TimeSpan(0, 1, 0), Watts = 1000.0 };
-      TempAndFan tf = new TempAndFan { Temp = 50, FanPct = 95.5 };
+      TempAndFan tf = new TempAndFan() { Temp = new Temperature(50, UnitsNet.Units.TemperatureUnit.DegreeFahrenheit), FanPct = new Ratio(95.5, UnitsNet.Units.RatioUnit.Percent)};
 
       RigConfig rc = RigConfigBuilder.CreateNew()
          .AddMinerSWs(minerSWs)

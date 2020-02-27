@@ -6,30 +6,6 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
 {
-  public class Fixture
-  {
-    ITestOutputHelper TestOutput { get; }
-
-    public Fixture()
-    {
-      // dcsUnderTest = new DefaultConfigurationSettings();
-
-      //    new EnumSerializerConfigurator()
-      //.WithAssemblies(AppDomain.CurrentDomain.GetAssemblies())
-      //.WithNamespaceFilter(ns => ns.StartsWith("ATAP"))
-      //.Configure();
-    }
-    public Fixture(ITestOutputHelper testOutput)
-    {
-      TestOutput = testOutput;
-      // dcsUnderTest = new DefaultConfigurationSettings();
-
-      //    new EnumSerializerConfigurator()
-      //.WithAssemblies(AppDomain.CurrentDomain.GetAssemblies())
-      //.WithNamespaceFilter(ns => ns.StartsWith("ATAP"))
-      //.Configure();
-    }
-  }
 
   public class ComputerInventoryConfigurationUnitTests001 : IClassFixture<Fixture>
   {

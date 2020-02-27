@@ -127,6 +127,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInve
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Enumerations.Software", "ATAP.Utilities.ComputerInventory.Enumerations.Software\ATAP.Utilities.ComputerInventory.Enumerations.Software.csproj", "{9DCAC849-3820-41B5-967D-A321C71AF9FA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.TypedGuids", "ATAP.Utilities.TypedGuids\ATAP.Utilities.TypedGuids.csproj", "{0A955373-6DDF-4EC5-B6BC-F9525D4BADDF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.CryptoMiner.Interfaces", "ATAP.Utilities.CryptoMiner.Interfaces\ATAP.Utilities.CryptoMiner.Interfaces.csproj", "{622619DB-7475-4A41-B03D-F50EA59B5981}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.CryptoCoin.Interfaces", "ATAP.Utilities.CryptoCoin.Interfaces\ATAP.Utilities.CryptoCoin.Interfaces.csproj", "{0B53AFE8-D9E3-4EF6-9DA1-484B9B5A30FC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -216,7 +222,6 @@ Global
 		{BA77F91E-3BE9-4F1C-956A-56EE711E002D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA77F91E-3BE9-4F1C-956A-56EE711E002D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{84AAB1CA-DCF2-40A3-B82B-1A8721A831E4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5BBC9254-FAB7-4EED-980F-F256387D7D80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -319,6 +324,18 @@ Global
 		{9DCAC849-3820-41B5-967D-A321C71AF9FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9DCAC849-3820-41B5-967D-A321C71AF9FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9DCAC849-3820-41B5-967D-A321C71AF9FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A955373-6DDF-4EC5-B6BC-F9525D4BADDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A955373-6DDF-4EC5-B6BC-F9525D4BADDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A955373-6DDF-4EC5-B6BC-F9525D4BADDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A955373-6DDF-4EC5-B6BC-F9525D4BADDF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{622619DB-7475-4A41-B03D-F50EA59B5981}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{622619DB-7475-4A41-B03D-F50EA59B5981}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{622619DB-7475-4A41-B03D-F50EA59B5981}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{622619DB-7475-4A41-B03D-F50EA59B5981}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B53AFE8-D9E3-4EF6-9DA1-484B9B5A30FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B53AFE8-D9E3-4EF6-9DA1-484B9B5A30FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B53AFE8-D9E3-4EF6-9DA1-484B9B5A30FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B53AFE8-D9E3-4EF6-9DA1-484B9B5A30FC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

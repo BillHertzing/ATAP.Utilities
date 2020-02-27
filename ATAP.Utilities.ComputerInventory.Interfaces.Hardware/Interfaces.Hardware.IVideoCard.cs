@@ -3,12 +3,12 @@ namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
   public interface IVideoCard
   {
     string BIOSVersion { get; }
-    double CoreClock { get; }
-    double CoreVoltage { get; }
+    UnitsNet.Frequency CoreClock { get; }
+    UnitsNet.Units.ElectricPotentialDcUnit CoreVoltage { get; }
     string DeviceID { get; }
     bool IsStrapped { get; }
-    double MemClock { get; }
-    double PowerLimit { get; }
+    UnitsNet.Frequency MemClock { get; }
+    UnitsNet.Units.PowerUnit PowerLimit { get; }
     IVideoCardDiscriminatingCharacteristics VideoCardDiscriminatingCharacteristics { get; }
   }
 }

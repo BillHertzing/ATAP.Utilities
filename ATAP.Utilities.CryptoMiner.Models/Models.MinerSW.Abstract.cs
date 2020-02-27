@@ -9,227 +9,209 @@ using ATAP.Utilities.CryptoCoin.Models;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoMiner.Models;
 using ATAP.Utilities.CryptoMiner.Enumerations;
-using ATAP.Utilities.ComputerInventory.Models;
+using ATAP.Utilities.ComputerInventory.Configuration;
+using ATAP.Utilities.ComputerInventory.Configuration.Software;
+using ATAP.Utilities.CryptoMiner.Interfaces;
+
+using UnitsNet.Units;
 
 namespace ATAP.Utilities.CryptoMiner.Models
 {
-    public static class MinerSWToMinerGPU
-    {
-        public static ConcurrentObservableDictionary<MinerGPU, MinerSW> minerSWToMinerGPU;
-
-        static MinerSWToMinerGPU()
-        {
-            minerSWToMinerGPU = new ConcurrentObservableDictionary<MinerGPU, MinerSW>();
-        }
-    }
-
-    public class MinerConfigSettings
-    {
-        Coin[] CoinsMined;
-        MinerSWE kind;
-
-        int ApiPort { get; set; }
-        int[][] CoinVideoCardIntensity { get; set; }
-        int CoreClock { get; set; }
-        int MemoryClock { get; set; }
-        int MemoryVoltage { get; set; }
-        int NumVideoCardsToPowerUpInParallel { get; set; }
-        string[] PoolPasswords { get; set; }
-        string[][] Pools { get; set; }
-        string[] PoolWallets { get; set; }
-
-        public MinerSWE Kind { get => kind; }
-    }
-
-    public abstract class MinerSW : ComputerSoftwareProgram
-    {
-        readonly Coin[] coinsMined;
-        readonly MinerSWE kind;
-
-        public MinerSW(string processName, string processPath, string processStartPath, string version, bool hasConfigurationSettings, ConcurrentObservableDictionary<string, string> configurationSettings, string configFilePath, bool hasLogFiles, string logFileFolder, string logFileFnPattern, bool hasAPI, bool hasSTDOut, bool hasERROut, Coin[] coinsMined) : base(processName,
-                                                                                                                                                                                                                                                                                                                                                                                            processPath,
-                                                                                                                                                                                                                                                                                                                                                                                            processStartPath,
-                                                                                                                                                                                                                                                                                                                                                                                            version,
-                                                                                                                                                                                                                                                                                                                                                                                            hasConfigurationSettings,
-                                                                                                                                                                                                                                                                                                                                                                                            configurationSettings,
-                                                                                                                                                                                                                                                                                                                                                                                            configFilePath,
-                                                                                                                                                                                                                                                                                                                                                                                            hasLogFiles,
-                                                                                                                                                                                                                                                                                                                                                                                            logFileFolder,
-                                                                                                                                                                                                                                                                                                                                                                                            logFileFnPattern,
-                                                                                                                                                                                                                                                                                                                                                                                            hasAPI,
-                                                                                                                                                                                                                                                                                                                                                                                            hasSTDOut,
-                                                                                                                                                                                                                                                                                                                                                                                            hasERROut)
-        {
-            this.coinsMined = coinsMined;
-        }
-
-        public Coin[] CoinsMined => coinsMined;
-
-        public MinerSWE Kind => kind;
-
-        public string[][] Pools { get; set; }
-    }
-
-    public interface IMinerSWBuilder
-    {
-        MinerSW Build();
-    }
-
-    public interface IMinerStatus
-    {
-        int ID { get; }
-        MinerSWE Kind { get; }
-        IMinerStatusDetails MinerStatusDetails { get; }
-        TimeBlock Moment { get; }
-        string StatusQueryError { get; }
-        string Version { get; }
-    }
-
-    public abstract class MinerStatus : IMinerStatus
-    {
-        readonly int iD;
-        readonly MinerSWE kind;
-        readonly IMinerStatusDetails minerStatusDetails;
-        readonly TimeBlock moment;
-        readonly string statusQueryError;
-        readonly string version;
-
-        public MinerStatus(string str)
-        {
-        }
-        public MinerStatus(int iD, MinerSWE kind, MinerStatusDetails minerStatusDetails, string statusQueryError, string version, TimeBlock moment)
-        {
-            this.iD = iD;
-            this.kind = kind;
-            this.minerStatusDetails = minerStatusDetails;
-            this.statusQueryError = statusQueryError;
-            this.version = version;
-            this.moment = moment;
-        }
-
-        public int ID => iD;
-
-        public MinerSWE Kind => kind;
-
-        public IMinerStatusDetails MinerStatusDetails => minerStatusDetails;
-
-        public TimeBlock Moment => moment;
-
-        public string StatusQueryError => statusQueryError;
-
-        public string Version => version;
-    }
-
-    public interface IMinerStatusDetails
-    {
-        MinerSWE Kind { get; }
-        ConcurrentObservableDictionary<int, double> PerGPUFanPct { get; }
-        ConcurrentObservableDictionary<int, ConcurrentObservableDictionary<Coin, double>> PerGPUPerCoinHashRate { get; }
-        ConcurrentObservableDictionary<int, Power> PerGPUPowerConsumption { get; }
-        ConcurrentObservableDictionary<int, Temperature> PerGPUTemperature { get; }
-        string RunningTime { get; }
-        ConcurrentObservableDictionary<Coin, double> TotalPerCoinHashRate { get; }
-        ConcurrentObservableDictionary<Coin, int> TotalPerCoinInvalidShares { get; }
-        ConcurrentObservableDictionary<Coin, int> TotalPerCoinPoolSwitches { get; }
-        ConcurrentObservableDictionary<Coin, int> TotalPerCoinRejectedShares { get; }
-        ConcurrentObservableDictionary<Coin, int> TotalPerCoinShares { get; }
-        string Version { get; }
-    }
-
-    public abstract class MinerStatusDetails : IMinerStatusDetails
-    {
-        readonly MinerSWE kind;
-        readonly ConcurrentObservableDictionary<int, double> perGPUFanPct;
-        readonly ConcurrentObservableDictionary<int, ConcurrentObservableDictionary<Coin, double>> perGPUPerCoinHashRate;
-        readonly ConcurrentObservableDictionary<int, Power> perGPUPowerConsumption;
-        readonly ConcurrentObservableDictionary<int, Temperature> perGPUTemperature;
-        readonly string runningTime;
-        readonly ConcurrentObservableDictionary<Coin, double> totalPerCoinHashRate;
-        readonly ConcurrentObservableDictionary<Coin, int> totalPerCoinInvalidShares;
-        readonly ConcurrentObservableDictionary<Coin, int> totalPerCoinPoolSwitches;
-        readonly ConcurrentObservableDictionary<Coin, int> totalPerCoinRejectedShares;
-        readonly ConcurrentObservableDictionary<Coin, int> totalPerCoinShares;
-
-        readonly string version;
-
-        public MinerStatusDetails(string str)
-        {
-        }
-
-        public MinerStatusDetails(MinerSWE kind, string version, string runningTime, ConcurrentObservableDictionary<Coin, double> totalPerCoinHashRate, ConcurrentObservableDictionary<Coin, int> totalPerCoinShares, ConcurrentObservableDictionary<Coin, int> totalPerCoinRejectedShares, ConcurrentObservableDictionary<Coin, int> totalPerCoinInvalidShares, ConcurrentObservableDictionary<Coin, int> totalPerCoinPoolSwitches, ConcurrentObservableDictionary<int, ConcurrentObservableDictionary<Coin, double>> perGPUPerCoinHashRate, ConcurrentObservableDictionary<int, Temperature> perGPUTemperature, ConcurrentObservableDictionary<int, double> perGPUFanPct, ConcurrentObservableDictionary<int, Power> perGPUPowerConsumption)
-        {
-            this.version = version;
-            this.runningTime = runningTime;
-            this.totalPerCoinHashRate = totalPerCoinHashRate;
-            this.totalPerCoinShares = totalPerCoinShares;
-            this.totalPerCoinRejectedShares = totalPerCoinRejectedShares;
-            this.totalPerCoinInvalidShares = totalPerCoinInvalidShares;
-            this.totalPerCoinPoolSwitches = totalPerCoinPoolSwitches;
-            this.perGPUPerCoinHashRate = perGPUPerCoinHashRate;
-            this.perGPUTemperature = perGPUTemperature;
-            this.perGPUFanPct = perGPUFanPct;
-            this.perGPUPowerConsumption = perGPUPowerConsumption;
-            this.kind = kind;
-        }
-
-        public MinerSWE Kind => kind;
-
-        public ConcurrentObservableDictionary<int, double> PerGPUFanPct => perGPUFanPct;
-
-        public ConcurrentObservableDictionary<int, ConcurrentObservableDictionary<Coin, double>> PerGPUPerCoinHashRate => perGPUPerCoinHashRate;
-
-        public ConcurrentObservableDictionary<int, Power> PerGPUPowerConsumption => perGPUPowerConsumption;
-
-        public ConcurrentObservableDictionary<int, Temperature> PerGPUTemperature => perGPUTemperature;
-
-        public string RunningTime => runningTime;
-
-        public ConcurrentObservableDictionary<Coin, double> TotalPerCoinHashRate => totalPerCoinHashRate;
-
-        public ConcurrentObservableDictionary<Coin, int> TotalPerCoinInvalidShares => totalPerCoinInvalidShares;
-
-        public ConcurrentObservableDictionary<Coin, int> TotalPerCoinPoolSwitches => totalPerCoinPoolSwitches;
-
-        public ConcurrentObservableDictionary<Coin, int> TotalPerCoinRejectedShares => totalPerCoinRejectedShares;
-
-        public ConcurrentObservableDictionary<Coin, int> TotalPerCoinShares => totalPerCoinShares;
-
-        public string Version => version;
-    }
-
-  public interface ITuneMinerGPUsResult
+  public static class MinerSWToMinerGPU
   {
-    double CoreClock { get; }
-    double CoreVoltage { get; }
-    ConcurrentObservableDictionary<Coin, HashRate> HashRates { get; }
-    double MemClock { get; }
-    Power PowerConsumption { get; }
+    public static ConcurrentObservableDictionary<MinerGPU, MinerSWAbstract> minerSWToMinerGPU;
+
+    static MinerSWToMinerGPU()
+    {
+      minerSWToMinerGPU = new ConcurrentObservableDictionary<MinerGPU, MinerSWAbstract>();
+    }
   }
-  public class TuneMinerGPUsResult : ITuneMinerGPUsResult
-  {
-    readonly double coreClock;
-    readonly double coreVoltage;
-    readonly ConcurrentObservableDictionary<Coin, HashRate> hashRates;
-    readonly double memClock;
-    readonly Power powerConsumption;
 
-    public TuneMinerGPUsResult(double coreClock, double memClock, double coreVoltage, ConcurrentObservableDictionary<Coin, HashRate> hashRates, Power powerConsumption)
+  public class MinerConfigSettings : IMinerConfigSettings
+  {
+    public MinerConfigSettings()
     {
-      this.coreClock = coreClock;
-      this.memClock = memClock;
-      this.coreVoltage = coreVoltage;
-      this.hashRates = hashRates;
-      this.powerConsumption = powerConsumption;
     }
 
-    public double CoreClock => coreClock;
+    public MinerConfigSettings(Coin[] coinsMined, int apiPort, int[][] coinVideoCardIntensity, FrequencyUnit coreClock, FrequencyUnit memoryClock, ElectricPotentialDcUnit memoryVoltage, int numVideoCardsToPowerUpInParallel, string[] poolPasswords, string[][] pools, string[] poolWallets, MinerSWE kind)
+    {
+      CoinsMined = coinsMined ?? throw new ArgumentNullException(nameof(coinsMined));
+      ApiPort = apiPort;
+      CoinVideoCardIntensity = coinVideoCardIntensity ?? throw new ArgumentNullException(nameof(coinVideoCardIntensity));
+      CoreClock = coreClock;
+      MemoryClock = memoryClock;
+      MemoryVoltage = memoryVoltage;
+      NumVideoCardsToPowerUpInParallel = numVideoCardsToPowerUpInParallel;
+      PoolPasswords = poolPasswords ?? throw new ArgumentNullException(nameof(poolPasswords));
+      Pools = pools ?? throw new ArgumentNullException(nameof(pools));
+      PoolWallets = poolWallets ?? throw new ArgumentNullException(nameof(poolWallets));
+      Kind = kind;
+    }
 
-    public double CoreVoltage => coreVoltage;
+    public Coin[] CoinsMined { get; set; }
 
-    public ConcurrentObservableDictionary<Coin, HashRate> HashRates => hashRates;
+    public int ApiPort { get; set; }
+    public int[][] CoinVideoCardIntensity { get; set; }
+    UnitsNet.Units.FrequencyUnit CoreClock { get; set; }
+    public UnitsNet.Units.FrequencyUnit MemoryClock { get; set; }
+    public UnitsNet.Units.ElectricPotentialDcUnit MemoryVoltage { get; set; }
+    public int NumVideoCardsToPowerUpInParallel { get; set; }
+    public string[] PoolPasswords { get; set; }
+    public string[][] Pools { get; set; }
+    public string[] PoolWallets { get; set; }
 
-    public double MemClock => memClock;
+    public MinerSWE Kind { get; }
+  }
 
-    public Power PowerConsumption => powerConsumption;
+  public abstract class MinerSWAbstract : ComputerSoftwareProgram, IMinerSWAbstract
+  {
+    public MinerSWAbstract(string processName, string processPath, string version, string processStartPath, bool hasConfigurationSettings, ConcurrentObservableDictionary<string, string> configurationSettings, string configFilePath, bool hasSTDOut, bool hasERROut, bool hasAPI, string aPIDiscoveryURL, bool hasLogFiles, string logFileFolder, string logFileFnPattern, Coin[] coinsMined, string[][] pools) : base(processName, processPath, version, processStartPath, hasConfigurationSettings, configurationSettings, configFilePath, hasSTDOut, hasERROut, hasAPI, aPIDiscoveryURL, hasLogFiles, logFileFolder, logFileFnPattern)
+    {
+      CoinsMined = coinsMined ?? throw new ArgumentNullException(nameof(coinsMined));
+      Pools = pools ?? throw new ArgumentNullException(nameof(pools));
+    }
+
+    public Coin[] CoinsMined { get; }
+
+    public string[][] Pools { get; set; }
+  }
+
+  public interface IMinerSWBuilder
+  {
+    MinerSWAbstract Build();
+  }
+
+  public abstract class MinerStatusAbstract : IMinerStatusAbstract
+  {
+    public MinerStatusAbstract()
+    {
+    }
+    public MinerStatusAbstract(int iD, MinerStatusDetailsAbstract minerStatusDetails, string statusQueryError, string version, TimeBlock moment)
+    {
+      this.ID = iD;
+      this.MinerStatusDetails = minerStatusDetails;
+      this.StatusQueryError = statusQueryError;
+      this.Version = version;
+      this.Moment = moment;
+    }
+
+    public int ID { get; }
+
+    public IMinerStatusDetailsAbstract MinerStatusDetails { get; }
+
+    public ITimeBlock Moment { get; }
+
+    public string StatusQueryError { get; }
+
+    public string Version { get; }
+  }
+
+
+
+  public abstract class MinerStatusDetailsAbstract : IMinerStatusDetailsAbstract
+  {
+    public MinerStatusDetailsAbstract()
+    {
+    }
+
+    public MinerStatusDetailsAbstract(ConcurrentObservableDictionary<int, Ratio> perGPUFanPct, ConcurrentObservableDictionary<int, ConcurrentObservableDictionary<Coin, double>> perGPUPerCoinHashRate, ConcurrentObservableDictionary<int, Power> perGPUPowerConsumption, ConcurrentObservableDictionary<int, Temperature> perGPUTemperature, string runningTime, ConcurrentObservableDictionary<Coin, double> totalPerCoinHashRate, ConcurrentObservableDictionary<Coin, int> totalPerCoinInvalidShares, ConcurrentObservableDictionary<Coin, int> totalPerCoinPoolSwitches, ConcurrentObservableDictionary<Coin, int> totalPerCoinRejectedShares, ConcurrentObservableDictionary<Coin, int> totalPerCoinShares, string version)
+    {
+      PerGPUFanPct = perGPUFanPct ?? throw new ArgumentNullException(nameof(perGPUFanPct));
+      PerGPUPerCoinHashRate = perGPUPerCoinHashRate ?? throw new ArgumentNullException(nameof(perGPUPerCoinHashRate));
+      PerGPUPowerConsumption = perGPUPowerConsumption ?? throw new ArgumentNullException(nameof(perGPUPowerConsumption));
+      PerGPUTemperature = perGPUTemperature ?? throw new ArgumentNullException(nameof(perGPUTemperature));
+      RunningTime = runningTime ?? throw new ArgumentNullException(nameof(runningTime));
+      TotalPerCoinHashRate = totalPerCoinHashRate ?? throw new ArgumentNullException(nameof(totalPerCoinHashRate));
+      TotalPerCoinInvalidShares = totalPerCoinInvalidShares ?? throw new ArgumentNullException(nameof(totalPerCoinInvalidShares));
+      TotalPerCoinPoolSwitches = totalPerCoinPoolSwitches ?? throw new ArgumentNullException(nameof(totalPerCoinPoolSwitches));
+      TotalPerCoinRejectedShares = totalPerCoinRejectedShares ?? throw new ArgumentNullException(nameof(totalPerCoinRejectedShares));
+      TotalPerCoinShares = totalPerCoinShares ?? throw new ArgumentNullException(nameof(totalPerCoinShares));
+      Version = version ?? throw new ArgumentNullException(nameof(version));
+    }
+
+    public ConcurrentObservableDictionary<int, UnitsNet.Ratio> PerGPUFanPct { get; }
+
+    public ConcurrentObservableDictionary<int, ConcurrentObservableDictionary<Coin, double>> PerGPUPerCoinHashRate { get; }
+
+    public ConcurrentObservableDictionary<int, UnitsNet.Power> PerGPUPowerConsumption { get; }
+
+    public ConcurrentObservableDictionary<int, UnitsNet.Temperature> PerGPUTemperature { get; }
+
+    public string RunningTime { get; }
+
+    public ConcurrentObservableDictionary<Coin, double> TotalPerCoinHashRate { get; }
+
+    public ConcurrentObservableDictionary<Coin, int> TotalPerCoinInvalidShares { get; }
+
+    public ConcurrentObservableDictionary<Coin, int> TotalPerCoinPoolSwitches { get; }
+
+    public ConcurrentObservableDictionary<Coin, int> TotalPerCoinRejectedShares { get; }
+
+    public ConcurrentObservableDictionary<Coin, int> TotalPerCoinShares { get; }
+
+    public string Version { get; }
+  }
+
+
+  public class TuneMinerGPUsResult : ITuneMinerGPUsResult, IEquatable<TuneMinerGPUsResult>
+  {
+    public TuneMinerGPUsResult()
+    {
+    }
+
+    public TuneMinerGPUsResult(Frequency coreClock, ElectricPotentialDc coreVoltage, ConcurrentObservableDictionary<Coin, HashRate> hashRates, Frequency memClock, Power powerConsumption)
+    {
+      CoreClock = coreClock;
+      CoreVoltage = coreVoltage;
+      HashRates = hashRates ?? throw new ArgumentNullException(nameof(hashRates));
+      MemClock = memClock;
+      PowerConsumption = powerConsumption;
+    }
+
+    public UnitsNet.Frequency CoreClock { get; }
+
+    public UnitsNet.ElectricPotentialDc CoreVoltage { get; }
+
+    public ConcurrentObservableDictionary<Coin, HashRate> HashRates { get; }
+
+    public UnitsNet.Frequency MemClock { get; }
+
+    public UnitsNet.Power PowerConsumption { get; }
+
+    public override bool Equals(object obj)
+    {
+      return Equals(obj as TuneMinerGPUsResult);
+    }
+
+    public bool Equals(TuneMinerGPUsResult other)
+    {
+      return other != null &&
+             CoreClock.Equals(other.CoreClock) &&
+             CoreVoltage.Equals(other.CoreVoltage) &&
+             EqualityComparer<ConcurrentObservableDictionary<Coin, HashRate>>.Default.Equals(HashRates, other.HashRates) &&
+             MemClock.Equals(other.MemClock) &&
+             PowerConsumption.Equals(other.PowerConsumption);
+    }
+
+    public override int GetHashCode()
+    {
+      var hashCode = -1949465691;
+      hashCode = hashCode * -1521134295 + CoreClock.GetHashCode();
+      hashCode = hashCode * -1521134295 + CoreVoltage.GetHashCode();
+      hashCode = hashCode * -1521134295 + EqualityComparer<ConcurrentObservableDictionary<Coin, HashRate>>.Default.GetHashCode(HashRates);
+      hashCode = hashCode * -1521134295 + MemClock.GetHashCode();
+      hashCode = hashCode * -1521134295 + PowerConsumption.GetHashCode();
+      return hashCode;
+    }
+
+    public static bool operator ==(TuneMinerGPUsResult left, TuneMinerGPUsResult right)
+    {
+      return EqualityComparer<TuneMinerGPUsResult>.Default.Equals(left, right);
+    }
+
+    public static bool operator !=(TuneMinerGPUsResult left, TuneMinerGPUsResult right)
+    {
+      return !(left == right);
+    }
   }
 }

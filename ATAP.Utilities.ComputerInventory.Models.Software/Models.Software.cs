@@ -4,71 +4,51 @@ using System.Runtime.Serialization;
 using ATAP.Utilities.ConcurrentObservableCollections;
 using ATAP.Utilities.ComputerInventory.Interfaces.Software;
 
-namespace ATAP.Utilities.ComputerInventory.Models.Software
+namespace ATAP.Utilities.ComputerInventory.Configuration.Software
 {
- 
 
-    [Serializable]
-    public class ComputerSoftwareProgram : IComputerSoftwareProgram
+  [Serializable]
+  public class ComputerSoftwareProgram : IComputerSoftwareProgram
+  {
+    public ComputerSoftwareProgram()
     {
-        readonly string configFilePath;
-        readonly ConcurrentObservableDictionary<string, string> configurationSettings;
-        readonly bool hasAPI;
-        readonly bool hasConfigurationSettings;
-        readonly bool hasERROut;
-        readonly bool hasLogFiles;
-        readonly bool hasSTDOut;
-        readonly string logFileFnPattern;
-        readonly string logFileFolder;
-        //ComputerSW kind;
-        readonly string processName;
-        readonly string processPath;
-        readonly string processStartPath;
-        readonly string version;
-
-        public ComputerSoftwareProgram(string processName, string processPath, string processStartPath, string version, bool hasConfigurationSettings, ConcurrentObservableDictionary<string, string> configurationSettings, string configFilePath, bool hasLogFiles, string logFileFolder, string logFileFnPattern, bool hasAPI, bool hasSTDOut, bool hasERROut)
-        {
-            this.processName = processName;
-            this.processPath = processPath;
-            this.processStartPath = processStartPath;
-            this.version = version;
-            this.hasConfigurationSettings = hasConfigurationSettings;
-            this.configurationSettings = configurationSettings;
-            this.configFilePath = configFilePath;
-            this.hasLogFiles = hasLogFiles;
-            this.logFileFolder = logFileFolder;
-            this.logFileFnPattern = logFileFnPattern;
-            this.hasAPI = hasAPI;
-            this.hasSTDOut = hasSTDOut;
-            this.hasERROut = hasERROut;
-        }
-
-        public string ConfigFilePath => configFilePath;
-
-        public ConcurrentObservableDictionary<string, string> ConfigurationSettings => configurationSettings;
-
-        public bool HasAPI => hasAPI;
-
-        public bool HasConfigurationSettings => hasConfigurationSettings;
-
-        public bool HasERROut => hasERROut;
-
-        public bool HasLogFiles => hasLogFiles;
-
-        public bool HasSTDOut => hasSTDOut;
-
-        public string LogFileFnPattern => logFileFnPattern;
-
-        public string LogFileFolder => logFileFolder;
-
-        public string ProcessName => processName;
-
-        public string ProcessPath => processPath;
-
-        public string ProcessStartPath => processStartPath;
-
-        public string Version => version;
     }
+
+    public ComputerSoftwareProgram(string processName, string processPath, string version, string processStartPath, bool hasConfigurationSettings,  ConcurrentObservableDictionary<string, string> configurationSettings, string configFilePath, bool hasSTDOut, bool hasERROut, bool hasAPI, string aPIDiscoveryURL, bool hasLogFiles, string logFileFolder, string logFileFnPattern )
+    {
+      ProcessName = processName ?? throw new ArgumentNullException(nameof(processName));
+      ProcessPath = processPath ?? throw new ArgumentNullException(nameof(processPath));
+      Version = version ?? throw new ArgumentNullException(nameof(version));
+      ProcessStartPath = processStartPath ?? throw new ArgumentNullException(nameof(processStartPath));
+      ConfigFilePath = configFilePath ?? throw new ArgumentNullException(nameof(configFilePath));
+      ConfigurationSettings = configurationSettings ?? throw new ArgumentNullException(nameof(configurationSettings));
+      HasAPI = hasAPI;
+      APIDiscoveryURL = aPIDiscoveryURL ?? throw new ArgumentNullException(nameof(aPIDiscoveryURL));
+      HasConfigurationSettings = hasConfigurationSettings;
+      HasERROut = hasERROut;
+      HasLogFiles = hasLogFiles;
+      HasSTDOut = hasSTDOut;
+      LogFileFnPattern = logFileFnPattern ?? throw new ArgumentNullException(nameof(logFileFnPattern));
+      LogFileFolder = logFileFolder ?? throw new ArgumentNullException(nameof(logFileFolder));
+    }
+
+    public string APIDiscoveryURL { get; }
+    public string ConfigFilePath { get; }
+    public ConcurrentObservableDictionary<string, string> ConfigurationSettings { get; }
+    public bool HasAPI { get; }
+    public bool HasConfigurationSettings { get; }
+    public bool HasERROut { get; }
+    public bool HasLogFiles { get; }
+    public bool HasSTDOut { get; }
+    public string LogFileFnPattern { get; }
+    public string LogFileFolder { get; }
+    //ComputerSW Kind{ get; }
+    public string ProcessName { get; }
+    public string ProcessPath { get; }
+    public string ProcessStartPath { get; }
+    public string Version { get; }
+
+  }
 
 
   [Serializable]
@@ -118,21 +98,26 @@ namespace ATAP.Utilities.ComputerInventory.Models.Software
     }
   }
 
+
+
   [Serializable]
-  public class ComputerSoftware : IEquatable<IComputerSoftware>, IComputerSoftware
+  public class ComputerSoftware : IComputerSoftware, IEquatable<ComputerSoftware>
   {
     public ComputerSoftware()
     {
     }
 
-    public ComputerSoftware(List<IComputerSoftwareDriver> computerSoftwareDrivers, List<IComputerSoftwareProgram> computerSoftwarePrograms)
+    public ComputerSoftware(OperatingSystem operatingSystem, List<IComputerSoftwareDriver> computerSoftwareDrivers, List<IComputerSoftwareProgram> computerSoftwarePrograms)
     {
+      OperatingSystem = operatingSystem ?? throw new ArgumentNullException(nameof(operatingSystem));
       ComputerSoftwareDrivers = computerSoftwareDrivers ?? throw new ArgumentNullException(nameof(computerSoftwareDrivers));
       ComputerSoftwarePrograms = computerSoftwarePrograms ?? throw new ArgumentNullException(nameof(computerSoftwarePrograms));
     }
 
+
+
     // ToDo implement OS when the bug in dot net core is fixed. this type cannot be serialized by newtonSoft in dot net core v2
-    //readonly OperatingSystem oS;
+    public OperatingSystem OperatingSystem { get; }
     public List<IComputerSoftwareDriver> ComputerSoftwareDrivers { get; }
     public List<IComputerSoftwareProgram> ComputerSoftwarePrograms { get; }
 
@@ -141,21 +126,21 @@ namespace ATAP.Utilities.ComputerInventory.Models.Software
       return Equals(obj as ComputerSoftware);
     }
 
-    public bool Equals(IComputerSoftware other)
+    public bool Equals(ComputerSoftware other)
     {
       return other != null &&
+             EqualityComparer<OperatingSystem>.Default.Equals(OperatingSystem, other.OperatingSystem) &&
              EqualityComparer<List<IComputerSoftwareDriver>>.Default.Equals(ComputerSoftwareDrivers, other.ComputerSoftwareDrivers) &&
              EqualityComparer<List<IComputerSoftwareProgram>>.Default.Equals(ComputerSoftwarePrograms, other.ComputerSoftwarePrograms);
     }
 
     public override int GetHashCode()
     {
-      var hashCode = 398348444;
-      //ToDo: Fix This
-      // hashCode = hashCode * -1521134295 + EqualityComparer<List<ComputerSoftwareDriver>>.Default.GetHashCode(IComputerSoftwareDrivers);
-      //hashCode = hashCode * -1521134295 + EqualityComparer<List<ComputerSoftwareProgram>>.Default.GetHashCode(IComputerSoftwarePrograms);
-      //return hashCode;
-      throw new NotImplementedException();
+      var hashCode = -2024901995;
+      hashCode = hashCode * -1521134295 + EqualityComparer<OperatingSystem>.Default.GetHashCode(OperatingSystem);
+      hashCode = hashCode * -1521134295 + EqualityComparer<List<IComputerSoftwareDriver>>.Default.GetHashCode(ComputerSoftwareDrivers);
+      hashCode = hashCode * -1521134295 + EqualityComparer<List<IComputerSoftwareProgram>>.Default.GetHashCode(ComputerSoftwarePrograms);
+      return hashCode;
     }
 
     public static bool operator ==(ComputerSoftware left, ComputerSoftware right)

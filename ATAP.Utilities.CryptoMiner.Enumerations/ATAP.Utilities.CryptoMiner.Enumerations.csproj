@@ -15,15 +15,11 @@
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
-  
+
+  <!-- Documentation generation -->
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-  </ItemGroup>
-  
-  <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
-    <PackageReference Include="docfx">
-      <Version>2.40.2</Version>
-    </PackageReference>
+    <PackageReference Include="docfx" Version="2.40.2"/>
+    <Folder Include="Documentation\" />
   </ItemGroup>
 
 </Project>

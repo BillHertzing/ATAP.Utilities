@@ -1,7 +1,10 @@
 using System;
 using System.Linq;
 using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Models;
+using ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo;
+using ATAP.Utilities.ComputerInventory.Configuration;
+using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
+using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;

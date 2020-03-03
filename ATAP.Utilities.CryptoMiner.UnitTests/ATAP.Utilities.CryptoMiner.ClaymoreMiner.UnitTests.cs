@@ -21,6 +21,7 @@ using ATAP.Utilities.CryptoMiner.Extensions;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
 using UnitsNet;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
 
 namespace ATAP.Utilities.CryptoMiner.UnitTests
 {
@@ -174,7 +175,7 @@ namespace ATAP.Utilities.CryptoMiner.UnitTests
     {
       ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSWAbstract> minerSWs = new ConcurrentObservableDictionary<(MinerSWE minerSWE, string version, Coin[] coins), MinerSWAbstract>();
       ConcurrentObservableDictionary<int, MinerGPU> minerGPUs = new ConcurrentObservableDictionary<int, MinerGPU>();
-      PowerConsumption pc = new PowerConsumption() { Period = new TimeSpan(0, 1, 0), Watts = 1000.0 };
+      PowerConsumption pc = new PowerConsumption(new TimeSpan(0, 1, 0), new Power(1, UnitsNet.Units.PowerUnit.Watt));
       TempAndFan tf = new TempAndFan() { Temp = new Temperature(50, UnitsNet.Units.TemperatureUnit.DegreeFahrenheit), FanPct = new Ratio(95.5, UnitsNet.Units.RatioUnit.Percent)};
 
       RigConfig rc = RigConfigBuilder.CreateNew()

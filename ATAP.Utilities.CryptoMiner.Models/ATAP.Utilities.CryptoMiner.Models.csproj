@@ -16,10 +16,10 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
-    <PackageReference Include="docfx">
-      <Version>2.40.2</Version>
-    </PackageReference>
+  <!-- Documentation generation -->
+  <ItemGroup>
+    <PackageReference Include="docfx" Version="2.40.2" />
+    <Folder Include="Documentation\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,6 +37,10 @@
     <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Enumerations\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Interfaces\ATAP.Utilities.CryptoMiner.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Documentation\" />
   </ItemGroup>
  
 </Project>

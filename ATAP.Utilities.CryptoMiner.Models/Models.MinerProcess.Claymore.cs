@@ -13,6 +13,7 @@ using Medallion.Shell;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using ATAP.Utilities.CryptoMiner.Interfaces;
 using System.Linq;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
 
 namespace ATAP.Utilities.CryptoMiner.Models
 {
@@ -30,7 +31,10 @@ namespace ATAP.Utilities.CryptoMiner.Models
       //var msorigianlZEC = "{\"id\": 0, \"error\": null, \"result\": [\"12.6 - ZEC\", \"1676\", \"352; 1300; 4\", \"175; 177\", \"0; 0; 0\", \"off; off\", \"81; 100\", \"zec - us - east1.nanopool.org:6633\", \"0; 2; 0; 0\"]}";
       //var ms = "{\"id\": 0, \"error\": null, \"result\": [\"12.6 - ZEC\", \"1676\", \"352; 1300; 4\", \"175; 177\", \"0; 0; 0\", \"off; off\", \"81; 100\", \"zec - us - east1.nanopool.org:6633\", \"0; 2; 0; 0\"]}";
       // ToDo: Make this error message better
-      if (!(this.ComputerSoftwareProgram.HasAPI && this.ComputerSoftwareProgram.HasConfigurationSettings)) throw new NotImplementedException("This software does not implement StatusFetchAsync.");
+      if (!(this.ComputerSoftwareProgram.HasAPI && this.ComputerSoftwareProgram.HasConfigurationSettings))
+      {
+        throw new NotImplementedException("This software does not implement StatusFetchAsync.");
+      }
       // ToDo: decide if localhost, or IPV4 127.0.0.1, or IPV6, is better here
       //var host = "localhost";
       var host = Dns.GetHostName();
@@ -39,7 +43,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
       var port = 21200;
       //ToDo: Determine if the claymore miner SW API message should be stored in a text file
       var message = "{\"id\":0,\"jsonrpc\":\"2.0\",\"method\":\"miner_getstat1\"}";
-      byte[] responsebuffer = new byte[Tcp.Tcp.defaultMaxResponseBufferSize];
+      byte[] responsebuffer; // = new byte[Tcp.Tcp.defaultMaxResponseBufferSize];
       // ToDo figure out what to do about exceptions and policies  let exceptions bubble up?
       // If there is no process listening on the port, there will be an exception
       //ToDo add a cancellation token
@@ -75,7 +79,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
         {
           // Select the tuning strategy for this MinerSW and this VideoCard
           var vcdc = mg.VideoCardDiscriminatingCharacteristics;
-          VideoCardTuningParameters vctp = new VideoCardTuningParameters(); ; //ATAP.Utilities.ComputerInventory.Configuration.DefaultConfigurationSettings.TuningParameters[vcdc];
+          VideoCardTuningParameters vctp = new VideoCardTuningParameters(); ; //ATAP.Utilities.ComputerInventory.Configuration.DefaultConfiguration.TuningParameters[vcdc];
           // Calculate the step for each parameter
           UnitsNet.Frequency memoryClockStep = (vctp.MemoryClockMax - vctp.MemoryClockMin) / (fine ? 1 : 5);
           UnitsNet.Frequency coreClockStep = (vctp.CoreClockMax - vctp.CoreClockMin) / (fine ? 1 : 5);

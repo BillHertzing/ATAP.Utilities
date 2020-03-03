@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -20,7 +20,9 @@
     <PackageReference Include="docfx" Version="2.40.2" />
     <Folder Include="Documentation\" />
   </ItemGroup>
+  
   <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models.Hardware\ATAP.Utilities.ComputerInventory.Models.Hardware.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Interfaces\ATAP.Utilities.CryptoCoin.Interfaces.csproj" />

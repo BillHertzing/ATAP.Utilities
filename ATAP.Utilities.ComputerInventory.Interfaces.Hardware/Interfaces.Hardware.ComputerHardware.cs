@@ -14,7 +14,7 @@ namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
     bool IsMainboardEnabled { get; }
     bool IsVideoCardsEnabled { get; }
     IMainBoard MainBoard { get; }
-    TimeBlock Moment { get; }
+    ITimeBlock Moment { get; }
     IVideoCard[] VideoCards { get; }
   }
  

@@ -11,7 +11,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
 
   public abstract class MinerProcessAbstract : ComputerProcess, IMinerProcess
   {
-    public MinerProcessAbstract(MinerSWAbstract computerSoftwareProgram, Command command, params object[] arguments) : base(computerSoftwareProgram, command, arguments)
+    public MinerProcessAbstract(MinerSWAbstract computerSoftwareProgram,  params object[] arguments) : base(computerSoftwareProgram,  arguments)
     {
     }
 

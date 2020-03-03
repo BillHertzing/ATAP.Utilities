@@ -43,8 +43,13 @@
     <InternalsVisibleTo>ATAP.Utilities.ZSandbox.UnitTests</InternalsVisibleTo>
     <InternalsVisibleTo>DataFlowExPatterns</InternalsVisibleTo>
   </PropertyGroup>
-  
 
+  <!-- Documentation generation -->
+  <ItemGroup>
+    <PackageReference Include="docfx" Version="2.40.2" />
+    <Folder Include="Documentation\" />
+  </ItemGroup>
+  
     <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="NLog" Version="4.6.8" />
@@ -57,12 +62,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
-    <PackageReference Include="docfx">
-      <Version>2.40.2</Version>
-    </PackageReference>
-  </ItemGroup>
-
 
 </Project>

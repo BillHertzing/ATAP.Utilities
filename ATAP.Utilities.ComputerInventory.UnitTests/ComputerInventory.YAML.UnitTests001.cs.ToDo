@@ -10,77 +10,8 @@ using Xunit;
 using Xunit.Abstractions;
 using YamlDotNet.Serialization;
 
-namespace ATAP.Utilities.ComputerInventory.YAML.UnitTests {
-    public class Fixture {
-        public ComputerProcesses computerProcesses;
-    public int pidUnderTest;
-
-    public Fixture() {
-        mainBoard = new MainBoard(MainBoardMaker.ASUS, "ToDo:makeSocketanEnum");
-      cPU = new CPU(CPUMaker.Intel);
-      cPUs = new CPU[1];
-      cPUs[0] = cPU;
-      videoCardDiscriminatingCharacteristics = VideoCardsKnown.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
-          VideoCardMaker.ASUS
-          && x.GPUMaker == GPUMaker.NVIDEA))
-          .Single();
-      videoCard = new VideoCard(videoCardDiscriminatingCharacteristics,
-                                "ToDo:readfromcard",
-                                "ToDo:readfromcard",
-                                false,
-                                -1,
-                                -1,
-                                -1,
-                                -1
-                     );
-      videoCards = new VideoCard[1];
-      videoCards[0] = videoCard;
-      videoCardSensorData = new VideoCardSensorData(1000.0, 1333.0, 1.0, 1.0, 500.0, 85.0, 100.0);
-      computerHardware = new ComputerHardware(CPUs, MainBoard, VideoCards);
-    }
-
-    #region (fields) YAML Serializer/Deserializer
-    readonly Serializer serializer = new SerializerBuilder().Build() as Serializer;
-    readonly Deserializer deserializer = new DeserializerBuilder().Build() as Deserializer;
-    #endregion (fields) YAML Serializer/Deserializer
-
-
-    #region (properties) YAML Serializer/Deserializer
-    public Serializer Serializer => serializer;
-    public Deserializer Deserializer => deserializer;
-    #endregion (properties) YAML Serializer/Deserializer
-
-    #region (fields) one example of computer hardware 
-    readonly MainBoard mainBoard;
-    readonly CPU cPU;
-    readonly CPU[] cPUs;
-    readonly VideoCardDiscriminatingCharacteristics videoCardDiscriminatingCharacteristics;
-
-    readonly VideoCard videoCard;
-    readonly VideoCard[] videoCards;
-    readonly VideoCardSensorData videoCardSensorData;
-    readonly ComputerHardware computerHardware;
-    #endregion (fields) one example of computer hardware 
-
-    #region (properties) one example of computer hardware 
-    public CPU CPU => cPU;
-
-    public CPU[] CPUs => cPUs;
-
-    public MainBoard MainBoard => mainBoard;
-
-    public VideoCardDiscriminatingCharacteristics VideoCardDiscriminatingCharacteristics => videoCardDiscriminatingCharacteristics;
-
-    public VideoCard VideoCard => videoCard;
-
-    public VideoCard[] VideoCards => videoCards;
-
-    public ComputerHardware ComputerHardware => computerHardware;
-
-    public VideoCardSensorData VideoCardSensorData => videoCardSensorData;
-    #endregion (properties) one example of computer hardware 
-    }
-
+namespace ATAP.Utilities.ComputerInventory.UnitTests {
+    
   public class ComputerInventoryUnitTestsYAML : IClassFixture<Fixture>
   {
     readonly ITestOutputHelper output;

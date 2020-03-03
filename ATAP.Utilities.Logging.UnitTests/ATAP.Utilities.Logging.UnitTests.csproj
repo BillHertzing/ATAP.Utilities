@@ -32,6 +32,10 @@
   <ItemGroup>
     <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+  </ItemGroup>
   
     <ItemGroup>
     <None Update="NLog.config">

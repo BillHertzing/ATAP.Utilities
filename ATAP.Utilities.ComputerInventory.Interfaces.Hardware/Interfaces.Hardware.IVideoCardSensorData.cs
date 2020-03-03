@@ -2,12 +2,12 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
 {
   public interface IVideoCardSensorData
   {
-    double CoreClock { get; }
-    double CoreVoltage { get; }
+    UnitsNet.Units.FrequencyUnit CoreClock { get; }
+    UnitsNet.Units.ElectricPotentialDcUnit CoreVoltage { get; }
     double FanRPM { get; }
-    double MemClock { get; }
+    UnitsNet.Units.FrequencyUnit MemClock { get; }
     double PowerConsumption { get; }
     double PowerLimit { get; }
-    double Temp { get; }
+    UnitsNet.Units.TemperatureUnit Temp { get; }
   }
 }

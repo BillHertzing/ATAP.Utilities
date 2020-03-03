@@ -3,29 +3,35 @@ using Xunit;
 using ATAP.Utilities.ComputerInventory.Configuration;
 using FluentAssertions;
 using Xunit.Abstractions;
+using ATAP.Utilities.Testing;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
+namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
 
   public class ComputerInventoryConfigurationUnitTests001 : IClassFixture<Fixture>
   {
 
-    readonly ITestOutputHelper output;
     protected Fixture Fixture { get; }
-    public ComputerInventoryConfigurationUnitTests001(ITestOutputHelper output, Fixture fixture)
+    protected ITestOutputHelper TestOutput { get; }
+
+    public ComputerInventoryConfigurationUnitTests001(ITestOutputHelper testOutput, Fixture fixture)
     {
-      this.output = output;
       Fixture = fixture;
+      TestOutput = testOutput;
     }
 
-      [Theory]
-      [InlineData("{\"ComputerSoftwareProgram\":{\"ProcessName\":powershell}}")]
-      public void DefaultConfigurationSettingsAsExpected(params string[] _testdatainput)
-      {
-        output.WriteLine("test {0}", "DefaultConfigurationSettingsAsExpected");
-      ATAP.Utilities.ComputerInventory.Configuration.DefaultConfigurationSettings.Dcs.Should().HaveCount(1, "Because we're just getting started");
-        DefaultConfigurationSettings.Dcs.ToString().Should().Match(_testdatainput[0]);
-      }
-   
+    [Theory]
+    [MemberData(nameof(DefaultConfigurationTestDataGenerator.DefaultConfigurationTestData), MemberType = typeof(DefaultConfigurationTestDataGenerator))]
+    public void DefaultConfigurationSerializeToJSON(DefaultConfigurationTestData inDefaultConfigurationTestData)
+    {
+      string str = Fixture.Serializer.Serialize(DefaultConfiguration.Production);
+      // TestOutput.WriteLine(str);
+      str.Should().Be(inDefaultConfigurationTestData.SerializedDefaultConfiguration);
+    }
+
+
+
+    // ToDo: Add more tests for default configuration
+
   }
 }

@@ -4,7 +4,7 @@ using ATAP.Utilities.ComputerInventory.Configuration.Software;
 using System;
 using ATAP.Utilities.ConcurrentObservableCollections;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
+namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
@@ -43,7 +43,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
               false,
               "*.log",
                "."
-        ), SerializedComputerSoftwareProgram = "{\"Maker\":0}" } };
+        ), SerializedComputerSoftwareProgram = "{\"APIDiscoveryURL\":\"\",\"ConfigFilePath\":\".\",\"ConfigurationSettings\":{},\"HasAPI\":false,\"HasConfigurationSettings\":false,\"HasERROut\":true,\"HasLogFiles\":false,\"HasSTDOut\":true,\"LogFileFnPattern\":\"*.log\",\"LogFileFolder\":\".\",\"ProcessName\":\"powershell\",\"ProcessPath\":\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\",\"ProcessStartPath\":\".\",\"Version\":\"v5\"}" } };
       yield return new ComputerSoftwareProgramTestData[] { new ComputerSoftwareProgramTestData { ComputerSoftwareProgram = new ComputerSoftwareProgram(
                "EthDCRMiner",
               @"C:\",

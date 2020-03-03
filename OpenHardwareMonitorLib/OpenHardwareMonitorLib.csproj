@@ -17,6 +17,12 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
+  <!-- Documentation generation -->
+  <ItemGroup>
+    <PackageReference Include="docfx" Version="2.40.2" />
+    <Folder Include="Documentation\" />
+  </ItemGroup>
+  
   <ItemGroup>
     <EmbeddedResource Include="Hardware\WinRing0.sys" />
     <EmbeddedResource Include="Hardware\WinRing0x64.sys" />

@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using System.Collections;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using System;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
+namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
   public class VideoCardTestData

@@ -1,14 +1,8 @@
 using ATAP.Utilities.Logging.Logging;
 using Xunit;
+using ATAP.Utilities.Testing;
 
 namespace ATAP.Utilities.Logging.UnitTests {
-
-  public class Fixture
-  {
-    public Fixture()
-    {
-    }
-  }
 
 
     public class LoggingUnitTests001 : IClassFixture<Fixture> {

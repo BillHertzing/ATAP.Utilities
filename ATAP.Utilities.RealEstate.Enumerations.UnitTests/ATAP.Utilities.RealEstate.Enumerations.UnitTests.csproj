@@ -33,5 +33,9 @@
       <PackageReference Include="ATAP.Utilities.RealEstate.Enumerations" Version="1.*" />
   </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+    </ItemGroup>
+
 
 </Project>

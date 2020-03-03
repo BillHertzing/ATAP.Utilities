@@ -13,6 +13,7 @@ using System.Text;
 using UnitsNet;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using ATAP.Utilities.CryptoMiner.Interfaces;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
 
 namespace ATAP.Utilities.CryptoCoin.Models
 {

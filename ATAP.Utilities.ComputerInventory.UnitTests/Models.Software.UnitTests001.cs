@@ -14,8 +14,9 @@ using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using ATAP.Utilities.ComputerInventory.Configuration.Software;
 using ATAP.Utilities.ComputerInventory.Interfaces.Software;
+using ATAP.Utilities.Testing;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
+namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
   public class ModelsSoftwareUnitTests001 : IClassFixture<Fixture>
   {
@@ -32,14 +33,14 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
     [MemberData(nameof(ComputerSoftwareProgramTestDataGenerator.ComputerSoftwareProgramTestData), MemberType = typeof(ComputerSoftwareProgramTestDataGenerator))]
     public void ComputerSoftwareProgramDeserialize(ComputerSoftwareProgramTestData inComputerSoftwareProgramTestData)
     {
-      JsonSerializer.DeserializeFromString<ComputerSoftwareProgram>(inComputerSoftwareProgramTestData.SerializedComputerSoftwareProgram).Should().Be(inComputerSoftwareProgramTestData.ComputerSoftwareProgram);
+      Fixture.Serializer.Deserialize<ComputerSoftwareProgram>(inComputerSoftwareProgramTestData.SerializedComputerSoftwareProgram).Should().Be(inComputerSoftwareProgramTestData.ComputerSoftwareProgram);
     }
 
     [Theory]
     [MemberData(nameof(ComputerSoftwareProgramTestDataGenerator.ComputerSoftwareProgramTestData), MemberType = typeof(ComputerSoftwareProgramTestDataGenerator))]
     public void ComputerSoftwareProgramSerialize(ComputerSoftwareProgramTestData inComputerSoftwareProgramTestData)
     {
-      JsonSerializer.SerializeToString<ComputerSoftwareProgram>(inComputerSoftwareProgramTestData.ComputerSoftwareProgram).Should().Be(inComputerSoftwareProgramTestData.SerializedComputerSoftwareProgram);
+      Fixture.Serializer.Serialize(inComputerSoftwareProgramTestData.ComputerSoftwareProgram).Should().Be(inComputerSoftwareProgramTestData.SerializedComputerSoftwareProgram);
     }
 
   }

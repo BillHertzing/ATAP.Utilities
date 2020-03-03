@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using System.Collections;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using System;
+using UnitsNet;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
+namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
   public class TempAndFanTestData
   {
@@ -23,8 +25,16 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
   {
     public static IEnumerable<object[]> TempAndFanTestData()
     {
-      yield return new TempAndFanTestData[] { new TempAndFanTestData { TempAndFan = new TempAndFan { Temp = 50, FanPct = 95.5 }, SerializedTempAndFan = "{\"Temp\":50,\"FanPct\":95.5}" } };
-      yield return new TempAndFanTestData[] { new TempAndFanTestData { TempAndFan = new TempAndFan { Temp = 0.0, FanPct = 100.0 }, SerializedTempAndFan = "{\"Temp\":0,\"FanPct\":100}" } };
+      yield return new TempAndFanTestData[] {
+        new TempAndFanTestData { TempAndFan =  new TempAndFan() {
+            Temp = new Temperature(50, UnitsNet.Units.TemperatureUnit.DegreeFahrenheit),
+            FanPct = new Ratio(95.5, UnitsNet.Units.RatioUnit.Percent) },
+        SerializedTempAndFan = "{\"Temp\":50,\"FanPct\":95.5}" } };
+      yield return new TempAndFanTestData[] {
+        new TempAndFanTestData { TempAndFan =  new TempAndFan() {
+            Temp = new Temperature(50, UnitsNet.Units.TemperatureUnit.DegreeFahrenheit),
+            FanPct = new Ratio(95.5, UnitsNet.Units.RatioUnit.Percent) },
+        SerializedTempAndFan = "{\"Temp\":50,\"FanPct\":95.5}" } };
     }
     public IEnumerator<object[]> GetEnumerator() { return TempAndFanTestData().GetEnumerator(); }
     IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }

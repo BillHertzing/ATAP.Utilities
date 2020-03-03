@@ -1,4 +1,5 @@
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
 using ATAP.Utilities.ConcurrentObservableCollections;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoMiner.Enumerations;

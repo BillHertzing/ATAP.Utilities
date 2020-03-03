@@ -3,8 +3,9 @@ using System.Collections;
 using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using System;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
+namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
   public class CPUArrayTestData
   {
@@ -26,9 +27,9 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
   {
     public static IEnumerable<object[]> CPUArrayTestData()
     {
-      yield return new CPUArrayTestData[] { new CPUArrayTestData { CPUArray = new CPU[] { new CPU(CPUMaker.Generic) }, SerializedCPUArray = "[{\"Maker\":0}]" } };
-      yield return new CPUArrayTestData[] { new CPUArrayTestData { CPUArray = new CPU[] { new CPU(CPUMaker.Intel) }, SerializedCPUArray = "[{\"Maker\":1}]" } };
-      yield return new CPUArrayTestData[] { new CPUArrayTestData { CPUArray = new CPU[] { new CPU(CPUMaker.AMD) }, SerializedCPUArray = "[{\"Maker\":2}]" } };
+      yield return new CPUArrayTestData[] { new CPUArrayTestData { CPUArray = new CPU[] { new CPU(CPUMaker.Generic) }, SerializedCPUArray = "[{\"CPUMaker\":0}]" } };
+      yield return new CPUArrayTestData[] { new CPUArrayTestData { CPUArray = new CPU[] { new CPU(CPUMaker.Intel) }, SerializedCPUArray = "[{\"CPUMaker\":1}]" } };
+      yield return new CPUArrayTestData[] { new CPUArrayTestData { CPUArray = new CPU[] { new CPU(CPUMaker.AMD) }, SerializedCPUArray = "[{\"CPUMaker\":2}]" } };
     }
     public IEnumerator<object[]> GetEnumerator() { return CPUArrayTestData().GetEnumerator(); }
     IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }

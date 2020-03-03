@@ -1,6 +1,6 @@
 using System;
 using Moq;
-using Newtonsoft.Json;
+
 using Xunit;
 using Xunit.Abstractions;
 using System.Collections.Generic;
@@ -10,17 +10,7 @@ using FluentAssertions;
 
 namespace ATAP.Utilities.Testing.UnitTests
 {
-    public class Fixture
-    {
-        private string hello;
-
-        public Fixture()
-        {
-            Hello = "Hello";
-        }
-
-        public string Hello { get => hello; set => hello = value; }
-    }
+  /*
     public class UnitTestsForTestingUtilities : IClassFixture<Fixture>
     {
         protected Fixture fixture;
@@ -141,4 +131,5 @@ namespace ATAP.Utilities.Testing.UnitTests
             r[0].k1.Should().Be("k1");
         }
     }
+  */
 }

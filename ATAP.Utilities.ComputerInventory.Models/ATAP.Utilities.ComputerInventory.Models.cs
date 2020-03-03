@@ -6,7 +6,7 @@ using ATAP.Utilities.ComputerInventory.Interfaces.Software;
 
 using System.Collections.Generic;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration
+namespace ATAP.Utilities.ComputerInventory
 {
   public class ComputerInventory : IEquatable<ComputerInventory>, IComputerInventory
   {

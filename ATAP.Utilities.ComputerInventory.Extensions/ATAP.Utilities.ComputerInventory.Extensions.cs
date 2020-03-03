@@ -6,31 +6,33 @@ using ATAP.Utilities.ComputerInventory.Configuration;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
 using Medallion.Shell;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
+using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
 
 namespace ATAP.Utilities.ComputerInventory.Extensions
 {
   public static partial class Extensions
   {
-    public static ATAP.Utilities.ComputerInventory.Configuration.ComputerInventory InventoryThisComputer(this ATAP.Utilities.ComputerInventory.Configuration.ComputerInventory computerInventory)
+    public static ComputerInventory InventoryThisComputer(this ComputerInventory computerInventory)
     {
       throw new NotImplementedException();
     }
 
     //ToDo: Implement writing a ComputerInventory object to a set of Configuration Settings
-    public static Dictionary<string, string> ToConfigurationSettings(this ATAP.Utilities.ComputerInventory.Configuration.ComputerInventory computerInventory)
+    public static Dictionary<string, string> ToConfigurationSettings(this ComputerInventory computerInventory)
     {
       throw new NotImplementedException();
     }
 
     //ToDo: Implement creating a ComputerInventory object from a set of Configuration Settings
-    public static ATAP.Utilities.ComputerInventory.Configuration.ComputerInventory FromConfigurationSettings(Dictionary<string, string> configurationSettings)
+    public static ComputerInventory FromConfigurationSettings(Dictionary<string, string> configurationSettings)
     {
       throw new NotImplementedException();
     }
 
-    public static int Start(this IComputerProcesses computerProcesses, IComputerSoftwareProgram computerSoftwareProgram, Command command, params object[] arguments)
+    public static int Start(this IComputerProcesses computerProcesses, IComputerSoftwareProgram computerSoftwareProgram, params object[] arguments) //Command command, 
     {
-      ComputerProcess computerProcess = new ComputerProcess(computerSoftwareProgram, command, arguments);
+      ComputerProcess computerProcess = new ComputerProcess(computerSoftwareProgram, arguments); //command, 
       int pid = computerProcess.Start();
       computerProcesses.ComputerProcessDictionary.Add(pid, computerProcess);
       return pid;
@@ -63,7 +65,7 @@ namespace ATAP.Utilities.ComputerInventory.Extensions
       computerProcess.Command.Process.Close();
     }
 
-    public static void OpenComputer(this ComputerHardware computerHardware)
+    public static void OpenComputer(this IComputerHardware computerHardware)
     {
 #if NETFUL
     computerHardware.Computer = new Computer

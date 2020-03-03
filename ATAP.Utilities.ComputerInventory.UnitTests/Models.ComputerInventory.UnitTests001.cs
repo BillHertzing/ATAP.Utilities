@@ -10,31 +10,13 @@ using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Extensions;
 using ATAP.Utilities.ComputerInventory.Configuration;
 using Itenso.TimePeriod;
-using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using ATAP.Utilities.ComputerInventory.Configuration.Software;
 using ATAP.Utilities.ComputerInventory.Interfaces.Software;
+using ATAP.Utilities.Testing;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
+namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
-  public class Fixture
-  {
-    public ComputerProcesses computerProcesses;
-    public int pidUnderTest;
-
-
-    public Fixture()
-    {
-      JsConfig.TextCase = TextCase.PascalCase;
-      JsConfig.TreatEnumAsInteger = true;
-      JsConfig.ExcludeDefaultValues = false;
-      //    new EnumSerializerConfigurator()
-      //.WithAssemblies(AppDomain.CurrentDomain.GetAssemblies())
-      //.WithNamespaceFilter(ns => ns.StartsWith("ATAP"))
-      //.Configure();
-    }
-
-  }
 
   public class ComputerInventoryModelsUnitTests001 : IClassFixture<Fixture>
   {
@@ -53,7 +35,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
 
     internal void ComputerInventorySerializeToJSON(ComputerInventoryTestData inComputerInventoryTestData)
     {
-      JsonSerializer.SerializeToString(inComputerInventoryTestData.ComputerInventory).Should().Be(inComputerInventoryTestData.SerializedComputerInventory);
+      Fixture.Serializer.Serialize(inComputerInventoryTestData.ComputerInventory).Should().Be(inComputerInventoryTestData.SerializedComputerInventory);
       /*
       string str;
       ATAP.Utilities.ComputerInventory.Models.ComputerInventory computerInventory;
@@ -73,11 +55,11 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
                                                                 false,
                                                                 false,
                                                                 false);
-      str = JsonSerializer.SerializeToString(computerSoftwareProgram);
+      str = Fixture.Serializer.Serialize(computerSoftwareProgram);
       List<IComputerSoftwareProgram> computerSoftwarePrograms = new List<IComputerSoftwareProgram> {
             computerSoftwareProgram
             };
-      str = JsonSerializer.SerializeToString(computerSoftwarePrograms);
+      str = Fixture.Serializer.Serialize(computerSoftwarePrograms);
       List<IComputerSoftwareDriver> computerSoftwareDrivers = new List<IComputerSoftwareDriver> {
             new ComputerSoftwareDriver("genericvideo",
                                        "1.0"),
@@ -87,15 +69,15 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
                 ComputerSoftwareDriver("NVideaVideoDriver",
                                        "1.0")
             };
-      str = JsonSerializer.SerializeToString(computerSoftwareDrivers);
+      str = Fixture.Serializer.Serialize(computerSoftwareDrivers);
       // OperatingSystem os = Environment.OSVersion;
-      //str = JsonSerializer.SerializeToString(os);
+      //str = Fixture.Serializer.Serialize(os);
       computerSoftware = new ComputerSoftware(computerSoftwareDrivers, computerSoftwarePrograms);
-      str = JsonSerializer.SerializeToString(computerSoftware);
+      str = Fixture.Serializer.Serialize(computerSoftware);
       computerProcesses = new ComputerProcesses();
-      str = JsonSerializer.SerializeToString(computerProcesses);
+      str = Fixture.Serializer.Serialize(computerProcesses);
       computerInventory = new ATAP.Utilities.ComputerInventory.Models.ComputerInventory(Fixture.ComputerHardware, computerSoftware, computerProcesses);
-      str = JsonSerializer.SerializeToString(computerInventory);
+      str = Fixture.Serializer.Serialize(computerInventory);
       str.Should()
           .NotBeNull();
       str.Should()

@@ -15,6 +15,7 @@ using ATAP.Utilities.CryptoMiner.Interfaces;
 using UnitsNet;
 using UnitsNet.Units;
 using ATAP.Utilities.CryptoCoin.Interfaces;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
 
 namespace ATAP.Utilities.CryptoMiner.Models
 {

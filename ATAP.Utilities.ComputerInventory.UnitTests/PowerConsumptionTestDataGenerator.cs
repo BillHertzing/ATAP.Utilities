@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
+using Itenso.TimePeriod;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
+namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
   public class PowerConsumptionTestData
   {
@@ -23,8 +25,12 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
   {
     public static IEnumerable<object[]> PowerConsumptionTestData()
     {
-      yield return new PowerConsumptionTestData[] { new PowerConsumptionTestData { PowerConsumption = new PowerConsumption(10.0, new TimeSpan(0, 0, 1)), SerializedPowerConsumption = "{\"Period\":\"00:00:01\",\"Watts\":1000.0}" } };
-      yield return new PowerConsumptionTestData[] { new PowerConsumptionTestData { PowerConsumption = new PowerConsumption(1.0, new TimeSpan(0, 1, 0)), SerializedPowerConsumption = "{\"Period\":00:01:00,\"Watts\":10.0}" } };
+      yield return new PowerConsumptionTestData[] { new PowerConsumptionTestData { PowerConsumption = new PowerConsumption(
+        new TimeSpan(1,0,0), new UnitsNet.Power(1,UnitsNet.Units.PowerUnit.Watt)),
+        SerializedPowerConsumption = "{\"TimeSpan\":\"01:00:00\",\"Power\":1}" } };
+      yield return new PowerConsumptionTestData[] { new PowerConsumptionTestData { PowerConsumption = new PowerConsumption(
+        new TimeSpan(0,0,0), new UnitsNet.Power(0.01m,UnitsNet.Units.PowerUnit.Watt)),
+        SerializedPowerConsumption = "{\"TimeSpan\":00:00:00,\"Power\":10.0}" } };
     }
     public IEnumerator<object[]> GetEnumerator() { return PowerConsumptionTestData().GetEnumerator(); }
     IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }

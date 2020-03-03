@@ -14,10 +14,10 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo
     {
     }
 
-    public ComputerProcess(IComputerSoftwareProgram computerSoftwareProgram, Command command, object[] arguments )
+    public ComputerProcess(IComputerSoftwareProgram computerSoftwareProgram,  object[] arguments) 
     {
       Arguments = arguments ?? throw new ArgumentNullException(nameof(arguments));
-      Command = command ?? throw new ArgumentNullException(nameof(command));
+      // Command = command ?? throw new ArgumentNullException(nameof(command));
       ComputerSoftwareProgram = computerSoftwareProgram ?? throw new ArgumentNullException(nameof(computerSoftwareProgram));
     }
 
@@ -34,7 +34,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo
     {
       return other != null &&
              EqualityComparer<object[]>.Default.Equals(Arguments, other.Arguments) &&
-             EqualityComparer<Command>.Default.Equals(Command, other.Command) &&
+             //EqualityComparer<Command>.Default.Equals(Command, other.Command) &&
              EqualityComparer<IComputerSoftwareProgram>.Default.Equals(ComputerSoftwareProgram, other.ComputerSoftwareProgram);
     }
 
@@ -43,14 +43,9 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo
     {
       var hashCode = 1615262500;
       hashCode = hashCode * -1521134295 + EqualityComparer<object[]>.Default.GetHashCode(Arguments);
-      hashCode = hashCode * -1521134295 + EqualityComparer<Command>.Default.GetHashCode(Command);
+      //hashCode = hashCode * -1521134295 + EqualityComparer<Command>.Default.GetHashCode(Command);
       hashCode = hashCode * -1521134295 + EqualityComparer<IComputerSoftwareProgram>.Default.GetHashCode(ComputerSoftwareProgram);
       return hashCode;
-    }
-
-    public IDisposable Subscribe(IObserver<IComputerProcess> observer)
-    {
-      throw new NotImplementedException();
     }
 
     public static bool operator ==(ComputerProcess left, ComputerProcess right)
@@ -104,6 +99,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo
       return !(left == right);
     }
 
+    /*
     // The IObservable provider objects, classes, and methods
     // attribution:  https://docs.microsoft.com/en-us/dotnet/standard/events/how-to-implement-a-provider
     List<IObserver<IComputerProcesses>> Observers { get; }
@@ -148,7 +144,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo
       //}
       //observers.Clear();
     }
-
+    */
 
   }
 }

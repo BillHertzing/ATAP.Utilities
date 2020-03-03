@@ -1,15 +1,17 @@
 using System;
 using Itenso.TimePeriod;
-using ATAP.Utilities.ComputerInventory.Enumerations;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.ComponentModel;
 using System.Globalization;
+using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
 using UnitsNet;
 using UnitsNet.Units;
+using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
+namespace ATAP.Utilities.ComputerInventory.Models.Hardware
 {
 
   /*
@@ -21,7 +23,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
   */
 
   [Serializable]
-  public class MainBoard : ISerializable, IMainBoard
+  public class MainBoard : ISerializable, IMainBoard, IEquatable<MainBoard>
   {
 
     public MainBoard() : this(MainBoardMaker.Generic, CPUSocket.Generic) { }
@@ -46,29 +48,38 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
       info.AddValue("CPUSocket", CPUSocket.ToString());
     }
 
+    public override bool Equals(object obj)
+    {
+      return Equals(obj as MainBoard);
+    }
+
+    public bool Equals(MainBoard other)
+    {
+      return other != null &&
+             Maker == other.Maker &&
+             CPUSocket == other.CPUSocket;
+    }
+
+    public override int GetHashCode()
+    {
+      var hashCode = 1129616743;
+      hashCode = hashCode * -1521134295 + Maker.GetHashCode();
+      hashCode = hashCode * -1521134295 + CPUSocket.GetHashCode();
+      return hashCode;
+    }
+
     public MainBoardMaker Maker { get; }
 
     public CPUSocket CPUSocket { get;  }
 
-    public override bool Equals(Object obj)
+    public static bool operator ==(MainBoard left, MainBoard right)
     {
-      if (obj == null)
-      {
-        return false;
-      }
-
-      if (!(obj is MainBoard id))
-      {
-        return false;
-      }
-
-      return (Maker == id.Maker && CPUSocket == id.CPUSocket);
+      return EqualityComparer<MainBoard>.Default.Equals(left, right);
     }
 
-    //ToDo: add CPUSocket field, figure out how to hash together two fields
-    public override int GetHashCode()
+    public static bool operator !=(MainBoard left, MainBoard right)
     {
-      return Maker.GetHashCode();
+      return !(left == right);
     }
   }
 
@@ -124,7 +135,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
     {
     }
 
-    public VideoCardSensorData(double coreClock, double coreVoltage, double fanRPM, double memClock, double powerConsumption, double powerLimit, double temp)
+    public VideoCardSensorData(UnitsNet.Units.FrequencyUnit coreClock, UnitsNet.Units.ElectricPotentialDcUnit coreVoltage, double fanRPM, UnitsNet.Units.FrequencyUnit memClock, double powerConsumption, double powerLimit, UnitsNet.Units.TemperatureUnit temp)
     {
       CoreClock = coreClock;
       CoreVoltage = coreVoltage;
@@ -135,13 +146,13 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
       Temp = temp;
     }
 
-    public double CoreClock { get; }
-    public double CoreVoltage { get; }
+    public UnitsNet.Units.FrequencyUnit CoreClock { get; }
+    public UnitsNet.Units.ElectricPotentialDcUnit CoreVoltage { get; }
     public double FanRPM { get; }
-    public double MemClock { get; }
+    public UnitsNet.Units.FrequencyUnit MemClock { get; }
     public double PowerConsumption { get; }
     public double PowerLimit { get; }
-    public double Temp { get; }
+    public UnitsNet.Units.TemperatureUnit Temp { get; }
 
     public override bool Equals(object obj)
     {
@@ -391,10 +402,10 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
     }
   }
 
- 
+
 
   //ToDo make these thread-safe (concurrent)
-
+  [Serializable]
   public class TempAndFan : ITempAndFan 
   {
     public TempAndFan()
@@ -410,165 +421,9 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
     public Temperature Temp { get; set; }
     public Ratio FanPct { get; set; }
 
-    // The IObservable provider objects, classes, and methods
-    // attribution:  https://docs.microsoft.com/en-us/dotnet/standard/events/how-to-implement-a-provider
-    // Stephen Cleary Concurrent C# recommends using Rx (Reactive) instead of observables
-    //List<IObserver<TempAndFan>> Observers { get; }
-    //private class Unsubscriber : IDisposable
-    //{
-    //  List<IObserver<TempAndFan>> Observers { get; }
-    //  private IObserver<TempAndFan> Observer { get; }
-
-    //  public Unsubscriber(List<IObserver<TempAndFan>> observers, IObserver<TempAndFan> observer)
-    //  {
-    //    Observers = observers ?? throw new ArgumentNullException(nameof(observers));
-    //    Observer = observer ?? throw new ArgumentNullException(nameof(observer));
-    //  }
-
-    //  public void Dispose()
-    //  {
-    //    if (!(Observer == null))
-    //    {
-    //      Observers.Remove(Observer);
-    //    }
-    //  }
-    //}
-
-    //public IDisposable Subscribe(IObserver<ITempAndFan> observer)
-    //{
-    //  if (!Observers.Contains(observer))
-    //  {
-    //    Observers.Add(observer);
-    //  }
-
-    //  return new Unsubscriber(Observers, observer);
-    //}
-    //public void NotifyObservers()
-    //{
-    //  //ToDo implement the method that gets a TempAndFan instance update
-    //  throw new NotImplementedException();
-    //  //foreach (var observer in observers)
-    //  //  observer.OnNext(tempAndFanData); // An event should trigger this, and pass in a TempAndFan instance named tempAndFanData
-    //  //}
-    //  //foreach (var observer in observers.ToArray())
-    //  //if (observer != null) observer.OnCompleted(); // this is the code to use if the instance will never send data again
-    //  //}
-    //  //observers.Clear();
-    //}
-
-
   }
 
-  /*  an example of an observer
-   *  // Attrobution: https://docs.microsoft.com/en-us/dotnet/standard/events/how-to-implement-an-observer
-  public class TempAndFanReporter : IObserver<TempAndFan>
-  {
-    private IDisposable unsubscriber;
-    private bool first = true;
-    private TempAndFan last;
-
-    public virtual void Subscribe(IObservable<TempAndFan> provider)
-    {
-      unsubscriber = provider.Subscribe(this);
-    }
-
-    public virtual void Unsubscribe()
-    {
-      unsubscriber.Dispose();
-    }
-
-    public virtual void OnCompleted()
-    {
-      //ToDo: use the action delegate passed into this class's constructor
-      //Console.WriteLine("Additional TempAndFan data will not be transmitted.");
-      throw new NotImplementedException();
-    }
-
-    public virtual void OnError(Exception error)
-    {
-      // Do nothing.
-    }
-
-    public virtual void OnNext(TempAndFan value)
-    {
-      //ToDo: use the action delegate passed into this class's constructor
-      //Console.WriteLine("{0} value.Temp .");
-      throw new NotImplementedException();
-    }
-  }
-  */
-  //ToDo make these thread-safe (concurrent)
-  public class PowerConsumption : IPowerConsumption
-  {
-    TimeSpan period;
-    double watts;
-
-    public PowerConsumption()
-    {
-      this.watts = default;
-      this.period = default;
-    }
-    public PowerConsumption(double w, TimeSpan period)
-    {
-      this.watts = w;
-      this.period = period;
-    }
-
-    public override string ToString()
-    {
-      return $"{this.watts}-{this.period}";
-    }
-
-    public TimeSpan Period { get => period; set => period = value; }
-    public double Watts { get => watts; set => watts = value; }
-
-    // The IObservable provider objects, classes, and methods
-    // attribution:  https://docs.microsoft.com/en-us/dotnet/standard/events/how-to-implement-a-provider
-    List<IObserver<IPowerConsumption>> Observers { get; }
-    private class Unsubscriber : IDisposable
-    {
-      List<IObserver<IPowerConsumption>> Observers { get; }
-      private IObserver<IPowerConsumption> Observer { get; }
-
-      public Unsubscriber(List<IObserver<IPowerConsumption>> observers, IObserver<IPowerConsumption> observer)
-      {
-        Observers = observers ?? throw new ArgumentNullException(nameof(observers));
-        Observer = observer ?? throw new ArgumentNullException(nameof(observer));
-      }
-
-      public void Dispose()
-      {
-        if (!(Observer == null))
-        {
-          Observers.Remove(Observer);
-        }
-      }
-    }
-
-    public IDisposable Subscribe(IObserver<IPowerConsumption> observer)
-    {
-      if (!Observers.Contains(observer))
-      {
-        Observers.Add(observer);
-      }
-
-      return new Unsubscriber(Observers, observer);
-    }
-    public void NotifyObservers()
-    {
-      //ToDo implement the method that gets a TempAndFan instance update
-      throw new NotImplementedException();
-      //foreach (var observer in observers)
-      //  observer.OnNext(tempAndFanData); // An event should trigger this, and pass in a TempAndFan instance named tempAndFanData
-      //}
-      //foreach (var observer in observers.ToArray())
-      //if (observer != null) observer.OnCompleted(); // this is the code to use if the instance will never send data again
-      //}
-      //observers.Clear();
-    }
-
-
-  }
+  /*
   public class PowerConsumptionConverter : ExpandableObjectConverter
   {
     public override bool CanConvertFrom(
@@ -643,8 +498,8 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
           destinationType);
     }
   }
+*/
 
- 
 
   [Serializable]
 #if NETFUL
@@ -680,7 +535,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
     public bool IsMainboardEnabled { get; }
     public bool IsVideoCardsEnabled { get; }
     public IMainBoard MainBoard { get; }
-    public TimeBlock Moment { get; }
+    public ITimeBlock Moment { get; }
     public IVideoCard[] VideoCards { get; }
 
     // ToDo: Add field and property for MainBoardMemory

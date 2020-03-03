@@ -1,9 +1,13 @@
 using System.Collections.Generic;
 using System.Collections;
-using ATAP.Utilities.ComputerInventory.Configuration.Software;
+using ATAP.Utilities.ComputerInventory.Interfaces;
 using System;
+using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
+using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
+using ATAP.Utilities.ComputerInventory.Configuration.Software;
+using ATAP.Utilities.ComputerInventory.Models.Hardware;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
+namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
@@ -95,14 +99,18 @@ ComputerInventory powerShell = new ComputerInventory("powershell",
     public static IEnumerable<object[]> ComputerInventoryTestData()
     {
       yield return new ComputerInventoryTestData[] { new ComputerInventoryTestData { ComputerInventory = new ComputerInventory(
-        ComputerInventoryMaker.Generic
+        new ComputerHardware(),
+        new ComputerSoftware(),
+        new ComputerProcesses()
         ), SerializedComputerInventory = "{\"Maker\":0}" } };
       yield return new ComputerInventoryTestData[] { new ComputerInventoryTestData { ComputerInventory = new ComputerInventory(
-        ComputerInventoryMaker.Intel
-        ), SerializedComputerInventory = "{\"Maker\":1}" } };
+        new ComputerHardware(),
+        new ComputerSoftware(),
+        new ComputerProcesses()        ), SerializedComputerInventory = "{\"Maker\":1}" } };
       yield return new ComputerInventoryTestData[] { new ComputerInventoryTestData { ComputerInventory = new ComputerInventory(
-        ComputerInventoryMaker.AMD
-        ), SerializedComputerInventory = "{\"Maker\":2}" } };
+        new ComputerHardware(),
+        new ComputerSoftware(),
+        new ComputerProcesses()        ), SerializedComputerInventory = "{\"Maker\":2}" } };
     }
     public IEnumerator<object[]> GetEnumerator() { return ComputerInventoryTestData().GetEnumerator(); }
     IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }

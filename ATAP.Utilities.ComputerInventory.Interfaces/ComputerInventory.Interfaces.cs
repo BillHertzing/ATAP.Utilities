@@ -6,12 +6,10 @@ using System;
 
 namespace ATAP.Utilities.ComputerInventory.Interfaces
 {
-  public interface IComputerInventory : IObservable<IComputerInventory>
+  public interface IComputerInventory 
   {
     IComputerHardware ComputerHardware { get; }
     IComputerProcesses ComputerProcesses { get; }
     IComputerSoftware ComputerSoftware { get; }
-
-    new IDisposable Subscribe(IObserver<IComputerInventory> observer);
   }
 }

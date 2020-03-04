@@ -18,12 +18,21 @@ using ATAP.Utilities.Testing;
 
 namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
-  public class ModelsSoftwareUnitTests001 : IClassFixture<Fixture>
+
+  public class Softwarefixture : Fixture
   {
-    protected Fixture Fixture { get; }
+    public Softwarefixture() : base()
+    {
+    }
+
+  }
+
+  public class ModelsSoftwareUnitTests001 : IClassFixture<Softwarefixture>
+  {
+    protected Softwarefixture Fixture { get; }
     protected ITestOutputHelper TestOutput { get; }
 
-    public ModelsSoftwareUnitTests001(ITestOutputHelper testOutput, Fixture fixture)
+    public ModelsSoftwareUnitTests001(ITestOutputHelper testOutput, Softwarefixture fixture)
     {
       Fixture = fixture;
       TestOutput = testOutput;

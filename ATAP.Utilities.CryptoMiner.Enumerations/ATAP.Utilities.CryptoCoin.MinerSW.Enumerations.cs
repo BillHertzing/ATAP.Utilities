@@ -10,19 +10,21 @@ namespace ATAP.Utilities.CryptoMiner.Enumerations
     //[JsonConverter(typeof(StringEnumConverter))]
     public enum MinerSWE
     {
-        [Description("Claymore")]
-        Claymore,
+    [Description("Generic")]
+    Generic = 0,
+    [Description("Claymore")]
+    Claymore = 1,
         [Description("ETHminer")]
-        ETHMiner,
+    ETHMiner = 2,
         [Description("GENOIL")]
-        GENOIL,
+    GENOIL = 3,
         [Description("XMRStak ")]
-        XMRStak,
+    XMRStak = 4,
         [Description("WolfsMiner")]
-        WolfsMiner,
+    WolfsMiner = 5,
         [Description("MoneroSpelunker")]
-        MoneroSpelunker
-    }
+    MoneroSpelunker = 6
+  }
 
 
 }

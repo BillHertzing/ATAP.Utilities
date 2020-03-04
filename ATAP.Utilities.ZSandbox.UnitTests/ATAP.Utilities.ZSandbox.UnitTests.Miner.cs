@@ -194,7 +194,7 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
                 {"mclock", "0" },
             };
 
-            VideoCardDiscriminatingCharacteristics localcardvcdc = VideoCardsKnown.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
+            VideoCardSignil localcardvcdc = VideoCardsKnown.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
     VideoCardMaker.ASUS
     && x.GPUMaker ==
     GPUMaker.NVIDEA))
@@ -242,7 +242,7 @@ namespace ATAP.Utilities.ZSandbox.UnitTests
                     // stop any running instances of this SW
                     Process.GetProcessesByName(msw.ProcessName).ToList().ForEach(x => x.Kill());
                     // Select the tuning strategy for this MinerSW and this VideoCard
-                    var vcdc = mg.VideoCardDiscriminatingCharacteristics;
+                    var vcdc = mg.VideoCardSignil;
                     var vctp = VideoCardsKnown.TuningParameters[vcdc];
                     // Calculate the step for each parameter
                     int memoryClockStep = (vctp.MemoryClockMax - vctp.MemoryClockMin) / (fine ? 1 : 5);

@@ -42,7 +42,7 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
     public CPU[] CPUArray;
     public CPUSocket CPUSocket;
     public MainBoard MainBoard;
-    public VideoCardDiscriminatingCharacteristics VideoCardDiscriminatingCharacteristics;
+    public VideoCardSignil VideoCardSignil;
     public VideoCard VideoCard;
     public VideoCard[] VideoCardArray;
 
@@ -50,13 +50,13 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
     {
     }
 
-    public DefaultConfigurationHardwareTestData(CPU cPU, CPU[] cPUArray, CPUSocket cPUSocket, MainBoard mainBoard, VideoCardDiscriminatingCharacteristics videoCardDiscriminatingCharacteristics, VideoCard videoCard, VideoCard[] videoCardArray)
+    public DefaultConfigurationHardwareTestData(CPU cPU, CPU[] cPUArray, CPUSocket cPUSocket, MainBoard mainBoard, VideoCardSignil videoCardSignil, VideoCard videoCard, VideoCard[] videoCardArray)
     {
       CPU = cPU ?? throw new ArgumentNullException(nameof(cPU));
       CPUArray = cPUArray ?? throw new ArgumentNullException(nameof(cPUArray));
       CPUSocket = cPUSocket;
       MainBoard = mainBoard ?? throw new ArgumentNullException(nameof(mainBoard));
-      VideoCardDiscriminatingCharacteristics = videoCardDiscriminatingCharacteristics ?? throw new ArgumentNullException(nameof(videoCardDiscriminatingCharacteristics));
+      VideoCardSignil = videoCardSignil ?? throw new ArgumentNullException(nameof(videoCardSignil));
       VideoCard = videoCard ?? throw new ArgumentNullException(nameof(videoCard));
       VideoCardArray = videoCardArray ?? throw new ArgumentNullException(nameof(videoCardArray));
     }
@@ -71,7 +71,7 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
         CPUArray = new CPU[1] { new CPU(CPUMaker.Generic) },
         CPUSocket = CPUSocket.Generic,
         MainBoard = new MainBoard(MainBoardMaker.Generic, CPUSocket.Generic ),
-        VideoCardDiscriminatingCharacteristics = new VideoCardDiscriminatingCharacteristics("generic",GPUMaker.Generic,VideoCardMaker.Generic,VideoCardMemoryMaker.Generic,4096),
+        VideoCardSignil = new VideoCardSignil("generic",GPUMaker.Generic,VideoCardMaker.Generic,VideoCardMemoryMaker.Generic,4096),
         VideoCard = new VideoCard(),
         VideoCardArray = new VideoCard[1] {new VideoCard() }
       }

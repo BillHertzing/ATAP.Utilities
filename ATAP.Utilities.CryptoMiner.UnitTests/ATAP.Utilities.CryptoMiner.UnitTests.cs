@@ -8,8 +8,6 @@ using ATAP.Utilities.CryptoCoin.Models;
 using ATAP.Utilities.CryptoMiner.Enumerations;
 using ATAP.Utilities.CryptoMiner.Models;
 using FluentAssertions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using System;
 using System.Linq;
 using Xunit;
@@ -18,6 +16,7 @@ using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using UnitsNet;
 using ATAP.Utilities.ComputerInventory.Models.Hardware;
+
 
 namespace ATAP.Utilities.CryptoMiner.UnitTests
 {
@@ -80,7 +79,7 @@ namespace ATAP.Utilities.CryptoMiner.UnitTests
                                                   0,
                                                   1)) }
             };
-      VideoCardDiscriminatingCharacteristics vcdc = VideoCardsKnown.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
+      VideoCardSignil vcdc = VideoCardsKnown.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
 VideoCardMaker.ASUS
 && x.GPUMaker ==
 GPUMaker.NVIDEA))

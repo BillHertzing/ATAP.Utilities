@@ -21,13 +21,20 @@ using ATAP.Utilities.Testing;
 
 namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
-
-  public class ModelsHardwareUnitTests001 : IClassFixture<Fixture>
+  public class Hardwarefixture : Fixture
   {
-    protected Fixture Fixture { get; }
+    public Hardwarefixture() : base()
+    {
+    }
+
+  }
+
+  public class ModelsHardwareUnitTests001 : IClassFixture<Hardwarefixture>
+  {
+    protected Hardwarefixture Fixture { get; }
     protected ITestOutputHelper TestOutput { get; }
 
-    public ModelsHardwareUnitTests001(ITestOutputHelper testOutput, Fixture fixture)
+    public ModelsHardwareUnitTests001(ITestOutputHelper testOutput, Hardwarefixture fixture)
     {
       Fixture = fixture;
       TestOutput = testOutput;
@@ -136,12 +143,12 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
     }
 
     [Theory]
-    [MemberData(nameof(VideoCardDiscriminatingCharacteristicsTestDataGenerator.VideoCardDiscriminatingCharacteristicsTestData), MemberType = typeof(VideoCardDiscriminatingCharacteristicsTestDataGenerator))]
-    public void VideoCardDiscriminatingCharacteristicsDeserializeFromJSON(VideoCardDiscriminatingCharacteristicsTestData inVideoCardDiscriminatingCharacteristicsTestData)
+    [MemberData(nameof(VideoCardSignilTestDataGenerator.VideoCardSignilTestData), MemberType = typeof(VideoCardSignilTestDataGenerator))]
+    public void VideoCardSignilDeserializeFromJSON(VideoCardSignilTestData inVideoCardSignilTestData)
     {
-      var videoCardDiscriminatingCharacteristics = Fixture.Serializer.Deserialize<IVideoCardDiscriminatingCharacteristics>(inVideoCardDiscriminatingCharacteristicsTestData.SerializedVideoCardDiscriminatingCharacteristics);
-      videoCardDiscriminatingCharacteristics.Should().BeOfType(typeof(VideoCard));
-      videoCardDiscriminatingCharacteristics.Should().Be(inVideoCardDiscriminatingCharacteristicsTestData.VideoCardDiscriminatingCharacteristics);
+      var videoCardSignil = Fixture.Serializer.Deserialize<IVideoCardSignil>(inVideoCardSignilTestData.SerializedVideoCardSignil);
+      videoCardSignil.Should().BeOfType(typeof(VideoCard));
+      videoCardSignil.Should().Be(inVideoCardSignilTestData.VideoCardSignil);
     }
 
 
@@ -156,28 +163,9 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
 
     [Theory]
     [MemberData(nameof(VideoCardTestDataGenerator.VideoCardTestData), MemberType = typeof(VideoCardTestDataGenerator))]
-    // [InlineData("{\"BIOSVersion\":\"100.00001.02320.00\",\"CoreClock\":1140.0,\"CoreVoltage\":11.13,\"DeviceID\":\"10DE 17C8 - 3842\",\"IsStrapped\":false,\"MemClock\":1753.0,\"PowerLimit\":0.8,\"VideoCardDiscriminatingCharacteristics\":{\"CardName\":\"GTX 980 TI\",\"GPUMaker\":\"NVIDEA\",\"VideoCardMaker\":\"ASUS\",\"VideoMemoryMaker\":\"Samsung\",\"VideoMemorySize\":6144}}")]
     internal void VideoCardSerializeToJSON(VideoCardTestData inVideoCardTestData)
     {
       Fixture.Serializer.Serialize(inVideoCardTestData.VideoCard).Should().Be(inVideoCardTestData.SerializedVideoCard);
-      //      VideoCardDiscriminatingCharacteristics vcdc = VideoCardsKnownDefaultConfiguration.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
-      //VideoCardMaker.ASUS
-      //&& x.GPUMaker ==
-      //GPUMaker.NVIDEA))
-      //                                                        .Single();
-      //      VideoCard videoCard = new VideoCard(vcdc,
-      //                                          "10DE 17C8 - 3842",
-      //                                          "100.00001.02320.00",
-      //                                          false,
-      //                                          1140,
-      //                                          1753,
-      //                                          11.13,
-      //                                          0.8);
-      //      string str = Fixture.Serializer.Deserialize(videoCard);
-      //      str.Should()
-      //          .NotBeNull();
-      //      str.Should()
-      //          .Be(_testdatainput);
     }
 
     [Theory]

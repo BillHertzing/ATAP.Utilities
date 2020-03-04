@@ -135,9 +135,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin.I
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Interfaces", "ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj", "{CECCF4F9-C220-4F5E-88F0-FEF8CCB7D2BA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Serializer.Shim.NewtonsoftJson", "ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.Shim.NewtonsoftJson.csproj", "{B4259A1F-B02C-42F5-B22F-40B61C5F6823}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.NewtonsoftJson", "ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.Shim.NewtonsoftJson.csproj", "{B4259A1F-B02C-42F5-B22F-40B61C5F6823}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Serializer.Shim.ServiceStackJson", "ATAP.Utilities.Serializer.Shim.ServiceStackJson\ATAP.Utilities.Serializer.Shim.ServiceStackJson.csproj", "{C2FFEDF1-281F-41A1-99CA-D235C105BF7C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.ServiceStackJson", "ATAP.Utilities.Serializer.Shim.ServiceStackJson\ATAP.Utilities.Serializer.Shim.ServiceStackJson.csproj", "{C2FFEDF1-281F-41A1-99CA-D235C105BF7C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.TypedGuids.UnitTests", "ATAP.Utilities.TypedGuids.UnitTests\ATAP.Utilities.TypedGuids.UnitTests.csproj", "{D925C274-C957-4781-B549-C120AA1D9DBD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -190,9 +192,7 @@ Global
 		{2854F171-F406-4731-8C11-137E9284262B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2854F171-F406-4731-8C11-137E9284262B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0A301C4A-9886-48E9-AA39-085D07E66482}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0A301C4A-9886-48E9-AA39-085D07E66482}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A301C4A-9886-48E9-AA39-085D07E66482}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0A301C4A-9886-48E9-AA39-085D07E66482}.Release|Any CPU.Build.0 = Release|Any CPU
 		{163CFFE9-AB84-46AD-A83A-175F33AF3DB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{163CFFE9-AB84-46AD-A83A-175F33AF3DB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{163CFFE9-AB84-46AD-A83A-175F33AF3DB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -260,9 +260,7 @@ Global
 		{A27F8B9A-CAF3-45D4-94D0-190B29EF58D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A27F8B9A-CAF3-45D4-94D0-190B29EF58D5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BC39C377-C9A5-43BF-A07C-E8D3462BDDAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BC39C377-C9A5-43BF-A07C-E8D3462BDDAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BC39C377-C9A5-43BF-A07C-E8D3462BDDAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BC39C377-C9A5-43BF-A07C-E8D3462BDDAC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D4CEE619-BAC8-4797-9277-5055EEBE4DB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D4CEE619-BAC8-4797-9277-5055EEBE4DB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4CEE619-BAC8-4797-9277-5055EEBE4DB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -355,6 +353,10 @@ Global
 		{C2FFEDF1-281F-41A1-99CA-D235C105BF7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C2FFEDF1-281F-41A1-99CA-D235C105BF7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C2FFEDF1-281F-41A1-99CA-D235C105BF7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D925C274-C957-4781-B549-C120AA1D9DBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D925C274-C957-4781-B549-C120AA1D9DBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D925C274-C957-4781-B549-C120AA1D9DBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D925C274-C957-4781-B549-C120AA1D9DBD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

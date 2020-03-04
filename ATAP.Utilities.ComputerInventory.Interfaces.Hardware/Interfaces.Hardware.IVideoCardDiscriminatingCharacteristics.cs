@@ -2,7 +2,7 @@ using ATAP.Utilities.ComputerInventory.Enumerations;
 
 namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
 {
-  public interface IVideoCardDiscriminatingCharacteristics
+  public interface IVideoCardSignil
   {
     string CardName { get; }
     GPUMaker GPUMaker { get; }

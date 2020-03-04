@@ -25,7 +25,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
     {
     }
 
-    public MinerGPU(string bIOSVersion, Frequency coreClock, ElectricPotentialDcUnit coreVoltage, string deviceID, ConcurrentObservableDictionary<Coin, IHashRate> hashRatePerCoin, bool isStrapped, Frequency memClock, PowerUnit powerLimit, IVideoCardDiscriminatingCharacteristics videoCardDiscriminatingCharacteristics) : base(bIOSVersion, coreClock, coreVoltage, deviceID, isStrapped, memClock, powerLimit, videoCardDiscriminatingCharacteristics)
+    public MinerGPU(string bIOSVersion, Frequency coreClock, ElectricPotentialDc coreVoltage, string deviceID, ConcurrentObservableDictionary<Coin, IHashRate> hashRatePerCoin, bool isStrapped, Frequency memClock, IPowerConsumption powerConsumption, IVideoCardSignil videoCardSignil) : base(bIOSVersion, coreClock, coreVoltage, deviceID, isStrapped, memClock, powerConsumption, videoCardSignil)
     {
       HashRatePerCoin = hashRatePerCoin;
     }

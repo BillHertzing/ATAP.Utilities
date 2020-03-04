@@ -1,3 +1,4 @@
+using ATAP.Utilities.Testing;
 using FluentAssertions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -8,24 +9,7 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.CryptoCoin.UnitTests
 {
-  public class Fixture
-  {
-    public int pidUnderTest;
-
-    public Fixture()
-    {
-      JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-      {
-        Converters =
-                {
-            new StringEnumConverter {
-            CamelCaseText =
-                    true
-            }
-            }
-      };
-    }
-  }
+ 
 
   public class CryptoCoinUnitTests001 : IClassFixture<Fixture>
   {

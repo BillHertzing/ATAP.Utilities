@@ -3,6 +3,8 @@ using System.Collections;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using System;
 using ATAP.Utilities.ComputerInventory.Models.Hardware;
+using UnitsNet;
+using UnitsNet.Units;
 
 namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
@@ -26,7 +28,7 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
   //[InlineData("{\"BIOSVersion\":\"100.00001.02320.00\",\"CardName\":\"GTX 980 TI\",\"CoreClock\":1140.0,\"CoreVoltage\":11.13,\"DeviceID\":\"10DE 17C8 - 3842\",\"IsStrapped\":false,\"MemClock\":1753.0,\"PowerConsumption\":{\"Period\":\"00:01:00\",\"Watts\":1000.0},\"PowerLimit\":0.8,\"TempAndFan\":{\"Temp\":60.0,\"FanPct\":50.0},\"VideoCardMaker\":\"ASUS\",\"GPUMaker\":\"NVIDEA\"}")]
 
   /*
-   *   VideoCardDiscriminatingCharacteristics vcdc = VideoCardsKnownDefaultConfiguration.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
+   *   VideoCardSignil vcdc = VideoCardsKnownDefaultConfiguration.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
 VideoCardMaker.ASUS
 && x.GPUMaker ==
 GPUMaker.NVIDEA))
@@ -41,10 +43,10 @@ GPUMaker.NVIDEA))
                                         0.8);
 
 
-    videoCardDiscriminatingCharacteristics = VideoCardsKnownDefaultConfiguration.TuningParameters.Keys.Where(x =>
+    videoCardSignil = VideoCardsKnownDefaultConfiguration.TuningParameters.Keys.Where(x =>
  (x.VideoCardMaker == VideoCardMaker.ASUS && x.GPUMaker == GPUMaker.NVIDEA))
                                                                                               .Single();
-      videoCard = new VideoCard(videoCardDiscriminatingCharacteristics,
+      videoCard = new VideoCard(videoCardSignil,
                      "ToDo:readfromcard",
                      "ToDo:readfromcard",
                      false,
@@ -55,8 +57,8 @@ GPUMaker.NVIDEA))
                      );
 
 
-        [InlineData("{\"BIOSVersion\":\"100.00001.02320.00\",\"CoreClock\":1140.0,\"CoreVoltage\":11.13,\"DeviceID\":\"10DE 17C8 - 3842\",\"IsStrapped\":false,\"MemClock\":1753.0,\"PowerLimit\":0.8,\"VideoCardDiscriminatingCharacteristics\":{\"CardName\":\"GTX 980 TI\",\"GPUMaker\":\"NVIDEA\",\"VideoCardMaker\":\"ASUS\",\"VideoMemoryMaker\":\"Samsung\",\"VideoMemorySize\":6144}}")]
- VideoCardDiscriminatingCharacteristics vcdc = VideoCardsKnownDefaultConfiguration.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
+        [InlineData("{\"BIOSVersion\":\"100.00001.02320.00\",\"CoreClock\":1140.0,\"CoreVoltage\":11.13,\"DeviceID\":\"10DE 17C8 - 3842\",\"IsStrapped\":false,\"MemClock\":1753.0,\"PowerLimit\":0.8,\"VideoCardSignil\":{\"CardName\":\"GTX 980 TI\",\"GPUMaker\":\"NVIDEA\",\"VideoCardMaker\":\"ASUS\",\"VideoMemoryMaker\":\"Samsung\",\"VideoMemorySize\":6144}}")]
+ VideoCardSignil vcdc = VideoCardsKnownDefaultConfiguration.TuningParameters.Keys.Where(x => (x.VideoCardMaker ==
 VideoCardMaker.ASUS
 && x.GPUMaker ==
 GPUMaker.NVIDEA))
@@ -74,13 +76,25 @@ GPUMaker.NVIDEA))
   {
     public static IEnumerable<object[]> VideoCardTestData()
     {
+      yield return new VideoCardTestData[] { new VideoCardTestData {
+        VideoCard = new VideoCard(
+          "100.00001.02320.00",
+          new Frequency(1140,FrequencyUnit.Megahertz),
+          new ElectricPotentialDc(11.13,ElectricPotentialDcUnit.VoltDc),
+          "10DE 17C8 - 3842",
+          false,
+          new Frequency(1753, FrequencyUnit.Megahertz),
+          new PowerConsumption(new TimeSpan(0,1,0), new Power(0.8m,PowerUnit.Watt)),
+          new VideoCardSignil(
+            )
+        ),
+        SerializedVideoCard = "{\"BIOSVersion\":\"100.00001.02320.00\",\"CoreClock\":1140.0,\"CoreVoltage\":11.13,\"DeviceID\":\"10DE 17C8 - 3842\",\"IsStrapped\":false,\"MemClock\":1753.0,\"PowerLimit\":0.8,\"VideoCardSignil\":{\"CardName\":\"GTX 980 TI\",\"GPUMaker\":\"NVIDEA\",\"VideoCardMaker\":\"ASUS\",\"VideoMemoryMaker\":\"Samsung\",\"VideoMemorySize\":6144}"
+      }
+  };
       yield return new VideoCardTestData[] { new VideoCardTestData { VideoCard = new VideoCard(
-        ), SerializedVideoCard = "{\"Maker\":0}" } };
-      yield return new VideoCardTestData[] { new VideoCardTestData { VideoCard = new VideoCard(
-        ), SerializedVideoCard = "{\"Maker\":1}" } };
-      yield return new VideoCardTestData[] { new VideoCardTestData { VideoCard = new VideoCard(
-        ), SerializedVideoCard = "{\"Maker\":2}" } };
+    ), SerializedVideoCard = "{\"BIOSVersion\":null,\"CoreClock\":\"0 Hz\",\"CoreVoltage\":0,\"DeviceID\":null,\"IsStrapped\":false,\"MemClock\":\"0 Hz\",\"PowerLimit\":0,\"VideoCardSignil\":null}" } };
     }
+
     public IEnumerator<object[]> GetEnumerator() { return VideoCardTestData().GetEnumerator(); }
     IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
   }

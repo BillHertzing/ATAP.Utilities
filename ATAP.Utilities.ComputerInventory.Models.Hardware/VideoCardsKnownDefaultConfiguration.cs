@@ -12,13 +12,13 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
   [Serializable]
   public static class VideoCardsKnownDefaultConfiguration
   {
-    public static Dictionary<VideoCardDiscriminatingCharacteristics, VideoCardTuningParameters> TuningParameters { get; }
+    public static Dictionary<VideoCardSignil, VideoCardTuningParameters> TuningParameters { get; }
 
     static VideoCardsKnownDefaultConfiguration()
     {
-      TuningParameters = new Dictionary<VideoCardDiscriminatingCharacteristics, VideoCardTuningParameters>
+      TuningParameters = new Dictionary<VideoCardSignil, VideoCardTuningParameters>
       {
-          { new VideoCardDiscriminatingCharacteristics(
+          { new VideoCardSignil(
             "GTX 980 TI",
             GPUMaker.NVIDEA,
             VideoCardMaker.ASUS,
@@ -34,7 +34,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
               new UnitsNet.ElectricPotentialDc(0.862, ElectricPotentialDcUnit.VoltDc),
               new UnitsNet.ElectricPotentialDc(0.80, ElectricPotentialDcUnit.VoltDc),
               new UnitsNet.ElectricPotentialDc(1.024, ElectricPotentialDcUnit.VoltDc)) },
-          { new VideoCardDiscriminatingCharacteristics(
+          { new VideoCardSignil(
               "R9 270",
               GPUMaker.AMD,
               VideoCardMaker.MSI,
@@ -50,7 +50,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
               new UnitsNet.ElectricPotentialDc(1.0, ElectricPotentialDcUnit.VoltDc),
               new UnitsNet.ElectricPotentialDc(0.98, ElectricPotentialDcUnit.VoltDc),
               new UnitsNet.ElectricPotentialDc(1.05, ElectricPotentialDcUnit.VoltDc)) },
-          { new VideoCardDiscriminatingCharacteristics(
+          { new VideoCardSignil(
               "RX 580",
               GPUMaker.AMD,
               VideoCardMaker.MSI,
@@ -66,7 +66,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
               new UnitsNet.ElectricPotentialDc(1.0, ElectricPotentialDcUnit.VoltDc),
               new UnitsNet.ElectricPotentialDc(0.98, ElectricPotentialDcUnit.VoltDc),
               new UnitsNet.ElectricPotentialDc(1.05, ElectricPotentialDcUnit.VoltDc)) },
-          { new VideoCardDiscriminatingCharacteristics(
+          { new VideoCardSignil(
               "RX 580",
               GPUMaker.AMD,
               VideoCardMaker.MSI,
@@ -82,7 +82,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
               new UnitsNet.ElectricPotentialDc(1.0, ElectricPotentialDcUnit.VoltDc),
               new UnitsNet.ElectricPotentialDc(0.98, ElectricPotentialDcUnit.VoltDc),
               new UnitsNet.ElectricPotentialDc(1.05, ElectricPotentialDcUnit.VoltDc)) },
-          { new VideoCardDiscriminatingCharacteristics(
+          { new VideoCardSignil(
               "RX 580",
               GPUMaker.AMD,
               VideoCardMaker.PowerColor,
@@ -98,7 +98,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
               new UnitsNet.ElectricPotentialDc(1.0, ElectricPotentialDcUnit.VoltDc),
               new UnitsNet.ElectricPotentialDc(0.98, ElectricPotentialDcUnit.VoltDc),
               new UnitsNet.ElectricPotentialDc(1.05, ElectricPotentialDcUnit.VoltDc)) },
-          { new VideoCardDiscriminatingCharacteristics(
+          { new VideoCardSignil(
               "RX 580",
               GPUMaker.AMD,
               VideoCardMaker.PowerColor,
@@ -114,7 +114,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
               new UnitsNet.ElectricPotentialDc(1.0, ElectricPotentialDcUnit.VoltDc),
               new UnitsNet.ElectricPotentialDc(0.98, ElectricPotentialDcUnit.VoltDc),
               new UnitsNet.ElectricPotentialDc(1.05, ElectricPotentialDcUnit.VoltDc))},
-          { new VideoCardDiscriminatingCharacteristics(
+          { new VideoCardSignil(
               "Generic",
               GPUMaker.Generic,
               VideoCardMaker.Generic,

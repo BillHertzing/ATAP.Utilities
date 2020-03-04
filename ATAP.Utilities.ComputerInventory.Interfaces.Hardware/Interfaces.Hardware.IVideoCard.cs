@@ -4,11 +4,11 @@ namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
   {
     string BIOSVersion { get; }
     UnitsNet.Frequency CoreClock { get; }
-    UnitsNet.Units.ElectricPotentialDcUnit CoreVoltage { get; }
+    UnitsNet.ElectricPotentialDc CoreVoltage { get; }
     string DeviceID { get; }
     bool IsStrapped { get; }
     UnitsNet.Frequency MemClock { get; }
-    UnitsNet.Units.PowerUnit PowerLimit { get; }
-    IVideoCardDiscriminatingCharacteristics VideoCardDiscriminatingCharacteristics { get; }
+    IPowerConsumption PowerConsumption { get; }
+    IVideoCardSignil VideoCardSignil { get; }
   }
 }

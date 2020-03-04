@@ -204,7 +204,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     {
     }
 
-    public VideoCard(string bIOSVersion, Frequency coreClock, ElectricPotentialDcUnit coreVoltage, string deviceID, bool isStrapped, Frequency memClock, PowerUnit powerLimit, IVideoCardDiscriminatingCharacteristics videoCardDiscriminatingCharacteristics)
+    public VideoCard(string bIOSVersion, Frequency coreClock, ElectricPotentialDc coreVoltage, string deviceID, bool isStrapped, Frequency memClock, IPowerConsumption powerConsumption, IVideoCardSignil videoCardSignil)
     {
       BIOSVersion = bIOSVersion ?? throw new ArgumentNullException(nameof(bIOSVersion));
       CoreClock = coreClock;
@@ -212,18 +212,18 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
       DeviceID = deviceID ?? throw new ArgumentNullException(nameof(deviceID));
       IsStrapped = isStrapped;
       MemClock = memClock;
-      PowerLimit = powerLimit;
-      VideoCardDiscriminatingCharacteristics = videoCardDiscriminatingCharacteristics ?? throw new ArgumentNullException(nameof(videoCardDiscriminatingCharacteristics));
+      PowerConsumption = powerConsumption;
+      VideoCardSignil = videoCardSignil ?? throw new ArgumentNullException(nameof(videoCardSignil));
     }
 
     public string BIOSVersion { get; }
     public UnitsNet.Frequency CoreClock { get; }
-    public UnitsNet.Units.ElectricPotentialDcUnit CoreVoltage { get; }
+    public UnitsNet.ElectricPotentialDc CoreVoltage { get; }
     public string DeviceID { get; }
     public bool IsStrapped { get; }
     public UnitsNet.Frequency MemClock { get; }
-    public UnitsNet.Units.PowerUnit PowerLimit { get; }
-    public IVideoCardDiscriminatingCharacteristics VideoCardDiscriminatingCharacteristics { get; }
+    public IPowerConsumption PowerConsumption { get; }
+    public IVideoCardSignil VideoCardSignil { get; }
 
     public override bool Equals(object obj)
     {
@@ -239,8 +239,8 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
              DeviceID == other.DeviceID &&
              IsStrapped == other.IsStrapped &&
              MemClock.Equals(other.MemClock) &&
-             PowerLimit == other.PowerLimit &&
-             EqualityComparer<IVideoCardDiscriminatingCharacteristics>.Default.Equals(VideoCardDiscriminatingCharacteristics, other.VideoCardDiscriminatingCharacteristics);
+             PowerConsumption == other.PowerConsumption &&
+             EqualityComparer<IVideoCardSignil>.Default.Equals(VideoCardSignil, other.VideoCardSignil);
     }
 
     public override int GetHashCode()
@@ -252,8 +252,8 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
       hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(DeviceID);
       hashCode = hashCode * -1521134295 + IsStrapped.GetHashCode();
       hashCode = hashCode * -1521134295 + MemClock.GetHashCode();
-      hashCode = hashCode * -1521134295 + PowerLimit.GetHashCode();
-      hashCode = hashCode * -1521134295 + EqualityComparer<IVideoCardDiscriminatingCharacteristics>.Default.GetHashCode(VideoCardDiscriminatingCharacteristics);
+      hashCode = hashCode * -1521134295 + PowerConsumption.GetHashCode();
+      hashCode = hashCode * -1521134295 + EqualityComparer<IVideoCardSignil>.Default.GetHashCode(VideoCardSignil);
       return hashCode;
     }
 
@@ -269,7 +269,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
   }
 
   [Serializable]
-  public class VideoCardDiscriminatingCharacteristics :IVideoCardDiscriminatingCharacteristics, IEquatable<VideoCardDiscriminatingCharacteristics>
+  public class VideoCardSignil :IVideoCardSignil, IEquatable<VideoCardSignil>
   {
     public string CardName { get; }
     public GPUMaker GPUMaker { get; }
@@ -277,11 +277,11 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     public VideoCardMemoryMaker VideoMemoryMaker { get; }
     public int VideoMemorySize { get; }
 
-    public VideoCardDiscriminatingCharacteristics()
+    public VideoCardSignil()
     {
     }
 
-    public VideoCardDiscriminatingCharacteristics(string cardName, GPUMaker gPUMaker, VideoCardMaker videoCardMaker, VideoCardMemoryMaker videoMemoryMaker, int videoMemorySize)
+    public VideoCardSignil(string cardName, GPUMaker gPUMaker, VideoCardMaker videoCardMaker, VideoCardMemoryMaker videoMemoryMaker, int videoMemorySize)
     {
       CardName = cardName ?? throw new ArgumentNullException(nameof(cardName));
       GPUMaker = gPUMaker;
@@ -292,10 +292,10 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
 
     public override bool Equals(object obj)
     {
-      return Equals(obj as VideoCardDiscriminatingCharacteristics);
+      return Equals(obj as VideoCardSignil);
     }
 
-    public bool Equals(VideoCardDiscriminatingCharacteristics other)
+    public bool Equals(VideoCardSignil other)
     {
       return other != null &&
              CardName == other.CardName &&
@@ -316,12 +316,12 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
       return hashCode;
     }
 
-    public static bool operator ==(VideoCardDiscriminatingCharacteristics left, VideoCardDiscriminatingCharacteristics right)
+    public static bool operator ==(VideoCardSignil left, VideoCardSignil right)
     {
-      return EqualityComparer<VideoCardDiscriminatingCharacteristics>.Default.Equals(left, right);
+      return EqualityComparer<VideoCardSignil>.Default.Equals(left, right);
     }
 
-    public static bool operator !=(VideoCardDiscriminatingCharacteristics left, VideoCardDiscriminatingCharacteristics right)
+    public static bool operator !=(VideoCardSignil left, VideoCardSignil right)
     {
       return !(left == right);
     }

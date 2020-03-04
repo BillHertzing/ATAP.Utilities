@@ -30,14 +30,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ATAP.Utilities.Logging" Version="1.*" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
   </ItemGroup>
-  
-    <ItemGroup>
+
+
+  <ItemGroup>
     <None Update="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

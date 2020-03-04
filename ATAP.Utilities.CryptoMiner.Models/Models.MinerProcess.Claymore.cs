@@ -78,7 +78,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
         foreach (var mg in minerGPUsToTune)
         {
           // Select the tuning strategy for this MinerSW and this VideoCard
-          var vcdc = mg.VideoCardDiscriminatingCharacteristics;
+          var vcdc = mg.VideoCardSignil;
           VideoCardTuningParameters vctp = new VideoCardTuningParameters(); ; //ATAP.Utilities.ComputerInventory.Configuration.DefaultConfiguration.TuningParameters[vcdc];
           // Calculate the step for each parameter
           UnitsNet.Frequency memoryClockStep = (vctp.MemoryClockMax - vctp.MemoryClockMin) / (fine ? 1 : 5);

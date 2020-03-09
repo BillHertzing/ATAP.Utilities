@@ -10,6 +10,7 @@ using ATAP.Utilities.ComputerInventory.Models.Hardware;
 using UnitsNet;
 using UnitsNet.Units;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
+using ATAP.Utilities.ComputerInventory.Enumerations.Hardware;
 
 namespace ATAP.Utilities.ComputerInventory.Models.Hardware
 {
@@ -20,7 +21,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
       public DiskDrivePartitionDriveLetterIdentifier(IDictionary<Guid, IDictionary<Guid, string>> diskDrivePartitionInfoGuidsDriveLetterStrings) { DiskDrivePartitionInfoGuidsDriveLetterStrings=diskDrivePartitionInfoGuidsDriveLetterStrings; }
       public IDictionary<Guid, IDictionary<Guid, string>> DiskDrivePartitionInfoGuidsDriveLetterStrings { get; set; }
   }
-  */
+
 
   [Serializable]
   public class MainBoard : ISerializable, IMainBoard, IEquatable<MainBoard>
@@ -83,9 +84,6 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     }
   }
 
-
-
-
   [Serializable]
   public class CPU : IEquatable<CPU>, ICPU
   {
@@ -127,7 +125,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     }
   }
 
-
+  */
   [Serializable]
   public class VideoCardSensorData : IVideoCardSensorData, IEquatable<VideoCardSensorData>
   {

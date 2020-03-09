@@ -5,39 +5,53 @@ using FluentAssertions;
 using ATAP.Utilities.RealEstate.Enumerations;
 using ATAP.Utilities.Enumeration;
 using System.Collections.Generic;
+using ATAP.Utilities.Testing;
 
 namespace ATAP.Utilities.RealEstate.Enumerations.UnitTests
 {
-  public class Fixture
+  public class RealEstateFixture : Fixture
   {
     // The correct answer to the test OperationEnumerationCountIsAsExpected
-    public readonly int NumberOfOperationEnumerations = 3;
+    public int NumberOfOperationEnumerations { get; }
 
-    public Fixture()
+    public RealEstateFixture()
     {
-
+      NumberOfOperationEnumerations = 3;
     }
   }
 
 
-  public class RealEstateEnumerationsUnitTests001 : IClassFixture<Fixture>
+  public class RealEstateUnitTests001 : IClassFixture<RealEstateFixture>
     {
-    protected Fixture fixture;
-    public RealEstateEnumerationsUnitTests001(Fixture fixture)
-    {
-      this.fixture = fixture;
-    }
+    protected RealEstateFixture Fixture { get; }
+    protected ITestOutputHelper TestOutput { get; }
 
-    [Fact]
-    // Test that the number of members of this enumeration is correct
-    public void OperationEnumerationCountAsExpected()
+    public RealEstateUnitTests001(ITestOutputHelper testOutput, RealEstateFixture fixture)
     {
-      int result = Enum.GetValues(typeof(Operation)).Length;
-
-      Assert.True(result == fixture.NumberOfOperationEnumerations);
+      Fixture = fixture;
+      TestOutput = testOutput;
     }
 
 
+    [Theory]
+    [MemberData(nameof(OperationTestDataGenerator.OperationTestData), MemberType = typeof(OperationTestDataGenerator))]
+    public void OperationEnumerationDeserializeFromJSON(OperationTestData inRealEstateTestData)
+    {
+      var realEstate = Fixture.Serializer.Deserialize<Operation>(inRealEstateTestData.SerializedOperation);
+      realEstate.Should().BeOfType(typeof(Operation));
+      Fixture.Serializer.Deserialize<Operation>(inRealEstateTestData.SerializedOperation).Should().Be(inRealEstateTestData.Operation);
+    }
+
+    [Theory]
+    [MemberData(nameof(OperationTestDataGenerator.OperationTestData), MemberType = typeof(OperationTestDataGenerator))]
+    public void OperationEnumerationSerializeToJSON(OperationTestData inRealEstateTestData)
+    {
+      string str = Fixture.Serializer.Serialize(inRealEstateTestData.SerializedOperation);
+      str.Should().Be(inRealEstateTestData.SerializedOperation);
+    }
+
+    // ToDo Add tests for additional enumeration attributes, and localized values of those attributes
+    /*
     [Theory]
     // ToDo: Replace this theory's InlineData with external configuration file data
     [InlineData("PropertySearch","PropertyLastSaleInfo","PropertyCurrentAgent")]
@@ -57,5 +71,6 @@ namespace ATAP.Utilities.RealEstate.Enumerations.UnitTests
       var str2 = descriptionStrings.ToString();
       str1.Should().Match(str2); 
     }
+    */
   }
 }

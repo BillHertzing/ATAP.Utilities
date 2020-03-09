@@ -144,13 +144,20 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
 
     [Theory]
     [MemberData(nameof(VideoCardSignilTestDataGenerator.VideoCardSignilTestData), MemberType = typeof(VideoCardSignilTestDataGenerator))]
+    public void VideoCardSignilSerializeToJSON(VideoCardSignilTestData inVideoCardSignilTestData)
+    {
+      var serializedVideoCardSignil = Fixture.Serializer.Serialize(inVideoCardSignilTestData.VideoCardSignil);
+      serializedVideoCardSignil.Should().Be(inVideoCardSignilTestData.SerializedVideoCardSignil);
+    }
+
+    [Theory]
+    [MemberData(nameof(VideoCardSignilTestDataGenerator.VideoCardSignilTestData), MemberType = typeof(VideoCardSignilTestDataGenerator))]
     public void VideoCardSignilDeserializeFromJSON(VideoCardSignilTestData inVideoCardSignilTestData)
     {
       var videoCardSignil = Fixture.Serializer.Deserialize<IVideoCardSignil>(inVideoCardSignilTestData.SerializedVideoCardSignil);
       videoCardSignil.Should().BeOfType(typeof(VideoCard));
       videoCardSignil.Should().Be(inVideoCardSignilTestData.VideoCardSignil);
     }
-
 
     [Theory]
     [MemberData(nameof(VideoCardTestDataGenerator.VideoCardTestData), MemberType = typeof(VideoCardTestDataGenerator))]

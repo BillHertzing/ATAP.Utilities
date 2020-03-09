@@ -5,7 +5,7 @@ namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
 {
   public interface IDiskDriveInfoExs
   {
-    ConcurrentObservableDictionary<Id<IDiskDriveInfoEx>, IDiskDriveInfoEx> DiskDriveInfoExCOD { get; set; }
+    ConcurrentObservableDictionary<Id<IDiskDrive>, IDiskDrive> DiskDriveCOD { get; set; }
   }
  
 }

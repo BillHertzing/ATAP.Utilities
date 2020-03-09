@@ -5,7 +5,7 @@ namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
 {
   public interface IDiskDrivePartitionIdentifier
   {
-    ConcurrentObservableDictionary<Id<IDiskDriveInfoEx>, IPartitionInfoExs> DiskDriveInfoPartitionInfoCOD { get; set; }
+    ConcurrentObservableDictionary<Id<IDiskDrive>, IPartitionInfoExs> DiskDriveToPartitionInfoCOD { get; set; }
 
   }
  

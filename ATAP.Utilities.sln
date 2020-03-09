@@ -85,7 +85,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.AutoDoc", "A
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.RealEstate.Enumerations", "ATAP.Utilities.RealEstate.Enumerations\ATAP.Utilities.RealEstate.Enumerations.csproj", "{A9F0F4DF-94D3-49F4-8A47-7768D9D49950}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.RealEstate.Enumerations.UnitTests", "ATAP.Utilities.RealEstate.Enumerations.UnitTests\ATAP.Utilities.RealEstate.Enumerations.UnitTests.csproj", "{188F4E57-4E95-429E-A844-A3655200A393}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.RealEstate.UnitTests", "ATAP.Utilities.RealEstate.UnitTests\ATAP.Utilities.RealEstate.UnitTests.csproj", "{188F4E57-4E95-429E-A844-A3655200A393}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionDocumentation", "SolutionDocumentation", "{9CCE4A2F-811E-4F6E-9639-74C974CC7DED}"
 	ProjectSection(SolutionItems) = preProject

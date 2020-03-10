@@ -11,6 +11,7 @@
     <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
     <PackageLifeCycleStage>Production</PackageLifeCycleStage>
+    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
@@ -20,14 +21,16 @@
     <PackageReference Include="docfx" Version="2.40.2" />
     <Folder Include="Documentation\" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Ninject" Version="3.3.4" />
+    <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
+    <PackageReference Include="xunit" Version="2.4.1" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-	    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.ServiceStackJson\ATAP.Utilities.Serializer.Shim.ServiceStackJson.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.SerializerLoader\ATAP.Utilities.SerializerLoader.csproj" />
   </ItemGroup>
 
 </Project>

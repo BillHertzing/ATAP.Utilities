@@ -20,10 +20,6 @@
     <None Remove="Interfaces.Hardware.IPartitionInfoEx.cs.old" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="Interfaces.Hardware.IPartitionInfoEx.cs.old" />
-  </ItemGroup>
-
   <!-- Documentation generation -->
   <ItemGroup>
     <PackageReference Include="docfx" Version="2.40.2" />

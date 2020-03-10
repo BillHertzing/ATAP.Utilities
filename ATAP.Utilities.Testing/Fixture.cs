@@ -1,6 +1,7 @@
 using System;
+using ATAP.Utilities.Serializer;
 using ATAP.Utilities.Serializer.Interfaces;
- using Ninject;
+using Ninject;
 
 namespace ATAP.Utilities.Testing
 {
@@ -15,19 +16,20 @@ namespace ATAP.Utilities.Testing
   {
     public override void Load()
     {
-      Bind<ISerializer>().To<ATAP.Utilities.Serializer.Serializer>();
+      // ToDo make this lazy ISerializer t = ATAP.Utilities.Serializer.SerializerLoader.LoadSerializerFromAssembly();
+      Bind<ISerializer>().To<Serializer.Serializer>();
     }
   }
-  public class Fixture :  IFixture
+  public class Fixture : IFixture
   {
     public Fixture()
     {
-      Ninject.IKernel kernel = new StandardKernel(new SerializerInjectionModule());
-      Serializer = kernel.Get<ISerializer>();
+      Kernel = new StandardKernel(new SerializerInjectionModule());
+      Serializer = Kernel.Get<ISerializer>();
     }
 
     public ISerializer Serializer { get; set; }
-
+    private Ninject.IKernel Kernel { get; set; }
 
   }
 }

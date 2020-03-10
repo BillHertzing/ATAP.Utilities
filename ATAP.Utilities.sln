@@ -141,6 +141,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.TypedGuids.UnitTests", "ATAP.Utilities.TypedGuids.UnitTests\ATAP.Utilities.TypedGuids.UnitTests.csproj", "{D925C274-C957-4781-B549-C120AA1D9DBD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.SerializerLoader", "ATAP.Utilities.SerializerLoader\ATAP.Utilities.SerializerLoader.csproj", "{F3487177-AE97-4BC5-AA1C-3E86176505B5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -357,6 +359,10 @@ Global
 		{D925C274-C957-4781-B549-C120AA1D9DBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D925C274-C957-4781-B549-C120AA1D9DBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D925C274-C957-4781-B549-C120AA1D9DBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3487177-AE97-4BC5-AA1C-3E86176505B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3487177-AE97-4BC5-AA1C-3E86176505B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3487177-AE97-4BC5-AA1C-3E86176505B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3487177-AE97-4BC5-AA1C-3E86176505B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

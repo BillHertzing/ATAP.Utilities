@@ -22,7 +22,12 @@
     <PackageReference Include="docfx" Version="2.40.2" />
     <Folder Include="Documentation\" />
   </ItemGroup>
-  
+
+  <!-- Roslyn Code Analysis -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8"></PackageReference>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="MedallionShell" Version="1.5.1" />
     <PackageReference Include="ServiceStack.Text" Version="5.8.1" />

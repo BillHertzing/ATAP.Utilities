@@ -17,7 +17,6 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
- 
   <!-- Documentation generation -->
   <ItemGroup>
     <PackageReference Include="docfx" Version="2.40.2" />
@@ -25,8 +24,8 @@
   </ItemGroup>
 
   <ItemGroup>
-  <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
-  <PackageReference Include="UnitsNet" Version="4.51.0" />
+    <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
+    <PackageReference Include="UnitsNet" Version="4.51.0" />
   </ItemGroup>
 
   <ItemGroup>

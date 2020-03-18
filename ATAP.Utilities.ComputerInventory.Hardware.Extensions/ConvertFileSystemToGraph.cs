@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATAP.Utilities.Philote;
 using ATAP.Utilities.GraphDataStructures;
+using System.Globalization;
 
 // To get access to the .Dump utility for logging
 //using ServiceStack.Text;
@@ -20,23 +21,23 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   public static class StaticExtensions
   {
-    public static async Task<ConvertFileSystemToGraphResult> ConvertFileSystemToGraphAsyncTask(string root, int asyncFileReadBlockSize, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress, CancellationToken cancellationToken, PersistenceAbstract? convertFileSystemToGraphPersistence)
+    public static async Task<ConvertFileSystemToGraphResult> ConvertFileSystemToGraphAsyncTask(string root, int asyncFileReadBlockSize, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress, PersistenceAbstract? convertFileSystemToGraphPersistence, CancellationToken cancellationToken)
     {
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult = new ConvertFileSystemToGraphResult();
-      // GraphAsIList<IFSEntityAbstract> graphAsIList = new GraphAsIList<IFSEntityAbstract>();
       if (!Directory.Exists(root))
       {
-        throw new ArgumentException(String.Format(StringConstants.RootDirectoryNotFoundExceptionMessage, root));
+        throw new ArgumentException(string.Format(CultureInfo.CurrentCulture, StringConstants.RootDirectoryNotFoundExceptionMessage, root));
       }
 
-      // Data structure to hold names of subdirectories to be examined for files.
+      // Data structure to hold names of subdirectories to be examined for files, along with associated structures for Vertex(s).
       Stack<string> dirs = new Stack<string>();
       string currentDir;
-
-
+      Stack<Vertex<IFSEntityAbstract>> directoryVerticesStack = new Stack<Vertex<IFSEntityAbstract>>();
+      Vertex<IFSEntityAbstract> currentDirectoryVertex;
+      Vertex<IFSEntityAbstract> parentDirectoryVertex;
 
       // Initialize the fields of the ConvertFileSystemToGraphProgress if it is not null
-      if (convertFileSystemToGraphPersistence != null)
+      if (convertFileSystemToGraphProgress != null)
       {
         convertFileSystemToGraphProgress.Completed = false;
         convertFileSystemToGraphProgress.NumberOfDirectories = 0;
@@ -64,6 +65,19 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           //ToDo: catch exceptions when setting up convertFileSystemToGraphPersistence
         }
       }
+      // check CancellationToken to see if this task is cancelled
+      if (cancellationToken.IsCancellationRequested)
+      {
+        // Log.Debug($"in ConvertFileSystemToGraphAsyncTask: Cancellation requested (2nd checkpoint)");
+        // ToDo: cleanup is needed
+        // DatabaseRollback();
+        cancellationToken.ThrowIfCancellationRequested();
+      }
+      dirs.Push(root);
+      // Create a vertex for the root
+      Vertex<IFSEntityAbstract> rootDirectoryVertex = new Vertex<IFSEntityAbstract>(new FSEntityDirectory(root));
+      directoryVerticesStack.Push(rootDirectoryVertex);
+      convertFileSystemToGraphResult.GraphAsIList.Vertices.Add(rootDirectoryVertex);
       // If the convertFileSystemToGraphPersistence argument is not null, persist the root directory
       if (convertFileSystemToGraphPersistence != null)
       {
@@ -84,41 +98,36 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         }
 
       }
-      // check CancellationToken to see if this task is cancelled
-      if (cancellationToken.IsCancellationRequested)
-      {
-        // Log.Debug($"in ConvertFileSystemToGraphAsyncTask: Cancellation requested (2nd checkpoint)");
-        // ToDo: cleanup is needed
-        // DatabaseRollback();
-        cancellationToken.ThrowIfCancellationRequested();
-      }
-      dirs.Push(root);
       // go down all the dirs, doing every file in each dir first, then the next dir
       // dirs are done in the order that they are returned by Directory.GetDirectories(currentDir)
       while (dirs.Count > 0)
       {
         currentDir = dirs.Pop();
+        currentDirectoryVertex = directoryVerticesStack.Pop();
         // Create a FSEntityDirectory, populated by path  and a vertex for this directory
-        FSEntityDirectory currentFSEntityDirectory = new FSEntityDirectory(currentDir);
+        // currentFSEntityDirectory = new FSEntityDirectory(currentDir);
+        // Push it 
         try
         {
-          currentFSEntityDirectory.DirectoryInfo = new DirectoryInfo(currentDir);
-          // Since the DirectoryInfo property is populated, no need to keep path
-          currentFSEntityDirectory.Path = "";
+          //FSEntityDirectory ObjAsFSEntityDirectory = currentDirectoryVertex.Obj as FSEntityDirectory;
+          //ObjAsFSEntityDirectory.DirectoryInfo = new DirectoryInfo(currentDir);
+          (currentDirectoryVertex.Obj as FSEntityDirectory).DirectoryInfo = new DirectoryInfo(currentDir);
+          // Once the DirectoryInfo property is populated, no need to keep path
+          currentDirectoryVertex.Obj.Path = "";
         }
         catch (Exception e) when (e is SecurityException || e is ArgumentException || e is PathTooLongException)
         {
           // Store this exception on the currentFSEntityDirectory and accumulate the exception as part of the Result and Progress
-          currentFSEntityDirectory.Exceptions.Add(e);
+          currentDirectoryVertex.Obj.Exceptions.Add(e);
           // Add this exception to the results
           convertFileSystemToGraphResult.AcceptableExceptions.Add(e);
           convertFileSystemToGraphProgress?.AcceptableExceptions.Add(e);
         }
-        Vertex<IFSEntityAbstract> currentDirectoryVertex = new Vertex<IFSEntityAbstract>(currentFSEntityDirectory);
+
 
         // ToDo: getting the list of dirs, and the list of files, should be done in parallel. AS soon as each has completed, populate FSEntities by path
-        string[] subDirs = { };
-        string[] files = { };
+        string[] subDirs = Array.Empty<string>();
+        string[] files = Array.Empty<string>();
         try
         {
           subDirs = Directory.GetDirectories(currentDir);
@@ -128,7 +137,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           // Thrown if we do not have discovery permission on the directory.
           // Thrown if another process has deleted the directory after we retrieved its name.
           // Store this exception on the currentFSEntityDirectory and accumulate the exception as part of the Result and Progress
-          currentFSEntityDirectory.Exceptions.Add(e);
+          currentDirectoryVertex.Obj.Exceptions.Add(e);
           // Add this exception to the results
           convertFileSystemToGraphResult.AcceptableExceptions.Add(e);
           convertFileSystemToGraphProgress?.AcceptableExceptions.Add(e);
@@ -136,21 +145,21 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           continue;
         }
         // update the results
-        if (convertFileSystemToGraphProgress != null)
-        {
-          convertFileSystemToGraphProgress.NumberOfDirectories += subDirs.Length;
-        }
         // create entities, vertices, and edges for each subdir, populated with path but no dirinfo, and put into results
-        foreach (var p in subDirs)
+        foreach (var sd in subDirs)
         {
-          FSEntityDirectory pEntity = new FSEntityDirectory(p);
-          Vertex<IFSEntityAbstract> pVertex = new Vertex<IFSEntityAbstract>(pEntity);
+          Vertex<IFSEntityAbstract> pVertex = new Vertex<IFSEntityAbstract>(new FSEntityDirectory(sd));
           convertFileSystemToGraphResult.GraphAsIList.Vertices.Add(pVertex);
           Edge<IFSEntityAbstract> pEdge = new Edge<IFSEntityAbstract>(currentDirectoryVertex, pVertex);
           convertFileSystemToGraphResult.GraphAsIList.Edges.Add(pEdge);
         }
+        // Update the Progress
+        if (convertFileSystemToGraphProgress != null)
+        {
+          convertFileSystemToGraphProgress.NumberOfDirectories += subDirs.Length;
+        }
+        // ToDo; The first of the two parallel tasks end here
 
-        ///
         // ToDo: second part of the two parallel tasks starts here.
         // analyze the files in this subdirectories
         try
@@ -162,7 +171,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           // Thrown if we do not have discovery permission on the directory.
           // Thrown for a generic IO exception
           // Store this exception on the currentFSEntityDirectory and accumulate the exception as part of the Result and Progress
-          currentFSEntityDirectory.Exceptions.Add(e);
+          currentDirectoryVertex.Obj.Exceptions.Add(e);
           // Add this exception to the results
           convertFileSystemToGraphResult.AcceptableExceptions.Add(e);
           convertFileSystemToGraphProgress?.AcceptableExceptions.Add(e);
@@ -173,32 +182,31 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         // create entities, vertices, and edges for each subdir, populated with path but no FileInfo or hash, and put into results
         foreach (var f in files)
         {
-          FSEntityDirectory fEntity = new FSEntityDirectory(f);
+          FSEntityFile fEntity = new FSEntityFile(f);
           Vertex<IFSEntityAbstract> fVertex = new Vertex<IFSEntityAbstract>(fEntity);
           convertFileSystemToGraphResult.GraphAsIList.Vertices.Add(fVertex);
           Edge<IFSEntityAbstract> pEdge = new Edge<IFSEntityAbstract>(currentDirectoryVertex, fVertex);
           convertFileSystemToGraphResult.GraphAsIList.Edges.Add(pEdge);
-        }
+          // If the convertFileSystemToGraphPersistence argument is not null, persist the vertex and edge for this file
+          if (convertFileSystemToGraphPersistence != null)
+          {
+            // ToDo: if writing to an ORM, there needs to be a indicator that this is a create operation
+            //convertFileSystemToGraphPersistence.PersistenceInsertData.DList = new List<string>(subDirs);
+            try
+            {
+              convertFileSystemToGraphPersistence.PersistenceInsertResults = convertFileSystemToGraphPersistence.PersistenceInsert(convertFileSystemToGraphPersistence.PersistenceInsertData, convertFileSystemToGraphPersistence.PersistenceSetupResults);
+            }
+            catch
+            {
+              //ToDo: catch exceptions when writing out data to convertFileSystemToGraphPersistence
+            }
+            // Did the insert fail
+            if (!convertFileSystemToGraphPersistence.PersistenceInsertResults.Success)
+            {
+              // ToDo: figure out how to handle a failed convertFileSystemToGraphPersistence insert
+            }
 
-        // If the convertFileSystemToGraphPersistence argument is not null, persist the root directory
-        if (convertFileSystemToGraphPersistence != null)
-        {
-          // ToDo: if writing to an ORM, there needs to be a indicator that this is a create operation
-          //convertFileSystemToGraphPersistence.PersistenceInsertData.DList = new List<string>(subDirs);
-          try
-          {
-            convertFileSystemToGraphPersistence.PersistenceInsertResults = convertFileSystemToGraphPersistence.PersistenceInsert(convertFileSystemToGraphPersistence.PersistenceInsertData, convertFileSystemToGraphPersistence.PersistenceSetupResults);
           }
-          catch
-          {
-            //ToDo: catch exceptions when writing out data to convertFileSystemToGraphPersistence
-          }
-          // Did the insert fail
-          if (!convertFileSystemToGraphPersistence.PersistenceInsertResults.Success)
-          {
-            // ToDo: figure out how to handle a failed convertFileSystemToGraphPersistence insert
-          }
-
         }
 
         // check CancellationToken to see if this task is cancelled
@@ -224,7 +232,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           taskList.Add(PopulateFSEntityFileAsync(f, asyncFileReadBlockSize, cancellationToken));
         }
         // wait for all to finish
-        await Task.WhenAll(taskList);
+        await Task.WhenAll(taskList).ConfigureAwait(false);
         // check CancellationToken to see if this task is cancelled
         if (cancellationToken.IsCancellationRequested)
         {
@@ -257,7 +265,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
             convertFileSystemToGraphResult.AcceptableExceptions.Add(e);
             convertFileSystemToGraphProgress?.AcceptableExceptions.Add(e);
           }
-          // increment the convertFileSystemToGraphResult.LargestFile if any file is larger
+          // update the Progress
           if (convertFileSystemToGraphProgress != null)
           {
             if (task.Result.FileInfo.Length > convertFileSystemToGraphProgress.LargestFile)
@@ -265,7 +273,6 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
               convertFileSystemToGraphProgress.LargestFile = task.Result.FileInfo.Length;
             }
           }
-
         }
         if (cancellationToken.IsCancellationRequested)
         {
@@ -283,9 +290,15 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           // ToDo: Insert the Node and Edge information about all directories into the DB
           // ToDo: update the DirectoryInfoEx in subDirs with the nodeID for each subdirectories as returned by the insert
           dirs.Push(str);
+          IFSEntityAbstract fSEntityDirectory = new FSEntityDirectory(str);
+          Vertex<IFSEntityAbstract> vertexDirectory = new Vertex<IFSEntityAbstract>(fSEntityDirectory);
+          directoryVerticesStack.Push(vertexDirectory);
         }
       }
       // The analysis is complete
+
+      convertFileSystemToGraphProgress.Completed = true;
+      convertFileSystemToGraphProgress.PercentCompleted = 100;
       // Log.Debug($"finished ConvertFileSystemToGraphAsyncTask");
       // TearDown the convertFileSystemToGraphPersistence mechanism
       convertFileSystemToGraphResult.Success = true;
@@ -372,7 +385,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
             int bytesRead;
             do
             {
-              bytesRead = await stream.ReadAsync(buffer, 0, blocksize);
+              bytesRead = await stream.ReadAsync(buffer, 0, blocksize).ConfigureAwait(false);
               if (cancellationToken.IsCancellationRequested)
               {
                 // Log.Debug($"in PopulateFSEntityFileAsync: Cancellation requested (2nd checkpoint)");

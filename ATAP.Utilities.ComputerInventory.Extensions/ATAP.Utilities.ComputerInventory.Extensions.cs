@@ -1,15 +1,11 @@
 using System;
 using System.Collections.Generic;
-using ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo;
-using ATAP.Utilities.ComputerInventory.Interfaces.Software;
-using ATAP.Utilities.ComputerInventory.Configuration;
-using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
-using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
+using ATAP.Utilities.ComputerInventory.Hardware;
+using ATAP.Utilities.ComputerInventory.ProcessInfo;
+using ATAP.Utilities.ComputerInventory.Software;
 using Medallion.Shell;
-using ATAP.Utilities.ComputerInventory.Models.Hardware;
-using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
 
-namespace ATAP.Utilities.ComputerInventory.Extensions
+namespace ATAP.Utilities.ComputerInventory
 {
   public static partial class Extensions
   {
@@ -28,41 +24,6 @@ namespace ATAP.Utilities.ComputerInventory.Extensions
     public static ComputerInventory FromConfigurationSettings(Dictionary<string, string> configurationSettings)
     {
       throw new NotImplementedException();
-    }
-
-    public static int Start(this IComputerProcesses computerProcesses, IComputerSoftwareProgram computerSoftwareProgram, params object[] arguments) //Command command, 
-    {
-      ComputerProcess computerProcess = new ComputerProcess(computerSoftwareProgram, arguments); //command, 
-      int pid = computerProcess.Start();
-      computerProcesses.ComputerProcessDictionary.Add(pid, computerProcess);
-      return pid;
-    }
-
-    public static void Kill(this ComputerProcesses computerProcesses, int pid)
-    {
-      computerProcesses.ComputerProcessDictionary[pid].Kill();
-    }
-
-    public static int Start(this ComputerProcess computerProcess)
-    {
-      computerProcess.Command = Command.Run(computerProcess.ComputerSoftwareProgram.ProcessPath, computerProcess.Arguments, options: o => o.DisposeOnExit(false));
-      return computerProcess.Command.ProcessId;
-    }
-    public static void Kill(this ComputerProcess computerProcess)
-    {
-      computerProcess.Command.Process.Kill();
-    }
-    public static void Kill(this IComputerProcess computerProcess)
-    {
-      computerProcess.Command.Process.Kill();
-    }
-    public static bool CloseMainWindow(this ComputerProcess computerProcess)
-    {
-      return computerProcess.Command.Process.CloseMainWindow();
-    }
-    public static void Close(this ComputerProcess computerProcess)
-    {
-      computerProcess.Command.Process.Close();
     }
 
     public static void OpenComputer(this IComputerHardware computerHardware)

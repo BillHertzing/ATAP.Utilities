@@ -1,15 +1,15 @@
-using ATAP.Utilities.ComputerInventory.Enumerations.Hardware;
-using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
 using System;
 using System.Collections.Generic;
 using UnitsNet;
-using UnitsNet.Units;
 
-namespace ATAP.Utilities.ComputerInventory.Models.Hardware
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   [Serializable]
   public class DiskDriveSignil : IDiskDriveSignil, IEquatable<DiskDriveSignil>
   {
+
+    //public static DiskDriveSignil GenericSignil = new DiskDriveSignil(DiskDriveMaker.Generic, DiskDriveType.Generic, new UnitsNet.Information(1, UnitsNet.Units.InformationUnit.Terabyte));
+
     public DiskDriveSignil()
     {
     }

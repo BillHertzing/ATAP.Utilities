@@ -3,16 +3,17 @@ using System.Text.Json;
 
 namespace ATAP.Utilities.Serializer
 {
-  public class SerializerNetCoreJSON : ISerializer
+  public class Serializer : ISerializer
   {
     public JsonSerializerOptions JsonSerializerOptions { get; private set; }
-    public SerializerNetCoreJSON()
+    public Serializer()
     {
+      this.Configure();
     }
 
     public string Serialize(object obj)
     {
-      return JsonSerializer.Serialize(obj, Typeof(obj),JsonSerializerOptions);
+      return JsonSerializer.Serialize(obj, JsonSerializerOptions);
     }
     public T Deserialize<T>(string str)
     {
@@ -24,7 +25,7 @@ namespace ATAP.Utilities.Serializer
       JsonSerializerOptions = new JsonSerializerOptions
       {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true
+        WriteIndented = true,
       };
 
 

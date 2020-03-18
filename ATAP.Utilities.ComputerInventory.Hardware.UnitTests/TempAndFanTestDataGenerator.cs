@@ -1,11 +1,10 @@
 using System.Collections.Generic;
 using System.Collections;
-using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using System;
 using UnitsNet;
-using ATAP.Utilities.ComputerInventory.Models.Hardware;
+using ATAP.Utilities.ComputerInventory.Hardware;
 
-namespace ATAP.Utilities.ComputerInventory.UnitTests
+namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 {
   public class TempAndFanTestData
   {

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -14,6 +14,7 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>NA</PackageLabel>
+    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
   <!-- Documentation generation -->
@@ -27,15 +28,20 @@
     <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
     <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
     <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
-    <PackageReference Include="UnitsNet" Version="4.43.0" />
+    <PackageReference Include="UnitsNet" Version="4.51.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo\ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Software\ATAP.Utilities.ComputerInventory.Interfaces.Software.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models.ProcessInfo\ATAP.Utilities.ComputerInventory.Models.ProcessInfo.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models.Software\ATAP.Utilities.ComputerInventory.Models.Software.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Hardware.Interfaces\ATAP.Utilities.ComputerInventory.Hardware.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Hardware.Models\ATAP.Utilities.ComputerInventory.Hardware.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Hardware.StringConstants\ATAP.Utilities.ComputerInventory.Hardware.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Interfaces\ATAP.Utilities.ComputerInventory.Software.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Models\ATAP.Utilities.ComputerInventory.Software.Models.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.GraphDataStructures.Interfaces\ATAP.Utilities.GraphDataStructures.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.GraphDataStructures\ATAP.Utilities.GraphDataStructures.csproj" />
   </ItemGroup>
 
   <ItemGroup>

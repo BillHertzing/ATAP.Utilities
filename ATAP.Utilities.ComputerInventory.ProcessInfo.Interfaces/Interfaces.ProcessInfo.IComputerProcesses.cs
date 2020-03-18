@@ -1,7 +1,7 @@
 using ATAP.Utilities.ConcurrentObservableCollections;
 using System;
 
-namespace ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo
+namespace ATAP.Utilities.ComputerInventory.ProcessInfo
 {
   public interface IComputerProcesses //: IObservable<IComputerProcesses>
   {

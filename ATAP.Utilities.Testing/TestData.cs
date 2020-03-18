@@ -1,5 +1,5 @@
 using System;
-
+using System.Collections.Generic;
 
 namespace ATAP.Utilities.Testing
 {
@@ -17,17 +17,13 @@ namespace ATAP.Utilities.Testing
     }
 
   }
-  public class TestDataEn<T> 
+  public class TestDataEn<T>
   {
-    public T[] ObjTestDataArray;
-    public string[] SerializedTestDataArray;
+    public IEnumerable<TestData<T>> E;
 
-
-    public TestDataEn(T[] objTestDataArray, string[] serializedTestDataArray)
+    public TestDataEn(IEnumerable<TestData<T>> e)
     {
-      ObjTestDataArray = objTestDataArray ?? throw new ArgumentNullException(nameof(objTestDataArray));
-      //ToDo add test to disallow 0-length enumerable
-      SerializedTestDataArray = serializedTestDataArray ?? throw new ArgumentNullException(nameof(serializedTestDataArray));
+      E = e ?? throw new ArgumentNullException(nameof(e));
     }
   }
 }

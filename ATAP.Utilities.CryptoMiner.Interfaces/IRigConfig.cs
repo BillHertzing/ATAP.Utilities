@@ -2,7 +2,7 @@ using Itenso.TimePeriod;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoMiner.Enumerations;
 using ATAP.Utilities.ConcurrentObservableCollections;
-using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
+using ATAP.Utilities.ComputerInventory.Hardware;
 
 namespace ATAP.Utilities.CryptoMiner.Interfaces
 {

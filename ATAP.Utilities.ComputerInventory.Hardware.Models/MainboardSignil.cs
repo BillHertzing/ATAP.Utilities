@@ -1,11 +1,7 @@
-using ATAP.Utilities.ComputerInventory.Enumerations.Hardware;
-using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
-using System;
-using System.Collections.Generic;
-using UnitsNet;
-using UnitsNet.Units;
 
-namespace ATAP.Utilities.ComputerInventory.Models.Hardware
+using System;
+
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   [Serializable]
   public class MainBoardSignil : IMainBoardSignil

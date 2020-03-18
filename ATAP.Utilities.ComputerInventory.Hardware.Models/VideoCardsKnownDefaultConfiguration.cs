@@ -1,14 +1,8 @@
-using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Enumerations.Hardware;
-using ATAP.Utilities.ComputerInventory.Models.Hardware;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnitsNet.Units;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   [Serializable]
   public static class VideoCardsKnownDefaultConfiguration

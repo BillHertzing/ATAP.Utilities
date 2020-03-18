@@ -21,7 +21,7 @@ using ATAP.Utilities.CryptoMiner.Extensions;
 using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
 using UnitsNet;
-using ATAP.Utilities.ComputerInventory.Models.Hardware;
+using ATAP.Utilities.ComputerInventory.Hardware.Models;
 
 namespace ATAP.Utilities.CryptoMiner.UnitTests
 {

@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace ATAP.Utilities.ComputerInventory.Enumerations.Hardware
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
 
   public enum CPUMaker

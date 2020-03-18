@@ -1,6 +1,6 @@
-using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
-using ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo;
-using ATAP.Utilities.ComputerInventory.Interfaces.Software;
+using ATAP.Utilities.ComputerInventory.Hardware;
+using ATAP.Utilities.ComputerInventory.ProcessInfo;
+using ATAP.Utilities.ComputerInventory.Software;
 
 using System;
 

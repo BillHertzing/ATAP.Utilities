@@ -2,10 +2,9 @@ using System;
 using Medallion.Shell;
 using System.Collections.Generic;
 using ATAP.Utilities.ConcurrentObservableCollections;
-using ATAP.Utilities.ComputerInventory.Interfaces.Software;
-using ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo;
+using ATAP.Utilities.ComputerInventory.Software;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo
+namespace ATAP.Utilities.ComputerInventory.ProcessInfo
 {
 
   public class ComputerProcess : IEquatable<ComputerProcess>, IComputerProcess
@@ -64,6 +63,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo
   {
     public ComputerProcesses()
     {
+      ComputerProcessDictionary = new ConcurrentObservableDictionary<int, IComputerProcess>();
     }
 
     public ComputerProcesses(ConcurrentObservableDictionary<int, IComputerProcess> computerProcessDictionary)

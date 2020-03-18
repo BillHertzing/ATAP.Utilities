@@ -1,13 +1,10 @@
 
-using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
-using ATAP.Utilities.TypedGuids;
-using Itenso.TimePeriod;
+using ATAP.Utilities.Philote;
 using System;
-using System.Collections.Generic;
 
-namespace ATAP.Utilities.ComputerInventory.Models.Hardware
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
+
 
   [Serializable]
   public class DiskDrive : IDiskDrive
@@ -16,21 +13,43 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     {
     }
 
-    public DiskDrive(IDiskDriveSignil diskDriveSignil, Id<IDiskDrive>? iD, Id<IDiskDrive>? iD2, int? diskDriveNumber, ITimeBlock timeBlock)
+    public DiskDrive(IDiskDriveSignil diskDriveSignil, int? diskDriveNumber, IPhilote<IDiskDrive> philote)
     {
       DiskDriveSignil = diskDriveSignil ?? throw new ArgumentNullException(nameof(diskDriveSignil));
-      ID = iD;
-      ID2 = iD2;
       DiskDriveNumber = diskDriveNumber;
-      TimeBlock = timeBlock ?? throw new ArgumentNullException(nameof(timeBlock));
+      Philote = philote ?? throw new ArgumentNullException(nameof(philote));
+    }
+
+    public DiskDrive(IDiskDriveSignil diskDriveSignil, int? diskDriveNumber)
+    {
+      DiskDriveSignil = diskDriveSignil ?? throw new ArgumentNullException(nameof(diskDriveSignil));
+      DiskDriveNumber = diskDriveNumber;
+      Philote = null;
     }
 
     public IDiskDriveSignil DiskDriveSignil { get; private set; }
-    public Id<IDiskDrive>? ID { get; private set; }
-    public Id<IDiskDrive>? ID2 { get; private set; }
-
     public int? DiskDriveNumber { get; private set; }
-    public ITimeBlock? TimeBlock { get; }
+    public IPhilote<IDiskDrive>? Philote { get; private set; }
+  }
+}
+
+/*
+// ToDo: try creating these collections as a dictionary of interfaces keyed by interface
+// A Concurrent dictionary structure that participates in R over Observable consisting of the identify collection of PartitionInfoEx(s), keyed by ID<IPartitionInfoEx> 
+public interface IDiskDrives
+{
+  ConcurrentObservableDictionary<Id<DiskDrive>, DiskDrive> DiskDriveCOD { get; set; }
+}
+
+public class DiskDrives : IDiskDrives
+{
+  public DiskDrives() : this(new ConcurrentObservableDictionary<Id<DiskDrive>, DiskDrive>()) { }
+
+  public DiskDrives(ConcurrentObservableDictionary<Id<DiskDrive>, DiskDrive> diskDiskDriveCOD)
+  {
+    DiskDriveCOD = diskDiskDriveCOD ?? throw new ArgumentNullException(nameof(diskDiskDriveCOD));
   }
 
+  public ConcurrentObservableDictionary<Id<DiskDrive>, DiskDrive> DiskDriveCOD { get; set; }
 }
+*/

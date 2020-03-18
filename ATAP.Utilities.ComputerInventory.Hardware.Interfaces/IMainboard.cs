@@ -1,17 +1,19 @@
 
 
 
+using ATAP.Utilities.Philote;
 using ATAP.Utilities.TypedGuids;
 using Itenso.TimePeriod;
+using System.Collections.Generic;
 
-namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   public interface IMainBoard
   {
-    ICPU[] CPUs { get; }
     IMainBoardSignil MainBoardSignil { get; }
-    Id<IMainBoard>? ID { get; }
-    ITimeBlock? TimeBlock { get; }
+    IEnumerable<ICPU>? CPUs { get; }
+    IEnumerable<IDiskDrive>? DiskDrives { get; }
+    IPhilote<IMainBoard>? Philote { get; }
   }
 
 }

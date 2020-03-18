@@ -14,6 +14,7 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>NA</PackageLabel>
+    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
   <!-- Documentation generation -->
@@ -23,10 +24,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Hardware\ATAP.Utilities.ComputerInventory.Interfaces.Hardware.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models.Hardware\ATAP.Utilities.ComputerInventory.Models.Hardware.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models.ProcessInfo\ATAP.Utilities.ComputerInventory.Models.ProcessInfo.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models.Software\ATAP.Utilities.ComputerInventory.Models.Software.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions\ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Models\ATAP.Utilities.ComputerInventory.Software.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Configuration\ATAP.Utilities.ComputerInventory.Configuration.csproj" />

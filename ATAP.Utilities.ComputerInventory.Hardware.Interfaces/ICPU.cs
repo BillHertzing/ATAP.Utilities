@@ -1,13 +1,10 @@
-using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
-using ATAP.Utilities.TypedGuids;
-using Itenso.TimePeriod;
+using ATAP.Utilities.Philote;
 
-namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   public interface ICPU
   {
     ICPUSignil CPUSignil { get; }
-    Id<Interfaces.Hardware.ICPU>? ID { get; }
-    ITimeBlock? TimeBlock { get; }
+    IPhilote<ICPU>? Philote { get; }
   }
 }

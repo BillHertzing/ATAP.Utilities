@@ -32,6 +32,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'ReleaseWithTrace' ">
+    <OutputPath>bin\ReleaseWithTrace\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
     <Folder Include="Documentation\" />
     <Folder Include="tools\" />

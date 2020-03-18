@@ -1,8 +1,8 @@
-using ATAP.Utilities.ComputerInventory.Interfaces.Software;
+using ATAP.Utilities.ComputerInventory.Software;
 using System;
 using Medallion.Shell;
 
-namespace ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo
+namespace ATAP.Utilities.ComputerInventory.ProcessInfo
 {
 
   public interface IComputerProcess //: IObservable<IComputerProcess>

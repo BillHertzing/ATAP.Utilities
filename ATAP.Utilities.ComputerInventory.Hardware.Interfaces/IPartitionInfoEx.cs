@@ -1,15 +1,16 @@
-using ATAP.Utilities.ComputerInventory.Enumerations.Hardware;
+using ATAP.Utilities.Philote;
 using System.Collections.Generic;
 using UnitsNet;
 
-namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
+
   public interface IPartitionInfoEx
   {
-    IEnumerable<string>? DriveLetters { get; }
-    TypedGuids.Id<IPartitionInfoEx>? ID { get; }
-    TypedGuids.Id<IPartitionInfoEx>? ID2 { get; }
     PartitionFileSystem PartitionFileSystem { get; }
     Information Size { get; }
+    IEnumerable<char>? DriveLetters { get; }
+    IPhilote<IPartitionInfoEx>? Philote { get; }
   }
+
 }

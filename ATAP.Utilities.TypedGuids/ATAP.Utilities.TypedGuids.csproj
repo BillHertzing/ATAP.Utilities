@@ -14,12 +14,16 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>NA</PackageLabel>
+    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
   <!-- Documentation generation -->
   <ItemGroup>
     <PackageReference Include="docfx" Version="2.40.2" />
     <Folder Include="Documentation\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.TypedGuids.Interfaces\ATAP.Utilities.TypedGuids.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

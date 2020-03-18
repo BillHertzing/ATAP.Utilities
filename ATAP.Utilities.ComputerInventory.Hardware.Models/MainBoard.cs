@@ -1,13 +1,11 @@
 
-using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
-using ATAP.Utilities.TypedGuids;
-using Itenso.TimePeriod;
+using ATAP.Utilities.Philote;
 using System;
 using System.Collections.Generic;
 
-namespace ATAP.Utilities.ComputerInventory.Models.Hardware
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
+
 
   [Serializable]
   public class MainBoard : IMainBoard
@@ -16,18 +14,19 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
     {
     }
 
-    public MainBoard(IMainBoardSignil mainBoardSignil, ICPU[] cPUs, Id<IMainBoard>? iD, ITimeBlock timeBlock)
+
+    public MainBoard(IMainBoardSignil mainBoardSignil, IEnumerable<ICPU>? cPUs, IEnumerable<IDiskDrive>? diskDrives, IPhilote<IMainBoard>? philote)
     {
       MainBoardSignil = mainBoardSignil ?? throw new ArgumentNullException(nameof(mainBoardSignil));
-      CPUs = cPUs ?? throw new ArgumentNullException(nameof(cPUs));
-      ID = iD;
-      TimeBlock = timeBlock ?? throw new ArgumentNullException(nameof(timeBlock));
+      CPUs = cPUs;
+      DiskDrives = diskDrives;
+      Philote = philote;
     }
 
     public IMainBoardSignil MainBoardSignil { get; private set; }
-    public ICPU[] CPUs { get; private set; }
-    public Id<IMainBoard>? ID { get; private set; }
-    public ITimeBlock? TimeBlock { get; private set; }
+    public IEnumerable<ICPU>? CPUs { get; private set; }
+    public IEnumerable<IDiskDrive>? DiskDrives { get; private set; }
+    public IPhilote<IMainBoard>? Philote { get; private set; }
   }
 
 }

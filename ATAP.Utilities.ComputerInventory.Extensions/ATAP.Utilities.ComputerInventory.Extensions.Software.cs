@@ -1,8 +1,9 @@
-using ATAP.Utilities.ComputerInventory.Configuration.Software;
+
+using ATAP.Utilities.ComputerInventory.Software;
 using System;
 using System.Collections.Generic;
 
-namespace ATAP.Utilities.ComputerInventory.Extensions
+namespace ATAP.Utilities.ComputerInventory
 {
   public static partial class Extensions
   {

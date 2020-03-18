@@ -1,47 +1,48 @@
 using System.Collections.Generic;
 using System.Collections;
-using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
+using ATAP.Utilities.ComputerInventory.Hardware;
 using System;
-using ATAP.Utilities.ComputerInventory.Models.Hardware;
+using System.Linq;
+using System.Text;
+using ATAP.Utilities.Testing;
+using ATAP.Utilities.TypedGuids;
 
-namespace ATAP.Utilities.ComputerInventory.UnitTests
+namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class MainBoardTestData
+  public class MainBoardTestData : TestData<MainBoard>
   {
-    public MainBoard MainBoard;
-    public string SerializedMainBoard;
-
-    public MainBoardTestData()
+    public MainBoardTestData(MainBoard objTestData, string serializedTestData) : base(objTestData, serializedTestData)
     {
-    }
-
-    public MainBoardTestData(MainBoard mainBoard, string serializedMainBoard)
-    {
-      MainBoard = mainBoard ?? throw new ArgumentNullException(nameof(mainBoard));
-      SerializedMainBoard = serializedMainBoard ?? throw new ArgumentNullException(nameof(serializedMainBoard));
     }
   }
 
   public class MainBoardTestDataGenerator : IEnumerable<object[]>
   {
-    public static IEnumerable<object[]> MainBoardTestData()
+    public static IEnumerable<object[]> TestData()
     {
-      yield return new MainBoardTestData[] { new MainBoardTestData { MainBoard = new MainBoard
-        (MainBoardMaker.ASUS,
-        CPUSocket.LGA1155
-        ), SerializedMainBoard = "{\"Maker\":0}" } };
-      yield return new MainBoardTestData[] { new MainBoardTestData { MainBoard = new MainBoard(
-        MainBoardMaker.MSI,
-        CPUSocket.LGA1156
-        ), SerializedMainBoard = "{\"Maker\":1}" } };
-      yield return new MainBoardTestData[] { new MainBoardTestData { MainBoard = new MainBoard(
-        MainBoardMaker.Generic, CPUSocket.Generic
-        ), SerializedMainBoard = "{\"Maker\":2}" } };
+      StringBuilder str = new StringBuilder();
+      foreach (MainBoardSignilTestData[] signil in MainBoardSignilTestDataGenerator.TestData())
+      {
+        foreach (CPUEnumerableTestData[] cPUEnumerable in CPUEnumerableTestDataGenerator.TestData())
+        {
+          if (cPUEnumerable[0].E.FirstOrDefault() == null) { continue; }
+          foreach (DiskDriveEnumerableTestData[] diskDriveEnumerable in DiskDriveEnumerableTestDataGenerator.TestData())
+          {
+            if (diskDriveEnumerable[0].E.FirstOrDefault() == null) { continue; }
+            foreach (PhiloteTestData<IMainBoard>[] philote in PhiloteTestDataGenerator<IMainBoard>.TestData())
+            {
+
+              str.Clear();
+              str.Append($"{{\"MainBoardSignil\":{signil[0].SerializedTestData},\"CPUEnumerable\":{{{cPUEnumerable[0].E.FirstOrDefault().SerializedTestData}}},\"DiskDriveEnumerable\":{{{diskDriveEnumerable[0].E.FirstOrDefault().SerializedTestData}}},\"Philote\":{philote[0].SerializedTestData}}}");
+              yield return new MainBoardTestData[] { new MainBoardTestData(new MainBoard(signil[0].ObjTestData, cPUEnumerable[0].E.Select(x => x.ObjTestData), diskDriveEnumerable[0].E.Select(x => x.ObjTestData), philote[0].ObjTestData), str.ToString()) };
+            }
+          }
+        }
+      }
     }
-    public IEnumerator<object[]> GetEnumerator() { return MainBoardTestData().GetEnumerator(); }
+    public IEnumerator<object[]> GetEnumerator() { return TestData().GetEnumerator(); }
     IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
   }
 }

@@ -3,17 +3,13 @@ using System.Collections.Generic;
 using Itenso.TimePeriod;
 using ATAP.Utilities.ConcurrentObservableCollections;
 using UnitsNet;
-using ATAP.Utilities.ComputerInventory.Enumerations;
-
 using ATAP.Utilities.CryptoCoin.Models;
 using ATAP.Utilities.CryptoCoin.Enumerations;
-using ATAP.Utilities.CryptoMiner.Models;
 using ATAP.Utilities.CryptoMiner.Enumerations;
-using ATAP.Utilities.ComputerInventory.Configuration;
-using ATAP.Utilities.ComputerInventory.Configuration.Software;
 using ATAP.Utilities.CryptoMiner.Interfaces;
 
 using UnitsNet.Units;
+using ATAP.Utilities.ComputerInventory.Software;
 
 namespace ATAP.Utilities.CryptoMiner.Models
 {
@@ -65,7 +61,11 @@ namespace ATAP.Utilities.CryptoMiner.Models
 
   public abstract class MinerSWAbstract : ComputerSoftwareProgram, IMinerSWAbstract
   {
-    public MinerSWAbstract(string processName, string processPath, string version, string processStartPath, bool hasConfigurationSettings, ConcurrentObservableDictionary<string, string> configurationSettings, string configFilePath, bool hasSTDOut, bool hasERROut, bool hasAPI, string aPIDiscoveryURL, bool hasLogFiles, string logFileFolder, string logFileFnPattern, Coin[] coinsMined, string[][] pools) : base(processName, processPath, version, processStartPath, hasConfigurationSettings, configurationSettings, configFilePath, hasSTDOut, hasERROut, hasAPI, aPIDiscoveryURL, hasLogFiles, logFileFolder, logFileFnPattern)
+    public MinerSWAbstract(string processName, string processPath, string version, string processStartPath, bool hasConfigurationSettings, ConcurrentObservableDictionary<string, string> configurationSettings, string configFilePath, bool hasSTDOut, bool hasERROut, bool hasAPI, string aPIDiscoveryURL, bool hasLogFiles, string logFileFolder, string logFileFnPattern, Coin[] coinsMined, string[][] pools) : base(
+      new ComputerSoftwareProgramSignil(processName, processPath, processStartPath, version, hasSTDOut, hasERROut, hasLogFiles, logFileFolder, logFileFnPattern, hasAPI, aPIDiscoveryURL, hasConfigurationSettings,  configFilePath),
+      null
+
+      )
     {
       CoinsMined = coinsMined ?? throw new ArgumentNullException(nameof(coinsMined));
       Pools = pools ?? throw new ArgumentNullException(nameof(pools));

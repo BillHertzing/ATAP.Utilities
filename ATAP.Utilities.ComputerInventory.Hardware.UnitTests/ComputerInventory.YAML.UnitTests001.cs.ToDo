@@ -1,16 +1,15 @@
 using System;
 using System.Linq;
-using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo;
+using ATAP.Utilities.ComputerInventory.ProcessInfo.;
 using ATAP.Utilities.ComputerInventory.Configuration;
-using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
-using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
+using ATAP.Utilities.ComputerInventory.Hardware;
+using ATAP.Utilities.ComputerInventory.ProcessInfo;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 using YamlDotNet.Serialization;
 
-namespace ATAP.Utilities.ComputerInventory.UnitTests {
+namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
     
   public class ComputerInventoryUnitTestsYAML : IClassFixture<Fixture>
   {

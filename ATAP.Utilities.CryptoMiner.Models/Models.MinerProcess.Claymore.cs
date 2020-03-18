@@ -1,4 +1,3 @@
-using ATAP.Utilities.ComputerInventory.Configuration;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoCoin.Models;
 using ATAP.Utilities.ConcurrentObservableCollections;
@@ -8,12 +7,11 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using UnitsNet;
-using ATAP.Utilities.ComputerInventory.Extensions;
 using Medallion.Shell;
-using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
 using ATAP.Utilities.CryptoMiner.Interfaces;
 using System.Linq;
-using ATAP.Utilities.ComputerInventory.Models.Hardware;
+using ATAP.Utilities.ComputerInventory.Hardware;
+using ATAP.Utilities.ComputerInventory.ProcessInfo;
 
 namespace ATAP.Utilities.CryptoMiner.Models
 {
@@ -31,7 +29,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
       //var msorigianlZEC = "{\"id\": 0, \"error\": null, \"result\": [\"12.6 - ZEC\", \"1676\", \"352; 1300; 4\", \"175; 177\", \"0; 0; 0\", \"off; off\", \"81; 100\", \"zec - us - east1.nanopool.org:6633\", \"0; 2; 0; 0\"]}";
       //var ms = "{\"id\": 0, \"error\": null, \"result\": [\"12.6 - ZEC\", \"1676\", \"352; 1300; 4\", \"175; 177\", \"0; 0; 0\", \"off; off\", \"81; 100\", \"zec - us - east1.nanopool.org:6633\", \"0; 2; 0; 0\"]}";
       // ToDo: Make this error message better
-      if (!(this.ComputerSoftwareProgram.HasAPI && this.ComputerSoftwareProgram.HasConfigurationSettings))
+      if (!(this.ComputerSoftwareProgram.ComputerSoftwareProgramSignil.HasAPI && this.ComputerSoftwareProgram.ComputerSoftwareProgramSignil.HasConfigurationSettings))
       {
         throw new NotImplementedException("This software does not implement StatusFetchAsync.");
       }

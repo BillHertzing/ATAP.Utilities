@@ -1,18 +1,9 @@
 using System;
-using Itenso.TimePeriod;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.ComponentModel;
-using System.Globalization;
-using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
-using ATAP.Utilities.ComputerInventory.Models.Hardware;
 using UnitsNet;
-using UnitsNet.Units;
-using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
-using ATAP.Utilities.ComputerInventory.Enumerations.Hardware;
 
-namespace ATAP.Utilities.ComputerInventory.Models.Hardware
+
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
 
   /*
@@ -49,41 +40,6 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
       info.AddValue("CPUSocket", CPUSocket.ToString());
     }
 
-    public override bool Equals(object obj)
-    {
-      return Equals(obj as MainBoard);
-    }
-
-    public bool Equals(MainBoard other)
-    {
-      return other != null &&
-             Maker == other.Maker &&
-             CPUSocket == other.CPUSocket;
-    }
-
-    public override int GetHashCode()
-    {
-      var hashCode = 1129616743;
-      hashCode = hashCode * -1521134295 + Maker.GetHashCode();
-      hashCode = hashCode * -1521134295 + CPUSocket.GetHashCode();
-      return hashCode;
-    }
-
-    public MainBoardMaker Maker { get; }
-
-    public CPUSocket CPUSocket { get;  }
-
-    public static bool operator ==(MainBoard left, MainBoard right)
-    {
-      return EqualityComparer<MainBoard>.Default.Equals(left, right);
-    }
-
-    public static bool operator !=(MainBoard left, MainBoard right)
-    {
-      return !(left == right);
-    }
-  }
-
   [Serializable]
   public class CPU : IEquatable<CPU>, ICPU
   {
@@ -98,31 +54,6 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
 
     public CPUMaker CPUMaker { get; }
 
-    public override bool Equals(object obj)
-    {
-      return Equals(obj as CPU);
-    }
-
-    public bool Equals(CPU other)
-    {
-      return other != null &&
-             CPUMaker == other.CPUMaker;
-    }
-
-    public override int GetHashCode()
-    {
-      return 1556992827 + CPUMaker.GetHashCode();
-    }
-
-    public static bool operator ==(CPU left, CPU right)
-    {
-      return EqualityComparer<CPU>.Default.Equals(left, right);
-    }
-
-    public static bool operator !=(CPU left, CPU right)
-    {
-      return !(left == right);
-    }
   }
 
   */
@@ -267,7 +198,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
   }
 
   [Serializable]
-  public class VideoCardSignil :IVideoCardSignil, IEquatable<VideoCardSignil>
+  public class VideoCardSignil : IVideoCardSignil, IEquatable<VideoCardSignil>
   {
     public string CardName { get; }
     public GPUMaker GPUMaker { get; }
@@ -404,7 +335,7 @@ namespace ATAP.Utilities.ComputerInventory.Models.Hardware
 
   //ToDo make these thread-safe (concurrent)
   [Serializable]
-  public class TempAndFan : ITempAndFan 
+  public class TempAndFan : ITempAndFan
   {
     public TempAndFan()
     {

@@ -1,9 +1,9 @@
-using ATAP.Utilities.ComputerInventory.Enumerations;
+
 using Itenso.TimePeriod;
 using System;
 using System.Collections.Generic;
 
-namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
 
   public interface IComputerHardware

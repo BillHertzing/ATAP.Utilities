@@ -1,7 +1,6 @@
-using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Enumerations.Hardware;
 
-namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
+
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   public interface IVideoCardSignil
   {

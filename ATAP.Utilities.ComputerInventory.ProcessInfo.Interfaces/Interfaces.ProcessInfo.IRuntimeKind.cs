@@ -1,6 +1,5 @@
-using ATAP.Utilities.ComputerInventory.Enumerations;
 
-namespace ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo
+namespace ATAP.Utilities.ComputerInventory.ProcessInfo
 {
   public interface IRuntimeKind
   {

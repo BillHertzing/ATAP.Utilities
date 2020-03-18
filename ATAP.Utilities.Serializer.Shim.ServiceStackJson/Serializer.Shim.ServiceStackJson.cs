@@ -27,6 +27,7 @@ namespace ATAP.Utilities.Serializer
       JsConfig.TreatEnumAsInteger = true;
       JsConfig.ExcludeDefaultValues = false;
       JsConfig.IncludeNullValues = true;
+      JsConfig.ExcludeTypeInfo = true;
       //    new EnumSerializerConfigurator()
       //.WithAssemblies(AppDomain.CurrentDomain.GetAssemblies())
       //.WithNamespaceFilter(ns => ns.StartsWith("ATAP"))

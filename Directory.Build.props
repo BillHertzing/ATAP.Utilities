@@ -21,6 +21,12 @@
 	-->
   </PropertyGroup>
 
+  <!-- Nullable Reference Type support solution-wide -->
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  
+
   <!-- solution-wide properties to include in every project -->
   <PropertyGroup>
     <!-- root directory of the solution, relative to the location where current project is found take place -->

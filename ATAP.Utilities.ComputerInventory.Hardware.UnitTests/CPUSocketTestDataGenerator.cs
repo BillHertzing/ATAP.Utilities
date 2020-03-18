@@ -1,39 +1,31 @@
 using System.Collections.Generic;
 using System.Collections;
-using ATAP.Utilities.ComputerInventory.Enumerations;
+using  ATAP.Utilities.ComputerInventory.Hardware;
 using System;
+using ATAP.Utilities.Testing;
 
-namespace ATAP.Utilities.ComputerInventory.UnitTests
+namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class CPUSocketTestData
+  public class CPUSocketTestData : TestData<CPUSocket>
   {
-    public CPUSocket CPUSocket;
-    public string SerializedCPUSocket;
-
-    public CPUSocketTestData()
+    public CPUSocketTestData(CPUSocket objTestData, string serializedTestData) : base(objTestData, serializedTestData)
     {
-    }
-
-    public CPUSocketTestData(CPUSocket cPUSocket, string serializedCPUSocket)
-    {
-      CPUSocket = cPUSocket;
-      SerializedCPUSocket = serializedCPUSocket ?? throw new ArgumentNullException(nameof(serializedCPUSocket));
     }
   }
 
   public class CPUSocketTestDataGenerator : IEnumerable<object[]>
   {
-    public static IEnumerable<object[]> CPUSocketTestData()
+    public static IEnumerable<object[]> TestData()
     {
-      yield return new CPUSocketTestData[] { new CPUSocketTestData { CPUSocket = CPUSocket.Generic, SerializedCPUSocket = "0" } };
-      yield return new CPUSocketTestData[] { new CPUSocketTestData { CPUSocket = CPUSocket.LGA1136, SerializedCPUSocket = "1" } };
-      yield return new CPUSocketTestData[] { new CPUSocketTestData { CPUSocket = CPUSocket.LGA1155, SerializedCPUSocket = "2" } };
-      yield return new CPUSocketTestData[] { new CPUSocketTestData { CPUSocket = CPUSocket.LGA1156, SerializedCPUSocket = "3" } };
-      yield return new CPUSocketTestData[] { new CPUSocketTestData { CPUSocket = CPUSocket.LGA775, SerializedCPUSocket = "4" } };
+      yield return new CPUSocketTestData[] { new CPUSocketTestData(CPUSocket.Generic, "0") };
+      yield return new CPUSocketTestData[] { new CPUSocketTestData(CPUSocket.LGA1136, "1") };
+      yield return new CPUSocketTestData[] { new CPUSocketTestData(CPUSocket.LGA1155, "2") };
+      yield return new CPUSocketTestData[] { new CPUSocketTestData(CPUSocket.LGA1156, "3") };
+      yield return new CPUSocketTestData[] { new CPUSocketTestData(CPUSocket.LGA775, "4") };
     }
-    public IEnumerator<object[]> GetEnumerator() { return CPUSocketTestData().GetEnumerator(); }
+    public IEnumerator<object[]> GetEnumerator() { return TestData().GetEnumerator(); }
     IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
   }
 }

@@ -1,7 +1,5 @@
 using ATAP.Utilities.Serializer.Interfaces;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 using System;
 
 namespace ATAP.Utilities.Serializer
@@ -11,27 +9,22 @@ namespace ATAP.Utilities.Serializer
     //JsonSerializerOptions JsonSerializerOptions { get; private set; }
     public Serializer()
     {
+      this.Configure();
     }
 
     public string Serialize(object obj)
     {
-      return JsonConvert.SerializeObject(obj);
+      return Newtonsoft.Json.JsonConvert.SerializeObject(obj);
     }
     public T Deserialize<T>(string str)
     {
-      return JsonConvert.DeserializeObject<T>(str);
+      return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(str);
     }
 
     public void Configure()
     {
-      // Configure for Newtonsoft
-      JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-      {
-        Converters = {
-            new StringEnumConverter {NamingStrategy = new CamelCaseNamingStrategy() }
-        }
-      };
-
+      JsonSerializerSettings S = new Newtonsoft.Json.JsonSerializerSettings();// Func<JsonSerializerSettings>
+      var str = "debug";
       // ToDo: newtonsoft configuration for PascalCase
       // ToDo: newtonsoft configuration for Enumerations using Value (int)
       // ToDo: newtonsoft configuration to ensure default values are added to teh serialization (?maybe?)

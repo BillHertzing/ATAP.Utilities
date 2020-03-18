@@ -1,8 +1,8 @@
-using ATAP.Utilities.ComputerInventory.Enumerations.Hardware;
+using ATAP.Utilities.ComputerInventory.Hardware;
 using UnitsNet;
 using UnitsNet.Units;
 
-namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   public interface ICPUSignil
   {

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
+
 using UnitsNet;
 
-namespace ATAP.Utilities.ComputerInventory.Models.Hardware
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   //ToDo make these thread-safe (concurrent)
   [Serializable]

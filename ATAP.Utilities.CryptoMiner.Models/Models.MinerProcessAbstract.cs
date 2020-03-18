@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using ATAP.Utilities.ComputerInventory.Configuration;
-using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
-using Medallion.Shell;
+using ATAP.Utilities.ComputerInventory.ProcessInfo;
 using ATAP.Utilities.CryptoMiner.Interfaces;
 
 namespace ATAP.Utilities.CryptoMiner.Models

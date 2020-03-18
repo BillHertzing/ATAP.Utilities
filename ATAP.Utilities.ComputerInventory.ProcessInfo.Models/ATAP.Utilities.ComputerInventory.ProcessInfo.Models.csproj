@@ -14,23 +14,25 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>NA</PackageLabel>
+    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
     <!-- Documentation generation -->
   <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2"/>
+    <PackageReference Include="docfx" Version="2.40.2" />
     <Folder Include="Documentation\" />
   </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="MedallionShell" Version="1.5.1" />
     <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
-    <PackageReference Include="UnitsNet" Version="4.43.0" />
+    <PackageReference Include="UnitsNet" Version="4.51.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo\ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces\ATAP.Utilities.ComputerInventory.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Interfaces\ATAP.Utilities.ComputerInventory.Software.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

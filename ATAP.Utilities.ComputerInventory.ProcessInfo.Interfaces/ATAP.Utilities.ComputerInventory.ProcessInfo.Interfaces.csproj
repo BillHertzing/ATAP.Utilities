@@ -14,11 +14,12 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>NA</PackageLabel>
+    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
   <!-- Documentation generation -->
   <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2"/>
+    <PackageReference Include="docfx" Version="2.40.2" />
     <Folder Include="Documentation\" />
   </ItemGroup>
   
@@ -27,8 +28,8 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo\ATAP.Utilities.ComputerInventory.Enumerations.ProcessInfo.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Software\ATAP.Utilities.ComputerInventory.Interfaces.Software.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations\ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Interfaces\ATAP.Utilities.ComputerInventory.Software.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
   </ItemGroup>
 

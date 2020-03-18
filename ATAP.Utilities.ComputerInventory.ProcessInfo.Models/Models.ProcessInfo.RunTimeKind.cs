@@ -1,9 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
-using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Interfaces.ProcessInfo;
 
-namespace ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo
+namespace ATAP.Utilities.ComputerInventory.ProcessInfo
 {
 
   public class RuntimeKind : IRuntimeKind

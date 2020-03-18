@@ -1,4 +1,4 @@
-namespace ATAP.Utilities.ComputerInventory.Configuration.Hardware
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   public interface IVideoCardSensorData
   {

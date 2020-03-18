@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
  <PropertyGroup>
+   <TargetFrameworks>netstandard2.1</TargetFrameworks>
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
@@ -19,6 +20,7 @@
   <!-- Documentation generation -->
   <ItemGroup>
     <PackageReference Include="docfx" Version="2.40.2" />
+    <PackageReference Include="System.Text.Json" Version="4.7.1" />
     <Folder Include="Documentation\" />
   </ItemGroup>
   

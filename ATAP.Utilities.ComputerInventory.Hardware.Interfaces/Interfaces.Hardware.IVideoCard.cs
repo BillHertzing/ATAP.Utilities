@@ -1,4 +1,4 @@
-namespace ATAP.Utilities.ComputerInventory.Interfaces.Hardware
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   public interface IVideoCard
   {

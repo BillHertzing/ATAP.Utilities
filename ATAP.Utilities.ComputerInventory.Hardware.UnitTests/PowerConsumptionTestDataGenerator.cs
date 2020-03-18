@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections;
-using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
-using ATAP.Utilities.ComputerInventory.Models.Hardware;
+using ATAP.Utilities.ComputerInventory.Hardware;
 using Itenso.TimePeriod;
 
-namespace ATAP.Utilities.ComputerInventory.UnitTests
+namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 {
   public class PowerConsumptionTestData
   {

@@ -1,39 +1,41 @@
 using System.Collections.Generic;
 using System.Collections;
-using ATAP.Utilities.ComputerInventory.Enumerations;
-using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
+using ATAP.Utilities.ComputerInventory.Hardware;
 using System;
-using ATAP.Utilities.ComputerInventory.Models.Hardware;
+using System.Text;
+using ATAP.Utilities.Testing;
+using ATAP.Utilities.TypedGuids;
+using Itenso.TimePeriod;
 
-namespace ATAP.Utilities.ComputerInventory.UnitTests
+namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class CPUTestData
+  public class CPUTestData : TestData<ICPU>
   {
-    public CPU CPU;
-    public string SerializedCPU;
-
-    public CPUTestData()
+    public CPUTestData(CPU objTestData, string serializedTestData) : base(objTestData, serializedTestData)
     {
-    }
-
-    public CPUTestData(CPU cPU, string serializedCPU)
-    {
-      CPU = cPU ?? throw new ArgumentNullException(nameof(cPU));
-      SerializedCPU = serializedCPU ?? throw new ArgumentNullException(nameof(serializedCPU));
     }
   }
 
   public class CPUTestDataGenerator : IEnumerable<object[]>
   {
-    public static IEnumerable<object[]> CPUTestData()
+    public static IEnumerable<object[]> TestData()
     {
-      yield return new CPUTestData[] { new CPUTestData { CPU = new CPU(CPUMaker.Generic), SerializedCPU = "{\"CPUMaker\":0}" } };
-      yield return new CPUTestData[] { new CPUTestData { CPU = new CPU(CPUMaker.Intel), SerializedCPU = "{\"CPUMaker\":1}" } };
-      yield return new CPUTestData[] { new CPUTestData { CPU = new CPU(CPUMaker.AMD), SerializedCPU = "{\"CPUMaker\":2}" } };
+      StringBuilder str = new StringBuilder();
+      foreach (CPUSignilTestData[] signil in CPUSignilTestDataGenerator.TestData())
+      {
+        foreach (PhiloteTestData<ICPU>[] philote in PhiloteTestDataGenerator<ICPU>.TestData())
+        {
+          str.Clear();
+          str.Append($"{{\"CPUSignil\":{signil[0].SerializedTestData},\"Philote\":{philote[0].SerializedTestData}}}");
+          yield return new CPUTestData[] { new CPUTestData(new CPU(signil[0].ObjTestData, philote[0].ObjTestData), str.ToString()) };
+          //yield return new CPUTestData[] { new CPUTestData(new CPU[2] { new CPU(signil[0].ObjTestData, id[0], timeBlock[0].ObjTestData), new CPU(signil[0].ObjTestData, id[1], timeBlock[0].ObjTestData) }, new string[2] { str[0].ToString(), String[1].ToString() }) };
+          //yield return new CPUTestData[] { new CPUTestData(new CPU(signil[0].ObjTestData, id[0], timeBlock[0].ObjTestData), str.ToString()) };
+        }
+      }
     }
-    public IEnumerator<object[]> GetEnumerator() { return CPUTestData().GetEnumerator(); }
+    public IEnumerator<object[]> GetEnumerator() { return TestData().GetEnumerator(); }
     IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
   }
 }

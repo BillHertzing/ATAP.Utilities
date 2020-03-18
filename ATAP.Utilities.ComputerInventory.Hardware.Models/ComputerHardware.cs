@@ -1,8 +1,8 @@
-using System;
 using Itenso.TimePeriod;
-using ATAP.Utilities.ComputerInventory.Interfaces.Hardware;
+using System;
 
-namespace ATAP.Utilities.ComputerInventory.Models.Hardware
+
+namespace ATAP.Utilities.ComputerInventory.Hardware
 {
 
 

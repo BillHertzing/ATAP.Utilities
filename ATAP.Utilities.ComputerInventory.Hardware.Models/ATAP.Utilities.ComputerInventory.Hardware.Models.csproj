@@ -14,6 +14,7 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>NA</PackageLabel>
+    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
   <!-- Documentation generation -->
@@ -27,12 +28,14 @@
     <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
     <PackageReference Include="MedallionShell" Version="1.5.1" />
     <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
-    <PackageReference Include="UnitsNet" Version="4.43.0" />
+    <PackageReference Include="UnitsNet" Version="4.51.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Enumerations.Hardware\ATAP.Utilities.ComputerInventory.Enumerations.Hardware.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Interfaces.Hardware\ATAP.Utilities.ComputerInventory.Interfaces.Hardware.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Hardware.Enumerations\ATAP.Utilities.ComputerInventory.Hardware.Enumerations.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Hardware.Interfaces\ATAP.Utilities.ComputerInventory.Hardware.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
   </ItemGroup>
 
 </Project>

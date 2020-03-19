@@ -68,7 +68,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
   }
 
 
-  public class FSEntityArchiveFile : FSEntityAbstract
+  public class FSEntityArchiveFile : FSEntityFile
   {
   }
 

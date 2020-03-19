@@ -6,6 +6,7 @@ using Itenso.TimePeriod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -56,16 +57,41 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
       var cancellationTokenSource = new CancellationTokenSource();
       var cancellationTokenSourceId = new Id<CancellationTokenSource>(Guid.NewGuid());
       var cancellationToken = cancellationTokenSource.Token;
-     
+
       //ConvertFileSystemToGraphPersistence? convertFileSystemToGraphPersistence = null;
       //Func<Task> act = () => asyncObject.Awaiting(async x => await x.ThrowAsync<ArgumentException>());
       //act.Should().Throw<ArgumentException>();
 
       Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, convertFileSystemToGraphProgress, null, cancellationToken);
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult = await run.Invoke();
-      var fnames = convertFileSystemToGraphResult.GraphAsIList.Vertices.Where(x => x.Obj.GetType() == typeof(IFSEntityFile));
-      var ffullnames = convertFileSystemToGraphResult.GraphAsIList.Vertices.Where(x => x.Obj.GetType() == typeof(IFSEntityFile)).Select(z => z.Obj as FSEntityFile).Where(y => (y.Path == null)).Select(z => z.FileInfo);
-      var dfullnames = convertFileSystemToGraphResult.GraphAsIList.Vertices.Where(x => x.Obj.GetType() == typeof(FSEntityDirectory)).Select(z => z.Obj as FSEntityDirectory).Where(y => (y.Path != null)).Select(z => z.DirectoryInfo);
+      //var fnames = convertFileSystemToGraphResult.GraphAsIList.Vertices.Where(x => x.Obj.GetType() == typeof(IFSEntityFile));
+
+      //var ffullnames = convertFileSystemToGraphResult.GraphAsIList.Vertices.Where(x => x.Obj.GetType() == typeof(IFSEntityFile)).Select(z => z.Obj as FSEntityFile).Where(y => (y.Path == null)).Select(z => z.FileInfo);
+      //var dfullnames = convertFileSystemToGraphResult.GraphAsIList.Vertices.Where(x => x.Obj.GetType() == typeof(FSEntityDirectory)).Select(z => z.Obj as FSEntityDirectory).Where(y => (y.Path != null)).Select(z => z.DirectoryInfo);
+      //var containeredgeandnodename = convertFileSystemToGraphResult.GraphAsIList.Edges
+      //  .Where(e => ((e.From.Obj.GetType() == typeof(FSEntityDirectory) && (e.To.Obj.GetType() == typeof(FSEntityDirectory)))))
+      //  .Select(e => {
+      //    string fs = (e.From.Obj as FSEntityDirectory).DirectoryInfo.FullName;
+      //    string ts = (e.To.Obj as FSEntityDirectory).DirectoryInfo.FullName;
+      //    var tu = (fs,ts);
+      //    return tu;
+      //  });
+      var containeredgeandnodename = convertFileSystemToGraphResult.GraphAsIList.Edges
+  .Where(e => ((e.From.Obj.GetType() == typeof(FSEntityDirectory) && (e.To.Obj.GetType() == typeof(FSEntityFile)))))
+  .Select(e => {
+    string fs = (e.From.Obj as FSEntityDirectory).DirectoryInfo.FullName;
+    string ts = (e.To.Obj as FSEntityFile).FileInfo.FullName;
+    var tu = (fs, ts);
+    return tu;
+  });
+
+      var digraph = new StringBuilder();
+      digraph.Append("digraph G {"); digraph.Append(Environment.NewLine);
+      foreach (var e in containeredgeandnodename.ToList<(string,string)>())
+      {
+        digraph.Append($"\"{e.Item1.Replace("\\","\\\\")}\" -> \"{e.Item2.Replace("\\", "\\\\")}\""); digraph.Append(Environment.NewLine);
+      }
+      digraph.Append("}");
       convertFileSystemToGraphResult.GraphAsIList.Vertices.Count.Should().Be(5);
       var x = 1;
     }

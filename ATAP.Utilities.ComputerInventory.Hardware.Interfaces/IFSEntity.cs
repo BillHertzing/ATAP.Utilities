@@ -7,7 +7,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   public interface IFSEntityAbstract
   {
-    IList<Exception> Exceptions { get; set; }
+    Exception Exception { get; set; }
     string Path { get; set; }
     IPhilote<IFSEntityAbstract> Philote { get; set; }
   }

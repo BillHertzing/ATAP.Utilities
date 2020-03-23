@@ -8,31 +8,31 @@ namespace ATAP.Utilities.Persistence.FileSystem {
   // ToDo figure out the disposable mechanism
     public class PersistenceViaFileSetupInitializationData : PersistenceSetupInitializationDataAbstract
   {
-    public PersistenceViaFileSetupInitializationData(string filePath, CancellationToken cancellationToken) : base(cancellationToken)
+    public PersistenceViaFileSetupInitializationData(string[] filePath, CancellationToken cancellationToken) : base(cancellationToken)
     {
       FilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
     }
 
     // ToDo something more sophisticated than just a string for identifying the FileSystem storage mechanism
-    public string FilePath { get; private set; }
+    public string[] FilePath { get; private set; }
   }
 
     public class PersistenceViaFileSetupResults : PersistenceSetupResultsAbstract
   {
 
-    public PersistenceViaFileSetupResults(FileStream fileStream, StreamWriter streamWriter, bool success) : base(success)
+    public PersistenceViaFileSetupResults(FileStream[] fileStream, StreamWriter[] streamWriter, bool success) : base(success)
     {
       FileStream = fileStream ?? throw new ArgumentNullException(nameof(fileStream));
       StreamWriter = streamWriter ?? throw new ArgumentNullException(nameof(streamWriter));
     }
 
-    public FileStream FileStream { get; private set; }
-    public StreamWriter StreamWriter { get; private set; }
+    public FileStream[] FileStream { get; private set; }
+    public StreamWriter[] StreamWriter { get; private set; }
   }
 
   public class PersistenceViaFileInsertData : PersistenceInsertDataAbstract
   {
-    public PersistenceViaFileInsertData(PersistenceSetupResultsAbstract persistenceSetupResults, List<string> dList, CancellationToken cancellationToken) : base(persistenceSetupResults, dList, cancellationToken)
+    public PersistenceViaFileInsertData(PersistenceViaFileSetupResults persistenceSetupResults, List<string>[] dList, CancellationToken cancellationToken) : base(persistenceSetupResults, dList, cancellationToken)
     {
     }
   }
@@ -44,9 +44,9 @@ namespace ATAP.Utilities.Persistence.FileSystem {
     }
   }
 
-  public class PersistenceViaFileTearDownInitializationData : PersistenceTearDownInitializationDataAbstract
+  public class PersistenceViaFileTearDownData : PersistenceTearDownDataAbstract
   {
-    public PersistenceViaFileTearDownInitializationData(PersistenceSetupResultsAbstract persistenceSetupResults, CancellationToken cancellationToken) : base(persistenceSetupResults, cancellationToken)
+    public PersistenceViaFileTearDownData(PersistenceSetupResultsAbstract persistenceSetupResults, CancellationToken cancellationToken) : base(persistenceSetupResults, cancellationToken)
     {
     }
   }
@@ -61,10 +61,10 @@ namespace ATAP.Utilities.Persistence.FileSystem {
   public class PersistenceViaFile : PersistenceAbstract {
 
         public Func<PersistenceViaFileSetupInitializationData, PersistenceViaFileSetupResults> PersistenceViaFileSetup;
-        public Func<PersistenceViaFileInsertData, PersistenceViaFileSetupResults, PersistenceViaFileInsertResults> PersistenceViaFileViaFileInsert;
-        public Func<PersistenceViaFileTearDownInitializationData, PersistenceViaFileTearDownResults> PersistenceViaFileTearDown;
+        public Func<PersistenceViaFileInsertData, PersistenceViaFileSetupResults, PersistenceViaFileInsertResults> PersistenceViaFileInsert;
+        public Func<PersistenceViaFileTearDownData, PersistenceViaFileTearDownResults> PersistenceViaFileTearDown;
 
-    public PersistenceViaFile(PersistenceSetupInitializationDataAbstract persistenceSetupInitializationData, PersistenceSetupResultsAbstract persistenceSetupResults, Func<PersistenceSetupInitializationDataAbstract, PersistenceSetupResultsAbstract> persistenceSetup, PersistenceInsertDataAbstract persistenceInsertData, PersistenceInsertResultsAbstract persistenceInsertResults, Func<PersistenceInsertDataAbstract, PersistenceSetupResultsAbstract, PersistenceInsertResultsAbstract> persistenceInsert, PersistenceTearDownInitializationDataAbstract persistenceTearDownInitializationData, PersistenceTearDownResultsAbstract persistenceTearDownResults, Func<PersistenceTearDownInitializationDataAbstract, PersistenceSetupResultsAbstract, PersistenceTearDownResultsAbstract> persistenceTearDown) : base(persistenceSetupInitializationData, persistenceSetupResults, persistenceSetup, persistenceInsertData, persistenceInsertResults, persistenceInsert, persistenceTearDownInitializationData, persistenceTearDownResults, persistenceTearDown)
+    public PersistenceViaFile(PersistenceSetupInitializationDataAbstract persistenceSetupInitializationData, PersistenceSetupResultsAbstract persistenceSetupResults, Func<PersistenceSetupInitializationDataAbstract, PersistenceSetupResultsAbstract> persistenceSetup, PersistenceInsertDataAbstract persistenceInsertData, PersistenceInsertResultsAbstract persistenceInsertResults, Func<PersistenceInsertDataAbstract, PersistenceSetupResultsAbstract, PersistenceInsertResultsAbstract> persistenceInsert, PersistenceTearDownDataAbstract persistenceTearDownInitializationData, PersistenceTearDownResultsAbstract persistenceTearDownResults, Func<PersistenceTearDownDataAbstract, PersistenceSetupResultsAbstract, PersistenceTearDownResultsAbstract> persistenceTearDown) : base(persistenceSetupInitializationData, persistenceSetupResults, persistenceSetup, persistenceInsertData, persistenceInsertResults, persistenceInsert, persistenceTearDownInitializationData, persistenceTearDownResults, persistenceTearDown)
     {
     }
   }

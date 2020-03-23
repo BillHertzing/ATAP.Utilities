@@ -7,7 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		Directory.Build.props = Directory.Build.props
-		Directory.Build.targets.DoNotDelete = Directory.Build.targets.DoNotDelete
+		Directory.Build.targets = Directory.Build.targets
 		Index.md = Index.md
 		LICENSE = LICENSE
 		README.md = README.md
@@ -177,9 +177,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInve
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions", "ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions\ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions.csproj", "{8EB36189-3E85-45EB-954A-58B4043DE356}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration", "ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration\ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration.csproj", "{CB30C9BA-A2F2-45A6-9A4A-E19CD7560768}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration", "ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration\ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration.csproj", "{CB30C9BA-A2F2-45A6-9A4A-E19CD7560768}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Philote.DefaultConfiguration", "ATAP.Utilities.Philote.DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj", "{EE877675-2FB7-416D-AE38-E3B5E4292251}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Philote.DefaultConfiguration", "ATAP.Utilities.Philote.DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj", "{EE877675-2FB7-416D-AE38-E3B5E4292251}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

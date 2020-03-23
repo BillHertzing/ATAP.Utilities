@@ -51,5 +51,23 @@ namespace ATAP.Utilities.Testing
       catch (Exception) { } // Ignore
     }
     public FileInfo FileInfo { get { return file; } }
+
+
+
+  }
+  public static class Extensions
+  {
+    public static TemporaryFile CreateTemporaryFileEmpty(this TemporaryFile tf) {
+      try
+      {
+        File.Delete(tf);
+      }
+      catch (Exception e) when (e is System.ArgumentNullException || e is System.Security.SecurityException || e is System.ArgumentException || e is System.UnauthorizedAccessException || e is System.IO.PathTooLongException || e is System.NotSupportedException)
+      {
+        throw new Exception("error deleting temporary file, details in innerException", e);
+
+      }
+      return tf;
+    }
   }
 }

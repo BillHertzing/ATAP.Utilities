@@ -30,7 +30,7 @@ namespace ATAP.Utilities.Persistence.ORM
 
     public class PersistenceViaORMInsertData : PersistenceInsertDataAbstract
     {
-      public PersistenceViaORMInsertData(PersistenceSetupResultsAbstract persistenceSetupResults, List<string> dList, CancellationToken cancellationToken) : base(persistenceSetupResults, dList, cancellationToken)
+      public PersistenceViaORMInsertData(PersistenceSetupResultsAbstract persistenceSetupResults, List<string>[] dList, CancellationToken cancellationToken) : base(persistenceSetupResults, dList, cancellationToken)
       {
       }
     }
@@ -42,7 +42,7 @@ namespace ATAP.Utilities.Persistence.ORM
       }
     }
 
-    public class PersistenceViaORMTearDownInitializationData : PersistenceTearDownInitializationDataAbstract
+    public class PersistenceViaORMTearDownInitializationData : PersistenceTearDownDataAbstract
     {
       public PersistenceViaORMTearDownInitializationData(PersistenceSetupResultsAbstract persistenceSetupResults, CancellationToken cancellationToken) : base(persistenceSetupResults, cancellationToken)
       {
@@ -62,7 +62,7 @@ namespace ATAP.Utilities.Persistence.ORM
         public Func<PersistenceViaORMInsertData, PersistenceViaORMSetupResults, PersistenceViaORMInsertResults> PersistenceViaORMViaORMInsert;
         public Func<PersistenceViaORMTearDownInitializationData, PersistenceViaORMTearDownResults> PersistenceViaORMTearDown;
 
-      public PersistenceViaORM(PersistenceSetupInitializationDataAbstract persistenceSetupInitializationData, PersistenceSetupResultsAbstract persistenceSetupResults, Func<PersistenceSetupInitializationDataAbstract, PersistenceSetupResultsAbstract> persistenceSetup, PersistenceInsertDataAbstract persistenceInsertData, PersistenceInsertResultsAbstract persistenceInsertResults, Func<PersistenceInsertDataAbstract, PersistenceSetupResultsAbstract, PersistenceInsertResultsAbstract> persistenceInsert, PersistenceTearDownInitializationDataAbstract persistenceTearDownInitializationData, PersistenceTearDownResultsAbstract persistenceTearDownResults, Func<PersistenceTearDownInitializationDataAbstract, PersistenceSetupResultsAbstract, PersistenceTearDownResultsAbstract> persistenceTearDown) : base(persistenceSetupInitializationData, persistenceSetupResults, persistenceSetup, persistenceInsertData, persistenceInsertResults, persistenceInsert, persistenceTearDownInitializationData, persistenceTearDownResults, persistenceTearDown)
+      public PersistenceViaORM(PersistenceSetupInitializationDataAbstract persistenceSetupInitializationData, PersistenceSetupResultsAbstract persistenceSetupResults, Func<PersistenceSetupInitializationDataAbstract, PersistenceSetupResultsAbstract> persistenceSetup, PersistenceInsertDataAbstract persistenceInsertData, PersistenceInsertResultsAbstract persistenceInsertResults, Func<PersistenceInsertDataAbstract, PersistenceSetupResultsAbstract, PersistenceInsertResultsAbstract> persistenceInsert, PersistenceTearDownDataAbstract persistenceTearDownInitializationData, PersistenceTearDownResultsAbstract persistenceTearDownResults, Func<PersistenceTearDownDataAbstract, PersistenceSetupResultsAbstract, PersistenceTearDownResultsAbstract> persistenceTearDown) : base(persistenceSetupInitializationData, persistenceSetupResults, persistenceSetup, persistenceInsertData, persistenceInsertResults, persistenceInsert, persistenceTearDownInitializationData, persistenceTearDownResults, persistenceTearDown)
       {
       }
     }

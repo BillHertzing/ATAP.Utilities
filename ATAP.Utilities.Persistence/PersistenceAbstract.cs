@@ -2,20 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace ATAP.Utilities.Persistence {
-    public abstract class PersistenceSetupInitializationDataAbstract
+namespace ATAP.Utilities.Persistence
+{
+  public abstract class PersistenceSetupInitializationDataAbstract
   {
-        public CancellationToken CancellationToken { get; private set; }
+    public CancellationToken CancellationToken { get; private set; }
 
- 
+
     protected PersistenceSetupInitializationDataAbstract(CancellationToken cancellationToken)
     {
       CancellationToken = cancellationToken;
     }
   }
 
- 
-    public abstract class PersistenceSetupResultsAbstract
+
+  public abstract class PersistenceSetupResultsAbstract
   {
     protected PersistenceSetupResultsAbstract(bool success)
     {
@@ -23,11 +24,11 @@ namespace ATAP.Utilities.Persistence {
     }
 
     public bool Success { get; private set; }
-    }
+  }
 
-    public abstract class PersistenceInsertDataAbstract
+  public abstract class PersistenceInsertDataAbstract
   {
-    protected PersistenceInsertDataAbstract(PersistenceSetupResultsAbstract persistenceSetupResults, List<string> dList, CancellationToken cancellationToken)
+    protected PersistenceInsertDataAbstract(PersistenceSetupResultsAbstract persistenceSetupResults, List<string>[] dList, CancellationToken cancellationToken)
     {
       PersistenceSetupResults = persistenceSetupResults ?? throw new ArgumentNullException(nameof(persistenceSetupResults));
       DList = dList ?? throw new ArgumentNullException(nameof(dList));
@@ -35,7 +36,7 @@ namespace ATAP.Utilities.Persistence {
     }
 
     public PersistenceSetupResultsAbstract PersistenceSetupResults { get; private set; }
-        public List<string> DList { get; private set; }
+    public List<string>[] DList { get; private set; }
     public CancellationToken CancellationToken { get; private set; }
 
   }
@@ -49,11 +50,11 @@ namespace ATAP.Utilities.Persistence {
     public bool Success { get; private set; }
   }
 
-    // ToDo Make writeFileInfo into a thread-safe structure
-    //ToDo: Add a CancellationToken
-    public abstract class PersistenceTearDownInitializationDataAbstract
+  // ToDo Make writeFileInfo into a thread-safe structure
+  //ToDo: Add a CancellationToken
+  public abstract class PersistenceTearDownDataAbstract
   {
-    protected PersistenceTearDownInitializationDataAbstract(PersistenceSetupResultsAbstract persistenceSetupResults, CancellationToken cancellationToken)
+    protected PersistenceTearDownDataAbstract(PersistenceSetupResultsAbstract persistenceSetupResults, CancellationToken cancellationToken)
     {
       PersistenceSetupResults = persistenceSetupResults ?? throw new ArgumentNullException(nameof(persistenceSetupResults));
       CancellationToken = cancellationToken;
@@ -74,19 +75,19 @@ namespace ATAP.Utilities.Persistence {
     public bool Success { get; private set; }
   }
 
-    public abstract class PersistenceAbstract
+  public abstract class PersistenceAbstract
   {
-        public PersistenceSetupInitializationDataAbstract PersistenceSetupInitializationData;
-        public PersistenceSetupResultsAbstract PersistenceSetupResults;
-        public Func<PersistenceSetupInitializationDataAbstract, PersistenceSetupResultsAbstract> PersistenceSetup;
-        public PersistenceInsertDataAbstract PersistenceInsertData;
-        public PersistenceInsertResultsAbstract PersistenceInsertResults;
-        public Func<PersistenceInsertDataAbstract, PersistenceSetupResultsAbstract, PersistenceInsertResultsAbstract> PersistenceInsert;
-        public PersistenceTearDownInitializationDataAbstract PersistenceTearDownInitializationData;
-        public PersistenceTearDownResultsAbstract PersistenceTearDownResults;
-        public Func<PersistenceTearDownInitializationDataAbstract, PersistenceSetupResultsAbstract, PersistenceTearDownResultsAbstract> PersistenceTearDown;
+    public PersistenceSetupInitializationDataAbstract PersistenceSetupInitializationData;
+    public PersistenceSetupResultsAbstract PersistenceSetupResults;
+    public Func<PersistenceSetupInitializationDataAbstract, PersistenceSetupResultsAbstract> PersistenceSetup;
+    public PersistenceInsertDataAbstract PersistenceInsertData;
+    public PersistenceInsertResultsAbstract PersistenceInsertResults;
+    public Func<PersistenceInsertDataAbstract, PersistenceSetupResultsAbstract, PersistenceInsertResultsAbstract> PersistenceInsert;
+    public PersistenceTearDownDataAbstract PersistenceTearDownInitializationData;
+    public PersistenceTearDownResultsAbstract PersistenceTearDownResults;
+    public Func<PersistenceTearDownDataAbstract, PersistenceSetupResultsAbstract, PersistenceTearDownResultsAbstract> PersistenceTearDown;
 
-    protected PersistenceAbstract(PersistenceSetupInitializationDataAbstract persistenceSetupInitializationData, PersistenceSetupResultsAbstract persistenceSetupResults, Func<PersistenceSetupInitializationDataAbstract, PersistenceSetupResultsAbstract> persistenceSetup, PersistenceInsertDataAbstract persistenceInsertData, PersistenceInsertResultsAbstract persistenceInsertResults, Func<PersistenceInsertDataAbstract, PersistenceSetupResultsAbstract, PersistenceInsertResultsAbstract> persistenceInsert, PersistenceTearDownInitializationDataAbstract persistenceTearDownInitializationData, PersistenceTearDownResultsAbstract persistenceTearDownResults, Func<PersistenceTearDownInitializationDataAbstract, PersistenceSetupResultsAbstract, PersistenceTearDownResultsAbstract> persistenceTearDown)
+    protected PersistenceAbstract(PersistenceSetupInitializationDataAbstract persistenceSetupInitializationData, PersistenceSetupResultsAbstract persistenceSetupResults, Func<PersistenceSetupInitializationDataAbstract, PersistenceSetupResultsAbstract> persistenceSetup, PersistenceInsertDataAbstract persistenceInsertData, PersistenceInsertResultsAbstract persistenceInsertResults, Func<PersistenceInsertDataAbstract, PersistenceSetupResultsAbstract, PersistenceInsertResultsAbstract> persistenceInsert, PersistenceTearDownDataAbstract persistenceTearDownInitializationData, PersistenceTearDownResultsAbstract persistenceTearDownResults, Func<PersistenceTearDownDataAbstract, PersistenceSetupResultsAbstract, PersistenceTearDownResultsAbstract> persistenceTearDown)
     {
       PersistenceSetupInitializationData = persistenceSetupInitializationData ?? throw new ArgumentNullException(nameof(persistenceSetupInitializationData));
       PersistenceSetupResults = persistenceSetupResults ?? throw new ArgumentNullException(nameof(persistenceSetupResults));

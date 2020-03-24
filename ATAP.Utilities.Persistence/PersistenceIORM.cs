@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Threading;
 using ATAP.Utilities.Persistence;
 
-namespace ATAP.Utilities.Persistence.ORM
+namespace ATAP.Utilities.Persistence
 {
 
 
-    public class PersistenceViaORMSetupInitializationData : PersistenceSetupInitializationDataAbstract
+    public class PersistenceViaIORMSetupInitializationData : SetupDataAbstract, ISetupDataAbstract
     {
-      public PersistenceViaORMSetupInitializationData(string dBConnectionString, CancellationToken cancellationToken) : base(cancellationToken)
+      public PersistenceViaIORMSetupInitializationData(string dBConnectionString, CancellationToken cancellationToken) : base(cancellationToken)
       {
         DBConnectionString = dBConnectionString ?? throw new ArgumentNullException(nameof(dBConnectionString));
       }
@@ -17,53 +17,50 @@ namespace ATAP.Utilities.Persistence.ORM
       public string DBConnectionString { get; private set; }
     }
 
-    public class PersistenceViaORMSetupResults : PersistenceSetupResultsAbstract
+    public class PersistenceViaIORMSetupResults : SetupResultsAbstract, ISetupResultsAbstract
     {
-      public PersistenceViaORMSetupResults(bool success) : base(success)
+      public PersistenceViaIORMSetupResults(bool success) : base(success)
       {
       }
-
-
-      //public IORMInfo ORMHandle { get; private set; }
       public bool DisposeOfTheORMFunc { get; private set; }
     }
 
-    public class PersistenceViaORMInsertData : PersistenceInsertDataAbstract
+    public class PersistenceViaIORMInsertData : InsertDataAbstract
     {
-      public PersistenceViaORMInsertData(PersistenceSetupResultsAbstract persistenceSetupResults, List<string>[] dList, CancellationToken cancellationToken) : base(persistenceSetupResults, dList, cancellationToken)
+      public PersistenceViaIORMInsertData( IEnumerable<object>[][] dataToInsert, CancellationToken cancellationToken) : base(dataToInsert, cancellationToken)
       {
       }
     }
 
-    public class PersistenceViaORMInsertResults : PersistenceInsertResultsAbstract
+    public class PersistenceViaIORMInsertResults : InsertResultsAbstract, IInsertResultsAbstract
     {
-      public PersistenceViaORMInsertResults(bool success) : base(success)
+      public PersistenceViaIORMInsertResults(bool success) : base(success)
       {
       }
     }
 
-    public class PersistenceViaORMTearDownInitializationData : PersistenceTearDownDataAbstract
+    public class PersistenceViaIORMTearDownInitializationData : TearDownDataAbstract
     {
-      public PersistenceViaORMTearDownInitializationData(PersistenceSetupResultsAbstract persistenceSetupResults, CancellationToken cancellationToken) : base(persistenceSetupResults, cancellationToken)
+      public PersistenceViaIORMTearDownInitializationData(SetupResultsAbstract persistenceSetupResults, CancellationToken cancellationToken) : base( cancellationToken)
       {
       }
     }
 
-    public class PersistenceViaORMTearDownResults : PersistenceTearDownResultsAbstract
+    public class PersistenceViaIORMTearDownResults : TearDownResultsAbstract
     {
-      public PersistenceViaORMTearDownResults(bool success) : base(success)
+      public PersistenceViaIORMTearDownResults(bool success) : base(success)
       {
       }
     }
 
-    public class PersistenceViaORM : PersistenceAbstract {
+    //public class PersistenceViaIORM : PersistenceAbstract {
 
-        public Func<PersistenceViaORMSetupInitializationData, PersistenceViaORMSetupResults> PersistenceViaORMSetup;
-        public Func<PersistenceViaORMInsertData, PersistenceViaORMSetupResults, PersistenceViaORMInsertResults> PersistenceViaORMViaORMInsert;
-        public Func<PersistenceViaORMTearDownInitializationData, PersistenceViaORMTearDownResults> PersistenceViaORMTearDown;
+    //    public Func<PersistenceViaIORMSetupInitializationData, PersistenceViaIORMSetupResults> PersistenceViaIORMSetup;
+    //    public Func<PersistenceViaIORMInsertData, PersistenceViaIORMSetupResults, PersistenceViaIORMInsertResults> PersistenceViaIORMViaIORMInsert;
+    //    public Func<PersistenceViaIORMTearDownInitializationData, PersistenceViaIORMTearDownResults> PersistenceViaIORMTearDown;
 
-      public PersistenceViaORM(PersistenceSetupInitializationDataAbstract persistenceSetupInitializationData, PersistenceSetupResultsAbstract persistenceSetupResults, Func<PersistenceSetupInitializationDataAbstract, PersistenceSetupResultsAbstract> persistenceSetup, PersistenceInsertDataAbstract persistenceInsertData, PersistenceInsertResultsAbstract persistenceInsertResults, Func<PersistenceInsertDataAbstract, PersistenceSetupResultsAbstract, PersistenceInsertResultsAbstract> persistenceInsert, PersistenceTearDownDataAbstract persistenceTearDownInitializationData, PersistenceTearDownResultsAbstract persistenceTearDownResults, Func<PersistenceTearDownDataAbstract, PersistenceSetupResultsAbstract, PersistenceTearDownResultsAbstract> persistenceTearDown) : base(persistenceSetupInitializationData, persistenceSetupResults, persistenceSetup, persistenceInsertData, persistenceInsertResults, persistenceInsert, persistenceTearDownInitializationData, persistenceTearDownResults, persistenceTearDown)
-      {
-      }
-    }
+    //  public PersistenceViaIORM(PersistenceSetupInitializationDataAbstract persistenceSetupInitializationData, PersistenceSetupResultsAbstract persistenceSetupResults, Func<PersistenceSetupInitializationDataAbstract, PersistenceSetupResultsAbstract> persistenceSetup, PersistenceInsertDataAbstract persistenceInsertData, PersistenceInsertResultsAbstract persistenceInsertResults, Func<PersistenceInsertDataAbstract, PersistenceSetupResultsAbstract, PersistenceInsertResultsAbstract> persistenceInsert, PersistenceTearDownDataAbstract persistenceTearDownInitializationData, PersistenceTearDownResultsAbstract persistenceTearDownResults, Func<PersistenceTearDownDataAbstract, PersistenceSetupResultsAbstract, PersistenceTearDownResultsAbstract> persistenceTearDown) : base(persistenceSetupInitializationData, persistenceSetupResults, persistenceSetup, persistenceInsertData, persistenceInsertResults, persistenceInsert, persistenceTearDownInitializationData, persistenceTearDownResults, persistenceTearDown)
+    //  {
+    //  }
+    //}
 }

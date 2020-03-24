@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <!-- Print debugging information if the BeforeTargets is "PublishAfterBuild" instead of "NeverJustAPlaceHolder"-->
+   <Target Name="PrintBuildVariables" BeforeTargets="NeverJustAPlaceHolder">
+     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectDirectory = $(MSBuildProjectDirectory)" />
+     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectFullPath = $(MSBuildProjectFullPath)" />
+     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildToolsPath = $(MSBuildToolsPath)" />
+     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildBinPath = $(MSBuildBinPath)" />
+     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Configuration = $(Configuration)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Platform = $(Platform)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="TargetFrameworks = $(TargetFrameworks)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="TargetFramework = $(TargetFramework)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MajorVersion = $(MajorVersion)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MinorVersion = $(MinorVersion)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PatchVersion = $(PatchVersion)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Build = $(Build)"  />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Revision = $(Revision)"  />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageLifecycleStage = $(PackageLifecycleStage)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageLabel = $(PackageLabel)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageVersion = $(PackageVersion)"  />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="VersionFile = $(VersionFile)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="AssemblyName = $(AssemblyName)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="AssemblyVersion = $(AssemblyVersion)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="AssemblyFileVersion = $(AssemblyFileVersion)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="AssemblyInfoVersion = $(AssemblyInfoVersion)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="IntDir = $(IntDir)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutDir = $(OutDir)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputPath = $(OutputPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="NuGetLocalFeedPath = $(NuGetLocalFeedPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageId = $(PackageId)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageName = $(PackageId).$(PackageVersion).nupkg" />
+  </Target>
+  
+    <!-- Include the custom tasks from the ATAP.Utilities.BuildTooling Assembly 
+        The location of the Assembly has been specified in Directory.Build.props -->
+  <UsingTask TaskName="ATAP.Utilities.BuildTooling.GetVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" />
+  <UsingTask TaskName="ATAP.Utilities.BuildTooling.UpdateVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" />
+  <UsingTask TaskName="ATAP.Utilities.BuildTooling.SetVersion" AssemblyFile="$(ATAPUtilitiesBuildToolingTasksAssembly)" />
+
+  <!-- http://blog.casavian.eu/2014/04/23/increment-version-for-changed-assemblies-only-first-part/ -->
+  <!--%Program Files (x86)%\MSBuild\12.0\Bin\Microsoft.CSharp.CurrentVersion.targets  -->
+  <!-- This target is run only if any of the Inputs are more recent than any output -->
+  <Target 
+    Name="BeforeCompile"
+    Inputs="$(MSBuildAllProjects);
+        @(Compile);                               
+        @(_CoreCompileResourceInputs);
+        $(ApplicationIcon);
+        $(AssemblyOriginatorKeyFile);
+        @(ReferencePath);
+        @(CompiledLicenseFile);
+        @(LinkResource);
+        @(EmbeddedDocumentation); 
+        $(Win32Resource);
+        $(Win32Manifest);
+        @(CustomAdditionalCompileInputs)"
+    Outputs="@(DocFileItem);
+         @(IntermediateAssembly);
+         @(_DebugSymbolsIntermediatePath);                 
+         $(NonExistentFile);
+         @(CustomAdditionalCompileOutputs)">
+    <!-- Conditionally call version increment task here,
+             if not in a Visual Studio Design Time build, AND
+             if UpdatePackageVersionLockFilePath file does not exist -->
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="DesignTimeBuild = $(DesignTimeBuild)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' AND $(DesignTimeBuild) == true" Text=" Do Not Execute because DesignTimeBuild = true" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' AND Exists($(UpdatePackageVersionLockFilePath))" Text="Do Not Execute because $(UpdatePackageVersionLockFilePath) exists" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' AND $(DesignTimeBuild) != true" Text="DesignTimeBuild != true" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' AND !Exists($(UpdatePackageVersionLockFilePath))" Text="$(UpdatePackageVersionLockFilePath) does not exist" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug' AND $(DesignTimeBuild) != true AND !Exists($(UpdatePackageVersionLockFilePath))" Text="Execute because !(DesignTimeBuild != true) AND because $(UpdatePackageVersionLockFilePath) does not exists" />
+    <!-- Don't create a lockfile or update package version during design time builds -->
+    <!-- Conditional below came frorm here: https://github.com/dotnet/project-system/blob/master/docs/design-time-builds.md#diagnosing-design-time-builds -->
+    <!--<CallTarget Targets="UpdatePackageVersionBeforeOuterBuild" Condition="$(DesignTimeBuild) != true AND !Exists($(UpdatePackageVersionLockFilePath))"/>-->
+  </Target>
+  
+<!-- This is the  target that updates the versioninformation during development for every build -->
+  <Target Name="UpdatePackageVersionBeforeOuterBuild" >
+    <!-- during debugging this BuildTooling, send to the output log messages  indicating lockfile will be created -->
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="creating LockFile $(UpdatePackageVersionLockFilePath)" />
+    <!-- Start with the creation of a lockfile to ensure version is not incrememnted in every framework when targeting multi-frameworks-->
+    <Touch Files="$(UpdatePackageVersionLockFilePath)" AlwaysCreate="true"/>
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectDirectory = $(MSBuildProjectDirectory)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectFullPath = $(MSBuildProjectFullPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildToolsPath = $(MSBuildToolsPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Configuration = $(Configuration)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Platform = $(Platform)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="TargetFrameworks = $(TargetFrameworks)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="TargetFramework = $(TargetFramework)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MajorVersion = $(MajorVersion)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MinorVersion = $(MinorVersion)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PatchVersion = $(PatchVersion)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Build = $(Build)"  />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Revision = $(Revision)"  />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageVersion = $(PackageVersion)"  />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageName = $(PackageId).$(PackageVersion).nupkg" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Call GetVersion" />
+    <!-- during debugging, use the GetVersion task to display to output window the values found in the Versionfile -->
+    <GetVersion VersionFile = "$(VersionFile)" Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'"
+      ATAPBuildToolingConfiguration="$(ATAPBuildToolingConfiguration)"
+      ATAPBuildToolingDebugVerbosity="$(ATAPBuildToolingDebugVerbosity)">
+      <Output TaskParameter="PackageVersion" PropertyName="PackageVersion" />
+    </GetVersion>
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageVersion after GetVersion = $(PackageVersion)"  />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Call UpdateVersion" />
+    <!-- During development of this .targets file, use a condition to control if the UpdateVersion task gets run, or not. Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'"-->
+    <!-- however there is strange thing happening if there is no condition, it claims the task cannot be loaded from the assembly, so instead, as a workaround, specify the task twise, once for debug and once again for release -->
+    <!-- <ATAP.Utilities.BuildTooling.UpdateVersion Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" -->
+    <ATAP.Utilities.BuildTooling.UpdateVersion
+      ATAPBuildToolingConfiguration="$(ATAPBuildToolingConfiguration)"
+      ATAPBuildToolingDebugVerbosity="$(ATAPBuildToolingDebugVerbosity)"
+      VersionFile="$(VersionFile)"
+      MajorVersion="$(MajorVersion)"
+      MinorVersion="$(MinorVersion)"
+      PatchVersion="$(PatchVersion)"
+      PackageLifeCycleStage ="$(PackageLifeCycleStage)"
+      PackageLabel="$(PackageLabel)">
+      <Output TaskParameter="Build" PropertyName="Build" />
+      <Output TaskParameter="PackageVersion" PropertyName="PackageVersion" />
+      <Output TaskParameter="Revision" PropertyName="Revision" />
+    </ATAP.Utilities.BuildTooling.UpdateVersion>
+     <!-- during debugging this BuildTooling, send to the output log messages with the new values as set by UpdateVersion-->
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Values returned from UpdateVersion"  />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Build = $(Build)"  />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Revision = $(Revision)"  />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageVersion = $(PackageVersion)"  />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="PackageName = $(PackageId).$(PackageVersion).nupkg" />
+  </Target>
+
+  <!-- after all framework builds have been completed, its time to remove the lockfile -->
+  <Target Name="UpdatePackageVersionAfterOuterBuild" AfterTargets="DispatchToInnerBuilds">
+    <!-- during debugging this BuildTooling, send to the output log messages  indicating lockfile will be deleted -->
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Deleting LockFile $(UpdatePackageVersionLockFilePath)" />
+    <Delete Files="$(UpdatePackageVersionLockFilePath)"/>
+  </Target>
+
+  <!-- NuGet Publish target package to local feed after successful package generation-->
+  <!-- Appveyor artifacts https://www.appveyor.com/docs/packaging-artifacts/ -->
+  <Target Name="PublishAfterBuild" AfterTargets="GenerateNuspec">
+    <!-- during debugging this BuildTooling, send to the output log messages the location of OutputPath, where the package should be found, and the value of the NuGetLocalFeedPath -->
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputPath = $(OutputPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="WorkingDirectory = $(MSBuildProjectDirectory)\$(OutputPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="NuGetLocalFeedPath = $(NuGetLocalFeedPath)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="Calling NuGet.exe to push the package to the local feed" />
+    <!-- When debugging the build tooling,the build tooling configuration is debug. Run the NuGet.exe command with detailed verbosity -->
+    <Exec  Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'"  WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" Command="NuGet.exe push &quot;$(MSBuildProjectDirectory)\$(OutputPath)$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot; -Verbosity detailed" />
+    <!-- Under normal conditions, run the NuGet.exe command with normal verbosity -->
+    <Exec  Condition="'$(ATAPBuildToolingConfiguration)'!='Debug'"  WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" Command="NuGet.exe push &quot;$(MSBuildProjectDirectory)\$(OutputPath)$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot; -Verbosity normal" />
+
+  </Target>
+
+  <!-- Examples of other kinds of targets  -->
+
+  <!-- Example how to call a Powershell script from a build task -->
+  <!--
+  <Target Name="TestPSIO" Condition=" '$(TestPSIO)'!='false' ">
+    <PropertyGroup>
+      <PowerShellExe Condition=" '$(PowerShellExe)'=='' "> 
+        %WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe
+      </PowerShellExe>
+      <ScriptLocation Condition=" '$(ScriptLocation)'=='' ">
+        C:\Path With Spaces\ExampleScript.ps1
+      </ScriptLocation>
+      <LogFileLocation Condition=" '$(LogFileLocation)'=='' ">
+        C:\Path With Spaces\ExampleLogFileName.txt
+      </LogFileLocation>
+    </PropertyGroup>
+    <Exec Command="$(PowerShellExe) -NonInteractive -executionpolicy Unrestricted 
+                 -command &quot;&amp; { 
+                          &amp;&apos;$(ScriptLocation)&apos; 
+                          &apos;$(LogFileLocation)&apos; 
+                          &apos;$(Parameter3)&apos;} &quot;" />
+  </Target>
+  -->
+
+  <!-- Example how to create a build task from inline code, and call that task -->
+  <!--
+  <UsingTask TaskName="FindFilesContaining" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >  
+    <ParameterGroup>  
+      <Expression Required="true" />  
+      <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />  
+      <Result ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />  
+    </ParameterGroup>  
+    <Task>  
+      <Using Namespace="System.Text.RegularExpressions"/>  
+      <Code Type="Fragment" Language="cs">  
+<![CDATA[  
+        if (Files.Length > 0)  
+        {  
+          Result = new TaskItem[Files.Length];  
+          for (int i = 0; i < Files.Length; i++)  
+          {  
+            ITaskItem item = Files[i];  
+            string path = item.GetMetadata("FullPath");  
+            using(StreamReader rdr = File.OpenText(path))  
+            {  
+              if (Regex.Match(rdr.ReadToEnd(), Expression).Success)  
+              {  
+                Result[i] = new TaskItem(item.ItemSpec);  
+              }  
+            }  
+          }  
+        }  
+]]>  
+      </Code>  
+    </Task> 
+  </UsingTask>    
+  <Target Name="TestFindFilesContaining" BeforeTargets="DispatchToInnerBuilds">  
+    <FindFilesContaining Expression="\[assembly: AssemblyVersion\(.(\d+)\.(\d+)\.(\d+)" Files="$(VersionFile)">  
+      <Output ItemName="MatchedFiles" TaskParameter="Result" />  
+    </FindFilesContaining>  
+    <Message Text="Input files: $(VersionFile)" Importance="High" />  
+    <Message Text="Matched files: @(MatchedFiles)" Importance="High" />  
+  </Target>  
+  -->
+
+  <!-- Another example how to create a build task from inline code, and call that task -->
+  <!--
+  <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <InputFilename ParameterType="System.String" Required="true" />
+      <OutputFilename ParameterType="System.String" Required="true" />
+      <MatchExpression ParameterType="System.String[]" Required="true" />
+      <ReplacementText ParameterType="System.String[]" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Reference Include="System.Core" />
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+            File.WriteAllText(
+                OutputFilename,
+                Regex.Replace(File.ReadAllText(InputFilename), MatchExpression, ReplacementText)
+                );
+          ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+ -->
+
+  
+</Project>

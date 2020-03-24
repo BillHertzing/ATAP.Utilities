@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using static FluentAssertions.FluentActions;
-using ATAP.Utilities.Persistence.FileSystem;
+
 
 namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 {
@@ -48,7 +48,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
       var asyncFileReadBlockSize = 4096;
       //var partitionInfoEx = new PartitionInfoEx(Hardware.Enumerations.PartitionFileSystem.NTFS, new UnitsNet.Information(1.2m, UnitsNet.Units.InformationUnit.Terabyte), new List<char>() { 'E' }, new Philote.Philote<IPartitionInfoEx>().Now());
       //var root = partitionInfoEx.DriveLetters.First();
-      var root = 'F';
+      var root = 'E';
       // In Windows, root is a single letter, but in *nix, root is a string. Convert the single char to a string
       // ToDo: replace with ATAP.Utilities RunTimeKind, and make it *nix friendly
       var rootstring = root.ToString() + ":/";
@@ -121,9 +121,88 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
       convertFileSystemToGraphResult.GraphAsIList.Vertices.Count.Should().Be(5);
     }
 
+    // Common constructor method for the SetupViaFileFunc used in these tests
+    // Sets up N empty files in the %tempt% directory
+    Func<SetupViaFileData, SetupViaFileResults> SetupViaFileFuncBuilder()
+    {
+      Func<SetupViaFileData, SetupViaFileResults> ret = new Func<SetupViaFileData, SetupViaFileResults>((setupData) =>
+      {
+        var filePathsAsArray = setupData.FilePaths.ToArray();
+        int numberOfFiles = filePathsAsArray.Length;
+#if DEBUG
+        TestOutput.WriteLine($"Got {numberOfFiles} FilePaths");
+#endif 
+
+        FileStream[] fileStreams = new FileStream[numberOfFiles];
+        StreamWriter[] streamWriters = new StreamWriter[numberOfFiles];
+        for (var i = 0; i < numberOfFiles; i++)
+        {
+          fileStreams[i] = new FileStream(filePathsAsArray[i], FileMode.CreateNew, FileAccess.Write);
+          //ToDo: exception handling
+          streamWriters[i] = new StreamWriter(fileStreams[i], Encoding.UTF8);
+          //ToDo: exception handling
+        }
+        return new SetupViaFileResults(true, fileStreams, streamWriters);
+      });
+      return ret;
+    }
+
+    // Common constructor method for the InsertViaFileFunc used in these tests
+    // Uses the structures setup by the SetupViaFileFuncBuilder
+    Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults> InsertViaFileFuncBuilder()
+    {
+      Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults> ret = new Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults>((insertData, setupResults) =>
+      {
+        int numberOfFiles = insertData.DataToInsert[0].Length;
+#if DEBUG
+        TestOutput.WriteLine($"Got {numberOfFiles} arrays of data to write");
+#endif
+        int numberOfStreamWriters = setupResults.StreamWriters.Length;
+#if DEBUG
+        TestOutput.WriteLine($"Got {numberOfStreamWriters} streamwriters to write to");
+#endif
+        for (var i = 0; i < numberOfFiles; i++)
+        {
+          foreach (string str in insertData.DataToInsert[i])
+          {
+            //await setupResults.StreamWriters[i].WriteLineAsync(str);
+            setupResults.StreamWriters[i].WriteLine(str);
+          }
+        }
+        return new InsertViaFileResults(true);
+
+      });
+      return ret;
+    }
+
+    // Common constructor method for the TearDownViaFileFunc used in these tests
+    // Uses the structures setup by the SetupViaFileFuncBuilder
+    Func<TearDownViaFileData, ISetupViaFileResults, TearDownViaFileResults> TearDownViaFileFuncBuilder()
+    {
+      Func<TearDownViaFileData, ISetupViaFileResults, TearDownViaFileResults> ret = new Func<TearDownViaFileData, ISetupViaFileResults, TearDownViaFileResults>((tearDownData, setupResults) =>
+      {
+        int numberOfFiles = setupResults.FileStreams.Length;
+#if DEBUG
+        TestOutput.WriteLine($"Got {numberOfFiles} filestreams and streamwriters to dispose");
+#endif
+
+        for (var i = 0; i < numberOfFiles; i++)
+        {
+          setupResults.StreamWriters[i].Dispose();
+          //Todo: ?? exception handling on call to Dispose
+          setupResults.FileStreams[i].Dispose();
+          //Todo: ?? exception handling on call to Dispose
+        }
+        return new TearDownViaFileResults(true);
+
+      });
+      return ret;
+    }
+
     [Fact]
     public async Task TestConvertFileSystemToGraphAsyncTaskFilePersistence()
     {
+      // Arrange
       var asyncFileReadBlockSize = 4096;
       //var partitionInfoEx = new PartitionInfoEx(Hardware.Enumerations.PartitionFileSystem.NTFS, new UnitsNet.Information(1.2m, UnitsNet.Units.InformationUnit.Terabyte), new List<char>() { 'E' }, new Philote.Philote<IPartitionInfoEx>().Now());
       //var root = partitionInfoEx.DriveLetters.First();
@@ -137,55 +216,46 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
       var cancellationTokenSource = new CancellationTokenSource();
       var cancellationTokenSourceId = new Id<CancellationTokenSource>(Guid.NewGuid());
       var cancellationToken = cancellationTokenSource.Token;
-
-      // Create a temporary file to hold the persistence files
-      var temporaryFileVertices = new TemporaryFile();
-      var temporaryFileEdges = new TemporaryFile();
-
-      // Create a Function that opens all files and returns an array of FileStreams and streamwriters.
-      // ToDo: Create a builder class to implement the persistence structure, and use it (or mock it) here
-      PersistenceViaFileSetupInitializationData persistenceSetupInitializationData = new PersistenceViaFileSetupInitializationData(new string[2] { temporaryFileVertices.FileInfo.FullName, temporaryFileEdges.FileInfo.FullName }, cancellationToken);
-      PersistenceViaFileSetupResults persistenceViaFileSetupResults;
-      Func<PersistenceViaFileSetupInitializationData, PersistenceViaFileSetupResults> persistenceSetupFunc = new Func<PersistenceViaFileSetupInitializationData, PersistenceViaFileSetupResults>((persistenceViaFileSetupInitializationData) =>
+      // PersistenceViaFiles
+      // Create temporary files to hold the persistence data
+      var numfiles = 2;
+      var temporaryFiles = new TemporaryFile[numfiles];
+      var filePaths = new string[2];
+      for (int i = 0; i < 2; i++)
       {
-        //ToDo: argument exception handling
-        int numberOfFiles = persistenceViaFileSetupInitializationData.FilePath.Length;
-        FileStream[] fileStreams = new FileStream[numberOfFiles];
-        StreamWriter[] streamWriters = new StreamWriter[numberOfFiles];
-        for (var i = 0; i < numberOfFiles; i++)
-        {
-          fileStreams[i] = new FileStream(persistenceViaFileSetupInitializationData.FilePath[i], FileMode.OpenOrCreate);
-          //ToDo: exception handling
-          streamWriters[i] = new StreamWriter(fileStreams[i], Encoding.UTF8);
-          //ToDo: exception handling
-        }
-        return new PersistenceViaFileSetupResults(fileStreams, streamWriters, true);
-      });
+        temporaryFiles[i] = new TemporaryFile().CreateTemporaryFileEmpty();
+        filePaths[i] = temporaryFiles[i].FileInfo.FullName;
+#if DEBUG
+        TestOutput.WriteLine($"File {i} is named {temporaryFiles[i].FileInfo.FullName}");
+#endif
+      }
 
-      PersistenceViaFileInsertData persistenceInsertData;
-      PersistenceViaFileInsertResults persistenceInsertResults;
-      Func<PersistenceViaFileInsertData, PersistenceViaFileSetupResults, PersistenceViaFileInsertResults> persistenceInsertFunc;
-      PersistenceViaFileTearDownData persistenceTearDownData;
-      PersistenceViaFileTearDownResults persistenceTearDownResults;
-      Func<PersistenceViaFileTearDownData, PersistenceViaFileSetupResults, PersistenceViaFileTearDownResults> persistenceTearDownFunc;
-      // persistenceSetupResults = persistenceSetupFunc(persistenceSetupInitializationData).Invoke();
-      PersistenceViaFile persistence = new PersistenceViaFile(persistenceSetupInitializationData, persistenceSetupResults, persistenceSetupFunc, persistenceInsertData, persistenceInsertResults, persistenceInsertFunc, persistenceTearDownData, persistenceTearDownResults, persistenceTearDownFunc);
+      var setupFunc = SetupViaFileFuncBuilder();
+      SetupViaFileData setupData = new SetupViaFileData(filePaths, cancellationToken);
 
+      PersistenceViaFile persistence = new PersistenceViaFile(setupFunc(setupData), setupFunc, InsertViaFileFuncBuilder(), TearDownViaFileFuncBuilder());
 
-      Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, convertFileSystemToGraphProgress, null, cancellationToken);
-      ConvertFileSystemToGraphResult convertFileSystemToGraphResult = await run.Invoke();
+      // Act
+      Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, convertFileSystemToGraphProgress, persistence, cancellationToken);
+      ConvertFileSystemToGraphResult convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
+      persistence.TearDownFunc(new TearDownViaFileData(), persistence.SetupResults);
 
+      //Assert
       convertFileSystemToGraphResult.GraphAsIList.Vertices.Count.Should().Be(5);
       convertFileSystemToGraphResult.GraphAsIList.Edges.Count.Should().Be(6);
 
-      string[] vertices = File.ReadLines(temporaryFileVertices.FileInfo.FullName) as string[];
-      string[] edges = File.ReadLines(temporaryFileEdges.FileInfo.FullName) as string[];
+      string[] vertices = File.ReadLines(temporaryFiles[0].FileInfo.FullName) as string[];
+#if DEBUG
+      TestOutput.WriteLine($"File 0 (vertices) contains {vertices}");
+      //TestOutput.WriteLine(vertices);
+#endif
+      string[] edges = File.ReadLines(temporaryFiles[1].FileInfo.FullName) as string[];
+#if DEBUG
+      TestOutput.WriteLine($"File 1 (edges) contains {edges}");
+#endif
       vertices.Length.Should().Be(5);
       edges.Length.Should().Be(6);
-      temporaryFileVertices.FileInfo.Length.Should().Be(100);
-      temporaryFileEdges.FileInfo.Length.Should().Be(100);
-      temporaryFileVertices.Dispose();
-      temporaryFileEdges.Dispose();
+
     }
   }
 }

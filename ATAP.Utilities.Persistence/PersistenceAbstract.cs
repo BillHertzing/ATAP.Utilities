@@ -1,104 +1,169 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace ATAP.Utilities.Persistence
 {
-  public abstract class PersistenceSetupInitializationDataAbstract
+  public interface ISetupDataAbstract
   {
-    public CancellationToken CancellationToken { get; private set; }
+    CancellationToken? CancellationToken { get; }
+  }
+
+  public abstract class SetupDataAbstract : ISetupDataAbstract
+  {
+    public CancellationToken? CancellationToken { get; private set; }
 
 
-    protected PersistenceSetupInitializationDataAbstract(CancellationToken cancellationToken)
+    protected SetupDataAbstract(CancellationToken? cancellationToken)
     {
-      CancellationToken = cancellationToken;
+      if (cancellationToken != null)
+      {
+        CancellationToken = cancellationToken;
+      }
+      else
+      {
+        CancellationToken = null;
+      }
+    }
+
+    protected SetupDataAbstract() : this(null)
+    {
     }
   }
 
-
-  public abstract class PersistenceSetupResultsAbstract
+  public interface ISetupResultsAbstract
   {
-    protected PersistenceSetupResultsAbstract(bool success)
+    bool Success { get; set; }
+  }
+
+  public abstract class SetupResultsAbstract : ISetupResultsAbstract
+  {
+    protected SetupResultsAbstract() : this(false)
+    {
+    }
+
+    protected SetupResultsAbstract(bool success)
     {
       Success = success;
     }
 
-    public bool Success { get; private set; }
+    public bool Success { get; set; }
   }
 
-  public abstract class PersistenceInsertDataAbstract
+  public interface IInsertDataAbstract
   {
-    protected PersistenceInsertDataAbstract(PersistenceSetupResultsAbstract persistenceSetupResults, List<string>[] dList, CancellationToken cancellationToken)
+    CancellationToken? CancellationToken { get; }
+    IEnumerable<IEnumerable<object>> DataToInsert { get; }
+  }
+
+  public abstract class InsertDataAbstract : IInsertDataAbstract
+  {
+    protected InsertDataAbstract(IEnumerable<IEnumerable<object>> dataToInsert, CancellationToken? cancellationToken)
     {
-      PersistenceSetupResults = persistenceSetupResults ?? throw new ArgumentNullException(nameof(persistenceSetupResults));
-      DList = dList ?? throw new ArgumentNullException(nameof(dList));
+      DataToInsert = dataToInsert ?? throw new ArgumentNullException(nameof(dataToInsert));
       CancellationToken = cancellationToken;
     }
 
-    public PersistenceSetupResultsAbstract PersistenceSetupResults { get; private set; }
-    public List<string>[] DList { get; private set; }
-    public CancellationToken CancellationToken { get; private set; }
+    public IEnumerable<IEnumerable<object>> DataToInsert { get; private set; }
+    public CancellationToken? CancellationToken { get; private set; }
 
   }
-  public abstract class PersistenceInsertResultsAbstract
+
+  public interface IInsertResultsAbstract
   {
-    protected PersistenceInsertResultsAbstract(bool success)
+    bool Success { get; set; }
+  }
+
+  public abstract class InsertResultsAbstract : IInsertResultsAbstract
+  {
+    protected InsertResultsAbstract() : this(false)
+    {
+    }
+
+    protected InsertResultsAbstract(bool success)
     {
       Success = success;
     }
 
-    public bool Success { get; private set; }
+    public bool Success { get; set; }
   }
 
-  // ToDo Make writeFileInfo into a thread-safe structure
-  //ToDo: Add a CancellationToken
-  public abstract class PersistenceTearDownDataAbstract
+  public interface ITearDownDataAbstract
   {
-    protected PersistenceTearDownDataAbstract(PersistenceSetupResultsAbstract persistenceSetupResults, CancellationToken cancellationToken)
+    CancellationToken? CancellationToken { get; }
+  }
+
+  public abstract class TearDownDataAbstract : ITearDownDataAbstract
+  {
+
+    protected TearDownDataAbstract(CancellationToken? cancellationToken)
     {
-      PersistenceSetupResults = persistenceSetupResults ?? throw new ArgumentNullException(nameof(persistenceSetupResults));
-      CancellationToken = cancellationToken;
+      if (cancellationToken != null)
+      {
+        CancellationToken = cancellationToken;
+      }
+      else
+      {
+        CancellationToken = null;
+
+      }
     }
 
-    public PersistenceSetupResultsAbstract PersistenceSetupResults { get; private set; }
-    public CancellationToken CancellationToken { get; private set; }
+    public CancellationToken? CancellationToken { get; private set; }
 
   }
 
-  public abstract class PersistenceTearDownResultsAbstract
+  public interface ITearDownResultsAbstract
   {
-    protected PersistenceTearDownResultsAbstract(bool success)
+    bool Success { get; set; }
+  }
+
+  public abstract class TearDownResultsAbstract : ITearDownResultsAbstract
+  {
+    protected TearDownResultsAbstract() : this(false)
+    {
+    }
+
+    protected TearDownResultsAbstract(bool success)
     {
       Success = success;
     }
 
-    public bool Success { get; private set; }
+    public bool Success { get; set; }
   }
 
-  public abstract class PersistenceAbstract
+  public interface IPersistenceAbstract
   {
-    public PersistenceSetupInitializationDataAbstract PersistenceSetupInitializationData;
-    public PersistenceSetupResultsAbstract PersistenceSetupResults;
-    public Func<PersistenceSetupInitializationDataAbstract, PersistenceSetupResultsAbstract> PersistenceSetup;
-    public PersistenceInsertDataAbstract PersistenceInsertData;
-    public PersistenceInsertResultsAbstract PersistenceInsertResults;
-    public Func<PersistenceInsertDataAbstract, PersistenceSetupResultsAbstract, PersistenceInsertResultsAbstract> PersistenceInsert;
-    public PersistenceTearDownDataAbstract PersistenceTearDownInitializationData;
-    public PersistenceTearDownResultsAbstract PersistenceTearDownResults;
-    public Func<PersistenceTearDownDataAbstract, PersistenceSetupResultsAbstract, PersistenceTearDownResultsAbstract> PersistenceTearDown;
+    ISetupResultsAbstract SetupResults { get; set; }
+    Func<SetupDataAbstract, ISetupResultsAbstract> SetupFunc { get; set; }
+    Func<InsertDataAbstract, ISetupResultsAbstract, InsertResultsAbstract> InsertFunc { get; set; }
+    Func<TearDownDataAbstract, ISetupResultsAbstract, TearDownResultsAbstract> TearDownFunc { get; set; }
+  }
 
-    protected PersistenceAbstract(PersistenceSetupInitializationDataAbstract persistenceSetupInitializationData, PersistenceSetupResultsAbstract persistenceSetupResults, Func<PersistenceSetupInitializationDataAbstract, PersistenceSetupResultsAbstract> persistenceSetup, PersistenceInsertDataAbstract persistenceInsertData, PersistenceInsertResultsAbstract persistenceInsertResults, Func<PersistenceInsertDataAbstract, PersistenceSetupResultsAbstract, PersistenceInsertResultsAbstract> persistenceInsert, PersistenceTearDownDataAbstract persistenceTearDownInitializationData, PersistenceTearDownResultsAbstract persistenceTearDownResults, Func<PersistenceTearDownDataAbstract, PersistenceSetupResultsAbstract, PersistenceTearDownResultsAbstract> persistenceTearDown)
+
+  public abstract class PersistenceAbstract : IPersistenceAbstract
+  {
+    protected PersistenceAbstract() { }
+    protected PersistenceAbstract(SetupDataAbstract? setupData, ISetupResultsAbstract? setupResults, Func<SetupDataAbstract, ISetupResultsAbstract> setupFunc, Func<object, InsertViaFileData> convertToDataToInsertFunc, Func<InsertDataAbstract, ISetupResultsAbstract, InsertResultsAbstract> insertFunc, Func<TearDownDataAbstract, ISetupResultsAbstract, TearDownResultsAbstract> tearDownFunc)
     {
-      PersistenceSetupInitializationData = persistenceSetupInitializationData ?? throw new ArgumentNullException(nameof(persistenceSetupInitializationData));
-      PersistenceSetupResults = persistenceSetupResults ?? throw new ArgumentNullException(nameof(persistenceSetupResults));
-      PersistenceSetup = persistenceSetup ?? throw new ArgumentNullException(nameof(persistenceSetup));
-      PersistenceInsertData = persistenceInsertData ?? throw new ArgumentNullException(nameof(persistenceInsertData));
-      PersistenceInsertResults = persistenceInsertResults ?? throw new ArgumentNullException(nameof(persistenceInsertResults));
-      PersistenceInsert = persistenceInsert ?? throw new ArgumentNullException(nameof(persistenceInsert));
-      PersistenceTearDownInitializationData = persistenceTearDownInitializationData ?? throw new ArgumentNullException(nameof(persistenceTearDownInitializationData));
-      PersistenceTearDownResults = persistenceTearDownResults ?? throw new ArgumentNullException(nameof(persistenceTearDownResults));
-      PersistenceTearDown = persistenceTearDown ?? throw new ArgumentNullException(nameof(persistenceTearDown));
+      SetupResults = setupResults;
+      SetupFunc = setupFunc ?? throw new ArgumentNullException(nameof(setupFunc));
+      InsertFunc = insertFunc ?? throw new ArgumentNullException(nameof(insertFunc));
+      TearDownFunc = tearDownFunc ?? throw new ArgumentNullException(nameof(tearDownFunc));
     }
+
+    public ISetupResultsAbstract? SetupResults { get; set; }
+    public Func<SetupDataAbstract, ISetupResultsAbstract> SetupFunc { get; set; }
+    public Func<InsertDataAbstract, ISetupResultsAbstract, InsertResultsAbstract> InsertFunc { get; set; }
+    public Func<TearDownDataAbstract, ISetupResultsAbstract, TearDownResultsAbstract> TearDownFunc { get; set; }
+
+
+  }
+
+  public class PersistenceBuilderAbstract //: IPersistenceBuilderAbstract
+  {
+
   }
 
 }

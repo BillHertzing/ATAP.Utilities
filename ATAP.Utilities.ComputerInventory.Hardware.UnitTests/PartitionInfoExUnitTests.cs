@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using static FluentAssertions.FluentActions;
-
+using ATAP.Utilities.GraphDataStructures;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 {
@@ -61,12 +61,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 
       Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, convertFileSystemToGraphProgress, null, cancellationToken);
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult = await run.Invoke();
-      //var fnames = convertFileSystemToGraphResult.GraphAsIList.Vertices.Where(x => x.Obj.GetType() == typeof(IFSEntityFile));
-
-      //var ffullnames = convertFileSystemToGraphResult.GraphAsIList.Vertices.Where(x => x.Obj.GetType() == typeof(IFSEntityFile)).Select(z => z.Obj as FSEntityFile).Where(y => (y.Path == null)).Select(z => z.FileInfo);
-      //var dfullnames = convertFileSystemToGraphResult.GraphAsIList.Vertices.Where(x => x.Obj.GetType() == typeof(FSEntityDirectory)).Select(z => z.Obj as FSEntityDirectory).Where(y => (y.Path != null)).Select(z => z.DirectoryInfo);
       var containeredgeandnodename = convertFileSystemToGraphResult.GraphAsIList.Edges
-      //.Where(e => ((e.From.Obj.GetType() == typeof(FSEntityDirectory) && (e.To.Obj.GetType() == typeof(FSEntityFile)))))
       .Select(edge =>
       {
         string fs;
@@ -118,7 +113,10 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
         digraph.Append($"\"{e.Item1.Replace("\\", "\\\\")}\" -> \"{e.Item2.Replace("\\", "\\\\")}\""); digraph.Append(Environment.NewLine);
       }
       digraph.Append("}");
-      convertFileSystemToGraphResult.GraphAsIList.Vertices.Count.Should().Be(5);
+#if DEBUG
+      TestOutput.WriteLine($"{digraph}");
+#endif
+      convertFileSystemToGraphResult.GraphAsIList.Vertices.Count.Should().Be(15);
     }
 
     // Common constructor method for the SetupViaFileFunc used in these tests
@@ -147,57 +145,37 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
       return ret;
     }
 
-    // Common constructor method for the InsertViaFileFunc used in these tests
-    // Uses the structures setup by the SetupViaFileFuncBuilder
-    Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults> InsertViaFileFuncBuilder()
-    {
-      Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults> ret = new Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults>((insertData, setupResults) =>
-      {
-        int numberOfFiles = insertData.DataToInsert[0].Length;
-#if DEBUG
-        TestOutput.WriteLine($"Got {numberOfFiles} arrays of data to write");
-#endif
-        int numberOfStreamWriters = setupResults.StreamWriters.Length;
-#if DEBUG
-        TestOutput.WriteLine($"Got {numberOfStreamWriters} streamwriters to write to");
-#endif
-        for (var i = 0; i < numberOfFiles; i++)
-        {
-          foreach (string str in insertData.DataToInsert[i])
-          {
-            //await setupResults.StreamWriters[i].WriteLineAsync(str);
-            setupResults.StreamWriters[i].WriteLine(str);
-          }
-        }
-        return new InsertViaFileResults(true);
+    //    // Common constructor method for the InsertViaFileFunc used in these tests
+    //    // closes over the ISetupViaFileResults that was pseed into the contructor
+    //    Func<IInsertViaFileData, ISetupViaFileResults, Func<IInsertViaFileData, ISetupViaFileResults, IInsertViaFileResults>> InsertViaFileFuncBuilder()
+    //    {
+    //      Func<IInsertViaFileData, ISetupViaFileResults, Func < IInsertViaFileData, ISetupViaFileResults, IInsertViaFileResults >> insertFunc = new Func<IInsertViaFileData, ISetupViaFileResults, Func<IInsertViaFileData, ISetupViaFileResults, IInsertViaFileResults>> ((insertData, setupResults) =>
+    //      {
+    //        // ToDo: should the two input objects have matching cardinality?
+    //        int numberOfFiles = insertData.DataToInsert[0].Length;
+    //#if DEBUG
+    //        TestOutput.WriteLine($"Got {numberOfFiles} arrays of data to write");
+    //#endif
+    //        int numberOfStreamWriters = setupResults.StreamWriters.Length;
+    //#if DEBUG
+    //        TestOutput.WriteLine($"Got {numberOfStreamWriters} streamwriters to write to");
+    //#endif
+    //        for (var i = 0; i < numberOfFiles; i++)
+    //        {
+    //          foreach (string str in insertData.DataToInsert[i])
+    //          {
+    //            //await setupResults.StreamWriters[i].WriteLineAsync(str); // ToDo: Make an anysc version
+    //            setupResults.StreamWriters[i].WriteLine(str);
+    //          }
+    //        }
+    //        InsertViaFileResults results = new InsertViaFileResults(true);
+    //        IInsertViaFileResults returnInterface = results;
+    //        return returnInterface;
 
-      });
-      return ret;
-    }
+    //      });
+    //      return insertFunc;
+    //    }
 
-    // Common constructor method for the TearDownViaFileFunc used in these tests
-    // Uses the structures setup by the SetupViaFileFuncBuilder
-    Func<TearDownViaFileData, ISetupViaFileResults, TearDownViaFileResults> TearDownViaFileFuncBuilder()
-    {
-      Func<TearDownViaFileData, ISetupViaFileResults, TearDownViaFileResults> ret = new Func<TearDownViaFileData, ISetupViaFileResults, TearDownViaFileResults>((tearDownData, setupResults) =>
-      {
-        int numberOfFiles = setupResults.FileStreams.Length;
-#if DEBUG
-        TestOutput.WriteLine($"Got {numberOfFiles} filestreams and streamwriters to dispose");
-#endif
-
-        for (var i = 0; i < numberOfFiles; i++)
-        {
-          setupResults.StreamWriters[i].Dispose();
-          //Todo: ?? exception handling on call to Dispose
-          setupResults.FileStreams[i].Dispose();
-          //Todo: ?? exception handling on call to Dispose
-        }
-        return new TearDownViaFileResults(true);
-
-      });
-      return ret;
-    }
 
     [Fact]
     public async Task TestConvertFileSystemToGraphAsyncTaskFilePersistence()
@@ -232,30 +210,69 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 
       var setupFunc = SetupViaFileFuncBuilder();
       SetupViaFileData setupData = new SetupViaFileData(filePaths, cancellationToken);
+      var setupResults = SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
+      //var insertFunc = InsertViaFileFuncBuilder(setupResults);
+      // Create an insertFunc that references the local variable setupResults, closing over it
+      var insertFunc = new Func<IEnumerable<IEnumerable<object>>, IInsertViaFileResults>((insertData) =>
+      {
+        int numberOfFiles = insertData.ToArray().Length;
+#if DEBUG
+        TestOutput.WriteLine($"Got {numberOfFiles} arrays of data to write");
+#endif
+        int numberOfStreamWriters = setupResults.StreamWriters.Length;
+#if DEBUG
+        TestOutput.WriteLine($"Got {numberOfStreamWriters} streamwriters to write to");
+#endif
+        for (var i = 0; i < numberOfFiles; i++)
+        {
+          foreach (string str in insertData.ToArray()[i])
+          {
+            //ToDo: add async versions await setupResults.StreamWriters[i].WriteLineAsync(str);
+            //ToDo: exception handling
+            setupResults.StreamWriters[i].WriteLine(str);
+#if DEBUG
+            TestOutput.WriteLine($"writing {str} to file {i}");
+#endif
+          }
+        }
+        return new InsertViaFileResults(true);
+      });
 
-      PersistenceViaFile persistence = new PersistenceViaFile(setupFunc(setupData), setupFunc, InsertViaFileFuncBuilder(), TearDownViaFileFuncBuilder());
+      Persistence<IInsertResultsAbstract> persistence = new Persistence<IInsertResultsAbstract>(insertFunc);
 
       // Act
       Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, convertFileSystemToGraphProgress, persistence, cancellationToken);
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
-      persistence.TearDownFunc(new TearDownViaFileData(), persistence.SetupResults);
+      setupResults.Dispose();
 
       //Assert
-      convertFileSystemToGraphResult.GraphAsIList.Vertices.Count.Should().Be(5);
-      convertFileSystemToGraphResult.GraphAsIList.Edges.Count.Should().Be(6);
-
-      string[] vertices = File.ReadLines(temporaryFiles[0].FileInfo.FullName) as string[];
+      convertFileSystemToGraphResult.GraphAsIList.Vertices.Count.Should().Be(15);
+      convertFileSystemToGraphResult.GraphAsIList.Edges.Count.Should().Be(14);
+      // Convert the IList objects to List objects
+      List<IVertex<IFSEntityAbstract>> verticesAsAbstract = convertFileSystemToGraphResult.GraphAsIList.Vertices.ToList();
+      List<IEdge<IFSEntityAbstract>> edgesAsAbstract = convertFileSystemToGraphResult.GraphAsIList.Edges.ToList();
+      verticesAsAbstract.Count.Should().Be(15);
+      edgesAsAbstract.Count.Should().Be(14);
+      List<string> verticesAsString = verticesAsAbstract.Select(x => x.Obj.GetFullName()).ToList();
+      List<string> edgesAsString = edgesAsAbstract.Select((x) => x.From.Obj.GetFullName() + " -> " + x.To.Obj.GetFullName()).ToList(); ;
+      List<string> verticesfromFile = File.ReadLines(temporaryFiles[0].FileInfo.FullName).ToList();
+      List<string> edgesfromFile = File.ReadLines(temporaryFiles[1].FileInfo.FullName).ToList();
 #if DEBUG
-      TestOutput.WriteLine($"File 0 (vertices) contains {vertices}");
-      //TestOutput.WriteLine(vertices);
+      TestOutput.WriteLine($"File 0 (vertices) contains {verticesfromFile.Count()} vertices");
+      foreach (var str in verticesfromFile)
+      {
+        TestOutput.WriteLine(str);
+      }
+      TestOutput.WriteLine($"File 1 (edges) contains {edgesfromFile.Count()} edges");
+      foreach (var str in edgesfromFile)
+      {
+        TestOutput.WriteLine(str);
+      }
 #endif
-      string[] edges = File.ReadLines(temporaryFiles[1].FileInfo.FullName) as string[];
-#if DEBUG
-      TestOutput.WriteLine($"File 1 (edges) contains {edges}");
-#endif
-      vertices.Length.Should().Be(5);
-      edges.Length.Should().Be(6);
-
+      //verticesfromFile.Count.Should().Be(15);
+      //edgesfromFile.Count.Should().Be(14);
+      verticesAsString.Should().BeEquivalentTo(verticesfromFile);
+      edgesAsString.Should().BeEquivalentTo(edgesfromFile);
     }
   }
 }

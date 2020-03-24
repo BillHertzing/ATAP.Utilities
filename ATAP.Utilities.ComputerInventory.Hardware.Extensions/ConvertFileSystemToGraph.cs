@@ -21,25 +21,27 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   public static class StaticExtensions
   {
-    public static async Task<ConvertFileSystemToGraphResult> ConvertFileSystemToGraphAsyncTask(string root, int asyncFileReadBlockSize, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress, PersistenceAbstract? convertFileSystemToGraphPersistence, CancellationToken cancellationToken)
+    public static async Task<ConvertFileSystemToGraphResult> ConvertFileSystemToGraphAsyncTask(string root, int asyncFileReadBlockSize, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress,Persistence<IInsertResultsAbstract>? convertFileSystemToGraphPersistence, CancellationToken cancellationToken)
     {
       // Some internal functions to make the code cleaner
-      void CheckAndHandleCancellationToken(int checkpointNumber, PersistenceAbstract? convertFileSystemToGraphPersistence, CancellationToken cancellationToken)
+      void CheckAndHandleCancellationToken(int checkpointNumber, CancellationToken cancellationToken)
       {
+        // Helper method to reduce code clutter
         // check CancellationToken to see if this task is cancelled
         if (cancellationToken.IsCancellationRequested)
         {
           // ToDo localize the Log message
           // Log.Debug($"in ConvertFileSystemToGraphAsyncTask: Cancellation requested, checkpoint numbe {checkpointNumber}");
-          // ToDo: cleanup is needed if persistence is not null and setup has completed
-          // DatabaseRollback();
           cancellationToken.ThrowIfCancellationRequested();
         }
       }
-      void HandleAcceptableExceptions(Exception e, IVertex<IFSEntityAbstract> currentContainerVertex, IConvertFileSystemToGraphResult convertFileSystemToGraphResult, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress, CancellationToken cancellationToken)
+
+      // Helper method to reduce code clutter
+      // Exceptions that occure whne looking at individual directories or files are acceptable, but need to be recorded
+      void HandleAcceptableExceptions(Exception e, IVertex<IFSEntityAbstract> currentVertex, IConvertFileSystemToGraphResult convertFileSystemToGraphResult, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress, CancellationToken cancellationToken)
       {
         // Store this exception on the currentFSEntityDirectory and accumulate the exception as part of the Result and Progress
-        currentContainerVertex.Obj.Exception = e;
+        currentVertex.Obj.Exception = e;
         // Add this exception to the results and progress
         convertFileSystemToGraphResult.AcceptableExceptions.Add(e);
         if (convertFileSystemToGraphProgress != null)
@@ -77,44 +79,19 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         //Earliest File write date
         //Latest File write date
       }
+
       // check CancellationToken to see if this task is canceled
-      if (cancellationToken.IsCancellationRequested)
-      {
-        // nothing to cleanup here
-        // Log.Debug($"in ConvertFileSystemToGraphAsyncTask: Cancellation requested (1st checkpoint)");
-        cancellationToken.ThrowIfCancellationRequested();
-      }
+      CheckAndHandleCancellationToken(1, cancellationToken);
       // After this point, there will be cleanup to do if the task is canceled or exceptions are thrown
       // Persistence setup is donw outside the ConvertFileSystemToGraph extension method
       // check CancellationToken to see if this task is canceled
-      CheckAndHandleCancellationToken(1, convertFileSystemToGraphPersistence, cancellationToken);
+      CheckAndHandleCancellationToken(2,  cancellationToken);
 
       containerStack.Push(root);
       currentContainerVertex = new Vertex<IFSEntityAbstract>(new FSEntityDirectory(root));
-      // Create a vertex for the root, push it onto the Vertices stack, add it to the Vertices.
+      // Create a vertex for the root, push it onto the Vertices stack, add it to the Results Vertices.
       containerVerticesStack.Push(currentContainerVertex);
       convertFileSystemToGraphResult.GraphAsIList.Vertices.Add(currentContainerVertex);
-      // No Edge for root
-      // If the convertFileSystemToGraphPersistence argument is not null, persist the root vertex
-      if (convertFileSystemToGraphPersistence != null)
-      {
-        IInsertResultsAbstract results = new InsertViaFileResults(false);
-        try
-        {
-          // Persisting the root
-          results = convertFileSystemToGraphPersistence.InsertFunc(new InsertViaFileData(new string[][] { new string[] { root } }), convertFileSystemToGraphPersistence.SetupResults);
-        }
-        catch (Exception e) //when (e is PersistenceInsertException)
-        {
-          // An error in the persistence insert should not cause the entire operation to fail, but it should be recorded
-          // ToDo: decide how and where to record this exception
-        }
-        // Did the persistence insert fail
-        if (!results.Success)
-        {
-          // ToDo: figure out how and where to record a failed persistence insert
-        }
-      }
 
       // go down all the containerStack, first get the list of subdirectories, then the list of files, then hash the files
       // directories are done in the order that they are returned by Directory.GetDirectories
@@ -150,8 +127,27 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         {
           HandleAcceptableExceptions(e, currentContainerVertex, convertFileSystemToGraphResult, convertFileSystemToGraphProgress, cancellationToken);
         }
+        // If the convertFileSystemToGraphPersistence argument is not null, persist the currentContainerVertex.Obj
+        if (convertFileSystemToGraphPersistence != null)
+        {
+          IInsertResultsAbstract results = new InsertViaFileResults(false);
+          try
+          {
+            results = convertFileSystemToGraphPersistence.InsertFunc(new string[][] { new string[] { currentContainerVertex.Obj.GetFullName() } });
+          }
+          catch (Exception e) //when (e is PersistenceInsertException)
+          {
+            // An error in the persistence insert should not cause the entire operation to fail, but it should be recorded
+            // ToDo: decide how and where to record this exception
+          }
+          // Did the persistence insert fail
+          if (!results.Success)
+          {
+            // ToDo: figure out how and where to record a failed persistence insert
+          }
+        }
 
-        CheckAndHandleCancellationToken(2, convertFileSystemToGraphPersistence, cancellationToken);
+        CheckAndHandleCancellationToken(3,  cancellationToken);
 
         // ToDo: getting the list of directories, and the list of files, should be done in parallel. As soon as each has completed, populate FSEntities by path
         string[] subContainers = Array.Empty<string>();
@@ -181,7 +177,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         catch (Exception e) when (e is UnauthorizedAccessException || e is DirectoryNotFoundException)
         {
           HandleAcceptableExceptions(e, currentContainerVertex, convertFileSystemToGraphResult, convertFileSystemToGraphProgress, cancellationToken);
-          // ToDo: The reason paralllelism is needed.  An exception here means that the files are not even looked for
+          // ToDo: The reason parallelism is needed.  An exception here means that the files are not even looked for
           continue;
         }
         // Push the subContainers onto the stack for traversal.
@@ -192,7 +188,30 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           var subContainerVertex = new Vertex<IFSEntityAbstract>(new FSEntityDirectory(subContainerPathString));
           containerVerticesStack.Push(subContainerVertex);
           convertFileSystemToGraphResult.GraphAsIList.Vertices.Add(subContainerVertex);
-          convertFileSystemToGraphResult.GraphAsIList.Edges.Add(new Edge<IFSEntityAbstract>(currentContainerVertex, subContainerVertex));
+          var edge = new Edge<IFSEntityAbstract>(currentContainerVertex, subContainerVertex);
+          convertFileSystemToGraphResult.GraphAsIList.Edges.Add(edge);
+          // If the convertFileSystemToGraphPersistence argument is not null, persist the edge
+          if (convertFileSystemToGraphPersistence != null)
+          {
+            IInsertResultsAbstract results = new InsertViaFileResults(false);
+            string[] edgeStrings = new string[] { $"{edge.From.Obj.GetFullName()} -> {edge.To.Obj.GetFullName()}" };
+          try
+            {
+              //var d = new string[][] { new string[] { vertex.Obj.Path }, new string[] { $"{edge.From.Obj.Path} -> {edge.To.Obj.Path}" } }
+              results = convertFileSystemToGraphPersistence.InsertFunc(new string[][] { Array.Empty<string>(), edgeStrings });
+            }
+            catch (Exception e) //when (e is PersistenceInsertException)
+            {
+              // An error in the persistence insert should not cause the entire operation to fail, but it should be recorded
+              // ToDo: decide how and where to record this exception
+            }
+            // Did the persistence insert fail
+            if (!results.Success)
+            {
+              // ToDo: figure out how and where to record a failed persistence insert
+            }
+          }
+
         }
         // Update the Progress
         if (convertFileSystemToGraphProgress != null)
@@ -200,7 +219,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           convertFileSystemToGraphProgress.NumberOfDirectories += subContainers.Length;
         }
         // check CancellationToken to see if this task is canceled
-        CheckAndHandleCancellationToken(3, convertFileSystemToGraphPersistence, cancellationToken);
+        CheckAndHandleCancellationToken(4,  cancellationToken);
 
         // ToDo: The first of the two parallel tasks end here
 
@@ -219,7 +238,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         }
 
         // check CancellationToken to see if this task is canceled
-        CheckAndHandleCancellationToken(4, convertFileSystemToGraphPersistence, cancellationToken);
+        CheckAndHandleCancellationToken(5,  cancellationToken);
 
         // update the results
         if (convertFileSystemToGraphProgress != null) { convertFileSystemToGraphProgress.NumberOfFiles += files.Length; }
@@ -237,7 +256,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         }
         // wait for all to finish
         await Task.WhenAll(taskList).ConfigureAwait(false);
-        CheckAndHandleCancellationToken(5, convertFileSystemToGraphPersistence, cancellationToken);
+        CheckAndHandleCancellationToken(6,  cancellationToken);
         // ToDo End of code block that needs paging/throttling
 
         // here, get the information from the tasklist needed to populate the ConvertFileSystemToGraphAsyncTask.GraphAsList
@@ -268,9 +287,65 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           if (convertFileSystemToGraphPersistence != null)
           {
             IInsertResultsAbstract results = new InsertViaFileResults(false);
+            string vertexString;
+            string edgeFromString;
+            string edgeToString;
+            vertexString = vertex.Obj.GetFullName();
+            switch (vertex.Obj)
+            {
+              case FSEntityDirectory directory:
+              {
+                vertexString = (vertex.Obj as FSEntityDirectory).DirectoryInfo.FullName;
+                break;
+              }
+              case FSEntityFile file:
+              {
+                vertexString = (vertex.Obj as FSEntityFile).FileInfo.FullName;
+                break;
+              }
+              default:
+              {
+                throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, vertex.Obj));
+              }
+            }
+            switch (edge.From.Obj)
+            {
+              case FSEntityDirectory directory:
+              {
+                edgeFromString = (edge.From.Obj as FSEntityDirectory).DirectoryInfo.FullName;
+                break;
+              }
+              case FSEntityFile file:
+              {
+                edgeFromString = (edge.From.Obj as FSEntityFile).FileInfo.FullName;
+                break;
+              }
+              default:
+              {
+                throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, edge.From.Obj));
+              }
+            }
+            switch (edge.To.Obj)
+            {
+              case FSEntityDirectory directory:
+              {
+                edgeToString = (edge.To.Obj as FSEntityDirectory).DirectoryInfo.FullName;
+                break;
+              }
+              case FSEntityFile file:
+              {
+                edgeToString = (edge.To.Obj as FSEntityFile).FileInfo.FullName;
+                break;
+              }
+              default:
+              {
+                throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, edge.To.Obj));
+              }
+            }
             try
             {
-              results = convertFileSystemToGraphPersistence.InsertFunc(new InsertViaFileData(new string[][] { new string[] { vertex.Obj.Path }, new string[] { $"{edge.From.Obj.Path} -> {edge.To.Obj.Path}" } }), convertFileSystemToGraphPersistence.SetupResults);
+              //var d = new string[][] { new string[] { vertex.Obj.Path }, new string[] { $"{edge.From.Obj.Path} -> {edge.To.Obj.Path}" } }
+              results = convertFileSystemToGraphPersistence.InsertFunc(new string[][] { new string[] {vertexString}, new string[] { $"{edgeFromString} -> {edgeToString}" } });
             }
             catch (Exception e) //when (e is PersistenceInsertException)
             {
@@ -286,7 +361,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           }
 
         }
-        CheckAndHandleCancellationToken(6, convertFileSystemToGraphPersistence, cancellationToken);
+        CheckAndHandleCancellationToken(7,  cancellationToken);
 
       }
 

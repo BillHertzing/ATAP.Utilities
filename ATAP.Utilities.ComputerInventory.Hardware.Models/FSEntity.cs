@@ -68,8 +68,20 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
   }
 
 
-  public class FSEntityArchiveFile : FSEntityFile
+  public class FSEntityArchiveFile : FSEntityAbstract,  IFSEntityArchiveFile
   {
+    public FileInfo? FileInfo { get; set; }
+
+    public string? Hash { get; set; }
+
+    public FSEntityArchiveFile(string path, FileInfo? fileInfo, string? hash, IPhilote<IFSEntityAbstract> philote, Exception? exception) : base(path, philote, exception)
+    {
+      FileInfo = fileInfo;
+      Hash = hash;
+    }
+    public FSEntityArchiveFile() : this("", null, null, new Philote.Philote<IFSEntityAbstract>().Now(), null) { }
+    public FSEntityArchiveFile(string path) : this(path, null, null, new Philote.Philote<IFSEntityAbstract>().Now(), null) { }
+
   }
 
   public class FSEntitySoftLink : FSEntityAbstract

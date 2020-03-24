@@ -17,13 +17,48 @@ namespace ATAP.Utilities.Persistence
       public string DBConnectionString { get; private set; }
     }
 
-    public class PersistenceViaIORMSetupResults : SetupResultsAbstract, ISetupResultsAbstract
+    public class PersistenceViaIORMSetupResults : SetupResultsAbstract, ISetupResultsAbstract, IDisposable
     {
       public PersistenceViaIORMSetupResults(bool success) : base(success)
       {
       }
-      public bool DisposeOfTheORMFunc { get; private set; }
+
+    #region IDisposable Support
+    private bool disposedValue = false; // To detect redundant calls
+
+    protected virtual void Dispose(bool disposing)
+    {
+      if (!disposedValue)
+      {
+        if (disposing)
+        {
+          // TODO: dispose managed state (managed objects).
+        }
+
+        // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+        // TODO: set large fields to null.
+
+        disposedValue = true;
+      }
     }
+
+    // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+    // ~PersistenceViaIORMSetupResults()
+    // {
+    //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+    //   Dispose(false);
+    // }
+
+    // This code added to correctly implement the disposable pattern.
+    public void Dispose()
+    {
+      // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+      Dispose(true);
+      // TODO: uncomment the following line if the finalizer is overridden above.
+      // GC.SuppressFinalize(this);
+    }
+    #endregion
+  }
 
     public class PersistenceViaIORMInsertData : InsertDataAbstract
     {
@@ -39,28 +74,5 @@ namespace ATAP.Utilities.Persistence
       }
     }
 
-    public class PersistenceViaIORMTearDownInitializationData : TearDownDataAbstract
-    {
-      public PersistenceViaIORMTearDownInitializationData(SetupResultsAbstract persistenceSetupResults, CancellationToken cancellationToken) : base( cancellationToken)
-      {
-      }
-    }
-
-    public class PersistenceViaIORMTearDownResults : TearDownResultsAbstract
-    {
-      public PersistenceViaIORMTearDownResults(bool success) : base(success)
-      {
-      }
-    }
-
-    //public class PersistenceViaIORM : PersistenceAbstract {
-
-    //    public Func<PersistenceViaIORMSetupInitializationData, PersistenceViaIORMSetupResults> PersistenceViaIORMSetup;
-    //    public Func<PersistenceViaIORMInsertData, PersistenceViaIORMSetupResults, PersistenceViaIORMInsertResults> PersistenceViaIORMViaIORMInsert;
-    //    public Func<PersistenceViaIORMTearDownInitializationData, PersistenceViaIORMTearDownResults> PersistenceViaIORMTearDown;
-
-    //  public PersistenceViaIORM(PersistenceSetupInitializationDataAbstract persistenceSetupInitializationData, PersistenceSetupResultsAbstract persistenceSetupResults, Func<PersistenceSetupInitializationDataAbstract, PersistenceSetupResultsAbstract> persistenceSetup, PersistenceInsertDataAbstract persistenceInsertData, PersistenceInsertResultsAbstract persistenceInsertResults, Func<PersistenceInsertDataAbstract, PersistenceSetupResultsAbstract, PersistenceInsertResultsAbstract> persistenceInsert, PersistenceTearDownDataAbstract persistenceTearDownInitializationData, PersistenceTearDownResultsAbstract persistenceTearDownResults, Func<PersistenceTearDownDataAbstract, PersistenceSetupResultsAbstract, PersistenceTearDownResultsAbstract> persistenceTearDown) : base(persistenceSetupInitializationData, persistenceSetupResults, persistenceSetup, persistenceInsertData, persistenceInsertResults, persistenceInsert, persistenceTearDownInitializationData, persistenceTearDownResults, persistenceTearDown)
-    //  {
-    //  }
-    //}
+   
 }

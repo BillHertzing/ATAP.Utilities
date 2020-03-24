@@ -69,7 +69,6 @@ namespace ATAP.Utilities.Persistence
     public CancellationToken? CancellationToken { get; private set; }
 
   }
-
   public interface IInsertResultsAbstract
   {
     bool Success { get; set; }
@@ -89,77 +88,22 @@ namespace ATAP.Utilities.Persistence
     public bool Success { get; set; }
   }
 
-  public interface ITearDownDataAbstract
+  public interface IPersistence<out Tout>
   {
-    CancellationToken? CancellationToken { get; }
+    Func<IEnumerable<IEnumerable<object>>, Tout> InsertFunc { get; }
   }
 
-  public abstract class TearDownDataAbstract : ITearDownDataAbstract
+  public class Persistence<Tout> : IPersistence<Tout> where Tout : IInsertResultsAbstract
   {
 
-    protected TearDownDataAbstract(CancellationToken? cancellationToken)
+    public Persistence(Func<IEnumerable<IEnumerable<object>>, Tout> insertFunc)
     {
-      if (cancellationToken != null)
-      {
-        CancellationToken = cancellationToken;
-      }
-      else
-      {
-        CancellationToken = null;
-
-      }
+      InsertFunc = insertFunc;
     }
 
-    public CancellationToken? CancellationToken { get; private set; }
-
+    public Func<IEnumerable<IEnumerable<object>>, Tout> InsertFunc { get; private set; }
   }
 
-  public interface ITearDownResultsAbstract
-  {
-    bool Success { get; set; }
-  }
-
-  public abstract class TearDownResultsAbstract : ITearDownResultsAbstract
-  {
-    protected TearDownResultsAbstract() : this(false)
-    {
-    }
-
-    protected TearDownResultsAbstract(bool success)
-    {
-      Success = success;
-    }
-
-    public bool Success { get; set; }
-  }
-
-  public interface IPersistenceAbstract
-  {
-    ISetupResultsAbstract SetupResults { get; set; }
-    Func<SetupDataAbstract, ISetupResultsAbstract> SetupFunc { get; set; }
-    Func<InsertDataAbstract, ISetupResultsAbstract, InsertResultsAbstract> InsertFunc { get; set; }
-    Func<TearDownDataAbstract, ISetupResultsAbstract, TearDownResultsAbstract> TearDownFunc { get; set; }
-  }
-
-
-  public abstract class PersistenceAbstract : IPersistenceAbstract
-  {
-    protected PersistenceAbstract() { }
-    protected PersistenceAbstract(SetupDataAbstract? setupData, ISetupResultsAbstract? setupResults, Func<SetupDataAbstract, ISetupResultsAbstract> setupFunc, Func<object, InsertViaFileData> convertToDataToInsertFunc, Func<InsertDataAbstract, ISetupResultsAbstract, InsertResultsAbstract> insertFunc, Func<TearDownDataAbstract, ISetupResultsAbstract, TearDownResultsAbstract> tearDownFunc)
-    {
-      SetupResults = setupResults;
-      SetupFunc = setupFunc ?? throw new ArgumentNullException(nameof(setupFunc));
-      InsertFunc = insertFunc ?? throw new ArgumentNullException(nameof(insertFunc));
-      TearDownFunc = tearDownFunc ?? throw new ArgumentNullException(nameof(tearDownFunc));
-    }
-
-    public ISetupResultsAbstract? SetupResults { get; set; }
-    public Func<SetupDataAbstract, ISetupResultsAbstract> SetupFunc { get; set; }
-    public Func<InsertDataAbstract, ISetupResultsAbstract, InsertResultsAbstract> InsertFunc { get; set; }
-    public Func<TearDownDataAbstract, ISetupResultsAbstract, TearDownResultsAbstract> TearDownFunc { get; set; }
-
-
-  }
 
   public class PersistenceBuilderAbstract //: IPersistenceBuilderAbstract
   {

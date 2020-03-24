@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace ATAP.Utilities.Persistence
 {
-  public interface ISetupViaFileData:ISetupDataAbstract
+  public interface ISetupViaFileData : ISetupDataAbstract
   {
     IEnumerable<string> FilePaths { get; set; }
   }
@@ -23,6 +23,7 @@ namespace ATAP.Utilities.Persistence
     }
 
     public IEnumerable<string> FilePaths { get; set; }
+
   }
 
   public interface ISetupViaFileResults : ISetupResultsAbstract
@@ -31,7 +32,7 @@ namespace ATAP.Utilities.Persistence
     StreamWriter[] StreamWriters { get; set; }
   }
 
-  public class SetupViaFileResults : SetupResultsAbstract, ISetupViaFileResults
+  public class SetupViaFileResults : SetupResultsAbstract, ISetupViaFileResults, IDisposable
   {
     public SetupViaFileResults(bool success, FileStream[] fileStreams, StreamWriter[] streamWriters) : base(success)
     {
@@ -41,9 +42,40 @@ namespace ATAP.Utilities.Persistence
 
     public FileStream[] FileStreams { get; set; }
     public StreamWriter[] StreamWriters { get; set; }
+
+    #region IDisposable Support
+    private bool disposedValue = false; // To detect redundant calls
+
+    protected virtual void Dispose(bool disposing)
+    {
+      if (!disposedValue)
+      {
+        if (disposing)
+        {
+          int numberOfFiles = FileStreams.Length;
+          for (var i = 0; i < numberOfFiles; i++)
+          {
+            StreamWriters[i].Dispose();
+            //Todo: ?? exception handling on call to Dispose
+            FileStreams[i].Dispose();
+            //Todo: ?? exception handling on call to Dispose
+          }
+        }
+
+        disposedValue = true;
+      }
+    }
+
+    // This code added to correctly implement the disposable pattern.
+    public void Dispose()
+    {
+      // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+      Dispose(true);
+    }
+    #endregion
   }
 
-  public interface IInsertViaFileData:IInsertDataAbstract
+  public interface IInsertViaFileData : IInsertDataAbstract
   {
     new string[][] DataToInsert { get; set; }
   }
@@ -54,7 +86,6 @@ namespace ATAP.Utilities.Persistence
 
     public InsertViaFileData(string[][] dataToInsert, CancellationToken? cancellationToken) : base(dataToInsert, cancellationToken)
     {
-      //ToDo: Validate the cardinality of the dataToInsert matches the cardinality of the setupResults, throw if not
       DataToInsert = dataToInsert ?? throw new ArgumentNullException(nameof(dataToInsert));
     }
 
@@ -65,59 +96,8 @@ namespace ATAP.Utilities.Persistence
   {
 
   }
-  public class InsertViaFileResults : InsertResultsAbstract
+  public class InsertViaFileResults : InsertResultsAbstract, IInsertViaFileResults
   {
     public InsertViaFileResults(bool success) : base(success) { }
-
-  }
-
-
-  public interface ITearDownViaFileData { }
-  public class TearDownViaFileData : TearDownDataAbstract, ITearDownDataAbstract, ITearDownViaFileData
-  {
-    public TearDownViaFileData() : this(null)
-    {
-    }
-
-    public TearDownViaFileData( CancellationToken? cancellationToken) : base(cancellationToken)
-    {
-    }
-  }
-
-  public interface ITearDownViaFileResults { }
-  public class TearDownViaFileResults : TearDownResultsAbstract, ITearDownResultsAbstract, ITearDownViaFileResults
-  {
-    public TearDownViaFileResults() : this(false)
-    {
-    }
-
-    public TearDownViaFileResults(bool success) : base(success)
-    {
-    }
-  }
-
-  public interface IPersistenceViaFile :IPersistenceAbstract
-  {
-    new ISetupViaFileResults SetupResults { get; set; }
-    new Func<SetupViaFileData, ISetupViaFileResults> SetupFunc { get; set; }
-    new Func<InsertViaFileData, ISetupViaFileResults, InsertViaFileResults> InsertFunc { get; set; }
-    new Func<TearDownViaFileData, ISetupViaFileResults, TearDownViaFileResults> TearDownFunc { get; set; }
-  }
-
-  public class PersistenceViaFile : PersistenceAbstract , IPersistenceViaFile
-
-  {
-    public PersistenceViaFile(ISetupViaFileResults? setupResults, Func<SetupViaFileData, ISetupViaFileResults> setupFunc,  Func<InsertViaFileData, ISetupViaFileResults, InsertViaFileResults> insertFunc, Func<TearDownViaFileData, ISetupViaFileResults, TearDownViaFileResults> tearDownFunc) : base()
-    {
-      SetupResults = setupResults;
-      SetupFunc = setupFunc ?? throw new ArgumentNullException(nameof(setupFunc));
-      InsertFunc = insertFunc ?? throw new ArgumentNullException(nameof(insertFunc));
-      TearDownFunc = tearDownFunc ?? throw new ArgumentNullException(nameof(tearDownFunc));
-    }
-
-    new public ISetupViaFileResults? SetupResults { get; set; }
-    new public Func<SetupViaFileData, ISetupViaFileResults> SetupFunc { get; set; }
-    new public Func<InsertViaFileData, ISetupViaFileResults, InsertViaFileResults> InsertFunc { get; set; }
-    new public Func<TearDownViaFileData, ISetupViaFileResults, TearDownViaFileResults> TearDownFunc { get; set; }
   }
 }

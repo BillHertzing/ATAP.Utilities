@@ -29,15 +29,18 @@
 
   <!-- solution-wide properties to include in every project -->
   <PropertyGroup>
-    <!-- root directory of the solution, relative to the location where current project is found take place -->
+    <!-- specify the root directory of the solution, relative to the location where the current project is found -->
     <!-- when msbuild is run by Visual Studio 15.8.2, ($(MSBuildRuntimeType) != 'Core') the property $(SolutionDir) is already defined at this point, so this line is not executed -->
     <!-- when msbuild is run by dotnet command, ($(MSBuildRuntimeType) == 'Core') the property $(SolutionDir) is not defined at this point, so this line is executed -->
     <!-- the result is that the $(SolutionDir) is set properly regardless of the $(MSBuildRuntimeType) -->
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">$(MSBuildProjectDirectory)\..\</SolutionDir>
+	
     <!-- Directory where all of the custom build tools are stored -->
-    <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir).build\</SolutionBuildToolsBaseDir>
+    <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)Build\</SolutionBuildToolsBaseDir>
+	
     <!-- bring in the build tasks extensions defined in the MSBuild.Community project-->
     <MSBuildCommunityTasksPath>$(SolutionBuildToolsBaseDir)MSBuildTasks.*\build</MSBuildCommunityTasksPath>
+	
     <!-- bring in the build tasks extensions defined in the ATAP.Utilities.BuildTooling project-->
     <!-- ATAPBuildToolingConfiguration is normally set to Release; use Debug if developing the BuildTooling assemblies and scripts -->
 	  <ATAPBuildToolingConfiguration>Debug</ATAPBuildToolingConfiguration>
@@ -48,15 +51,16 @@
     <ATAPUtilitiesBuildToolingTasksPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.0.1.0.1\build</ATAPUtilitiesBuildToolingTasksPath>
     <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\$(ATAPBuildToolingConfiguration)\netstandard2.0\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
     <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\$(ATAPBuildToolingConfiguration)\net471\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
-    <!-- The Rosyun Code Analyzers for FxCop Rules should be installed as a Nuget Package at the Solution level, per this article https://docs.microsoft.com/en-us/visualstudio/code-quality/install-fxcop-analyzers?view=vs-2019 -->
+
+    <!-- The Roslyn Code Analyzers for FxCop Rules should be installed as a Nuget Package at the Solution level, per this article https://docs.microsoft.com/en-us/visualstudio/code-quality/install-fxcop-analyzers?view=vs-2019 -->
     <!-- Per this article https://docs.microsoft.com/en-us/visualstudio/code-quality/roslyn-analyzers-overview?view=vs-2019#nuget-package-versus-vsix-extension the legacy post-build code analysis tools should be turned off -->
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
 
   <!-- NuGet Package information for all assemblies in the solution -->
   <PropertyGroup>
-    <Company>ATAP Technology, Inc.</Company>
-    <Copyright>ATAP Technology, Inc.</Copyright>
+    <Company></Company>
+    <Copyright>William Hertzing</Copyright>
     <Authors>William Hertzing</Authors>
     <Product>ATAP.Utilities</Product>
     <ProductName>ATAP.Utilities</ProductName>
@@ -75,7 +79,6 @@
     <NuGetLocalFeedPath Condition=" '$(NuGetLocalFeedPath)' == '' ">C:\Dropbox\NuGetLocalFeed</NuGetLocalFeedPath> 
   </PropertyGroup>
 
-
   <!-- Release Configuration compilation symbols, flags and build options -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -89,30 +92,75 @@
     <NoWarn>1701;1702;1705,NU1701</NoWarn>
   </PropertyGroup>
 
-  <!-- .NET Standard 2.0 references, compilation flags and build options -->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
-    <DefineConstants>NETCORE;NETSTANDARD;NETSTANDARD2_0</DefineConstants>
+  <!-- .NET Standard any version references, compilation flags and build options -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('netstandard'))">
+    <DefineConstants>NETSTANDARD</DefineConstants>
   </PropertyGroup>
 
-  <!-- .NET Standard 2.0 solution-wide items to include in every project -->
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+  <!-- .NET Standard 2.0 references, compilation flags and build options -->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+    <DefineConstants>NETSTANDARD2_0</DefineConstants>
+  </PropertyGroup>
+
+  <!-- .NET Standard 2.1 references, compilation flags and build options -->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.1'">
+    <DefineConstants>NETSTANDARD2_1</DefineConstants>
+  </PropertyGroup>
+
+  <!-- .NET Standard solution-wide items to include in every project -->
+  <ItemGroup Condition="$(TargetFramework.Contains('netstandard'))">
   </ItemGroup>
+
+  <!-- .NET Core references, compilation flags and build options -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('netcore'))">
+    <DefineConstants>NETCORE;</DefineConstants>
+  </PropertyGroup>
 
   <!-- .NET Core 2.0 references, compilation flags and build options -->
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0'">
-    <DefineConstants>NETCORE;</DefineConstants>
+    <DefineConstants>NETCOREAPP2_0</DefineConstants>
+  </PropertyGroup>
+
+  <!-- .NET Core 3.0 references, compilation flags and build options -->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.0'">
+    <DefineConstants>NETCOREAPP3_0</DefineConstants>
+  </PropertyGroup>
+
+  <!-- .NET Core 3.1 references, compilation flags and build options -->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1'">
+    <DefineConstants>NETCOREAPP3_1</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Core 2.0 solution-wide items to include in every project -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">
   </ItemGroup>
 
-    <!-- .NET 4 or greater references, compilation flags and build options -->
-  <PropertyGroup Condition="$(TargetFramework.Contains('net47'))">
-    <DefineConstants>NET47;NETFULL</DefineConstants>
+    <!-- .NET Framework, compilation flags and build options -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('net'))">
+    <DefineConstants>NETFULL</DefineConstants>
+  </PropertyGroup>
+  
+      <!-- .NET 47 references, compilation flags and build options -->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net47' ">
+    <DefineConstants>NET47</DefineConstants>
   </PropertyGroup>
 
-  <!-- .NET 471 solution-wide items to include in every project -->
+      <!-- .NET 471 references, compilation flags and build options -->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net471' ">
+    <DefineConstants>NET471</DefineConstants>
+  </PropertyGroup>
+
+      <!-- .NET 472 references, compilation flags and build options -->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net472' ">
+    <DefineConstants>NET472</DefineConstants>
+  </PropertyGroup>
+
+      <!-- .NET 48 references, compilation flags and build options -->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net48' ">
+    <DefineConstants>NET48</DefineConstants>
+  </PropertyGroup>
+
+   <!-- .NET 471 solution-wide items to include in every project -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net471' ">
   </ItemGroup>
 

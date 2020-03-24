@@ -70,6 +70,12 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         convertFileSystemToGraphProgress.NumberOfFiles = 0;
         convertFileSystemToGraphProgress.DeepestDirectoryTree = 0;
         convertFileSystemToGraphProgress.LargestFile = 0;
+        //Earliest Direcotry creation date
+        //Latest Direcotry creation date
+        //Earliest File creation date
+        //Latest File creation date
+        //Earliest File write date
+        //Latest File write date
       }
       // check CancellationToken to see if this task is canceled
       if (cancellationToken.IsCancellationRequested)
@@ -79,19 +85,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         cancellationToken.ThrowIfCancellationRequested();
       }
       // After this point, there will be cleanup to do if the task is canceled or exceptions are thrown
-      // If the persistence argument is not null, setup the persistence
-      if (convertFileSystemToGraphPersistence != null)
-      {
-        try
-        {
-          convertFileSystemToGraphPersistence.PersistenceSetupResults = convertFileSystemToGraphPersistence.PersistenceSetup(convertFileSystemToGraphPersistence.PersistenceSetupInitializationData);
-        }
-        catch
-        {
-          // An error in the persistence setup should not cause the entire operation to fail, but it should be recorded
-          // ToDo: catch exceptions when setting up convertFileSystemToGraphPersistence
-        }
-      }
+      // Persistence setup is donw outside the ConvertFileSystemToGraph extension method
       // check CancellationToken to see if this task is canceled
       CheckAndHandleCancellationToken(1, convertFileSystemToGraphPersistence, cancellationToken);
 
@@ -104,9 +98,11 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
       // If the convertFileSystemToGraphPersistence argument is not null, persist the root vertex
       if (convertFileSystemToGraphPersistence != null)
       {
+        IInsertResultsAbstract results = new InsertViaFileResults(false);
         try
         {
-          convertFileSystemToGraphPersistence.PersistenceInsertResults = convertFileSystemToGraphPersistence.PersistenceInsert(convertFileSystemToGraphPersistence.PersistenceInsertData, convertFileSystemToGraphPersistence.PersistenceSetupResults);
+          // Persisting the root
+          results = convertFileSystemToGraphPersistence.InsertFunc(new InsertViaFileData(new string[][] { new string[] { root } }), convertFileSystemToGraphPersistence.SetupResults);
         }
         catch (Exception e) //when (e is PersistenceInsertException)
         {
@@ -114,7 +110,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           // ToDo: decide how and where to record this exception
         }
         // Did the persistence insert fail
-        if (!convertFileSystemToGraphPersistence.PersistenceInsertResults.Success)
+        if (!results.Success)
         {
           // ToDo: figure out how and where to record a failed persistence insert
         }
@@ -252,7 +248,8 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           // Create an Edge between this Vertex and the currentContainerVertex, and add this Edge to the Edges
           Vertex<IFSEntityAbstract> vertex = new Vertex<IFSEntityAbstract>(task.Result);
           convertFileSystemToGraphResult.GraphAsIList.Vertices.Add(vertex);
-          convertFileSystemToGraphResult.GraphAsIList.Edges.Add(new Edge<IFSEntityAbstract>(currentContainerVertex, vertex));
+          Edge<IFSEntityAbstract> edge = new Edge<IFSEntityAbstract>(currentContainerVertex, vertex);
+          convertFileSystemToGraphResult.GraphAsIList.Edges.Add(edge);
           // append the exception from each task, if it exist, to the convertFileSystemToGraphResults and the convertFileSystemToGraphProgress
           if (task.Result.Exception != null)
           {
@@ -267,27 +264,30 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
               convertFileSystemToGraphProgress.LargestFile = task.Result.FileInfo.Length;
             }
           }
-        }
-        CheckAndHandleCancellationToken(6, convertFileSystemToGraphPersistence, cancellationToken);
-         // If the convertFileSystemToGraphPersistence argument is not null, persist the vertex and edge for this file
-         if (convertFileSystemToGraphPersistence != null)
-         {
-           try
-           {
-             convertFileSystemToGraphPersistence.PersistenceInsertResults = convertFileSystemToGraphPersistence.PersistenceInsert(convertFileSystemToGraphPersistence.PersistenceInsertData, convertFileSystemToGraphPersistence.PersistenceSetupResults);
-           }
-        catch (Exception e) //when (e is PersistenceInsertException)
-        {
-          // An error in the persistence insert should not cause the entire operation to fail, but it should be recorded
-          // ToDo: decide how and where to record this exception
-        }
-        // Did the persistence insert fail
-        if (!convertFileSystemToGraphPersistence.PersistenceInsertResults.Success)
-        {
-          // ToDo: figure out how and where to record a failed persistence insert
-        }
+          // If the convertFileSystemToGraphPersistence argument is not null, persist the vertex and edge for this file
+          if (convertFileSystemToGraphPersistence != null)
+          {
+            IInsertResultsAbstract results = new InsertViaFileResults(false);
+            try
+            {
+              results = convertFileSystemToGraphPersistence.InsertFunc(new InsertViaFileData(new string[][] { new string[] { vertex.Obj.Path }, new string[] { $"{edge.From.Obj.Path} -> {edge.To.Obj.Path}" } }), convertFileSystemToGraphPersistence.SetupResults);
+            }
+            catch (Exception e) //when (e is PersistenceInsertException)
+            {
+              // An error in the persistence insert should not cause the entire operation to fail, but it should be recorded
+              // ToDo: decide how and where to record this exception
+            }
+            // Did the persistence insert fail
+            if (!results.Success)
+            {
+              // ToDo: figure out how and where to record a failed persistence insert
+            }
 
           }
+
+        }
+        CheckAndHandleCancellationToken(6, convertFileSystemToGraphPersistence, cancellationToken);
+
       }
 
       // The analysis is complete, update progress

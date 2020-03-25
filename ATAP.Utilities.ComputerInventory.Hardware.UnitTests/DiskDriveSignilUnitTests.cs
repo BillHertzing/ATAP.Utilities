@@ -1,5 +1,4 @@
 using ATAP.Utilities.ComputerInventory.Hardware;
-using ATAP.Utilities.Testing.XunitSkipAttributeExtension;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -10,7 +9,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 
   public partial class ComputerInventoryHardwareUnitTests001 : IClassFixture<ComputerInventoryHardwareFixture>
   {
-    [SkipBecauseNotWorkingTheory]
+    [Theory]
     [MemberData(nameof(DiskDriveSignilTestDataGenerator.TestData), MemberType = typeof(DiskDriveSignilTestDataGenerator))]
     public void DiskDriveSignilDeserializeFromJSON(DiskDriveSignilTestData inTestData)
     {

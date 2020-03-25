@@ -9,6 +9,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
 {
   public static class FSEntityExtensions
   {
+    //Projection for FD, FF, and FA use the DirectoryInfo.FullName, FileInfo.FullName, and / or Path properties 
     public static string GetFullName(this IFSEntityAbstract fSEntityAbstract)
     {
       Func<FSEntityDirectory, string> PFD = new Func<FSEntityDirectory, string>((fSEntityDirectory) => {
@@ -42,10 +43,10 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
       }
     }
 
-    public static Tout GetObject<Tout>(this FSEntityAbstract fSEntityAbstract) where Tout : new()
-    {
-      Tout ret = new Tout();
-      return ret;
-    }
+    //public static Tout GetObject<Tout>(this FSEntityAbstract fSEntityAbstract) where Tout : new()
+    //{
+    //  Tout ret = new Tout();
+    //  return ret;
+    //}
   }
 }

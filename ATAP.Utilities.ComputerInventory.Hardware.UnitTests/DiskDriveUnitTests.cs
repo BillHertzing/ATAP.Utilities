@@ -11,7 +11,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 
   public partial class ComputerInventoryHardwareUnitTests001 : IClassFixture<ComputerInventoryHardwareFixture>
   {
-    [SkipBecauseNotWorkingTheory]
+    [@Fact]
     [MemberData(nameof(DiskDriveTestDataGenerator.TestData), MemberType = typeof(DiskDriveTestDataGenerator))]
     public void DiskDriveDeserializeFromJSON(DiskDriveTestData inTestData)
     {

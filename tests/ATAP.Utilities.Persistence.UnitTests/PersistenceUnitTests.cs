@@ -19,62 +19,37 @@ namespace ATAP.Utilities.Persistence.UnitTests
 {
   public partial class PersistenceUnitTests001 : IClassFixture<PersistenceFixture>
   {
-    // Common constructor method for the SetupViaFileFunc used in these tests
-    // Sets up N empty files in the %tempt% directory
-    Func<SetupViaFileData, SetupViaFileResults> SetupViaFileFuncBuilder()
-    {
-      Func<SetupViaFileData, SetupViaFileResults> ret = new Func<SetupViaFileData, SetupViaFileResults>((setupData) =>
-      {
-        var filePathsAsArray = setupData.FilePaths.ToArray();
-        int numberOfFiles = filePathsAsArray.Length;
-#if DEBUG
-        TestOutput.WriteLine($"Got {numberOfFiles} FilePaths");
-#endif 
 
-        FileStream[] fileStreams = new FileStream[numberOfFiles];
-        StreamWriter[] streamWriters = new StreamWriter[numberOfFiles];
-        for (var i = 0; i < numberOfFiles; i++)
-        {
-          fileStreams[i] = new FileStream(filePathsAsArray[i], FileMode.CreateNew, FileAccess.Write);
-          //ToDo: exception handling
-          streamWriters[i] = new StreamWriter(fileStreams[i], Encoding.UTF8);
-          //ToDo: exception handling
-        }
-        return new SetupViaFileResults(true, fileStreams, streamWriters);
-      });
-      return ret;
-    }
+    // // Common constructor method for the InsertViaFileFunc used in these tests
+    // // Uses the structures setup by the SetupViaFileFuncBuilder
+    // Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults> InsertViaFileFuncBuilder()
+    // {
+      // Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults> ret = new Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults>((insertData, setupResults) =>
+      // {
+        // int numberOfFiles = insertData.DataToInsert[0].Length;
+// #if DEBUG
+        // TestOutput.WriteLine($"Got {numberOfFiles} arrays of data to write");
+// #endif
+        // int numberOfStreamWriters = setupResults.StreamWriters.Length;
+// #if DEBUG
+        // TestOutput.WriteLine($"Got {numberOfStreamWriters} streamwriters to write to");
+// #endif
+        // for (var i = 0; i < numberOfFiles; i++)
+        // {
+          // foreach (string str in insertData.DataToInsert[i])
+          // {
+            // //await setupResults.StreamWriters[i].WriteLineAsync(str);
+            // setupResults.StreamWriters[i].WriteLine(str);
+          // }
+        // }
+        // return new InsertViaFileResults(true);
 
-    // Common constructor method for the InsertViaFileFunc used in these tests
-    // Uses the structures setup by the SetupViaFileFuncBuilder
-    Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults> InsertViaFileFuncBuilder()
-    {
-      Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults> ret = new Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults>((insertData, setupResults) =>
-      {
-        int numberOfFiles = insertData.DataToInsert[0].Length;
-#if DEBUG
-        TestOutput.WriteLine($"Got {numberOfFiles} arrays of data to write");
-#endif
-        int numberOfStreamWriters = setupResults.StreamWriters.Length;
-#if DEBUG
-        TestOutput.WriteLine($"Got {numberOfStreamWriters} streamwriters to write to");
-#endif
-        for (var i = 0; i < numberOfFiles; i++)
-        {
-          foreach (string str in insertData.DataToInsert[i])
-          {
-            //await setupResults.StreamWriters[i].WriteLineAsync(str);
-            setupResults.StreamWriters[i].WriteLine(str);
-          }
-        }
-        return new InsertViaFileResults(true);
-
-      });
-      return ret;
-    }
+      // });
+      // return ret;
+    // }
 
 
-    [Fact]
+    [Xunit.Fact]
     void VerifySetupViaFileDataThrowsOnEmptyIEnumerable()
     {
       string[] filePaths = new string[0];
@@ -88,7 +63,6 @@ namespace ATAP.Utilities.Persistence.UnitTests
     [InlineData(2)]
     void VerifySetupCreatesCorrectNumberOfResultElements(int inTestData)
     {
-      var setupFunc = SetupViaFileFuncBuilder();
       // Create a number of temporary files, empty, and put their names in filePaths
       var temporaryFiles = new TemporaryFile[inTestData];
       var filePaths = new string[inTestData];
@@ -97,8 +71,10 @@ namespace ATAP.Utilities.Persistence.UnitTests
         temporaryFiles[i] = new TemporaryFile().CreateTemporaryFileEmpty();
         filePaths[i] = temporaryFiles[i].FileInfo.FullName;
       }
-      var setupData = new SetupViaFileData(filePaths);
-      var setupResults = setupFunc(setupData);
+      
+      // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
+      var setupResults = ATAP.Utilities.Persistence.StaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
+
       setupResults.Success.Should().Be(true);
       setupResults.FileStreams.Length.Should().Be(inTestData);
       setupResults.StreamWriters.Length.Should().Be(inTestData);
@@ -110,7 +86,6 @@ namespace ATAP.Utilities.Persistence.UnitTests
     [InlineData(2)]
     void VerifyDispose(int inTestData)
     {
-      var setupFunc = SetupViaFileFuncBuilder();
       // Create a number of temporary files, empty, and put their names in filePaths
       var temporaryFiles = new TemporaryFile[inTestData];
       var filePaths = new string[inTestData];
@@ -119,8 +94,8 @@ namespace ATAP.Utilities.Persistence.UnitTests
         temporaryFiles[i] = new TemporaryFile().CreateTemporaryFileEmpty();
         filePaths[i] = temporaryFiles[i].FileInfo.FullName;
       }
-      var setupData = new SetupViaFileData(filePaths);
-      var setupResults = setupFunc(setupData);
+      // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
+      var setupResults = ATAP.Utilities.Persistence.StaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
       setupResults.Dispose();
       for (int i = 0; i < inTestData; i++)
       {
@@ -134,7 +109,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
       }
     }
 
-    [SkipBecauseNotWorkingTheory]
+    [Theory]
     [MemberData(nameof(PersistenceViaFileTestDataGenerator.TestData), MemberType = typeof(PersistenceViaFileTestDataGenerator))]
 
     void VerifyInsert(PersistenceTestData<IInsertViaFileResults> inTestData)
@@ -147,13 +122,35 @@ namespace ATAP.Utilities.Persistence.UnitTests
         temporaryFiles[i] = new TemporaryFile().CreateTemporaryFileEmpty();
         filePaths[i] = temporaryFiles[i].FileInfo.FullName;
       }
-      var setupData = new SetupViaFileData(filePaths);
+
       // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-      var setupFunc = SetupViaFileFuncBuilder();
-      var setupResults = setupFunc(setupData);
+      var setupResults = ATAP.Utilities.Persistence.StaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
       setupResults.Success.Should().Be(true);
 
-      var insertFunc = InsertViaFileFuncBuilder();
+      var insertFunc = new Func<IEnumerable<IEnumerable<object>>, IInsertViaFileResults>((insertData) =>
+      {
+        int numberOfFiles = insertData.ToArray().Length;
+#if DEBUG
+        TestOutput.WriteLine($"Got {numberOfFiles} arrays of data to write");
+#endif
+        int numberOfStreamWriters = setupResults.StreamWriters.Length;
+#if DEBUG
+        TestOutput.WriteLine($"Got {numberOfStreamWriters} streamwriters to write to");
+#endif
+        for (var i = 0; i < numberOfFiles; i++)
+        {
+          foreach (string str in insertData.ToArray()[i])
+          {
+            //ToDo: add async versions await setupResults.StreamWriters[i].WriteLineAsync(str);
+            //ToDo: exception handling
+            setupResults.StreamWriters[i].WriteLine(str);
+#if DEBUG
+            TestOutput.WriteLine($"writing {str} to file {i}");
+#endif
+          }
+        }
+        return new InsertViaFileResults(true);
+      });
       //IEnumerable<IEnumerable<object>> dataToInsert = inTestData.ObjectsForEachContainer;
       IEnumerable<object>[] containersToInsert = inTestData.ObjectsForEachContainer.ToArray();
       string[][] dataToInsert = new string[containersToInsert.Count()][];
@@ -164,9 +161,8 @@ namespace ATAP.Utilities.Persistence.UnitTests
 
         dataToInsert[i] = objArray.Select(x => x.ToString()) as string[];
       }
-      var insertData = new InsertViaFileData(dataToInsert);
 
-      var insertResults = insertFunc(insertData, setupResults);
+      var insertResults = insertFunc(dataToInsert);
       insertResults.Success.Should().Be(true);
       setupResults.Dispose();
       long CountLinesLINQ(FileInfo file) => File.ReadLines(file.FullName).Count(); // replace with a File Utility https://www.nimaara.com/, or pull in his library
@@ -190,7 +186,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
       }
       var setupData = new SetupViaFileData(filePaths);
       // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-      var setupResults = SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
+      var setupResults = ATAP.Utilities.Persistence.StaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
       // Validate the results are as expected
       setupResults.Success.Should().Be(true);
       setupResults.FileStreams.Length.Should().Be(inTestData.NumberOfContainers);
@@ -255,11 +251,10 @@ namespace ATAP.Utilities.Persistence.UnitTests
       {
         temporaryFiles[i] = new TemporaryFile().CreateTemporaryFileEmpty();
         filePaths[i] = temporaryFiles[i].FileInfo.FullName;
-      }
-      // Starting with an array of file names in filePaths
-      var setupData = new SetupViaFileData(filePaths);
+      };
+
       // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-      var setupResults = SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
+      var setupResults = ATAP.Utilities.Persistence.StaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
       // Validate the results are as expected
       setupResults.Success.Should().Be(true);
       setupResults.FileStreams.Length.Should().Be(inTestData.NumberOfContainers);

@@ -17,7 +17,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ATAP.Utilities.Testing" Version="1.0.0" />
     <PackageReference Include="FluentAssertions" Version="5.10.2" />
     <PackageReference Include="Funq" Version="1.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
@@ -35,11 +34,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
   </ItemGroup>
 
-
+  <ItemGroup>
+    <ProjectReference Include="..\..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Persistence.Extensions\ATAP.Utilities.Persistence.Extensions.csproj" />
+  </ItemGroup>
 
 </Project>

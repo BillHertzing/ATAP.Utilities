@@ -9,9 +9,9 @@ using Xunit;
 namespace ATAP.Utilities.Testing.XunitSkipAttributeExtension
 {
   //Attribution: [Skipping XUnit tests based on runtime conditions](https://josephwoodward.co.uk/2019/01/skipping-xunit-tests-based-on-runtime-conditions)
-  public sealed class SkipBecauseNotWorkingTheory : TheoryAttribute
+  public sealed class Fact : TheoryAttribute
   {
-    public SkipBecauseNotWorkingTheory()
+    public Fact()
     {
         Skip = "Skipped because test is not working";
     }

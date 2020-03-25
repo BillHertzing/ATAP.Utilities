@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 using static FluentAssertions.FluentActions;
 using ATAP.Utilities.GraphDataStructures;
 
+
 namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 {
 
@@ -64,44 +65,8 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
       var containeredgeandnodename = convertFileSystemToGraphResult.GraphAsIList.Edges
       .Select(edge =>
       {
-        string fs;
-        switch (edge.From.Obj)
-        {
-          case FSEntityDirectory directory:
-          {
-            fs = (edge.From.Obj as FSEntityDirectory).DirectoryInfo.FullName;
-            break;
-          }
-          // Handles the more-derived type FSEntityArchiveFile as well
-          case FSEntityFile file:
-          {
-            fs = (edge.From.Obj as FSEntityFile).FileInfo.FullName;
-            break;
-          }
-          default:
-          {
-            throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, edge.From.Obj));
-          }
-        }
-        string ts;
-        switch (edge.To.Obj)
-        {
-          case FSEntityDirectory directory:
-          {
-            ts = (edge.To.Obj as FSEntityDirectory).DirectoryInfo.FullName;
-            break;
-          }
-          // Handles the more-derived type FSEntityArchiveFile as well
-          case FSEntityFile file:
-          {
-            ts = (edge.To.Obj as FSEntityFile).FileInfo.FullName;
-            break;
-          }
-          default:
-          {
-            throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, edge.To.Obj));
-          }
-        }
+        string fs = edge.From.Obj.GetFullName();
+        string ts = edge.To.Obj.GetFullName();
         var tu = (fs, ts);
         return tu;
       });
@@ -119,31 +84,31 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
       convertFileSystemToGraphResult.GraphAsIList.Vertices.Count.Should().Be(15);
     }
 
-    // Common constructor method for the SetupViaFileFunc used in these tests
-    // Sets up N empty files in the %tempt% directory
-    Func<SetupViaFileData, SetupViaFileResults> SetupViaFileFuncBuilder()
-    {
-      Func<SetupViaFileData, SetupViaFileResults> ret = new Func<SetupViaFileData, SetupViaFileResults>((setupData) =>
-      {
-        var filePathsAsArray = setupData.FilePaths.ToArray();
-        int numberOfFiles = filePathsAsArray.Length;
-#if DEBUG
-        TestOutput.WriteLine($"Got {numberOfFiles} FilePaths");
-#endif 
+    // // Common constructor method for the SetupViaFileFunc used in these tests
+    // // Sets up N empty files in the %tempt% directory
+    // Func<SetupViaFileData, SetupViaFileResults> SetupViaFileFuncBuilder()
+    // {
+      // Func<SetupViaFileData, SetupViaFileResults> ret = new Func<SetupViaFileData, SetupViaFileResults>((setupData) =>
+      // {
+        // var filePathsAsArray = setupData.FilePaths.ToArray();
+        // int numberOfFiles = filePathsAsArray.Length;
+// #if DEBUG
+        // TestOutput.WriteLine($"Got {numberOfFiles} FilePaths");
+// #endif 
 
-        FileStream[] fileStreams = new FileStream[numberOfFiles];
-        StreamWriter[] streamWriters = new StreamWriter[numberOfFiles];
-        for (var i = 0; i < numberOfFiles; i++)
-        {
-          fileStreams[i] = new FileStream(filePathsAsArray[i], FileMode.CreateNew, FileAccess.Write);
-          //ToDo: exception handling
-          streamWriters[i] = new StreamWriter(fileStreams[i], Encoding.UTF8);
-          //ToDo: exception handling
-        }
-        return new SetupViaFileResults(true, fileStreams, streamWriters);
-      });
-      return ret;
-    }
+        // FileStream[] fileStreams = new FileStream[numberOfFiles];
+        // StreamWriter[] streamWriters = new StreamWriter[numberOfFiles];
+        // for (var i = 0; i < numberOfFiles; i++)
+        // {
+          // fileStreams[i] = new FileStream(filePathsAsArray[i], FileMode.CreateNew, FileAccess.Write);
+          // //ToDo: exception handling
+          // streamWriters[i] = new StreamWriter(fileStreams[i], Encoding.UTF8);
+          // //ToDo: exception handling
+        // }
+        // return new SetupViaFileResults(true, fileStreams, streamWriters);
+      // });
+      // return ret;
+    // }
 
     //    // Common constructor method for the InsertViaFileFunc used in these tests
     //    // closes over the ISetupViaFileResults that was pseed into the contructor
@@ -208,9 +173,9 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 #endif
       }
 
-      var setupFunc = SetupViaFileFuncBuilder();
-      SetupViaFileData setupData = new SetupViaFileData(filePaths, cancellationToken);
-      var setupResults = SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
+      // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
+      var setupResults = ATAP.Utilities.Persistence.StaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
+
       //var insertFunc = InsertViaFileFuncBuilder(setupResults);
       // Create an insertFunc that references the local variable setupResults, closing over it
       var insertFunc = new Func<IEnumerable<IEnumerable<object>>, IInsertViaFileResults>((insertData) =>

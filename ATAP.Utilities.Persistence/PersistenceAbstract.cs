@@ -88,7 +88,7 @@ namespace ATAP.Utilities.Persistence
     public bool Success { get; set; }
   }
 
-  public interface IPersistence<out Tout>
+  public interface IPersistence<out Tout> where Tout : IInsertResultsAbstract
   {
     Func<IEnumerable<IEnumerable<object>>, Tout> InsertFunc { get; }
   }

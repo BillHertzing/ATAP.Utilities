@@ -10,7 +10,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 
   public partial class ComputerInventoryHardwareUnitTests001 : IClassFixture<ComputerInventoryHardwareFixture>
   {
-    [SkipBecauseNotWorkingTheory]
+    [@Fact]
     [MemberData(nameof(MainBoardTestDataGenerator.TestData), MemberType = typeof(MainBoardTestDataGenerator))]
     public void MainBoardDeserializeFromJSON(MainBoardTestData inTestData)
     {

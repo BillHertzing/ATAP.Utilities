@@ -45,4 +45,17 @@
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Models\ATAP.Utilities.ComputerInventory.Software.Models.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Update="SerializationStrings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SerializationStrings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <Compile Update="SerializationStrings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SerializationStrings.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+
 </Project>

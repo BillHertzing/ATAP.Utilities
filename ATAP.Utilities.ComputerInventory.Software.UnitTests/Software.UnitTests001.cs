@@ -11,17 +11,17 @@ namespace ATAP.Utilities.ComputerInventory.Software.UnitTests
   {
  
     [Theory]
-    [MemberData(nameof(ComputerSoftwareProgramTestDataGenerator.TestData), MemberType = typeof(ComputerSoftwareProgramTestDataGenerator))]
-    public void ComputerSoftwareProgramDeserialize(ComputerSoftwareProgramTestData inComputerSoftwareProgramTestData)
+    [MemberData(nameof(ComputerSoftwareProgramSerializationTestDataGenerator.TestData), MemberType = typeof(ComputerSoftwareProgramSerializationTestDataGenerator))]
+    public void ComputerSoftwareProgramDeserialize(ComputerSoftwareSerializationProgramTestData inComputerSoftwareProgramTestData)
     {
       Fixture.Serializer.Deserialize<ComputerSoftwareProgram>(inComputerSoftwareProgramTestData.SerializedTestData).Should().Be(inComputerSoftwareProgramTestData.ObjTestData);
     }
 
     [Theory]
-    [MemberData(nameof(ComputerSoftwareProgramTestDataGenerator.TestData), MemberType = typeof(ComputerSoftwareProgramTestDataGenerator))]
-    public void ComputerSoftwareProgramSerialize(ComputerSoftwareProgramTestData inComputerSoftwareProgramTestData)
+    [MemberData(nameof(ComputerSoftwareProgramSerializationTestDataGenerator.TestData), MemberType = typeof(ComputerSoftwareProgramSerializationTestDataGenerator))]
+    public void ComputerSoftwareProgramSerialize(ComputerSoftwareSerializationProgramTestData inComputerSoftwareProgramTestData)
     {
-      Fixture.Serializer.Serialize(inComputerSoftwareProgramTestData.ObjTestData).Should().Be(inComputerSoftwareProgramTestData.SerializedTestData);
+      Fixture.Serializer.Serialize(inComputerSoftwareProgramTestData.ObjTestData).Should().MatchRegex(inComputerSoftwareProgramTestData.SerializedTestData);
     }
 
   }

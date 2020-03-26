@@ -5,11 +5,12 @@ namespace ATAP.Utilities.GraphDataStructures
 {
 
 
+
   public class Vertex<T> : IVertex<T>
   {
-    public Vertex()
+    public Vertex() 
     {
-    }
+          }
 
     public Vertex(T obj)
     {

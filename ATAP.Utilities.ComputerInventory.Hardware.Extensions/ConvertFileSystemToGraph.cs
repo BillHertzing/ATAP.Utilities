@@ -9,8 +9,11 @@ using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using ATAP.Utilities.Philote;
-using ATAP.Utilities.GraphDataStructures;
+//using ATAP.Utilities.GraphDataStructures;
+using QuickGraph;
 using System.Globalization;
+using System.Text.RegularExpressions;
+using ATAP.Utilities.ComputerInventory.Hardware;
 
 // To get access to the .Dump utility for logging
 //using ServiceStack.Text;
@@ -19,12 +22,48 @@ using System.Globalization;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware
 {
+  // Block that implement graph data structures specificly for FSEntities
+  //interface IFSEVertex<in FSEntityAbstract>  { }
+  //class FSEVertex<FSEntityAbstract> : IFSEVertex<T> where T : FSEntityAbstract { }
+
+  //interface IFSEEdge<TSource, TTarget> where TSource : FSEntityAbstract where TTarget : FSEntityAbstract {
+  //  IFSEntityAbstract IEdge<IFSEntityAbstract>.Source { get; }
+  //  IFSEntityAbstract IEdge<IFSEntityAbstract>.Target { get; }
+  //}
+
+  public class FSEEdge<TVertex> : IEdge<TVertex> where TVertex : FSEntityAbstract
+  {
+    public FSEEdge(TVertex source, TVertex target) 
+    {
+      Source = source ?? throw new ArgumentNullException(nameof(source));
+      Target = target ?? throw new ArgumentNullException(nameof(target));
+    }
+
+    public TVertex Source { get;  }
+
+    public TVertex Target { get;  }
+  }
+  public class FSEntityAdjacencyGraph : AdjacencyGraph<FSEntityAbstract, FSEEdge<FSEntityAbstract>> { }
+
+
+  // ToDo: move to a seperate assembly ATAP.Utilities.FileIO
+  public static class FileIOExtensions// rename to just extensions when moved to a separate assembly
+  {
+    const string archiveExtensionRegex = "7zip|7z|rar|zip";
+    //Helper method to determing if a file is an archived file
+    static bool IsArchiveFile(this FileInfo f)
+    {
+
+      return Regex.Match(f.Extension, archiveExtensionRegex).Success;
+    }
+  }
+
   public static class StaticExtensions
   {
-    public static async Task<ConvertFileSystemToGraphResult> ConvertFileSystemToGraphAsyncTask(string root, int asyncFileReadBlockSize, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress,Persistence<IInsertResultsAbstract>? convertFileSystemToGraphPersistence, CancellationToken cancellationToken)
+    public static async Task<ConvertFileSystemToGraphResult> ConvertFileSystemToGraphAsyncTask(string root, int asyncFileReadBlockSize, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress, Persistence<IInsertResultsAbstract>? convertFileSystemToGraphPersistence, CancellationToken cancellationToken)
     {
-      // Some internal functions to make the code cleaner
-      void CheckAndHandleCancellationToken(int checkpointNumber, CancellationToken cancellationToken)
+      // Helper method to reduce code clutter
+      static void CheckAndHandleCancellationToken(int checkpointNumber, CancellationToken cancellationToken)
       {
         // Helper method to reduce code clutter
         // check CancellationToken to see if this task is cancelled
@@ -37,11 +76,13 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
       }
 
       // Helper method to reduce code clutter
-      // Exceptions that occure whne looking at individual directories or files are acceptable, but need to be recorded
-      void HandleAcceptableExceptions(Exception e, IVertex<IFSEntityAbstract> currentVertex, IConvertFileSystemToGraphResult convertFileSystemToGraphResult, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress, CancellationToken cancellationToken)
+      // Exceptions that occure when looking at individual directories or files are acceptable, but need to be recorded
+      //void HandleAcceptableExceptions(Exception e, IVertex<IFSEntityAbstract> currentVertex, IConvertFileSystemToGraphResult convertFileSystemToGraphResult, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress, CancellationToken cancellationToken)
+      static void HandleAcceptableExceptions(Exception e, IFSEntityAbstract currentVertex, IConvertFileSystemToGraphResult convertFileSystemToGraphResult, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress, CancellationToken cancellationToken)
       {
         // Store this exception on the currentFSEntityDirectory and accumulate the exception as part of the Result and Progress
-        currentVertex.Obj.Exception = e;
+        //currentVertex.Obj.Exception = e;
+        currentVertex.Exception = e;
         // Add this exception to the results and progress
         convertFileSystemToGraphResult.AcceptableExceptions.Add(e);
         if (convertFileSystemToGraphProgress != null)
@@ -49,6 +90,8 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           convertFileSystemToGraphProgress.AcceptableExceptions.Add(e);
         }
       }
+
+      
 
       // create the results instance
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult = new ConvertFileSystemToGraphResult();
@@ -61,8 +104,8 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
       // Data structure to hold names of subcontainers to be examined for files, along with associated structures for Vertex(s).
       Stack<string> containerStack = new Stack<string>();
       string currentContainer;
-      Stack<Vertex<IFSEntityAbstract>> containerVerticesStack = new Stack<Vertex<IFSEntityAbstract>>();
-      Vertex<IFSEntityAbstract> currentContainerVertex;
+      Stack<FSEntityAbstract> containerVerticesStack = new Stack<FSEntityAbstract>();
+      FSEntityAbstract currentContainerVertex;
 
       // Initialize the fields of the ConvertFileSystemToGraphProgress if it is not null
       if (convertFileSystemToGraphProgress != null)
@@ -85,13 +128,14 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
       // After this point, there will be cleanup to do if the task is canceled or exceptions are thrown
       // Persistence setup is donw outside the ConvertFileSystemToGraph extension method
       // check CancellationToken to see if this task is canceled
-      CheckAndHandleCancellationToken(2,  cancellationToken);
+      CheckAndHandleCancellationToken(2, cancellationToken);
 
       containerStack.Push(root);
-      currentContainerVertex = new Vertex<IFSEntityAbstract>(new FSEntityDirectory(root));
+      //currentContainerVertex = new Vertex<IFSEntityAbstract>(new FSEntityDirectory(root));
+      currentContainerVertex =new FSEntityDirectory(root);
       // Create a vertex for the root, push it onto the Vertices stack, add it to the Results Vertices.
       containerVerticesStack.Push(currentContainerVertex);
-      convertFileSystemToGraphResult.GraphAsIList.Vertices.Add(currentContainerVertex);
+      convertFileSystemToGraphResult.FSEntityAdjacencyGraph.AddVertex(currentContainerVertex);
 
       // go down all the containerStack, first get the list of subdirectories, then the list of files, then hash the files
       // directories are done in the order that they are returned by Directory.GetDirectories
@@ -103,13 +147,16 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         try
         {
           // Handle directories and archiveFiles differently
-          switch (currentContainerVertex.Obj)
+          //switch (currentContainerVertex.Obj)
+          switch (currentContainerVertex)
           {
             case FSEntityDirectory directory:
             {
-              (currentContainerVertex.Obj as FSEntityDirectory).DirectoryInfo = new DirectoryInfo(currentContainer);
+              //(currentContainerVertex.Obj as FSEntityDirectory).DirectoryInfo = new DirectoryInfo(currentContainer);
+              (currentContainerVertex as FSEntityDirectory).DirectoryInfo = new DirectoryInfo(currentContainer);
               // Once the DirectoryInfo property is populated, no need to keep path
-              currentContainerVertex.Obj.Path = string.Empty;
+              //currentContainerVertex.Obj.Path = string.Empty;
+              currentContainerVertex.Path = string.Empty;
               break;
             }
             case FSEntityArchiveFile archive:
@@ -119,7 +166,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
             }
             default:
             {
-              throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, currentContainerVertex.Obj));
+              throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, currentContainerVertex));
             }
           }
         }
@@ -133,7 +180,8 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           IInsertResultsAbstract results = new InsertViaFileResults(false);
           try
           {
-            results = convertFileSystemToGraphPersistence.InsertFunc(new string[][] { new string[] { currentContainerVertex.Obj.GetFullName() } });
+            //results = convertFileSystemToGraphPersistence.InsertFunc(new string[][] { new string[] { currentContainerVertex.Obj.GetFullName() } });
+            results = convertFileSystemToGraphPersistence.InsertFunc(new string[][] { new string[] { currentContainerVertex.GetFullName() } });
           }
           catch (Exception e) //when (e is PersistenceInsertException)
           {
@@ -147,7 +195,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           }
         }
 
-        CheckAndHandleCancellationToken(3,  cancellationToken);
+        CheckAndHandleCancellationToken(3, cancellationToken);
 
         // ToDo: getting the list of directories, and the list of files, should be done in parallel. As soon as each has completed, populate FSEntities by path
         string[] subContainers = Array.Empty<string>();
@@ -155,7 +203,8 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
 
         try
         {
-          switch (currentContainerVertex.Obj)
+          //switch (currentContainerVertex.Obj)
+          switch (currentContainerVertex)
           {
             case FSEntityDirectory directory:
             {
@@ -170,7 +219,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
             }
             default:
             {
-              throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, currentContainerVertex.Obj));
+              throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, currentContainerVertex));
             }
           }
         }
@@ -185,19 +234,21 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         foreach (var subContainerPathString in subContainers)
         {
           containerStack.Push(subContainerPathString);
-          var subContainerVertex = new Vertex<IFSEntityAbstract>(new FSEntityDirectory(subContainerPathString));
+          //var subContainerVertex = new Vertex<IFSEntityAbstract>(new FSEntityDirectory(subContainerPathString));
+          var subContainerVertex = new FSEntityDirectory(subContainerPathString);
           containerVerticesStack.Push(subContainerVertex);
-          convertFileSystemToGraphResult.GraphAsIList.Vertices.Add(subContainerVertex);
-          var edge = new Edge<IFSEntityAbstract>(currentContainerVertex, subContainerVertex);
-          convertFileSystemToGraphResult.GraphAsIList.Edges.Add(edge);
+          convertFileSystemToGraphResult.FSEntityAdjacencyGraph.AddVertex(subContainerVertex);
+          var edge = new FSEEdge<FSEntityAbstract>(currentContainerVertex, subContainerVertex);
+          convertFileSystemToGraphResult.FSEntityAdjacencyGraph.AddEdge(edge);
           // If the convertFileSystemToGraphPersistence argument is not null, persist the edge
           if (convertFileSystemToGraphPersistence != null)
           {
             IInsertResultsAbstract results = new InsertViaFileResults(false);
-            string[] edgeStrings = new string[] { $"{edge.From.Obj.GetFullName()} -> {edge.To.Obj.GetFullName()}" };
-          try
+            //string[] edgeStrings = new string[] { $"{edge.Source.GetFullName()} -> {edge.Target.GetFullName()}" };
+            string[] edgeStrings = new string[] { $"{edge.Source.GetFullName()} -> {edge.Target.GetFullName()}" };
+            try
             {
-              //var d = new string[][] { new string[] { vertex.Obj.Path }, new string[] { $"{edge.From.Obj.Path} -> {edge.To.Obj.Path}" } }
+              //var d = new string[][] { new string[] { vertex.Path }, new string[] { $"{edge.Source.Path} -> {edge.Target.Path}" } }
               results = convertFileSystemToGraphPersistence.InsertFunc(new string[][] { Array.Empty<string>(), edgeStrings });
             }
             catch (Exception e) //when (e is PersistenceInsertException)
@@ -219,7 +270,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           convertFileSystemToGraphProgress.NumberOfDirectories += subContainers.Length;
         }
         // check CancellationToken to see if this task is canceled
-        CheckAndHandleCancellationToken(4,  cancellationToken);
+        CheckAndHandleCancellationToken(4, cancellationToken);
 
         // ToDo: The first of the two parallel tasks end here
 
@@ -238,7 +289,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         }
 
         // check CancellationToken to see if this task is canceled
-        CheckAndHandleCancellationToken(5,  cancellationToken);
+        CheckAndHandleCancellationToken(5, cancellationToken);
 
         // update the results
         if (convertFileSystemToGraphProgress != null) { convertFileSystemToGraphProgress.NumberOfFiles += files.Length; }
@@ -255,20 +306,34 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           taskList.Add(PopulateFSEntityFileAsync(f, asyncFileReadBlockSize, cancellationToken));
         }
         // wait for all to finish
+        // See this GitHub issue about exceptions occurring in WhenAll https://github.com/dotnet/runtime/issues/31494
         await Task.WhenAll(taskList).ConfigureAwait(false);
-        CheckAndHandleCancellationToken(6,  cancellationToken);
+
+        // regardless of the states of the child tasks, if cancellation has been signalled, do it now (throw away all the results of all the tasks in the tasklist
+        CheckAndHandleCancellationToken(6, cancellationToken);
         // ToDo End of code block that needs paging/throttling
 
         // here, get the information from the tasklist needed to populate the ConvertFileSystemToGraphAsyncTask.GraphAsList
         foreach (var task in taskList)
         {
-          //ToDo: Add test for Tasks.Result not being proper. Skip if task is in Faulted or ??? state
           // Create a Vertex from the Result of the task, and regardless of any exception, add this Vertex to the Vertices, in order that a record of this file be kept
           // Create an Edge between this Vertex and the currentContainerVertex, and add this Edge to the Edges
-          Vertex<IFSEntityAbstract> vertex = new Vertex<IFSEntityAbstract>(task.Result);
-          convertFileSystemToGraphResult.GraphAsIList.Vertices.Add(vertex);
-          Edge<IFSEntityAbstract> edge = new Edge<IFSEntityAbstract>(currentContainerVertex, vertex);
-          convertFileSystemToGraphResult.GraphAsIList.Edges.Add(edge);
+          //Vertex<IFSEntityAbstract> vertex;
+          FSEntityAbstract vertex;
+          FSEEdge<FSEntityAbstract> edge;
+          // Determine if this is an FSEntityFile or a more-specialized FSEntityArchiveFile
+          // ToDo create and use a static FileInfo extension called IsArchiveFile
+          if (task.Result.FileInfo != null && Regex.Match(task.Result.FileInfo.Extension, "7zip|7z|rar|zip").Success) {
+            vertex =  new FSEntityArchiveFile(task.Result);
+             //vertex = (Vertex<IFSEntityAbstract>) new Vertex<IFSEntityArchiveFile>(task.Result as IFSEntityArchiveFile);
+          }
+          else {
+            // Create an Edge between this Vertex and the currentContainerVertex, and add this Edge to the Edges
+            vertex = (FSEntityFile)task.Result;
+          }
+          edge = new FSEEdge<FSEntityAbstract>(currentContainerVertex, vertex);
+          convertFileSystemToGraphResult.FSEntityAdjacencyGraph.AddVertex(vertex);
+          convertFileSystemToGraphResult.FSEntityAdjacencyGraph.AddEdge(edge);
           // append the exception from each task, if it exist, to the convertFileSystemToGraphResults and the convertFileSystemToGraphProgress
           if (task.Result.Exception != null)
           {
@@ -290,62 +355,62 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
             string vertexString;
             string edgeFromString;
             string edgeToString;
-            vertexString = vertex.Obj.GetFullName();
-            switch (vertex.Obj)
+            vertexString = vertex.GetFullName();
+            switch (vertex)
             {
               case FSEntityDirectory directory:
               {
-                vertexString = (vertex.Obj as FSEntityDirectory).DirectoryInfo.FullName;
+                vertexString = (vertex as FSEntityDirectory).DirectoryInfo.FullName;
                 break;
               }
               case FSEntityFile file:
               {
-                vertexString = (vertex.Obj as FSEntityFile).FileInfo.FullName;
+                vertexString = (vertex as FSEntityFile).FileInfo.FullName;
                 break;
               }
               default:
               {
-                throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, vertex.Obj));
+                throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, vertex));
               }
             }
-            switch (edge.From.Obj)
+            switch (edge.Source)
             {
               case FSEntityDirectory directory:
               {
-                edgeFromString = (edge.From.Obj as FSEntityDirectory).DirectoryInfo.FullName;
+                edgeFromString = (edge.Source as FSEntityDirectory).DirectoryInfo.FullName;
                 break;
               }
               case FSEntityFile file:
               {
-                edgeFromString = (edge.From.Obj as FSEntityFile).FileInfo.FullName;
+                edgeFromString = (edge.Source as FSEntityFile).FileInfo.FullName;
                 break;
               }
               default:
               {
-                throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, edge.From.Obj));
+                throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, edge.Source));
               }
             }
-            switch (edge.To.Obj)
+            switch (edge.Target)
             {
               case FSEntityDirectory directory:
               {
-                edgeToString = (edge.To.Obj as FSEntityDirectory).DirectoryInfo.FullName;
+                edgeToString = (edge.Target as FSEntityDirectory).DirectoryInfo.FullName;
                 break;
               }
               case FSEntityFile file:
               {
-                edgeToString = (edge.To.Obj as FSEntityFile).FileInfo.FullName;
+                edgeToString = (edge.Target as FSEntityFile).FileInfo.FullName;
                 break;
               }
               default:
               {
-                throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, edge.To.Obj));
+                throw new Exception(string.Format(CultureInfo.CurrentCulture, StringConstants.InvalidTypeInSwitchExceptionMessage, edge.Target));
               }
             }
             try
             {
-              //var d = new string[][] { new string[] { vertex.Obj.Path }, new string[] { $"{edge.From.Obj.Path} -> {edge.To.Obj.Path}" } }
-              results = convertFileSystemToGraphPersistence.InsertFunc(new string[][] { new string[] {vertexString}, new string[] { $"{edgeFromString} -> {edgeToString}" } });
+              //var d = new string[][] { new string[] { vertex.Path }, new string[] { $"{edge.Source.Path} -> {edge.Target.Path}" } }
+              results = convertFileSystemToGraphPersistence.InsertFunc(new string[][] { new string[] { vertexString }, new string[] { $"{edgeFromString} -> {edgeToString}" } });
             }
             catch (Exception e) //when (e is PersistenceInsertException)
             {
@@ -361,7 +426,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           }
 
         }
-        CheckAndHandleCancellationToken(7,  cancellationToken);
+        CheckAndHandleCancellationToken(7, cancellationToken);
 
       }
 

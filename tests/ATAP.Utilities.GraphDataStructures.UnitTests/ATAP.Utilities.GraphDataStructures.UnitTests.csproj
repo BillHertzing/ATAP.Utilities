@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="5.10.2" />
+    <PackageReference Include="Funq" Version="1.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     <PackageReference Include="Moq" Version="4.13.1" />
     <PackageReference Include="xunit" Version="2.4.1" />
@@ -26,36 +27,26 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
-   <PackageReference Include="coverlet.collector" Version="1.2.0">
+    <PackageReference Include="coverlet.collector" Version="1.2.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.Hardware.Interfaces\ATAP.Utilities.ComputerInventory.Hardware.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.GraphDataStructures.Interfaces\ATAP.Utilities.GraphDataStructures.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.GraphDataStructures\ATAP.Utilities.GraphDataStructures.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Enumerations\ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Interfaces\ATAP.Utilities.ComputerInventory.Software.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Models\ATAP.Utilities.ComputerInventory.Software.Models.csproj" />
+    <PackageReference Include="UnitsNet" Version="4.52.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="SerializationStrings.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>SerializationStrings.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <Compile Update="SerializationStrings.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>SerializationStrings.resx</DependentUpon>
-    </Compile>
+    <ProjectReference Include="..\..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
   </ItemGroup>
-
 
 </Project>

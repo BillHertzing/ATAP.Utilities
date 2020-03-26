@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="5.10.2" />
+    <PackageReference Include="Funq" Version="1.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     <PackageReference Include="Moq" Version="4.13.1" />
     <PackageReference Include="xunit" Version="2.4.1" />
@@ -33,17 +34,31 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Philote.DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-  <ProjectReference Include="..\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Philote.DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="SerializationStrings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SerializationStrings.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="SerializationStrings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SerializationStrings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
 
 
 </Project>

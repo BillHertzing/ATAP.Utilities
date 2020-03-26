@@ -28,13 +28,13 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         {
           return PFD(fSEntityAbstract as FSEntityDirectory);
         }
+        case FSEntityArchiveFile file: // Important to handle the more-derived type (subclass) before handling a less-derived type (superclass) 
+        {
+          return PFA(fSEntityAbstract as FSEntityArchiveFile);
+        }
         case FSEntityFile file:
         {
           return PFF(fSEntityAbstract as FSEntityFile);
-        }
-        case FSEntityArchiveFile file:
-        {
-          return PFA(fSEntityAbstract as FSEntityArchiveFile);
         }
         default:
         {

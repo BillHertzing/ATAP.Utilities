@@ -60,7 +60,7 @@ namespace ATAP.Utilities.Philote.UnitTests
     IP<IA>? P { get; }
   }
 
-  public abstract class A 
+  public abstract class A
   {
     public  IP<IA>? P { get; set; }
   }
@@ -88,7 +88,7 @@ namespace ATAP.Utilities.Philote.UnitTests
     public int? D2int { get; private set; }
   }
 
-  public class NodeSets  
+  public class NodeSets
   {
     public IEnumerable<IA>  Nodes { get; private set; }
   }
@@ -111,7 +111,7 @@ namespace ATAP.Utilities.Philote.UnitTests
     End of block for StackOverflow */
 
 
-  public partial class PhiloteUnitTests001 : IClassFixture<PhiloteFixture>
+  public partial class SerializationUnitTests001 : IClassFixture<SerializationFixture>
   {
 
 
@@ -130,7 +130,7 @@ namespace ATAP.Utilities.Philote.UnitTests
     [MemberData(nameof(PhiloteTestDataGenerator<IDummyTypeForPhiloteTest>.TestData), MemberType = typeof(PhiloteTestDataGenerator<IDummyTypeForPhiloteTest>))]
     public void PhiloteSerializeToJSON(PhiloteTestData<IDummyTypeForPhiloteTest> inTestData)
     {
-      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.SerializedTestData);
+      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().MatchRegex(inTestData.SerializedTestData);
     }
   }
 }

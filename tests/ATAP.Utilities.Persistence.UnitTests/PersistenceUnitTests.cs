@@ -17,7 +17,7 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.Persistence.UnitTests
 {
-  public partial class PersistenceUnitTests001 : IClassFixture<PersistenceFixture>
+  public partial class SerializationUnitTests001 : IClassFixture<SerializationFixture>
   {
 
     // // Common constructor method for the InsertViaFileFunc used in these tests
@@ -71,7 +71,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
         temporaryFiles[i] = new TemporaryFile().CreateTemporaryFileEmpty();
         filePaths[i] = temporaryFiles[i].FileInfo.FullName;
       }
-      
+
       // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
       var setupResults = ATAP.Utilities.Persistence.StaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
 

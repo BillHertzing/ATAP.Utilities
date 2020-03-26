@@ -1,10 +1,9 @@
-﻿using System.IO;
+using System.IO;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware
 {
-  public interface IFSEntityArchiveFile
+  public interface IFSEntityArchiveFile : IFSEntityFile
   {
-    FileInfo FileInfo { get; set; }
-    string Hash { get; set; }
+
   }
 }

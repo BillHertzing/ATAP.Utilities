@@ -16,7 +16,7 @@ using Xunit;
 using Xunit.Abstractions;
 using static FluentAssertions.FluentActions;
 using QuickGraph;
-
+using System.Diagnostics;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
 
@@ -40,8 +40,9 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
     }
 
     [Fact]
-    public async Task TestConvertFileSystemToGraphAsyncTaskNoPersistence() {
+    public async Task TestConvertFileSystemToGraphAsyncTaskWithHashWithoutPersistence() {
       var asyncFileReadBlockSize = 4096;
+      var enableHash = true;
       //var partitionInfoEx = new PartitionInfoEx(Hardware.Enumerations.PartitionFileSystem.NTFS, new UnitsNet.Information(1.2m, UnitsNet.Units.InformationUnit.Terabyte), new List<char>() { 'E' }, new Philote.Philote<IPartitionInfoEx>().Now());
       //var root = partitionInfoEx.DriveLetters.First();
       var root = 'E';
@@ -55,8 +56,10 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
       var cancellationTokenSourceId = new Id<CancellationTokenSource>(Guid.NewGuid());
       var cancellationToken = cancellationTokenSource.Token;
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
+      Stopwatch stopWatch = new Stopwatch();
+      stopWatch.Start();
       try {
-        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, convertFileSystemToGraphProgress, null, cancellationToken);
+        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, null, cancellationToken);
         convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
       }
       catch (Exception) {
@@ -65,18 +68,84 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
       finally {
         cancellationTokenSource.Dispose();
       }
+      stopWatch.Stop();
+      convertFileSystemToGraphResult.FSEntityAdjacencyGraph.VertexCount.Should().Be(15);
+      convertFileSystemToGraphResult.FSEntityAdjacencyGraph.EdgeCount.Should().Be(16);
+    }
 
-      var containeredgeandnodename = convertFileSystemToGraphResult.FSEntityAdjacencyGraph.Edges
+    [Fact]
+    public async Task TestConvertFileSystemToGraphAsyncTaskWithoutHashWithoutPersistence() {
+      var asyncFileReadBlockSize = 4096;
+      var enableHash = false;
+      //var partitionInfoEx = new PartitionInfoEx(Hardware.Enumerations.PartitionFileSystem.NTFS, new UnitsNet.Information(1.2m, UnitsNet.Units.InformationUnit.Terabyte), new List<char>() { 'E' }, new Philote.Philote<IPartitionInfoEx>().Now());
+      //var root = partitionInfoEx.DriveLetters.First();
+      var root = 'E';
+      // In Windows, root is a single letter, but in *nix, root is a string. Convert the single char to a string
+      // ToDo: replace with ATAP.Utilities RunTimeKind, and make it *nix friendly
+      var rootstring = root.ToString() + ":/";
+      // Create storage for the results and progress
+      var convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
+      // Cancellation token for the task 
+      var cancellationTokenSource = new CancellationTokenSource();
+      var cancellationTokenSourceId = new Id<CancellationTokenSource>(Guid.NewGuid());
+      var cancellationToken = cancellationTokenSource.Token;
+      ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
+      Stopwatch stopWatch = new Stopwatch();
+      stopWatch.Start();
+      try {
+        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, null, cancellationToken);
+        convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
+      }
+      catch (Exception) {
+        throw;
+      }
+      finally {
+        cancellationTokenSource.Dispose();
+      }
+      stopWatch.Stop();
+      convertFileSystemToGraphResult.FSEntityAdjacencyGraph.VertexCount.Should().Be(15);
+      convertFileSystemToGraphResult.FSEntityAdjacencyGraph.EdgeCount.Should().Be(16);
+    }
+
+    [Fact]
+    public async Task TestConvertFileSystemToGraphAsyncTaskWithoutHashWithoutPersistenceToDigraph() {
+      var asyncFileReadBlockSize = 4096;
+      var enableHash = false;
+      //var partitionInfoEx = new PartitionInfoEx(Hardware.Enumerations.PartitionFileSystem.NTFS, new UnitsNet.Information(1.2m, UnitsNet.Units.InformationUnit.Terabyte), new List<char>() { 'E' }, new Philote.Philote<IPartitionInfoEx>().Now());
+      //var root = partitionInfoEx.DriveLetters.First();
+      var root = 'E';
+      // In Windows, root is a single letter, but in *nix, root is a string. Convert the single char to a string
+      // ToDo: replace with ATAP.Utilities RunTimeKind, and make it *nix friendly
+      var rootstring = root.ToString() + ":/";
+      // Create storage for the results and progress
+      var convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
+      // Cancellation token for the task 
+      var cancellationTokenSource = new CancellationTokenSource();
+      var cancellationTokenSourceId = new Id<CancellationTokenSource>(Guid.NewGuid());
+      var cancellationToken = cancellationTokenSource.Token;
+      ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
+      Stopwatch stopWatch = new Stopwatch();
+      stopWatch.Start();
+      try {
+        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, null, cancellationToken);
+        convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
+      }
+      catch (Exception) {
+        throw;
+      }
+      finally {
+        cancellationTokenSource.Dispose();
+      }
+      stopWatch.Stop();
+      var digraph = new StringBuilder();
+      digraph.Append("digraph G {"); digraph.Append(Environment.NewLine);
+      foreach (var e in (convertFileSystemToGraphResult.FSEntityAdjacencyGraph.Edges
       .Select(edge => {
         string fs = edge.Source.GetFullName();
         string ts = edge.Target.GetFullName();
         var tu = (fs, ts);
         return tu;
-      });
-
-      var digraph = new StringBuilder();
-      digraph.Append("digraph G {"); digraph.Append(Environment.NewLine);
-      foreach (var e in containeredgeandnodename.ToList<(string, string)>()) {
+      })).ToList<(string, string)>()) {
         digraph.Append($"\"{e.Item1.Replace("\\", "\\\\")}\" -> \"{e.Item2.Replace("\\", "\\\\")}\""); digraph.Append(Environment.NewLine);
       }
       digraph.Append("}");
@@ -86,68 +155,12 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
       convertFileSystemToGraphResult.FSEntityAdjacencyGraph.VertexCount.Should().Be(15);
     }
 
-    // // Common constructor method for the SetupViaFileFunc used in these tests
-    // // Sets up N empty files in the %tempt% directory
-    // Func<SetupViaFileData, SetupViaFileResults> SetupViaFileFuncBuilder()
-    // {
-    // Func<SetupViaFileData, SetupViaFileResults> ret = new Func<SetupViaFileData, SetupViaFileResults>((setupData) =>
-    // {
-    // var filePathsAsArray = setupData.FilePaths.ToArray();
-    // int numberOfFiles = filePathsAsArray.Length;
-    // #if DEBUG
-    // TestOutput.WriteLine($"Got {numberOfFiles} FilePaths");
-    // #endif 
-
-    // FileStream[] fileStreams = new FileStream[numberOfFiles];
-    // StreamWriter[] streamWriters = new StreamWriter[numberOfFiles];
-    // for (var i = 0; i < numberOfFiles; i++)
-    // {
-    // fileStreams[i] = new FileStream(filePathsAsArray[i], FileMode.CreateNew, FileAccess.Write);
-    // //ToDo: exception handling
-    // streamWriters[i] = new StreamWriter(fileStreams[i], Encoding.UTF8);
-    // //ToDo: exception handling
-    // }
-    // return new SetupViaFileResults(true, fileStreams, streamWriters);
-    // });
-    // return ret;
-    // }
-
-    //    // Common constructor method for the InsertViaFileFunc used in these tests
-    //    // closes over the ISetupViaFileResults that was pseed into the contructor
-    //    Func<IInsertViaFileData, ISetupViaFileResults, Func<IInsertViaFileData, ISetupViaFileResults, IInsertViaFileResults>> InsertViaFileFuncBuilder()
-    //    {
-    //      Func<IInsertViaFileData, ISetupViaFileResults, Func < IInsertViaFileData, ISetupViaFileResults, IInsertViaFileResults >> insertFunc = new Func<IInsertViaFileData, ISetupViaFileResults, Func<IInsertViaFileData, ISetupViaFileResults, IInsertViaFileResults>> ((insertData, setupResults) =>
-    //      {
-    //        // ToDo: should the two input objects have matching cardinality?
-    //        int numberOfFiles = insertData.DataToInsert[0].Length;
-    //#if DEBUG
-    //        TestOutput.WriteLine($"Got {numberOfFiles} arrays of data to write");
-    //#endif
-    //        int numberOfStreamWriters = setupResults.StreamWriters.Length;
-    //#if DEBUG
-    //        TestOutput.WriteLine($"Got {numberOfStreamWriters} streamwriters to write to");
-    //#endif
-    //        for (var i = 0; i < numberOfFiles; i++)
-    //        {
-    //          foreach (string str in insertData.DataToInsert[i])
-    //          {
-    //            //await setupResults.StreamWriters[i].WriteLineAsync(str); // ToDo: Make an anysc version
-    //            setupResults.StreamWriters[i].WriteLine(str);
-    //          }
-    //        }
-    //        InsertViaFileResults results = new InsertViaFileResults(true);
-    //        IInsertViaFileResults returnInterface = results;
-    //        return returnInterface;
-
-    //      });
-    //      return insertFunc;
-    //    }
-
-
     [Fact]
-    public async Task TestConvertFileSystemToGraphAsyncTaskFilePersistence() {
+    public async Task TestConvertFileSystemToGraphAsyncTaskFileWithoutHashWithPersistence() {
       // Arrange
       var asyncFileReadBlockSize = 4096;
+      var enableHash = false;
+
       //var partitionInfoEx = new PartitionInfoEx(Hardware.Enumerations.PartitionFileSystem.NTFS, new UnitsNet.Information(1.2m, UnitsNet.Units.InformationUnit.Terabyte), new List<char>() { 'E' }, new Philote.Philote<IPartitionInfoEx>().Now());
       //var root = partitionInfoEx.DriveLetters.First();
       var root = 'E';
@@ -204,7 +217,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
       // Act
       try {
-        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, convertFileSystemToGraphProgress, persistence, cancellationToken);
+        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, persistence, cancellationToken);
         convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
       }
       catch (Exception) {
@@ -237,8 +250,6 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
         TestOutput.WriteLine(str);
       }
 #endif
-      //verticesfromFile.Count.Should().Be(15);
-      //edgesfromFile.Count.Should().Be(14);
       verticesAsString.Should().BeEquivalentTo(verticesfromFile);
       edgesAsString.Should().BeEquivalentTo(edgesfromFile);
     }

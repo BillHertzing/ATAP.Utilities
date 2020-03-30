@@ -60,7 +60,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
 
   public static class StaticExtensions
   {
-    public static async Task<ConvertFileSystemToGraphResult> ConvertFileSystemToGraphAsyncTask(string root, int asyncFileReadBlockSize, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress, Persistence<IInsertResultsAbstract>? convertFileSystemToGraphPersistence, CancellationToken cancellationToken)
+    public static async Task<ConvertFileSystemToGraphResult> ConvertFileSystemToGraphAsyncTask(string root, int asyncFileReadBlockSize, bool enableHash, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress, Persistence<IInsertResultsAbstract>? convertFileSystemToGraphPersistence, CancellationToken cancellationToken)
     {
       // Helper method to reduce code clutter
       static void CheckAndHandleCancellationToken(int checkpointNumber, CancellationToken cancellationToken)
@@ -303,7 +303,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
         List<Task<IFSEntityFile>> taskList = new List<Task<IFSEntityFile>>();
         foreach (var f in files)
         {
-          taskList.Add(PopulateFSEntityFileAsync(f, asyncFileReadBlockSize, cancellationToken));
+          taskList.Add(PopulateFSEntityFileAsync(f, asyncFileReadBlockSize, enableHash, cancellationToken));
         }
         // wait for all to finish
         // See this GitHub issue about exceptions occurring in WhenAll https://github.com/dotnet/runtime/issues/31494
@@ -481,7 +481,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
     //   T:System.NotSupportedException:
     //     fileName contains a colon (:) in the middle of the string.
 
-    public static async Task<IFSEntityFile> PopulateFSEntityFileAsync(string path, int blocksize, CancellationToken cancellationToken)
+    public static async Task<IFSEntityFile> PopulateFSEntityFileAsync(string path, int blocksize, bool enableHash, CancellationToken cancellationToken)
     {
       FSEntityFile fSEntityFile = new FSEntityFile(path);
 
@@ -510,57 +510,52 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
           cancellationToken.ThrowIfCancellationRequested();
         }
       }
-
-      try
-      {
-        // read all bytes and generate the hash for the file
-        using (var stream = new FileStream(fSEntityFile.FileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, blocksize, true)) // true means use IO async operations
-        {
-          // ToDo: move the instance of the md5 hasher out of the task, but ensure the implementation of the instance is thread-safe and can be reused
-          // ToDo: The MD5 hasher found in the AnalyzeDisk properties cannot be reused after the call to TransformFinalBlock
-          // ToDo: The MD5Cng implementation is not available on netstandard2.0
-          using (var md5 = System.Security.Cryptography.MD5.Create())
+      if (enableHash) {
+        try {
+          // read all bytes and generate the hash for the file
+          using (var stream = new FileStream(fSEntityFile.FileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, blocksize, true)) // true means use IO async operations
           {
-            byte[] buffer = new byte[blocksize];
-            int bytesRead;
-            do
-            {
-              bytesRead = await stream.ReadAsync(buffer, 0, blocksize).ConfigureAwait(false);
-              if (cancellationToken != null)
-              {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                  // Log.Debug($"in PopulateFSEntityFileAsync: Cancellation requested (2nd checkpoint)");
-                  // dispose of the hasher
-                  md5.Dispose();
-                  cancellationToken.ThrowIfCancellationRequested();
-                }
-
-              }
-              if (bytesRead > 0)
-              {
-                md5.TransformBlock(buffer, 0, bytesRead, null, 0);
-                if (cancellationToken != null)
-                {
-                  if (cancellationToken.IsCancellationRequested)
-                  {
-                    // Log.Debug($"in PopulateFSEntityFileAsync: Cancellation requested (3rd checkpoint)");
+            // ToDo: move the instance of the md5 hasher out of the task, but ensure the implementation of the instance is thread-safe and can be reused
+            // ToDo: The MD5 hasher found in the AnalyzeDisk properties cannot be reused after the call to TransformFinalBlock
+            // ToDo: The MD5Cng implementation is not available on netstandard2.0
+            using (var md5 = System.Security.Cryptography.MD5.Create()) {
+              byte[] buffer = new byte[blocksize];
+              int bytesRead;
+              do {
+                bytesRead = await stream.ReadAsync(buffer, 0, blocksize).ConfigureAwait(false);
+                if (cancellationToken != null) {
+                  if (cancellationToken.IsCancellationRequested) {
+                    // Log.Debug($"in PopulateFSEntityFileAsync: Cancellation requested (2nd checkpoint)");
                     // dispose of the hasher
                     md5.Dispose();
                     cancellationToken.ThrowIfCancellationRequested();
                   }
-                }
-              }
-            } while (bytesRead > 0);
 
-            md5.TransformFinalBlock(buffer, 0, 0);
-            fSEntityFile.Hash = BitConverter.ToString(md5.Hash).Replace("-", string.Empty).ToUpperInvariant();
+                }
+                if (bytesRead > 0) {
+                  md5.TransformBlock(buffer, 0, bytesRead, null, 0);
+                  if (cancellationToken != null) {
+                    if (cancellationToken.IsCancellationRequested) {
+                      // Log.Debug($"in PopulateFSEntityFileAsync: Cancellation requested (3rd checkpoint)");
+                      // dispose of the hasher
+                      md5.Dispose();
+                      cancellationToken.ThrowIfCancellationRequested();
+                    }
+                  }
+                }
+              } while (bytesRead > 0);
+
+              md5.TransformFinalBlock(buffer, 0, 0);
+              fSEntityFile.Hash = BitConverter.ToString(md5.Hash).Replace("-", string.Empty).ToUpperInvariant();
+            }
           }
         }
+        catch (Exception e) when (e is IOException || e is System.Security.SecurityException || e is UnauthorizedAccessException) {
+          fSEntityFile.Exception = e;
+        }
       }
-      catch (Exception e) when (e is IOException || e is System.Security.SecurityException || e is UnauthorizedAccessException)
-      {
-        fSEntityFile.Exception = e;
+      else {
+        fSEntityFile.Hash = null;
       }
       return fSEntityFile;
     }

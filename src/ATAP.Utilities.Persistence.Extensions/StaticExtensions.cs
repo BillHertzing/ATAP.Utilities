@@ -18,7 +18,7 @@ namespace ATAP.Utilities.Persistence
         StreamWriter[] streamWriters = new StreamWriter[numberOfFiles];
         for (var i = 0; i < numberOfFiles; i++)
         {
-          fileStreams[i] = new FileStream(filePathsAsArray[i], FileMode.CreateNew, FileAccess.Write);
+          fileStreams[i] = new FileStream(filePathsAsArray[i], FileMode.Create, FileAccess.Write);
           //ToDo: exception handling
           streamWriters[i] = new StreamWriter(fileStreams[i], Encoding.UTF8);
           //ToDo: exception handling

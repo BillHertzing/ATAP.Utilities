@@ -114,8 +114,6 @@ namespace ATAP.Utilities.Philote.UnitTests
   public partial class SerializationUnitTests001 : IClassFixture<SerializationFixture>
   {
 
-
-
     [Theory]
     [MemberData(nameof(PhiloteTestDataGenerator<IDummyTypeForPhiloteTest>.TestData), MemberType = typeof(PhiloteTestDataGenerator<IDummyTypeForPhiloteTest>))]
     public void PhiloteDeserializeFromJSON(PhiloteTestData<IDummyTypeForPhiloteTest> inTestData)

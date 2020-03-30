@@ -191,6 +191,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.GraphDataStr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Philote.UnitTests", "tests\ATAP.Utilities.Philote.UnitTests\ATAP.Utilities.Philote.UnitTests.csproj", "{97867737-350F-45A2-9888-AAE28086D3A2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.1Console", "src\ATAP.Utilities.1Console\ATAP.Utilities.1Console.csproj", "{6ED198E7-653B-4454-BBC3-E341593F6065}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.1Console.StringConstants", "src\ATAP.Utilities.1Console.StringConstants\ATAP.Utilities.1Console.StringConstants.csproj", "{1A921845-35F7-454E-99BE-573326CB5D31}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -651,6 +655,18 @@ Global
 		{97867737-350F-45A2-9888-AAE28086D3A2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{97867737-350F-45A2-9888-AAE28086D3A2}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{97867737-350F-45A2-9888-AAE28086D3A2}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{6ED198E7-653B-4454-BBC3-E341593F6065}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6ED198E7-653B-4454-BBC3-E341593F6065}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6ED198E7-653B-4454-BBC3-E341593F6065}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6ED198E7-653B-4454-BBC3-E341593F6065}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6ED198E7-653B-4454-BBC3-E341593F6065}.ReleaseWithTrace|Any CPU.ActiveCfg = Debug|Any CPU
+		{6ED198E7-653B-4454-BBC3-E341593F6065}.ReleaseWithTrace|Any CPU.Build.0 = Debug|Any CPU
+		{1A921845-35F7-454E-99BE-573326CB5D31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A921845-35F7-454E-99BE-573326CB5D31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A921845-35F7-454E-99BE-573326CB5D31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A921845-35F7-454E-99BE-573326CB5D31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A921845-35F7-454E-99BE-573326CB5D31}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{1A921845-35F7-454E-99BE-573326CB5D31}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -667,5 +683,7 @@ Global
 		{B2A4723B-52AB-4C25-B9DB-EDBC55E0FE02} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 		{80D10EB6-52BE-40A4-8B98-09BC84C5D7D8} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 		{97867737-350F-45A2-9888-AAE28086D3A2} = {984B3A90-8771-486E-9BC3-66D2F35963C2}
+		{6ED198E7-653B-4454-BBC3-E341593F6065} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
+		{1A921845-35F7-454E-99BE-573326CB5D31} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 	EndGlobalSection
 EndGlobal

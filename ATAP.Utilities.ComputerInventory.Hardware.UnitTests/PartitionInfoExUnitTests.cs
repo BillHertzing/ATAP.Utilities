@@ -59,7 +59,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
       Stopwatch stopWatch = new Stopwatch();
       stopWatch.Start();
       try {
-        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, null, cancellationToken);
+        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, null, null, cancellationToken);
         convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
       }
       catch (Exception) {
@@ -93,7 +93,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
       Stopwatch stopWatch = new Stopwatch();
       stopWatch.Start();
       try {
-        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, null, cancellationToken);
+        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, null, null, cancellationToken);
         convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
       }
       catch (Exception) {
@@ -127,7 +127,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
       Stopwatch stopWatch = new Stopwatch();
       stopWatch.Start();
       try {
-        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, null, cancellationToken);
+        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, null, null, cancellationToken);
         convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
       }
       catch (Exception) {
@@ -217,7 +217,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
       // Act
       try {
-        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, persistence, cancellationToken);
+        Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, persistence, null, cancellationToken);
         convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
       }
       catch (Exception) {

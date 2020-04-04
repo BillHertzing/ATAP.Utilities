@@ -16,6 +16,7 @@
     <PackageLabel>NA</PackageLabel>
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
+  
 
   <!-- Documentation generation -->
   <ItemGroup>

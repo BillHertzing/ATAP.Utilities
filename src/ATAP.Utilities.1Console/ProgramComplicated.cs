@@ -325,12 +325,11 @@ namespace ATAP.Utilities._1Console.Complicated {
       else {
         // This program is GenericHost configured to run as a ConsoleApp
         Log.Debug("{DebugMessage}", string.Format(debugResourceManager.GetString("AddingConsoleLifetimeTogenericHostBuilder")));
-        // ConsoleLifetime implements IHostLifetime. IHostLifetime is typically responsible for controlling when the application shuts down
-        genericHostBuilder.ConfigureServices((context, collection) => collection.AddSingleton<IHostLifetime, ConsoleLifetime>());
         // Define the services this Console application will provide
-        genericHostBuilder.ConfigureServices((context, collection) => collection.AddSingleton<IHostLifetime, ConsoleLifetime>());
         // Add them to the genericHostBuilder
-        genericHostBuilder.ConfigureServices((context, collection) => collection.AddSingleton<SimpleConsole>());
+        // ConsoleLifetime implements IHostLifetime. IHostLifetime is responsible for controlling when the application shuts down
+        genericHostBuilder.ConfigureServices((context, collection) => collection.AddSingleton<IHostLifetime, ConsoleLifetime>());
+        //genericHostBuilder.ConfigureServices((context, collection) => collection.AddSingleton<SimpleConsole>());
         // Build the genericHost
         var genericHost = genericHostBuilder.Build();
         //Log.Debug("in Program.Main: genericHost.Dump() = {@genericHost}", genericHost);

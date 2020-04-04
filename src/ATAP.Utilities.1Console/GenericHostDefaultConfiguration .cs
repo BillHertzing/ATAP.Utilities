@@ -15,17 +15,7 @@ namespace ATAP.Utilities._1Console {
       {StringConstants.WebHostBuilderToBuildConfigRootKey, SupportedWebHostBuilders.KestrelAloneWebHostBuilder.ToString()},
       {StringConstants.GenericHostLifetimeConfigRootKey, SupportedGenericHostLifetimes.ConsoleLifetime.ToString()},
       {StringConstants.MaxTimeInSecondsToWaitForGenericHostShutdownConfigKey, StringConstants.MaxTimeInSecondsToWaitForGenericHostShutdownStringDefault},
-#endregion
-#region Services
-#region ConvertFileSystemToGraphAsyncTask
-      {StringConstants.RootStringConfigRootKey, StringConstants.RootStringDefault},
-      {StringConstants.AsyncFileReadBlockSizeConfigRootKey, StringConstants.AsyncFileReadBlockSizeDefault},
-      {StringConstants.TemporaryDirectoryBaseConfigRootKey, StringConstants.TemporaryDirectoryBaseDefault},
-      {StringConstants.EnableProgressBoolConfigRootKey, StringConstants.EnableProgressBoolDefault},
-      {StringConstants.EnablePersistenceBoolConfigRootKey, StringConstants.EnablePersistenceBoolDefault},
-      {StringConstants.WithPersistenceNodeFileRelativePathConfigRootKey, StringConstants.WithPersistenceNodeFileRelativePathDefault},
-      {StringConstants.WithPersistenceEdgeFileRelativePathConfigRootKey, StringConstants.WithPersistenceEdgeFileRelativePathDefault},
-#endregion
+      {StringConstants.SupressConsoleHostStartupMessagesConfigKey, StringConstants.SupressConsoleHostStartupMessagesStringDefault},
 #endregion
     };
   }

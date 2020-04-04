@@ -29,14 +29,17 @@ namespace ATAP.Utilities._1Console {
     public const string WebHostBuilderToBuildStringDefault = "KestrelAloneWebHostBuilder";
     public const string GenericHostLifetimeConfigRootKey = "GenericHostLifetime";
     public const string GenericHostLifetimeStringDefault = "ConsoleLifetime";
-    
+    public const string MaxTimeInSecondsToWaitForGenericHostShutdownConfigKey = "MaxTimeInSecondsToWaitForGenericHostShutdown";
+    public const string MaxTimeInSecondsToWaitForGenericHostShutdownStringDefault = "10";
+    public const string SupressConsoleHostStartupMessagesConfigKey = "SupressConsoleHostStartupMessages";
+    public const string SupressConsoleHostStartupMessagesStringDefault = "true";
+
 
     public const string PhysicalRootPathConfigKey = "PhysicalRootPath";
     public const string PhysicalRootPathStringDefault = "./GUI/GUI";
     public const string URLSConfigRootKey = "urls";
     public const string ConsoleAppConfigRootKey = "Console";
-    public const string MaxTimeInSecondsToWaitForGenericHostShutdownConfigKey = "MaxTimeInSecondsToWaitForGenericHostShutdown";
-    public const string MaxTimeInSecondsToWaitForGenericHostShutdownStringDefault = "10";
+
     public const string configKeyAceAgentListeningOnString = "Ace.Agent.ListeningOn";
     public const string configKeyRedisConnectionString = "RedisConnectionString";
     public const string configKeyMySqlConnectionString = "MySqlConnectionString";
@@ -62,30 +65,6 @@ namespace ATAP.Utilities._1Console {
     public const string ServiceDescriptionBase = "TBDNameYourService";
     #endregion
 
-    #region Per-Service Configuration items
-    #region FunctionSelectorUI Configuration Items
-    public const string TemporaryDirectoryBaseConfigRootKey = "TemporaryDirectoryBase";
-    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\_1Console\\";
-
-    #region ConvertFileSystemToGraph
-    public const string RootStringConfigRootKey = "RootString";
-    public const string RootStringDefault = "E:\\";
-    public const string AsyncFileReadBlockSizeConfigRootKey = "AsyncFileReadBlockSize";
-    public const string AsyncFileReadBlockSizeDefault = "4096";
-    public const string EnableHashBoolConfigRootKey = "EnableHash";
-    public const string EnableHashBoolConfigRootKeyDefault = "false";
-    public const string EnablePersistenceBoolConfigRootKey = "EnablePersistence";
-    public const string EnablePersistenceBoolDefault = "true";
-    public const string EnableProgressBoolConfigRootKey = "EnableProgress";
-    public const string EnableProgressBoolDefault = "true";
-    public const string WithPersistenceNodeFileRelativePathConfigRootKey = "WithPersistenceNodeFileRelativePath";
-    public const string WithPersistenceNodeFileRelativePathDefault = "Node";
-    public const string WithPersistenceEdgeFileRelativePathConfigRootKey = "WithPersistenceEdgeFileRelativePath";
-    public const string WithPersistenceEdgeFileRelativePathDefault = "Edge";
-
-    #endregion
-    #endregion
-    #endregion
 
   }
 }

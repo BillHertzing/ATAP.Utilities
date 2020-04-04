@@ -105,6 +105,23 @@ namespace ATAP.Utilities.Persistence
   }
 
 
+  public interface IPickAndSave<out Tout> where Tout : IInsertResultsAbstract {
+    Func<object, bool> PickFunc { get; }
+    Func<IEnumerable<IEnumerable<object>>, Tout> InsertFunc { get; }
+  }
+
+  public class PickAndSave<Tout> : IPersistence<Tout> where Tout : IInsertResultsAbstract {
+
+    public PickAndSave(Func<object, bool> pickFunc, Func<IEnumerable<IEnumerable<object>>, Tout> insertFunc) {
+      PickFunc = pickFunc;
+      InsertFunc = insertFunc;
+    }
+    public Func<object, bool> PickFunc { get; private set; }
+    public Func<IEnumerable<IEnumerable<object>>, Tout> InsertFunc { get; private set; }
+  }
+
+
+
   public class PersistenceBuilderAbstract //: IPersistenceBuilderAbstract
   {
 

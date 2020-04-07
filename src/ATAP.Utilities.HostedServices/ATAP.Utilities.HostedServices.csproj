@@ -33,9 +33,12 @@
     </None>
   </ItemGroup>
 
+  <!-- Packages to persist data to QuickGraph -->
   <ItemGroup>
-    <PackageReference Include="FSharp.Core" />
     <PackageReference Include="YC.QuickGraph" />
+    <PackageReference Include="DotNet.Contracts" />
+    <PackageReference Include="FSharp.Core" />
+    <PackageReference Include="FSharpx.Collections.Experimental" />
   </ItemGroup>
 
   <!-- Reactive Extensions -->
@@ -55,7 +58,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
-    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Localization" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>

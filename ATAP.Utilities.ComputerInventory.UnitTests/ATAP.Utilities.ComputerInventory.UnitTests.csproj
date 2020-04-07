@@ -51,7 +51,7 @@
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
-    <PackageReference Include="UnitsNet" Version="4.51.0" />
-  </ItemGroup>
+    <PackageReference Include="UnitsNet" />
+</ItemGroup>
 
 </Project>

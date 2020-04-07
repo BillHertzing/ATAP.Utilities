@@ -17,13 +17,7 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx"  Version="*"  />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-
-  <ItemGroup>
+<ItemGroup>
     <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
 

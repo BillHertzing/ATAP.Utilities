@@ -17,15 +17,9 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
-  </ItemGroup>
+<ItemGroup>
+    <PackageReference Include="TimePeriodLibrary.NET" />
+</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.TypedGuids\ATAP.Utilities.TypedGuids.csproj" />

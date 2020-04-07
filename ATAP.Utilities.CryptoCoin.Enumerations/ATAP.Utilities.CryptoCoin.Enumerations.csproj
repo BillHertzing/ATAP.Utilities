@@ -17,16 +17,10 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
-    <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
-  </ItemGroup>
+<ItemGroup>
+    <PackageReference Include="ServiceStack.Text" />
+<PackageReference Include="ServiceStack.Text.EnumMemberSerializer" />
+</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />

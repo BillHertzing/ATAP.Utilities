@@ -45,18 +45,12 @@
     <InternalsVisibleTo>DataFlowExPatterns</InternalsVisibleTo>
   </PropertyGroup>
 
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-  
-    <ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="NLog" Version="4.6.8" />
-    <PackageReference Include="NLog.Config" Version="4.6.8" />
-    <PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />
-  </ItemGroup>
+<ItemGroup>
+    <PackageReference Include="Microsoft.CSharp" />
+<PackageReference Include="NLog" />
+<PackageReference Include="NLog.Config" />
+<PackageReference Include="System.Dynamic.Runtime" />
+</ItemGroup>
 
   <ItemGroup>
     <None Update="NLog.config">

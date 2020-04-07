@@ -48,7 +48,7 @@
     <ProjectReference Include="..\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
     <ProjectReference Include="..\src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
     <ProjectReference Include="..\src\ATAP.Utilities.Extensions.Persistence\ATAP.Utilities.Extensions.Persistence.csproj" />
-    <PackageReference Include="UnitsNet" Version="4.51.0" />
-  </ItemGroup>
+    <PackageReference Include="UnitsNet" />
+</ItemGroup>
 
 </Project>

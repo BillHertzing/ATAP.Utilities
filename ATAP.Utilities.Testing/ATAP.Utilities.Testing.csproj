@@ -17,13 +17,7 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-
-  <!-- referencing xUnit in order to extend it also causes VS 2019 to think  this is a test project. and then it crashes test discovery without this added -->
+<!-- referencing xUnit in order to extend it also causes VS 2019 to think  this is a test project. and then it crashes test discovery without this added -->
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="5.10.2" />
     <PackageReference Include="Funq" Version="1.0.0" />
@@ -43,9 +37,10 @@
 
 
   <ItemGroup>
-    <PackageReference Include="Ninject" Version="3.3.4" />
-    <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
-    <PackageReference Include="xunit" Version="2.4.1" /> <!-- This PackageReference causes xUnit to crash without the section added above-->
+    <PackageReference Include="Ninject" />
+
+    <PackageReference Include="TimePeriodLibrary.NET" />
+<PackageReference Include="xunit" Version="2.4.1" /> <!-- This PackageReference causes xUnit to crash without the section added above-->
   </ItemGroup>
 
   <ItemGroup>

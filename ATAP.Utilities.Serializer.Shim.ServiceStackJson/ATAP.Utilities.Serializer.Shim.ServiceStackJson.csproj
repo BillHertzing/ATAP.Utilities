@@ -20,8 +20,8 @@
   <!-- Documentation generation -->
   <ItemGroup>
     <PackageReference Include="docfx" Version="2.40.2" />
-    <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
-    <Folder Include="Documentation\" />
+    <PackageReference Include="ServiceStack.Text" />
+<Folder Include="Documentation\" />
   </ItemGroup>
 
   <ItemGroup>

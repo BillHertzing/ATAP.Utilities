@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -21,13 +21,7 @@
     <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
   </ItemGroup>
 
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-
-  <ItemGroup>
+<ItemGroup>
     <PackageReference Include="TimePeriodLibrary.NET"/>
   </ItemGroup>
 

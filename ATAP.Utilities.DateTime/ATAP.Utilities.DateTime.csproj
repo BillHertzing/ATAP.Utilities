@@ -19,13 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
-  </ItemGroup>
-
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
+    <PackageReference Include="TimePeriodLibrary.NET" />
+</ItemGroup>
 
 </Project>

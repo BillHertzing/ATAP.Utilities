@@ -17,15 +17,9 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-  
-  <ItemGroup>
-  <PackageReference Include="MedallionShell" Version="1.5.1" />
-  </ItemGroup>
+<ItemGroup>
+  <PackageReference Include="MedallionShell" />
+</ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations\ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations.csproj" />

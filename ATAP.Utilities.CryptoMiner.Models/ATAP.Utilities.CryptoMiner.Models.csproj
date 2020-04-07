@@ -17,13 +17,7 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-
-  <ItemGroup>
+<ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions\ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Models\ATAP.Utilities.ComputerInventory.Software.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Models\ATAP.Utilities.ComputerInventory.Models.csproj" />
@@ -36,10 +30,6 @@
     <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Enumerations\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Interfaces\ATAP.Utilities.CryptoMiner.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Documentation\" />
   </ItemGroup>
  
 </Project>

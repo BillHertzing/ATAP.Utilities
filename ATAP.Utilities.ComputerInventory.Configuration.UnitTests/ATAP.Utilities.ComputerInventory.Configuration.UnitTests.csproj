@@ -32,12 +32,7 @@
     </PackageReference>
   </ItemGroup>
 
-  <!-- Roslyn Code Analysis -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8"></PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
+<ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Hardware.Enumerations\ATAP.Utilities.ComputerInventory.Hardware.Enumerations.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Hardware.Extensions\ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Hardware.Interfaces\ATAP.Utilities.ComputerInventory.Hardware.Interfaces.csproj" />

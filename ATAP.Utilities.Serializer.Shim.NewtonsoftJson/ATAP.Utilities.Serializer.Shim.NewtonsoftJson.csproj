@@ -25,15 +25,4 @@
     <PackageReference Include="Newtonsoft.Json"/>
   </ItemGroup>
 
-  <!-- Roslyn Code Analysis -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers"></PackageReference>
-  </ItemGroup>
-
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx"/>
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-
 </Project>

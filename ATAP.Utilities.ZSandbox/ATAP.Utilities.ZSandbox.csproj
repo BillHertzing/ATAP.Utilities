@@ -16,16 +16,10 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="Polly" Version="6.1.1" />
-  </ItemGroup>
+<ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" />
+<PackageReference Include="Polly" />
+</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Extensions\ATAP.Utilities.CryptoCoin.Extensions.csproj" />

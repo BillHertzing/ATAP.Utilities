@@ -17,23 +17,12 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-  <!-- Documentation generation -->
   <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-
-  <!-- Roslyn Code Analysis -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8"></PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="MedallionShell" Version="1.5.1" />
-    <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
-    <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
-    <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
-    <PackageReference Include="UnitsNet" Version="4.51.0" />
+    <PackageReference Include="MedallionShell" />
+    <PackageReference Include="ServiceStack.Text" />
+    <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" />
+    <PackageReference Include="TimePeriodLibrary.NET" />
+    <PackageReference Include="UnitsNet" />
   </ItemGroup>
 
   <ItemGroup>
@@ -54,5 +43,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  
+
 </Project>

@@ -40,8 +40,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="UnitsNet" Version="4.52.0" />
-  </ItemGroup>
+    <PackageReference Include="UnitsNet" />
+</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />

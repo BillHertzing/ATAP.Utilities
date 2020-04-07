@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -59,19 +59,19 @@
 
   <!-- QuickGraph and its dependencies -->
   <ItemGroup>
-    <PackageReference Include="YC.QuickGraph"/> <!-- 3.7.4 -->
-    <PackageReference Include="FSharp.Core"/> <!-- 4.7.1 -->
+    <PackageReference Include="YC.QuickGraph"/>
+    <PackageReference Include="FSharp.Core"/>
   </ItemGroup>
 
 
   <!-- Reactive Extensions -->
   <ItemGroup>
-    <PackageReference Include="System.Reactive" Version="4.3.2" />
+    <PackageReference Include="System.Reactive" />
   </ItemGroup>
 
   <!-- ServiceStack dump utility -->
   <ItemGroup>
-    <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
+    <PackageReference Include="ServiceStack.Text" />
   </ItemGroup>
 
   <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->
@@ -81,7 +81,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
-    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Localization" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
@@ -89,7 +88,6 @@
   <!-- Packages to implement Serilog as logging provider -->
   <ItemGroup>
     <PackageReference Include="Serilog" />
-    <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Settings.Configuration" />
     <PackageReference Include="Serilog.Enrichers.Thread" />
     <PackageReference Include="Serilog.Exceptions" />
@@ -99,6 +97,7 @@
     <PackageReference Include="Serilog.Sinks.File" />
     <PackageReference Include="Serilog.Sinks.Seq" />
     <PackageReference Include="SerilogAnalyzer" />
+<!--    <PackageReference Include="Serilog.AspNetCore" /> -->
   </ItemGroup>
 
   <!-- Packages to implement Serilog as a Microsoft logging provider ? ToDo: implement Serilog as a logging provider to Microsoft logging -->

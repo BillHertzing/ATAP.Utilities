@@ -17,17 +17,18 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-
-  <ItemGroup>
+<ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations\ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces\ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants\ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MedallionShell" />
+    <PackageReference Include="TimePeriodLibrary.NET" />
+    <PackageReference Include="UnitsNet" />
+  </ItemGroup>
+
 
 </Project>

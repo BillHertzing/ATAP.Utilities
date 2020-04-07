@@ -27,10 +27,10 @@
 
   <!-- Packages to persist data to QuickGraph -->
   <ItemGroup>
-    <PackageReference Include="YC.QuickGraph" Version="3.7.4" />
-    <PackageReference Include="DotNet.Contracts" Version="1.10.20606.1" />
-    <PackageReference Include="FSharp.Core" Version="4.7.1" />
-    <PackageReference Include="FSharpx.Collections.Experimental" Version="1.7.3" />
+    <PackageReference Include="YC.QuickGraph" />
+    <PackageReference Include="DotNet.Contracts" />
+    <PackageReference Include="FSharp.Core" />
+    <PackageReference Include="FSharpx.Collections.Experimental" />
   </ItemGroup>
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
@@ -41,16 +41,6 @@
     <ProjectReference Include="..\src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
-  <!-- Roslyn Code Analysis -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8"></PackageReference>
-  </ItemGroup>
-
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Management" />
   </ItemGroup>

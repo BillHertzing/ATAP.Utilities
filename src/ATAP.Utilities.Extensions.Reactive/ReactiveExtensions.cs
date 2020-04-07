@@ -10,85 +10,41 @@ namespace ATAP.Utilities.Reactive {
   [ETWLogAttribute]
 #endif
   #region helper methods for async observers // https://github.com/dotnet/reactive/issues/459
-  public static partial class ObservableExtensions { // https://github.com/dotnet/reactive/issues/459
-      public static IDisposable SubscribeAsync<T>(this IObservable<T> source, Func<T, Task> onNextAsync) =>
-          source
-              .Select(number => Observable.FromAsync(() => onNextAsync(number)))
-              .Concat()
-              .Subscribe();
+  public static partial class Extensions { // https://github.com/dotnet/reactive/issues/459
+    public static IDisposable SubscribeAsync<T>(this IObservable<T> source, Func<T, Task> onNextAsync) =>
+        source
+            .Select(number => Observable.FromAsync(() => onNextAsync(number)))
+            .Concat()
+            .Subscribe();
 
-      public static IDisposable SubscribeAsyncConcurrent<T>(this IObservable<T> source, Func<T, Task> onNextAsync) =>
-          source
-              .Select(number => Observable.FromAsync(() => onNextAsync(number)))
-              .Merge()
-              .Subscribe();
+    public static IDisposable SubscribeAsyncConcurrent<T>(this IObservable<T> source, Func<T, Task> onNextAsync) =>
+        source
+            .Select(number => Observable.FromAsync(() => onNextAsync(number)))
+            .Merge()
+            .Subscribe();
 
-      public static IDisposable SubscribeAsyncConcurrent<T>(this IObservable<T> source, Func<T, Task> onNextAsync, int maxConcurrent) =>
-          source
-              .Select(number => Observable.FromAsync(() => onNextAsync(number)))
-              .Merge(maxConcurrent)
-              .Subscribe();
-    }
+    public static IDisposable SubscribeAsyncConcurrent<T>(this IObservable<T> source, Func<T, Task> onNextAsync, int maxConcurrent) =>
+        source
+            .Select(number => Observable.FromAsync(() => onNextAsync(number)))
+            .Merge(maxConcurrent)
+            .Subscribe();
+
     #endregion
+    #region Constraining a stream of events in Rx to a maximum rate (http://www.zerobugbuild.com/?p=323)
+      public static IDisposable RateConstrained<T>(this IObservable<T> source, Func<T, Task> onNextAsync, TimeSpan interval) =>
+      source
+        .Select(i => Observable.Empty<T>()
+        .Delay(interval)
+        .StartWith(i))
+        .Concat()
+        .Subscribe();
+    #endregion
+    #region FileWatcher
 
-    #region RobertDyball/ObservableExtensions.cs https://gist.github.com/RobertDyball/e4bc7b2914d201ad3db9
-
-    /// <summary>
-    /// Regulate extension method is from John Rayner, http://sharpfellows.com/post/Rx-Controlling-frequency-of-events.aspx
-    /// </summary>
-    public static partial class ObservableExtensions {
-      public static IObservable<T> Regulate<T>(this IObservable<T> observable, TimeSpan duration) {
-        return Regulate(observable, duration, TaskPoolScheduler.Default);
-      }
-
-      public static IObservable<T> Regulate<T>(this IObservable<T> observable, TimeSpan duration, IScheduler scheduler) {
-        var regulator = new ObservableRegulator<T>(duration, scheduler);
-
-        return Observable.Create<T>(observer => observable.Subscribe(obj => regulator.ProcessItem(obj, observer)));
-      }
-
-      private class ObservableRegulator<T> {
-        private DateTimeOffset _lastEntry = DateTimeOffset.MinValue;
-        private readonly object _lastEntryLock = new object();
-
-        private readonly TimeSpan _duration;
-        private readonly IScheduler _scheduler;
-
-        public ObservableRegulator(TimeSpan duration, IScheduler scheduler) {
-          _duration = duration;
-          _scheduler = scheduler;
-        }
-
-        public void ProcessItem(T val, IObserver<T> observer) {
-          var canBroadcastNow = false;
-          var nexEntryTime = DateTimeOffset.MaxValue;
-          lock (_lastEntryLock) {
-            var now = DateTimeOffset.Now;
-            if (now.Subtract(_lastEntry) > _duration) {
-              _lastEntry = now;
-              canBroadcastNow = true;
-            }
-            else {
-              _lastEntry = _lastEntry.Add(_duration);
-              nexEntryTime = _lastEntry;
-            }
-          }
-
-          if (canBroadcastNow) {
-            observer.OnNext(val);
-          }
-          else {
-            _scheduler.Schedule(nexEntryTime, () => observer.OnNext(val));
-          }
-
-        }
-      }
-    }
+    #endregion
   }
 
-  #endregion
- 
-
+}
 
   /* this implementation waiting on QueueBackgroundWorkItem  to be implemented in Dot Net Core 3.x
   #region Scoped Service for Background task

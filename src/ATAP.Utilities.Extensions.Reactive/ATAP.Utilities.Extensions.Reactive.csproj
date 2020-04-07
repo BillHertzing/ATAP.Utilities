@@ -18,16 +18,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FSharp.Core" />
+    <PackageReference Include="YC.QuickGraph" />
   </ItemGroup>
 
-    <!-- Reactive Extensions -->
+
+  <!-- Reactive Extensions -->
   <ItemGroup>
-    <PackageReference Include="System.Reactive" Version="4.3.2" />
+    <PackageReference Include="System.Reactive" />
   </ItemGroup>
 
   <!-- ServiceStack dump utility -->
   <ItemGroup>
-    <PackageReference Include="ServiceStack.Text" Version="5.8.1" />
+    <PackageReference Include="ServiceStack.Text" />
   </ItemGroup>
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
@@ -42,19 +45,5 @@
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
-
-  <!-- Roslyn Code Analysis -->
-  <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="4.7.1" />
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8"></PackageReference>
-    <PackageReference Include="YC.QuickGraph" Version="3.7.4" />
-  </ItemGroup>
-
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-
 
 </Project>

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -22,27 +22,18 @@
     <ProjectReference Include="..\ATAP.Utilities.GraphDatastructures.Interfaces\ATAP.Utilities.GraphDataStructures.Interfaces.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="FSharp.Core" />
+    <PackageReference Include="YC.QuickGraph" />
+  </ItemGroup>
+
+
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
     <PackageReference Include="MethodBoundaryAspect.Fody" Version="2.0.118" />
     <!-- Project Reference to the ETW attribute and log provider -->
-
-
+    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
-
-  <!-- Roslyn Code Analysis -->
-  <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="4.7.1" />
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8"></PackageReference>
-    <PackageReference Include="YC.QuickGraph" Version="3.7.4" />
-  </ItemGroup>
-
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-
 
 </Project>

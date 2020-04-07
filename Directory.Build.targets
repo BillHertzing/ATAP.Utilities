@@ -1,0 +1,90 @@
+<Project>
+  <!-- import the non-default targets files -->
+  <Import Project="$(MSBuildCommunityTasksPath)\MSBuildTasks.Targets" />
+  <!-- <Import Project="$(ATAPUtilitiesBuildToolingTargetsPath)\ATAP.Utilities.BuildTooling.Targets" /> -->
+
+
+  <!-- Targets for multiframework publishing courtesy of
+    this stackoverflow answer https://stackoverflow.com/questions/43947599/how-to-publish-for-all-target-frameworks
+    this GIST:https://gist.github.com/dasMulli/b14026437468ce4b56ef93e010f24a36
+   -->
+
+  <Target Name="PublishProjectForAllRIDsIfTargetFrameworkSet" Condition=" '$(TargetFramework)' != '' and '$(RuntimeIdentifiers)' != '' and '$(RuntimeIdentifier)' == ''  ">
+    <ItemGroup>
+      <_PublishRuntimeIdentifier Include="$(RuntimeIdentifiers)" />
+    </ItemGroup>
+    <MSBuild Projects="$(MSBuildProjectFile)" Targets="PublishAll" Properties="TargetFramework=$(TargetFramework);RuntimeIdentifier=%(_PublishRuntimeIdentifier.Identity)" />
+  </Target>
+
+  <Target Name="PublishProjectForAllFrameworksIfFrameworkUnset" Condition=" '$(TargetFramework)' == '' ">
+    <ItemGroup>
+      <_PublishFramework Include="$(TargetFrameworks)" />
+    </ItemGroup>
+    <MSBuild Projects="$(MSBuildProjectFile)" Targets="PublishAll" Properties="TargetFramework=%(_PublishFramework.Identity)" />
+  </Target>
+
+  <Target Name="PublishAll"
+        DependsOnTargets="PublishProjectIfFrameworkSet;PublishProjectForAllRIDsIfTargetFrameworkSet;PublishProjectForAllFrameworksIfFrameworkUnset" />
+  <Target Name="PublishProjectIfFrameworkSet" DependsOnTargets="Publish" Condition=" '$(TargetFramework)' != '' " />
+
+  <!-- Include Roslyn Code Analysis for every project -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers"></PackageReference>
+  </ItemGroup>
+
+  <!-- Include Documentation generation  for every project-->
+  <ItemGroup>
+    <PackageReference Include="docfx" />
+    <Folder Include="Documentation\" />
+  </ItemGroup>
+
+
+  <!-- https://www.strathweb.com/2018/07/solution-wide-nuget-package-version-handling-with-msbuild-15/ -->
+  <ItemGroup>
+    <!-- QuickGraph and its dependencies -->
+    <PackageReference Update="YC.QuickGraph" Version="*" /> <!-- 3.7.4 -->
+    <PackageReference Update="FSharp.Core" Version="*" /> <!-- 4.7.1 -->
+
+  <!-- Reactive Extensions -->
+    <PackageReference Update="System.Reactive" Version="4.3.2" />
+
+  <!-- ServiceStack dump utility -->
+    <PackageReference Update="ServiceStack.Text" Version="5.8.1" />
+
+  <!-- Packages necessary to run the Net Core Generic Host and web server hosts Server -->
+    <PackageReference Update="Microsoft.Extensions.Configuration" Version="*" />
+    <PackageReference Update="Microsoft.Extensions.Configuration.CommandLine" Version="*" />
+    <PackageReference Update="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="*" />
+    <PackageReference Update="Microsoft.Extensions.Configuration.Json" Version="*" />
+    <PackageReference Update="Microsoft.Extensions.Hosting" Version="*" />
+    <PackageReference Update="Microsoft.AspNetCore.Hosting.Abstractions" Version="*" />
+    <PackageReference Update="Microsoft.Extensions.Localization" Version="*" />
+    <PackageReference Update="Microsoft.Extensions.Logging" Version="*" />
+
+  <!-- documentation generation  -->
+    <PackageReference Update="docfx" Version="2.40.2" /><!-- 2.40.2 -->
+
+    <!-- Roslyn Code Analyzers -->
+     <PackageReference Update="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8"></PackageReference>
+
+    <PackageReference Update="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Update="Polly" Version="6.1.1" />
+    <PackageReference Update="UnitsNet" Version="4.51.0" />
+    <PackageReference Update="TimePeriodLibrary.NET" Version="2.1.1" />
+
+
+    <!-- Serilog packages -->
+    <PackageReference Update="Serilog" Version="2.9.0" />
+    <PackageReference Update="Serilog.Settings.Configuration" Version="3.1.1-dev-00216" />
+    <PackageReference Update="Serilog.Enrichers.Thread" Version="3.2.0-dev-00747" />
+    <PackageReference Update="Serilog.Extensions.Hosting" Version="3.0.0" />
+    <PackageReference Update="Serilog.Extensions.Logging" Version="3.0.2-dev-10272" />
+    <PackageReference Update="Serilog.Exceptions" Version="5.4.0" />
+    <PackageReference Update="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
+    <PackageReference Update="Serilog.Sinks.Debug" Version="1.0.2-dev-00020" />
+    <PackageReference Update="Serilog.Sinks.File" Version="5.0.0-dev-00864" />
+    <PackageReference Update="Serilog.Sinks.Seq" Version="4.1.0-dev-00166" />
+    <PackageReference Update="SerilogAnalyzer" Version="0.15.0" />
+  </ItemGroup>
+
+</Project>

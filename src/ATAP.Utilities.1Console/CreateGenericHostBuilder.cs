@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-
+using Serilog.Extensions.Hosting;
 namespace ATAP.Utilities._1Console {
 #if TRACE
   [ETWLogAttribute]

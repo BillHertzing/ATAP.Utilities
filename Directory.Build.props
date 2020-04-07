@@ -13,7 +13,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>net47;netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;</TargetFrameworks>
+    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
     <!--
     <TargetFramework>netstandard2.1</TargetFramework>
@@ -21,11 +22,12 @@
 	-->
   </PropertyGroup>
 
+
   <!-- Nullable Reference Type support solution-wide -->
   <PropertyGroup>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-  
+
 
   <!-- solution-wide properties to include in every project -->
   <PropertyGroup>
@@ -34,16 +36,16 @@
     <!-- when msbuild is run by dotnet command, ($(MSBuildRuntimeType) == 'Core') the property $(SolutionDir) is not defined at this point, so this line is executed -->
     <!-- the result is that the $(SolutionDir) is set properly regardless of the $(MSBuildRuntimeType) -->
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">$(MSBuildProjectDirectory)\..\</SolutionDir>
-	
+
     <!-- Directory where all of the custom build tools are stored -->
     <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)Build\</SolutionBuildToolsBaseDir>
-	
+
     <!-- bring in the build tasks extensions defined in the MSBuild.Community project-->
     <MSBuildCommunityTasksPath>$(SolutionBuildToolsBaseDir)MSBuildTasks.*\build</MSBuildCommunityTasksPath>
-	
+
     <!-- bring in the build tasks extensions defined in the ATAP.Utilities.BuildTooling project-->
     <!-- ATAPBuildToolingConfiguration is normally set to Release; use Debug if developing the BuildTooling assemblies and scripts -->
-	  <ATAPBuildToolingConfiguration>Debug</ATAPBuildToolingConfiguration>
+    <ATAPBuildToolingConfiguration>Debug</ATAPBuildToolingConfiguration>
     <!-- ATAPBuildToolingDebugVerbosity controls the level of details the Debug mode logging. If ATAPBuildToolingConfiguration is not Debug, this setting has no effect -->
     <!-- valid values for ATAPBuildToolingDebugVerbosity are trace -->
     <ATAPBuildToolingDebugVerbosity>Trace</ATAPBuildToolingDebugVerbosity>
@@ -72,11 +74,10 @@
     <PackageTags>Testing, experimental, alpha, ATAP, ATAP.Utilities</PackageTags>
     <PackageReleaseNotes>Initial implementation/test of ATAP.Utilities Nuget packaging</PackageReleaseNotes>
   </PropertyGroup>
-  
-     
+
   <!-- NuGet Local Feed location, using an environment variable and fallback -->
   <PropertyGroup>
-    <NuGetLocalFeedPath Condition=" '$(NuGetLocalFeedPath)' == '' ">C:\Dropbox\NuGetLocalFeed</NuGetLocalFeedPath> 
+    <NuGetLocalFeedPath Condition=" '$(NuGetLocalFeedPath)' == '' ">C:\Dropbox\NuGetLocalFeed</NuGetLocalFeedPath>
   </PropertyGroup>
 
   <!-- Release Configuration compilation symbols, flags and build options -->
@@ -107,10 +108,6 @@
     <DefineConstants>NETSTANDARD2_1</DefineConstants>
   </PropertyGroup>
 
-  <!-- .NET Standard solution-wide items to include in every project -->
-  <ItemGroup Condition="$(TargetFramework.Contains('netstandard'))">
-  </ItemGroup>
-
   <!-- .NET Core references, compilation flags and build options -->
   <PropertyGroup Condition="$(TargetFramework.Contains('netcore'))">
     <DefineConstants>NETCORE;</DefineConstants>
@@ -119,6 +116,11 @@
   <!-- .NET Core 2.0 references, compilation flags and build options -->
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0'">
     <DefineConstants>NETCOREAPP2_0</DefineConstants>
+  </PropertyGroup>
+
+  <!-- .NET Core 2.1 references, compilation flags and build options -->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1'">
+    <DefineConstants>NETCOREAPP2_1</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Core 3.0 references, compilation flags and build options -->
@@ -131,36 +133,42 @@
     <DefineConstants>NETCOREAPP3_1</DefineConstants>
   </PropertyGroup>
 
-  <!-- .NET Core 2.0 solution-wide items to include in every project -->
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">
-  </ItemGroup>
-
-    <!-- .NET Framework, compilation flags and build options -->
+  <!-- .NET Framework, compilation flags and build options -->
   <PropertyGroup Condition="$(TargetFramework.Contains('net'))">
     <DefineConstants>NETFULL</DefineConstants>
   </PropertyGroup>
-  
-      <!-- .NET 47 references, compilation flags and build options -->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net47' ">
+
+  <!-- .NET 45 references, compilation flags and build options -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('net45'))">
+    <DefineConstants>NET45</DefineConstants>
+  </PropertyGroup>
+
+  <!-- .NET 46 references, compilation flags and build options -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('net46'))">
+    <DefineConstants>NET46</DefineConstants>
+  </PropertyGroup>
+
+  <!-- .NET 47 references, compilation flags and build options -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('net47'))">
     <DefineConstants>NET47</DefineConstants>
   </PropertyGroup>
 
-      <!-- .NET 471 references, compilation flags and build options -->
+  <!-- .NET 471 references, compilation flags and build options -->
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net471' ">
     <DefineConstants>NET471</DefineConstants>
   </PropertyGroup>
 
-      <!-- .NET 472 references, compilation flags and build options -->
+  <!-- .NET 472 references, compilation flags and build options -->
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net472' ">
     <DefineConstants>NET472</DefineConstants>
   </PropertyGroup>
 
-      <!-- .NET 48 references, compilation flags and build options -->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net48' ">
+  <!-- .NET 48 references, compilation flags and build options -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('net48'))">
     <DefineConstants>NET48</DefineConstants>
   </PropertyGroup>
 
-   <!-- .NET 471 solution-wide items to include in every project -->
+  <!-- .NET 471 solution-wide items to include in every project -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net471' ">
   </ItemGroup>
 
@@ -176,7 +184,7 @@
   <ItemGroup>
     <Analyzer Include="..\..\packages\xunit.analyzers.0.7.0\analyzers\dotnet\cs\xunit.analyzers.dll" />
   </ItemGroup>
-  
+
   <Import Project="..\..\packages\xunit.core.2.3.1\build\xunit.core.targets" Condition="Exists('..\..\packages\xunit.core.2.3.1\build\xunit.core.targets')" />
   -->
 

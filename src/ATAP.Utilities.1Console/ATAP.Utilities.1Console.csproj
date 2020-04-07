@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -16,6 +16,7 @@
     <ProjectReference Include="..\ATAP.Utilities.1Console.StringConstants\ATAP.Utilities.1Console.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Extensions.Persistence\ATAP.Utilities.Extensions.Persistence.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Extensions.Reactive\ATAP.Utilities.Extensions.Reactive.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.GenerateProgram\ATAP.Utilities.GenerateProgram.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.HostedServices\ATAP.Utilities.HostedServices.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.HostedServices.Interfaces\ATAP.Utilities.HostedServices.Interfaces.csproj" />
   </ItemGroup>
@@ -56,6 +57,13 @@
     </Compile>
   </ItemGroup>
 
+  <!-- QuickGraph and its dependencies -->
+  <ItemGroup>
+    <PackageReference Include="YC.QuickGraph"/> <!-- 3.7.4 -->
+    <PackageReference Include="FSharp.Core"/> <!-- 4.7.1 -->
+  </ItemGroup>
+
+
   <!-- Reactive Extensions -->
   <ItemGroup>
     <PackageReference Include="System.Reactive" Version="4.3.2" />
@@ -68,33 +76,34 @@
 
   <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Localization" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Localization" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
   <!-- Packages to implement Serilog as logging provider -->
   <ItemGroup>
-    <PackageReference Include="Serilog" Version="2.9.0" />
-    <PackageReference Include="Serilog.AspNetCore" Version="3.2.0" />
-    <PackageReference Include="Serilog.Settings.Configuration" Version="3.1.1-dev-00216" />
-    <PackageReference Include="Serilog.Enrichers.Thread" Version="3.2.0-dev-00747" />
-    <PackageReference Include="Serilog.Exceptions" Version="5.4.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
-    <PackageReference Include="Serilog.Sinks.Debug" Version="1.0.2-dev-00020" />
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0-dev-00864" />
-    <PackageReference Include="Serilog.Sinks.Seq" Version="4.1.0-dev-00166" />
-    <PackageReference Include="SerilogAnalyzer" Version="0.15.0" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Settings.Configuration" />
+    <PackageReference Include="Serilog.Enrichers.Thread" />
+    <PackageReference Include="Serilog.Exceptions" />
+    <PackageReference Include="Serilog.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.Debug" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Serilog.Sinks.Seq" />
+    <PackageReference Include="SerilogAnalyzer" />
   </ItemGroup>
 
   <!-- Packages to implement Serilog as a Microsoft logging provider ? ToDo: implement Serilog as a logging provider to Microsoft logging -->
   <ItemGroup>
-    <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.2-dev-10265" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
   </ItemGroup>
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
@@ -104,19 +113,5 @@
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
-
-  <!-- Roslyn Code Analysis -->
-  <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="4.7.1" />
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8"></PackageReference>
-    <PackageReference Include="YC.QuickGraph" Version="3.7.4" />
-  </ItemGroup>
-
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-
 
 </Project>

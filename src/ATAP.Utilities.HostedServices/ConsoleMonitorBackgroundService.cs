@@ -13,6 +13,8 @@ using System.Diagnostics;
 using ComputerInventoryHardwareStaticExtensions = ATAP.Utilities.ComputerInventory.Hardware.StaticExtensions;
 using PersistenceStaticExtensions = ATAP.Utilities.Persistence.StaticExtensions;
 using HostedServicesStringConstants = ATAP.Utilities.HostedServices.StringConstants;
+using ConsoleMonitorStringConstants = ATAP.Utilities.HostedServices.ConsoleMonitor.StringConstants;
+using ConsoleMonitorDefaultConfiguration = ATAP.Utilities.HostedServices.ConsoleMonitor.DefaultConfiguration;
 using System.Threading;
 using ATAP.Utilities.ComputerInventory.Hardware;
 using ATAP.Utilities.Persistence;
@@ -45,6 +47,7 @@ namespace ATAP.Utilities.HostedServices {
     private readonly IConsoleSourceHostedService consoleSourceHostedService;
     #endregion
     #region Data for this Service
+    IConfigurationRoot configurationRoot;
     IEnumerable<string> choices;
     StringBuilder mesg = new StringBuilder();
     IDisposable DisposeThis { get; set; }
@@ -90,6 +93,7 @@ namespace ATAP.Utilities.HostedServices {
       // check CancellationToken to see if this task is cancelled
       CheckAndHandleCancellationToken(2, cancellationToken);
       mesg.Clear();
+
       foreach (var choice in choices) {
         mesg.Append(choice);
         mesg.Append(Environment.NewLine);
@@ -140,6 +144,33 @@ namespace ATAP.Utilities.HostedServices {
     }
     #endregion
 
+    #region ConfigurationBuilder
+    IConfigurationBuilder ATAPConfigurationBuilder(string loadedFromDirectory, string initialStartupDirectory, IConfiguration hostConfiguration, IStringLocalizer stringLocalizer, Dictionary<string, string> defaultConfiguration, string settingsFileName, string settingsFileNameSuffix, string customEnvironmentVariablePrefix) {
+      IConfigurationBuilder configurationBuilder = new ConfigurationBuilder()
+      // Start with a "compiled-in defaults" for anything that is REQUIRED to be provided in configuration for Production
+      .AddInMemoryCollection(defaultConfiguration)
+      // SetBasePath creates a Physical File provider pointing to the directory where this assembly was loaded from
+      .SetBasePath(Path.GetFullPath(loadedFromDirectory));
+      // get any Production level Settings file present in the installation directory
+      // ToDo: File names should be localized
+      configurationBuilder.AddJsonFile(settingsFileName+"."+ settingsFileNameSuffix, optional: true);
+      // Add environment-specific settings file
+      if (!hostEnvironment.IsProduction()) {
+        configurationBuilder.AddJsonFile(settingsFileName+"."+ hostEnvironment.EnvironmentName+"."+ settingsFileNameSuffix, optional: true);
+      }
+      // and again, SetBasePath creates a Physical File provider, this time pointing to the initial startup directory, which will be used by the following method
+      configurationBuilder.SetBasePath(Path.GetFullPath(initialStartupDirectory));
+      configurationBuilder.AddJsonFile(settingsFileName + "." + settingsFileNameSuffix, optional: true);
+      if (!hostEnvironment.IsProduction()) {
+        configurationBuilder.AddJsonFile(settingsFileName + "." + hostEnvironment.EnvironmentName + "." + settingsFileNameSuffix, optional: true);
+      }
+      // Add environment variables, only environment variables that start with the given prefix
+      configurationBuilder.AddEnvironmentVariables(prefix: customEnvironmentVariablePrefix);
+      // Note that command line arguments are available on hostConfig
+      return configurationBuilder;
+    }
+    #endregion
+
     protected override async Task ExecuteAsync(CancellationToken externalCancellationToken) {
 
       #region CancellationToken creation and linking
@@ -154,6 +185,16 @@ namespace ATAP.Utilities.HostedServices {
       linkedCancellationToken.Register(() => logger.LogInformation("ConsoleMonitorBackgroundService: linkedCancellationToken has signalled stopping."));
       #endregion
       #region Instantiate this service's Data structure
+      #region configurationRoot for this HostedService
+      // Create the configurationBuilder for this HostedService. This creates an ordered chain of configuration providers. The first providers in the chain have the lowest priority, the last providers in the chain have a higher priority.
+      // The Environment has been configured by the GenericHost before this point is reached
+      // Both LoadedFromDirectory and InitialStartupDirectory have been configured by the GenericHost before this point is reached
+
+      var loadedFromDirectory = hostConfiguration.GetValue<string>("SomeStringConstantConfigrootKey", "./"); //ToDo suport dynamic assembly loading form other Startup directories -  Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+      var initialStartupDirectory = hostConfiguration.GetValue<string>("SomeStringConstantConfigrootKey", "./");
+      var configurationBuilder = ATAPConfigurationBuilder(loadedFromDirectory, initialStartupDirectory, hostConfiguration, stringLocalizer, ConsoleMonitorDefaultConfiguration.Production, ConsoleMonitorStringConstants.SettingsFileName, ConsoleMonitorStringConstants.SettingsFileNameSuffix, StringConstants.CustomEnvironmentVariablePrefix);
+      configurationRoot = configurationBuilder.Build();
+      #endregion
       // Create a list of choices
       choices = new List<string>() { "1. Run ConvertFileSystemToGraphAsyncTask", "2. Subscribe ConsoleOut to ConsoleIn", "2. Unsubscribe ConsoleOut from ConsoleIn" };
       #endregion
@@ -161,7 +202,7 @@ namespace ATAP.Utilities.HostedServices {
       BuildMenu(mesg, choices, linkedCancellationToken);
       await WriteMessageSafelyAsync(mesg, consoleSinkHostedService, linkedCancellationToken).ConfigureAwait(false); // ToDo: handle Task.Faulted when Console.Out has been closed
       #endregion
-      #region define the Func<string,Task> that will be executed every time the consoleSourceHostedService.ConsoleReadLineAsyncAsObservable produces a sequence element
+      #region define the ConsoleMonitorFunc<string,Task> that will be executed every time the consoleSourceHostedService.ConsoleReadLineAsyncAsObservable produces a sequence element
       // This Action closes over the current local variables' values
       Func<string, Task> ConsoleMonitorFunc = new Func<string, Task>(async (inputLineString) => {
         // check CancellationToken to see if this task is canceled
@@ -172,17 +213,18 @@ namespace ATAP.Utilities.HostedServices {
         mesg.Clear();
         switch (inputLineString) {
           case "1":
-            var rootString = hostConfiguration.GetValue<string>(HostedServicesStringConstants.RootStringConfigRootKey, StringConstants.RootStringDefault);
-            var asyncFileReadBlockSize = hostConfiguration.GetValue<int>(StringConstants.AsyncFileReadBlockSizeConfigRootKey, int.Parse(StringConstants.AsyncFileReadBlockSizeDefault));  // ToDo: should validate in case the StringConstants assembly is messed up?
-            var enableHash = hostConfiguration.GetValue<bool>(StringConstants.EnableHashBoolConfigRootKey, bool.Parse(StringConstants.EnableHashBoolConfigRootKeyDefault));  // ToDo: should validate in case the StringConstants assembly is messed up?
-            var enableProgress = hostConfiguration.GetValue<bool>(StringConstants.EnableProgressBoolConfigRootKey, bool.Parse(StringConstants.EnableProgressBoolDefault));// ToDo: should validate in case the StringConstants assembly is messed up?
-            var enablePersistence = hostConfiguration.GetValue<bool>(StringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(StringConstants.EnablePersistenceBoolDefault));// ToDo: should validate in case the StringConstants assembly is messed up?
-            var enablePickAndSave = hostConfiguration.GetValue<bool>(StringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(StringConstants.EnablePickAndSaveBoolDefault));// ToDo: should validate in case the StringConstants assembly is messed up?
-            var temporaryDirectoryBase = hostConfiguration.GetValue<string>(StringConstants.TemporaryDirectoryBaseConfigRootKey, StringConstants.TemporaryDirectoryBaseDefault);
-            var WithPersistenceNodeFileRelativePath = hostConfiguration.GetValue<string>(StringConstants.WithPersistenceNodeFileRelativePathConfigRootKey, StringConstants.WithPersistenceNodeFileRelativePathDefault);
-            var WithPersistenceEdgeFileRelativePath = hostConfiguration.GetValue<string>(StringConstants.WithPersistenceEdgeFileRelativePathConfigRootKey, StringConstants.WithPersistenceEdgeFileRelativePathDefault);
+            // ToDo: Get these from the configRoot in the Data instance in the ConsoleMonitor service
+            var rootString = configurationRoot.GetValue<string>(ConsoleMonitorStringConstants.RootStringConfigRootKey, ConsoleMonitorStringConstants.RootStringDefault);
+            var asyncFileReadBlockSize = hostConfiguration.GetValue<int>(ConsoleMonitorStringConstants.AsyncFileReadBlockSizeConfigRootKey, int.Parse(ConsoleMonitorStringConstants.AsyncFileReadBlockSizeDefault));  // ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
+            var enableHash = hostConfiguration.GetValue<bool>(ConsoleMonitorStringConstants.EnableHashBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnableHashBoolConfigRootKeyDefault));  // ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
+            var enableProgress = hostConfiguration.GetValue<bool>(ConsoleMonitorStringConstants.EnableProgressBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnableProgressBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
+            var enablePersistence = hostConfiguration.GetValue<bool>(ConsoleMonitorStringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnablePersistenceBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
+            var enablePickAndSave = hostConfiguration.GetValue<bool>(ConsoleMonitorStringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnablePickAndSaveBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
+            var temporaryDirectoryBase = hostConfiguration.GetValue<string>(ConsoleMonitorStringConstants.TemporaryDirectoryBaseConfigRootKey, ConsoleMonitorStringConstants.TemporaryDirectoryBaseDefault);
+            var WithPersistenceNodeFileRelativePath = hostConfiguration.GetValue<string>(ConsoleMonitorStringConstants.WithPersistenceNodeFileRelativePathConfigRootKey, ConsoleMonitorStringConstants.WithPersistenceNodeFileRelativePathDefault);
+            var WithPersistenceEdgeFileRelativePath = hostConfiguration.GetValue<string>(ConsoleMonitorStringConstants.WithPersistenceEdgeFileRelativePathConfigRootKey, ConsoleMonitorStringConstants.WithPersistenceEdgeFileRelativePathDefault);
             var filePathsPersistence = new string[2] { temporaryDirectoryBase + WithPersistenceNodeFileRelativePath, temporaryDirectoryBase + WithPersistenceEdgeFileRelativePath };
-            var WithPickAndSaveNodeFileRelativePath = hostConfiguration.GetValue<string>(StringConstants.WithPickAndSaveNodeFileRelativePathConfigRootKey, StringConstants.WithPickAndSaveNodeFileRelativePathDefault);
+            var WithPickAndSaveNodeFileRelativePath = hostConfiguration.GetValue<string>(ConsoleMonitorStringConstants.WithPickAndSaveNodeFileRelativePathConfigRootKey, ConsoleMonitorStringConstants.WithPickAndSaveNodeFileRelativePathDefault);
             var filePathsPickAndSave = new string[1] { temporaryDirectoryBase + WithPickAndSaveNodeFileRelativePath };
             mesg.Append(string.Format("Running PartitionInfoEx Extension Function ConvertFileSystemToObjectGraph, on rootString {0} with an asyncFileReadBlockSize of {1} with hashihg enabled: {2} ; progress enabled: {3} ; persistence enabled: {5} ; pickAndSave enabled: {4}", rootString, asyncFileReadBlockSize, enableHash, enableProgress, enablePersistence, enablePickAndSave));
             if (enablePersistence) {
@@ -284,7 +326,7 @@ namespace ATAP.Utilities.HostedServices {
             #region define the Func<string,Task> to be executed when the ConsoleSourceHostedService.ConsoleReadLineAsyncAsObservable produces a sequence element
             // This Action closes over the current local variables' values
             Func<string, Task> SimpleEchoToConsoleOutFunc = new Func<string, Task>(async (inputLineString) => {
-            await consoleSinkHostedService.WriteMessage(inputLineString).ConfigureAwait(false); // ToDo: catch exceptions, return a task in a faulted state
+              await consoleSinkHostedService.WriteMessage(inputLineString).ConfigureAwait(false); // ToDo: catch exceptions, return a task in a faulted state
             });
             #endregion
             // create subscription between the ConsoleInAsObservable source and the ConsoleOutHostedService.WriteMessage sink
@@ -314,7 +356,6 @@ namespace ATAP.Utilities.HostedServices {
       #endregion
 
       // Subscribe to consoleSourceHostedService. Run the Func<string,Task> every time ConsoleReadLineAsyncAsObservable() produces aa sequence element
-      // SubscriptionToConsoleReadLineAsObservableDisposeHandle = ConsoleSourceHostedService.ConsoleReadLineAsyncAsObservable().SelectMany(async inputLineString => await ConsoleMonitorFunc(inputLineString), () => SubscriptionToConsoleReadLineAsObservableDisposeHandle.Dispose()).Subscribe();
       // ToDo:  Add OnError and OnCompleted handlers
       SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle = ConsoleSourceHostedService.ConsoleReadLineAsyncAsObservable().SubscribeAsync<string>(ConsoleMonitorFunc);
 

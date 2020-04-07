@@ -1,28 +1,15 @@
 
-namespace ATAP.Utilities.HostedServices {
+namespace ATAP.Utilities.HostedServices.ConsoleMonitor {
   public static class StringConstants {
     // ToDo: Localize the string constants
-
-    #region Per-Service Configuration items
-    #region GenerateProgram Configuration Items
-    #region string constants: File Names 
-    public const string PhysicalRootPathConfigRootKey = "PhysicalRootPath";
-    public const string PhysicalRootPathStringDefault = "./";
+    #region Settings File Names
+    public const string SettingsFileName = "ConsoleMonitorSettings";
+    public const string SettingsFileNameSuffix = "json";
+    #endregion
+    #region File Names
     public const string TemporaryDirectoryBaseConfigRootKey = "TemporaryDirectoryBase";
     public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\_1Console\\";
     #endregion
-    #region string constants: Exception Messages
-    #endregion
-
-    #region Database ConnectionKeys
-    public const string KeyRedisConnectionStringConfigRootKey = "RedisConnectionString";
-    public const string KeyMySqlConnectionStringConfigRootKey = "MySqlConnectionString";
-    #endregion
-
-    #region string constants: EnvironmentVariablePrefixs
-    public const string CustomEnvironmentVariablePrefix = "HostedServices__";
-    #endregion
-
     #region ConvertFileSystemToGraph
     public const string RootStringConfigRootKey = "RootString";
     public const string RootStringDefault = "E:\\";
@@ -42,19 +29,7 @@ namespace ATAP.Utilities.HostedServices {
     public const string WithPersistenceEdgeFileRelativePathDefault = "Edge.txt";
     public const string WithPickAndSaveNodeFileRelativePathConfigRootKey = "WithPickAndSaveNodeFileRelativePath";
     public const string WithPickAndSaveNodeFileRelativePathDefault = "ArchiveFiles.txt";
-
     #endregion
-    #endregion
-    #endregion
-
   }
 }
 
-/*
- *     #region Per-Service Configuration items
-    #region FunctionSelectorUI Configuration Items
-    public const string TemporaryDirectoryBaseConfigRootKey = "TemporaryDirectoryBase";
-    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\_1Console\\";
-
-
-*/

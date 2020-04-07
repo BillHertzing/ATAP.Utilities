@@ -13,7 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
-namespace ATAP.Utilities._1Console {
+namespace ATAP.Utilities.HostedServices {
 
   [ETWLogAttribute]
   public class ObservableResetableTimer {

@@ -32,6 +32,7 @@ using PersistenceStaticExtensions = ATAP.Utilities.Persistence.StaticExtensions;
 using Microsoft.Extensions.Hosting.Internal;
 using ATAP.Utilities.ETW;
 using ATAP.Utilities.HostedServices;
+using ATAP.Utilities.HostedServices.GenerateProgram;
 
 namespace ATAP.Utilities._1Console {
   public class DebugResourceManager : ResourceManager {
@@ -73,7 +74,7 @@ namespace ATAP.Utilities._1Console {
       // Another example is at https://github.com/serilog/serilog-extensions-logging/blob/dev/samples/Sample/Program.cs
       // Another is https://nblumhardt.com/2019/10/serilog-in-aspnetcore-3/
       // Creating a `LoggerProviderCollection` lets Serilog optionally write events through other dynamically-added MEL ILoggerProviders.
-      var providers = new LoggerProviderCollection();
+      //var providers = new LoggerProviderCollection();
       // Setup Serilog's static logger with an initial configuration sufficient to log startup errors
       Log.Logger = new LoggerConfiguration()
           .MinimumLevel.Verbose()
@@ -83,7 +84,7 @@ namespace ATAP.Utilities._1Console {
           //.Enrich.WithUserName()
           //.WithExceptionDetails()
           .WriteTo.Seq(serverUrl: "http://localhost:5341")
-          .WriteTo.Providers(providers)
+          //.WriteTo.Providers(providers)
           .WriteTo.Debug()
           //.WriteTo.File(path: "Logs/Demo.Serilog.{Date}.log", fileSizeLimitBytes: 1024, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, retainedFileCountLimit: 31)
           .CreateLogger();
@@ -217,12 +218,13 @@ namespace ATAP.Utilities._1Console {
       genericHostBuilder.ConfigureServices((hostContext, services) => {
         // Localization for the Generic Host
         services.AddLocalization(options => options.ResourcesPath = "Resources");
-        services.AddHostedService<ConsoleMonitorBackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime. 
-        services.AddHostedService<ConsoleSourceHostedService>();  // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime. 
         services.AddSingleton<IConsoleSinkHostedService, ConsoleSinkHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime. 
         services.AddSingleton<IConsoleSourceHostedService, ConsoleSourceHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime. 
+        services.AddSingleton<IFileSystemWatchersHostedService, FileSystemWatchersHostedService>();
         services.AddHostedService<ObservableResetableTimersHostedService>();
-        services.AddHostedService<FileWatchersHostedService>();
+        services.AddHostedService<ConsoleMonitorBackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime. 
+        services.AddHostedService<GenerateProgramBackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime. 
+        //services.AddSingleton<IFileSystemWatchersAsObservableFactoryService, FileSystemWatchersAsObservableFactoryService>();
         //services.AddHostedService<MyServiceB>();
         //services.AddHostedService<SimpleDelayLoopWithSharedCancellationToken>();
         //services.AddHostedService<SimpleDelayLoop>();
@@ -231,7 +233,6 @@ namespace ATAP.Utilities._1Console {
 
       // Surpress the startup messages appearing on the Console stdout
       //genericHostBuilder.ConfigureHostConfiguration(options => options.ConsoleLifetimeOptions.SuppressStatusMessages = true);
-
       // Build the Host
       var genericHost = genericHostBuilder.Build();
       IDisposable? DisposeThis = null;

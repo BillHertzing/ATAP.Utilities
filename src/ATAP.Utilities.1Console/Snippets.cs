@@ -4,10 +4,10 @@ using System.Linq;
 
 namespace ATAP.Utilities._1Console {
 
-  public static class Resources {
-    public const string Required = "Required";
-    public const string NotAValidEmail = "NotAValidEmail";
-  }
+  //public static class Resources {
+  //  public const string Required = "Required";
+  //  public const string NotAValidEmail = "NotAValidEmail";
+  //}
 
   //try {
   //  await genericHost.StopAsync();

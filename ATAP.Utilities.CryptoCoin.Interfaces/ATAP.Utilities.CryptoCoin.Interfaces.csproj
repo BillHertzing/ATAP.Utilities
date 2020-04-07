@@ -17,16 +17,18 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
+  </ItemGroup>
+
   <!-- Documentation generation -->
   <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
+    <PackageReference Include="docfx" />
     <Folder Include="Documentation\" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="TimePeriodLibrary.NET" Version="2.1.1" />
-  </ItemGroup>  <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Enumerations\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
+    <PackageReference Include="TimePeriodLibrary.NET"/>
   </ItemGroup>
 
 

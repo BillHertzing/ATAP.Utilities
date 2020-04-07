@@ -19,17 +19,17 @@
 
   <!-- Documentation generation -->
   <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
+    <PackageReference Include="docfx"  Version="*"  />
     <Folder Include="Documentation\" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Polly" Version="6.1.1" />
-    <PackageReference Include="UnitsNet" Version="4.51.0" />
+    <PackageReference Include="Polly" />
+    <PackageReference Include="UnitsNet" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,5 +37,5 @@
     <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Models\ATAP.Utilities.CryptoCoin.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Http\ATAP.Utilities.Http.csproj" />
   </ItemGroup>
-  
+
 </Project>

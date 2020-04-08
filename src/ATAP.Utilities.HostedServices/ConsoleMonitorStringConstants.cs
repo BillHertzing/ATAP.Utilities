@@ -1,5 +1,5 @@
 
-namespace ATAP.Utilities.HostedServices.ConsoleMonitor {
+namespace ATAP.Utilities.HostedServices.ConsoleMonitor { 
   public static class StringConstants {
     // ToDo: Localize the string constants
     #region Settings File Names
@@ -10,7 +10,7 @@ namespace ATAP.Utilities.HostedServices.ConsoleMonitor {
     public const string TemporaryDirectoryBaseConfigRootKey = "TemporaryDirectoryBase";
     public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\_1Console\\";
     #endregion
-    #region ConvertFileSystemToGraph
+    #region ConvertFileSystemToGraphConfigRootKeys
     public const string RootStringConfigRootKey = "RootString";
     public const string RootStringDefault = "E:\\";
     public const string AsyncFileReadBlockSizeConfigRootKey = "AsyncFileReadBlockSize";

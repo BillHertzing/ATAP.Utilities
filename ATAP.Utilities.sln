@@ -185,10 +185,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.U
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GraphDataStructures.UnitTests", "tests\ATAP.Utilities.GraphDataStructures.UnitTests\ATAP.Utilities.GraphDataStructures.UnitTests.csproj", "{30343D72-3E63-43ED-AB2B-822489629DA2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GraphDataStructures", "src\ATAP.Utilities.GraphDataStructures\ATAP.Utilities.GraphDataStructures.csproj", "{B2A4723B-52AB-4C25-B9DB-EDBC55E0FE02}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GraphDataStructures.Interfaces", "src\ATAP.Utilities.GraphDataStructures.Interfaces\ATAP.Utilities.GraphDataStructures.Interfaces.csproj", "{80D10EB6-52BE-40A4-8B98-09BC84C5D7D8}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Philote.UnitTests", "tests\ATAP.Utilities.Philote.UnitTests\ATAP.Utilities.Philote.UnitTests.csproj", "{97867737-350F-45A2-9888-AAE28086D3A2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.1Console", "src\ATAP.Utilities.1Console\ATAP.Utilities.1Console.csproj", "{6ED198E7-653B-4454-BBC3-E341593F6065}"
@@ -206,6 +202,12 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.HostedServices", "src\ATAP.Utilities.HostedServices\ATAP.Utilities.HostedServices.csproj", "{74E8627F-CFB3-418A-8596-9B5F56A403D6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.HostedServices.Interfaces", "src\ATAP.Utilities.HostedServices.Interfaces\ATAP.Utilities.HostedServices.Interfaces.csproj", "{F263A28D-A9F3-42C5-AFA7-9016316086CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.GraphDataStructures", "src\ATAP.Utilities.GraphDataStructures\ATAP.Utilities.GraphDataStructures.csproj", "{586CB315-C49F-4D2A-8B24-E173EB85E71C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.GraphDataStructures.Interfaces", "src\ATAP.Utilities.GraphDataStructures.Interfaces\ATAP.Utilities.GraphDataStructures.Interfaces.csproj", "{FE7B1561-6174-455D-94E2-A42B76A1650D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Extensions.Configuration", "src\ATAP.Utilities.Extensions.Configuration\ATAP.Utilities.Extensions.Configuration.csproj", "{85A6DA84-9B79-48B5-94AF-846F829A0828}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -646,18 +648,6 @@ Global
 		{30343D72-3E63-43ED-AB2B-822489629DA2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{30343D72-3E63-43ED-AB2B-822489629DA2}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{30343D72-3E63-43ED-AB2B-822489629DA2}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
-		{B2A4723B-52AB-4C25-B9DB-EDBC55E0FE02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B2A4723B-52AB-4C25-B9DB-EDBC55E0FE02}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B2A4723B-52AB-4C25-B9DB-EDBC55E0FE02}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B2A4723B-52AB-4C25-B9DB-EDBC55E0FE02}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B2A4723B-52AB-4C25-B9DB-EDBC55E0FE02}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
-		{B2A4723B-52AB-4C25-B9DB-EDBC55E0FE02}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
-		{80D10EB6-52BE-40A4-8B98-09BC84C5D7D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{80D10EB6-52BE-40A4-8B98-09BC84C5D7D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{80D10EB6-52BE-40A4-8B98-09BC84C5D7D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{80D10EB6-52BE-40A4-8B98-09BC84C5D7D8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{80D10EB6-52BE-40A4-8B98-09BC84C5D7D8}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
-		{80D10EB6-52BE-40A4-8B98-09BC84C5D7D8}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 		{97867737-350F-45A2-9888-AAE28086D3A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{97867737-350F-45A2-9888-AAE28086D3A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{97867737-350F-45A2-9888-AAE28086D3A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -712,6 +702,24 @@ Global
 		{F263A28D-A9F3-42C5-AFA7-9016316086CA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F263A28D-A9F3-42C5-AFA7-9016316086CA}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{F263A28D-A9F3-42C5-AFA7-9016316086CA}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{586CB315-C49F-4D2A-8B24-E173EB85E71C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{586CB315-C49F-4D2A-8B24-E173EB85E71C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{586CB315-C49F-4D2A-8B24-E173EB85E71C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{586CB315-C49F-4D2A-8B24-E173EB85E71C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{586CB315-C49F-4D2A-8B24-E173EB85E71C}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{586CB315-C49F-4D2A-8B24-E173EB85E71C}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{FE7B1561-6174-455D-94E2-A42B76A1650D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE7B1561-6174-455D-94E2-A42B76A1650D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE7B1561-6174-455D-94E2-A42B76A1650D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE7B1561-6174-455D-94E2-A42B76A1650D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FE7B1561-6174-455D-94E2-A42B76A1650D}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{FE7B1561-6174-455D-94E2-A42B76A1650D}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{85A6DA84-9B79-48B5-94AF-846F829A0828}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85A6DA84-9B79-48B5-94AF-846F829A0828}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85A6DA84-9B79-48B5-94AF-846F829A0828}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85A6DA84-9B79-48B5-94AF-846F829A0828}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85A6DA84-9B79-48B5-94AF-846F829A0828}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{85A6DA84-9B79-48B5-94AF-846F829A0828}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -722,8 +730,6 @@ Global
 		{2AAC7546-88A5-4F9D-B0C8-FBA851E6A50E} = {984B3A90-8771-486E-9BC3-66D2F35963C2}
 		{D27ADDC5-684F-46D3-BE9E-5488559A53A3} = {984B3A90-8771-486E-9BC3-66D2F35963C2}
 		{30343D72-3E63-43ED-AB2B-822489629DA2} = {984B3A90-8771-486E-9BC3-66D2F35963C2}
-		{B2A4723B-52AB-4C25-B9DB-EDBC55E0FE02} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
-		{80D10EB6-52BE-40A4-8B98-09BC84C5D7D8} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 		{97867737-350F-45A2-9888-AAE28086D3A2} = {984B3A90-8771-486E-9BC3-66D2F35963C2}
 		{6ED198E7-653B-4454-BBC3-E341593F6065} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 		{1A921845-35F7-454E-99BE-573326CB5D31} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
@@ -733,6 +739,9 @@ Global
 		{B5DD19D5-1496-4207-A693-A73595B1B930} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 		{74E8627F-CFB3-418A-8596-9B5F56A403D6} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 		{F263A28D-A9F3-42C5-AFA7-9016316086CA} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
+		{586CB315-C49F-4D2A-8B24-E173EB85E71C} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
+		{FE7B1561-6174-455D-94E2-A42B76A1650D} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
+		{85A6DA84-9B79-48B5-94AF-846F829A0828} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40986DA9-E8C6-49CE-B434-BE8625798C2C}

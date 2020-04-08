@@ -15,6 +15,8 @@ using PersistenceStaticExtensions = ATAP.Utilities.Persistence.StaticExtensions;
 using HostedServicesStringConstants = ATAP.Utilities.HostedServices.StringConstants;
 using ConsoleMonitorStringConstants = ATAP.Utilities.HostedServices.ConsoleMonitor.StringConstants;
 using ConsoleMonitorDefaultConfiguration = ATAP.Utilities.HostedServices.ConsoleMonitor.DefaultConfiguration;
+using ConfigurationExtensions = ATAP.Utilities.Extensions.Configuration.Extensions;
+
 using System.Threading;
 using ATAP.Utilities.ComputerInventory.Hardware;
 using ATAP.Utilities.Persistence;
@@ -30,7 +32,9 @@ namespace ATAP.Utilities.HostedServices {
   // A Function to read stdin (Console) and act on the choices
   public class ConsoleMonitorBackgroundService : BackgroundService {
     #region Common Constructor-injected fields from the GenericHost
+    private readonly ILoggerFactory loggerFactory;
     private readonly ILogger<ConsoleMonitorBackgroundService> logger;
+    private readonly IStringLocalizerFactory stringLocalizerFactory;
     private readonly IStringLocalizer<ConsoleMonitorBackgroundService> stringLocalizer;
     private readonly IHostEnvironment hostEnvironment;
     private readonly IConfiguration hostConfiguration;
@@ -55,7 +59,6 @@ namespace ATAP.Utilities.HostedServices {
     Stopwatch stopWatch; // ToDo: utilize a much more powerfull and ubiquitious timing and profiling tool than a stopwatch
 
     #endregion
-    //public ConsoleMonitorBackgroundService(IConsoleSinkHostedService hostedServiceConsoleSink, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IHostApplicationLifetime hostApplicationLifetime) {
     //public ConsoleMonitorBackgroundService(IConsoleSinkHostedService hostedServiceConsoleSink, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizer stringLocalizer, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IHostApplicationLifetime hostApplicationLifetime) {
     /// <summary>
     /// Constructor that populates all the injected services provided by a GenericHost, along with teh injected services specific to this program that are needed by this HostedService (or derivitive like BackgroundService)
@@ -67,9 +70,12 @@ namespace ATAP.Utilities.HostedServices {
     /// <param name="hostConfiguration"></param>
     /// <param name="hostLifetime"></param>
     /// <param name="hostApplicationLifetime"></param>
-    public ConsoleMonitorBackgroundService(IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IHostApplicationLifetime hostApplicationLifetime) {
+    //public ConsoleMonitorBackgroundService(IConsoleSinkHostedService hostedServiceConsoleSink, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IHostApplicationLifetime hostApplicationLifetime) {
+    public ConsoleMonitorBackgroundService(IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IHostApplicationLifetime hostApplicationLifetime) {
+      this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       this.logger = loggerFactory.CreateLogger<ConsoleMonitorBackgroundService>();
-      //this.stringLocalizer = stringLocalizer ?? throw new ArgumentNullException(nameof(stringLocalizer));;
+      this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));;
+      this.stringLocalizer = (IStringLocalizer<ConsoleMonitorBackgroundService>)stringLocalizerFactory.Create(nameof(ConsoleMonitorBackgroundService), ".");
       this.hostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
       this.hostConfiguration = hostConfiguration ?? throw new ArgumentNullException(nameof(hostConfiguration));
       this.hostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostLifetime));
@@ -144,33 +150,6 @@ namespace ATAP.Utilities.HostedServices {
     }
     #endregion
 
-    #region ConfigurationBuilder
-    IConfigurationBuilder ATAPConfigurationBuilder(string loadedFromDirectory, string initialStartupDirectory, IConfiguration hostConfiguration, IStringLocalizer stringLocalizer, Dictionary<string, string> defaultConfiguration, string settingsFileName, string settingsFileNameSuffix, string customEnvironmentVariablePrefix) {
-      IConfigurationBuilder configurationBuilder = new ConfigurationBuilder()
-      // Start with a "compiled-in defaults" for anything that is REQUIRED to be provided in configuration for Production
-      .AddInMemoryCollection(defaultConfiguration)
-      // SetBasePath creates a Physical File provider pointing to the directory where this assembly was loaded from
-      .SetBasePath(Path.GetFullPath(loadedFromDirectory));
-      // get any Production level Settings file present in the installation directory
-      // ToDo: File names should be localized
-      configurationBuilder.AddJsonFile(settingsFileName+"."+ settingsFileNameSuffix, optional: true);
-      // Add environment-specific settings file
-      if (!hostEnvironment.IsProduction()) {
-        configurationBuilder.AddJsonFile(settingsFileName+"."+ hostEnvironment.EnvironmentName+"."+ settingsFileNameSuffix, optional: true);
-      }
-      // and again, SetBasePath creates a Physical File provider, this time pointing to the initial startup directory, which will be used by the following method
-      configurationBuilder.SetBasePath(Path.GetFullPath(initialStartupDirectory));
-      configurationBuilder.AddJsonFile(settingsFileName + "." + settingsFileNameSuffix, optional: true);
-      if (!hostEnvironment.IsProduction()) {
-        configurationBuilder.AddJsonFile(settingsFileName + "." + hostEnvironment.EnvironmentName + "." + settingsFileNameSuffix, optional: true);
-      }
-      // Add environment variables, only environment variables that start with the given prefix
-      configurationBuilder.AddEnvironmentVariables(prefix: customEnvironmentVariablePrefix);
-      // Note that command line arguments are available on hostConfig
-      return configurationBuilder;
-    }
-    #endregion
-
     protected override async Task ExecuteAsync(CancellationToken externalCancellationToken) {
 
       #region CancellationToken creation and linking
@@ -192,7 +171,8 @@ namespace ATAP.Utilities.HostedServices {
 
       var loadedFromDirectory = hostConfiguration.GetValue<string>("SomeStringConstantConfigrootKey", "./"); //ToDo suport dynamic assembly loading form other Startup directories -  Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
       var initialStartupDirectory = hostConfiguration.GetValue<string>("SomeStringConstantConfigrootKey", "./");
-      var configurationBuilder = ATAPConfigurationBuilder(loadedFromDirectory, initialStartupDirectory, hostConfiguration, stringLocalizer, ConsoleMonitorDefaultConfiguration.Production, ConsoleMonitorStringConstants.SettingsFileName, ConsoleMonitorStringConstants.SettingsFileNameSuffix, StringConstants.CustomEnvironmentVariablePrefix);
+
+      var configurationBuilder = ConfigurationExtensions.StandardConfigurationBuilder(loadedFromDirectory, initialStartupDirectory, ConsoleMonitorDefaultConfiguration.Production, ConsoleMonitorStringConstants.SettingsFileName, ConsoleMonitorStringConstants.SettingsFileNameSuffix, StringConstants.CustomEnvironmentVariablePrefix, loggerFactory,  stringLocalizerFactory, hostEnvironment, hostConfiguration, linkedCancellationToken);
       configurationRoot = configurationBuilder.Build();
       #endregion
       // Create a list of choices
@@ -215,16 +195,16 @@ namespace ATAP.Utilities.HostedServices {
           case "1":
             // ToDo: Get these from the configRoot in the Data instance in the ConsoleMonitor service
             var rootString = configurationRoot.GetValue<string>(ConsoleMonitorStringConstants.RootStringConfigRootKey, ConsoleMonitorStringConstants.RootStringDefault);
-            var asyncFileReadBlockSize = hostConfiguration.GetValue<int>(ConsoleMonitorStringConstants.AsyncFileReadBlockSizeConfigRootKey, int.Parse(ConsoleMonitorStringConstants.AsyncFileReadBlockSizeDefault));  // ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-            var enableHash = hostConfiguration.GetValue<bool>(ConsoleMonitorStringConstants.EnableHashBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnableHashBoolConfigRootKeyDefault));  // ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-            var enableProgress = hostConfiguration.GetValue<bool>(ConsoleMonitorStringConstants.EnableProgressBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnableProgressBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-            var enablePersistence = hostConfiguration.GetValue<bool>(ConsoleMonitorStringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnablePersistenceBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-            var enablePickAndSave = hostConfiguration.GetValue<bool>(ConsoleMonitorStringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnablePickAndSaveBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-            var temporaryDirectoryBase = hostConfiguration.GetValue<string>(ConsoleMonitorStringConstants.TemporaryDirectoryBaseConfigRootKey, ConsoleMonitorStringConstants.TemporaryDirectoryBaseDefault);
-            var WithPersistenceNodeFileRelativePath = hostConfiguration.GetValue<string>(ConsoleMonitorStringConstants.WithPersistenceNodeFileRelativePathConfigRootKey, ConsoleMonitorStringConstants.WithPersistenceNodeFileRelativePathDefault);
-            var WithPersistenceEdgeFileRelativePath = hostConfiguration.GetValue<string>(ConsoleMonitorStringConstants.WithPersistenceEdgeFileRelativePathConfigRootKey, ConsoleMonitorStringConstants.WithPersistenceEdgeFileRelativePathDefault);
+            var asyncFileReadBlockSize = configurationRoot.GetValue<int>(ConsoleMonitorStringConstants.AsyncFileReadBlockSizeConfigRootKey, int.Parse(ConsoleMonitorStringConstants.AsyncFileReadBlockSizeDefault));  // ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
+            var enableHash = configurationRoot.GetValue<bool>(ConsoleMonitorStringConstants.EnableHashBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnableHashBoolConfigRootKeyDefault));  // ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
+            var enableProgress = configurationRoot.GetValue<bool>(ConsoleMonitorStringConstants.EnableProgressBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnableProgressBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
+            var enablePersistence = configurationRoot.GetValue<bool>(ConsoleMonitorStringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnablePersistenceBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
+            var enablePickAndSave = configurationRoot.GetValue<bool>(ConsoleMonitorStringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnablePickAndSaveBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
+            var temporaryDirectoryBase = configurationRoot.GetValue<string>(ConsoleMonitorStringConstants.TemporaryDirectoryBaseConfigRootKey, ConsoleMonitorStringConstants.TemporaryDirectoryBaseDefault);
+            var WithPersistenceNodeFileRelativePath = configurationRoot.GetValue<string>(ConsoleMonitorStringConstants.WithPersistenceNodeFileRelativePathConfigRootKey, ConsoleMonitorStringConstants.WithPersistenceNodeFileRelativePathDefault);
+            var WithPersistenceEdgeFileRelativePath = configurationRoot.GetValue<string>(ConsoleMonitorStringConstants.WithPersistenceEdgeFileRelativePathConfigRootKey, ConsoleMonitorStringConstants.WithPersistenceEdgeFileRelativePathDefault);
             var filePathsPersistence = new string[2] { temporaryDirectoryBase + WithPersistenceNodeFileRelativePath, temporaryDirectoryBase + WithPersistenceEdgeFileRelativePath };
-            var WithPickAndSaveNodeFileRelativePath = hostConfiguration.GetValue<string>(ConsoleMonitorStringConstants.WithPickAndSaveNodeFileRelativePathConfigRootKey, ConsoleMonitorStringConstants.WithPickAndSaveNodeFileRelativePathDefault);
+            var WithPickAndSaveNodeFileRelativePath = configurationRoot.GetValue<string>(ConsoleMonitorStringConstants.WithPickAndSaveNodeFileRelativePathConfigRootKey, ConsoleMonitorStringConstants.WithPickAndSaveNodeFileRelativePathDefault);
             var filePathsPickAndSave = new string[1] { temporaryDirectoryBase + WithPickAndSaveNodeFileRelativePath };
             mesg.Append(string.Format("Running PartitionInfoEx Extension Function ConvertFileSystemToObjectGraph, on rootString {0} with an asyncFileReadBlockSize of {1} with hashihg enabled: {2} ; progress enabled: {3} ; persistence enabled: {5} ; pickAndSave enabled: {4}", rootString, asyncFileReadBlockSize, enableHash, enableProgress, enablePersistence, enablePickAndSave));
             if (enablePersistence) {
@@ -256,6 +236,7 @@ namespace ATAP.Utilities.HostedServices {
 
             // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
             // ToDo: create a function that will create subdirectories if needed to fulfill path, and use that function when creating the temp fiiles
+            //ToDo: add exception handling if the setup function fails
             var setupResultsPersistence = PersistenceStaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePathsPersistence));
 
             // Create an insertFunc that references the local variable setupResults, closing over it
@@ -311,6 +292,7 @@ namespace ATAP.Utilities.HostedServices {
               // ToDo: put the results someplace
             }
             catch (Exception) { // ToDo: define explicit exceptions to catch and report upon
+              // ToDo: catch FileIO.FileNotFound, sometimes the file disappears 
               throw;
             }
             finally {

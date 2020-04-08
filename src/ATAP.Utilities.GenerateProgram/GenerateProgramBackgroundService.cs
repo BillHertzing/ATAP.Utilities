@@ -16,6 +16,8 @@ using System.Linq;
 using System.Reactive.Linq;
 using ATAP.Utilities.Reactive;
 using ATAP.Utilities.HostedServices;
+using ConfigurationExtensions = ATAP.Utilities.Extensions.Configuration.Extensions;
+
 
 namespace ATAP.Utilities.HostedServices.GenerateProgram {
 #if TRACE
@@ -24,7 +26,9 @@ namespace ATAP.Utilities.HostedServices.GenerateProgram {
   // A Function to read stdin (Console) and act on the choices
   public class GenerateProgramBackgroundService : BackgroundService {
     #region Common Constructor-injected fields from the GenericHost
+    private readonly ILoggerFactory loggerFactory;
     private readonly ILogger<GenerateProgramBackgroundService> logger;
+    private readonly IStringLocalizerFactory stringLocalizerFactory;
     private readonly IStringLocalizer<GenerateProgramBackgroundService> stringLocalizer;
     private readonly IHostEnvironment hostEnvironment;
     private readonly IConfiguration hostConfiguration;
@@ -41,6 +45,7 @@ namespace ATAP.Utilities.HostedServices.GenerateProgram {
     // private readonly IFileSystemWatchersAsObservable<GenerateProgramBackgroundService> watcher;
     #endregion
     #region Data for this Service
+    IConfigurationRoot configurationRoot;
     IDisposable SubscriptionToFileSystemWatchersAsObservableDisposeHandle { get; set; }
     #endregion
     /// <summary>
@@ -102,33 +107,8 @@ namespace ATAP.Utilities.HostedServices.GenerateProgram {
 
       var loadedFromDirectory = hostConfiguration.GetValue<string>("SomeStringConstantConfigrootKey", "./"); //ToDo suport dynamic assembly loading form other Startup directories -  Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
       var initialStartupDirectory = hostConfiguration.GetValue<string>("SomeStringConstantConfigrootKey", "./");
-      // IConfigurationBuilder configurationBuilder = IConfigurationBuilder.Extensions.HostedServiceConfigurationBuilder(hostConfiguration, stringLocalizer, GenerateProgramDefaultConfiguration.Production, StringConstants.GenerateProgramSettingsFileName, StringConstants.GenerateProgramSettingsFileNameSuffix, StringConstants.CustomEnvironmentVariablePrefix);
-      IConfigurationBuilder configurationBuilder = new ConfigurationBuilder()
-          // Start with a "compiled-in defaults" for anything that is REQUIRED to be provided in configuration for Production
-          .AddInMemoryCollection(GenerateProgramDefaultConfiguration.Production)
-          // SetBasePath creates a Physical File provider pointing to the directory where this assembly was loaded from
-          .SetBasePath(loadedFromDirectory)
-          // get any Production level GenerateProgramSettings file present in the installation directory
-          // ToDo: File names should be localized
-          .AddJsonFile(StringConstants.GenerateProgramSettingsFileName + StringConstants.GenerateProgramSettingsFileNameSuffix, optional: true);
-      // Add environment-specific settings file
-      if (!hostEnvironment.IsProduction()) {
-        configurationBuilder.AddJsonFile(StringConstants.GenerateProgramSettingsFileName + "." + hostEnvironment.EnvironmentName + StringConstants.GenerateProgramSettingsFileNameSuffix, optional: true);
-      }
-      // and again, SetBasePath creates a Physical File provider, this time pointing to the initial startup directory, which will be used by the following method
-      configurationBuilder.SetBasePath(initialStartupDirectory)
-          // get any Production level GenericHostSettings file  present in the initial startup directory
-          .AddJsonFile(StringConstants.GenerateProgramSettingsFileName + StringConstants.GenerateProgramSettingsFileNameSuffix, optional: true);
-      if (!hostEnvironment.IsProduction()) {
-        configurationBuilder.AddJsonFile(StringConstants.GenerateProgramSettingsFileName + "." + hostEnvironment.EnvironmentName + StringConstants.GenerateProgramSettingsFileNameSuffix, optional: true);
-      }
-      // Add environment variables for this HostedService
-      // only environment variables that start with the given prefix
-      configurationBuilder.AddEnvironmentVariables(prefix: StringConstants.CustomEnvironmentVariablePrefix);
-      // Note that command line arguments are available on hostConfig
-
-      // Create configurationRoot for this HostedService
-      var generateProgramConfigurationRoot = configurationBuilder.Build();
+      var configurationBuilder = ConfigurationExtensions.StandardConfigurationBuilder(loadedFromDirectory, initialStartupDirectory, DefaultConfiguration.Production, StringConstants.SettingsFileName, StringConstants.SettingsFileNameSuffix, StringConstants.CustomEnvironmentVariablePrefix, loggerFactory, stringLocalizerFactory, hostEnvironment, hostConfiguration, linkedCancellationToken);
+      configurationRoot = configurationBuilder.Build();
       #endregion
       #region Filewatchers
       var fileSystemWatcherArgs = new FileSystemWatcherArg[1] { new FileSystemWatcherArg(path: ".") };

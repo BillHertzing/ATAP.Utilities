@@ -75,6 +75,37 @@
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Resources\DebugResources\DebugMessages.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DebugMessages.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\ExceptionResources\ExceptionMessages.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ExceptionMessages.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\UIResources\UIMessages.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>UIMessages.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\DebugResources\DebugMessages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DebugMessages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\ExceptionResources\ExceptionMessages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ExceptionMessages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\UIResources\UIMessages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>UIMessages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
 
 
 </Project>

@@ -24,6 +24,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using ATAP.Utilities.Reactive;
+using System.Globalization;
 
 namespace ATAP.Utilities.HostedServices {
 #if TRACE
@@ -35,7 +36,6 @@ namespace ATAP.Utilities.HostedServices {
     private readonly ILoggerFactory loggerFactory;
     private readonly ILogger<ConsoleMonitorBackgroundService> logger;
     private readonly IStringLocalizerFactory stringLocalizerFactory;
-    private readonly IStringLocalizer<ConsoleMonitorBackgroundService> stringLocalizer;
     private readonly IHostEnvironment hostEnvironment;
     private readonly IConfiguration hostConfiguration;
     private readonly IHostLifetime hostLifetime;
@@ -46,12 +46,15 @@ namespace ATAP.Utilities.HostedServices {
     private CancellationToken internalCancellationToken;
     private CancellationTokenSource linkedCancellationTokenSource;
     #endregion
-    #region Constructor-injected fields unique to this service
+    #region Constructor-injected fields unique to this service. These repersent other services expected to bepresent in the app's DI container
     private readonly IConsoleSinkHostedService consoleSinkHostedService;
     private readonly IConsoleSourceHostedService consoleSourceHostedService;
     #endregion
     #region Data for this Service
     IConfigurationRoot configurationRoot;
+    private readonly IStringLocalizer debugLocalizer;
+    private readonly IStringLocalizer exceptionLocalizer;
+    private readonly IStringLocalizer uILocalizer;
     IEnumerable<string> choices;
     StringBuilder mesg = new StringBuilder();
     IDisposable DisposeThis { get; set; }
@@ -72,10 +75,13 @@ namespace ATAP.Utilities.HostedServices {
     /// <param name="hostApplicationLifetime"></param>
     //public ConsoleMonitorBackgroundService(IConsoleSinkHostedService hostedServiceConsoleSink, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IHostApplicationLifetime hostApplicationLifetime) {
     public ConsoleMonitorBackgroundService(IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IHostApplicationLifetime hostApplicationLifetime) {
+      this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
+      exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources.ExceptionResources), "ATAP.Utilities.HostedServices");
+      debugLocalizer = stringLocalizerFactory.Create(nameof(Resources.DebugResources), "ATAP.Utilities.HostedServices");
+      uILocalizer = stringLocalizerFactory.Create(nameof(Resources.UIResources), "ATAP.Utilities.HostedServices");
       this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       this.logger = loggerFactory.CreateLogger<ConsoleMonitorBackgroundService>();
-      this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));;
-      this.stringLocalizer = (IStringLocalizer<ConsoleMonitorBackgroundService>)stringLocalizerFactory.Create(nameof(ConsoleMonitorBackgroundService), ".");
+      this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
       this.hostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
       this.hostConfiguration = hostConfiguration ?? throw new ArgumentNullException(nameof(hostConfiguration));
       this.hostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostLifetime));
@@ -90,7 +96,7 @@ namespace ATAP.Utilities.HostedServices {
       // check CancellationToken to see if this task is cancelled
       if (cancellationToken.IsCancellationRequested) {
         // ToDo localize the Log message
-        logger.LogDebug($"in ConvertFileSystemToGraphAsyncTask: Cancellation requested, checkpoint number {checkpointNumber}");
+        logger.LogDebug(debugLocalizer["{0}: Cancellation requested, checkpoint number {1}", "ConsoleMonitorBackgroundService", checkpointNumber.ToString(CultureInfo.CurrentCulture)]);
         cancellationToken.ThrowIfCancellationRequested();
       }
     }
@@ -104,7 +110,8 @@ namespace ATAP.Utilities.HostedServices {
         mesg.Append(choice);
         mesg.Append(Environment.NewLine);
       }
-      mesg.Append("Enter Selection>");
+      //ToDo: use String.Format and CurrentCulture
+      mesg.Append(uILocalizer["Enter a number for a choice, Ctrl-C to Exit"]);
     }
 
     // Output a message, wrapped with exception handling
@@ -112,28 +119,30 @@ namespace ATAP.Utilities.HostedServices {
       // check CancellationToken to see if this task is cancelled
       CheckAndHandleCancellationToken(3, cancellationToken);
       try {
-        await consoleSinkHostedService.WriteMessageAsync(mesg.ToString()).ConfigureAwait(false);
+        await consoleSinkHostedService.WriteMessageAsync(mesg).ConfigureAwait(false);
+        // ToDo: Handle Task Faulted
       }
-      catch (Exception) {
+      catch (Exception) {// ToDo: Better excpetion handling
         throw;
       }
       mesg.Clear();
     }
 
     // Format an instance of ConvertFileSystemToGraphResults for UI presentation
+    // // Uses the CurrentCulture, converts File Sizes to UnitsNet.Information types, and DateTimes to ITenso Times
     void BuildConvertFileSystemToGraphResults(StringBuilder mesg, ConvertFileSystemToGraphResult convertFileSystemToGraphResult, Stopwatch? stopwatch) {
       mesg.Clear();
       if (stopwatch != null) {
-        mesg.Append(string.Format("Running the function took {0} milliseconds", stopwatch.ElapsedMilliseconds));
+        mesg.Append(uILocalizer["Running the function took {0} milliseconds", string.Format(CultureInfo.CurrentCulture,stopwatch.ElapsedMilliseconds.ToString())]);
         mesg.Append(Environment.NewLine);
       }
       mesg.Append(string.Format("DeepestDirectoryTree: {0}", convertFileSystemToGraphResult.DeepestDirectoryTree));
       mesg.Append(Environment.NewLine);
-      mesg.Append(string.Format("LargestFile: {0}", convertFileSystemToGraphResult.LargestFile));
+      mesg.Append(uILocalizer["LargestFile: {0}", new UnitsNet.Information(convertFileSystemToGraphResult.LargestFile, UnitsNet.Units.InformationUnit.Byte).ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
-      mesg.Append(string.Format("EarliestDirectoryCreationTime: {0}", convertFileSystemToGraphResult.EarliestDirectoryCreationTime));
+      mesg.Append(uILocalizer["EarliestDirectoryCreationTime: {0}", convertFileSystemToGraphResult.EarliestDirectoryCreationTime.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
-      mesg.Append(string.Format("LatestDirectoryCreationTime: {0}", convertFileSystemToGraphResult.LatestDirectoryCreationTime));
+      mesg.Append(uILocalizer["LatestDirectoryCreationTime: {0}", convertFileSystemToGraphResult.LatestDirectoryCreationTime.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
       mesg.Append(string.Format("EarliestFileCreationTime: {0}", convertFileSystemToGraphResult.EarliestFileCreationTime));
       mesg.Append(Environment.NewLine);
@@ -145,6 +154,7 @@ namespace ATAP.Utilities.HostedServices {
       mesg.Append(Environment.NewLine);
       mesg.Append(string.Format("Number of AcceptableExceptions: {0}", convertFileSystemToGraphResult.AcceptableExceptions.Count));
       mesg.Append(Environment.NewLine);
+      // List the acceptable Exceptions that occurred
       //ToDo: break out AcceptableExceptions by type
 
     }
@@ -167,15 +177,17 @@ namespace ATAP.Utilities.HostedServices {
       #region configurationRoot for this HostedService
       // Create the configurationBuilder for this HostedService. This creates an ordered chain of configuration providers. The first providers in the chain have the lowest priority, the last providers in the chain have a higher priority.
       // The Environment has been configured by the GenericHost before this point is reached
-      // Both LoadedFromDirectory and InitialStartupDirectory have been configured by the GenericHost before this point is reached
-
+      // InitialStartupDirectory has been set by the GenericHost before this point is reached, and is where the GenericHost program or service was started
+      // LoadedFromDirectory has been configured by the GenericHost before this point is reached. It is the location where this assembly resides
+      // ToDo: Implement these two values into the GenericHost configurationRoot somehow, then remove from the constructor signature
       var loadedFromDirectory = hostConfiguration.GetValue<string>("SomeStringConstantConfigrootKey", "./"); //ToDo suport dynamic assembly loading form other Startup directories -  Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
       var initialStartupDirectory = hostConfiguration.GetValue<string>("SomeStringConstantConfigrootKey", "./");
-
+      // Build the configurationRoot for this service
       var configurationBuilder = ConfigurationExtensions.StandardConfigurationBuilder(loadedFromDirectory, initialStartupDirectory, ConsoleMonitorDefaultConfiguration.Production, ConsoleMonitorStringConstants.SettingsFileName, ConsoleMonitorStringConstants.SettingsFileNameSuffix, StringConstants.CustomEnvironmentVariablePrefix, loggerFactory,  stringLocalizerFactory, hostEnvironment, hostConfiguration, linkedCancellationToken);
       configurationRoot = configurationBuilder.Build();
       #endregion
       // Create a list of choices
+      // ToDo: Get the list from the configurationRoot, with secure vetting
       choices = new List<string>() { "1. Run ConvertFileSystemToGraphAsyncTask", "2. Subscribe ConsoleOut to ConsoleIn", "2. Unsubscribe ConsoleOut from ConsoleIn" };
       #endregion
       #region Build and write menu

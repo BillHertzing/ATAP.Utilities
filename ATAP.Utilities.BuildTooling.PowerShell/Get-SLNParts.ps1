@@ -9,16 +9,16 @@ For every InputFilenamePattern below, the utility will look (in the inputdir) fo
 Every argument below that allows the InputFilenamePattern like '(InFnPatrn1,InFnPatrn2,...,InFnPaternN)', the utility will look (in the inputdir) for all files that match each pattern in the array, then select, for each pattern in the array, the one with the latest FileModifyTime
 .PARAMETER InDir
 Where the input files reside
-Defaults to .\inputs
+Defaults to .\
 .PARAMETER OutDir
 Where the files created by this utility reside
 Defaults to .\outputs
 .PARAMETER InFnFilePattern
 An pattern for the input file name
-Defaults to ˜Statistics.log'
+Defaults to "\.sln$" which matches all files ending in .sln (Solution files)
 .PARAMETER OutFn
 Name of the output file
-Defaults to 'Statistic <PCAName> <daterangeofdata>.csv'
+Defaults to 'Statistic <SLNName> <daterangeofdata>.csv'
 
 .EXAMPLE
 #Always use the cd command to change to the directory where the data file lives
@@ -39,7 +39,7 @@ Param(
 )
 $settings=@{
   InDir = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-  InFnFilePattern = '(sln)'
+  InFnFilePattern = '\.sln$'
   OutDir = 'D:\Temp\GenerateProgram'
   OutFn = 'slnstructures.txt'
   OrderedProperties = 'Projects,BuildConfigurations'
@@ -91,16 +91,36 @@ ls $settings.InDir | ?{$_ -match $settings.InFnFilePattern } | ?{$_.fullname -ma
   Expand-7ZipFile $_.fullname $settings.InDir
 }
 
-# get all of the statistics file to parse
+# get all of the solution file to parse
 $filesToProcess = @(ls $settings.InDir | ?{$_ -match $settings.InFnFilePattern } | ?{$_.fullname -notmatch '\.gz$'})
 
 # create an empty output file, overwrite one if it already exists
 set-content -force $Outfn ''
 
-# function to parse one file into the AllStats structure
-function ParseOneStatsFile ($Allstats, $InFn) {
+# move this function to a library for reuse
+function New-Tuple { #https://stackoverflow.com/questions/54373785/tuples-arraylist-of-pairs
+    Param(
+        [Parameter(
+            Mandatory=$true,
+            ValueFromPipeline=$true,
+            ValueFromPipelineByPropertyName=$true
+        )]
+        [ValidateCount(2,20)]
+        [array]$Values
+    )
 
-    $OneStat = @{}
+    Process {
+        $types = ($Values | ForEach-Object { $_.GetType().Name }) -join ','
+        New-Object "Tuple[$types]" $Values
+    }
+}
+
+# function to parse one file into the AllParts structure
+function ParseOneSLNFile ($AllParts, $InFn) {
+
+    $OneProject = @{}
+    $OneProjectSection = @{}
+    $OneGlobal = @{}
     $OneInstance = @{}
     $InstanceID=0
     $state='Top'
@@ -108,161 +128,113 @@ function ParseOneStatsFile ($Allstats, $InFn) {
     $lines = gc $InFn
 
     $lines | %{$l=$_;
-
-    switch -regex ($state) {
-      '^TOP$' {
-        if ($l -match "^\s+BEGIN\s+$top\s*") {
-          $state=$state+$top
-          $OneStat = @{}
+      switch -regex ($state) {
+        '^TOP$' {
+          switch -regex ($l) {
+          '^\s*Project\("\{(?<ParentGUID>[0-9A-Fa-f]{8}-?([0-9A-Fa-f]{4}-?){3}[0-9A-Fa-f]{12})}"\)\s*=\s*(?<NLP>.*?)\s*,\s*"\{(?<ProjectGUID>[0-9A-Fa-f]{8}-?([0-9A-Fa-f]{4}-?){3}[0-9A-Fa-f]{12})}"\s*$' {
+            $state= $state+'Project'
+            $OneProject = @{}
+            $OneProject.ParentGUID = $matches['ParentGUID']
+            $OneProject.NLP = $matches['NLP']
+            $OneProject.ProjectGUID = $matches['ProjectGUID']
+            break
+          }
+          '^\s*Global\s*$' {
+            $state=$state+'Global'
+            $OneGlobal = @()
+            break
+          }
+          '^\s*$' {break} # blank line ignored here
+          default {
+            write-host "in $state state, only Project or Global or blank lines are allowed: $l"
+          }
+          }break}
+        '^TOPProject$' {
+          switch -regex ($l) {
+            '^\s*ProjectSection\((?<TypeOfProjectSection>.*?)\)\s*=\s*(?<PreOrPost>\S*?)\s*$' {
+              $state =  $state+'ProjectSection'
+              $OneProjectSection = @{}
+              $OneProjectSection.TypeOfProjectSection = $matches['TypeOfProjectSection']
+              $OneProjectSection.PreOrPost = $matches['PreOrPost']
+              $OneProjectSection.SectionItems = @()
+              break
+            }
+            '^\s*ENDProject\s*$' {
+              $state = $state -replace 'Project',''
+              $AllParts.Projects += $OneProject
+              break
+            }
+            '^\s*$' {break} # blank line
+            default {
+              write-host "in $state state, only ProjectSection or EndProject or blank lines are allowed: $l"
+            }
+          }break}
+        '^TOPProjectProjectSection$' {
+          switch -regex ($l) {
+            '^\s*EndProjectSection\s*$' {
+              $state =  $state -replace 'ProjectSection$',''
+              $OneProject.Sections += $OneProjectSection
+              $OneProjectSection = @{}
+              break
+            }
+            '^\s*(?<Name>\S*?)\s*=\s*(?<Location>\S*?)\s*$' {
+              $OneProjectSection.SectionItems += New-Tuple $matches['Name'],$matches['Location']
+              break
+            }
+            '^\s*$' {break} # blank line
+            default {
+              write-host "in $state state, only ProjectSection or EndProjectSection or Name = Value Pairs or blank lines are allowed: $l"
+            }
+          }break}
+        '^TOPGlobal$' {
+          switch -regex ($l) {
+            '^\s*ENDGlobal' {
+              $state = $state -replace 'Global$',''
+              $AllParts.Global += $OneGlobal
+              break
+            }
+            '^\s*GlobalSection\((?<TypeOfGlobalSection>.*?)\)\s*=\s*(?<PreOrPost>\S*?)\s*$' {
+              $state = $state + 'Section'
+              $OneGlobalSection = @{}
+              $OneGlobalSection.TypeOfGlobalSection = $matches['TypeOfGlobalSection']
+              $OneGlobalSection.PreOrPost = $matches['PreOrPost']
+               $OneGlobalSection.SectionItems = @()
+              break
+            }
+            '^\s*$' {break} # blank line
+            default {
+              write-host "in $state state, only GlobalSection or ENDGlobal or blank lines are allowed: $l"
+            }
+          }break}
+        '^TOPGlobalSection' {
+          switch -regex ($l) {
+            "^\s*EndGlobalSection" {
+              $state = $state = $state -replace 'Section$',''
+              $OneGlobal += $OneGlobalSection
+              break
+            }
+            '^\s*(?<Name>.*?)\s*=\s*(?<Location>.*?)\s*$' {
+              $OneGlobalSection.SectionItems += New-Tuple $matches['Name'],$matches['Location']
+              break
+            }
+            '^\s*$' {break} # blank line
+            default {
+              write-host "in $state state, only EndGlobalSection or blank lines are allowed: $l"
+            }
+          }break}
+        '^\s*$' {break} # blank line
+        default {
+          write-host "in $state state, only Project or Global or blank lines are allowed: $l"
         }
-        break
       }
-      '^TOPStatistics$' {
-        switch -regex ($l) {
-          "^\s+END\s+Statistics\s*" {
-            $state = 'Top'
-            $AllStats.(([datetime]'1/1/1970').AddSeconds($OneStat.Time.LocalTimeSecondsUtc)) = $OneStat
-            break
-          }
-          "^\s+BEGIN\s+GENERAL\s*" {
-            $state=$state+'GENERAL'
-            $OneStat.GENERAL = @{}
-            break
-          }
-          "^\s+BEGIN\s+COREDUMPS\s*" {
-            $state=$state+'COREDUMPS'
-            $OneStat.COREDUMPS = @{}
-            break
-          }
-          "^\s+BEGIN\s+Delivery\s*" {
-            $state=$state+'Delivery'
-            $OneStat.Delivery = @{}
-            break
-          }
-          "^\s+BEGIN\s+Instances\s*" {
-            $state=$state+'Instances'
-            $OneStat.Instances = @{}
-            break
-          }
-          "^\s+BEGIN\s+ProcessClasses\s*" {
-            $state=$state+'ProcessClasses'
-            $OneStat.ProcessClasses = @{}
-            break
-          }
-          "^\s+BEGIN\s+Processes\s*" {
-            $state=$state+'Processes'
-            $OneStat.Processes = @{}
-            break
-          }
-          "^\s+BEGIN\s+TIME\s*" {
-            $state=$state+'TIME'
-            $OneStat.TIME = @{}
-            break
-          }
-        }break}
-      '^TOPStatisticsGENERAL$' {
-        switch -regex ($l) {
-        "^\s+END\s+GENERAL\s*" {
-          $state = 'TOPStatistics'
-          break
-        }
-        default {
-          if ($l -match '^\s+VALUE\s+(.*?)\s+(.*)\s*$') {
-          $OneStat.GENERAL.($matches[1])= $matches[2]
-          }
-        }
-        }break}
-      '^TOPStatisticsCOREDUMPS$' {
-        switch -regex ($l) {
-        "^\s+END\s+COREDUMPS\s*" {
-          $state = 'TOPStatistics'
-          break
-        }
-        default {
-          if ($l -match '^\s+VALUE\s+(.*?)\s+(.*)\s*$') {
-          $OneStat.COREDUMPS.($matches[1])= $matches[2]
-          }
-        }
-        }break}
-      '^TOPStatisticsDelivery$' {
-        switch -regex ($l) {
-        "^\s+END\s+Delivery\s*" {
-          $state = 'TOPStatistics'
-          break
-        }
-        default {
-          if ($l -match '^\s+VALUE\s+(.*?)\s+(.*)\s*$') {
-          $OneStat.Delivery.($matches[1])= $matches[2]
-          }
-        }
-        }break}
-      '^TOPStatisticsInstances$' {
-        switch -regex ($l) {
-        "^\s+END\s+Instances\s*" {
-          $state = 'TOPStatistics'
-          break
-        }
-        "^\s+BEGIN\s+Instance\s*ID=(\d+)" {
-            $state=$state+'Instance'
-            $OneInstance = @{}
-            $InstanceID=$matches[1]
-            break
-          }
-        default {
-          throw "not supposed to happen inside instances"
-        }
-        }break}
-      '^TOPStatisticsInstancesInstance$' {
-        switch -regex ($l) {
-        "^\s+END\s+Instance\s*" {
-          $state = 'TOPStatisticsInstances'
-          $OneStat.INSTANCES.($instanceID) = $OneInstance
-          break
-        }
-        default {
-          if ($l -match '^\s+VALUE\s+(.*?)\s+(.*)\s*$') {
-          $OneInstance.($matches[1])= $matches[2]
-          }
-        }
-        }break}
-      '^TOPStatisticsProcessClasses$' {
-        switch -regex ($l) {
-        "^\s+END\s+ProcessClasses\s*" {
-          $state = 'TOPStatistics'
-          break
-        }
-        default {
-          if ($l -match '^\s+VALUE\s+(.*?)\s+(.*)\s*$') {
-          $OneStat.ProcessClasses.($matches[1])= $matches[2]
-          }
-        }
-        }break}
-      '^TOPStatisticsProcesses$' {
-        switch -regex ($l) {
-        "^\s+END\s+Processes\s*" {
-          $state = 'TOPStatistics'
-          break
-        }
-        default {
-          if ($l -match '^\s+VALUE\s+(.*?)\s+(.*)\s*$') {
-          $OneStat.Processes.($matches[1])= $matches[2]
-          }
-        }
-        }break}
-      '^TOPStatisticsTIME$' {
-        switch -regex ($l) {
-        "^\s+END\s+TIME\s*" {
-          $state = 'TOPStatistics'
-          break
-        }
-        default {if ($l -match '^\s+VALUE\s+(.*?)\s+(.*)\s*$') {$OneStat.TIME.($matches[1])= $matches[2]}}}break}
-    }}
+  }
 }
 
 
-function AllStatStruct-OutObj ($AllStats,$outobj,$PCAId) {
-    $AllStats.keys|sort|%{$dts = $_
-      $onestat=$Allstats.$dts
+
+function AllPartstruct-OutObj ($AllParts,$outobj,$PCAId) {
+    $AllParts.keys|sort|%{$dts = $_
+      $onestat=$AllParts.$dts
       $onestat.Instances.keys | sort | %{$IID=$_
         $onerow=@{"DTS"=$dts;"PCAId"=$PCAId;"InstanceID"=$IID}
         $instance=$onestat.Instances.($IID)
@@ -277,15 +249,15 @@ function AllStatStruct-OutObj ($AllStats,$outobj,$PCAId) {
 
 # Repeat for every file
 $filestoProcess | %{$fn = $_.fullname
-   # Create the AllStats accumulator.
-  $AllStats=@{}
+   # Create the AllParts accumulator.
+  $AllParts=@{Projects=@();Global=@()}
   # Get the PCA name from the name of the statstics file
-  $PCAname=$fn.basename
+  $SLNName=$fn.basename
   # parse the file
-  ParseOneStatsFile $AllStats $fn
-  # output the data for each statistics file as it is parsed
+  ParseOneSLNFile $AllParts $fn
+  # output the data for each solution file as it is parsed
   $outobj = @()
-  AllStatStruct-OutObj $AllStats $outobj $PCAname
+  AllPartstruct-OutObj $AllParts $outobj $SLNName
   # order the properties of the output
   $partprops = $outobj[0] | select-object | Get-Member -MemberType NoteProperty |%{if($_.Name -notmatch ('^'+(($settings.OrderedProperties -split ',') -join '|'))+'$') {$_.Name}} | sort
   $allprops = ($settings.OrderedProperties -split ',') + $partprops
@@ -296,8 +268,8 @@ $filestoProcess | %{$fn = $_.fullname
 
 
 
-#$AllStats.keys | sort | %{$_; $k = $_; $onestat = $Allstats.$k; $onestat.Keys | sort | %{$_; $k=$_; $onesection = $onestat.$k; $onesection.keys| sort | %{$_; $k = $_; }}}
-#set-content $OutFn ($AllStats.keys | sort | %{$dts = $_; $onestat = $Allstats.$dts; $onestat.Instances.keys | sort | %{$IID=$_; $instance = $onestat.Instances.($IID); $instance.keys| sort | %{"{0}, {1}, {2}, {3}" -f $dts,$IID,$_,$instance.$_}}})
+#$AllParts.keys | sort | %{$_; $k = $_; $onestat = $AllParts.$k; $onestat.Keys | sort | %{$_; $k=$_; $onesection = $onestat.$k; $onesection.keys| sort | %{$_; $k = $_; }}}
+#set-content $OutFn ($AllParts.keys | sort | %{$dts = $_; $onestat = $AllParts.$dts; $onestat.Instances.keys | sort | %{$IID=$_; $instance = $onestat.Instances.($IID); $instance.keys| sort | %{"{0}, {1}, {2}, {3}" -f $dts,$IID,$_,$instance.$_}}})
 
 #iex $program
 
@@ -306,7 +278,7 @@ $filestoProcess | %{$fn = $_.fullname
   $StatisticsFileProperties =  @('LocalTimeUtc','Instance ID','Process ID','Peer ID','TotalHitsQueued','TotalHitsDelivered','CaptureBytesWrittenByListener','CaptureBytesWrittenByRouter','CaptureBytesReadFromListener','HitsCaptured','HitsRejectedHits','HitsTotalCaptureType1','HitsTotalDroppedBusinessModeExtension','HitsTotalDroppedBusinessModeResponse','HitsTotalDroppedByDelimagesFeature','HitsTotalDroppedInvalidMethod','HitsTotalDroppedBySampling','SslCurrentHitsPerSec','TcpUnidirectionalTrafficPercentage')
   $StatisticsFileStructureProperties =  @('Instance ID=(\d+)','Process ID','Peer ID')
 
-#The structure of the statistics file, described in a string. top is special
+#The structure of the solution file, described in a string. top is special
 $top='Statistics'
 $sfs = @'
 Statistics=General,CoreDumps,Delivery,Failover,Instances,ProcessClasses,Processes,Time
@@ -389,7 +361,7 @@ if ($state -eq 'Top') {
 } elseif ($state -eq ('Top'+$top)) {
   if ($l -match "^\s+END\s+$top\s*") {
     $state -eq 'Top'
-    $AllStats.($OneStat.Time.LocalTimeSecondsUtc) = $OneStat
+    $AllParts.($OneStat.Time.LocalTimeSecondsUtc) = $OneStat
   } else {
     switch -regex ($l) {
 '@

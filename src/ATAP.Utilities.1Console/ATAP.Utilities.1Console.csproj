@@ -40,6 +40,14 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>ConsoleUIResources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="Resources\DebugResources\DebugMessages.resx">
+      <LastGenOutput>DebugMessages.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\ExceptionResources\ExceptionMessages.resx">
+      <LastGenOutput>ExceptionMessages.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
     <Compile Update="Properties\ConsoleDebugResources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -55,12 +63,22 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>ConsoleUIResources.resx</DependentUpon>
     </Compile>
+    <Compile Update="Resources\DebugResources\DebugMessages.Designer.cs">
+      <DependentUpon>DebugMessages.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Resources\ExceptionResources\ExceptionMessages.Designer.cs">
+      <DependentUpon>ExceptionMessages.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
   </ItemGroup>
 
   <!-- QuickGraph and its dependencies -->
   <ItemGroup>
-    <PackageReference Include="YC.QuickGraph"/>
-    <PackageReference Include="FSharp.Core"/>
+    <PackageReference Include="YC.QuickGraph" />
+    <PackageReference Include="FSharp.Core" />
   </ItemGroup>
 
 

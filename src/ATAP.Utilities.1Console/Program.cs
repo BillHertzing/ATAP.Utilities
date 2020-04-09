@@ -20,6 +20,7 @@ using Serilog;
 using Serilog.Debugging;
 //  using the .Dump static method inside of Log.Debug
 using ServiceStack.Text;
+
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using System.Text;
 using ATAP.Utilities.ComputerInventory.Hardware;
@@ -34,6 +35,11 @@ using ATAP.Utilities.ETW;
 using ATAP.Utilities.HostedServices;
 using ATAP.Utilities.HostedServices.GenerateProgram;
 
+using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using System.Globalization;
+
 namespace ATAP.Utilities._1Console {
   public class DebugResourceManager : ResourceManager {
 
@@ -46,9 +52,11 @@ namespace ATAP.Utilities._1Console {
   }
 
   partial class Program {
+
     // Log Program Startup to ETW (as of 06/2019, ILWeaving this assembly results in a thrown invalid CLI Program Exception
     // ATAP.Utilities.ETW.ATAPUtilitiesETWProvider.Log.MethodBoundry("<");
 
+      // ToDo: figure out how to localize the ConfigurationRoot keys. Use StringConstants for now
 
     // Extend the CommandLine Configuration Provider with these switch mappings
     // https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-3.0#switch-mappings
@@ -62,6 +70,7 @@ namespace ATAP.Utilities._1Console {
     public const string userSecretsID = "TBD a GUID GOES HERE";
 
     public static async Task Main(string[] args) {
+
 
       // Serilog is the logging provider I picked to provide a logging solution for the _1Console application
       // Enable Serilog's internal debug logging. Note that internal logging will not write to any user-defined Sources
@@ -89,14 +98,22 @@ namespace ATAP.Utilities._1Console {
           //.WriteTo.File(path: "Logs/Demo.Serilog.{Date}.log", fileSizeLimitBytes: 1024, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, retainedFileCountLimit: 31)
           .CreateLogger();
 
+      // Create the localizers for Program
+      var options = Options.Create(new LocalizationOptions());
+      var stringLocalizerFactory = new ResourceManagerStringLocalizerFactory(options, NullLoggerFactory.Instance);
+      var localizer = new StringLocalizer<Program>(stringLocalizerFactory);
+      var debugLocalizer = stringLocalizerFactory.Create(nameof(Resources.DebugResources), "ATAP.Utilities.1Console");
+      var exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources.ExceptionResources), "ATAP.Utilities.1Console");
+
+
       // When running as a service, the initial working dir is usually %WinDir%\System32, but the program (and configuration files) is probably installed to a different directory
       // When running as a Console App, the initial working dir could be anything, but the program (and machine-wide configuration files) is probably installed to a different directory. When running as a console app, it is very possible that there may be local configuraiton files to load
       // get the initial startup directory
       // get the directory where the executing assembly (usually .exe) and possibly machine-wide configuration files are installed to.
       var initialStartupDirectory = Directory.GetCurrentDirectory();
       var loadedFromDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-      Log.Debug("in Program.Main(Serilog Static Logger): initialStartupDirectory is {initialStartupDirectory}", initialStartupDirectory);
-      Log.Debug("in Program.Main(Serilog Static Logger): loadedFromDir is {loadedFromDir}", loadedFromDirectory);
+      Log.Debug(debugLocalizer["{0} {1}: initialStartupDirectory: {2}", "Program",  "Main", initialStartupDirectory]);
+      Log.Debug(debugLocalizer["{0} {1}: loadedFromDirectory: {2}", "Program", "Main", loadedFromDirectory]);
       // Directory.SetCurrentDirectory(loadedFromDirectory); // Should be able to get machine-widw files by setting the content path then resetting it to initial later
 
       // Load the ResourceManagers from the installation direectory. These provide access to localized exception messages and debug messages
@@ -137,16 +154,16 @@ namespace ATAP.Utilities._1Console {
 
       // Determine the environment (Debug, TestingUnit, TestingX, QA, QA1, QA2, ..., Staging, Production) to use from the initialGenericHostConfigurationRoot
       var initialEnvName = initialGenericHostConfigurationRoot.GetValue<string>(StringConstants.EnvironmentConfigRootKey, StringConstants.EnvironmentDefault);
-      Log.Debug("{DebugMessage}", ResourceManagerExtensions.FromRM(debugResourceManager, "EnvNameInitial", initialEnvName));
-      //logger.LogDebug("{DebugMessage}", ResourceManagerExtensions.FromRM(debugResourceManager, "EnvNameInitial", initialEnvName));
+      Log.Debug(debugLocalizer["{0} {1}: Initial environment name: {2}", "Program", "Main", initialEnvName]);
 
       // If the initialGenericHostConfigurationRoot specifies the Environment is production, then the final genericHostConfigurationRoot is correect 
       //   but if not, build a 2nd genericHostConfigurationBuilder and .Build it to create the genericHostConfigurationRoot
 
       // Validate that the environment provided is one this progam understands how to use, and create the final genericHostConfigurationRoot
-      // The first switch statement in the following block also provides validation the the initialEnvName is one that this program understands and knows how to use
+      // The first switch statement in the following block also provides validation that the initialEnvName is one that this program understands and knows how to use
 
       IConfigurationBuilder? genericHostConfigurationBuilder = null;
+      // ToDo: Hmmm... Before the genericHost is built, Have to use a stringConstant, and hope the environment matches
       if (initialEnvName != StringConstants.EnvironmentProduction) {
         // Recreate the ConfigurationBuilder for this genericHost, this time including environment-specific configuration providers.
         // ToDo: Get the string for the EnvironmentProduction from someplace the has it localized

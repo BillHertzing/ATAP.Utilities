@@ -122,23 +122,29 @@ namespace ATAP.Utilities.HostedServices {
       Console.WriteLine(message);
       return Task.FromResult(0);
     }
+    public Task WriteMessage(StringBuilder message) {
+      return WriteMessage(message.ToString());
+    }
     public async Task<Task> WriteMessageAsync(string message) {
       await Console.Out.WriteLineAsync(message).ConfigureAwait(false);  // ToDo: handle TaskFaulted when the underlying stream has been closed
       return Task.FromResult(0);
     }
+    public async Task<Task> WriteMessageAsync(StringBuilder message) {
+      return WriteMessageAsync(message.ToString());
+    }
 
-    //public static IObserver<string> ConsoleWriteLineAsyncAsObserver() {
-    //  return
-    //      Observable
-    //          .FromAsync(() => Console.Out.WriteLineAsync())
-    //          .Repeat()
-    //          .Publish()
-    //          .RefCount()
-    //          .SubscribeOn(Scheduler.Default);
-    //}
+      //public static IObserver<string> ConsoleWriteLineAsyncAsObserver() {
+      //  return
+      //      Observable
+      //          .FromAsync(() => Console.Out.WriteLineAsync())
+      //          .Repeat()
+      //          .Publish()
+      //          .RefCount()
+      //          .SubscribeOn(Scheduler.Default);
+      //}
 
 
-    public void Dispose() {
+      public void Dispose() {
       GC.SuppressFinalize(this);
     }
 

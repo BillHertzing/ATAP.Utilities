@@ -4,7 +4,7 @@
 .SYNOPSIS
 Create structured representation of a .sln file
 .DESCRIPTION
-This utility will create
+This utility will create a Powershell Object representing the parts of a SLN file
 For every InputFilenamePattern below, the utility will look (in the inputdir) for all files that match the pattern, then select the one with the latest FileModifyTime
 Every argument below that allows the InputFilenamePattern like '(InFnPatrn1,InFnPatrn2,...,InFnPaternN)', the utility will look (in the inputdir) for all files that match each pattern in the array, then select, for each pattern in the array, the one with the latest FileModifyTime
 .PARAMETER InDir
@@ -91,7 +91,7 @@ ls $settings.InDir | ?{$_ -match $settings.InFnFilePattern } | ?{$_.fullname -ma
   Expand-7ZipFile $_.fullname $settings.InDir
 }
 
-# get all of the solution file to parse
+# get all of the input files to parse
 $filesToProcess = @(ls $settings.InDir | ?{$_ -match $settings.InFnFilePattern } | ?{$_.fullname -notmatch '\.gz$'})
 
 # create an empty output file, overwrite one if it already exists
@@ -125,9 +125,12 @@ function ParseOneSLNFile ($AllParts, $InFn) {
     $InstanceID=0
     $state='Top'
 
-    $lines = gc $InFn
+    $FileStream = New-Object "System.IO.FileStream" $InFn,"Open","Read","ReadWrite" 
+    $reader = New-Object "System.IO.StreamReader" $FileStream
+    try {
+      while (!$reader.EndOfStream) {
+        $l = $reader.ReadLine()
 
-    $lines | %{$l=$_;
       switch -regex ($state) {
         '^TOP$' {
           switch -regex ($l) {
@@ -141,10 +144,16 @@ function ParseOneSLNFile ($AllParts, $InFn) {
           }
           '^\s*Global\s*$' {
             $state=$state+'Global'
-            $OneGlobal = @()
+            $OneGlobal = [System.Collections.ArrayList]@()
             break
           }
           '^\s*$' {break} # blank line ignored here
+          '^\s*(?<MetaLine>.*)\s*$'{
+            # Non-Blank line, but not Project nor global
+            # $state does not change
+            $AllParts.Meta += $matches['MetaLine']
+            break
+          }
           default {
             write-host "in $state state, only Project or Global or blank lines are allowed: $l"
           }
@@ -156,7 +165,7 @@ function ParseOneSLNFile ($AllParts, $InFn) {
               $OneProjectSection = @{}
               $OneProjectSection.TypeOfProjectSection = $matches['TypeOfProjectSection']
               $OneProjectSection.PreOrPost = $matches['PreOrPost']
-              $OneProjectSection.SectionItems = @()
+              $OneProjectSection.SectionItems = [System.Collections.ArrayList]@()
               break
             }
             '^\s*ENDProject\s*$' {
@@ -198,7 +207,7 @@ function ParseOneSLNFile ($AllParts, $InFn) {
               $OneGlobalSection = @{}
               $OneGlobalSection.TypeOfGlobalSection = $matches['TypeOfGlobalSection']
               $OneGlobalSection.PreOrPost = $matches['PreOrPost']
-               $OneGlobalSection.SectionItems = @()
+              $OneGlobalSection.SectionItems = [System.Collections.ArrayList]@()
               break
             }
             '^\s*$' {break} # blank line
@@ -227,197 +236,172 @@ function ParseOneSLNFile ($AllParts, $InFn) {
           write-host "in $state state, only Project or Global or blank lines are allowed: $l"
         }
       }
+    }
+  } finally {
+    $reader.Close()
+    $FileStream.Close()
   }
 }
 
+$ProjectStart = 'Project("{'
+$ProjectPart2 = '}") = '
+$ProjectPart3 = ', "{'
+$ProjectPart4 = '}"'
+$ProjectEnd = 'EndProject'
+$ProjectSectionStart = '  ProjectSection('
+$ProjectSectionPart2 = ') = '
+$ProjectSectionEnd = '  EndProjectSection'
+$ProjectSectionSectionItemStart = '          '
+$ProjectSectionSectionItemPart2 = ' = '
+$GlobalStart = 'Global'
+$GlobalEnd = 'EndGlobal'
+$GlobalSectionStart = 'GlobalSection('
+$GlobalSectionPart2 = ') = '
+$GlobalSectionEnd = 'EndGlobalSection'
+$GlobalSectionSectionItemStart = '    '
+$GlobalSectionSectionItemPart2 = ' = '
 
-
-function AllPartstruct-OutObj ($AllParts,$outobj,$PCAId) {
-    $AllParts.keys|sort|%{$dts = $_
-      $onestat=$AllParts.$dts
-      $onestat.Instances.keys | sort | %{$IID=$_
-        $onerow=@{"DTS"=$dts;"PCAId"=$PCAId;"InstanceID"=$IID}
-        $instance=$onestat.Instances.($IID)
-        $instance.keys | sort | %{$value=$_
-          $onerow.($Value) = $instance.$value
-        }
-        $outobj += (New-Object PSObject -Property $onerow)
-    }}
+function Out-OneProjectSectionItem {
+  Param(
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    $SectionItem,
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    [System.Text.StringBuilder]$mesg
+    )
+  Process {
+    # OneSectionItem has no special string, it just ends with a newline
+    $mesg.Append(('{0}{1}{2}{3}{4}' -f $ProjectSectionSectionItemStart, $SectionItem.Item1, $ProjectSectionSectionItemPart2, $SectionItem.Item2, [System.Environment]::NewLine))  > $null
+  }
 }
 
+function Out-OneProjectSection {
+  Param(
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    $Section,
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    [System.Text.StringBuilder]$mesg
+    )
+  Process {
+    $mesg.Append(('{0}{1}{2}{3}{4}' -f $ProjectSectionStart, $Section.TypeOfProjectSection, $ProjectSectionPart2, $Section.PreOrPost, [System.Environment]::NewLine))  > $null
+    foreach ($SectionItem in $Section.SectionItems) {Out-OneProjectSectionItem $SectionItem $mesg}
+    $mesg.Append(('{0}{1}' -f $ProjectSectionEnd, [System.Environment]::NewLine))  > $null
+  }
+}
 
+function Out-OneProject {
+  Param(
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    $Project,
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    [System.Text.StringBuilder]$mesg
+  )
+  Process {
+    $mesg.Append(('{0}{1}{2}{3}{4}{5}{6}{7}' -f $ProjectStart, $Project.ParentGUID, $ProjectPart2, $Project.NLP, $ProjectPart3, $Project.ProjectGuid, $ProjectPart4, [System.Environment]::NewLine))  > $null
+    foreach ($Section in $Project.Sections) {Out-OneProjectSection $Section $mesg}
+    $mesg.Append(('{0}{1}' -f $ProjectEnd, [System.Environment]::NewLine))  > $null
+  }
+}
+function Out-Projects {
+  Param(
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    [System.Collections.ArrayList] $Projects,
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    [System.Text.StringBuilder]$mesg
+  )
+  Begin {
+    $CustomSortingScriptBlock = {$_.NLP}
+  }
+  Process {
+    # Sort Projects using a custom sort scriptblock
+    foreach ($p in ($Projects| Sort-Object -Property $CustomSortingScriptBlock)){Out-OneProject $p $mesg}
+  }
+}
+
+function Out-OneGlobalSectionItem {
+  Param(
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    $SectionItem,
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    [System.Text.StringBuilder]$mesg
+    )
+  Process {
+    $mesg.Append(('{0}{1}{2}{3}{4}' -f $GlobalSectionSectionItemStart, $SectionItem.Item1, $GlobalSectionSectionItemPart2, $SectionItem.Item2, [System.Environment]::NewLine))  > $null
+  }
+}
+
+function Out-OneGlobalSection {
+  Param(
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    [System.Collections.ArrayList] $Section,
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    [System.Text.StringBuilder]$mesg
+  )
+  Process {
+    $mesg.Append(('{0}{1}{2}{3}{4}' -f $GlobalSectionStart, $Section.TypeOfGlobalSection, $GlobalSectionPart2, $Section.PreOrPost, [System.Environment]::NewLine)) > $null
+    foreach ($SectionItem in $Section.SectionItems) {Out-OneGlobalSectionItem $SectionItem $mesg}
+    $mesg.Append(('{0}{1}' -f $GlobalSectionEnd, [System.Environment]::NewLine)) > $null
+  }
+}
+
+function Out-Global {
+  Param(
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    [System.Collections.ArrayList] $Global,
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    [System.Text.StringBuilder]$mesg
+  )
+  Process {
+    $mesg.Append(('{0}{1}' -f $GlobalStart, [System.Environment]::NewLine)) > $null
+    foreach ($Section in $Global) {Out-OneGlobalSection $Section $mesg}
+    $mesg.Append(('{0}{1}' -f $GlobalEnd, [System.Environment]::NewLine)) > $null
+  }
+}
+
+function Out-Meta {
+  Param(
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    [System.Collections.ArrayList] $meta,
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    [System.Text.StringBuilder]$mesg
+  )
+  Process {
+    foreach ($metaLine in $meta) {$mesg.Append(('{0}{1}' -f $metaLine, [System.Environment]::NewLine)) > $null}
+  }
+}
+
+function Out-AllParts  {
+  Param(
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    $AllParts,
+    [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
+    [System.Text.StringBuilder]$mesg
+  )
+  Process {
+    Out-Meta $AllParts.Meta $mesg
+    Out-Projects $AllParts.Projects $mesg
+    Out-Global $AllParts.Global $mesg
+  }
+}
 
 # Repeat for every file
 $filestoProcess | %{$fn = $_.fullname
    # Create the AllParts accumulator.
-  $AllParts=@{Projects=@();Global=@()}
-  # Get the PCA name from the name of the statstics file
-  $SLNName=$fn.basename
+  $AllParts=@{Meta=[System.Collections.ArrayList]@();Projects=[System.Collections.ArrayList]@();Global=[System.Collections.ArrayList]@()}
   # parse the file
   ParseOneSLNFile $AllParts $fn
   # output the data for each solution file as it is parsed
-  $outobj = @()
-  AllPartstruct-OutObj $AllParts $outobj $SLNName
+  # Convert the SLN structure to a string
+  $mesg = [System.Text.StringBuilder]::new()
+  Out-AllParts $AllParts $mesg
+  # SLN files should be UTF8 encoded with a ByteOrdermark(BOM), however, it may also be correct to get teh encoding from the original and use that
+  [io.file]::WriteAllText($Outfn, $mesg.ToString(), (new-object  System.Text.UTF8Encoding($true)))
+}
+  #***
   # order the properties of the output
-  $partprops = $outobj[0] | select-object | Get-Member -MemberType NoteProperty |%{if($_.Name -notmatch ('^'+(($settings.OrderedProperties -split ',') -join '|'))+'$') {$_.Name}} | sort
-  $allprops = ($settings.OrderedProperties -split ',') + $partprops
-  # Select all of the properties, in order as specified, Write all the data as a CSV file, append to the current output file
-  $outobj | select-object -property $allprops | Export-CSV -append -Path $Outfn -NoTypeInformation
- }
+  # $partprops = $outobj[0] | select-object | Get-Member -MemberType NoteProperty |%{if($_.Name -notmatch ('^'+(($settings.OrderedProperties -split ',') -join '|'))+'$') {$_.Name}} | sort
+  # $allprops = ($settings.OrderedProperties -split ',') + $partprops
+  # Select all of the properties, in order as specified. Write all the data as a CSV file, append to the current output file
+  #$outobj | select-object -property $allprops | Export-CSV -append -Path $Outfn -NoTypeInformation
 
 
 
-
-#$AllParts.keys | sort | %{$_; $k = $_; $onestat = $AllParts.$k; $onestat.Keys | sort | %{$_; $k=$_; $onesection = $onestat.$k; $onesection.keys| sort | %{$_; $k = $_; }}}
-#set-content $OutFn ($AllParts.keys | sort | %{$dts = $_; $onestat = $AllParts.$dts; $onestat.Instances.keys | sort | %{$IID=$_; $instance = $onestat.Instances.($IID); $instance.keys| sort | %{"{0}, {1}, {2}, {3}" -f $dts,$IID,$_,$instance.$_}}})
-
-#iex $program
-
-<#
-
-  $StatisticsFileProperties =  @('LocalTimeUtc','Instance ID','Process ID','Peer ID','TotalHitsQueued','TotalHitsDelivered','CaptureBytesWrittenByListener','CaptureBytesWrittenByRouter','CaptureBytesReadFromListener','HitsCaptured','HitsRejectedHits','HitsTotalCaptureType1','HitsTotalDroppedBusinessModeExtension','HitsTotalDroppedBusinessModeResponse','HitsTotalDroppedByDelimagesFeature','HitsTotalDroppedInvalidMethod','HitsTotalDroppedBySampling','SslCurrentHitsPerSec','TcpUnidirectionalTrafficPercentage')
-  $StatisticsFileStructureProperties =  @('Instance ID=(\d+)','Process ID','Peer ID')
-
-#The structure of the solution file, described in a string. top is special
-$top='Statistics'
-$sfs = @'
-Statistics=General,CoreDumps,Delivery,Failover,Instances,ProcessClasses,Processes,Time
-General=
-CoreDumps=CoreDump
-CoreDump=
-Delivery=Peer
-Failover=
-Peer=Host,TotalHitsQueued,TotalHitsDelivered,TotalHitsDropped
-Instances=Instance
-Instance=Capture,Hits,Memory,SSL,TCP,Time
-Capture=CapturePacketsDroppedByPcap,CaptureBytesReadFromListener,CapturePacketsDroppedInOutputAtListend,CapturePacketsDroppedInOutputAtRouterd,CaptureCurrentFilteredKbytesPerSec
-Hits=HitsCaptured,HitsRejectedHitsHitsUndeliveredHitsWhilePassive
-Memory=
-SSL=SslTotalNewHandshakes,SslTotalResumedHandshakes,SslHitCount,SslTotalUnknownCipherErrors,SslTotalEphemeralRsaConnections,SslTotalDhCipherConnections
-TCP=TcpTotalPacketsRcvdAtRouterd,TcpTotalPacketsRcvd,TcpUnidirectionalTrafficPercentage,TcpAlienPacketsRcvd,TcpTotalDuplicatePackets
-Time=LocalTimeSecondsUtc,LocalTimeUtc
-ProcessClasses=ProcessClass
-ProcessClass=
-Processes=Process
-Process=
-Time=LocalTimeSecondsUtc,LocalTimeUtc
-'@
-
-$sfs = @'
-Statistics=General
-General=
-CoreDumps=CoreDump
-CoreDump=
-Delivery=Peer
-Failover=
-Peer=Host,TotalHitsQueued,TotalHitsDelivered,TotalHitsDropped
-Instances=Instance
-Instance=Capture,Hits,Memory,SSL,TCP,Time
-Capture=CapturePacketsDroppedByPcap,CaptureBytesReadFromListener,CapturePacketsDroppedInOutputAtListend,CapturePacketsDroppedInOutputAtRouterd,CaptureCurrentFilteredKbytesPerSec
-Hits=HitsCaptured,HitsRejectedHitsHitsUndeliveredHitsWhilePassive
-Memory=
-SSL=SslTotalNewHandshakes,SslTotalResumedHandshakes,SslHitCount,SslTotalUnknownCipherErrors,SslTotalEphemeralRsaConnections,SslTotalDhCipherConnections
-TCP=TcpTotalPacketsRcvdAtRouterd,TcpTotalPacketsRcvd,TcpUnidirectionalTrafficPercentage,TcpAlienPacketsRcvd,TcpTotalDuplicatePackets
-Time=LocalTimeSecondsUtc,LocalTimeUtc
-ProcessClasses=ProcessClass
-ProcessClass=
-Processes=Process
-Process=
-Time=LocalTimeSecondsUtc,LocalTimeUtc
-'@
-
-$haskids=('Statistics','CoreDumps','Delivery','Instances','Instance','ProcessClasses','Processes')
-
-
-function buildvalues ($st) {
-  $values=(($sfs -split "`r`n") | ?{$_ -match "$st"}) -split ','
-  $values[0] = $values[0] -replace "$st=",''
-  $values | %{ "^\s+VALUE\s+$_\s+(.*)$ {$_=$matches[1]}" }
-}
-function buildnextlevel ($st) {
-  "^\s+BEGIN\s+$st\s {$state+=$state$st"
-  $KidsOrValues = getKidsOrValues $st
-  if (($KidsOrValues.count -eq 0) -or (($KidsOrValues.count -eq 1) -and (-not $KidsOrValues[0]))) {
-    '}'
-    return
-  }
-  if ($haskids -notcontains $st) {buildvalues $st; '}'}
-  getKidsOrValues $st | %{buildnextlevel $_; '}'}
-}
-
-function getKidsOrValues ($st) {
-  $kovs=(($sfs -split "`r`n") | ?{$_ -match "^$st"}) -split ','
-  $kovs[0] = $kovs[0] -replace "$st=",''
-  @($kovs)
-}
-
-# Build the levels
-$program = '$lines[0..100] | %{$l=$_;'+ @'
-if ($state -eq 'Top') {
-  if ($l -match "^\s+BEGIN\s+$top\s*") {
-    $state=$state+$top
-    $OneStat = @{}
-  }
-} elseif ($state -eq ('Top'+$top)) {
-  if ($l -match "^\s+END\s+$top\s*") {
-    $state -eq 'Top'
-    $AllParts.($OneStat.Time.LocalTimeSecondsUtc) = $OneStat
-  } else {
-    switch -regex ($l) {
-'@
-$str = (getKidsOrValues $top | %{buildnextlevel $_})
-#+ (getKidsOrValues $top | %{buildnextlevel $_})
-#+ '}}}}'
-
-
-$Statistics
-# Get the property hash and the Regex
-$s=PropHashAndRegex($StatisticsFileProperties)
-$PropHash=$s[0];$PropNameRegex=$s[1];
-$StructuredPropertiesRegex=[regex] ('(' + ($StatisticsFileStructureProperties -join '|') +')')
-$RowEndKey= 'LocalTimeUtc'
-
-    $ConvertedRows=@{}
-    $ThisRow=@{}
-    $ThisSubLevel=$ThisRow
-    $t = (get-content $inFn).where{$_ -match $PropNameRegex}
-    $t |
-      # evaluate the line again against every property Regex to find which property matched,
-      %{$l=$_;$PropHash.Keys |
-        %{$k=$_; if ($l -match $PropHash.$k) {
-          # If this is a peer, process, or instance line, add another level to the row and break out of the property evaluation loop
-          if ($k -match $StructuredPropertiesRegex) {
-            $ThisRow.($Matches[1..2] -join ' ')=@{}; $ThisSubLevel=$ThisRow.($Matches[1..2] -join ' ')
-          } else {
-            # push the value into the accumulator hash and break out of the property evaluation loop
-            $ThisSubLevel.$k = $Matches[1];
-            if ($k -eq $RowEndKey) {$ConvertedRows.($Matches[2]) += $ThisRow; $ThisRow=@{};$ThisSubLevel=$ThisRow}
-          }
-        }
-      }
-    }
-  #@
-
-    # Write the data out to a CSV file, in column order as specified in the $RequestBlockProperties list,
-    #  and converting the RequestTimeEx to a standard datetime string format useable by Excel pivot tables
-    $ConvertedRows | %{$thisrow=$_;
-      $ConvertedRow = New-Object PSObject;
-      $StatisticsFileProperties | %{$prop=$_;
-        if ($prop -eq 'LocalTimeUtc') {
-          $dts = Convert-TealeafDate $thisrow.$prop
-          if (-not $dts) {throw "unrecognized datetime format: $thisrow.$prop"}
-          Add-Member $prop $dts.ToString('MM/dd/yyyy HH:mm:ss') -InputObject $ConvertedRow
-        } else {
-          Add-Member $prop $thisrow.$prop -InputObject $ConvertedRow
-        }
-      }
-      $ConvertedRow
-    } |
-    export-csv $OutFullname -NoTypeInformation -Force
-
-
-
-
-#Get instance 0 and timestamps and packets dropped
-
-#>

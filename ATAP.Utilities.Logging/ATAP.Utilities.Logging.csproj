@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  
+
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <!-- Set the  NuGet Package control for this assembly -->
@@ -17,45 +17,10 @@
     <PackageLabel>NA</PackageLabel>
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
-  
-  <PropertyGroup>
-    <InternalsVisibleTo>ATAP.Utilities.Logging.UnitTests</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.ComputerInventory</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.ComputerInventory.UnitTests</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.Configuration</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.Configuration.UnitTests</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.CryptoCoin</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.CryptoCoin.UnitTests</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.DateTime</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.DateTime.UnitTests</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.Http</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.Http.UnitTests</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.Enumeration</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.Enumeration.UnitTests</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.FileSystem</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.FileSystem.UnitTests</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.String</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.String.UnitTests</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.Tcp</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.Tcp.UnitTests</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.UnitTest</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.UnitTest.UnitTests</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.ZSandbox</InternalsVisibleTo>
-    <InternalsVisibleTo>ATAP.Utilities.ZSandbox.UnitTests</InternalsVisibleTo>
-    <InternalsVisibleTo>DataFlowExPatterns</InternalsVisibleTo>
-  </PropertyGroup>
-
-<ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" />
-<PackageReference Include="NLog" />
-<PackageReference Include="NLog.Config" />
-<PackageReference Include="System.Dynamic.Runtime" />
-</ItemGroup>
 
   <ItemGroup>
-    <None Update="NLog.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
+
 
 </Project>

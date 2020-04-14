@@ -46,6 +46,7 @@
     <Compile Include="Remove-VSComponentCache.ps1" />
     <Compile Include="Set-LineEndings.ps1" />
     <Compile Include="Set-PerceivedTypeInRegistryForPreviewPane.ps1" />
+    <Compile Include="tools\Run7-InISE.ps1" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="toc.yml" />

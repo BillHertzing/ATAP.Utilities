@@ -1,0 +1,184 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp3.1;</TargetFrameworks>
+    <RootNamespace>ATAP.Utilities.AConsole01</RootNamespace>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.Hardware.Extensions\ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.ProcessInfo.Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.Software.Enumerations\ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.1Console.StringConstants\ATAP.Utilities.AConsole01.StringConstants.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Extensions.Persistence\ATAP.Utilities.Extensions.Persistence.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Extensions.Reactive\ATAP.Utilities.Extensions.Reactive.csproj" />
+    <ProjectReference Include="..\GenericHost\Extensions.GenericHost.Interfaces\Extensions.GenericHost.Interfaces.csproj" />
+    <ProjectReference Include="..\GenericHost\Extensions.GenericHost\Extensions.GenericHost.csproj" />
+    <ProjectReference Include="..\services\GenerateProgram\GenerateProgram.csproj" />
+    <ProjectReference Include="..\services\ConsoleSink.Interfaces\ConsoleSink.Interfaces.csproj" />
+    <ProjectReference Include="..\services\ConsoleSink\ConsoleSink.csproj" />
+    <ProjectReference Include="..\services\ConsoleSource.Interfaces\ConsoleSource.Interfaces.csproj" />
+    <ProjectReference Include="..\services\ConsoleSource\ConsoleSource.csproj" />
+    <ProjectReference Include="..\services\ConsoleMonitor.Interfaces\ConsoleMonitor.Interfaces.csproj" />
+    <ProjectReference Include="..\services\ConsoleMonitor\ConsoleMonitor.csproj" />
+    <ProjectReference Include="..\services\Timers.Interfaces\Timers.Interfaces.csproj" />
+    <ProjectReference Include="..\services\Timers\Timers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="AConsole01Settings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="AConsole01Settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="FileWatcher.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GenericHostSettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GenericHostSettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\ConsoleDebugResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ConsoleDebugResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Properties\ConsoleExceptionResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ConsoleExceptionResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Properties\ConsoleUIResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ConsoleUIResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\ConfigStrings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ConfigStrings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\DebugMessages.resx">
+      <LastGenOutput>DebugMessages.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\ExceptionMessages.resx">
+      <LastGenOutput>ExceptionMessages.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\UIMessages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>UIMessages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <Compile Update="Properties\ConsoleDebugResources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ConsoleDebugResources.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Properties\ConsoleExceptionResources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ConsoleExceptionResources.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Properties\ConsoleUIResources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ConsoleUIResources.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\ConfigStrings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ConfigStrings.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\DebugMessages.Designer.cs">
+      <DependentUpon>DebugMessages.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Resources\ExceptionMessages.Designer.cs">
+      <DependentUpon>ExceptionMessages.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Resources\UIMessages.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>UIMessages.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <!-- Packages to persist data to QuickGraph -->
+  <ItemGroup>
+    <PackageReference Include="YC.QuickGraph" />
+    <PackageReference Include="FSharp.Core" />
+  </ItemGroup>
+
+  <!-- Packages to ensure persisting data to QuickGraph uses the correct version of dependent packages-->
+  <ItemGroup>
+    <PackageReference Include="DotNet.Contracts" />
+    <PackageReference Include="FSharpx.Collections.Experimental" />
+  </ItemGroup>
+
+  <!-- Reactive Extensions -->
+  <ItemGroup>
+    <PackageReference Include="System.Reactive" />
+  </ItemGroup>
+
+  <!-- ServiceStack Serilization and dump utility -->
+  <ItemGroup>
+    <PackageReference Include="ServiceStack.Text" />
+  </ItemGroup>
+
+  <!-- ServiceStack ORMLite (database) utilities -->
+  <ItemGroup>
+    <PackageReference Include="ServiceStack.ORMLite" />
+    <PackageReference Include="ServiceStack.OrmLite.SqlServer" />
+  </ItemGroup>
+
+  <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Localization" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <!-- Packages to implement Serilog as logging provider -->
+  <ItemGroup>
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Settings.Configuration" />
+    <PackageReference Include="Serilog.Enrichers.Thread" />
+    <PackageReference Include="Serilog.Exceptions" />
+    <PackageReference Include="Serilog.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.Debug" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Serilog.Sinks.Seq" />
+    <PackageReference Include="SerilogAnalyzer" />
+<!--    <PackageReference Include="Serilog.AspNetCore" /> -->
+  </ItemGroup>
+
+  <!-- Packages to implement Serilog as a Microsoft logging provider ? ToDo: implement Serilog as a logging provider to Microsoft logging -->
+  <ItemGroup>
+    <PackageReference Include="Serilog.Extensions.Logging" />
+  </ItemGroup>
+
+  <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
+  <ItemGroup>
+    <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
+    <PackageReference Include="MethodBoundaryAspect.Fody" Version="2.0.118" />
+    <!-- Project Reference to the ETW attribute and log provider -->
+    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -58,6 +58,10 @@
     <PackageReference Update="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
     <!-- ServiceStack serializers and dump utility -->
     <PackageReference Update="ServiceStack.Text" Version="5.8.1" />
+    <!-- ServiceStack ORMLite and SQLServer shim for Core -->
+    <PackageReference Update="ServiceStack.OrmLite" Version="5.8.0" />
+    <PackageReference Update="ServiceStack.OrmLite.SqlServer" Version="5.8.0" />
+
 
     <!-- Packages necessary to run the Net Core Generic Host and web server hosts Server -->
     <PackageReference Update="Microsoft.Extensions.Configuration" Version="3.1.3" />

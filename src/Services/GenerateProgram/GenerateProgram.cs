@@ -107,11 +107,11 @@ namespace ATAP.Utilities.HostedServices.GenerateProgram {
 
       var loadedFromDirectory = hostConfiguration.GetValue<string>("SomeStringConstantConfigrootKey", "./"); //ToDo suport dynamic assembly loading form other Startup directories -  Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
       var initialStartupDirectory = hostConfiguration.GetValue<string>("SomeStringConstantConfigrootKey", "./");
-      var configurationBuilder = ConfigurationExtensions.StandardConfigurationBuilder(loadedFromDirectory, initialStartupDirectory, DefaultConfiguration.Production, StringConstants.SettingsFileName, StringConstants.SettingsFileNameSuffix, StringConstants.CustomEnvironmentVariablePrefix, loggerFactory, stringLocalizerFactory, hostEnvironment, hostConfiguration, linkedCancellationToken);
-      configurationRoot = configurationBuilder.Build();
+     // var configurationBuilder = ConfigurationExtensions.ATAPStandardConfigurationBuilder(loadedFromDirectory, initialStartupDirectory, DefaultConfiguration.Production, StringConstants.SettingsFileName, StringConstants.SettingsFileNameSuffix, StringConstants.CustomEnvironmentVariablePrefix, loggerFactory, stringLocalizerFactory, hostEnvironment, hostConfiguration, linkedCancellationToken);
+     // configurationRoot = configurationBuilder.Build();
       #endregion
       #region Filewatchers
-      var fileSystemWatcherArgs = new FileSystemWatcherArg[1] { new FileSystemWatcherArg(path: ".") };
+      IFileSystemWatcherArg[] fileSystemWatcherArgs = (IFileSystemWatcherArg[]) new FileSystemWatcherArg[1] { new FileSystemWatcherArg(path: ".") };
       var fileSystemWatchersAsObservable = fileSystemWatchersHostedService.Create(fileSystemWatcherArgs);
       #endregion
       #endregion

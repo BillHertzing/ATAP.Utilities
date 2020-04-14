@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -18,20 +18,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.HostedServices.Interfaces\ATAP.Utilities.HostedServices.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.HostedServices\ATAP.Utilities.HostedServices.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Extensions.Persistence\ATAP.Utilities.Extensions.Persistence.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.DateTime\ATAP.Utilities.DateTime.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.SerializerLoader\ATAP.Utilities.SerializerLoader.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.String\ATAP.Utilities.String.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.TypedGuids.Interfaces\ATAP.Utilities.TypedGuids.Interfaces.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.TypedGuids\ATAP.Utilities.TypedGuids.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+    <ProjectReference Include="..\FileSystemWatchers.Interfaces\FileSystemWatchers.Interfaces.csproj" />
+    <ProjectReference Include="..\FileSystemWatchers\FileSystemWatchers.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Extensions.Reactive\ATAP.Utilities.Extensions.Reactive.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.Extensions.Persistence\ATAP.Utilities.Extensions.Persistence.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.DateTime\ATAP.Utilities.DateTime.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.String\ATAP.Utilities.String.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.TypedGuids.Interfaces\ATAP.Utilities.TypedGuids.Interfaces.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\..\ATAP.Utilities.SerializerLoader\ATAP.Utilities.SerializerLoader.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -70,7 +70,7 @@
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
     <PackageReference Include="MethodBoundaryAspect.Fody" Version="2.0.118" />
     <!-- Project Reference to the ETW attribute and log provider -->
-    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+    <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
   <ItemGroup>

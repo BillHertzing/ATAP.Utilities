@@ -5,6 +5,7 @@
 Create structured representation of a .sln file
 .DESCRIPTION
 This utility will create a Powershell Object representing the parts of a SLN file
+#Boilerblate
 For every InputFilenamePattern below, the utility will look (in the inputdir) for all files that match the pattern, then select the one with the latest FileModifyTime
 Every argument below that allows the InputFilenamePattern like '(InFnPatrn1,InFnPatrn2,...,InFnPaternN)', the utility will look (in the inputdir) for all files that match each pattern in the array, then select, for each pattern in the array, the one with the latest FileModifyTime
 .PARAMETER InDir
@@ -14,17 +15,20 @@ Defaults to .\
 Where the files created by this utility reside
 Defaults to .\outputs
 .PARAMETER InFnFilePattern
-An pattern for the input file name
+A pattern for the input file name
 Defaults to "\.sln$" which matches all files ending in .sln (Solution files)
+It will look (in the inputdir) for all files that match the pattern, then select the one with the latest FileModifyTime
+It allows the InputFilenamePattern like '(InFnPatrn1,InFnPatrn2,...,InFnPaternN)', the utility will look (in the inputdir) for all files that match each pattern in the array, then select, for each pattern in the array, the one with the latest FileModifyTime
+It will expand any gzipped files that match the input filename pattern
 .PARAMETER OutFn
 Name of the output file
 Defaults to 'Statistic <SLNName> <daterangeofdata>.csv'
 
 .EXAMPLE
-#Always use the cd command to change to the directory where the data file lives
-cd 'c:\temp'
-#
-.\Get-PCACaptureData.ps1 -InDir '.\Inputs' -OutDir '.\Outputs' -InFnFilePattern 'Statistics.log'-OutFn Statistics.csv # For Sales
+
+# Run this in a Solution directory 
+# Add this file to a Direcotry ./Build, ensure there is a directory   ./Artifacts
+./Build/Get-SLNParts.ps1 -InDir '.' -OutDir './Artifacts' -InFnFilePattern '*.sln' -OutFn ReconstitutedSLN.sln
 #>
 
 
@@ -39,7 +43,7 @@ Param(
 )
 $settings=@{
   InDir = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
-  InFnFilePattern = '\.sln$'
+  InFnFilePattern = '.sln$'
   OutDir = 'D:\Temp\GenerateProgram'
   OutFn = 'slnstructures.txt'
   OrderedProperties = 'Projects,BuildConfigurations'
@@ -86,7 +90,7 @@ function Expand-7ZipFile {
   $outputOption = "-o$OutDir"
   sz x "$InFn1" $outputOption -r -y
 }
-# list the direcotry and expand the gzip files
+# list the directory and expand the gzip files
 ls $settings.InDir | ?{$_ -match $settings.InFnFilePattern } | ?{$_.fullname -match '\.gz$'} | %{
   Expand-7ZipFile $_.fullname $settings.InDir
 }
@@ -96,6 +100,21 @@ $filesToProcess = @(ls $settings.InDir | ?{$_ -match $settings.InFnFilePattern }
 
 # create an empty output file, overwrite one if it already exists
 set-content -force $Outfn ''
+
+# ToDo: Move the next few lines into a library function
+# Set the default output file Encoding and line endings
+#lineEnding
+# [ValidateSet("mac","unix","win")] 
+$lineEnding = 'win'
+# Convert the friendly name into a PowerShell EOL character
+Switch ($lineEnding) {
+    "mac"  { $eol="`r" }
+    "unix" { $eol="`n" }
+    "win"  { $eol="`r`n" }
+}
+# MSBuild sln files seem to be UTF8WithBOM, and *nix line endings
+# UTF8 encoded with a ByteOrdermark(BOM)
+$encoding = new-object  System.Text.UTF8Encoding($true)
 
 # move this function to a library for reuse
 function New-Tuple { #https://stackoverflow.com/questions/54373785/tuples-arraylist-of-pairs
@@ -270,7 +289,7 @@ function Out-OneProjectSectionItem {
     )
   Process {
     # OneSectionItem has no special string, it just ends with a newline
-    $mesg.Append(('{0}{1}{2}{3}{4}' -f $ProjectSectionSectionItemStart, $SectionItem.Item1, $ProjectSectionSectionItemPart2, $SectionItem.Item2, [System.Environment]::NewLine))  > $null
+    $mesg.Append(('{0}{1}{2}{3}{4}' -f $ProjectSectionSectionItemStart, $SectionItem.Item1, $ProjectSectionSectionItemPart2, $SectionItem.Item2, $eol))  > $null
   }
 }
 
@@ -282,9 +301,9 @@ function Out-OneProjectSection {
     [System.Text.StringBuilder]$mesg
     )
   Process {
-    $mesg.Append(('{0}{1}{2}{3}{4}' -f $ProjectSectionStart, $Section.TypeOfProjectSection, $ProjectSectionPart2, $Section.PreOrPost, [System.Environment]::NewLine))  > $null
+    $mesg.Append(('{0}{1}{2}{3}{4}' -f $ProjectSectionStart, $Section.TypeOfProjectSection, $ProjectSectionPart2, $Section.PreOrPost, $eol))  > $null
     foreach ($SectionItem in $Section.SectionItems) {Out-OneProjectSectionItem $SectionItem $mesg}
-    $mesg.Append(('{0}{1}' -f $ProjectSectionEnd, [System.Environment]::NewLine))  > $null
+    $mesg.Append(('{0}{1}' -f $ProjectSectionEnd, $eol))  > $null
   }
 }
 
@@ -296,11 +315,12 @@ function Out-OneProject {
     [System.Text.StringBuilder]$mesg
   )
   Process {
-    $mesg.Append(('{0}{1}{2}{3}{4}{5}{6}{7}' -f $ProjectStart, $Project.ParentGUID, $ProjectPart2, $Project.NLP, $ProjectPart3, $Project.ProjectGuid, $ProjectPart4, [System.Environment]::NewLine))  > $null
+    $mesg.Append(('{0}{1}{2}{3}{4}{5}{6}{7}' -f $ProjectStart, $Project.ParentGUID, $ProjectPart2, $Project.NLP, $ProjectPart3, $Project.ProjectGuid, $ProjectPart4, $eol))  > $null
     foreach ($Section in $Project.Sections) {Out-OneProjectSection $Section $mesg}
-    $mesg.Append(('{0}{1}' -f $ProjectEnd, [System.Environment]::NewLine))  > $null
+    $mesg.Append(('{0}{1}' -f $ProjectEnd, $eol))  > $null
   }
 }
+
 function Out-Projects {
   Param(
     [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true )]
@@ -325,7 +345,7 @@ function Out-OneGlobalSectionItem {
     [System.Text.StringBuilder]$mesg
     )
   Process {
-    $mesg.Append(('{0}{1}{2}{3}{4}' -f $GlobalSectionSectionItemStart, $SectionItem.Item1, $GlobalSectionSectionItemPart2, $SectionItem.Item2, [System.Environment]::NewLine))  > $null
+    $mesg.Append(('{0}{1}{2}{3}{4}' -f $GlobalSectionSectionItemStart, $SectionItem.Item1, $GlobalSectionSectionItemPart2, $SectionItem.Item2, $eol))  > $null
   }
 }
 
@@ -337,9 +357,9 @@ function Out-OneGlobalSection {
     [System.Text.StringBuilder]$mesg
   )
   Process {
-    $mesg.Append(('{0}{1}{2}{3}{4}' -f $GlobalSectionStart, $Section.TypeOfGlobalSection, $GlobalSectionPart2, $Section.PreOrPost, [System.Environment]::NewLine)) > $null
+    $mesg.Append(('{0}{1}{2}{3}{4}' -f $GlobalSectionStart, $Section.TypeOfGlobalSection, $GlobalSectionPart2, $Section.PreOrPost, $eol)) > $null
     foreach ($SectionItem in $Section.SectionItems) {Out-OneGlobalSectionItem $SectionItem $mesg}
-    $mesg.Append(('{0}{1}' -f $GlobalSectionEnd, [System.Environment]::NewLine)) > $null
+    $mesg.Append(('{0}{1}' -f $GlobalSectionEnd, $eol)) > $null
   }
 }
 
@@ -351,9 +371,9 @@ function Out-Global {
     [System.Text.StringBuilder]$mesg
   )
   Process {
-    $mesg.Append(('{0}{1}' -f $GlobalStart, [System.Environment]::NewLine)) > $null
+    $mesg.Append(('{0}{1}' -f $GlobalStart, $eol)) > $null
     foreach ($Section in $Global) {Out-OneGlobalSection $Section $mesg}
-    $mesg.Append(('{0}{1}' -f $GlobalEnd, [System.Environment]::NewLine)) > $null
+    $mesg.Append(('{0}{1}' -f $GlobalEnd, $eol)) > $null
   }
 }
 
@@ -365,7 +385,7 @@ function Out-Meta {
     [System.Text.StringBuilder]$mesg
   )
   Process {
-    foreach ($metaLine in $meta) {$mesg.Append(('{0}{1}' -f $metaLine, [System.Environment]::NewLine)) > $null}
+    foreach ($metaLine in $meta) {$mesg.Append(('{0}{1}' -f $metaLine, $eol)) > $null}
   }
 }
 
@@ -385,15 +405,18 @@ function Out-AllParts  {
 
 # Repeat for every file
 $filestoProcess | %{$fn = $_.fullname
-   # Create the AllParts accumulator.
+   # Create the AllParts accumulator. Initialize each member as an ArrayList
   $AllParts=@{Meta=[System.Collections.ArrayList]@();Projects=[System.Collections.ArrayList]@();Global=[System.Collections.ArrayList]@()}
   # parse the file
+  # ToDo: optionaly get the file encoding and EOL characteristics
   ParseOneSLNFile $AllParts $fn
-  # output the data for each solution file as it is parsed
+  #ToDo: Optionally validate the input sln file encodings and EOL characteristics match the expected
+  # output the data for each solution file as parsing is completed
   # Convert the SLN structure to a string
   $mesg = [System.Text.StringBuilder]::new()
+  #ToDo: rewrite output so either a string to a file in the filesystem, or, SQL statements written to a file, or directly doing value inserts into tables in a db.
   Out-AllParts $AllParts $mesg
-  # SLN files should be UTF8 encoded with a ByteOrdermark(BOM), however, it may also be correct to get teh encoding from the original and use that
+  # Write the mesg StringBuilder to the output file
   [io.file]::WriteAllText($Outfn, $mesg.ToString(), (new-object  System.Text.UTF8Encoding($true)))
 }
   #***

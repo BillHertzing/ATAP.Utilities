@@ -2,23 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ATAP.Utilities._1Console {
+namespace ATAP.Utilities.AConsole01 {
 
-  //public static class Resources {
-  //  public const string Required = "Required";
-  //  public const string NotAValidEmail = "NotAValidEmail";
-  //}
-
-  //try {
-  //  await genericHost.StopAsync();
-  //}
-  //catch (OperationCanceledException e) {
-  //  ; // Just ignore OperationCanceledException to suppress  it from bubbling upwards if the main program was cancelledOperationCanceledException
-  //}
-
-  //Console.WriteLine("Stopped!");
-
-
+  
 
   //public class MyServiceA : BackgroundService {
   //  public MyServiceA(ILoggerFactory loggerFactory) {

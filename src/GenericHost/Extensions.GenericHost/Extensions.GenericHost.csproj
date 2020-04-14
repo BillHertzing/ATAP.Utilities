@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly-->
+    <!-- Build and revision are created based on date-->
+    <MajorVersion>1</MajorVersion>
+    <MinorVersion>0</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <!-- Current Lifecycle stage for this assembly-->
+    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
+    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
+    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
+    <PackageLabel>NA</PackageLabel>
+    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
+  </PropertyGroup>
+  <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Localization" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
+  <!--
+  <PropertyGroup>
+  <ATAP.Utilities.ETW.ETWLogAttribute>True</ATAP.Utilities.ETW.ETWLogAttribute>
+  </PropertyGroup>
+  -->
+  <ItemGroup>
+    <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
+    <PackageReference Include="MethodBoundaryAspect.Fody" Version="2.0.118" />
+    <!-- Project Reference to the ETW attribute and log provider -->
+    <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+    <ProjectReference Include="..\Extensions.GenericHost.Interfaces\Extensions.GenericHost.Interfaces.csproj" />
+  </ItemGroup>
+</Project>

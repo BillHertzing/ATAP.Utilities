@@ -1,37 +1,50 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading;
 using ATAP.Utilities.Persistence;
+using ServiceStack.OrmLite;
 
-namespace ATAP.Utilities.Persistence
-{
+namespace ATAP.Utilities.Persistence {
 
-
-    public class PersistenceViaIORMSetupInitializationData : SetupDataAbstract, ISetupDataAbstract
-    {
-      public PersistenceViaIORMSetupInitializationData(string dBConnectionString, CancellationToken cancellationToken) : base(cancellationToken)
-      {
-        DBConnectionString = dBConnectionString ?? throw new ArgumentNullException(nameof(dBConnectionString));
-      }
-
-      public string DBConnectionString { get; private set; }
+  public interface ISetupViaORMData {
+    string DBConnectionString { get; }
+    IOrmLiteDialectProvider Provider { get; }
+    bool SetGlobalDialectProvider { get; }
+  }
+  public class SetupViaORMData : SetupDataAbstract, ISetupViaORMData {
+    public SetupViaORMData(string dBConnectionString, IOrmLiteDialectProvider provider, CancellationToken cancellationToken) : this(dBConnectionString, provider, true, cancellationToken) {
+    }
+    public SetupViaORMData(string dBConnectionString, IOrmLiteDialectProvider provider, bool setGlobalDialectProvider, CancellationToken cancellationToken) : base(cancellationToken) {
+      DBConnectionString = dBConnectionString ?? throw new ArgumentNullException(nameof(dBConnectionString));
+      Provider = provider ?? throw new ArgumentNullException(nameof(provider));
+      SetGlobalDialectProvider = setGlobalDialectProvider;
     }
 
-    public class PersistenceViaIORMSetupResults : SetupResultsAbstract, ISetupResultsAbstract, IDisposable
-    {
-      public PersistenceViaIORMSetupResults(bool success) : base(success)
-      {
-      }
+    public string DBConnectionString { get; }
+    public IOrmLiteDialectProvider Provider { get; }
+    public bool SetGlobalDialectProvider { get; }
+  }
+
+  public interface ISetupViaORMResults {
+    void Dispose();
+  }
+
+  public class SetupViaORMResults : SetupResultsAbstract, IDisposable, ISetupViaORMResults {
+    OrmLiteConnectionFactory DbFactory { get; }
+    IDbConnection DbConn { get; }
+    IDbCommand DbCmd { get; }
+
+    bool Success { get; }
+    public SetupViaORMResults(OrmLiteConnectionFactory DbFactory, IDbConnection DbConn, IDbCommand DbCmd, bool success) : base(success) {
+    }
 
     #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls
 
-    protected virtual void Dispose(bool disposing)
-    {
-      if (!disposedValue)
-      {
-        if (disposing)
-        {
+    protected virtual void Dispose(bool disposing) {
+      if (!disposedValue) {
+        if (disposing) {
           // TODO: dispose managed state (managed objects).
         }
 
@@ -43,15 +56,14 @@ namespace ATAP.Utilities.Persistence
     }
 
     // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-    // ~PersistenceViaIORMSetupResults()
+    // ~SetupViaIORMResults()
     // {
     //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
     //   Dispose(false);
     // }
 
     // This code added to correctly implement the disposable pattern.
-    public void Dispose()
-    {
+    public void Dispose() {
       // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
       Dispose(true);
       // TODO: uncomment the following line if the finalizer is overridden above.
@@ -60,19 +72,17 @@ namespace ATAP.Utilities.Persistence
     #endregion
   }
 
-    public class PersistenceViaIORMInsertData : InsertDataAbstract
-    {
-      public PersistenceViaIORMInsertData( IEnumerable<object>[][] dataToInsert, CancellationToken cancellationToken) : base(dataToInsert, cancellationToken)
-      {
-      }
+  public interface IInsertViaORMData : IInsertDataAbstract { }
+  public class InsertViaORMData : InsertDataAbstract, IInsertViaORMData {
+    public InsertViaORMData(IEnumerable<object>[][] dataToInsert, CancellationToken cancellationToken) : base(dataToInsert, cancellationToken) {
     }
+  }
 
-    public class PersistenceViaIORMInsertResults : InsertResultsAbstract, IInsertResultsAbstract
-    {
-      public PersistenceViaIORMInsertResults(bool success) : base(success)
-      {
-      }
+  public interface IInsertViaORMResults : IInsertResultsAbstract { }
+  public class InsertViaORMResults : InsertResultsAbstract, IInsertViaORMResults {
+    public InsertViaORMResults(bool success) : base(success) {
     }
+  }
 
-   
+
 }

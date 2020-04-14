@@ -1,0 +1,208 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using ATAP.Utilities.ComputerInventory.Software;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using ATAP.Utilities.ETW;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Localization;
+using System.Diagnostics;
+using ComputerInventoryHardwareStaticExtensions = ATAP.Utilities.ComputerInventory.Hardware.StaticExtensions;
+using PersistenceStaticExtensions = ATAP.Utilities.Persistence.StaticExtensions;
+//using ConsoleMonitorStringConstants = ConsoleMonitor.StringConstants;
+//using ConsoleMonitorDefaultConfiguration = ConsoleMonitor.DefaultConfiguration;
+using ConfigurationExtensions = ATAP.Utilities.Extensions.Configuration.Extensions;
+
+using System.Threading;
+using ATAP.Utilities.ComputerInventory.Hardware;
+using ATAP.Utilities.Persistence;
+using System.IO;
+using System.Linq;
+using System.Reactive.Linq;
+using ATAP.Utilities.Reactive;
+using System.Globalization;
+using ServiceStack.OrmLite;
+using ServiceStack.OrmLite.SqlServer;
+
+namespace ATAP.Utilities.HostedServices {
+#if TRACE
+  [ETWLogAttribute]
+#endif
+  // A Background service that consumes stdin (Console.In) and acts on the value delivered
+  public class ConsoleMonitor : BackgroundService {
+    #region Common Constructor-injected Auto-Implemented Properties
+    // These properteis can only be set in the class constructor.
+    // Class constructor for a BackgroundService is only called from the GenericHost when DI-injected services are referenced
+    ILoggerFactory loggerFactory { get; }
+    ILogger<ConsoleMonitor> logger { get; }
+    private readonly IStringLocalizerFactory stringLocalizerFactory;
+    private readonly IHostEnvironment hostEnvironment;
+    private readonly IConfiguration hostConfiguration;
+    private readonly IHostLifetime hostLifetime;
+    private readonly IHostApplicationLifetime hostApplicationLifetime;
+    #endregion
+    #region Internal and Linked CancellationTokenSource and Tokens
+    private readonly CancellationTokenSource internalCancellationTokenSource = new CancellationTokenSource();
+    private CancellationToken internalCancellationToken;
+    private CancellationTokenSource linkedCancellationTokenSource;
+    #endregion
+    #region Constructor-injected fields unique to this service. These repersent other services expected to bepresent in the app's DI container
+    private readonly IConsoleSinkHostedService consoleSinkHostedService;
+    private readonly IConsoleSourceHostedService consoleSourceHostedService;
+    #endregion
+    #region Data for this Service
+    IConfigurationRoot configurationRoot;
+    private readonly IStringLocalizer debugLocalizer;
+    private readonly IStringLocalizer exceptionLocalizer;
+    private readonly IStringLocalizer uILocalizer;
+    IEnumerable<string> choices;
+    StringBuilder mesg = new StringBuilder();
+    IDisposable DisposeThis { get; set; }
+    IDisposable SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle { get; set; }
+    Stopwatch stopWatch; // ToDo: utilize a much more powerfull and ubiquitious timing and profiling tool than a stopwatch
+
+    #endregion
+    //public ConsoleMonitorBackgroundService(IConsoleSinkHostedService hostedServiceConsoleSink, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizer stringLocalizer, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IHostApplicationLifetime hostApplicationLifetime) {
+    /// <summary>
+    /// Constructor that populates all the injected services provided by a GenericHost, along with teh injected services specific to this program that are needed by this HostedService (or derivitive like BackgroundService)
+    /// </summary>
+    /// <param name="consoleSinkHostedService"></param>
+    /// <param name="consoleSourceHostedService"></param>
+    /// <param name="loggerFactory"></param>
+    /// <param name="hostEnvironment"></param>
+    /// <param name="hostConfiguration"></param>
+    /// <param name="hostLifetime"></param>
+    /// <param name="hostApplicationLifetime"></param>
+    //public ConsoleMonitorBackgroundService(IConsoleSinkHostedService hostedServiceConsoleSink, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IHostApplicationLifetime hostApplicationLifetime) {
+    public ConsoleMonitor(IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IHostApplicationLifetime hostApplicationLifetime) {
+      this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
+      exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources.ExceptionResources), "ATAP.Utilities.HostedServices");
+      debugLocalizer = stringLocalizerFactory.Create(nameof(Resources.DebugResources), "ATAP.Utilities.HostedServices");
+      uILocalizer = stringLocalizerFactory.Create(nameof(Resources.UIResources), "ATAP.Utilities.HostedServices");
+      this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+      this.logger = loggerFactory.CreateLogger<ConsoleMonitor>();
+      this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
+      this.hostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
+      this.hostConfiguration = hostConfiguration ?? throw new ArgumentNullException(nameof(hostConfiguration));
+      this.hostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostLifetime));
+      this.hostApplicationLifetime = hostApplicationLifetime ?? throw new ArgumentNullException(nameof(hostApplicationLifetime));
+      this.consoleSinkHostedService = consoleSinkHostedService ?? throw new ArgumentNullException(nameof(consoleSinkHostedService));
+      this.consoleSourceHostedService = consoleSourceHostedService ?? throw new ArgumentNullException(nameof(consoleSourceHostedService));
+    }
+
+    #region static helper methods to reduce code clutter
+    // Helper methods to reduce code clutter
+    void CheckAndHandleCancellationToken(int checkpointNumber, CancellationToken cancellationToken) {
+      // check CancellationToken to see if this task is cancelled
+      if (cancellationToken.IsCancellationRequested) {
+        // ToDo localize the Log message
+        logger.LogDebug(debugLocalizer["{0}: Cancellation requested, checkpoint number {1}", "ConsoleMonitorBackgroundService", checkpointNumber.ToString(CultureInfo.CurrentCulture)]);
+        cancellationToken.ThrowIfCancellationRequested();
+      }
+    }
+    // Build a menu for the user to see and interact with
+    void BuildMenu(StringBuilder mesg, IEnumerable<string> choices, CancellationToken cancellationToken) {
+      // check CancellationToken to see if this task is cancelled
+      CheckAndHandleCancellationToken(2, cancellationToken);
+      mesg.Clear();
+
+      foreach (var choice in choices) {
+        mesg.Append(choice);
+        mesg.Append(Environment.NewLine);
+      }
+      //ToDo: use String.Format and CurrentCulture
+      mesg.Append(uILocalizer["Enter a number for a choice, Ctrl-C to Exit"]);
+    }
+
+    // Output a message, wrapped with exception handling
+    async Task WriteMessageSafelyAsync(StringBuilder mesg, IConsoleSinkHostedService consoleSinkHostedService, CancellationToken cancellationToken) {
+      // check CancellationToken to see if this task is cancelled
+      CheckAndHandleCancellationToken(3, cancellationToken);
+      try {
+        await consoleSinkHostedService.WriteMessageAsync(mesg).ConfigureAwait(false);
+        // ToDo: Handle Task Faulted
+      }
+      catch (Exception) {// ToDo: Better excpetion handling
+        throw;
+      }
+      mesg.Clear();
+    }
+
+    // Format an instance of ConvertFileSystemToGraphResults for UI presentation
+    // // Uses the CurrentCulture, converts File Sizes to UnitsNet.Information types, and DateTimes to ITenso Times
+    void BuildConvertFileSystemToGraphResults(StringBuilder mesg, ConvertFileSystemToGraphResult convertFileSystemToGraphResult, Stopwatch? stopwatch) {
+      mesg.Clear();
+      if (stopwatch != null) {
+        mesg.Append(uILocalizer["Running the function took {0} milliseconds", string.Format(CultureInfo.CurrentCulture, stopwatch.ElapsedMilliseconds.ToString())]);
+        mesg.Append(Environment.NewLine);
+      }
+      mesg.Append(string.Format("DeepestDirectoryTree: {0}", convertFileSystemToGraphResult.DeepestDirectoryTree));
+      mesg.Append(Environment.NewLine);
+      mesg.Append(uILocalizer["LargestFile: {0}", new UnitsNet.Information(convertFileSystemToGraphResult.LargestFile, UnitsNet.Units.InformationUnit.Byte).ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(Environment.NewLine);
+      mesg.Append(uILocalizer["EarliestDirectoryCreationTime: {0}", convertFileSystemToGraphResult.EarliestDirectoryCreationTime.ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(Environment.NewLine);
+      mesg.Append(uILocalizer["LatestDirectoryCreationTime: {0}", convertFileSystemToGraphResult.LatestDirectoryCreationTime.ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(Environment.NewLine);
+      mesg.Append(string.Format("EarliestFileCreationTime: {0}", convertFileSystemToGraphResult.EarliestFileCreationTime));
+      mesg.Append(Environment.NewLine);
+      mesg.Append(string.Format("LatestFileCreationTime: {0}", convertFileSystemToGraphResult.LatestFileCreationTime));
+      mesg.Append(Environment.NewLine);
+      mesg.Append(string.Format("EarliestFileModificationTime: {0}", convertFileSystemToGraphResult.EarliestFileModificationTime));
+      mesg.Append(Environment.NewLine);
+      mesg.Append(string.Format("LatestFileModificationTime: {0}", convertFileSystemToGraphResult.LatestFileModificationTime));
+      mesg.Append(Environment.NewLine);
+      mesg.Append(string.Format("Number of AcceptableExceptions: {0}", convertFileSystemToGraphResult.AcceptableExceptions.Count));
+      mesg.Append(Environment.NewLine);
+      // List the acceptable Exceptions that occurred
+      //ToDo: break out AcceptableExceptions by type
+
+    }
+    #endregion
+
+    protected override async Task ExecuteAsync(CancellationToken externalCancellationToken) {
+
+      #region CancellationToken creation and linking
+      // Combine the cancellation tokens,so that either can stop this HostedService
+      internalCancellationToken = internalCancellationTokenSource.Token;
+      linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, externalCancellationToken);
+      var linkedCancellationToken = linkedCancellationTokenSource.Token;
+      #endregion
+      #region Register actions with the CancellationToken (s)
+      externalCancellationToken.Register(() => logger.LogInformation("ConsoleMonitorBackgroundService: externalCancellationToken has signalled stopping."));
+      internalCancellationToken.Register(() => logger.LogInformation("ConsoleMonitorBackgroundService: internalCancellationToken has signalled stopping."));
+      linkedCancellationToken.Register(() => logger.LogInformation("ConsoleMonitorBackgroundService: linkedCancellationToken has signalled stopping."));
+      #endregion
+      #region Instantiate this service's Data structure
+      #region configurationRoot for this HostedService
+      // Create the configurationBuilder for this HostedService. This creates an ordered chain of configuration providers. The first providers in the chain have the lowest priority, the last providers in the chain have a higher priority.
+      // The Environment has been configured by the GenericHost before this point is reached
+      // InitialStartupDirectory has been set by the GenericHost before this point is reached, and is where the GenericHost program or service was started
+      // LoadedFromDirectory has been configured by the GenericHost before this point is reached. It is the location where this assembly resides
+      // ToDo: Implement these two values into the GenericHost configurationRoot somehow, then remove from the constructor signature
+      var loadedFromDirectory = hostConfiguration.GetValue<string>("SomeStringConstantConfigrootKey", "./"); //ToDo suport dynamic assembly loading form other Startup directories -  Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+      var initialStartupDirectory = hostConfiguration.GetValue<string>("SomeStringConstantConfigrootKey", "./");
+      // Build the configurationRoot for this service
+      var configurationBuilder = ConfigurationExtensions.StandardConfigurationBuilder(loadedFromDirectory, initialStartupDirectory, ConsoleMonitorDefaultConfiguration.Production, ConsoleMonitorStringConstants.SettingsFileName, ConsoleMonitorStringConstants.SettingsFileNameSuffix, StringConstants.CustomEnvironmentVariablePrefix, loggerFactory, stringLocalizerFactory, hostEnvironment, hostConfiguration, linkedCancellationToken);
+      configurationRoot = configurationBuilder.Build();
+      #endregion
+      // Create a list of choices
+      // ToDo: Get the list from the configurationRoot, with secure vetting
+      choices = new List<string>() { "1. Run ConvertFileSystemToGraphAsyncTask", "2. Subscribe ConsoleOut to ConsoleIn", "2. Unsubscribe ConsoleOut from ConsoleIn" };
+      #endregion
+      #region Subscribe to ConsoleSourceHostedService.
+      // Subscribe to consoleSourceHostedService. Run the Func<string,Task> every time ConsoleReadLineAsyncAsObservable() produces aa sequence element
+      // ToDo:  Add OnError and OnCompleted handlers
+      SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle = ConsoleSourceHostedService.ConsoleReadLineAsyncAsObservable().SubscribeAsync<string>(ConsoleMonitorFunc);
+      #endregion
+      // Wait for the conjoined cancellation token (or individually if the hosted service does not define its own internal cts)
+      WaitHandle.WaitAny(new[] { linkedCancellationToken.WaitHandle });
+      logger.LogInformation("{ExecuteAsync} ConsoleMonitorBackgroundService is stopping.");
+      SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
+    }
+
+  }
+}

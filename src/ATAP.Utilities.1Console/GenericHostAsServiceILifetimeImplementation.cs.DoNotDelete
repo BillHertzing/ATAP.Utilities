@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 
 
-namespace ATAP.Utilities._1Console {
+namespace ATAP.Utilities.AConsole01 {
 
   // Attribution to https://dejanstojanovic.net/aspnet/2018/june/clean-service-stop-on-linux-with-net-core-21/
   // Attribution to https://www.stevejgordon.co.uk/running-net-core-generic-host-applications-as-a-windows-service

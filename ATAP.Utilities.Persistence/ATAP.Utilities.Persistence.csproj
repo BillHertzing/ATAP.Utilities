@@ -17,4 +17,9 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
+  <ItemGroup>
+  <PackageReference Include="ServiceStack.OrmLite" />
+  <PackageReference Include="ServiceStack.OrmLite.SqlServer" />
+  </ItemGroup>
+  
 </Project>

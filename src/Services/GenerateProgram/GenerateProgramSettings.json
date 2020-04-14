@@ -20,7 +20,7 @@
     ],
     "Enrich": [ "FromLogContext", "WithThreadId" ],
     "Properties": {
-      "Application": "_1Console"
+      "Application": "AConsole01"
     }
   }
 }

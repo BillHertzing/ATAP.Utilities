@@ -8,7 +8,7 @@ using System.Resources;
 using System.Threading;
 
 using System.Threading.Tasks;
-using ATAP.Utilities._1Console.Properties;
+using ATAP.Utilities.AConsole01.Properties;
 using ATAP.Utilities.ComputerInventory.ProcessInfo;
 using ATAP.Utilities.ComputerInventory.Software;
 //using ATAP.Utilities.ETW;
@@ -25,179 +25,10 @@ using Serilog.Debugging;
 using ServiceStack.Text;
 
 
-namespace ATAP.Utilities._1Console.Complicated {
+namespace ATAP.Utilities.AConsole01.Complicated {
 
-  //partial class ProgramComplicated {
-  //  // Log Program Startup to ETW (as of 06/2019, ILWeaving this assembly results in a thrown invalid CLI Program Exception
-  //  // ATAP.Utilities.ETW.ATAPUtilitiesETWProvider.Log.MethodBoundry("<");
-
-
-  //  // Extend the CommandLine Configuration Provider with these switch mappings
-  //  // https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-3.0#switch-mappings
-  //  public static readonly Dictionary<string, string> switchMappings =
-  //      new Dictionary<string, string>
-  //      {
-  //              { "-Console", StringConstants.ConsoleAppConfigRootKey },
-  //              { "-C", StringConstants.ConsoleAppConfigRootKey },
-  //      };
-
-  //  public const string userSecretsID = "TBD a GUID GOES HERE";
-
-  //  public static async Task MainComplicated(string[] args) {
-
-  //    // Serilog is the logging provider I picked to provide a logging solution for the _1Console application
-  //    // Enable Serilog's internal debug logging. Note that internal logging will not write to any user-defined sinks
-  //    //  https://github.com/serilog/serilog-sinks-file/blob/dev/example/Sample/Program.cs
-  //    SelfLog.Enable(Console.Out);
-  //    // Another example is at https://stackify.com/serilog-tutorial-net-logging/
-  //    //  This brings in the System.Diagnostics.Debug namespace and writes the SelfLog there
-  //    SelfLog.Enable(msg => Debug.WriteLine(msg));
-  //    SelfLog.WriteLine("in Program.Main(Serilog Self Log)");
-
-  //    // Setup Serilog's static logger with an initial configuration sufficient to log startup errors
-  //    // Define the logger and create it
-  //    Serilog.Core.Logger mainAsyncTaskStartupLogger = new LoggerConfiguration()
-  //        .MinimumLevel.Verbose()
-  //        .Enrich.FromLogContext()
-  //        .Enrich.WithThreadId()
-  //        //.Enrich.WithHttpRequestId()
-  //        //.Enrich.WithUserName()
-  //        //.WithExceptionDetails()
-  //        .WriteTo.Seq(serverUrl: "http://localhost:5341")
-  //        .WriteTo.Debug()
-  //        //.WriteTo.File(path: "Logs/Demo.Serilog.{Date}.log", fileSizeLimitBytes: 1024, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, retainedFileCountLimit: 31)
-  //        .CreateLogger();
-  //    // ToDo: figure out how this logger seems to magically gets assigned as the logger to the Serilog static Log entry point
-  //    Log.Logger = mainAsyncTaskStartupLogger;
-
-  //    // When running as a service, the initial working dir is usually %WinDir%\System32, but the program (and configuration files) is probably installed to a different directory
-  //    // When running as a Console App, the initial working dir could be anything
-  //    // ToDo: figure out how to find json configuration files from both the installation directory (for installation-wide settings) and from the startup directory
-  //    // get the initial startup directory, and go back to it after initialization 
-  //    var initialStartupDirectory = Directory.GetCurrentDirectory();
-  //    Log.Debug("in Program.Main(Serilog Static Logger): initialStartupDirectory is {initialStartupDirectory}", initialStartupDirectory);
-  //    mainAsyncTaskStartupLogger.Debug("in Program.Main(MEL): initialStartupDirectory is {initialStartupDirectory}", initialStartupDirectory);
-  //    // Cet the directory where the executing assembly (usually .exe) and configuration files are installed to.
-  //    var loadedFromDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-  //    Log.Debug("in Program.Main: loadedFromDir is {loadedFromDir}", loadedFromDir);
-  //    Directory.SetCurrentDirectory(loadedFromDir);
-
-  //    // Load the ResourceManagers, provides access to localized exception messages and debug messages
-  //    ResourceManager debugResourceManager = new ResourceManager("ATAP.Utilities._1Console.Properties.ConsoleDebugResources", typeof(ConsoleDebugResources).Assembly);
-  //    ResourceManager exceptionResourceManager = new ResourceManager("ATAP.Utilities._1Console.Properties.ConsoleExceptionResources", typeof(ConsoleExceptionResources).Assembly);
-
-  //    // Create the initialConfigurationBuilder for this genericHost. This creates an ordered chain of configuration providers. The first providers in the chain have the lowest priority, the last providers in the chain have a higher priority.
-  //    //  Initial configuration does not take Environment into account. 
-  //    var initialGenericHostConfigurationBuilder = new ConfigurationBuilder()
-  //        // Start with a "compiled-in defaults" for anything that is REQUIRED to be provided in configuration for Production
-  //        .AddInMemoryCollection(GenericHostDefaultConfiguration.Production)
-  //        // SetBasePath creates a Physical File provider pointing to the installation directory, which will be used by the following method
-  //        .SetBasePath(loadedFromDir)
-  //        // get any Production level GenericHostSettings file present in the installation directory
-  //        .AddJsonFile(StringConstants.genericHostSettingsFileName + StringConstants.hostSettingsFileNameSuffix, optional: true)
-  //        // and again, SetBasePath creates a Physical File provider, this time pointing to the initial startup directory, which will be used by the following method
-  //        .SetBasePath(initialStartupDirectory)
-  //        // get any Production level GenericHostSettings file  present in the initial startup directory
-  //        .AddJsonFile(StringConstants.genericHostSettingsFileName + StringConstants.hostSettingsFileNameSuffix, optional: true)
-  //        // ToDo: - Don't think we need any ASPNETCORE environment variables at program  startup time, probably remove the following line
-  //        .AddEnvironmentVariables(prefix: StringConstants.ASPNETCOREEnvironmentVariablePrefix)
-  //        .AddEnvironmentVariables(prefix: StringConstants.CustomEnvironmentVariablePrefix) // only environment variables that start with the given prefix
-  //                                                                                          //.AddEnvironmentVariables() // All environment variables
-  //                                                                                          // Add command-line switch provider and map -console to --console:true
-  //        .AddCommandLine(args, switchMappings);
-
-  //    // Create this program's initial ConfigurationRoot
-  //    var initialGenericHostConfigurationRoot = initialGenericHostConfigurationBuilder.Build();
-
-  //    // Determine the environment (Debug, TestingUnit, TestingX, QA, QA1, QA2, ..., Staging, Production) to use from the initialGenericHostConfigurationRoot
-  //    var initialEnvName = initialGenericHostConfigurationRoot.GetValue<string>(StringConstants.EnvironmentConfigRootKey, StringConstants.EnvironmentDefault);
-  //    Log.Debug("{DebugMessage}", ResourceManagerExtensions.FromRM(debugResourceManager, "EnvNameInitial", initialEnvName));
-
-  //    // declare the final ConfigurationRoot for this genericHost, and set it to the initialGenericHostConfigurationRoot
-  //    IConfigurationRoot genericHostConfigurationRoot = initialGenericHostConfigurationRoot;
-
-  //    // If the initialGenericHostConfigurationRoot specifies the Environment is production, then the final genericHostConfigurationRoot is correect 
-  //    //   but if not, build a 2nd genericHostConfigurationBuilder and .Build it to create the genericHostConfigurationRoot
-
-  //    // Validate that the environment provided is one this progam understands how to use, and create the final genericHostConfigurationRoot
-  //    // The first switch statement in the following block also provides validation the the initialEnvName is one that this program understands and knows how to use
-  //    if (initialEnvName != StringConstants.EnvironmentProduction) {
-  //      // Recreate the ConfigurationBuilder for this genericHost, this time including environment-specific configuration providers.
-  //      IConfigurationBuilder genericHostConfigurationBuilder = new ConfigurationBuilder()
-  //      // Start with a "compiled-in defaults" for anything that is REQUIRED to be provided in configuration for Production
-  //      .AddInMemoryCollection(GenericHostDefaultConfiguration.Production)
-  //      // SetBasePath creates a Physical File provider pointing to the installation directory, which will be used by the following method
-  //      .SetBasePath(loadedFromDir)
-  //      // get any Production level GenericHostSettings file present in the installation directory
-  //      .AddJsonFile(StringConstants.genericHostSettingsFileName + StringConstants.hostSettingsFileNameSuffix, optional: true);
-  //      // Add environment-specific settings file
-  //      switch (initialEnvName) {
-  //        case StringConstants.EnvironmentDevelopment:
-  //          genericHostConfigurationBuilder.AddJsonFile(StringConstants.genericHostSettingsFileName + "." + initialEnvName + StringConstants.hostSettingsFileNameSuffix, optional: true);
-  //          break;
-  //        case StringConstants.EnvironmentProduction:
-  //          throw new InvalidOperationException(exceptionResourceManager.GetString("InvalidCircularEnvironment"));
-  //        default:
-  //          throw new NotImplementedException(string.Format(exceptionResourceManager.GetString("InvalidSupportedEnvironment"), initialEnvName));
-  //      };
-  //      // and again, SetBasePath creates a Physical File provider, this time pointing to the initial startup directory, which will be used by the following method
-  //      genericHostConfigurationBuilder.SetBasePath(initialStartupDirectory)
-  //      // get any Production level GenericHostSettings file  present in the initial startup directory
-  //      .AddJsonFile(StringConstants.genericHostSettingsFileName + StringConstants.hostSettingsFileNameSuffix, optional: true);
-  //      // Add environment-specific settings file
-  //      switch (initialEnvName) {
-  //        case StringConstants.EnvironmentDevelopment:
-  //          genericHostConfigurationBuilder.AddJsonFile(StringConstants.genericHostSettingsFileName + "." + initialEnvName + StringConstants.hostSettingsFileNameSuffix, optional: true);
-  //          break;
-  //        case StringConstants.EnvironmentProduction:
-  //          throw new InvalidOperationException(String.Format(exceptionResourceManager.GetString("InvalidCircularEnvironment"), initialEnvName));
-  //        default:
-  //          throw new NotImplementedException(String.Format(exceptionResourceManager.GetString("InvalidCircularEnvironment"), initialEnvName));
-  //      };
-  //      // Add environment variables for this program
-  //      genericHostConfigurationBuilder
-  //          // ToDo: - Don't think we need any ASPNETCORE environment variables at program  startup time, probably remove the following line
-  //          .AddEnvironmentVariables(prefix: StringConstants.ASPNETCOREEnvironmentVariablePrefix)
-  //          .AddEnvironmentVariables(prefix: StringConstants.CustomEnvironmentVariablePrefix)
-  //          .AddCommandLine(args);
-  //      // Set the final genericHostConfigurationRoot to the .Build() results
-  //      genericHostConfigurationRoot = genericHostConfigurationBuilder.Build();
-  //    }
-
-  //    var sections = genericHostConfigurationRoot.GetChildren(); // for debugging
-  //    List<IConfigurationSection> sectionsAsListOfIConfigurationSections = new List<IConfigurationSection>();
-  //    List<ConfigurationSection> sectionsAsListOfConfigurationSections = new List<ConfigurationSection>();
-  //    foreach (var isection in sections) sectionsAsListOfIConfigurationSections.Add(isection);
-  //    foreach (var isection in sectionsAsListOfIConfigurationSections) sectionsAsListOfConfigurationSections.Add((ConfigurationSection)isection);
-
-  //    // Validate that the current Environment matches the Environment from the initialConfigurationRoot
-  //    var envName = genericHostConfigurationRoot.GetValue<string>(StringConstants.EnvironmentConfigRootKey, StringConstants.EnvironmentDefault);
-  //    Log.Debug("{DebugMessage}", string.Format(debugResourceManager.GetString("EnvNameRunning"), envName));
-  //    if (initialEnvName != envName) {
-  //      throw new InvalidOperationException(String.Format(exceptionResourceManager.GetString("InvalidRedeclarationOfEnvironment"), initialEnvName, envName));
-  //    }
-
-  //    // Setup the Microsoft.Logging.Extensions Logging
-  //    // One of what seems to me to be a limitation, is, the configurationRoot needs to exist before logging can be read from it, so, 
-  //    //    the whole process of getting the environment above, has to be done without the loggers. That seems... wrong?
-  //    //  MEL is anacronym for Microsoft.Extensions.Logging
-
-
-
-  //    // Create a Serilog logger based on the logging section of the final ConfigurationRoot
-  //    // The Serilog.Log is a static entry to the Serilog logging provider
-  //    // Create a Serilog logger based on the final ConfigurationRoot and assign it to the static Serilog.Log object
-  //    // Configure logging based on the information in ConfigurationRoot
-  //    Serilog.Core.Logger logger = new LoggerConfiguration().ReadFrom.Configuration(genericHostConfigurationRoot).CreateLogger(); /// uncomment during development to inspect the logger that gets created 
-  //    Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(genericHostConfigurationRoot).CreateLogger();
-  //    // To Do figure out what's important from Logger and create a DebugMessage
-  //    var stateOfDebugLogging = Log.Logger.IsEnabled(Serilog.Events.LogEventLevel.Debug);
-  //    Log.Debug("{DebugMessage}", string.Format(debugResourceManager.GetString("LoggerImportantCharacteristics"), stateOfDebugLogging));
-  //    logger.Debug("{DebugMessageMEL}", string.Format(debugResourceManager.GetString("LoggerImportantCharacteristics"), stateOfDebugLogging));
-  //    // Introduce a Cancellation token source that can be used to signal the genericHost regardless of KindOfHostedHost, and regardless of having it configured with a ConsoleApplication lifetime or a Service lifetime
-  //    CancellationTokenSource genericHostCancellationTokenSource = new CancellationTokenSource();
-  //    // and its token
-  //    CancellationToken genericHostCancellationToken = genericHostCancellationTokenSource.Token;
+  
+ 
 
   //    // Validate the value of SupportedKindsOfHostBuilders from the genericHostConfigurationRoot is one that is supported by this program
   //    SupportedKindsOfHostBuilders kindOfHostBuilderToBuild;
@@ -261,18 +92,6 @@ namespace ATAP.Utilities._1Console.Complicated {
   //    RuntimeKind runtimeKind = new RuntimeKind(isConsoleHost);
   //    // ToDo: Need to expand runtTimeKind into its string representation. Will need a serializer selected in order to do this
   //    Log.Debug("{DebugMessage}", string.Format(debugResourceManager.GetString("RunTimeKindDetails"), runtimeKind));
-
-  //    // Create the GenericHostBuilder instance based on the ConfigurationRoot
-  //    Log.Debug("{DebugMessage}", string.Format(debugResourceManager.GetString("CallingCreateSpecificHostBuilder")));
-  //    IHostBuilder genericHostBuilder;
-  //    try {
-  //      genericHostBuilder = CreateSpecificHostBuilderComplicated(args, genericHostConfigurationRoot, exceptionResourceManager, debugResourceManager);
-  //    }
-  //    catch (Exception) {
-  //      // ToDo Cleanup and exit
-  //      throw;
-  //    }
-  //    Log.Debug("{DebugMessage}", string.Format(debugResourceManager.GetString("GenericHostBuilderDetails"), ((IHostBuilder)genericHostBuilder).Dump<IHostBuilder>()));
 
   //    // Attach the appropriate ServiceLifetime structures to the GenericHostBuilder, build the host, and run it async
   //    if (!runtimeKind.IsConsoleApplication) {

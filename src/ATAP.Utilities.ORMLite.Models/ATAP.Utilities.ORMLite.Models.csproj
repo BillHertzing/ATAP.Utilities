@@ -17,8 +17,9 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-<ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.GraphDatastructures.Interfaces\ATAP.Utilities.GraphDataStructures.Interfaces.csproj" />
+  <ItemGroup>
+    <PackageReference Include="ServiceStack.OrmLite"/>
+    <PackageReference Include="ServiceStack.OrmLite.SqlServer"/>
   </ItemGroup>
 
 

@@ -26,12 +26,11 @@ namespace ATAP.Utilities.Persistence
 
   }
 
-  public interface ISetupViaFileResults : ISetupResultsAbstract
-  {
+  public interface ISetupViaFileResults : ISetupResultsAbstract, IDisposable {
     FileStream[] FileStreams { get; set; }
     StreamWriter[] StreamWriters { get; set; }
+    new void Dispose();
   }
-
   public class SetupViaFileResults : SetupResultsAbstract, ISetupViaFileResults, IDisposable
   {
     public SetupViaFileResults(bool success, FileStream[] fileStreams, StreamWriter[] streamWriters) : base(success)

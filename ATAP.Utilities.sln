@@ -187,9 +187,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GraphDataStr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Philote.UnitTests", "tests\ATAP.Utilities.Philote.UnitTests\ATAP.Utilities.Philote.UnitTests.csproj", "{97867737-350F-45A2-9888-AAE28086D3A2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.AConsole01", "src\ATAP.Utilities.1Console\ATAP.Utilities.AConsole01.csproj", "{6ED198E7-653B-4454-BBC3-E341593F6065}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.AConsole01", "src\ATAP.Utilities.AConsole01\ATAP.Utilities.AConsole01.csproj", "{6ED198E7-653B-4454-BBC3-E341593F6065}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.AConsole01.StringConstants", "src\ATAP.Utilities.1Console.StringConstants\ATAP.Utilities.AConsole01.StringConstants.csproj", "{1A921845-35F7-454E-99BE-573326CB5D31}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.AConsole01.StringConstants", "src\ATAP.Utilities.AConsole01.StringConstants\ATAP.Utilities.AConsole01.StringConstants.csproj", "{1A921845-35F7-454E-99BE-573326CB5D31}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ETW", "src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj", "{F9F36BF6-B652-41DF-8F81-D67E35FCEF3C}"
 EndProject

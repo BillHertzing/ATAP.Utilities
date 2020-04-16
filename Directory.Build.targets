@@ -41,6 +41,11 @@
   <!-- documentation generation  -->
   <!--<PackageReference Update="docfx" Version="2.51.2" />-->
 
+  <!-- Packages to play with CSharpSyntaxTree  -->
+  <ItemGroup>
+    <PackageReference Update="Microsoft.CodeAnalysis.Common" Version="3.5.0" />
+  </ItemGroup>
+
 
   <!-- https://www.strathweb.com/2018/07/solution-wide-nuget-package-version-handling-with-msbuild-15/ -->
   <ItemGroup>
@@ -92,6 +97,11 @@
     <PackageReference Update="Serilog.Sinks.File" Version="5.0.0-dev-00864" />
     <PackageReference Update="Serilog.Sinks.Seq" Version="4.1.0-dev-00166" />
     <PackageReference Update="SerilogAnalyzer" Version="0.15.0" />
+
+    <!-- Packages to add Serilog and SEQ as Microsoft.Extensions.Logging providers -->
+    <PackageReference Update="Serilog.Extensions.Hosting" Version="3.0.0" />
+    <PackageReference Update="Seq.Extensions.Logging" Version="4.0.2" />
+
 
     <PackageReference Update="MedallionShell" Version="1.6.1" />
     <PackageReference Update="TimePeriodLibrary.NET" Version="2.1.1" />

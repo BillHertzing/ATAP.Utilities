@@ -14,56 +14,60 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
-namespace ATAP.Utilities.HostedServices {
+namespace ATAP.Utilities.HostedServices.ConsoleSourceHostedService {
 
 #if TRACE
   [ETWLogAttribute]
 #endif
   public class ConsoleSourceHostedService : IHostedService, IDisposable, IConsoleSourceHostedService {
-    #region Common Constructor-injected fields from the GenericHost
-    private readonly ILogger<ConsoleSourceHostedService> logger;
-    private readonly IStringLocalizer<ConsoleSourceHostedService> stringLocalizer;
-    private readonly IHostEnvironment hostEnvironment;
-    private readonly IConfiguration hostConfiguration;
-    private readonly IHostLifetime hostLifetime;
-    private readonly IHostApplicationLifetime hostApplicationLifetime;
+    #region Common Constructor-injected Auto-Implemented Properties
+    // These properties can only be set in the class constructor.
+    // Class constructor for a BackgroundService is called from the GenericHost and the DI-injected services are referenced
+    ILoggerFactory loggerFactory { get; }
+    ILogger<ConsoleSourceHostedService> logger { get; }
+    IStringLocalizerFactory stringLocalizerFactory { get; }
+    IHostEnvironment hostEnvironment { get; }
+    IConfiguration hostConfiguration { get; }
+    IHostLifetime hostLifetime { get; }
+    IConfiguration appConfiguration { get; }
+    IHostApplicationLifetime hostApplicationLifetime { get; }
     #endregion
     #region Internal and Linked CancellationTokenSource and Tokens
-    private readonly CancellationTokenSource internalCancellationTokenSource = new CancellationTokenSource();
-    private CancellationToken internalCancellationToken;
-    private CancellationTokenSource linkedCancellationTokenSource;
+    CancellationTokenSource internalCancellationTokenSource { get; } = new CancellationTokenSource();
+    CancellationToken internalCancellationToken { get; }
+    // Set in the ExecuteAsync method
+    CancellationTokenSource linkedCancellationTokenSource { get; set; }
+    // Set in the ExecuteAsync method
+    CancellationToken linkedCancellationToken { get; set; }
     #endregion
-    public ConsoleSourceHostedService(
-            // This service gets all the default injected services
-            ILogger<ConsoleSourceHostedService> logger,
-            // todo: inject localizer
-            IHostEnvironment hostEnvironment,
-            IConfiguration hostConfiguration,
-            IHostLifetime hostLifetime,
-            IHostApplicationLifetime hostApplicationLifetime
-      // Can the external CTS go here instead of in StartAsync?
-      ) {
-      this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-      this.stringLocalizer = null; // new StringLocalizer<ConsoleSourceHostedService>();
-      this.logger.LogInformation("{@ .ctor}{ConsoleSourceHostedService} in .ctor");
+    public ConsoleSourceHostedService(ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment,
+  IConfiguration hostConfiguration, IHostLifetime hostLifetime, IHostApplicationLifetime hostApplicationLifetime
+  // Can the external CTS go here instead of in StartAsync?
+  ) {
+      this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
+      //exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Utilities.ConsoleSourceHostedService");
+      //debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Utilities.ConsoleSourceHostedService");
+      this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+      this.logger = loggerFactory.CreateLogger<ConsoleSourceHostedService>();
+      logger.LogDebug("ConsoleSourceHostedService", ".ctor");
       this.hostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
       this.hostApplicationLifetime = hostApplicationLifetime ?? throw new ArgumentNullException(nameof(hostApplicationLifetime));
       this.hostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostEnvironment));
       this.hostConfiguration = hostConfiguration ?? throw new ArgumentNullException(nameof(hostConfiguration));
+      internalCancellationToken = internalCancellationTokenSource.Token;
     }
 
     #region StartAsync and StopAsync methods as promised by IHostedService
     public Task StartAsync(CancellationToken externalCancellationToken) {
       #region CancellationToken creation and linking
       // Combine the cancellation tokens,so that either can stop this HostedService
-      internalCancellationToken = internalCancellationTokenSource.Token;
       linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, externalCancellationToken);
-      var linkedCancellationToken = linkedCancellationTokenSource.Token;
+      linkedCancellationToken = linkedCancellationTokenSource.Token;
       #endregion
       #region Register actions with the CancellationToken (s)
-      externalCancellationToken.Register(() => logger.LogInformation("GenerateProgramBackgroundService: externalCancellationToken has signalled stopping."));
-      internalCancellationToken.Register(() => logger.LogInformation("GenerateProgramBackgroundService: internalCancellationToken has signalled stopping."));
-      linkedCancellationToken.Register(() => logger.LogInformation("GenerateProgramBackgroundService: linkedCancellationToken has signalled stopping."));
+      //externalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "ConsoleSinkHostedService", "externalCancellationToken"));
+      //internalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} internalCancellationToken has signalled stopping."], "ConsoleSinkHostedService", "internalCancellationToken"));
+      //linkedCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} linkedCancellationToken has signalled stopping."], "ConsoleSinkHostedService", "linkedCancellationToken"));
       #endregion
       #region TBD
       // Register on that cancellationToken an Action that will call TrySetCanceled method on the _delayStart task.
@@ -125,7 +129,7 @@ namespace ATAP.Utilities.HostedServices {
     public IObservable<string> ConsoleReadLineAsyncAsObservable() {
       return
           Observable
-              .FromAsync(() => Console.In.ReadLineAsync())
+              .FromAsync(() => Console.In.ReadLineAsync()) // This is actually a BLOCKING operation, see ?? for workaround
               .Repeat()
               .Publish()
               .RefCount()

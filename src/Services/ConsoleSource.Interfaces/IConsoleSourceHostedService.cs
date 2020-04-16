@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using System.Reactive;
 using System;
 
-namespace ATAP.Utilities.HostedServices {
+namespace ATAP.Utilities.HostedServices.ConsoleSourceHostedService {
   public interface IConsoleSourceHostedService {
     void Dispose();
     Task StartAsync(CancellationToken externalCancellationToken);

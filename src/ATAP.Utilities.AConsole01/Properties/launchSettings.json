@@ -4,7 +4,7 @@
       "commandName": "Project",
       "commandLineArgs": "-C",
       "environmentVariables": {
-        "AConsole01_Environment": "Development"
+        "AConsole01GenericHost_Environment": "Development"
       }
     }
   }

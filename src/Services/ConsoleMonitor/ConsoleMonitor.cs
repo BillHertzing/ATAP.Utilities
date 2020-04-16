@@ -1,15 +1,20 @@
+using ATAP.Utilities.ETW;
+using ATAP.Utilities.HostedServices;
+using ATAP.Utilities.HostedServices.ConsoleSinkHostedService;
+using ATAP.Utilities.HostedServices.ConsoleSourceHostedService;
+
+using ATAP.Utilities.Reactive;
+
 using System;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
-using ATAP.Utilities.ETW;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Localization;
 //using ConsoleMonitorStringConstants = ConsoleMonitor.StringConstants;
 //using ConsoleMonitorDefaultConfiguration = ConsoleMonitor.DefaultConfiguration;
 using System.Threading;
 using System.Reactive.Linq;
-using ATAP.Utilities.Reactive;
 
 namespace ATAP.Utilities.HostedServices {
 #if TRACE

@@ -14,7 +14,7 @@
     <ProjectReference Include="..\..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.1Console.StringConstants\ATAP.Utilities.AConsole01.StringConstants.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.AConsole01.StringConstants\ATAP.Utilities.AConsole01.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Extensions.Persistence\ATAP.Utilities.Extensions.Persistence.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Extensions.Reactive\ATAP.Utilities.Extensions.Reactive.csproj" />
     <ProjectReference Include="..\GenericHost\Extensions.GenericHost.Interfaces\Extensions.GenericHost.Interfaces.csproj" />
@@ -40,7 +40,7 @@
     <None Update="FileWatcher.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="GenericHostSettings.Development.json">
+    <None Update="GenericHostSettings.Development.save.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="GenericHostSettings.json">
@@ -114,6 +114,12 @@
     </Compile>
   </ItemGroup>
 
+  <!-- Packages to play with CSharpSyntaxTree  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Common" />
+    <PackageReference Include="Seq.Extensions.Logging" Version="4.0.2" />
+  </ItemGroup>
+
   <!-- Packages to persist data to QuickGraph -->
   <ItemGroup>
     <PackageReference Include="YC.QuickGraph" />
@@ -165,13 +171,16 @@
     <PackageReference Include="Serilog.Sinks.File" />
     <PackageReference Include="Serilog.Sinks.Seq" />
     <PackageReference Include="SerilogAnalyzer" />
-<!--    <PackageReference Include="Serilog.AspNetCore" /> -->
+    <!--    <PackageReference Include="Serilog.AspNetCore" /> -->
   </ItemGroup>
 
-  <!-- Packages to implement Serilog as a Microsoft logging provider ? ToDo: implement Serilog as a logging provider to Microsoft logging -->
+  <!-- Packages to add Serilog and SEQ as Microsoft.Extensions.Logging providers -->
   <ItemGroup>
     <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Seq.Extensions.Logging" />
   </ItemGroup>
+
+
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>

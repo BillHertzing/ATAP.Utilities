@@ -149,7 +149,7 @@ namespace ATAP.Utilities.AConsole01 {
   //      //});
 
   //      //try {
-  //      //  Func<Task<ConvertFileSystemToGraphResult>> run = () => StaticExtensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, convertFileSystemToGraphProgress, null, cancellationToken);
+  //      //  Func<Task<ConvertFileSystemToGraphResult>> run = () => Extensions.ConvertFileSystemToGraphAsyncTask(rootstring, asyncFileReadBlockSize, convertFileSystemToGraphProgress, null, cancellationToken);
   //      //  convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
   //      //}
   //      //catch (Exception) {

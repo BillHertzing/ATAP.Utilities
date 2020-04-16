@@ -159,15 +159,15 @@ namespace ATAP.Utilities.HostedServices {
   // attribution to https://gist.github.com/RobertDyball/e4bc7b2914d201ad3db9
   public class FileSystemWatchersHostedService : IHostedService, IDisposable, IFileSystemWatchersHostedService {
     #region Common Constructor-injected fields from the GenericHost
-    private readonly ILogger<FileSystemWatchersHostedService> logger;
-    private readonly IStringLocalizer<FileSystemWatchersHostedService> stringLocalizer;
-    private readonly IHostEnvironment hostEnvironment;
-    private readonly IConfiguration hostConfiguration;
-    private readonly IHostLifetime hostLifetime;
-    private readonly IHostApplicationLifetime hostApplicationLifetime;
-    #endregion
-    #region Internal and Linked CancellationTokenSource and Tokens
-    private readonly CancellationTokenSource internalCancellationTokenSource = new CancellationTokenSource();
+    ILogger<FileSystemWatchersHostedService> logger { get; }
+    IStringLocalizer<FileSystemWatchersHostedService> stringLocalizer { get; }
+    IHostEnvironment hostEnvironment { get; }
+    IConfiguration hostConfiguration { get; }
+    IHostLifetime hostLifetime { get; }
+  IHostApplicationLifetime hostApplicationLifetime { get; }
+  #endregion
+  #region Internal and Linked CancellationTokenSource and Tokens
+  private readonly CancellationTokenSource internalCancellationTokenSource = new CancellationTokenSource();
     private CancellationToken internalCancellationToken;
     private CancellationTokenSource linkedCancellationTokenSource;
     #endregion

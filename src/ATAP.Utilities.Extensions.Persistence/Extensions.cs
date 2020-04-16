@@ -7,7 +7,7 @@ using ServiceStack.OrmLite;
 using ServiceStack.OrmLite.SqlServer;
 
 namespace ATAP.Utilities.Persistence {
-  public static class StaticExtensions {
+  public static class Extensions {
     // Common constructor method for the SetupViaFileFunc
     public static Func<SetupViaFileData, SetupViaFileResults> SetupViaFileFuncBuilder() {
       Func<SetupViaFileData, SetupViaFileResults> ret = new Func<SetupViaFileData, SetupViaFileResults>((setupData) => {
@@ -16,10 +16,28 @@ namespace ATAP.Utilities.Persistence {
         FileStream[] fileStreams = new FileStream[numberOfFiles];
         StreamWriter[] streamWriters = new StreamWriter[numberOfFiles];
         for (var i = 0; i < numberOfFiles; i++) {
-          fileStreams[i] = new FileStream(filePathsAsArray[i], FileMode.Create, FileAccess.Write);
+          try {
+            fileStreams[i] = new FileStream(filePathsAsArray[i], FileMode.Create, FileAccess.Write);
+          }
+          catch (System.IO.FileNotFoundException) {
+            // have to serialize the filepaths
+            throw new System.IO.FileNotFoundException("The FilePaths enumerable passed could not be created");
+            // Let the caller format the UI presentation
+            // ToDo:Need a new exception here SetupViaFileFuncBuilderIOFileNotFoundException
+          }
           //ToDo: exception handling
-          streamWriters[i] = new StreamWriter(fileStreams[i], Encoding.UTF8);
-          //ToDo: exception handling
+          try {
+            streamWriters[i] = new StreamWriter(fileStreams[i], Encoding.UTF8);
+          }
+          catch (System.IO.IOException ex) {
+            // Let the caller format the UI presentation
+            // ToDo:Need a new exception here SetupViaFileFuncBuilderIOStreamwriterCreationExcpetion
+            // var newEx  = new SetupViaFileFuncBuilderIOStreamwriterCreationExcpetion("Report in Results: StreamWriter (s) could not be created", ex);
+            var newEx = new System.IO.IOException("Report in Results: StreamWriter (s) could not be created ToDo: return the inner exception");
+            return new SetupViaFileResults(false, fileStreams, streamWriters); // ToDo add a constructor that takes an IO.Exception
+
+            throw;
+          }
         }
         return new SetupViaFileResults(true, fileStreams, streamWriters);
       });
@@ -61,7 +79,7 @@ namespace ATAP.Utilities.Persistence {
         //int numberOfInsertableTableOrViews = InsertableTableOrViewsAsarray.Length;
         //InsertableTableOrView[] InsertableTableOrViewCollection = new InsertableTableOrView[number OfTables];
 
-        return new SetupViaORMResults( dbFactory, dbConn, dbCmd, true);
+        return new SetupViaORMResults(dbFactory, dbConn, dbCmd, true);
       });
       return ret;
     }

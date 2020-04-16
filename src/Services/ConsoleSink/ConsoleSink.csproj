@@ -25,6 +25,11 @@
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ConsoleSink.Interfaces\ConsoleSink.Interfaces.csproj" />
+  </ItemGroup>
+
+
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <!--
   <PropertyGroup>
@@ -36,27 +41,18 @@
     <PackageReference Include="MethodBoundaryAspect.Fody" Version="2.0.118" />
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
-    <ProjectReference Include="..\ConsoleSink.Interfaces\ConsoleSink.Interfaces.csproj" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Update="Resources\DebugResources\DebugMessages.Designer.cs">
+    <EmbeddedResource Update="Resources\DebugMessages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DebugMessages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <Compile Update="Resources\DebugMessages.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>DebugMessages.resx</DependentUpon>
     </Compile>
-    <EmbeddedResource Update="Resources\DebugResources\DebugMessages.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DebugMessages.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <Compile Update="Resources\ExceptionResources\ExceptionMessages.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ExceptionMessages.resx</DependentUpon>
-    </Compile>
-    <EmbeddedResource Update="Resources\ExceptionResources\ExceptionMessages.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>ExceptionMessages.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

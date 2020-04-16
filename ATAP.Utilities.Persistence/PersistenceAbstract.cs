@@ -39,9 +39,7 @@ namespace ATAP.Utilities.Persistence
 
   public abstract class SetupResultsAbstract : ISetupResultsAbstract
   {
-    protected SetupResultsAbstract() : this(false)
-    {
-    }
+    protected SetupResultsAbstract() : this(false) { }
 
     protected SetupResultsAbstract(bool success)
     {
@@ -49,6 +47,7 @@ namespace ATAP.Utilities.Persistence
     }
 
     public bool Success { get; set; }
+
   }
 
   public interface IInsertDataAbstract

@@ -73,7 +73,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
       }
 
       // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-      var setupResults = ATAP.Utilities.Persistence.StaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
+      var setupResults = ATAP.Utilities.Persistence.Extensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
 
       setupResults.Success.Should().Be(true);
       setupResults.FileStreams.Length.Should().Be(inTestData);
@@ -95,7 +95,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
         filePaths[i] = temporaryFiles[i].FileInfo.FullName;
       }
       // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-      var setupResults = ATAP.Utilities.Persistence.StaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
+      var setupResults = ATAP.Utilities.Persistence.Extensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
       setupResults.Dispose();
       for (int i = 0; i < inTestData; i++)
       {
@@ -124,7 +124,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
       }
 
       // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-      var setupResults = ATAP.Utilities.Persistence.StaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
+      var setupResults = ATAP.Utilities.Persistence.Extensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
       setupResults.Success.Should().Be(true);
 
       var insertFunc = new Func<IEnumerable<IEnumerable<object>>, IInsertViaFileResults>((insertData) =>
@@ -186,7 +186,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
       }
       var setupData = new SetupViaFileData(filePaths);
       // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-      var setupResults = ATAP.Utilities.Persistence.StaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
+      var setupResults = ATAP.Utilities.Persistence.Extensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
       // Validate the results are as expected
       setupResults.Success.Should().Be(true);
       setupResults.FileStreams.Length.Should().Be(inTestData.NumberOfContainers);
@@ -254,7 +254,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
       };
 
       // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-      var setupResults = ATAP.Utilities.Persistence.StaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
+      var setupResults = ATAP.Utilities.Persistence.Extensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
       // Validate the results are as expected
       setupResults.Success.Should().Be(true);
       setupResults.FileStreams.Length.Should().Be(inTestData.NumberOfContainers);

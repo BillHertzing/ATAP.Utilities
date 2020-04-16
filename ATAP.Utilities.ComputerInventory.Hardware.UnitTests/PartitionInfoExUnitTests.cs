@@ -187,7 +187,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
       }
 
       // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-      var setupResults = ATAP.Utilities.Persistence.StaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
+      var setupResults = ATAP.Utilities.Persistence.Extensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
 
       //var insertFunc = InsertViaFileFuncBuilder(setupResults);
       // Create an insertFunc that references the local variable setupResults, closing over it

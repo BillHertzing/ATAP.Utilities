@@ -1,3 +1,4 @@
+using ATAP.Utilities.ETW;
 
 using ATAP.Utilities.Persistence;
 using ATAP.Utilities.TypedGuids;
@@ -56,7 +57,9 @@ namespace ATAP.Utilities.ComputerInventory.Hardware {
       return Regex.Match(str, archiveExtensionRegex).Success;
     }
   }
-
+#if TRACE
+  [ETWLogAttribute]
+#endif
   public static partial class StaticExtensions {
     public static async Task<ConvertFileSystemToGraphResult> ConvertFileSystemToGraphAsyncTask(string root, int asyncFileReadBlockSize, bool enableHash, IConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress, Persistence<IInsertResultsAbstract>? convertFileSystemToGraphPersistence, PickAndSave<IInsertResultsAbstract>? convertFileSystemToGraphPickAndSave, CancellationToken cancellationToken) {
       // Helper method to reduce code clutter

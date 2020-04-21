@@ -61,22 +61,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>ConsoleUIResources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Update="Resources\ConfigStrings.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>ConfigStrings.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\DebugMessages.resx">
-      <LastGenOutput>DebugMessages.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\ExceptionMessages.resx">
-      <LastGenOutput>ExceptionMessages.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\UIMessages.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>UIMessages.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
     <Compile Update="Properties\ConsoleDebugResources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -92,32 +76,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>ConsoleUIResources.resx</DependentUpon>
     </Compile>
-    <Compile Update="Resources\ConfigStrings.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ConfigStrings.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Resources\DebugMessages.Designer.cs">
-      <DependentUpon>DebugMessages.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-    </Compile>
-    <Compile Update="Resources\ExceptionMessages.Designer.cs">
-      <DependentUpon>ExceptionMessages.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-    </Compile>
-    <Compile Update="Resources\UIMessages.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>UIMessages.resx</DependentUpon>
-    </Compile>
   </ItemGroup>
 
   <!-- Packages to play with CSharpSyntaxTree  -->
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Common" />
-    <PackageReference Include="Seq.Extensions.Logging" Version="4.0.2" />
   </ItemGroup>
 
   <!-- Packages to persist data to QuickGraph -->

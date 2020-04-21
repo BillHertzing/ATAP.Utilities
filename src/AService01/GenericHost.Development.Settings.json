@@ -1,0 +1,4 @@
+{
+  "MaxTimeInSecondsToWaitForGenericHostShutdown" : "30"
+  "SupressConsoleHostStartupMessages":"false"
+}

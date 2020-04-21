@@ -1,0 +1,77 @@
+{
+  "Logging": {
+    "PathFormat": "./Logs/Serilog/eStartupLog.{Date}.log",
+    "LogLevel": {
+      "Default": "Debug",
+      "System": "Information",
+      "Microsoft": "Information"
+    },
+    "WriteTo": [
+      {
+        "Name": "File",
+        "Args": {
+          "outputTemplate": "MEL GH logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}",
+          "path": "@\"C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\devlog\\AService01.{Date}.log\"",
+          "fileSizeLimitBytes": 1024,
+          "rollingInterval": "RollingInterval.Day",
+          "rollOnFileSizeLimit": true,
+          "retainedFileCountLimit": 31
+        }
+      },
+      {
+        "Name": "Console",
+        "Args": {
+          "outputTemplate": "MEL GH logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "Seq",
+        "Args": {
+          "outputTemplate": "MEL GH logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}",
+          "serverUrl": "http://localhost:5341"
+        }
+      }
+    ],
+    "Enrich": [ "FromLogContext", "WithThreadId" ],
+    "Properties": {
+      "Application": "AService01"
+    }
+
+  },
+  "Serilog": {
+    "MinimumLevel": "Verbose",
+    "WriteTo": [
+      {
+        "Name": "File",
+        "Args": {
+          "outputTemplate": "Serilog GHS logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}",
+          "path": "@\"C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\devlog\\AService01.{Date}.log\"",
+          "fileSizeLimitBytes": 1024,
+          "rollingInterval": "RollingInterval.Day",
+          "rollOnFileSizeLimit": true,
+          "retainedFileCountLimit": 31
+        }
+      },
+      {
+        "Name": "Console",
+        "Args": {
+          "outputTemplate": "Serilog GHS logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "Seq",
+        "Args": {
+          "outputTemplate": "Serilog GHS logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}",
+          "serverUrl": "http://localhost:5341"
+        }
+      }
+    ],
+    "Enrich": [ "FromLogContext", "WithThreadId" ],
+    "Properties": {
+      "Application": "AService01"
+    }
+  },
+  "MaxTimeInSecondsToWaitForGenericHostShutdown" : "10"
+  "SupressConsoleHostStartupMessages":"true"
+  
+}

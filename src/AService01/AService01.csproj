@@ -3,11 +3,11 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>netcoreapp3.1;</TargetFrameworks>
-    <RootNamespace>ATAP.Utilities.AConsole01</RootNamespace>
   </PropertyGroup>
 
-
   <ItemGroup>
+    <ProjectReference Include="..\..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.DataBaseManagement\ATAP.Utilities.DatabaseManagement.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.Hardware.Extensions\ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.ProcessInfo.Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
     <ProjectReference Include="..\..\ATAP.Utilities.ComputerInventory.Software.Enumerations\ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj" />
@@ -28,60 +28,9 @@
     <ProjectReference Include="..\services\ConsoleMonitor\ConsoleMonitor.csproj" />
     <ProjectReference Include="..\services\Timers.Interfaces\Timers.Interfaces.csproj" />
     <ProjectReference Include="..\services\Timers\Timers.csproj" />
+
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="AConsole01Settings.Development.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="AConsole01Settings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="FileWatcher.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="GenericHostSettings.Development.save.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="GenericHostSettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Properties\ConsoleDebugResources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>ConsoleDebugResources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Properties\ConsoleExceptionResources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>ConsoleExceptionResources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Properties\ConsoleUIResources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>ConsoleUIResources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <Compile Update="Properties\ConsoleDebugResources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ConsoleDebugResources.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Properties\ConsoleExceptionResources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ConsoleExceptionResources.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Properties\ConsoleUIResources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ConsoleUIResources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <!-- Packages to play with CSharpSyntaxTree  -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.Common" />
-  </ItemGroup>
 
   <!-- Packages to persist data to QuickGraph -->
   <ItemGroup>
@@ -107,6 +56,7 @@
 
   <!-- ServiceStack ORMLite (database) utilities -->
   <ItemGroup>
+    <PackageReference Include="ServiceStack" />
     <PackageReference Include="ServiceStack.ORMLite" />
     <PackageReference Include="ServiceStack.OrmLite.SqlServer" />
   </ItemGroup>
@@ -145,6 +95,7 @@
 
 
 
+
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
@@ -152,5 +103,44 @@
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
-
+  <ItemGroup>
+    <Compile Update="Resources\ConfigStrings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ConfigStrings.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\DebugMessages.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DebugMessages.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\ExceptionMessages.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ExceptionMessages.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\UIMessages.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>UIMessages.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\ConfigStrings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ConfigStrings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\DebugMessages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DebugMessages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\ExceptionMessages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ExceptionMessages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\UIMessages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>UIMessages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>

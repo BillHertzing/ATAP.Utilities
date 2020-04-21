@@ -1,0 +1,4 @@
+{
+"ORMLiteDialectProvider":"SqlServerOrmLiteDialectProvider",
+"DatabaseName":"FileSystemGraph"
+}

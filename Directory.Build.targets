@@ -59,13 +59,15 @@
     <PackageReference Update="System.Reactive" Version="4.3.2" />
 
     <!-- ServiceStack  -->
-    <PackageReference Update="ServiceStack.HttpClient" Version="5.8.1" />
-    <PackageReference Update="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
+    <PackageReference Update="ServiceStack" Version="5.8.1" />
     <!-- ServiceStack serializers and dump utility -->
+    <PackageReference Update="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
     <PackageReference Update="ServiceStack.Text" Version="5.8.1" />
-    <!-- ServiceStack ORMLite and SQLServer shim for Core -->
+    <!-- ServiceStack ORMLite and SQLServer -->
     <PackageReference Update="ServiceStack.OrmLite" Version="5.8.0" />
     <PackageReference Update="ServiceStack.OrmLite.SqlServer" Version="5.8.0" />
+    <!-- ServiceStack HTTPClient for making HTTP calls -->
+    <PackageReference Update="ServiceStack.HttpClient" Version="5.8.1" />
 
 
     <!-- Packages necessary to run the Net Core Generic Host and web server hosts Server -->

@@ -41,8 +41,6 @@
     <ProjectReference Include="..\src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="System.Management" />
-  </ItemGroup>
+
 
 </Project>

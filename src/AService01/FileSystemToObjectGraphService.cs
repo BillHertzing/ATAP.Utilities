@@ -36,14 +36,15 @@ using ConfigurationExtensions = ATAP.Utilities.Extensions.Configuration.Extensio
 using hostedServiceStringConstants = FileSystemToObjectGraphService.StringConstants;
 
 using ServiceStack;
-using ATAP.Utilities.HostedServices.StdInHandlerService;
+
 
 namespace FileSystemToObjectGraphService {
+  
   public interface IFileSystemToObjectGraphService {
 
     Task<ConvertFileSystemToGraphResult> ConvertFileSystemToObjectGraphAsync(string rootString, int asyncFileReadBlockSize, bool enableHash, ConvertFileSystemToGraphProgress convertFileSystemToGraphProgress, Persistence<IInsertResultsAbstract> persistence, PickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken);
 
-    Task EnableListeningToStdInAsync();
+    Task EnableListeningToStdInAsync(Action finishedWithStdInAction);
 
   }
 
@@ -68,15 +69,14 @@ namespace FileSystemToObjectGraphService {
 
     #endregion
     #region Internal and Linked CancellationTokenSource and Tokens
-    CancellationTokenSource internalCancellationTokenSource { get; } = new CancellationTokenSource();
-    CancellationToken internalCancellationToken { get; }
-    // Set in the ExecuteAsync method
-    CancellationTokenSource linkedCancellationTokenSource { get; set; }
-    // Set in the ExecuteAsync method
-    CancellationToken linkedCancellationToken { get; set; }
+    //CancellationTokenSource internalCancellationTokenSource { get; } = new CancellationTokenSource();
+    //CancellationToken internalCancellationToken { get; }
+    //// Set in the ExecuteAsync method
+    //CancellationTokenSource linkedCancellationTokenSource { get; set; }
+    // Set in the ExecuteAsync method for  Background service and in the StartAsync method for an IHostedService
+    CancellationToken GenericHostsCancellationToken { get; set; }
     #endregion
     #region Constructor-injected fields unique to this service. These represent other DI services used by this service that are expected to be present in the app's DI container, and are constructor-injected
-    IStdInHandlerService StdInHandlerService { get; }
     IConsoleSinkHostedService consoleSinkHostedService { get; }
     IConsoleSourceHostedService consoleSourceHostedService { get; }
     #endregion
@@ -97,7 +97,7 @@ namespace FileSystemToObjectGraphService {
     /// <param name="hostConfiguration"></param>
     /// <param name="hostLifetime"></param>
     /// <param name="hostApplicationLifetime"></param>
-    public FileSystemToObjectGraphService(IStdInHandlerService stdInHandlerService, IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration hostedServiceConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
+    public FileSystemToObjectGraphService(IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration hostedServiceConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
       this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
       exceptionLocalizer = stringLocalizerFactory.Create(nameof(AService01.Resources), "AService01");
       debugLocalizer = stringLocalizerFactory.Create(nameof(AService01.Resources), "AService01");
@@ -111,10 +111,9 @@ namespace FileSystemToObjectGraphService {
       this.hostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostLifetime));
       this.hostedServiceConfiguration = hostedServiceConfiguration ?? throw new ArgumentNullException(nameof(hostedServiceConfiguration));
       this.hostApplicationLifetime = hostApplicationLifetime ?? throw new ArgumentNullException(nameof(hostApplicationLifetime));
-      this.StdInHandlerService = stdInHandlerService ?? throw new ArgumentNullException(nameof(stdInHandlerService));
       this.consoleSinkHostedService = consoleSinkHostedService ?? throw new ArgumentNullException(nameof(consoleSinkHostedService));
       this.consoleSourceHostedService = consoleSourceHostedService ?? throw new ArgumentNullException(nameof(consoleSourceHostedService));
-      internalCancellationToken = internalCancellationTokenSource.Token;
+      //internalCancellationToken = internalCancellationTokenSource.Token;
       Stopwatch = new Stopwatch();
       #region Create the serviceData and initialize it from the StringConstants or this service's ConfigRoot
       this.serviceData = new FileSystemToObjectGraphServiceData(
@@ -146,29 +145,28 @@ await Task.Delay(10000);
       return new ConvertFileSystemToGraphResult();
     }
 
-
     #region Helper methods to reduce code clutter
     #region CheckAndHandleCancellationToken
-    void CheckAndHandleCancellationToken(int checkpointNumber, CancellationTokenSource cancellationTokenSource) {
+    void CheckAndHandleCancellationToken(int checkpointNumber) {
       // check CancellationToken to see if this task is canceled
-      if (cancellationTokenSource.IsCancellationRequested) {
-        logger.LogDebug(debugLocalizer["{0}: Cancellation requested, checkpoint number {1}", "FileSystemToObjectGraphService", checkpointNumber.ToString(CultureInfo.CurrentCulture)]);
-        cancellationTokenSource.Token.ThrowIfCancellationRequested();
+      if (GenericHostsCancellationToken.IsCancellationRequested) {
+        logger.LogDebug(debugLocalizer["{0}: Cancellation requested, checkpoint number {1}", "FileSystemGraphToDBService", checkpointNumber.ToString(CultureInfo.CurrentCulture)]);
+        GenericHostsCancellationToken.ThrowIfCancellationRequested();
       }
     }
-    void CheckAndHandleCancellationToken(string locationMessage, CancellationTokenSource cancellationTokenSource) {
+    void CheckAndHandleCancellationToken(string locationMessage) {
       // check CancellationTokenSource to see if this task is canceled
-      if (linkedCancellationTokenSource.IsCancellationRequested) {
-        logger.LogDebug(debugLocalizer["{0}: Cancellation requested, checkpoint number {1}", "FileSystemToObjectGraphService", locationMessage]);
-        cancellationTokenSource.Token.ThrowIfCancellationRequested();
+      if (GenericHostsCancellationToken.IsCancellationRequested) {
+        logger.LogDebug(debugLocalizer["{0}: Cancellation requested, checkpoint location {1}", "FileSystemGraphToDBService", locationMessage]);
+        GenericHostsCancellationToken.ThrowIfCancellationRequested();
       }
     }
     #endregion
     #region WriteMessageSafelyAsync
     // Output a message, wrapped with exception handling
-    async Task<Task> WriteMessageSafelyAsync(StringBuilder mesg, IStringLocalizer exceptionLocalizer, CancellationTokenSource cancellationTokenSource) {
+    async Task<Task> WriteMessageSafelyAsync(StringBuilder mesg, IStringLocalizer exceptionLocalizer) {
       // check CancellationToken to see if this task is canceled
-      CheckAndHandleCancellationToken("WriteMessageSafelyAsync", cancellationTokenSource);
+      CheckAndHandleCancellationToken("WriteMessageSafelyAsync");
       var task = await consoleSinkHostedService.WriteMessageAsync(mesg).ConfigureAwait(false);
       if (!task.IsCompletedSuccessfully) {
         if (task.IsCanceled) {
@@ -189,7 +187,7 @@ await Task.Delay(10000);
       return Task.CompletedTask;
     }
     async Task<Task> WriteMessageSafelyAsync() {
-      return await WriteMessageSafelyAsync(serviceData.Mesg, exceptionLocalizer, linkedCancellationTokenSource);
+      return await WriteMessageSafelyAsync(serviceData.Mesg, exceptionLocalizer);
     }
     #endregion
     #region Build Menu
@@ -202,9 +200,9 @@ await Task.Delay(10000);
     /// <param name="exceptionLocalizer"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    void BuildMenu(StringBuilder mesg, IEnumerable<string> choices, IStringLocalizer uILocalizer, CancellationTokenSource cancellationTokenSource) {
+    void BuildMenu(StringBuilder mesg, IEnumerable<string> choices, IStringLocalizer uILocalizer) {
       // check CancellationToken to see if this task is cancelled
-      CheckAndHandleCancellationToken("BuildMenu", cancellationTokenSource);
+      CheckAndHandleCancellationToken("BuildMenu");
       mesg.Clear();
 
       foreach (var choice in choices) {
@@ -214,16 +212,16 @@ await Task.Delay(10000);
       mesg.Append(uiLocalizer["Enter a number for a choice, Ctrl-C to Exit"]);
     }
     void BuildMenu() {
-      BuildMenu(serviceData.Mesg, serviceData.Choices, uiLocalizer, linkedCancellationTokenSource);
+      BuildMenu(serviceData.Mesg, serviceData.Choices, uiLocalizer);
     }
     #endregion
     #region Build and Display Menu
-    async Task BuildAndDisplayMenu(StringBuilder mesg, IEnumerable<string> choices, IStringLocalizer uILocalizer, IStringLocalizer exceptionLocalizer, CancellationTokenSource cancellationTokenSource) {
-      BuildMenu(mesg, choices, uILocalizer, cancellationTokenSource);
-      await WriteMessageSafelyAsync(mesg, exceptionLocalizer, cancellationTokenSource);
+    async Task BuildAndDisplayMenu(StringBuilder mesg, IEnumerable<string> choices, IStringLocalizer uILocalizer, IStringLocalizer exceptionLocalizer) {
+      BuildMenu(mesg, choices, uILocalizer);
+      await WriteMessageSafelyAsync(mesg, exceptionLocalizer);
     }
     async Task BuildAndDisplayMenu() {
-      await BuildAndDisplayMenu(serviceData.Mesg, serviceData.Choices, uiLocalizer, exceptionLocalizer, linkedCancellationTokenSource);
+      await BuildAndDisplayMenu(serviceData.Mesg, serviceData.Choices, uiLocalizer, exceptionLocalizer);
 
     }
     #region prepare ConvertFileSystemToGraphResult for UI Display
@@ -265,7 +263,7 @@ await Task.Delay(10000);
 
       int checkpointnumber = 0;
       // check CancellationToken to see if this task is canceled
-      CheckAndHandleCancellationToken(checkpointnumber++, linkedCancellationTokenSource);
+      CheckAndHandleCancellationToken(checkpointnumber++);
 
       logger.LogDebug(uiLocalizer["{0} {1} inputLineString = {2}", "FileSystemToObjectGraphService", "InputLineLoopAsync", inputLine]);
 
@@ -292,6 +290,7 @@ await Task.Delay(10000);
         serviceData.Mesg.Clear();
       }
       #endregion
+
       #region Switch on user's selection
       switch (inputLine) {
         case "1":
@@ -480,7 +479,7 @@ await Task.Delay(10000);
           stopWatch.Start();
           #endregion
           try {
-            Func<Task<ConvertFileSystemToGraphResult>> run = () => ComputerInventoryHardwareStaticExtensions.ConvertFileSystemToGraphAsyncTask(serviceData.RootString, serviceData.AsyncFileReadBlockSize, serviceData.EnableHash, convertFileSystemToGraphProgress, persistence, pickAndSave, linkedCancellationToken);
+            Func<Task<ConvertFileSystemToGraphResult>> run = () => ComputerInventoryHardwareStaticExtensions.ConvertFileSystemToGraphAsyncTask(serviceData.RootString, serviceData.AsyncFileReadBlockSize, serviceData.EnableHash, convertFileSystemToGraphProgress, persistence, pickAndSave, GenericHostsCancellationToken);
             convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
             stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitious timing and profiling tool than a stopwatch
                               // ToDo: put the results someplace
@@ -604,12 +603,12 @@ await Task.Delay(10000);
         //      break;
         case "99":
           #region Quit this service
-          // Go Back to the StdInHandlerService 
-          StdInHandlerService.EnableListeningToStdInAsync();
+          // Finished With StdIn
+          // Call the callback to notify whoever passed us sdtIn that we are finished with it
+          serviceData.FinishedWithStdInAction();
           serviceData.SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
           #endregion
           break;
-
         default:
           serviceData.Mesg.Clear();
           serviceData.Mesg.Append(uiLocalizer["Invalid Input Does Not Match Available Choices: {0}", inputLine]);
@@ -646,19 +645,19 @@ await Task.Delay(10000);
     /// <summary>
     /// Called to start the service. 
     /// </summary>
-    /// <param name="externalCancellationToken"></param> Used to signal FROM the GenericHost TO this BackgroundService a request for cancelllation
+    /// <param name="genericHostsCancellationToken"></param> Used to signal FROM the GenericHost TO this IHostedService a request for cancelllation
     /// <returns></returns>
-    public async Task StartAsync(CancellationToken externalCancellationToken) {
+    public async Task StartAsync(CancellationToken genericHostsCancellationToken) {
 
       #region create linkedCancellationSource and token
       // Combine the cancellation tokens,so that either can stop this HostedService
-      linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, externalCancellationToken);
-      linkedCancellationToken = linkedCancellationTokenSource.Token;
+      //linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, externalCancellationToken);
+      GenericHostsCancellationToken = genericHostsCancellationToken;
       #endregion
       #region Register actions with the CancellationToken (s)
-      externalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "FileSystemToObjectGraphService", "externalCancellationToken"));
-      internalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} internalCancellationToken has signalled stopping."], "FileSystemToObjectGraphService", "internalCancellationToken"));
-      linkedCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} GenericHostsCancellationToken has signalled stopping."], "FileSystemToObjectGraphService", "GenericHostsCancellationToken"));
+      GenericHostsCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} GenericHostsCancellationToken has signalled stopping."], "FileSystemToObjectGraphService", "StartAsync"));
+      //internalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} internalCancellationToken has signalled stopping."], "FileSystemToObjectGraphService", "internalCancellationToken"));
+      //linkedCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} GenericHostsCancellationToken has signalled stopping."], "FileSystemToObjectGraphService", "GenericHostsCancellationToken"));
       #endregion
       #region register local event handlers with the IHostApplicationLifetime's events
       // Register the methods defined in this class with the three CancellationToken properties found on the IHostApplicationLifetime instance passed to this class in it's .ctor
@@ -719,7 +718,9 @@ await Task.Delay(10000);
     #endregion
 
     #region 'standard" method for EnableListeningToStdIn
-    public async Task EnableListeningToStdInAsync() {
+    public async Task EnableListeningToStdInAsync(Action finishedWithStdInAction) {
+      // Store the callback
+      serviceData.FinishedWithStdInAction = finishedWithStdInAction;
       #region Build and Display Menu
       await BuildAndDisplayMenu();
       #endregion
@@ -753,7 +754,9 @@ await Task.Delay(10000);
       if (!disposedValue) {
         if (disposing) {
           // dispose of the SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle
-          serviceData.Dispose();
+          if (serviceData != null) {
+            serviceData.Dispose();
+          }
         }
         disposedValue = true;
       }

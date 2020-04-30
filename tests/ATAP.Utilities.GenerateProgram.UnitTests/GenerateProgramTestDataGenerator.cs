@@ -10,7 +10,7 @@ using System.Resources;
 using System.Text.RegularExpressions;
 using ATAP.Utilities.GenerateProgram;
 
-namespace ATAP.Utilities.GenerateProgram.UnitTests {
+namespace GenerateProgram.UnitTests {
 
   // //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
   // public class GenerateProgramTestData : TestData<IGenerateProgram> {

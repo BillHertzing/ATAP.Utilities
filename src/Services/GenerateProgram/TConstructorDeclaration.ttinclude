@@ -1,0 +1,19 @@
+<#@ include file="TConstructorDeclarationArgumentGroups.ttinclude" once="true" #>
+<#+ // Start of feature control block.
+string GenerateConstructorDeclaration(GConstructorDeclaration cd)
+{ var sb = new StringBuilder();
+sb.Append(cd.GVisibility);
+sb.Append(" ");
+sb.Append(cd.GName);
+sb.Append("(");
+var constructorArgumentGroupStrings = new string[cd.GConstructorArgumentGroups.Count];
+for (var i = 0; i< cd.GConstructorArgumentGroups.Count; i++ ) {
+  constructorArgumentGroupStrings[i] = GenerateConstructorDeclarationArgumentGroup(cd.GConstructorArgumentGroups[i]);
+}
+sb.Append(String.Join(",",constructorArgumentGroupStrings))
+sb.Append(")");
+if (cd.GBase != null) {;}
+else if (cd.GThis != null) {;}
+sb.Append("{"); #>
+<#= sb.Tostring() #>
+<#+} // End of feature control block. #>

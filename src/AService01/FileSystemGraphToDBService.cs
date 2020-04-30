@@ -37,14 +37,12 @@ using hostedServiceStringConstants = FileSystemGraphToDBService.StringConstants;
 using ServiceStack;
 
 namespace FileSystemGraphToDBService {
-
-
   
   public interface IFileSystemGraphToDBService {
 
     Task<ConvertFileSystemGraphToDBResults> ConvertFileSystemGraphToDBAsync(string[] filePaths, int asyncFileReadBlockSize, bool enableProgress, IConvertFileSystemGraphToDBProgress fileSystemToGraphToDBProgress);
 
-    Task EnableListeningToStdInAsync();
+    Task EnableListeningToStdInAsync(Action finishedWithStdInAction);
 
   }
 
@@ -431,7 +429,10 @@ namespace FileSystemGraphToDBService {
           break;
         case "99":
           #region Quit this service
-          //internalcancellationtoken.
+          // Finished With StdIn
+          // Call the callback to notify whoever passed us sdtIn that we are finished with it
+          serviceData.FinishedWithStdInAction();
+          serviceData.SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
           #endregion
           break;
         default:
@@ -542,7 +543,9 @@ namespace FileSystemGraphToDBService {
     #endregion
 
     #region 'standard" method for EnableListeningToStdIn
-    public async Task EnableListeningToStdInAsync() {
+    public async Task EnableListeningToStdInAsync(Action finishedWithStdInAction) {
+      // Store the callback
+      serviceData.FinishedWithStdInAction = finishedWithStdInAction;
       #region Build and Display Menu
       await BuildAndDisplayMenu();
       #endregion
@@ -576,7 +579,9 @@ namespace FileSystemGraphToDBService {
       if (!disposedValue) {
         if (disposing) {
           // dispose of the SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle
-          serviceData.Dispose();
+          if (serviceData != null) {
+            serviceData.Dispose();
+          }
         }
         disposedValue = true;
       }

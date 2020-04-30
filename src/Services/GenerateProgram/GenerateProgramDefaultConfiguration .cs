@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ATAP.Utilities.HostedServices.GenerateProgram {
+namespace GenerateProgram {
   static public class DefaultConfiguration {
     // Create the minimal set of Configuration settings that the Generic Host needs to startup and run in production
     public static Dictionary<string, string> Production =

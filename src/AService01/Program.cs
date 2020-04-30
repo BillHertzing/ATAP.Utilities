@@ -93,7 +93,7 @@ namespace AService01 {
 
       // create a local Serilog logger for use during Program startup
       var serilogLoggerConfiguration = new Serilog.LoggerConfiguration()
-        .MinimumLevel.Verbose()
+        .MinimumLevel.Information()
         .Enrich.FromLogContext()
         .Enrich.WithThreadId()
         .WriteTo.Console(outputTemplate: "Static startup Serilog {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}")
@@ -302,6 +302,16 @@ namespace AService01 {
             var S = genericHost.Services.GetService<IStdInHandlerService>();
             //await Task.Delay(100000);
             await S.EnableListeningToStdInAsync();
+
+            // Create concurrent observable dictionary <Task,>
+            // Wait on collection of TSource items not empty
+            // Pull one off, Create a transformation task (with CT and Progress) using Task.Factory.StartNew and putting the handle and the task into a concurrent observable dictionary, put TransTask onto LongRunningTasksCOD, start it
+
+            // Wait on Collection of TransTask items not empty
+            // Create select query for tasks having task.IsCompleted == true
+            // wait any on the select
+            // Wait on any TransTask item in Collection to complete, pull it off
+
             // Nothing to do, the HostedServices and BackgroundServices do it all
             ////// ToDo:  Deal with application lifetime? can applications stop, and restart, within the lifetime of the genericHost
             //////// Get the CancellationToken stored in IHostApplicationLifetime ApplicationStopping

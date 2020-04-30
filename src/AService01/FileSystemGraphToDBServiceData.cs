@@ -39,6 +39,7 @@ namespace FileSystemGraphToDBService {
     public IDisposable SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle { get; set; }
     public IConvertFileSystemGraphToDBDataAndResults ConvertFileSystemGraphToDBDataAndResults { get; set; }
     public List<Task<ConvertFileSystemGraphToDBResults>> LongRunningTasks { get; }
+    public Action FinishedWithStdInAction { get; set; }
 
     public FileSystemGraphToDBServiceData(IEnumerable<string> choices, StringBuilder stdInHandlerState, StringBuilder mesg, IConvertFileSystemGraphToDBDataAndResults convertFileSystemGraphToDBDataAndResults, List<Task<ConvertFileSystemGraphToDBResults>> longRunningTasks) {
       Choices = choices;
@@ -54,8 +55,12 @@ namespace FileSystemGraphToDBService {
     protected virtual void Dispose(bool disposing) {
       if (!disposedValue) {
         if (disposing) {
-          this.SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
-          ConvertFileSystemGraphToDBDataAndResults.Dispose();
+          if (SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle != null) {
+            SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
+          }
+          if (ConvertFileSystemGraphToDBDataAndResults != null) {
+              ConvertFileSystemGraphToDBDataAndResults.Dispose();
+          }
         }
         disposedValue = true;
       }

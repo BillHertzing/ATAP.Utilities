@@ -31,6 +31,7 @@ using FileSystemGraphToDBService;
 namespace ATAP.Utilities.HostedServices.StdInHandlerService {
   public interface IStdInHandlerService {
     Task EnableListeningToStdInAsync();
+    Action FinishedWithStdInAction {get;set;}
   }
 
 #if TRACE
@@ -69,6 +70,10 @@ namespace ATAP.Utilities.HostedServices.StdInHandlerService {
     #endregion
     #region Data for StdInHandlerService
     StdInHandlerServiceData serviceData { get; }
+    #endregion
+    #region Callback Action for other services when they are ready to release stdIn
+    public Action FinishedWithStdInAction { get; set; }
+
     #endregion
     #region Performance Monitoring data
     Stopwatch Stopwatch { get; }
@@ -112,6 +117,7 @@ namespace ATAP.Utilities.HostedServices.StdInHandlerService {
         // Create a list of choices
         stdInHandlerState: new StringBuilder(),
         mesg: new StringBuilder());
+      FinishedWithStdInAction = () => EnableListeningToStdInAsync();
       #endregion
 
     }
@@ -234,13 +240,13 @@ namespace ATAP.Utilities.HostedServices.StdInHandlerService {
       switch (inputLine) {
         case "1":
           // switch stdIn process to FileSystemToObjectGraphService
-          FileSystemToObjectGraphService.EnableListeningToStdInAsync();
+          FileSystemToObjectGraphService.EnableListeningToStdInAsync(FinishedWithStdInAction);
           serviceData.SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
           break;
-          // switch stdIn process to FileSystemGraphToDBService
-          FileSystemGraphToDBService.EnableListeningToStdInAsync();
-          serviceData.SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
         case "2":
+          // switch stdIn process to FileSystemGraphToDBService
+          FileSystemGraphToDBService.EnableListeningToStdInAsync(FinishedWithStdInAction);
+          serviceData.SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
           break;
         case "99":
           #region Quit the program
@@ -250,8 +256,9 @@ namespace ATAP.Utilities.HostedServices.StdInHandlerService {
           break;
 
         default:
-          serviceData.Mesg.Clear();
+          //serviceData.Mesg.Clear();
           serviceData.Mesg.Append(uiLocalizer["InvalidInput Does Not Match Available Choices: {0}", inputLine]);
+          Task.Delay(100000);
           break;
       }
       #endregion
@@ -405,6 +412,7 @@ namespace ATAP.Utilities.HostedServices.StdInHandlerService {
     #region 'standard" method for EnableListeningToStdIn
     public async Task EnableListeningToStdInAsync() {
       #region Build and Display Menu
+      //await BuildAndDisplayMenu();
       await BuildAndDisplayMenu();
       #endregion
 
@@ -436,7 +444,9 @@ namespace ATAP.Utilities.HostedServices.StdInHandlerService {
     protected virtual void Dispose(bool disposing) {
       if (!disposedValue) {
         if (disposing) {
-          this.serviceData.Dispose();
+          if (serviceData != null) {
+              serviceData.Dispose();
+          }
         }
         disposedValue = true;
       }

@@ -46,7 +46,7 @@ namespace ATAP.Utilities.HostedServices.ConsoleSourceHostedService {
   ) {
       this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
       //exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Utilities.ConsoleSourceHostedService");
-      //debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Utilities.ConsoleSourceHostedService");
+      //debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "AService01");
       this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       this.logger = loggerFactory.CreateLogger<ConsoleSourceHostedService>();
       logger.LogDebug("ConsoleSourceHostedService", ".ctor");
@@ -58,13 +58,14 @@ namespace ATAP.Utilities.HostedServices.ConsoleSourceHostedService {
     }
 
     #region StartAsync and StopAsync methods as promised by IHostedService
-    public Task StartAsync(CancellationToken externalCancellationToken) {
+    public Task StartAsync(CancellationToken cancellationToken) {
       #region CancellationToken creation and linking
       // Combine the cancellation tokens,so that either can stop this HostedService
-      linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, externalCancellationToken);
+      linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, cancellationToken);
       linkedCancellationToken = linkedCancellationTokenSource.Token;
       #endregion
       #region Register actions with the CancellationToken (s)
+      cancellationToken.Register(() => logger.LogDebug(String.Format("{0} {1} cancellationToken has signalled stopping.", "ConsoleSinkHostedService", "externalCancellationToken")));  //debugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "ConsoleSinkHostedService", "externalCancellationToken"));
       //externalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "ConsoleSinkHostedService", "externalCancellationToken"));
       //internalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} internalCancellationToken has signalled stopping."], "ConsoleSinkHostedService", "internalCancellationToken"));
       //linkedCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} linkedCancellationToken has signalled stopping."], "ConsoleSinkHostedService", "linkedCancellationToken"));

@@ -1,0 +1,13 @@
+<#@ include file="TUsingGroups.ttinclude" once="true"#>
+<#@ include file="TClass.ttinclude" once="true" #>
+<#+ // Start of feature control block.
+string GenerateCompilationUnit(GCompilationUnit cu)
+{ foreach (var ug in cu.GUsingGroups) {  #>
+  <#= GenerateUsingGroup(ug) #>
+  <#+ } #>
+<#= cu.GNamespace.GName #> {
+  <#+ foreach (var cla in cu.GClasses) { #>
+  <#= GenerateClass(cla) #>
+  <#+ }#>
+}
+<#+ } #>

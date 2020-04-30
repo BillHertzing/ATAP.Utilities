@@ -2,7 +2,7 @@
   "Logging": {
     "PathFormat": "./Logs/Serilog/eStartupLog.{Date}.log",
     "LogLevel": {
-      "Default": "Debug",
+      "Default": "Information",
       "System": "Information",
       "Microsoft": "Information"
     },
@@ -39,7 +39,7 @@
 
   },
   "Serilog": {
-    "MinimumLevel": "Verbose",
+    "MinimumLevel": "Information",
     "WriteTo": [
       {
         "Name": "File",

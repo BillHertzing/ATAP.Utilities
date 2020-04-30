@@ -1,5 +1,5 @@
 
-namespace ATAP.Utilities.HostedServices.GenerateProgram { 
+namespace GenerateProgram { 
   public static class StringConstants {
     // ToDo: Localize the string constants
     #region Settings File Names

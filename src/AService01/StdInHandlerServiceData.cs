@@ -20,15 +20,15 @@ namespace ATAP.Utilities.HostedServices.StdInHandlerService {
       Mesg = mesg;
     }
 
-
-
     #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls
 
     protected virtual void Dispose(bool disposing) {
       if (!disposedValue) {
         if (disposing) {
-          this.SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
+          if (SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle != null) {
+            SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
+          }
         }
         disposedValue = true;
       }

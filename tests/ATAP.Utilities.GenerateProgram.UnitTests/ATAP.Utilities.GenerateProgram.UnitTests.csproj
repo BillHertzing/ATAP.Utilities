@@ -40,11 +40,23 @@
     <ProjectReference Include="..\..\src\Services\GenerateProgram\GenerateProgram.csproj" />
   </ItemGroup>
 
+ 
+  
   <ItemGroup>
+    <Compile Update="Harness.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Harness.tt</DependentUpon>
+    </Compile>
     <Compile Update="SerializationStrings.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>SerializationStrings.resx</DependentUpon>
+    </Compile>
+    <Compile Update="TPropertyTest.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>TPropertyTest.tt</DependentUpon>
     </Compile>
   </ItemGroup>
 
@@ -53,6 +65,23 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>SerializationStrings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Harness.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Harness.cs</LastGenOutput>
+    </None>
+    <None Update="TPropertyTest.tt">
+
+      <Generator>TextTemplatingFilePreProcessor</Generator>
+
+      <LastGenOutput>TPropertyTest.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
 
 </Project>

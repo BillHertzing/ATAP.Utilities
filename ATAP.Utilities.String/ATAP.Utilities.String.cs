@@ -3,19 +3,27 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ATAP.Utilities.String
-{
+namespace ATAP.Utilities.String {
+
+  public static class Extensions {
+    // https://stackoverflow.com/questions/8809354/replace-first-occurrence-of-pattern-in-a-string
+    public static string ReplaceFirst(this string text, string search, string replace) {
+      int pos = text.IndexOf(search);
+      if (pos < 0) {
+        return text;
+      }
+      return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
+    }
+  }
   //Don't forget the using System.Security.Cryptography; statement when you add this class
-  public static class Encrypt
-  {
+  public static class Encrypt {
     // This size of the IV (in bytes) must = (keysize / 8).  Default keysize is 256, so the IV must be
     // 32 bytes long.  Using a 16 character string here gives us 32 bytes when converted to a byte array.
     private const string initVector = "e4F8jvzxvOjaGEio";
     // This constant is used to determine the keysize of the encryption algorithm
     private const int keysize = 256;
     //Encrypt
-    public static string EncryptString(string plainText, string passPhrase)
-    {
+    public static string EncryptString(string plainText, string passPhrase) {
       byte[] initVectorBytes = Encoding.UTF8.GetBytes(initVector);
       byte[] plainTextBytes = Encoding.UTF8.GetBytes(plainText);
       PasswordDeriveBytes password = new PasswordDeriveBytes(passPhrase, null);
@@ -33,8 +41,7 @@ namespace ATAP.Utilities.String
       return Convert.ToBase64String(cipherTextBytes);
     }
     //Decrypt
-    public static string DecryptString(string cipherText, string passPhrase)
-    {
+    public static string DecryptString(string cipherText, string passPhrase) {
       byte[] initVectorBytes = Encoding.UTF8.GetBytes(initVector);
       byte[] cipherTextBytes = Convert.FromBase64String(cipherText);
       PasswordDeriveBytes password = new PasswordDeriveBytes(passPhrase, null);

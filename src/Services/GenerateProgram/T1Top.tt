@@ -1,0 +1,30 @@
+<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core"
+#><#@ assembly name="System.Data.Linq"
+#><#@ assembly name="EnvDTE"
+#><#@ assembly name="System.Xml"
+#><#@ assembly name="System.Xml.Linq"
+#><#@ import namespace="Microsoft.VisualStudio.TextTemplating"
+#><#@ import namespace="System.Collections.Generic"
+#><#@ import namespace="System.IO"
+#><#@ import namespace="System.Text"
+#><#@ import namespace="System.Reflection"
+#>
+<#@ output extension=".cs" #>
+
+<# // Top level Template and corresponding Generated Class
+
+// Load the program pieces from ConfigurationRoot
+
+//var loadedFromDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location); 
+//var settingsFileName = "GenerateProgramSettings" // GenerateProgram.StringConstants.SettingsFileName;
+//var settingsFileNameSuffix = "json" // GenerateProgram.StringConstants.SettingsFileNameSuffix;
+//var envNameFromConfiguration = "Development";
+//var configurationBuilder = new ConfigurationBuilder().SetBasePath(loadedFromDirectory).AddJsonFile(settingsFileName + "." + envNameFromConfiguration + settingsFileNameSuffix, optional: true);
+//var cR = configurationBuilder.Build();
+//var gUsingName = cR.GetValue<string>("UsingName");
+//GUsing gUsing = new GUsing() {GName = "System.Text"};
+#>
+using  System.Text;
+namespace GenerateNamespaceTop {
+}

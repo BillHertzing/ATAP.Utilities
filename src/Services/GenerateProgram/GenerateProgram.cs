@@ -19,7 +19,7 @@ using ATAP.Utilities.HostedServices;
 using ConfigurationExtensions = ATAP.Utilities.Extensions.Configuration.Extensions;
 
 
-namespace ATAP.Utilities.HostedServices.GenerateProgram {
+namespace GenerateProgram {
 #if TRACE
   [ETWLogAttribute]
 #endif
@@ -86,6 +86,8 @@ namespace ATAP.Utilities.HostedServices.GenerateProgram {
       }
     }
     #endregion
+
+ 
     protected override async Task ExecuteAsync(CancellationToken externalCancellationToken) {
 
       #region CancellationToken creation and linking
@@ -126,11 +128,15 @@ namespace ATAP.Utilities.HostedServices.GenerateProgram {
         // Extract
         // Update the configurationRoot
         // Transform
+        #region Transform Configuration to Intermediate
         // Create the intermediate structures as specified in the configurationRoot
         // Populate the intermediate structures with data from the configurationRoot
         // Break if errors
+        #endregion
+        #region Load Intermediate From Configuration
         // Load
-        // write out all specified files
+        #endregion
+        // write out c# Files by calling the T4 template processor
         // Break if errors
         // Build
         // Invoke dotnet build

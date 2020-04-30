@@ -7,7 +7,7 @@ using Xunit;
 using Xunit.Abstractions;
 
 
-namespace ATAP.Utilities.GenerateProgram.UnitTests
+namespace GenerateProgram.UnitTests
 {
   public class SerializationFixture : Fixture { }
   public partial class SerializationUnitTests001 : IClassFixture<SerializationFixture>

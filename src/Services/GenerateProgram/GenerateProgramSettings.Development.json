@@ -48,5 +48,98 @@
     "Properties": {
       "Application": "AConsole01"
     }
-  }
+  },
+  "OutputDirectory": "@\"../../../Artefacts/\"",
+    "<GProjectType" "Sdk=\"Microsoft.NET.Sdk\">",
+
+  "HostedServiceUsings": [
+    "Microsoft.Extensions.Localization",
+    "Microsoft.Extensions.Options",
+    "Microsoft.Extensions.Configuration",
+    "Microsoft.Extensions.Logging",
+    "Microsoft.Extensions.Logging.Abstractions",
+    "Microsoft.Extensions.DependencyInjection",
+    "Microsoft.Extensions.Hosting",
+    "Microsoft.Extensions.Hosting.Internal"
+  ],
+
+  "HostedServiceUsingsPerServiceType": {
+    "ORMAccess": [],
+    "StdIn": [],
+    "StdOut": [],
+    "Serialization: []"
+  },
+
+  "CompilationUnitBaseNames": [
+    "Program",
+
+    "StdInHandler",
+    "FileSystemGraphToDB",
+    "FileSystemToObjectGraph",
+    "FileSystemWatchers",
+    "ConsoleMonitor",
+    "ConsoleSink",
+    "ConsoleSource"
+  ],
+  "StdInHandler": [
+    "GUsings",
+    :,
+    []
+  ],
+  "NamespaceNames": "CompilationUnitBaseNames",
+  "EpiClassNames": "ClassHostedServiceNames",
+  "ClassHostedServiceNames": [
+    "StdInHandler",
+    "FileSystemGraphToDB",
+    "FileSystemToObjectGraph",
+    "FileSystemWatchers",
+    "ConsoleMonitor",
+    "ConsoleSink",
+    "ConsoleSource"
+  ],
+  "ClassNameFromClassHostedServiceNames": "{ClassNameSubstitutionPattern}Service",
+  "DataClassNames": "{ClassHostedServiceNamesSubstitutionPattern}Data",
+  "HostedServiceAdditionalInterfaceNames": [],
+  "InterfaceNameFromClassNameTransform": "I{ClassNameSubstitutionPattern}",
+  "ClassHostedServicePropertyNames": [
+    "{ClassHostedServiceNamesSubstitutionPattern}Data[varname=serviceData]",
+    "ClassHostedServicePropertyConstructorInjectedNames",
+    :,
+    [
+      "StringLocalizerFactory",
+      "LoggerFactory",
+      "HostEnvironment",
+      "HostConfiguration",
+      "HostLifetime",
+      "AppConfiguration",
+      "HostApplicationLifetime"
+    ],
+    "ClassHostedServicePropertyConstructorInjectedDerivedNames",
+    :,
+    [
+      "Logger",
+      "UiLocalizer",
+      "ExceptionLocalizer",
+      "DebugLocalizer"
+    ]
+
+  ],
+  "ClassHostedServicePropertyNamesPerService": {
+    "StdInHandler": [
+      "FileSystemGraphToDB",
+      "FileSystemToObjectGraph",
+      "ConsoleSinkHosted",
+      "ConsoleSourceHoste"
+    ],
+    "IFileSystemToObjectGraphService": [
+      "ConsoleSinkHosted",
+      "ConsoleSourceHosted"
+    ],
+    "IFileSystemGraphToDBService": [
+      "ConsoleSinkHosted",
+      "ConsoleSourceHosted"
+    ]
+  },
+  "ClassHostedServiceConstructorBodyFileName": "HostedServiceConstructorBody",
+  "ClassHostedServiceConstructorBodyFileSuffix": "template"
 }

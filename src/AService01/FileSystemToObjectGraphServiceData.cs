@@ -77,7 +77,8 @@ namespace FileSystemToObjectGraphService {
     public StringBuilder StdInHandlerState { get;  }
     public StringBuilder Mesg { get;  }
     public IDisposable SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle { get; set; }
-    public string RootString { get; set; }
+    public Action FinishedWithStdInAction { get; set; }
+  public string RootString { get; set; }
     public int AsyncFileReadBlockSize { get; set; }
     public bool EnableHash { get; set; }
     public bool EnablePersistence { get; set; }
@@ -94,19 +95,22 @@ namespace FileSystemToObjectGraphService {
     public string OrmLiteDialectProviderStringDefault { get; set; }
     public bool Success { get; set; }
 
-    #region IDisposable Support
-    private bool disposedValue = false; // To detect redundant calls
-
     public FileSystemToObjectGraphServiceData(IEnumerable<string> choices, StringBuilder stdInHandlerState, StringBuilder mesg) {
       Choices = choices;
       StdInHandlerState = stdInHandlerState;
       Mesg = mesg;
     }
 
+    #region IDisposable Support
+    private bool disposedValue = false; // To detect redundant calls
+
     protected virtual void Dispose(bool disposing) {
       if (!disposedValue) {
         if (disposing) {
-          this.SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
+          if (SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle != null) {
+
+            SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
+          }
         }
         disposedValue = true;
       }

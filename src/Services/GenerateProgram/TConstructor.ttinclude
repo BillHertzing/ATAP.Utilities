@@ -1,0 +1,8 @@
+<#@ include file="TConstructorDeclaration.ttinclude" once="true" #>
+<#@ include file="TConstructorBody.ttinclude" once="true" #>
+<#+ // Start of feature control block.
+string GenerateConstructor(GConstructor c)
+{ #>
+  <#= GenerateConstructorDeclaration(GConstructorDeclaration c.GDeclaration) #>
+  <#= GenerateConstructorBody(GConstructorBody c.GBody) #>
+<#+} // End of feature control block. #>

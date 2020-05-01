@@ -7,9 +7,9 @@ namespace GenerateProgram {
   public static partial class RenderExtensions {
  
     public static StringBuilder RenderDisposesOfPreambleStringBuilder(this StringBuilder sb, List<string> gDisposesOf, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
-      sb.Append($"{indent}private bool disposedValue = false; // To detect redundant calls{eol}");
+      sb.Append($"{indent}private bool _disposedValue = false; // To detect redundant calls{eol}");
       sb.Append($"{indent}protected virtual void Dispose(bool disposing) {{{eol}");
-      sb.Append($"{indent}{indentDelta}if (!disposedValue) {{{eol}");
+      sb.Append($"{indent}{indentDelta}if (!_disposedValue) {{{eol}");
       sb.Append($"{indent}{indentDelta}{indentDelta}if (disposing) {{{eol}");
       foreach (var o in gDisposesOf) {
         sb.Append($"{indent}{indentDelta}{indentDelta}{indentDelta}if ({o} != null) {{{eol}");
@@ -18,7 +18,7 @@ namespace GenerateProgram {
       }
       //sb.RenderDisposesOfItemsStringBuilder(gDisposesOf,indent, indentDelta,eol);
       sb.Append($"{indent}{indentDelta}{indentDelta}}}{eol}");
-      sb.Append($"{indent}{indentDelta}disposedValue = true;{eol}");
+      sb.Append($"{indent}{indentDelta}_disposedValue = true;{eol}");
       sb.Append($"{indent}{indentDelta}}}{eol}");
       sb.Append($"{indent}}}{eol}");
       sb.Append($"{indent}public void Dispose() {{{eol}");

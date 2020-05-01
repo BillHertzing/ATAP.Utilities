@@ -9,6 +9,7 @@ namespace GenerateProgram
       ct?.ThrowIfCancellationRequested();
       StringBuilder firstLine = new StringBuilder();
       firstLine.Append($"{indent}{gMethodDeclaration.GVisibility} ");
+      firstLine.Append($"{gMethodDeclaration.GAccessModifier}");
       if (gMethodDeclaration.IsStatic!=null && (bool)gMethodDeclaration.IsStatic) {
         firstLine.Append("static ");
       }

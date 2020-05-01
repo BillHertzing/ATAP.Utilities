@@ -7,19 +7,28 @@ using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
   public static partial class RenderExtensions {
-    public static IR1Top RClass(this IR1Top r1Top, GClass gClass) {
-      r1Top.Sb.Append($"{r1Top.R1TopData.Indent}{gClass.GVisibility}");
-      r1Top.Sb.Append(" class ");
-      r1Top.Sb.Append(gClass.GName);
-      if (gClass.GInheritance != null || (gClass.GImplements != null && gClass.GImplements.Any())) { r1Top.Sb.Append(" : "); }
-      if (gClass.GInheritance != null && (gClass.GImplements == null || !gClass.GImplements.Any())) { r1Top.Sb.Append(gClass.GInheritance); }
-      else if (gClass.GInheritance == null && (gClass.GImplements != null && gClass.GImplements.Any())) { r1Top.Sb.Append(String.Join(",", gClass.GImplements)); }
+    public static StringBuilder RenderClassFirstLineStringBuilder(this StringBuilder sb, GClass gClass, StringBuilder indent, string eol, CancellationToken? ct = default) {
+      ct?.ThrowIfCancellationRequested();
+      sb.Append($"{indent}{gClass.GVisibility} class {gClass.GName} ");
+      if (gClass.GInheritance != null || (gClass.GImplements != null && gClass.GImplements.Any())) { sb.Append(" : "); }
+      if (gClass.GInheritance != null && (gClass.GImplements == null || !gClass.GImplements.Any())) { sb.Append(gClass.GInheritance); }
+      else if (gClass.GInheritance == null && (gClass.GImplements != null && gClass.GImplements.Any())) { sb.Append(String.Join(",", gClass.GImplements)); }
       else if (gClass.GInheritance != null && (gClass.GImplements != null && gClass.GImplements.Any())) {
-        r1Top.Sb.Append(gClass.GInheritance);
-        r1Top.Sb.Append(",");
-        r1Top.Sb.Append(String.Join(",", gClass.GImplements));
+        sb.Append(gClass.GInheritance);
+        sb.Append(",");
+        sb.Append(String.Join(",", gClass.GImplements));
       }
-      r1Top.Sb.Append($" {{{r1Top.R1TopData.Eol}");
+      sb.Append($" {{{eol}");
+      return sb;
+    }
+    public static StringBuilder RenderClassPreambleStringBuilder(this StringBuilder sb, GClass gClass, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
+      ct?.ThrowIfCancellationRequested();
+      sb.RenderClassFirstLineStringBuilder(gClass, indent, eol, ct);
+      return sb;
+    }
+    public static IR1Top RClass(this IR1Top r1Top, GClass gClass) {
+
+      r1Top.Sb.RenderClassFirstLineStringBuilder(gClass, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
       r1Top.R1TopData.Indent.Append(r1Top.R1TopData.IndentDelta);
       if (gClass.GPropertyGroups.Any()) {
         r1Top.Sb.Append($"{r1Top.R1TopData.Indent}#region PropertyGroups{r1Top.R1TopData.Eol}");

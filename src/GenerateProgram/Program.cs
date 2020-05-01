@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Permissions;
 using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
@@ -9,12 +10,36 @@ using ATAP.Utilities.Philote;
 namespace GenerateProgram {
   class Program {
     static void Main(string[] args) {
-      // Get the Artifacts directory from the host
-      string ArtifactsPath = "../../../Artifacts/";
+      // ToDo: Get the Artifacts directory from the host
+      string ArtifactsPath = "D:/Temp/GenerateProgramArtifacts";
+
+      GAssemblyUnit gAssemblyUnit;
+      Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit> gAssemblyUnits;
+      GResourceUnit gResourceUnit;
+      Dictionary<Philote<GResourceUnit>, GResourceUnit> gResourceUnits;
+      GResourceItem gResourceItem;
+      Dictionary<Philote<GResourceItem>, GResourceItem> gResourceItems;
       GCompilationUnit gCompilationUnit;
-      gCompilationUnit = new GCompilationUnit("TestFile", gRelativePath: ArtifactsPath, gFileSuffix: ".cs");
+      Dictionary<Philote<GCompilationUnit>, GCompilationUnit> gCompilationUnits;
       GUsing gUsing;
+      Dictionary<Philote<GUsing>, GUsing> gUsings;
       GUsingGroup gUsingGroup;
+      Dictionary<Philote<GUsingGroup>, GUsingGroup> gUsingGroups;
+      GNamespace gNamespace;
+      Dictionary<Philote<GNamespace>, GNamespace> gNamespaces;
+      GClass gClass;
+      Dictionary<Philote<GClass>, GClass> gClasss;
+      GProperty gProperty;
+      Dictionary<Philote<GProperty>, GProperty> gPropertys;
+      GPropertyGroup gPropertyGroup;
+      Dictionary<Philote<GPropertyGroup>, GPropertyGroup>  gPropertyGroups;
+      GMethod gConstructor;
+      GMethod gMethod;
+      GInterface gInterface;
+      List<string> AutoProperties;
+      string assemblyName;
+
+      gCompilationUnit = new GCompilationUnit("TestFile",  gFileSuffix: ".cs");
       gUsingGroup = new GUsingGroup("Usings For GenericHost");
       foreach (var gName in new List<string>() {
         "Microsoft.Extensions.Localization","Microsoft.Extensions.Options","Microsoft.Extensions.Configuration","Microsoft.Extensions.Logging",
@@ -23,6 +48,7 @@ namespace GenerateProgram {
         gUsingGroup.GUsings[gUsing.Philote] = gUsing;
       }
       gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
+
       gUsingGroup = new GUsingGroup("Usings For System");
       foreach (var gName in new List<string>() {
         "System","System.Collections.Generic","System.IO","System.Text","System.Threading","System.Threading.Tasks",
@@ -31,96 +57,88 @@ namespace GenerateProgram {
         gUsingGroup.GUsings[gUsing.Philote] = gUsing;
       }
       gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
-      gUsing = new GUsing("StandaloneUsing1");
-      gCompilationUnit.GUsings[gUsing.Philote] = gUsing;
-      gUsing = new GUsing("StandaloneUsing2");
-      gCompilationUnit.GUsings[gUsing.Philote] = gUsing;
 
-      GNamespace gNamespace = new GNamespace("Base.ServiceName");
+      gNamespace = new GNamespace("Base.ToDoNameOfService");
       gCompilationUnit.GNamespaces[gNamespace.Philote] = gNamespace;
-      GClass gClass = new GClass("NameOfServiceData", "public", gImplements: new List<string> { "IDisposable" }, gDisposesOf: new List<string> { "SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle" });
-      GMethod gConstructor = new GMethod(new GMethodDeclaration("NameOfServiceData", isConstructor: true, gVisibility: "public"));
+
+      gClass = new GClass("ToDoNameOfServiceData", "public", gImplements: new List<string> { "IDisposable" }, gDisposesOf: new List<string> { "SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle" });
+      gConstructor = new GMethod(new GMethodDeclaration("ToDoNameOfServiceData", isConstructor: true, gVisibility: "public"));
       gClass.GConstructors[gConstructor.Philote] = gConstructor;
-      List<GProperty> gPropertys = new List<GProperty>()  {
-                new GProperty("ConfigurationRoot", gAccessors:"{ get; }"),
-                new GProperty("Choices", gType: "IEnumerable<string>", gAccessors:"{ get; }"),
-                new GProperty("SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle", gType: "IDisposable", gAccessors:"{ get; }"),
-                new GProperty("StdInHandlerState", gType: "StringBuilder", gAccessors:"{ get; }")
-            };
-      foreach (var o in gPropertys) {
-        gClass.GPropertys[o.Philote] = o;
-      }
+
+      List<GProperty> gPropertyList = new List<GProperty>(){
+        new GProperty("ConfigurationRoot", gAccessors:"{ get; }"),
+        new GProperty("Choices", gType: "IEnumerable<string>", gAccessors:"{ get; }"),
+        new GProperty("SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle", gType: "IDisposable", gAccessors:"{ get; }"),
+        new GProperty("StdInHandlerState", gType: "StringBuilder", gAccessors:"{ get; }")
+      };
+      gPropertyList.ForEach(gProperty=>gClass.GPropertys[gProperty.Philote]=gProperty);
+
       gNamespace.GClasss[gClass.Philote] = gClass;
 
-      gClass = new GClass("NameOfService", "public", gImplements: new List<string> { "IDisposable" }, gDisposesOf: new List<string> { "ServiceNameData" });
-      //gClass.AddPropertys(new GProperty("SoloProperty", "String"));
-
-      //var gPropertys = new List<GProperty>()  {
-      //          new GProperty("SoloProperty1OfCollection","String"),
-      //          new GProperty("SoloProperty2OfCollection","String")
-      //      };
-      //gClass.AddPropertys(gPropertys);
-      //var gPropertyGroup = new GPropertyGroup("PropertyGroup1", new List<GProperty>{
-      //        new GProperty("Property1OfPropertyGroup1","String"),
-      //        new GProperty("Property2OfPropertyGroup1","String")
-      //      });
-      //gClass.AddPropertyGroups(gPropertyGroup);
-      //var gPropertyGroups = new List<GPropertyGroup>() {
-      //        new GPropertyGroup("PropertyGroup2", new List<GProperty>{
-      //          new GProperty("Property1OfPropertyGroup2","String"),
-      //          new GProperty("Property2OfPropertyGroup2","String")
-      //        }),
-      //        new GPropertyGroup("PropertyGroup3", new List<GProperty>{
-      //          new GProperty("Property1OfPropertyGroup3","String"),
-      //          new GProperty("Property2OfPropertyGroup3","String")
-      //        })
-      //      };
-      //gClass.AddPropertyGroups(gPropertyGroups);
-      //GMethodArgument arg1 = new GMethodArgument("arg1", "int");
-      //GMethodArgument arg2 = new GMethodArgument("arg2", "string", isOut: true);
-      //GMethodArgument arg3 = new GMethodArgument("arg3", "Philote<GMethodArgument>", isRef: true);
-      //Dictionary<Philote<GMethodArgument>, GMethodArgument> gMethodArguments =
-      //  new Dictionary<Philote<GMethodArgument>, GMethodArgument>() { { arg1.Philote, arg1 }, { arg2.Philote, arg2 }, { arg3.Philote, arg3 } };
-      //GMethodDeclaration gMethodDeclaration =
-      //  new GMethodDeclaration(gName: "ServiceData", isConstructor:true,gMethodArguments:gMethodArguments);
-      //GMethodBody gMethodBody = new GMethodBody(statementList: new List<string>() { "A=a", "B=b" });
-      //var gConstructor = new GMethod(gMethodDeclaration, gMethodBody);
-      gConstructor = new GMethod(new GMethodDeclaration("ServiceName", isConstructor: true, gVisibility: "public"));
+      gClass = new GClass("ToDoNameOfService", "public", gImplements: new List<string> { "IDisposable" }, gDisposesOf: new List<string> { "ToDoNameOfServiceData" });
+      gConstructor = new GMethod(new GMethodDeclaration("ToDoNameOfService", isConstructor: true, gVisibility: "public"));
       gClass.GConstructors[gConstructor.Philote] = gConstructor;
-      List<string> AutoProperties = new List<string>() {
+
+      AutoProperties = new List<string>() {
         "LoggerFactory",
         "StringLocalizerFactory",
         "HostEnvironment",
-        "HostConfiguration",
         "HostLifetime",
-        "AppConfiguration",
         "HostApplicationLifetime"
       };
-      GPropertyGroup gPropertyGroup = new GPropertyGroup("Injected AutoProperty Group for GenericHost");
+      gPropertyGroup = new GPropertyGroup("Injected AutoProperty Group for GenericHost");
       gClass.AddPropertyGroups(gPropertyGroup);
       foreach (var ap in AutoProperties) {
         gClass.AddTConstructorAutoPropertyGroup(gConstructor.Philote, ap, gPropertyGroupId: gPropertyGroup.Philote);
       }
+      AutoProperties.Clear();
+      AutoProperties.AddRange(new List<string>(){"HostConfiguration","AppConfiguration"});
+      foreach (var ap in AutoProperties) {
+        gClass.AddTConstructorAutoPropertyGroup(gConstructor.Philote, ap, gType: "IConfiguration", gPropertyGroupId: gPropertyGroup.Philote);
+      }
+
       gPropertyGroup = new GPropertyGroup("Derived AutoProperty Group for logger");
       gClass.AddPropertyGroups(gPropertyGroup);
       gClass.AddTLoggerConstructorAutoPropertyGroup(gConstructor.Philote, gPropertyGroupId: gPropertyGroup.Philote);
+
       AutoProperties.Clear();
       AutoProperties.AddRange(new List<string>() { "debugLocalizer", "exceptionLocalizer", "uiLocalizer" });
       gPropertyGroup = new GPropertyGroup("Derived AutoProperty Group for Localizers");
       gClass.AddPropertyGroups(gPropertyGroup);
-      string assemblyName = "ToDoAssemblyName";
+
+      assemblyName = "AssemblyNameReplacementPattern";
       foreach (var ap in AutoProperties) {
         gClass.AddTLocalizerConstructorAutoPropertyGroup(gConstructor.Philote, ap, assemblyName, gPropertyGroupId: gPropertyGroup.Philote);
       }
 
-
       gNamespace.GClasss[gClass.Philote] = gClass;
-      GInterface gInterface = new GInterface("ServiceData");
+
+      gAssemblyUnit = new GAssemblyUnit("TestAssembly");
+      gAssemblyUnit.GCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;
+
+      gCompilationUnit = new GCompilationUnit("TestFile.Interfaces", gFileSuffix: ".cs");
+      gNamespace = new GNamespace("Base.ToDoNameOfService");
+      
+      gInterface = new GInterface("IServiceData");
       gNamespace.GInterfaces[gInterface.Philote] = gInterface;
+
+      gAssemblyUnit.GCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;
+
+      gResourceItem = new GResourceItem(gName:"ExceptionMessage1",gValue:"textfor exception {0}", gComment:"{0} is the exception something?");
+      gResourceItems = new Dictionary<Philote<GResourceItem>, GResourceItem>();
+      gResourceItems[gResourceItem.Philote] = gResourceItem;
+      gResourceUnit = new GResourceUnit("ExceptionMessages",gRelativePath:"Resources");
+      gAssemblyUnit.GResourceUnits[gResourceUnit.Philote] = gResourceUnit;
+
+      gResourceItem = new GResourceItem(gName:"Enter Selection>",gValue:"Enter Selection>", gComment:"Enter Selection prompt for Console UI");
+      gResourceItems = new Dictionary<Philote<GResourceItem>, GResourceItem>();
+      gResourceItems[gResourceItem.Philote] = gResourceItem;
+      gResourceUnit = new GResourceUnit("UIMessages",gRelativePath:"Resources");
+      gAssemblyUnit.GResourceUnits[gResourceUnit.Philote] = gResourceUnit;
+
       var session = new System.Collections.Generic.Dictionary<string, object>();
-      var compilationUnits = new Dictionary<Philote<GCompilationUnit>, GCompilationUnit>();
-      compilationUnits[gCompilationUnit.Philote] = gCompilationUnit;
-      session.Add("compilationUnits", gCompilationUnit);
+      //session.Add("compilationUnits", gCompilationUnit);
+      session.Add("assemblyUnit", gAssemblyUnit);
       // session.Add gNamespace.End
       StringBuilder indent = new StringBuilder(8192);
       string indentDelta = "  ";
@@ -130,7 +148,7 @@ namespace GenerateProgram {
       var r1TopData = new R1TopData(indent, indentDelta, eol, ct);
       StringBuilder sb = new StringBuilder();
       var r1Top = new R1Top(session, r1TopData, sb);
-      var w1Top = new W1Top();
+      var w1Top = new W1Top(basePath:ArtifactsPath);
       r1Top.Render(w1Top);
 
       //  Invoke Editor or Compiler or IDE or Tests on the output files
@@ -138,6 +156,44 @@ namespace GenerateProgram {
       var wait = Console.ReadLine();
     }
   }
-
-
 }
+//gUsing = new GUsing("StandaloneUsing1");
+//gCompilationUnit.GUsings[gUsing.Philote] = gUsing;
+//gUsing = new GUsing("StandaloneUsing2");
+//gCompilationUnit.GUsings[gUsing.Philote] = gUsing;
+
+//gClass.AddPropertys(new GProperty("SoloProperty", "String"));
+
+//var gPropertys = new List<GProperty>()  {
+//          new GProperty("SoloProperty1OfCollection","String"),
+//          new GProperty("SoloProperty2OfCollection","String")
+//      };
+//gClass.AddPropertys(gPropertys);
+//var gPropertyGroup = new GPropertyGroup("PropertyGroup1", new List<GProperty>{
+//        new GProperty("Property1OfPropertyGroup1","String"),
+//        new GProperty("Property2OfPropertyGroup1","String")
+//      });
+//gClass.AddPropertyGroups(gPropertyGroup);
+//var gPropertyGroups = new List<GPropertyGroup>() {
+//        new GPropertyGroup("PropertyGroup2", new List<GProperty>{
+//          new GProperty("Property1OfPropertyGroup2","String"),
+//          new GProperty("Property2OfPropertyGroup2","String")
+//        }),
+//        new GPropertyGroup("PropertyGroup3", new List<GProperty>{
+//          new GProperty("Property1OfPropertyGroup3","String"),
+//          new GProperty("Property2OfPropertyGroup3","String")
+//        })
+//      };
+//gClass.AddPropertyGroups(gPropertyGroups);
+//GMethodArgument arg1 = new GMethodArgument("arg1", "int");
+//GMethodArgument arg2 = new GMethodArgument("arg2", "string", isOut: true);
+//GMethodArgument arg3 = new GMethodArgument("arg3", "Philote<GMethodArgument>", isRef: true);
+//Dictionary<Philote<GMethodArgument>, GMethodArgument> gMethodArguments =
+//  new Dictionary<Philote<GMethodArgument>, GMethodArgument>() { { arg1.Philote, arg1 }, { arg2.Philote, arg2 }, { arg3.Philote, arg3 } };
+//GMethodDeclaration gMethodDeclaration =
+//  new GMethodDeclaration(gName: "ServiceData", isConstructor:true,gMethodArguments:gMethodArguments);
+//GMethodBody gMethodBody = new GMethodBody(statementList: new List<string>() { "A=a", "B=b" });
+//var gConstructor = new GMethod(gMethodDeclaration, gMethodBody);
+
+//gCompilationUnits = new Dictionary<Philote<GCompilationUnit>, GCompilationUnit>();
+//gCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;

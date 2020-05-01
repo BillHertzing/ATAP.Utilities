@@ -7,8 +7,13 @@ using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
   public static partial class RenderExtensions {
+    public static StringBuilder RenderCompilationUnitStringBuilder(this StringBuilder sb, GCompilationUnit gCompilationUnit, StringBuilder indent, string eol, CancellationToken? ct = default) {
+      ct?.ThrowIfCancellationRequested();
+      return sb.Append($"{indent}{GCompilationUnit.Header}{eol}");
+    }
     public static IR1Top RCompilationUnit(this IR1Top r1Top,GCompilationUnit gCompilationUnit, IW1Top w1Top) {
       r1Top.R1TopData.Ct?.ThrowIfCancellationRequested();
+      r1Top.Sb.RenderCompilationUnitStringBuilder(gCompilationUnit, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
       if (gCompilationUnit.GUsingGroups.Any()) {
           r1Top.RUsingGroup(gCompilationUnit.GUsingGroups);
       }

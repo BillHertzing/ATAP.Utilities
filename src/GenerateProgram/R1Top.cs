@@ -85,6 +85,12 @@ namespace GenerateProgram {
           case Dictionary<Philote<GCompilationUnit>, GCompilationUnit> gCompilationUnits:
             this.RCompilationUnit(gCompilationUnits, w1Top);
             break;
+          case GAssemblyUnit gAssemblyUnit:
+            this.RAssemblyUnit(gAssemblyUnit, w1Top);
+            break;
+          case Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit> gAssemblyUnits:
+            this.RAssemblyUnit(gAssemblyUnits, w1Top);
+            break;
           default:
             throw new NotImplementedException(string.Format("object at key {0} is of unknown type {1}", key,
               typeof(object)));

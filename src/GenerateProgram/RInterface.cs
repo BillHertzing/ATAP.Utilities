@@ -6,12 +6,13 @@ using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
   public static partial class RenderExtensions {
-    public static StringBuilder RenderInterfaceStringBuilder(this StringBuilder sb, GInterface gInterface, StringBuilder indent, string eol, CancellationToken? ct = default) {
-      return sb.Append($"{indent}Interface {gInterface.GName} {{{eol}");
+    public static StringBuilder RenderInterfacePreambleStringBuilder(this StringBuilder sb, GInterface gInterface, StringBuilder indent, string eol, CancellationToken? ct = default) {
+      ct?.ThrowIfCancellationRequested();
+      return sb.Append($"{indent}interface {gInterface.GName} {{{eol}");
     }
 
     public static IR1Top RInterface(this IR1Top r1Top, GInterface gInterface) {
-      r1Top.Sb.RenderInterfaceStringBuilder(gInterface, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
+      r1Top.Sb.RenderInterfacePreambleStringBuilder(gInterface, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
       r1Top.R1TopData.Indent.Append(r1Top.R1TopData.IndentDelta);
       r1Top.RInterfaceProperty(gInterface.GPropertys);
       r1Top.RInterfaceMethod(gInterface.GMethods);

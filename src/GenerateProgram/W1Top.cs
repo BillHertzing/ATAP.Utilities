@@ -6,11 +6,7 @@ using ATAP.Utilities.Philote;
 //using Microsoft.FSharp.Core;
 
 namespace GenerateProgram {
-  //public interface IW1TopData {
-  //  String BasePath { get; set; }
-  //   Encoding Encoding { get; set; }
-  //  CancellationToken? Ct { get; set; }
-  //}
+
 
   public interface IW1Top
   {

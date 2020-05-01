@@ -24,7 +24,7 @@ namespace GenerateProgram {
     public string GRelativePath { get; }
     public string GFileSuffix { get; }
     public Philote<GCompilationUnit> Philote { get; }
-
+    public static string Header { get; } = StringConstants.HeaderTextStringDefault;
   }
 }
 

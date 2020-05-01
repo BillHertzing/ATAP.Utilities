@@ -14,8 +14,8 @@ namespace GenerateProgram {
       return r1Top;
     }
     public static IR1Top RUsing(this IR1Top r1Top, List<GUsing> gUsings) {
-      foreach (var u in gUsings) {
-        r1Top.RUsing(u);
+      foreach (var o in gUsings) {
+        r1Top.RUsing(o);
       }
       return r1Top;
     }

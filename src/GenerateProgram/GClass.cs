@@ -33,8 +33,5 @@ namespace GenerateProgram {
     public List<string>? GDisposesOf { get; }
     public Philote<GClass> Philote { get; }
 
-      
-    //public GMethod[]? GMethods { get; }
-
   }
 }

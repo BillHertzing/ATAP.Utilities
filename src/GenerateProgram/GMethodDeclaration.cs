@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Management.Instrumentation;
 using ATAP.Utilities.Philote;
+
 
 namespace GenerateProgram {
   public class GMethodDeclaration {
-    public GMethodDeclaration(string? gName = default, string? gType = default, string? gVisibility = default, bool? isStatic = default,bool? isConstructor = default, Dictionary<Philote<GMethodArgument>, GMethodArgument>? gMethodArguments = default, string? gBase = default, string? gThis = default) {
+    public GMethodDeclaration(string? gName = default, string? gType = default, string? gVisibility = default, string? gAccessModifier = default, bool? isStatic = default,bool? isConstructor = default, Dictionary<Philote<GMethodArgument>, GMethodArgument>? gMethodArguments = default, string? gBase = default, string? gThis = default) {
       GName = gName == default ? "" : gName;
       GVisibility = gVisibility == default ? "" : gVisibility;
       GType = gType == default ? "" : gType;
+      GAccessModifier = gAccessModifier == default ? "" : gAccessModifier;
       IsStatic = isStatic == default ? false : (bool) isStatic;
       IsConstructor = isConstructor == default ? false : (bool) isConstructor;
       GMethodArguments = gMethodArguments == default ? new Dictionary<Philote<GMethodArgument>, GMethodArgument>() : gMethodArguments;
@@ -28,6 +31,8 @@ namespace GenerateProgram {
     }
     public string GName { get; }
     public string? GType { get; }
+    // ToDo: make this an enumeration
+    public string? GAccessModifier { get; }
     public bool? IsConstructor { get; }
     public string? GVisibility { get; }
     public bool? IsStatic { get; }

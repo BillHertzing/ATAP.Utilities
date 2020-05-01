@@ -10,18 +10,9 @@ namespace GenerateProgram {
       //Dictionary<Philote<GException>, GException>? gExceptions = default
       ) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
-      if (gClasss == default) {
-        GClasss = new Dictionary<Philote<GClass>, GClass>();
-      }
-      else {
-        GClasss = gClasss;
-      }
-      if (gInterfaces == default) {
-        GInterfaces = new Dictionary<Philote<GInterface>, GInterface>();
-      }
-      else {
-        GInterfaces = gInterfaces;
-      }
+      GClasss = gClasss == default ? new Dictionary<Philote<GClass>, GClass>() : gClasss;
+      GInterfaces = gInterfaces == default? new Dictionary<Philote<GInterface>, GInterface>() : gInterfaces;
+
       //GEnumerations = gEnumerations;
       //GExceptions = gExceptions;
       Philote = new Philote<GNamespace>();

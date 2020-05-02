@@ -8,7 +8,7 @@ using ATAP.Utilities.Philote;
 namespace GenerateProgram {
   public static partial class RenderExtensions {
     public static IR1Top RAssemblyUnit(this IR1Top r1Top,GAssemblyUnit gAssemblyUnit, IW1Top w1Top) {
-      r1Top.R1TopData.Ct?.ThrowIfCancellationRequested();
+      r1Top.Ct?.ThrowIfCancellationRequested();
       if (gAssemblyUnit.GCompilationUnits.Any()) {
         foreach (var kvp in gAssemblyUnit.GCompilationUnits) {
           r1Top.RCompilationUnit(kvp.Value,w1Top);
@@ -29,6 +29,7 @@ namespace GenerateProgram {
           r1Top.Sb.Clear();
         }
       }
+      r1Top.RProjectUnit(gAssemblyUnit.GProjectUnit,w1Top);
       return r1Top;
     }
     public static IR1Top RAssemblyUnit(this IR1Top r1Top, List<GAssemblyUnit> gAssemblyUnits,IW1Top w1Top) {

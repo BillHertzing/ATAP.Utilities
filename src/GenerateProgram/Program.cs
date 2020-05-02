@@ -1,17 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing.Text;
 using System.Linq;
 using System.Security.Permissions;
 using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
+using static GenerateProgram.GUsingGroupExtensions;
+using static GenerateProgram.GItemGroupInProjectUnitExtensions;
+using static GenerateProgram.GCompilationUnitExtensions;
 //using AutoMapper.Configuration;
 
 namespace GenerateProgram {
+
   class Program {
     static void Main(string[] args) {
       // ToDo: Get the Artifacts directory from the host
       string ArtifactsPath = "D:/Temp/GenerateProgramArtifacts";
+      string BaseNamespace = "ATAPConsole02";
+      string NameOfService = "ToDoNameOfService";
 
       GAssemblyUnit gAssemblyUnit;
       Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit> gAssemblyUnits;
@@ -37,16 +44,17 @@ namespace GenerateProgram {
       GMethod gMethod;
       GInterface gInterface;
       List<string> AutoProperties;
+
+      GPropertyGroupInProjectUnit gPropertyGroupInProjectUnit;
+      List<String> gPropertyGroupStatements;
+      GItemGroupInProjectUnit gItemGroupInProjectUnit;
+      List<String> gItemGroupStatements;
+
       string assemblyName;
 
       gCompilationUnit = new GCompilationUnit("TestFile",  gFileSuffix: ".cs");
-      gUsingGroup = new GUsingGroup("Usings For GenericHost");
-      foreach (var gName in new List<string>() {
-        "Microsoft.Extensions.Localization","Microsoft.Extensions.Options","Microsoft.Extensions.Configuration","Microsoft.Extensions.Logging",
-        "Microsoft.Extensions.Logging.Abstractions", "Microsoft.Extensions.DependencyInjection", "Microsoft.Extensions.Hosting","Microsoft.Extensions.Hosting.Internal"}) {
-        gUsing = new GUsing(gName);
-        gUsingGroup.GUsings[gUsing.Philote] = gUsing;
-      }
+      gUsingGroup = new GUsingGroup().UsingsForMicrosoftGenericHost();
+      
       gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
 
       gUsingGroup = new GUsingGroup("Usings For System");
@@ -58,7 +66,7 @@ namespace GenerateProgram {
       }
       gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
 
-      gNamespace = new GNamespace("Base.ToDoNameOfService");
+      gNamespace = new GNamespace($"{BaseNamespace}.{NameOfService}" );
       gCompilationUnit.GNamespaces[gNamespace.Philote] = gNamespace;
 
       gClass = new GClass("ToDoNameOfServiceData", "public", gImplements: new List<string> { "IDisposable" }, gDisposesOf: new List<string> { "SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle" });
@@ -113,13 +121,16 @@ namespace GenerateProgram {
 
       gNamespace.GClasss[gClass.Philote] = gClass;
 
-      gAssemblyUnit = new GAssemblyUnit("TestAssembly");
+      gAssemblyUnit = new GAssemblyUnit(NameOfService,gProjectUnit:new GProjectUnit(NameOfService));
       gAssemblyUnit.GCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;
 
       gCompilationUnit = new GCompilationUnit("TestFile.Interfaces", gFileSuffix: ".cs");
-      gNamespace = new GNamespace("Base.ToDoNameOfService");
+      gNamespace = new GNamespace($"{BaseNamespace}.{NameOfService}" );
       
-      gInterface = new GInterface("IServiceData");
+      gInterface = new GInterface($"I{NameOfService}Data");
+      gNamespace.GInterfaces[gInterface.Philote] = gInterface;
+
+      gInterface = new GInterface($"I{NameOfService}");
       gNamespace.GInterfaces[gInterface.Philote] = gInterface;
 
       gAssemblyUnit.GCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;
@@ -129,25 +140,72 @@ namespace GenerateProgram {
       gResourceItems[gResourceItem.Philote] = gResourceItem;
       gResourceUnit = new GResourceUnit("ExceptionMessages",gRelativePath:"Resources");
       gAssemblyUnit.GResourceUnits[gResourceUnit.Philote] = gResourceUnit;
+      gAssemblyUnit.GProjectUnit.GResourceUnits[gResourceUnit.Philote] = gResourceUnit;
 
       gResourceItem = new GResourceItem(gName:"Enter Selection>",gValue:"Enter Selection>", gComment:"Enter Selection prompt for Console UI");
       gResourceItems = new Dictionary<Philote<GResourceItem>, GResourceItem>();
       gResourceItems[gResourceItem.Philote] = gResourceItem;
       gResourceUnit = new GResourceUnit("UIMessages",gRelativePath:"Resources");
       gAssemblyUnit.GResourceUnits[gResourceUnit.Philote] = gResourceUnit;
+      gAssemblyUnit.GProjectUnit.GResourceUnits[gResourceUnit.Philote] = gResourceUnit;
+
+      gPropertyGroupStatements = new List<string>();
+      gPropertyGroupInProjectUnit = new GPropertyGroupInProjectUnit("PackableProductionV1.0.0Library","what kind of an assembly", gPropertyGroupStatements);
+      gPropertyGroupInProjectUnit.GPropertyGroupStatements.AddRange(new List<string>() {
+        "<OutputType>Library</OutputType>",
+        "<GeneratePackageOnBuild>true</GeneratePackageOnBuild>",
+        "<IsPackable>true</IsPackable>",
+        "<!-- Assembly, File, and Package Information for this assembly-->",
+        "<!-- Build and revision are created based on date-->",
+        "<MajorVersion>1</MajorVersion>",
+        "<MinorVersion>0</MinorVersion>",
+        "<PatchVersion>0</PatchVersion>",
+        "<!-- Current Lifecycle stage for this assembly-->",
+        "<PackageLifeCycleStage>Production</PackageLifeCycleStage>",
+        "<!-- NuGet Package Label for the Nuget Package if the LifecycleStage is not Production-->",
+        "<!-- However, if the LifecycleStage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->",
+        "<PackageLabel>NA</PackageLabel>",
+        "<Configurations>Debug;Release;ReleaseWithTrace</Configurations>",
+      });
+      gAssemblyUnit.GProjectUnit.GPropertyGroupInProjectUnits[gPropertyGroupInProjectUnit.Philote] =
+        gPropertyGroupInProjectUnit;
+
+
+      gItemGroupInProjectUnit = ItemGroupInProjectUnitForEntireService();
+      gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits[gItemGroupInProjectUnit.Philote] = gItemGroupInProjectUnit;
+      gItemGroupInProjectUnit = ItemGroupInProjectUnitForQuickGraphPackageReferences();
+      gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits[gItemGroupInProjectUnit.Philote] = gItemGroupInProjectUnit;
+      gItemGroupInProjectUnit = ItemGroupInProjectUnitForQuickGraphDependentPackageReferences();
+      gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits[gItemGroupInProjectUnit.Philote] = gItemGroupInProjectUnit;
+      gItemGroupInProjectUnit = ItemGroupInProjectUnitForReactiveExtensionsPackageReferences();
+      gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits[gItemGroupInProjectUnit.Philote] = gItemGroupInProjectUnit;
+      gItemGroupInProjectUnit = ItemGroupInProjectUnitForServiceStackSerializationPackageReferences();
+      gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits[gItemGroupInProjectUnit.Philote] = gItemGroupInProjectUnit;
+      gItemGroupInProjectUnit = ItemGroupInProjectUnitForServiceStackORMLitePackageReferences();
+      gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits[gItemGroupInProjectUnit.Philote] = gItemGroupInProjectUnit;
+      gItemGroupInProjectUnit = ItemGroupInProjectUnitForNetCoreGenericHostAndWebServerHostPackageReferences();
+      gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits[gItemGroupInProjectUnit.Philote] = gItemGroupInProjectUnit;
+      gItemGroupInProjectUnit = ItemGroupInProjectUnitForSerilogLoggingProviderPackageReferences();
+      gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits[gItemGroupInProjectUnit.Philote] = gItemGroupInProjectUnit;
+      gItemGroupInProjectUnit = ItemGroupInProjectUnitForSerilogAndSeqMELLoggingProviderPackageReferences();
+      gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits[gItemGroupInProjectUnit.Philote] = gItemGroupInProjectUnit;
+      gItemGroupInProjectUnit = ItemGroupInProjectUnitForILWeavingUsingFodyPackageReferences();
+      gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits[gItemGroupInProjectUnit.Philote] = gItemGroupInProjectUnit;
+
+      gCompilationUnit = gCompilationUnit.CompilationUnitStringConstants(gNamespaceName: gNamespace.GName);
+      gAssemblyUnit.GCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;
 
       var session = new System.Collections.Generic.Dictionary<string, object>();
       //session.Add("compilationUnits", gCompilationUnit);
       session.Add("assemblyUnit", gAssemblyUnit);
-      // session.Add gNamespace.End
-      StringBuilder indent = new StringBuilder(8192);
+      // session.Add gNames pace.End
+      StringBuilder sb = new StringBuilder(0x2000);
+      StringBuilder indent = new StringBuilder(64);
       string indentDelta = "  ";
       string eol = Environment.NewLine;
       CancellationTokenSource cts = new CancellationTokenSource();
       CancellationToken ct = cts.Token;
-      var r1TopData = new R1TopData(indent, indentDelta, eol, ct);
-      StringBuilder sb = new StringBuilder();
-      var r1Top = new R1Top(session, r1TopData, sb);
+      var r1Top = new R1Top(session,sb,indent,indentDelta,eol,ct);
       var w1Top = new W1Top(basePath:ArtifactsPath);
       r1Top.Render(w1Top);
 

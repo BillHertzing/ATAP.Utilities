@@ -10,7 +10,7 @@ namespace GenerateProgram {
       return sb.Append($"{indent}{gProperty.GVisibility} {gProperty.GType} {gProperty.GName} {gProperty.GAccessors}{eol}");
     }
     public static IR1Top RProperty(this IR1Top r1Top, GProperty gProperty) {
-      r1Top.Sb.RenderPropertyStringBuilder(gProperty, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
+      r1Top.Sb.RenderPropertyStringBuilder(gProperty, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       return r1Top;
     }
     public static IR1Top RProperty(this IR1Top r1Top, List<GProperty> gPropertys) {

@@ -12,12 +12,12 @@ namespace GenerateProgram {
     }
 
     public static IR1Top RInterface(this IR1Top r1Top, GInterface gInterface) {
-      r1Top.Sb.RenderInterfacePreambleStringBuilder(gInterface, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
-      r1Top.R1TopData.Indent.Append(r1Top.R1TopData.IndentDelta);
+      r1Top.Sb.RenderInterfacePreambleStringBuilder(gInterface, r1Top.Indent, r1Top.Eol, r1Top.Ct);
+      r1Top.Indent.Append(r1Top.IndentDelta);
       r1Top.RInterfaceProperty(gInterface.GPropertys);
       r1Top.RInterfaceMethod(gInterface.GMethods);
-      r1Top.R1TopData.Indent.ReplaceFirst(r1Top.R1TopData.IndentDelta,"");
-      r1Top.Sb.Append($"{r1Top.R1TopData.Indent} }}{r1Top.R1TopData.Eol}");
+      r1Top.Indent.ReplaceFirst(r1Top.IndentDelta,"");
+      r1Top.Sb.Append($"{r1Top.Indent} }}{r1Top.Eol}");
       return r1Top;
     }
 

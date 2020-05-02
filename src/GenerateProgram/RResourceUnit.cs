@@ -14,7 +14,7 @@ namespace GenerateProgram {
       return sb.Append($"</data>{eol}");
     }
     public static IR1Top RResourceUnit(this IR1Top r1Top,GResourceUnit gResourceUnit, IW1Top w1Top) {
-      r1Top.R1TopData.Ct?.ThrowIfCancellationRequested();
+      r1Top.Ct?.ThrowIfCancellationRequested();
       StringBuilder localStringBuilder = new StringBuilder();
       try {
         localStringBuilder.FetchFileAsStringBuilder("CResourceUnitPreambleTemplate.xml");
@@ -23,9 +23,10 @@ namespace GenerateProgram {
         Console.WriteLine(e);  // ToDo: better exception handling
         throw;
       }
+      // ToDo: Figure out how to insert the header into the XML File Fetched as a template
       if (gResourceUnit.GResourceItems.Any()) {
         foreach (var kvp in gResourceUnit.GResourceItems) {
-          localStringBuilder.RenderResourceItemStringBuilder(kvp.Value,  r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
+          localStringBuilder.RenderResourceItemStringBuilder(kvp.Value,  r1Top.Eol, r1Top.Ct);
         }
       }
       w1Top.WResourceUnit(gResourceUnit, r1Top.Sb);

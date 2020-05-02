@@ -28,14 +28,14 @@ namespace GenerateProgram {
       return sb;
     }
     public static IR1Top RMethodArgument(this IR1Top r1Top, GMethodArgument gMethodArgument) {
-      r1Top.Sb.RenderMethodArgumentStringBuilder(gMethodArgument, r1Top.R1TopData.Ct);
+      r1Top.Sb.RenderMethodArgumentStringBuilder(gMethodArgument, r1Top.Ct);
       return r1Top;
     }
     public static IR1Top RMethodArgument(this IR1Top r1Top, List<GMethodArgument> gMethodArguments) {
       var args = new List<string>();
       StringBuilder sb = new StringBuilder();
       foreach (var ma in gMethodArguments) {
-        sb.RenderMethodArgumentStringBuilder(ma, r1Top.R1TopData.Ct);
+        sb.RenderMethodArgumentStringBuilder(ma, r1Top.Ct);
         args.Add(sb.ToString());
       }
       r1Top.Sb.Append(string.Join(",",args));
@@ -45,7 +45,7 @@ namespace GenerateProgram {
       var args = new List<string>();
       StringBuilder sb = new StringBuilder();
       foreach (var kvp in gMethodArguments) {
-        sb.RenderMethodArgumentStringBuilder(kvp.Value, r1Top.R1TopData.Ct);
+        sb.RenderMethodArgumentStringBuilder(kvp.Value, r1Top.Ct);
         args.Add(sb.ToString());
         sb.Clear();
       }

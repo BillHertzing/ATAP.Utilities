@@ -14,11 +14,11 @@ namespace GenerateProgram {
       return sb;
     }
     public static IR1Top RUsingGroup(this IR1Top r1Top, GUsingGroup gUsingGroup) {
-      r1Top.Sb.Append($"{r1Top.R1TopData.Indent}#region {gUsingGroup.GName}{r1Top.R1TopData.Eol}");
-      r1Top.R1TopData.Indent.Append(r1Top.R1TopData.IndentDelta);
-      r1Top.Sb.RenderUsingGroupStringBuilder(gUsingGroup, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
-      r1Top.R1TopData.Indent.ReplaceFirst(r1Top.R1TopData.IndentDelta, "");
-      r1Top.Sb.Append($"{r1Top.R1TopData.Indent}#endregion {r1Top.R1TopData.Eol}");
+      r1Top.Sb.Append($"{r1Top.Indent}#region {gUsingGroup.GName}{r1Top.Eol}");
+      r1Top.Indent.Append(r1Top.IndentDelta);
+      r1Top.Sb.RenderUsingGroupStringBuilder(gUsingGroup, r1Top.Indent, r1Top.Eol, r1Top.Ct);
+      r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+      r1Top.Sb.Append($"{r1Top.Indent}#endregion {r1Top.Eol}");
       return r1Top;
     }
     public static IR1Top RUsingGroup(this IR1Top r1Top, List<GUsingGroup> gUsingGroups) {

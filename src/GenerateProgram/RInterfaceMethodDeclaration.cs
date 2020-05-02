@@ -24,7 +24,7 @@ namespace GenerateProgram
     }
     public static IR1Top RInterfaceMethodDeclaration(this IR1Top r1Top, GMethodDeclaration gMethodDeclaration)
     {
-      r1Top.Sb.RenderInterfaceMethodDeclarationStringBuilder(gMethodDeclaration, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
+      r1Top.Sb.RenderInterfaceMethodDeclarationStringBuilder(gMethodDeclaration, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       return r1Top;
     }
   }

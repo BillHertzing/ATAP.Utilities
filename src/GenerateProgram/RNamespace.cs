@@ -13,12 +13,12 @@ namespace GenerateProgram {
       return sb.Append($"{indent}}}{eol}");
     }
     public static IR1Top RNamespace(this IR1Top r1Top, GNamespace gNamespace) {
-      r1Top.Sb.RenderNamespaceDeclarationStringBuilder(gNamespace, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
-      r1Top.R1TopData.Indent.Append(r1Top.R1TopData.IndentDelta);
+      r1Top.Sb.RenderNamespaceDeclarationStringBuilder(gNamespace, r1Top.Indent, r1Top.Eol, r1Top.Ct);
+      r1Top.Indent.Append(r1Top.IndentDelta);
       r1Top.RClass(gNamespace.GClasss);
       r1Top.RInterface(gNamespace.GInterfaces);
-      r1Top.R1TopData.Indent.ReplaceFirst(r1Top.R1TopData.IndentDelta, "");
-      r1Top.Sb.RenderNamespaceTerminationStringBuilder(gNamespace, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
+      r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+      r1Top.Sb.RenderNamespaceTerminationStringBuilder(gNamespace, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       return r1Top;
     }
   }

@@ -10,7 +10,7 @@ namespace GenerateProgram {
       return sb.Append($"{indent}using {gUsing.GName};{eol}");
     }
     public static IR1Top RUsing(this IR1Top r1Top, GUsing gUsing) {
-      r1Top.Sb.RenderUsingStringBuilder(gUsing, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
+      r1Top.Sb.RenderUsingStringBuilder(gUsing, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       return r1Top;
     }
     public static IR1Top RUsing(this IR1Top r1Top, List<GUsing> gUsings) {

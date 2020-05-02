@@ -5,7 +5,7 @@ using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
   public class GUsingGroup {
-    public GUsingGroup(string gName, Dictionary<Philote<GUsing>, GUsing> gUsings = default) {
+    public GUsingGroup(string gName = "", Dictionary<Philote<GUsing>, GUsing> gUsings = default) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
       if (gUsings == default) {
         GUsings = new Dictionary<Philote<GUsing>, GUsing>();

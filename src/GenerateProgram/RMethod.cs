@@ -8,10 +8,10 @@ namespace GenerateProgram {
   public static partial class RenderExtensions {
     public static IR1Top RMethod(this IR1Top r1Top, GMethod gMethod) {
       r1Top.RMethodDeclaration(gMethod.GDeclaration);
-      r1Top.R1TopData.Indent.Append(r1Top.R1TopData.IndentDelta);
+      r1Top.Indent.Append(r1Top.IndentDelta);
       r1Top.RMethodBody(gMethod.GBody);
-      r1Top.R1TopData.Indent.ReplaceFirst(r1Top.R1TopData.IndentDelta,"");
-      r1Top.Sb.Append($"{r1Top.R1TopData.Indent} }}{r1Top.R1TopData.Eol}");
+      r1Top.Indent.ReplaceFirst(r1Top.IndentDelta,"");
+      r1Top.Sb.Append($"{r1Top.Indent} }}{r1Top.Eol}");
       return r1Top;
     }
 

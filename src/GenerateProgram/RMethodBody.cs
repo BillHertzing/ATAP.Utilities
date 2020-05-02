@@ -11,7 +11,7 @@ namespace GenerateProgram {
     }
     public static IR1Top RMethodBody(this IR1Top r1Top, GMethodBody gMethodBody) {
       foreach (var s in gMethodBody.StatementList) {
-        r1Top.Sb.RenderMethodBodyStatementStringBuilder(s, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
+        r1Top.Sb.RenderMethodBodyStatementStringBuilder(s, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       }
       return r1Top;
     }

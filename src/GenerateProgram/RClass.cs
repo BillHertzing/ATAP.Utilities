@@ -28,51 +28,68 @@ namespace GenerateProgram {
     }
     public static IR1Top RClass(this IR1Top r1Top, GClass gClass) {
 
-      r1Top.Sb.RenderClassFirstLineStringBuilder(gClass, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
-      r1Top.R1TopData.Indent.Append(r1Top.R1TopData.IndentDelta);
+      r1Top.Sb.RenderClassFirstLineStringBuilder(gClass, r1Top.Indent, r1Top.Eol, r1Top.Ct);
+      r1Top.Indent.Append(r1Top.IndentDelta);
       if (gClass.GPropertyGroups.Any()) {
-        r1Top.Sb.Append($"{r1Top.R1TopData.Indent}#region PropertyGroups{r1Top.R1TopData.Eol}");
-        r1Top.R1TopData.Indent.Append(r1Top.R1TopData.IndentDelta);
+        r1Top.Sb.Append($"{r1Top.Indent}#region PropertyGroups{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
         r1Top.RPropertyGroup(gClass.GPropertyGroups);
-        r1Top.R1TopData.Indent.ReplaceFirst(r1Top.R1TopData.IndentDelta, "");
-        r1Top.Sb.Append($"{r1Top.R1TopData.Indent}#endregion{r1Top.R1TopData.Eol}");
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
       }
       if (gClass.GPropertys.Any()) {
-        r1Top.Sb.Append($"{r1Top.R1TopData.Indent}#region Property{r1Top.R1TopData.Eol}");
-        r1Top.R1TopData.Indent.Append(r1Top.R1TopData.IndentDelta);
+        r1Top.Sb.Append($"{r1Top.Indent}#region Property{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
         foreach (var kvp in gClass.GPropertys) {
           r1Top.RProperty(kvp.Value);
         }
-        r1Top.R1TopData.Indent.ReplaceFirst(r1Top.R1TopData.IndentDelta, "");
-        r1Top.Sb.Append($"{r1Top.R1TopData.Indent}#endregion{r1Top.R1TopData.Eol}");
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
       }
       if (gClass.GConstructors.Any()) {
-        r1Top.Sb.Append($"{r1Top.R1TopData.Indent}#region Constructors{r1Top.R1TopData.Eol}");
-        r1Top.R1TopData.Indent.Append(r1Top.R1TopData.IndentDelta);
+        r1Top.Sb.Append($"{r1Top.Indent}#region Constructors{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
         foreach (var kvp in gClass.GConstructors) {
           r1Top.RMethod(kvp.Value);
         }
-        r1Top.R1TopData.Indent.ReplaceFirst(r1Top.R1TopData.IndentDelta, "");
-        r1Top.Sb.Append($"{r1Top.R1TopData.Indent}#endregion{r1Top.R1TopData.Eol}");
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
       }
       if (gClass.GMethods.Any()) {
-        r1Top.Sb.Append($"{r1Top.R1TopData.Indent}#region Methods{r1Top.R1TopData.Eol}");
-        r1Top.R1TopData.Indent.Append(r1Top.R1TopData.IndentDelta);
+        r1Top.Sb.Append($"{r1Top.Indent}#region Methods{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
         foreach (var kvp in gClass.GMethods) {
           r1Top.RMethod(kvp.Value);
         }
-        r1Top.R1TopData.Indent.ReplaceFirst(r1Top.R1TopData.IndentDelta, "");
-        r1Top.Sb.Append($"{r1Top.R1TopData.Indent}#endregion{r1Top.R1TopData.Eol}");
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
       }
+      if (gClass.GConstStringGroups.Any()) {
+        r1Top.Sb.Append($"{r1Top.Indent}#region ConstStringGroups{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
+        r1Top.RConstStringGroup(gClass.GConstStringGroups);
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
+      }
+      if (gClass.GConstStrings.Any()) {
+        r1Top.Sb.Append($"{r1Top.Indent}#region ConstString{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
+        foreach (var kvp in gClass.GConstStrings) {
+          r1Top.RConstString(kvp.Value);
+        }
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
+      }
+
       if (gClass.GDisposesOf.Any()) {
-        r1Top.Sb.Append($"{r1Top.R1TopData.Indent}#region IDisposable Support{r1Top.R1TopData.Eol}");
-        r1Top.R1TopData.Indent.Append(r1Top.R1TopData.IndentDelta);
+        r1Top.Sb.Append($"{r1Top.Indent}#region IDisposable Support{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
         r1Top.RDisposesOf(gClass.GDisposesOf);
-        r1Top.R1TopData.Indent.ReplaceFirst(r1Top.R1TopData.IndentDelta, "");
-        r1Top.Sb.Append($"{r1Top.R1TopData.Indent}#endregion{r1Top.R1TopData.Eol}");
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
       }
-      r1Top.R1TopData.Indent.ReplaceFirst(r1Top.R1TopData.IndentDelta, "");
-      r1Top.Sb.Append($"}}{r1Top.R1TopData.Eol}");
+      r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+      r1Top.Sb.Append($"}}{r1Top.Eol}");
       return r1Top;
     }
     public static IR1Top RClass(this IR1Top r1Top, Dictionary<Philote<GClass>, GClass> gClasss) {

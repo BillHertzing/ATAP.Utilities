@@ -27,7 +27,7 @@ namespace GenerateProgram {
       return sb;
     }
     public static IR1Top RDisposesOf(this IR1Top r1Top, List<string> gDisposesOf) {
-      r1Top.Sb.RenderDisposesOfPreambleStringBuilder(gDisposesOf, r1Top.R1TopData.Indent, r1Top.R1TopData.IndentDelta,r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
+      r1Top.Sb.RenderDisposesOfPreambleStringBuilder(gDisposesOf, r1Top.Indent, r1Top.IndentDelta,r1Top.Eol, r1Top.Ct);
       return r1Top;
     }
     

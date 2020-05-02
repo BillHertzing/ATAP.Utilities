@@ -22,9 +22,9 @@ namespace GenerateProgram
     }
     public static IR1Top RMethodDeclaration(this IR1Top r1Top, GMethodDeclaration gMethodDeclaration)
     {
-      r1Top.Sb.RenderMethodDeclarationPreambleStringBuilder(gMethodDeclaration, r1Top.R1TopData.Indent, r1Top.R1TopData.Eol, r1Top.R1TopData.Ct);
+      r1Top.Sb.RenderMethodDeclarationPreambleStringBuilder(gMethodDeclaration, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       r1Top.RMethodArgument(gMethodArguments: gMethodDeclaration.GMethodArguments);
-      r1Top.Sb.Append($") {{{r1Top.R1TopData.Eol }");
+      r1Top.Sb.Append($") {{{r1Top.Eol }");
       return r1Top;
     }
   }

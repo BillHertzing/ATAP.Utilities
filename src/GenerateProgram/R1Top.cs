@@ -5,44 +5,52 @@ using System.Threading;
 using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
-  public interface IR1TopData {
-    StringBuilder Indent { get; set; }
-    string IndentDelta { get; set; }
-    string Eol { get; set; }
-    CancellationToken? Ct { get; set; }
-  }
+  //public interface IR1TopData {
+  //  StringBuilder Indent { get; set; }
+  //  string IndentDelta { get; set; }
+  //  string Eol { get; set; }
+  //  CancellationToken? Ct { get; set; }
+  //}
 
-  public class R1TopData : IR1TopData {
-    public R1TopData(StringBuilder indent, string indentDelta, string eol, CancellationToken ct = default) {
-      Indent = indent ?? throw new ArgumentNullException(nameof(indent));
-      IndentDelta = indentDelta ?? throw new ArgumentNullException(nameof(indentDelta));
-      Eol = eol ?? throw new ArgumentNullException(nameof(eol));
-      Ct = ct;
-    }
+  //public class R1TopData : IR1TopData {
+  //  public R1TopData(StringBuilder indent, string indentDelta, string eol, CancellationToken ct = default) {
+  //    Indent = indent ?? throw new ArgumentNullException(nameof(indent));
+  //    IndentDelta = indentDelta ?? throw new ArgumentNullException(nameof(indentDelta));
+  //    Eol = eol ?? throw new ArgumentNullException(nameof(eol));
+  //    Ct = ct;
+  //  }
 
+  //  public StringBuilder Indent { get; set; }
+  //  public string IndentDelta { get; set; }
+  //  public string Eol { get; set; }
+  //  public CancellationToken? Ct { get; set; }
+  //}
+
+  public interface IR1Top {
     public StringBuilder Indent { get; set; }
     public string IndentDelta { get; set; }
     public string Eol { get; set; }
     public CancellationToken? Ct { get; set; }
-  }
-
-  public interface IR1Top {
     Dictionary<string, object> Session { get; set; }
-    IR1TopData R1TopData { get; set; }
     StringBuilder Sb { get; set; }
     void Render(IW1Top w1Top);
   }
 
   public class R1Top : IR1Top {
 
-    public R1Top(Dictionary<string, object> session, IR1TopData r1TopData, StringBuilder sb) {
+    public R1Top(Dictionary<string, object> session, StringBuilder sb, StringBuilder indent, string indentDelta, string eol, CancellationToken ct = default) {
       Session = session ?? throw new ArgumentNullException(nameof(session));
-      R1TopData = r1TopData ?? throw new ArgumentNullException(nameof(r1TopData));
       Sb = sb ?? throw new ArgumentNullException(nameof(sb));
+      Indent = indent ?? throw new ArgumentNullException(nameof(indent));
+      IndentDelta = indentDelta ?? throw new ArgumentNullException(nameof(indentDelta));
+      Eol = eol ?? throw new ArgumentNullException(nameof(eol));
+      Ct = ct;
     }
-
+    public StringBuilder Indent { get; set; }
+    public string IndentDelta { get; set; }
+    public string Eol { get; set; }
+    public CancellationToken? Ct { get; set; }
     public Dictionary<string, object> Session { get; set; }
-    public IR1TopData R1TopData { get; set; }
     public StringBuilder Sb { get; set; }
 
     public void Render(IW1Top w1Top) {

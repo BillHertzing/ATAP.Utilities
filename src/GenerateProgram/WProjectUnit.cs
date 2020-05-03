@@ -9,8 +9,24 @@ using ATAP.Utilities.Philote;
 namespace GenerateProgram {
   public static partial class WriteExtensions {
     public static IW1Top WProjectUnit(this IW1Top w1Top, GProjectUnit gProjectUnit, StringBuilder sB, CancellationToken? ct = default) {
-
-      string path = Path.Combine(w1Top.BasePath, gProjectUnit.GRelativePath, gProjectUnit.GName+gProjectUnit.GFileSuffix);
+      var path = Path.Combine(w1Top.BasePath, gProjectUnit.GRelativePath);
+      var dirInfo = new DirectoryInfo( path);
+      if (!dirInfo.Exists) {
+        if (!(bool)w1Top.Force) {
+          //ToDo: Log exception
+          throw new Exception(message: $"Relative directory for Generated code does not exist (try force=true): {path}");
+        }
+        else {
+          try {
+            dirInfo.Create();
+          }
+          catch (System.IO.IOException e) {
+            //ToDo: Log exception
+            throw new Exception(message: $"Could not create relative directory for Generated code: {path}", innerException: e);
+          }
+        }
+      }
+      path = Path.Combine(w1Top.BasePath, gProjectUnit.GRelativePath, gProjectUnit.GName+gProjectUnit.GFileSuffix);
       using (var stream = new FileStream(
         path, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write, 4096, useAsync: false)) {
         var bytes = Encoding.UTF8.GetBytes(sB.ToString());
@@ -22,6 +38,8 @@ namespace GenerateProgram {
           throw;
         }
       }
+
+      sB.Clear();
       return w1Top;
     }
 

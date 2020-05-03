@@ -9,9 +9,9 @@ namespace GenerateProgram {
   public static partial class RenderExtensions {
     public static StringBuilder RenderClassFirstLineStringBuilder(this StringBuilder sb, GClass gClass, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
-      sb.Append($"{indent}{gClass.GVisibility} class {gClass.GName} ");
+      sb.Append($"{indent}{gClass.GVisibility} {gClass.GAccessModifier} class {gClass.GName} ");
       if (gClass.GInheritance != null || (gClass.GImplements != null && gClass.GImplements.Any())) { sb.Append(" : "); }
-      if (gClass.GInheritance != null && (gClass.GImplements == null || !gClass.GImplements.Any())) { sb.Append(gClass.GInheritance); }
+      if (gClass.GInheritance != null && (gClass.GImplements  == null || !gClass.GImplements.Any())) { sb.Append(gClass.GInheritance); }
       else if (gClass.GInheritance == null && (gClass.GImplements != null && gClass.GImplements.Any())) { sb.Append(String.Join(",", gClass.GImplements)); }
       else if (gClass.GInheritance != null && (gClass.GImplements != null && gClass.GImplements.Any())) {
         sb.Append(gClass.GInheritance);
@@ -60,6 +60,15 @@ namespace GenerateProgram {
         r1Top.Indent.Append(r1Top.IndentDelta);
         foreach (var kvp in gClass.GMethods) {
           r1Top.RMethod(kvp.Value);
+        }
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
+      }
+      if (gClass.GMethodGroups.Any()) {
+        r1Top.Sb.Append($"{r1Top.Indent}#region MethodGroups{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
+        foreach (var kvp in gClass.GMethodGroups) {
+          r1Top.RMethodGroup(kvp.Value);
         }
         r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
         r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");

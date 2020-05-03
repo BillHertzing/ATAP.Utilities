@@ -16,7 +16,7 @@ namespace GenerateProgram
       GClass gClass = new GClass("StringConstants",gVisibility:"public","static");
       GConstStringGroup gConstStringGroup = new GConstStringGroup(gName:"Settings File Names");
       foreach (var kvp in new Dictionary<string,string>() {
-        {"SettingsFileName","TemplateReplacementPattern"},
+        {"SettingsFileName","AssemblyNameTemplateReplacementPattern"},
         {"SettingsFileNameSuffix","json"},
       }) {
         GConstString gConstString = new GConstString(kvp.Key,kvp.Value);
@@ -26,7 +26,7 @@ namespace GenerateProgram
       gConstStringGroup = new GConstStringGroup(gName:"Temporary File Names");
       foreach (var kvp in new Dictionary<string,string>() {
         {"TemporaryDirectoryBaseConfigRootKey","TemporaryDirectoryBase"},
-        {"TemporaryDirectoryBaseDefault","D:\\Temp\\TemplateReplacementPattern\\"},
+        {"TemporaryDirectoryBaseDefault","D:/Temp/AssemblyNameTemplateReplacementPattern/"},
       }) {
         GConstString gConstString = new GConstString(kvp.Key,kvp.Value);
         gConstStringGroup.GConstStrings[gConstString.Philote] = gConstString;

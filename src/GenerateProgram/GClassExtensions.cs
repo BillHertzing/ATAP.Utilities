@@ -30,7 +30,6 @@ namespace GenerateProgram
       foreach (var o in gPropertyGroups) {
         gClass.GPropertyGroups[o.Philote] = o;
       }
-
       return gClass;
     }
     public static GClass AddMethod(this GClass gClass,  GMethod gMethod) {
@@ -43,13 +42,13 @@ namespace GenerateProgram
       }
       return gClass;
     }
-    public static GClass AddMethod(this GClass gClass,  GMethodGroup gMethodGroup) {
+    public static GClass AddMethodGroup(this GClass gClass,  GMethodGroup gMethodGroup) {
       gClass.GMethodGroups[gMethodGroup.Philote] = gMethodGroup;
       return gClass;
     }
-    public static GClass AddMethod(this GClass gClass,  IEnumerable<GMethodGroup> gMethodGroups) {
+    public static GClass AddMethodGroup(this GClass gClass,  IEnumerable<GMethodGroup> gMethodGroups) {
       foreach (var o in gMethodGroups) {
-        gClass.GMethodGroups[o.Philote] = o;
+        gClass.AddMethodGroup(o);
       }
       return gClass;
     }

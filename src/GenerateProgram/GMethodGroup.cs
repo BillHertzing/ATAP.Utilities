@@ -5,16 +5,14 @@ using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
   public class GMethodGroup {
-    public GMethodGroup(string gName, Dictionary<Philote<GMethod>, GMethod> gMethods = default) {
+    public GMethodGroup(string gName, Dictionary<Philote<GMethod>, GMethod>? gMethods = default) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
-      GMethods = gMethods ?? throw new ArgumentNullException(nameof(gMethods));
+      GMethods = gMethods == default ? new Dictionary<Philote<GMethod>, GMethod>() : gMethods;
       Philote = new Philote<GMethodGroup>();
     }
 
     public string GName { get; }
     public Dictionary<Philote<GMethod>, GMethod>? GMethods { get; }
-
     public  Philote<GMethodGroup> Philote { get; }
   }
 }
-

@@ -7,7 +7,6 @@ namespace GenerateProgram {
       StatementList = statementList == default ? new List<string>() : statementList;
       Philote = new Philote<GMethodBody>();
     }
-
     public List<string>? StatementList { get; }
     public  Philote<GMethodBody> Philote { get; }
 

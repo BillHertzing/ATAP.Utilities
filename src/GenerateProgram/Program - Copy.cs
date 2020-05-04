@@ -17,41 +17,8 @@ using static GenerateProgram.GCompilationUnitExtensions;
 
 namespace GenerateProgram {
 
-  class Program {
-    static void Main(string[] args) {
-
-      // ToDo: Get the Artifacts directory from the host
-      string artifactsPath = "D:/Temp/GenerateProgramArtifacts";
-      string baseNamespace = "ATAPConsole02";
-      string relativePathForGeneratedFiles = "Generated";
-      StringBuilder sb = new StringBuilder(0x2000);
-      StringBuilder indent = new StringBuilder(64);
-      string indentDelta = "  ";
-      string eol = Environment.NewLine;
-      CancellationTokenSource cts = new CancellationTokenSource();
-      CancellationToken ct = cts.Token;
-      var session = new System.Collections.Generic.Dictionary<string, object>();
-      R1Top r1Top;
-      W1Top w1Top;
-      string assemblyGroupName = "NewGenericHostHostedService";
-      GAssemblyGroup gAssemblyGroup = GAssemblyGroupGHHSConstructor(gName:assemblyGroupName);
-      session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
-      r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
-      w1Top = new W1Top(basePath: artifactsPath, force: true);
-      r1Top.Render(w1Top);
-      session.Clear();
-      string assemblyGroupName = "NewGenericHostBackgroundService";
-      gAssemblyGroup = GAssemblyGroupGHBSConstructor(gName:assemblyGroupName);
-      session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
-      r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
-      w1Top = new W1Top(basePath: artifactsPath, force: true);
-      r1Top.Render(w1Top);
-      session.Clear();
-      
-      //  Invoke Editor or Compiler or IDE or Tests on the output files
-      //Console.WriteLine(r1Top.Sb);
-      //Console.WriteLine("Press any Key to exit");
-      //var wait = Console.ReadLine();
+  static partial class Extensions  {
+    static GAssemblyGroup GAssemblyGroupGHHSConstructor(string assemblyGroupName=default){
       GAssemblyUnit gAssemblyUnit;
 
       GPatternReplacement gPatternReplacement;
@@ -306,9 +273,7 @@ namespace GenerateProgram {
       gAssemblyGroup.GAssemblyUnits[gAssemblyUnit.Philote] = gAssemblyUnit;
 
 
- 
-
-    }
+      
   }
 }
 //gUsing = new GUsing("StandaloneUsing1");

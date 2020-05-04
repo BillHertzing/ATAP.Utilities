@@ -7,7 +7,7 @@ using ATAP.Utilities.Philote;
 namespace GenerateProgram {
 
   public static partial class GClassExtensions {
-    public static GClass AddTLocalizerConstructorAutoPropertyGroup(this GClass gClass, Philote<GMethod> gMethodId, string gAutoPropertyName,  string assemblyName, Philote<GPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get; }", string? gVisibility = default) {
+    public static GClass AddTLocalizerConstructorAutoPropertyGroup(this GClass gClass, Philote<GMethod> gMethodId, string gAutoPropertyName,  string assemblyUnitName, Philote<GPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get; }", string? gVisibility = default) {
       GMethod gMethod = default;
       if (gClass.GConstructors != null && gClass.GConstructors.ContainsKey(gMethodId)) {
         gMethod = gClass.GConstructors[gMethodId];
@@ -18,8 +18,8 @@ namespace GenerateProgram {
       else if (gClass.GMethodGroups != null) {
         foreach (var kvp in gClass.GMethodGroups) {
           if (kvp.Value.GMethods.ContainsKey(gMethodId)) {
-            GMethodGroup gMethodGroup = kvp.Value;
-            gMethod = gMethodGroup.GMethods[gMethodId];
+            //GMethodGroup gMethodGroup = kvp.Value;
+            gMethod = kvp.Value.GMethods[gMethodId];
           }
         }
       }
@@ -37,7 +37,7 @@ namespace GenerateProgram {
         throw new Exception(string.Format("{0} not found in the PropertyGroups of {1}", gPropertyGroupId.ID.ToString(), gClass.GName));
       }
   
-      gMethod.GBody.StatementList.Add($"{gAutoPropertyName} = StringLocalizerFactory.Create(nameof({assemblyName}.Resources), \"{assemblyName}\");");
+      gMethod.GBody.StatementList.Add($"{gAutoPropertyName} = StringLocalizerFactory.Create(nameof({assemblyUnitName}.Resources), \"{assemblyUnitName}\");");
       return gClass;
     }
 

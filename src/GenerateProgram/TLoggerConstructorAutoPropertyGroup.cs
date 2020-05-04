@@ -29,7 +29,7 @@ namespace GenerateProgram {
 
       GMethodDeclaration gMethodDeclaration = gMethod.GDeclaration;
       string gName = gMethodDeclaration.GName;
-      GProperty gProperty = new GProperty(gName:$"logger", gType:$"ILogger<{gName}>",gAccessors:gAccessors);
+      GProperty gProperty = new GProperty(gName:$"Logger", gType:$"ILogger<{gName}>",gAccessors:gAccessors);
       if (gClass.GPropertyGroups != null && gClass.GPropertyGroups.ContainsKey(gPropertyGroupId)) {
         gClass.GPropertyGroups[gPropertyGroupId].GPropertys[gProperty.Philote] = gProperty;
       }
@@ -37,7 +37,7 @@ namespace GenerateProgram {
         throw new Exception(string.Format("{0} not found in the PropertyGroups of {1}", gPropertyGroupId.ID.ToString(), gClass.GName));
       }
   
-      gMethod.GBody.StatementList.Add($"logger = LoggerFactory.CreateLogger<{gName}>();");
+      gMethod.GBody.StatementList.Add($"Logger = LoggerFactory.CreateLogger<{gName}>();");
       return gClass;
     }
 

@@ -5,14 +5,20 @@ using ATAP.Utilities.Philote;
 namespace GenerateProgram {
   public class GClass {
     //public GClass(string gName, string? gVisibility, string? gInheritance, string[]? gImplements, GPropertyGroup[]? gPropertyGroups, GConstructor[]? gConstructors, GMethod[]? gMethods) {
-    public GClass(string gName, string? gVisibility = default,  string? gAccessModifier = default, string? gInheritance = default, List<string>? gImplements = default, List<string>? gDisposesOf = default,
-      Dictionary<Philote<GProperty>, GProperty>? gPropertys = default, Dictionary<Philote<GPropertyGroup>, GPropertyGroup>? gPropertyGroups = default,
-      Dictionary<Philote<GMethod>, GMethod>? gConstructors = default,  Dictionary<Philote<GMethod>, GMethod>? gMethods = default, Dictionary<Philote<GMethodGroup>, GMethodGroup>? gMethodGroups = default,
-      Dictionary<Philote<GConstString>, GConstString>? gConstStrings = default, Dictionary<Philote<GConstStringGroup>, GConstStringGroup>? gConstStringGroups = default) {
-      GName = gName;
-      GVisibility = gVisibility;
+    public GClass(string gName = default, string gVisibility = default,  string gAccessModifier = default, string gInheritance = default,
+      List<string> gImplements = default,
+      List<string> gDisposesOf = default,
+      Dictionary<Philote<GProperty>, GProperty> gPropertys = default,
+      Dictionary<Philote<GPropertyGroup>, GPropertyGroup> gPropertyGroups = default,
+      Dictionary<Philote<GMethod>, GMethod> gConstructors = default,
+      Dictionary<Philote<GMethod>, GMethod> gMethods = default,
+      Dictionary<Philote<GMethodGroup>, GMethodGroup> gMethodGroups = default,
+      Dictionary<Philote<GConstString>, GConstString> gConstStrings = default,
+      Dictionary<Philote<GConstStringGroup>, GConstStringGroup> gConstStringGroups = default) {
+      GName = gName == default ? "" : gName;
+      GVisibility = gVisibility == default ? "" : gVisibility;;
       GAccessModifier = gAccessModifier == default ? "" : gAccessModifier;
-      GInheritance = gInheritance;
+      GInheritance = gInheritance == default ? "" : gInheritance;;
       GImplements = gImplements == default? new List<string>() : gImplements;
       GDisposesOf = gDisposesOf == default? new List<string>() : gDisposesOf;
       GPropertyGroups = gPropertyGroups  == default? new Dictionary<Philote<GPropertyGroup>, GPropertyGroup>() : gPropertyGroups;
@@ -27,15 +33,15 @@ namespace GenerateProgram {
     }
 
     public string GName { get; }
-    public string? GVisibility { get;  }
+    public string GVisibility { get;  }
     // ToDo: make this an enumeration
-    public string? GAccessModifier { get; }
-    public string? GInheritance { get; }
+    public string GAccessModifier { get; }
+    public string GInheritance { get; }
     public List<string>? GImplements { get; }
-    public Dictionary<Philote<GProperty>, GProperty>? GPropertys { get; }
-    public Dictionary<Philote<GPropertyGroup>, GPropertyGroup>? GPropertyGroups { get; }
-    public Dictionary<Philote<GMethod>, GMethod>? GConstructors { get; }
-    public Dictionary<Philote<GMethod>, GMethod>? GMethods { get; }
+    public Dictionary<Philote<GProperty>, GProperty> GPropertys { get; }
+    public Dictionary<Philote<GPropertyGroup>, GPropertyGroup> GPropertyGroups { get; }
+    public Dictionary<Philote<GMethod>, GMethod> GConstructors { get; }
+    public Dictionary<Philote<GMethod>, GMethod> GMethods { get; }
     public Dictionary<Philote<GMethodGroup>, GMethodGroup>? GMethodGroups { get; }
     public Dictionary<Philote<GConstString>, GConstString>? GConstStrings { get; }
     public Dictionary<Philote<GConstStringGroup>, GConstStringGroup>? GConstStringGroups { get; }

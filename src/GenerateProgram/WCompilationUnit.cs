@@ -9,36 +9,19 @@ using ATAP.Utilities.Philote;
 namespace GenerateProgram {
   public static partial class WriteExtensions {
     public static IW1Top WCompilationUnit(this IW1Top w1Top, GCompilationUnit gCompilationUnit, StringBuilder sB, CancellationToken? ct = default) {
-      var path = Path.Combine(w1Top.BasePath, gCompilationUnit.GRelativePath);
-      var dirInfo = new DirectoryInfo( path);
-      if (!dirInfo.Exists) {
-        if (!(bool)w1Top.Force) {
-          //ToDo: Log exception
-          throw new Exception(message: $"Relative directory for Generated code does not exist (try force=true): {path}");
-        }
-        else {
-          try {
-            dirInfo.Create();
-          }
-          catch (System.IO.IOException e) {
-            //ToDo: Log exception
-            throw new Exception(message: $"Could not create relative directory for Generated code: {path}", innerException: e);
-          }
-        }
+      var pathToDir = Path.Combine(w1Top.BasePath, gCompilationUnit.GRelativePath);
+      var pathToFile = Path.Combine(w1Top.BasePath, gCompilationUnit.GRelativePath, gCompilationUnit.GName+gCompilationUnit.GFileSuffix);
+      var transformDictionary = gCompilationUnit.GPatternReplacement.GDictionary;
+      IW1Top iW1Top;
+      try {
+        iW1Top = w1Top.WFile(pathToDir, pathToFile, transformDictionary, sB, ct);
       }
-      path = Path.Combine(w1Top.BasePath, gCompilationUnit.GRelativePath, gCompilationUnit.GName+gCompilationUnit.GFileSuffix);
-      using (var stream = new FileStream(
-        path, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write, 4096, useAsync: false)) {
-        var bytes = Encoding.UTF8.GetBytes(sB.ToString());
-        try {
-          stream.Write(bytes, 0, bytes.Length);
-        }
-        catch (IOException e) {
-          Console.WriteLine(e);
-          throw;
-        }
+      catch (Exception e) {
+        Console.WriteLine(e); // ToDo: better exception handling
+        throw;
       }
-      return w1Top;
+      sB.Clear();
+      return iW1Top;
     }
 
   }

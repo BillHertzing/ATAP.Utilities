@@ -10,10 +10,10 @@ namespace GenerateProgram {
     public static StringBuilder RenderClassFirstLineStringBuilder(this StringBuilder sb, GClass gClass, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       sb.Append($"{indent}{gClass.GVisibility} {gClass.GAccessModifier} class {gClass.GName} ");
-      if (gClass.GInheritance != null || (gClass.GImplements != null && gClass.GImplements.Any())) { sb.Append(" : "); }
-      if (gClass.GInheritance != null && (gClass.GImplements  == null || !gClass.GImplements.Any())) { sb.Append(gClass.GInheritance); }
-      else if (gClass.GInheritance == null && (gClass.GImplements != null && gClass.GImplements.Any())) { sb.Append(String.Join(",", gClass.GImplements)); }
-      else if (gClass.GInheritance != null && (gClass.GImplements != null && gClass.GImplements.Any())) {
+      if (gClass.GInheritance != "" ||  gClass.GImplements.Any()) { sb.Append(" : "); }
+      if (gClass.GInheritance != "" && !gClass.GImplements.Any()) { sb.Append(gClass.GInheritance); }
+      else if (gClass.GInheritance == "" && gClass.GImplements.Any()) { sb.Append(String.Join(",", gClass.GImplements)); }
+      else if (gClass.GInheritance != "" && gClass.GImplements.Any()) {
         sb.Append(gClass.GInheritance);
         sb.Append(",");
         sb.Append(String.Join(",", gClass.GImplements));

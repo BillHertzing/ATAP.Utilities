@@ -5,14 +5,16 @@ using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
   public class GMethod {
-    public GMethod( GMethodDeclaration gDeclaration, GMethodBody? gBody = default) {
-      GDeclaration = gDeclaration ?? throw new ArgumentNullException(nameof(gDeclaration));
+    public GMethod( GMethodDeclaration? gDeclaration = default, GMethodBody? gBody = default, GComment? gComment = default) {
+      GDeclaration = gDeclaration == default? new GMethodDeclaration() : gDeclaration;
       GBody = gBody == default? new GMethodBody() : gBody;
+      GComment = gComment == default? new GComment() : gComment;
       Philote = new Philote<GMethod>();
     }
 
     public GMethodDeclaration GDeclaration { get; }
     public GMethodBody GBody { get; }
+    public GComment GComment { get; }
     public Philote<GMethod> Philote { get; }
   }
 }

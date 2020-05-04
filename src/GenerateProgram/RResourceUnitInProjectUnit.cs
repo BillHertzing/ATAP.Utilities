@@ -10,14 +10,14 @@ namespace GenerateProgram {
     public static StringBuilder RenderResourceInProjectUnitStringBuilder(this StringBuilder sb, GResourceUnit gResourceUnit, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       sb.Append(
-        $"{indent}<EmbeddedResource Update=\"{gResourceUnit.GRelativePath}\\{gResourceUnit.GName}.{gResourceUnit.GFileSuffix}\">{eol}");
+        $"{indent}<EmbeddedResource Update=\"{gResourceUnit.GRelativePath}/{gResourceUnit.GName}{gResourceUnit.GFileSuffix}\">{eol}");
       sb.Append($"{indent}{indentDelta}<Generator>ResXFileCodeGenerator</Generator >{eol}");
-      sb.Append($"{indent}{indentDelta}<LastGenOutput>{gResourceUnit.GName}.Designer.cs\"</LastGenOutput>{eol}");
+      sb.Append($"{indent}{indentDelta}<LastGenOutput>{gResourceUnit.GName}.Designer.cs</LastGenOutput>{eol}");
       sb.Append($"{indent}</EmbeddedResource>{eol}");
-      sb.Append($"{indent}<Compile Update=\"{gResourceUnit.GRelativePath}\\{gResourceUnit.GName}.{gResourceUnit.GFileSuffix}\">{eol}");
+      sb.Append($"{indent}<Compile Update=\"{gResourceUnit.GRelativePath}/{gResourceUnit.GName}.Designer.cs\">{eol}");
       sb.Append($"{indent}{indentDelta}<DesignTime>True</DesignTime>{eol}");
       sb.Append($"{indent}{indentDelta}<AutoGen >True</AutoGen>{eol}");
-      sb.Append($"{indent}{indentDelta}<DependentUpon >{gResourceUnit.GName}.{gResourceUnit.GFileSuffix}</DependentUpon>{eol}");
+      sb.Append($"{indent}{indentDelta}<DependentUpon>{gResourceUnit.GName}{gResourceUnit.GFileSuffix}</DependentUpon>{eol}");
       sb.Append($"{indent}</Compile>{eol}");
       return sb;
     }

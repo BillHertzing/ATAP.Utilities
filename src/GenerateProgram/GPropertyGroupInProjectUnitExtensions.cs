@@ -19,7 +19,7 @@ namespace GenerateProgram {
       "<MajorVersion>1</MajorVersion>",
       "<MinorVersion>0</MinorVersion>",
       "<PatchVersion>0</PatchVersion>",
-      "<!-- Current Lifecycle stage for this assembly-->",
+      "<!-- Current Lifecycle stage for this assembly -->",
       "<PackageLifeCycleStage>Production</PackageLifeCycleStage>",
       "<!-- NuGet Package Label for the Nuget Package if the LifecycleStage is not Production-->",
       "<!-- However, if the LifecycleStage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->",
@@ -28,13 +28,13 @@ namespace GenerateProgram {
       });
     }
 
-    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForLibrary() {
+    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsLibrary() {
       return new GPropertyGroupInProjectUnit("Library","Creates a Library Project", new List<string>() {
         "<OutputType>Library</OutputType>"
       });
     }
 
-    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForExe() {
+    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsExe() {
       return new GPropertyGroupInProjectUnit("Executable","Creates an Executable Project", new List<string>() {
         "<OutputType>Exe</OutputType>"
       });
@@ -48,7 +48,7 @@ namespace GenerateProgram {
 
     public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForLifecycleStage() {
       return new GPropertyGroupInProjectUnit("LifecycleStage","Describes the current stage in the development/Release lifecycle for this Assembly", new List<string>() {
-        "<!-- Current Lifecycle stage for this assembly-->",
+        "<!-- Current Lifecycle stage for this assembly -->",
         "<PackageLifeCycleStage>Production</PackageLifeCycleStage>",
         "<!-- NuGet Package Label for the Nuget Package if the LifecycleStage is not Production-->",
         "<!-- However, if the LifecycleStage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->",

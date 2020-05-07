@@ -1,8 +1,4 @@
-using ATAP.Utilities.ComputerInventory.Software;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ATAP.Utilities.AConsole01 {
   #region AConsole01 Default Configuration settings

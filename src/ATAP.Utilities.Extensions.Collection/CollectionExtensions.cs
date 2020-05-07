@@ -1,5 +1,7 @@
 using System;
-
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using ATAP.Utilities.ETW;
 
@@ -19,12 +21,12 @@ namespace ATAP.Utilities.Collection {
 }
 /// Will take the first value if multiple keys appear
 
-public static Dictionary<K, V> Merge<K, V>(IEnumerable<Dictionary<K, V>> dictionaries)
-{
-	return dictionaries.SelectMany(x => x)
-					.GroupBy(d => d.Key)
-					.ToDictionary(x => x.Key, y => y.First().Value);
-}
+//public static Dictionary<K, V> Merge<K, V>(IEnumerable<Dictionary<K, V>> dictionaries)
+//{
+//	return dictionaries.SelectMany(x => x)
+//					.GroupBy(d => d.Key)
+//					.ToDictionary(x => x.Key, y => y.First().Value);
+//}
   }
 
 }

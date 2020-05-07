@@ -43,5 +43,6 @@ namespace GenerateProgram {
       return gClass.AddTConstructorAutoProperty(gMethodID, gAutoPropertyName, gType);
     }
 
+
   }
 }

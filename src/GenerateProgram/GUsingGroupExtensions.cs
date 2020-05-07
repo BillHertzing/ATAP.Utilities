@@ -41,7 +41,7 @@ namespace GenerateProgram {
       return gUsingGroup;
     }
 
-    public static GUsingGroup UsingsForMicrosoftGenericHost(this GUsingGroup gUsingGroup) {
+    public static GUsingGroup UsingsForMicrosoftGenericHost() {
       var _gUsingGroup = new GUsingGroup("Usings For Microsoft GenericHost");
       foreach (var gName in new List<string>() {
         "Microsoft.Extensions.Localization","Microsoft.Extensions.Options","Microsoft.Extensions.Configuration","Microsoft.Extensions.Logging",

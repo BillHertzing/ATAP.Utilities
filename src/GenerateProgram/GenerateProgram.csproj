@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v16.0\TextTemplating\Microsoft.TextTemplating.targets" />-->
+
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -21,7 +21,7 @@
   <DefaultItemExcludes>Artifacts\**</DefaultItemExcludes>
   <DefaultItemExcludes>$(DefaultItemExcludes);**\Resources\**</DefaultItemExcludes>
 </PropertyGroup>
-  
+
   <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" />

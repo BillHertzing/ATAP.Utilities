@@ -16,7 +16,7 @@ namespace GenerateProgram {
       return r1Top;
     }
 
-    public static IR1Top RMethod(this IR1Top r1Top, List<GMethod> gMethods) {
+    public static IR1Top RMethod(this IR1Top r1Top, IEnumerable<GMethod> gMethods) {
       foreach (var o in gMethods) {
         r1Top.RMethod(o);
       }

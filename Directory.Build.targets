@@ -49,6 +49,9 @@
 
   <!-- https://www.strathweb.com/2018/07/solution-wide-nuget-package-version-handling-with-msbuild-15/ -->
   <ItemGroup>
+    <!--Stateless lightweight StateMachine library -->
+    <PackageReference Update="Stateless" Version="5.1.2" />
+
     <!-- QuickGraph and its dependencies -->
     <PackageReference Update="YC.QuickGraph" Version="3.7.4" />
     <PackageReference Update="DotNet.Contracts" Version="1.10.20606.1" />

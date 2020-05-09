@@ -21,7 +21,7 @@ namespace GenerateProgram {
         "Projects in this solution for ", gItemGroupStatements);
       return gItemGroupInProjectUnit;
     }
-    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForConsoleServices() {
+    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForConsoleMonitorPattern() {
       var gItemGroupStatements = new List<string>() {
         "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/ConsoleSink.Interfaces/ConsoleSink.Interfaces.csproj\" />",
         "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/ConsoleSink/ConsoleSink.csproj\" />",
@@ -84,7 +84,7 @@ namespace GenerateProgram {
       return gItemGroupInProjectUnit;
     }
 
-        public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForStdInStdOutStdErrServices() {
+ public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForStdInStdOutStdErrServices() {
       var gItemGroupStatements = new List<string>() {
         "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/StdInSource.Interfaces/StdInSource.Interfaces.csproj\" />",
         "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/StdInSource/StdInSource.csproj\" />",
@@ -109,6 +109,13 @@ namespace GenerateProgram {
       var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("QuickGraphPackageReferences",
         "Packages to persist data to QuickGraph", gItemGroupStatements);
       return gItemGroupInProjectUnit;
+    }
+
+    public static GItemGroupInProjectUnit ItemGroupInProjectUnitForStatelessStatemachinePackageReferences() {
+      return new GItemGroupInProjectUnit("StatelessPackageReferences",
+        "Packages to for the Stateless lightweight StateMachine library", new List<string>() {
+          "<PackageReference Include=\"Stateless\" />",
+        });
     }
 
     public static GItemGroupInProjectUnit ItemGroupInProjectUnitForQuickGraphDependentPackageReferences() {

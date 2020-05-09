@@ -9,6 +9,7 @@ using ATAP.Utilities.Philote;
 namespace GenerateProgram {
   public static partial class WriteExtensions {
     public static IW1Top WAssemblyUnit(this IW1Top w1Top, GAssemblyUnit gAssemblyUnit, StringBuilder? sB = default, CancellationToken? ct = default) {
+      ct?.ThrowIfCancellationRequested();
       var path = Path.Combine(w1Top.BasePath, gAssemblyUnit.GRelativePath);
       var dirInfo = new DirectoryInfo(path);
       if (!dirInfo.Exists) {

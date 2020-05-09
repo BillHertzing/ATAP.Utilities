@@ -62,6 +62,7 @@ namespace GenerateProgram {
       gCompilationUnit.GNamespaces[gNamespace.Philote] =gNamespace;
       return gCompilationUnit;
     }
+       
 
   }
 }

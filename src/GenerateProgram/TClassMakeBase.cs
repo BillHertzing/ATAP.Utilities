@@ -23,7 +23,7 @@ namespace GenerateProgram {
           gType: oldGMethod.GDeclaration.GType,
           gAccessModifier: newgAccessModifier,
           isStatic: oldGMethod.GDeclaration.IsStatic,
-          gMethodArguments: oldGMethod.GDeclaration.GMethodArguments
+          gArguments: oldGMethod.GDeclaration.GArguments
             )
           , oldGMethod.GBody));
       }

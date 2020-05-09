@@ -7,24 +7,29 @@ namespace GenerateProgram
   {
     public static StringBuilder RenderMethodDeclarationPreambleStringBuilder(this StringBuilder sb, GMethodDeclaration gMethodDeclaration, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
-      StringBuilder firstLine = new StringBuilder();
-      firstLine.Append($"{indent}{gMethodDeclaration.GVisibility} ");
-      firstLine.Append($"{gMethodDeclaration.GAccessModifier} ");
+      sb.Append($"{indent}{gMethodDeclaration.GVisibility} ");
+      sb.Append($"{gMethodDeclaration.GAccessModifier} ");
       if (gMethodDeclaration.IsStatic!=null && (bool)gMethodDeclaration.IsStatic) {
-        firstLine.Append("static ");
+        sb.Append("static ");
       }
       if (gMethodDeclaration.IsConstructor!=null && !(bool)gMethodDeclaration.IsConstructor) {
-        firstLine.Append($"{gMethodDeclaration.GType} ");
+        sb.Append($"{gMethodDeclaration.GType} ");
       }
-      firstLine.Append($"{gMethodDeclaration.GName}(");
-      sb.Append(firstLine);
+      sb.Append($"{gMethodDeclaration.GName}({eol}");
       return sb;
     }
     public static IR1Top RMethodDeclaration(this IR1Top r1Top, GMethodDeclaration gMethodDeclaration)
     {
       r1Top.Sb.RenderMethodDeclarationPreambleStringBuilder(gMethodDeclaration, r1Top.Indent, r1Top.Eol, r1Top.Ct);
-      r1Top.RMethodArgument(gMethodArguments: gMethodDeclaration.GMethodArguments);
-      r1Top.Sb.Append($") {{{r1Top.Eol }");
+      r1Top.RArgument(gArguments: gMethodDeclaration.GArguments);
+      if (gMethodDeclaration.GBase != "") {
+        r1Top.Sb.Append($") : base({gMethodDeclaration.GBase}){{{r1Top.Eol}");
+      } else if (gMethodDeclaration.GThis != "") {
+        r1Top.Sb.Append($") : this({gMethodDeclaration.GThis}{{{r1Top.Eol}");
+      }
+      else {
+        r1Top.Sb.Append($") {{{r1Top.Eol}");
+      }
       return r1Top;
     }
   }

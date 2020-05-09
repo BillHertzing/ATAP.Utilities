@@ -26,6 +26,8 @@ csharp_new_line_before_members_in_anonymous_types = true
 csharp_new_line_before_members_in_object_initializers = true
 csharp_new_line_before_open_brace = none
 csharp_new_line_between_query_expression_clauses = true
+blank_lines_inside_region = false
+blank_lines_around_region = false
 
 # .NET formatting settings
 [*.{cs,vb}]

@@ -4,16 +4,16 @@ using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
   public static partial class GMethodExtensions {
-    public static GMethod CreateStartAsyncMethod(this GMethod gGMethod) {
+    public static GMethod CreateStartAsyncMethod( bool usesConsoleMonitorConvention = false) {
       var gMethodDeclaration = new GMethodDeclaration(gName: "StartAsync", gType: "Task",
         gVisibility: "public", gAccessModifier: "async", isConstructor: false,
-        gMethodArguments: new Dictionary<Philote<GMethodArgument>, GMethodArgument>());
+        gArguments: new Dictionary<Philote<GArgument>, GArgument>());
       foreach (var kvp in new Dictionary<string, string>() { { "genericHostsCancellationToken", "CancellationToken " } }) {
-        var gMethodArgument = new GMethodArgument(kvp.Key, kvp.Value);
-        gMethodDeclaration.GMethodArguments[gMethodArgument.Philote] = gMethodArgument;
+        var gMethodArgument = new GArgument(kvp.Key, kvp.Value);
+        gMethodDeclaration.GArguments[gMethodArgument.Philote] = gMethodArgument;
       }
 
-      var gMethodBody = new GMethodBody(statementList: new List<string>() {
+      var gMethodBody = new GMethodBody(gStatementsList: new List<string>() {
         "#region create linkedCancellationSource and token",
         "  // Combine the cancellation tokens,so that either can stop this HostedService",
         "  //linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, externalCancellationToken);",
@@ -40,16 +40,16 @@ namespace GenerateProgram {
       return newgMethod;
     }
 
-    public static GMethod CreateStopAsyncMethod(this GMethod gGMethod) {
+    public static GMethod CreateStopAsyncMethod(bool usesConsoleMonitorConvention = false) {
       var gMethodDeclaration = new GMethodDeclaration(gName: "StopAsync", gType: "Task",
         gVisibility: "public", gAccessModifier: "async", isConstructor: false,
-        gMethodArguments: new Dictionary<Philote<GMethodArgument>, GMethodArgument>());
+        gArguments: new Dictionary<Philote<GArgument>, GArgument>());
       foreach (var kvp in new Dictionary<string, string>() { { "genericHostsCancellationToken", "CancellationToken " } }) {
-        var gMethodArgument = new GMethodArgument(kvp.Key, kvp.Value);
-        gMethodDeclaration.GMethodArguments[gMethodArgument.Philote] = gMethodArgument;
+        var gMethodArgument = new GArgument(kvp.Key, kvp.Value);
+        gMethodDeclaration.GArguments[gMethodArgument.Philote] = gMethodArgument;
       }
 
-      var gMethodBody = new GMethodBody(statementList: new List<string>() {
+      var gMethodBody = new GMethodBody(gStatementsList:new List<string>() {
         "// StopAsync issued in both IHostedService and IHostLifetime interfaces",
         "// This IS called when the user closes the ConsoleWindow with the windows top right pane \"x (close)\" icon",
         "// This IS called when the user hits ctrl-C in the console window",
@@ -70,16 +70,16 @@ namespace GenerateProgram {
       return new GMethod(gMethodDeclaration, gMethodBody, gComment);
     }
 
-    public static GMethod CreateExecuteAsyncMethod() {
+    public static GMethod CreateExecuteAsyncMethod(bool usesConsoleMonitorConvention = false) {
       var gMethodDeclaration = new GMethodDeclaration(gName: "ExecuteAsync", gType: "Task",
         gVisibility: "protected", gAccessModifier: "override async", isConstructor: false,
-        gMethodArguments: new Dictionary<Philote<GMethodArgument>, GMethodArgument>());
+        gArguments: new Dictionary<Philote<GArgument>, GArgument>());
       foreach (var kvp in new Dictionary<string, string>() { { "genericHostsCancellationToken", "CancellationToken " } }) {
-        var gMethodArgument = new GMethodArgument(kvp.Key, kvp.Value);
-        gMethodDeclaration.GMethodArguments[gMethodArgument.Philote] = gMethodArgument;
+        var gMethodArgument = new GArgument(kvp.Key, kvp.Value);
+        gMethodDeclaration.GArguments[gMethodArgument.Philote] = gMethodArgument;
       }
 
-      var gMethodBody = new GMethodBody(statementList: new List<string>() {
+      var gMethodBody = new GMethodBody(gStatementsList: new List<string>() {
         "#region create linkedCancellationSource and token",
         "// Combine the cancellation tokens,so that either can stop this HostedService",
         "//linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, externalCancellationToken);",
@@ -127,12 +127,13 @@ namespace GenerateProgram {
       return new GMethod(gMethodDeclaration, gMethodBody, gComment);
     }
 
+
     public static GMethod CreateOnStartedMethod() {
       var gMethodDeclaration = new GMethodDeclaration(gName: "OnStarted", gType: "void",
         gVisibility: "private", gAccessModifier: "", isConstructor: false,
-        gMethodArguments: new Dictionary<Philote<GMethodArgument>, GMethodArgument>());
+        gArguments: new Dictionary<Philote<GArgument>, GArgument>());
       return new GMethod(gMethodDeclaration,
-        new GMethodBody(statementList: new List<string>() { "// Post-startup code goes here", }),
+        new GMethodBody(gStatementsList:new List<string>() { "// Post-startup code goes here", }),
         new GComment(new List<string>() {
           "// Registered as a handler with the HostApplicationLifetime.ApplicationStarted event",
         }));
@@ -141,8 +142,8 @@ namespace GenerateProgram {
       return new GMethod(
         new GMethodDeclaration(gName: "OnStopping", gType: "void",
           gVisibility: "private", gAccessModifier: "", isConstructor: false,
-          gMethodArguments: new Dictionary<Philote<GMethodArgument>, GMethodArgument>()),
-        new GMethodBody(statementList: new List<string>() { "// On-stopping code goes here", }),
+          gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
+        new GMethodBody(gStatementsList: new List<string>() { "// On-stopping code goes here", }),
         new GComment(new List<string>() {
           "// Registered as a handler with the HostApplicationLifetime.ApplicationStarted event",
         }));
@@ -151,8 +152,8 @@ namespace GenerateProgram {
       return new GMethod(
         new GMethodDeclaration(gName: "OnStopped", gType: "void",
           gVisibility: "private", gAccessModifier: "", isConstructor: false,
-          gMethodArguments: new Dictionary<Philote<GMethodArgument>, GMethodArgument>()),
-        new GMethodBody(statementList: new List<string>() { "// On-stopped code goes here", }),
+          gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
+        new GMethodBody(gStatementsList: new List<string>() { "// On-stopped code goes here", }),
         new GComment(new List<string>() {
           "// Registered as a handler with the HostApplicationLifetime.ApplicationStarted event",
           "// This is NOT called if the ConsoleWindows ends when the connected browser (browser opened by LaunchSettings when starting with debugger) is closed (not applicable to ConsoleLifetime generic hosts)",
@@ -161,19 +162,19 @@ namespace GenerateProgram {
     }
 
     public static GMethod CreateWriteAsyncMethod() {
-      var gMethodArgumentList = new List<GMethodArgument>() {
-        new GMethodArgument("mesg","string"),
-        new GMethodArgument("ct","CancellationToken?")
+      var gMethodArgumentList = new List<GArgument>() {
+        new GArgument("mesg","string"),
+        new GArgument("ct","CancellationToken?")
       };
-      var gMethodArguments = new Dictionary<Philote<GMethodArgument>, GMethodArgument>();
+      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
       foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
 
       return new GMethod(
         new GMethodDeclaration(gName: "WriteAsync", gType: "Task",
           gVisibility: "private", gAccessModifier: "async", isConstructor: false,
-          gMethodArguments: gMethodArguments),
-          gBody:
-        new GMethodBody(statementList: new List<string>() {
+          gArguments: gMethodArguments),
+        gBody:
+        new GStatementList(new List<string>() {
           "ct?.ThrowIfCancellationRequested();",
           "var task = await ConsoleMonitorGenericHostHostedService.WriteMessageAsync(mesg).ConfigureAwait(false);",
           "if (!task.IsCompletedSuccessfully) {",
@@ -200,21 +201,21 @@ namespace GenerateProgram {
     }
 
     public static GMethod CreateBuildMenuMethod() {
-      var gMethodArgumentList = new List<GMethodArgument>() {
-        new GMethodArgument("Choices","TypeOfHostedservice"),
-        new GMethodArgument("mesg","StringBuilder"),
-        new GMethodArgument("choices","IEnumerable<string>"),
-        new GMethodArgument("cancellationToken","CancellationToken?")
+      var gMethodArgumentList = new List<GArgument>() {
+        new GArgument("Choices","TypeOfHostedservice"),
+        new GArgument("mesg","StringBuilder"),
+        new GArgument("choices","IEnumerable<string>"),
+        new GArgument("cancellationToken","CancellationToken?")
       };
-      var gMethodArguments = new Dictionary<Philote<GMethodArgument>, GMethodArgument>();
+      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
       foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
 
       return new GMethod(
         new GMethodDeclaration(gName: "SubscribeToConsoleReadLine", gType: "IDisposable",
           gVisibility: "private", gAccessModifier: "", isConstructor: false,
-          gMethodArguments: gMethodArguments),
+          gArguments: gMethodArguments),
         gBody:
-        new GMethodBody(statementList: new List<string>() {
+        new GStatementList( new List<string>() {
           "cancellationToken?.ThrowIfCancellationRequested();",
           "mesg.Clear();",
           "foreach (var choice in choices) {",
@@ -236,20 +237,20 @@ namespace GenerateProgram {
 
 
     public static GMethod CreateReadLineMethod() {
-      var gMethodArgumentList = new List<GMethodArgument>() {
-        new GMethodArgument("inService","TypeOfHostedservice"),
-        //new GMethodArgument("mesg","string"),
-        new GMethodArgument("ct","CancellationToken?")
+      var gMethodArgumentList = new List<GArgument>() {
+        new GArgument("inService","TypeOfHostedservice"),
+        //new GArgument("mesg","string"),
+        new GArgument("ct","CancellationToken?")
       };
-      var gMethodArguments = new Dictionary<Philote<GMethodArgument>, GMethodArgument>();
+      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
       foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
 
       return new GMethod(
         new GMethodDeclaration(gName: "SubscribeToConsoleReadLine", gType: "IDisposable",
           gVisibility: "private", gAccessModifier: "", isConstructor: false,
-          gMethodArguments: gMethodArguments),
+          gArguments: gMethodArguments),
         gBody:
-        new GMethodBody(statementList: new List<string>() {
+        new GStatementList( new List<string>() {
           "return Task.CompletedTask;"
         }),
         new GComment(new List<string>() {

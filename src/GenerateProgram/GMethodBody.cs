@@ -2,13 +2,10 @@ using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
-  public class GMethodBody {
-    public GMethodBody(List<string>? statementList = default) {
-      StatementList = statementList == default ? new List<string>() : statementList;
-      Philote = new Philote<GMethodBody>();
+  public class GMethodBody :GStatementList {
+    public GMethodBody(List<string> gStatementsList = default) : base(gStatementsList) {
     }
-    public List<string>? StatementList { get; }
-    public  Philote<GMethodBody> Philote { get; }
-
+    public GMethodBody(GStatementList gStatementsList = default) : base(gStatementsList.GStatements) {
+    }
   }
 }

@@ -55,6 +55,15 @@ namespace GenerateProgram {
         r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
         r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
       }
+      if (gClass.GMethodGroups.Any()) {
+        r1Top.Sb.Append($"{r1Top.Indent}#region MethodGroups{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
+        foreach (var kvp in gClass.GMethodGroups) {
+          r1Top.RMethodGroup(kvp.Value);
+        }
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
+      }
       if (gClass.GMethods.Any()) {
         r1Top.Sb.Append($"{r1Top.Indent}#region Methods{r1Top.Eol}");
         r1Top.Indent.Append(r1Top.IndentDelta);
@@ -64,11 +73,18 @@ namespace GenerateProgram {
         r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
         r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
       }
-      if (gClass.GMethodGroups.Any()) {
-        r1Top.Sb.Append($"{r1Top.Indent}#region MethodGroups{r1Top.Eol}");
+      if (gClass.GStaticVariableGroups.Any()) {
+        r1Top.Sb.Append($"{r1Top.Indent}#region StaticVariableGroups{r1Top.Eol}");
         r1Top.Indent.Append(r1Top.IndentDelta);
-        foreach (var kvp in gClass.GMethodGroups) {
-          r1Top.RMethodGroup(kvp.Value);
+        r1Top.RStaticVariableGroup(gClass.GStaticVariableGroups);
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
+      }
+      if (gClass.GStaticVariables.Any()) {
+        r1Top.Sb.Append($"{r1Top.Indent}#region StaticVariable{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
+        foreach (var kvp in gClass.GStaticVariables) {
+          r1Top.RStaticVariable(kvp.Value);
         }
         r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
         r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
@@ -89,7 +105,42 @@ namespace GenerateProgram {
         r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
         r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
       }
-
+      if (gClass.GDelegateGroups.Any()) {
+        r1Top.Sb.Append($"{r1Top.Indent}#region DelegateGroups{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
+        foreach (var kvp in gClass.GDelegateGroups) {
+          r1Top.RDelegateGroup(kvp.Value);
+        }
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
+      }
+      if (gClass.GDelegates.Any()) {
+        r1Top.Sb.Append($"{r1Top.Indent}#region Delegates{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
+        foreach (var kvp in gClass.GDelegates) {
+          r1Top.RDelegate(kvp.Value);
+        }
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
+      }
+      if (gClass.GEnumerationGroups.Any()) {
+        r1Top.Sb.Append($"{r1Top.Indent}#region EnumerationGroups{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
+        foreach (var kvp in gClass.GEnumerationGroups) {
+          r1Top.REnumerationGroup(kvp.Value);
+        }
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
+      }
+      if (gClass.GEnumerations.Any()) {
+        r1Top.Sb.Append($"{r1Top.Indent}#region Enumerations{r1Top.Eol}");
+        r1Top.Indent.Append(r1Top.IndentDelta);
+        foreach (var kvp in gClass.GEnumerations) {
+          r1Top.REnumeration(kvp.Value);
+        }
+        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
+      }
       if (gClass.GDisposesOf.Any()) {
         r1Top.Sb.Append($"{r1Top.Indent}#region IDisposable Support{r1Top.Eol}");
         r1Top.Indent.Append(r1Top.IndentDelta);

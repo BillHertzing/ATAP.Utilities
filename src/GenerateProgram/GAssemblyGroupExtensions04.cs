@@ -3,7 +3,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Schema;
 using ATAP.Utilities.Philote;
-
 using static GenerateProgram.GCompilationUnitExtensions;
 using static GenerateProgram.GItemGroupInProjectUnitExtensions;
 using static GenerateProgram.GPropertyGroupInProjectUnitExtensions;
@@ -13,12 +12,11 @@ using static GenerateProgram.GMethodGroupExtensions;
 using static GenerateProgram.GMethodExtensions;
 using static GenerateProgram.GUsingGroupExtensions;
 
-
 namespace GenerateProgram {
-
   public static partial class GAssemblyGroupExtensions {
-
-    public static GAssemblyGroup GAssemblyGroupGHBSConstructor(string gAssemblyGroupName = default, string subDirectoryForGeneratedFiles = default, string baseNamespace = default, bool usesConsoleMonitorConvention = false) {
+    public static GAssemblyGroup GAssemblyGroupGHBSConstructor(string gAssemblyGroupName = default,
+      string subDirectoryForGeneratedFiles = default, string baseNamespace = default,
+      bool usesConsoleMonitorConvention = false) {
       if (gAssemblyGroupName == default) {
         gAssemblyGroupName = "";
       }
@@ -41,16 +39,18 @@ namespace GenerateProgram {
       GMethodGroup gMethodGroup;
       GStatementList gAdditionalStatements;
       GInterface gInterface;
-
       GPropertyGroupInProjectUnit gPropertyGroupInProjectUnit;
       GItemGroupInProjectUnit gItemGroupInProjectUnit;
+      GPatternReplacement gAssemblyGroupPatternReplacement;
+      GPatternReplacement gAssemblyUnitPatternReplacement;
+      GPatternReplacement gCompilationPatternReplacement;
 
-      var gAassemblyGroupName = "AssemblyGroupNameReplacementPattern";
+      //var gAssemblyGroupName = "AssemblyGroupNameReplacementPattern";
       #region GReplacementPatternDictionary for AssemblyGroup
-      GPatternReplacement gAssemblyGroupPatternReplacement = new GPatternReplacement(
+      gAssemblyGroupPatternReplacement = new GPatternReplacement(
         gDictionary: new Dictionary<Regex, string>() {
-          {new Regex("AssemblyGroupNameReplacementPattern"), gAssemblyGroupName},
-          {new Regex("SolutionReferencedProjectsBasePathReplacementPattern"),
+          {new Regex("AssemblyGroupNameReplacementPattern"), gAssemblyGroupName}, {
+            new Regex("SolutionReferencedProjectsBasePathReplacementPattern"),
             @"C:/Dropbox/whertzing/GitHub/ATAP.Utilities/"
           },
         });
@@ -58,12 +58,12 @@ namespace GenerateProgram {
       gAssemblyGroup = new GAssemblyGroup(gAssemblyGroupName, gPatternReplacement: gAssemblyGroupPatternReplacement);
 
       #region TitularAssemblyUnit
-      var gAssemblyUnitName = $"{gAassemblyGroupName}";
+      var gAssemblyUnitName = $"{gAssemblyGroupName}";
       #region GReplacementPatternDictionary for AssemblyUnit
-      GPatternReplacement gAssemblyUnitPatternReplacement = new GPatternReplacement(
+      gAssemblyUnitPatternReplacement = new GPatternReplacement(
         gDictionary: new Dictionary<Regex, string>() {
-        {new Regex("AssemblyUnitNameReplacementPattern"), gAssemblyUnitName}
-      });
+          {new Regex("AssemblyUnitNameReplacementPattern"), gAssemblyUnitName}
+        });
       foreach (var kvp in gAssemblyGroupPatternReplacement.GDictionary) {
         gAssemblyUnitPatternReplacement.GDictionary.Add(kvp.Key, kvp.Value);
       }
@@ -75,10 +75,12 @@ namespace GenerateProgram {
       #region TitularCompilationUnit Base CompilationUnit
       var gCompilationUnitName = $"{assemblyUnitName}Base";
       #region GReplacementPatternDictionary for CompilationUnit Base CompilationUnit
-      GPatternReplacement gCompilationPatternReplacement = new GPatternReplacement(gDictionary: new Dictionary<Regex, string>() {
+      gCompilationPatternReplacement = new GPatternReplacement(gDictionary: new Dictionary<Regex, string>() {
         {new Regex("CompilationUnitNameReplacementPattern"), "AssemblyUnitNameReplacementPattern"},
-        {new Regex("DataInitializationInStartAsyncReplacementPattern"), "Choices=new List<string>() {\"Choice1\"};"},
-        {new Regex("DataDisposalInStopAsyncReplacemenmtPattern"), "SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();"},
+        {new Regex("DataInitializationInStartAsyncReplacementPattern"), "Choices=new List<string>() {\"Choice1\"};"}, {
+          new Regex("DataDisposalInStopAsyncReplacemenmtPattern"),
+          "SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();"
+        },
       });
       foreach (var kvp in gAssemblyUnitPatternReplacement.GDictionary) {
         gCompilationPatternReplacement.GDictionary.Add(kvp.Key, kvp.Value);
@@ -92,26 +94,37 @@ namespace GenerateProgram {
 
       gUsingGroup = new GUsingGroup("Usings For System");
       foreach (var gName in new List<string>() {
-        "System","System.Collections.Generic","System.IO","System.Text","System.Threading",
-        "System.Threading.Tasks","System.Diagnostics","System.Globalization","System.Linq"
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text",
+        "System.Threading",
+        "System.Threading.Tasks",
+        "System.Diagnostics",
+        "System.Globalization",
+        "System.Linq"
       }) {
         gUsing = new GUsing(gName);
         gUsingGroup.GUsings[gUsing.Philote] = gUsing;
       }
       gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
+      if (usesConsoleMonitorConvention) {
+        gUsingGroup = UsingsForConsoleMonitorPattern($"{baseNamespace}");
+        gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
+      }
       #endregion
       #region namespace For TitularCompilationUnit Base CompilationUnit
-      gNamespace = new GNamespace($"{baseNamespace}.{gAassemblyGroupName}");
+      gNamespace = new GNamespace($"{baseNamespace}.{gAssemblyGroupName}");
       gCompilationUnit.GNamespaces[gNamespace.Philote] = gNamespace;
       #endregion
 
       #region TitularClass Base Class (IHostedService)
       gClass = new GClass(gCompilationUnitName, gVisibility: "public",
         gInheritance: "BackgroundService",
-        gImplements: new List<string> {  "IDisposable" },
-        gDisposesOf: new List<string> { "SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle" });
+        gImplements: new List<string> {"IDisposable"},
+        gDisposesOf: new List<string> {"SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle"});
       #region specific methods for BackgroundService
-      gClass.AddMethod(CreateExecuteAsyncMethod());
+      gClass.AddMethod(CreateExecuteAsyncMethod(usesConsoleMonitorConvention));
       #endregion
       #region Constructors
       gConstructor = new GMethod(new GMethodDeclaration(gCompilationUnitName, isConstructor: true,
@@ -121,17 +134,22 @@ namespace GenerateProgram {
       #region ConstructorGroups
       #endregion
       #region Propertys for services that follow the ConsoleMonitor pattern
-      gClass.AddProperty(new List<GProperty>() {
-       new GProperty("Choices", gType: "Dictionary<String,IEnumerable<string>>", gAccessors: "{ get; }", gVisibility:"protected internal"),
-       new GProperty("SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle", gType: "IDisposable", gAccessors: "{ get; set; }", gVisibility:"protected internal"),
-       new GProperty("StdInHandlerState", gType: "String", gAccessors: "{ get; }", gVisibility:"protected internal")
-      });
+      if (usesConsoleMonitorConvention) {
+        gClass.AddProperty(new List<GProperty>() {
+          new GProperty("Choices", gType: "Dictionary<String,IEnumerable<string>>", gAccessors: "{ get; }",
+            gVisibility: "protected internal"),
+          new GProperty("SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle", gType: "IDisposable",
+            gAccessors: "{ get; set; }", gVisibility: "protected internal"),
+          new GProperty("StdInHandlerState", gType: "String", gAccessors: "{ get; }", gVisibility: "protected internal")
+        });
+      }
       #endregion
       #region Standard Properties for every GenericHostHostedService
       #region local ConfigurationRoot property for every GenericHostHostedService
-      new List<GProperty>() {
-             new GProperty("ConfigurationRoot", gType:"ConfigurationRoot", gAccessors: "{ get; }", gVisibility:"protected internal"),
-      }.ForEach(gProperty => gClass.GPropertys[gProperty.Philote] = gProperty);
+      gClass.AddProperty(new List<GProperty>() {
+        new GProperty("ConfigurationRoot", gType: "ConfigurationRoot", gAccessors: "{ get; }",
+          gVisibility: "protected internal"),
+      });
       #endregion
       #region Injected AutoProperty Group and their derived AutoProperties for GenericHost
       #region InjectedAutoProperties whose Type IS their name
@@ -148,7 +166,7 @@ namespace GenerateProgram {
       }
       #endregion
       #region InjectedAutoProperties whose Type is NOT their name
-      foreach (var ap in new List<string>() { "HostConfiguration", "AppConfiguration" }) {
+      foreach (var ap in new List<string>() {"HostConfiguration", "AppConfiguration"}) {
         gClass.AddTConstructorAutoPropertyGroup(gConstructor.Philote, ap, gType: "IConfiguration",
           gPropertyGroupId: gPropertyGroup.Philote);
       }
@@ -161,7 +179,7 @@ namespace GenerateProgram {
       #region Derived AutoProperties for Localizers
       gPropertyGroup = new GPropertyGroup("Derived AutoProperty Group for Localizers");
       gClass.AddPropertyGroups(gPropertyGroup);
-      foreach (var ap in new List<string>() { "DebugLocalizer", "ExceptionLocalizer", "UiLocalizer" }) {
+      foreach (var ap in new List<string>() {"DebugLocalizer", "ExceptionLocalizer", "UiLocalizer"}) {
         gClass.AddTLocalizerConstructorAutoPropertyGroup(gConstructor.Philote, ap, assemblyUnitName,
           gPropertyGroupId: gPropertyGroup.Philote);
       }
@@ -185,8 +203,6 @@ namespace GenerateProgram {
         gClass.AddMethodGroup(CreateUsesConsoleMonitorMethods());
       }
       #endregion
-
-
       #endregion
       gNamespace.GClasss[gClass.Philote] = gClass;
       var baseClass = gClass;
@@ -218,90 +234,131 @@ namespace GenerateProgram {
         gInheritance: "CompilationUnitNameReplacementPatternBase"
         //gImplements: new List<string> { "IDisposable" },
         //gDisposesOf: new List<string> { "CompilationUnitNameReplacementPatternBaseData" }
-        );
+      );
+      GStatementList gStatementList = new GStatementList();
+
+      if (usesConsoleMonitorConvention) {
+        // State initialization
+        gStatementList.GStatements.AddRange(new List<string>() {
+          "var ConsoleMonitorStateMachine = new StateMachine<State, Trigger>(State.NotConnected);"
+        });
+      }
+      var gMethodBody = new GMethodBody(gStatementList);
       gConstructor = new GMethod(new GMethodDeclaration("CompilationUnitNameReplacementPattern", isConstructor: true,
-        gVisibility: "public", gBase: "ToDo:base arguments"));
+        gVisibility: "public", gBase: " "), gMethodBody);
       gClass.GConstructors[gConstructor.Philote] = gConstructor;
       gNamespace.GClasss[gClass.Philote] = gClass;
       #endregion
       gAssemblyUnit.GCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;
       #endregion
       #region ResourceUnits
-      GPatternReplacement gResourcePatternReplacement = new GPatternReplacement(gDictionary: new Dictionary<Regex, string>() {
-        {new Regex("ResourceUnitNameReplacementPattern"), "AssemblyUnitNameReplacementPattern"}
-      });
+      GPatternReplacement gResourcePatternReplacement = new GPatternReplacement(
+        gDictionary: new Dictionary<Regex, string>() {
+          {new Regex("ResourceUnitNameReplacementPattern"), "AssemblyUnitNameReplacementPattern"}
+        });
       foreach (var kvp in gAssemblyUnitPatternReplacement.GDictionary) {
         gResourcePatternReplacement.GDictionary.Add(kvp.Key, kvp.Value);
       }
 
       gResourceItem = new GResourceItem(gName: "ExceptionMessage1", gValue: "text for exception {0}",
         gComment: "{0} is the exception something?");
-      gResourceItems = new Dictionary<Philote<GResourceItem>, GResourceItem>();
-      gResourceItems[gResourceItem.Philote] = gResourceItem;
+      gResourceItems = new Dictionary<Philote<GResourceItem>, GResourceItem> {[gResourceItem.Philote] = gResourceItem};
       gResourceUnit =
-        new GResourceUnit("ExceptionMessages", gRelativePath: "Resources", gResourceItems: gResourceItems, gPatternReplacement: gResourcePatternReplacement);
+        new GResourceUnit("ExceptionMessages", gRelativePath: "Resources", gResourceItems: gResourceItems,
+          gPatternReplacement: gResourcePatternReplacement);
       gAssemblyUnit.GResourceUnits[gResourceUnit.Philote] = gResourceUnit;
       gAssemblyUnit.GProjectUnit.GResourceUnits[gResourceUnit.Philote] = gResourceUnit;
 
       gResourceItem = new GResourceItem(gName: "Enter Selection>", gValue: "Enter Selection>",
         gComment: "Enter Selection prompt for Console UI");
-      gResourceItems = new Dictionary<Philote<GResourceItem>, GResourceItem>();
-      gResourceItems[gResourceItem.Philote] = gResourceItem;
-      gResourceUnit = new GResourceUnit("UIMessages", gRelativePath: "Resources", gResourceItems: gResourceItems, gPatternReplacement: gResourcePatternReplacement);
+      gResourceItems = new Dictionary<Philote<GResourceItem>, GResourceItem> {[gResourceItem.Philote] = gResourceItem};
+      gResourceUnit = new GResourceUnit("UIMessages", gRelativePath: "Resources", gResourceItems: gResourceItems,
+        gPatternReplacement: gResourcePatternReplacement);
       gAssemblyUnit.GResourceUnits[gResourceUnit.Philote] = gResourceUnit;
       gAssemblyUnit.GProjectUnit.GResourceUnits[gResourceUnit.Philote] = gResourceUnit;
       #endregion
       #region PropertyGroups for the ProjectUnit
       new List<GPropertyGroupInProjectUnit>() {
-        PropertyGroupInProjectUnitForProjectUnitIsLibrary(), PropertyGroupInProjectUnitForPackableOnBuild(),PropertyGroupInProjectUnitForLifecycleStage(),
-        PropertyGroupInProjectUnitForBuildConfigurations(), PropertyGroupInProjectUnitForVersion()
-      }.ForEach(gP => gAssemblyUnit.GProjectUnit.GPropertyGroupInProjectUnits.Add(gP.Philote, gP)); ;
+        PropertyGroupInProjectUnitForProjectUnitIsLibrary(),
+        PropertyGroupInProjectUnitForPackableOnBuild(),
+        PropertyGroupInProjectUnitForLifecycleStage(),
+        PropertyGroupInProjectUnitForBuildConfigurations(),
+        PropertyGroupInProjectUnitForVersion()
+      }.ForEach(gP => gAssemblyUnit.GProjectUnit.GPropertyGroupInProjectUnits.Add(gP.Philote, gP));
+      ;
       #endregion
       #region ItemGroups for the ProjectUnit
-      new List<GItemGroupInProjectUnit>() {
-        ProjectReferenceItemGroupInProjectUnitForLoggingUtilities(), ItemGroupInProjectUnitForSerilogAndSeqMELLoggingProviderPackageReferences(),ItemGroupInProjectUnitForSerilogLoggingProviderPackageReferences(),
-        ProjectReferenceItemGroupInProjectUnitForConsoleServices(),
-        ItemGroupInProjectUnitForQuickGraphPackageReferences(), ItemGroupInProjectUnitForQuickGraphDependentPackageReferences(),
-        ItemGroupInProjectUnitForReactiveExtensionsPackageReferences(),ItemGroupInProjectUnitForServiceStackSerializationPackageReferences(),
+      var gItemGroupInProjectUnitList = new List<GItemGroupInProjectUnit>() {
+        ProjectReferenceItemGroupInProjectUnitForLoggingUtilities(),
+        ItemGroupInProjectUnitForSerilogAndSeqMELLoggingProviderPackageReferences(),
+        ItemGroupInProjectUnitForSerilogLoggingProviderPackageReferences(),
+        ItemGroupInProjectUnitForQuickGraphPackageReferences(),
+        ItemGroupInProjectUnitForQuickGraphDependentPackageReferences(),
+        ItemGroupInProjectUnitForReactiveExtensionsPackageReferences(),
+        ItemGroupInProjectUnitForServiceStackSerializationPackageReferences(),
         ItemGroupInProjectUnitForServiceStackORMLitePackageReferences(),
         ProjectReferenceItemGroupInProjectUnitForPersistenceUtilities(),
-        ItemGroupInProjectUnitForNetCoreGenericHostAndWebServerHostPackageReferences(), ProjectReferenceItemGroupInProjectUnitForGenericHostUtilities(),
+        ItemGroupInProjectUnitForNetCoreGenericHostAndWebServerHostPackageReferences(),
+        ProjectReferenceItemGroupInProjectUnitForGenericHostUtilities(),
+        ItemGroupInProjectUnitForStatelessStatemachinePackageReferences(),
         ProjectReferenceItemGroupInProjectUnitForTimersService(),
         //ProjectReferenceItemGroupInProjectUnitForFilesystemWatchersService(),
         ItemGroupInProjectUnitForILWeavingUsingFodyPackageReferences()
-      }.ForEach(gP => gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(gP.Philote, gP)); ;
+      };
+      if (usesConsoleMonitorConvention) {
+        gItemGroupInProjectUnitList.Add(ProjectReferenceItemGroupInProjectUnitForConsoleMonitorPattern());
+      }
+      gItemGroupInProjectUnitList.ForEach(gP =>
+        gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(gP.Philote, gP));
       #endregion
       #region StringConstants Base CompilationUnit
+      gCompilationPatternReplacement = new GPatternReplacement(
+        gDictionary: new Dictionary<Regex, string>() {
+          {new Regex("CompilationUnitNameReplacementPattern"), "AssemblyUnitNameReplacementPattern"}
+        });
+      foreach (var kvp in gAssemblyUnitPatternReplacement.GDictionary) {
+        gCompilationPatternReplacement.GDictionary.Add(kvp.Key, kvp.Value);
+      }
+
       #region Additional StringConstants items
-       gAdditionalStatements = new GStatementList(new List<string>(){"{dummyConfigKeyRoot,dummyConfigDefaultString}"});
+      gAdditionalStatements = new GStatementList(new List<string>() {"{dummyConfigKeyRoot,dummyConfigDefaultString}"});
       #endregion
       gCompilationUnit = CompilationUnitStringConstantsConstructor(gNamespaceName: gNamespace.GName,
         gRelativePath: subDirectoryForGeneratedFiles,
-        gPatternReplacement: gAssemblyUnit.GPatternReplacement);
+        gPatternReplacement: gCompilationPatternReplacement);
       gAssemblyUnit.GCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;
       #endregion
       #region DefaultConfiguration Base CompilationUnit
+      gCompilationPatternReplacement = new GPatternReplacement(
+        gDictionary: new Dictionary<Regex, string>() {
+          {new Regex("CompilationUnitNameReplacementPattern"), "AssemblyUnitNameReplacementPattern"}
+        });
+      foreach (var kvp in gAssemblyUnitPatternReplacement.GDictionary) {
+        gCompilationPatternReplacement.GDictionary.Add(kvp.Key, kvp.Value);
+      }
+
       #region Additional DefaultConfiguration items
-       gAdditionalStatements = new GStatementList(new List<string>(){"{dummyConfigKeyRoot,dummyConfigDefaultString}"});
+      gAdditionalStatements = new GStatementList(new List<string>() {"{dummyConfigKeyRoot,dummyConfigDefaultString}"});
       #endregion
       gCompilationUnit = CompilationUnitDefaultConfigurationConstructor(gNamespaceName: gNamespace.GName,
-        gRelativePath: subDirectoryForGeneratedFiles,gAdditionalStatements:gAdditionalStatements, gPatternReplacement: gAssemblyUnit.GPatternReplacement);
+        gRelativePath: subDirectoryForGeneratedFiles, gAdditionalStatements: gAdditionalStatements,
+        gPatternReplacement: gCompilationPatternReplacement);
       gAssemblyUnit.GCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;
       #endregion
 
       gAssemblyGroup.GAssemblyUnits[gAssemblyUnit.Philote] = gAssemblyUnit;
 
       #region TitularAssemblyUnitName Interfaces
-
-      gAassemblyGroupName = "AssemblyGroupNameReplacementPattern";
+      gAssemblyGroupName = "AssemblyGroupNameReplacementPattern";
       gAssemblyUnitPatternReplacement = new GPatternReplacement(gDictionary: new Dictionary<Regex, string>() {
-        {new Regex($"AssemblyUnitNameReplacementPattern"), $"{gAassemblyGroupName}"}
+        {new Regex($"AssemblyUnitNameReplacementPattern"), $"{gAssemblyGroupName}"}
       });
       foreach (var kvp in gAssemblyGroupPatternReplacement.GDictionary) {
         gAssemblyUnitPatternReplacement.GDictionary.Add(kvp.Key, kvp.Value);
       }
-      gAssemblyUnitName = $"{gAassemblyGroupName}";
-      gAssemblyUnit = new GAssemblyUnit($"{gAssemblyUnitName}.Interfaces", gRelativePath: $"{gAassemblyGroupName}.Interfaces",
+      gAssemblyUnitName = $"{gAssemblyGroupName}";
+      gAssemblyUnit = new GAssemblyUnit($"{gAssemblyUnitName}.Interfaces",
+        gRelativePath: $"{gAssemblyGroupName}.Interfaces",
         gProjectUnit: new GProjectUnit($"{gAssemblyUnitName}.Interfaces",
           gPatternReplacement: gAssemblyUnitPatternReplacement), gPatternReplacement: gAssemblyUnitPatternReplacement);
 
@@ -317,11 +374,7 @@ namespace GenerateProgram {
         gRelativePath: subDirectoryForGeneratedFiles, gPatternReplacement: gCompilationPatternReplacement);
       gUsingGroup = UsingsForMicrosoftGenericHost();
       gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
-      foreach (var gName in new List<string>() {
-        "System",
-        "System.Collections.Generic",
-        "System.IO"
-      }) {
+      foreach (var gName in new List<string>() {"System", "System.Collections.Generic", "System.IO"}) {
         gUsing = new GUsing(gName);
         gUsingGroup.GUsings[gUsing.Philote] = gUsing;
       }
@@ -331,9 +384,15 @@ namespace GenerateProgram {
       //gCompilationUnit.GNamespaces[gNamespace.Philote].GInterfaces[gInterface.Philote] = gInterface;
 
       gInterface = new GInterface($"I{compilationUnitName}");
-      foreach (var kvp in baseClass.ConvertToInterfacePropertys()) { gInterface.GPropertys.Add(kvp.Key, kvp.Value); }
+      foreach (var kvp in baseClass.ConvertToInterfacePropertys()) {
+        gInterface.GPropertys.Add(kvp.Key, kvp.Value);
+      }
+
       //baseClass.ConvertToInterfacePropertyGroups().ForEach(x => gInterface.GPropertyGroups.Add(x.Key, x.Value));
-      foreach (var kvp in baseClass.ConvertToInterfaceMethods()) { gInterface.GMethods.Add(kvp.Key, kvp.Value); }
+      foreach (var kvp in baseClass.ConvertToInterfaceMethods()) {
+        gInterface.GMethods.Add(kvp.Key, kvp.Value);
+      }
+
       //baseClass.ConvertToInterfaceMethodGroups().ForEach(x => gInterface.GMethodGroups.Add(x.Key, x.Value));
       //baseClass.ConvertToInterfaceExceptions().ForEach(x => gInterface.GExceptions.Add(x.Key, x.Value));
       //baseClass.ConvertToInterfaceExceptionGroups().ForEach(x => gInterface.GExceptionGroups.Add(x.Key, x.Value));
@@ -345,7 +404,7 @@ namespace GenerateProgram {
       #endregion
 
       #region ProjectUnit
-      #region PropertyGroups for the ProjectUnit
+      #region PropertyGroups for the ProjectUnit Interfaces
       gPropertyGroupInProjectUnit = PropertyGroupInProjectUnitForProjectUnitIsLibrary();
       gAssemblyUnit.GProjectUnit.GPropertyGroupInProjectUnits[gPropertyGroupInProjectUnit.Philote] =
         gPropertyGroupInProjectUnit;
@@ -362,19 +421,29 @@ namespace GenerateProgram {
       gAssemblyUnit.GProjectUnit.GPropertyGroupInProjectUnits[gPropertyGroupInProjectUnit.Philote] =
         gPropertyGroupInProjectUnit;
       #endregion
-      #region ItemGroups for the ProjectUnit
-      new List<GItemGroupInProjectUnit>() {
-        ProjectReferenceItemGroupInProjectUnitForLoggingUtilities(), ItemGroupInProjectUnitForSerilogAndSeqMELLoggingProviderPackageReferences(),ItemGroupInProjectUnitForSerilogLoggingProviderPackageReferences(),
-        ProjectReferenceItemGroupInProjectUnitForConsoleServices(),
-        ItemGroupInProjectUnitForQuickGraphPackageReferences(), ItemGroupInProjectUnitForQuickGraphDependentPackageReferences(),
-        ItemGroupInProjectUnitForReactiveExtensionsPackageReferences(),ItemGroupInProjectUnitForServiceStackSerializationPackageReferences(),
+      #region ItemGroups for the ProjectUnit Interfaces
+      gItemGroupInProjectUnitList = new List<GItemGroupInProjectUnit>() {
+        ProjectReferenceItemGroupInProjectUnitForLoggingUtilities(),
+        ItemGroupInProjectUnitForSerilogAndSeqMELLoggingProviderPackageReferences(),
+        ItemGroupInProjectUnitForSerilogLoggingProviderPackageReferences(),
+        ItemGroupInProjectUnitForQuickGraphPackageReferences(),
+        ItemGroupInProjectUnitForQuickGraphDependentPackageReferences(),
+        ItemGroupInProjectUnitForReactiveExtensionsPackageReferences(),
+        ItemGroupInProjectUnitForServiceStackSerializationPackageReferences(),
         ItemGroupInProjectUnitForServiceStackORMLitePackageReferences(),
         ProjectReferenceItemGroupInProjectUnitForPersistenceUtilities(),
-        ItemGroupInProjectUnitForNetCoreGenericHostAndWebServerHostPackageReferences(), ProjectReferenceItemGroupInProjectUnitForGenericHostUtilities(),
+        ItemGroupInProjectUnitForNetCoreGenericHostAndWebServerHostPackageReferences(),
+        ProjectReferenceItemGroupInProjectUnitForGenericHostUtilities(),
+        ItemGroupInProjectUnitForStatelessStatemachinePackageReferences(),
         ProjectReferenceItemGroupInProjectUnitForTimersService(),
         //ProjectReferenceItemGroupInProjectUnitForFilesystemWatchersService(),
         ItemGroupInProjectUnitForILWeavingUsingFodyPackageReferences()
-      }.ForEach(gP => gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(gP.Philote, gP)); ;
+      };
+      if (usesConsoleMonitorConvention) {
+        gItemGroupInProjectUnitList.Add(ProjectReferenceItemGroupInProjectUnitForConsoleMonitorPattern());
+      }
+      gItemGroupInProjectUnitList.ForEach(gP =>
+        gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(gP.Philote, gP));
       #endregion
       #endregion
 
@@ -384,43 +453,3 @@ namespace GenerateProgram {
     }
   }
 }
-//gUsing = new GUsing("StandaloneUsing1");
-//gCompilationUnit.GUsings[gUsing.Philote] = gUsing;
-//gUsing = new GUsing("StandaloneUsing2");
-//gCompilationUnit.GUsings[gUsing.Philote] = gUsing;
-
-//gClass.AddPropertys(new GProperty("SoloProperty", "String"));
-
-//var gPropertys = new List<GProperty>()  {
-//          new GProperty("SoloProperty1OfCollection","String"),
-//          new GProperty("SoloProperty2OfCollection","String")
-//      };
-//gClass.AddPropertys(gPropertys);
-//var gPropertyGroup = new GPropertyGroup("PropertyGroup1", new List<GProperty>{
-//        new GProperty("Property1OfPropertyGroup1","String"),
-//        new GProperty("Property2OfPropertyGroup1","String")
-//      });
-//gClass.AddPropertyGroups(gPropertyGroup);
-//var gPropertyGroups = new List<GPropertyGroup>() {
-//        new GPropertyGroup("PropertyGroup2", new List<GProperty>{
-//          new GProperty("Property1OfPropertyGroup2","String"),
-//          new GProperty("Property2OfPropertyGroup2","String")
-//        }),
-//        new GPropertyGroup("PropertyGroup3", new List<GProperty>{
-//          new GProperty("Property1OfPropertyGroup3","String"),
-//          new GProperty("Property2OfPropertyGroup3","String")
-//        })
-//      };
-//gClass.AddPropertyGroups(gPropertyGroups);
-//GMethodArgument arg1 = new GMethodArgument("arg1", "int");
-//GMethodArgument arg2 = new GMethodArgument("arg2", "string", isOut: true);
-//GMethodArgument arg3 = new GMethodArgument("arg3", "Philote<GMethodArgument>", isRef: true);
-//Dictionary<Philote<GMethodArgument>, GMethodArgument> gMethodArguments =
-//  new Dictionary<Philote<GMethodArgument>, GMethodArgument>() { { arg1.Philote, arg1 }, { arg2.Philote, arg2 }, { arg3.Philote, arg3 } };
-//GMethodDeclaration gMethodDeclaration =
-//  new GMethodDeclaration(gName: "ServiceData", isConstructor:true,gMethodArguments:gMethodArguments);
-//GMethodBody gMethodBody = new GMethodBody(statementList: new List<string>() { "A=a", "B=b" });
-//var gConstructor = new GMethod(gMethodDeclaration, gMethodBody);
-
-//gCompilationUnits = new Dictionary<Philote<GCompilationUnit>, GCompilationUnit>();
-//gCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;

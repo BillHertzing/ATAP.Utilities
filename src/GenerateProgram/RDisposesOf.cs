@@ -7,6 +7,7 @@ namespace GenerateProgram {
   public static partial class RenderExtensions {
  
     public static StringBuilder RenderDisposesOfPreambleStringBuilder(this StringBuilder sb, List<string> gDisposesOf, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
+      ct?.ThrowIfCancellationRequested();
       sb.Append($"{indent}private bool _disposedValue = false; // To detect redundant calls{eol}");
       sb.Append($"{indent}protected virtual void Dispose(bool disposing) {{{eol}");
       sb.Append($"{indent}{indentDelta}if (!_disposedValue) {{{eol}");

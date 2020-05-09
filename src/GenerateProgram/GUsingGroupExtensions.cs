@@ -51,5 +51,11 @@ namespace GenerateProgram {
       }
       return _gUsingGroup;
     }
+    public static GUsingGroup UsingsForConsoleMonitorPattern(string baseNamespace) {
+      return new GUsingGroup("Usings For ConsoleMonitor Pattern").AddUsing(new List<GUsing>() {
+          new GUsing($"{baseNamespace}.ConsoleMonitorGenericHostHostedService"),
+          new GUsing("Stateless"),
+        });
+    }
   }
 }

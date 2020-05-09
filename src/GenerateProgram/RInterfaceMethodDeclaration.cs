@@ -6,19 +6,17 @@ namespace GenerateProgram
   public static partial class RenderExtensions
   {
     public static StringBuilder RenderInterfaceMethodDeclarationStringBuilder(this StringBuilder sb, GMethodDeclaration gMethodDeclaration, StringBuilder indent, string eol, CancellationToken? ct = default) {
-      StringBuilder firstLine = new StringBuilder();
-      firstLine.Append($"{indent}{gMethodDeclaration.GVisibility} ");
+      ct?.ThrowIfCancellationRequested();
+      sb.Append($"{indent}{gMethodDeclaration.GVisibility} ");
       if (gMethodDeclaration.IsStatic!=null && (bool)gMethodDeclaration.IsStatic) {
-        firstLine.Append("static ");
+        sb.Append("static ");
       }
       if (gMethodDeclaration.IsConstructor!=null && !(bool)gMethodDeclaration.IsConstructor) {
-        firstLine.Append($"{gMethodDeclaration.GType} ");
+        sb.Append($"{gMethodDeclaration.GType} ");
       }
 
-      firstLine.Append($"{gMethodDeclaration.GName} (");
-
-      sb.Append(firstLine);
-      sb.RenderMethodArgumentStringBuilder(gMethodDeclaration.GMethodArguments);
+      sb.Append($"{gMethodDeclaration.GName} (");
+      sb.RenderArgumentStringBuilder(gMethodDeclaration.GArguments);
       sb.Append($");{eol}");
       return sb;
     }

@@ -37,7 +37,7 @@ namespace GenerateProgram {
         throw new Exception(string.Format("{0} not found in the PropertyGroups of {1}", gPropertyGroupId.ID.ToString(), gClass.GName));
       }
   
-      gMethod.GBody.StatementList.Add($"Logger = LoggerFactory.CreateLogger<{gName}>();");
+      gMethod.GBody.GStatements.Add($"Logger = LoggerFactory.CreateLogger<{gName}>();");
       return gClass;
     }
 

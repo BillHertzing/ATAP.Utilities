@@ -12,6 +12,7 @@ using ATAP.Utilities.Philote;
 namespace GenerateProgram {
   public static partial class WriteExtensions {
     public static IW1Top WFile(this IW1Top w1Top, string pathToDirectory, string pathToFile, Dictionary<Regex, string> gDictionary, StringBuilder sB, CancellationToken? ct = default) {
+      ct?.ThrowIfCancellationRequested();
       bool testforidentity = true; // Move higher and make this an argument
       bool isIdentical = false;
       string transformedString = sB.ToString(); // ToDo: performance enhancement for large strings and many replacementss?

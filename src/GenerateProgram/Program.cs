@@ -114,11 +114,11 @@ namespace GenerateProgram {
 //        })
 //      };
 //gClass.AddPropertyGroups(gPropertyGroups);
-//GMethodArgument arg1 = new GMethodArgument("arg1", "int");
-//GMethodArgument arg2 = new GMethodArgument("arg2", "string", isOut: true);
-//GMethodArgument arg3 = new GMethodArgument("arg3", "Philote<GMethodArgument>", isRef: true);
-//Dictionary<Philote<GMethodArgument>, GMethodArgument> gMethodArguments =
-//  new Dictionary<Philote<GMethodArgument>, GMethodArgument>() { { arg1.Philote, arg1 }, { arg2.Philote, arg2 }, { arg3.Philote, arg3 } };
+//GArgument arg1 = new GArgument("arg1", "int");
+//GArgument arg2 = new GArgument("arg2", "string", isOut: true);
+//GArgument arg3 = new GArgument("arg3", "Philote<GArgument>", isRef: true);
+//Dictionary<Philote<GArgument>, GArgument> gMethodArguments =
+//  new Dictionary<Philote<GArgument>, GArgument>() { { arg1.Philote, arg1 }, { arg2.Philote, arg2 }, { arg3.Philote, arg3 } };
 //GMethodDeclaration gMethodDeclaration =
 //  new GMethodDeclaration(gName: "ServiceData", isConstructor:true,gMethodArguments:gMethodArguments);
 //GMethodBody gMethodBody = new GMethodBody(statementList: new List<string>() { "A=a", "B=b" });

@@ -37,7 +37,8 @@ namespace GenerateProgram {
         throw new Exception(string.Format("{0} not found in the PropertyGroups of {1}", gPropertyGroupId.ID.ToString(), gClass.GName));
       }
   
-      gMethod.GBody.StatementList.Add($"{gAutoPropertyName} = StringLocalizerFactory.Create(nameof({assemblyUnitName}.Resources), \"{assemblyUnitName}\");");
+      //gMethod.GBody.StatementList.Add($"{gAutoPropertyName} = StringLocalizerFactory.Create(nameof({assemblyUnitName}.Resources), \"{assemblyUnitName}\");");
+      gMethod.GBody.GStatements.Add($"{gAutoPropertyName} = StringLocalizerFactory.Create(nameof(Resources), \"{assemblyUnitName}\");");
       return gClass;
     }
 

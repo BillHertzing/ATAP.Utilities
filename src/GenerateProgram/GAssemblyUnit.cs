@@ -4,12 +4,12 @@ using ATAP.Utilities.Philote;
 namespace GenerateProgram {
   public class GAssemblyUnit {
     public GAssemblyUnit(string gName = default, string gRelativePath = default,
-      GProjectUnit? gProjectUnit = default,
+      GProjectUnit gProjectUnit = default,
       Dictionary<Philote<GCompilationUnit>, GCompilationUnit> gCompilationUnits = default,
       Dictionary<Philote<GPropertiesUnit>, GPropertiesUnit> gPropertiesUnits = default,
-      Dictionary<Philote<GResourceUnit>, GResourceUnit>? gResourceUnits = default,
-      GPatternReplacement? gPatternReplacement = default,
-      GComment? gComment = default
+      Dictionary<Philote<GResourceUnit>, GResourceUnit> gResourceUnits = default,
+      GPatternReplacement gPatternReplacement = default,
+      GComment gComment = default
     ) {
       GName = gName == default ? "" : gName;
       GRelativePath = gRelativePath == default ? "" : gRelativePath;
@@ -28,8 +28,8 @@ namespace GenerateProgram {
     public Dictionary<Philote<GCompilationUnit>, GCompilationUnit> GCompilationUnits { get; }
     public Dictionary<Philote<GPropertiesUnit>, GPropertiesUnit> GPropertiesUnits { get; }
     public Dictionary<Philote<GResourceUnit>, GResourceUnit> GResourceUnits { get; }
-    public GComment GComment { get; }
     public GPatternReplacement GPatternReplacement { get; }
+    public GComment GComment { get; }
     public Philote<GAssemblyUnit> Philote { get; }
 
   }

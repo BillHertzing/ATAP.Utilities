@@ -22,7 +22,7 @@ namespace GenerateProgram {
       r1Top.Indent.Append(r1Top.IndentDelta);
       r1Top.RStatementList(gStaticVariable.GStaticVariableBody);
       r1Top.Indent.ReplaceFirst(r1Top.IndentDelta,"");
-      r1Top.Sb.Append($"{r1Top.Indent}}};{r1Top.Eol}");
+      //r1Top.Sb.Append($"{r1Top.Indent};{r1Top.Eol}");
       return r1Top;
     }
 

@@ -35,10 +35,10 @@ namespace GenerateProgram {
         throw new Exception(string.Format("{0} not found in the Methods or MethodGroups of {1}", gMethodId.ID.ToString(), gClass.GName));
       }
 
-      GMethodArgument gMethodArgument = new GMethodArgument(gAutoPropertyName.ToLowerFirstChar(), gType);
-      gMethod.GDeclaration.GMethodArguments[gMethodArgument.Philote] = gMethodArgument;
+      GArgument gArgument = new GArgument(gAutoPropertyName.ToLowerFirstChar(), gType);
+      gMethod.GDeclaration.GArguments[gArgument.Philote] = gArgument;
 
-      gMethod.GBody.StatementList.Add($"{gAutoPropertyName.ToUpperFirstChar()} = {gAutoPropertyName.ToLowerFirstChar()} ?? throw new ArgumentNullException(nameof({gAutoPropertyName.ToLowerFirstChar()}));");
+      gMethod.GBody.GStatements.Add($"{gAutoPropertyName.ToUpperFirstChar()} = {gAutoPropertyName.ToLowerFirstChar()} ?? throw new ArgumentNullException(nameof({gAutoPropertyName.ToLowerFirstChar()}));");
       return gClass;
     }
 

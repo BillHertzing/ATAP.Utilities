@@ -14,12 +14,12 @@ using static GenerateProgram.GUsingGroupExtensions;
 
 namespace GenerateProgram {
   public static partial class GAssemblyGroupExtensions {
-    public static GAssemblyGroup GAssemblyGroupGHBSConstructor(string gAssemblyGroupName = default,
+    public static GAssemblyGroup GAssemblyGroupGHHSConstructor(string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespace = default,
       bool usesConsoleMonitorConvention = false) {
-      if (gAssemblyGroupName == default) {
-        gAssemblyGroupName = "";
-      }
+      //if (gAssemblyGroupName == default) {
+      //  gAssemblyGroupName = "";
+      //}
 
       GAssemblyGroup gAssemblyGroup;
       GAssemblyUnit gAssemblyUnit;
@@ -37,7 +37,7 @@ namespace GenerateProgram {
       GMethod gConstructor;
       GMethod gMethod;
       GMethodGroup gMethodGroup;
-      GStatementList gAdditionalStatements;
+      List<string> gAdditionalStatements;
       GInterface gInterface;
       GPropertyGroupInProjectUnit gPropertyGroupInProjectUnit;
       GItemGroupInProjectUnit gItemGroupInProjectUnit;
@@ -53,6 +53,7 @@ namespace GenerateProgram {
             new Regex("SolutionReferencedProjectsBasePathReplacementPattern"),
             @"C:/Dropbox/whertzing/GitHub/ATAP.Utilities/"
           },
+          {new Regex("SolutionReferencedProjectsLocalBasePathReplacementPattern"), @"D:/Temp/GenerateProgramArtifacts/"},
         });
       #endregion
       gAssemblyGroup = new GAssemblyGroup(gAssemblyGroupName, gPatternReplacement: gAssemblyGroupPatternReplacement);
@@ -108,6 +109,8 @@ namespace GenerateProgram {
         gUsingGroup.GUsings[gUsing.Philote] = gUsing;
       }
       gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
+      gUsingGroup = UsingsForStatelessStateMachine();
+      gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
       if (usesConsoleMonitorConvention) {
         gUsingGroup = UsingsForConsoleMonitorPattern($"{baseNamespace}");
         gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
@@ -120,11 +123,10 @@ namespace GenerateProgram {
 
       #region TitularClass Base Class (IHostedService)
       gClass = new GClass(gCompilationUnitName, gVisibility: "public",
-        gInheritance: "BackgroundService",
-        gImplements: new List<string> {"IDisposable"},
+        gImplements: new List<string> {"IHostedService", "IDisposable"},
         gDisposesOf: new List<string> {"SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle"});
-      #region specific methods for BackgroundService
-      gClass.AddMethod(CreateExecuteAsyncMethod(usesConsoleMonitorConvention));
+      #region specific methods for IHostedService
+      gClass.AddMethodGroup(CreateStartStopAsyncMethods(usesConsoleMonitorConvention));
       #endregion
       #region Constructors
       gConstructor = new GMethod(new GMethodDeclaration(gCompilationUnitName, isConstructor: true,
@@ -189,7 +191,7 @@ namespace GenerateProgram {
       if (usesConsoleMonitorConvention) {
         gPropertyGroup = new GPropertyGroup("ConsoleMonitor pattern supporting injected HostedServices");
         gClass.AddPropertyGroups(gPropertyGroup);
-        foreach (var ap in new List<string>() {"ConsoleMonitorGenericHostHostedService"}) {
+        foreach (var ap in new List<string>() {"ConsoleMonitor"}) {
           gClass.AddTConstructorAutoPropertyGroup(gConstructor.Philote, ap, gPropertyGroupId: gPropertyGroup.Philote);
         }
       }
@@ -205,12 +207,28 @@ namespace GenerateProgram {
       #endregion
       #endregion
       gNamespace.GClasss[gClass.Philote] = gClass;
+      var assemblysMainClassBase = gClass;
+      #region setup the StateMachine for the service
+      #region Delegates and Enumerations for StateMachine
+      gNamespace.CreateStateMachineDelegatesAndEnumerations();
+      #endregion
+      #region Add the Statemachine Property to the service's assemblysMainClassBase class, and statememnts in its Constructor to initialize the Property
+      gNamespace.CreateStateMachineInitialization(assemblysMainClassBase.Philote, gConstructor.Philote);
+      #endregion
+      #endregion
       var baseClass = gClass;
       gAssemblyUnit.GCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;
       #endregion
+      /* ************************************************************************************ */
       #region TitularCompilationUnit (non-Base) CompilationUnit
       gCompilationUnit = new GCompilationUnit("CompilationUnitNameReplacementPattern", gFileSuffix: ".cs",
         gPatternReplacement: gCompilationPatternReplacement);
+      #region Usings For TitularCompilationUnit (non-Base) CompilationUnit
+      gUsingGroup = UsingsForMicrosoftGenericHost();
+      gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
+      //gUsingGroup = new GUsingGroup("Usings For System").AddUsing(new List<GUsing>() {
+      //  new GUsing("System"),
+      //});
       gUsingGroup = new GUsingGroup("Usings For System");
       foreach (var gName in new List<string>() {
         "System",
@@ -227,6 +245,13 @@ namespace GenerateProgram {
         gUsingGroup.GUsings[gUsing.Philote] = gUsing;
       }
       gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
+      gUsingGroup = UsingsForStatelessStateMachine();
+      gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
+      if (usesConsoleMonitorConvention) {
+        gUsingGroup = UsingsForConsoleMonitorPattern($"{baseNamespace}");
+        gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
+      }
+      #endregion
       gNamespace = new GNamespace($"{baseNamespace}.CompilationUnitNameReplacementPattern");
       gCompilationUnit.GNamespaces[gNamespace.Philote] = gNamespace;
       #region TitularClass (non-base) (IHostedService)
@@ -235,18 +260,12 @@ namespace GenerateProgram {
         //gImplements: new List<string> { "IDisposable" },
         //gDisposesOf: new List<string> { "CompilationUnitNameReplacementPatternBaseData" }
       );
-      GStatementList gStatementList = new GStatementList();
 
-      if (usesConsoleMonitorConvention) {
-        // State initialization
-        gStatementList.GStatements.AddRange(new List<string>() {
-          "var ConsoleMonitorStateMachine = new StateMachine<State, Trigger>(State.NotConnected);"
-        });
-      }
-      var gMethodBody = new GMethodBody(gStatementList);
+   
       gConstructor = new GMethod(new GMethodDeclaration("CompilationUnitNameReplacementPattern", isConstructor: true,
-        gVisibility: "public", gBase: " "), gMethodBody);
+        gVisibility: "public", gBase: " "));
       gClass.GConstructors[gConstructor.Philote] = gConstructor;
+
       gNamespace.GClasss[gClass.Philote] = gClass;
       #endregion
       gAssemblyUnit.GCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;
@@ -289,24 +308,24 @@ namespace GenerateProgram {
       #endregion
       #region ItemGroups for the ProjectUnit
       var gItemGroupInProjectUnitList = new List<GItemGroupInProjectUnit>() {
-        ProjectReferenceItemGroupInProjectUnitForLoggingUtilities(),
-        ItemGroupInProjectUnitForSerilogAndSeqMELLoggingProviderPackageReferences(),
-        ItemGroupInProjectUnitForSerilogLoggingProviderPackageReferences(),
-        ItemGroupInProjectUnitForQuickGraphPackageReferences(),
-        ItemGroupInProjectUnitForQuickGraphDependentPackageReferences(),
-        ItemGroupInProjectUnitForReactiveExtensionsPackageReferences(),
-        ItemGroupInProjectUnitForServiceStackSerializationPackageReferences(),
-        ItemGroupInProjectUnitForServiceStackORMLitePackageReferences(),
-        ProjectReferenceItemGroupInProjectUnitForPersistenceUtilities(),
-        ItemGroupInProjectUnitForNetCoreGenericHostAndWebServerHostPackageReferences(),
-        ProjectReferenceItemGroupInProjectUnitForGenericHostUtilities(),
-        ItemGroupInProjectUnitForStatelessStatemachinePackageReferences(),
-        ProjectReferenceItemGroupInProjectUnitForTimersService(),
+        ProjectReferenceItemGroupInProjectUnitForLoggingUtilities("SolutionReferencedProjectsBasePathReplacementPattern"),
+        SerilogAndSeqMELLoggingProviderPackageReferencesItemGroupInProjectUnit(),
+        SerilogLoggingProviderPackageReferencesItemGroupInProjectUnit(),
+        QuickGraphPackageReferencesItemGroupInProjectUnit(),
+        QuickGraphDependentPackageReferencesItemGroupInProjectUnit(),
+        ReactiveExtensionsPackageReferencesItemGroupInProjectUnit(),
+        ServiceStackSerializationPackageReferencesItemGroupInProjectUnit(),
+        ServiceStackORMLitePackageReferencesItemGroupInProjectUnit(),
+        ProjectReferenceItemGroupInProjectUnitForPersistenceUtilities("SolutionReferencedProjectsBasePathReplacementPattern"),
+        NetCoreGenericHostAndWebServerHostPackageReferencesItemGroupInProjectUnit(),
+        ProjectReferenceItemGroupInProjectUnitForGenericHostUtilities("SolutionReferencedProjectsBasePathReplacementPattern"),
+        ProjectReferenceItemGroupInProjectUnitForTimersService("SolutionReferencedProjectsLocalBasePathReplacementPattern"),
+        StatelessStateMachinePackageReferencesItemGroupInProjectUnit(),
         //ProjectReferenceItemGroupInProjectUnitForFilesystemWatchersService(),
         ItemGroupInProjectUnitForILWeavingUsingFodyPackageReferences()
       };
       if (usesConsoleMonitorConvention) {
-        gItemGroupInProjectUnitList.Add(ProjectReferenceItemGroupInProjectUnitForConsoleMonitorPattern());
+        gItemGroupInProjectUnitList.Add(ProjectReferenceItemGroupInProjectUnitForConsoleMonitorPattern("SolutionReferencedProjectsBasePathReplacementPattern"));
       }
       gItemGroupInProjectUnitList.ForEach(gP =>
         gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(gP.Philote, gP));
@@ -321,7 +340,7 @@ namespace GenerateProgram {
       }
 
       #region Additional StringConstants items
-      gAdditionalStatements = new GStatementList(new List<string>() {"{dummyConfigKeyRoot,dummyConfigDefaultString}"});
+      gAdditionalStatements = new List<string>() {"{dummyConfigKeyRoot,dummyConfigDefaultString}"};
       #endregion
       gCompilationUnit = CompilationUnitStringConstantsConstructor(gNamespaceName: gNamespace.GName,
         gRelativePath: subDirectoryForGeneratedFiles,
@@ -338,7 +357,7 @@ namespace GenerateProgram {
       }
 
       #region Additional DefaultConfiguration items
-      gAdditionalStatements = new GStatementList(new List<string>() {"{dummyConfigKeyRoot,dummyConfigDefaultString}"});
+      gAdditionalStatements = new List<string>() {"{dummyConfigKeyRoot,dummyConfigDefaultString}"};
       #endregion
       gCompilationUnit = CompilationUnitDefaultConfigurationConstructor(gNamespaceName: gNamespace.GName,
         gRelativePath: subDirectoryForGeneratedFiles, gAdditionalStatements: gAdditionalStatements,
@@ -423,24 +442,24 @@ namespace GenerateProgram {
       #endregion
       #region ItemGroups for the ProjectUnit Interfaces
       gItemGroupInProjectUnitList = new List<GItemGroupInProjectUnit>() {
-        ProjectReferenceItemGroupInProjectUnitForLoggingUtilities(),
-        ItemGroupInProjectUnitForSerilogAndSeqMELLoggingProviderPackageReferences(),
-        ItemGroupInProjectUnitForSerilogLoggingProviderPackageReferences(),
-        ItemGroupInProjectUnitForQuickGraphPackageReferences(),
-        ItemGroupInProjectUnitForQuickGraphDependentPackageReferences(),
-        ItemGroupInProjectUnitForReactiveExtensionsPackageReferences(),
-        ItemGroupInProjectUnitForServiceStackSerializationPackageReferences(),
-        ItemGroupInProjectUnitForServiceStackORMLitePackageReferences(),
-        ProjectReferenceItemGroupInProjectUnitForPersistenceUtilities(),
-        ItemGroupInProjectUnitForNetCoreGenericHostAndWebServerHostPackageReferences(),
-        ProjectReferenceItemGroupInProjectUnitForGenericHostUtilities(),
-        ItemGroupInProjectUnitForStatelessStatemachinePackageReferences(),
-        ProjectReferenceItemGroupInProjectUnitForTimersService(),
+        ProjectReferenceItemGroupInProjectUnitForLoggingUtilities("SolutionReferencedProjectsBasePathReplacementPattern"),
+        SerilogAndSeqMELLoggingProviderPackageReferencesItemGroupInProjectUnit(),
+        SerilogLoggingProviderPackageReferencesItemGroupInProjectUnit(),
+        QuickGraphPackageReferencesItemGroupInProjectUnit(),
+        QuickGraphDependentPackageReferencesItemGroupInProjectUnit(),
+        ReactiveExtensionsPackageReferencesItemGroupInProjectUnit(),
+        ServiceStackSerializationPackageReferencesItemGroupInProjectUnit(),
+        ServiceStackORMLitePackageReferencesItemGroupInProjectUnit(),
+        ProjectReferenceItemGroupInProjectUnitForPersistenceUtilities("SolutionReferencedProjectsBasePathReplacementPattern"),
+        NetCoreGenericHostAndWebServerHostPackageReferencesItemGroupInProjectUnit(),
+        ProjectReferenceItemGroupInProjectUnitForGenericHostUtilities("SolutionReferencedProjectsBasePathReplacementPattern"),
+        StatelessStateMachinePackageReferencesItemGroupInProjectUnit(),
+        ProjectReferenceItemGroupInProjectUnitForTimersService("SolutionReferencedProjectsLocalBasePathReplacementPattern"),
         //ProjectReferenceItemGroupInProjectUnitForFilesystemWatchersService(),
         ItemGroupInProjectUnitForILWeavingUsingFodyPackageReferences()
       };
       if (usesConsoleMonitorConvention) {
-        gItemGroupInProjectUnitList.Add(ProjectReferenceItemGroupInProjectUnitForConsoleMonitorPattern());
+        gItemGroupInProjectUnitList.Add(ProjectReferenceItemGroupInProjectUnitForConsoleMonitorPattern("SolutionReferencedProjectsLocalBasePathReplacementPattern"));
       }
       gItemGroupInProjectUnitList.ForEach(gP =>
         gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(gP.Philote, gP));

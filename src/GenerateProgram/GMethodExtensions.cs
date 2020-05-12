@@ -13,7 +13,7 @@ namespace GenerateProgram {
         gMethodDeclaration.GArguments[gMethodArgument.Philote] = gMethodArgument;
       }
 
-      var gMethodBody = new GMethodBody(gStatementsList: new List<string>() {
+      var gBody = new GBody(gStatements: new List<string>() {
         "#region create linkedCancellationSource and token",
         "  // Combine the cancellation tokens,so that either can stop this HostedService",
         "  //linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, externalCancellationToken);",
@@ -36,7 +36,7 @@ namespace GenerateProgram {
       });
 
       GComment gComment = new GComment(new List<string>() { });
-      GMethod newgMethod = new GMethod(gMethodDeclaration, gMethodBody, gComment);
+      GMethod newgMethod = new GMethod(gMethodDeclaration, gBody, gComment);
       return newgMethod;
     }
 
@@ -49,7 +49,7 @@ namespace GenerateProgram {
         gMethodDeclaration.GArguments[gMethodArgument.Philote] = gMethodArgument;
       }
 
-      var gMethodBody = new GMethodBody(gStatementsList:new List<string>() {
+      var gBody = new GBody(gStatements:new List<string>() {
         "// StopAsync issued in both IHostedService and IHostLifetime interfaces",
         "// This IS called when the user closes the ConsoleWindow with the windows top right pane \"x (close)\" icon",
         "// This IS called when the user hits ctrl-C in the console window",
@@ -67,7 +67,7 @@ namespace GenerateProgram {
         "//return Task.CompletedTask;"
       });
       GComment gComment = new GComment(new List<string>() { });
-      return new GMethod(gMethodDeclaration, gMethodBody, gComment);
+      return new GMethod(gMethodDeclaration, gBody, gComment);
     }
 
     public static GMethod CreateExecuteAsyncMethod(bool usesConsoleMonitorConvention = false) {
@@ -79,7 +79,7 @@ namespace GenerateProgram {
         gMethodDeclaration.GArguments[gMethodArgument.Philote] = gMethodArgument;
       }
 
-      var gMethodBody = new GMethodBody(gStatementsList: new List<string>() {
+      var gBody = new GBody(gStatements: new List<string>() {
         "#region create linkedCancellationSource and token",
         "// Combine the cancellation tokens,so that either can stop this HostedService",
         "//linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, externalCancellationToken);",
@@ -124,7 +124,7 @@ namespace GenerateProgram {
         "/// <param name=\"externalCancellationToken\"></param>",
         "/// <returns></returns>",
       });
-      return new GMethod(gMethodDeclaration, gMethodBody, gComment);
+      return new GMethod(gMethodDeclaration, gBody, gComment);
     }
 
 
@@ -133,7 +133,7 @@ namespace GenerateProgram {
         gVisibility: "private", gAccessModifier: "", isConstructor: false,
         gArguments: new Dictionary<Philote<GArgument>, GArgument>());
       return new GMethod(gMethodDeclaration,
-        new GMethodBody(gStatementsList:new List<string>() { "// Post-startup code goes here", }),
+        new GBody(gStatements:new List<string>() { "// Post-startup code goes here", }),
         new GComment(new List<string>() {
           "// Registered as a handler with the HostApplicationLifetime.ApplicationStarted event",
         }));
@@ -143,7 +143,7 @@ namespace GenerateProgram {
         new GMethodDeclaration(gName: "OnStopping", gType: "void",
           gVisibility: "private", gAccessModifier: "", isConstructor: false,
           gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
-        new GMethodBody(gStatementsList: new List<string>() { "// On-stopping code goes here", }),
+        new GBody(gStatements: new List<string>() { "// On-stopping code goes here", }),
         new GComment(new List<string>() {
           "// Registered as a handler with the HostApplicationLifetime.ApplicationStarted event",
         }));
@@ -153,7 +153,7 @@ namespace GenerateProgram {
         new GMethodDeclaration(gName: "OnStopped", gType: "void",
           gVisibility: "private", gAccessModifier: "", isConstructor: false,
           gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
-        new GMethodBody(gStatementsList: new List<string>() { "// On-stopped code goes here", }),
+        new GBody(gStatements: new List<string>() { "// On-stopped code goes here", }),
         new GComment(new List<string>() {
           "// Registered as a handler with the HostApplicationLifetime.ApplicationStarted event",
           "// This is NOT called if the ConsoleWindows ends when the connected browser (browser opened by LaunchSettings when starting with debugger) is closed (not applicable to ConsoleLifetime generic hosts)",
@@ -173,10 +173,10 @@ namespace GenerateProgram {
         new GMethodDeclaration(gName: "WriteAsync", gType: "Task",
           gVisibility: "private", gAccessModifier: "async", isConstructor: false,
           gArguments: gMethodArguments),
-        gBody:
-        new GStatementList(new List<string>() {
+        gBody: new GBody(gStatements:
+        new List<string>() {
           "ct?.ThrowIfCancellationRequested();",
-          "var task = await ConsoleMonitorGenericHostHostedService.WriteMessageAsync(mesg).ConfigureAwait(false);",
+          "var task = await ConsoleMonitor.WriteMessageAsync(mesg).ConfigureAwait(false);",
           "if (!task.IsCompletedSuccessfully) {",
           "if (task.IsCanceled) {",
           "// Ignore if user cancelled the operation during a large file output (internal cancellation)",
@@ -215,7 +215,7 @@ namespace GenerateProgram {
           gVisibility: "private", gAccessModifier: "", isConstructor: false,
           gArguments: gMethodArguments),
         gBody:
-        new GStatementList( new List<string>() {
+        new GBody( new List<string>() {
           "cancellationToken?.ThrowIfCancellationRequested();",
           "mesg.Clear();",
           "foreach (var choice in choices) {",
@@ -250,7 +250,7 @@ namespace GenerateProgram {
           gVisibility: "private", gAccessModifier: "", isConstructor: false,
           gArguments: gMethodArguments),
         gBody:
-        new GStatementList( new List<string>() {
+        new GBody( new List<string>() {
           "return Task.CompletedTask;"
         }),
         new GComment(new List<string>() {

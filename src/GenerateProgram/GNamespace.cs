@@ -19,7 +19,9 @@ namespace GenerateProgram {
       GClasss = gClasss == default ? new Dictionary<Philote<GClass>, GClass>() : gClasss;
       GInterfaces = gInterfaces == default? new Dictionary<Philote<GInterface>, GInterface>() : gInterfaces;
       GDelegates = gDelegates == default? new Dictionary<Philote<GDelegate>, GDelegate>() : gDelegates;
+      GDelegateGroups = gDelegateGroups == default? new Dictionary<Philote<GDelegateGroup>, GDelegateGroup>() : gDelegateGroups;
       GEnumerations = gEnumerations == default? new Dictionary<Philote<GEnumeration>, GEnumeration>() : gEnumerations;
+      GEnumerationGroups = gEnumerationGroups == default? new Dictionary<Philote<GEnumerationGroup>, GEnumerationGroup>() : gEnumerationGroups;
       //GEnumerations = gEnumerations;
       //GExceptions = gExceptions;
       GComment = gComment == default? new GComment() : gComment;

@@ -14,6 +14,7 @@ using static GenerateProgram.GPropertyGroupInProjectUnitExtensions;
 using static GenerateProgram.GCompilationUnitExtensions;
 using static GenerateProgram.GCompilationUnitExtensions;
 using static GenerateProgram.GAssemblyGroupExtensions;
+using static GenerateProgram.GMacroExtensions;
 //using AutoMapper.Configuration;
 
 namespace GenerateProgram {
@@ -22,7 +23,7 @@ namespace GenerateProgram {
     static void Main(string[] args) {
 
       // ToDo: Get the Artifacts directory from the host
-      string artifactsPath = "D:/Temp/GenerateProgramArtifacts";
+      string artifactsPath = "D:/Temp/GenerateProgramArtifacts/GenericHostHostedServices/";
       string baseNamespace = "ATAPConsole02";
       string subDirectoryForGeneratedFiles = "Generated";
       StringBuilder sb = new StringBuilder(0x2000);
@@ -34,44 +35,44 @@ namespace GenerateProgram {
       var session = new System.Collections.Generic.Dictionary<string, object>();
       R1Top r1Top;
       W1Top w1Top;
-      GAssemblyGroup gAssemblyGroup = GAssemblyGroupGHHSConstructor("TimersGenericHostHostedService",  subDirectoryForGeneratedFiles, baseNamespace);
+      GAssemblyGroup gAssemblyGroup = GAssemblyGroupGHHSConstructor("Timers",  subDirectoryForGeneratedFiles, baseNamespace);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
-      gAssemblyGroup = GAssemblyGroupGHHSConstructor("FilesystemWatchersGenericHostHostedService",  subDirectoryForGeneratedFiles, baseNamespace);
+      gAssemblyGroup = GAssemblyGroupGHHSConstructor("FilesystemWatchers",  subDirectoryForGeneratedFiles, baseNamespace);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
 
-      gAssemblyGroup = GAssemblyGroupGHHSConstructor( "ConsoleSourceGenericHostHostedService",  subDirectoryForGeneratedFiles, baseNamespace);
+      gAssemblyGroup = MConsoleSource( subDirectoryForGeneratedFiles, baseNamespace);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
-      gAssemblyGroup = GAssemblyGroupGHHSConstructor( "ConsoleSinkGenericHostHostedService",  subDirectoryForGeneratedFiles, baseNamespace);
+      gAssemblyGroup = MConsoleSink(  subDirectoryForGeneratedFiles, baseNamespace);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
-      gAssemblyGroup = GAssemblyGroupGHHSConstructor( "ConsoleMonitorGenericHostHostedService",  subDirectoryForGeneratedFiles, baseNamespace);
+      gAssemblyGroup = MConsoleMonitor(  subDirectoryForGeneratedFiles, baseNamespace);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
-      gAssemblyGroup = GAssemblyGroupGHHSConstructor( "FileSystemToGraphDataBaseGenericHostHostedService", subDirectoryForGeneratedFiles, baseNamespace, usesConsoleMonitorConvention: true);
+      gAssemblyGroup = MFileSystemToGraphDB( subDirectoryForGeneratedFiles, baseNamespace);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
-      gAssemblyGroup = GAssemblyGroupGHBSConstructor( "TopLevelGenericHostBackgroundService",  subDirectoryForGeneratedFiles, baseNamespace, usesConsoleMonitorConvention: true);
+      gAssemblyGroup = GAssemblyGroupGHBSConstructor( "TopLevelBackgroundService",  subDirectoryForGeneratedFiles, baseNamespace, usesConsoleMonitorConvention: true);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
@@ -121,8 +122,8 @@ namespace GenerateProgram {
 //  new Dictionary<Philote<GArgument>, GArgument>() { { arg1.Philote, arg1 }, { arg2.Philote, arg2 }, { arg3.Philote, arg3 } };
 //GMethodDeclaration gMethodDeclaration =
 //  new GMethodDeclaration(gName: "ServiceData", isConstructor:true,gMethodArguments:gMethodArguments);
-//GMethodBody gMethodBody = new GMethodBody(statementList: new List<string>() { "A=a", "B=b" });
-//var gConstructor = new GMethod(gMethodDeclaration, gMethodBody);
+//GBody gBody = new GBody(statementList: new List<string>() { "A=a", "B=b" });
+//var gConstructor = new GMethod(gMethodDeclaration, gBody);
 
 //gCompilationUnits = new Dictionary<Philote<GCompilationUnit>, GCompilationUnit>();
 //gCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;

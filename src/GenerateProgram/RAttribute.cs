@@ -8,7 +8,7 @@ namespace GenerateProgram {
   public static partial class RenderExtensions {
     public static StringBuilder RenderAttributeStringBuilder(this StringBuilder sb, GAttribute gAttribute, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
-      sb.Append($"{indent}[{gAttribute.GName} ]");
+      sb.Append($"{indent}[{gAttribute.GName}]{eol}");
       return sb;
     }
     public static IR1Top RAttribute(this IR1Top r1Top, GAttribute gAttribute) {

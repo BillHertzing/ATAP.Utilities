@@ -6,7 +6,7 @@ using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
   public class GEnumeration {
-    public GEnumeration(string gName = default, string gUnderlyingBaseType = default,  string gVisibility = default, 
+    public GEnumeration(string gName = default, string gUnderlyingBaseType = default, string gVisibility = default,  string gInheritance = default,
       bool isBitFlags = default,
       Dictionary<Philote<GEnumerationMember>, GEnumerationMember> gEnumerationMembers = default,
       Dictionary<Philote<GAttribute>, GAttribute> gAttributes = default,
@@ -16,6 +16,7 @@ namespace GenerateProgram {
       GName = gName == default ? "" : gName;
       GUnderlyingBaseType = gUnderlyingBaseType == default ? "" : gUnderlyingBaseType;
       GVisibility = gVisibility == default ? "" : gVisibility;
+      GInheritance = gInheritance == default ? "" : gInheritance;;
       IsBitFlags = isBitFlags == default ? false : (bool) isBitFlags;
       GEnumerationMembers = gEnumerationMembers == default ? new Dictionary<Philote<GEnumerationMember>, GEnumerationMember>() : gEnumerationMembers;
       GAttributes = gAttributes == default ? new Dictionary<Philote<GAttribute>, GAttribute>() : gAttributes;
@@ -28,6 +29,7 @@ namespace GenerateProgram {
     // ToDo: make this an enumeration
     public string GAccessModifier { get; }
     public string GVisibility { get; }
+    public string GInheritance { get; }
     public bool IsBitFlags { get; }
     public Dictionary<Philote<GEnumerationMember>, GEnumerationMember> GEnumerationMembers { get; }
     public Dictionary<Philote<GAttribute>, GAttribute> GAttributes { get; }

@@ -5,14 +5,14 @@ using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
   public class GAssemblyGroup {
-    public GAssemblyGroup(string gName = "", string gDescription = default, string gRelativePath = default,
+    public GAssemblyGroup(string gName = "", string gDescription = "", string gRelativePath = "",
       Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit> gAssemblyUnits = default,
       GPatternReplacement gPatternReplacement = default,
       GComment gComment = default
     ) {
       GName = gName;
-      GDescription = gDescription == default ? "" : gDescription;
-      GRelativePath = gRelativePath == default ? "" : gRelativePath;
+      GDescription = gDescription;
+      GRelativePath = gRelativePath;
       GAssemblyUnits = gAssemblyUnits == default ? new Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit>() : gAssemblyUnits;
       GPatternReplacement = gPatternReplacement == default? new GPatternReplacement() : gPatternReplacement;
       GComment = gComment == default? new GComment() : gComment;

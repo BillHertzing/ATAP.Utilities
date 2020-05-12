@@ -1,4 +1,0 @@
-<#+ // Start of feature control block.
-string GenerateProperty(GProperty p) { #>
-  <#= p.GVisibility #> <#= p.GType #> <#= p.GName #> <#= p.GAccessors #> ;
-<#+} // End of feature control block #>

@@ -8,13 +8,15 @@ namespace GenerateProgram {
   public static partial class RenderExtensions {
     public static StringBuilder RenderEnumerationPreambleStringBuilder(this StringBuilder sb, GEnumeration gEnumeration, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
-      sb.Append($"{indent}{gEnumeration.GVisibility} enum  {gEnumeration.GName}");
       if (gEnumeration.IsBitFlags) {
-        
+        sb.Append($"{indent}[Flags]{eol}");
+      }
+      sb.Append($"{indent}{gEnumeration.GVisibility} enum  {gEnumeration.GName}");
+      if (gEnumeration.GInheritance != "") {
+        sb.Append($" : {gEnumeration.GInheritance} {{ {eol}");
       }
       else {
-        sb.Append($"{gEnumeration.GName}");
-
+        sb.Append($"{{{eol}");
       }
       return sb;
     }

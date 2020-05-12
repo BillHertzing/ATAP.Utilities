@@ -6,13 +6,13 @@ using ATAP.Utilities.Philote;
 namespace GenerateProgram {
   public class GStaticVariable {
     public GStaticVariable(string gName = default, string gType = default, string gVisibility = default, string gAccessModifier = default,
-      GStaticVariableBody gStaticVariableBody =default,GStatementList gAdditionalStatements =default,  GComment gComment =default) {
+      GBody gBody =default,List<string> gAdditionalStatements =default,  GComment gComment =default) {
       GName = gName == default ? "" : gName;
       GVisibility = gVisibility == default ? "" : gVisibility;
       GType = gType == default ? "" : gType;
       GAccessModifier = gAccessModifier == default ? "" : gAccessModifier;
-      GStaticVariableBody = gStaticVariableBody == default? new GStaticVariableBody() : gStaticVariableBody;
-      GAdditionalStatements = gAdditionalStatements == default? new GStatementList() : gAdditionalStatements;
+      GBody = gBody == default? new GBody() : gBody;
+      GAdditionalStatements = gAdditionalStatements == default? new List<string>() : gAdditionalStatements;
       GComment = gComment == default? new GComment() : gComment;
       Philote = new Philote<GStaticVariable>();
     }
@@ -22,8 +22,8 @@ namespace GenerateProgram {
     // ToDo: make this an enumeration
     public string GAccessModifier { get; }
     public string GVisibility { get; }
-    public GStaticVariableBody GStaticVariableBody { get; }
-    public GStatementList GAdditionalStatements { get; }
+    public GBody GBody { get; }
+    public List<string> GAdditionalStatements { get; }
     public GComment GComment { get; }
     public Philote<GStaticVariable> Philote { get; }
   }

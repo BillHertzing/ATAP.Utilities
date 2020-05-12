@@ -21,132 +21,124 @@ namespace GenerateProgram {
         "Projects in this solution for ", gItemGroupStatements);
       return gItemGroupInProjectUnit;
     }
-    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForConsoleMonitorPattern() {
+    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForConsoleMonitorPattern(string basePathToSolution) {
       var gItemGroupStatements = new List<string>() {
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/ConsoleSink.Interfaces/ConsoleSink.Interfaces.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/ConsoleSink/ConsoleSink.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/ConsoleSource.Interfaces/ConsoleSource.Interfaces.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/ConsoleSource/ConsoleSource.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/ConsoleMonitor.Interfaces/ConsoleMonitor.Interfaces.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/ConsoleMonitor/ConsoleMonitor.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}ConsoleSink.Interfaces/ConsoleSink.Interfaces.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}ConsoleSink/ConsoleSink.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}ConsoleSource.Interfaces/ConsoleSource.Interfaces.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}ConsoleSource/ConsoleSource.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}ConsoleMonitor.Interfaces/ConsoleMonitor.Interfaces.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}ConsoleMonitor/ConsoleMonitor.csproj\" />",
       };
       var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("ProjectReferencesForConsoleServices",
         "Projects in this solution for the Console Services", gItemGroupStatements);
       return gItemGroupInProjectUnit;
     }
 
-    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForLoggingUtilities() {
+    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForLoggingUtilities(string basePathToSolution) {
       var gItemGroupStatements = new List<string>() {
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.Logging/ATAP.Utilities.Logging.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}ATAP.Utilities.Logging/ATAP.Utilities.Logging.csproj\" />",
       };
       var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("ProjectReferencesForLoggingUtilities",
         "Projects in this solution for the Logging Utilities", gItemGroupStatements);
       return gItemGroupInProjectUnit;
     }
 
-    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForReactiveUtilities() {
+    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForReactiveUtilities(string basePathToSolution) {
       var gItemGroupStatements = new List<string>() {
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/ATAP.Utilities.Extensions.Reactive/ATAP.Utilities.Extensions.Reactive.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}src/ATAP.Utilities.Extensions.Reactive/ATAP.Utilities.Extensions.Reactive.csproj\" />",
       };
       var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("ProjectReferencesForReactiveUtilities",
         "Projects in this solution for the Reactive Utilities", gItemGroupStatements);
       return gItemGroupInProjectUnit;
     }
 
-    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForPersistenceUtilities() {
+    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForPersistenceUtilities(string basePathToSolution) {
       var gItemGroupStatements = new List<string>() {
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.Persistence.Interfaces/ATAP.Utilities.Persistence.Interfaces.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/ATAP.Utilities.Extensions.Persistence/ATAP.Utilities.Extensions.Persistence.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.Persistence/ATAP.Utilities.Persistence.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}ATAP.Utilities.Persistence.Interfaces/ATAP.Utilities.Persistence.Interfaces.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}src/ATAP.Utilities.Extensions.Persistence/ATAP.Utilities.Extensions.Persistence.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}ATAP.Utilities.Persistence/ATAP.Utilities.Persistence.csproj\" />",
       };
-      var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("ProjectReferencesForPersistenceUtilities",
+      return new GItemGroupInProjectUnit("ProjectReferencesForPersistenceUtilities",
         "Projects in this solution for the Persistence Utilities", gItemGroupStatements);
-      return gItemGroupInProjectUnit;
     }
 
-    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForTimersService() {
+    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForTimersService(string basePathToSolution) {
       var gItemGroupStatements = new List<string>() {
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/Timers.Interfaces/Timers.Interfaces.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/Timers/Timers.csproj\" />"
+        $"<ProjectReference Include=\"{basePathToSolution}src/services/Timers.Interfaces/Timers.Interfaces.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}src/services/Timers/Timers.csproj\" />"
       };
-      var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("ProjectReferencesForTimerService",
+      return new GItemGroupInProjectUnit("ProjectReferencesForTimerService",
         "Projects in this solution for the Timer Service", gItemGroupStatements);
-      return gItemGroupInProjectUnit;
     }
 
-    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForGenericHostUtilities() {
+    public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForGenericHostUtilities(string basePathToSolution) {
       var gItemGroupStatements = new List<string>() {
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/GenericHost/Extensions.GenericHost.Interfaces/Extensions.GenericHost.Interfaces.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/GenericHost/Extensions.GenericHost/Extensions.GenericHost.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}src/GenericHost/Extensions.GenericHost.Interfaces/Extensions.GenericHost.Interfaces.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}src/GenericHost/Extensions.GenericHost/Extensions.GenericHost.csproj\" />",
       };
-      var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("ProjectReferencesForTGenericHostUtilities",
+      return new GItemGroupInProjectUnit("ProjectReferencesForTGenericHostUtilities",
         "Projects in this solution for the GenericHost Utilities", gItemGroupStatements);
-      return gItemGroupInProjectUnit;
     }
 
- public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForStdInStdOutStdErrServices() {
+ public static GItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForStdInStdOutStdErrServices(string basePathToSolution) {
       var gItemGroupStatements = new List<string>() {
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/StdInSource.Interfaces/StdInSource.Interfaces.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/StdInSource/StdInSource.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/StdInMonitor.Interfaces/StdInMonitor.Interfaces.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/StdInMonitor/StdInMonitor.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/StdOutSink.Interfaces/StdOutSink.Interfaces.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/StdOutSink/StdOutSink.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/StdErrSink.Interfaces/StdErrSink.Interfaces.csproj\" />",
-        "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/StdErrSink/StdErrSink.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}src/services/StdInSource.Interfaces/StdInSource.Interfaces.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}src/services/StdInSource/StdInSource.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}src/services/StdInMonitor.Interfaces/StdInMonitor.Interfaces.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}src/services/StdInMonitor/StdInMonitor.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}src/services/StdOutSink.Interfaces/StdOutSink.Interfaces.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}src/services/StdOutSink/StdOutSink.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}src/services/StdErrSink.Interfaces/StdErrSink.Interfaces.csproj\" />",
+        $"<ProjectReference Include=\"{basePathToSolution}src/services/StdErrSink/StdErrSink.csproj\" />",
       };
-      var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("ProjectReferencesForStdInStdOutStdErrServices",
+      return new GItemGroupInProjectUnit("ProjectReferencesForStdInStdOutStdErrServices",
         "Projects in this solution for the StdIn, StdOut, and StdErr Services", gItemGroupStatements);
-      return gItemGroupInProjectUnit;
     }
 
-
-    public static GItemGroupInProjectUnit ItemGroupInProjectUnitForQuickGraphPackageReferences() {
+    public static GItemGroupInProjectUnit QuickGraphPackageReferencesItemGroupInProjectUnit() {
       var gItemGroupStatements = new List<string>() {
         "<PackageReference Include=\"YC.QuickGraph\" />",
         "<PackageReference Include=\"FSharp.Core\" />",
       };
-      var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("QuickGraphPackageReferences",
+      return new GItemGroupInProjectUnit("QuickGraphPackageReferences",
         "Packages to persist data to QuickGraph", gItemGroupStatements);
-      return gItemGroupInProjectUnit;
     }
 
-    public static GItemGroupInProjectUnit ItemGroupInProjectUnitForStatelessStatemachinePackageReferences() {
+    public static GItemGroupInProjectUnit StatelessStateMachinePackageReferencesItemGroupInProjectUnit() {
       return new GItemGroupInProjectUnit("StatelessPackageReferences",
         "Packages to for the Stateless lightweight StateMachine library", new List<string>() {
           "<PackageReference Include=\"Stateless\" />",
         });
     }
 
-    public static GItemGroupInProjectUnit ItemGroupInProjectUnitForQuickGraphDependentPackageReferences() {
+    public static GItemGroupInProjectUnit QuickGraphDependentPackageReferencesItemGroupInProjectUnit() {
       var gItemGroupStatements = new List<string>() {
         "<PackageReference Include=\"DotNet.Contracts\" />",
         "<PackageReference Include=\"FSharpx.Collections.Experimental\" />"
 
       };
-      var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("QuickGraphDependentPackageReferences",
+      return new GItemGroupInProjectUnit("QuickGraphDependentPackageReferences",
         "Packages to ensure persisting data to QuickGraph uses the correct version of dependent packages", gItemGroupStatements);
-      return gItemGroupInProjectUnit;
     }
 
-    public static GItemGroupInProjectUnit ItemGroupInProjectUnitForReactiveExtensionsPackageReferences() {
+    public static GItemGroupInProjectUnit ReactiveExtensionsPackageReferencesItemGroupInProjectUnit() {
       var gItemGroupStatements = new List<string>() {
         "<PackageReference Include=\"System.Reactive\" />"
 
       };
-      var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("ReactiveExtensionsPackageReferences",
+      return new GItemGroupInProjectUnit("ReactiveExtensionsPackageReferences",
         "Packages for Reactive Extensions", gItemGroupStatements);
-      return gItemGroupInProjectUnit;
     }
 
-    public static GItemGroupInProjectUnit ItemGroupInProjectUnitForServiceStackSerializationPackageReferences() {
+    public static GItemGroupInProjectUnit ServiceStackSerializationPackageReferencesItemGroupInProjectUnit() {
       return new GItemGroupInProjectUnit("ServiceStackSerializationPackageReferences",
         "ServiceStack Serialization and Dump utility", new List<string>() {
           "<PackageReference Include=\"ServiceStack.Text\" />"
         });
     }
 
-    public static GItemGroupInProjectUnit ItemGroupInProjectUnitForServiceStackORMLitePackageReferences() {
+    public static GItemGroupInProjectUnit ServiceStackORMLitePackageReferencesItemGroupInProjectUnit() {
       return new GItemGroupInProjectUnit("ServiceStackORMLitePackageReferences",
         "ServiceStack ORMLite (database) utilities", new List<string>() {
           "<PackageReference Include=\"ServiceStack\" />",
@@ -155,7 +147,7 @@ namespace GenerateProgram {
         });
     }
 
-    public static GItemGroupInProjectUnit ItemGroupInProjectUnitForNetCoreGenericHostAndWebServerHostPackageReferences() {
+    public static GItemGroupInProjectUnit NetCoreGenericHostAndWebServerHostPackageReferencesItemGroupInProjectUnit() {
       return new GItemGroupInProjectUnit("NetCoreGenericHostAndWebServerHostPackageReferences",
         "Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server", new List<string>() {
           "<PackageReference Include=\"Microsoft.Extensions.Configuration\" />",
@@ -167,7 +159,7 @@ namespace GenerateProgram {
           "<PackageReference Include=\"Microsoft.Extensions.Logging\" />",
         });
     }
-    public static GItemGroupInProjectUnit ItemGroupInProjectUnitForSerilogLoggingProviderPackageReferences() {
+    public static GItemGroupInProjectUnit SerilogLoggingProviderPackageReferencesItemGroupInProjectUnit() {
       return new GItemGroupInProjectUnit("SerilogLoggingProviderPackageReferences",
         "Packages to implement Serilog as logging provider", new List<string>() {
           "<PackageReference Include=\"Serilog\" />",
@@ -182,7 +174,7 @@ namespace GenerateProgram {
           "<PackageReference Include=\"SerilogAnalyzer\" />"
         });
     }
-    public static GItemGroupInProjectUnit ItemGroupInProjectUnitForSerilogAndSeqMELLoggingProviderPackageReferences() {
+    public static GItemGroupInProjectUnit SerilogAndSeqMELLoggingProviderPackageReferencesItemGroupInProjectUnit() {
       return new GItemGroupInProjectUnit("SerilogAndSeqMELLoggingProviderPackageReferences",
         "Packages to add Serilog and SEQ as Microsoft.Extensions.Logging providers", new List<string>() {
           "<PackageReference Include=\"Serilog.Extensions.Logging\" />",

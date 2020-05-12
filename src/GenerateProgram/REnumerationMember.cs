@@ -12,7 +12,7 @@ namespace GenerateProgram {
       ct?.ThrowIfCancellationRequested();
       sb.Append($"{indent}{gEnumerationMember.GName} ");
       if (gEnumerationMember.GValue != null) {
-        sb.Append($"value = {gEnumerationMember.GValue.ToString()},{eol}");
+        sb.Append($" = {gEnumerationMember.GValue.ToString()},{eol}");
       }
       else {
         sb.Append($",{eol}");

@@ -2,10 +2,15 @@ using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
-  public class GBody :GStatementList {
-    public GBody(List<string> gStatementsList = default) : base(gStatementsList) {
+  public class GBody {
+    public GBody( List<string> gStatements = default, GComment gComment = default
+    ) {
+      GStatements = gStatements == default ? new List<string>() : gStatements;
+      GComment = gComment == default ? new GComment() : gComment;
+      Philote = new Philote<GBody>();
     }
-    public GBody(GStatementList gStatementsList = default) : base(gStatementsList.GStatements) {
-    }
+    public List<string> GStatements { get; }
+    public GComment GComment { get; }
+    public Philote<GBody> Philote { get; }
   }
 }

@@ -28,8 +28,7 @@ namespace ATAP.Utilities.GenerateProgram.UnitTests
         /// </summary>
         public virtual string TransformText()
         {
-            this.Write("\n");
-            this.Write("\n");
+            this.Write("\n\n");
             this.Write("\n");
             
             #line 6 "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\tests\ATAP.Utilities.GenerateProgram.UnitTests\TPropertyTest.tt"
@@ -55,74 +54,6 @@ namespace ATAP.Utilities.GenerateProgram.UnitTests
                 this.hostValue = value;
             }
         }
-        
-        #line 1 "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\tests\ATAP.Utilities.GenerateProgram.UnitTests\../../src/services/generateprogram/TProperty.ttinclude"
- void GenerateProperty(GProperty p) { 
-        
-        #line default
-        #line hidden
-        
-        #line 1 "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\tests\ATAP.Utilities.GenerateProgram.UnitTests\../../src/services/generateprogram/TProperty.ttinclude"
-this.Write("\n  public ");
-
-        
-        #line default
-        #line hidden
-        
-        #line 1 "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\tests\ATAP.Utilities.GenerateProgram.UnitTests\../../src/services/generateprogram/TProperty.ttinclude"
-this.Write(this.ToStringHelper.ToStringWithCulture(p.GType));
-
-        
-        #line default
-        #line hidden
-        
-        #line 1 "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\tests\ATAP.Utilities.GenerateProgram.UnitTests\../../src/services/generateprogram/TProperty.ttinclude"
-this.Write(" ");
-
-        
-        #line default
-        #line hidden
-        
-        #line 1 "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\tests\ATAP.Utilities.GenerateProgram.UnitTests\../../src/services/generateprogram/TProperty.ttinclude"
-this.Write(this.ToStringHelper.ToStringWithCulture(p.GName));
-
-        
-        #line default
-        #line hidden
-        
-        #line 1 "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\tests\ATAP.Utilities.GenerateProgram.UnitTests\../../src/services/generateprogram/TProperty.ttinclude"
-this.Write(" ");
-
-        
-        #line default
-        #line hidden
-        
-        #line 1 "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\tests\ATAP.Utilities.GenerateProgram.UnitTests\../../src/services/generateprogram/TProperty.ttinclude"
-this.Write(this.ToStringHelper.ToStringWithCulture(p.GAutoPropertyAccessors));
-
-        
-        #line default
-        #line hidden
-        
-        #line 1 "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\tests\ATAP.Utilities.GenerateProgram.UnitTests\../../src/services/generateprogram/TProperty.ttinclude"
-this.Write(" ;\r\n");
-
-        
-        #line default
-        #line hidden
-        
-        #line 2 "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\tests\ATAP.Utilities.GenerateProgram.UnitTests\../../src/services/generateprogram/TProperty.ttinclude"
-} 
-        
-        #line default
-        #line hidden
-        
-        #line 2 "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\tests\ATAP.Utilities.GenerateProgram.UnitTests\../../src/services/generateprogram/TProperty.ttinclude"
-this.Write("\n");
-
-        
-        #line default
-        #line hidden
         
         #line 1 "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\tests\ATAP.Utilities.GenerateProgram.UnitTests\TPropertyTest.tt"
 

@@ -77,7 +77,7 @@ namespace GenerateProgram {
       return gNamespace;
     }
 
- public static GNamespace CreateStateMachine(this GNamespace gNamespace) {
+ public static GNamespace CreateStateMachineDelegatesAndEnumerations(this GNamespace gNamespace) {
       //var gPropertys = new Dictionary<Philote<GProperty>, GProperty>();
       //foreach (var o in new List<GProperty>() {
       //  new GProperty(gName: "StateMachine", gType: "IStateMachine", gVisibility: "internal"),
@@ -126,7 +126,7 @@ namespace GenerateProgram {
       }
 
       var gEnumeration =
-        new GEnumeration(gName: "Trigger", gVisibility: "public", gEnumerationMembers: gEnumerationMembers);
+        new GEnumeration(gName: "Trigger", gVisibility: "public", gInheritance: "ATAP.Utilities.Enumerations",gEnumerationMembers: gEnumerationMembers);
       var gEnumerations = new Dictionary<Philote<GEnumeration>, GEnumeration>();
       gEnumerations[gEnumeration.Philote] = gEnumeration;
       gNamespace.AddDelegate(gDelegates);
@@ -134,5 +134,24 @@ namespace GenerateProgram {
       return gNamespace;
       
     }
+ public static GNamespace CreateStateMachineInitialization(this GNamespace gNamespace, Philote<GClass> gClassID, Philote<GMethod> gMethodID) {
+   //var gPropertys = new Dictionary<Philote<GProperty>, GProperty>();
+   //foreach (var o in new List<GProperty>() {
+   //  new GProperty(gName: "StateMachine", gType: "IStateMachine", gVisibility: "internal"),
+   //}) {
+   //  gPropertys[o.Philote] = o;
+   //}
+   // This is the class and the constructor in which to Initialize the statemachine
+   GClass gClass = gNamespace.GClasss[gClassID];
+   // Find the method by its Philote value
+   var gMethod = gClass.GConstructors[gMethodID];
+   // Add the StateMachine Property to the class
+   var gProperty = new GProperty(gName: "StateMachine", gAccessors: "{get;}");
+   // Add the StateMachine Property initializtion to the constructor body
+   var gBody = gMethod.GBody;
+   var gAdditionalStatements = new List<String>(){"StateMachine<State, Trigger> = new StateMachine<State, Trigger>(State,Trigger);"};
+   gBody.GStatements.AddRange(gAdditionalStatements);
+   return gNamespace;
+ }
     }
 }

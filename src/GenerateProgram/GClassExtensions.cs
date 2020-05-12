@@ -21,6 +21,12 @@ namespace GenerateProgram {
       }
       return gClass;
     }
+    public static GClass AddProperty(this GClass gClass, Dictionary<Philote<GProperty>,GProperty> gPropertys) {
+      foreach (var kvp in gPropertys) {
+        gClass.GPropertys.Add(kvp.Key,kvp.Value);
+      }
+      return gClass;
+    }
     public static GClass AddPropertyGroups(this GClass gClass, GPropertyGroup gPropertyGroup) {
       gClass.GPropertyGroups[gPropertyGroup.Philote] = gPropertyGroup;
       return gClass;

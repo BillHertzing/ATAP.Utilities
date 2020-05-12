@@ -17,6 +17,10 @@ namespace GenerateProgram {
       r1Top.Indent.Append(r1Top.IndentDelta);
       r1Top.RClass(gNamespace.GClasss);
       r1Top.RInterface(gNamespace.GInterfaces);
+      r1Top.RDelegateGroup(gNamespace.GDelegateGroups);
+      r1Top.RDelegate(gNamespace.GDelegates);
+      r1Top.REnumerationGroup(gNamespace.GEnumerationGroups);
+      r1Top.REnumeration(gNamespace.GEnumerations);
       r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
       r1Top.Sb.RenderNamespaceTerminationStringBuilder(gNamespace, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       return r1Top;

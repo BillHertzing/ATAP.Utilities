@@ -57,6 +57,16 @@ namespace GenerateProgram {
       }
       return gClass;
     }
+    public static IEnumerable<GMethod> CombinedMethods(this GClass gClass) {
+      foreach (var o in gClass.GMethods) {
+        yield return o.Value;
+      }
+      foreach (var mg in gClass.GMethodGroups) {
+        foreach (var o in mg.Value.GMethods) {
+          yield return o.Value;
+        }
+      }
+    }
     public static IEnumerable<KeyValuePair<Philote<GProperty>, GProperty>> ConvertToInterfacePropertys(
       this GClass gClass) {
       //var IEKVP = gClass.GPropertys.Where(kvp => kvp.Value.GVisibility == "public");

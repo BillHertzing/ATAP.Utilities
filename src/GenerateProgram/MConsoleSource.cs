@@ -66,9 +66,7 @@ namespace GenerateProgram {
       var gEnumerationMemberList = new List<GEnumerationMember>();
       Dictionary<Philote<GAttributeGroup>, GAttributeGroup> gAttributeGroups =
         new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
-      //gDescription: "Signals that the Console Monitor has received our request to be added",
-      //gVisualDisplay: "Waiting For Initialization",gVisibleSortOrder: 1
-      GAttributeGroup gAttributeGroup = CreateLocalizableEnumerationAttributeGroup();
+      GAttributeGroup gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: "Power-On State - waiting until minimal initialization condition has been met",visualDisplay: "Waiting For Initialization",visualSortOrder: 1);
       gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
       gEnumerationMemberList.Add(
         new GEnumerationMember(gName: "WaitingForInitialization", gValue: 1,
@@ -76,9 +74,7 @@ namespace GenerateProgram {
         ));
 
       gAttributeGroups = new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
-      //gDescription: "The Console Monitor is signaling us to subscribe to the ConsoleIn Observable",
-      //gVisualDisplay: "Subscribe ToConsole Monitor Received", gVisibleSortOrder: 2),
-      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup();
+      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: "Signal to the Console Monitor that we are a valid ConsoleSource",visualDisplay: "Initiate Contact",visualSortOrder: 2);
       gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
       gEnumerationMemberList.Add(new GEnumerationMember(gName: "InitiateContact", gValue: 2,
         gAttributeGroups: gAttributeGroups
@@ -97,10 +93,7 @@ namespace GenerateProgram {
       #region Trigger Enumeration members
       gEnumerationMemberList = new List<GEnumerationMember>();
       gAttributeGroups = new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
-
-      //gDescription: "todo",
-      //gVisualDisplay: "todo",gVisibleSortOrder: 1
-      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup();
+      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: "The minimal initialization conditions have been met",visualDisplay: "Initialization Complete Received",visualSortOrder: 2);
       gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
       gEnumerationMemberList.Add(
         new GEnumerationMember(gName: "InitializationCompleteReceived", gValue: 1,
@@ -157,7 +150,7 @@ namespace GenerateProgram {
       // ToDo: Look up the right AssemblyUnit via the Database
       foreach (var gAU in gAssemblyGroup.GAssemblyUnits) {
         foreach (var gCU in gAU.Value.GCompilationUnits) {
-          if (gCU.Value.GName == "AssemblyUnitNameReplacementPattern.Interfaces") {
+          if (gCU.Value.GName == "AssemblyUnitNameReplacementPatternBase.Interfaces") {
             gAssemblyUnit = gAU.Value;
             // ToDo: break out to the outermost loop
           }

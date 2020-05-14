@@ -15,20 +15,18 @@ namespace GenerateProgram {
     String BasePath { get; set; }
     Encoding Encoding { get;  }
     bool? Force { get; }
-
     CancellationToken? Ct { get;  }
     //Dictionary<string, object> Session { get; set; }
     //void Write();
   }
 
-  public class W1Top : IW1Top {//},IW1TopData {
-    //public W1Top(string basePath = "", Dictionary<string, object> session = default, Encoding encoding = default, CancellationToken? ct = default) {
-    //  Session = session ?? throw new ArgumentNullException(nameof(session));
-    public W1Top(string basePath = "", Encoding? encoding = default, bool? force = default,
+  public class W1Top : IW1Top {
+    public W1Top(string basePath = "", Encoding? encoding = default, bool? force = default,List<string> nonReleasedPackages = default,
       CancellationToken? ct = default) {
       BasePath = basePath ?? throw new ArgumentNullException(nameof(basePath));
       Encoding = encoding == default ? Encoding.UTF8 : encoding;
       Force = force == default ? false : force;
+      NonReleasedPackages = nonReleasedPackages == default ? new List<string>() : nonReleasedPackages;
       Ct = ct;
      
       var dirInfo = new DirectoryInfo(BasePath);
@@ -53,51 +51,7 @@ namespace GenerateProgram {
     public String BasePath { get; set; }
     public Encoding Encoding { get; set; }
     public bool? Force { get; set; }
+    public List<string> NonReleasedPackages { get; set; }
     public CancellationToken? Ct { get; set; }
-    //public Dictionary<string, object> Session { get; set; }
-    //public void Write() {
-    //  var sk = Session.Keys;
-    //  foreach (var key in sk) {
-    //    var o = Session[key];
-    //    switch (o) {
-    //      //case GUsing gUsing:
-    //      //  this.WUsing( gUsing);
-    //      //  break;
-    //      //case List<GUsing> gUsings:
-    //      //  foreach (var gu in gUsings) {
-    //      //    this.WUsing(gu);
-    //      //  }
-    //      //  break;
-    //      //case GUsingGroup gUsingGroup:
-    //      //  this.WUsingGroup( gUsingGroup);
-    //      //  break;
-    //      //case Dictionary<Philote<GUsingGroup>, GUsingGroup> gUsingGroups:
-    //      //  this.WUsingGroup( gUsingGroups);
-    //      //  break;
-    //      //case GNamespace gNamespace:
-    //      //  this.WNamespace( gNamespace);
-    //      //  break;
-    //      //case GClass gClass:
-    //      //  this.WClass( gClass);
-    //      //  break;
-    //      //case GInterface gInterface:
-    //      //  this.WInterface( gInterface);
-    //      //  break;
-    //      //case GProperty gProperty:
-    //      //  this.WProperty( gProperty);
-    //      //  break;
-    //      //case GMethod gMethod:
-    //      //  this.WMethod( gMethod);
-    //      //  break;
-    //      case GCompilationUnit gCompilationUnit:
-    //        this.WCompilationUnit(gCompilationUnit);
-    //        break;
-
-    //      default:
-    //        throw new NotImplementedException(string.Format("object at key {0} is of unknown type {1}", key,
-    //          typeof(object)));
-    //    }
-    //  }
-    //}
   }
 }

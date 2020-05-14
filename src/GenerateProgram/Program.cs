@@ -31,7 +31,7 @@ namespace GenerateProgram {
         "ConsoleSource",
         "ConsoleSink",
         "ConsoleMonitor",
-        "FileSystemToGraphDB",
+        "FileSystemToObjectGraph",
         "TopLevelBackgroundService",
       };
       string subDirectoryForGeneratedFiles = "Generated";
@@ -47,10 +47,17 @@ namespace GenerateProgram {
       GAssemblyGroup gAssemblyGroup = GAssemblyGroupGHHSConstructor("Timers",  subDirectoryForGeneratedFiles, baseNamespace);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
-      w1Top = new W1Top(basePath: artifactsPath, force: true);
+      w1Top = new W1Top(basePath: artifactsPath, force: true,nonReleasedPackages:nonReleasedPackages);
       r1Top.Render(w1Top);
       session.Clear();
       gAssemblyGroup = GAssemblyGroupGHHSConstructor("FilesystemWatchers",  subDirectoryForGeneratedFiles, baseNamespace);
+      session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
+      w1Top = new W1Top(basePath: artifactsPath, force: true);
+      r1Top.Render(w1Top);
+      session.Clear();
+
+      gAssemblyGroup = MConsoleSource( subDirectoryForGeneratedFiles, baseNamespace);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
@@ -75,7 +82,7 @@ namespace GenerateProgram {
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
-      gAssemblyGroup = MFileSystemToGraphDB( subDirectoryForGeneratedFiles, baseNamespace);
+      gAssemblyGroup = MFileSystemToObjectGraph( subDirectoryForGeneratedFiles, baseNamespace);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);

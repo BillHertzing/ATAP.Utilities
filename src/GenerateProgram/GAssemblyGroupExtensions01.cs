@@ -254,7 +254,6 @@ namespace GenerateProgram {
 
       #region ItemGroups for the ProjectUnit
       var gItemGroupInProjectUnitList = new List<GItemGroupInProjectUnit>() {
-        ProjectReferenceItemGroupInProjectUnitForLoggingUtilities("SolutionReferencedProjectsBasePathReplacementPattern"),
         SerilogAndSeqMELLoggingProviderPackageReferencesItemGroupInProjectUnit(),
         SerilogLoggingProviderPackageReferencesItemGroupInProjectUnit(),
         QuickGraphPackageReferencesItemGroupInProjectUnit(),
@@ -263,15 +262,14 @@ namespace GenerateProgram {
         ServiceStackSerializationPackageReferencesItemGroupInProjectUnit(),
         ServiceStackORMLitePackageReferencesItemGroupInProjectUnit(),
         ProjectReferenceItemGroupInProjectUnitForPersistenceUtilities("SolutionReferencedProjectsBasePathReplacementPattern"),
-        NetCoreGenericHostAndWebServerHostPackageReferencesItemGroupInProjectUnit(),
-        ProjectReferenceItemGroupInProjectUnitForGenericHostUtilities("SolutionReferencedProjectsBasePathReplacementPattern"),
+        ATAPGenericHostUtilitiesPackageReferenceItemGroupInProjectUnit("SolutionReferencedProjectsBasePathReplacementPattern"),
         ProjectReferenceItemGroupInProjectUnitForTimersService("SolutionReferencedProjectsBasePathReplacementPattern"),
         //ProjectReferenceItemGroupInProjectUnitForFilesystemWatchersService(),
         ItemGroupInProjectUnitForILWeavingUsingFodyPackageReferences()
       };
-      if (usesConsoleMonitorConvention) {
-        gItemGroupInProjectUnitList.Add(ProjectReferenceItemGroupInProjectUnitForConsoleMonitorPattern("SolutionReferencedProjectsBasePathReplacementPattern"));
-      }
+      //if (usesConsoleMonitorConvention) {
+      //  gItemGroupInProjectUnitList.Add(ProjectReferenceItemGroupInProjectUnitForConsoleMonitorPattern("SolutionReferencedProjectsBasePathReplacementPattern"));
+      //}
       gItemGroupInProjectUnitList.ForEach(gP => gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(gP.Philote, gP));
       #endregion
       #region region StringConstantsBase
@@ -349,43 +347,3 @@ namespace GenerateProgram {
     }
   }
 }
-//gUsing = new GUsing("StandaloneUsing1");
-//gCompilationUnit.GUsings[gUsing.Philote] = gUsing;
-//gUsing = new GUsing("StandaloneUsing2");
-//gCompilationUnit.GUsings[gUsing.Philote] = gUsing;
-
-//gClass.AddPropertys(new GProperty("SoloProperty", "String"));
-
-//var gPropertys = new List<GProperty>()  {
-//          new GProperty("SoloProperty1OfCollection","String"),
-//          new GProperty("SoloProperty2OfCollection","String")
-//      };
-//gClass.AddPropertys(gPropertys);
-//var gPropertyGroup = new GPropertyGroup("PropertyGroup1", new List<GProperty>{
-//        new GProperty("Property1OfPropertyGroup1","String"),
-//        new GProperty("Property2OfPropertyGroup1","String")
-//      });
-//gClass.AddPropertyGroups(gPropertyGroup);
-//var gPropertyGroups = new List<GPropertyGroup>() {
-//        new GPropertyGroup("PropertyGroup2", new List<GProperty>{
-//          new GProperty("Property1OfPropertyGroup2","String"),
-//          new GProperty("Property2OfPropertyGroup2","String")
-//        }),
-//        new GPropertyGroup("PropertyGroup3", new List<GProperty>{
-//          new GProperty("Property1OfPropertyGroup3","String"),
-//          new GProperty("Property2OfPropertyGroup3","String")
-//        })
-//      };
-//gClass.AddPropertyGroups(gPropertyGroups);
-//GArgument arg1 = new GArgument("arg1", "int");
-//GArgument arg2 = new GArgument("arg2", "string", isOut: true);
-//GArgument arg3 = new GArgument("arg3", "Philote<GArgument>", isRef: true);
-//Dictionary<Philote<GArgument>, GArgument> gMethodArguments =
-//  new Dictionary<Philote<GArgument>, GArgument>() { { arg1.Philote, arg1 }, { arg2.Philote, arg2 }, { arg3.Philote, arg3 } };
-//GMethodDeclaration gMethodDeclaration =
-//  new GMethodDeclaration(gName: "ServiceData", isConstructor:true,gMethodArguments:gMethodArguments);
-//GBody gBody = new GBody(statementList: new List<string>() { "A=a", "B=b" });
-//var gConstructor = new GMethod(gMethodDeclaration, gBody);
-
-//gCompilationUnits = new Dictionary<Philote<GCompilationUnit>, GCompilationUnit>();
-//gCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;

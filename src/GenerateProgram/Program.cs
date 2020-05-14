@@ -25,6 +25,15 @@ namespace GenerateProgram {
       // ToDo: Get the Artifacts directory from the host
       string artifactsPath = "D:/Temp/GenerateProgramArtifacts/GenericHostHostedServices/";
       string baseNamespace = "ATAPConsole02";
+      List<string> nonReleasedPackages = new List<string>() {
+        "Timers",
+        "FilesystemWatchers",
+        "ConsoleSource",
+        "ConsoleSink",
+        "ConsoleMonitor",
+        "FileSystemToGraphDB",
+        "TopLevelBackgroundService",
+      };
       string subDirectoryForGeneratedFiles = "Generated";
       StringBuilder sb = new StringBuilder(0x2000);
       StringBuilder indent = new StringBuilder(64);
@@ -72,7 +81,7 @@ namespace GenerateProgram {
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
-      gAssemblyGroup = GAssemblyGroupGHBSConstructor( "TopLevelBackgroundService",  subDirectoryForGeneratedFiles, baseNamespace, usesConsoleMonitorConvention: true);
+      gAssemblyGroup = MTopLevelBackgroundService(subDirectoryForGeneratedFiles, baseNamespace);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);

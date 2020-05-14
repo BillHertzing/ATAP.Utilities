@@ -1,15 +1,10 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Xml.Schema;
 using ATAP.Utilities.Philote;
 using static GenerateProgram.GAssemblyGroupExtensions;
-using static GenerateProgram.StringConstants;
 //using AutoMapper.Configuration;
-using static GenerateProgram.GMethodGroupExtensions;
-using static GenerateProgram.GMethodExtensions;
-using static GenerateProgram.GUsingGroupExtensions;
-using System;
+using static GenerateProgram.GAttributeGroupExtensions;
+using static GenerateProgram.GItemGroupInProjectUnitExtensions;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
@@ -17,12 +12,31 @@ namespace GenerateProgram {
       string subDirectoryForGeneratedFiles = default, string baseNamespace = default
       ) {
       var gAssemblyGroupName = "ConsoleSink";
+      var gAssemblyGroup = GAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespace);
 
-      var gAssemblyGroup = GAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespace, true);
-
-      // Modify it
       #region StateMachine Configuration
-      /*
+      // Get the namespace, and class, to which the gEnumerationGroup and GStaticVariable will be added
+      GNamespace gNamespace = default;
+      GClass gClass = default;
+      // ToDo: Look up the right class via the Database
+      foreach (var gAU in gAssemblyGroup.GAssemblyUnits) {
+        foreach (var gCU in gAU.Value.GCompilationUnits) {
+          foreach (var gNs in gCU.Value.GNamespaces) {
+            foreach (var gCl in gNs.Value.GClasss) {
+              if (gCl.Value.GName == "AssemblyUnitNameReplacementPatternBase") {
+                gNamespace = gNs.Value;
+                gClass = gCl.Value;
+                // ToDo: break out to the outermost loop
+              }
+            }
+          }
+        }
+      }
+      if (gClass == default) {
+        //ToDo: better exception handling
+        throw new Exception("This should not happen");
+      }
+/*
         * digraph finite_state_machine {
         WaitingForInitialization ->InitiateContact [label = "InitializationCompleteReceived"];
         InitiateContact -> WaitingForContact [label = "ConsoleMonitorNotifyConsoleSinkReadySent"];
@@ -45,75 +59,120 @@ namespace GenerateProgram {
         ShutdownStarted->ShutDownComplete [label = "AllShutDownStepsCompleted"];
         }
        */
-      // ToDo: Look up the right class via the Database
-      GNamespace rightGNamespace = default;
-      GClass rightGClass = default;
+      #region StateMachine EnumerationGroups
+      var gEnumerationGroup = new GEnumerationGroup(gName: "State and Trigger Enumerations for StateMachine");
+      #region State Enumeration
+      #region State Enumeration members
+      var gEnumerationMemberList = new List<GEnumerationMember>();
+      Dictionary<Philote<GAttributeGroup>, GAttributeGroup> gAttributeGroups =
+        new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
+      //gDescription: "Signals that the Console Monitor has received our request to be added",
+      //gVisualDisplay: "Waiting For Initialization",gVisibleSortOrder: 1
+      GAttributeGroup gAttributeGroup = CreateLocalizableEnumerationAttributeGroup();
+      gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
+      gEnumerationMemberList.Add(
+        new GEnumerationMember(gName: "WaitingForInitialization", gValue: 1,
+          gAttributeGroups: gAttributeGroups
+        ));
+
+      gAttributeGroups = new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
+      //gDescription: "The Console Monitor is signaling us to subscribe to the ConsoleIn Observable",
+      //gVisualDisplay: "Subscribe ToConsole Monitor Received", gVisibleSortOrder: 2),
+      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup();
+      gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
+      gEnumerationMemberList.Add(new GEnumerationMember(gName: "InitiateContact", gValue: 2,
+        gAttributeGroups: gAttributeGroups
+      ));
+
+      var gEnumerationMembers = new Dictionary<Philote<GEnumerationMember>, GEnumerationMember>();
+      foreach (var o in gEnumerationMemberList) {
+        gEnumerationMembers[o.Philote] = o;
+      }
+      #endregion
+      var gEnumeration =
+        new GEnumeration(gName: "State", gVisibility: "public", gInheritance: "", gEnumerationMembers: gEnumerationMembers);
+      gEnumerationGroup.GEnumerations[gEnumeration.Philote] = gEnumeration;
+      #endregion
+      #region Trigger Enumeration
+      #region Trigger Enumeration members
+      gEnumerationMemberList = new List<GEnumerationMember>();
+      gAttributeGroups = new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
+
+      //gDescription: "todo",
+      //gVisualDisplay: "todo",gVisibleSortOrder: 1
+      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup();
+      gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
+      gEnumerationMemberList.Add(
+        new GEnumerationMember(gName: "InitializationCompleteReceived", gValue: 1,
+          gAttributeGroups: gAttributeGroups
+        ));
+
+      gEnumerationMembers = new Dictionary<Philote<GEnumerationMember>, GEnumerationMember>();
+      foreach (var o in gEnumerationMemberList) {
+        gEnumerationMembers[o.Philote] = o;
+      }
+      #endregion
+      gEnumeration =
+       new GEnumeration(gName: "Trigger", gVisibility: "public", gInheritance: "", gEnumerationMembers: gEnumerationMembers);
+      gEnumerationGroup.GEnumerations[gEnumeration.Philote] = gEnumeration;
+      #endregion
+      gNamespace.AddEnumerationGroup(gEnumerationGroup);
+
+      #endregion
+      #region StateMachine Transitions
+      // Add a StaticVariable to the class
+      var gStaticVariable = new GStaticVariable("stateConfigurations", gType: "List<StateConfiguration>", gBody: new GBody(new List<string>(){
+        "new List<StateConfiguration>(){",
+       "new StateConfiguration(State.WaitingForInitialization,Trigger.InitializationCompleteReceived,State.InitiateContact)",
+        "}"
+      }));
+      gClass.GStaticVariables.Add(gStaticVariable.Philote, gStaticVariable);
+
+      #endregion
+      #endregion
+
+      #region AssemblyGroup referenced Packages and Projects
+      GAssemblyUnit gAssemblyUnit = default;
+      // References used by the Base Assembly
+      // ToDo: Look up the right AssemblyUnit via the Database
       foreach (var gAU in gAssemblyGroup.GAssemblyUnits) {
         foreach (var gCU in gAU.Value.GCompilationUnits) {
-          foreach (var gNs in gCU.Value.GNamespaces) {
-            foreach (var gCl in gNs.Value.GClasss) {
-              if (gCl.Value.GName == "AssemblyUnitNameReplacementPatternBase") {
-                rightGNamespace = gNs.Value;
-                rightGClass = gCl.Value;
-                // ToDo: break out to the outermost loop
-              }
-            }
+          if (gCU.Value.GName == "AssemblyUnitNameReplacementPatternBase") {
+            gAssemblyUnit = gAU.Value;
+            // ToDo: break out to the outermost loop
           }
         }
       }
-      //var gClass = gAssemblyGroup.GAssemblyUnits.AsQueryable().Where( )Select(x => x.State)"
-      if (rightGClass == default) {
+      if (gAssemblyUnit == default) {
         //ToDo: better exception handling
         throw new Exception("This should not happen");
       }
+      foreach (var o in new List<GItemGroupInProjectUnit>() {
+        ProjectReferenceItemGroupInProjectUnitForReactiveUtilities(),
+      }) {
+        gAssemblyGroup.GAssemblyUnits[gAssemblyUnit.Philote].GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote,o);
+      }
 
-      // Add the State enumeration and its members to the base class
-      // Add the Trigger enumeration and its members to the base class
-      // Add a StaticVariable to the base class
-      var gStaticVariable = new GStaticVariable("stateConfigurations", gType: "StateConfiguration", gBody: new GBody(new List<string>()));
-      rightGClass.GStaticVariables.Add(gStaticVariable.Philote, gStaticVariable);
-      // Define the properties for the StateConfiguration class
-      var gPropertys = new Dictionary<Philote<GProperty>, GProperty>();
-      var gProperty = new GProperty("State", "State", gAccessors: "{get;}");
-      gPropertys.Add(gProperty.Philote, gProperty);
-      gProperty = new GProperty("Trigger", "Trigger", gAccessors: "{get;}");
-      gPropertys.Add(gProperty.Philote, gProperty);
-      gProperty = new GProperty("NextState", "State", gAccessors: "{get;}");
-      gPropertys.Add(gProperty.Philote, gProperty);
-
-      // Add a StateConfiguration class to the base Compilation unit's namespace
-      var stateConfigurationClass = new GClass(gName: "StateConfiguration", gPropertys: gPropertys);
-      rightGNamespace.GClasss.Add(stateConfigurationClass.Philote, stateConfigurationClass);
-      // Add a stateConfigurationsProperty to the base class
-      var stateConfigurationsProperty = new GProperty("StateConfigurations", gType: "List<StateConfiguration>", gAccessors: "{get;}");
-      rightGClass.AddProperty(stateConfigurationsProperty);
-      // By Convention add a method to the base class
-      // StateMachine Configuration
-      var gBody = new GBody(new List<string>() {
-          "// attribution :https://github.com/dhrobbins/ApprovaFlow/blob/master/ApprovaFlow/ApprovaFlow/ApprovaFlow/Workflow/WorkflowProcessor.cs",
-          "//  Get a distinct list of states with a trigger from the stateConfigurations static variable",
-          "//  State => Trigger => TargetState",
-          "var states = StateConfigurations.AsQueryable()",
-          ".Select(x => x.State)",
-          ".Distinct()",
-          ".Select(x => x)",
-          ".ToList();",
-          "//  Get each trigger for each state",
-          "states.ForEach(state =>{",
-          "var triggers = StateConfigurations.AsQueryable()",
-          ".Where(config => config.State == state)",
-          ".Select(config => new { Trigger = config.Trigger, TargetState = config.TargetState })",
-          ".ToList();",
-          "triggers.ForEach(trig => {",
-          "StateMachine.Configure(state).Permit(trig.Trigger, trig.TargetState);",
-          "});",
-
-        });
-      var gMethodDeclaration = new GMethodDeclaration(gName: "ConfigureState", gType: "void", gAccessModifier: "override");
-      var gMethod = new GMethod(gMethodDeclaration, gBody);
-
-      rightGClass.GMethods.Add(gMethod.Philote, gMethod);
-
+      // References used by the Interface Assembly
+      // ToDo: Look up the right AssemblyUnit via the Database
+      foreach (var gAU in gAssemblyGroup.GAssemblyUnits) {
+        foreach (var gCU in gAU.Value.GCompilationUnits) {
+          if (gCU.Value.GName == "AssemblyUnitNameReplacementPattern.Interfaces") {
+            gAssemblyUnit = gAU.Value;
+            // ToDo: break out to the outermost loop
+          }
+        }
+      }
+      if (gAssemblyUnit == default) {
+        //ToDo: better exception handling
+        throw new Exception("This should not happen");
+      }
+      foreach (var o in new List<GItemGroupInProjectUnit>() {
+          ProjectReferenceItemGroupInProjectUnitForReactiveUtilities(),
+        }
+      ) {
+        gAssemblyGroup.GAssemblyUnits[gAssemblyUnit.Philote].GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote,o);
+      }
       #endregion
 
       return gAssemblyGroup;

@@ -11,7 +11,7 @@ namespace GenerateProgram {
       ct?.ThrowIfCancellationRequested();
       sb.Append(
         $"{indent}<EmbeddedResource Update=\"{gResourceUnit.GRelativePath}/{gResourceUnit.GName}{gResourceUnit.GFileSuffix}\">{eol}");
-      sb.Append($"{indent}{indentDelta}<Generator>ResXFileCodeGenerator</Generator >{eol}");
+      sb.Append($"{indent}{indentDelta}<Generator>PublicResXFileCodeGenerator</Generator >{eol}");
       sb.Append($"{indent}{indentDelta}<LastGenOutput>{gResourceUnit.GName}.Designer.cs</LastGenOutput>{eol}");
       sb.Append($"{indent}</EmbeddedResource>{eol}");
       sb.Append($"{indent}<Compile Update=\"{gResourceUnit.GRelativePath}/{gResourceUnit.GName}.Designer.cs\">{eol}");

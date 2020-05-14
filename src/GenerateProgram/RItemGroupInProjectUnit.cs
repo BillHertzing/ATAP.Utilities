@@ -7,9 +7,14 @@ namespace GenerateProgram {
   public static partial class RenderExtensions {
     public static StringBuilder RenderItemGroupInProjectUnit(this StringBuilder sb, GItemGroupInProjectUnit gItemGroupInProjectUnit, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
-      sb.Append($"{indent}<!-- {gItemGroupInProjectUnit.GDescription} --> {eol}");
+      sb.Append($"{indent}<!-- {gItemGroupInProjectUnit.GDescription} --> {eol}");  
+      if (gItemGroupInProjectUnit.GComment.GStatements.Count >0) {
+        foreach (var s in gItemGroupInProjectUnit.GComment.GStatements) {
+          sb.Append($"{indent}<!-- {s} --> {eol}");
+        }
+      }
       sb.Append($"{indent}<ItemGroup>{eol}");
-      foreach (var s in gItemGroupInProjectUnit.GItemGroupStatements) {
+      foreach (var s in gItemGroupInProjectUnit.GBody.GStatements) {
         sb.Append($"{indent}{indentDelta}{s}{eol}");
       }
       sb.Append($"{indent}</ItemGroup>{eol}");

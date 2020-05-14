@@ -25,25 +25,25 @@ namespace GenerateProgram {
       "<!-- However, if the LifecycleStage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->",
       "<PackageLabel>NA</PackageLabel>",
       "<Configurations>Debug;Release;ReleaseWithTrace</Configurations>",
-      });
+      }));
     }
 
     public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsLibrary() {
       return new GPropertyGroupInProjectUnit("Library","Creates a Library Project", new List<string>() {
         "<OutputType>Library</OutputType>"
-      });
+      }));
     }
 
     public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsExe() {
       return new GPropertyGroupInProjectUnit("Executable","Creates an Executable Project", new List<string>() {
         "<OutputType>Exe</OutputType>"
-      });
+      }));
     }
     public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForPackableOnBuild() {
       return new GPropertyGroupInProjectUnit("PackableOnBuild","The Assembly will be packed into a NuGet Package on every build", new List<string>() {
         "<GeneratePackageOnBuild>true</GeneratePackageOnBuild>",
         "<IsPackable>true</IsPackable>",
-      });
+      }));
     }
 
     public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForLifecycleStage() {
@@ -52,12 +52,12 @@ namespace GenerateProgram {
         "<PackageLifeCycleStage>Production</PackageLifeCycleStage>",
         "<!-- NuGet Package Label for the Nuget Package if the LifecycleStage is not Production-->",
         "<!-- However, if the LifecycleStage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->",
-        "<PackageLabel>NA</PackageLabel>",      });
+        "<PackageLabel>NA</PackageLabel>",      }));
     }
     public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForBuildConfigurations() {
       return new GPropertyGroupInProjectUnit("BuildConfigurations","The BuildConfigurations available for this assembly", new List<string>() {
         "<Configurations>Debug;Release;ReleaseWithTrace</Configurations>",
-      });
+      }));
     }
     public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForVersion() {
       return new GPropertyGroupInProjectUnit("Version","The current version of this assembly", new List<string>() {
@@ -66,11 +66,11 @@ namespace GenerateProgram {
         "<MajorVersion>1</MajorVersion>",
         "<MinorVersion>0</MinorVersion>",
         "<PatchVersion>0</PatchVersion>",
-      });
+      }));
     }
     public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitFor() {
       return new GPropertyGroupInProjectUnit("","", new List<string>() {
-      });
+      }));
     }
   }
 

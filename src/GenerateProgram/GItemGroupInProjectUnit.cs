@@ -5,16 +5,17 @@ using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
   public class GItemGroupInProjectUnit {
-    public GItemGroupInProjectUnit(string gName = "", string? gDescription = default, List<String> gItemGroupStatements = default) {
+    public GItemGroupInProjectUnit(string gName = "", string gDescription = "", GBody gBody = default, GComment gComment = default) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
       GDescription = gDescription == default ? "" : gDescription;
-
-      GItemGroupStatements = gItemGroupStatements  == default? new List<String> () : gItemGroupStatements;
+      GBody = gBody == default? new GBody() : gBody;
+      GComment = gComment == default? new GComment() : gComment;
       Philote = new Philote<GItemGroupInProjectUnit>();
     }
     public string GName { get; }
     public string GDescription { get; }
-    public List<String>  GItemGroupStatements { get; }
+    public GBody GBody { get; }
+    public GComment GComment { get; }
     public Philote<GItemGroupInProjectUnit> Philote { get; }
 
   }

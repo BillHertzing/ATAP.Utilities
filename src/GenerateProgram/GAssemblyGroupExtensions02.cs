@@ -255,7 +255,6 @@ namespace GenerateProgram {
 
       #region ItemGroups for the ProjectUnit
       var gItemGroupInProjectUnitList = new List<GItemGroupInProjectUnit>() {
-        ProjectReferenceItemGroupInProjectUnitForLoggingUtilities("SolutionReferencedProjectsBasePathReplacementPattern"),
         SerilogAndSeqMELLoggingProviderPackageReferencesItemGroupInProjectUnit(),
         SerilogLoggingProviderPackageReferencesItemGroupInProjectUnit(),
         QuickGraphPackageReferencesItemGroupInProjectUnit(),
@@ -264,15 +263,14 @@ namespace GenerateProgram {
         ServiceStackSerializationPackageReferencesItemGroupInProjectUnit(),
         ServiceStackORMLitePackageReferencesItemGroupInProjectUnit(),
         ProjectReferenceItemGroupInProjectUnitForPersistenceUtilities("SolutionReferencedProjectsBasePathReplacementPattern"),
-        NetCoreGenericHostAndWebServerHostPackageReferencesItemGroupInProjectUnit(),
-        ProjectReferenceItemGroupInProjectUnitForGenericHostUtilities("SolutionReferencedProjectsBasePathReplacementPattern"),
+        ATAPGenericHostUtilitiesPackageReferenceItemGroupInProjectUnit("SolutionReferencedProjectsBasePathReplacementPattern"),
         ProjectReferenceItemGroupInProjectUnitForTimersService("SolutionReferencedProjectsBasePathReplacementPattern"),
         //ProjectReferenceItemGroupInProjectUnitForFilesystemWatchersService(),
         ItemGroupInProjectUnitForILWeavingUsingFodyPackageReferences()
       };
-      if (usesConsoleMonitorConvention) {
-        gItemGroupInProjectUnitList.Add(ProjectReferenceItemGroupInProjectUnitForConsoleMonitorPattern("SolutionReferencedProjectsBasePathReplacementPattern"));
-      }
+      //if (usesConsoleMonitorConvention) {
+      //  gItemGroupInProjectUnitList.Add(ProjectReferenceItemGroupInProjectUnitForConsoleMonitorPattern("SolutionReferencedProjectsBasePathReplacementPattern"));
+      //}
       gItemGroupInProjectUnitList.ForEach(gP => gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(gP.Philote, gP));
       #endregion
       #region region StringConstantsBase

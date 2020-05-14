@@ -25,16 +25,7 @@ namespace GenerateProgram {
       newgMethodGroup.GMethods[gMethod.Philote] = gMethod;
       return newgMethodGroup;
     }
-    public static GMethodGroup CreateUsesConsoleMonitorMethods() {
-      GMethodGroup gMethodGroup =
-        new GMethodGroup(gName: " Methods for GenericHostHostedServices that use the ConsoleMonitor convention for handling input and output");
-      GMethod gMethod = CreateWriteAsyncMethod();
-      gMethodGroup.GMethods[gMethod.Philote] = gMethod;
-      gMethod = CreateBuildMenuMethod();
-      gMethodGroup.GMethods[gMethod.Philote] = gMethod;
-      //gMethod = new GMethod().CreateReadCharMethod();
-      //newgMethodGroup.GMethods[gMethod.Philote] = gMethod;
-      return gMethodGroup;
-    }
+   
+
   }
 }

@@ -51,15 +51,11 @@ namespace GenerateProgram {
       }
       return _gUsingGroup;
     }
-    public static GUsingGroup UsingsForStatelessStateMachine() {
+    public static GUsingGroup UsingGroupForStatelessStateMachine() {
       return new GUsingGroup("Usings For Stateless implementation of StateMachine").AddUsing(new List<GUsing>() {
         new GUsing("Stateless"),
       });
     }
-    public static GUsingGroup UsingsForConsoleMonitorPattern(string baseNamespace) {
-      return new GUsingGroup("Usings For ConsoleMonitor Pattern").AddUsing(new List<GUsing>() {
-          new GUsing($"{baseNamespace}.ConsoleMonitor"),
-        });
-    }
+   
   }
 }

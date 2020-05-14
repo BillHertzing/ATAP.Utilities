@@ -31,7 +31,8 @@ namespace GenerateProgram {
         "  HostApplicationLifetime.ApplicationStopped.Register(OnStopped);",
         "#endregion",
         "DataInitializationInStartAsyncReplacementPattern",
-        "// Wait to be connected to the stdIn observable",
+        "// Fire Trigger for InitializationCompleteReceived",
+        "StateMachine.Fire(StateMachine,Trigger.InitializationCompleteReceived);",
         "//return Task.CompletedTask;"
       });
 
@@ -194,64 +195,6 @@ namespace GenerateProgram {
         "}",
         "}",
         "return Task.CompletedTask;"
-        }),
-        new GComment(new List<string>() {
-          "// Used to write a string to the consoleout service"
-        }));
-    }
-
-    public static GMethod CreateBuildMenuMethod() {
-      var gMethodArgumentList = new List<GArgument>() {
-        new GArgument("Choices","TypeOfHostedservice"),
-        new GArgument("mesg","StringBuilder"),
-        new GArgument("choices","IEnumerable<string>"),
-        new GArgument("cancellationToken","CancellationToken?")
-      };
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
-      foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
-
-      return new GMethod(
-        new GMethodDeclaration(gName: "SubscribeToConsoleReadLine", gType: "IDisposable",
-          gVisibility: "private", gAccessModifier: "", isConstructor: false,
-          gArguments: gMethodArguments),
-        gBody:
-        new GBody( new List<string>() {
-          "cancellationToken?.ThrowIfCancellationRequested();",
-          "mesg.Clear();",
-          "foreach (var choice in choices) {",
-          "mesg.Append(choice);",
-          "}",
-
-        }),
-        new GComment(new List<string>() {
-          "/// <summary>",
-          "/// Build a multiline menu from the choices, and send to stdout",
-          "/// </summary>",
-          "/// <param name=\"mesg\"></param>",
-          "/// <param name=\"choices\"></param>",
-          "/// <param name=\"cancellationToken\"></param>",
-          "/// <returns></returns>",
-
-        }));
-    }
-
-
-    public static GMethod CreateReadLineMethod() {
-      var gMethodArgumentList = new List<GArgument>() {
-        new GArgument("inService","TypeOfHostedservice"),
-        //new GArgument("mesg","string"),
-        new GArgument("ct","CancellationToken?")
-      };
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
-      foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
-
-      return new GMethod(
-        new GMethodDeclaration(gName: "SubscribeToConsoleReadLine", gType: "IDisposable",
-          gVisibility: "private", gAccessModifier: "", isConstructor: false,
-          gArguments: gMethodArguments),
-        gBody:
-        new GBody( new List<string>() {
-          "return Task.CompletedTask;"
         }),
         new GComment(new List<string>() {
           "// Used to write a string to the consoleout service"

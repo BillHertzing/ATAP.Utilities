@@ -7,9 +7,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATAP.Utilities.Philote;
 using GenerateProgram;
+using static GenerateProgram.GItemGroupInProjectUnitExtensions;
 
 namespace GenerateProgram {
   public static partial class GAssemblyUnitExtensions {
+
+
+
     //public static IEnumerable<KeyValuePair<Philote<GCompilationUnit>,GCompilationUnit>> AssemblyUnitStringCOnstantsAndLinkedBaseAndDerivedClassConstructor(String gNamespaceName,
     //  string gRelativePathBase = default,
     //  string gRelativePathDerived = default,

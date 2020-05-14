@@ -9,10 +9,8 @@ namespace GenerateProgram {
     public static StringBuilder RenderStaticVariablePreambleStringBuilder(this StringBuilder sb, GStaticVariable gStaticVariable, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       sb.Append($"{indent}{gStaticVariable.GVisibility} ");
-      sb.Append($"{gStaticVariable.GAccessModifier} ");
-
+      sb.Append($"{gStaticVariable.GAccessModifier} static ");
         sb.Append($"{gStaticVariable.GType} ");
-
       sb.Append($"{gStaticVariable.GName} = {eol}");
       return sb;
     }

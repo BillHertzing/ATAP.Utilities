@@ -5,7 +5,8 @@ using static GenerateProgram.GAssemblyGroupExtensions;
 //using AutoMapper.Configuration;
 using static GenerateProgram.GMethodGroupExtensions;
 using static GenerateProgram.GMethodExtensions;
-using static GenerateProgram.GUsingGroupExtensions;
+using static GenerateProgram.GAttributeGroupExtensions;
+
 using static GenerateProgram.GItemGroupInProjectUnitExtensions;
 
 namespace GenerateProgram {
@@ -39,28 +40,28 @@ namespace GenerateProgram {
         throw new Exception("This should not happen");
       }
       /*
-              * digraph finite_state_machine {
-              WaitingForInitialization ->InitiateContact [label = "InitializationCompleteReceived"];
-              InitiateContact -> WaitingForContact [label = "ConsoleMonitorNotifyConsoleSinkReadySent"];
-              WaitingForContact -> WaitingForContactTimeoutFailure [label = "ConsoleMonitorNotifyConsoleSinkReadySentTimeout"];
-              WaitingForContact -> Connected [label = "ConsoleMonitorNotifyConsoleSinkReadyAcknowledgementReceived"];
-              Connected -> Write [label = "WriteMethodCalled"];
-              Connected -> WriteASync [label = "WriteAsyncMethodCalled"]
-              Write -> Connected [label = "WriteMethodCompleted"];
-              Write -> ServiceFaulted [label="WriteMethodExceptionCaught"];
-              WriteAsync -> Connected [label = "WriteAsyncMethodCalled"];
-              WriteAsync -> ServiceFaulted [label="WriteAsyncMethodReturnedTaskFaulted"];
-              WaitingForInitialization ->ShuttingDown [label = "CancellationTokenActivated"];
-              InitiateContact ->ShuttingDown [label = "CancellationTokenActivated"];
-              WaitingForContact ->ShuttingDown [label = "CancellationTokenActivated"];
-              WaitingForContactTimeoutFailure ->ShutdownStarted [label = "CancellationTokenActivated"];
-              Connected ->ShutdownStarted [label = "CancellationTokenActivated"];
-              Write ->ShutdownStarted [label = "CancellationTokenActivated"];
-              WriteAsync ->ShutdownStarted [label = "CancellationTokenActivated"];
-              ServiceFaulted ->ShutdownStarted [label = "CancellationTokenActivated"];
-              ShutdownStarted->ShutDownComplete [label = "AllShutDownStepsCompleted"];
-              }
-             */
+        * digraph finite_state_machine {
+        WaitingForInitialization -> WaitForConsoleSourceAndSink [label = "InitializationCompleteReceived"];
+        WaitForConsoleSourceAndSink -> WaitingForContact [label = "ConsoleSourceAndSinkConnectedComplete"];
+        WaitingForContact -> WaitingForContactTimeoutFailure [label = "ConsoleMonitorNotifyConsoleSinkReadySentTimeout"];
+        WaitingForContact -> Connected [label = "ConsoleMonitorNotifyConsoleSinkReadyAcknowledgementReceived"];
+        Connected -> Write [label = "WriteMethodCalled"];
+        Connected -> WriteASync [label = "WriteAsyncMethodCalled"]
+        Write -> Connected [label = "WriteMethodCompleted"];
+        Write -> ServiceFaulted [label="WriteMethodExceptionCaught"];
+        WriteAsync -> Connected [label = "WriteAsyncMethodCalled"];
+        WriteAsync -> ServiceFaulted [label="WriteAsyncMethodReturnedTaskFaulted"];
+        WaitingForInitialization ->ShuttingDown [label = "CancellationTokenActivated"];
+        InitiateContact ->ShuttingDown [label = "CancellationTokenActivated"];
+        WaitingForContact ->ShuttingDown [label = "CancellationTokenActivated"];
+        WaitingForContactTimeoutFailure ->ShutdownStarted [label = "CancellationTokenActivated"];
+        Connected ->ShutdownStarted [label = "CancellationTokenActivated"];
+        Write ->ShutdownStarted [label = "CancellationTokenActivated"];
+        WriteAsync ->ShutdownStarted [label = "CancellationTokenActivated"];
+        ServiceFaulted ->ShutdownStarted [label = "CancellationTokenActivated"];
+        ShutdownStarted->ShutDownComplete [label = "AllShutDownStepsCompleted"];
+        }
+      */
       #region StateMachine EnumerationGroups
       var gEnumerationGroup = new GEnumerationGroup(gName: "State and Trigger Enumerations for StateMachine");
       #region State Enumeration
@@ -68,21 +69,16 @@ namespace GenerateProgram {
       var gEnumerationMemberList = new List<GEnumerationMember>();
       Dictionary<Philote<GAttributeGroup>, GAttributeGroup> gAttributeGroups =
         new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
-      //gDescription: "Signals that the Console Monitor has received our request to be added",
-      //gVisualDisplay: "Waiting For Initialization",gVisibleSortOrder: 1
-      GAttributeGroup gAttributeGroup = CreateLocalizableEnumerationAttributeGroup();
+      GAttributeGroup gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: "Power-On State - waiting until minimal initialization condition has been met",visualDisplay: "Waiting For Initialization",visualSortOrder: 1);
       gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
       gEnumerationMemberList.Add(
         new GEnumerationMember(gName: "WaitingForInitialization", gValue: 1,
           gAttributeGroups: gAttributeGroups
         ));
-
       gAttributeGroups = new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
-      //gDescription: "The Console Monitor is signaling us to subscribe to the ConsoleIn Observable",
-      //gVisualDisplay: "Subscribe ToConsole Monitor Received", gVisibleSortOrder: 2),
-      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup();
+      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: "Wait until both a ConsoleSource and a ConsoleSink service has registered with us",visualDisplay: "Wait For ConsoleSource And ConsoleSink", visualSortOrder: 2);
       gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
-      gEnumerationMemberList.Add(new GEnumerationMember(gName: "InitiateContact", gValue: 2,
+      gEnumerationMemberList.Add(new GEnumerationMember(gName: "WaitForConsoleSourceAndSink", gValue: 2,
         gAttributeGroups: gAttributeGroups
       ));
 
@@ -99,10 +95,7 @@ namespace GenerateProgram {
       #region Trigger Enumeration members
       gEnumerationMemberList = new List<GEnumerationMember>();
       gAttributeGroups = new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
-
-      //gDescription: "todo",
-      //gVisualDisplay: "todo",gVisibleSortOrder: 1
-      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup();
+      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: "The minimal initialization conditions have been met",visualDisplay: "Initialization Complete Received",visualSortOrder: 2);
       gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
       gEnumerationMemberList.Add(
         new GEnumerationMember(gName: "InitializationCompleteReceived", gValue: 1,
@@ -164,7 +157,7 @@ namespace GenerateProgram {
       // ToDo: Look up the right AssemblyUnit via the Database
       foreach (var gAU in gAssemblyGroup.GAssemblyUnits) {
         foreach (var gCU in gAU.Value.GCompilationUnits) {
-          if (gCU.Value.GName == "AssemblyUnitNameReplacementPattern.Interfaces") {
+          if (gCU.Value.GName == "AssemblyUnitNameReplacementPatternBase.Interfaces") {
             gAssemblyUnit = gAU.Value;
             // ToDo: break out to the outermost loop
           }

@@ -37,11 +37,55 @@ namespace GenerateProgram {
 
       #endregion
 
+      // Property Group for StateMachine properties
+      var gPropertyGroup = new GPropertyGroup(gName: "StateMachine Properties");
+      // StateConfigurations Property
+      var gProperty = new GProperty(gName: "StateMachine", gType: "StateMachine<State,Trigger>", gAccessors: "{get;}");
+      gPropertyGroup.GPropertys.Add(gProperty.Philote, gProperty);
+      // Add the StateMachine Property to the class
+      gProperty = new GProperty(gName: "StateConfigurations", gType: "List<StateConfiguration>", gAccessors: "{get;}");
+      gPropertyGroup.GPropertys.Add(gProperty.Philote, gProperty);
+      gClass.GPropertyGroups.Add(gPropertyGroup.Philote,gPropertyGroup);
+      // add a method to the class that configures the StateMachine according to the StateConfigurations property
+      // StateMachine Configuration
+
+      var gMethodGroup = new GMethodGroup(gName:"Methods For StateMachine");
+
+      var gMethod = new GMethod(new GMethodDeclaration(gName: "ConfigureStateMachine", gType: "void",gVisibility:"public", gAccessModifier: "virtual"), new GBody(new List<string>() {
+        "// attribution :https://github.com/dhrobbins/ApprovaFlow/blob/master/ApprovaFlow/ApprovaFlow/ApprovaFlow/Workflow/WorkflowProcessor.cs",
+        "//  Get a distinct list of states with a trigger from the stateConfigurations static variable",
+        "//  State => Trigger => TargetState",
+        "var states = StateConfigurations.AsQueryable()",
+        ".Select(x => x.State)",
+        ".Distinct()",
+        ".Select(x => x)",
+        ".ToList();",
+        "//  Get each trigger for each state",
+        "states.ForEach(state =>{",
+          "var triggers = StateConfigurations.AsQueryable()",
+          ".Where(config => config.State == state)",
+          ".Select(config => new { Trigger = config.Trigger, TargetState = config.NextState })",
+          ".ToList();",
+          "triggers.ForEach(trig => {",
+          "StateMachine.Configure(state).Permit(trig.Trigger, trig.TargetState);",
+        "  });",
+        "});",
+      }));
+      gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
+      gClass.GMethodGroups.Add(gMethodGroup.Philote, gMethodGroup);
+
+      // Add initialization statements for the properties in the the StateMachine Properties Property Group to the constructor body
+      gConstructor.GBody.GStatements.AddRange(new List<String>() {
+        "StateMachine = new StateMachine<State, Trigger>(State.WaitingForInitialization);",
+        "StateConfigurations = stateConfigurations;",
+        "ConfigureStateMachine();",
+      });
+
       // StateConfiguration Class for the provided namespace
       // Define the properties for the StateConfiguration class
       // ToDo: Move this type into ATAP.Utilities.StateMachine
       var gPropertys = new Dictionary<Philote<GProperty>, GProperty>();
-      var gProperty = new GProperty("State", "State", gAccessors: "{get;}", gVisibility:"public");
+       gProperty = new GProperty("State", "State", gAccessors: "{get;}", gVisibility:"public");
       gPropertys.Add(gProperty.Philote, gProperty);
       gProperty = new GProperty("Trigger", "Trigger", gAccessors: "{get;}", gVisibility:"public");
       gPropertys.Add(gProperty.Philote, gProperty);
@@ -75,52 +119,6 @@ namespace GenerateProgram {
         }));
       stateConfigurationClass.GConstructors.Add(gConstructor.Philote, gConstructor);
       gNamespace.GClasss.Add(stateConfigurationClass.Philote, stateConfigurationClass);
-
-      // Property Group for StateMachine properties
-      var gPropertyGroup = new GPropertyGroup(gName: "StateMachine Properties");
-      // StateConfigurations Property 
-      gProperty = new GProperty(gName: "StateMachine", gType: "StateMachine<State,Trigger>", gAccessors: "{get;}");
-      gPropertyGroup.GPropertys.Add(gProperty.Philote, gProperty);
-      // Add the StateMachine Property to the class
-      gProperty = new GProperty(gName: "StateConfigurations", gType: "List<StateConfiguration>", gAccessors: "{get;}");
-      gPropertyGroup.GPropertys.Add(gProperty.Philote, gProperty);
-      gClass.GPropertyGroups.Add(gPropertyGroup.Philote,gPropertyGroup);
-      // add a method to the class that configures the StateMachine according to the StateConfigurations property
-      // StateMachine Configuration
-
-      var gMethodGroup = new GMethodGroup(gName:"Methods For StateMachine");
-
-      var gMethod = new GMethod(new GMethodDeclaration(gName: "ConfigureOverallStateMachine", gType: "void",gVisibility:"public", gAccessModifier: "virtual"), new GBody(new List<string>() {
-        "// attribution :https://github.com/dhrobbins/ApprovaFlow/blob/master/ApprovaFlow/ApprovaFlow/ApprovaFlow/Workflow/WorkflowProcessor.cs",
-        "//  Get a distinct list of states with a trigger from the stateConfigurations static variable",
-        "//  State => Trigger => TargetState",
-        "var states = StateConfigurations.AsQueryable()",
-        ".Select(x => x.State)",
-        ".Distinct()",
-        ".Select(x => x)",
-        ".ToList();",
-        "//  Get each trigger for each state",
-        "states.ForEach(state =>{",
-          "var triggers = StateConfigurations.AsQueryable()",
-          ".Where(config => config.State == state)",
-          ".Select(config => new { Trigger = config.Trigger, TargetState = config.NextState })",
-          ".ToList();",
-          "triggers.ForEach(trig => {",
-          "StateMachine.Configure(state).Permit(trig.Trigger, trig.TargetState);",
-        "  });",
-        "});",
-      }));
-      gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
-      gClass.GMethodGroups.Add(gMethodGroup.Philote, gMethodGroup);
-
-      // Add initialization statements for the properties in the the StateMachine Properties Property Group to the constructor body
-
-      gConstructor.GBody.GStatements.AddRange(new List<String>() {
-        "StateMachine = new StateMachine<State, Trigger>(State,Trigger);",
-        "StateConfigurations = stateConfigurations;",
-        "StateMachine.ConfigureOverallStateMachine;",
-      });
-
 
     }
   }

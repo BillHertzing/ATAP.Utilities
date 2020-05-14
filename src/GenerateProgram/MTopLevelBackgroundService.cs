@@ -42,8 +42,8 @@ namespace GenerateProgram {
 
       /*
         * digraph finite_state_machine {
-        WaitingForInitialization ->InitiateContact [label = "InitializationCompleteReceived"];
-        InitiateContact -> WaitingForContact [label = "ConsoleMonitorRequestContactSent"];
+        WaitingForInitialization ->InitiateContactWithConsoleMonitor [label = "InitializationCompleteReceived"];
+        InitiateContactWithConsoleMonitor -> WaitingForContact [label = "ConsoleMonitorRequestContactSent"];
         WaitingForContact -> WaitingForContactTimeoutFailure [label = "ConsoleMonitorRequestContactSent"];
         WaitingForContact -> Contacted [label = "ConsoleMonitorRequestContactAcknowledgementReceived"];
         Contacted -> Connected [label = SubscribeToConsoleMonitorReceived];
@@ -72,9 +72,7 @@ namespace GenerateProgram {
       var gEnumerationMemberList = new List<GEnumerationMember>();
       Dictionary<Philote<GAttributeGroup>, GAttributeGroup> gAttributeGroups =
         new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
-      //gDescription: "Signals that the Console Monitor has received our request to be added",
-      //gVisualDisplay: "Waiting For Initialization",gVisibleSortOrder: 1
-      GAttributeGroup gAttributeGroup = CreateLocalizableEnumerationAttributeGroup();
+      GAttributeGroup gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: "Power-On State - waiting until minimal initialization condition has been met", visualDisplay: "Waiting For Initialization", visualSortOrder: 1);
       gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
       gEnumerationMemberList.Add(
         new GEnumerationMember(gName: "WaitingForInitialization", gValue: 1,
@@ -82,11 +80,9 @@ namespace GenerateProgram {
         ));
 
       gAttributeGroups = new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
-      //gDescription: "The Console Monitor is signaling us to subscribe to the ConsoleIn Observable",
-      //gVisualDisplay: "Subscribe ToConsole Monitor Received", gVisibleSortOrder: 2),
-      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup();
+      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: "register as a consumer of the ConsoleMonitor services ", visualDisplay: "Initiate contact with ConsoleMonitor", visualSortOrder: 2);
       gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
-      gEnumerationMemberList.Add(new GEnumerationMember(gName: "InitiateContact", gValue: 2,
+      gEnumerationMemberList.Add(new GEnumerationMember(gName: "InitiateContactWithConsoleMonitor", gValue: 2,
         gAttributeGroups: gAttributeGroups
       ));
 
@@ -103,15 +99,13 @@ namespace GenerateProgram {
       #region Trigger Enumeration members
       gEnumerationMemberList = new List<GEnumerationMember>();
       gAttributeGroups = new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
-
-      //gDescription: "todo",
-      //gVisualDisplay: "todo",gVisibleSortOrder: 1
-      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup();
+      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: "The minimal initialization conditions have been met", visualDisplay: "Initialization Complete Received", visualSortOrder: 1);
       gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
-      gEnumerationMemberList.Add(
-        new GEnumerationMember(gName: "InitializationCompleteReceived", gValue: 1,
-          gAttributeGroups: gAttributeGroups
-        ));
+      gEnumerationMemberList.Add(new GEnumerationMember(gName: "InitializationCompleteReceived", gValue: 1, gAttributeGroups: gAttributeGroups));
+      gAttributeGroups = new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
+      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: "Sent a ContactRequest to the ConsoleMonitor", visualDisplay: "Console Monitor RequestContact Sent", visualSortOrder: 2);
+      gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
+      gEnumerationMemberList.Add(new GEnumerationMember(gName: "ConsoleMonitorRequestContactSent", gValue: 2, gAttributeGroups: gAttributeGroups));
 
       gEnumerationMembers = new Dictionary<Philote<GEnumerationMember>, GEnumerationMember>();
       foreach (var o in gEnumerationMemberList) {
@@ -129,7 +123,7 @@ namespace GenerateProgram {
       // Add a StaticVariable to the class
       var gStaticVariable = new GStaticVariable("stateConfigurations", gType: "List<StateConfiguration>", gBody: new GBody(new List<string>(){
         "new List<StateConfiguration>(){",
-       "new StateConfiguration(State.WaitingForInitialization,Trigger.InitializationCompleteReceived,State.InitiateContact)",
+       "new StateConfiguration(State.WaitingForInitialization,Trigger.InitializationCompleteReceived,State.InitiateContactWithConsoleMonitor)",
         "}"
       }));
       gClass.GStaticVariables.Add(gStaticVariable.Philote, gStaticVariable);
@@ -137,7 +131,7 @@ namespace GenerateProgram {
       #endregion
       #endregion
       #region Use MConsoleMonitorClient to implememnt the  GHConsoleMonitorServicePattern
-      MConsoleMonitorClient(gAssemblyGroup,baseNamespace);
+      MConsoleMonitorClient(gAssemblyGroup, baseNamespace);
       #endregion
 
       #region Package references used
@@ -157,16 +151,16 @@ namespace GenerateProgram {
         throw new Exception("This should not happen");
       }
 
-      foreach (var o in new List<GItemGroupInProjectUnit>() {}
+      foreach (var o in new List<GItemGroupInProjectUnit>() { }
       ) {
-        gAssemblyGroup.GAssemblyUnits[gAssemblyUnit.Philote].GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote,o);
+        gAssemblyGroup.GAssemblyUnits[gAssemblyUnit.Philote].GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote, o);
       }
 
       // References used by the Interface Assembly
       // ToDo: Look up the right AssemblyUnit via the Database
       foreach (var gAU in gAssemblyGroup.GAssemblyUnits) {
         foreach (var gCU in gAU.Value.GCompilationUnits) {
-          if (gCU.Value.GName == "AssemblyUnitNameReplacementPattern.Interfaces") {
+          if (gCU.Value.GName == "AssemblyUnitNameReplacementPatternBase.Interfaces") {
             gAssemblyUnit = gAU.Value;
             // ToDo: break out to the outermost loop
           }
@@ -176,9 +170,9 @@ namespace GenerateProgram {
         //ToDo: better exception handling
         throw new Exception("This should not happen");
       }
-      foreach (var o in new List<GItemGroupInProjectUnit>() {}
+      foreach (var o in new List<GItemGroupInProjectUnit>() { }
       ) {
-        gAssemblyGroup.GAssemblyUnits[gAssemblyUnit.Philote].GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote,o);
+        gAssemblyGroup.GAssemblyUnits[gAssemblyUnit.Philote].GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote, o);
       }
       #endregion
 

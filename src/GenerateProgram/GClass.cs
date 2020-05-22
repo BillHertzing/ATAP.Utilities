@@ -10,7 +10,6 @@ namespace GenerateProgram {
       List<string> gDisposesOf = default,
       Dictionary<Philote<GProperty>, GProperty> gPropertys = default,
       Dictionary<Philote<GPropertyGroup>, GPropertyGroup> gPropertyGroups = default,
-      Dictionary<Philote<GMethod>, GMethod> gConstructors = default,
       Dictionary<Philote<GMethod>, GMethod> gMethods = default,
       Dictionary<Philote<GMethodGroup>, GMethodGroup> gMethodGroups = default,
       Dictionary<Philote<GStaticVariable>, GStaticVariable> gStaticVariables = default,
@@ -34,7 +33,6 @@ namespace GenerateProgram {
       GDisposesOf = gDisposesOf == default? new List<string>() : gDisposesOf;
       GPropertyGroups = gPropertyGroups  == default? new Dictionary<Philote<GPropertyGroup>, GPropertyGroup>() : gPropertyGroups;
       GPropertys = gPropertys  == default? new Dictionary<Philote<GProperty>, GProperty>() : gPropertys;
-      GConstructors = gConstructors  == default? new Dictionary<Philote<GMethod>, GMethod>() : gConstructors;
       GMethods = gMethods  == default? new Dictionary<Philote<GMethod>, GMethod>() : gMethods;
       GMethodGroups = gMethodGroups  == default? new Dictionary<Philote<GMethodGroup>, GMethodGroup>() : gMethodGroups;
       GStaticVariables = gStaticVariables  == default? new Dictionary<Philote<GStaticVariable>, GStaticVariable>() : gStaticVariables;
@@ -58,10 +56,9 @@ namespace GenerateProgram {
     // ToDo: make this an enumeration
     public string GAccessModifier { get; }
     public string GInheritance { get; }
-    public List<string>? GImplements { get; }
+    public List<string> GImplements { get; }
     public Dictionary<Philote<GProperty>, GProperty> GPropertys { get; }
     public Dictionary<Philote<GPropertyGroup>, GPropertyGroup> GPropertyGroups { get; }
-    public Dictionary<Philote<GMethod>, GMethod> GConstructors { get; }
     public Dictionary<Philote<GMethod>, GMethod> GMethods { get; }
     public Dictionary<Philote<GMethodGroup>, GMethodGroup> GMethodGroups { get; }
     public Dictionary<Philote<GStaticVariable>, GStaticVariable> GStaticVariables { get; }

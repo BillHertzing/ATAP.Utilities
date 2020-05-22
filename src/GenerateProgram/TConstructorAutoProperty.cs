@@ -13,10 +13,7 @@ namespace GenerateProgram {
         gClass.GPropertys[gProperty.Philote] = gProperty;
       }
       GMethod gMethod = default;
-      if (gClass.GConstructors != null && gClass.GConstructors.ContainsKey(gMethodId)) {
-        gMethod = gClass.GConstructors[gMethodId];
-      }
-      else if (gClass.GMethods != null && gClass.GMethods.ContainsKey(gMethodId)) {
+      if (gClass.GMethods != null && gClass.GMethods.ContainsKey(gMethodId)) {
         gMethod = gClass.GMethods[gMethodId];
       }
       else if ( gClass.GMethodGroups != null) {

@@ -10,10 +10,10 @@ namespace GenerateProgram {
 
     public static List<GItemGroupInProjectUnit> MGenericHostServiceCommonItemGroupInProjectUnitList() {
       return new List<GItemGroupInProjectUnit>() {
-        NetCoreGenericHostPackageReferencesItemGroupInProjectUnit(),
-        StatelessStateMachinePackageReferencesItemGroupInProjectUnit(),
-        ATAPLoggingUtilitiesPackageReferenceItemGroupForProjectUnit(),
-        ItemGroupInProjectUnitForILWeavingUsingFodyPackageReferences(),
+        NetCoreGenericHostReferencesItemGroupInProjectUnit(),
+        StatelessStateMachineReferencesItemGroupInProjectUnit(),
+        ATAPLoggingUtilitiesReferencesItemGroupInProjectUnit(),
+        FodyMethodBoundryReferencesItemGroupInProjectUnit(),
       };
     }
   }

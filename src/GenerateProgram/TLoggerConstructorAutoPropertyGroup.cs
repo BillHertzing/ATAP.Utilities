@@ -9,10 +9,7 @@ namespace GenerateProgram {
   public static partial class GClassExtensions {
     public static GClass AddTLoggerConstructorAutoPropertyGroup(this GClass gClass, Philote<GMethod> gMethodId, Philote<GPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get; }", string? gVisibility = default) {
       GMethod gMethod = default;
-      if (gClass.GConstructors != null && gClass.GConstructors.ContainsKey(gMethodId)) {
-        gMethod = gClass.GConstructors[gMethodId];
-      }
-      else if (gClass.GMethods != null && gClass.GMethods.ContainsKey(gMethodId)) {
+       if (gClass.GMethods != null && gClass.GMethods.ContainsKey(gMethodId)) {
         gMethod = gClass.GMethods[gMethodId];
       }
       else if (gClass.GMethodGroups != null) {

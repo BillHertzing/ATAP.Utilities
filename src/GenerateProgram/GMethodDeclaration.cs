@@ -9,7 +9,7 @@ namespace GenerateProgram {
     public GMethodDeclaration(string gName = default, string gType = default, string gVisibility = default, string gAccessModifier = default,
       bool isStatic = default,bool isConstructor = default,
       Dictionary<Philote<GArgument>, GArgument> gArguments = default,
-      string gBase = default, string gThis = default) {
+      string gBase = default, string gThis = default, bool isForInterface = false) {
       GName = gName == default ? "" : gName;
       GVisibility = gVisibility == default ? "" : gVisibility;
       GType = gType == default ? "" : gType;
@@ -19,6 +19,7 @@ namespace GenerateProgram {
       GArguments = gArguments == default ? new Dictionary<Philote<GArgument>, GArgument>() : gArguments;
       GBase = gBase == default ? "" : gBase;
       GThis = gThis == default ? "" : gThis;
+      IsForInterface = isForInterface;
       Philote = new Philote<GMethodDeclaration>();
     }
     public string GName { get; }
@@ -31,6 +32,7 @@ namespace GenerateProgram {
     public Dictionary<Philote<GArgument>, GArgument> GArguments { get; }
     public string GBase { get; }
     public string GThis { get; set; }
+    public bool IsForInterface { get; }
     public Philote<GMethodDeclaration> Philote { get; }
 
   }

@@ -16,10 +16,7 @@ namespace GenerateProgram {
         throw new Exception(string.Format("{0} not found in the PropertyGroups of {1}", gPropertyGroupId.ID.ToString(), gClass.GName));
       }
       GMethod gMethod = default;
-      if (gClass.GConstructors != null && gClass.GConstructors.ContainsKey(gMethodId)) {
-        gMethod = gClass.GConstructors[gMethodId];
-      }
-      else if (gClass.GMethods != null && gClass.GMethods.ContainsKey(gMethodId)) {
+      if (gClass.GMethods != null && gClass.GMethods.ContainsKey(gMethodId)) {
         gMethod = gClass.GMethods[gMethodId];
       }
       else if (gClass.GMethodGroups != null) {

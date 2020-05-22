@@ -12,7 +12,8 @@ using static GenerateProgram.Lookup;
 using static GenerateProgram.StringConstants;
 using static GenerateProgram.GItemGroupInProjectUnitExtensions;
 using static GenerateProgram.GPropertyGroupInProjectUnitExtensions;
-using static GenerateProgram.GCompilationUnitExtensions;
+using static GenerateProgram.GAssemblyGroupExtensions;
+using static GenerateProgram.GAssemblyUnitExtensions;
 using static GenerateProgram.GCompilationUnitExtensions;
 using static GenerateProgram.GAssemblyGroupExtensions;
 using static GenerateProgram.GMacroExtensions;
@@ -92,6 +93,7 @@ namespace GenerateProgram {
       });
       MStateMachineDetails(lookupResultsForTitularBase, rawDiGraph);
       #endregion
+      GAssemblyGroupCommonFinalizer(gAssemblyGroup);
       GAssemblyGroupPopulateInterfaces(gAssemblyGroup);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);

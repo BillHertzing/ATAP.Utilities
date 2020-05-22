@@ -5,12 +5,12 @@ using static GenerateProgram.GMethodExtensions;
 
 namespace GenerateProgram {
   public static partial class GMethodGroupExtensions {
-    public static GMethodGroup CreateStartStopAsyncMethods(bool usesConsoleMonitorConvention = false) {
+    public static GMethodGroup CreateStartStopAsyncMethods(string gAccessModifier = "") {
       GMethodGroup newgMethodGroup =
         new GMethodGroup(gName: "Start and Stop Async Methods for IHostedService (part of Generic Host)");
-      GMethod gMethod = CreateStartAsyncMethod(usesConsoleMonitorConvention);
+      GMethod gMethod = CreateStartAsyncMethod(gAccessModifier);
       newgMethodGroup.GMethods[gMethod.Philote] = gMethod;
-      gMethod = CreateStopAsyncMethod(usesConsoleMonitorConvention);
+      gMethod = CreateStopAsyncMethod(gAccessModifier);
       newgMethodGroup.GMethods[gMethod.Philote] = gMethod;
       return newgMethodGroup;
     }

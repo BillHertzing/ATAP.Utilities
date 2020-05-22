@@ -15,75 +15,26 @@ using static GenerateProgram.GAssemblyUnitExtensions;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static void MConsoleMonitorClient(GAssemblyGroup gAssemblyGroup, string baseNamespace) {
-      #region Base Assembly Unit
-      // Get the namespace, and class, to which the gEnumerationGroup and GStaticVariable will be added
-      GAssemblyUnit gAssemblyUnit = default;
-      GCompilationUnit gCompilationUnit = default;
-      GNamespace gNamespace = default;
-      GClass gClass = default;
-      GMethod gConstructor = default;
-      // ToDo: Look up the right class via the Database
-      foreach (var gAU in gAssemblyGroup.GAssemblyUnits) {
-        foreach (var gCU in gAU.Value.GCompilationUnits) {
-          foreach (var gNs in gCU.Value.GNamespaces) {
-            foreach (var gCl in gNs.Value.GClasss) {
-              if (gCl.Value.GName == "AssemblyUnitNameReplacementPatternBase") {
-                foreach (var gMe in gCl.Value.GConstructors) {
-                  //foreach (var gMe in gCl.Value.CombinedMethods()) {
-                  if (gMe.Value.GDeclaration.IsConstructor) {
-                    gAssemblyUnit = gAU.Value;
-                    gCompilationUnit = gCU.Value;
-                    gNamespace = gNs.Value;
-                    gClass = gCl.Value;
-                    gConstructor = gMe.Value;
-                    // ToDo: break out to the outermost loop
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      if (gClass == default) {
-        //ToDo: better exception handling
-        throw new Exception("This should not happen");
-      }
-      MConsoleMonitorClientBase(gAssemblyUnit, gCompilationUnit, gNamespace, gClass, gConstructor, baseNamespace);
-      #endregion
-      #region Interface Assembly Unit
-      GInterface gInterface = default;
-      // ToDo: Look up the right class via the Database
-      foreach (var gAU in gAssemblyGroup.GAssemblyUnits) {
-        foreach (var gCU in gAU.Value.GCompilationUnits) {
-          if (gCU.Value.GName == "AssemblyUnitNameReplacementPatternBase.Interfaces") {
-            foreach (var gNs in gCU.Value.GNamespaces) {
-              foreach (var gIn in gNs.Value.GInterfaces) {
-                if (gIn.Value.GName == "AssemblyUnitNameReplacementPattern") {
-                }
-
-                gAssemblyUnit = gAU.Value;
-                gCompilationUnit = gCU.Value;
-                gNamespace = gNs.Value;
-                gInterface = gIn.Value;
-                // ToDo: break out to the outermost loop
-              }
-            }
-          }
-        }
-      }
-      if (gInterface == default) {
-        //ToDo: better exception handling
-        throw new Exception("This should not happen");
-      }
-      MConsoleMonitorClientInterface(gAssemblyUnit, gCompilationUnit, gNamespace, gInterface, baseNamespace);
-      #endregion
+    public static void MConsoleMonitorClient(GAssemblyGroup gAssemblyGroup, (
+      IEnumerable<GAssemblyUnit> gAssemblyUnits,
+      IEnumerable<GCompilationUnit> gCompilationUnits,
+      IEnumerable<GNamespace> gNamespacess,
+      IEnumerable<GClass> gClasss,
+      IEnumerable<GMethod> gMethods) lookupResultsTuple, string baseNamespaceName = "", List<string> rawDiGraph = default) {
+      MConsoleMonitorClient(gAssemblyGroup, lookupResultsTuple.gAssemblyUnits.First(), lookupResultsTuple.gCompilationUnits.First(), lookupResultsTuple.gNamespacess.First(), lookupResultsTuple.gClasss.First(), lookupResultsTuple.gMethods.First(),baseNamespaceName:baseNamespaceName);
     }
+    public static void MConsoleMonitorClient(GAssemblyGroup gAssemblyGroup, GAssemblyUnit gAssemblyUnit = default, GCompilationUnit gCompilationUnit = default, GNamespace gNamespace = default, GClass gClass = default, GMethod gMethod = default,  string baseNamespaceName = "", List<string> rawDiGraph = default) {
+      #region Titular Base Assembly Unit
+      MConsoleMonitorClientBase(gAssemblyUnit, gCompilationUnit, gNamespace, gClass, gMethod, baseNamespaceName);
+    }
+
+    #endregion
+
     public static void MConsoleMonitorClientBase(GAssemblyUnit gAssemblyUnit, GCompilationUnit gCompilationUnit,
-      GNamespace gNamespace, GClass gClass, GMethod gConstructor, string baseNamespace) {
-      #region Base ASsembly Unit
+      GNamespace gNamespace, GClass gClass, GMethod gConstructor, string baseNamespaceName) {
+      #region Titular Assembly Unit, TitularBase CompilationUnit, TitularBase Namespace, , TitularBase Class TitularBase Primary Constructor
       #region UsingGroup
-      MUsingsForConsoleMonitorPattern(gCompilationUnit, baseNamespace);
+      MUsingsForConsoleMonitorPattern(gCompilationUnit, baseNamespaceName);
       #endregion
       #region PropertyGroup ForConsoleMonitorPattern
       MPropertyGroupForConsoleMonitorPattern(gClass);
@@ -95,36 +46,16 @@ namespace GenerateProgram {
       MMethodGroupForConsoleMonitorPattern(gClass);
       #endregion
       #region ItemGroups for the ProjectUnit For ConsoleMonitorPattern
-      MProjectReferenceItemGroupInBaseProjectUnitForConsoleMonitorService(gAssemblyUnit);
+      MReferenceItemGroupInBaseProjectUnitForConsoleMonitorService(gAssemblyUnit);
       #endregion
       #endregion
     }
-    public static void MConsoleMonitorClientInterface(GAssemblyUnit gAssemblyUnit, GCompilationUnit gCompilationUnit,
-        GNamespace gNamespace, GInterface gInterface, string baseNamespace) {
-      #region Interface Assembly Unit
-      //#region UsingGroup
-      //MUsingsForConsoleMonitorPattern(gCompilationUnit, baseNamespace);
-      //#endregion
-      //#region PropertyGroup ForConsoleMonitorPattern
-      //MPropertyGroupForConsoleMonitorPattern(gClass);
-      //#endregion
-      //#region Injected PropertyGroup ForConsoleMonitorPattern
-      //MPropertyGroupAndConstructorDeclarationAndInitializationForInjectedConsoleMonitorService(gClass, gConstructor);
-      //#endregion
-      //#region MethodGroup ForConsoleMonitorPattern
-      //MMethodGroupForConsoleMonitorPattern(gClass);
-      //#endregion
-      #region ItemGroups for the ProjectUnit For ConsoleMonitorPattern
-      MProjectReferenceItemGroupInInterfaceProjectUnitForConsoleMonitorService(gAssemblyUnit);
-      #endregion
-      #endregion
-    }
-
     public static void MUsingsForConsoleMonitorPattern(GCompilationUnit gCompilationUnit, string baseNamespace) {
       var gUsingGroup = new GUsingGroup("Usings For ConsoleMonitor Pattern").AddUsing(new List<GUsing>() {
         new GUsing($"{baseNamespace}.ConsoleMonitor"),
+        new GUsing("System.Text"),
       });
-      gCompilationUnit.GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
+      gCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
     }
     public static void MPropertyGroupForConsoleMonitorPattern(GClass gClass) {
       var gPropertyGroup = new GPropertyGroup("Propertys needed to interoperate with the ConsoleMonitor Service");
@@ -133,7 +64,7 @@ namespace GenerateProgram {
           gAccessors: "{ get; set; }", gVisibility: "protected internal"),
         // new GProperty("Choices", gType: "Dictionary<String,IEnumerable<string>>", gAccessors: "{ get; }", gVisibility: "protected internal"),
       }) {
-        gPropertyGroup.GPropertys[o.Philote] = o;
+        gPropertyGroup.GPropertys.Add(o.Philote, o);
       }
       gClass.AddPropertyGroups(gPropertyGroup);
     }
@@ -148,16 +79,19 @@ namespace GenerateProgram {
     public static void MMethodGroupForConsoleMonitorPattern(GClass gClass) {
       var gMethodGroup =
         new GMethodGroup(gName: "MethodGroup ForConsoleMonitorPattern");
-      GMethod gMethod = CreateWriteAsyncMethod();
+      GMethod gMethod = MCreateWriteAsyncMethodForConsoleMonitorPattern();
       gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
-      gMethod = MBuildMenuMethodForConsoleMonitorPatter();
+      gMethod = MCreateWriteMethodForConsoleMonitorPattern();
+      gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
+      gMethod = MBuildMenuMethodForConsoleMonitorPattern();
       gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
       //gMethod = new GMethod().CreateReadCharMethod();
       //newgMethodGroup.GMethods[gMethod.Philote] = gMethod;
       gClass.AddMethodGroup(gMethodGroup);
+      gClass.AddMethodGroup(MCreateStateTransitionMethodGroupForConsoleMonitorPattern());
     }
     public static void
-      MProjectReferenceItemGroupInBaseProjectUnitForConsoleMonitorService(GAssemblyUnit gAssemblyUnit) {
+      MReferenceItemGroupInBaseProjectUnitForConsoleMonitorService(GAssemblyUnit gAssemblyUnit) {
 
       var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("ReferencesUsedByConsoleMonitorServiceClients",
         "Packages referenced by Clients wishing to use the GHConsoleMonitorService", new GBody(new List<string>() {
@@ -168,7 +102,7 @@ namespace GenerateProgram {
         gItemGroupInProjectUnit);
     }
     public static void
-      MProjectReferenceItemGroupInInterfaceProjectUnitForConsoleMonitorService(GAssemblyUnit gAssemblyUnit) {
+      MReferenceItemGroupInInterfaceProjectUnitForConsoleMonitorService(GAssemblyUnit gAssemblyUnit) {
 
       var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("ReferencesUsedByConsoleMonitorServiceClients",
         "Packages referenced by Clients wishing to use the GHConsoleMonitorService", new GBody(new List<string>() {
@@ -178,7 +112,7 @@ namespace GenerateProgram {
         gItemGroupInProjectUnit);
     }
 
-    public static GMethod MBuildMenuMethodForConsoleMonitorPatter() {
+    public static GMethod MBuildMenuMethodForConsoleMonitorPattern() {
       var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
       foreach (var o in new List<GArgument>() {
         new GArgument("mesg","StringBuilder"),
@@ -187,7 +121,7 @@ namespace GenerateProgram {
       }) { gMethodArguments.Add(o.Philote, o); }
 
       return new GMethod(
-        new GMethodDeclaration(gName: "SubscribeToConsoleReadLine", gType: "IDisposable",
+        new GMethodDeclaration(gName: "BuildMenu", gType: "void",
           gVisibility: "private", gAccessModifier: "", isConstructor: false,
           gArguments: gMethodArguments),
         gBody:
@@ -210,7 +144,7 @@ namespace GenerateProgram {
     }
 
 
-    public static GMethod CreateReadLineMethod() {
+    public static GMethod MCreateReadLineMethodForConsoleMonitorPattern() {
       var gMethodArgumentList = new List<GArgument>() {
         new GArgument("inService","TypeOfHostedservice"),
         //new GArgument("mesg","string"),
@@ -220,7 +154,7 @@ namespace GenerateProgram {
       foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
 
       return new GMethod(
-        new GMethodDeclaration(gName: "SubscribeToConsoleReadLine", gType: "IDisposable",
+        new GMethodDeclaration(gName: "SubscribeToConsoleMonitorReadLine", gType: "IDisposable",
           gVisibility: "private", gAccessModifier: "", isConstructor: false,
           gArguments: gMethodArguments),
         gBody:
@@ -228,8 +162,135 @@ namespace GenerateProgram {
           "return Task.CompletedTask;"
         }),
         new GComment(new List<string>() {
-          "// Used to write a string to the consoleout service"
+          "// Subscribes to the ConsoleMonitor Todo: finish this comment"
         }));
+    }
+
+    public static GMethod MCreateWriteAsyncMethodForConsoleMonitorPattern(string gAccessModifier = "") {
+      var gMethodArgumentList = new List<GArgument>() {
+    new GArgument("mesg","string"),
+    new GArgument("ct","CancellationToken?")
+  };
+      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
+
+      return new GMethod(
+        new GMethodDeclaration(gName: "WriteAsync", gType: "Task",
+          gVisibility: "private", gAccessModifier: gAccessModifier + " async", isConstructor: false,
+          gArguments: gMethodArguments),
+        gBody: new GBody(gStatements:
+          new List<string>() {
+            "StateMachine.Fire(Trigger.WriteAsyncStarted);",
+        "ct?.ThrowIfCancellationRequested();",
+        "var task = await ConsoleMonitor.WriteAsync(mesg).ConfigureAwait(false);",
+        "if (!task.IsCompletedSuccessfully) {",
+        "if (task.IsCanceled) {",
+        "// Ignore if user cancelled the operation during a large file output (internal cancellation)",
+        "// re-throw if the cancellation request came from outside the ConsoleMonitor",
+        "/// ToDo: evaluate the linked, inner, and external tokens",
+        "throw new OperationCanceledException();",
+        "}",
+        "else if (task.IsFaulted) {",
+        "//ToDo: Go through the inner exception",
+        "//foreach (var e in t.Exception) {",
+        "//  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors",
+        "// ToDo figure out what to do if the output stream is closed",
+        "throw new Exception(\"ToDo: task.faulted from ioutService.WriteMessageAsync n WriteMessageSafelyAsync\");",
+        "//}",
+        "}",
+        "}",
+        "StateMachine.Fire(Trigger.WriteAsyncFinished);",
+        "return Task.CompletedTask;"
+          }),
+        new GComment(new List<string>() {
+      "// Used to write a string to the ConsoleMonitor service"
+        }));
+    }
+
+    static GMethod MCreateWriteMethodForConsoleMonitorPattern(string gAccessModifier = "") {
+      var gMethodArgumentList = new List<GArgument>() {
+        new GArgument("mesg","string"),
+        new GArgument("ct","CancellationToken?")
+      };
+      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
+
+      return new GMethod(
+        new GMethodDeclaration(gName: "Write", gType: "void",
+          gVisibility: "private", gAccessModifier: gAccessModifier, isConstructor: false,
+          gArguments: gMethodArguments),
+        gBody: new GBody(gStatements:
+          new List<string>() {
+            "StateMachine.Fire(Trigger.WriteStarted);",
+            "ct?.ThrowIfCancellationRequested();",
+            "ConsoleMonitor.Write(mesg);",
+            "StateMachine.Fire(Trigger.WriteFinished);",
+          }),
+        new GComment(new List<string>() {
+          "// Used to write a string to Write method of the ConsoleSink service"
+        }));
+    }
+
+    public static GMethodGroup MCreateStateTransitionMethodGroupForConsoleMonitorPattern() {
+
+      #region ConsoleMonitorPattern public methods
+      var gMethodGroup = new GMethodGroup(gName: "Methods for ConsoleMonitor Pattern StateMachine states");
+      var gMethod = new GMethod(new GMethodDeclaration(gName: "InitiateContactWithConsoleMonitor", gType: "void",
+          gVisibility: "private", gAccessModifier: "", isConstructor: false,
+          gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
+        new GBody(gStatements: new List<string>() {
+          "ConsoleMonitor.RequestContact();",
+          "StateMachine.Fire(Trigger.ConsoleMonitorRequestContactSent);"
+        }),
+        new GComment(new List<string>() {
+          "// ",
+        }));
+      gMethodGroup.GMethods[gMethod.Philote] = gMethod;
+
+
+      gMethod = new GMethod(new GMethodDeclaration(gName: "AcknowledgeConsoleMonitorContact", gType: "void",
+          gVisibility: "public", gAccessModifier: "", isConstructor: false,
+          gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
+        new GBody(gStatements: new List<string>() { "// Called By Console Monitor",
+          "// Just move to the next state", "StateMachine.Fire(Trigger.ConsoleMonitorRequestContactAcknowledgementReceived);" }),
+        new GComment(new List<string>() {
+          "// ",
+        }));
+
+      gMethod = new GMethod(new GMethodDeclaration(gName: "SubscribeToConsoleMonitor", gType: "void",
+          gVisibility: "public", gAccessModifier: "", isConstructor: false,
+          gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
+        new GBody(gStatements: new List<string>() { "// Called By ConsoleMonitor",
+          "// Subscribe to ConsoleMonitor's ISObservable",
+          "StateMachine.Fire(Trigger.SubscribeToConsoleMonitorReceived);" }),
+        new GComment(new List<string>() {
+          "// Called By ConsoleMonitor",
+        }));
+      #endregion
+      return gMethodGroup;
+    }
+
+    public static void MConsoleMonitorClientInterface(GAssemblyUnit gAssemblyUnit, GCompilationUnit gCompilationUnit,
+      GNamespace gNamespace, GInterface gInterface, string baseNamespace) {
+      #region Interface Assembly Unit
+      //#region UsingGroup
+      var gUsingGroup = MUsingGroupForConsoleMonitorPatternInInterfaces();
+      gCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
+
+      //#endregion
+      //#region PropertyGroup ForConsoleMonitorPattern
+      //MPropertyGroupForConsoleMonitorPattern(gClass);
+      //#endregion
+      //#region Injected PropertyGroup ForConsoleMonitorPattern
+      //MPropertyGroupAndConstructorDeclarationAndInitializationForInjectedConsoleMonitorService(gClass, gConstructor);
+      //#endregion
+      //#region MethodGroup ForConsoleMonitorPattern
+      //MMethodGroupForConsoleMonitorPattern(gClass);
+      //#endregion
+      #region ItemGroups for the ProjectUnit For ConsoleMonitorPattern
+      MReferenceItemGroupInInterfaceProjectUnitForConsoleMonitorService(gAssemblyUnit);
+      #endregion
+      #endregion
     }
 
 

@@ -4,9 +4,9 @@ using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
   public static partial class GMethodExtensions {
-    public static GMethod CreateStartAsyncMethod( bool usesConsoleMonitorConvention = false) {
+    public static GMethod CreateStartAsyncMethod( string gAccessModifier = "") {
       var gMethodDeclaration = new GMethodDeclaration(gName: "StartAsync", gType: "Task",
-        gVisibility: "public", gAccessModifier: "async", isConstructor: false,
+        gVisibility: "public", gAccessModifier: gAccessModifier, isConstructor: false,
         gArguments: new Dictionary<Philote<GArgument>, GArgument>());
       foreach (var kvp in new Dictionary<string, string>() { { "genericHostsCancellationToken", "CancellationToken " } }) {
         var gMethodArgument = new GArgument(kvp.Key, kvp.Value);
@@ -31,8 +31,6 @@ namespace GenerateProgram {
         "  HostApplicationLifetime.ApplicationStopped.Register(OnStopped);",
         "#endregion",
         "DataInitializationInStartAsyncReplacementPattern",
-        "// Fire Trigger for InitializationCompleteReceived",
-        "StateMachine.Fire(StateMachine,Trigger.InitializationCompleteReceived);",
         "//return Task.CompletedTask;"
       });
 
@@ -41,9 +39,9 @@ namespace GenerateProgram {
       return newgMethod;
     }
 
-    public static GMethod CreateStopAsyncMethod(bool usesConsoleMonitorConvention = false) {
+    public static GMethod CreateStopAsyncMethod(string gAccessModifier = "") {
       var gMethodDeclaration = new GMethodDeclaration(gName: "StopAsync", gType: "Task",
-        gVisibility: "public", gAccessModifier: "async", isConstructor: false,
+        gVisibility: "public", gAccessModifier: gAccessModifier,  isConstructor: false,
         gArguments: new Dictionary<Philote<GArgument>, GArgument>());
       foreach (var kvp in new Dictionary<string, string>() { { "genericHostsCancellationToken", "CancellationToken " } }) {
         var gMethodArgument = new GArgument(kvp.Key, kvp.Value);
@@ -71,9 +69,9 @@ namespace GenerateProgram {
       return new GMethod(gMethodDeclaration, gBody, gComment);
     }
 
-    public static GMethod CreateExecuteAsyncMethod(bool usesConsoleMonitorConvention = false) {
+    public static GMethod CreateExecuteAsyncMethod(string gAccessModifier = "") {
       var gMethodDeclaration = new GMethodDeclaration(gName: "ExecuteAsync", gType: "Task",
-        gVisibility: "protected", gAccessModifier: "override async", isConstructor: false,
+        gVisibility: "protected", gAccessModifier: gAccessModifier, isConstructor: false,
         gArguments: new Dictionary<Philote<GArgument>, GArgument>());
       foreach (var kvp in new Dictionary<string, string>() { { "genericHostsCancellationToken", "CancellationToken " } }) {
         var gMethodArgument = new GArgument(kvp.Key, kvp.Value);
@@ -92,24 +90,8 @@ namespace GenerateProgram {
         "//linkedCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer[\"{0} {1} linkedCancellationToken has signalled stopping.\"], \"ConsoleMonitorBackgroundService\", \"linkedCancellationToken\"));",
         "#endregion",
         "#region Instantiate this service's Data structure",
-        // Embedded object As Data 
-        "AssemblyUnitNameReplacementPatternBaseData = new AssemblyUnitNameReplacementPatternBaseData();",
-        "/*",
-        "#region configurationRoot for this HostedService",
-        "// Create the configurationBuilder for this HostedService. This creates an ordered chain of configuration providers. The first providers in the chain have the lowest priority, the last providers in the chain have a higher priority.",
-        "// The Environment has been configured by the GenericHost before this point is reached",
-        "// InitialStartupDirectory has been set by the GenericHost before this point is reached, and is where the GenericHost program or service was started",
-        "// LoadedFromDirectory has been configured by the GenericHost before this point is reached. It is the location where this assembly resides",
-        "// ToDo: Implement these two values into the GenericHost configurationRoot somehow, then remove from the constructor signature",
-        "var loadedFromDirectory = hostConfiguration.GetValue<string>(\"SomeStringConstantConfigrootKey\", \"./\"); //ToDo suport dynamic assembly loading form other Startup directories -  Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);",
-        "var initialStartupDirectory = hostConfiguration.GetValue<string>(\"SomeStringConstantConfigrootKey\", \"./\");",
-        "// Build the configurationRoot for this service",
-        "var configurationBuilder = ConfigurationExtensions.StandardConfigurationBuilder(loadedFromDirectory, initialStartupDirectory, ConsoleMonitorDefaultConfiguration.Production, ConsoleMonitorStringConstants.SettingsFileName, ConsoleMonitorStringConstants.SettingsFileNameSuffix, StringConstants.CustomEnvironmentVariablePrefix, LoggerFactory, stringLocalizerFactory, hostEnvironment, hostConfiguration, linkedCancellationToken);",
-        "ConfigurationRoot = configurationBuilder.Build();",
-        "#endregion",
-        // Embedded object as Data 
-        "AssemblyUnitNameReplacementPatternBaseData = new AssemblyUnitNameReplacementPatternBaseData();",
-        "*/",
+        "DataInitializationInStartAsyncReplacementPattern",
+
         "#endregion",
         "// Wait for the conjoined cancellation token (or individually if the hosted service does not define its own internal cts)",
         "// WaitHandle.WaitAny(new[] { linkedCancellationToken.WaitHandle });",
@@ -131,7 +113,7 @@ namespace GenerateProgram {
 
     public static GMethod CreateOnStartedMethod() {
       var gMethodDeclaration = new GMethodDeclaration(gName: "OnStarted", gType: "void",
-        gVisibility: "private", gAccessModifier: "", isConstructor: false,
+        gVisibility: "public", gAccessModifier: "virtual", isConstructor: false,
         gArguments: new Dictionary<Philote<GArgument>, GArgument>());
       return new GMethod(gMethodDeclaration,
         new GBody(gStatements:new List<string>() { "// Post-startup code goes here", }),
@@ -142,7 +124,7 @@ namespace GenerateProgram {
     public static GMethod CreateOnStoppingMethod() {
       return new GMethod(
         new GMethodDeclaration(gName: "OnStopping", gType: "void",
-          gVisibility: "private", gAccessModifier: "", isConstructor: false,
+          gVisibility: "public", gAccessModifier: "virtual", isConstructor: false,
           gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
         new GBody(gStatements: new List<string>() { "// On-stopping code goes here", }),
         new GComment(new List<string>() {
@@ -152,7 +134,7 @@ namespace GenerateProgram {
     public static GMethod CreateOnStoppedMethod() {
       return new GMethod(
         new GMethodDeclaration(gName: "OnStopped", gType: "void",
-          gVisibility: "private", gAccessModifier: "", isConstructor: false,
+          gVisibility: "public", gAccessModifier: "virtual", isConstructor: false,
           gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
         new GBody(gStatements: new List<string>() { "// On-stopped code goes here", }),
         new GComment(new List<string>() {
@@ -162,44 +144,6 @@ namespace GenerateProgram {
         }));
     }
 
-    public static GMethod CreateWriteAsyncMethod() {
-      var gMethodArgumentList = new List<GArgument>() {
-        new GArgument("mesg","string"),
-        new GArgument("ct","CancellationToken?")
-      };
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
-      foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
-
-      return new GMethod(
-        new GMethodDeclaration(gName: "WriteAsync", gType: "Task",
-          gVisibility: "private", gAccessModifier: "async", isConstructor: false,
-          gArguments: gMethodArguments),
-        gBody: new GBody(gStatements:
-        new List<string>() {
-          "ct?.ThrowIfCancellationRequested();",
-          "var task = await ConsoleMonitor.WriteMessageAsync(mesg).ConfigureAwait(false);",
-          "if (!task.IsCompletedSuccessfully) {",
-          "if (task.IsCanceled) {",
-          "// Ignore if user cancelled the operation during a large file output (internal cancellation)",
-          "// re-throw if the cancellation request came from outside the ConsoleMonitor",
-          "/// ToDo: evaluate the linked, inner, and external tokens",
-          "throw new OperationCanceledException();",
-          "}",
-          "else if (task.IsFaulted) {",
-          "//ToDo: Go through the inner exception",
-        "//foreach (var e in t.Exception) {",
-        "//  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors",
-        "// ToDo figure out what to do if the output stream is closed",
-        "throw new Exception(\"ToDo: task.faulted from ioutService.WriteMessageAsync n WriteMessageSafelyAsync\");",
-        "//}",
-        "}",
-        "}",
-        "return Task.CompletedTask;"
-        }),
-        new GComment(new List<string>() {
-          "// Used to write a string to the consoleout service"
-        }));
-    }
 
   }
 }

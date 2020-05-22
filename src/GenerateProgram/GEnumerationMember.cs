@@ -15,11 +15,13 @@ namespace GenerateProgram {
       GName = gName;
       GValue = gValue;
       GAttributes = gAttributes == default ? new Dictionary<Philote<GAttribute>, GAttribute>() : gAttributes;
-      GAttributeGroups = gAttributeGroups == default ? new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>() : gAttributeGroups;      GComment = gComment == default? new GComment() : gComment;
+      GAttributeGroups = gAttributeGroups == default ? new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>() : gAttributeGroups;
+      GComment = gComment == default? new GComment() : gComment;
       Philote = new Philote<GEnumerationMember>();
     }
 
     public string GName { get;  }
+    // ToDo: support for enumeration member types other than int
     public int? GValue { get; }
     public Dictionary<Philote<GAttribute>, GAttribute> GAttributes { get; }
     public Dictionary<Philote<GAttributeGroup>, GAttributeGroup> GAttributeGroups { get; }

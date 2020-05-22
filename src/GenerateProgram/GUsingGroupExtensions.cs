@@ -40,22 +40,5 @@ namespace GenerateProgram {
       }
       return gUsingGroup;
     }
-
-    public static GUsingGroup UsingsForMicrosoftGenericHost() {
-      var _gUsingGroup = new GUsingGroup("Usings For Microsoft GenericHost");
-      foreach (var gName in new List<string>() {
-        "Microsoft.Extensions.Localization","Microsoft.Extensions.Options","Microsoft.Extensions.Configuration","Microsoft.Extensions.Logging",
-        "Microsoft.Extensions.Logging.Abstractions", "Microsoft.Extensions.DependencyInjection", "Microsoft.Extensions.Hosting","Microsoft.Extensions.Hosting.Internal"}) {
-        var gUsing = new GUsing(gName);
-        _gUsingGroup.GUsings[gUsing.Philote] = gUsing;
-      }
-      return _gUsingGroup;
-    }
-    public static GUsingGroup UsingGroupForStatelessStateMachine() {
-      return new GUsingGroup("Usings For Stateless implementation of StateMachine").AddUsing(new List<GUsing>() {
-        new GUsing("Stateless"),
-      });
-    }
-   
   }
 }

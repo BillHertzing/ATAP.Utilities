@@ -8,11 +8,38 @@ using System.Threading.Tasks;
 using ATAP.Utilities.Philote;
 using GenerateProgram;
 using static GenerateProgram.GItemGroupInProjectUnitExtensions;
+using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GAssemblyUnitExtensions {
 
-
+    public static void GAssemblyGroupCommonFinalizer(GAssemblyGroup gAssemblyGroup) {
+      #region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor
+      var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
+      var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
+      #endregion
+      #region Lookup the Derived GAssemblyUnit, GCompilationUnit, GNamespace, and GClass
+      var titularClassName = $"{gAssemblyGroup.GName}";
+      var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
+      #endregion
+      #region Create Derived Constructors for all public Base Constructors
+      // Create a constructor in the Titular class for every public constructor in the Titular Base class
+      var baseConstructorsList = new List<GMethod>();
+      baseConstructorsList.AddRange(titularAssemblyUnitLookupPrimaryConstructorResults.gClasss.First().CombinedConstructors());
+      foreach (var bc in baseConstructorsList) {
+        var gConstructor = new GMethod(new GMethodDeclaration(titularClassName, isConstructor: true,
+          gVisibility: "public", gArguments: bc.GDeclaration.GArguments, gBase: bc.GDeclaration.GArguments.ToBaseString()));
+        titularAssemblyUnitLookupDerivedClassResults.gClasss.First().GMethods.Add(gConstructor.Philote,gConstructor);
+      }
+      #endregion
+      #region Constructor Groups
+      // ToDo handle method groups, will require a chance to CombinedConstructors
+      #endregion
+      #region Condense GUsings in Base GCompilationUnit
+      #endregion
+      #region Condense GItemGroups in Base GAssemblyUnit's GProjectUnit
+      #endregion
+    }
 
     //public static IEnumerable<KeyValuePair<Philote<GCompilationUnit>,GCompilationUnit>> AssemblyUnitStringCOnstantsAndLinkedBaseAndDerivedClassConstructor(String gNamespaceName,
     //  string gRelativePathBase = default,

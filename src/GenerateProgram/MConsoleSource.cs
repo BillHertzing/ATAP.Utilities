@@ -1,174 +1,120 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ATAP.Utilities.Philote;
+
 using static GenerateProgram.GAssemblyGroupExtensions;
-//using AutoMapper.Configuration;
-using static GenerateProgram.GAttributeGroupExtensions;
 using static GenerateProgram.GItemGroupInProjectUnitExtensions;
+using static GenerateProgram.Lookup;
+//using AutoMapper.Configuration;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
     public static GAssemblyGroup MConsoleSource(
-      string subDirectoryForGeneratedFiles = default, string baseNamespace = default
-      ) {
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
+      GPatternReplacement gPatternReplacement = default) {
+      GPatternReplacement _gPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
+
       var gAssemblyGroupName = "ConsoleSource";
-      var gAssemblyGroup = GAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespace);
-
-      #region StateMachine Configuration
-      // Get the namespace, and class, to which the gEnumerationGroup and GStaticVariable will be added
-      GNamespace gNamespace = default;
-      GClass gClass = default;
-      // ToDo: Look up the right class via the Database
-      foreach (var gAU in gAssemblyGroup.GAssemblyUnits) {
-        foreach (var gCU in gAU.Value.GCompilationUnits) {
-          foreach (var gNs in gCU.Value.GNamespaces) {
-            foreach (var gCl in gNs.Value.GClasss) {
-              if (gCl.Value.GName == "AssemblyUnitNameReplacementPatternBase") {
-                gNamespace = gNs.Value;
-                gClass = gCl.Value;
-                // ToDo: break out to the outermost loop
-              }
-            }
-          }
-        }
-      }
-      if (gClass == default) {
+      var gAssemblyGroup = GAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, _gPatternReplacement);
+      #region Declare and populate the initial rawDiGraph, which handles basic states for a GHHS
+      List<string> rawDiGraph = new List<string>() {
+        @"WaitingForInitialization ->BlockingOnConsoleInReadLineAsync [label = ""InitializationCompleteReceived""]",
+        @"ServiceFaulted ->ShutdownStarted [label = ""CancellationTokenActivated""]",
+        @"ServiceFaulted ->ShutdownStarted [label = ""StopAsyncActivated""]",
+        @"ShutdownStarted->ShutDownComplete [label = ""AllShutDownStepsCompleted""]",
+      };
+      #endregion
+      #region Select the Titular AssemblyUnit, TitularBase CompilationUnit, Namespace, Class, and Constructor
+      var titularBaseClassName = $"{gAssemblyGroupName}Base";
+      var lookupResultsForTitularBase = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>() {gAssemblyGroup},  gClassName:titularBaseClassName);
+      if (lookupResultsForTitularBase.gMethods.Count() == 0) {
         //ToDo: better exception handling
         throw new Exception("This should not happen");
       }
-      /*
-              * digraph finite_state_machine {
-              WaitingForInitialization ->InitiateContact [label = "InitializationCompleteReceived"];
-              InitiateContact -> WaitingForContact [label = "ConsoleMonitorNotifyConsoleSinkReadySent"];
-              WaitingForContact -> WaitingForContactTimeoutFailure [label = "ConsoleMonitorNotifyConsoleSinkReadySentTimeout"];
-              WaitingForContact -> Connected [label = "ConsoleMonitorNotifyConsoleSinkReadyAcknowledgementReceived"];
-              Connected -> Write [label = "WriteMethodCalled"];
-              Connected -> WriteASync [label = "WriteAsyncMethodCalled"]
-              Write -> Connected [label = "WriteMethodCompleted"];
-              Write -> ServiceFaulted [label="WriteMethodExceptionCaught"];
-              WriteAsync -> Connected [label = "WriteAsyncMethodCalled"];
-              WriteAsync -> ServiceFaulted [label="WriteAsyncMethodReturnedTaskFaulted"];
-              WaitingForInitialization ->ShuttingDown [label = "CancellationTokenActivated"];
-              InitiateContact ->ShuttingDown [label = "CancellationTokenActivated"];
-              WaitingForContact ->ShuttingDown [label = "CancellationTokenActivated"];
-              WaitingForContactTimeoutFailure ->ShutdownStarted [label = "CancellationTokenActivated"];
-              Connected ->ShutdownStarted [label = "CancellationTokenActivated"];
-              Write ->ShutdownStarted [label = "CancellationTokenActivated"];
-              WriteAsync ->ShutdownStarted [label = "CancellationTokenActivated"];
-              ServiceFaulted ->ShutdownStarted [label = "CancellationTokenActivated"];
-              ShutdownStarted->ShutDownComplete [label = "AllShutDownStepsCompleted"];
-              }
-             */
-      #region StateMachine EnumerationGroups
-      var gEnumerationGroup = new GEnumerationGroup(gName: "State and Trigger Enumerations for StateMachine");
-      #region State Enumeration
-      #region State Enumeration members
-      var gEnumerationMemberList = new List<GEnumerationMember>();
-      Dictionary<Philote<GAttributeGroup>, GAttributeGroup> gAttributeGroups =
-        new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
-      GAttributeGroup gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: "Power-On State - waiting until minimal initialization condition has been met",visualDisplay: "Waiting For Initialization",visualSortOrder: 1);
-      gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
-      gEnumerationMemberList.Add(
-        new GEnumerationMember(gName: "WaitingForInitialization", gValue: 1,
-          gAttributeGroups: gAttributeGroups
-        ));
-
-      gAttributeGroups = new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
-      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: "Signal to the Console Monitor that we are a valid ConsoleSource",visualDisplay: "Initiate Contact",visualSortOrder: 2);
-      gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
-      gEnumerationMemberList.Add(new GEnumerationMember(gName: "InitiateContact", gValue: 2,
-        gAttributeGroups: gAttributeGroups
-      ));
-
-      var gEnumerationMembers = new Dictionary<Philote<GEnumerationMember>, GEnumerationMember>();
-      foreach (var o in gEnumerationMemberList) {
-        gEnumerationMembers[o.Philote] = o;
-      }
       #endregion
-      var gEnumeration =
-        new GEnumeration(gName: "State", gVisibility: "public", gInheritance: "", gEnumerationMembers: gEnumerationMembers);
-      gEnumerationGroup.GEnumerations[gEnumeration.Philote] = gEnumeration;
-      #endregion
-      #region Trigger Enumeration
-      #region Trigger Enumeration members
-      gEnumerationMemberList = new List<GEnumerationMember>();
-      gAttributeGroups = new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
-      gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: "The minimal initialization conditions have been met",visualDisplay: "Initialization Complete Received",visualSortOrder: 2);
-      gAttributeGroups[gAttributeGroup.Philote] = gAttributeGroup;
-      gEnumerationMemberList.Add(
-        new GEnumerationMember(gName: "InitializationCompleteReceived", gValue: 1,
-          gAttributeGroups: gAttributeGroups
-        ));
-
-      gEnumerationMembers = new Dictionary<Philote<GEnumerationMember>, GEnumerationMember>();
-      foreach (var o in gEnumerationMemberList) {
-        gEnumerationMembers[o.Philote] = o;
-      }
-      #endregion
-      gEnumeration =
-       new GEnumeration(gName: "Trigger", gVisibility: "public", gInheritance: "", gEnumerationMembers: gEnumerationMembers);
-      gEnumerationGroup.GEnumerations[gEnumeration.Philote] = gEnumeration;
-      #endregion
-      gNamespace.AddEnumerationGroup(gEnumerationGroup);
-
-      #endregion
-      #region StateMachine Transitions
-      // Add a StaticVariable to the class
-      var gStaticVariable = new GStaticVariable("stateConfigurations", gType: "List<StateConfiguration>", gBody: new GBody(new List<string>(){
-        "new List<StateConfiguration>(){",
-       "new StateConfiguration(State.WaitingForInitialization,Trigger.InitializationCompleteReceived,State.InitiateContact)",
-        "}"
-      }));
-      gClass.GStaticVariables.Add(gStaticVariable.Philote, gStaticVariable);
-
-      #endregion
+      #region StateMachine Configuration for this specific service
+      rawDiGraph.AddRange(new List<string>(){
+         @"BlockingOnConsoleInReadLineAsync -> ServiceFaulted [label = ""ExceptionCaught""]",
+         @"BlockingOnConsoleInReadLineAsync -> ShutdownStarted [label = ""CancellationTokenActivated""]",
+         });
+      MStateMachineDetails(lookupResultsForTitularBase, rawDiGraph);
       #endregion
 
-      #region AssemblyGroup referenced Packages and Projects
-      GAssemblyUnit gAssemblyUnit = default;
-      // References used by the Base Assembly
-      // ToDo: Look up the right AssemblyUnit via the Database
-      foreach (var gAU in gAssemblyGroup.GAssemblyUnits) {
-        foreach (var gCU in gAU.Value.GCompilationUnits) {
-          if (gCU.Value.GName == "AssemblyUnitNameReplacementPatternBase") {
-            gAssemblyUnit = gAU.Value;
-            // ToDo: break out to the outermost loop
-          }
-        }
-      }
-      if (gAssemblyUnit == default) {
-        //ToDo: better exception handling
-        throw new Exception("This should not happen");
-      }
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
-        ProjectReferenceItemGroupInProjectUnitForReactiveUtilities(),
+      #region Add the UsingGroup for this service
+      var gUsingGroup = new GUsingGroup($"Usings specific to {lookupResultsForTitularBase.gCompilationUnits.First().GName}");
+      foreach (var gName in new List<string>() {
+        "System.Reactive.Linq",
+        "System.Reactive.Concurrency",
       }) {
-        gAssemblyGroup.GAssemblyUnits[gAssemblyUnit.Philote].GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote,o);
+        var gUsing = new GUsing(gName);
+        gUsingGroup.GUsings[gUsing.Philote] = gUsing;
       }
+      lookupResultsForTitularBase.gCompilationUnits.First().GUsingGroups[gUsingGroup.Philote] = gUsingGroup;
+      #endregion
+      #region Add the MethodGroup for this service
+      var gMethodGroup =
+        new GMethodGroup(gName: $"MethodGroup specific to {lookupResultsForTitularBase.gCompilationUnits.First().GName}");
+      GMethod gMethod = CreateConsoleReadLineAsyncAsObservableMethod();
+      gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
+      lookupResultsForTitularBase.gClasss.First().AddMethodGroup(gMethodGroup);
+      #endregion
 
-      // References used by the Interface Assembly
-      // ToDo: Look up the right AssemblyUnit via the Database
-      foreach (var gAU in gAssemblyGroup.GAssemblyUnits) {
-        foreach (var gCU in gAU.Value.GCompilationUnits) {
-          if (gCU.Value.GName == "AssemblyUnitNameReplacementPatternBase.Interfaces") {
-            gAssemblyUnit = gAU.Value;
-            // ToDo: break out to the outermost loop
-          }
-        }
-      }
-      if (gAssemblyUnit == default) {
-        //ToDo: better exception handling
-        throw new Exception("This should not happen");
-      }
+      #region References to be added to the Titular ProjectUnit
+      #region References common to both Titular and Base
       foreach (var o in new List<GItemGroupInProjectUnit>() {
-          ProjectReferenceItemGroupInProjectUnitForReactiveUtilities(),
+          ReactiveUtilitiesReferencesItemGroupInProjectUnit(),
         }
       ) {
-        gAssemblyGroup.GAssemblyUnits[gAssemblyUnit.Philote].GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote,o);
+        lookupResultsForTitularBase.gAssemblyUnits.First().GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote, o);
       }
       #endregion
+      #endregion
 
+      /*******************************************************************************/
+      #region Populate the Interface Assembly
+      #region Populate the Interfaces
+      GAssemblyGroupPopulateInterfaces(gAssemblyGroup);
+      #endregion
+      #region Add Package references unique to this service used by the Interface Assembly
+      var titularInterfaceAssemblyName = $"{gAssemblyGroup.GName}.Interfaces";
+      var lookupResultsForProjectAssembly = LookupProjectUnits(new List<GAssemblyGroup>() {gAssemblyGroup}, gAssemblyUnitName: titularInterfaceAssemblyName);
+      foreach (var o in new List<GItemGroupInProjectUnit>() {
+          ReactiveUtilitiesReferencesItemGroupInProjectUnit(),
+        }
+      ) {
+        lookupResultsForProjectAssembly.gProjectUnits.First().GItemGroupInProjectUnits.Add(o.Philote, o);
+      }
+      #endregion
+      #endregion
       return gAssemblyGroup;
+      /*******************************************************************************/
+      /*******************************************************************************/
+
+      static GMethod CreateConsoleReadLineAsyncAsObservableMethod(string gAccessModifier = "") {
+        var gMethodArgumentList = new List<GArgument>() {
+        // None
+        };
+        var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+        foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
+        return new GMethod(
+        new GMethodDeclaration(gName: "ConsoleReadLineAsyncAsObservable", gType: "IObservable<string>",
+          gVisibility: "public", gAccessModifier: gAccessModifier, isConstructor: false,
+        gArguments: gMethodArguments),
+        gBody: new GBody(gStatements:
+        new List<string>() {
+      @"     return",
+      @"         Observable",
+      @"             .FromAsync(() => Console.In.ReadLineAsync()) // This is actually a BLOCKING operation, see ?? for workaround",
+      @"             .Repeat()",
+      @"             .Publish()",
+      @"             .RefCount()",
+      @"             .SubscribeOn(Scheduler.Default);",
+        }),
+        new GComment(new List<string>() {
+      "// Convert the Console.In.ReadLineAsync into an IObservable in this service",
+        }));
+      }
     }
   }
 }

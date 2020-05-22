@@ -7,13 +7,14 @@ namespace GenerateProgram {
     public static GAttributeGroup CreateLocalizableEnumerationAttributeGroup(string description, string visualDisplay, int  visualSortOrder) {
       GAttributeGroup gAttributeGroup =
         new GAttributeGroup(gName: "LocalizableEnumerationAttributeGroup");
-      GAttribute gAttribute = new GAttribute(  "Description",description);
-      gAttributeGroup.GAttributes[gAttribute.Philote] = gAttribute;
-      gAttribute = new GAttribute(  "VisualDisplay", visualDisplay);
-      gAttributeGroup.GAttributes[gAttribute.Philote] = gAttribute;
-      gAttribute = new GAttribute(  "VisualSortOrder",visualSortOrder.ToString());
-      gAttributeGroup.GAttributes[gAttribute.Philote] = gAttribute;
+      //GAttribute gAttribute = new GAttribute(  "Description",description);
+      //gAttributeGroup.GAttributes[gAttribute.Philote] = gAttribute;
+      //gAttribute = new GAttribute(  "VisualDisplay", visualDisplay);
+      //gAttributeGroup.GAttributes[gAttribute.Philote] = gAttribute;
+      //gAttribute = new GAttribute(  "VisualSortOrder",visualSortOrder.ToString());
+      //gAttributeGroup.GAttributes[gAttribute.Philote] = gAttribute;
       return gAttributeGroup;
     }
+
   }
 }

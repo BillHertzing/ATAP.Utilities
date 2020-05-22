@@ -46,15 +46,17 @@ namespace GenerateProgram {
         r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
         r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
       }
-      if (gClass.GConstructors.Any()) {
-        r1Top.Sb.Append($"{r1Top.Indent}#region Constructors{r1Top.Eol}");
-        r1Top.Indent.Append(r1Top.IndentDelta);
-        foreach (var kvp in gClass.GConstructors) {
-          r1Top.RMethod(kvp.Value);
-        }
-        r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
-        r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
-      }
+      //var constructorsList = new List<GMethod>();
+      //constructorsList.AddRange(gClass.CombinedConstructors());
+      //if (constructorsList.Any()) {
+      //  r1Top.Sb.Append($"{r1Top.Indent}#region Constructors{r1Top.Eol}");
+      //  r1Top.Indent.Append(r1Top.IndentDelta);
+      //  foreach (var o in constructorsList) {
+      //    r1Top.RMethod(o);
+      //  }
+      //  r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
+      //  r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
+      //}
       if (gClass.GMethodGroups.Any()) {
         r1Top.Sb.Append($"{r1Top.Indent}#region MethodGroups{r1Top.Eol}");
         r1Top.Indent.Append(r1Top.IndentDelta);

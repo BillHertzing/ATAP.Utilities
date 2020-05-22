@@ -37,6 +37,12 @@ namespace GenerateProgram {
       }
       return gInterface;
     }
+    public static GInterface AddPropertyGroup(this GInterface gInterface, Dictionary<Philote<GPropertyGroup>,GPropertyGroup> gPropertyGroups) {
+      foreach (var kvp in gPropertyGroups) {
+        gInterface.GPropertyGroups.Add(kvp.Key,kvp.Value);
+      }
+      return gInterface;
+    }
     public static GInterface AddMethod(this GInterface gInterface, GMethod gMethod) {
       gInterface.GMethods[gMethod.Philote] = gMethod;
       return gInterface;
@@ -47,6 +53,12 @@ namespace GenerateProgram {
       }
       return gInterface;
     }
+    public static GInterface AddMethod(this GInterface gInterface, Dictionary<Philote<GMethod>,GMethod> gMethods) {
+      foreach (var kvp in gMethods) {
+        gInterface.GMethods.Add(kvp.Key,kvp.Value);
+      }
+      return gInterface;
+    }
     public static GInterface AddMethodGroup(this GInterface gInterface, GMethodGroup gMethodGroup) {
       gInterface.GMethodGroups[gMethodGroup.Philote] = gMethodGroup;
       return gInterface;
@@ -54,6 +66,12 @@ namespace GenerateProgram {
     public static GInterface AddMethodGroup(this GInterface gInterface, IEnumerable<GMethodGroup> gMethodGroups) {
       foreach (var o in gMethodGroups) {
         gInterface.AddMethodGroup(o);
+      }
+      return gInterface;
+    }
+    public static GInterface AddMethodGroup(this GInterface gInterface, Dictionary<Philote<GMethodGroup>,GMethodGroup> gMethodGroups) {
+      foreach (var kvp in gMethodGroups) {
+        gInterface.GMethodGroups.Add(kvp.Key,kvp.Value);
       }
       return gInterface;
     }

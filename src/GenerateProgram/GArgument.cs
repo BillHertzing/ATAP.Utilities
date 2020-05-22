@@ -21,6 +21,7 @@ namespace GenerateProgram {
     public bool IsOut { get; }
     public Philote<GArgument> Philote { get; }
 
+
   }
 }
 

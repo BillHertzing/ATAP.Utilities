@@ -15,7 +15,7 @@ namespace GenerateProgram
       if (gMethodDeclaration.IsConstructor!=null && !(bool)gMethodDeclaration.IsConstructor) {
         sb.Append($"{gMethodDeclaration.GType} ");
       }
-      sb.Append($"{gMethodDeclaration.GName}({eol}");
+      sb.Append($"{gMethodDeclaration.GName}(");
       return sb;
     }
     public static IR1Top RMethodDeclaration(this IR1Top r1Top, GMethodDeclaration gMethodDeclaration)
@@ -23,13 +23,20 @@ namespace GenerateProgram
       r1Top.Sb.RenderMethodDeclarationPreambleStringBuilder(gMethodDeclaration, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       r1Top.RArgument(gArguments: gMethodDeclaration.GArguments);
       if (gMethodDeclaration.GBase != "") {
-        r1Top.Sb.Append($") : base({gMethodDeclaration.GBase}){{{r1Top.Eol}");
+        r1Top.Sb.Append($") : base({gMethodDeclaration.GBase})");
       } else if (gMethodDeclaration.GThis != "") {
-        r1Top.Sb.Append($") : this({gMethodDeclaration.GThis}{{{r1Top.Eol}");
+        r1Top.Sb.Append($") : this({gMethodDeclaration.GThis})");
       }
       else {
-        r1Top.Sb.Append($") {{{r1Top.Eol}");
+        r1Top.Sb.Append($")");
       }
+      if (!gMethodDeclaration.IsForInterface) {
+        r1Top.Sb.Append($" {{{r1Top.Eol}");
+      }
+      else {
+        r1Top.Sb.Append($";{r1Top.Eol}");
+      }
+
       return r1Top;
     }
   }

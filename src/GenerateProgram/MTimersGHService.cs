@@ -10,16 +10,16 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MConsoleMonitor(
+    public static GAssemblyGroup MTimersGHService(
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
 
-      var gAssemblyGroupName = "ConsoleMonitor";
+      var gAssemblyGroupName = "TimersGHService";
       var gAssemblyGroup = GAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, _gPatternReplacement);
       #region Declare and populate the initial rawDiGraph, which handles basic states for a GHHS
       List<string> rawDiGraph = new List<string>() {
-        @"WaitingForInitialization ->BlockingOnConsoleInReadLineAsync [label = ""InitializationCompleteReceived""]",
+        @"WaitingForInitialization -> BlockingOnConsoleInReadLineAsync [label = ""InitializationCompleteReceived""]",
         @"ServiceFaulted ->ShutdownStarted [label = ""CancellationTokenActivated""]",
         @"ServiceFaulted ->ShutdownStarted [label = ""StopAsyncActivated""]",
         @"ShutdownStarted->ShutDownComplete [label = ""AllShutDownStepsCompleted""]",
@@ -35,14 +35,13 @@ namespace GenerateProgram {
       #endregion
       #region StateMachine Configuration for this specific service
       rawDiGraph.AddRange(new List<string>(){
-         @"WaitingForRequestToWriteSomething -> WaitingForWriteToComplete [label = ""WriteStarted""]",
-         @"WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""WriteFinished""]",
-         @"WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""CancellationTokenActivated""]",
-         @"WaitingForRequestToWriteSomething -> ServiceFaulted [label = ""ExceptionCaught""]",
-         @"WaitingForWriteToComplete ->ServiceFaulted [label = ""ExceptionCaught""]",
-         @"WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""CancellationTokenActivated""]",
-         @"WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""StopAsyncActivated""]",
-         @"WaitingForWriteToComplete ->ShutdownStarted [label = ""StopAsyncActivated""]",
+         @"WaitingForARequestForATimer -> RespondingToARequestForATimer [label = ""TimerRequested""]",
+         @"RespondingToARequestForATimer -> WaitingForARequestForATimer [label = ""TimerAllocatedAndSent""]",
+         @"RespondingToARequestForATimer -> WaitingForARequestForATimer [label = ""CancellationTokenActivated""]",
+         @"WaitingForARequestForATimer -> ServiceFaulted [label = ""ExceptionCaught""]",
+         @"RespondingToARequestForATimer ->ServiceFaulted [label = ""ExceptionCaught""]",
+         @"WaitingForARequestForATimer ->ShutdownStarted [label = ""CancellationTokenActivated""]",
+         @"RespondingToARequestForATimer ->ShutdownStarted [label = ""StopAsyncActivated""]",
          });
       MStateMachineDetails(lookupResultsForTitularBase, rawDiGraph);
       #endregion
@@ -50,7 +49,7 @@ namespace GenerateProgram {
       #region Add the UsingGroup for this service
       var gUsingGroup = new GUsingGroup($"Usings specific to {lookupResultsForTitularBase.gCompilationUnits.First().GName}");
       foreach (var gName in new List<string>() {
-        "System.Reactive.Linq",
+        // none
       }) {
         var gUsing = new GUsing(gName);
         gUsingGroup.GUsings[gUsing.Philote] = gUsing;
@@ -59,13 +58,11 @@ namespace GenerateProgram {
       #endregion
       #region Add the MethodGroup for this service
       var gMethodGroup =
-        new GMethodGroup(gName: $"MethodGroup specific to {lookupResultsForTitularBase.gCompilationUnits.First().GName}");
+      new GMethodGroup(gName: $"MethodGroup specific to {lookupResultsForTitularBase.gCompilationUnits.First().GName}");
       GMethod gMethod;
-      gMethod = CreateConsoleReadLineAsyncAsObservableMethod();
-      gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
-      gMethod = MCreateWriteMethodInConsoleMonitor();
-      gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
-      gMethod = MCreateWriteAsyncMethodInConsoleMonitor();
+      gMethod = MCreateRequestATimer();
+      //gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
+      //gMethod = MCreateWriteAsyncMethodInConsoleSink();
       gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
       lookupResultsForTitularBase.gClasss.First().AddMethodGroup(gMethodGroup);
       #endregion
@@ -73,20 +70,8 @@ namespace GenerateProgram {
       #region References to be added to the Titular ProjectUnit
       #region References common to both Titular and Base
       foreach (var o in new List<GItemGroupInProjectUnit>() {
-        ReactiveUtilitiesReferencesItemGroupInProjectUnit(),
+          //None
         }
-      ) {
-        lookupResultsForTitularBase.gAssemblyUnits.First().GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote, o);
-      }
-      #endregion
-      #region References unique to Base
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
-        new GItemGroupInProjectUnit("References specific to {lookupResultsForTitularBase.gCompilationUnits.First().GName}",
-          "References to the ConsoleSource and ConsoleSink", new GBody(new List<string>() {
-            "<PackageReference Include=\"ConsoleSource\" />",
-            "<PackageReference Include=\"ConsoleSink\" />",
-          })
-          )}
       ) {
         lookupResultsForTitularBase.gAssemblyUnits.First().GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote, o);
       }
@@ -94,6 +79,7 @@ namespace GenerateProgram {
       #endregion
 
       /*******************************************************************************/
+      
       #region Populate the Interface Assembly
       #region Populate the Interfaces
       GAssemblyGroupPopulateInterfaces(gAssemblyGroup);
@@ -102,8 +88,8 @@ namespace GenerateProgram {
       var titularInterfaceAssemblyName = $"{gAssemblyGroup.GName}.Interfaces";
       var lookupResultsForProjectAssembly = LookupProjectUnits(new List<GAssemblyGroup>() {gAssemblyGroup}, gAssemblyUnitName: titularInterfaceAssemblyName);
       foreach (var o in new List<GItemGroupInProjectUnit>() {
-          ReactiveUtilitiesReferencesItemGroupInProjectUnit(),
-        }
+        // None
+      }
       ) {
         lookupResultsForProjectAssembly.gProjectUnits.First().GItemGroupInProjectUnits.Add(o.Philote, o);
       }
@@ -111,32 +97,37 @@ namespace GenerateProgram {
       #endregion
       return gAssemblyGroup;
       /*******************************************************************************/
+      #region Finalize the GHHS
+      GAssemblyGroupGHHSFinalizer(gAssemblyGroup);
+      #endregion
       /*******************************************************************************/
 
-      static GMethod MCreateWriteAsyncMethodInConsoleMonitor(string gAccessModifier = "") {
+      static GMethod MCreateRequestATimer(string gAccessModifier = "virtual") {
         var gMethodArgumentList = new List<GArgument>() {
-          new GArgument("mesg","string"),
+          new GArgument("requestorPhilote","object"),
+          new GArgument("callback","object"),
+          new GArgument("timerSignil","object"),
           new GArgument("ct","CancellationToken?")
         };
         var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
         foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
         return new GMethod(
-        new GMethodDeclaration(gName: "WriteAsync", gType: "Task",
-          gVisibility: "public", gAccessModifier: gAccessModifier + " async", isConstructor: false,
+        new GMethodDeclaration(gName: "RequestATimer", gType: "ServiceTimer",
+          gVisibility: "public", gAccessModifier: gAccessModifier, isConstructor: false,
         gArguments: gMethodArguments),
         gBody: new GBody(gStatements:
         new List<string>() {
-      "StateMachine.Fire(Trigger.WriteAsyncStarted);",
+      "StateMachine.Fire(Trigger.TimerRequestStarted);",
       "ct?.ThrowIfCancellationRequested();",
-      "await ConsoleSink.WriteAsync(mesg);",
-      "StateMachine.Fire(Trigger.WriteAsyncFinished);",
+      "await Console.WriteAsync(mesg);",
+      "StateMachine.Fire(Trigger.TimerRequestFinished);",
       "return Task.CompletedTask;"
         }),
         new GComment(new List<string>() {
-      "// Used to asynchronously write a string to the WriteAsync method of the ConsoleSink service"
+      "// Used to request a managed ServiceTimer"
         }));
       }
-      static GMethod MCreateWriteMethodInConsoleMonitor(string gAccessModifier = "") {
+      static GMethod MCreateWriteMethodInConsoleSink(string gAccessModifier = "") {
         var gMethodArgumentList = new List<GArgument>() {
         new GArgument("mesg","string"),
         new GArgument("ct","CancellationToken?")
@@ -152,36 +143,12 @@ namespace GenerateProgram {
             new List<string>() {
             "StateMachine.Fire(Trigger.WriteStarted);",
             "ct?.ThrowIfCancellationRequested();",
-            "ConsoleSink.Write(mesg);",
+            "Console.Write(mesg);",
             "StateMachine.Fire(Trigger.WriteFinished);",
             }),
           new GComment(new List<string>() {
-          "// Used to write a string to Write method of the ConsoleSink service"
+          "// Used to write a string to the Console instance"
           }));
-      }
-      static GMethod CreateConsoleReadLineAsyncAsObservableMethod(string gAccessModifier = "") {
-        var gMethodArgumentList = new List<GArgument>() {
-        // None
-        };
-        var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
-        foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
-        return new GMethod(
-        new GMethodDeclaration(gName: "ConsoleReadLineAsyncAsObservable", gType: "IObservable<string>",
-          gVisibility: "public", gAccessModifier: gAccessModifier, isConstructor: false,
-        gArguments: gMethodArguments),
-        gBody: new GBody(gStatements:
-        new List<string>() {
-      @"     return",
-      @"         Observable",
-      @"             .FromAsync(() => ConsoleSource.ReadLineAsync()) // This is actually a BLOCKING operation, see ?? for workaround",
-      @"             .Repeat()",
-      @"             .Publish()",
-      @"             .RefCount()",
-      @"             .SubscribeOn(Scheduler.Default);",
-        }),
-        new GComment(new List<string>() {
-      "// Convert the ConsoleSource.ConsoleReadLineAsyncAsObservable into an IObservable in this service",
-        }));
       }
     }
   }

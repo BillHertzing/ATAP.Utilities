@@ -26,16 +26,16 @@ namespace GenerateProgram {
 
       // ToDo: Get the Artifacts directory from the host
       string artifactsPath = "D:/Temp/GenerateProgramArtifacts/GenericHostHostedServices/";
-      string baseNamespace = "ATAPConsole02";
+      string baseNamespaceName = "ATAP.Utilities.GHS.Services";
 
       var nonReleasedPackageNames = new List<string>() {
-        "Timers",
-        "FilesystemWatchers",
-        "ConsoleSource",
-        "ConsoleSink",
-        "ConsoleMonitor",
-        "FileSystemToObjectGraph",
-        "TopLevelBackgroundService",
+        "TimerGHS",
+        "FileSystemWatcherGHS",
+        "ConsoleSourceGHS",
+        "ConsoleSinkGHS",
+        "ConsoleMonitorGHS",
+        "FileSystemToObjectGraphGHS",
+        "TopLevelBackgroundGHS",
       };
       var interfaces = ".Interfaces";
       var fromPatternP = "<PackageReference Include=\"";
@@ -69,70 +69,43 @@ namespace GenerateProgram {
       var session = new System.Collections.Generic.Dictionary<string, object>();
       R1Top r1Top;
       W1Top w1Top;
-      GAssemblyGroup gAssemblyGroup = GAssemblyGroupGHHSConstructor("Timers", subDirectoryForGeneratedFiles, baseNamespace, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
-      #region Declare and populate the initial rawDiGraph, which handles basic states for a GHHS
-      List<string> rawDiGraph = new List<string>() {
-        @"WaitingForInitialization ->BlockingOnConsoleInReadLineAsync [label = ""InitializationCompleteReceived""]",
-        @"ServiceFaulted ->ShutdownStarted [label = ""CancellationTokenActivated""]",
-        @"ServiceFaulted ->ShutdownStarted [label = ""StopAsyncActivated""]",
-        @"ShutdownStarted->ShutDownComplete [label = ""AllShutDownStepsCompleted""]",
-      };
-      #endregion
-      #region Select the Titular AssemblyUnit, TitularBase CompilationUnit, Namespace, Class, and Constructor
-      var titularBaseClassName = $"{"Timers"}Base";
-      var lookupResultsForTitularBase = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>() { gAssemblyGroup }, gClassName: titularBaseClassName);
-      if (lookupResultsForTitularBase.gMethods.Count() == 0) {
-        //ToDo: better exception handling
-        throw new Exception("This should not happen");
-      }
-      #endregion
-      #region StateMachine Configuration for this specific service
-      rawDiGraph.AddRange(new List<string>(){
-        @"BlockingOnConsoleInReadLineAsync -> ServiceFaulted [label = ""ExceptionCaught""]",
-        @"BlockingOnConsoleInReadLineAsync -> ShutdownStarted [label = ""CancellationTokenActivated""]",
-      });
-      MStateMachineDetails(lookupResultsForTitularBase, rawDiGraph);
-      #endregion
-      GAssemblyGroupCommonFinalizer(gAssemblyGroup);
-      GAssemblyGroupPopulateInterfaces(gAssemblyGroup);
+      var gAssemblyGroup = MTimerGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gNonReleasedPackagesPatternReplacement);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
-      gAssemblyGroup = GAssemblyGroupGHHSConstructor("FilesystemWatchers", subDirectoryForGeneratedFiles, baseNamespace, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
-      GAssemblyGroupPopulateInterfaces(gAssemblyGroup);
+      gAssemblyGroup = MFileSystemWatcherGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gNonReleasedPackagesPatternReplacement);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
-
-      gAssemblyGroup = MConsoleSource(subDirectoryForGeneratedFiles, baseNamespace, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
+      gAssemblyGroup = MConsoleSourceGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
-      gAssemblyGroup = MConsoleSink(subDirectoryForGeneratedFiles, baseNamespace, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
+      gAssemblyGroup = MConsoleSinkGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
-      gAssemblyGroup = MConsoleMonitor(subDirectoryForGeneratedFiles, baseNamespace, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
+      gAssemblyGroup = MConsoleMonitorGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
-      gAssemblyGroup = MTopLevelBackgroundService(subDirectoryForGeneratedFiles, baseNamespace, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
+      gAssemblyGroup = MTopLevelBackgroundGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);
       r1Top.Render(w1Top);
       session.Clear();
-      gAssemblyGroup = MFileSystemToObjectGraph(subDirectoryForGeneratedFiles, baseNamespace, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
+      gAssemblyGroup = MFileSystemToObjectGraphGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
       session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: artifactsPath, force: true);

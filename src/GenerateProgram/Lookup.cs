@@ -20,7 +20,6 @@ namespace GenerateProgram {
         string gNamespaceName = "",
         string gClassName = ""
       ) {
-
       List<GAssemblyUnit> gAssemblyUnits = new List<GAssemblyUnit>();
       List<GCompilationUnit> gCompilationUnits = new List<GCompilationUnit>();
       List<GNamespace> gNamespaces = new List<GNamespace>();
@@ -36,14 +35,14 @@ namespace GenerateProgram {
                     if (String.IsNullOrWhiteSpace(gNamespaceName) || gNs.Value.GName == gNamespaceName) {
                       foreach (var gCl in gNs.Value.GClasss) {
                         if (String.IsNullOrWhiteSpace(gClassName) || gCl.Value.GName == gClassName) {
-                            foreach (var gMe in gCl.Value.CombinedMethods()) {
-                              if (gMe.GDeclaration.IsConstructor) {
-                                gAssemblyUnits.Add(gAU.Value);
-                                gCompilationUnits.Add(gCU.Value);
-                                gNamespaces.Add(gNs.Value);
-                                gClasss.Add(gCl.Value);
-                                gMethods.Add(gMe);
-                              }
+                          foreach (var gMe in gCl.Value.CombinedMethods()) {
+                            if (gMe.GDeclaration.IsConstructor) {
+                              gAssemblyUnits.Add(gAU.Value);
+                              gCompilationUnits.Add(gCU.Value);
+                              gNamespaces.Add(gNs.Value);
+                              gClasss.Add(gCl.Value);
+                              gMethods.Add(gMe);
+                            }
                           }
                         }
                       }
@@ -57,13 +56,11 @@ namespace GenerateProgram {
       }
       return (gAssemblyUnits, gCompilationUnits, gNamespaces, gClasss, gMethods);
     }
-
     public static (
       IEnumerable<GAssemblyUnit> gAssemblyUnits,
       IEnumerable<GCompilationUnit> gCompilationUnits,
       IEnumerable<GNamespace> gNamespacess,
-      IEnumerable<GClass> gClasss,
-      IEnumerable<GMethod> gMethods)
+      IEnumerable<GClass> gClasss)
       LookupDerivedClass(
         IEnumerable<GAssemblyGroup> gAssemblyGroups,
         string gAssemblyGroupName = "",
@@ -72,7 +69,6 @@ namespace GenerateProgram {
         string gNamespaceName = "",
         string gClassName = ""
       ) {
-
       List<GAssemblyUnit> gAssemblyUnits = new List<GAssemblyUnit>();
       List<GCompilationUnit> gCompilationUnits = new List<GCompilationUnit>();
       List<GNamespace> gNamespaces = new List<GNamespace>();
@@ -88,15 +84,10 @@ namespace GenerateProgram {
                     if (String.IsNullOrWhiteSpace(gNamespaceName) || gNs.Value.GName == gNamespaceName) {
                       foreach (var gCl in gNs.Value.GClasss) {
                         if (String.IsNullOrWhiteSpace(gClassName) || gCl.Value.GName == gClassName) {
-                            foreach (var gMe in gCl.Value.CombinedMethods()) {
-                              if (gMe.GDeclaration.IsConstructor) {
-                                gAssemblyUnits.Add(gAU.Value);
-                                gCompilationUnits.Add(gCU.Value);
-                                gNamespaces.Add(gNs.Value);
-                                gClasss.Add(gCl.Value);
-                                gMethods.Add(gMe);
-                              }
-                          }
+                          gAssemblyUnits.Add(gAU.Value);
+                          gCompilationUnits.Add(gCU.Value);
+                          gNamespaces.Add(gNs.Value);
+                          gClasss.Add(gCl.Value);
                         }
                       }
                     }
@@ -107,9 +98,8 @@ namespace GenerateProgram {
           }
         }
       }
-      return (gAssemblyUnits, gCompilationUnits, gNamespaces, gClasss, gMethods);
+      return (gAssemblyUnits, gCompilationUnits, gNamespaces, gClasss);
     }
-
     public static (
       IEnumerable<GAssemblyUnit> gAssemblyUnits,
       IEnumerable<GCompilationUnit> gCompilationUnits,
@@ -155,15 +145,15 @@ namespace GenerateProgram {
       return (gAssemblyUnits, gCompilationUnits, gNamespaces, gInterfaces);
     }
     public static (
-     IEnumerable<GAssemblyUnit> gAssemblyUnits,
-     IEnumerable<GProjectUnit> gProjectUnits
-     )
-     LookupProjectUnits(
-       IEnumerable<GAssemblyGroup> gAssemblyGroups,
-       string gAssemblyGroupName = "",
-       string gAssemblyUnitName = "",
-       string gProjectUnitName = ""
-     ) {
+      IEnumerable<GAssemblyUnit> gAssemblyUnits,
+      IEnumerable<GProjectUnit> gProjectUnits
+      )
+    LookupProjectUnits(
+      IEnumerable<GAssemblyGroup> gAssemblyGroups,
+      string gAssemblyGroupName = "",
+      string gAssemblyUnitName = "",
+      string gProjectUnitName = ""
+    ) {
       List<GAssemblyUnit> gAssemblyUnits = new List<GAssemblyUnit>();
       List<GProjectUnit> gProjectUnits = new List<GProjectUnit>();
       foreach (var gAg in gAssemblyGroups) {

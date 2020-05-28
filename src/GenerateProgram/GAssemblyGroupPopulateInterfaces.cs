@@ -18,8 +18,8 @@ using static GenerateProgram.GArgumentExtensions;
 using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
-  public static partial class GAssemblyGroupExtensions {
-    public static void GAssemblyGroupPopulateInterfaces(GAssemblyGroup gAssemblyGroup = default
+  public static partial class GMacroExtensions {
+    public static void MAssemblyGroupPopulateBaseInterfaces(GAssemblyGroup gAssemblyGroup = default
       ) {
       if (gAssemblyGroup == default) {throw new ArgumentException(nameof(gAssemblyGroup));};
 
@@ -37,6 +37,11 @@ namespace GenerateProgram {
       titularInterfaceAssemblyUnitLookupResults = LookupInterfaces(new List<GAssemblyGroup>(){gAssemblyGroup},gInterfaceName:titularInterfaceName);
       PopulateInterface(titularAssemblyUnitLookupResults.gClasss.First(),
         titularInterfaceAssemblyUnitLookupResults.gInterfaces.First());
+    }
+    public static void MAssemblyGroupPopulateTitularInterfaces(GAssemblyGroup gAssemblyGroup = default
+    ) {
+      if (gAssemblyGroup == default) {throw new ArgumentException(nameof(gAssemblyGroup));};
+
     }
 
   }

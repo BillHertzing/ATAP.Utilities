@@ -49,9 +49,6 @@ namespace GenerateProgram {
           "<PackageReference Include=\"ATAP.Utilities.Persistence.Interfaces\" />",
           "<PackageReference Include=\"ATAP.Utilities.Extensions.Persistence\" />",
           "<PackageReference Include=\"ATAP.Utilities.Persistence\" />",
-          //$"<ProjectReference Include=\"{basePathToSolution}ATAP.Utilities.Persistence.Interfaces/ATAP.Utilities.Persistence.Interfaces.csproj\" />",
-          //$"<ProjectReference Include=\"{basePathToSolution}src/ATAP.Utilities.Extensions.Persistence/ATAP.Utilities.Extensions.Persistence.csproj\" />",
-          //$"<ProjectReference Include=\"{basePathToSolution}ATAP.Utilities.Persistence/ATAP.Utilities.Persistence.csproj\" />",
         }));
     }
 

@@ -19,11 +19,13 @@ namespace GenerateProgram {
       Dictionary<Philote<GDelegate>, GDelegate> gDelegates = default,
         Dictionary<Philote<GDelegateGroup>, GDelegateGroup> gDelegateGroups = default,
       Dictionary<Philote<GEnumeration>, GEnumeration> gEnumerations = default,
-      Dictionary<Philote<GEnumerationGroup>, GEnumerationGroup> gEnumerationGroups = default
+      Dictionary<Philote<GEnumerationGroup>, GEnumerationGroup> gEnumerationGroups = default,
       //Dictionary<Philote<GException>, GException> gExceptions = default,
       //Dictionary<Philote<GExceptionGroup>, GExceptionGroup> gExceptionGroups = default,
       //Dictionary<Philote<GEvent>, GEvent> gEvents = default,
       //Dictionary<Philote<GEventGroup>, GEventGroup> gEventGroups = default,
+      GComment gComment = default, 
+      IEnumerable<GStateConfiguration> gStateConfigurations = default
     ) {
       GName = gName == default ? "" : gName;
       GVisibility = gVisibility == default ? "" : gVisibility;;
@@ -47,6 +49,14 @@ namespace GenerateProgram {
       //GExceptionGroups = gExceptionGroups  == default? new Dictionary<Philote<GExceptionGroup>, GExceptionGroup>() : gExceptionGroups;
       //GEvents = gEvents  == default? new Dictionary<Philote<GEvent>, GEvent>() : gEvents;
       //GEventGroups = gEventGroups  == default? new Dictionary<Philote<GEventGroup>, GEventGroup>() : gEventGroups;
+      GComment = gComment == default ? new GComment() : gComment;
+      GStateConfigurations = new List<GStateConfiguration>();
+      if (gStateConfigurations != default) {
+        foreach (var sc in gStateConfigurations) {
+          GStateConfigurations.Add(sc);
+        }
+      }
+
       Philote = new Philote<GClass>();
 
     }
@@ -74,6 +84,9 @@ namespace GenerateProgram {
     //public Dictionary<Philote<GEvent>, GEvent> GEvents { get; }
     //public Dictionary<Philote<GEventGroup>, GEventGroup> GEventGroups { get; }
     public List<string>? GDisposesOf { get; }
+    public GComment GComment { get; }
+    public List<GStateConfiguration> GStateConfigurations { get; }
+
     public Philote<GClass> Philote { get; }
 
   }

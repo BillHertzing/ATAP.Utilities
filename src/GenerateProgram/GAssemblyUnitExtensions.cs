@@ -9,6 +9,7 @@ using ATAP.Utilities.Philote;
 using GenerateProgram;
 using static GenerateProgram.GItemGroupInProjectUnitExtensions;
 using static GenerateProgram.Lookup;
+using static GenerateProgram.GMacroExtensions;
 
 namespace GenerateProgram {
   public static partial class GAssemblyUnitExtensions {
@@ -33,11 +34,26 @@ namespace GenerateProgram {
       }
       #endregion
       #region Constructor Groups
-      // ToDo handle method groups, will require a chance to CombinedConstructors
+      // ToDo handle method groups, will require a change to CombinedConstructors
       #endregion
-      #region Condense GUsings in Base GCompilationUnit
+      #region Condense GUsings in the Base and Derived GCompilationUnits of the Titular Assembly
       #endregion
-      #region Condense GItemGroups in Base GAssemblyUnit's GProjectUnit
+      #region Condense GItemGroups in the GProjectUnit of the Titular Assembly
+      #endregion
+      #region Finalize the Statemachine
+      MStateMachineFinalizer(titularAssemblyUnitLookupPrimaryConstructorResults);
+      #endregion
+      #region Populate Interfaces for Base Class
+      MAssemblyGroupPopulateBaseInterfaces(gAssemblyGroup);
+      #endregion
+      #region populate the Interfaces CompilationUnits for Base and Derived
+      #endregion
+      #region Condense GUsings in the Base and Derived GCompilationUnits of the Titular Interfaces Assembly 
+      #endregion
+      #region Condense GItemGroups in the GProjectUnit of the Titular Interfaces Assembly 
+      #endregion
+      #region Populate Interfaces for Titular Class
+      MAssemblyGroupPopulateTitularInterfaces(gAssemblyGroup);
       #endregion
     }
 

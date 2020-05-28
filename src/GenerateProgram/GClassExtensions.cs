@@ -76,6 +76,38 @@ namespace GenerateProgram {
       }
       return gClass;
     }
+    public static GClass AddDelegate(this GClass gClass, GDelegate gDelegate) {
+      gClass.GDelegates[gDelegate.Philote] = gDelegate;
+      return gClass;
+    }
+    public static GClass AddDelegate(this GClass gClass, IEnumerable<GDelegate> gDelegates) {
+      foreach (var o in gDelegates) {
+        gClass.GDelegates[o.Philote] = o;
+      }
+      return gClass;
+    }
+    public static GClass AddDelegate(this GClass gClass, Dictionary<Philote<GDelegate>,GDelegate> gDelegates) {
+      foreach (var kvp in gDelegates) {
+        gClass.GDelegates.Add(kvp.Key,kvp.Value);
+      }
+      return gClass;
+    }
+    public static GClass AddDelegateGroup(this GClass gClass, GDelegateGroup gDelegateGroup) {
+      gClass.GDelegateGroups[gDelegateGroup.Philote] = gDelegateGroup;
+      return gClass;
+    }
+    public static GClass AddDelegateGroup(this GClass gClass, IEnumerable<GDelegateGroup> gDelegateGroups) {
+      foreach (var o in gDelegateGroups) {
+        gClass.AddDelegateGroup(o);
+      }
+      return gClass;
+    }
+    public static GClass AddDelegateGroup(this GClass gClass, Dictionary<Philote<GDelegateGroup>,GDelegateGroup> gDelegateGroups) {
+      foreach (var kvp in gDelegateGroups) {
+        gClass.GDelegateGroups.Add(kvp.Key,kvp.Value);
+      }
+      return gClass;
+    }
     public static IEnumerable<GMethod> CombinedMethods(this GClass gClass) {
       foreach (var o in gClass.GMethods) {
         yield return o.Value;

@@ -5,11 +5,6 @@ using System.Threading;
 
 namespace ATAP.Utilities.Persistence
 {
-  public interface ISetupDataAbstract
-  {
-    CancellationToken? CancellationToken { get; }
-  }
-
   public abstract class SetupDataAbstract : ISetupDataAbstract
   {
     public CancellationToken? CancellationToken { get; private set; }
@@ -32,11 +27,6 @@ namespace ATAP.Utilities.Persistence
     }
   }
 
-  public interface ISetupResultsAbstract
-  {
-    bool Success { get; set; }
-  }
-
   public abstract class SetupResultsAbstract : ISetupResultsAbstract
   {
     protected SetupResultsAbstract() : this(false) { }
@@ -50,12 +40,6 @@ namespace ATAP.Utilities.Persistence
 
   }
 
-  public interface IInsertDataAbstract
-  {
-    CancellationToken? CancellationToken { get; }
-    IEnumerable<IEnumerable<object>> DataToInsert { get; }
-  }
-
   public abstract class InsertDataAbstract : IInsertDataAbstract
   {
     protected InsertDataAbstract(IEnumerable<IEnumerable<object>> dataToInsert, CancellationToken? cancellationToken)
@@ -67,10 +51,6 @@ namespace ATAP.Utilities.Persistence
     public IEnumerable<IEnumerable<object>> DataToInsert { get; private set; }
     public CancellationToken? CancellationToken { get; private set; }
 
-  }
-  public interface IInsertResultsAbstract
-  {
-    bool Success { get; set; }
   }
 
   public abstract class InsertResultsAbstract : IInsertResultsAbstract
@@ -87,11 +67,6 @@ namespace ATAP.Utilities.Persistence
     public bool Success { get; set; }
   }
 
-  public interface IPersistence<out Tout> where Tout : IInsertResultsAbstract
-  {
-    Func<IEnumerable<IEnumerable<object>>, Tout> InsertFunc { get; }
-  }
-
   public class Persistence<Tout> : IPersistence<Tout> where Tout : IInsertResultsAbstract
   {
 
@@ -101,12 +76,6 @@ namespace ATAP.Utilities.Persistence
     }
 
     public Func<IEnumerable<IEnumerable<object>>, Tout> InsertFunc { get; private set; }
-  }
-
-
-  public interface IPickAndSave<out Tout> where Tout : IInsertResultsAbstract {
-    Func<object, bool> PickFunc { get; }
-    Func<IEnumerable<IEnumerable<object>>, Tout> InsertFunc { get; }
   }
 
   public class PickAndSave<Tout> : IPersistence<Tout> where Tout : IInsertResultsAbstract {

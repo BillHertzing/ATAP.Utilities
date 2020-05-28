@@ -21,5 +21,9 @@
   <PackageReference Include="ServiceStack.OrmLite" />
   <PackageReference Include="ServiceStack.OrmLite.SqlServer" />
   </ItemGroup>
-  
+
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
+  </ItemGroup>
+
 </Project>

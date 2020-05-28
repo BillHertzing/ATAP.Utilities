@@ -10,7 +10,7 @@ namespace GenerateProgram {
     public static GClass AddTConstructorAutoProperty(this GClass gClass, Philote<GMethod> gMethodId, string gAutoPropertyName, string gType, string? gAccessors = "{ get;}", string? gVisibility = default) {
       if (gClass.GPropertys != null) {
         GProperty gProperty = new GProperty(gAutoPropertyName.ToUpperFirstChar(), gType, gAccessors, gVisibility);
-        gClass.GPropertys[gProperty.Philote] = gProperty;
+        gClass.GPropertys.Add(gProperty.Philote,gProperty);
       }
       GMethod gMethod = default;
       if (gClass.GMethods != null && gClass.GMethods.ContainsKey(gMethodId)) {
@@ -29,7 +29,7 @@ namespace GenerateProgram {
       }
 
       GArgument gArgument = new GArgument(gAutoPropertyName.ToLowerFirstChar(), gType);
-      gMethod.GDeclaration.GArguments[gArgument.Philote] = gArgument;
+      gMethod.GDeclaration.GArguments.Add(gArgument.Philote,gArgument);
 
       gMethod.GBody.GStatements.Add($"{gAutoPropertyName.ToUpperFirstChar()} = {gAutoPropertyName.ToLowerFirstChar()} ?? throw new ArgumentNullException(nameof({gAutoPropertyName.ToLowerFirstChar()}));");
       return gClass;

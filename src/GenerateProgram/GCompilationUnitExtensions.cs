@@ -51,7 +51,7 @@ namespace GenerateProgram {
       GStaticVariable gStaticVariable = new GStaticVariable(gName:"Production", gType:"Dictionary<string,string>", gVisibility: "public",gAccessModifier: "",
         gBody: new GBody(new List<string>() {
           "new Dictionary<string, string> {",
-          "  {StringConstants.PlaceholderConfigKey, StringConstants.PlaceholderStringDefault},",
+          //"  {StringConstants.PlaceholderConfigKey, StringConstants.PlaceholderStringDefault},",
           "}",
         }),
         gAdditionalStatements:gAdditionalStatements

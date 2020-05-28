@@ -32,6 +32,15 @@
     <PackageReference Include="Microsoft.Extensions.Localization" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
+
+  <!-- Packages to persist data to QuickGraph -->
+  <ItemGroup>
+    <PackageReference Include="YC.QuickGraph" />
+    <PackageReference Include="DotNet.Contracts" />
+    <PackageReference Include="FSharp.Core" />
+    <PackageReference Include="FSharpx.Collections.Experimental" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Update="CResourceUnitPreambleTemplate.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

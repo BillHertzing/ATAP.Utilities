@@ -5,13 +5,15 @@ using ATAP.Utilities.Philote;
 namespace GenerateProgram {
   public static partial class GMethodExtensions {
     public static GMethod CreateStartAsyncMethod( string gAccessModifier = "") {
+      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      foreach (var o in new List<GArgument>() {
+        new GArgument("genericHostsCancellationToken", "CancellationToken"),
+      }) {
+        gMethodArguments.Add(o.Philote, o);
+      }
       var gMethodDeclaration = new GMethodDeclaration(gName: "StartAsync", gType: "Task",
         gVisibility: "public", gAccessModifier: gAccessModifier, isConstructor: false,
-        gArguments: new Dictionary<Philote<GArgument>, GArgument>());
-      foreach (var kvp in new Dictionary<string, string>() { { "genericHostsCancellationToken", "CancellationToken " } }) {
-        var gMethodArgument = new GArgument(kvp.Key, kvp.Value);
-        gMethodDeclaration.GArguments[gMethodArgument.Philote] = gMethodArgument;
-      }
+        gArguments: gMethodArguments);
 
       var gBody = new GBody(gStatements: new List<string>() {
         "#region create linkedCancellationSource and token",
@@ -58,7 +60,7 @@ namespace GenerateProgram {
         "// Attribution to  https://stackoverflow.com/questions/51044781/graceful-shutdown-with-generic-host-in-net-core-2-1",
         "// Attribution to https://stackoverflow.com/questions/52915015/how-to-apply-hostoptions-shutdowntimeout-when-configuring-net-core-generic-host for OperationCanceledException notes",
         //Not sure if this is the right place for the dispose
-        "DataDisposalInStopAsyncReplacemenmtPattern",
+        "DataDisposalInStopAsyncReplacementPattern",
         "//InternalCancellationTokenSource.Cancel();",
         "// Defer completion promise, until our application has reported it is done.",
         "// return TaskCompletionSource.Task;",

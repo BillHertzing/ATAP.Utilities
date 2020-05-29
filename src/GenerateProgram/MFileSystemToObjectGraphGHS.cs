@@ -24,6 +24,7 @@ namespace GenerateProgram {
         baseNamespaceName, _gPatternReplacement);
       #region Select the Titular AssemblyUnit, Titular StateMachineDiGraph, TitularBase CompilationUnit, Namespace, Class, and Constructor
       var titularBaseClassName = $"{gAssemblyGroupName}Base";
+      var titularClassName = $"{gAssemblyGroupName}";
       var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(
         new List<GAssemblyGroup>() {gAssemblyGroup},
         gClassName: titularBaseClassName);
@@ -31,13 +32,15 @@ namespace GenerateProgram {
         //ToDo: better exception handling
         throw new Exception("This should not happen");
       }
+      var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<GAssemblyGroup>() {gAssemblyGroup},
+        gClassName: titularClassName);
       #endregion
       #region Method to process the ConsoleMonitorPattern inputString Observable
  
       #endregion
       #region Use MConsoleMonitorClient to implement the  ConsoleMonitor Pattern (includes adding the Transition from basic GHHS to ConsoleMonitorClient to the diGraph)
       MConsoleMonitorClient(gAssemblyGroup, titularAssemblyUnitLookupPrimaryConstructorResults, baseNamespaceName);
-      MCreateProcessInputMethod(titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First());
+      MCreateProcessInputMethodForFileSystemToObjectGraphGHS(titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First());
       #endregion
       #region Initial StateMachine Configuration for this specific service
       titularAssemblyUnitLookupPrimaryConstructorResults.gMethods.First().GStateConfigurations.AddRange(
@@ -71,8 +74,22 @@ namespace GenerateProgram {
         }.AsEnumerable());
       #endregion
 
-      #region Add the UsingGroup for this service
+      #region Add UsingGroups specific to this service to the Titular and TitularBase CompilationUnits 
+      #region Add the UsingGroup for this service to the Titular CompilationUnit
       var gUsingGroup =
+        new GUsingGroup(
+          $"Usings specific to {titularAssemblyUnitLookupDerivedClassResults.gCompilationUnits.First().GName}");
+      foreach (var gName in new List<string>() {
+        "ATAP.Utilities.ComputerInventory.Hardware", "ATAP.Utilities.Persistence",
+      }) {
+        var gUsing = new GUsing(gName);
+        gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
+      }
+      titularAssemblyUnitLookupDerivedClassResults.gCompilationUnits.First().GUsingGroups
+        .Add(gUsingGroup.Philote, gUsingGroup);
+      #endregion
+      #region Add the UsingGroup for this service to the Titular Base CompilationUnit
+      gUsingGroup =
         new GUsingGroup(
           $"Usings specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}");
       foreach (var gName in new List<string>() {
@@ -83,6 +100,7 @@ namespace GenerateProgram {
       }
       titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GUsingGroups
         .Add(gUsingGroup.Philote, gUsingGroup);
+      #endregion
       #endregion
       #region Add the MethodGroup for this service
       var gMethodGroup =
@@ -115,19 +133,18 @@ namespace GenerateProgram {
       }
       #endregion
       #region References unique to Base for this service
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
-          new GItemGroupInProjectUnit(
-            "References needed only by Base, specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
-            "None",
-            new GBody(new List<string>() {
-              // None,
-            })
-          )
-        }
-      ) {
-        titularAssemblyUnitLookupPrimaryConstructorResults.gAssemblyUnits.First().GProjectUnit.GItemGroupInProjectUnits
-          .Add(o.Philote, o);
-      }
+      //foreach (var o in new List<GItemGroupInProjectUnit>() {
+      //    new GItemGroupInProjectUnit(
+      //      "References needed only by Base, specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
+      //      "References to ...",
+      //      new GBody(new List<string>() {
+      //       // None,
+      //      }))
+      //  }
+      //) {
+      //  titularAssemblyUnitLookupPrimaryConstructorResults.gAssemblyUnits.First().GProjectUnit.GItemGroupInProjectUnits
+      //    .Add(o.Philote, o);
+      //}
       #endregion
       #endregion
 
@@ -199,18 +216,18 @@ namespace GenerateProgram {
       }
       #endregion
       #region References unique to Base for this service's Interface
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
-          new GItemGroupInProjectUnit(
-            "References needed only by Base, specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
-            "None",
-            new GBody(new List<string>() {
-              // None,
-            })
-          )
-        }
-      ) {
-        lookupResultsForProjectAssembly.gProjectUnits.First().GItemGroupInProjectUnits.Add(o.Philote, o);
-      }
+      //foreach (var o in new List<GItemGroupInProjectUnit>() {
+      //    new GItemGroupInProjectUnit(
+      //      "References needed only by Base, specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
+      //      "None",
+      //      new GBody(new List<string>() {
+      //        // None,
+      //      })
+      //    )
+      //  }
+      //) {
+      //  lookupResultsForProjectAssembly.gProjectUnits.First().GItemGroupInProjectUnits.Add(o.Philote, o);
+      //}
       #endregion
       #endregion
       #endregion
@@ -274,7 +291,7 @@ namespace GenerateProgram {
       gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(gItemGroupInProjectUnit.Philote,
         gItemGroupInProjectUnit);
     }
-    public static GMethod MCreateProcessInputMethod(GCompilationUnit gCompilationUnit) {
+    public static GMethod MCreateProcessInputMethodForFileSystemToObjectGraphGHS(GCompilationUnit gCompilationUnit) {
       var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
       foreach (var o in new List<GArgument>() {
         new GArgument("inputString", "string?"), new GArgument("genericHostsCancellationToken", "CancellationToken?"),

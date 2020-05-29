@@ -5,7 +5,6 @@ using ATAP.Utilities.Philote;
 using static GenerateProgram.GAssemblyGroupExtensions;
 using static GenerateProgram.GItemGroupInProjectUnitExtensions;
 using static GenerateProgram.Lookup;
-
 //using AutoMapper.Configuration;
 
 namespace GenerateProgram {
@@ -21,6 +20,7 @@ namespace GenerateProgram {
         baseNamespaceName, _gPatternReplacement);
       #region Select the Titular AssemblyUnit, Titular StateMachineDiGraph, TitularBase CompilationUnit, Namespace, Class, and Constructor
       var titularBaseClassName = $"{gAssemblyGroupName}Base";
+      var titularClassName = $"{gAssemblyGroupName}";
       var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(
         new List<GAssemblyGroup>() {gAssemblyGroup},
         gClassName: titularBaseClassName);
@@ -28,6 +28,8 @@ namespace GenerateProgram {
         //ToDo: better exception handling
         throw new Exception("This should not happen");
       }
+      var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<GAssemblyGroup>() {gAssemblyGroup},
+        gClassName: titularClassName);
       #endregion
       #region Initial StateMachine Configuration for this specific service
       titularAssemblyUnitLookupPrimaryConstructorResults.gMethods.First().GStateConfigurations.AddRange(
@@ -45,12 +47,26 @@ namespace GenerateProgram {
         }.AsEnumerable());
       #endregion
 
-      #region Add the UsingGroup for this service
+      #region Add UsingGroups specific to this service to the Titular and TitularBase CompilationUnits 
+      #region Add the UsingGroup for this service to the Titular CompilationUnit
+      //var gUsingGroup =
+      //  new GUsingGroup(
+      //    $"Usings specific to {titularAssemblyUnitLookupDerivedClassResults.gCompilationUnits.First().GName}");
+      //foreach (var gName in new List<string>() {
+      //  // none
+      //}) {
+      //  var gUsing = new GUsing(gName);
+      //  gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
+      //}
+      //titularAssemblyUnitLookupDerivedClassResults.gCompilationUnits.First().GUsingGroups
+      //  .Add(gUsingGroup.Philote, gUsingGroup);
+      #endregion
+      #region Add the UsingGroup for this service to the Titular Base CompilationUnit
       var gUsingGroup =
         new GUsingGroup(
           $"Usings specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}");
       foreach (var gName in new List<string>() {
-        "System.Reactive.Linq", 
+        "System.Reactive.Linq",
         "System.Reactive.Concurrency",
       }) {
         var gUsing = new GUsing(gName);
@@ -58,6 +74,7 @@ namespace GenerateProgram {
       }
       titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GUsingGroups
         .Add(gUsingGroup.Philote, gUsingGroup);
+      #endregion
       #endregion
       #region Add the MethodGroup for this service
       var gMethodGroup =
@@ -73,7 +90,7 @@ namespace GenerateProgram {
       #region References to be added to the Titular ProjectUnit for this service
       #region References common to both Titular and Base for this service
       foreach (var o in new List<GItemGroupInProjectUnit>() {
-          //None
+        ReactiveUtilitiesReferencesItemGroupInProjectUnit(),
         }
       ) {
         titularAssemblyUnitLookupPrimaryConstructorResults.gAssemblyUnits.First().GProjectUnit.GItemGroupInProjectUnits
@@ -81,13 +98,18 @@ namespace GenerateProgram {
       }
       #endregion
       #region References unique to Base for this service
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
-          ReactiveUtilitiesReferencesItemGroupInProjectUnit()
-        }
-      ) {
-        titularAssemblyUnitLookupPrimaryConstructorResults.gAssemblyUnits.First().GProjectUnit.GItemGroupInProjectUnits
-          .Add(o.Philote, o);
-      }
+      //foreach (var o in new List<GItemGroupInProjectUnit>() {
+      //    new GItemGroupInProjectUnit(
+      //      "References needed only by Base, specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
+      //      "References to the ConsoleSourceGHS and ConsoleSinkGHS Interfaces",
+      //      new GBody(new List<string>() {
+      //       // None,
+      //      }))
+      //  }
+      //) {
+      //  titularAssemblyUnitLookupPrimaryConstructorResults.gAssemblyUnits.First().GProjectUnit.GItemGroupInProjectUnits
+      //    .Add(o.Philote, o);
+      //}
       #endregion
       #endregion
 
@@ -104,7 +126,7 @@ namespace GenerateProgram {
         throw new Exception("This should not happen");
       }
       #endregion
-      #region Select the Titular Interfaces AssemblyUnit, Titular Interface Base CompilationUnit, Namespace, and Interface
+      #region Select the Titular Interfaces AssemblyUnit, Titular Interface CompilationUnit, Namespace, and Interface
       var lookupTitularInterfaceResults = LookupInterfaces(
         new List<GAssemblyGroup>() {gAssemblyGroup},
         gInterfaceName: titularInterfaceName);
@@ -115,33 +137,34 @@ namespace GenerateProgram {
       #endregion
       #region Using groups for the Titular Interface and Titular Base Interface for this service
       #region Using groups for the Titular Interface for this service
-      gUsingGroup =
-        new GUsingGroup($"Usings specific to {lookupTitularInterfaceResults.gCompilationUnits.First().GName}");
-      foreach (var gName in new List<string>() {
-        //None
-      }) {
-        var gUsing = new GUsing(gName);
-        gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
-      }
-      lookupTitularInterfaceResults.gCompilationUnits.First().GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
+      //gUsingGroup =
+      //  new GUsingGroup($"Usings specific to {lookupTitularInterfaceResults.gCompilationUnits.First().GName}");
+      //foreach (var gName in new List<string>() {
+      //  //None
+      //}) {
+      //  var gUsing = new GUsing(gName);
+      //  gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
+      //}
+      //lookupTitularInterfaceResults.gCompilationUnits.First().GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
       #endregion
       #region Using groups for the Titular Base Interface for this service
-      gUsingGroup =
-        new GUsingGroup($"Usings specific to {lookupTitularBaseInterfaceResults.gCompilationUnits.First().GName}");
-      foreach (var gName in new List<string>() {
-        //None
-      }) {
-        var gUsing = new GUsing(gName);
-        gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
-      }
-      lookupTitularBaseInterfaceResults.gCompilationUnits.First().GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
+      //gUsingGroup =
+      //  new GUsingGroup($"Usings specific to {lookupTitularBaseInterfaceResults.gCompilationUnits.First().GName}");
+      //foreach (var gName in new List<string>() {
+      //  //None
+      //}) {
+      //  var gUsing = new GUsing(gName);
+      //  gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
+      //}
+      //lookupTitularBaseInterfaceResults.gCompilationUnits.First().GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
       #endregion
       #endregion
 
       var titularInterfaceAssemblyName = $"{gAssemblyGroup.GName}.Interfaces";
       var lookupResultsForProjectAssembly = LookupProjectUnits(new List<GAssemblyGroup>() {gAssemblyGroup},
         gAssemblyUnitName: titularInterfaceAssemblyName);
-      #region ReferenceItemGroups for the ProjectUnit that are unique to this service to be added to the Titular Interfaces ProjectUnit
+      #region References to be added to the Titular ProjectUnit for this service
+      #region References common to both Titular and Base for this service
       foreach (var o in new List<GItemGroupInProjectUnit>() {
           ReactiveUtilitiesReferencesItemGroupInProjectUnit()
         }
@@ -149,7 +172,23 @@ namespace GenerateProgram {
         lookupResultsForProjectAssembly.gProjectUnits.First().GItemGroupInProjectUnits.Add(o.Philote, o);
       }
       #endregion
+      #region References unique to Base for this service's Interface
+      //foreach (var o in new List<GItemGroupInProjectUnit>() {
+      //    new GItemGroupInProjectUnit(
+      //      "References needed only by Base, specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
+      //      "None",
+      //      new GBody(new List<string>() {
+      //        // None,
+      //      })
+      //    )
+      //  }
+      //) {
+      //  lookupResultsForProjectAssembly.gProjectUnits.First().GItemGroupInProjectUnits.Add(o.Philote, o);
+      //}
       #endregion
+      #endregion
+      #endregion
+
       #region Finalize the GHHS
       GAssemblyGroupGHHSFinalizer(gAssemblyGroup);
       #endregion

@@ -19,8 +19,8 @@ namespace GenerateProgram {
       var gAssemblyGroup = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
       #region Select the Titular AssemblyUnit, Titular StateMachineDiGraph, TitularBase CompilationUnit, Namespace, Class, and Constructor
-      var titularClassName = $"{gAssemblyGroupName}";
       var titularBaseClassName = $"{gAssemblyGroupName}Base";
+      var titularClassName = $"{gAssemblyGroupName}";
       var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(
         new List<GAssemblyGroup>() {gAssemblyGroup},
         gClassName: titularBaseClassName);
@@ -53,11 +53,11 @@ namespace GenerateProgram {
         }.AsEnumerable());
       #endregion
 
-      #region Add UsingGroups specific to this service to the Titular and TitularBase Compilationunits 
-      #region Add the UsingGroup for specific to this service to the Titular Compilationunits this service
+      #region Add UsingGroups specific to this service to the Titular and TitularBase CompilationUnits 
+      #region Add the UsingGroup for this service to the Titular CompilationUnit
       var gUsingGroup =
         new GUsingGroup(
-          $"Usings specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}");
+          $"Usings specific to {titularAssemblyUnitLookupDerivedClassResults.gCompilationUnits.First().GName}");
       foreach (var gName in new List<string>() {
       "System.Reactive.Linq",
       $"{baseNamespaceName}.ConsoleSinkGHS",
@@ -69,7 +69,7 @@ namespace GenerateProgram {
       titularAssemblyUnitLookupDerivedClassResults.gCompilationUnits.First().GUsingGroups
         .Add(gUsingGroup.Philote, gUsingGroup);
       #endregion
-      #region Add the UsingGroup for specific to this service to the Titular  Bae Compilationunits this service
+      #region Add the UsingGroup for this service to the Titular Base CompilationUnit
       gUsingGroup =
         new GUsingGroup(
           $"Usings specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}");
@@ -96,7 +96,6 @@ namespace GenerateProgram {
         titularAssemblyUnitLookupPrimaryConstructorResults.gClasss.First().AddTConstructorAutoPropertyGroup(titularAssemblyUnitLookupPrimaryConstructorResults.gMethods.First().Philote, o, gPropertyGroupId: gPropertyGroup.Philote);
       }
       #endregion
-
       #region Add the MethodGroup for this service
       var gMethodGroup =
         new GMethodGroup(
@@ -116,13 +115,6 @@ namespace GenerateProgram {
       #region References common to both Titular and Base for this service
       foreach (var o in new List<GItemGroupInProjectUnit>() {
         ReactiveUtilitiesReferencesItemGroupInProjectUnit(),
-        new GItemGroupInProjectUnit(
-        "References common to both Titular and Base specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
-        "References to the ConsoleSourceGHS and ConsoleSinkGHS Interfaces",
-         new GBody(new List<string>() {
-          "<PackageReference Include=\"ConsoleSourceGHS.Interfaces\" />",
-          "<PackageReference Include=\"ConsoleSinkGHS.Interfaces\" />",
-        }))
         }
       ) {
         titularAssemblyUnitLookupPrimaryConstructorResults.gAssemblyUnits.First().GProjectUnit.GItemGroupInProjectUnits
@@ -133,11 +125,11 @@ namespace GenerateProgram {
       foreach (var o in new List<GItemGroupInProjectUnit>() {
           new GItemGroupInProjectUnit(
             "References needed only by Base, specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
-            "None",
+            "References to the ConsoleSourceGHS and ConsoleSinkGHS Interfaces",
             new GBody(new List<string>() {
-              // None,
-            })
-          )
+              "<PackageReference Include=\"ConsoleSourceGHS.Interfaces\" />",
+              "<PackageReference Include=\"ConsoleSinkGHS.Interfaces\" />",
+            }))
         }
       ) {
         titularAssemblyUnitLookupPrimaryConstructorResults.gAssemblyUnits.First().GProjectUnit.GItemGroupInProjectUnits
@@ -159,7 +151,7 @@ namespace GenerateProgram {
         throw new Exception("This should not happen");
       }
       #endregion
-      #region Select the Titular Interfaces AssemblyUnit, Titular Interface Base CompilationUnit, Namespace, and Interface
+      #region Select the Titular Interfaces AssemblyUnit, Titular Interface CompilationUnit, Namespace, and Interface
       var lookupTitularInterfaceResults = LookupInterfaces(
         new List<GAssemblyGroup>() {gAssemblyGroup},
         gInterfaceName: titularInterfaceName);
@@ -203,24 +195,11 @@ namespace GenerateProgram {
       foreach (var o in new List<GItemGroupInProjectUnit>() {
           ReactiveUtilitiesReferencesItemGroupInProjectUnit(),
           new GItemGroupInProjectUnit(
-          "References common to both Titular and Base specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName} Interfaces",
-          "References to the Hardware, Persistence, and Progress classes and methods", new GBody(new List<string>() {
-            "<PackageReference Include=\"ConsoleSourceGHS\" />",
-            "<PackageReference Include=\"ConsoleSinkGHS\" />",
-          })
-          )
-        }
-      ) {
-        lookupResultsForProjectAssembly.gProjectUnits.First().GItemGroupInProjectUnits.Add(o.Philote, o);
-      }
-      #endregion
-      #region References unique to Base for this service's Interface
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
-          new GItemGroupInProjectUnit(
-            "References needed only by Base, specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
-            "None",
+            "References common to both Titular and Base specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
+            "References to the Hardware, Persistence, and Progress classes and methods",
             new GBody(new List<string>() {
-              // None,
+              "<PackageReference Include=\"ConsoleSourceGHS\" />",
+              "<PackageReference Include=\"ConsoleSinkGHS\" />",
             })
           )
         }
@@ -228,8 +207,23 @@ namespace GenerateProgram {
         lookupResultsForProjectAssembly.gProjectUnits.First().GItemGroupInProjectUnits.Add(o.Philote, o);
       }
       #endregion
+      #region References unique to Base for this service's Interface
+      //foreach (var o in new List<GItemGroupInProjectUnit>() {
+      //    new GItemGroupInProjectUnit(
+      //      "References needed only by Base, specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
+      //      "None",
+      //      new GBody(new List<string>() {
+      //        // None,
+      //      })
+      //    )
+      //  }
+      //) {
+      //  lookupResultsForProjectAssembly.gProjectUnits.First().GItemGroupInProjectUnits.Add(o.Philote, o);
+      //}
       #endregion
       #endregion
+      #endregion
+
       #region Finalize the GHHS
       GAssemblyGroupGHHSFinalizer(gAssemblyGroup);
       #endregion

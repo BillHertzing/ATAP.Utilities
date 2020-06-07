@@ -22,6 +22,12 @@
   <DefaultItemExcludes>$(DefaultItemExcludes);**\Resources\**</DefaultItemExcludes>
 </PropertyGroup>
 
+  <!-- ATAP Utility library for collection extensions (for Dictionary AddRange) -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Extensions.Collection\ATAP.Utilities.Extensions.Collection.csproj" />
+  </ItemGroup>
+
+
   <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" />

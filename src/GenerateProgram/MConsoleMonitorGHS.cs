@@ -9,13 +9,16 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MConsoleMonitorGHS(
+    public static GAssemblyGroup MConsoleMonitorGHS(string gAssemblyGroupName,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default) {
+      return MConsoleMonitorGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, new GPatternReplacement()  );
+    }
+
+    public static GAssemblyGroup MConsoleMonitorGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
-
-      var gAssemblyGroupName = "ConsoleMonitorGHS";
       var gAssemblyGroup = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
       #region Select the Titular AssemblyUnit, Titular StateMachineDiGraph, TitularBase CompilationUnit, Namespace, Class, and Constructor
@@ -87,7 +90,7 @@ namespace GenerateProgram {
       #endregion
       #endregion
       #region Injected PropertyGroup For ConsoleSinkAndConsoleSource
-      var gPropertyGroup = new GPropertyGroup("Injected Property for ConsoleSinkGHS");
+      var gPropertyGroup = new GPropertyGroup("Injected Property for ConsoleSinkGHS and ConsoleSourceGHS");
       titularAssemblyUnitLookupPrimaryConstructorResults.gClasss.First().AddPropertyGroups(gPropertyGroup);
       foreach (var o in new List<string>() {
         "ConsoleSourceGHS",
@@ -194,14 +197,14 @@ namespace GenerateProgram {
       #region References common to both Titular and Base for this service
       foreach (var o in new List<GItemGroupInProjectUnit>() {
           ReactiveUtilitiesReferencesItemGroupInProjectUnit(),
-          new GItemGroupInProjectUnit(
-            "References common to both Titular and Base specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
-            "References to the Hardware, Persistence, and Progress classes and methods",
-            new GBody(new List<string>() {
-              "<PackageReference Include=\"ConsoleSourceGHS\" />",
-              "<PackageReference Include=\"ConsoleSinkGHS\" />",
-            })
-          )
+          //new GItemGroupInProjectUnit(
+          //  "References common to both Titular and Base specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
+          //  "References to the Hardware, Persistence, and Progress classes and methods",
+          //  new GBody(new List<string>() {
+          //    "<PackageReference Include=\"ConsoleSourceGHS\" />",
+          //    "<PackageReference Include=\"ConsoleSinkGHS\" />",
+          //})
+          //)
         }
       ) {
         lookupResultsForProjectAssembly.gProjectUnits.First().GItemGroupInProjectUnits.Add(o.Philote, o);
@@ -222,6 +225,7 @@ namespace GenerateProgram {
       //}
       #endregion
       #endregion
+ 
       #endregion
 
       #region Finalize the GHHS

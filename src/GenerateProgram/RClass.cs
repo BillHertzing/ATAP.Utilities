@@ -151,7 +151,7 @@ namespace GenerateProgram {
         r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
       }
       r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
-      r1Top.Sb.Append($"}}{r1Top.Eol}");
+      r1Top.Sb.Append($"{r1Top.Indent}}}{r1Top.Eol}");
       return r1Top;
     }
     public static IR1Top RClass(this IR1Top r1Top, Dictionary<Philote<GClass>, GClass> gClasss) {

@@ -12,13 +12,16 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MTopLevelBackgroundGHS(
+    public static GAssemblyGroup MTopLevelBackgroundGHS(string gAssemblyGroupName,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default) {
+      return MTopLevelBackgroundGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, new GPatternReplacement()  );
+    }
+    public static GAssemblyGroup MTopLevelBackgroundGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
 
-      var gAssemblyGroupName = "TopLevelBackgroundGHS";
       var gAssemblyGroup = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
       #region Select the Titular AssemblyUnit, Titular StateMachineDiGraph, TitularBase CompilationUnit, Namespace, Class, and Constructor
@@ -38,8 +41,9 @@ namespace GenerateProgram {
  
       #endregion
       #region Use MConsoleMonitorClient to implement the  ConsoleMonitor Pattern (includes adding the Transition from basic GHHS to ConsoleMonitorClient to the diGraph)
-      MConsoleMonitorClient(gAssemblyGroup, titularAssemblyUnitLookupPrimaryConstructorResults, baseNamespaceName);
-      MCreateProcessInputMethodForTopLevelBackgroundGHS(titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First());
+      MConsoleMonitorClient(gAssemblyGroup, titularAssemblyUnitLookupPrimaryConstructorResults, baseNamespaceName,
+      gBodyCommentTuple: MCreateProcessInputMethodForTopLevelBackgroundGHS()
+        );
       #endregion
       #region Initial StateMachine Configuration for this specific service
       titularAssemblyUnitLookupPrimaryConstructorResults.gMethods.First().GStateConfigurations.AddRange(
@@ -107,8 +111,13 @@ namespace GenerateProgram {
 
       #region References to be added to the Titular ProjectUnit for this service
       #region References common to both Titular and Base for this service
-      //foreach (var o in new List<GItemGroupInProjectUnit>() {
-      //    //None
+     //foreach (var o in new List<GItemGroupInProjectUnit>() {
+      //    new GItemGroupInProjectUnit(
+      //      "References common to both Titular and Base specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
+      //      "References to ...",
+      //      new GBody(new List<string>() {
+      //       // None,
+      //      }))
       //  }
       //) {
       //  titularAssemblyUnitLookupPrimaryConstructorResults.gAssemblyUnits.First().GProjectUnit.GItemGroupInProjectUnits
@@ -215,21 +224,12 @@ namespace GenerateProgram {
     /*******************************************************************************/
     /*******************************************************************************/
 
-    public static GMethod MCreateProcessInputMethodForTopLevelBackgroundGHS(GCompilationUnit gCompilationUnit) {
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
-      foreach (var o in new List<GArgument>() {
-        new GArgument("inputString", "string?"), new GArgument("genericHostsCancellationToken", "CancellationToken?"),
-      }) {
-        gMethodArguments.Add(o.Philote, o);
-      }
-      var gMethodDeclaration = new GMethodDeclaration(gName: $"ProcessInput{gCompilationUnit.GName}", gType: "void",
-        gVisibility: "", isConstructor: false,
-        gArguments: gMethodArguments);
-      var gBody = new GBody(gStatements: new List<string>() {"#region TBD", " #endregion",});
+    public static (GBody, GComment) MCreateProcessInputMethodForTopLevelBackgroundGHS() {
+      GBody gBody = new GBody(gStatements: new List<string>() {"#region TBD", " #endregion",});
       GComment gComment = new GComment(new List<string>() {
         "///  Used to process inputStrings from the ConsoleMonitorPattern"
       });
-      return new GMethod(gMethodDeclaration, gBody, gComment);
+      return (gBody:gBody, gComment:gComment);
     }
   }
 }

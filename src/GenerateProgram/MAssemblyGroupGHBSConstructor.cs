@@ -23,14 +23,17 @@ namespace GenerateProgram {
       string subDirectoryForGeneratedFiles = default, string baseNamespace = default,
       GPatternReplacement gPatternReplacement = default) {
 
-      var part1Tuple = MAssemblyGroupCommonConstructorForGHHSAndGHBSPart1(gAssemblyGroupName, subDirectoryForGeneratedFiles,
+      var part1Tuple = MAssemblyGroupCommonConstructorForGHHSAndGHBSPart1(gAssemblyGroupName,
+        subDirectoryForGeneratedFiles,
         baseNamespace, gPatternReplacement);
- 
+
       #region Titular Base Class (IHostedService)
       var gClass = new GClass(part1Tuple.gCompilationUnitName, gVisibility: "public",
-        gImplements: new List<string> { "IHostedService", "IDisposable" },
-        gDisposesOf: new List<string> { "SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle" });
-      #region specific methods for BackgroundService
+        gImplements: new List<string> {"IBackgroundService"}
+        //gImplements: new List<string> { "IDisposable" },
+        //gDisposesOf: new List<string> { "CompilationUnitNameReplacementPatternBaseData" }
+      );
+    #region specific methods for BackgroundService
       gClass.AddMethod(CreateExecuteAsyncMethod(gAccessModifier: "override async"));
       gClass.AddMethodGroup(CreateStartStopAsyncMethods(gAccessModifier: "override async"));
       #endregion
@@ -39,7 +42,7 @@ namespace GenerateProgram {
 
       return gAssemblyGroup;
     }
-    public static void GAssemblyGroupGHBSFinalizer(GAssemblyGroup gAssemblyGroup) {
+    public static void GAssemblyGroupGHBSFinalizer(GAssemblyGroup gAssemblyGroup,  GClass gClassDerived, GClass gClassBase, GInterface gInterfaceDerived, GInterface gInterfaceBase) {
       //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor
       //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
       //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
@@ -49,7 +52,7 @@ namespace GenerateProgram {
       //var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
       //#endregion
       // No Additional work needed, call CommonFinalizer
-      GAssemblyGroupCommonFinalizer(gAssemblyGroup);
+      GAssemblyGroupCommonFinalizer( gAssemblyGroup,   gClassDerived,  gClassBase,  gInterfaceDerived,  gInterfaceBase);
     }
   }
 }

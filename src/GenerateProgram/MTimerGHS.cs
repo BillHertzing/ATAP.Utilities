@@ -9,13 +9,15 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MTimerGHS(
+    public static GAssemblyGroup MTimerGHS(string gAssemblyGroupName,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default) {
+      return MTimerGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, new GPatternReplacement()  );
+    }
+    public static GAssemblyGroup MTimerGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
-
-      var gAssemblyGroupName = "TimerGHS";
       var gAssemblyGroup = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
       #region Select the Titular AssemblyUnit, Titular StateMachineDiGraph, TitularBase CompilationUnit, Namespace, Class, and Constructor
@@ -194,7 +196,8 @@ namespace GenerateProgram {
       #endregion
 
       #region Finalize the GHHS
-      GAssemblyGroupGHHSFinalizer(gAssemblyGroup);
+      //GAssemblyGroupGHHSFinalizer(  gAssemblyGroup,   gClassDerived,  gClassBase,  gCompilationUnitDerivedInterface,  gCompilationUnitBaseInterface);
+      GAssemblyGroupGHHSFinalizer(  gAssemblyGroup);
       #endregion
       return gAssemblyGroup;
     }

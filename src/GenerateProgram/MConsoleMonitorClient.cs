@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Xml.Schema;
 using ATAP.Utilities.Philote;
 using static GenerateProgram.GAssemblyGroupExtensions;
@@ -20,18 +21,29 @@ namespace GenerateProgram {
       IEnumerable<GCompilationUnit> gCompilationUnits,
       IEnumerable<GNamespace> gNamespacess,
       IEnumerable<GClass> gClasss,
-      IEnumerable<GMethod> gMethods) lookupResultsTuple, string baseNamespaceName = "", List<string> rawDiGraph = default) {
-      MConsoleMonitorClient(gAssemblyGroup, lookupResultsTuple.gAssemblyUnits.First(), lookupResultsTuple.gCompilationUnits.First(), lookupResultsTuple.gNamespacess.First(), lookupResultsTuple.gClasss.First(), lookupResultsTuple.gMethods.First(),baseNamespaceName:baseNamespaceName);
+      IEnumerable<GMethod> gMethods) lookupResultsTuple, string baseNamespaceName = "", List<string> rawDiGraph = default,(GBody, GComment) gBodyCommentTuple = default ) {
+      MConsoleMonitorClient(gAssemblyGroup, lookupResultsTuple.gAssemblyUnits.First(), lookupResultsTuple.gCompilationUnits.First(),
+        lookupResultsTuple.gNamespacess.First(), lookupResultsTuple.gClasss.First(), lookupResultsTuple.gMethods.First(),
+        baseNamespaceName:baseNamespaceName, rawDiGraph, gBodyCommentTuple);
     }
-    public static void MConsoleMonitorClient(GAssemblyGroup gAssemblyGroup, GAssemblyUnit gAssemblyUnit = default, GCompilationUnit gCompilationUnit = default, GNamespace gNamespace = default, GClass gClass = default, GMethod gMethod = default,  string baseNamespaceName = "", List<string> rawDiGraph = default) {
+    public static void MConsoleMonitorClient(GAssemblyGroup gAssemblyGroup, GAssemblyUnit gAssemblyUnit = default, GCompilationUnit gCompilationUnit = default,
+      GNamespace gNamespace = default, GClass gClass = default, GMethod gMethod = default,
+      string baseNamespaceName = "",
+      List<string> rawDiGraph = default,
+        (GBody, GComment) gBodyCommentTuple = default
+      ) {
       #region Titular Base Assembly Unit
-      MConsoleMonitorClientBase(gAssemblyUnit, gCompilationUnit, gNamespace, gClass, gMethod, baseNamespaceName);
+      MConsoleMonitorClientBase(gAssemblyUnit, gCompilationUnit, gNamespace, gClass, gMethod, baseNamespaceName,rawDiGraph,gBodyCommentTuple);
     }
 
     #endregion
 
     public static void MConsoleMonitorClientBase(GAssemblyUnit gAssemblyUnit, GCompilationUnit gCompilationUnit,
-      GNamespace gNamespace, GClass gClass, GMethod gConstructor, string baseNamespaceName) {
+      GNamespace gNamespace, GClass gClass, GMethod gConstructor,
+      string baseNamespaceName = "",
+      List<string> rawDiGraph = default,
+      (GBody, GComment) gBodyCommentTuple = default
+      ) {
       #region UsingGroup
       MUsingsForConsoleMonitorPattern(gCompilationUnit, baseNamespaceName);
       #endregion
@@ -42,7 +54,7 @@ namespace GenerateProgram {
       MPropertyGroupAndConstructorDeclarationAndInitializationForInjectedConsoleMonitorGHS(gClass, gConstructor);
       #endregion
       #region MethodGroup For ConsoleMonitorPattern
-      MMethodGroupForConsoleMonitorPattern(gClass);
+      MMethodGroupForConsoleMonitorPattern(gClass, gBodyCommentTuple);
       #endregion
       #region DelegateGroup For ConsoleMonitorPattern
       MDelegateGroupForConsoleMonitorPattern(gClass);
@@ -77,7 +89,7 @@ namespace GenerateProgram {
         gClass.AddTConstructorAutoPropertyGroup(gConstructor.Philote, o, gPropertyGroupId: gPropertyGroup.Philote);
       }
     }
-    public static void MMethodGroupForConsoleMonitorPattern(GClass gClass) {
+    public static void MMethodGroupForConsoleMonitorPattern(GClass gClass, (GBody, GComment) gBodyCommentTuple = default) {
       var gMethodGroup =
         new GMethodGroup(gName: "MethodGroup For ConsoleMonitorPattern");
       //GMethod gMethod = MCreateWriteAsyncMethodForConsoleMonitorPattern();
@@ -89,6 +101,8 @@ namespace GenerateProgram {
       //gMethod = new GMethod().CreateReadCharMethod();
       //gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
       gMethod = MCreateReadLineMethodForConsoleMonitorPattern();
+      gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
+      gMethod = MCreateProcessInputStringMethodForConsoleMonitorPattern(gBodyCommentTuple);
       gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
       gClass.AddMethodGroup(gMethodGroup);
       gClass.AddMethodGroup(MCreateStateTransitionMethodGroupForConsoleMonitorPattern());
@@ -158,8 +172,8 @@ namespace GenerateProgram {
       foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
 
       return new GMethod(
-        new GMethodDeclaration(gName: "SubscribeToConsoleMonitorReadLine", gType: "IDisposable",
-          gVisibility: "private", gAccessModifier: "", isConstructor: false,
+        new GMethodDeclaration(gName: "SubscribeToConsoleMonitorReadLineAsyncAsObservable", gType: "IDisposable",
+          gVisibility: "private", gAccessModifier: "async", isConstructor: false,
           gArguments: gMethodArguments),
         gBody:
         new GBody(new List<string>() {
@@ -170,6 +184,25 @@ namespace GenerateProgram {
         new GComment(new List<string>() {
           "// Subscribes to the ConsoleMonitorGHS  Todo: finish this comment"
         }));
+    }
+
+    public static GMethod MCreateProcessInputStringMethodForConsoleMonitorPattern(
+      (GBody gBody, GComment gComment) gBodyCommentTuple = default) {
+      var gMethodArgumentList = new List<GArgument>() {
+        new GArgument("inputString", "string"), new GArgument("ct", "CancellationToken?"),
+      };
+      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      foreach (var o in gMethodArgumentList) {
+        gMethodArguments.Add(o.Philote, o);
+      }
+
+      return new GMethod(
+        new GMethodDeclaration(gName: "ProcessInput", gType: "void",
+          gVisibility: "", gAccessModifier: "", isConstructor: false,
+          gArguments: gMethodArguments),
+        gBody: gBodyCommentTuple.gBody,
+        gComment: gBodyCommentTuple.gComment
+      );
     }
 
     public static GMethod MCreateWriteAsyncMethodForConsoleMonitorPattern(string gAccessModifier = "") {

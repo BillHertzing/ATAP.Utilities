@@ -477,7 +477,7 @@ namespace GenerateProgram {
       #endregion
       #region ItemGroups for the ProjectUnit in the Interfaces AssemblyUnit
       gItemGroupInProjectUnitList = new List<GItemGroupInProjectUnit>() {
-        NetCoreGenericHostReferencesItemGroupInProjectUnit(), StatelessStateMachineReferencesItemGroupInProjectUnit(),
+        NetCoreGenericHostReferencesItemGroupInProjectUnit(), 
       };
       gItemGroupInProjectUnitList.ForEach(o => gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote, o));
       #endregion
@@ -486,17 +486,17 @@ namespace GenerateProgram {
       #endregion
       return gAssemblyGroup;
     }
-    public static void GAssemblyGroupGHBSFinalizer(GAssemblyGroup gAssemblyGroup) {
-      //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor
-      //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
-      //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
-      //#endregion
-      //#region Lookup the Derived GAssemblyUnit, GCompilationUnit, GNamespace, and GClass
-      //var titularClassName = $"{gAssemblyGroup.GName}";
-      //var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
-      //#endregion
-      // No Additional work needed, call CommonFinalizer
-      GAssemblyGroupCommonFinalizer(gAssemblyGroup);
-    }
+    //public static void GAssemblyGroupGHBSFinalizer(GAssemblyGroup gAssemblyGroup,  GClass gClassDerived, GClass gClassBase, GInterface gInterfaceDerived, GInterface gInterfaceBase) {
+    //  //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor
+    //  //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
+    //  //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
+    //  //#endregion
+    //  //#region Lookup the Derived GAssemblyUnit, GCompilationUnit, GNamespace, and GClass
+    //  //var titularClassName = $"{gAssemblyGroup.GName}";
+    //  //var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
+    //  //#endregion
+    //  // No Additional work needed, call CommonFinalizer
+    //  GAssemblyGroupCommonFinalizer(gAssemblyGroup,  gClassDerived,  gClassBase,  gInterfaceDerived,  gInterfaceBase);
+    //}
   }
 }

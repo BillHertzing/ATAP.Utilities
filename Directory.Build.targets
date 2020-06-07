@@ -1,7 +1,7 @@
 <Project>
   <!-- import the non-default targets files -->
   <Import Project="$(MSBuildCommunityTasksPath)\MSBuildTasks.Targets" />
-  <!-- <Import Project="$(ATAPUtilitiesBuildToolingTargetsPath)\ATAP.Utilities.BuildTooling.Targets" /> -->
+  <Import Project="$(ATAPUtilitiesBuildToolingTargetsPath)\ATAP.Utilities.BuildTooling.Targets" />
 
 
   <!-- Targets for multiframework publishing courtesy of
@@ -115,8 +115,8 @@
     <PackageReference Update="NLog" Version="4.7.0" />
     <PackageReference Update="NLog.Config" Version="4.7.0" />
     <PackageReference Update="Polly" Version="6.1.1" />
-
     <PackageReference Update="System.Collections.Immutable" Version="1.7.0" />
+
     <!-- Dynamic Types -->
     <PackageReference Update="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Update="System.Dynamic.Runtime" Version="4.3.0" />

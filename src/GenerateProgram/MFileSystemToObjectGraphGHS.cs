@@ -13,13 +13,17 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MFileSystemToObjectGraphGHS(
+    public static GAssemblyGroup MFileSystemToObjectGraphGHS(string gAssemblyGroupName,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default) {
+      return MFileSystemToObjectGraphGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, new GPatternReplacement()  );
+    }
+
+    public static GAssemblyGroup MFileSystemToObjectGraphGHS( string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
 
-      var gAssemblyGroupName = "FileSystemToObjectGraphGHS";
       var gAssemblyGroup = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
       #region Select the Titular AssemblyUnit, Titular StateMachineDiGraph, TitularBase CompilationUnit, Namespace, Class, and Constructor
@@ -36,11 +40,11 @@ namespace GenerateProgram {
         gClassName: titularClassName);
       #endregion
       #region Method to process the ConsoleMonitorPattern inputString Observable
- 
       #endregion
       #region Use MConsoleMonitorClient to implement the  ConsoleMonitor Pattern (includes adding the Transition from basic GHHS to ConsoleMonitorClient to the diGraph)
-      MConsoleMonitorClient(gAssemblyGroup, titularAssemblyUnitLookupPrimaryConstructorResults, baseNamespaceName);
-      MCreateProcessInputMethodForFileSystemToObjectGraphGHS(titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First());
+      MConsoleMonitorClient(gAssemblyGroup, titularAssemblyUnitLookupPrimaryConstructorResults, baseNamespaceName,
+        gBodyCommentTuple: MCreateProcessInputMethodForFileSystemToObjectGraphGHS()
+        );
       #endregion
       #region Initial StateMachine Configuration for this specific service
       titularAssemblyUnitLookupPrimaryConstructorResults.gMethods.First().GStateConfigurations.AddRange(
@@ -74,7 +78,7 @@ namespace GenerateProgram {
         }.AsEnumerable());
       #endregion
 
-      #region Add UsingGroups specific to this service to the Titular and TitularBase CompilationUnits 
+      #region Add UsingGroups specific to this service to the Titular and TitularBase CompilationUnits
       #region Add the UsingGroup for this service to the Titular CompilationUnit
       var gUsingGroup =
         new GUsingGroup(
@@ -239,13 +243,7 @@ namespace GenerateProgram {
     }
     /*******************************************************************************/
     /*******************************************************************************/
-    public static void MUsingsForFileSystemToObjectGraphBaseAssembly(GCompilationUnit gCompilationUnit,
-      string baseNamespace) {
-      var gUsingGroup = new GUsingGroup("Usings For ConsoleMonitor Pattern").AddUsing(new List<GUsing>() {
-        new GUsing($"{baseNamespace}.ConsoleMonitor"),
-      });
-      gCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
-    }
+
     public static void MPropertyGroupForFileSystemToObjectGraphBaseAssembly(GClass gClass) {
       var gPropertyGroup = new GPropertyGroup("Propertys specific to the FileSystemToObjectGraph");
       foreach (var o in new List<GProperty>() {
@@ -269,12 +267,7 @@ namespace GenerateProgram {
     public static void MMethodGroupForFileSystemToObjectGraphBaseAssembly(GClass gClass) {
       var gMethodGroup =
         new GMethodGroup(gName: "MethodGroup specific to the FileSystemToObjectGraph");
-      // GMethod gMethod = CreateWriteAsyncMethod();
-      // gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
-      // gMethod = MBuildMenuMethodForConsoleMonitorPatter();
-      // gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
-      //gMethod = new GMethod().CreateReadCharMethod();
-      //newgMethodGroup.GMethods[gMethod.Philote] = gMethod;
+      // None
       gClass.AddMethodGroup(gMethodGroup);
     }
     public static void
@@ -291,21 +284,12 @@ namespace GenerateProgram {
       gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(gItemGroupInProjectUnit.Philote,
         gItemGroupInProjectUnit);
     }
-    public static GMethod MCreateProcessInputMethodForFileSystemToObjectGraphGHS(GCompilationUnit gCompilationUnit) {
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
-      foreach (var o in new List<GArgument>() {
-        new GArgument("inputString", "string?"), new GArgument("genericHostsCancellationToken", "CancellationToken?"),
-      }) {
-        gMethodArguments.Add(o.Philote, o);
-      }
-      var gMethodDeclaration = new GMethodDeclaration(gName: $"ProcessInput{gCompilationUnit.GName}", gType: "void",
-        gVisibility: "", isConstructor: false,
-        gArguments: gMethodArguments);
-      var gBody = new GBody(gStatements: new List<string>() {"#region TBD", " #endregion",});
+    public static (GBody, GComment) MCreateProcessInputMethodForFileSystemToObjectGraphGHS() {
+      GBody gBody = new GBody(gStatements: new List<string>() {"#region TBD", " #endregion",});
       GComment gComment = new GComment(new List<string>() {
         "///  Used to process inputStrings from the ConsoleMonitorPattern"
       });
-      return new GMethod(gMethodDeclaration, gBody, gComment);
+      return (gBody:gBody, gComment:gComment);
     }
     public static GMethod MCreateConvertFileSystemToObjectGraphAsync(GClass gClass) {
       var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();

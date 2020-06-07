@@ -55,7 +55,7 @@
     <PackageReference Include="ATAP.Utilities.CryptoMiner.Models" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.DateTime" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.Enumeration" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.FileSystem" Version="1.*" />
+
     <PackageReference Include="ATAP.Utilities.Http" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.String" Version="1.*" />
     <PackageReference Include="ATAP.Utilities.Tcp" Version="1.*" />

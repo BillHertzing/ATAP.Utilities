@@ -11,10 +11,25 @@ namespace GenerateProgram {
     public static List<GItemGroupInProjectUnit> MGenericHostServiceCommonItemGroupInProjectUnitList() {
       return new List<GItemGroupInProjectUnit>() {
         NetCoreGenericHostReferencesItemGroupInProjectUnit(),
-        StatelessStateMachineReferencesItemGroupInProjectUnit(),
+        MStatelessStateMachineReferencesItemGroupInProjectUnit(),
         ATAPLoggingUtilitiesReferencesItemGroupInProjectUnit(),
-        FodyMethodBoundryReferencesItemGroupInProjectUnit(),
+        MFodyMethodBoundryReferencesItemGroupInProjectUnit(),
       };
+    }
+
+    public static GItemGroupInProjectUnit MStatelessStateMachineReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("StatelessPackageReferences",
+        "Packages for the Stateless lightweight StateMachine library", new GBody(new List<string>() {
+          "<PackageReference Include=\"Stateless\" />",
+        }));
+    }
+
+    public static GItemGroupInProjectUnit MFodyMethodBoundryReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("ILWeavingUsingFodyPackageReferences",
+        "Packages to implement IL Weaving using Fody during the build process", new GBody(new List<string>() {
+          "<PackageReference Include=\"MethodBoundaryAspect.Fody\" Version=\"2.0.118\" />",
+          "<PackageReference Include=\"ATAP.Utilities.ETW\" />",
+        }));
     }
   }
 }

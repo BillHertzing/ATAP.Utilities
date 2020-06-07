@@ -11,7 +11,8 @@ using System.Text;
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
     public static void MStateMachineConstructor(
-      GCompilationUnit gCompilationUnit = default, GNamespace gNamespace = default, GClass gClass = default, GMethod gConstructor = default, List<string> initialDiGraphList = default) {
+      GCompilationUnit gCompilationUnit = default, GNamespace gNamespace = default, GClass gClass = default,
+      GMethod gConstructor = default, List<string> initialDiGraphList = default) {
       #region UsingGroup
       var gUsingGroup = MUsingGroupForStatelessStateMachine();
       gCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
@@ -19,7 +20,7 @@ namespace GenerateProgram {
       #region Delegates
       var gDelegates = new Dictionary<Philote<GDelegate>, GDelegate>();
       var UnhandledTriggerDelegateArguments = new Dictionary<Philote<GArgument>, GArgument>();
-      foreach (var o in new List<GArgument>() { new GArgument("state", "State"), new GArgument("trigger", "Trigger"), }) {
+      foreach (var o in new List<GArgument>() {new GArgument("state", "State"), new GArgument("trigger", "Trigger"),}) {
         UnhandledTriggerDelegateArguments.Add(o.Philote, o);
       }
       foreach (var o in new List<GDelegate>() {
@@ -31,7 +32,6 @@ namespace GenerateProgram {
         gDelegates.Add(o.Philote, o);
       }
       gNamespace.AddDelegate(gDelegates);
-
       #endregion
 
       // Property Group for StateMachine properties
@@ -65,47 +65,37 @@ namespace GenerateProgram {
 
       var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
       foreach (var o in new List<GArgument>() {
-        new GArgument("state","State"),
-        new GArgument("trigger","Trigger"),
-        new GArgument("nextState","State"),
-      }) { gMethodArguments.Add(o.Philote, o); }
+        new GArgument("state", "State"), new GArgument("trigger", "Trigger"), new GArgument("nextState", "State"),
+      }) {
+        gMethodArguments.Add(o.Philote, o);
+      }
 
       gConstructor = new GMethod(
         new GMethodDeclaration(gName: "StateConfiguration", isConstructor: true, gType: "IDisposable",
           gVisibility: "public", gAccessModifier: "",
           gArguments: gMethodArguments),
         gBody:
-        new GBody(new List<string>() {
-          "State=state;",
-          "Trigger=trigger;",
-          "NextState=nextState;",
-        }),
+        new GBody(new List<string>() {"State=state;", "Trigger=trigger;", "NextState=nextState;",}),
         new GComment(new List<string>() {
-          "/// <summary>",
-          "/// builds one state instance",
-          "/// </summary>",
-          "/// <returns></returns>",
-
+          "/// <summary>", "/// builds one state instance", "/// </summary>", "/// <returns></returns>",
         }));
       stateConfigurationClass.GMethods.Add(gConstructor.Philote, gConstructor);
       gNamespace.GClasss.Add(stateConfigurationClass.Philote, stateConfigurationClass);
-
     }
-
     public static (IEnumerable<string> StateNames, IEnumerable<string> TriggerNames, IEnumerable<string> StateConfigurations) ParseDiGraphToStateMachine(List<GStateConfiguration> diGraph = default) {
-
       const string pattern = @"\s*(?<State>.+?)\s*->\s*(?<NextState>.+?)\s*\[label\s*=\s*""(?<Trigger>[^""\]]+?)""\]";
       Regex regex = new Regex(pattern);
       StringBuilder diGraphSB = new StringBuilder();
       diGraph.ForEach(s => diGraphSB.Append(s));
       var diGraphStates = regex.Matches(diGraphSB.ToString()).Cast<Match>()
-        .Select(x => (State: x.Groups["State"].Value, Trigger: x.Groups["Trigger"].Value, NextState: x.Groups["NextState"].Value));
+        .Select(x => (State: x.Groups["State"].Value, Trigger: x.Groups["Trigger"].Value,
+          NextState: x.Groups["NextState"].Value));
       var stateNames = diGraphStates.Select(x => x.State).Concat(diGraphStates.Select(x => x.NextState)).Distinct();
       var triggerNames = diGraphStates.Select(x => x.Trigger).Distinct();
-      var stateConfigurations = diGraphStates.Select(x => $"new StateConfiguration(state:State.{x.State},trigger:Trigger.{x.Trigger},nextState:State.{x.NextState}),");
+      var stateConfigurations = diGraphStates.Select(x =>
+        $"new StateConfiguration(state:State.{x.State},trigger:Trigger.{x.Trigger},nextState:State.{x.NextState}),");
       return (stateNames, triggerNames, stateConfigurations);
     }
-
     public static void MStateMachineFinalizer(
       (
         IEnumerable<GAssemblyUnit> gAssemblyUnits,
@@ -115,7 +105,6 @@ namespace GenerateProgram {
         IEnumerable<GMethod> gMethods) lookupResults) {
       List<GStateConfiguration> finalGStateConfigurations = new List<GStateConfiguration>();
       #region Accumulate the StateConfigurations
-
       foreach (var gAU in lookupResults.gAssemblyUnits) {
         // finalGStateConfigurations.AddRange();
         foreach (var gCU in gAU.GCompilationUnits) {
@@ -132,101 +121,128 @@ namespace GenerateProgram {
         }
       }
       #endregion
-        MStateMachineFinalizer(lookupResults.gCompilationUnits.First(), lookupResults.gNamespacess.First(), lookupResults.gClasss.First(), lookupResults.gMethods.First(),finalGStateConfigurations);
+      MStateMachineFinalizer(lookupResults.gCompilationUnits.First(), lookupResults.gNamespacess.First(),
+        lookupResults.gClasss.First(), lookupResults.gMethods.First(), finalGStateConfigurations);
+    }
+    public static void MStateMachineFinalizer(
+      GCompilationUnit gCompilationUnit = default, GNamespace gNamespace = default, GClass gClass = default,
+      GMethod gConstructor = default,
+      List<GStateConfiguration> gStateConfigurations = default) {
+      var parsedDiGraph = ParseDiGraphToStateMachine(gStateConfigurations);
+      #region StateMachine EnumerationGroups
+      var gEnumerationGroup = new GEnumerationGroup(gName: "State and Trigger Enumerations for StateMachine");
+      #region State Enumeration
+      #region State Enumeration members
+      var names = parsedDiGraph.StateNames;
+      var gEnumerationMemberList = new List<GEnumerationMember>();
+      var enumerationValue = 1;
+      foreach (var name in names) {
+        gEnumerationMemberList.Add(LocalizableEnumerationMember(name, enumerationValue++));
       }
-
-      public static void MStateMachineFinalizer(
-        GCompilationUnit gCompilationUnit = default, GNamespace gNamespace = default, GClass gClass = default,
-        GMethod gConstructor = default,
-        List<GStateConfiguration> gStateConfigurations = default) {
-        var parsedDiGraph = ParseDiGraphToStateMachine(gStateConfigurations);
-        #region StateMachine EnumerationGroups
-        var gEnumerationGroup = new GEnumerationGroup(gName: "State and Trigger Enumerations for StateMachine");
-        #region State Enumeration
-        #region State Enumeration members
-        var names = parsedDiGraph.StateNames;
-        var gEnumerationMemberList = new List<GEnumerationMember>();
-        var enumerationValue = 1;
-        foreach (var name in names) {
-          gEnumerationMemberList.Add(LocalizableEnumerationMember(name, enumerationValue++));
-        }
-        // gEnumerationMemberList = new List<GEnumerationMember>() {
-        //  LocalizableEnumerationMember("WaitingForInitialization",1,"Power-On State - waiting until minimal initialization condition has been met","Waiting For Initialization"),
-        //  LocalizableEnumerationMember("InitiateContact",1,"Signal to the Console Monitor that we are a valid ConsoleSource","Initiate Contact"),
-        //};
-        var gEnumerationMembers = new Dictionary<Philote<GEnumerationMember>, GEnumerationMember>();
-        foreach (var o in gEnumerationMemberList) {
-          gEnumerationMembers.Add(o.Philote, o);
-        }
-        #endregion
-        var gEnumeration = new GEnumeration(gName: "State", gVisibility: "public", gInheritance: "", gEnumerationMembers: gEnumerationMembers);
-        #endregion
-        gEnumerationGroup.GEnumerations.Add(gEnumeration.Philote, gEnumeration);
-        #region Trigger Enumeration
-        #region Trigger Enumeration members
-        names = parsedDiGraph.TriggerNames;
-        gEnumerationMemberList = new List<GEnumerationMember>();
-        enumerationValue = 1;
-        foreach (var name in names) {
-          gEnumerationMemberList.Add(LocalizableEnumerationMember(name, enumerationValue++));
-        }
-        //gEnumerationMemberList = new List<GEnumerationMember>() {
-        //  LocalizableEnumerationMember("InitializationCompleteReceived",1,"The minimal initialization conditions have been met","Initialization Complete Received"),
-        //};
-        gEnumerationMembers = new Dictionary<Philote<GEnumerationMember>, GEnumerationMember>();//{gEnumerationMemberList.ForEach(m=>m.Philote,m)};
-        foreach (var o in gEnumerationMemberList) {
-          gEnumerationMembers.Add(o.Philote, o);
-        }
-        #endregion
-        gEnumeration =
-         new GEnumeration(gName: "Trigger", gVisibility: "public", gInheritance: "", gEnumerationMembers: gEnumerationMembers);
-        gEnumerationGroup.GEnumerations.Add(gEnumeration.Philote, gEnumeration);
-        #endregion
-        gNamespace.AddEnumerationGroup(gEnumerationGroup);
-
-        #endregion
-        #region StateMachine Transitions
-        // Add a StaticVariable to the class
-        List<string> gStatements = new List<string>() { "new List<StateConfiguration>(){" };
-        foreach (var sc in parsedDiGraph.StateConfigurations) {
-          gStatements.Add(sc);
-        }
-        gStatements.Add("}");
-        var gStaticVariable = new GStaticVariable("stateConfigurations", gType: "List<StateConfiguration>", gBody: new GBody(gStatements));
-        gClass.GStaticVariables.Add(gStaticVariable.Philote, gStaticVariable);
-        #endregion
-
-        // add a method to the class that configures the StateMachine according to the StateConfigurations parsed from the iGraph
-        // StateMachine Configuration
-        var gMethodGroup = new GMethodGroup(gName: "Methods For StateMachine");
-        var gMethod = new GMethod(new GMethodDeclaration(gName: "ConfigureStateMachine", gType: "void", gVisibility: "private", gAccessModifier: ""), new GBody(new List<string>() {
-        "// attribution :https://github.com/dhrobbins/ApprovaFlow/blob/master/ApprovaFlow/ApprovaFlow/ApprovaFlow/Workflow/WorkflowProcessor.cs",
-        "//  Get a distinct list of states with a trigger from the stateConfigurations static variable",
-        "//  State => Trigger => TargetState",
-        "var states = StateConfigurations.AsQueryable()",
-        ".Select(x => x.State)",
-        ".Distinct()",
-        ".Select(x => x)",
-        ".ToList();",
-        "//  Get each trigger for each state",
-        "states.ForEach(state =>{",
-        "var triggers = StateConfigurations.AsQueryable()",
-        ".Where(config => config.State == state)",
-        ".Select(config => new { Trigger = config.Trigger, TargetState = config.NextState })",
-        ".ToList();",
-        "triggers.ForEach(trig => {",
-        "StateMachine.Configure(state).Permit(trig.Trigger, trig.TargetState);",
-        "  });",
-        "});",
-      }));
-        gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
-        gClass.GMethodGroups.Add(gMethodGroup.Philote, gMethodGroup);
-        #region Add Triggers
-        var statementList = gClass.CombinedMethods().Where(x => x.GDeclaration.GName == "StartAsync").First().GBody.GStatements;
-        statementList.Insert(statementList.Count - 1, "StateMachine.Fire(Trigger.InitializationCompleteReceived);");
-        #endregion
-
+      // gEnumerationMemberList = new List<GEnumerationMember>() {
+      //  LocalizableEnumerationMember("WaitingForInitialization",1,"Power-On State - waiting until minimal initialization condition has been met","Waiting For Initialization"),
+      //  LocalizableEnumerationMember("InitiateContact",1,"Signal to the Console Monitor that we are a valid ConsoleSource","Initiate Contact"),
+      //};
+      var gEnumerationMembers = new Dictionary<Philote<GEnumerationMember>, GEnumerationMember>();
+      foreach (var o in gEnumerationMemberList) {
+        gEnumerationMembers.Add(o.Philote, o);
       }
+      #endregion
+      var gEnumeration = new GEnumeration(gName: "State", gVisibility: "public", gInheritance: "",
+        gEnumerationMembers: gEnumerationMembers);
+      #endregion
+      gEnumerationGroup.GEnumerations.Add(gEnumeration.Philote, gEnumeration);
+      #region Trigger Enumeration
+      #region Trigger Enumeration members
+      names = parsedDiGraph.TriggerNames;
+      gEnumerationMemberList = new List<GEnumerationMember>();
+      enumerationValue = 1;
+      foreach (var name in names) {
+        gEnumerationMemberList.Add(LocalizableEnumerationMember(name, enumerationValue++));
+      }
+      //gEnumerationMemberList = new List<GEnumerationMember>() {
+      //  LocalizableEnumerationMember("InitializationCompleteReceived",1,"The minimal initialization conditions have been met","Initialization Complete Received"),
+      //};
+      gEnumerationMembers =
+        new Dictionary<Philote<GEnumerationMember>, GEnumerationMember>(); //{gEnumerationMemberList.ForEach(m=>m.Philote,m)};
+      foreach (var o in gEnumerationMemberList) {
+        gEnumerationMembers.Add(o.Philote, o);
+      }
+      #endregion
+      gEnumeration =
+        new GEnumeration(gName: "Trigger", gVisibility: "public", gInheritance: "",
+          gEnumerationMembers: gEnumerationMembers);
+      gEnumerationGroup.GEnumerations.Add(gEnumeration.Philote, gEnumeration);
+      #endregion
+      gNamespace.AddEnumerationGroup(gEnumerationGroup);
+      #endregion
 
+      #region StateMachine Transitions Static variable
+      // Add a StaticVariable to the class
+      List<string> gStatements = new List<string>() {"new List<StateConfiguration>(){"};
+      foreach (var sc in parsedDiGraph.StateConfigurations) {
+        gStatements.Add(sc);
+      }
+      gStatements.Add("}");
+      var gStaticVariable = new GStaticVariable("stateConfigurations", gType: "List<StateConfiguration>",
+        gBody: new GBody(gStatements));
+      gClass.GStaticVariables.Add(gStaticVariable.Philote, gStaticVariable);
+      #endregion
+
+      #region Create the detailed ConfigureStateMachine Method using the parsedDiGraph information
+      // add a method to the class that configures the StateMachine according to the StateConfigurations parsed from the diGraph
+
+      var gMethodGroup = new GMethodGroup(gName: "Detailed ConfigureStateMachine Method");
+      var gBody = new GBody(new List<string>());
+      var gMethod =
+        new GMethod(
+          new GMethodDeclaration(gName: "ConfigureStateMachine", gType: "void", gVisibility: "private",
+            gAccessModifier: ""), gBody);
+      //"// attribution :https://github.com/dhrobbins/ApprovaFlow/blob/master/ApprovaFlow/ApprovaFlow/ApprovaFlow/Workflow/WorkflowProcessor.cs",
+      //"// attribution :https://github.com/frederiksen/Stateless-Designer/blob/master/src/StatelessDesigner.VS2017/StatelessCodeGenerator/StatelessCodeGenerator.cs",
+      //"// Heavily modified to work in a code generator",
+      //"",
+      gBody.GStatements.Add("#region Delegates for each state's Entry and Exit method calls, and GuardClauses method calls");
+      foreach (var stateName in parsedDiGraph.StateNames) {
+        gBody.GStatements.AddRange(new List<string>() {
+          $"public EntryExitDelegate On{stateName}Entry = null;", $"public EntryExitDelegate On{stateName}Exit = null;",
+        });
+        foreach (var stateConfiguration in parsedDiGraph.StateConfigurations) {
+          //gBody.GStatements. Add("StateMachine.Configure($State},");
+          if (true) // stateName == stateConfiguration) {
+            gBody.GStatements.Add($"endregion");
+        }
+      }
+      gBody.GStatements.Add(
+        "#region Delegates for each state's Entry and Exit method calls, and GuardClauses method calls");
+
+      //"//  Get a distinct list of states with a trigger from the stateConfigurations static variable",
+      //"//  State => Trigger => TargetState",
+      //"var states = StateConfigurations.AsQueryable()",
+      //".Select(x => x.State)",
+      //".Distinct()",
+      //".Select(x => x)",
+      //".ToList();",
+      //"//  Get each trigger for each state",
+      //"states.ForEach(state =>{",
+      //"var triggers = StateConfigurations.AsQueryable()",
+      //".Where(config => config.State == state)",
+      //".Select(config => new { Trigger = config.Trigger, TargetState = config.NextState })",
+      //".ToList();",
+      //"triggers.ForEach(trig => {",
+      //"StateMachine.Configure(state).Permit(trig.Trigger, trig.TargetState);",
+      //"  });",
+      //"});",
+
+  
+      #endregion  
+      gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
+      gClass.GMethodGroups.Add(gMethodGroup.Philote, gMethodGroup);
+      #region Add Triggers
+      var statementList = gClass.CombinedMethods().Where(x => x.GDeclaration.GName == "StartAsync").First().GBody
+        .GStatements;
+      statementList.Insert(statementList.Count - 1, "StateMachine.Fire(Trigger.InitializationCompleteReceived);");
+      #endregion
     }
   }
+}

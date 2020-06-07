@@ -10,18 +10,16 @@ using System.Threading.Tasks;
 namespace GenerateProgram {
   public static partial class GItemGroupInProjectUnitExtensions {
 
-    public static GItemGroupInProjectUnit ItemGroupInProjectUnitForEntireService() {
-      return  new GItemGroupInProjectUnit("CompleteServiceProjectReferences",
-        "Projects in this solution for ", new GBody(new List<string>() {
-          "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/ATAP.Utilities.DataBaseManagement/ATAP.Utilities.DatabaseManagement.csproj\" />",
-          "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/GenerateProgram/GenerateProgram.csproj\" />",
-          "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.ComputerInventory.Hardware.Extensions/ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj\" />",
-          "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.ComputerInventory.ProcessInfo.Models/ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj\" />",
-          "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.ComputerInventory.Software.Enumerations/ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj\" />",
-        }));
-    }
-
-
+    //public static GItemGroupInProjectUnit ItemGroupInProjectUnitForEntireService() {
+    //  return  new GItemGroupInProjectUnit("CompleteServiceProjectReferences",
+    //    "Projects in this solution for ", new GBody(new List<string>() {
+    //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/ATAP.Utilities.DataBaseManagement/ATAP.Utilities.DatabaseManagement.csproj\" />",
+    //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/GenerateProgram/GenerateProgram.csproj\" />",
+    //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.ComputerInventory.Hardware.Extensions/ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj\" />",
+    //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.ComputerInventory.ProcessInfo.Models/ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj\" />",
+    //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.ComputerInventory.Software.Enumerations/ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj\" />",
+    //    }));
+    //}
 
     public static GItemGroupInProjectUnit ATAPLoggingUtilitiesReferencesItemGroupInProjectUnit() {
       return new GItemGroupInProjectUnit("PackageReferencesForLoggingUtilities",
@@ -101,13 +99,6 @@ namespace GenerateProgram {
           "<PackageReference Include=\"FSharpx.Collections.Experimental\" />"
         }));
     }
-    public static GItemGroupInProjectUnit StatelessStateMachineReferencesItemGroupInProjectUnit() {
-      return new GItemGroupInProjectUnit("StatelessPackageReferences",
-        "Packages to for the Stateless lightweight StateMachine library", new GBody(new List<string>() {
-          "<PackageReference Include=\"Stateless\" />",
-        }));
-    }
-
 
     public static GItemGroupInProjectUnit ServiceStackSerializationReferencesItemGroupInProjectUnit() {
       return new GItemGroupInProjectUnit("ServiceStackSerializationPackageReferences",
@@ -160,15 +151,6 @@ namespace GenerateProgram {
         }));
     }
 
-    public static GItemGroupInProjectUnit FodyMethodBoundryReferencesItemGroupInProjectUnit() {
-      return new GItemGroupInProjectUnit("ILWeavingUsingFodyPackageReferences",
-        "Packages to implement IL Weaving using Fody during the build process", new GBody(new List<string>() {
-          "<PackageReference Include=\"MethodBoundaryAspect.Fody\" Version=\"2.0.118\" />",
-          "<PackageReference Include=\"ATAP.Utilities.ETW\" />",
-        }));
-    }
-
-
-
+   
   }
 }

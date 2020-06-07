@@ -2,6 +2,7 @@ using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Drawing.Text;
+using System.IO;
 using System.Linq;
 using System.Security.Permissions;
 using System.Text;
@@ -17,38 +18,103 @@ using static GenerateProgram.GAssemblyUnitExtensions;
 using static GenerateProgram.GCompilationUnitExtensions;
 using static GenerateProgram.GAssemblyGroupExtensions;
 using static GenerateProgram.GMacroExtensions;
+using static ATAP.Utilities.Collection.Extensions;
+
 //using AutoMapper.Configuration;
 
 namespace GenerateProgram {
-
   class Program {
+    delegate GAssemblyGroup MCreateAssemblyGroupDelegate(string name, string subDirectoryForGeneratedFiles,
+      string baseNamespaceName);
+
     static void Main(string[] args) {
-
       // ToDo: Get the Artifacts directory from the host
-      string artifactsPath = "D:/Temp/GenerateProgramArtifacts/GenericHostHostedServices/";
-      string baseNamespaceName = "ATAP.Utilities.GHS.Services";
+      string artifactsPath = "D:/Temp/GenerateProgramArtifacts/";
+      // Source Code Directory and Tests Code Directory relative to the artifactsPath
+      string sourceRelativePath = "src/";
+      string sourceArtifactsPath = Path.Combine(artifactsPath, sourceRelativePath);
+      string testRelativePath = "tests/";
+      string testArtifactsPath = Path.Combine(artifactsPath, testRelativePath);
+      string baseNamespaceName = "ATAP.Utilities.";
 
-      var nonReleasedPackageNames = new List<string>() {
-        "TimerGHS",
-        "FileSystemWatcherGHS",
-        "ConsoleSourceGHS",
-        "ConsoleSinkGHS",
-        "ConsoleMonitorGHS",
-        "FileSystemToObjectGraphGHS",
-        "TopLevelBackgroundGHS",
-      };
-      var interfaces = ".Interfaces";
+      #region The structure of the project and package includes lines found in a ProjectUnit's ItemGroup
       var fromPatternP = "<PackageReference Include=\"";
       var fromPatternS = "\"\\s*/>";
       var toPatternP = "<ProjectReference Include=\"";
       var toPatternS = "\" />";
+      #endregion
+
+      var interfaces = ".Interfaces";
+      string subDirectoryForGeneratedFiles = "Generated";
+
+
+      #region Projects under development, their realtive paths under the source and tests directory, and the delegate to create each
+      string genericHostServicesRelativeNextPath = "GenericHostServices";
+      string genericHostServicesRelativeNextNamespace = "GenericHostServices";
+      string gHSBaseNamespaceName = baseNamespaceName + genericHostServicesRelativeNextNamespace;
+      var projectsUnderDevelopment =
+        new List<(string name, string sourceRelativePath, string testRelativePath, string subDirectoryForGeneratedFiles,
+          string baseNamespaceName,MCreateAssemblyGroupDelegate
+          mCreateAssemblyGroupDelegate )>() {
+          ("ATAP.Utilities.Stateless", Path.Combine(sourceArtifactsPath, "StateMachine/"),
+            Path.Combine(testArtifactsPath, "StateMachine/"), subDirectoryForGeneratedFiles, baseNamespaceName,
+            new MCreateAssemblyGroupDelegate(MAUStateless)),
+
+          ("TimerGHS", Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "TimerGHS"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "TimerGHS"),
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            new MCreateAssemblyGroupDelegate(MTimerGHS)),
+
+          ("FileSystemWatcherGHS",
+            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemWatcherGHS"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemWatcherGHS"),
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            new MCreateAssemblyGroupDelegate(MFileSystemWatcherGHS)),
+
+          ("ConsoleSourceGHS",
+            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSourceGHS"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSourceGHS"),
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            new MCreateAssemblyGroupDelegate(MConsoleSourceGHS)),
+
+          ("ConsoleSinkGHS",
+            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSinkGHS"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSinkGHS"),
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            new MCreateAssemblyGroupDelegate(MConsoleSinkGHS)),
+
+          ("ConsoleMonitorGHS",
+            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleMonitorGHS"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleMonitorGHS"),
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            new MCreateAssemblyGroupDelegate(MConsoleMonitorGHS)),
+
+          ("TopLevelBackgroundGHS",
+            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "TopLevelBackgroundGHS"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "TopLevelBackgroundGHS"),
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            new MCreateAssemblyGroupDelegate(MTopLevelBackgroundGHS)),
+
+          ("FileSystemToObjectGraphGHS",
+            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemToObjectGraphGHS"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemToObjectGraphGHS"),
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            new MCreateAssemblyGroupDelegate(MFileSystemToObjectGraphGHS)),
+        };
+      #endregion
+
       List<KeyValuePair<Regex, string>> nonReleasedPackageKVPs = new List<KeyValuePair<Regex, string>>();
-      foreach (var s in nonReleasedPackageNames) {
+      foreach (var package in projectsUnderDevelopment) {
         nonReleasedPackageKVPs.Add(new KeyValuePair<Regex, string>(
-          new Regex(fromPatternP + s + fromPatternS), toPatternP + artifactsPath + s + "/" + s + ".csproj" + toPatternS
-          ));
+          new Regex(fromPatternP + package.name + fromPatternS),
+          toPatternP + package.sourceRelativePath + package.name + "/" + package.name + ".csproj" + toPatternS
+        ));
+
         nonReleasedPackageKVPs.Add(new KeyValuePair<Regex, string>(
-          new Regex(fromPatternP + s + interfaces + fromPatternS), toPatternP + artifactsPath + s + interfaces + "/" + s + interfaces + ".csproj" + toPatternS
+          new Regex(fromPatternP + package.name + interfaces + fromPatternS),
+          toPatternP + package.sourceRelativePath + package.name + interfaces + "/" + package.name + interfaces +
+          ".csproj" +
+          toPatternS
         ));
       }
       var nonReleasedPackageReplacementDictionary = new Dictionary<Regex, string>();
@@ -59,7 +125,18 @@ namespace GenerateProgram {
       var gNonReleasedPackagesPatternReplacement = new GPatternReplacement(gName: "NonReleasedPackages",
         gDictionary: nonReleasedPackageReplacementDictionary);
       #endregion
-      string subDirectoryForGeneratedFiles = "Generated";
+      #region GReplacementPatternDictionary for SolutionReferencedProjectPaths
+      var gSolutionReferencedProjectPathsPatternReplacement = new GPatternReplacement(
+        gName: "SolutionReferencedProjectPaths",
+        gDictionary: new Dictionary<Regex, string>() {
+          {
+            new Regex("SolutionReferencedProjectsBasePathReplacementPattern"),
+            @"C:/Dropbox/whertzing/GitHub/ATAP.Utilities/"
+          },
+          {new Regex("SolutionReferencedProjectsLocalBasePathReplacementPattern"), sourceArtifactsPath},
+        });
+      #endregion
+
       StringBuilder sb = new StringBuilder(0x2000);
       StringBuilder indent = new StringBuilder(64);
       string indentDelta = "  ";
@@ -69,94 +146,102 @@ namespace GenerateProgram {
       var session = new System.Collections.Generic.Dictionary<string, object>();
       R1Top r1Top;
       W1Top w1Top;
-      var gAssemblyGroup = MTimerGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gNonReleasedPackagesPatternReplacement);
-      session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
-      r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
-      w1Top = new W1Top(basePath: artifactsPath, force: true);
-      r1Top.Render(w1Top);
-      session.Clear();
-      gAssemblyGroup = MFileSystemWatcherGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gNonReleasedPackagesPatternReplacement);
-      session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
-      r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
-      w1Top = new W1Top(basePath: artifactsPath, force: true);
-      r1Top.Render(w1Top);
-      session.Clear();
-      gAssemblyGroup = MConsoleSourceGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
-      session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
-      r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
-      w1Top = new W1Top(basePath: artifactsPath, force: true);
-      r1Top.Render(w1Top);
-      session.Clear();
-      gAssemblyGroup = MConsoleSinkGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
-      session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
-      r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
-      w1Top = new W1Top(basePath: artifactsPath, force: true);
-      r1Top.Render(w1Top);
-      session.Clear();
-      gAssemblyGroup = MConsoleMonitorGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
-      session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
-      r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
-      w1Top = new W1Top(basePath: artifactsPath, force: true);
-      r1Top.Render(w1Top);
-      session.Clear();
-      gAssemblyGroup = MTopLevelBackgroundGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
-      session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
-      r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
-      w1Top = new W1Top(basePath: artifactsPath, force: true);
-      r1Top.Render(w1Top);
-      session.Clear();
-      gAssemblyGroup = MFileSystemToObjectGraphGHS(subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement: gNonReleasedPackagesPatternReplacement);
-      session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
-      r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
-      w1Top = new W1Top(basePath: artifactsPath, force: true);
-      r1Top.Render(w1Top);
-      session.Clear();
+      var gAssemblyGroupReplacementPatternDictionary = new Dictionary<Regex, string>();
+      gAssemblyGroupReplacementPatternDictionary.AddRange(gNonReleasedPackagesPatternReplacement.GDictionary);
+      gAssemblyGroupReplacementPatternDictionary.AddRange(gSolutionReferencedProjectPathsPatternReplacement
+        .GDictionary);
+      var gAssemblyGroupPatternReplacement = new GPatternReplacement(
+        gName: gNonReleasedPackagesPatternReplacement.GName + gSolutionReferencedProjectPathsPatternReplacement.GName,
+        gDictionary: gAssemblyGroupReplacementPatternDictionary);
+      string assemblyGroupName;
+      string assemblyGroupSourceArtifactsPath;
+      string assemblyGroupTestArtifactsPath;
+      GAssemblyGroup gAssemblyGroup;
+
+
+      foreach (var projectUnderDevelopment in projectsUnderDevelopment) {
+        assemblyGroupName = projectUnderDevelopment.name;
+        assemblyGroupSourceArtifactsPath = projectUnderDevelopment.sourceRelativePath;
+        assemblyGroupTestArtifactsPath = projectUnderDevelopment.testRelativePath;
+        gAssemblyGroup = projectUnderDevelopment.mCreateAssemblyGroupDelegate(projectUnderDevelopment.name,
+          projectUnderDevelopment.subDirectoryForGeneratedFiles, projectUnderDevelopment.baseNamespaceName);
+        #region Update the GPatternReplacement properties for every element of every projectsUnderDevelopment
+        MUpdateGPatternReplacement(gAssemblyGroup,gAssemblyGroupPatternReplacement);
+        #endregion
+        session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+        r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
+        w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
+        r1Top.Render(w1Top);
+        session.Clear();
+      }
+
+      //assemblyGroupName = "ATAP.Utilities.Stateless";
+      // assemblyGroupSourceArtifactsPath = Path.Combine(artifactsPath, sourceRelativePath, assemblyGroupName);
+      //var gAssemblyGroup = MAUStateless(assemblyGroupName, subDirectoryForGeneratedFiles, "ATAP.Utilities",
+      //  gAssemblyGroupPatternReplacement);
+      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
+      //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
+      //r1Top.Render(w1Top);
+      //session.Clear();
+
+      //string baseNamespaceNameForGHSServices = "ATAP.Utilities.GHS.Services";
+      //string genericHostServicesPath = "GenericHostServices";
+      //assemblyGroupSourceArtifactsPath = Path.Combine(artifactsPath, sourceRelativePath, genericHostServicesPath);
+      //gAssemblyGroup = MTimerGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //  gAssemblyGroupPatternReplacement);
+      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
+      //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
+      //r1Top.Render(w1Top);
+      //session.Clear();
+      //gAssemblyGroup = MFileSystemWatcherGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //  gAssemblyGroupPatternReplacement);
+      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
+      //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
+      //r1Top.Render(w1Top);
+      //session.Clear();
+      //gAssemblyGroup = MConsoleSourceGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //  gPatternReplacement: gAssemblyGroupPatternReplacement);
+      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
+      //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
+      //r1Top.Render(w1Top);
+      //session.Clear();
+      //gAssemblyGroup = MConsoleSinkGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //  gPatternReplacement: gAssemblyGroupPatternReplacement);
+      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
+      //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
+      //r1Top.Render(w1Top);
+      //session.Clear();
+      //gAssemblyGroup = MConsoleMonitorGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //  gPatternReplacement: gAssemblyGroupPatternReplacement);
+      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
+      //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
+      //r1Top.Render(w1Top);
+      //session.Clear();
+      //gAssemblyGroup = MTopLevelBackgroundGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //  gPatternReplacement: gAssemblyGroupPatternReplacement);
+      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
+      //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
+      //r1Top.Render(w1Top);
+      //session.Clear();
+      //gAssemblyGroup = MFileSystemToObjectGraphGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //  gPatternReplacement: gAssemblyGroupPatternReplacement);
+      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
+      //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
+      //r1Top.Render(w1Top);
+      //session.Clear();
 
       //  Invoke Editor or Compiler or IDE or Tests on the output files
       //Console.WriteLine(r1Top.Sb);
       //Console.WriteLine("Press any Key to exit");
       //var wait = Console.ReadLine();
-
     }
   }
 }
-//gUsing = new GUsing("StandaloneUsing1");
-//gCompilationUnit.GUsings[gUsing.Philote] = gUsing;
-//gUsing = new GUsing("StandaloneUsing2");
-//gCompilationUnit.GUsings[gUsing.Philote] = gUsing;
-
-//gClass.AddPropertys(new GProperty("SoloProperty", "String"));
-
-//var gPropertys = new List<GProperty>()  {
-//          new GProperty("SoloProperty1OfCollection","String"),
-//          new GProperty("SoloProperty2OfCollection","String")
-//      };
-//gClass.AddPropertys(gPropertys);
-//var gPropertyGroup = new GPropertyGroup("PropertyGroup1", new List<GProperty>{
-//        new GProperty("Property1OfPropertyGroup1","String"),
-//        new GProperty("Property2OfPropertyGroup1","String")
-//      });
-//gClass.AddPropertyGroups(gPropertyGroup);
-//var gPropertyGroups = new List<GPropertyGroup>() {
-//        new GPropertyGroup("PropertyGroup2", new List<GProperty>{
-//          new GProperty("Property1OfPropertyGroup2","String"),
-//          new GProperty("Property2OfPropertyGroup2","String")
-//        }),
-//        new GPropertyGroup("PropertyGroup3", new List<GProperty>{
-//          new GProperty("Property1OfPropertyGroup3","String"),
-//          new GProperty("Property2OfPropertyGroup3","String")
-//        })
-//      };
-//gClass.AddPropertyGroups(gPropertyGroups);
-//GArgument arg1 = new GArgument("arg1", "int");
-//GArgument arg2 = new GArgument("arg2", "string", isOut: true);
-//GArgument arg3 = new GArgument("arg3", "Philote<GArgument>", isRef: true);
-//Dictionary<Philote<GArgument>, GArgument> gMethodArguments =
-//  new Dictionary<Philote<GArgument>, GArgument>() { { arg1.Philote, arg1 }, { arg2.Philote, arg2 }, { arg3.Philote, arg3 } };
-//GMethodDeclaration gMethodDeclaration =
-//  new GMethodDeclaration(gName: "ServiceData", isConstructor:true,gMethodArguments:gMethodArguments);
-//GBody gBody = new GBody(statementList: new List<string>() { "A=a", "B=b" });
-//var gConstructor = new GMethod(gMethodDeclaration, gBody);
-
-//gCompilationUnits = new Dictionary<Philote<GCompilationUnit>, GCompilationUnit>();
-//gCompilationUnits[gCompilationUnit.Philote] = gCompilationUnit;

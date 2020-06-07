@@ -9,13 +9,16 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MConsoleSourceGHS(
+    public static GAssemblyGroup MConsoleSourceGHS(string gAssemblyGroupName,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default) {
+      return MConsoleSourceGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, new GPatternReplacement()  );
+    }
+    public static GAssemblyGroup MConsoleSourceGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
 
-      var gAssemblyGroupName = "ConsoleSourceGHS";
       var gAssemblyGroup = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
       #region Select the Titular AssemblyUnit, Titular StateMachineDiGraph, TitularBase CompilationUnit, Namespace, Class, and Constructor

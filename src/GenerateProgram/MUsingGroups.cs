@@ -45,6 +45,7 @@ namespace GenerateProgram {
       return new GUsingGroup("Usings For Stateless implementation of StateMachine").AddUsing(new List<GUsing>() {
         new GUsing("System.Linq"),
         new GUsing("Stateless"),
+        new GUsing("ATAP.Utilities.Stateless"),
       });
     }
   }

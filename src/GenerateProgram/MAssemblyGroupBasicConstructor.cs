@@ -20,40 +20,11 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static (string subDirectoryForGeneratedFiles,
-      string baseNamespaceName,
-      string gAssemblyGroupName,
-      string gTitularAssemblyUnitName,
-      string gTitularBaseCompilationUnitName,
-      GPatternReplacement gAssemblyGroupPatternReplacement,
-      GPatternReplacement gAssemblyUnitPatternReplacement,
-      GPatternReplacement gCompilationUnitBasePatternReplacement,
-      GAssemblyGroup gAssemblyGroup,
-      GAssemblyUnit gTitularAssemblyUnit,
-      GCompilationUnit gCompilationUnitBase,
-      GCompilationUnit gCompilationUnitDerived,
-      GNamespace gNamespaceBase,
-      GNamespace gNamespaceDerived,
-      GClass gClassBase,
-      GClass gClassDerived,
-      GMethod gPrimaryConstructorBase,
-      GAssemblyUnit gTitularInterfaceAssemblyUnit,
-      GCompilationUnit gTitularInterfaceDerivedCompilationUnit,
-      GCompilationUnit gTitularInterfaceBaseCompilationUnit,
-      GInterface gTitularInterfaceDerivedInterface,
-      GInterface gTitularInterfaceBaseInterface
-      ) MAssemblyGroupBasicConstructorPart1(string gAssemblyGroupName = default,
-        string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
-        GPatternReplacement gPatternReplacement = default) {
+    public static MCreateAssemblyGroupResult MAssemblyGroupBasicConstructorPart1(string gAssemblyGroupName = default,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
+      GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
-      GAssemblyGroup gAssemblyGroup;
-      GAssemblyUnit gTitularAssemblyUnit;
-      GCompilationUnit gCompilationUnit;
-      GUsingGroup gUsingGroup;
-      GNamespace gNamespace;
-      GPatternReplacement gAssemblyGroupPatternReplacement;
-      GPatternReplacement gAssemblyUnitPatternReplacement;
 
       #region Determine the names Titular and TitularInterfaces Base and Derived CompilationUnits, Namespaces, Classes, and Interfaces
       // everything to the right of the last "." character, returns original string if no "."
@@ -73,7 +44,7 @@ namespace GenerateProgram {
       var gTitularInterfaceBaseName = "I" + gCompilationUnitCommonName + "Base";
       #endregion
       #region GReplacementPatternDictionary for AssemblyGroup
-      gAssemblyGroupPatternReplacement = new GPatternReplacement(
+      var gAssemblyGroupPatternReplacement = new GPatternReplacement(gName: "gAssemblyGroupPatternReplacement",
         gDictionary: new Dictionary<Regex, string>() {
           {new Regex("AssemblyGroupNameReplacementPattern"), gAssemblyGroupName},
         });
@@ -83,27 +54,39 @@ namespace GenerateProgram {
       }
       #endregion
       #region Instantiate the GAssemblyGroup
-      gAssemblyGroup = new GAssemblyGroup(gAssemblyGroupName, gPatternReplacement: gAssemblyGroupPatternReplacement);
+      var gAssemblyGroup =
+        new GAssemblyGroup(gName: gAssemblyGroupName, gPatternReplacement: gAssemblyGroupPatternReplacement);
       #endregion
       #region Titular AssemblyUnit
-      #region GReplacementPatternDictionary for Titular AssemblyUnit
-      gAssemblyUnitPatternReplacement = new GPatternReplacement(
+      #region GReplacementPatternDictionary for the Titular AssemblyUnit
+      var gTitularAssemblyUnitPatternReplacement = new GPatternReplacement(gName: "gAssemblyUnitPatternReplacement",
         gDictionary: new Dictionary<Regex, string>() {
           {new Regex("AssemblyUnitNameReplacementPattern"), gTitularAssemblyUnitName}
         });
       // add the AssemblyGroup PatternReplacements to the Titular AssemblyUnit PatternReplacements
-      gAssemblyUnitPatternReplacement.GDictionary.AddRange(gAssemblyGroupPatternReplacement.GDictionary);
+      gTitularAssemblyUnitPatternReplacement.GDictionary.AddRange(gAssemblyGroupPatternReplacement.GDictionary);
+      #endregion
+      #region ProjectUnit for the Titular AssemblyUnit
+      #region GPatternReplacement for the ProjectUnit
+      var gTitularAssemblyUnitProjectUnitPatternReplacement =
+        new GPatternReplacement(gName: "TitularAssemblyUnitProjectUnitPatternReplacement");
+      gTitularAssemblyUnitProjectUnitPatternReplacement.GDictionary.AddRange(
+        gTitularAssemblyUnitPatternReplacement.GDictionary);
+      #endregion
+      var gTitularAssemblyUnitProjectUnit = new GProjectUnit(gName: gTitularAssemblyUnitName,
+        gPatternReplacement: gTitularAssemblyUnitProjectUnitPatternReplacement);
       #endregion
       #region Instantiate the gTitularAssemblyUnit
-      gTitularAssemblyUnit = new GAssemblyUnit(gTitularAssemblyUnitName, gRelativePath: gTitularAssemblyUnitName,
-        gProjectUnit: new GProjectUnit(gTitularAssemblyUnitName, gPatternReplacement: gAssemblyUnitPatternReplacement),
-        gPatternReplacement: gAssemblyUnitPatternReplacement);
+      var gTitularAssemblyUnit = new GAssemblyUnit(gName: gTitularAssemblyUnitName,
+        gRelativePath: gTitularAssemblyUnitName,
+        gProjectUnit: gTitularAssemblyUnitProjectUnit,
+        gPatternReplacement: gTitularAssemblyUnitPatternReplacement);
       #endregion
       #endregion
       gAssemblyGroup.GAssemblyUnits.Add(gTitularAssemblyUnit.Philote, gTitularAssemblyUnit);
       #region Titular Derived CompilationUnit
-      #region Pattern Replacements for Derived CompilationUnit
-      var gDerivedCompilationUnitPatternReplacement = new GPatternReplacement(
+      #region Pattern Replacements for Titular Derived CompilationUnit
+      var gTitularDerivedCompilationUnitPatternReplacement = new GPatternReplacement(gName:"gTitularDerivedCompilationUnitPatternReplacement",
         gDictionary: new Dictionary<Regex, string>() {
           {new Regex("CompilationUnitNameReplacementPattern"), gTitularDerivedCompilationUnitName},
           //{new Regex("DataInitializationReplacementPattern"), tempdatainitialization},
@@ -112,19 +95,18 @@ namespace GenerateProgram {
           //},
         });
       // add the AssemblyUnit PatternReplacements to the Derived CompilationUnit PatternReplacements
-      foreach (var kvp in gAssemblyUnitPatternReplacement.GDictionary) {
-        gDerivedCompilationUnitPatternReplacement.GDictionary.Add(kvp.Key, kvp.Value);
-      }
+      gTitularDerivedCompilationUnitPatternReplacement.GDictionary.AddRange(gTitularAssemblyUnitPatternReplacement
+        .GDictionary);
       #endregion
-      #region Instantiate the gCompilationUnitDerived
-      var gCompilationUnitDerived = new GCompilationUnit(gTitularDerivedCompilationUnitName, gFileSuffix: ".cs",
-        gRelativePath: subDirectoryForGeneratedFiles, gPatternReplacement: gDerivedCompilationUnitPatternReplacement);
+      #region Instantiate the Titular Derived CompilationUnit
+      var gTitularDerivedCompilationUnit = new GCompilationUnit(gTitularDerivedCompilationUnitName, gFileSuffix: ".cs",
+        gRelativePath: subDirectoryForGeneratedFiles, gPatternReplacement: gTitularDerivedCompilationUnitPatternReplacement);
       #endregion
-      gTitularAssemblyUnit.GCompilationUnits.Add(gCompilationUnitDerived.Philote, gCompilationUnitDerived);
+      gTitularAssemblyUnit.GCompilationUnits.Add(gTitularDerivedCompilationUnit.Philote, gTitularDerivedCompilationUnit);
       #region Instantiate the gNamespaceDerived
       var gNamespaceDerived = new GNamespace(gNamespaceName);
       #endregion
-      gCompilationUnitDerived.GNamespaces.Add(gNamespaceDerived.Philote, gNamespaceDerived);
+      gTitularDerivedCompilationUnit.GNamespaces.Add(gNamespaceDerived.Philote, gNamespaceDerived);
       #region Instantiate the gClassDerived
       var gClassDerived = new GClass(gClassDerivedName, "public", gAccessModifier: "partial",
         gInheritance: gClassBaseName,
@@ -136,8 +118,8 @@ namespace GenerateProgram {
       #endregion
 
       #region Titular Base CompilationUnit
-      #region GReplacementPatternDictionary for CompilationUnit Base CompilationUnit
-      var gCompilationUnitBasePatternReplacement = new GPatternReplacement(
+      #region Pattern Replacements for Derived CompilationUnit
+      var gTitularBaseCompilationUnitPatternReplacement = new GPatternReplacement(gName:"gTitularBaseCompilationUnitPatternReplacement",
         gDictionary: new Dictionary<Regex, string>() {
           {new Regex("CompilationUnitNameReplacementPattern"), gTitularBaseCompilationUnitName},
           //{new Regex("DataInitializationReplacementPattern"), tempdatainitialization}, {
@@ -146,20 +128,20 @@ namespace GenerateProgram {
           //  ""
           //},
         });
-      // add the Base AssemblyUnit PatternReplacements to the Base CompilationUnit PatternReplacements
-      foreach (var kvp in gAssemblyUnitPatternReplacement.GDictionary) {
-        gCompilationUnitBasePatternReplacement.GDictionary.Add(kvp.Key, kvp.Value);
+      // add the AssemblyUnit PatternReplacements to the Base CompilationUnit PatternReplacements
+      foreach (var kvp in gTitularAssemblyUnitPatternReplacement.GDictionary) {
+        gTitularBaseCompilationUnitPatternReplacement.GDictionary.Add(kvp.Key, kvp.Value);
       }
       #endregion
-      #region Instantiate the gCompilationUnitBase
-      var gCompilationUnitBase = new GCompilationUnit(gTitularBaseCompilationUnitName, gFileSuffix: ".cs",
-        gRelativePath: subDirectoryForGeneratedFiles, gPatternReplacement: gCompilationUnitBasePatternReplacement);
+      #region Instantiate the Titular Base CompilationUnit
+      var gTitularBaseCompilationUnit = new GCompilationUnit(gTitularBaseCompilationUnitName, gFileSuffix: ".cs",
+        gRelativePath: subDirectoryForGeneratedFiles, gPatternReplacement: gTitularBaseCompilationUnitPatternReplacement);
       #endregion
-      gTitularAssemblyUnit.GCompilationUnits.Add(gCompilationUnitBase.Philote, gCompilationUnitBase);
+      gTitularAssemblyUnit.GCompilationUnits.Add(gTitularBaseCompilationUnit.Philote, gTitularBaseCompilationUnit);
       #region Instantiate the gNamespaceBase
       var gNamespaceBase = new GNamespace(gNamespaceName);
       #endregion
-      gCompilationUnitBase.GNamespaces.Add(gNamespaceBase.Philote, gNamespaceBase);
+      gTitularBaseCompilationUnit.GNamespaces.Add(gNamespaceBase.Philote, gNamespaceBase);
       #region Instantiate the gClassBase
       var gClassBase = new GClass(gClassBaseName, "public", gAccessModifier: "partial",
         //gInheritance: baseClass.GName
@@ -198,28 +180,38 @@ namespace GenerateProgram {
       /* ************************************************************************************ */
       #region Titular Interfaces AssemblyUnit
       #region GReplacementPatternDictionary for Titular Interfaces AssemblyUnit
-      gAssemblyUnitPatternReplacement = new GPatternReplacement(
+      var gTitularInterfaceAssemblyUnitPatternReplacement = new GPatternReplacement(
         gDictionary: new Dictionary<Regex, string>() {
           {new Regex("AssemblyUnitNameReplacementPattern"), gTitularInterfaceAssemblyUnitName}
         });
-      // add the AssemblyGroup PatternReplacements to the Titular Interfaces AssemblyUnit PatternReplacements
-      gAssemblyUnitPatternReplacement.GDictionary.AddRange(gAssemblyGroupPatternReplacement.GDictionary);
+      // add the AssemblyGroup PatternReplacements to the Titular Interface AssemblyUnit PatternReplacements
+      gTitularInterfaceAssemblyUnitPatternReplacement.GDictionary.AddRange(gAssemblyGroupPatternReplacement.GDictionary);
+      #endregion
+      #region ProjectUnit for the Titular Interface AssemblyUnit
+      #region GPatternReplacement for the ProjectUnit
+      var gTitularInterfaceAssemblyUnitProjectUnitPatternReplacement =
+        new GPatternReplacement(gName: "TitularInterfaceAssemblyUnitProjectUnitPatternReplacement");
+      gTitularInterfaceAssemblyUnitProjectUnitPatternReplacement.GDictionary.AddRange(
+        gTitularInterfaceAssemblyUnitPatternReplacement.GDictionary);
+      #endregion
+      var gTitularInterfaceAssemblyUnitProjectUnit = new GProjectUnit(gTitularInterfaceAssemblyUnitName,
+        gPatternReplacement: gTitularInterfaceAssemblyUnitProjectUnitPatternReplacement);
       #endregion
       #region Instantiate the gTitularInterfaceAssemblyUnit
-      var gTitularInterfaceAssemblyUnit = new GAssemblyUnit(gTitularInterfaceAssemblyUnitName,
+      var gTitularInterfaceAssemblyUnit = new GAssemblyUnit(gName: gTitularInterfaceAssemblyUnitName,
         gRelativePath: gTitularInterfaceAssemblyUnitName,
-        gProjectUnit: new GProjectUnit(gTitularInterfaceAssemblyUnitName,
-          gPatternReplacement: gAssemblyUnitPatternReplacement),
-        gPatternReplacement: gAssemblyUnitPatternReplacement);
+        gProjectUnit: gTitularInterfaceAssemblyUnitProjectUnit,
+        gPatternReplacement: gTitularInterfaceAssemblyUnitPatternReplacement);
       #endregion
       gAssemblyGroup.GAssemblyUnits.Add(gTitularInterfaceAssemblyUnit.Philote, gTitularInterfaceAssemblyUnit);
       #region Titular Interface Derived CompilationUnit
-      #region Pattern Replacements for Interface Derived CompilationUnit
-      var gInterfaceDerivedCompilationUnitPatternReplacement = new GPatternReplacement(
+      #region Pattern Replacements for Titular Interface Derived CompilationUnit
+      var gInterfaceDerivedCompilationUnitPatternReplacement = new GPatternReplacement(gName:"gTitularInterfaceDerivedCompilationUnitPatternReplacement",
         gDictionary: new Dictionary<Regex, string>() {
-          {new Regex("CompilationUnitNameReplacementPattern"), "AssemblyUnitNameReplacementPattern"}
+          {new Regex("CompilationUnitNameReplacementPattern"), gTitularInterfaceDerivedCompilationUnitName}
         });
-      gInterfaceDerivedCompilationUnitPatternReplacement.GDictionary.AddRange(gAssemblyUnitPatternReplacement
+      // add the interface AssemblyUnit PatternReplacements to the Interface Derived CompilationUnit PatternReplacements
+      gInterfaceDerivedCompilationUnitPatternReplacement.GDictionary.AddRange(gTitularInterfaceAssemblyUnitPatternReplacement
         .GDictionary);
       #endregion
       #region instantiate the Titular Interface Derived CompilationUnit
@@ -248,7 +240,7 @@ namespace GenerateProgram {
         gDictionary: new Dictionary<Regex, string>() {
           {new Regex("CompilationUnitNameReplacementPattern"), "AssemblyUnitNameReplacementPattern"}
         });
-      gInterfaceBaseCompilationUnitPatternReplacement.GDictionary.AddRange(gAssemblyUnitPatternReplacement.GDictionary);
+      gInterfaceBaseCompilationUnitPatternReplacement.GDictionary.AddRange(gTitularInterfaceAssemblyUnitPatternReplacement.GDictionary);
       #endregion
       #region instantiate the Titular Interface Base CompilationUnit
       var gTitularInterfaceBaseCompilationUnit = new GCompilationUnit(gTitularInterfaceBaseCompilationUnitName,
@@ -307,30 +299,32 @@ namespace GenerateProgram {
         gItemGroupInProjectUint);
       #endregion
       #endregion
-      var part1Tuple = (subDirectoryForGeneratedFilesValue: subDirectoryForGeneratedFiles,
-          baseNamespaceName: baseNamespaceName,
-          gAssemblyGroupName: gAssemblyGroupName,
-          gTitularAssemblyUnitName: gTitularAssemblyUnitName,
-          gTitularBaseCompilationUnitName: gTitularBaseCompilationUnitName,
-          gAssemblyGroupPatternReplacement: gAssemblyGroupPatternReplacement,
-          gAssemblyUnitPatternReplacement: gAssemblyUnitPatternReplacement,
-          gCompilationUnitBasePatternReplacement: gCompilationUnitBasePatternReplacement,
-          gAssemblyGroup: gAssemblyGroup,
-          gTitularAssemblyUnit: gTitularAssemblyUnit,
-          gCompilationUnitBase: gCompilationUnitBase,
-          gCompilationUnitDerived: gCompilationUnitDerived,
-          gNamespaceBase: gNamespaceBase,
-          gNamespaceDerived: gNamespaceDerived,
-          gClassBase: gClassBase,
-          gClassDerived: gClassDerived,
-          gPrimaryConstructorBase: gPrimaryConstructorBase,
-          gTitularInterfaceAssemblyUnit: gTitularInterfaceAssemblyUnit,
-          gTitularInterfaceDerivedCompilationUnit: gTitularInterfaceDerivedCompilationUnit,
-          gTitularInterfaceBaseCompilationUnit: gTitularInterfaceBaseCompilationUnit,
-          gTitularInterfaceDerivedInterface: gTitularInterfaceDerivedInterface,
-          gTitularInterfaceBaseInterface: gTitularInterfaceBaseInterface
-        );
-      return part1Tuple;
+      MCreateAssemblyGroupResult p1Result = new MCreateAssemblyGroupResult() {
+        subDirectoryForGeneratedFiles = subDirectoryForGeneratedFiles,
+        baseNamespaceName = baseNamespaceName,
+        gAssemblyGroupName = gAssemblyGroupName,
+        gTitularAssemblyUnitName = gTitularAssemblyUnitName,
+        gTitularBaseCompilationUnitName = gTitularBaseCompilationUnitName,
+        gAssemblyGroup = gAssemblyGroup,
+        gAssemblyGroupPatternReplacement = gAssemblyGroupPatternReplacement,
+        gTitularAssemblyUnit = gTitularAssemblyUnit,
+        gTitularAssemblyUnitPatternReplacement = gTitularAssemblyUnitPatternReplacement,
+        gTitularDerivedCompilationUnit = gTitularDerivedCompilationUnit,
+        gTitularDerivedCompilationUnitPatternReplacement = gTitularDerivedCompilationUnitPatternReplacement,
+        gTitularBaseCompilationUnit = gTitularBaseCompilationUnit,
+        gTitularBaseCompilationUnitPatternReplacement = gTitularBaseCompilationUnitPatternReplacement,
+        gNamespaceDerived = gNamespaceDerived,
+        gNamespaceBase = gNamespaceBase,
+        gClassBase = gClassBase,
+        gClassDerived = gClassDerived,
+        gPrimaryConstructorBase = gPrimaryConstructorBase,
+        gTitularInterfaceAssemblyUnit = gTitularInterfaceAssemblyUnit,
+        gTitularInterfaceDerivedCompilationUnit = gTitularInterfaceDerivedCompilationUnit,
+        gTitularInterfaceBaseCompilationUnit = gTitularInterfaceBaseCompilationUnit,
+        gTitularInterfaceDerivedInterface = gTitularInterfaceDerivedInterface,
+        gTitularInterfaceBaseInterface = gTitularInterfaceBaseInterface
+      };
+      return p1Result;
     }
     public static GAssemblyGroup MAssemblyGroupBasicConstructorPart2(
       (string subDirectoryForGeneratedFiles,
@@ -403,6 +397,22 @@ namespace GenerateProgram {
     }
     public static void MUpdateGPatternReplacement(GAssemblyGroup gAssemblyGroup,
       GPatternReplacement gAssemblyGroupPatternReplacement) {
+      gAssemblyGroup.GPatternReplacement.GDictionary.AddRange(gAssemblyGroupPatternReplacement.GDictionary);
+      foreach (var gAssemblyUnitKVP in gAssemblyGroup.GAssemblyUnits) {
+        gAssemblyUnitKVP.Value.GPatternReplacement.GDictionary.AddRange(gAssemblyGroupPatternReplacement.GDictionary);
+        gAssemblyUnitKVP.Value.GProjectUnit.GPatternReplacement.GDictionary.AddRange(gAssemblyGroupPatternReplacement
+          .GDictionary);
+        foreach (var gCompilationUnitKVP in gAssemblyUnitKVP.Value.GCompilationUnits) {
+          gCompilationUnitKVP.Value.GPatternReplacement.GDictionary.AddRange(gAssemblyGroupPatternReplacement
+            .GDictionary);
+        }
+        foreach (var gResourceUnitKVP in gAssemblyUnitKVP.Value.GResourceUnits) {
+          gResourceUnitKVP.Value.GPatternReplacement.GDictionary.AddRange(gAssemblyGroupPatternReplacement.GDictionary);
+        }
+        //foreach (var gPropertiesUnitKVP in gAssemblyUnitKVP.Value.GPropertiesUnits) {
+        //  gPropertiesUnitKVP.Value.GPatternReplacement.GDictionary.AddRange(gAssemblyGroupPatternReplacement.GDictionary);
+        //}
+      }
     }
   }
 }

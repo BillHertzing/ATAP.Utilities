@@ -31,7 +31,6 @@ namespace GenerateProgram {
      
       var dirInfo = new DirectoryInfo(BasePath);
       if (!dirInfo.Exists) {
-
         if (!(bool)Force) {
           //ToDo: Log exception
           throw new Exception(message: $"Base directory for Generated code does not exist (try force=true): {BasePath}");

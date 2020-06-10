@@ -37,20 +37,15 @@ namespace GenerateProgram {
       string testArtifactsPath = Path.Combine(artifactsPath, testRelativePath);
       string baseNamespaceName = "ATAP.Utilities.";
 
-      #region The structure of the project and package includes lines found in a ProjectUnit's ItemGroup
-      var fromPatternP = "<PackageReference Include=\"";
-      var fromPatternS = "\"\\s*/>";
-      var toPatternP = "<ProjectReference Include=\"";
-      var toPatternS = "\" />";
-      #endregion
+
 
       var interfaces = ".Interfaces";
       string subDirectoryForGeneratedFiles = "Generated";
 
 
       #region Projects under development, their realtive paths under the source and tests directory, and the delegate to create each
-      string genericHostServicesRelativeNextPath = "GenericHostServices";
-      string genericHostServicesRelativeNextNamespace = "GenericHostServices";
+      string genericHostServicesRelativeNextPath = "GenericHostServices/";
+      string genericHostServicesRelativeNextNamespace = "GenericHostServices.";
       string gHSBaseNamespaceName = baseNamespaceName + genericHostServicesRelativeNextNamespace;
       var projectsUnderDevelopment =
         new List<(string name, string sourceRelativePath, string testRelativePath, string subDirectoryForGeneratedFiles,
@@ -60,47 +55,55 @@ namespace GenerateProgram {
             Path.Combine(testArtifactsPath, "StateMachine/"), subDirectoryForGeneratedFiles, baseNamespaceName,
             new MCreateAssemblyGroupDelegate(MAUStateless)),
 
-          ("TimerGHS", Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "TimerGHS"),
-            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "TimerGHS"),
+          ("TimerGHS", Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "TimerGHS/"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "TimerGHS/"),
             subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
             new MCreateAssemblyGroupDelegate(MTimerGHS)),
 
           ("FileSystemWatcherGHS",
-            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemWatcherGHS"),
-            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemWatcherGHS"),
+            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemWatcherGHS/"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemWatcherGHS/"),
             subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
             new MCreateAssemblyGroupDelegate(MFileSystemWatcherGHS)),
 
           ("ConsoleSourceGHS",
-            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSourceGHS"),
-            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSourceGHS"),
+            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSourceGHS/"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSourceGHS/"),
             subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
             new MCreateAssemblyGroupDelegate(MConsoleSourceGHS)),
 
           ("ConsoleSinkGHS",
-            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSinkGHS"),
-            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSinkGHS"),
+            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSinkGHS/"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSinkGHS/"),
             subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
             new MCreateAssemblyGroupDelegate(MConsoleSinkGHS)),
 
           ("ConsoleMonitorGHS",
-            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleMonitorGHS"),
-            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleMonitorGHS"),
+            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleMonitorGHS/"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleMonitorGHS/"),
             subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
             new MCreateAssemblyGroupDelegate(MConsoleMonitorGHS)),
 
           ("TopLevelBackgroundGHS",
-            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "TopLevelBackgroundGHS"),
-            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "TopLevelBackgroundGHS"),
+            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "TopLevelBackgroundGHS/"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "TopLevelBackgroundGHS/"),
             subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
             new MCreateAssemblyGroupDelegate(MTopLevelBackgroundGHS)),
 
           ("FileSystemToObjectGraphGHS",
-            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemToObjectGraphGHS"),
-            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemToObjectGraphGHS"),
+            Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemToObjectGraphGHS/"),
+            Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemToObjectGraphGHS/"),
             subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
             new MCreateAssemblyGroupDelegate(MFileSystemToObjectGraphGHS)),
         };
+      #endregion
+
+      #region Conversion of nonReleased Packages from PacakgeRefference to ProjectReference
+      #region The structure of the project and package includes lines found in a ProjectUnit's ItemGroup
+      var fromPatternP = "<PackageReference Include=\"";
+      var fromPatternS = "\"\\s*/>";
+      var toPatternP = "<ProjectReference Include=\"";
+      var toPatternS = "\" />";
       #endregion
 
       List<KeyValuePair<Regex, string>> nonReleasedPackageKVPs = new List<KeyValuePair<Regex, string>>();
@@ -136,6 +139,7 @@ namespace GenerateProgram {
           {new Regex("SolutionReferencedProjectsLocalBasePathReplacementPattern"), sourceArtifactsPath},
         });
       #endregion
+      #endregion
 
       StringBuilder sb = new StringBuilder(0x2000);
       StringBuilder indent = new StringBuilder(64);
@@ -153,15 +157,13 @@ namespace GenerateProgram {
       var gAssemblyGroupPatternReplacement = new GPatternReplacement(
         gName: gNonReleasedPackagesPatternReplacement.GName + gSolutionReferencedProjectPathsPatternReplacement.GName,
         gDictionary: gAssemblyGroupReplacementPatternDictionary);
-      string assemblyGroupName;
-      string assemblyGroupSourceArtifactsPath;
+
+
       string assemblyGroupTestArtifactsPath;
       GAssemblyGroup gAssemblyGroup;
 
 
       foreach (var projectUnderDevelopment in projectsUnderDevelopment) {
-        assemblyGroupName = projectUnderDevelopment.name;
-        assemblyGroupSourceArtifactsPath = projectUnderDevelopment.sourceRelativePath;
         assemblyGroupTestArtifactsPath = projectUnderDevelopment.testRelativePath;
         gAssemblyGroup = projectUnderDevelopment.mCreateAssemblyGroupDelegate(projectUnderDevelopment.name,
           projectUnderDevelopment.subDirectoryForGeneratedFiles, projectUnderDevelopment.baseNamespaceName);
@@ -170,7 +172,7 @@ namespace GenerateProgram {
         #endregion
         session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
         r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
-        w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
+        w1Top = new W1Top(basePath: projectUnderDevelopment.sourceRelativePath, force: true);
         r1Top.Render(w1Top);
         session.Clear();
       }

@@ -15,7 +15,7 @@ using static GenerateProgram.GClassExtensions;
 namespace GenerateProgram {
   public static partial class GAssemblyUnitExtensions {
 
-    public static void GAssemblyGroupCommonFinalizer(GAssemblyGroup gAssemblyGroup,  GClass gClassDerived, GClass gClassBase, GInterface gInterfaceDerived, GInterface gInterfaceBase) {
+    public static void GAssemblyGroupCommonFinalizer(MCreateAssemblyGroupResult mCreateAssemblyGroupResult) {
       //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor,  GCompilationUnit gCompilationUnitDerived
       //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
       //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
@@ -27,11 +27,11 @@ namespace GenerateProgram {
       #region Create Derived Constructors for all public Base Constructors
       // Create a constructor in the Titular class for every public constructor in the Titular Base class
       var baseConstructorsList = new List<GMethod>();
-      baseConstructorsList.AddRange(gClassBase.CombinedConstructors());
+      baseConstructorsList.AddRange(mCreateAssemblyGroupResult.gClassBase.CombinedConstructors());
       foreach (var bc in baseConstructorsList) {
-        var gConstructor = new GMethod(new GMethodDeclaration(gClassDerived.GName, isConstructor: true,
+        var gConstructor = new GMethod(new GMethodDeclaration(mCreateAssemblyGroupResult.gClassDerived.GName, isConstructor: true,
           gVisibility: "public", gArguments: bc.GDeclaration.GArguments, gBase: bc.GDeclaration.GArguments.ToBaseString()));
-        gClassDerived.GMethods.Add(gConstructor.Philote,gConstructor);
+        mCreateAssemblyGroupResult.gClassDerived.GMethods.Add(gConstructor.Philote,gConstructor);
       }
       #endregion
       #region Constructor Groups
@@ -49,14 +49,16 @@ namespace GenerateProgram {
       //  IEnumerable<GClass> gClasss,
       //  IEnumerable<GMethod> gMethods) lookupResultsTuple = LookupPrimaryConstructorMethod();
       //MStateMachineFinalizer( gClassBase);
-      //MStateMachineFinalizer(gCompilationUnitBase, gNamespace, gClassBase, gConstructorBase, gStateConfigurations);
+      //MStateMachineFinalizer(gTitularBaseCompilationUnit, gNamespace, gClassBase, gConstructorBase, gStateConfigurations);
       //MStateMachineFinalizer(  gClassBase, gConstructorBase, gStateConfigurations);
+      MStateMachineFinalizer(mCreateAssemblyGroupResult);
+
       #endregion
       #region Populate Interfaces for Titular Derived and Base Class
-      PopulateInterface(gClassDerived, gInterfaceDerived);
-      PopulateInterface(gClassBase, gInterfaceBase);
+      PopulateInterface(mCreateAssemblyGroupResult.gClassDerived, mCreateAssemblyGroupResult.gTitularInterfaceDerivedInterface);
+      PopulateInterface(mCreateAssemblyGroupResult.gClassBase, mCreateAssemblyGroupResult.gTitularInterfaceBaseInterface);
       #endregion
-      #region populate the Interfaces CompilationUnits for Base and Derived
+      #region populate the Interfaces CompilationUnits for additional classes found in the Titular Derived and Base CompilationUnits
       #endregion
       #region Condense GUsings in the Base and Derived GCompilationUnits of the Titular Interfaces Assembly 
       #endregion

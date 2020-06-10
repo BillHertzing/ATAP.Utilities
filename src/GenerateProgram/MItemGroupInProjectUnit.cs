@@ -21,13 +21,14 @@ namespace GenerateProgram {
       return new GItemGroupInProjectUnit("StatelessPackageReferences",
         "Packages for the Stateless lightweight StateMachine library", new GBody(new List<string>() {
           "<PackageReference Include=\"Stateless\" />",
+          "<PackageReference Include=\"ATAP.Utilities.Stateless\" />",
         }));
     }
 
     public static GItemGroupInProjectUnit MFodyMethodBoundryReferencesItemGroupInProjectUnit() {
       return new GItemGroupInProjectUnit("ILWeavingUsingFodyPackageReferences",
-        "Packages to implement IL Weaving using Fody during the build process", new GBody(new List<string>() {
-          "<PackageReference Include=\"MethodBoundaryAspect.Fody\" Version=\"2.0.118\" />",
+        "Packages to implement ETW logging of Method Boundaries by using Fody for IL Weaving during the build process", new GBody(new List<string>() {
+          "<PackageReference Include=\"MethodBoundaryAspect.Fody\" />",
           "<PackageReference Include=\"ATAP.Utilities.ETW\" />",
         }));
     }

@@ -19,30 +19,24 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GAssemblyGroupExtensions {
-    public static GAssemblyGroup MAssemblyGroupGHBSConstructor(string gAssemblyGroupName = default,
+    public static MCreateAssemblyGroupResult MAssemblyGroupGHBSConstructor(string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespace = default,
       GPatternReplacement gPatternReplacement = default) {
-
-      var part1Tuple = MAssemblyGroupCommonConstructorForGHHSAndGHBSPart1(gAssemblyGroupName,
+      var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName,
         subDirectoryForGeneratedFiles,
         baseNamespace, gPatternReplacement);
 
-      #region Titular Base Class (IHostedService)
-      var gClass = new GClass(part1Tuple.gCompilationUnitName, gVisibility: "public",
-        gImplements: new List<string> {"IBackgroundService"}
-        //gImplements: new List<string> { "IDisposable" },
-        //gDisposesOf: new List<string> { "CompilationUnitNameReplacementPatternBaseData" }
-      );
-    #region specific methods for BackgroundService
-      gClass.AddMethod(CreateExecuteAsyncMethod(gAccessModifier: "override async"));
-      gClass.AddMethodGroup(CreateStartStopAsyncMethods(gAccessModifier: "override async"));
+      #region Additions to Titular Base Class (IBackgroundService)
+      #region specific methods for BackgroundService
+      mCreateAssemblyGroupResult.gClassBase.AddMethod(MCreateExecuteAsyncMethod(gAccessModifier: "override async"));
+      mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(MCreateStartStopAsyncMethods(gAccessModifier: "override async"));
       #endregion
       #endregion
-      var gAssemblyGroup = MAssemblyGroupCommonConstructorForGHHSAndGHBSPart2(part1Tuple, gClass);
+      MAssemblyGroupCommonConstructorForGHHSAndGHBSPart2(mCreateAssemblyGroupResult);
 
-      return gAssemblyGroup;
+      return mCreateAssemblyGroupResult;
     }
-    public static void GAssemblyGroupGHBSFinalizer(GAssemblyGroup gAssemblyGroup,  GClass gClassDerived, GClass gClassBase, GInterface gInterfaceDerived, GInterface gInterfaceBase) {
+    public static void GAssemblyGroupGHBSFinalizer(MCreateAssemblyGroupResult mCreateAssemblyGroupResult) {
       //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor
       //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
       //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
@@ -52,7 +46,7 @@ namespace GenerateProgram {
       //var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
       //#endregion
       // No Additional work needed, call CommonFinalizer
-      GAssemblyGroupCommonFinalizer( gAssemblyGroup,   gClassDerived,  gClassBase,  gInterfaceDerived,  gInterfaceBase);
+      GAssemblyGroupCommonFinalizer(mCreateAssemblyGroupResult);
     }
   }
 }

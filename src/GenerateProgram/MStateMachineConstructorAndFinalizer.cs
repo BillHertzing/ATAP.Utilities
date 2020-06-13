@@ -34,20 +34,22 @@ namespace GenerateProgram {
       gNamespace.AddDelegate(gDelegates);
       #endregion
 
-      // Property Group for StateMachine properties
+     #region StateMachine GPropertyGroup and its porperties
       var gPropertyGroup = new GPropertyGroup(gName: "StateMachine Properties");
-      // StateConfigurations Property
+      // StateMachine Property
       var gProperty = new GProperty(gName: "StateMachine", gType: "StateMachine<State,Trigger>", gAccessors: "{get;}");
       gPropertyGroup.GPropertys.Add(gProperty.Philote, gProperty);
-      // Add the StateMachine Property to the class
-      gProperty = new GProperty(gName: "StateConfigurations", gType: "List<StateConfiguration>", gAccessors: "{get;}");
-      gPropertyGroup.GPropertys.Add(gProperty.Philote, gProperty);
+      // StateConfigurations property
+      //gProperty = new GProperty(gName: "StateConfigurations", gType: "List<StateConfiguration>", gAccessors: "{get;}");
+      //gPropertyGroup.GPropertys.Add(gProperty.Philote, gProperty);
+      // Add the PropertyGroup to the gClass
       gClass.GPropertyGroups.Add(gPropertyGroup.Philote, gPropertyGroup);
+      #endregion
 
       // Add initialization statements for the properties in the the StateMachine Properties Property Group to the constructor body
       gConstructor.GBody.GStatements.AddRange(new List<string>() {
         "StateMachine = new StateMachine<State, Trigger>(State.WaitingForInitialization);",
-        "StateConfigurations = stateConfigurations;",
+        "//StateConfigurations = stateConfigurations;",
         "ConfigureStateMachine();",
       });
 
@@ -87,13 +89,19 @@ namespace GenerateProgram {
       const string pattern = @"\s*(?<State>.+?)\s*->\s*(?<NextState>.+?)\s*\[label\s*=\s*""(?<Trigger>[^""\]]+?)""\]";
       Regex regex = new Regex(pattern);
       StringBuilder diGraphSB = new StringBuilder();
-      diGraph.ForEach(s => diGraphSB.Append(s));
+      diGraph.ForEach(sc => {
+          sc.GStateTransitions.ForEach(st => {
+              diGraphSB.Append(st);
+          });
+      });
+ 
       var diGraphStates = regex.Matches(diGraphSB.ToString()).Cast<Match>()
         .Select(x => (State: x.Groups["State"].Value, Trigger: x.Groups["Trigger"].Value,
-          NextState: x.Groups["NextState"].Value));
+          NextState: x.Groups["NextState"].Value,GuardPredicate: x.Groups["GuardPredicate"].Value));
       var stateNames = diGraphStates.Select(x => x.State).Concat(diGraphStates.Select(x => x.NextState)).Distinct();
       var triggerNames = diGraphStates.Select(x => x.Trigger).Distinct();
-      var stateConfigurations = diGraphStates.Select(x =>
+      //var transitionNames = diGraphStates.Select(x => (fromState: x.State,toState: x.NextState, trigger:x.Trigger, transition:Span<Bytes>).Distinct();
+      var stateConfigurations = diGraphStates.Select(x => 
         $"new StateConfiguration(state:State.{x.State},trigger:Trigger.{x.Trigger},nextState:State.{x.NextState}),");
       return (stateNames, triggerNames, stateConfigurations);
     }
@@ -185,17 +193,17 @@ namespace GenerateProgram {
         gNamespace.AddEnumerationGroup(gEnumerationGroup);
         #endregion
 
-        #region StateMachine Transitions Static variable
-        // Add a StaticVariable to the class
-        List<string> gStatements = new List<string>() {"new List<StateConfiguration>(){"};
-        foreach (var sc in parsedDiGraph.StateConfigurations) {
-          gStatements.Add(sc);
-        }
-        gStatements.Add("}");
-        var gStaticVariable = new GStaticVariable("stateConfigurations", gType: "List<StateConfiguration>",
-          gBody: new GBody(gStatements));
-        gClass.GStaticVariables.Add(gStaticVariable.Philote, gStaticVariable);
-        #endregion
+        //#region StateMachine Transitions Static variable
+        //// Add a StaticVariable to the class
+        //List<string> gStatements = new List<string>() {"new List<StateConfiguration>(){"};
+        //foreach (var sc in parsedDiGraph.StateConfigurations) {
+        //  gStatements.Add(sc);
+        //}
+        //gStatements.Add("}");
+        //var gStaticVariable = new GStaticVariable("stateConfigurations", gType: "List<StateConfiguration>",
+        //  gBody: new GBody(gStatements));
+        //gClass.GStaticVariables.Add(gStaticVariable.Philote, gStaticVariable);
+        //#endregion
 
         #region Create the detailed ConfigureStateMachine Method using the parsedDiGraph information
         // add a method to the class that configures the StateMachine according to the StateConfigurations parsed from the diGraph
@@ -203,7 +211,7 @@ namespace GenerateProgram {
         var gBody = new GBody(new List<string>());
         var gMethod =
           new GMethod(
-            new GMethodDeclaration(gName: "ConfigureStateMachine", gType: "void", gVisibility: "public",
+            new GMethodDeclaration(gName: "ConfigureStateMachine", gType: "void", gVisibility: "private",
               gAccessModifier: ""), gBody);
         //"// attribution :https://github.com/dhrobbins/ApprovaFlow/blob/master/ApprovaFlow/ApprovaFlow/ApprovaFlow/Workflow/WorkflowProcessor.cs",
         //"// attribution :https://github.com/frederiksen/Stateless-Designer/blob/master/src/StatelessDesigner.VS2017/StatelessCodeGenerator/StatelessCodeGenerator.cs",
@@ -211,19 +219,19 @@ namespace GenerateProgram {
         //"",
         gBody.GStatements.Add(
           "#region Delegates for each state's Entry and Exit method calls, and GuardClauses method calls");
-        foreach (var stateName in parsedDiGraph.StateNames) {
-          gBody.GStatements.AddRange(new List<string>() {
-            $"public EntryExitDelegate On{stateName}Entry = null;",
-            $"public EntryExitDelegate On{stateName}Exit = null;",
-          });
-        }
+        //foreach (var stateName in parsedDiGraph.StateNames) {
+        //  gBody.GStatements.AddRange(new List<string>() {
+        //    $"public EntryExitDelegate On{stateName}Entry = null;",
+        //    $"public EntryExitDelegate On{stateName}Exit = null;",
+        //  });
+        //}
         gBody.GStatements.Add("#endregion");
         gBody.GStatements.Add("#region Fluent");
-        foreach (var stateConfiguration in parsedDiGraph.StateConfigurations) {
-          //gBody.GStatements. Add("StateMachine.Configure($State},");
-          //  if (true) // stateName == stateConfiguration) {
-          //    gBody.GStatements.Add($"#endregion");
-        }
+        //foreach (var stateConfiguration in parsedDiGraph.StateConfigurations) {
+        //  //gBody.GStatements. Add("StateMachine.Configure($State},");
+        //  //  if (true) // stateName == stateConfiguration) {
+        //  //    gBody.GStatements.Add($"#endregion");
+        //}
         gBody.GStatements.Add("#endregion");
       
       //gBody.GStatements.AddRange(

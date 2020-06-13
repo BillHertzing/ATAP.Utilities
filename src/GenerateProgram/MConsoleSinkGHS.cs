@@ -21,25 +21,76 @@ namespace GenerateProgram {
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
       #region Initial StateMachine Configuration for this specific service
+      //gStateConfigurationFluentChains:
+      //new List<string>() {
+      //  // None
+      //};
+      var s1 = new List<string>() {
+        @"StateMachine.Configure(State.WaitingForInitialization)",
+        //$"  .OnEntry(() => {{ if (OnWaitingForInitializationEntry!= null) OnWaitingForInitializationEntry(); }})",
+        //$"  .OnExit(() => {{ if (OnWaitingForInitializationExit!= null) OnWaitingForInitializationExit(); }})",
+        $"  .Permit(Trigger.InitializationCompleteReceived, State.WaitingForRequestToWriteSomething)",
+        $";",
+
+        @"StateMachine.Configure(State.WaitingForRequestToWriteSomething)",
+        //$"  .OnEntry(() => {{ if (OnWaitingForInitializationEntry!= null) OnWaitingForInitializationEntry(); }})",
+       // $"  .OnExit(() => {{ if (OnWaitingForInitializationExit!= null) OnWaitingForInitializationExit(); }})",
+        $"  .Permit(Trigger.WriteStarted, State.WaitingForWriteToComplete)",
+        $"  .Permit(Trigger.StopAsyncActivated, State.ShutdownStarted)",
+        // $"  .PermitReentryIf(Trigger.InitializationCompleteReceived, State.WaitingForRequestToWriteSomething, () => {{ if (GuardClauseFroWaitingForInitializationToWaitingForRequestToWriteSomethingUsingTriggerInitializationCompleteReceived!= null) return GuardClauseFroWaitingForInitializationToWaitingForRequestToWriteSomethingUsingTriggerInitializationCompleteReceived(); return true; }})",
+        $";",
+
+        @"StateMachine.Configure(State.WaitingForWriteToComplete)",
+        $"  .OnEntry((string mesg) => {{Console.Write(mesg);}})",
+        // $"  .OnExit(() => {{ if (OnWaitingForInitializationExit!= null) OnWaitingForInitializationExit(); }})",
+        $"  .Permit(Trigger.WriteFinished, State.WaitingForRequestToWriteSomething)",
+        $"  .Permit(Trigger.StopAsyncActivated, State.ShutdownStarted)",
+        // $"  .PermitReentryIf(Trigger.InitializationCompleteReceived, State.WaitingForRequestToWriteSomething, () => {{ if (GuardClauseFroWaitingForInitializationToWaitingForRequestToWriteSomethingUsingTriggerInitializationCompleteReceived!= null) return GuardClauseFroWaitingForInitializationToWaitingForRequestToWriteSomethingUsingTriggerInitializationCompleteReceived(); return true; }})",
+        $";",
+
+
+        @"StateMachine.Configure(State.ShutdownStarted)",
+        //$"  .OnEntry(() => {{ if (OnWaitingForInitializationEntry!= null) OnWaitingForInitializationEntry(); }})",
+        // $"  .OnExit(() => {{ if (OnWaitingForInitializationExit!= null) OnWaitingForInitializationExit(); }})",
+        $"  .Permit(Trigger.ShutdownCompleted, State.ShutdownComplete)",
+        // $"  .PermitReentryIf(Trigger.InitializationCompleteReceived, State.WaitingForRequestToWriteSomething, () => {{ if (GuardClauseFroWaitingForInitializationToWaitingForRequestToWriteSomethingUsingTriggerInitializationCompleteReceived!= null) return GuardClauseFroWaitingForInitializationToWaitingForRequestToWriteSomethingUsingTriggerInitializationCompleteReceived(); return true; }})",
+        $";",
+        @"StateMachine.Configure(State.ShutdownComplete);",
+      };
+
+
+      var gStateConfigurations = new List<GStateConfiguration>();
+      var s3 = @"
+      WaitingForInitialization -> WaitingForRequestToWriteSomething [label = ""InitializationCompleteReceived""]
+      WaitingForRequestToWriteSomething -> WaitingForWriteToComplete [label = ""WriteStarted""]
+      WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""WriteFinished""]
+      WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""CancellationTokenActivated""]
+      WaitingForRequestToWriteSomething -> ServiceFaulted [label = ""ExceptionCaught""]
+      WaitingForWriteToComplete ->ServiceFaulted [label = ""ExceptionCaught""]
+      WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""CancellationTokenActivated""]
+      WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""StopAsyncActivated""]
+      WaitingForWriteToComplete ->ShutdownStarted [label = ""StopAsyncActivated""]
+      ShutdownStarted ->ShutdownComplete [label = ""ShutdownCompleted""]
+";
+
+      foreach (var s in new List<string>() {
+        @"WaitingForInitialization -> WaitingForRequestToWriteSomething [label = ""InitializationCompleteReceived""]",
+        @"WaitingForRequestToWriteSomething -> WaitingForWriteToComplete [label = ""WriteStarted""]",
+        @"WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""WriteFinished""]",
+        @"WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""CancellationTokenActivated""]",
+        @"WaitingForRequestToWriteSomething -> ServiceFaulted [label = ""ExceptionCaught""]",
+        @"WaitingForWriteToComplete ->ServiceFaulted [label = ""ExceptionCaught""]",
+        @"WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""CancellationTokenActivated""]",
+        @"WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""StopAsyncActivated""]",
+        @"WaitingForWriteToComplete ->ShutdownStarted [label = ""StopAsyncActivated""]",
+        @"ShutdownStarted ->ShutdownComplete [label = ""ShutdownCompleted""]",
+      }) {
+        var gStateConfiguration = new GStateConfiguration(new List<string>() {s});
+        gStateConfigurations.Add(gStateConfiguration);
+      }
       mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfigurations.AddRange(
-        new List<GStateConfiguration>() {
-          new GStateConfiguration(
-            gStateTransitions: new List<string>() {
-              @"WaitingForInitialization -> WaitingForRequestToWriteSomething [label = ""InitializationCompleteReceived""]",
-              @"WaitingForRequestToWriteSomething -> WaitingForWriteToComplete [label = ""WriteStarted""]",
-              @"WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""WriteFinished""]",
-              @"WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""CancellationTokenActivated""]",
-              @"WaitingForRequestToWriteSomething -> ServiceFaulted [label = ""ExceptionCaught""]",
-              @"WaitingForWriteToComplete ->ServiceFaulted [label = ""ExceptionCaught""]",
-              @"WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""CancellationTokenActivated""]",
-              @"WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""StopAsyncActivated""]",
-              @"WaitingForWriteToComplete ->ShutdownStarted [label = ""StopAsyncActivated""]",
-            },
-            gStateConfigurationFluentChains: new List<string>() {
-              // None
-            }
-          )
-        }.AsEnumerable());
+        gStateConfigurations);
+ 
       #endregion
       #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits 
       #region Add UsingGroups common to both the Titular Derived and Titular Base CompilationUnits
@@ -54,8 +105,7 @@ namespace GenerateProgram {
         new GMethodGroup(
           gName:
           $"MethodGroup specific to {mCreateAssemblyGroupResult.gClassBase.GName}");
-      GMethod gMethod;
-      gMethod = MCreateWriteMethodInConsoleSink();
+      var gMethod = MCreateWriteMethodInConsoleSink();
       gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
       mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(gMethodGroup);
       #endregion
@@ -84,6 +134,11 @@ namespace GenerateProgram {
       #endregion
       #region Finalize the GHHS
       GAssemblyGroupGHHSFinalizer(mCreateAssemblyGroupResult);
+      #endregion
+      #region Populate the ConfigureStateMachine method
+      mCreateAssemblyGroupResult.gClassBase.CombinedMethods()
+        .Where(x => x.GDeclaration.GName == "ConfigureStateMachine").First().GBody.GStatements.AddRange(s1);
+      // mCreateAssemblyGroupResult.gPrimaryConstructorBase.GBody.GStatements.AddRange(s1); 
       #endregion
       return mCreateAssemblyGroupResult.gAssemblyGroup;
     }

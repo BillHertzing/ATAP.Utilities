@@ -65,8 +65,8 @@ namespace GenerateProgram {
       #endregion
       #region Add additional classes provided by this library to the Titular Base CompilationUnit
       #region Add the StateConfiguration Class provided by this library to the Titular Base CompilationUnits
-      var gClass = MCreateStateConfigurationClass();
-      mCreateAssemblyGroupResult.gNamespaceBase.GClasss.Add(gClass.Philote, gClass);
+      //var gClass = MCreateStateConfigurationClass();
+      //mCreateAssemblyGroupResult.gNamespaceBase.GClasss.Add(gClass.Philote, gClass);
       #endregion
       #endregion
       #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit 

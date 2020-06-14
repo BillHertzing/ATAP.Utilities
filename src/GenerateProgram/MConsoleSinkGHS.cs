@@ -20,12 +20,24 @@ namespace GenerateProgram {
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
-      #region Initial StateMachine Configuration for this specific service
-      //gStateConfigurationFluentChains:
-      //new List<string>() {
-      //  // None
-      //};
-      var s1 = new List<string>() {
+      #region Initial StateMachine Configuration
+      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
+        @" 
+          WaitingForInitialization -> WaitingForRequestToWriteSomething [label = ""InitializationCompleteReceived""]
+          WaitingForRequestToWriteSomething -> WaitingForWriteToComplete [label = ""WriteStarted""]
+          WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""WriteFinished""]
+          WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""CancellationTokenActivated""]
+          WaitingForRequestToWriteSomething -> ServiceFaulted [label = ""ExceptionCaught""]
+          WaitingForWriteToComplete ->ServiceFaulted [label = ""ExceptionCaught""]
+          WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""CancellationTokenActivated""]
+          WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""StopAsyncActivated""]
+          WaitingForWriteToComplete ->ShutdownStarted [label = ""StopAsyncActivated""]
+          ShutdownStarted ->ShutdownComplete [label = ""ShutdownCompleted""]
+        "
+      );
+      #endregion
+
+ var s1 = new List<string>() {
         @"StateMachine.Configure(State.WaitingForInitialization)",
         //$"  .OnEntry(() => {{ if (OnWaitingForInitializationEntry!= null) OnWaitingForInitializationEntry(); }})",
         //$"  .OnExit(() => {{ if (OnWaitingForInitializationExit!= null) OnWaitingForInitializationExit(); }})",
@@ -48,7 +60,6 @@ namespace GenerateProgram {
         // $"  .PermitReentryIf(Trigger.InitializationCompleteReceived, State.WaitingForRequestToWriteSomething, () => {{ if (GuardClauseFroWaitingForInitializationToWaitingForRequestToWriteSomethingUsingTriggerInitializationCompleteReceived!= null) return GuardClauseFroWaitingForInitializationToWaitingForRequestToWriteSomethingUsingTriggerInitializationCompleteReceived(); return true; }})",
         $";",
 
-
         @"StateMachine.Configure(State.ShutdownStarted)",
         //$"  .OnEntry(() => {{ if (OnWaitingForInitializationEntry!= null) OnWaitingForInitializationEntry(); }})",
         // $"  .OnExit(() => {{ if (OnWaitingForInitializationExit!= null) OnWaitingForInitializationExit(); }})",
@@ -57,41 +68,6 @@ namespace GenerateProgram {
         $";",
         @"StateMachine.Configure(State.ShutdownComplete);",
       };
-
-
-      var gStateConfigurations = new List<GStateConfiguration>();
-      var s3 = @"
-      WaitingForInitialization -> WaitingForRequestToWriteSomething [label = ""InitializationCompleteReceived""]
-      WaitingForRequestToWriteSomething -> WaitingForWriteToComplete [label = ""WriteStarted""]
-      WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""WriteFinished""]
-      WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""CancellationTokenActivated""]
-      WaitingForRequestToWriteSomething -> ServiceFaulted [label = ""ExceptionCaught""]
-      WaitingForWriteToComplete ->ServiceFaulted [label = ""ExceptionCaught""]
-      WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""CancellationTokenActivated""]
-      WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""StopAsyncActivated""]
-      WaitingForWriteToComplete ->ShutdownStarted [label = ""StopAsyncActivated""]
-      ShutdownStarted ->ShutdownComplete [label = ""ShutdownCompleted""]
-";
-
-      foreach (var s in new List<string>() {
-        @"WaitingForInitialization -> WaitingForRequestToWriteSomething [label = ""InitializationCompleteReceived""]",
-        @"WaitingForRequestToWriteSomething -> WaitingForWriteToComplete [label = ""WriteStarted""]",
-        @"WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""WriteFinished""]",
-        @"WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""CancellationTokenActivated""]",
-        @"WaitingForRequestToWriteSomething -> ServiceFaulted [label = ""ExceptionCaught""]",
-        @"WaitingForWriteToComplete ->ServiceFaulted [label = ""ExceptionCaught""]",
-        @"WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""CancellationTokenActivated""]",
-        @"WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""StopAsyncActivated""]",
-        @"WaitingForWriteToComplete ->ShutdownStarted [label = ""StopAsyncActivated""]",
-        @"ShutdownStarted ->ShutdownComplete [label = ""ShutdownCompleted""]",
-      }) {
-        var gStateConfiguration = new GStateConfiguration(new List<string>() {s});
-        gStateConfigurations.Add(gStateConfiguration);
-      }
-      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfigurations.AddRange(
-        gStateConfigurations);
- 
-      #endregion
       #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits 
       #region Add UsingGroups common to both the Titular Derived and Titular Base CompilationUnits
       #endregion
@@ -100,13 +76,20 @@ namespace GenerateProgram {
       #endregion
       #region Injected PropertyGroup For ConsoleSinkAndConsoleSource
       #endregion
+      #region Additional Properties needed by the Base  class
+      var lclPropertyGroup = new GPropertyGroup($"Private Properties part of {mCreateAssemblyGroupResult.gClassBase.GName}");
+      var mesgProperty = new GProperty(gName:"Mesg",gType:"string",gVisibility:"private");
+      lclPropertyGroup.GPropertys.Add(mesgProperty.Philote,mesgProperty);
+      mCreateAssemblyGroupResult.gClassBase.GPropertyGroups.Add(lclPropertyGroup.Philote,lclPropertyGroup);
+      #endregion
       #region Add the MethodGroup containing new methods provided by this library to the Titular Base CompilationUnit
       var gMethodGroup =
         new GMethodGroup(
           gName:
           $"MethodGroup specific to {mCreateAssemblyGroupResult.gClassBase.GName}");
-      var gMethod = MCreateWriteMethodInConsoleSink();
-      gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
+      foreach (var gMethod in MCreateWriteMethodInConsoleSink()) {
+        gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
+      }
       mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(gMethodGroup);
       #endregion
       #region Add additional classes provided by this library to the Titular Base CompilationUnit
@@ -167,7 +150,7 @@ namespace GenerateProgram {
     //"// Used to asynchronously write a string to the WriteAsync method of the Console instance"
     //  }));
     //}
-    static GMethod MCreateWriteMethodInConsoleSink(string gAccessModifier = "") {
+    static List<GMethod> MCreateWriteMethodInConsoleSink(string gAccessModifier = "") {
       var gMethodArgumentList = new List<GArgument>() {
         new GArgument("mesg", "string"), new GArgument("ct", "CancellationToken?")
       };
@@ -175,18 +158,27 @@ namespace GenerateProgram {
       foreach (var o in gMethodArgumentList) {
         gMethodArguments.Add(o.Philote, o);
       }
-      return new GMethod(
+      var publicWriteMethod = new GMethod(
         new GMethodDeclaration(gName: "Write", gType: "void",
           gVisibility: "public", gAccessModifier: gAccessModifier, isConstructor: false,
           gArguments: gMethodArguments),
         gBody: new GBody(gStatements:
           new List<string>() {
-            "StateMachine.Fire(Trigger.WriteStarted);",
             "ct?.ThrowIfCancellationRequested();",
-            "Console.Write(mesg);",
-            "StateMachine.Fire(Trigger.WriteFinished);",
+            "Mesg=mesg;",
+            "StateMachine.Fire(Trigger.WriteStarted);",
           }),
         new GComment(new List<string>() {"// Used to write a string to the Console instance"}));
+
+      gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      var privateWriteMethod = new GMethod(
+        new GMethodDeclaration(gName: "Write", gType: "void",
+          gVisibility: "private", gAccessModifier: gAccessModifier, isConstructor: false,
+          gArguments: gMethodArguments),
+        gBody: new GBody(gStatements:
+          new List<string>() {"Console.Write(Mesg);", "StateMachine.Fire(Trigger.WriteFinished);",}),
+        new GComment(new List<string>() {"// (private) Used to write a string to the Console instance"}));
+      return new List<GMethod>(){publicWriteMethod,privateWriteMethod};
     }
   }
 }

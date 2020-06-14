@@ -5,13 +5,15 @@ using ATAP.Utilities.Philote;
 using static GenerateProgram.GAssemblyGroupExtensions;
 using static GenerateProgram.GItemGroupInProjectUnitExtensions;
 using static GenerateProgram.Lookup;
+
 //using AutoMapper.Configuration;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
     public static GAssemblyGroup MConsoleSourceGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default) {
-      return MConsoleSourceGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, new GPatternReplacement()  );
+      return MConsoleSourceGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName,
+        new GPatternReplacement());
     }
     public static GAssemblyGroup MConsoleSourceGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
@@ -20,32 +22,24 @@ namespace GenerateProgram {
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
-      #region Initial StateMachine Configuration for this specific service
-      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfigurations.AddRange(
-        new List<GStateConfiguration>() {
-          new GStateConfiguration(
-            gStateTransitions: new List<string>() {
-              @"WaitingForInitialization ->BlockingOnConsoleInReadLineAsync [label = ""InitializationCompleteReceived""]",
-              @"BlockingOnConsoleInReadLineAsync -> ServiceFaulted [label = ""ExceptionCaught""]",
-              @"BlockingOnConsoleInReadLineAsync -> ShutdownStarted [label = ""CancellationTokenActivated""]",
-            },
-            gStateConfigurationFluentChains: new List<string>() {
-              // None
-            }
-          )
-        }.AsEnumerable());
+      #region Initial StateMachine Configuration
+      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
+    @"
+          WaitingForInitialization ->BlockingOnConsoleInReadLineAsync [label = ""InitializationCompleteReceived""]
+          BlockingOnConsoleInReadLineAsync -> ServiceFaulted [label = ""ExceptionCaught""]
+          BlockingOnConsoleInReadLineAsync -> ShutdownStarted [label = ""CancellationTokenActivated""]
+          "
+      );
       #endregion
-      #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits 
+
+      #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits
       #region Add UsingGroups common to both the Titular Derived and Titular Base CompilationUnits
       #endregion
       #region Add UsingGroups specific to the Titular Base CompilationUnit
       var gUsingGroup =
         new GUsingGroup(
           $"UsingGroup specific to {mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GName}");
-      foreach (var gName in new List<string>() {
-        "System.Reactive.Linq",
-        "System.Reactive.Concurrency",
-      }) {
+      foreach (var gName in new List<string>() {"System.Reactive.Linq", "System.Reactive.Concurrency",}) {
         var gUsing = new GUsing(gName);
         gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
       }
@@ -67,11 +61,9 @@ namespace GenerateProgram {
       #endregion
       #region Add additional classes provided by this library to the Titular Base CompilationUnit
       #endregion
-      #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit 
+      #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit
       #region Add References used by both the Titular Derived and Titular Base CompilationUnits
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
-        ReactiveUtilitiesReferencesItemGroupInProjectUnit(),
-        }
+      foreach (var o in new List<GItemGroupInProjectUnit>() {ReactiveUtilitiesReferencesItemGroupInProjectUnit(),}
       ) {
         mCreateAssemblyGroupResult.gTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
           .Add(o.Philote, o);
@@ -90,11 +82,10 @@ namespace GenerateProgram {
       #endregion
       #region Add References for the Titular Interface ProjectUnit
       #region Add References common to both the Titular Derived Interface and Titular Base Interface
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
-          ReactiveUtilitiesReferencesItemGroupInProjectUnit()
-        }
+      foreach (var o in new List<GItemGroupInProjectUnit>() {ReactiveUtilitiesReferencesItemGroupInProjectUnit()}
       ) {
-        mCreateAssemblyGroupResult.gTitularInterfaceAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote, o);
+        mCreateAssemblyGroupResult.gTitularInterfaceAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
+          .Add(o.Philote, o);
       }
       #endregion
       #region Add References unique to the Titular Base Interface CompilationUnit

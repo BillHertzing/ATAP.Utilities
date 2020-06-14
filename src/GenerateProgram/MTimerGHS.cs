@@ -20,27 +20,20 @@ namespace GenerateProgram {
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
-      #region Initial StateMachine Configuration for this specific service
-      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfigurations.AddRange(
-        new List<GStateConfiguration>() {
-          new GStateConfiguration(
-            gStateTransitions: new List<string>() {
-              @"WaitingForInitialization -> WaitingForARequestForATimer [label = ""InitializationCompleteReceived""]",
-              @"WaitingForARequestForATimer -> RespondingToARequestForATimer [label = ""TimerRequested""]",
-              @"RespondingToARequestForATimer -> WaitingForARequestForATimer [label = ""TimerAllocatedAndSent""]",
-              @"RespondingToARequestForATimer -> WaitingForARequestForATimer [label = ""CancellationTokenActivated""]",
-              @"WaitingForARequestForATimer -> ServiceFaulted [label = ""ExceptionCaught""]",
-              @"RespondingToARequestForATimer ->ServiceFaulted [label = ""ExceptionCaught""]",
-              @"WaitingForARequestForATimer ->ShutdownStarted [label = ""CancellationTokenActivated""]",
-              @"RespondingToARequestForATimer ->ShutdownStarted [label = ""StopAsyncActivated""]",
-            },
-            gStateConfigurationFluentChains: new List<string>() {
-              // None
-            }
-          )
-        }.AsEnumerable());
+      #region Initial StateMachine Configuration
+      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
+    @"
+          WaitingForInitialization -> WaitingForARequestForATimer [label = ""InitializationCompleteReceived""]
+          WaitingForARequestForATimer -> RespondingToARequestForATimer [label = ""TimerRequested""]
+          RespondingToARequestForATimer -> WaitingForARequestForATimer [label = ""TimerAllocatedAndSent""]
+          RespondingToARequestForATimer -> WaitingForARequestForATimer [label = ""CancellationTokenActivated""]
+          WaitingForARequestForATimer -> ServiceFaulted [label = ""ExceptionCaught""]
+          RespondingToARequestForATimer ->ServiceFaulted [label = ""ExceptionCaught""]
+          WaitingForARequestForATimer ->ShutdownStarted [label = ""CancellationTokenActivated""]
+          RespondingToARequestForATimer ->ShutdownStarted [label = ""StopAsyncActivated""]
+        "
+      );
       #endregion
-
       #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits 
       #region Add UsingGroups common to both the Titular Derived and Titular Base CompilationUnits
       #endregion

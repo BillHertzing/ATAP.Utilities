@@ -24,36 +24,30 @@ namespace GenerateProgram {
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
-      #region Initial StateMachine Configuration for this specific service
-      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfigurations.AddRange(
-        new List<GStateConfiguration>() {
-          new GStateConfiguration(
-            gStateTransitions: new List<string>() {
-              @"WaitingForInitialization ->InitiateContactWithConsoleMonitor [label = ""InitializationCompleteReceived""]", // ToDo: move this to ConsoleMonitorClient
-              @"Connected -> Execute [label = ""inputline == 1""]",
-              @"Connected -> Relinquish [label = ""inputline == 99""]",
-              @"Connected -> Editing [label = ""inputline == 2""]",
-              @"Editing -> Connected [label=""EditingComplete""]",
-              @"Execute -> Connected [label = ""LongRunningTaskStartedNotificationSent""]",
-              @"Relinquish -> Contacted [label = ""RelinquishNotificationAcknowledgementReceived""]",
-              @"Connected ->ShutdownStarted [label = ""CancellationTokenActivated""]",
-              @"Editing->ShutdownStarted[label = ""CancellationTokenActivated""]",
-              @"Execute->ShutdownStarted[label = ""CancellationTokenActivated""]",
-              @"Relinquish->ShutdownStarted[label = ""CancellationTokenActivated""]",
-              @"Connected -> ServiceFaulted [label = ""ExceptionCaught""]",
-              @"Editing ->ServiceFaulted [label = ""ExceptionCaught""]",
-              @"Execute ->ServiceFaulted [label = ""ExceptionCaught""]",
-              @"Relinquish ->ServiceFaulted [label = ""ExceptionCaught""]",
-              @"Connected ->ShutdownStarted [label = ""StopAsyncActivated""]",
-              @"Editing ->ShutdownStarted [label = ""StopAsyncActivated""]",
-              @"Execute ->ShutdownStarted [label = ""StopAsyncActivated""]",
-              @"Relinquish ->ShutdownStarted [label = ""StopAsyncActivated""]",
-            },
-            gStateConfigurationFluentChains: new List<string>() {
-              // None
-            }
-          )
-        }.AsEnumerable());
+      #region Initial StateMachine Configuration
+      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
+    @"
+          WaitingForInitialization ->InitiateContactWithConsoleMonitor [label = ""InitializationCompleteReceived""] // ToDo: move this to ConsoleMonitorClient
+          Connected -> Execute [label = ""inputline == 1""]
+          Connected -> Relinquish [label = ""inputline == 99""]
+          Connected -> Editing [label = ""inputline == 2""]
+          Editing -> Connected [label=""EditingComplete""]
+          Execute -> Connected [label = ""LongRunningTaskStartedNotificationSent""]
+          Relinquish -> Contacted [label = ""RelinquishNotificationAcknowledgementReceived""]
+          Connected ->ShutdownStarted [label = ""CancellationTokenActivated""]
+          Editing->ShutdownStarted[label = ""CancellationTokenActivated""]
+          Execute->ShutdownStarted[label = ""CancellationTokenActivated""]
+          Relinquish->ShutdownStarted[label = ""CancellationTokenActivated""]
+          Connected -> ServiceFaulted [label = ""ExceptionCaught""]
+          Editing ->ServiceFaulted [label = ""ExceptionCaught""]
+          Execute ->ServiceFaulted [label = ""ExceptionCaught""]
+          Relinquish ->ServiceFaulted [label = ""ExceptionCaught""]
+          Connected ->ShutdownStarted [label = ""StopAsyncActivated""]
+          Editing ->ShutdownStarted [label = ""StopAsyncActivated""]
+          Execute ->ShutdownStarted [label = ""StopAsyncActivated""]
+          Relinquish ->ShutdownStarted [label = ""StopAsyncActivated""]
+        "
+      );
       #endregion
       #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits 
       #region Add UsingGroups common to both the Titular Derived and Titular Base CompilationUnits

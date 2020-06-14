@@ -5,15 +5,16 @@ using ATAP.Utilities.Philote;
 using static GenerateProgram.GAssemblyGroupExtensions;
 using static GenerateProgram.GItemGroupInProjectUnitExtensions;
 using static GenerateProgram.Lookup;
+
 //using AutoMapper.Configuration;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
     public static GAssemblyGroup MConsoleMonitorGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default) {
-      return MConsoleMonitorGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, new GPatternReplacement()  );
+      return MConsoleMonitorGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName,
+        new GPatternReplacement());
     }
-
     public static GAssemblyGroup MConsoleMonitorGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
@@ -21,35 +22,28 @@ namespace GenerateProgram {
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
-      #region Initial StateMachine Configuration for this specific service
-      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfigurations.AddRange(
-        new List<GStateConfiguration>() {
-          new GStateConfiguration(
-            gStateTransitions: new List<string>() {
-              @"WaitingForInitialization ->BlockingOnConsoleInReadLineAsync [label = ""InitializationCompleteReceived""]",
-              @"WaitingForRequestToWriteSomething -> WaitingForWriteToComplete [label = ""WriteStarted""]",
-              @"WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""WriteFinished""]",
-              @"WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""CancellationTokenActivated""]",
-              @"WaitingForRequestToWriteSomething -> ServiceFaulted [label = ""ExceptionCaught""]",
-              @"WaitingForWriteToComplete ->ServiceFaulted [label = ""ExceptionCaught""]",
-              @"WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""CancellationTokenActivated""]",
-              @"WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""StopAsyncActivated""]",
-              @"WaitingForWriteToComplete ->ShutdownStarted [label = ""StopAsyncActivated""]",
-            },
-            gStateConfigurationFluentChains: new List<string>() {
-              // None
-            }
-          )
-        }.AsEnumerable());
+      #region Initial StateMachine Configuration
+      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
+    @"
+          WaitingForInitialization ->BlockingOnConsoleInReadLineAsync [label = ""InitializationCompleteReceived""]
+          WaitingForRequestToWriteSomething -> WaitingForWriteToComplete [label = ""WriteStarted""]
+          WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""WriteFinished""]
+          WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""CancellationTokenActivated""]
+          WaitingForRequestToWriteSomething -> ServiceFaulted [label = ""ExceptionCaught""]
+          WaitingForWriteToComplete ->ServiceFaulted [label = ""ExceptionCaught""]
+          WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""CancellationTokenActivated""]
+          WaitingForRequestToWriteSomething ->ShutdownStarted [label = ""StopAsyncActivated""]
+          WaitingForWriteToComplete ->ShutdownStarted [label = ""StopAsyncActivated""]
+        "
+      );
       #endregion
-      #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits 
+      #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits
       #region Add UsingGroups common to both the Titular Derived and Titular Base CompilationUnits
       var gUsingGroup =
         new GUsingGroup(
           $"UsingGroup common to both  {mCreateAssemblyGroupResult.gTitularDerivedCompilationUnit.GName} and {mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GName}");
       foreach (var gName in new List<string>() {
-      "ATAP.Utilities.GenericHostServices.ConsoleSourceGHS",
-      "ATAP.Utilities.GenericHostServices.ConsoleSinkGHS",
+        "ATAP.Utilities.GenericHostServices.ConsoleSourceGHS", "ATAP.Utilities.GenericHostServices.ConsoleSinkGHS",
       }) {
         var gUsing = new GUsing(gName);
         gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
@@ -79,11 +73,9 @@ namespace GenerateProgram {
       #region Injected PropertyGroup For ConsoleSinkAndConsoleSource
       var gPropertyGroup = new GPropertyGroup("Injected Property for ConsoleSinkGHS and ConsoleSourceGHS");
       mCreateAssemblyGroupResult.gClassBase.AddPropertyGroups(gPropertyGroup);
-      foreach (var o in new List<string>() {
-        "ConsoleSourceGHS",
-        "ConsoleSinkGHS"
-      }) {
-        mCreateAssemblyGroupResult.gClassBase.AddTConstructorAutoPropertyGroup(mCreateAssemblyGroupResult.gPrimaryConstructorBase.Philote, o, gPropertyGroupId: gPropertyGroup.Philote);
+      foreach (var o in new List<string>() {"ConsoleSourceGHS", "ConsoleSinkGHS"}) {
+        mCreateAssemblyGroupResult.gClassBase.AddTConstructorAutoPropertyGroup(
+          mCreateAssemblyGroupResult.gPrimaryConstructorBase.Philote, o, gPropertyGroupId: gPropertyGroup.Philote);
       }
       #endregion
       #region Add the MethodGroup for this service
@@ -100,17 +92,17 @@ namespace GenerateProgram {
       //gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
       mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(gMethodGroup);
       #endregion
-      #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit 
+      #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit
       #region Add References used by both the Titular Derived and Titular Base CompilationUnits
       foreach (var o in new List<GItemGroupInProjectUnit>() {
-        ReactiveUtilitiesReferencesItemGroupInProjectUnit(),
-        new GItemGroupInProjectUnit(
-          "References used by both the {Derived} and {Base}",
-          "References to the ConsoleSourceGHS and ConsoleSinkGHS Interfaces, used by both the used by both the {Derived CompilationUnit} and {Base CompilationUnit}",
-          new GBody(new List<string>() {
-            "<PackageReference Include=\"ConsoleSourceGHS.Interfaces\" />",
-            "<PackageReference Include=\"ConsoleSinkGHS.Interfaces\" />",
-          }))
+          ReactiveUtilitiesReferencesItemGroupInProjectUnit(),
+          new GItemGroupInProjectUnit(
+            "References used by both the {Derived} and {Base}",
+            "References to the ConsoleSourceGHS and ConsoleSinkGHS Interfaces, used by both the used by both the {Derived CompilationUnit} and {Base CompilationUnit}",
+            new GBody(new List<string>() {
+              "<PackageReference Include=\"ConsoleSourceGHS.Interfaces\" />",
+              "<PackageReference Include=\"ConsoleSinkGHS.Interfaces\" />",
+            }))
         }
       ) {
         mCreateAssemblyGroupResult.gTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
@@ -118,9 +110,7 @@ namespace GenerateProgram {
       }
       #endregion
       #region Add References unique to the Titular Base CompilationUnit
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
-          
-        }
+      foreach (var o in new List<GItemGroupInProjectUnit>() { }
       ) {
         mCreateAssemblyGroupResult.gTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
           .Add(o.Philote, o);
@@ -132,16 +122,18 @@ namespace GenerateProgram {
       #region Add UsingGroups for the Titular Derived Interface CompilationUnit and Titular Base Interface CompilationUnit
       #region Add UsingGroups common to both the Titular Derived Interface CompilationUnit and the Titular Base Interface CompilationUnit
       gUsingGroup =
-        new GUsingGroup($"UsingGroups common to both {mCreateAssemblyGroupResult.gTitularInterfaceDerivedCompilationUnit.GName} and {mCreateAssemblyGroupResult.gTitularInterfaceBaseCompilationUnit.GName}");
+        new GUsingGroup(
+          $"UsingGroups common to both {mCreateAssemblyGroupResult.gTitularInterfaceDerivedCompilationUnit.GName} and {mCreateAssemblyGroupResult.gTitularInterfaceBaseCompilationUnit.GName}");
       foreach (var gName in new List<string>() {
-        $"{baseNamespaceName}ConsoleSinkGHS",
-        $"{baseNamespaceName}ConsoleSourceGHS"
+        $"{baseNamespaceName}ConsoleSinkGHS", $"{baseNamespaceName}ConsoleSourceGHS"
       }) {
         var gUsing = new GUsing(gName);
         gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
       }
-      mCreateAssemblyGroupResult.gTitularInterfaceDerivedCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
-      mCreateAssemblyGroupResult.gTitularInterfaceBaseCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
+      mCreateAssemblyGroupResult.gTitularInterfaceDerivedCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote,
+        gUsingGroup);
+      mCreateAssemblyGroupResult.gTitularInterfaceBaseCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote,
+        gUsingGroup);
       #endregion
       #region Add UsingGroups specific to the Titular Base Interface
       #endregion
@@ -159,13 +151,13 @@ namespace GenerateProgram {
             })),
         }
       ) {
-        mCreateAssemblyGroupResult.gTitularInterfaceAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote, o);
+        mCreateAssemblyGroupResult.gTitularInterfaceAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
+          .Add(o.Philote, o);
       }
       #endregion
       #region Add References unique to the Titular Base Interface CompilationUnit
       #endregion
       #endregion
- 
       #endregion
       #region Finalize the GHHS
       GAssemblyGroupGHHSFinalizer(mCreateAssemblyGroupResult);

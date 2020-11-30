@@ -29,6 +29,12 @@ namespace GenerateProgram {
         });
     }
 
+    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsExecutable() {
+      return new GPropertyGroupInProjectUnit("Executable", "Creates a Executable Project", new List<string>() {
+        "<OutputType>Exe</OutputType>"
+      });
+    }
+
     public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsLibrary() {
       return new GPropertyGroupInProjectUnit("Library", "Creates a Library Project", new List<string>() {
         "<OutputType>Library</OutputType>"
@@ -60,14 +66,17 @@ namespace GenerateProgram {
         "<Configurations>Debug;Release;ReleaseWithTrace</Configurations>",
       });
     }
-    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForVersion() {
+    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForVersionInfo(Version version) {
       return new GPropertyGroupInProjectUnit("Version", "The current version of this assembly", new List<string>() {
         "<!-- Assembly, File, and Package Information for this assembly-->",
         "<!-- Build and revision are created based on date-->",
-        "<MajorVersion>1</MajorVersion>",
-        "<MinorVersion>0</MinorVersion>",
-        "<PatchVersion>0</PatchVersion>",
+        $"<MajorVersion>{version.Major}</MajorVersion>",
+        $"<MinorVersion>{version.Minor}</MinorVersion>",
+        $"<PatchVersion>{version.Revision}</PatchVersion>",
       });
+    }
+    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForVersionInfo() {
+      return PropertyGroupInProjectUnitForVersionInfo(new Version());
     }
     public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitFor() {
       return new GPropertyGroupInProjectUnit("", "", new List<string>() {

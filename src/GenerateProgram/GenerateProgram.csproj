@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-
+  <PropertyGroup>
+  <StartupObject>GenerateProgram.PService03</StartupObject>
+  </PropertyGroup>
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -17,6 +19,7 @@
   <ItemGroup>
     <Folder Include="Artifacts\Resources\" />
   </ItemGroup>
+
 <PropertyGroup>
   <DefaultItemExcludes>Artifacts\**</DefaultItemExcludes>
   <DefaultItemExcludes>$(DefaultItemExcludes);**\Resources\**</DefaultItemExcludes>

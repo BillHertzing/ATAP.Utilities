@@ -23,8 +23,10 @@ using static ATAP.Utilities.Collection.Extensions;
 //using AutoMapper.Configuration;
 
 namespace GenerateProgram {
-  class Program {
+  class PConsole02 {
     delegate GAssemblyGroup MCreateAssemblyGroupDelegate(string name, string subDirectoryForGeneratedFiles,
+      string baseNamespaceName);
+    delegate GAssemblySingle MCreateAssemblySingleDelegate(string name, string subDirectoryForGeneratedFiles,
       string baseNamespaceName);
 
     static void Main(string[] args) {
@@ -44,11 +46,24 @@ namespace GenerateProgram {
 
 
       #region Projects under development, their realtive paths under the source and tests directory, and the delegate to create each
+      string genericHostProgramsRelativeNextPath = "GenericHostPrograms/";
+      string genericHostProgramsRelativeNextNamespace = "GenericHostPrograms.";
+      string gHPBaseNamespaceName = baseNamespaceName + genericHostProgramsRelativeNextNamespace;
+
       string genericHostServicesRelativeNextPath = "GenericHostServices/";
       string genericHostServicesRelativeNextNamespace = "GenericHostServices.";
       string gHSBaseNamespaceName = baseNamespaceName + genericHostServicesRelativeNextNamespace;
-      var projectsUnderDevelopment =
-        new List<(string name, string sourceRelativePath, string testRelativePath, string subDirectoryForGeneratedFiles,
+      (string name, string sourceRelativePath, string testRelativePath,
+        string subDirectoryForGeneratedFiles,
+        string baseNamespaceName, MCreateAssemblySingleDelegate
+        mCreateAssemblySingleDelegate) gPrimaryExecutingProgram = 
+      ("Service03",
+        Path.Combine(sourceArtifactsPath, genericHostProgramsRelativeNextPath, "Service03/"),
+        Path.Combine(testArtifactsPath, genericHostProgramsRelativeNextPath, "Service03/"),
+        subDirectoryForGeneratedFiles, gHSBaseNamespaceName,
+        new MCreateAssemblySingleDelegate(MGenericHostService03));
+
+      var projectsUnderDevelopment =  new List<(string name, string sourceRelativePath, string testRelativePath, string subDirectoryForGeneratedFiles,
           string baseNamespaceName,MCreateAssemblyGroupDelegate
           mCreateAssemblyGroupDelegate )>() {
           ("ATAP.Utilities.Stateless", Path.Combine(sourceArtifactsPath, "StateMachine/"),
@@ -98,7 +113,7 @@ namespace GenerateProgram {
         };
       #endregion
 
-      #region Conversion of nonReleased Packages from PacakgeRefference to ProjectReference
+      #region Conversion of nonReleased Packages from PacakgeReference to ProjectReference
       #region The structure of the project and package includes lines found in a ProjectUnit's ItemGroup
       var fromPatternP = "<PackageReference Include=\"";
       var fromPatternS = "\"\\s*/>";
@@ -160,9 +175,17 @@ namespace GenerateProgram {
 
 
       string assemblyGroupTestArtifactsPath;
+      #region executable if present
+      GAssemblySingle gPrimaryExecutableAssemblyGroup = gPrimaryExecutingProgram.mCreateAssemblySingleDelegate(gPrimaryExecutingProgram.name,
+        gPrimaryExecutingProgram.subDirectoryForGeneratedFiles, gPrimaryExecutingProgram.baseNamespaceName);
+      session.Add("assemblyUnits", gPrimaryExecutableAssemblyGroup.GAssemblyUnits);
+      r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
+      w1Top = new W1Top(basePath: gPrimaryExecutingProgram.sourceRelativePath, force: true);
+      r1Top.Render(w1Top);
+      session.Clear();
+      #endregion
+
       GAssemblyGroup gAssemblyGroup;
-
-
       foreach (var projectUnderDevelopment in projectsUnderDevelopment) {
         assemblyGroupTestArtifactsPath = projectUnderDevelopment.testRelativePath;
         gAssemblyGroup = projectUnderDevelopment.mCreateAssemblyGroupDelegate(projectUnderDevelopment.name,

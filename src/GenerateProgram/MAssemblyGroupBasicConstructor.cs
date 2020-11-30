@@ -31,15 +31,15 @@ namespace GenerateProgram {
       var pos = gAssemblyGroupName.LastIndexOf(".") + 1;
       var gTitularCommonName = gAssemblyGroupName.Substring(pos, gAssemblyGroupName.Length - pos);
       var gTitularAssemblyUnitName = gAssemblyGroupName;
-      var gTitularInterfaceAssemblyUnitName = gAssemblyGroupName + ".Interfaces";
       var gNamespaceName = $"{baseNamespaceName}{gTitularCommonName}";
       var gCompilationUnitCommonName = gTitularCommonName;
       var gTitularDerivedCompilationUnitName = gCompilationUnitCommonName;
       var gTitularBaseCompilationUnitName = gCompilationUnitCommonName + "Base";
-      var gTitularInterfaceDerivedCompilationUnitName = "I" + gCompilationUnitCommonName;
-      var gTitularInterfaceBaseCompilationUnitName = "I" + gCompilationUnitCommonName + "Base";
       var gClassDerivedName = gCompilationUnitCommonName;
       var gClassBaseName = gCompilationUnitCommonName + "Base";
+      var gTitularInterfaceAssemblyUnitName = gAssemblyGroupName + ".Interfaces";
+      var gTitularInterfaceDerivedCompilationUnitName = "I" + gCompilationUnitCommonName;
+      var gTitularInterfaceBaseCompilationUnitName = "I" + gCompilationUnitCommonName + "Base";
       var gTitularInterfaceDerivedName = "I" + gCompilationUnitCommonName;
       var gTitularInterfaceBaseName = "I" + gCompilationUnitCommonName + "Base";
       #endregion
@@ -270,7 +270,7 @@ namespace GenerateProgram {
         PropertyGroupInProjectUnitForPackableOnBuild(),
         PropertyGroupInProjectUnitForLifecycleStage(),
         PropertyGroupInProjectUnitForBuildConfigurations(),
-        PropertyGroupInProjectUnitForVersion()
+        PropertyGroupInProjectUnitForVersionInfo()
       }.ForEach(gP => {
         gTitularAssemblyUnit.GProjectUnit.GPropertyGroupInProjectUnits.Add(gP.Philote, gP);
         gTitularInterfaceAssemblyUnit.GProjectUnit.GPropertyGroupInProjectUnits.Add(gP.Philote, gP);

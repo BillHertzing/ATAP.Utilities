@@ -20,11 +20,11 @@ using static GenerateProgram.Lookup;
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
     public static MCreateAssemblyGroupResult MAssemblyGroupGHHSConstructor(string gAssemblyGroupName = default,
-      string subDirectoryForGeneratedFiles = default, string baseNamespace = default,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
       var mCreateAssemblyGroupResult = MAssemblyGroupCommonConstructorForGHHSAndGHBSPart1(gAssemblyGroupName,
         subDirectoryForGeneratedFiles,
-        baseNamespace, gPatternReplacement);
+        baseNamespaceName, gPatternReplacement);
 
       #region Additions to Titular Base Class (IBackgroundService)
       #region specific methods for IHostedService

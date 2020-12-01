@@ -35,7 +35,7 @@
     <!-- when msbuild is run by Visual Studio 15.8.2, ($(MSBuildRuntimeType) != 'Core') the property $(SolutionDir) is already defined at this point, so this line is not executed -->
     <!-- when msbuild is run by dotnet command, ($(MSBuildRuntimeType) == 'Core') the property $(SolutionDir) is not defined at this point, so this line is executed -->
     <!-- the result is that the $(SolutionDir) is set properly regardless of the $(MSBuildRuntimeType) -->
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">$(MSBuildProjectDirectory)\..\</SolutionDir>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">$(MSBuildProjectDirectory)\..\..\</SolutionDir>
 
     <!-- Directory where all of the custom build tools are stored -->
     <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)Build\</SolutionBuildToolsBaseDir>
@@ -180,7 +180,7 @@
 
   <!-- Demonstrate the difference between a msbuild run from inside Visual Studio, and a msbuild called from dotnet CLI
        Replace Never with Clean -->
-  <Target Name="HighlightDifferencesBetweenMSBuild" BeforeTargets="Never">
+  <Target Name="HighlightDifferencesBetweenMSBuild" BeforeTargets="Clean">
     <Message  Text="MSBuildRuntimeType = $(MSBuildRuntimeType)" />
     <Message Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'" Text="SolutionDir undefined or null"/>
     <Message Condition="$(SolutionDir) != '' And $(SolutionDir) != '*Undefined*'" Text="SolutionDir =$(SolutionDir)"/>

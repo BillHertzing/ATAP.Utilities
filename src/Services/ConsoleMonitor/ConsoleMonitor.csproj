@@ -18,8 +18,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ATAP.Utilities.Extensions.Configuration\Extensions.Configuration.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Extensions.Reactive\ATAP.Utilities.Extensions.Reactive.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Extensions.Configuration\Extensions.Configuration.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Extensions.Reactive\ATAP.Utilities.Extensions.Reactive.csproj" />
     <ProjectReference Include="..\ConsoleMonitor.Interfaces\ConsoleMonitor.Interfaces.csproj" />
     <ProjectReference Include="..\ConsoleSink.Interfaces\ConsoleSink.Interfaces.csproj" />
     <ProjectReference Include="..\ConsoleSource.Interfaces\ConsoleSource.Interfaces.csproj" />
@@ -82,7 +82,7 @@
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
     <PackageReference Include="MethodBoundaryAspect.Fody" Version="2.0.118" />
     <!-- Project Reference to the ETW attribute and log provider -->
-    <ProjectReference Include="..\..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Resources\DebugResources\DebugMessages.Designer.cs">

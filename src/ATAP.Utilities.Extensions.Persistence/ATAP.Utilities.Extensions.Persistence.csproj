@@ -18,8 +18,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
-    <ProjectReference Include="..\..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
   </ItemGroup>
 
   <ItemGroup>

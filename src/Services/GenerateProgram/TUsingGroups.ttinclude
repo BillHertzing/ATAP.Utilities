@@ -1,8 +1,0 @@
-<#@ include file="TUsing.ttinclude" once="true" #>
-<#+ string GenerateUsingGroup(GUsingGroup ug) {  // Start of feature control block. #>
-  #region <#= ug.GName #>
-  <#+ foreach (var u in ug.GUsings) {  #>
-  <#= GenerateUsing(u); #>
-  <#+ } #>
-  #endregion
-<#+ } // End of feature control block #>

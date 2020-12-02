@@ -1,3 +1,0 @@
-<#+ public string GenerateUsing(GUsing u) { #>
-using <#= u.GName #> ;
-<#+ } #>

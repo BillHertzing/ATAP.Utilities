@@ -34,15 +34,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.Shim.NewtonsoftJson.csproj" />
-    <ProjectReference Include="..\src\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-    <ProjectReference Include="..\src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.Shim.NewtonsoftJson.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
-    <ProjectReference Include="..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
   </ItemGroup>
 
 </Project>

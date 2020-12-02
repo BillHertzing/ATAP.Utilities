@@ -217,9 +217,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ORMLite.Mode
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "services", "services", "{B6F9F570-22C9-4DF5-B580-942C6C7BFE32}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.ConsoleMonitor.Interfaces", "src\Services.ConsoleMonitor.Interfaces\ConsoleMonitor.Interfaces.csproj", "{53DF90CE-6BCC-47E8-91D5-21D507BD6F6C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.ConsoleMonitor.Interfaces", "src\ATAP.Services.ConsoleMonitor.Interfaces\ConsoleMonitor.Interfaces.csproj", "{53DF90CE-6BCC-47E8-91D5-21D507BD6F6C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.ConsoleMonitor", "src\Services.ConsoleMonitor\ConsoleMonitor.csproj", "{1C4BF0A2-417C-47A5-9763-D038F09FF51D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.ConsoleMonitor", "src\ATAP.Services.ConsoleMonitor\ConsoleMonitor.csproj", "{1C4BF0A2-417C-47A5-9763-D038F09FF51D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleSink", "src\services\ConsoleSink\ConsoleSink.csproj", "{27A9AD0B-A8AB-439C-9AE6-9056C77384CC}"
 EndProject

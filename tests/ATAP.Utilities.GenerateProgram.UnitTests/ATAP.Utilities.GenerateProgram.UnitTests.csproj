@@ -34,10 +34,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
-    <ProjectReference Include="..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
-    <ProjectReference Include="..\src\Services\GenerateProgram\GenerateProgram.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+    <ProjectReference Include="..\..\src\Services\GenerateProgram\GenerateProgram.csproj" />
   </ItemGroup>
 
  

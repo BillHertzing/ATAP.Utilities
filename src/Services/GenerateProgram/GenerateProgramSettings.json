@@ -1,6 +1,6 @@
 {
   "Logging": {
-    "PathFormat": "./Logs/Serilog/AceStartupLog.{Date}.log",
+    "PathFormat": "./Logs/Serilog/AConsole01ReleaseStartupLog.{Date}.log",
     "LogLevel": {
       "Default": "Information",
       "System": "Information",

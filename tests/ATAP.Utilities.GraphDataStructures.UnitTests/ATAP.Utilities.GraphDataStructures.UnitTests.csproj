@@ -35,8 +35,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\src\ATAP.Utilities.ComputerInventory.Hardware.Interfaces\ATAP.Utilities.ComputerInventory.Hardware.Interfaces.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.GraphDataStructures.Interfaces\ATAP.Utilities.GraphDataStructures.Interfaces.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.GraphDataStructures\ATAP.Utilities.GraphDataStructures.csproj" />
+    <ProjectReference Include="..\src\ATAP.Utilities.GraphDataStructures.Interfaces\ATAP.Utilities.GraphDataStructures.Interfaces.csproj" />
+    <ProjectReference Include="..\src\ATAP.Utilities.GraphDataStructures\ATAP.Utilities.GraphDataStructures.csproj" />
   </ItemGroup>
 
   <ItemGroup>

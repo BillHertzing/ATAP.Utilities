@@ -27,7 +27,7 @@
 
   <!-- ATAP Utility library for collection extensions (for Dictionary AddRange) -->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Extensions.Collection\ATAP.Utilities.Extensions.Collection.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Extensions.Collection\ATAP.Utilities.Extensions.Collection.csproj" />
   </ItemGroup>
 
 

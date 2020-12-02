@@ -41,7 +41,7 @@
     <PackageReference Include="MethodBoundaryAspect.Fody" Version="2.0.118" />
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
-    <ProjectReference Include="..\Timers.Interfaces\Timers.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Services.Timers.Interfaces\Timers.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Resources\DebugResources\DebugMessages.Designer.cs">

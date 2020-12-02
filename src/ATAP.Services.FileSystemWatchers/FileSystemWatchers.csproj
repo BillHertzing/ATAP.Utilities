@@ -20,7 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Extensions.Configuration\Extensions.Configuration.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Extensions.Reactive\ATAP.Utilities.Extensions.Reactive.csproj" />
-    <ProjectReference Include="..\FileSystemWatchers.Interfaces\FileSystemWatchers.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Services.FileSystemWatchers.Interfaces\FileSystemWatchers.Interfaces.csproj" />
   </ItemGroup>
 
   <ItemGroup>

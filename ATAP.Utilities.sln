@@ -237,11 +237,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.Timers", "src
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GenericHost", "GenericHost", "{5E166243-704C-4AB6-AD77-7955CC82D2AC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Extensions.GenericHost", "src\GenericHost\Extensions.GenericHost\Extensions.GenericHost.csproj", "{66601533-D4A3-4875-9BCA-6BBDA9223A17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Extensions.GenericHost", "src\ATAP.Utilities.GenericHost\Extensions.GenericHost.csproj", "{66601533-D4A3-4875-9BCA-6BBDA9223A17}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Extensions.GenericHost.Interfaces", "src\ATAP.Utilities.GenericHost.Interfaces\Extensions.GenericHost.Interfaces.csproj", "{53101E2A-6351-47DC-8FA5-EAABA61942BE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configuration", "Configuration", "{8200B6C7-7958-4593-94C2-7D90C056F419}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Extensions.GenericHost.Interfaces", "src\GenericHost\Extensions.GenericHost.Interfaces\Extensions.GenericHost.Interfaces.csproj", "{53101E2A-6351-47DC-8FA5-EAABA61942BE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AService01", "src\AService01\AService01.csproj", "{0FFAA494-929F-465D-A39D-229AF32914DA}"
 EndProject

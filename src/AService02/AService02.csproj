@@ -7,7 +7,7 @@
 
   <-- This project will run under the following target frameworks -->
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;</TargetFrameworks>
+    <TargetFrameworks>net5.0;</TargetFrameworks>
   </PropertyGroup>
 
   <!-- The Assembly will be packed into a NuGet Package on every build -->

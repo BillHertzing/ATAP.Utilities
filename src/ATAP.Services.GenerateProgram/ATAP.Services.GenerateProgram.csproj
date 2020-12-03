@@ -6,7 +6,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net47;</TargetFrameworks> <!-- netcoreapp3.1 net47-->
+    <TargetFrameworks>net5.0;</TargetFrameworks> <!-- netcoreapp3.1 net47-->
     <DefaultNamespace>GenerateProgram</DefaultNamespace>
   </PropertyGroup>
 

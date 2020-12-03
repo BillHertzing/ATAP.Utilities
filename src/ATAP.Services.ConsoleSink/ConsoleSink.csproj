@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ConsoleSink.Interfaces\ConsoleSink.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Services.ConsoleSink.Interfaces\ConsoleSink.Interfaces.csproj" />
   </ItemGroup>
 
 

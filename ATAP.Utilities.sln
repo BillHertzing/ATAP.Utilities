@@ -199,8 +199,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.BuildTooling
 EndProject
 Project("{F5034706-568F-408A-B7B3-4D38C6DB8A32}") = "ATAP.Utilities.BuildTooling.PowerShell", "src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.pssproj", "{DBD8663F-C30C-4702-B97A-5365529B4D15}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenerateProgram", "src\Services\GenerateProgram\GenerateProgram.csproj", "{43055EF2-D3E2-44A1-8F65-C7A6779F8437}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GenerateProgram.UnitTests", "tests\ATAP.Utilities.GenerateProgram.UnitTests\ATAP.Utilities.GenerateProgram.UnitTests.csproj", "{CF9D47E4-D333-4805-9176-BE701F6428A2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Extensions.Reactive", "src\ATAP.Utilities.Extensions.Reactive\ATAP.Utilities.Extensions.Reactive.csproj", "{B5DD19D5-1496-4207-A693-A73595B1B930}"
@@ -209,7 +207,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GraphDataStr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GraphDataStructures.Interfaces", "src\ATAP.Utilities.GraphDataStructures.Interfaces\ATAP.Utilities.GraphDataStructures.Interfaces.csproj", "{FE7B1561-6174-455D-94E2-A42B76A1650D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Extensions.Configuration", "src\ATAP.Utilities.Extensions.Configuration\Extensions.Configuration.csproj", "{85A6DA84-9B79-48B5-94AF-846F829A0828}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Extensions.Configuration", "src\ATAP.Utilities.Extensions.Configuration\Extensions.Configuration.csproj", "{85A6DA84-9B79-48B5-94AF-846F829A0828}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.DatabaseManagement", "src\ATAP.Utilities.DataBaseManagement\ATAP.Utilities.DatabaseManagement.csproj", "{74B848EA-528C-481F-949A-65AEB74F0EC5}"
 EndProject
@@ -233,6 +231,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.FileSystemWat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.FileSystemWatchers.Interfaces", "src\ATAP.Services.FileSystemWatchers.Interfaces\FileSystemWatchers.Interfaces.csproj", "{BE6AD294-5A2D-47B7-8F5E-07FAA90A2290}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenerateProgram", "src\ATAP.Services.GenerateProgram\GenerateProgram.csproj", "{9A2A96CB-20F2-4321-B5A7-4E4AF4F61489}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.Timers.Interfaces", "src\ATAP.Services.Timers.Interfaces\Timers.Interfaces.csproj", "{055AD23D-97FB-4B0F-8E8E-8B1BAEE73E90}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.Timers", "src\ATAP.Services.Timers\Timers.csproj", "{478E5417-F7A3-44B6-8180-FAE6D2CD9C62}"
@@ -248,8 +248,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AService01", "src\AService01\AService01.csproj", "{0FFAA494-929F-465D-A39D-229AF32914DA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{F42B91A1-68F4-40E6-BC1A-2C6194F2EA49}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenerateProgram", "src\GenerateProgram\GenerateProgram.csproj", "{9A2A96CB-20F2-4321-B5A7-4E4AF4F61489}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.FileIO", "src\ATAP.Utilities.FIleIO\ATAP.Utilities.FileIO.csproj", "{981D1A7A-DC30-4F93-8247-F2AD6D09E4EC}"
 EndProject
@@ -1076,16 +1074,6 @@ Global
 		{F9F36BF6-B652-41DF-8F81-D67E35FCEF3C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F9F36BF6-B652-41DF-8F81-D67E35FCEF3C}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{F9F36BF6-B652-41DF-8F81-D67E35FCEF3C}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
-		{43055EF2-D3E2-44A1-8F65-C7A6779F8437}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{43055EF2-D3E2-44A1-8F65-C7A6779F8437}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{43055EF2-D3E2-44A1-8F65-C7A6779F8437}.RELEASE NET40|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
-		{43055EF2-D3E2-44A1-8F65-C7A6779F8437}.RELEASE NET40|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
-		{43055EF2-D3E2-44A1-8F65-C7A6779F8437}.RELEASE NET45|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
-		{43055EF2-D3E2-44A1-8F65-C7A6779F8437}.RELEASE NET45|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
-		{43055EF2-D3E2-44A1-8F65-C7A6779F8437}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{43055EF2-D3E2-44A1-8F65-C7A6779F8437}.Release|Any CPU.Build.0 = Release|Any CPU
-		{43055EF2-D3E2-44A1-8F65-C7A6779F8437}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
-		{43055EF2-D3E2-44A1-8F65-C7A6779F8437}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 		{CF9D47E4-D333-4805-9176-BE701F6428A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CF9D47E4-D333-4805-9176-BE701F6428A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CF9D47E4-D333-4805-9176-BE701F6428A2}.RELEASE NET40|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
@@ -1395,7 +1383,6 @@ Global
 		{6ED198E7-653B-4454-BBC3-E341593F6065} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 		{1A921845-35F7-454E-99BE-573326CB5D31} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 		{F9F36BF6-B652-41DF-8F81-D67E35FCEF3C} = {EF2582A0-33A7-11EB-9C14-5132EBA7B73D}
-		{43055EF2-D3E2-44A1-8F65-C7A6779F8437} = {B6F9F570-22C9-4DF5-B580-942C6C7BFE32}
 		{CF9D47E4-D333-4805-9176-BE701F6428A2} = {984B3A90-8771-486E-9BC3-66D2F35963C2}
 		{B5DD19D5-1496-4207-A693-A73595B1B930} = {80F0147B-1F56-4BCF-8A2D-6502290DF0C2}
 		{586CB315-C49F-4D2A-8B24-E173EB85E71C} = {08DAC750-33A8-11EB-9C14-5132EBA7B73D}

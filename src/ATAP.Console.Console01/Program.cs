@@ -4,7 +4,7 @@ using ATAP.Utilities.ETW;
 using ATAP.Utilities.HostedServices;
 using ATAP.Utilities.HostedServices.ConsoleSourceHostedService;
 using ATAP.Utilities.HostedServices.ConsoleSinkHostedService;
-using GenerateProgram;
+//using GenerateProgram;
 using ATAP.Utilities.Logging;
 using ATAP.Utilities.Persistence;
 

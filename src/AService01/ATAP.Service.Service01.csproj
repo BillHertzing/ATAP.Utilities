@@ -14,20 +14,20 @@
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.AConsole01.StringConstants\ATAP.Utilities.AConsole01.StringConstants.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.GenericHost.Extensions\ATAP.Utilities.GenericHost.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.GenericHost.Extensions.Interfaces\ATAP.Utilities.GenericHost.Extensions.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Console.Console01.StringConstants\ATAP.Console.Console01.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Extensions.Persistence\ATAP.Utilities.Extensions.Persistence.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Extensions.Reactive\ATAP.Utilities.Extensions.Reactive.csproj" />
-    <ProjectReference Include="..\GenericHost\Extensions.GenericHost.Interfaces\Extensions.GenericHost.Interfaces.csproj" />
-    <ProjectReference Include="..\GenericHost\Extensions.GenericHost\Extensions.GenericHost.csproj" />
-    <ProjectReference Include="..\services\GenerateProgram\GenerateProgram.csproj" />
-    <ProjectReference Include="..\services\ConsoleSink.Interfaces\ConsoleSink.Interfaces.csproj" />
-    <ProjectReference Include="..\services\ConsoleSink\ConsoleSink.csproj" />
-    <ProjectReference Include="..\services\ConsoleSource.Interfaces\ConsoleSource.Interfaces.csproj" />
-    <ProjectReference Include="..\services\ConsoleSource\ConsoleSource.csproj" />
-    <ProjectReference Include="..\services\ConsoleMonitor.Interfaces\ConsoleMonitor.Interfaces.csproj" />
-    <ProjectReference Include="..\services\ConsoleMonitor\ConsoleMonitor.csproj" />
-    <ProjectReference Include="..\services\Timers.Interfaces\Timers.Interfaces.csproj" />
-    <ProjectReference Include="..\services\Timers\Timers.csproj" />
+    <ProjectReference Include="..\ATAP.Services.GenerateProgram\GenerateProgram.csproj" />
+    <ProjectReference Include="..\ATAP.Services.ConsoleSink.Interfaces\ConsoleSink.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Services.ConsoleSink\ConsoleSink.csproj" />
+    <ProjectReference Include="..\ATAP.Services.ConsoleSource.Interfaces\ConsoleSource.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Services.ConsoleSource\ConsoleSource.csproj" />
+    <ProjectReference Include="..\ATAP.Services.ConsoleMonitor.Interfaces\ConsoleMonitor.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Services.ConsoleMonitor\ConsoleMonitor.csproj" />
+    <ProjectReference Include="..\ATAP.Services.Timers.Interfaces\Timers.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Services.Timers\Timers.csproj" />
 
   </ItemGroup>
 

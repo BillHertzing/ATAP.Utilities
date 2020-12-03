@@ -22,15 +22,15 @@
     <Folder Include="images\" />
     <Folder Include="svg\" />
   </ItemGroup>
-  
+
     <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->
   <ItemGroup>
-    
+
     <PackageReference Include="docfx.console" Version="2.48.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    
+
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.4.0" />
   </ItemGroup>
   <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>

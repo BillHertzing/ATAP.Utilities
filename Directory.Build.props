@@ -86,12 +86,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DefineConstants>RELEASE;</DefineConstants>
+    <NoWarn>1602;1603;1701;1705;NU1705;NU1701;NU1602;NU1603;</NoWarn>
   </PropertyGroup>
 
   <!-- ReleaseWithTrace Configuration compilation symbols, flags and build options -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithTrace|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DefineConstants>RELEASE;TRACE;</DefineConstants>
+    <NoWarn>1602;1603;1701;1705;NU1705;NU1701;NU1602;NU1603;</NoWarn>
   </PropertyGroup>
 
   <!-- Debug Configuration compilation symbols, flags and build options -->

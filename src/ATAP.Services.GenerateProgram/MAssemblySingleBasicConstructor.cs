@@ -65,7 +65,6 @@ namespace GenerateProgram {
       #endregion
       var gGTitularAssemblyProjectUnit = new GProjectUnit(gName: gTitularAssemblyName,
         gPatternReplacement: gGTitularAssemblyProjectUnitPatternReplacement);
-      gTitularAssembly
       #endregion
       #region Titular Derived CompilationUnit
       #region Pattern Replacements for Titular Derived CompilationUnit

@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/ATAP.Utilities.sln",
+                "${workspaceFolder}/src/ATAP.Console.Console01/ATAP.Console.Console01.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],

@@ -30,8 +30,8 @@ using System.Reactive.Linq;
 
 using ComputerInventoryHardwareStaticExtensions = ATAP.Utilities.ComputerInventory.Hardware.StaticExtensions;
 using PersistenceStaticExtensions = ATAP.Utilities.Persistence.Extensions;
-using GenericHostExtensions = ATAP.Utilities.Extensions.GenericHost.Extensions;
-using ConfigurationExtensions = ATAP.Utilities.Extensions.Configuration.Extensions;
+using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
+using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
 using appStringConstants = FileSystemToObjectGraphService.StringConstants;
 
 namespace FileSystemToObjectGraphService {

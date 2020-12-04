@@ -40,7 +40,7 @@
     <PackageReference Include="Ninject" />
 
     <PackageReference Include="TimePeriodLibrary.NET" />
-<PackageReference Include="xunit" Version="2.4.1" /> <!-- This PackageReference causes xUnit to crash without the section added above-->
+
   </ItemGroup>
 
   <ItemGroup>

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Localization;
 using System.Threading;
 using System.IO;
 
-namespace ATAP.Utilities.Extensions.Configuration {
+namespace ATAP.Utilities.Configuration.Extensions {
 #if TRACE
   [ETWLogAttribute]
 #endif

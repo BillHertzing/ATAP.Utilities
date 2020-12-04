@@ -26,27 +26,34 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionDocumentation", "So
 		SolutionDocumentation\VisualStudioExtensions.md = SolutionDocumentation\VisualStudioExtensions.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{0383FC22-0B8D-4D17-B466-E4DBDE7B5F81}"
+	ProjectSection(SolutionItems) = preProject
+		Build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Get-CoreInfo.ps1 = Build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Get-CoreInfo.ps1
+		Build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Set-LineEndings.ps1 = Build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Set-LineEndings.ps1
+		Build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Set-LineEndings.ps1 = Build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Set-LineEndings.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F78E1157-C4C3-4162-8B2D-72FC45CB698E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildTooling", "BuildTooling", "{8080A6F0-3374-11EB-8B1F-2363E6506914}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.BuildTooling.CSharp", "src\ATAP.Utilities.BuildTooling.CSharp\ATAP.Utilities.BuildTooling.CSharp.csproj", "{0AC51559-80D3-4C2C-BDA6-495CB26F02FC}"
+EndProject
+Project("{F5034706-568F-408A-B7B3-4D38C6DB8A32}") = "ATAP.Utilities.BuildTooling.PowerShell", "src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.pssproj", "{DBD8663F-C30C-4702-B97A-5365529B4D15}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console01", "src\ATAP.Console.Console01\ATAP.Console.Console01.csproj", "{6ED198E7-653B-4454-BBC3-E341593F6065}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console01.StringConstants", "src\ATAP.Console.Console01.StringConstants\ATAP.Console.Console01.StringConstants.csproj", "{1A921845-35F7-454E-99BE-573326CB5D31}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F78E1157-C4C3-4162-8B2D-72FC45CB698E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities._1ConsoleTestRunner", "src\ATAP.Utilities.1ConsoleTestRunner\ATAP.Utilities._1ConsoleTestRunner.csproj", "{9293C0CA-6E85-4448-801B-F92600C78787}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.AutoDoc", "src\ATAP.Utilities.AutoDoc\ATAP.Utilities.AutoDoc.csproj", "{DF414E11-E82C-4710-9DDD-9FE741E9C7FC}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ETW", "ETW", "{EF2582A0-33A7-11EB-9C14-5132EBA7B73D}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Collections", "Collections", "{49B057C0-0D3E-49BF-A908-09A75066A373}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ETW", "src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj", "{F9F36BF6-B652-41DF-8F81-D67E35FCEF3C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ConcurrentObservableCollections", "src\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj", "{43810099-C65B-413E-B11A-07679830D867}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence", "Persistence", "{6CA48A6B-4910-4DD7-92D1-F079CD34A13B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Extensions.Persistence", "src\ATAP.Utilities.Extensions.Persistence\ATAP.Utilities.Extensions.Persistence.csproj", "{DE16D68A-42DE-46F2-8A18-E9A1EC72678E}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Persistence", "src\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj", "{208E54AF-C24F-4235-B367-967BF9F6437B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Persistence.Interfaces", "src\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj", "{A595E0FD-8147-4032-BDD6-14C979AD97CC}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ComputerInventory", "ComputerInventory", "{375D7460-3394-11EB-A79B-A5C3908303A6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Configuration", "src\ATAP.Utilities.ComputerInventory.Configuration\ATAP.Utilities.ComputerInventory.Configuration.csproj", "{D4CEE619-BAC8-4797-9277-5055EEBE4DB9}"
 EndProject
@@ -86,7 +93,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInve
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration", "src\ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration\ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration.csproj", "{CB30C9BA-A2F2-45A6-9A4A-E19CD7560768}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ConcurrentObservableCollections", "src\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj", "{43810099-C65B-413E-B11A-07679830D867}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configuration", "Configuration", "{8200B6C7-7958-4593-94C2-7D90C056F419}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Configuration.Extensions", "src\ATAP.Utilities.Configuration.Extensions\ATAP.Utilities.Configuration.Extensions.csproj", "{85A6DA84-9B79-48B5-94AF-846F829A0828}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin.Interfaces", "src\ATAP.Utilities.CryptoCoin.Interfaces\ATAP.Utilities.CryptoCoin.Interfaces.csproj", "{0B53AFE8-D9E3-4EF6-9DA1-484B9B5A30FC}"
 EndProject
@@ -104,13 +113,37 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoMiner.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoMiner.Extensions","src\ATAP.Utilities.CryptoMiner.Extensions\ATAP.Utilities.CryptoMiner.Extensions.csproj", "{A27F8B9A-CAF3-45D4-94D0-190B29EF58D5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Database", "Database", "{4EBDE565-19FD-40A1-A291-E8024792F805}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.DatabaseManagement", "src\ATAP.Utilities.DataBaseManagement\ATAP.Utilities.DatabaseManagement.csproj", "{74B848EA-528C-481F-949A-65AEB74F0EC5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DateTime", "DateTime", "{8BC6DE10-340C-11EB-B0F3-8BBCA7824458}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.DateTime","src\ATAP.Utilities.DateTime\ATAP.Utilities.DateTime.csproj", "{9DEDDD4C-B2FB-4BB3-8C2C-26BC2FED4D83}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ETW", "ETW", "{EF2582A0-33A7-11EB-9C14-5132EBA7B73D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ETW", "src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj", "{F9F36BF6-B652-41DF-8F81-D67E35FCEF3C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GenericHost", "GenericHost", "{5E166243-704C-4AB6-AD77-7955CC82D2AC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GenericHost.Extensions", "src\ATAP.Utilities.GenericHost.Extensions\ATAP.Utilities.GenericHost.Extensions.csproj", "{66601533-D4A3-4875-9BCA-6BBDA9223A17}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GenericHost.Interfaces", "src\ATAP.Utilities.GenericHost.Interfaces\ATAP.Utilities.GenericHost.Interfaces.csproj", "{53101E2A-6351-47DC-8FA5-EAABA61942BE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Enumeration","src\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj", "{0D9B33E0-65C8-4C22-ADE4-787E37EC632E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Http","src\ATAP.Utilities.Http\ATAP.Utilities.Http.csproj", "{10DC5525-66C4-4FC6-8B41-B0C96E94632B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Logging","src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj", "{B8DDB1DA-F124-4DF3-9497-2927F73B678D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence", "Persistence", "{6CA48A6B-4910-4DD7-92D1-F079CD34A13B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Persistence", "src\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj", "{208E54AF-C24F-4235-B367-967BF9F6437B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Persistence.Interfaces", "src\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj", "{A595E0FD-8147-4032-BDD6-14C979AD97CC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Persistence.Extensions", "src\ATAP.Utilities.Persistence.Extensions\ATAP.Utilities.Persistence.Extensions.csproj", "{DE16D68A-42DE-46F2-8A18-E9A1EC72678E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.RealEstate.Enumerations","src\ATAP.Utilities.RealEstate.Enumerations\ATAP.Utilities.RealEstate.Enumerations.csproj", "{A9F0F4DF-94D3-49F4-8A47-7768D9D49950}"
 EndProject
@@ -160,6 +193,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoCoin.U
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.CryptoMiner.UnitTests","tests\ATAP.Utilities.CryptoMiner.UnitTests\ATAP.Utilities.CryptoMiner.UnitTests.csproj", "{BC39C377-C9A5-43BF-A07C-E8D3462BDDAC}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DateTime", "DateTime", "{94DCC3C0-340C-11EB-B0F3-8BBCA7824458}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.DateTime.UnitTests","tests\ATAP.Utilities.DateTime.UnitTests\ATAP.Utilities.DateTime.UnitTests.csproj", "{9BCADBFA-9F96-475A-A134-F17C34AEBF6C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Enumeration.UnitTests","tests\ATAP.Utilities.Enumeration.UnitTests\ATAP.Utilities.Enumeration.UnitTests.csproj", "{CFAD03DD-277D-417E-95CC-57D98E2C2EBF}"
@@ -169,6 +204,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Http.UnitTests","tests\ATAP.Utilities.Http.UnitTests\ATAP.Utilities.Http.UnitTests.csproj", "{FC73DB9F-64DD-4D44-B68C-F3767AA6A337}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Logging.UnitTests","tests\ATAP.Utilities.Logging.UnitTests\ATAP.Utilities.Logging.UnitTests.csproj", "{37605D6E-FF53-4E67-84EF-C4A02EE322AF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Philote", "Philote", "{CA9D2400-340C-11EB-B0F3-8BBCA7824458}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Philote.UnitTests", "tests\ATAP.Utilities.Philote.UnitTests\ATAP.Utilities.Philote.UnitTests.csproj", "{97867737-350F-45A2-9888-AAE28086D3A2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.RealEstate.UnitTests","tests\ATAP.Utilities.RealEstate.UnitTests\ATAP.Utilities.RealEstate.UnitTests.csproj", "{188F4E57-4E95-429E-A844-A3655200A393}"
 EndProject
@@ -186,28 +225,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ZSandbox.Uni
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Persistence.UnitTests", "tests\ATAP.Utilities.Persistence.UnitTests\ATAP.Utilities.Persistence.UnitTests.csproj", "{E3B52A78-D799-4C07-80E2-F7E06D6D3377}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Philote.UnitTests", "tests\ATAP.Utilities.Philote.UnitTests\ATAP.Utilities.Philote.UnitTests.csproj", "{97867737-350F-45A2-9888-AAE28086D3A2}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{0383FC22-0B8D-4D17-B466-E4DBDE7B5F81}"
-	ProjectSection(SolutionItems) = preProject
-		Build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Get-CoreInfo.ps1 = Build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Get-CoreInfo.ps1
-		Build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Set-LineEndings.ps1 = Build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Set-LineEndings.ps1
-		Build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Set-LineEndings.ps1 = Build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Set-LineEndings.ps1
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.BuildTooling.CSharp", "src\ATAP.Utilities.BuildTooling.CSharp\ATAP.Utilities.BuildTooling.CSharp.csproj", "{0AC51559-80D3-4C2C-BDA6-495CB26F02FC}"
-EndProject
-Project("{F5034706-568F-408A-B7B3-4D38C6DB8A32}") = "ATAP.Utilities.BuildTooling.PowerShell", "src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.pssproj", "{DBD8663F-C30C-4702-B97A-5365529B4D15}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Extensions.Reactive", "src\ATAP.Utilities.Extensions.Reactive\ATAP.Utilities.Extensions.Reactive.csproj", "{B5DD19D5-1496-4207-A693-A73595B1B930}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Reactive.Extensions", "src\ATAP.Utilities.Reactive.Extensions\ATAP.Utilities.Reactive.Extensions.csproj", "{B5DD19D5-1496-4207-A693-A73595B1B930}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GraphDataStructures", "src\ATAP.Utilities.GraphDataStructures\ATAP.Utilities.GraphDataStructures.csproj", "{586CB315-C49F-4D2A-8B24-E173EB85E71C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GraphDataStructures.Interfaces", "src\ATAP.Utilities.GraphDataStructures.Interfaces\ATAP.Utilities.GraphDataStructures.Interfaces.csproj", "{FE7B1561-6174-455D-94E2-A42B76A1650D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Extensions.Configuration", "src\ATAP.Utilities.Extensions.Configuration\Extensions.Configuration.csproj", "{85A6DA84-9B79-48B5-94AF-846F829A0828}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.DatabaseManagement", "src\ATAP.Utilities.DataBaseManagement\ATAP.Utilities.DatabaseManagement.csproj", "{74B848EA-528C-481F-949A-65AEB74F0EC5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ORMLite.Models", "src\ATAP.Utilities.ORMLite.Models\ATAP.Utilities.ORMLite.Models.csproj", "{FB9E7337-FB8C-4120-B909-5A29645D7D53}"
 EndProject
@@ -235,33 +257,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.Timers.Interf
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.Timers", "src\ATAP.Services.Timers\Timers.csproj", "{478E5417-F7A3-44B6-8180-FAE6D2CD9C62}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GenericHost", "GenericHost", "{5E166243-704C-4AB6-AD77-7955CC82D2AC}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GenericHost.Extensions", "src\ATAP.Utilities.GenericHost.Extensions\ATAP.Utilities.GenericHost.Extensions.csproj", "{66601533-D4A3-4875-9BCA-6BBDA9223A17}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GenericHost.Interfaces", "src\ATAP.Utilities.GenericHost.Interfaces\ATAP.Utilities.GenericHost.Interfaces.csproj", "{53101E2A-6351-47DC-8FA5-EAABA61942BE}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configuration", "Configuration", "{8200B6C7-7958-4593-94C2-7D90C056F419}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Service.Service01", "src\AService01\ATAP.Service.Service01.csproj", "{0FFAA494-929F-465D-A39D-229AF32914DA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Service.Service01", "src\ATAP.Service.Service01\ATAP.Service.Service01.csproj", "{0FFAA494-929F-465D-A39D-229AF32914DA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{F42B91A1-68F4-40E6-BC1A-2C6194F2EA49}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.FileIO", "src\ATAP.Utilities.FIleIO\ATAP.Utilities.FileIO.csproj", "{981D1A7A-DC30-4F93-8247-F2AD6D09E4EC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Extensions.Collection", "src\ATAP.Utilities.Extensions.Collection\ATAP.Utilities.Extensions.Collection.csproj", "{81B9E796-B04D-41F4-9F49-4EC1C0AA08E7}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildTooling", "BuildTooling", "{8080A6F0-3374-11EB-8B1F-2363E6506914}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Collections", "Collections", "{49B057C0-0D3E-49BF-A908-09A75066A373}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Database", "Database", "{4EBDE565-19FD-40A1-A291-E8024792F805}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Collection.Extensions", "src\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj", "{81B9E796-B04D-41F4-9F49-4EC1C0AA08E7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FileIO", "FileIO", "{175E9FF8-FB81-4A99-A32D-62B4FF6CB3F4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GraphDataStructures", "GraphDataStructures", "{08DAC750-33A8-11EB-9C14-5132EBA7B73D}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ComputerInventory", "ComputerInventory", "{375D7460-3394-11EB-A79B-A5C3908303A6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CryptoCoin", "CryptoCoin", "{B570FA40-33A6-11EB-9C14-5132EBA7B73D}"
 EndProject
@@ -282,12 +288,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CryptoCoin", "CryptoCoin", "{1F443DF0-340C-11EB-B0F3-8BBCA7824458}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CryptoMiner", "CryptoMiner", "{2B511C80-340C-11EB-B0F3-8BBCA7824458}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DateTime", "DateTime", "{8BC6DE10-340C-11EB-B0F3-8BBCA7824458}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DateTime", "DateTime", "{94DCC3C0-340C-11EB-B0F3-8BBCA7824458}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Philote", "Philote", "{CA9D2400-340C-11EB-B0F3-8BBCA7824458}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Philote", "Philote", "{D27866D0-340C-11EB-B0F3-8BBCA7824458}"
 EndProject

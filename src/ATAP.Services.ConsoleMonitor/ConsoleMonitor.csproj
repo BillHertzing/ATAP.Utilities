@@ -18,8 +18,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Extensions.Configuration\Extensions.Configuration.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Extensions.Reactive\ATAP.Utilities.Extensions.Reactive.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Configuration.Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Reactive.Extensions\ATAP.Utilities.Reactive.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Services.ConsoleMonitor.Interfaces\ConsoleMonitor.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Services.ConsoleSink.Interfaces\ConsoleSink.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Services.ConsoleSource.Interfaces\ConsoleSource.Interfaces.csproj" />

@@ -16,7 +16,6 @@ using static GenerateProgram.GPropertyGroupInProjectUnitExtensions;
 using static GenerateProgram.GAssemblyGroupExtensions;
 using static GenerateProgram.GAssemblyUnitExtensions;
 using static GenerateProgram.GCompilationUnitExtensions;
-using static GenerateProgram.GAssemblyGroupExtensions;
 using static GenerateProgram.GMacroExtensions;
 using static ATAP.Utilities.Collection.Extensions;
 

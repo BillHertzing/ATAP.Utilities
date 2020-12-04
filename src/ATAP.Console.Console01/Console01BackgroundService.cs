@@ -29,8 +29,8 @@ using System.Reactive.Linq;
 
 using ComputerInventoryHardwareStaticExtensions = ATAP.Utilities.ComputerInventory.Hardware.StaticExtensions;
 using PersistenceStaticExtensions = ATAP.Utilities.Persistence.Extensions;
-using GenericHostExtensions = ATAP.Utilities.Extensions.GenericHost.Extensions;
-using ConfigurationExtensions = ATAP.Utilities.Extensions.Configuration.Extensions;
+using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
+using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
 using appStringConstants = ATAP.Utilities.AConsole01.AConsole01StringConstants;
 
 namespace ATAP.Utilities.AConsole01 {
@@ -360,7 +360,7 @@ namespace ATAP.Utilities.AConsole01 {
           }
           catch (System.IO.IOException ex) {
             // prepare message for UI interface
-            // ToDo: custome exception,  and include its message here
+            // ToDo: custom exception,  and include its message here
             mesg.Append(uiLocalizer["IOException trying to setup PickAndSaveViaFiles"]);
             #region Write the mesg to stdout
             using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {

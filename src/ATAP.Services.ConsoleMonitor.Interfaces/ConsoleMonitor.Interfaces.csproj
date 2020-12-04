@@ -27,7 +27,7 @@
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Hardware.Interfaces\ATAP.Utilities.ComputerInventory.Hardware.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Extensions.Persistence\ATAP.Utilities.Extensions.Persistence.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence.Extensions\ATAP.Utilities.Persistence.Extensions.csproj" />
   </ItemGroup>
 
 </Project>

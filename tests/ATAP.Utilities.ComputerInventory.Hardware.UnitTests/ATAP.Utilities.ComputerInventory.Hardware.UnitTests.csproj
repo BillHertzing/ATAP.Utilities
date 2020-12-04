@@ -47,7 +47,7 @@
     <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Hardware.Models\ATAP.Utilities.ComputerInventory.Hardware.Models.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Extensions.Persistence\ATAP.Utilities.Extensions.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Persistence.Extensions\ATAP.Utilities.Persistence.Extensions.csproj" />
     <PackageReference Include="UnitsNet" />
 </ItemGroup>
 

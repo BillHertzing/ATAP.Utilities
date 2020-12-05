@@ -35,7 +35,6 @@ namespace ATAP.Utilities.Persistence {
     IDbConnection DbConn { get; }
     IDbCommand DbCmd { get; }
 
-    bool Success { get; }
     public SetupViaORMResults(OrmLiteConnectionFactory DbFactory, IDbConnection DbConn, IDbCommand DbCmd, bool success) : base(success) {
     }
 

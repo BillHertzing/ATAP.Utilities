@@ -71,7 +71,7 @@ namespace ATAP.Utilities.AConsole01 {
     IEnumerable<string> choices;
     StringBuilder mesg = new StringBuilder();
     IDisposable SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle { get; set; }
-    Stopwatch stopWatch; // ToDo: utilize a much more powerfull and ubiquitious timing and profiling tool than a stopwatch
+    Stopwatch stopWatch; // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
     #endregion
     #region Constructor
     /// <summary>
@@ -249,7 +249,7 @@ namespace ATAP.Utilities.AConsole01 {
           var filePathsPersistence = new string[2] { temporaryDirectoryBase + WithPersistenceNodeFileRelativePath, temporaryDirectoryBase + WithPersistenceEdgeFileRelativePath };
           var WithPickAndSaveNodeFileRelativePath = appConfiguration.GetValue<string>(appStringConstants.WithPickAndSaveNodeFileRelativePathConfigRootKey, appStringConstants.WithPickAndSaveNodeFileRelativePathDefault);
           var filePathsPickAndSave = new string[1] { temporaryDirectoryBase + WithPickAndSaveNodeFileRelativePath };
-          mesg.Append(uiLocalizer["Running PartitionInfoEx Extension Function ConvertFileSystemToObjectGraph, on rootString {0} with an asyncFileReadBlockSize of {1} with hashihg enabled: {2} ; progress enabled: {3} ; persistence enabled: {5} ; pickAndSave enabled: {4}", rootString, asyncFileReadBlockSize, enableHash, enableProgress, enablePersistence, enablePickAndSave]);
+          mesg.Append(uiLocalizer["Running PartitionInfoEx Extension Function ConvertFileSystemToObjectGraph, on rootString {0} with an asyncFileReadBlockSize of {1} with hashing enabled: {2} ; progress enabled: {3} ; persistence enabled: {5} ; pickAndSave enabled: {4}", rootString, asyncFileReadBlockSize, enableHash, enableProgress, enablePersistence, enablePickAndSave]);
           if (enablePersistence) {
             mesg.Append(Environment.NewLine);
             mesg.Append(uiLocalizer["  persistence filePaths: {0}", string.Join(",", filePathsPersistence)]);
@@ -297,7 +297,7 @@ namespace ATAP.Utilities.AConsole01 {
           // Ensure the Node and Edge files are empty and can be written to
 
           // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-          // ToDo: create a function that will create subdirectories if needed to fulfill path, and use that function when creating the temp fiiles
+          // ToDo: create a function that will create subdirectories if needed to fulfill path, and use that function when creating the temp files
           //ToDo: add exception handling if the setup function fails
           ISetupViaFileResults setupResultsPersistence;
           try {
@@ -305,7 +305,7 @@ namespace ATAP.Utilities.AConsole01 {
           }
           catch (System.IO.IOException ex) {
             // prepare message for UI interface
-            // ToDo: custome exception,  and include its message here
+            // ToDo: custom exception,  and include its message here
             mesg.Append(uiLocalizer["IOException trying to setup PersistenceViaFiles"]);
 
             #region Write the mesg to stdout
@@ -329,7 +329,7 @@ namespace ATAP.Utilities.AConsole01 {
               mesg.Clear();
             }
             #endregion
-            // Throw exception, Cancel the entire service (internal CTS), or swallow and Continue (possiblky offering hints as to resolution), client's choice
+            // Throw exception, Cancel the entire service (internal CTS), or swallow and Continue (possibly offering hints as to resolution), client's choice
             throw ex;
             // internalCancellationTokenSource.Signal ????
             // or just continue and let the user make another selection or go fix the problem
@@ -353,7 +353,7 @@ namespace ATAP.Utilities.AConsole01 {
           #region PickAndSaveViaFiles setup
           // Ensure the Archived files are empty and can be written to
           // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePathsPickAndSave as the argument
-          // ToDo: create a function that will create subdirectories if needed to fulfill path, and use that function when creating the temp fiiles
+          // ToDo: create a function that will create subdirectories if needed to fulfill path, and use that function when creating the temp files
           ISetupViaFileResults setupResultsPickAndSave;
           try {
             setupResultsPickAndSave = PersistenceStaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePathsPickAndSave));
@@ -383,7 +383,7 @@ namespace ATAP.Utilities.AConsole01 {
               mesg.Clear();
             }
             #endregion
-            // Throw exception, Cancel the entire service (internal CTS), or swallow and Continue (possiblky offering hints as to resolution), client's choice
+            // Throw exception, Cancel the entire service (internal CTS), or swallow and Continue (possibly offering hints as to resolution), client's choice
             throw ex;
             // internalCancellationTokenSource.Signal ????
             // or just continue and let the user make another selection or go fix the problem
@@ -417,13 +417,13 @@ namespace ATAP.Utilities.AConsole01 {
 
           ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
           #region Method timing setup
-          Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitious timing and profiling tool than a stopwatch
+          Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
           stopWatch.Start();
           #endregion
           try {
             Func<Task<ConvertFileSystemToGraphResult>> run = () => ComputerInventoryHardwareStaticExtensions.ConvertFileSystemToGraphAsyncTask(rootString, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, persistence, pickAndSave, linkedCancellationToken);
             convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
-            stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitious timing and profiling tool than a stopwatch
+            stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
                               // ToDo: put the results someplace
           }
           catch (Exception) { // ToDo: define explicit exceptions to catch and report upon
@@ -488,7 +488,7 @@ namespace ATAP.Utilities.AConsole01 {
         //          convertFileSystemToGraphProgress = null;
         //        }
         //        #endregion
-        //        #region PersistenceViaIORMsetup
+        //        #region PersistenceViaIORMSetup
         //        // Call the SetupViaIORMFuncBuilder here, execute the Func that comes back, with dBConnectionString as the argument
         //        // Ensure the NNode and Edge Tables for this PartitionInfo are empty and can be written to
         //        // ToDo: create a function that will create Node and Edge tables if they don't yet exist, and use that function when creating the temp fiiles
@@ -514,7 +514,7 @@ namespace ATAP.Utilities.AConsole01 {
         //        // Ensure the Node and Edge files are empty and can be written to
 
         //        // Call the SetupViaIORMFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-        //        // ToDo: create a function that will create subdirectories if needed to fulfill path, and use that function when creating the temp fiiles
+        //        // ToDo: create a function that will create subdirectories if needed to fulfill path, and use that function when creating the temp files
         //        var setupResultsPickAndSave = PersistenceStaticExtensions.SetupViaORMFuncBuilder()(new SetupViaORMData(dBConnectionString, dBProvider, linkedCancellationToken));
         //        // Create a pickFunc
         //        var pickFuncPickAndSave = new Func<object, bool>((objToTest) => {
@@ -578,7 +578,7 @@ namespace ATAP.Utilities.AConsole01 {
 
       #endregion
       #region Buildmenu
-      BuildMenu();
+      await BuildMenu();
       #endregion
       #region Write the mesg to stdout
       using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
@@ -627,7 +627,7 @@ namespace ATAP.Utilities.AConsole01 {
       choices = new List<string>() { "1. Run ConvertFileSystemToGraphAsyncTask", "2. Subscribe ConsoleOut to ConsoleIn", "3. Unsubscribe ConsoleOut from ConsoleIn", "99: Quit" };
 
       #region Buildmenu
-      BuildMenu();
+      await BuildMenu();
       #endregion
       #region Write the mesg to stdout
       using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {

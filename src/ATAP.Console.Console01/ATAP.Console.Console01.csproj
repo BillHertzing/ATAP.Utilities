@@ -20,17 +20,17 @@
     <ProjectReference Include="..\ATAP.Services.ConsoleSource.Interfaces\ConsoleSource.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Services.FileSystemWatchers\FileSystemWatchers.csproj" />
     <ProjectReference Include="..\ATAP.Services.FileSystemWatchers.Interfaces\FileSystemWatchers.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.GenericHost\Extensions.GenericHost.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.GenericHost.Interfaces\Extensions.GenericHost.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Extensions.Configuration\Extensions.Configuration.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.GenericHost.Extensions\ATAP.Utilities.GenericHost.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.GenericHost.Interfaces\ATAP.Utilities.GenericHost.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Configuration.Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Hardware.Extensions\ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Enumerations\ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Extensions.Persistence\ATAP.Utilities.Extensions.Persistence.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Extensions.Reactive\ATAP.Utilities.Extensions.Reactive.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence.Extensions\ATAP.Utilities.Persistence.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Reactive.Extensions\ATAP.Utilities.Reactive.Extensions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -26,7 +26,7 @@ namespace GenerateProgram {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
 
-      #region Determine the names Titular and TitularInterfaces Base and Derived CompilationUnits, Namespaces, Classes, and Interfaces
+      #region Determine the names of the Titular and TitularInterfaces Base and Derived CompilationUnits, Namespaces, Classes, and Interfaces
       // everything to the right of the last "." character, returns original string if no "."
       var pos = gAssemblyGroupName.LastIndexOf(".") + 1;
       var gTitularCommonName = gAssemblyGroupName.Substring(pos, gAssemblyGroupName.Length - pos);
@@ -43,7 +43,7 @@ namespace GenerateProgram {
       var gTitularInterfaceDerivedName = "I" + gCompilationUnitCommonName;
       var gTitularInterfaceBaseName = "I" + gCompilationUnitCommonName + "Base";
       #endregion
-      #region GReplacementPatternDictionary for AssemblyGroup
+      #region GReplacementPatternDictionary for gAssemblyGroup
       var gAssemblyGroupPatternReplacement = new GPatternReplacement(gName: "gAssemblyGroupPatternReplacement",
         gDictionary: new Dictionary<Regex, string>() {
           {new Regex("AssemblyGroupNameReplacementPattern"), gAssemblyGroupName},
@@ -172,10 +172,11 @@ namespace GenerateProgram {
       //  // var configurationBuilder = ConfigurationExtensions.StandardConfigurationBuilder(loadedFromDirectory, initialStartupDirectory, ConsoleMonitorDefaultConfiguration.Production, ConsoleMonitorStringConstants.SettingsFileName, ConsoleMonitorStringConstants.SettingsFileNameSuffix, StringConstants.CustomEnvironmentVariablePrefix, LoggerFactory, stringLocalizerFactory, hostEnvironment, hostConfiguration, linkedCancellationToken);
       //  // ConfigurationRoot = configurationBuilder.Build();
       //  #endregion
-      //  // Embedded object as Data 
+      //  // Embedded object as Data
       //  //AssemblyUnitNameReplacementPatternBaseData = new AssemblyUnitNameReplacementPatternBaseData();
       //  */";
       //#endregion
+
 
       /* ************************************************************************************ */
       #region Titular Interfaces AssemblyUnit
@@ -299,7 +300,7 @@ namespace GenerateProgram {
         gItemGroupInProjectUint);
       #endregion
       #endregion
-      MCreateAssemblyGroupResult p1Result = new MCreateAssemblyGroupResult() {
+      MCreateAssemblyGroupResult mCreateAssemblyGroupResult = new MCreateAssemblyGroupResult() {
         subDirectoryForGeneratedFiles = subDirectoryForGeneratedFiles,
         baseNamespaceName = baseNamespaceName,
         gAssemblyGroupName = gAssemblyGroupName,
@@ -324,7 +325,7 @@ namespace GenerateProgram {
         gTitularInterfaceDerivedInterface = gTitularInterfaceDerivedInterface,
         gTitularInterfaceBaseInterface = gTitularInterfaceBaseInterface
       };
-      return p1Result;
+      return mCreateAssemblyGroupResult;
     }
     public static GAssemblyGroup MAssemblyGroupBasicConstructorPart2(
       (string subDirectoryForGeneratedFiles,

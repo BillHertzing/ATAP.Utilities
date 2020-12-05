@@ -56,14 +56,14 @@ namespace ATAP.Utilities.HostedServices
 
 //      ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
 //      #region Method timing setup
-//      Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitious timing and profiling tool than a stopwatch
+//      Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
 //      stopWatch.Start();
 //      #endregion
 //      try
 //      {
 //        Func<Task<ConvertFileSystemToGraphResult>> run = () => ComputerInventoryHardwareStaticExtensions.ConvertFileSystemToGraphAsyncTask(rootString, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, persistence, pickAndSave, linkedCancellationToken);
 //        convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
-//        stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitious timing and profiling tool than a stopwatch
+//        stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
 //                          // ToDo: put the results someplace
 //      }
 //      catch (Exception)

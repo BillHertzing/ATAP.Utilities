@@ -20,7 +20,7 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static MCreateAssemblySingleResult MAssemblySingleBasicConstructor(string gTitularAssemblyName = default,
+    public static MCreateAssemblySingleResult MAssemblySingleBasicConstructor(string gAssemblySingleName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
@@ -28,47 +28,60 @@ namespace GenerateProgram {
 
       #region Determine the names of the Titular Base and Derived CompilationUnits, Namespaces, Classes
       // everything to the right of the last "." character, returns original string if no "."
-      var pos = gTitularAssemblyName.LastIndexOf(".") + 1;
-      var gTitularCommonName = gTitularAssemblyName.Substring(pos, gTitularAssemblyName.Length - pos);
-      var gTitularAssemblyUnitName = gTitularAssemblyName;
+      var pos = gAssemblySingleName.LastIndexOf(".") + 1;
+      var gTitularCommonName = gAssemblySingleName.Substring(pos, gAssemblySingleName.Length - pos);
+      var gTitularAssemblyUnitName = gAssemblySingleName;
       var gNamespaceName = $"{baseNamespaceName}{gTitularCommonName}";
       var gCompilationUnitCommonName = gTitularCommonName;
       var gTitularDerivedCompilationUnitName = gCompilationUnitCommonName;
       var gTitularBaseCompilationUnitName = gCompilationUnitCommonName + "Base";
       var gClassDerivedName = gCompilationUnitCommonName;
       var gClassBaseName = gCompilationUnitCommonName + "Base";
-
-
-
-
-
       #endregion
-      #region GReplacementPatternDictionary for the GTitularAssembly
-      var gTitularAssemblyPatternReplacement = new GPatternReplacement(gName: "gTitularAssemblyPatternReplacement",
+      #region GReplacementPatternDictionary for  gAssemblySingle
+      var gAssemblySinglePatternReplacement = new GPatternReplacement(gName: "gAssemblySinglePatternReplacement",
         gDictionary: new Dictionary<Regex, string>() {
-          {new Regex("AssemblyUnitNameReplacementPattern"), gTitularAssemblyName},
+          {new Regex("AssemblySingleNameReplacementPattern"), gAssemblySingleName},
         });
       // add the PatternReplacements specified as the gPatternReplacement argument
       foreach (var kvp in gPatternReplacement.GDictionary) {
-        gTitularAssemblyPatternReplacement.GDictionary.Add(kvp.Key, kvp.Value);
+        gAssemblySinglePatternReplacement.GDictionary.Add(kvp.Key, kvp.Value);
       }
       #endregion
-      #region Instantiate the GTitularAssembly
-      var gTitularAssembly = new GAssemblySingle(new GAssemblySingleSignil(gName: gTitularAssemblyName, gPatternReplacement: gTitularAssemblyPatternReplacement));
+      #region Instantiate the GAssemblySingle
+      var gAssemblySingle = 
+        new GAssemblySingle(new GAssemblySingleSignil(gName: gAssemblySingleName, gPatternReplacement: gAssemblySinglePatternReplacement));
+      #endregion
+      #region Titular AssemblyUnit
+      #region GReplacementPatternDictionary for the Titular AssemblyUnit
+      var gTitularAssemblyUnitPatternReplacement = new GPatternReplacement(gName: "gAssemblyUnitPatternReplacement",
+        gDictionary: new Dictionary<Regex, string>() {
+          {new Regex("AssemblyUnitNameReplacementPattern"), gTitularAssemblyUnitName}
+        });
+      // add the AssemblyGroup PatternReplacements to the Titular AssemblyUnit PatternReplacements
+      gTitularAssemblyUnitPatternReplacement.GDictionary.AddRange(gAssemblySinglePatternReplacement.GDictionary);
       #endregion
       #region ProjectUnit for the Titular AssemblyUnit
       #region GPatternReplacement for the ProjectUnit
-      var gGTitularAssemblyProjectUnitPatternReplacement =
-        new GPatternReplacement(gName: "GTitularAssemblyProjectUnitPatternReplacement");
-      gGTitularAssemblyProjectUnitPatternReplacement.GDictionary.AddRange(
-        gTitularAssemblyPatternReplacement.GDictionary);
+      var gGAssemblySingleProjectUnitPatternReplacement =
+        new GPatternReplacement(gName: "TitularAssemblyProjectUnitPatternReplacement");
+      gGAssemblySingleProjectUnitPatternReplacement.GDictionary.AddRange(
+        gAssemblySinglePatternReplacement.GDictionary);
       #endregion
-      var gGTitularAssemblyProjectUnit = new GProjectUnit(gName: gTitularAssemblyName,
-        gPatternReplacement: gGTitularAssemblyProjectUnitPatternReplacement);
+      var gTitularAssemblyUnitProjectUnit = new GProjectUnit(gName: gTitularAssemblyUnitName,
+        gPatternReplacement: gGAssemblySingleProjectUnitPatternReplacement);
       #endregion
+      #region Instantiate the gTitularAssemblyUnit
+      var gTitularAssemblyUnit = new GAssemblyUnit(gName: gTitularAssemblyUnitName,
+        gRelativePath: gTitularAssemblyUnitName,
+        gProjectUnit: gTitularAssemblyUnitProjectUnit,
+        gPatternReplacement: gTitularAssemblyUnitPatternReplacement);
+      #endregion
+
+      gAssemblySingle.GAssemblySingleSignil.GAssemblyUnits.Add(gTitularAssemblyUnit.Philote, gTitularAssemblyUnit);
       #region Titular Derived CompilationUnit
       #region Pattern Replacements for Titular Derived CompilationUnit
-      var gTitularDerivedCompilationUnitPatternReplacement = new GPatternReplacement(gName: "gTitularDerivedCompilationUnitPatternReplacement",
+      var gTitularDerivedCompilationUnitPatternReplacement = new GPatternReplacement(gName:"gTitularDerivedCompilationUnitPatternReplacement",
         gDictionary: new Dictionary<Regex, string>() {
           {new Regex("CompilationUnitNameReplacementPattern"), gTitularDerivedCompilationUnitName},
         });
@@ -97,7 +110,7 @@ namespace GenerateProgram {
 
       #region Titular Base CompilationUnit
       #region Pattern Replacements for Derived CompilationUnit
-      var gTitularBaseCompilationUnitPatternReplacement = new GPatternReplacement(gName: "gTitularBaseCompilationUnitPatternReplacement",
+      var gTitularBaseCompilationUnitPatternReplacement = new GPatternReplacement(gName:"gTitularBaseCompilationUnitPatternReplacement",
         gDictionary: new Dictionary<Regex, string>() {
           {new Regex("CompilationUnitNameReplacementPattern"), gTitularBaseCompilationUnitName},
           //{new Regex("DataInitializationReplacementPattern"), tempdatainitialization}, {
@@ -150,7 +163,7 @@ namespace GenerateProgram {
       //  // var configurationBuilder = ConfigurationExtensions.StandardConfigurationBuilder(loadedFromDirectory, initialStartupDirectory, ConsoleMonitorDefaultConfiguration.Production, ConsoleMonitorStringConstants.SettingsFileName, ConsoleMonitorStringConstants.SettingsFileNameSuffix, StringConstants.CustomEnvironmentVariablePrefix, LoggerFactory, stringLocalizerFactory, hostEnvironment, hostConfiguration, linkedCancellationToken);
       //  // ConfigurationRoot = configurationBuilder.Build();
       //  #endregion
-      //  // Embedded object as Data 
+      //  // Embedded object as Data
       //  //AssemblyUnitNameReplacementPatternBaseData = new AssemblyUnitNameReplacementPatternBaseData();
       //  */";
       //#endregion
@@ -162,12 +175,12 @@ namespace GenerateProgram {
         subDirectoryForGeneratedFiles = subDirectoryForGeneratedFiles,
         baseNamespaceName = baseNamespaceName,
         gAssemblySingleName = gAssemblySingleName,
-        gTitularAssemblyUnitName = gTitularAssemblyUnitName,
+        gAssemblySingleUnitName = gAssemblySingleUnitName,
         gTitularBaseCompilationUnitName = gTitularBaseCompilationUnitName,
         gAssemblySingle = gAssemblySingle,
         gAssemblySinglePatternReplacement = gAssemblySinglePatternReplacement,
-        gTitularAssemblyUnit = gTitularAssemblyUnit,
-        gTitularAssemblyUnitPatternReplacement = gTitularAssemblyUnitPatternReplacement,
+        gAssemblySingleUnit = gAssemblySingleUnit,
+        gAssemblySingleUnitPatternReplacement = gAssemblySingleUnitPatternReplacement,
         gTitularDerivedCompilationUnit = gTitularDerivedCompilationUnit,
         gTitularDerivedCompilationUnitPatternReplacement = gTitularDerivedCompilationUnitPatternReplacement,
         gTitularBaseCompilationUnit = gTitularBaseCompilationUnit,
@@ -255,7 +268,7 @@ namespace GenerateProgram {
       }
 
       #region Additional StringConstants items
-      var gAdditionalStatements = new List<string>() { "{dummyConfigKeyRoot,dummyConfigDefaultString}" };
+      var gAdditionalStatements = new List<string>() {"{dummyConfigKeyRoot,dummyConfigDefaultString}"};
       #endregion
       var gCompilationUnit = CompilationUnitStringConstantsConstructor(gNamespaceName: gNamespace.GName,
         gRelativePath: subDirectoryForGeneratedFiles,

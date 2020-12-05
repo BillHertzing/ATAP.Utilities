@@ -82,25 +82,28 @@
     <NuGetLocalFeedPath Condition=" '$(NuGetLocalFeedPath)' == '' ">C:\Dropbox\NuGetLocalFeed</NuGetLocalFeedPath>
   </PropertyGroup>
 
+  <!-- Set MSBuild output verbosity and warnings to ignore-->
+  <PropertyGroup>
+    <NoWarn>1602;1603;1701;1705;8600;8602;8603;8618;8625</NoWarn>
+    <clp>NoSummary;NoItemAndPropertyList;ErrorsOnly</clp>
+  </PropertyGroup>
+
   <!-- Release Configuration compilation symbols, flags and build options -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DefineConstants>RELEASE;</DefineConstants>
-    <NoWarn>1602;1603;1701;1705;8600;8602;8603;8618;8625</NoWarn>
   </PropertyGroup>
 
   <!-- ReleaseWithTrace Configuration compilation symbols, flags and build options -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithTrace|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DefineConstants>RELEASE;TRACE;</DefineConstants>
-    <NoWarn>1602;1603;1701;1705;8600;8602;8603;8618;8625</NoWarn>
   </PropertyGroup>
 
   <!-- Debug Configuration compilation symbols, flags and build options -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DefineConstants>DEBUG;TRACE;</DefineConstants>
-    <NoWarn>1602;1603;1701;1705;8600;8602;8603;8618;8625</NoWarn>
   </PropertyGroup>
 
   <!-- .NET Standard any version references, compilation flags and build options -->

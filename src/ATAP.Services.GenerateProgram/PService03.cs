@@ -44,7 +44,7 @@ namespace GenerateProgram {
       string subDirectoryForGeneratedFiles = "Generated";
 
 
-      #region Projects under development, their realtive paths under the source and tests directory, and the delegate to create each
+      #region Projects under development, their relative paths under the source and tests directory, and the delegate to create each
       string genericHostProgramsRelativeNextPath = "GenericHostPrograms/";
       string genericHostProgramsRelativeNextNamespace = "GenericHostPrograms.";
       string gHPBaseNamespaceName = baseNamespaceName + genericHostProgramsRelativeNextNamespace;
@@ -112,7 +112,7 @@ namespace GenerateProgram {
         };
       #endregion
 
-      #region Conversion of nonReleased Packages from PacakgeReference to ProjectReference
+      #region Conversion of nonReleased Packages from PackageReference to ProjectReference
       #region The structure of the project and package includes lines found in a ProjectUnit's ItemGroup
       var fromPatternP = "<PackageReference Include=\"";
       var fromPatternS = "\"\\s*/>";
@@ -177,7 +177,7 @@ namespace GenerateProgram {
       #region executable if present
       GAssemblySingle gPrimaryExecutableAssemblyGroup = gPrimaryExecutingProgram.mCreateAssemblySingleDelegate(gPrimaryExecutingProgram.name,
         gPrimaryExecutingProgram.subDirectoryForGeneratedFiles, gPrimaryExecutingProgram.baseNamespaceName);
-      session.Add("assemblyUnits", gPrimaryExecutableAssemblyGroup.GAssemblyUnits);
+      session.Add("assemblyUnits", gPrimaryExecutableAssemblyGroup.GAssemblySingleSignil.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: gPrimaryExecutingProgram.sourceRelativePath, force: true);
       r1Top.Render(w1Top);

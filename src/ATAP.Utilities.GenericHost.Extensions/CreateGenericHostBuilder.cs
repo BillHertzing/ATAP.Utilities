@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
 
-namespace ATAP.Utilities.GenericHos.Extensionst {
+namespace ATAP.Utilities.GenericHost.Extensions {
 #if TRACE
   [ETWLogAttribute]
 #endif

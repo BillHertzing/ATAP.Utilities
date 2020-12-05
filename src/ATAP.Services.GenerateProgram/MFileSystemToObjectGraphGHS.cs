@@ -127,7 +127,7 @@ namespace GenerateProgram {
       #endregion
       #endregion
        /* ************************************************************************************ */
-      #region Upate the ProjectUnits in both the Titular AssemblyUnit and Titular InterfacesAssemblyUnit
+      #region Update the ProjectUnits in both the Titular AssemblyUnit and Titular InterfacesAssemblyUnit
       #region Add References for the Titular Interface ProjectUnit
       #region Add References common to both the Titular Derived Interface and Titular Base Interface
       foreach (var o in new List<GItemGroupInProjectUnit>() {
@@ -202,7 +202,7 @@ namespace GenerateProgram {
       GComment gComment = new GComment(new List<string>() {
         "///  Used to process inputStrings from the ConsoleMonitorPattern"
       });
-      return (gBody:gBody, gComment:gComment);
+      return (GBody:gBody, GComment:gComment);
     }
     public static GMethod MCreateConvertFileSystemToObjectGraphAsync(GClass gClass) {
       var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();

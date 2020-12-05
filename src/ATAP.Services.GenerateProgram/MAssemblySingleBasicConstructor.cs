@@ -266,8 +266,8 @@ namespace GenerateProgram {
     }
     public static void MUpdateGPatternReplacement(GAssemblySingle gAssemblySingle,
       GPatternReplacement gAssemblySinglePatternReplacement) {
-      gAssemblySingle.GPatternReplacement.GDictionary.AddRange(gAssemblySinglePatternReplacement.GDictionary);
-      foreach (var gAssemblyUnitKVP in gAssemblySingle.GAssemblyUnits) {
+      gAssemblySingle.GAssemblySingleSignil.GPatternReplacement.GDictionary.AddRange(gAssemblySinglePatternReplacement.GDictionary);
+      foreach (var gAssemblyUnitKVP in gAssemblySingle.GAssemblySingleSignil.GAssemblyUnits) {
         gAssemblyUnitKVP.Value.GPatternReplacement.GDictionary.AddRange(gAssemblySinglePatternReplacement.GDictionary);
         gAssemblyUnitKVP.Value.GProjectUnit.GPatternReplacement.GDictionary.AddRange(gAssemblySinglePatternReplacement
           .GDictionary);

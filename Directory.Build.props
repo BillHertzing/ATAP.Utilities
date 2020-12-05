@@ -85,7 +85,7 @@
   <!-- Set MSBuild output verbosity and warnings to ignore-->
   <PropertyGroup>
     <NoWarn>1602;1603;1701;1705;8600;8602;8603;8618;8625</NoWarn>
-    <clp>NoSummary;NoItemAndPropertyList;ErrorsOnly</clp>
+
   </PropertyGroup>
 
   <!-- Release Configuration compilation symbols, flags and build options -->

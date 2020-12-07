@@ -8,13 +8,19 @@ using Polly;
 
 namespace ATAP.Utilities.Tcp
 {
+    /*
     public class Tcp
     {
         public static int defaultMaxResponseBufferSize = 1024;
+        public static int maxRetryAttempts = 3;
+        public static TimeSpan pauseBetweenFailures = TimeSpan.FromSeconds(2); 
+
+        public static Policy retryPolicy = Policy
+          .WaitAndRetryAsync(maxRetryAttempts, i => pauseBetweenFailures);
 
         public static async Task<byte[]> FetchAsync(string host, int port, string tcpRequestMessage)
         {
-            return await FetchAsync(Policy.NoOpAsync(),
+            return await FetchAsync(retryPolicy,
                                     host,
                                     port,
                                     tcpRequestMessage,
@@ -32,7 +38,7 @@ namespace ATAP.Utilities.Tcp
         }
         public static async Task<byte[]> FetchAsync(string host, int port, string tcpRequestMessage, CancellationToken cancellationToken)
         {
-            return await FetchAsync(Policy.NoOp(),
+            return await FetchAsync(retryPolicy,
                                     host,
                                     port,
                                     tcpRequestMessage,
@@ -46,7 +52,7 @@ namespace ATAP.Utilities.Tcp
                 // let every exception in this method bubble up
                 //ToDo: Support other encodings?
                 // assume the tcpRequestMessage is an ASCII encoded string, and convert it to a byte array
- var data = Encoding.ASCII.GetBytes(tcpRequestMessage);
+                var data = Encoding.ASCII.GetBytes(tcpRequestMessage);
                 // In particular, this will thor an exception if there is no listener on this host/port combination
                 var socket = new TcpClient(host, port);
                 var stream = socket.GetStream();
@@ -64,4 +70,5 @@ namespace ATAP.Utilities.Tcp
             });
         }
     }
+    */
 }

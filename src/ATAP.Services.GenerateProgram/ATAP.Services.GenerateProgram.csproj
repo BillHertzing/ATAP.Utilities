@@ -30,7 +30,6 @@
     <ProjectReference Include="..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
   </ItemGroup>
 
-
   <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" />
@@ -50,6 +49,12 @@
     <PackageReference Include="FSharpx.Collections.Experimental" />
   </ItemGroup>
 
+  <!-- Library of rich time and interval manipulation routines -->
+  <ItemGroup>
+    <PackageReference Update="TimePeriodLibrary.NET"  />
+  </ItemGroup>
+
+  <!-- large block of standard text included at the start of every generated resource file -->
   <ItemGroup>
     <None Update="CResourceUnitPreambleTemplate.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

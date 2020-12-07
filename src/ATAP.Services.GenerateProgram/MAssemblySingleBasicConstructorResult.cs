@@ -1,6 +1,6 @@
 namespace GenerateProgram {
-  public class MCreateAssemblySingleResult {
-    public MCreateAssemblySingleResult(GAssemblyUnit gTitularAssemblyUnit, string gTitularAssemblyUnitName, GPatternReplacement gTitularAssemblyUnitPatternReplacement, string subDirectoryForGeneratedFiles, string baseNamespaceName, string gTitularBaseCompilationUnitName, GCompilationUnit gTitularDerivedCompilationUnit, GPatternReplacement gTitularDerivedCompilationUnitPatternReplacement, GNamespace gNamespaceDerived, GClass gClassDerived, GCompilationUnit gTitularBaseCompilationUnit, GPatternReplacement gTitularBaseCompilationUnitPatternReplacement, GNamespace gNamespaceBase, GClass gClassBase, GMethod gPrimaryConstructorBase) {
+  public class MAssemblySingleBasicConstructorResult {
+    public MAssemblySingleBasicConstructorResult(GAssemblyUnit gTitularAssemblyUnit, string gTitularAssemblyUnitName, GPatternReplacement gTitularAssemblyUnitPatternReplacement, string subDirectoryForGeneratedFiles, string baseNamespaceName, string gTitularBaseCompilationUnitName, GCompilationUnit gTitularDerivedCompilationUnit, GPatternReplacement gTitularDerivedCompilationUnitPatternReplacement, GNamespace gNamespaceDerived, GClass gClassDerived, GCompilationUnit gTitularBaseCompilationUnit, GPatternReplacement gTitularBaseCompilationUnitPatternReplacement, GNamespace gNamespaceBase, GClass gClassBase, GMethod gPrimaryConstructorBase) {
       this.gTitularAssemblyUnit = gTitularAssemblyUnit;
       this.gTitularAssemblyUnitName = gTitularAssemblyUnitName;
       this.gTitularAssemblyUnitPatternReplacement = gTitularAssemblyUnitPatternReplacement;

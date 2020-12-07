@@ -2,7 +2,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
     <!-- Print debugging information if the BeforeTargets is "PublishAfterBuild" instead of "NeverJustAPlaceHolder"-->
-   <Target Name="PrintBuildVariables" BeforeTargets="NeverJustAPlaceHolder">
+   <Target Name="PrintBuildVariables" BeforeTargets="build">
      <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectDirectory = $(MSBuildProjectDirectory)" />
      <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildProjectFullPath = $(MSBuildProjectFullPath)" />
      <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="MSBuildToolsPath = $(MSBuildToolsPath)" />

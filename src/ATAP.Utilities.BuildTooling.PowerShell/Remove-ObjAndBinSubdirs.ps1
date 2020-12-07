@@ -15,7 +15,7 @@ param (
 # The standard place to find it is from the $solutiondir/.build/TBD
 Import-Module ATAP.Utilities.BuildTooling.psm1
 
-remove-objandBin $itempath $solutionpath
+Remove-ObjAndBinSubdirs $itempath $solutionpath
 
 
 

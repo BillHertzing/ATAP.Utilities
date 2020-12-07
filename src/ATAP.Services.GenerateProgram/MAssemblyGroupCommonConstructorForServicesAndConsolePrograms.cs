@@ -20,7 +20,7 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static MCreateAssemblySingleResult MAssemblySingleCommonConstructorForServicesAndConsolePrograms(
+    public static MAssemblySingleBasicConstructorResult MAssemblySingleCommonConstructorForServicesAndConsolePrograms(
       string gAssemblySingleName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {

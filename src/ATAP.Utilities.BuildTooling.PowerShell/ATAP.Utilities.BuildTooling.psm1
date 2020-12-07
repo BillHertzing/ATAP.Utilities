@@ -1,7 +1,7 @@
 <#
 	My Function
 #>
-Function remove-objandbin {
+Function Remove-ObjAndBinSubdirs {
     [CmdletBinding(SupportsShouldProcess=$true)]
 	param (
 		[parameter(mandatory=$true)]

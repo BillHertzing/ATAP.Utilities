@@ -27,8 +27,8 @@ namespace ATAP.Utilities.Http
 
     public static async Task<HttpResponseMessage> AsyncFetch(Policy policy, HttpRequestMessage httpRequestMessage)
     {
-      return await policy.ExecuteAsync(async () => {
-        return await SingletonHttpClient.SingleInstanceOfHttpClient.httpClient.SendAsync(httpRequestMessage);
+      return await policy.GetAsync(async () => {
+        return await SingletonHttpClient.SingleInstanceOfHttpClient.httpClient.FetchAsync(httpRequestMessage);
       });
     }
   }

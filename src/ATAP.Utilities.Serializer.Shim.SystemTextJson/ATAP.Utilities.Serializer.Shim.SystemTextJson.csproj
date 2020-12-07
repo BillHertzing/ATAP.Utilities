@@ -17,10 +17,14 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
+<!-- The System JSON Library to use -->
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="4.7.1" />
+  </ItemGroup>
+
   <!-- Documentation generation -->
   <ItemGroup>
-    <PackageReference Include="docfx" Version="2.40.2" />
-    <PackageReference Include="System.Text.Json" Version="4.7.1" />
+    <PackageReference Include="docfx" />
     <Folder Include="Documentation\" />
   </ItemGroup>
   

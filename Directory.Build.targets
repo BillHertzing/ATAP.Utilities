@@ -72,7 +72,9 @@
     <!-- ServiceStack HTTPClient for making HTTP calls -->
     <PackageReference Update="ServiceStack.HttpClient" Version="5.8.1" />
 
-
+    <!-- Library of rich time and interval manipulation routines -->
+    <PackageReference Update="TimePeriodLibrary.NET" Version="2.1.1" />
+    
     <!-- Packages necessary to run the Net Core Generic Host and web server hosts Server -->
     <PackageReference Update="Microsoft.Extensions.Configuration" Version="5.0.0" />
     <PackageReference Update="Microsoft.Extensions.Configuration.CommandLine" Version="5.0.0" />
@@ -106,9 +108,17 @@
     <PackageReference Update="Serilog.Extensions.Hosting" Version="4.0.0-dev-00051" />
     <PackageReference Update="Seq.Extensions.Logging" Version="5.0.0-dev-00067" />
 
+    <!-- Packages to add xUnit Testing providers and extensions -->
+    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+    <PackageReference Update="FluentAssertions" Version="5.10.2" />
+    <PackageReference Update="Moq" Version="4.13.1" />
+    <PackageReference Update="xunit" Version="2.4.1" />
+    <PackageReference Update="xunit.runner.console" Version="2.4.1"/>
+    <PackageReference Update="xunit.runner.visualstudio" Version="2.4.1"/>
+    <PackageReference Update="coverlet.collector" Version="1.2.0"/>
 
+    <!-- To Be Sorted -->
     <PackageReference Update="MedallionShell" Version="1.6.1" />
-    <PackageReference Update="TimePeriodLibrary.NET" Version="2.1.1" />
     <PackageReference Update="UnitsNet" Version="4.58.0" />
     <PackageReference Update="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Update="NLog" Version="4.7.0" />

@@ -20,7 +20,7 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static MCreateAssemblySingleResult MAssemblySingleBasicConstructor(string gAssemblySingleName = default,
+    public static MAssemblySingleBasicConstructorResult MAssemblySingleBasicConstructor(string gAssemblySingleName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
@@ -171,7 +171,7 @@ namespace GenerateProgram {
 
       /* ************************************************************************************ */
 
-      MCreateAssemblySingleResult mCreateAssemblySingleResult = new MCreateAssemblySingleResult() {
+      MAssemblySingleBasicConstructorResult mAssemblySingleBasicConstructorResult = new MAssemblySingleBasicConstructorResult() {
         subDirectoryForGeneratedFiles = subDirectoryForGeneratedFiles,
         baseNamespaceName = baseNamespaceName,
         gAssemblySingleName = gAssemblySingleName,
@@ -191,7 +191,7 @@ namespace GenerateProgram {
         gClassDerived = gClassDerived,
         gPrimaryConstructorBase = gPrimaryConstructorBase
       };
-      return mCreateAssemblySingleResult;
+      return mAssemblySingleBasicConstructorResult;
     }
     public static GAssemblySingle MAssemblySingleStringConstants(
       (string subDirectoryForGeneratedFiles,
@@ -224,7 +224,7 @@ namespace GenerateProgram {
         gClass
       );
     }
-    public static GAssemblySingle MAssemblySingleStringConstants(MCreateAssemblySingleResult mCreateAssemblySingleResult) {
+    public static GAssemblySingle MAssemblySingleStringConstants(MAssemblySingleBasicConstructorResult mCreateAssemblySingleResult) {
       return MAssemblySingleStringConstants(
         mCreateAssemblySingleResult.subDirectoryForGeneratedFiles,
         mCreateAssemblySingleResult.baseNamespaceName,

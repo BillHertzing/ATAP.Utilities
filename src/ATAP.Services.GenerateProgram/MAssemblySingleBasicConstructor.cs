@@ -77,8 +77,8 @@ namespace GenerateProgram {
         gProjectUnit: gTitularAssemblyUnitProjectUnit,
         gPatternReplacement: gTitularAssemblyUnitPatternReplacement);
       #endregion
-
       gAssemblySingle.GAssemblySingleSignil.GAssemblyUnits.Add(gTitularAssemblyUnit.Philote, gTitularAssemblyUnit);
+      #endregion      
       #region Titular Derived CompilationUnit
       #region Pattern Replacements for Titular Derived CompilationUnit
       var gTitularDerivedCompilationUnitPatternReplacement = new GPatternReplacement(gName:"gTitularDerivedCompilationUnitPatternReplacement",

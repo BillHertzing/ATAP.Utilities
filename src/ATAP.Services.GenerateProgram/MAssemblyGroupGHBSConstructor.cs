@@ -19,24 +19,24 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GAssemblyGroupExtensions {
-    public static MCreateAssemblyGroupResult MAssemblyGroupGHBSConstructor(string gAssemblyGroupName = default,
+    public static GAssemblyGroupBasicConstructorResult MAssemblyGroupGHBSConstructor(string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespace = default,
       GPatternReplacement gPatternReplacement = default) {
-      var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName,
+      var gCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName,
         subDirectoryForGeneratedFiles,
         baseNamespace, gPatternReplacement);
 
       #region Additions to Titular Base Class (IBackgroundService)
       #region specific methods for BackgroundService
-      mCreateAssemblyGroupResult.gClassBase.AddMethod(MCreateExecuteAsyncMethod(gAccessModifier: "override async"));
-      mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(MCreateStartStopAsyncMethods(gAccessModifier: "override async"));
+      gCreateAssemblyGroupResult.gClassBase.AddMethod(MCreateExecuteAsyncMethod(gAccessModifier: "override async"));
+      gCreateAssemblyGroupResult.gClassBase.AddMethodGroup(MCreateStartStopAsyncMethods(gAccessModifier: "override async"));
       #endregion
       #endregion
-      MAssemblyGroupCommonConstructorForGHHSAndGHBSPart2(mCreateAssemblyGroupResult);
+      MAssemblyGroupCommonConstructorForGHHSAndGHBSPart2(gCreateAssemblyGroupResult);
 
-      return mCreateAssemblyGroupResult;
+      return gCreateAssemblyGroupResult;
     }
-    public static void GAssemblyGroupGHBSFinalizer(MCreateAssemblyGroupResult mCreateAssemblyGroupResult) {
+    public static void GAssemblyGroupGHBSFinalizer(GAssemblyGroupBasicConstructorResult mCreateAssemblyGroupResult) {
       //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor
       //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
       //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;

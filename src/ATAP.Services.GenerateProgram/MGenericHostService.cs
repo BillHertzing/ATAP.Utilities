@@ -20,12 +20,12 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static MAssemblySingleBasicConstructorResult MGenericHostService(string gAssemblySingleName = default,
+    public static GAssemblyGroupBasicConstructorResult MGenericHostService(string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
-      var mCreateAssemblySingleResult = MAssemblySingleCommonConstructorForServicesAndConsolePrograms(gAssemblySingleName,
+      var mCreateAssemblySingleResult = MAssemblyGroupCommonConstructorForServicesAndConsolePrograms(gAssemblyGroupName,
         subDirectoryForGeneratedFiles,
         baseNamespaceName, gPatternReplacement);
       return mCreateAssemblySingleResult;

@@ -98,7 +98,7 @@ namespace GenerateProgram {
       GComment gComment = new GComment(new List<string>() {
         "///  Used to process inputStrings from the ConsoleMonitorPattern"
       });
-      return (GBody:gBody, GComment:gComment);
+      return (gBody, gComment);
     }
   }
 }

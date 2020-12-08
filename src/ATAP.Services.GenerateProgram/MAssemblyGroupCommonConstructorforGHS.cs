@@ -20,10 +20,10 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static MCreateAssemblyGroupResult MAssemblyGroupCommonConstructorForGHHSAndGHBSPart1(string gAssemblyGroupName = default,
+    public static GAssemblyGroupBasicConstructorResult MAssemblyGroupCommonConstructorForGHHSAndGHBS(string gAssemblyGroupName = default,
         string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
         GPatternReplacement gPatternReplacement = default) {
-      var mCreateAssemblyGroupResult = MAssemblyGroupBasicConstructorPart1(gAssemblyGroupName,
+      var gAssemblyGroupBasicConstructorResult = MAssemblyGroupBasicConstructor(gAssemblyGroupName,
         subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement);
       //var gTitularAssemblyUnitName = gAssemblyGroupName;
       //GPatternReplacement _gPatternReplacement =
@@ -106,17 +106,17 @@ namespace GenerateProgram {
       //  gRelativePath: subDirectoryForGeneratedFiles, gPatternReplacement: gCompilationUnitPatternReplacement);
       #region Add UsingGroups common to both the Titular Derived CompilationUnit and the Titular Base CompilationUnit
       var gUsingGroup = MUsingGroupForMicrosoftGenericHostInGHHSAndGHBS();
-      mCreateAssemblyGroupResult.gTitularDerivedCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
-      mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
+      gAssemblyGroupBasicConstructorResult.gTitularDerivedCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
+      gAssemblyGroupBasicConstructorResult.gTitularBaseCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
       gUsingGroup = MUsingGroupForSystemGenericHostInGHHSAndGHBS();
-      mCreateAssemblyGroupResult.gTitularDerivedCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
-      mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
+      gAssemblyGroupBasicConstructorResult.gTitularDerivedCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
+      gAssemblyGroupBasicConstructorResult.gTitularBaseCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
       #endregion
       #region Add UsingGroups specific to the Titular Base CompilationUnit
       #endregion
       #region Standard Property Group for every GenericHostHostedService
       var gPropertyGroup = new GPropertyGroup("Standard Properties for every GenericHostHostedService");
-      mCreateAssemblyGroupResult.gClassBase.AddPropertyGroups(gPropertyGroup);
+      gAssemblyGroupBasicConstructorResult.gClassBase.AddPropertyGroups(gPropertyGroup);
       foreach (var o in new List<GProperty>() {
         new GProperty("ConfigurationRoot", gType: "ConfigurationRoot", gAccessors: "{ get; }",
           gVisibility: "protected internal"),
@@ -127,7 +127,7 @@ namespace GenerateProgram {
       #region Injected AutoProperty Group and their derived AutoProperty Groups for every GenericHostHostedService
       #region Injected AutoProperties whose Type IS their name
       gPropertyGroup = new GPropertyGroup("Injected AutoProperty Group for GenericHost");
-      mCreateAssemblyGroupResult.gClassBase.AddPropertyGroups(gPropertyGroup);
+      gAssemblyGroupBasicConstructorResult.gClassBase.AddPropertyGroups(gPropertyGroup);
       foreach (var ap in new List<string>() {
         "LoggerFactory",
         "StringLocalizerFactory",
@@ -135,38 +135,38 @@ namespace GenerateProgram {
         "HostLifetime",
         "HostApplicationLifetime"
       }) {
-        mCreateAssemblyGroupResult.gClassBase.AddTConstructorAutoPropertyGroup(
-          mCreateAssemblyGroupResult.gPrimaryConstructorBase.Philote, ap, gPropertyGroupId: gPropertyGroup.Philote);
+        gAssemblyGroupBasicConstructorResult.gClassBase.AddTConstructorAutoPropertyGroup(
+          gAssemblyGroupBasicConstructorResult.gPrimaryConstructorBase.Philote, ap, gPropertyGroupId: gPropertyGroup.Philote);
       }
       #endregion
       #region Injected AutoProperties whose Type is NOT their name
       foreach (var ap in new List<string>() {"HostConfiguration", "AppConfiguration"}) {
-        mCreateAssemblyGroupResult.gClassBase.AddTConstructorAutoPropertyGroup(
-          mCreateAssemblyGroupResult.gPrimaryConstructorBase.Philote, ap, gType: "IConfiguration",
+        gAssemblyGroupBasicConstructorResult.gClassBase.AddTConstructorAutoPropertyGroup(
+          gAssemblyGroupBasicConstructorResult.gPrimaryConstructorBase.Philote, ap, gType: "IConfiguration",
           gPropertyGroupId: gPropertyGroup.Philote);
       }
       #endregion
       #region Derived AutoProperty Group for Logger
       gPropertyGroup = new GPropertyGroup("Derived AutoProperty Group for Logger");
-      mCreateAssemblyGroupResult.gClassBase.AddPropertyGroups(gPropertyGroup);
-      mCreateAssemblyGroupResult.gClassBase.AddTLoggerConstructorAutoPropertyGroup(
-        mCreateAssemblyGroupResult.gPrimaryConstructorBase.Philote, gPropertyGroupId: gPropertyGroup.Philote);
+      gAssemblyGroupBasicConstructorResult.gClassBase.AddPropertyGroups(gPropertyGroup);
+      gAssemblyGroupBasicConstructorResult.gClassBase.AddTLoggerConstructorAutoPropertyGroup(
+        gAssemblyGroupBasicConstructorResult.gPrimaryConstructorBase.Philote, gPropertyGroupId: gPropertyGroup.Philote);
       #endregion
       #region Derived AutoProperty Group for Localizers
       gPropertyGroup = new GPropertyGroup("Derived AutoProperty Group for Localizers");
-      mCreateAssemblyGroupResult.gClassBase.AddPropertyGroups(gPropertyGroup);
+      gAssemblyGroupBasicConstructorResult.gClassBase.AddPropertyGroups(gPropertyGroup);
       foreach (var ap in new List<string>() {"DebugLocalizer", "ExceptionLocalizer", "UiLocalizer"}) {
-        mCreateAssemblyGroupResult.gClassBase.AddTLocalizerConstructorAutoPropertyGroup(
-          mCreateAssemblyGroupResult.gPrimaryConstructorBase.Philote, ap, mCreateAssemblyGroupResult.gTitularAssemblyUnitName,
+        gAssemblyGroupBasicConstructorResult.gClassBase.AddTLocalizerConstructorAutoPropertyGroup(
+          gAssemblyGroupBasicConstructorResult.gPrimaryConstructorBase.Philote, ap, gAssemblyGroupBasicConstructorResult.gTitularAssemblyUnitName,
           gPropertyGroupId: gPropertyGroup.Philote);
       }
       #endregion
       #endregion
 
       #region standard Methods for every GenericHostHostedService
-      mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(MCreateHostApplicationLifetimeEventHandlerMethods());
+      gAssemblyGroupBasicConstructorResult.gClassBase.AddMethodGroup(MCreateHostApplicationLifetimeEventHandlerMethods());
       #endregion
-      return mCreateAssemblyGroupResult;
+      return gAssemblyGroupBasicConstructorResult;
       
     }
     //#region Titular Base Class (IHostedService)
@@ -184,7 +184,7 @@ namespace GenerateProgram {
     //  gClass.GMethods.Add(gConstructor.Philote,gConstructor);
     //  #endregion
     public static void MAssemblyGroupCommonConstructorForGHHSAndGHBSPart2(
-      MCreateAssemblyGroupResult mCreateAssemblyGroupResult)
+      GAssemblyGroupBasicConstructorResult mCreateAssemblyGroupResult)
      {
       #region Add a StateMachine for the service
       #region Declare and populate the initial initialDiGraphList, which handles basic states for a GHS

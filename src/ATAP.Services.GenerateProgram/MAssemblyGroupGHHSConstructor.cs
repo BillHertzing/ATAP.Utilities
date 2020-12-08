@@ -19,22 +19,22 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static MCreateAssemblyGroupResult MAssemblyGroupGHHSConstructor(string gAssemblyGroupName = default,
+    public static GAssemblyGroupBasicConstructorResult MAssemblyGroupGHHSConstructor(string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
-      var mCreateAssemblyGroupResult = MAssemblyGroupCommonConstructorForGHHSAndGHBSPart1(gAssemblyGroupName,
+      var gAssemblyGroupBasicConstructorResult = MAssemblyGroupCommonConstructorForGHHSAndGHBS(gAssemblyGroupName,
         subDirectoryForGeneratedFiles,
         baseNamespaceName, gPatternReplacement);
 
       #region Additions to Titular Base Class (IBackgroundService)
       #region specific methods for IHostedService
-      mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(MCreateStartStopAsyncMethods(gAccessModifier: "virtual async"));
+      gAssemblyGroupBasicConstructorResult.gClassBase.AddMethodGroup(MCreateStartStopAsyncMethods(gAccessModifier: "virtual async"));
       #endregion
       #endregion
-      MAssemblyGroupCommonConstructorForGHHSAndGHBSPart2(mCreateAssemblyGroupResult);
-      return mCreateAssemblyGroupResult;
+      MAssemblyGroupCommonConstructorForGHHSAndGHBSPart2(gAssemblyGroupBasicConstructorResult);
+      return gAssemblyGroupBasicConstructorResult;
     }
-    public static void GAssemblyGroupGHHSFinalizer( MCreateAssemblyGroupResult mCreateAssemblyGroupResult) {
+    public static void GAssemblyGroupGHHSFinalizer(GAssemblyGroupBasicConstructorResult gAssemblyGroupBasicConstructorResult) {
       //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor
       //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
       //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>() {gAssemblyGroup}, gClassName: titularBaseClassName);
@@ -54,7 +54,7 @@ namespace GenerateProgram {
       //var gInterfaceBase = titularAssemblyUnitLookupBaseInterfacesResults.gInterfaces.First();
       //#endregion
      // No Additional work needed, call CommonFinalizer
-      GAssemblyGroupCommonFinalizer(mCreateAssemblyGroupResult);
+      GAssemblyGroupCommonFinalizer(gAssemblyGroupBasicConstructorResult);
     }
 
     //public static void GAssemblyGroupGHHSFinalizer( GAssemblyGroup gAssemblyGroup,  GClass gClassDerived, GClass gClassBase, GInterface gInterfaceDerived, GInterface gInterfaceBase) {

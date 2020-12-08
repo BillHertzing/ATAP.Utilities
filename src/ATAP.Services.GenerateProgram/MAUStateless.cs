@@ -23,11 +23,11 @@ namespace GenerateProgram {
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
 
 
-      var mCreateAssemblyGroupResult = MAssemblyGroupBasicConstructorPart1(gAssemblyGroupName,
+      var gAssemblyGroupBasicConstructorResult = MAssemblyGroupBasicConstructor(gAssemblyGroupName,
         subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
       #region Initial StateMachine Configuration
-      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
+      gAssemblyGroupBasicConstructorResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
         @"
               WaitingForARequestToGenerateAStateMachineConfiguration -> GeneratingAStateMachineConfiguration [label = ""RequestToGenerateAStateMachineReceived""]
               GeneratingAStateMachineConfiguration -> WaitingForARequestToGenerateAStateMachineConfiguration [label = ""ReadyToReturnAStateMachineConfigurationMethod""]
@@ -44,12 +44,12 @@ namespace GenerateProgram {
       #region Add UsingGroups specific to the Titular Base CompilationUnit
       var gUsingGroup =
         new GUsingGroup(
-          $"UsingGroup specific to {mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GName}");
+          $"UsingGroup specific to {gAssemblyGroupBasicConstructorResult.gTitularBaseCompilationUnit.GName}");
       foreach (var gName in new List<string>() {"Stateless", "System.Collections.Generic",}) {
         var gUsing = new GUsing(gName);
         gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
       }
-      mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GUsingGroups
+      gAssemblyGroupBasicConstructorResult.gTitularBaseCompilationUnit.GUsingGroups
         .Add(gUsingGroup.Philote, gUsingGroup);
       #endregion
       #endregion
@@ -71,7 +71,7 @@ namespace GenerateProgram {
             new GBody(new List<string>() {"<PackageReference Include=\"Stateless\" />",})),
         }
       ) {
-        mCreateAssemblyGroupResult.gTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
+        gAssemblyGroupBasicConstructorResult.gTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
           .Add(o.Philote, o);
       }
       #endregion
@@ -97,9 +97,9 @@ namespace GenerateProgram {
       #endregion
       #endregion
       #region Finalize the Assemblygroup
-      GAssemblyGroupCommonFinalizer(mCreateAssemblyGroupResult);
+      GAssemblyGroupCommonFinalizer(gAssemblyGroupBasicConstructorResult);
       #endregion
-      return mCreateAssemblyGroupResult.gAssemblyGroup;
+      return gAssemblyGroupBasicConstructorResult.gAssemblyGroup;
     }
 /*******************************************************************************/
 /*******************************************************************************/

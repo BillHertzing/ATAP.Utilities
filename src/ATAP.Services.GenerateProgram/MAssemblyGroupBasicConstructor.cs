@@ -20,13 +20,14 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static MCreateAssemblyGroupResult MAssemblyGroupBasicConstructorPart1(string gAssemblyGroupName = default,
+        // If HasInterfaces
+    public static GAssemblyGroupBasicConstructorResult MAssemblyGroupBasicConstructor(string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
 
-      #region Determine the names of the Titular and TitularInterfaces Base and Derived CompilationUnits, Namespaces, Classes, and Interfaces
+      #region Determine the names of the Titular Base and Derived CompilationUnits, Namespaces, Classes
       // everything to the right of the last "." character, returns original string if no "."
       var pos = gAssemblyGroupName.LastIndexOf(".") + 1;
       var gTitularCommonName = gAssemblyGroupName.Substring(pos, gAssemblyGroupName.Length - pos);
@@ -37,6 +38,10 @@ namespace GenerateProgram {
       var gTitularBaseCompilationUnitName = gCompilationUnitCommonName + "Base";
       var gClassDerivedName = gCompilationUnitCommonName;
       var gClassBaseName = gCompilationUnitCommonName + "Base";
+      #endregion
+            // If HasInterfaces
+
+      #region Determine the names TitularInterfaces Base and Derived CompilationUnits, Namespaces, Classes
       var gTitularInterfaceAssemblyUnitName = gAssemblyGroupName + ".Interfaces";
       var gTitularInterfaceDerivedCompilationUnitName = "I" + gCompilationUnitCommonName;
       var gTitularInterfaceBaseCompilationUnitName = "I" + gCompilationUnitCommonName + "Base";
@@ -108,9 +113,12 @@ namespace GenerateProgram {
       #endregion
       gTitularDerivedCompilationUnit.GNamespaces.Add(gNamespaceDerived.Philote, gNamespaceDerived);
       #region Instantiate the gClassDerived
+      // If HasInterfaces
       var gClassDerived = new GClass(gClassDerivedName, "public", gAccessModifier: "partial",
         gInheritance: gClassBaseName,
-        gImplements: new List<string> {gTitularInterfaceDerivedName} //"IDisposable",
+              // If HasInterfaces
+
+        gImplements: new List<string> {gTitularInterfaceDerivedName} 
         //gDisposesOf: new List<string> { "CompilationUnitNameReplacementPatternDerivedData" }
       );
       #endregion
@@ -145,6 +153,8 @@ namespace GenerateProgram {
       #region Instantiate the gClassBase
       var gClassBase = new GClass(gClassBaseName, "public", gAccessModifier: "partial",
         //gInheritance: baseClass.GName
+              // If HasInterfaces
+
         gImplements: new List<string> {gTitularInterfaceBaseName} //, "IDisposable"
         //gDisposesOf: new List<string> { "CompilationUnitNameReplacementPatternBaseData" }
       );
@@ -179,6 +189,8 @@ namespace GenerateProgram {
 
 
       /* ************************************************************************************ */
+            // If HasInterfaces
+
       #region Titular Interfaces AssemblyUnit
       #region GReplacementPatternDictionary for Titular Interfaces AssemblyUnit
       var gTitularInterfaceAssemblyUnitPatternReplacement = new GPatternReplacement(
@@ -300,7 +312,7 @@ namespace GenerateProgram {
         gItemGroupInProjectUint);
       #endregion
       #endregion
-      MCreateAssemblyGroupResult mCreateAssemblyGroupResult = new MCreateAssemblyGroupResult() {
+      GAssemblyGroupBasicConstructorResult mCreateAssemblyGroupResult = new GAssemblyGroupBasicConstructorResult() {
         subDirectoryForGeneratedFiles = subDirectoryForGeneratedFiles,
         baseNamespaceName = baseNamespaceName,
         gAssemblyGroupName = gAssemblyGroupName,
@@ -319,6 +331,8 @@ namespace GenerateProgram {
         gClassBase = gClassBase,
         gClassDerived = gClassDerived,
         gPrimaryConstructorBase = gPrimaryConstructorBase,
+              // If HasInterfaces
+
         gTitularInterfaceAssemblyUnit = gTitularInterfaceAssemblyUnit,
         gTitularInterfaceDerivedCompilationUnit = gTitularInterfaceDerivedCompilationUnit,
         gTitularInterfaceBaseCompilationUnit = gTitularInterfaceBaseCompilationUnit,
@@ -342,7 +356,7 @@ namespace GenerateProgram {
         GNamespace gNamespace) part1Tuple,
       GClass gClass
     ) {
-      return MAssemblyGroupBasicConstructorPart2(
+      return MAssemblyGroupStringConstants(
         part1Tuple.subDirectoryForGeneratedFiles,
         part1Tuple.baseNamespaceName,
         part1Tuple.gAssemblyGroupName,
@@ -358,7 +372,24 @@ namespace GenerateProgram {
         gClass
       );
     }
-    public static GAssemblyGroup MAssemblyGroupBasicConstructorPart2(
+    public static GAssemblyGroup MAssemblyGroupStringConstants(GAssemblyGroupBasicConstructorResult gAssemblyGroupBasicConstructorResult) {
+      return MAssemblyGroupStringConstants(
+        gAssemblyGroupBasicConstructorResult.subDirectoryForGeneratedFiles,
+        gAssemblyGroupBasicConstructorResult.baseNamespaceName,
+        gAssemblyGroupBasicConstructorResult.gAssemblyGroupName,
+        gAssemblyGroupBasicConstructorResult.gAssemblyGroupName,
+        gAssemblyGroupBasicConstructorResult.gTitularBaseCompilationUnitName,
+        gAssemblyGroupBasicConstructorResult.gAssemblyGroupPatternReplacement,
+        gAssemblyGroupBasicConstructorResult.gTitularAssemblyUnitPatternReplacement,
+        gAssemblyGroupBasicConstructorResult.gTitularDerivedCompilationUnitPatternReplacement,
+        gAssemblyGroupBasicConstructorResult.gAssemblyGroup,
+        gAssemblyGroupBasicConstructorResult.gAssemblyUnit,
+        gAssemblyGroupBasicConstructorResult.gTitularBaseCompilationUnit,
+        gAssemblyGroupBasicConstructorResult.gNamespaceBase
+        //gClass
+      );
+    }
+    public static GAssemblyGroup MAssemblyGroupStringConstants(
       string subDirectoryForGeneratedFiles = default,
       string baseNamespaceName = default,
       string gAssemblyGroupName = default,
@@ -375,8 +406,6 @@ namespace GenerateProgram {
     ) {
       GUsingGroup gUsingGroup;
       GPropertyGroup gPropertyGroup;
-
-
       #region StringConstants Base CompilationUnit
       gCompilationUnitPatternReplacement = new GPatternReplacement(
         gDictionary: new Dictionary<Regex, string>() {

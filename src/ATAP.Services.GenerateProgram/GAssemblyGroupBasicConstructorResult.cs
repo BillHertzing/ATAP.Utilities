@@ -1,5 +1,5 @@
 namespace GenerateProgram {
-  public class MCreateAssemblyGroupResult {
+  public class GAssemblyGroupBasicConstructorResult {
 
     public string subDirectoryForGeneratedFiles { get; set; }
       public string baseNamespaceName { get; set; }

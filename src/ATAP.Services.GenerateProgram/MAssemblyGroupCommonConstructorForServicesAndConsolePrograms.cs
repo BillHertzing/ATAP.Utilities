@@ -20,11 +20,11 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static MAssemblySingleBasicConstructorResult MAssemblySingleCommonConstructorForServicesAndConsolePrograms(
-      string gAssemblySingleName = default,
+    public static GAssemblyGroupBasicConstructorResult MAssemblyGroupCommonConstructorForServicesAndConsolePrograms(
+      string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
-      var mCreateAssemblySingleResult = MAssemblySingleBasicConstructor(gAssemblySingleName,
+      var gAssemblyGroupBasicConstructorResult = MAssemblyGroupBasicConstructor(gAssemblyGroupName,
         subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement);
       #region Upate the ProjectUnit
       #region PropertyGroups 
@@ -35,20 +35,20 @@ namespace GenerateProgram {
         PropertyGroupInProjectUnitForBuildConfigurations(),
         PropertyGroupInProjectUnitForVersionInfo()
       }.ForEach(gP => {
-        mCreateAssemblySingleResult.gTitularAssemblyUnit.GProjectUnit.GPropertyGroupInProjectUnits.Add(gP.Philote, gP);
+        gAssemblyGroupBasicConstructorResult.gTitularAssemblyUnit.GProjectUnit.GPropertyGroupInProjectUnits.Add(gP.Philote, gP);
       });
       #endregion
       #region PropertyGroups only in Titular AssemblyUnit
       new List<GItemGroupInProjectUnit>() {
         //TBD
       }.ForEach(o => {
-        mCreateAssemblySingleResult.gTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote, o);
+        gAssemblyGroupBasicConstructorResult.gTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote, o);
       });
       #endregion
       #endregion
 
-        MAssemblySingleStringConstants(mCreateAssemblySingleResult);
-      return mCreateAssemblySingleResult;
+        MAssemblyGroupStringConstants(gAssemblyGroupBasicConstructorResult);
+      return gAssemblyGroupBasicConstructorResult;
     }
   }
 }

@@ -21,9 +21,9 @@ namespace GenerateProgram {
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
-      var mCreateAssemblySingleResult = MGenericHostService(gAssemblySingleName, subDirectoryForGeneratedFiles,
+      var gAssemblyGroupBasicConstructorResult = MGenericHostService(gAssemblySingleName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
-      return mCreateAssemblySingleResult.gAssemblySingle;
+      return gAssemblyGroupBasicConstructorResult.gAssemblySingle;
     }
   }
 }

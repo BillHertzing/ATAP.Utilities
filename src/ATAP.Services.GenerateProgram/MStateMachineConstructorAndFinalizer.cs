@@ -124,7 +124,7 @@ namespace GenerateProgram {
     //    mCreateAssemblyGroupResult.gNamespaceBase, mCreateAssemblyGroupResult.gClassBase,
     //    gStateConfiguration: mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfigurations);
     //}
-    public static void MStateMachineFinalizer(MCreateAssemblyGroupResult mCreateAssemblyGroupResult) {
+    public static void MStateMachineFinalizer(GAssemblyGroupBasicConstructorResult mCreateAssemblyGroupResult) {
       #region Accumulate the StateConfigurations
       var finalGStateConfiguration = new GStateConfiguration();
       foreach (var gAU in mCreateAssemblyGroupResult.gAssemblyGroup.GAssemblyUnits) {

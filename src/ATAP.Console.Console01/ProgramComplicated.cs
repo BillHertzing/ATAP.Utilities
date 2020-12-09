@@ -8,7 +8,7 @@ using System.Resources;
 using System.Threading;
 
 using System.Threading.Tasks;
-using ATAP.Utilities.AConsole01.Properties;
+using ATAP.Console.Console01.Properties;
 using ATAP.Utilities.ComputerInventory.ProcessInfo;
 using ATAP.Utilities.ComputerInventory.Software;
 //using ATAP.Utilities.ETW;
@@ -25,7 +25,7 @@ using Serilog.Debugging;
 using ServiceStack.Text;
 
 
-namespace ATAP.Utilities.AConsole01.Complicated {
+namespace ATAP.Console.Console01.Complicated {
 
   
  

@@ -38,7 +38,7 @@ using ILogger = Serilog.ILogger;
 
 using Microsoft.CodeAnalysis;
 
-namespace ATAP.Utilities.AConsole01 {
+namespace ATAP.Console.Console01 {
 
   /// <summary>
   /// This program is going to be a Console program that displays a menu on stdout, gets a line of data (a string) from stdin, evaluates it,  performs a function or action, displays on stdout the information returned, then redisplays the menu on stdout
@@ -121,19 +121,19 @@ namespace ATAP.Utilities.AConsole01 {
       // populate the string localizers for Program
       options = Options.Create(new LocalizationOptions());
       stringLocalizerFactory = new ResourceManagerStringLocalizerFactory(options, NullLoggerFactory.Instance);
-      debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Utilities.AConsole01");
-      exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Utilities.AConsole01");
-      configLCL = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Utilities.AConsole01");
-      uILocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Utilities.AConsole01");
+      debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
+      exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
+      configLCL = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
+      uILocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
 
       // If localized non-string resources are needed, uncomment the following block
       // Load the ResourceManagers from the installation directory. These provide access to all localized resources including non-string resources
       // Cannot create more-derived types from a ResourceeManager. Gets Invalid cast. See also https://stackoverflow.com/questions/2500280/invalidcastexception-for-two-objects-of-the-same-type/30623970, the invalid cast might be because resouremanagers are not per-assembly?
-      // i.e., the following will no compile DebugResourceManager debugResourceManager = (DebugResourceManager)new ResourceManager("ATAP.Utilities.AConsole01.Properties.ConsoleDebugResources", typeof(ConsoleDebugResources).Assembly);
+      // i.e., the following will no compile DebugResourceManager debugResourceManager = (DebugResourceManager)new ResourceManager("ATAP.Console.Console01.Properties.ConsoleDebugResources", typeof(ConsoleDebugResources).Assembly);
       // These will compile if needed
-      //var debugResourceManager = new ResourceManager("ATAP.Utilities.AConsole01.Properties.ConsoleDebugResources", typeof(ConsoleDebugResources).Assembly);
-      //var exceptionResourceManager = new ResourceManager("ATAP.Utilities.AConsole01.Properties.ConsoleExceptionResources", typeof(ConsoleExceptionResources).Assembly);
-      //var uIResourceManager = new ResourceManager("ATAP.Utilities.AConsole01.Properties.ConsoleUIResources", typeof(ConsoleUIResources).Assembly);
+      //var debugResourceManager = new ResourceManager("ATAP.Console.Console01.Properties.ConsoleDebugResources", typeof(ConsoleDebugResources).Assembly);
+      //var exceptionResourceManager = new ResourceManager("ATAP.Console.Console01.Properties.ConsoleExceptionResources", typeof(ConsoleExceptionResources).Assembly);
+      //var uIResourceManager = new ResourceManager("ATAP.Console.Console01.Properties.ConsoleUIResources", typeof(ConsoleUIResources).Assembly);
       #endregion region
 
       #region initialStartup and loadedFrom directories

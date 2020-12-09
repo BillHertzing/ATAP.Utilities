@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ATAP.Utilities.AConsole01.Resources {
+namespace ATAP.Console.Console01.Resources {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace ATAP.Utilities.AConsole01.Resources {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("ATAP.Utilities.AConsole01.Resources.ConfigStrings", typeof(ConfigStrings).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("ATAP.Console.Console01.Resources.ConfigStrings", typeof(ConfigStrings).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

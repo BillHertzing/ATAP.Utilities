@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Console.Console01.StringConstants\ATAP.Console.Console01.StringConstants.csproj" />
-    <ProjectReference Include="..\ATAP.Services.GenerateProgram\ATAP.Services.GenerateProgram.csproj" />
+<!--    <ProjectReference Include="..\ATAP.Services.GenerateProgram\ATAP.Services.GenerateProgram.csproj" /> -->
     <ProjectReference Include="..\ATAP.Services.ConsoleMonitor.Interfaces\ConsoleMonitor.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Services.ConsoleMonitor\ConsoleMonitor.csproj" />
     <ProjectReference Include="..\ATAP.Services.Timers.Interfaces\Timers.Interfaces.csproj" />

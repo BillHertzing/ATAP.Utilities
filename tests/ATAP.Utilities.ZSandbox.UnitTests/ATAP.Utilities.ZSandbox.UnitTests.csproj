@@ -17,16 +17,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" Version="5.10.2" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
-    <PackageReference Include="Moq" Version="4.13.1" />
-    <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
+    <PackageReference Include="FluentAssertions"/>
+    <PackageReference Include="Microsoft.NET.Test.Sdk"  />
+    <PackageReference Include="Moq"  />
+    <PackageReference Include="xunit"  />
+    <PackageReference Include="xunit.runner.visualstudio" >
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
-   <PackageReference Include="coverlet.collector" Version="1.2.0">
+    <DotNetCliToolReference Include="dotnet-xunit"  />
+   <PackageReference Include="coverlet.collector" >
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -39,27 +39,27 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.TcpWithResilience\ATAP.Services.TcpWithResilience.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Extensions" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ComputerInventory.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ConcurrentObservableCollections" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Extensions" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoCoin.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoMiner.Enumerations" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoMiner.Extensions" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.CryptoMiner.Models" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.DateTime" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.Enumeration" Version="1.*" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Enumerations"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Extensions"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Models"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ConcurrentObservableCollections"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Enumerations"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Extensions"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Models"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Enumerations"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Extensions"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Models"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.DateTime"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Enumeration"  />
 
-    <PackageReference Include="ATAP.Utilities.Http" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.String" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.Tcp" Version="1.*" />
-    <PackageReference Include="ATAP.Utilities.ZSandbox" Version="1.*" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Http"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.String"  />
+    <ProjectReference Include="..\..\src\ATAP.Services.TcpWithResilience"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ZSandbox"  />
   </ItemGroup>
 
 </Project>

@@ -48,7 +48,7 @@
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.AConsole01.StringConstants\ATAP.Utilities.AConsole01.StringConstants.csproj" />
+    <ProjectReference Include="..\ATAP.Console.Console01.StringConstants\ATAP.Console.Console01.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Extensions.Persistence\ATAP.Utilities.Extensions.Persistence.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Extensions.Reactive\ATAP.Utilities.Extensions.Reactive.csproj" />
     <ProjectReference Include="..\GenericHost\Extensions.GenericHost.Interfaces\Extensions.GenericHost.Interfaces.csproj" />

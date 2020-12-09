@@ -31,9 +31,9 @@ using ComputerInventoryHardwareStaticExtensions = ATAP.Utilities.ComputerInvento
 using PersistenceStaticExtensions = ATAP.Utilities.Persistence.Extensions;
 using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
 using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
-using appStringConstants = ATAP.Utilities.AConsole01.AConsole01StringConstants;
+using appStringConstants = ATAP.Console.Console01.AConsole01StringConstants;
 
-namespace ATAP.Utilities.AConsole01 {
+namespace ATAP.Console.Console01 {
   // This file contains the "boilerplate" code that creates the Background Service
 #if TRACE
   [ETWLogAttribute]
@@ -86,9 +86,9 @@ namespace ATAP.Utilities.AConsole01 {
     /// <param name="hostApplicationLifetime"></param>
     public AConsole01BackgroundService(IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration appConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
       this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
-      exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Utilities.AConsole01");
-      debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Utilities.AConsole01");
-      uiLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Utilities.AConsole01");
+      exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
+      debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
+      uiLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
       this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       this.logger = loggerFactory.CreateLogger<AConsole01BackgroundService>();
       // this.logger = (Logger<AConsole01BackgroundService>) ATAP.Utilities.Logging.LogProvider.GetLogger("AConsole01BackgroundService");

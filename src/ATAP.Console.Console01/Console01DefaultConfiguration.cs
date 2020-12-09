@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace ATAP.Utilities.AConsole01 {
+namespace ATAP.Console.Console01 {
   #region AConsole01 Default Configuration settings
   static public class AConsole01DefaultConfiguration {
     // Create the minimal set of Configuration settings that the AConsole01 app needs to startup and run in production, but don't duplicate genericHost default settings

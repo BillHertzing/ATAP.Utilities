@@ -1,6 +1,6 @@
 {
   "Logging": {
-    "PathFormat": "C:/DevLogs/Serilog/AConsole01StartupLog.{Date}.log",
+    "PathFormat": "C:/DevLogs/Serilog/Console01StartupLog.{Date}.log",
     "LogLevel": {
       "Default": "Debug",
       "System": "Information",
@@ -36,7 +36,7 @@
           {
             "Name": "File",
             "Args": {
-              "path": "C:\\DevLogs\\AConsole01\\Serilogs\\log.txt",
+              "path": "C:\\DevLogs\\Console01\\Serilogs\\log.txt",
               "outputTemplate": "{Timestamp:o} [{Level:u3}] ({Application}/{MachineName}/{ThreadId}) {Message}{NewLine}{Exception}",
               "rollingInterval": "RollingInterval.Day"
             }
@@ -46,7 +46,7 @@
     },
     "Enrich": [ "FromLogContext", "WithThreadId" ],
     "Properties": {
-      "Application": "AConsole01"
+      "Application": "Console01"
     }
   }
 }

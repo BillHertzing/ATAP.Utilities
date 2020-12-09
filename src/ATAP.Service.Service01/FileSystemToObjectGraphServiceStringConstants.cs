@@ -12,7 +12,7 @@ namespace FileSystemToObjectGraphService {
     #endregion
     #region File Names
     public const string TemporaryDirectoryBaseConfigRootKey = "TemporaryDirectoryBase";
-    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\AConsole01\\FileSystemToObjectGraphService\\";
+    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\Console01\\FileSystemToObjectGraphService\\";
     #endregion
     #region FileSystemToObjectGraphService ConfigRootKeys and default values
     public const string RootStringConfigRootKey = "RootString";

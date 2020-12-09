@@ -145,14 +145,14 @@ namespace ATAP.Utilities.HostedServices {
       // Post-startup code goes here  
     }
 
-    // Registered as a handler with the HostApplicationLifetime.Application event
+    // Registered as a handler with the HostApplicationLifetime.ApplicationStopping event
     // This is NOT called if the ConsoleWindows ends when the connected browser (browser opened by LaunchSettings when starting with debugger) is closed (not applicable to ConsoleLifetime generic hosts
     // This IS called if the user hits ctrl-C in the ConsoleWindow
     private void OnStopping() {
       // On-stopping code goes here  
     }
 
-    // Registered as a handler with the HostApplicationLifetime.ApplicationStarted event
+    // Registered as a handler with the HostApplicationLifetime.ApplicationStopped event
     private void OnStopped() {
       // Post-stopped code goes here  
     }
@@ -174,6 +174,7 @@ namespace ATAP.Utilities.HostedServices {
     // Dispose must dispose of the internalCancellationTokenSource and the linkedCancellationTokenSource
     // Dispose must dispose of all timers in the collection and the linkedCancellationTokenSource
     public void Dispose() {
+      // ToDo: dispose of the internalCancellationTokenSource and the linkedCancellationTokenSource
       GC.SuppressFinalize(this);
     }
 

@@ -1,5 +1,5 @@
 
-namespace ATAP.Utilities.AConsole01 {
+namespace ATAP.Console.Console01 {
   public static class AConsole01StringConstants {
     // ToDo: Localize the string constants
 

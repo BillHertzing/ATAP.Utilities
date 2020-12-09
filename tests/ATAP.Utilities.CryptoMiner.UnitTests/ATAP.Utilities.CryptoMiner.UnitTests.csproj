@@ -43,7 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.TcpWithResilience\ATAP.Services.TcpWithResilience.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -12,7 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 //using Serilog;
 
-namespace ATAP.Utilities.AConsole01.Complicated {
+namespace ATAP.Console.Console01.Complicated {
 
 
   //partial class ProgramComplicated {

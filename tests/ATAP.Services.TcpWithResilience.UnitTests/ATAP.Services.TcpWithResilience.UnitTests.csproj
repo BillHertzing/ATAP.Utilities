@@ -39,7 +39,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.TcpWithResilience\ATAP.Services.TcpWithResilience.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.TcpWithResilience.Interfaces\ATAP.Services.TcpWithResilience.ATAP.Services.TcpWithResilience.Interfaces.csproj" />
   </ItemGroup>
 
 

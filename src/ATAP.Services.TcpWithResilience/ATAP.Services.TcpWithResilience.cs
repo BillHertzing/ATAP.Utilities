@@ -15,11 +15,11 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Polly;
-using ATAP.Services.Resilience;
+/*using ATAP.Utilities.HostedServices.Resilience; */
 
-namespace ATAP.Utilities.HostedServices {
+namespace ATAP.Utilities.HostedServices.TcpWithResilienceHostedService {
     
-    public class TcpWithResilience
+    public class TcpWithResilience 
     {
         //
         // ToDo: Move into a TCP configuration section
@@ -68,7 +68,7 @@ namespace ATAP.Utilities.HostedServices {
 #if TRACE
   [ETWLogAttribute]
 #endif
-  public class TCPWithResilienceHostedServiceData : IDisposable {
+  public class TcpWithResilienceHostedServiceData : IDisposable {
     public TcpWithResilience TcpWithResilience;
     public void Dispose() {
       GC.SuppressFinalize(this);
@@ -78,9 +78,9 @@ namespace ATAP.Utilities.HostedServices {
 #if TRACE
   [ETWLogAttribute]
 #endif
-  public class TCPWithResilienceHostedService : IHostedService, IDisposable, ITCPWithResilienceHostedService {
+  public class TcpWithResilienceHostedService : IHostedService, IDisposable, ITcpWithResilienceHostedService {
     #region Common Constructor-injected fields
-    private readonly ILogger<TCPWithResilienceHostedService> logger;
+    private readonly ILogger<TcpWithResilienceHostedService> logger;
     private readonly IConfiguration hostConfiguration;
     private readonly IStringLocalizer stringLocalizer;
     private readonly IHostEnvironment hostEnvironment;
@@ -94,9 +94,9 @@ namespace ATAP.Utilities.HostedServices {
     private CancellationToken linkedCancellationToken;
     private CancellationTokenSource linkedCancellationTokenSource;
     #endregion
-    public TCPWithResilienceHostedService(
+    public TcpWithResilienceHostedService(
             // This service gets all the default injected services
-            ILogger<TCPWithResilienceHostedService> logger,
+            ILogger<TcpWithResilienceHostedService> logger,
             // todo: inject localizer
             IHostEnvironment hostEnvironment,
             IConfiguration hostConfiguration,
@@ -105,7 +105,7 @@ namespace ATAP.Utilities.HostedServices {
       // Can the external CTS go here instead of in StartAsync?
       ) {
       this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-      this.stringLocalizer = null; // new StringLocalizer<TCPWithResilienceHostedService>();
+      this.stringLocalizer = null; // new StringLocalizer<TcpWithResilienceHostedService>();
       this.hostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
       this.hostApplicationLifetime = hostApplicationLifetime ?? throw new ArgumentNullException(nameof(hostApplicationLifetime));
       this.hostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostEnvironment));
@@ -114,24 +114,20 @@ namespace ATAP.Utilities.HostedServices {
 
     // public data structure for this service
     // a collection of TCP connection points
-    public TCPWithResilienceHostedServiceData HostedServiceTCPWithResilienceData;
+    public TcpWithResilienceHostedServiceData HostedServiceTCPWithResilienceData;
 
     public void Startup() {
-      HostedServiceTCPWithResilienceData = new TCPWithResilienceHostedServiceData();
-      HostedServiceTCPWithResilienceData.timer = new ObservableResetableTimer(new TimeSpan(0, 0, 1));
+      //HostedServiceTCPWithResilienceData = new TcpWithResilienceHostedServiceData();
+      //HostedServiceTCPWithResilienceData.timer = new ObservableResetableTimer(new TimeSpan(0, 0, 1));
 
     }
 
 
-    // to reset or start a ObservableResetableTimer:
-    //HostedServiceTCPWithResilienceData.timer.resetSignal.OnNext(Unit.Default);
-
-
-    // method to add a ObservableResetableTimer to the collection
+    // method to add a Tcp connection to the collection
     //   if hot start it
     //   if cold just allocate it
 
-    // method to remove a ObservableResetableTimer from the collection
+    // method to remove a Tcp connection from the collection
 
 
     #region StartAsync and StopAsync methods as promised by IHostedService

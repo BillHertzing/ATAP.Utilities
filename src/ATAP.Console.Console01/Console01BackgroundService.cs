@@ -31,19 +31,19 @@ using ComputerInventoryHardwareStaticExtensions = ATAP.Utilities.ComputerInvento
 using PersistenceStaticExtensions = ATAP.Utilities.Persistence.Extensions;
 using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
 using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
-using appStringConstants = ATAP.Console.Console01.AConsole01StringConstants;
+using appStringConstants = ATAP.Console.Console01.Console01StringConstants;
 
 namespace ATAP.Console.Console01 {
   // This file contains the "boilerplate" code that creates the Background Service
 #if TRACE
   [ETWLogAttribute]
 #endif
-  public partial class AConsole01BackgroundService : BackgroundService {
+  public partial class Console01BackgroundService : BackgroundService {
     #region Common Constructor-injected Auto-Implemented Properties
     // These properties can only be set in the class constructor.
     // Class constructor for a BackgroundService is called from the GenericHost and the DI-injected services are referenced
     ILoggerFactory loggerFactory { get; }
-    ILogger<AConsole01BackgroundService> logger { get; }
+    ILogger<Console01BackgroundService> logger { get; }
     IStringLocalizerFactory stringLocalizerFactory { get; }
     IHostEnvironment hostEnvironment { get; }
     IConfiguration hostConfiguration { get; }
@@ -63,7 +63,7 @@ namespace ATAP.Console.Console01 {
     IConsoleSinkHostedService consoleSinkHostedService { get; }
     IConsoleSourceHostedService consoleSourceHostedService { get; }
     #endregion
-    #region Data for AConsole01
+    #region Data for Console01
     IStringLocalizer debugLocalizer { get; }
     IStringLocalizer exceptionLocalizer { get; }
     IStringLocalizer uiLocalizer { get; }
@@ -84,15 +84,15 @@ namespace ATAP.Console.Console01 {
     /// <param name="hostConfiguration"></param>
     /// <param name="hostLifetime"></param>
     /// <param name="hostApplicationLifetime"></param>
-    public AConsole01BackgroundService(IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration appConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
+    public Console01BackgroundService(IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration appConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
       this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
       exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
       debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
       uiLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
       this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-      this.logger = loggerFactory.CreateLogger<AConsole01BackgroundService>();
-      // this.logger = (Logger<AConsole01BackgroundService>) ATAP.Utilities.Logging.LogProvider.GetLogger("AConsole01BackgroundService");
-      logger.LogDebug("AConsole01BackgroundService", ".ctor");
+      this.logger = loggerFactory.CreateLogger<Console01BackgroundService>();
+      // this.logger = (Logger<Console01BackgroundService>) ATAP.Utilities.Logging.LogProvider.GetLogger("Console01BackgroundService");
+      logger.LogDebug("Console01BackgroundService", ".ctor");
       this.hostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
       this.hostConfiguration = hostConfiguration ?? throw new ArgumentNullException(nameof(hostConfiguration));
       this.hostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostLifetime));
@@ -208,7 +208,7 @@ namespace ATAP.Console.Console01 {
       // check CancellationToken to see if this task is canceled
       CheckAndHandleCancellationToken(1);
 
-      logger.LogDebug(uiLocalizer["{0} {1} inputLineString = {2}", "AConsole01BackgroundService", "DoLoopAsync", inputLine]);
+      logger.LogDebug(uiLocalizer["{0} {1} inputLineString = {2}", "Console01BackgroundService", "DoLoopAsync", inputLine]);
 
       // Echo to stdOut the line that came in on stdIn
       mesg.Append(uiLocalizer["You selected: {0}", inputLine]);
@@ -617,9 +617,9 @@ namespace ATAP.Console.Console01 {
       linkedCancellationToken = linkedCancellationTokenSource.Token;
       #endregion
       #region Register actions with the CancellationToken (s)
-      externalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "AConsole01BackgroundService", "externalCancellationToken"));
-      internalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} internalCancellationToken has signalled stopping."], "AConsole01BackgroundService", "internalCancellationToken"));
-      linkedCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} linkedCancellationToken has signalled stopping."], "AConsole01BackgroundService", "linkedCancellationToken"));
+      externalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "Console01BackgroundService", "externalCancellationToken"));
+      internalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} internalCancellationToken has signalled stopping."], "Console01BackgroundService", "internalCancellationToken"));
+      linkedCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} linkedCancellationToken has signalled stopping."], "Console01BackgroundService", "linkedCancellationToken"));
       #endregion
 
       // Create a list of choices
@@ -675,7 +675,7 @@ namespace ATAP.Console.Console01 {
       /*
 
 
-      logger.LogDebug(debugLocalizer["{0} {1} AConsole01BackgroundService is stopping due to "], "AConsole01BackgroundService", "ExecuteAsync"); // add third parameter for internal or external
+      logger.LogDebug(debugLocalizer["{0} {1} Console01BackgroundService is stopping due to "], "Console01BackgroundService", "ExecuteAsync"); // add third parameter for internal or external
       SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
 
     }

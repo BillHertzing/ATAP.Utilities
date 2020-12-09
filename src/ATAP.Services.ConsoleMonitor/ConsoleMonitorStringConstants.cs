@@ -8,7 +8,7 @@ namespace ATAP.Utilities.HostedServices.ConsoleMonitor {
     #endregion
     #region File Names
     public const string TemporaryDirectoryBaseConfigRootKey = "TemporaryDirectoryBase";
-    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\AConsole01\\";
+    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\Console01\\";
     #endregion
     #region ConvertFileSystemToGraphConfigRootKeys
     public const string RootStringConfigRootKey = "RootString";

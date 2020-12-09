@@ -46,7 +46,7 @@ namespace ATAP.Console.Console01 {
     #endregion
 
     #region string constants: EnvironmentVariablePrefixs
-    public const string CustomEnvironmentVariablePrefix = "AConsole01Host_";
+    public const string CustomEnvironmentVariablePrefix = "Console01Host_";
     #endregion
 
     // ToDo: replace with newest "best practices" that use IHostEnvironment

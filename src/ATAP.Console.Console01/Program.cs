@@ -60,8 +60,8 @@ namespace ATAP.Console.Console01 {
         };
 
     // The list of environment prefixes this program wants to use
-    public static string[] hostEnvPrefixes = new string[1] { "AConsole01GenericHost_" };
-    public static string[] appEnvPrefixes = new string[1] { "AConsole01App_" };
+    public static string[] hostEnvPrefixes = new string[1] { "Console01GenericHost_" };
+    public static string[] appEnvPrefixes = new string[1] { "Console01App_" };
 
     // Use the Secrets pattern to access confidential information stored per-user
     public const string userSecretsID = "TBD a GUID GOES HERE";
@@ -76,10 +76,10 @@ namespace ATAP.Console.Console01 {
 
       #region Startup logger
       // Configure a startup logger, prior to getting the Logger configuration from the ConfigurationRoot
-      // Serilog is the logging provider I picked to provide a logging solution for the AConsole01 application
+      // Serilog is the logging provider I picked to provide a logging solution for the Console01 application
       // Enable Serilog's internal debug logging. Note that internal logging will not write to any user-defined Sources
       //  https://github.com/serilog/serilog-sinks-file/blob/dev/example/Sample/Program.cs
-      Serilog.Debugging.SelfLog.Enable(Console.Out);
+      Serilog.Debugging.SelfLog.Enable(System.Console.Out);
       // Another example is at https://stackify.com/serilog-tutorial-net-logging/
       //  This brings in the System.Diagnostics.Debug namespace and writes the SelfLog there
       Serilog.Debugging.SelfLog.Enable(msg => Debug.WriteLine(msg));
@@ -107,13 +107,13 @@ namespace ATAP.Console.Console01 {
       Serilog.Core.Logger serilogLogger = serilogLoggerConfiguration.CreateLogger();
       // Set the Static logger called Log to use this LoggerConfiguration
       Serilog.Log.Logger = serilogLogger;
-      Log.Debug("{Program} {Main}: The program AConsole01 is starting", "Program", "Main");
+      Log.Debug("{Program} {Main}: The program Console01 is starting", "Program", "Main");
       Log.Debug("{Program} {Main}: LoggerFactory and local logger defined with a default startup configuration:", "Program", "Main");
 
       // Set the MEL LoggerFactory to use this LoggerConfiguration
       Microsoft.Extensions.Logging.ILoggerFactory mELoggerFactory = new Microsoft.Extensions.Logging.LoggerFactory().AddSerilog();
       Microsoft.Extensions.Logging.ILogger mELlogger = mELoggerFactory.CreateLogger("Program");
-      mELlogger.LogDebug("{0} {1}: The program AConsole01 is starting", "Program", "Main");
+      mELlogger.LogDebug("{0} {1}: The program Console01 is starting", "Program", "Main");
       mELlogger.LogDebug("{0} {1}: LoggerFactory and local logger defined with a default startup configuration:", "Program", "Main");
       #endregion
 
@@ -128,7 +128,7 @@ namespace ATAP.Console.Console01 {
 
       // If localized non-string resources are needed, uncomment the following block
       // Load the ResourceManagers from the installation directory. These provide access to all localized resources including non-string resources
-      // Cannot create more-derived types from a ResourceeManager. Gets Invalid cast. See also https://stackoverflow.com/questions/2500280/invalidcastexception-for-two-objects-of-the-same-type/30623970, the invalid cast might be because resouremanagers are not per-assembly?
+      // Cannot create more-derived types from a ResourceManager. Gets Invalid cast. See also https://stackoverflow.com/questions/2500280/invalidcastexception-for-two-objects-of-the-same-type/30623970, the invalid cast might be because ResourceManagers are not per-assembly?
       // i.e., the following will no compile DebugResourceManager debugResourceManager = (DebugResourceManager)new ResourceManager("ATAP.Console.Console01.Properties.ConsoleDebugResources", typeof(ConsoleDebugResources).Assembly);
       // These will compile if needed
       //var debugResourceManager = new ResourceManager("ATAP.Console.Console01.Properties.ConsoleDebugResources", typeof(ConsoleDebugResources).Assembly);
@@ -138,7 +138,7 @@ namespace ATAP.Console.Console01 {
 
       #region initialStartup and loadedFrom directories
       // When running as a Windows service, the initial working dir is usually %WinDir%\System32, but the program (and configuration files) is probably installed to a different directory
-      // When running as a *nix service, the initial working dir could be anything. The program (and machine-wide configuration files) are probably installed in the location whwere teh service starts. //ToDo: verify this
+      // When running as a *nix service, the initial working dir could be anything. The program (and machine-wide configuration files) are probably installed in the location where the service starts. //ToDo: verify this
       // When running as a Windows or Linux Console App, the initial working dir could be anything, but the program (and machine-wide configuration files) is probably installed to a different directory.
       // When running as a console app, it is very possible that there may be local (to the initial startup directory) configuration files to load
       // get the initial startup directory
@@ -165,12 +165,12 @@ namespace ATAP.Console.Console01 {
       //    var sections = genericHostConfigurationRoot.GetChildren(); 
       //    List<IConfigurationSection> sectionsAsListOfIConfigurationSections = new List<IConfigurationSection>();
       //    List<ConfigurationSection> sectionsAsListOfConfigurationSections = new List<ConfigurationSection>();
-      //    foreach (var isection in sections) sectionsAsListOfIConfigurationSections.Add(isection);
-      //    foreach (var isection in sectionsAsListOfIConfigurationSections) sectionsAsListOfConfigurationSections.Add((ConfigurationSection)isection);
+      //    foreach (var iSection in sections) sectionsAsListOfIConfigurationSections.Add(iSection);
+      //    foreach (var iSection in sectionsAsListOfIConfigurationSections) sectionsAsListOfConfigurationSections.Add((ConfigurationSection)iSection);
       #endregion
 
       #region Environment determination and validation
-      // ToDo: Hmmm... Before the genericHost is built, have to use a StringConstant for the string that means "Production", and hope the ConfigurationRoot value for Environment matches the StringConstant
+      // ToDo: Before the genericHost is built, have to use a StringConstant for the string that means "Production", and hope the ConfigurationRoot value for Environment matches the StringConstant
       // Determine the environment (Debug, TestingUnit, TestingX, QA, QA1, QA2, ..., Staging, Production) to use from the initialGenericHostConfigurationRoot
       var envNameFromConfiguration = genericHostConfigurationRoot.GetValue<string>(GenericHostStringConstants.EnvironmentConfigRootKey, GenericHostStringConstants.EnvironmentDefault);
       mELlogger.LogDebug(debugLocalizer["{0} {1}: Initial environment name: {2}", "Program", "Main", envNameFromConfiguration]);
@@ -204,8 +204,8 @@ namespace ATAP.Console.Console01 {
       // Create the appConfigurationBuilder, either as Production or as some other environment specific
       IConfigurationBuilder appConfigurationBuilder;
       mELlogger.LogDebug(debugLocalizer["{0} {1}: Creating appConfigurationBuilder for Environment: {2}"], "Program", "Main", envNameFromConfiguration);
-      appConfigurationBuilder = ConfigurationExtensions.ATAPStandardConfigurationBuilder(AConsole01DefaultConfiguration.Production, envNameFromConfiguration == GenericHostStringConstants.EnvironmentProduction, envNameFromConfiguration,
-        AConsole01StringConstants.SettingsFileName, AConsole01StringConstants.SettingsFileNameSuffix, loadedFromDirectory, initialStartupDirectory, appEnvPrefixes, args, switchMappings);
+      appConfigurationBuilder = ConfigurationExtensions.ATAPStandardConfigurationBuilder(Console01DefaultConfiguration.Production, envNameFromConfiguration == GenericHostStringConstants.EnvironmentProduction, envNameFromConfiguration,
+        Console01StringConstants.SettingsFileName, Console01StringConstants.SettingsFileNameSuffix, loadedFromDirectory, initialStartupDirectory, appEnvPrefixes, args, switchMappings);
       #endregion
 
 
@@ -235,7 +235,7 @@ namespace ATAP.Console.Console01 {
       //genericHostConfigurationRoot = genericHostConfigurationBuilder.Build();
       //// Create a LoggerFactory, configure it to use Serilog
       //loggerConfiguration = genericHostConfigurationRoot.GetSection("Logging");
-      //// redine the factory according to the new configuration
+      //// redefine the factory according to the new configuration
       //factory = new LoggerFactory();
       //factory.AddSerilog(loggerConfiguration.CreateLogger());
       //// Set the LogFactory in the ATP.Utilities.Logging class
@@ -243,7 +243,7 @@ namespace ATAP.Console.Console01 {
       //// Set the LogFactory in the DI-Services
       //// ToDo: LoggerFactory loggerFactory.SetLogFactory(factory);
       //// redefine the local logger from this factory, configured with the startup logging as defined in the Logging section of the configurationRoot 
-      //logger = factory.CreateLogger("AConsole01");
+      //logger = factory.CreateLogger("Console01");
       //serilogLogger.LogDebug(debugLocalizer["{0} {1}: LoggerFactory and local logger redefined per the Logging section in the configuration settings:"], "Program", "Main");
       //// Copy this tour "standard logger 
       //// Create a LoggerFactory, configure it to use Serilog
@@ -252,7 +252,7 @@ namespace ATAP.Console.Console01 {
       //factory.AddSerilog(serilogLoggerConfiguration.CreateLogger());
       //LogProvider.SetLogFactory(factory);
       //// Create a local logger from this factory, configured with the startup logging defined above
-      //logger = factory.CreateLogger("AConsole01");
+      //logger = factory.CreateLogger("Console01");
       //// For this program, I've selected Serilog as the underlying serilogLogger.
       //genericHostBuilder.UseSerilog();
       #endregion
@@ -264,7 +264,7 @@ namespace ATAP.Console.Console01 {
         services.AddSingleton<IConsoleSinkHostedService, ConsoleSinkHostedService>();
         services.AddSingleton<IConsoleSourceHostedService, ConsoleSourceHostedService>();
         //services.AddHostedService<ConsoleMonitorBackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
-        services.AddHostedService<AConsole01BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
+        services.AddHostedService<Console01BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
         services.AddSingleton<IFileSystemWatchersHostedService, FileSystemWatchersHostedService>();
         services.AddSingleton<IObservableResetableTimersHostedService, ObservableResetableTimersHostedService>();
         //services.AddSingleton<IFileSystemWatchersAsObservableFactoryService, FileSystemWatchersAsObservableFactoryService>();
@@ -278,7 +278,7 @@ namespace ATAP.Console.Console01 {
       // Build the Host
       var genericHost = genericHostBuilder.Build();
 
-      // Use the ConsigurationSettings for ConsoleLifetimeOptions.SuppressStatusMessages
+      // Use the ConfigurationSettings for ConsoleLifetimeOptions.SuppressStatusMessages
       //services.Configure<ConsoleLifetimeOptions>(opts opts.SuppressStatusMessages = Configuration["SuppressStatusMessages"] != null)
 
       // Start it going
@@ -316,11 +316,11 @@ namespace ATAP.Console.Console01 {
             ; // Just ignore OperationCanceledException to suppress it from bubbling upwards if the main program was cancelledOperationCanceledException
               // The Exception should be shown in the ETW trace
               //ToDo: Add Error level or category to ATAPUtilitiesETWProvider, and make OperationCanceled one of the catagories
-              // Specificly log the details of the cancellation (where it originated)
+              // Specifically log the details of the cancellation (where it originated)
               // ATAPUtilitiesETWProvider.Log.Information($"Exception in Program.Main: {e.Exception.GetType()}: {e.Exception.Message}");
           } // Other kinds of exceptions bubble up to the catch block for the surrounding try, where the Serilog logger records it
           finally {
-            // Dispose of any resources held directly by this program. Resources held by services in the DI-Container will be disposed of by the genricHost as it tears down
+            // Dispose of any resources held directly by this program. Resources held by services in the DI-Container will be disposed of by the genericHost as it tears down
             //if (DisposeThis != null) { DisposeThis.Dispose(); }
           }
 
@@ -344,7 +344,7 @@ namespace ATAP.Console.Console01 {
       // Just playing with the CSharpSyntaxTree feature here
       //SyntaxTree tree = CSharpSyntaxTree.ParseText(programText);
       //CompilationUnitSyntax root = tree.GetCompilationUnitRoot();
-      // Use the sebugger and Locals window to see these objects
+      // Use the debugger and Locals window to see these objects
       #endregion region
       mELlogger.LogDebug(debugLocalizer["{0} {1}: Program:Main is exiting", "Program", "Main"]);
 
@@ -368,7 +368,7 @@ namespace ATAP.Console.Console01 {
   //      return string.Format(rm.GetString(key), args);
   //    }
   //    catch (Exception e) {
-  //      //ToDo: Create a specific exception for the key not present, or, one or more of the expected args not present. Either condition indicates aproblem wit the satelite assemblies
+  //      //ToDo: Create a specific exception for the key not present, or, one or more of the expected args not present. Either condition indicates a problem wit the satelite assemblies
   //      throw;
   //    }
   //  }

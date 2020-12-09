@@ -25,10 +25,10 @@ namespace GenerateProgram {
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
-      var mCreateAssemblySingleResult = MAssemblyGroupCommonConstructorForServicesAndConsolePrograms(gAssemblyGroupName,
+      var gCreateAssemblyGroupResult = MAssemblyGroupCommonConstructorForServicesAndConsolePrograms(gAssemblyGroupName,
         subDirectoryForGeneratedFiles,
         baseNamespaceName, gPatternReplacement);
-      return mCreateAssemblySingleResult;
+      return gCreateAssemblyGroupResult;
     }
   }
 }

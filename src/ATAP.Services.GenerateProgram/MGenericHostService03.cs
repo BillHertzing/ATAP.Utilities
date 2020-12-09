@@ -12,18 +12,18 @@ using static GenerateProgram.Lookup;
 
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblySingle MGenericHostService03(string gAssemblySingleName,
+    public static GAssemblyGroup MGenericHostService03(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default) {
-      return MGenericHostService03(gAssemblySingleName, subDirectoryForGeneratedFiles, baseNamespaceName, new GPatternReplacement()  );
+      return MGenericHostService03(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, new GPatternReplacement()  );
     }
-    public static GAssemblySingle MGenericHostService03(string gAssemblySingleName,
+    public static GAssemblyGroup MGenericHostService03(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
-      var gAssemblyGroupBasicConstructorResult = MGenericHostService(gAssemblySingleName, subDirectoryForGeneratedFiles,
+      var gAssemblyGroupBasicConstructorResult = MGenericHostService(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, _gPatternReplacement);
-      return gAssemblyGroupBasicConstructorResult.gAssemblySingle;
+      return gAssemblyGroupBasicConstructorResult.gAssemblyGroup;
     }
   }
 }

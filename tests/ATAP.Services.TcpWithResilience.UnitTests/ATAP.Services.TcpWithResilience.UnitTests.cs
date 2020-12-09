@@ -1,8 +1,9 @@
 using FluentAssertions;
 using System.Text;
 using Xunit;
+using ATAP.Services.TcpWithResilience.Interfaces;
 
-namespace ATAP.Utilities.Tcp.UnitTests
+namespace ATAP.Services.TcpWithResilience.UnitTests
 {
   public class Fixture
     {
@@ -15,14 +16,17 @@ namespace ATAP.Utilities.Tcp.UnitTests
 
         public Fixture()
         {
+            /* create a policy registry, to be injected into the SUT */
+            /* create a Tcp service with associated policies */
+ITcpWithResilience TcpWithResilience;
             /*
-            mockTerm1 = new Mock<ITcp>();
-            mockTerm1.Setup(webGet => webGet.AsyncWebGet<double>("A"))
+            mockTerm1 = new Mock<ITcpWithResilience>();
+            mockTerm1.Setup(webGet => webGet.AsyncWebGet<byte[]>("A"))
                 .Callback(() => Task.Delay(new TimeSpan(0, 0, 1)))
-                .ReturnsAsync(100.0);
-            mockTerm1.Setup(webGet => webGet.AsyncWebGet<double>("B"))
+                .ReturnsAsync("[{\"Temp\":20.0,\"FanPct\":0.0},{\"Temp\":50.0,\"FanPct\":50.0},{\"Temp\":85.0,\"FanPct\":100.0}]");
+            mockTerm1.Setup(webGet => webGet.AsyncWebGet<byte[]>("B"))
                 .Callback(() => Task.Delay(new TimeSpan(0, 0, 1)))
-                .ReturnsAsync(200.0);
+                .ReturnsAsync("[{\"Temp\":60.0,\"FanPct\":50.0},{\"Temp\":45.0,\"FanPct\":65.0},{\"Temp\":15.0,\"FanPct\":99.9}]");
                 */
         }
     }

@@ -8,4 +8,4 @@
 Import-Module ATAP.Utilities.BuildTooling.psm1
 
 # Call the function of the same name in the module.
-Remove_VSComponentCache 
+Empty-NuGetCaches.

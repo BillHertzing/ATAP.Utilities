@@ -37,6 +37,26 @@ Function Remove_VSComponentCache {
 		}
 }
 
+#
+Function Empty-NuGetCaches {
+    [CmdletBinding(SupportsShouldProcess=$true)]
+
+  # ToDo: rewrite using powershell NuGet or dotnet nuget commands?
+	write-verbose "starting Empty-NuGetCaches"
+	write-verbose "Removing ($ENV:\AppData)\Local\NuGet\v3-cache"
+			if ($PSCmdlet.ShouldProcess("($ENV:\AppData)\Local\NuGet\v3-cache",'Delete')) {
+				write-host "really would delete ($ENV:\AppData)\Local\NuGet\v3-cache"
+		}
+	write-verbose "Removing ($ENV:\USERPROFILE)\.nuget\packages"
+			if ($PSCmdlet.ShouldProcess("($ENV:\USERPROFILE)\.nuget\packages",'Delete')) {
+				write-host "really would delete ($ENV:\USERPROFILE)\.nuget\packages"
+		}
+	write-verbose "Removing ($ENV:\AppData)\Local\Temp\NuGetScratch"
+			if ($PSCmdlet.ShouldProcess("($ENV:\AppData)\Local\Temp\NuGetScratch",'Delete')) {
+				write-host "really would delete ($ENV:\AppData)\Local\Temp\NuGetScratch"
+		}
+}
+
 Function create-DocFolderIfNotPresent {
     [CmdletBinding(SupportsShouldProcess=$true)]
 	param (
@@ -58,7 +78,7 @@ Function create-DocFilesIfNotPresent {
 		[string]$DocsPath
     ,[parameter(mandatory=$true)]
 		[ValidateNotNullOrEmpty()]
-		[string[]]$DocFileNames 
+		[string[]]$DocFileNames
 	)
 	write-verbose "DocsPath is $DocsPath, error if not present"
   if (!Test-Path -Path $DocsPath) {throw "$DocsPath is not present"}

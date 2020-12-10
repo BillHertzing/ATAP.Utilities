@@ -9,8 +9,8 @@ using Newtonsoft.Json.Converters;
 using ATAP.Utilities.ConcurrentObservableCollections;
 using Xunit;
 using Xunit.Abstractions;
-using ATAP.Utilities.ComputerInventory.Extensions;
-using ATAP.Utilities.ComputerInventory.Enumerations;
+//using ATAP.Utilities.ComputerInventory.Extensions;
+//using ATAP.Utilities.ComputerInventory.Enumerations;
 using ATAP.Utilities.ComputerInventory.Configuration;
 using ATAP.Utilities.CryptoCoin.Enumerations;
 using ATAP.Utilities.CryptoCoin.Models;
@@ -18,10 +18,10 @@ using ATAP.Utilities.CryptoCoin.Extensions;
 using ATAP.Utilities.CryptoMiner.Enumerations;
 using ATAP.Utilities.CryptoMiner.Models;
 using ATAP.Utilities.CryptoMiner.Extensions;
-using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
-using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
+//using ATAP.Utilities.ComputerInventory.Configuration.Hardware;
+//using ATAP.Utilities.ComputerInventory.Configuration.ProcessInfo;
 using UnitsNet;
-using ATAP.Utilities.ComputerInventory.Hardware.Models;
+//using ATAP.Utilities.ComputerInventory.Hardware.Models;
 
 namespace ATAP.Utilities.CryptoMiner.UnitTests
 {

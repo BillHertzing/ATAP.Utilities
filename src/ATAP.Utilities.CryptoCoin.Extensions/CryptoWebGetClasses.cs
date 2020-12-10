@@ -4,10 +4,61 @@ using System.Threading.Tasks;
 using ATAP.Utilities.Http;
 using Newtonsoft.Json;
 using Polly;
+using Polly.Wrap;
 using Polly.Timeout;
 
 namespace ATAP.Utilities.CryptoCoin
 {
+    // Attribution for the Policies to https://stackoverflow.com/questions/49412806/pollys-policy-timeoutasync-does-not-work-with-policywrap-in-an-async-context
+public static class Policies
+{
+ 
+    public static RetryASync<HttpResponseMessage> RetryPolicy
+    {
+        get
+        {
+            return Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
+                    .Or<TimeoutRejectedException>()
+                    .RetryAsync(3, onRetryAsync: (delegateResult, i) =>
+                    {
+                        Console.WriteLine("Retry delegate fired for time No. " + i);
+                        return Task.CompletedTask;
+                    });
+        }
+    }
+    public static FallbackPolicy<HttpResponseMessage> FallbackPolicy
+    {
+        get
+        {
+            return Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
+                    .Or<TimeoutRejectedException>()
+                    .FallbackAsync(new HttpResponseMessage(HttpStatusCode.InternalServerError), onFallbackAsync: (delegateResult, context) =>
+                    {
+                        Console.WriteLine("Fallback delegate fired");
+                        return Task.CompletedTask;
+                    });
+        }
+    }
+       public static AsyncTimeoutPolicy<HttpResponseMessage> TimeoutPolicy
+    {
+        get
+        {
+            return Policy.TimeoutAsync<HttpResponseMessage>(1, onTimeoutAsync: (context, timeSpan, task) =>
+            {
+                Console.WriteLine("Timeout delegate fired after " + timeSpan.TotalMilliseconds);
+                return Task.CompletedTask;
+            });
+        }
+    }
+
+    public static PolicyWrap<HttpResponseMessage> PolicyWrap
+    {
+        get
+        {
+            return Policy.WrapAsync(FallbackPolicy, RetryPolicy, TimeoutPolicy);
+        }
+    }
+}
   public class ChainInfo : WebGet<chain_so_api_v2_get_info_Data> {
         public ChainInfo() : base(Policy.TimeoutAsync(new TimeSpan(0, 0, 30),
                                               TimeoutStrategy.Optimistic),
@@ -27,11 +78,12 @@ namespace ATAP.Utilities.CryptoCoin
                                                                  .Build()) {
         }
 
-        public async Task<chain_so_api_v2_get_info_Data> GetAsync(string coin) {
+        public override async Task<chain_so_api_v2_get_info_Data> AsyncFetch(string coin) {
             UriBuilder uriBuilder = new UriBuilder(HttpRequestMessage.RequestUri);
             uriBuilder.Path += coin;
             HttpRequestMessage.RequestUri = uriBuilder.Uri;
-            var httpResponseMessage = await SingletonHttpClient.AsyncFetch(Policy, HttpRequestMessage);
+            //var httpResponseMessage = await SingletonHttpClient.PostAsync(Policy, HttpRequestMessage);
+            var httpResponseMessage = await Policies.PolicyWrap.Execute(ct => SingletonHttpClient.AsyncFetch(HttpRequestMessage.RequestUri , HttpRequestMessage));
             var data = await httpResponseMessage.Content.ReadAsStringAsync();
             return string.IsNullOrEmpty(data) ?
                             default(chain_so_api_v2_get_info_Data) :
@@ -92,7 +144,7 @@ namespace ATAP.Utilities.CryptoCoin
                                   ) {
         }
 
-        public new async Task<blockChainInfo_ticker> GetAsync() {
+        public new async Task<blockChainInfo_ticker> AsyncFetch() {
             UriBuilder uriBuilder = new UriBuilder(HttpRequestMessage.RequestUri);
             HttpRequestMessage.RequestUri = uriBuilder.Uri;
             var httpResponseMessage = await SingletonHttpClient.AsyncFetch(Policy, HttpRequestMessage);

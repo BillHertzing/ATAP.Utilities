@@ -26,7 +26,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
     public override async Task<IMinerStatusAbstract> StatusFetchAsync()
     {
       //var DUalStr = "{\"id\": 0, \"result\": [\"10.2 - ETH\", \"4258\", \"50033;1249;0\", \"24583;25450\", \"1501011;2571;0\", \"737502;763509\", \"68;100;81;100\", \"eth-us-east1.nanopool.org:9999;sia-us-east1.nanopool.org:7777\", \"0;2;0;2\"], \"error\": null}";
-      //var msorigianlZEC = "{\"id\": 0, \"error\": null, \"result\": [\"12.6 - ZEC\", \"1676\", \"352; 1300; 4\", \"175; 177\", \"0; 0; 0\", \"off; off\", \"81; 100\", \"zec - us - east1.nanopool.org:6633\", \"0; 2; 0; 0\"]}";
+      //var msoriginalZEC = "{\"id\": 0, \"error\": null, \"result\": [\"12.6 - ZEC\", \"1676\", \"352; 1300; 4\", \"175; 177\", \"0; 0; 0\", \"off; off\", \"81; 100\", \"zec - us - east1.nanopool.org:6633\", \"0; 2; 0; 0\"]}";
       //var ms = "{\"id\": 0, \"error\": null, \"result\": [\"12.6 - ZEC\", \"1676\", \"352; 1300; 4\", \"175; 177\", \"0; 0; 0\", \"off; off\", \"81; 100\", \"zec - us - east1.nanopool.org:6633\", \"0; 2; 0; 0\"]}";
       // ToDo: Make this error message better
       if (!(this.ComputerSoftwareProgram.ComputerSoftwareProgramSignil.HasAPI && this.ComputerSoftwareProgram.ComputerSoftwareProgramSignil.HasConfigurationSettings))
@@ -49,7 +49,7 @@ namespace ATAP.Utilities.CryptoMiner.Models
 
       try
       {
-        responsebuffer = await Tcp.Tcp.FetchAsync(host, port, message);
+        responsebuffer = await Tcp.FetchAsync(host, port, message);
       }
       catch (Exception)
       {

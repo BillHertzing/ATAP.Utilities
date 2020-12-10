@@ -46,7 +46,7 @@ namespace ATAP.Console.Console01 {
   static partial class Program {
 
     // Log Program Startup to ETW (as of 06/2019, ILWeaving this assembly results in a thrown invalid CLI Program Exception
-    // ATAP.Utilities.ETW.ATAPUtilitiesETWProvider.Log.MethodBoundry("<");
+    // ATAP.Utilities.ETW.ATAPUtilitiesETWProvider.Log.MethodBoundary("<");
 
     // ToDo: figure out how to localize the ConfigurationRoot keys. Use StringConstants for now
 

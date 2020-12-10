@@ -2,6 +2,7 @@ using FluentAssertions;
 using System.Text;
 using Xunit;
 using ATAP.Services.TcpWithResilience.Interfaces;
+using ATAP.Services.TcpWithResilience;
 
 namespace ATAP.Services.TcpWithResilience.UnitTests
 {
@@ -18,7 +19,7 @@ namespace ATAP.Services.TcpWithResilience.UnitTests
         {
             /* create a policy registry, to be injected into the SUT */
             /* create a Tcp service with associated policies */
-ITcpWithResilience TcpWithResilience;
+            ITcpWithResilience TcpWithResilience;
             /*
             mockTerm1 = new Mock<ITcpWithResilience>();
             mockTerm1.Setup(webGet => webGet.AsyncWebGet<byte[]>("A"))

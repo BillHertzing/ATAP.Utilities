@@ -27,8 +27,9 @@ namespace ATAP.Utilities.Http
 
     public static async Task<HttpResponseMessage> AsyncFetch(Policy policy, HttpRequestMessage httpRequestMessage)
     {
-      return await policy.GetAsync(async () => {
-        return await SingletonHttpClient.SingleInstanceOfHttpClient.httpClient.FetchAsync(httpRequestMessage);
+      return await policy.Execute(async () => {
+        // ToDo:: This is too simplistic, should use a method, headers, etc, from the httpRequestMessage. This is a simple Post as a placeholder
+        return await SingletonHttpClient.SingleInstanceOfHttpClient.httpClient.PostAsync("", httpRequestMessage.Content);
       });
     }
   }
@@ -42,10 +43,13 @@ namespace ATAP.Utilities.Http
   {
 
     HttpContent content;
-    // The HttpRequestHeaders are a System.Collections.Specialized.NameValueCollection() with a ADD(string,string) method
     HttpRequestHeaders httpRequestHeaders;
     HttpMethod method;
+    string AcceptHeader { get; set; }
+    string BearerToken { get; set; }
+    Uri RequestUri { get; set; }
 
+    // The HttpRequestHeaders are a System.Collections.Specialized.NameValueCollection() with a ADD(string,string) method
 
     public HttpRequestMessageBuilder()
     {
@@ -66,13 +70,6 @@ namespace ATAP.Utilities.Http
       this.content = content;
       return this;
     }
-    // Figure out some way to replace all of the headers with a new 
-    //public HttpRequestMessageBuilder AddHeaders(HttpRequestMessage httpRequestMessage)
-    //{
-    //    foreach(var h in httpRequestMessage.Headers) { switch(h.Key) { defaulthttpRequestHeaders[h.Key] = h.Value; break; } }
-    //    httpRequestHeaders = httpRequestHeaders;
-    //    return this;
-    //}
     public HttpRequestMessageBuilder AddMethod(HttpMethod method)
     {
       this.method = method;
@@ -83,6 +80,13 @@ namespace ATAP.Utilities.Http
       RequestUri = requestUri;
       return this;
     }
+    // clone the headers from an existing HttpRequestMessage  
+    //public HttpRequestMessageBuilder AddHeaders(HttpRequestMessage httpRequestMessage)
+    //{
+    //    foreach(var h in httpRequestMessage.Headers) { switch(h.Key) { defaulthttpRequestHeaders[h.Key] = h.Value; break; } }
+    //    httpRequestHeaders = httpRequestHeaders;
+    //    return this;
+    //}
     public HttpRequestMessage Build()
     {
       HttpRequestMessage hrm = new HttpRequestMessage(method, RequestUri);
@@ -108,10 +112,6 @@ namespace ATAP.Utilities.Http
     {
       return new HttpRequestMessageBuilder();
     }
-    string AcceptHeader { get; set; }
-
-    string BearerToken { get; set; }
-    Uri RequestUri { get; set; }
   }
 
   public abstract class WebGet<TResult>
@@ -122,17 +122,17 @@ namespace ATAP.Utilities.Http
       HttpRequestMessage = httpRequestMessage;
     }
 
-    public virtual Task<TResult> FetchAsync(string str)
+    public virtual Task<TResult> AsyncFetch(string str)
     {
       throw new NotImplementedException("Abstract class method called");
     }
 
-    public virtual async Task<HttpResponseMessage> FetchAsync(Policy policy, HttpRequestMessage httpRequestMessage)
+    public virtual async Task<HttpResponseMessage> AsyncFetch(Policy policy, HttpRequestMessage httpRequestMessage)
     {
       return await SingletonHttpClient.AsyncFetch(policy, httpRequestMessage);
     }
 
-    public virtual async Task<HttpResponseMessage> GetAsync()
+    public virtual async Task<HttpResponseMessage> AsyncFetch()
     {
       return await SingletonHttpClient.AsyncFetch(Policy, HttpRequestMessage);
     }

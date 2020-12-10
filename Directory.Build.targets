@@ -86,6 +86,10 @@
 
     <!-- <PackageReference Update="Microsoft.AspNetCore.Hosting.Abstractions" Version="5.0.0" /> -->
 
+    <!-- Packages used for custom build tasks -->
+    <PackageReference Update="Microsoft.Build.Framework" Version="16.8.0" />
+    <PackageReference Update="Microsoft.Build.Utilities.Core" Version="16.8.0" />
+
     <!-- alternate DI container -->
     <PackageReference Update="Ninject" Version="3.3.4" />
 

@@ -19,7 +19,7 @@ using Polly;
 
 namespace ATAP.Utilities.HostedServices.TcpWithResilienceHostedService {
     
-    public class TcpWithResilience 
+    public class TcpWithResilience : ITcpWithResilience
     {
         //
         // ToDo: Move into a TCP configuration section

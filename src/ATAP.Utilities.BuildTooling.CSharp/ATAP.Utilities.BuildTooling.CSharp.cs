@@ -25,7 +25,7 @@ namespace ATAP.Utilities.BuildTooling {
 
     /// <summary>
     /// Read versionFile and return the current values of the out parameters
-    /// aTAPBuildToolingConfiguration and aTAPBuildToolingDebugVerbosity control the amount of logging to perform whne the function is called
+    /// aTAPBuildToolingConfiguration and aTAPBuildToolingDebugVerbosity control the amount of logging to perform when the function is called
     /// log is a logger object
     /// </summary>
     /// <param name="log">an ILog object</param>

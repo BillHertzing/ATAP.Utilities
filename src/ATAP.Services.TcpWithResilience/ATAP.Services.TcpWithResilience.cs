@@ -30,7 +30,7 @@ namespace ATAP.Utilities.HostedServices.TcpWithResilienceHostedService {
         public static Policy retryPolicy = Policy
           .WaitAndRetryAsync(maxRetryAttempts, i => pauseBetweenFailures);
 
-        public static async Task<byte[]> FetchAsync(string host, int port, string tcpRequestMessage, Encoding encoding = default, Policy policy = default, int maxResponseBufferSize = default, CancellationToken cancellationToken = default)
+        public async Task<byte[]> FetchAsync(string host, int port, string tcpRequestMessage, Encoding encoding = default, Policy policy = default, int maxResponseBufferSize = default, CancellationToken cancellationToken = default)
         {
             Encoding _encoding;
             if (encoding == default) {_encoding = new System.Text.UTF8Encoding();} else {_encoding = encoding;}
@@ -40,7 +40,7 @@ namespace ATAP.Utilities.HostedServices.TcpWithResilienceHostedService {
             if (maxResponseBufferSize == default) {_maxResponseBufferSize = defaultMaxResponseBufferSize;} else {_maxResponseBufferSize = maxResponseBufferSize;}
             CancellationToken _cancellationToken ;
             if (cancellationToken == default) {_cancellationToken = CancellationToken.None;} else {_cancellationToken = cancellationToken;}
-            return await policy.FetchAsync(async() =>
+            return await policy.ExecuteAsync(async() =>
             {
                 // let every exception in this method bubble up
                 // assume the tcpRequestMessage encoding supports converting to a byte array 
@@ -69,7 +69,7 @@ namespace ATAP.Utilities.HostedServices.TcpWithResilienceHostedService {
   [ETWLogAttribute]
 #endif
   public class TcpWithResilienceHostedServiceData : IDisposable {
-    public TcpWithResilience TcpWithResilience;
+    // public TcpWithResilience TcpWithResilience;
     public void Dispose() {
       GC.SuppressFinalize(this);
     }

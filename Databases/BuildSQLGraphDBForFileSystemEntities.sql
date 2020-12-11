@@ -58,7 +58,7 @@ PRINT '@@Identy = ' + @@IDENTITY
 SET @mylastident = @@IDENTITY
 PRINT  '@mylastident = ' + @mylastident
 DECLARE @xmltmp xml = (SELECT * FROM DirectoryNames FOR XML AUTO   )
-PRINT CONVERT(NVARCHAR(MAX), @xmltmp
+PRINT CONVERT(NVARCHAR(MAX), @xmltmp)
 /*
 Insert INTO SubDirectoryOf Values ((SELECT $node_id From DirectoryNames WHERE DirectoryName = 'root'),(SELECT $node_id From DirectoryNames WHERE DirectoryName = 'Temp' ))
 */

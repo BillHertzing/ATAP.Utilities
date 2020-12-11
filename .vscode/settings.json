@@ -1,3 +1,13 @@
 {
-    "testExplorer.addToEditorContextMenu": true
+    "testExplorer.addToEditorContextMenu": true,
+    "mssql:connections": [
+        {
+            "authenticationType": "SqlLogin",
+            "server": "ncat016",
+            "database": "FileSystemAsGraphDB",
+            "user": "whertzing",
+            "password": "",
+            "savePassword": true
+        }
+    ]
 }

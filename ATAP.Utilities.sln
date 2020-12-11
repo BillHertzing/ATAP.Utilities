@@ -329,6 +329,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Resilience", "Resilience", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Services.TcpWithResilience.Interfaces", "src\ATAP.Services.TcpWithResilience.Interfaces\ATAP.Services.TcpWithResilience.Interfaces.csproj", "{95108E2E-60B2-47BB-9026-7EAC368BE9CD}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HttpWithResilience", "HttpWithResilience", "{AE497440-3B3F-11EB-8FD1-6B6F9A88CDDD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Databases", "Databases", "{1A75E3A0-3B78-11EB-8FD1-6B6F9A88CDDD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1344,6 +1348,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{AE497440-3B3F-11EB-8FD1-6B6F9A88CDDD} = {B6F9F570-22C9-4DF5-B580-942C6C7BFE32}
 		{F1D0F980-390B-11EB-993C-05D7FC15B653} = {984B3A90-8771-486E-9BC3-66D2F35963C2}
 		{D925C274-C957-4781-B549-C120AA1D9DBD} = {DDC402C0-38A2-11EB-993C-05D7FC15B653}
 		{5F890922-C0DE-49F8-8C2C-DDE96075F2B6} = {D7990800-38A2-11EB-993C-05D7FC15B653}

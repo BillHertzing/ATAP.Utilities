@@ -11,17 +11,17 @@ using static GenerateProgram.Lookup;
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
     public static GAssemblyGroup MConsoleSourceGHS(string gAssemblyGroupName,
-      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default) {
-      return MConsoleSourceGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true) {
+      return MConsoleSourceGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, 
         new GPatternReplacement());
     }
     public static GAssemblyGroup MConsoleSourceGHS(string gAssemblyGroupName,
-      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
-        baseNamespaceName, _gPatternReplacement);
+        baseNamespaceName, hasInterfaces, _gPatternReplacement);
       #region Initial StateMachine Configuration
       mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
     @"

@@ -22,10 +22,10 @@ namespace GenerateProgram {
   public static partial class GMacroExtensions {
     public static GAssemblyGroupBasicConstructorResult MAssemblyGroupCommonConstructorForServicesAndConsolePrograms(
       string gAssemblyGroupName = default,
-      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
       GPatternReplacement gPatternReplacement = default) {
       var gAssemblyGroupBasicConstructorResult = MAssemblyGroupBasicConstructor(gAssemblyGroupName,
-        subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement);
+        subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, gPatternReplacement);
       #region Upate the ProjectUnit
       #region PropertyGroups 
       new List<GPropertyGroupInProjectUnit>() {

@@ -22,7 +22,7 @@ namespace GenerateProgram {
   public static partial class GMacroExtensions {
         // If HasInterfaces
     public static GAssemblyGroupBasicConstructorResult MAssemblyGroupBasicConstructor(string gAssemblyGroupName = default,
-      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
@@ -113,14 +113,22 @@ namespace GenerateProgram {
       #endregion
       gTitularDerivedCompilationUnit.GNamespaces.Add(gNamespaceDerived.Philote, gNamespaceDerived);
       #region Instantiate the gClassDerived
-      // If HasInterfaces
-      var gClassDerived = new GClass(gClassDerivedName, "public", gAccessModifier: "partial",
+      // If hasInterfaces, the derived class Implements the Interface
+      GClass gClassDerived;
+      if (hasInterfaces) {
+      gClassDerived = new GClass(gClassDerivedName, "public", gAccessModifier: "partial",
         gInheritance: gClassBaseName,
-              // If HasInterfaces
-
         gImplements: new List<string> {gTitularInterfaceDerivedName} 
         //gDisposesOf: new List<string> { "CompilationUnitNameReplacementPatternDerivedData" }
       );
+      } else {
+        gClassDerived = new GClass(gClassDerivedName, "public", gAccessModifier: "partial",
+        gInheritance: gClassBaseName
+        //Implements: new List<string> {gTitularInterfaceDerivedName}  -- No Interfaces in this AssemblyGroup
+        //gDisposesOf: new List<string> { "CompilationUnitNameReplacementPatternDerivedData" }
+      );        
+      }
+
       #endregion
       gNamespaceDerived.GClasss.Add(gClassDerived.Philote, gClassDerived);
       #endregion
@@ -276,7 +284,7 @@ namespace GenerateProgram {
       #endregion
 
       /* ************************************************************************************ */
-      #region Upate the ProjectUnits for both AssemblyUnits
+      #region Update the ProjectUnits for both AssemblyUnits
       #region PropertyGroups common to both AssemblyUnits
       new List<GPropertyGroupInProjectUnit>() {
         PropertyGroupInProjectUnitForProjectUnitIsLibrary(),
@@ -383,7 +391,7 @@ namespace GenerateProgram {
         gAssemblyGroupBasicConstructorResult.gTitularAssemblyUnitPatternReplacement,
         gAssemblyGroupBasicConstructorResult.gTitularDerivedCompilationUnitPatternReplacement,
         gAssemblyGroupBasicConstructorResult.gAssemblyGroup,
-        gAssemblyGroupBasicConstructorResult.gAssemblyUnit,
+        gAssemblyGroupBasicConstructorResult.gTitularAssemblyUnit,
         gAssemblyGroupBasicConstructorResult.gTitularBaseCompilationUnit,
         gAssemblyGroupBasicConstructorResult.gNamespaceBase
         //gClass
@@ -404,8 +412,8 @@ namespace GenerateProgram {
       GNamespace gNamespace = default,
       GClass gClass = default
     ) {
-      GUsingGroup gUsingGroup;
-      GPropertyGroup gPropertyGroup;
+      //GUsingGroup gUsingGroup; These seem to be unnecessary, deprecating
+      //GPropertyGroup gPropertyGroup;
       #region StringConstants Base CompilationUnit
       gCompilationUnitPatternReplacement = new GPatternReplacement(
         gDictionary: new Dictionary<Regex, string>() {

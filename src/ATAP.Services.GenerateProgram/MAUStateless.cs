@@ -12,12 +12,12 @@ using static GenerateProgram.Lookup;
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
     public static GAssemblyGroup MAUStateless(string gAssemblyGroupName,
-      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default) {
-      return MAUStateless(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true) {
+      return MAUStateless(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, 
         new GPatternReplacement());
     }
     public static GAssemblyGroup MAUStateless(string gAssemblyGroupName,
-      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
@@ -25,7 +25,7 @@ namespace GenerateProgram {
 
       var gAssemblyGroupBasicConstructorResult = MAssemblyGroupBasicConstructor(gAssemblyGroupName,
         subDirectoryForGeneratedFiles,
-        baseNamespaceName, _gPatternReplacement);
+        baseNamespaceName, hasInterfaces, _gPatternReplacement);
       #region Initial StateMachine Configuration
       gAssemblyGroupBasicConstructorResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
         @"

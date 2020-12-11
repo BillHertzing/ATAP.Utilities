@@ -24,9 +24,8 @@ using static ATAP.Utilities.Collection.Extensions;
 namespace GenerateProgram {
   class PService03 {
     delegate GAssemblyGroup MCreateAssemblyGroupDelegate(string name, string subDirectoryForGeneratedFiles,
-      string baseNamespaceName);
-    delegate GAssemblySingle MCreateAssemblySingleDelegate(string name, string subDirectoryForGeneratedFiles,
-      string baseNamespaceName);
+      string baseNamespaceName, bool hasInterfaces);
+
 
     static void Main(string[] args) {
       // ToDo: Get the Artifacts directory from the host
@@ -54,60 +53,60 @@ namespace GenerateProgram {
       string gHSBaseNamespaceName = baseNamespaceName + genericHostServicesRelativeNextNamespace;
       (string name, string sourceRelativePath, string testRelativePath,
         string subDirectoryForGeneratedFiles,
-        string baseNamespaceName, MCreateAssemblySingleDelegate
-        mCreateAssemblySingleDelegate) gPrimaryExecutingProgram = 
+        string baseNamespaceName, bool hasInterfaces, MCreateAssemblyGroupDelegate
+        mCreateAssemblyGroupDelegate) gPrimaryExecutingProgram = 
       ("Service03",
         Path.Combine(sourceArtifactsPath, genericHostProgramsRelativeNextPath, "Service03/"),
         Path.Combine(testArtifactsPath, genericHostProgramsRelativeNextPath, "Service03/"),
-        subDirectoryForGeneratedFiles, gHSBaseNamespaceName,
-        new MCreateAssemblySingleDelegate(MGenericHostService03));
+        subDirectoryForGeneratedFiles, gHSBaseNamespaceName, false,
+        new MCreateAssemblyGroupDelegate(MGenericHostService03));
 
       var projectsUnderDevelopment =  new List<(string name, string sourceRelativePath, string testRelativePath, string subDirectoryForGeneratedFiles,
-          string baseNamespaceName,MCreateAssemblyGroupDelegate
+          string baseNamespaceName, bool hasInterfaces, MCreateAssemblyGroupDelegate
           mCreateAssemblyGroupDelegate )>() {
           ("ATAP.Utilities.Stateless", Path.Combine(sourceArtifactsPath, "StateMachine/"),
-            Path.Combine(testArtifactsPath, "StateMachine/"), subDirectoryForGeneratedFiles, baseNamespaceName,
+            Path.Combine(testArtifactsPath, "StateMachine/"), subDirectoryForGeneratedFiles, baseNamespaceName, true,
             new MCreateAssemblyGroupDelegate(MAUStateless)),
 
           ("TimerGHS", Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "TimerGHS/"),
             Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "TimerGHS/"),
-            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
             new MCreateAssemblyGroupDelegate(MTimerGHS)),
 
           ("FileSystemWatcherGHS",
             Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemWatcherGHS/"),
             Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemWatcherGHS/"),
-            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
             new MCreateAssemblyGroupDelegate(MFileSystemWatcherGHS)),
 
           ("ConsoleSourceGHS",
             Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSourceGHS/"),
             Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSourceGHS/"),
-            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
             new MCreateAssemblyGroupDelegate(MConsoleSourceGHS)),
 
           ("ConsoleSinkGHS",
             Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSinkGHS/"),
             Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSinkGHS/"),
-            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
             new MCreateAssemblyGroupDelegate(MConsoleSinkGHS)),
 
           ("ConsoleMonitorGHS",
             Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleMonitorGHS/"),
             Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleMonitorGHS/"),
-            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
             new MCreateAssemblyGroupDelegate(MConsoleMonitorGHS)),
 
           ("TopLevelBackgroundGHS",
             Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "TopLevelBackgroundGHS/"),
             Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "TopLevelBackgroundGHS/"),
-            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
             new MCreateAssemblyGroupDelegate(MTopLevelBackgroundGHS)),
 
           ("FileSystemToObjectGraphGHS",
             Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemToObjectGraphGHS/"),
             Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemToObjectGraphGHS/"),
-            subDirectoryForGeneratedFiles, gHSBaseNamespaceName ,
+            subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
             new MCreateAssemblyGroupDelegate(MFileSystemToObjectGraphGHS)),
         };
       #endregion
@@ -175,9 +174,9 @@ namespace GenerateProgram {
 
       string assemblyGroupTestArtifactsPath;
       #region executable if present
-      GAssemblySingle gPrimaryExecutableAssemblyGroup = gPrimaryExecutingProgram.mCreateAssemblySingleDelegate(gPrimaryExecutingProgram.name,
-        gPrimaryExecutingProgram.subDirectoryForGeneratedFiles, gPrimaryExecutingProgram.baseNamespaceName);
-      session.Add("assemblyUnits", gPrimaryExecutableAssemblyGroup.GAssemblySingleSignil.GAssemblyUnits);
+      GAssemblyGroup gPrimaryExecutableAssemblyGroup = gPrimaryExecutingProgram.mCreateAssemblyGroupDelegate(gPrimaryExecutingProgram.name,
+        gPrimaryExecutingProgram.subDirectoryForGeneratedFiles, gPrimaryExecutingProgram.baseNamespaceName, gPrimaryExecutingProgram.hasInterfaces);
+      session.Add("assemblyUnits", gPrimaryExecutableAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       w1Top = new W1Top(basePath: gPrimaryExecutingProgram.sourceRelativePath, force: true);
       r1Top.Render(w1Top);
@@ -188,7 +187,7 @@ namespace GenerateProgram {
       foreach (var projectUnderDevelopment in projectsUnderDevelopment) {
         assemblyGroupTestArtifactsPath = projectUnderDevelopment.testRelativePath;
         gAssemblyGroup = projectUnderDevelopment.mCreateAssemblyGroupDelegate(projectUnderDevelopment.name,
-          projectUnderDevelopment.subDirectoryForGeneratedFiles, projectUnderDevelopment.baseNamespaceName);
+          projectUnderDevelopment.subDirectoryForGeneratedFiles, projectUnderDevelopment.baseNamespaceName, projectUnderDevelopment.hasInterfaces);
         #region Update the GPatternReplacement properties for every element of every projectsUnderDevelopment
         MUpdateGPatternReplacement(gAssemblyGroup,gAssemblyGroupPatternReplacement);
         #endregion

@@ -21,13 +21,13 @@ using static GenerateProgram.Lookup;
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
     public static GAssemblyGroupBasicConstructorResult MGenericHostService(string gAssemblyGroupName = default,
-      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
+      string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var gCreateAssemblyGroupResult = MAssemblyGroupCommonConstructorForServicesAndConsolePrograms(gAssemblyGroupName,
         subDirectoryForGeneratedFiles,
-        baseNamespaceName, gPatternReplacement);
+        baseNamespaceName, hasInterfaces, gPatternReplacement);
       return gCreateAssemblyGroupResult;
     }
   }

@@ -3,7 +3,7 @@ using System.Text;
 
 namespace GenerateProgram
 {
-    public class GAssemblySingle
+    /* public class GAssemblySingle -- being deprecated
     {
         public GAssemblySingle(GAssemblySingleSignil gAssemblySingleSignil = default)
         {
@@ -12,5 +12,5 @@ namespace GenerateProgram
 
         public GAssemblySingleSignil GAssemblySingleSignil { get; }
        
-    }
+    } */
 }

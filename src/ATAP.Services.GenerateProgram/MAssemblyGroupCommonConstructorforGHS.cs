@@ -21,10 +21,10 @@ using static GenerateProgram.Lookup;
 namespace GenerateProgram {
   public static partial class GMacroExtensions {
     public static GAssemblyGroupBasicConstructorResult MAssemblyGroupCommonConstructorForGHHSAndGHBS(string gAssemblyGroupName = default,
-        string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,
+        string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
         GPatternReplacement gPatternReplacement = default) {
       var gAssemblyGroupBasicConstructorResult = MAssemblyGroupBasicConstructor(gAssemblyGroupName,
-        subDirectoryForGeneratedFiles, baseNamespaceName, gPatternReplacement);
+        subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, gPatternReplacement);
       //var gTitularAssemblyUnitName = gAssemblyGroupName;
       //GPatternReplacement _gPatternReplacement =
       //  gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;

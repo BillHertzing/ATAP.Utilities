@@ -11,5 +11,5 @@ CREATE TABLE BelongsTo
     INDEX ix_fromid ($from_id, $to_id),
     INDEX ix_toid ($to_id, $from_id)
 )
-AS Edge ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+AS Edge ON [PRIMARY] --TEXTIMAGE_ON [PRIMARY]
 GO

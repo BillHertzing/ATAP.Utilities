@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <-- Creates an executable Project -->
+  <!-- Creates an executable Project -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
-  <-- This project will run under the following target frameworks -->
+  <!-- This project will run under the following target frameworks -->
   <PropertyGroup>
     <TargetFrameworks>net5.0;</TargetFrameworks>
   </PropertyGroup>

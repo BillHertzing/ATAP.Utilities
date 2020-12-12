@@ -1,0 +1,52 @@
+{
+  "Logging": {
+    "PathFormat": "C:/DevLogs/Serilog/Console02StartupLog.{Date}.log",
+    "LogLevel": {
+      "Default": "Debug",
+      "System": "Information",
+      "Microsoft": "Information"
+    }
+  },
+  "Serilog": {
+    "MinimumLevel": "Verbose",
+    "WriteTo": [
+      {
+        "Name": "Console",
+        "Args": {
+          "themes": "{Serilog.Sinks.SystemConsole.Themes.SystemConsoleTheme.AnsiConsoleTheme.Code}"
+        }
+      },
+      {
+        "Name": "Debug",
+        "Args": {
+        }
+      },
+      {
+        "Name": "Seq",
+        "Args": {
+          "serverUrl": "http://localhost:5341",
+          "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}"
+        }
+      }
+    ],
+    "WriteTo:Async": {
+      "Name": "Async",
+      "Args": {
+        "configure": [
+          {
+            "Name": "File",
+            "Args": {
+              "path": "C:\\DevLogs\\Console02\\Serilogs\\log.txt",
+              "outputTemplate": "{Timestamp:o} [{Level:u3}] ({Application}/{MachineName}/{ThreadId}) {Message}{NewLine}{Exception}",
+              "rollingInterval": "RollingInterval.Day"
+            }
+          }
+        ]
+      }
+    },
+    "Enrich": [ "FromLogContext", "WithThreadId" ],
+    "Properties": {
+      "Application": "Console02"
+    }
+  }
+}

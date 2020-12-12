@@ -9,7 +9,7 @@
       "RenameInComments": true,
       "RenameOverloads": true,
       "RenameInStrings": true
-    }
+    },
     "ImplementTypeOptions": {
         "PropertyGenerationBehavior": "PreferAutoProperties",
         "InsertionBehavior": "WithOtherMembersOfTheSameKind"

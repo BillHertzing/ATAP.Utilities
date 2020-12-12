@@ -27,6 +27,13 @@
         DependsOnTargets="PublishProjectIfFrameworkSet;PublishProjectForAllRIDsIfTargetFrameworkSet;PublishProjectForAllFrameworksIfFrameworkUnset" />
   <Target Name="PublishProjectIfFrameworkSet" DependsOnTargets="Publish" Condition=" '$(TargetFramework)' != '' " />
 
+<!-- Microsoft Source Link for every project -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
   <!-- Include Roslyn Code Analysis for every project -->
   <!--<ItemGroup>
@@ -95,6 +102,9 @@
 
     <!-- Roslyn Code Analyzers -->
     <PackageReference Update="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.2"></PackageReference>
+
+    <!-- Microsoft Source Link -->
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.0.0" />
 
     <!-- Serilog packages -->
     <PackageReference Update="Serilog" Version="2.10.0" />

@@ -1,13 +1,42 @@
 {
+    "omnisharp.enableEditorConfigSupport": true,
+    "omnisharp.useGlobalMono": "never",
+    "git.enableSmartCommit": true,
+    "git.confirmSync": false,
     "testExplorer.addToEditorContextMenu": true,
-    "mssql:connections": [
-        {
-            "authenticationType": "SqlLogin",
-            "server": "ncat016",
-            "database": "FileSystemAsGraphDB",
-            "user": "whertzing",
-            "password": "",
-            "savePassword": true
-        }
+    "nxunitExplorer.logpanel": true,
+    "nxunitExplorer.modules": [
+        "tests/**/bin/**/**/*.{dll,exe}"
+    ],
+    "yaml.schemas": {
+        "file:///toc.schema.json": "/toc\\.yml/i"
+    },
+    "cSpell.enableFiletypes": [
+        "sql"
+    ],
+    "cSpell.allowCompoundWords": true,
+    "cSpell.userWords": [
+        "Finalizer",
+        "GDOT",
+        "GHBS",
+        "GHHS",
+        "Guids",
+        "IORM",
+        "Itenso",
+        "KVPs",
+        "MSMQ",
+        "Newtonsoft",
+        "Philote",
+        "Propertys",
+        "Serilog",
+        "Usings",
+        "Xunit",
+        "atap",
+        "datas",
+        "localizers",
+        "number",
+        "of",
+        "graphid",
+        "whertzing"
     ]
 }

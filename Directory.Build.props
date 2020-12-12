@@ -82,12 +82,17 @@
     <NuGetLocalFeedPath Condition=" '$(NuGetLocalFeedPath)' == '' ">C:\Dropbox\NuGetLocalFeed</NuGetLocalFeedPath>
   </PropertyGroup>
 
+  <!-- To support Microsoft Source Link, allow .pdf files in the generated NuGet package -->
+  <PropertyGroup>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+
   <!--  Set MSBuild output verbosity and warnings to ignore. Half are NuGet issues, the other half is regarding the nullable reference types -->
-  <!-- Attribution: many posts about this on the internet, nobody seems to have solved the problem. At least, my attempts using the following flags fails -->
   <!-- Attribution: https://github.com/lecaillon/Evolve/blob/master/src/Evolve/Evolve.csproj has a working example to silence many nullability warnings, but similar does not work for NuGet package warninngs -->
   <PropertyGroup>
-    <NoWarn>$(NoWarn);1602;1603;1701;1705;8600;8602;8603;8618;8625</NoWarn>
+    <NoWarn>$(NoWarn);1602;1603;1701;1705;8600;8601;8602;8603;8605;8618;8625;8629</NoWarn>
   </PropertyGroup>
+  <!-- Attribution: many posts about this on the internet, nobody seems to have solved the problem. At least, my attempts using the following flags fails -->
     <!-- disable the nullable warnings when compiling 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net35' OR '$(TargetFramework)' == 'net461' OR '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'net5.0'">
     <NoWarn>$(NoWarn);8600;8601;8602;8603;8604</NoWarn>

@@ -1,6 +1,6 @@
 {
   "RootString": "E:\\",
-  "TemporaryDirectoryBase": "D:\\Temp\\Console01\\",
+  "TemporaryDirectoryBase": "D:\\Temp\\ConsoleMonitor\\",
   "DBConnectionString": "Server=ncat016;Database=ATAPUtilities;Trusted_Connection=True;IntegratedSecurity=true;Asynchronous Processing=True;"
 
 }

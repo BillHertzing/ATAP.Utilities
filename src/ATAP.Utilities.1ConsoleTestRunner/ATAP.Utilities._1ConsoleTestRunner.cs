@@ -1,6 +1,6 @@
 using System;
 
-namespace ATAP.Console.Console01TestRunner
+namespace ATAP.Console.1TestRunner
 {
     class Program
     {

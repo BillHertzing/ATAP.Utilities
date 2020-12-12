@@ -9,7 +9,7 @@ namespace ATAP.Utilities.HostedServices {
     public const string PhysicalRootPathConfigRootKey = "PhysicalRootPath";
     public const string PhysicalRootPathStringDefault = "./";
     public const string TemporaryDirectoryBaseConfigRootKey = "TemporaryDirectoryBase";
-    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\Console01\\";
+    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\ConsoleMonitor\\";
     #endregion
 
     #region string constants: EnvironmentVariablePrefixs
@@ -31,7 +31,7 @@ namespace ATAP.Utilities.HostedServices {
  *     #region Per-Service Configuration items
     #region FunctionSelectorUI Configuration Items
     public const string TemporaryDirectoryBaseConfigRootKey = "TemporaryDirectoryBase";
-    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\Console01\\";
+    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\ConsoleMonitor\\";
 
 
 */

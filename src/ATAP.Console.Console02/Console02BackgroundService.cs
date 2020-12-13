@@ -27,8 +27,8 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 
-using ComputerInventoryHardwareStaticExtensions = ATAP.Utilities.ComputerInventory.Hardware.StaticExtensions;
-using PersistenceStaticExtensions = ATAP.Utilities.Persistence.Extensions;
+//using ComputerInventoryHardwareStaticExtensions = ATAP.Utilities.ComputerInventory.Hardware.StaticExtensions;
+//using PersistenceStaticExtensions = ATAP.Utilities.Persistence.Extensions;
 using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
 using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
 using appStringConstants = ATAP.Console.Console02.Console02StringConstants;
@@ -173,32 +173,38 @@ namespace ATAP.Console.Console02 {
     #region PrettyPrintConvertFileSystemToGraphResults
     // Format an instance of ConvertFileSystemToGraphResults for UI presentation
     // // Uses the CurrentCulture, converts File Sizes to UnitsNet.Information types, and DateTimes to ITenso Times
-    void BuildConvertFileSystemToGraphResults(StringBuilder mesg, ConvertFileSystemToGraphResult convertFileSystemToGraphResult, Stopwatch? stopwatch) {
+    void BuildGenerateProgramResults(StringBuilder mesg, GenerateProgramResult generateProgramResult, Stopwatch? stopwatch) {
       mesg.Clear();
       if (stopwatch != null) {
         mesg.Append(uiLocalizer["Running the function took {0} milliseconds", stopwatch.ElapsedMilliseconds.ToString(CultureInfo.CurrentCulture)]);
         mesg.Append(Environment.NewLine);
       }
-      mesg.Append(uiLocalizer["DeepestDirectoryTree: {0}", convertFileSystemToGraphResult.DeepestDirectoryTree]);
+      mesg.Append(uiLocalizer["DB extraction was successful: {0}", generateProgramResult.DBExtractionSuccess.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
-      mesg.Append(uiLocalizer["LargestFile: {0}", new UnitsNet.Information(convertFileSystemToGraphResult.LargestFile, UnitsNet.Units.InformationUnit.Byte).ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(uiLocalizer["Build was successful: {0}", generateProgramResult.BuildSuccess.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
-      mesg.Append(uiLocalizer["EarliestDirectoryCreationTime: {0}", convertFileSystemToGraphResult.EarliestDirectoryCreationTime.ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(uiLocalizer["Unit Tests were successful: {0}", generateProgramResult.UnitTestsSuccess.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
-      mesg.Append(uiLocalizer["LatestDirectoryCreationTime: {0}", convertFileSystemToGraphResult.LatestDirectoryCreationTime.ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(uiLocalizer["Unit Tests coverage was: {0}", generateProgramResult.UnitTestsCoverage.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
-      mesg.Append(uiLocalizer["EarliestFileCreationTime: {0}", convertFileSystemToGraphResult.EarliestFileCreationTime]);
+      mesg.Append(uiLocalizer["Generated Solution File Directory: {0}", generateProgramResult.GeneratedSolutionFileDirectory.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
-      mesg.Append(uiLocalizer["LatestFileCreationTime: {0}", convertFileSystemToGraphResult.LatestFileCreationTime]);
-      mesg.Append(Environment.NewLine);
-      mesg.Append(uiLocalizer["EarliestFileModificationTime: {0}", convertFileSystemToGraphResult.EarliestFileModificationTime]);
-      mesg.Append(Environment.NewLine);
-      mesg.Append(uiLocalizer["LatestFileModificationTime: {0}", convertFileSystemToGraphResult.LatestFileModificationTime]);
-      mesg.Append(Environment.NewLine);
-      mesg.Append(uiLocalizer["Number of AcceptableExceptions: {0}", convertFileSystemToGraphResult.AcceptableExceptions.Count]);
+      foreach (var assemblyBuilt in generateProgramResult.CollectionOfAssembliesBuilt) {
+        mesg.Append(uiLocalizer["Assembly Built: {0}", assemblyBuilt.ToString(CultureInfo.CurrentCulture)]);
+        mesg.Append(Environment.NewLine);
+      }
+      mesg.Append(uiLocalizer["Packaging was successful: {0}", generateProgramResult.PackagingSuccess.ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(uiLocalizer["Deployment was successful: {0}", generateProgramResult.DeploymentSuccess.ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(uiLocalizer["Number of AcceptableExceptions: {0}", generateProgramResult.AcceptableExceptions.Count]);
       mesg.Append(Environment.NewLine);
       // List the acceptable Exceptions that occurred
       //ToDo: break out AcceptableExceptions by type
+      // ToDo: DBExtraction Details, warnings, and Errors
+      // ToDo: Build Details, warnings, and Errors
+      // ToDo: Unit Test Details, warnings, and Errors
+      // ToDo: Unit Test Coverage Details
+      // ToDo: Packaging Details
+      // ToDo: Deployment Details
     }
     #endregion
     #endregion
@@ -249,19 +255,8 @@ namespace ATAP.Console.Console02 {
           var filePathsPersistence = new string[2] { temporaryDirectoryBase + WithPersistenceNodeFileRelativePath, temporaryDirectoryBase + WithPersistenceEdgeFileRelativePath };
           var WithPickAndSaveNodeFileRelativePath = appConfiguration.GetValue<string>(appStringConstants.WithPickAndSaveNodeFileRelativePathConfigRootKey, appStringConstants.WithPickAndSaveNodeFileRelativePathDefault);
           var filePathsPickAndSave = new string[1] { temporaryDirectoryBase + WithPickAndSaveNodeFileRelativePath };
-          mesg.Append(uiLocalizer["Running PartitionInfoEx Extension Function ConvertFileSystemToObjectGraph, on rootString {0} with an asyncFileReadBlockSize of {1} with hashing enabled: {2} ; progress enabled: {3} ; persistence enabled: {5} ; pickAndSave enabled: {4}", rootString, asyncFileReadBlockSize, enableHash, enableProgress, enablePersistence, enablePickAndSave]);
-          if (enablePersistence) {
-            mesg.Append(Environment.NewLine);
-            mesg.Append(uiLocalizer["  persistence filePaths: {0}", string.Join(",", filePathsPersistence)]);
-          }
-          if (enablePickAndSave) {
-            mesg.Append(Environment.NewLine);
-            mesg.Append(uiLocalizer["  pickAndSave filePaths {0}", string.Join(",", filePathsPickAndSave)]);
-          }
-          if (enableProgress) {
-            mesg.Append(Environment.NewLine);
-            mesg.Append(uiLocalizer["  progressReporting TBD{0}", "ProgressReportingDataStructureDetails"]);
-          }
+          //mesg.Append(uiLocalizer["Running PartitionInfoEx Extension Function ConvertFileSystemToObjectGraph, on rootString {0} with an asyncFileReadBlockSize of {1} with hashing enabled: {2} ; progress enabled: {3} ; persistence enabled: {5} ; pickAndSave enabled: {4}", rootString, asyncFileReadBlockSize, enableHash, enableProgress, enablePersistence, enablePickAndSave]);
+          mesg.Append(uiLocalizer["Running GenerateProgram Function on the AssemblyGroupKey {0}, with GlobalSettingsKey {1}","Console02Mechanical","ATAPStandardGlobalSettingsKey"]);
 
           #region Write the mesg to stdout
           using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
@@ -284,6 +279,27 @@ namespace ATAP.Console.Console02 {
             mesg.Clear();
           }
           #endregion
+          // Get GlobalSettingsSignil using GlobalSettingsKey
+          // Get the SolutionGroupKey from the DB using the ProgramKey
+          // get the SolutionGroupSignil from the DB using the SolutionGroupKey
+          // create the MCreateSolutionGroupSignil from the GlobalSettingsSignil and the SolutionGroupSignil
+          // call MCreateSolutionGroup for the SolutionGroupKey
+          // execute the powershell program, passing it the dotnet build command
+          // Get the AssemblyGroupKey from the DB using the ProgramKey
+          // For any dependencies that are in lifecyclestage other than production
+            // Get a collection of AssemblyGroupKeys from the DB using the ProgramKey and the list of dependencies that are in lifecyclestage Development
+            // Iterate the collection in parallel
+              // get the AssemblyGroupSignil from the DB for each AssemblyGroupKey
+              // create the MCreateAssemblyGroupSignil from the GlobalSettingsSignil and the AssemblyGroupSignil
+              // call MCreateAssemblyGroup for each AssemblygroupKey
+              // execute the powershell program, passing it the dotnet build command
+              // execute the powershell program, passing it the dotnet test command
+          // get the AssemblyGroupSignil from the DB for the ProgramKey
+          // create the MCreateAssemblyGroupSignil from the GlobalSettingsSignil and the AssemblyGroupSignil
+          // call MCreateAssemblyGroup for the ProgramKey
+          // execute the powershell program, passing it the dotnet build command
+          
+
           #region ProgressReporting setup
           ConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress; ;
           if (enableProgress) {
@@ -662,7 +678,8 @@ namespace ATAP.Console.Console02 {
               catch (Exception ex) {
 
                 throw ex;
-              }            },
+              }
+            },
             // OnError
             ex => { logger.LogDebug("got an exception"); },
             // OnCompleted

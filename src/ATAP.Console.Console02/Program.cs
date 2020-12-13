@@ -41,7 +41,7 @@ using Microsoft.CodeAnalysis;
 namespace ATAP.Console.Console02 {
 
   /// <summary>
-  /// This program is going to be a Console program that displays a menu on stdout, gets a line of data (a string) from stdin, evaluates it,  performs a function or action, displays on stdout the information returned, then redisplays the menu on stdout
+  /// This program is going to be a Console program reads the GenerateProgramDB and mechanically re-creates the Console01 program as Console01Mechanical, by populating Artefacts with mechanically created files, and then building the ATAP.Console,Console01Mechanical.csproj file
   /// </summary>
   static partial class Program {
 
@@ -162,7 +162,7 @@ namespace ATAP.Console.Console02 {
 
       #region (optional) Debugging the  Configuration
       // for debugging and education, uncomment this region and inspect the two section Lists (using debugger Locals) to see exactly what is in the configuration
-      //    var sections = genericHostConfigurationRoot.GetChildren(); 
+      //    var sections = genericHostConfigurationRoot.GetChildren();
       //    List<IConfigurationSection> sectionsAsListOfIConfigurationSections = new List<IConfigurationSection>();
       //    List<ConfigurationSection> sectionsAsListOfConfigurationSections = new List<ConfigurationSection>();
       //    foreach (var iSection in sections) sectionsAsListOfIConfigurationSections.Add(iSection);
@@ -179,7 +179,7 @@ namespace ATAP.Console.Console02 {
       // Accepting any string for envNameFromConfiguration might pose a security risk, as it will allow arbitrary files to be loaded into the configuration root
       switch (envNameFromConfiguration) {
         case GenericHostStringConstants.EnvironmentDevelopment:
-          // ToDo: Programmers can add things here 
+          // ToDo: Programmers can add things here
           break;
         case GenericHostStringConstants.EnvironmentProduction:
           // This is the expected leg for Production environment
@@ -211,7 +211,7 @@ namespace ATAP.Console.Console02 {
 
       #region Configure the genericHostBuilder, including DI-Container, IHostLifetime, services in the services collection, genericHostConfiguration, and appConfiguration
 
-      // Make a GenericHostBuilder with the Configuration (as above), and chose a specific instance of an IHostLifetime 
+      // Make a GenericHostBuilder with the Configuration (as above), and chose a specific instance of an IHostLifetime
       var genericHostBuilder = GenericHostExtensions.ATAPStandardGenericHostBuilderForConsoleLifetime(genericHostConfigurationBuilder, appConfigurationBuilder);
 
       // Add the specific IHostLifetime for this program (or service)
@@ -223,7 +223,7 @@ namespace ATAP.Console.Console02 {
 
       // in Production, surpress the startup messages appearing on the Console stdout
       if (envNameFromConfiguration == GenericHostStringConstants.EnvironmentProduction) {
-        //genericHostBuilder.Configure<ConsoleLifetimeOptions>(options => options.SuppressStatusMessages = true); // 
+        //genericHostBuilder.Configure<ConsoleLifetimeOptions>(options => options.SuppressStatusMessages = true); //
       }
 
       #region Configure the GenericHost logging per the Logging section in ConfigurationRoot
@@ -242,10 +242,10 @@ namespace ATAP.Console.Console02 {
       //LogProvider.SetLogFactory(factory);
       //// Set the LogFactory in the DI-Services
       //// ToDo: LoggerFactory loggerFactory.SetLogFactory(factory);
-      //// redefine the local logger from this factory, configured with the startup logging as defined in the Logging section of the configurationRoot 
+      //// redefine the local logger from this factory, configured with the startup logging as defined in the Logging section of the configurationRoot
       //logger = factory.CreateLogger("Console02");
       //serilogLogger.LogDebug(debugLocalizer["{0} {1}: LoggerFactory and local logger redefined per the Logging section in the configuration settings:"], "Program", "Main");
-      //// Copy this tour "standard logger 
+      //// Copy this tour "standard logger
       //// Create a LoggerFactory, configure it to use Serilog
       //var factory = new LoggerFactory();
       //var x = serilogLoggerConfiguration..CreateLoggerF();
@@ -261,17 +261,15 @@ namespace ATAP.Console.Console02 {
       genericHostBuilder.ConfigureServices((hostContext, services) => {
         // Localization for the services
         services.AddLocalization(options => options.ResourcesPath = "Resources");
+        // Asynchronous wrappers around stdin and stdout
         services.AddSingleton<IConsoleSinkHostedService, ConsoleSinkHostedService>();
         services.AddSingleton<IConsoleSourceHostedService, ConsoleSourceHostedService>();
-        //services.AddHostedService<ConsoleMonitorBackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
-        services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
+        services.AddHostedService<ConsoleMonitorBackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
+        //services.AddSingleton<IFileSystemWatchersAsObservableFactoryService, FileSystemWatchersAsObservableFactoryService>();
         services.AddSingleton<IFileSystemWatchersHostedService, FileSystemWatchersHostedService>();
         services.AddSingleton<IObservableResetableTimersHostedService, ObservableResetableTimersHostedService>();
-        //services.AddSingleton<IFileSystemWatchersAsObservableFactoryService, FileSystemWatchersAsObservableFactoryService>();
-        //services.AddHostedService<MyServiceB>();
-        //services.AddHostedService<SimpleDelayLoopWithSharedCancellationToken>();
-        //services.AddHostedService<SimpleDelayLoop>();
-        //services.AddHostedService<SimpleConsole>();
+        // The primary service (loop) that this program does
+        services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
       });
       #endregion
 
@@ -315,7 +313,7 @@ namespace ATAP.Console.Console02 {
           catch (OperationCanceledException e) {
             ; // Just ignore OperationCanceledException to suppress it from bubbling upwards if the main program was cancelledOperationCanceledException
               // The Exception should be shown in the ETW trace
-              //ToDo: Add Error level or category to ATAPUtilitiesETWProvider, and make OperationCanceled one of the catagories
+              //ToDo: Add Error level or category to ATAPUtilitiesETWProvider, and make OperationCanceled one of the categories
               // Specifically log the details of the cancellation (where it originated)
               // ATAPUtilitiesETWProvider.Log.Information($"Exception in Program.Main: {e.Exception.GetType()}: {e.Exception.Message}");
           } // Other kinds of exceptions bubble up to the catch block for the surrounding try, where the Serilog logger records it
@@ -360,7 +358,7 @@ namespace ATAP.Console.Console02 {
 
   }
 
-  //// ToDo: move this into an ATAP extension assembly 
+  //// ToDo: move this into an ATAP extension assembly
   //// This static method is an extension on a ResourceManager, that validates the requested string resource and formats it. Exceptions here usually mean a invalid/incorrect satelite assembly
   //public static class ResourceManagerExtensions {
   //  public static string FromRM(this ResourceManager rm, string key, params string[] args) {

@@ -119,12 +119,12 @@ namespace ATAP.Console.Console01 {
 
       #region stringLocalizers and optionally resource managers for InternationalizatioN (AKA I18N)
       // populate the string localizers for Program
-      options = Options.Create(new LocalizationOptions());
-      stringLocalizerFactory = new ResourceManagerStringLocalizerFactory(options, NullLoggerFactory.Instance);
-      debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
-      exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
-      configLCL = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
-      uILocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
+      Options = Microsoft.Extensions.Options.Options.Create(new LocalizationOptions());
+      StringLocalizerFactory = new ResourceManagerStringLocalizerFactory(Options, NullLoggerFactory.Instance);
+      DebugLocalizer = StringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
+      ExceptionLocalizer = StringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
+      ConfigLCL = StringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
+      UILocalizer = StringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console01");
 
       // If localized non-string resources are needed, uncomment the following block
       // Load the ResourceManagers from the installation directory. These provide access to all localized resources including non-string resources
@@ -144,9 +144,9 @@ namespace ATAP.Console.Console01 {
       // get the initial startup directory
       // get the directory where the executing assembly (usually .exe) and possibly machine-wide configuration files are installed to.
       var initialStartupDirectory = Directory.GetCurrentDirectory(); //ToDo: Catch exceptions
-      mELlogger.LogDebug(debugLocalizer["{0} {1}: initialStartupDirectory: {2}", "Program", "Main", initialStartupDirectory]);
+      mELlogger.LogDebug(DebugLocalizer["{0} {1}: initialStartupDirectory: {2}", "Program", "Main", initialStartupDirectory]);
       var loadedFromDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location); //ToDo: Catch exceptions
-      mELlogger.LogDebug(debugLocalizer["{0} {1}: loadedFromDirectory: {2}", "Program", "Main", loadedFromDirectory]);
+      mELlogger.LogDebug(DebugLocalizer["{0} {1}: loadedFromDirectory: {2}", "Program", "Main", loadedFromDirectory]);
       #endregion region
 
       #region initial genericHostConfigurationBuilder and genericHostConfigurationRoot
@@ -173,7 +173,7 @@ namespace ATAP.Console.Console01 {
       // ToDo: Before the genericHost is built, have to use a StringConstant for the string that means "Production", and hope the ConfigurationRoot value for Environment matches the StringConstant
       // Determine the environment (Debug, TestingUnit, TestingX, QA, QA1, QA2, ..., Staging, Production) to use from the initialGenericHostConfigurationRoot
       var envNameFromConfiguration = genericHostConfigurationRoot.GetValue<string>(GenericHostStringConstants.EnvironmentConfigRootKey, GenericHostStringConstants.EnvironmentDefault);
-      mELlogger.LogDebug(debugLocalizer["{0} {1}: Initial environment name: {2}", "Program", "Main", envNameFromConfiguration]);
+      mELlogger.LogDebug(DebugLocalizer["{0} {1}: Initial environment name: {2}", "Program", "Main", envNameFromConfiguration]);
 
       // optional: Validate that the environment provided is one this program understands how to use
       // Accepting any string for envNameFromConfiguration might pose a security risk, as it will allow arbitrary files to be loaded into the configuration root
@@ -187,7 +187,7 @@ namespace ATAP.Console.Console01 {
         default:
           // IF you want to accept any environment name as OK, just comment out the following throw
           // Keep the throw in here if you want to explicitly disallow any environment other than ones specified in the switch
-          throw new NotImplementedException(exceptionLocalizer["The Environment {0} is not supported", envNameFromConfiguration]);
+          throw new NotImplementedException(ExceptionLocalizer["The Environment {0} is not supported", envNameFromConfiguration]);
       };
       #endregion
 
@@ -196,14 +196,14 @@ namespace ATAP.Console.Console01 {
       //   but if not, build a 2nd (final) genericHostConfigurationBuilder, this time including environment-specific configuration providers
       if (envNameFromConfiguration != GenericHostStringConstants.EnvironmentProduction) {
         // Recreate the ConfigurationBuilder for this genericHost, this time including environment-specific configuration providers.
-        mELlogger.LogDebug(debugLocalizer["{0} {1}: Recreating genericHostConfigurationBuilder for Environment: {2}"], "Program", "Main", envNameFromConfiguration);
+        mELlogger.LogDebug(DebugLocalizer["{0} {1}: Recreating genericHostConfigurationBuilder for Environment: {2}"], "Program", "Main", envNameFromConfiguration);
         genericHostConfigurationBuilder = ConfigurationExtensions.ATAPStandardConfigurationBuilder(GenericHostDefaultConfiguration.Production, false, envNameFromConfiguration,
           GenericHostStringConstants.genericHostSettingsFileName, GenericHostStringConstants.hostSettingsFileNameSuffix, loadedFromDirectory, initialStartupDirectory, hostEnvPrefixes, args, switchMappings);
       }
 
       // Create the appConfigurationBuilder, either as Production or as some other environment specific
       IConfigurationBuilder appConfigurationBuilder;
-      mELlogger.LogDebug(debugLocalizer["{0} {1}: Creating appConfigurationBuilder for Environment: {2}"], "Program", "Main", envNameFromConfiguration);
+      mELlogger.LogDebug(DebugLocalizer["{0} {1}: Creating appConfigurationBuilder for Environment: {2}"], "Program", "Main", envNameFromConfiguration);
       appConfigurationBuilder = ConfigurationExtensions.ATAPStandardConfigurationBuilder(Console01DefaultConfiguration.Production, envNameFromConfiguration == GenericHostStringConstants.EnvironmentProduction, envNameFromConfiguration,
         Console01StringConstants.SettingsFileName, Console01StringConstants.SettingsFileNameSuffix, loadedFromDirectory, initialStartupDirectory, appEnvPrefixes, args, switchMappings);
       #endregion
@@ -218,12 +218,12 @@ namespace ATAP.Console.Console01 {
       //ToDo: implement service and serviced, then see if this can be moved to the ATAPStandardGenericHostBuilder static extension method
       genericHostBuilder.ConfigureServices((hostContext, services) => {
         services.AddSingleton<IHostLifetime, ConsoleLifetime>();
-        //services.AddOptions<ConsoleLifetime>(options => options.SuppressStatusMessages = true);
+        //services.AddOptions<ConsoleLifetime>(Options => Options.SuppressStatusMessages = true);
       });
 
       // in Production, surpress the startup messages appearing on the Console stdout
       if (envNameFromConfiguration == GenericHostStringConstants.EnvironmentProduction) {
-        //genericHostBuilder.Configure<ConsoleLifetimeOptions>(options => options.SuppressStatusMessages = true); // 
+        //genericHostBuilder.Configure<ConsoleLifetimeOptions>(Options => Options.SuppressStatusMessages = true); // 
       }
 
       #region Configure the GenericHost logging per the Logging section in ConfigurationRoot
@@ -244,7 +244,7 @@ namespace ATAP.Console.Console01 {
       //// ToDo: LoggerFactory loggerFactory.SetLogFactory(factory);
       //// redefine the local logger from this factory, configured with the startup logging as defined in the Logging section of the configurationRoot 
       //logger = factory.CreateLogger("Console01");
-      //serilogLogger.LogDebug(debugLocalizer["{0} {1}: LoggerFactory and local logger redefined per the Logging section in the configuration settings:"], "Program", "Main");
+      //serilogLogger.LogDebug(DebugLocalizer["{0} {1}: LoggerFactory and local logger redefined per the Logging section in the configuration settings:"], "Program", "Main");
       //// Copy this tour "standard logger 
       //// Create a LoggerFactory, configure it to use Serilog
       //var factory = new LoggerFactory();
@@ -265,13 +265,9 @@ namespace ATAP.Console.Console01 {
         services.AddSingleton<IConsoleSourceHostedService, ConsoleSourceHostedService>();
         //services.AddHostedService<ConsoleMonitorBackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
         services.AddHostedService<Console01BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
-        services.AddSingleton<IFileSystemWatchersHostedService, FileSystemWatchersHostedService>();
+        //services.AddSingleton<IFileSystemWatchersHostedService, FileSystemWatchersHostedService>();
         services.AddSingleton<IObservableResetableTimersHostedService, ObservableResetableTimersHostedService>();
         //services.AddSingleton<IFileSystemWatchersAsObservableFactoryService, FileSystemWatchersAsObservableFactoryService>();
-        //services.AddHostedService<MyServiceB>();
-        //services.AddHostedService<SimpleDelayLoopWithSharedCancellationToken>();
-        //services.AddHostedService<SimpleDelayLoop>();
-        //services.AddHostedService<SimpleConsole>();
       });
       #endregion
 
@@ -283,9 +279,9 @@ namespace ATAP.Console.Console01 {
 
       // Start it going
       try {
-        mELlogger.LogDebug(debugLocalizer["{0} {1}: \"using\" the genericHost.", "Program", "Main"]);
+        mELlogger.LogDebug(DebugLocalizer["{0} {1}: \"using\" the genericHost.", "Program", "Main"]);
         using (genericHost) {
-          mELlogger.LogDebug(debugLocalizer["{0} {1}: Calling StartAsync on the genericHost.", "Program", "Main"]);
+          mELlogger.LogDebug(DebugLocalizer["{0} {1}: Calling StartAsync on the genericHost.", "Program", "Main"]);
 
           // Start the generic host running all its services and setup listeners for stopping
           // all the rigamarole in https://andrewlock.net/introducing-ihostlifetime-and-untangling-the-generic-host-startup-interactions/
@@ -327,12 +323,12 @@ namespace ATAP.Console.Console01 {
           // Here, the StartAsync has completed, the Main method is over
           // Log Program finishing to ETW if it happens to resume execution here for some reason(as of 06/2019, ILWeaving this assembly results in a thrown invalid CLI Program Exception
           // ATAP.Utilities.ETW.ATAPUtilitiesETWProvider.Log(">Program.Main");
-          mELlogger.LogDebug(debugLocalizer["{0} {1}: the genericHost has exitied "], "Program", "Main");
+          mELlogger.LogDebug(DebugLocalizer["{0} {1}: the genericHost has exitied "], "Program", "Main");
 
         }
       }
       catch (Exception ex) {
-        mELLogger.LogCritical(exceptionLocalizer["{0} {1}: genericHost start-up failed. ExceptionMessage: {2}", "Program", "Main", ex.Message]);
+        MELLogger.LogCritical(ExceptionLocalizer["{0} {1}: genericHost start-up failed. ExceptionMessage: {2}", "Program", "Main", ex.Message]);
         throw ex;
       }
       finally {
@@ -346,17 +342,17 @@ namespace ATAP.Console.Console01 {
       //CompilationUnitSyntax root = tree.GetCompilationUnitRoot();
       // Use the debugger and Locals window to see these objects
       #endregion region
-      mELlogger.LogDebug(debugLocalizer["{0} {1}: Program:Main is exiting", "Program", "Main"]);
+      mELlogger.LogDebug(DebugLocalizer["{0} {1}: Program:Main is exiting", "Program", "Main"]);
 
     }
-    static IOptions<LocalizationOptions> options { get; set; }
-    static ResourceManagerStringLocalizerFactory stringLocalizerFactory { get; set; }
-    static IStringLocalizer debugLocalizer { get; set; }
-    static IStringLocalizer exceptionLocalizer { get; set; }
-    static IStringLocalizer configLCL { get; set; }
-    static IStringLocalizer uILocalizer { get; set; }
+    static IOptions<LocalizationOptions> Options { get; set; }
+    static ResourceManagerStringLocalizerFactory StringLocalizerFactory { get; set; }
+    static IStringLocalizer DebugLocalizer { get; set; }
+    static IStringLocalizer ExceptionLocalizer { get; set; }
+    static IStringLocalizer ConfigLCL { get; set; }
+    static IStringLocalizer UILocalizer { get; set; }
     // MEL logger;
-    static Microsoft.Extensions.Logging.ILogger mELLogger { get; set; }
+    static Microsoft.Extensions.Logging.ILogger MELLogger { get; set; }
 
   }
 

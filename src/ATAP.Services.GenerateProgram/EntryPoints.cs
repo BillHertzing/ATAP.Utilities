@@ -4,7 +4,25 @@ namespace ATAP.Services.GenerateProgram
 {
     public static class EntryPoints
     {
-        public static GenerateProgramResult GenerateProgram(GenerateProgramSignil generateProgramSignil, GlobalKeysSignil globalKeysSignil, SolutionKeySignil solutionKeySignil) {
+        public static GGenerateProgramResult GenerateProgram(GGenerateProgramSignil gGenerateProgramSignil, GGlobalKeysSignil gGlobalKeysSignil, GSolutionKeySignil gSolutionKeySignil) {
+            GGenerateProgramResult gGenerateProgramResult = new GGenerateProgramResult();
+          // create the MCreateSolutionGroupSignil from the GlobalSettingsSignil and the SolutionGroupSignil
+          // call MCreateSolutionGroup for the SolutionGroupKey
+          // execute the powershell program, passing it the dotnet build command
+          // Get the AssemblyGroupKey from the DB using the ProgramKey
+          // For any dependencies that are in lifecyclestage other than production
+          // Get a collection of AssemblyGroupKeys from the DB using the ProgramKey and the list of dependencies that are in lifecyclestage Development
+          // Iterate the collection in parallel
+          // get the AssemblyGroupSignil from the DB for each AssemblyGroupKey
+          // create the MCreateAssemblyGroupSignil from the GlobalSettingsSignil and the AssemblyGroupSignil
+          // call MCreateAssemblyGroup for each AssemblygroupKey
+          // execute the powershell program, passing it the dotnet build command
+          // execute the powershell program, passing it the dotnet test command
+          // get the AssemblyGroupSignil from the DB for the ProgramKey
+          // create the MCreateAssemblyGroupSignil from the GlobalSettingsSignil and the AssemblyGroupSignil
+          // call MCreateAssemblyGroup for the ProgramKey
+          // execute the powershell program, passing it the dotnet build command
+
 
         }
     }

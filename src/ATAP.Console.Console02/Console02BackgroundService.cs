@@ -175,29 +175,29 @@ namespace ATAP.Console.Console02 {
     #region PrettyPrintConvertFileSystemToGraphResults
     // Format an instance of ConvertFileSystemToGraphResults for UI presentation
     // // Uses the CurrentCulture, converts File Sizes to UnitsNet.Information types, and DateTimes to ITenso Times
-    void BuildGenerateProgramResults(StringBuilder mesg, GenerateProgramResult generateProgramResult, Stopwatch? stopwatch) {
+    void BuildGenerateProgramResults(StringBuilder mesg, GGenerateProgramResult gGenerateProgramResult, Stopwatch? stopwatch) {
       mesg.Clear();
       if (stopwatch != null) {
         mesg.Append(uiLocalizer["Running the function took {0} milliseconds", stopwatch.ElapsedMilliseconds.ToString(CultureInfo.CurrentCulture)]);
         mesg.Append(Environment.NewLine);
       }
-      mesg.Append(uiLocalizer["DB extraction was successful: {0}", generateProgramResult.DBExtractionSuccess.ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(uiLocalizer["DB extraction was successful: {0}", gGenerateProgramResult.DBExtractionSuccess.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
-      mesg.Append(uiLocalizer["Build was successful: {0}", generateProgramResult.BuildSuccess.ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(uiLocalizer["Build was successful: {0}", gGenerateProgramResult.BuildSuccess.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
-      mesg.Append(uiLocalizer["Unit Tests were successful: {0}", generateProgramResult.UnitTestsSuccess.ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(uiLocalizer["Unit Tests were successful: {0}", gGenerateProgramResult.UnitTestsSuccess.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
-      mesg.Append(uiLocalizer["Unit Tests coverage was: {0}", generateProgramResult.UnitTestsCoverage.ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(uiLocalizer["Unit Tests coverage was: {0}", gGenerateProgramResult.UnitTestsCoverage.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
-      mesg.Append(uiLocalizer["Generated Solution File Directory: {0}", generateProgramResult.GeneratedSolutionFileDirectory.ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(uiLocalizer["Generated Solution File Directory: {0}", gGenerateProgramResult.GeneratedSolutionFileDirectory.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
-      foreach (var assemblyBuilt in generateProgramResult.CollectionOfAssembliesBuilt) {
+      foreach (var assemblyBuilt in gGenerateProgramResult.CollectionOfAssembliesBuilt) {
         mesg.Append(uiLocalizer["Assembly Built: {0}", assemblyBuilt.ToString(CultureInfo.CurrentCulture)]);
         mesg.Append(Environment.NewLine);
       }
-      mesg.Append(uiLocalizer["Packaging was successful: {0}", generateProgramResult.PackagingSuccess.ToString(CultureInfo.CurrentCulture)]);
-      mesg.Append(uiLocalizer["Deployment was successful: {0}", generateProgramResult.DeploymentSuccess.ToString(CultureInfo.CurrentCulture)]);
-      mesg.Append(uiLocalizer["Number of AcceptableExceptions: {0}", generateProgramResult.AcceptableExceptions.Count]);
+      mesg.Append(uiLocalizer["Packaging was successful: {0}", gGenerateProgramResult.PackagingSuccess.ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(uiLocalizer["Deployment was successful: {0}", gGenerateProgramResult.DeploymentSuccess.ToString(CultureInfo.CurrentCulture)]);
+      mesg.Append(uiLocalizer["Number of AcceptableExceptions: {0}", gGenerateProgramResult.AcceptableExceptions.Count]);
       mesg.Append(Environment.NewLine);
       // List the acceptable Exceptions that occurred
       //ToDo: break out AcceptableExceptions by type
@@ -288,22 +288,6 @@ namespace ATAP.Console.Console02 {
           // Get GlobalSettingsSignil using GlobalSettingsKey
           // Get the SolutionGroupKey from the DB using the ProgramKey
           // get the SolutionGroupSignil from the DB using the SolutionGroupKey
-          // create the MCreateSolutionGroupSignil from the GlobalSettingsSignil and the SolutionGroupSignil
-          // call MCreateSolutionGroup for the SolutionGroupKey
-          // execute the powershell program, passing it the dotnet build command
-          // Get the AssemblyGroupKey from the DB using the ProgramKey
-          // For any dependencies that are in lifecyclestage other than production
-          // Get a collection of AssemblyGroupKeys from the DB using the ProgramKey and the list of dependencies that are in lifecyclestage Development
-          // Iterate the collection in parallel
-          // get the AssemblyGroupSignil from the DB for each AssemblyGroupKey
-          // create the MCreateAssemblyGroupSignil from the GlobalSettingsSignil and the AssemblyGroupSignil
-          // call MCreateAssemblyGroup for each AssemblygroupKey
-          // execute the powershell program, passing it the dotnet build command
-          // execute the powershell program, passing it the dotnet test command
-          // get the AssemblyGroupSignil from the DB for the ProgramKey
-          // create the MCreateAssemblyGroupSignil from the GlobalSettingsSignil and the AssemblyGroupSignil
-          // call MCreateAssemblyGroup for the ProgramKey
-          // execute the powershell program, passing it the dotnet build command
 
           #region ProgressReporting setup
           ConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress; ;
@@ -440,14 +424,14 @@ namespace ATAP.Console.Console02 {
           #endregion
           */
 
-          GenerateProgramResult generateProgramResult;
+          GGenerateProgramResult gGenerateProgramResult;
           #region Method timing setup
           Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
           stopWatch.Start();
           #endregion
           try {
-            Func<Task<GenerateProgramResult>> run = () => GenerateProgram.GenerateProgram(GenerateProgramSignil);
-            generateProgramResult = await run.Invoke().ConfigureAwait(false);
+            Func<Task<GGenerateProgramResult>> run = () => GenerateProgram.GenerateProgram(gGenerateProgramSignil);
+            gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);
             stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
                               // ToDo: put the results someplace
           }
@@ -465,7 +449,7 @@ namespace ATAP.Console.Console02 {
             */
           }
           #region Build the results
-          BuildGenerateProgramResults(mesg, generateProgramResult, stopWatch);
+          BuildGenerateProgramResults(mesg, gGenerateProgramResult, stopWatch);
           #endregion
 
           break;

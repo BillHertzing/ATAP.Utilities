@@ -675,7 +675,7 @@ namespace ATAP.Console.Console01 {
       /*
 
 
-      logger.LogDebug(debugLocalizer["{0} {1} Console01BackgroundService is stopping due to "], "Console01BackgroundService", "ExecuteAsync"); // add third parameter for internal or external
+      logger.LogDebug(DebugLocalizer["{0} {1} Console01BackgroundService is stopping due to "], "Console01BackgroundService", "ExecuteAsync"); // add third parameter for internal or external
       SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
 
     }

@@ -96,12 +96,12 @@ namespace ATAP.Console.Console01.Complicated {
   //    // Attach the appropriate ServiceLifetime structures to the GenericHostBuilder, build the host, and run it async
   //    if (!runtimeKind.IsConsoleApplication) {
   //      // This program is a GenericHost configured to run as a service
-  //      // insert a singleton implementation of IHostLifetime into the genericHost's DI container, and any options needed by the IHostLifetime instance
+  //      // insert a singleton implementation of IHostLifetime into the genericHost's DI container, and any Options needed by the IHostLifetime instance
   //      /*
   //      Log.Debug("{DebugMessage}", string.Format(debugResourceManager.GetString("AddingAnIHostLifetimeToGenericHostDI"), typeof(GenericHostAsServiceILifetimeImplementation)));
   //      genericHostBuilder.ConfigureServices((hostContext, servicesGenericHostBuilder) => {
   //        servicesGenericHostBuilder.AddSingleton<IHostLifetime, GenericHostAsServiceILifetimeImplementation>();
-  //        // add Host options here if needed
+  //        // add Host Options here if needed
   //        // Extend the generic host timeout to thecvalue specified in the configuration, in seconds, to give all running process time to do a graceful shutdown
   //        // Ensure that the string value specified in the ConfigurationRoot can be converted to a double
   //        String shutDownTimeoutInSecondsString = genericHostConfigurationRoot.GetValue<string>(StringConstants.MaxTimeInSecondsToWaitForGenericHostShutdownConfigKey, StringConstants.MaxTimeInSecondsToWaitForGenericHostShutdownStringDefault);

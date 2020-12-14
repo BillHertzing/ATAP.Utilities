@@ -5,7 +5,9 @@ using ATAP.Utilities.HostedServices.ConsoleSourceHostedService;
 using ATAP.Utilities.ComputerInventory.Hardware;
 using ATAP.Utilities.Logging;
 using ATAP.Utilities.Persistence;
+using ATAP.Utilities.Philote;
 using ATAP.Utilities.Reactive;
+using GenerateProgram;
 
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
@@ -245,9 +247,9 @@ namespace ATAP.Console.Console02 {
           // ToDo: Get these from the Console02 application configuration 
           // ToDo: Get these from the database or from a configurationRoot (priority?)
           string GenerateProgramDBConnectionString = "";
-          Philote<GAssemblyGroup> assemblyGroupPhilote = Philote<GAssemblyGroup>();
-          Philote<GSolutionGroupSignil> solutionGroupSignilPhilote = Philote<GSolutionGroupSignil>();
-          Philote<GGlobalCreateBuildtestDeployKVPs> gGlobalCreateBuildtestDeployKVPsPhilote = Philote<GGlobalCreateBuildtestDeployKVPs>();
+          Philote<GAssemblyGroup> assemblyGroupPhilote = new Philote<GAssemblyGroup>();
+          Philote<GSolutionGroupSignil> solutionGroupSignilPhilote = new Philote<GSolutionGroupSignil>();
+          Philote<GGlobalCreateBuildtestDeployKVPs> gGlobalCreateBuildtestDeployKVPsPhilote = new Philote<GGlobalCreateBuildtestDeployKVPs>();
           var enableProgress = appConfiguration.GetValue<bool>(appStringConstants.EnableProgressBoolConfigRootKey, bool.Parse(appStringConstants.EnableProgressBoolDefault));// ToDo: should validate in case the appStringConstants assembly is messed up?
           // var enablePersistence = appConfiguration.GetValue<bool>(appStringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(appStringConstants.EnablePersistenceBoolDefault));// ToDo: should validate in case the appStringConstants assembly is messed up?
           // var enablePickAndSave = appConfiguration.GetValue<bool>(appStringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(appStringConstants.EnablePickAndSaveBoolDefault));// ToDo: should validate in case the appStringConstants assembly is messed up?
@@ -312,6 +314,8 @@ namespace ATAP.Console.Console02 {
             convertFileSystemToGraphProgress = null;
           }
           #endregion
+          /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls 
+
           #region PersistenceViaFiles setup
           // Ensure the Node and Edge files are empty and can be written to
           // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
@@ -368,6 +372,8 @@ namespace ATAP.Console.Console02 {
           });
           Persistence<IInsertResultsAbstract> persistence = new Persistence<IInsertResultsAbstract>(insertFunc);
           #endregion
+          */
+          /* PickAndSave is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls 
           #region PickAndSaveViaFiles setup
           // Ensure the Archived files are empty and can be written to
           // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePathsPickAndSave as the argument
@@ -432,15 +438,16 @@ namespace ATAP.Console.Console02 {
           });
           PickAndSave<IInsertResultsAbstract> pickAndSave = new PickAndSave<IInsertResultsAbstract>(pickFuncPickAndSave, insertFuncPickAndSave);
           #endregion
+          */
 
-          ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
+          GenerateProgramResult generateProgramResult;
           #region Method timing setup
           Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
           stopWatch.Start();
           #endregion
           try {
-            Func<Task<ConvertFileSystemToGraphResult>> run = () => ComputerInventoryHardwareStaticExtensions.ConvertFileSystemToGraphAsyncTask(rootString, asyncFileReadBlockSize, enableHash, convertFileSystemToGraphProgress, persistence, pickAndSave, linkedCancellationToken);
-            convertFileSystemToGraphResult = await run.Invoke().ConfigureAwait(false);
+            Func<Task<GenerateProgramResult>> run = () => GenerateProgram.GenerateProgram(GenerateProgramSignil);
+            generateProgramResult = await run.Invoke().ConfigureAwait(false);
             stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
                               // ToDo: put the results someplace
           }
@@ -450,11 +457,15 @@ namespace ATAP.Console.Console02 {
           }
           finally {
             // Dispose of the objects that need disposing
+            /* PickAndSave is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls 
             setupResultsPickAndSave.Dispose();
+            */
+            /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls 
             setupResultsPersistence.Dispose();
+            */
           }
           #region Build the results
-          BuildConvertFileSystemToGraphResults(mesg, convertFileSystemToGraphResult, stopWatch);
+          BuildGenerateProgramResults(mesg, generateProgramResult, stopWatch);
           #endregion
 
           break;

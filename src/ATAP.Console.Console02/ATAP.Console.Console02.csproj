@@ -60,6 +60,7 @@
     <ProjectReference Include="..\ATAP.Services.ConsoleMonitor\ConsoleMonitor.csproj" />
     <ProjectReference Include="..\ATAP.Services.Timers.Interfaces\Timers.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Services.Timers\Timers.csproj" />
+    <ProjectReference Include="..\ATAP.Services.GenerateProgram\ATAP.Services.GenerateProgram.csproj" />
   </ItemGroup>
 
 

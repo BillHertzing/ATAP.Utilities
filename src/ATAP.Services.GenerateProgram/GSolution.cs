@@ -1,29 +1,20 @@
 using System;
 
-namespace ATAP.Services.GenerateProgram
+using ATAP.Utilities.Philote;
+namespace GenerateProgram
 {
-    public class GSolution
-    {
+    public class GSolution{
 
- public GAssemblyUnit(string gName = default, string gRelativePath = default,
-      GProjectUnit gProjectUnit = default,
-      Dictionary<Philote<GCompilationUnit>, GCompilationUnit> gCompilationUnits = default,
-      Dictionary<Philote<GPropertiesUnit>, GPropertiesUnit> gPropertiesUnits = default,
-      Dictionary<Philote<GResourceUnit>, GResourceUnit> gResourceUnits = default,
-      GPatternReplacement gPatternReplacement = default,
-      GComment gComment = default
+
+ public GSolution(GSolutionSignil gSolutionSignil = default
     ) {
-      GName = gName == default ? "" : gName;
-      GRelativePath = gRelativePath == default ? "" : gRelativePath;
-      GProjectUnit = gProjectUnit == default? new GProjectUnit(GName) : gProjectUnit;
-      GCompilationUnits = gCompilationUnits == default ? new Dictionary<Philote<GCompilationUnit>, GCompilationUnit>() : gCompilationUnits;
-      GPropertiesUnits = gPropertiesUnits == default ? new Dictionary<Philote<GPropertiesUnit>, GPropertiesUnit>() : gPropertiesUnits;
-      GResourceUnits = gResourceUnits == default ? new Dictionary<Philote<GResourceUnit>, GResourceUnit>() : gResourceUnits;
-      GComment = gComment == default? new GComment() : gComment;
-      GPatternReplacement = gPatternReplacement == default? new GPatternReplacement() : gPatternReplacement;
-      Philote = new Philote<GAssemblyUnit>();
+            GSolutionSignil = gSolutionSignil ?? throw new ArgumentNullException(nameof(gSolutionSignil));
+
+      Philote = new Philote<GSolution>();
     }
 
+    public GSolutionSignil GSolutionSignil { get; }
+    public Philote<GSolution> Philote { get; }
 
     }
 }

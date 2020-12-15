@@ -1,11 +1,11 @@
 using System;
 
-namespace ATAP.Services.GenerateProgram
+namespace GenerateProgram
 {
     public static class EntryPoints
     {
-        public static GGenerateProgramResult GenerateProgram(GGenerateProgramSignil gGenerateProgramSignil, GGlobalKeysSignil gGlobalKeysSignil, GSolutionKeySignil gSolutionKeySignil) {
-            GGenerateProgramResult gGenerateProgramResult = new GGenerateProgramResult();
+        public static IGGenerateProgramResult GenerateProgram(IGGenerateProgramSignil gGenerateProgramSignil, IGGlobalKeysSignil gGlobalKeysSignil, IGSolutionKeySignil gSolutionKeySignil) {
+
           // create the MCreateSolutionGroupSignil from the GlobalSettingsSignil and the SolutionGroupSignil
           // call MCreateSolutionGroup for the SolutionGroupKey
           // execute the powershell program, passing it the dotnet build command
@@ -23,6 +23,7 @@ namespace ATAP.Services.GenerateProgram
           // call MCreateAssemblyGroup for the ProgramKey
           // execute the powershell program, passing it the dotnet build command
 
+            GGenerateProgramResult gGenerateProgramResult = new GGenerateProgramResult();
 
         }
     }

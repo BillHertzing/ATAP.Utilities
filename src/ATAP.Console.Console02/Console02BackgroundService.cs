@@ -173,9 +173,9 @@ namespace ATAP.Console.Console02 {
     }
     #endregion
     #region PrettyPrintConvertFileSystemToGraphResults
-    // Format an instance of ConvertFileSystemToGraphResults for UI presentation
-    // // Uses the CurrentCulture, converts File Sizes to UnitsNet.Information types, and DateTimes to ITenso Times
-    void BuildGenerateProgramResults(StringBuilder mesg, GGenerateProgramResult gGenerateProgramResult, Stopwatch? stopwatch) {
+    // Format an instance of GenerateProgramResultsResults for UI presentation
+    // // Uses the CurrentCulture
+    void BuildGenerateProgramResults(StringBuilder mesg, IGGenerateProgramResult gGenerateProgramResult, Stopwatch? stopwatch) {
       mesg.Clear();
       if (stopwatch != null) {
         mesg.Append(uiLocalizer["Running the function took {0} milliseconds", stopwatch.ElapsedMilliseconds.ToString(CultureInfo.CurrentCulture)]);

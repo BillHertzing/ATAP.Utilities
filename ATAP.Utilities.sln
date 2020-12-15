@@ -47,8 +47,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console01.Stri
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Console.Console02", "src\ATAP.Console.Console02\ATAP.Console.Console02.csproj", "{3C4064F2-FCB3-4638-886D-49E3099C4299}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities._1ConsoleTestRunner", "src\ATAP.Utilities.1ConsoleTestRunner\ATAP.Utilities._1ConsoleTestRunner.csproj", "{9293C0CA-6E85-4448-801B-F92600C78787}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.AutoDoc", "src\ATAP.Utilities.AutoDoc\ATAP.Utilities.AutoDoc.csproj", "{DF414E11-E82C-4710-9DDD-9FE741E9C7FC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Collections", "Collections", "{49B057C0-0D3E-49BF-A908-09A75066A373}"
@@ -253,7 +251,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.FileSystemWat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.FileSystemWatchers.Interfaces", "src\ATAP.Services.FileSystemWatchers.Interfaces\FileSystemWatchers.Interfaces.csproj", "{BE6AD294-5A2D-47B7-8F5E-07FAA90A2290}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services..GenerateProgram", "src\ATAP.Services.GenerateProgram\ATAP.Services.GenerateProgram.csproj", "{9A2A96CB-20F2-4321-B5A7-4E4AF4F61489}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.GenerateProgram", "src\ATAP.Services.GenerateProgram\ATAP.Services.GenerateProgram.csproj", "{9A2A96CB-20F2-4321-B5A7-4E4AF4F61489}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.Timers.Interfaces", "src\ATAP.Services.Timers.Interfaces\Timers.Interfaces.csproj", "{055AD23D-97FB-4B0F-8E8E-8B1BAEE73E90}"
 EndProject
@@ -337,6 +335,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Databases", "Databases", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Console.Console02.StringConstants", "src\ATAP.Console.Console02.StringConstants\ATAP.Console.Console02.StringConstants.csproj", "{7E9D3E08-B004-4DEB-804A-DC54533AB06E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Services.GenerateProgram.Interfaces", "src\ATAP.Services.GenerateProgram.Interfaces\ATAP.Services.GenerateProgram.Interfaces.csproj", "{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -346,16 +346,6 @@ Global
 		ReleaseWithTrace|Any CPU = ReleaseWithTrace|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{9293C0CA-6E85-4448-801B-F92600C78787}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9293C0CA-6E85-4448-801B-F92600C78787}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9293C0CA-6E85-4448-801B-F92600C78787}.RELEASE NET40|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
-		{9293C0CA-6E85-4448-801B-F92600C78787}.RELEASE NET40|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
-		{9293C0CA-6E85-4448-801B-F92600C78787}.RELEASE NET45|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
-		{9293C0CA-6E85-4448-801B-F92600C78787}.RELEASE NET45|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
-		{9293C0CA-6E85-4448-801B-F92600C78787}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9293C0CA-6E85-4448-801B-F92600C78787}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9293C0CA-6E85-4448-801B-F92600C78787}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
-		{9293C0CA-6E85-4448-801B-F92600C78787}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 		{DF414E11-E82C-4710-9DDD-9FE741E9C7FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DF414E11-E82C-4710-9DDD-9FE741E9C7FC}.RELEASE NET40|Any CPU.ActiveCfg = Release|Any CPU
 		{DF414E11-E82C-4710-9DDD-9FE741E9C7FC}.RELEASE NET40|Any CPU.Build.0 = Release|Any CPU
@@ -1367,6 +1357,16 @@ Global
 		{7E9D3E08-B004-4DEB-804A-DC54533AB06E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7E9D3E08-B004-4DEB-804A-DC54533AB06E}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{7E9D3E08-B004-4DEB-804A-DC54533AB06E}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519}.RELEASE NET40|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519}.RELEASE NET40|Any CPU.Build.0 = Debug|Any CPU
+		{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519}.RELEASE NET45|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519}.RELEASE NET45|Any CPU.Build.0 = Debug|Any CPU
+		{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519}.ReleaseWithTrace|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519}.ReleaseWithTrace|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1516,6 +1516,7 @@ Global
 		{95108E2E-60B2-47BB-9026-7EAC368BE9CD} = {37F78D80-38A2-11EB-993C-05D7FC15B653}
 		{3C4064F2-FCB3-4638-886D-49E3099C4299} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 		{7E9D3E08-B004-4DEB-804A-DC54533AB06E} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
+		{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519} = {B6F9F570-22C9-4DF5-B580-942C6C7BFE32}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40986DA9-E8C6-49CE-B434-BE8625798C2C}

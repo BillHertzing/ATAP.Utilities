@@ -5,7 +5,9 @@ using System.Text;
 
 using ATAP.Utilities.Philote;
 namespace GenerateProgram {
-  public class GGlobalSettingsSignil  : IGGlobalSettingsSignil {
+
+
+  public class GGlobalSettingsSignil : IGGlobalSettingsSignil, IGGlobalSettingsSignil1 {
     public GGlobalSettingsSignil(
      ICollection<string> targetFrameworks = default
 ) {

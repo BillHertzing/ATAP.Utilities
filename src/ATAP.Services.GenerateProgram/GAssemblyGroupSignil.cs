@@ -1,10 +1,20 @@
+using System;
 using System.Collections.Generic;
 
 using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
+  public interface IGAssemblyGroupSignil : IEquatable<GAssemblyGroupSignil?> {
+    string GName { get; }
+    string GDescription { get; }
+    string GRelativePath { get; }
+    bool HasInterfacesAssembly { get; }
+    Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit> GAssemblyUnits { get; }
+    GPatternReplacement GPatternReplacement { get; }
+    GComment GComment { get; }
+  }
 
-  public class GAssemblyGroupSignil : IGAssemblyGroupSignil {
+  public record GAssemblyGroupSignil : IGAssemblyGroupSignil {
     public GAssemblyGroupSignil(string gName = default, string gDescription = default, string gRelativePath = default,
       Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit> gAssemblyUnits = default,
       GPatternReplacement gPatternReplacement = default, GComment gComment = default, bool hasInterfacesAssembly = default) {

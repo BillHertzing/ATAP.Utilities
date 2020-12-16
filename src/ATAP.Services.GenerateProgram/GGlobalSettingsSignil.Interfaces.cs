@@ -1,8 +1,9 @@
-using System;
 using System.Collections.Generic;
+
+using ATAP.Utilities.Philote;
+
 namespace GenerateProgram {
   public interface IGGlobalSettingsSignil {
-    public ICollection<string> TargetFrameworks { get; }
-
+    ICollection<string> TargetFrameworks { get; }
   }
 }

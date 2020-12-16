@@ -51,7 +51,7 @@
 
   <!-- Library of rich time and interval manipulation routines -->
   <ItemGroup>
-    <PackageReference Update="TimePeriodLibrary.NET"  />
+    <PackageReference Update="TimePeriodLibrary.NET" />
   </ItemGroup>
 
   <!-- large block of standard text included at the start of every generated resource file -->

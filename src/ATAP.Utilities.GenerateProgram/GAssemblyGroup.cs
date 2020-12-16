@@ -4,7 +4,8 @@ using System.Text;
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GAssemblyGroup {
+
+  public class GAssemblyGroup : IGAssemblyGroup {
     public GAssemblyGroup(string gName = "", string gDescription = "", string gRelativePath = "",
       Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit> gAssemblyUnits = default,
       GPatternReplacement gPatternReplacement = default,
@@ -14,8 +15,8 @@ namespace ATAP.Utilities.GenerateProgram {
       GDescription = gDescription;
       GRelativePath = gRelativePath;
       GAssemblyUnits = gAssemblyUnits == default ? new Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit>() : gAssemblyUnits;
-      GPatternReplacement = gPatternReplacement == default? new GPatternReplacement() : gPatternReplacement;
-      GComment = gComment == default? new GComment() : gComment;
+      GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
+      GComment = gComment == default ? new GComment() : gComment;
 
       Philote = new Philote<GAssemblyGroup>();
     }

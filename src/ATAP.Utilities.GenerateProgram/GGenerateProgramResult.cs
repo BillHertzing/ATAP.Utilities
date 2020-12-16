@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ATAP.Utilities.Philote;
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public record GGenerateProgramResult : IGGenerateProgramResult {
     public GGenerateProgramResult(bool dBExtractionSuccess, bool buildSuccess, bool unitTestsSuccess, double unitTestsCoverage, string generatedSolutionFileDirectory, ICollection<GAssemblyGroup> collectionOfAssembliesBuilt, bool packagingSuccess, bool deploymentSuccess) {
       DBExtractionSuccess = dBExtractionSuccess;

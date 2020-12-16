@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GPropertyGroupExtensions {
    
   }

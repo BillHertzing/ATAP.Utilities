@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   //public interface IR1TopData {
   //  StringBuilder Indent { get; set; }
   //  string IndentDelta { get; set; }

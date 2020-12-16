@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using ATAP.Utilities.Philote;
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
 
   public class GGlobalSettingsSignil : IGGlobalSettingsSignil {
     public GGlobalSettingsSignil(

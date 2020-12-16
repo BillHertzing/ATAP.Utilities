@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net5.0;</TargetFrameworks> <!-- netcoreapp3.1 net47-->
+    <DefaultNamespace>ATAP.Utilities.GenerateProgram</DefaultNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+  </ItemGroup>
+
+</Project>

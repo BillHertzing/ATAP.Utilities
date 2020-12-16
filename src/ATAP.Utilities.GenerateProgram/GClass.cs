@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GClass {
     //public GClass(string gName, string? gVisibility, string? gInheritance, string[]? gImplements, GPropertyGroup[]? gPropertyGroups, GConstructor[]? gConstructors, GMethod[]? gMethods) {
     public GClass(string gName = default, string gVisibility = default,  string gAccessModifier = default, string gInheritance = default,

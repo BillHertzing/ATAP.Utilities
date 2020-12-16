@@ -6,10 +6,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ATAP.Utilities.Philote;
-using GenerateProgram;
+using ATAP.Utilities.GenerateProgram;
 
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GBodyExtensions {
     public static GBody AddBody(this GBody gBody, GBody gAdditionalBody) {
       gBody.GStatements.AddRange(gAdditionalBody.GStatements);

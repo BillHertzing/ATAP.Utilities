@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-namespace GenerateProgram {
-  public static class EntryPoints {
-    public static IGGenerateProgramResult GenerateProgram(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil) {
+namespace ATAP.Utilities.GenerateProgram {
+  public class EntryPoints {
+    public static IGGenerateProgramResult GenerateProgramEntryPoint1(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil) {
 
       bool DBExtractionSuccess;
       bool BuildSuccess;

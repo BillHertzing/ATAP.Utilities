@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   //public class GStatementList {
   //  public GStatementList(List<string> gStatements = default,
   //    GComment gComment = default

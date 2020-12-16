@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GPatternReplacement {
     public GPatternReplacement(string? gName = default, Dictionary<Regex,string>? gDictionary = default, GComment? gComment = default) {
       GName = gName == default? "": gName;

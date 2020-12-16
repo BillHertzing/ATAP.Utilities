@@ -4,7 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Permissions;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
 
   public static partial class GClassExtensions {
     public static GClass AddTLocalizerConstructorAutoPropertyGroup(this GClass gClass, Philote<GMethod> gMethodId, string gAutoPropertyName, string assemblyUnitName, Philote<GPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get; }", string? gVisibility = default) {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GDelegate {
     public GDelegate( GDelegateDeclaration gDelegateDeclaration = default, GComment gComment = default) {
       GDelegateDeclaration = gDelegateDeclaration == default? new GDelegateDeclaration() : gDelegateDeclaration;

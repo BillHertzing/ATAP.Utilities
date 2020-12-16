@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static class Lookup {
     public static (
       IEnumerable<GAssemblyUnit> gAssemblyUnits,

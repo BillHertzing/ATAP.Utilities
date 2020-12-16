@@ -6,10 +6,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ATAP.Utilities.Philote;
-using GenerateProgram;
-using static GenerateProgram.GAttributeGroupExtensions;
+using ATAP.Utilities.GenerateProgram;
+using static ATAP.Utilities.GenerateProgram.GAttributeGroupExtensions;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GEnumerationMemberExtensions {
 
     public static GEnumerationMember LocalizableEnumerationMember(string gName = "", int gValue = default, string description = "", string visualDisplay = "", int  visualSortOrder = default) {

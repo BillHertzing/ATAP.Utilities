@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GPropertyGroupInProjectUnitExtensions {
     public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForPackableLibraryVersionedConfigurations() {
       return new GPropertyGroupInProjectUnit("PackableProductionV1.0.0Library", "what kind of an assembly",

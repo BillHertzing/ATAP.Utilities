@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GDelegateDeclaration {
     public GDelegateDeclaration(string gName = default, string gType = default, string gVisibility = default, 
       Dictionary<Philote<GArgument>, GArgument> gArguments = default,

@@ -6,10 +6,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ATAP.Utilities.Philote;
-using GenerateProgram;
+using ATAP.Utilities.GenerateProgram;
 
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GStatementListExtensions {
     public static List<string> AddStatementList(this List<string> gStatementList, List<string> gAdditionalStatementList) {
       gStatementList.AddRange(gAdditionalStatementList);

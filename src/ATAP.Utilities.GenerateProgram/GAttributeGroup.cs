@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GAttributeGroup {
     public GAttributeGroup(string gName = "", Dictionary<Philote<GAttribute>, GAttribute> gAttributes = default,
       GComment gComment = default

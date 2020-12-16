@@ -6,7 +6,7 @@ using System.Security.Permissions;
 using System.Xml.Schema;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
 
   public static partial class GCompilationUnitExtensions {
     public static GCompilationUnit TClassMakeBase(this GCompilationUnit gCompilationUnit, GClass gClass) {

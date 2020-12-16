@@ -9,7 +9,7 @@ using System.Threading;
 using ATAP.Utilities.Philote;
 
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class WriteExtensions {
     public static IW1Top WFile(this IW1Top w1Top, string pathToDirectory, string pathToFile, Dictionary<Regex, string> gDictionary, StringBuilder sB, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();

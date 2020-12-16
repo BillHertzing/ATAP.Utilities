@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
     public static IR1Top RDelegate(this IR1Top r1Top, GDelegate gDelegate) {
       r1Top.RComment(gDelegate.GComment);

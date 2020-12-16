@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GStaticVariableGroup {
     public GStaticVariableGroup(string gName = default, Dictionary<Philote<GStaticVariable>, GStaticVariable> gStaticVariables = default) {
       GName = gName == default ? "" : gName;

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GNamespace {
     public GNamespace(string gName = "", Dictionary<Philote<GClass>, GClass>? gClasss = default,
       Dictionary<Philote<GInterface>, GInterface>? gInterfaces = default,

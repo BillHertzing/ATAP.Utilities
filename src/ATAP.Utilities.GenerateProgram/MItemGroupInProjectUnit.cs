@@ -3,9 +3,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Schema;
 using ATAP.Utilities.Philote;
-using static GenerateProgram.GItemGroupInProjectUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.GItemGroupInProjectUnitExtensions;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
 
     public static List<GItemGroupInProjectUnit> MGenericHostServiceCommonItemGroupInProjectUnitList() {

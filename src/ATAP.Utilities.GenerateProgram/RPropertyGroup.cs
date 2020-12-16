@@ -3,7 +3,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
     public static IR1Top RPropertyGroup(this IR1Top r1Top, GPropertyGroup gPropertyGroup) {
       r1Top.Ct?.ThrowIfCancellationRequested();

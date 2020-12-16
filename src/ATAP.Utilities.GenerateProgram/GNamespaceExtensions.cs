@@ -6,10 +6,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ATAP.Utilities.Philote;
-using GenerateProgram;
-using static GenerateProgram.GAttributeGroupExtensions;
+using ATAP.Utilities.GenerateProgram;
+using static ATAP.Utilities.GenerateProgram.GAttributeGroupExtensions;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GNamespaceExtensions {
 
     public static GNamespace AddDelegate(this GNamespace gNamespace, GDelegate gDelegate) {

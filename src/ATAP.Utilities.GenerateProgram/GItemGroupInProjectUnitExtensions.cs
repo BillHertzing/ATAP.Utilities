@@ -7,14 +7,14 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GItemGroupInProjectUnitExtensions {
 
     //public static GItemGroupInProjectUnit ItemGroupInProjectUnitForEntireService() {
     //  return  new GItemGroupInProjectUnit("CompleteServiceProjectReferences",
     //    "Projects in this solution for ", new GBody(new List<string>() {
     //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/ATAP.Utilities.DataBaseManagement/ATAP.Utilities.DatabaseManagement.csproj\" />",
-    //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/GenerateProgram/GenerateProgram.csproj\" />",
+    //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/ATAP.Utilities.GenerateProgram/ATAP.Utilities.GenerateProgram.csproj\" />",
     //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.ComputerInventory.Hardware.Extensions/ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj\" />",
     //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.ComputerInventory.ProcessInfo.Models/ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj\" />",
     //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.ComputerInventory.Software.Enumerations/ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj\" />",

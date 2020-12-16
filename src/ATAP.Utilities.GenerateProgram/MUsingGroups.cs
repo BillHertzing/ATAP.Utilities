@@ -3,12 +3,12 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using ATAP.Utilities.Philote;
 //using AutoMapper.Configuration;
-using static GenerateProgram.GUsingGroupExtensions;
-using static GenerateProgram.GEnumerationMemberExtensions;
+using static ATAP.Utilities.GenerateProgram.GUsingGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.GEnumerationMemberExtensions;
 using System;
 using System.Text;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     public static GUsingGroup MUsingGroupForMicrosoftGenericHostInGHHSAndGHBS() {
       var _gUsingGroup = new GUsingGroup("Usings For Microsoft GenericHost in GHHS and GHBS");

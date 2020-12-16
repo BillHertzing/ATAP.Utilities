@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
     public static StringBuilder RenderArgumentStringBuilder(this StringBuilder sb, GArgument gArgument,  CancellationToken? ct = default) {
       if (gArgument.IsRef) {

@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ATAP.Utilities.Philote;
-using static GenerateProgram.GAssemblyGroupExtensions;
-using static GenerateProgram.GMethodGroupExtensions;
-using static GenerateProgram.GMethodExtensions;
-using static GenerateProgram.GUsingGroupExtensions;
-using static GenerateProgram.GAttributeGroupExtensions;
-using static GenerateProgram.Lookup;
+using static ATAP.Utilities.GenerateProgram.GAssemblyGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.GMethodGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.GMethodExtensions;
+using static ATAP.Utilities.GenerateProgram.GUsingGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.GAttributeGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.Lookup;
 //using AutoMapper.Configuration;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     public static GAssemblyGroup MTopLevelBackgroundGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,bool hasInterfaces = true) {

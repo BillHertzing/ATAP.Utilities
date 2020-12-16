@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GAttributeGroupExtensions {
     public static GAttributeGroup CreateLocalizableEnumerationAttributeGroup(string description, string visualDisplay, int  visualSortOrder) {
       GAttributeGroup gAttributeGroup =

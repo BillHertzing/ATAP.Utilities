@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GPropertyGroupInProjectUnit {
     public GPropertyGroupInProjectUnit(string? gName = default, string? gDescription = default, List<String>? gPropertyGroupStatements = default) {
       GName = gName == default ? "" : gName;

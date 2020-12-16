@@ -7,10 +7,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using ATAP.Utilities.Philote;
-using GenerateProgram;
-using static GenerateProgram.GAttributeGroupExtensions;
+using ATAP.Utilities.GenerateProgram;
+using static ATAP.Utilities.GenerateProgram.GAttributeGroupExtensions;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GClassExtensions {
     public static GClass AddProperty(this GClass gClass, GProperty gProperty) {
       gClass.GPropertys[gProperty.Philote] = (gProperty);

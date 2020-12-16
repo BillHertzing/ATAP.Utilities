@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public interface IGGlobalSettingsSignil {
     ICollection<string> TargetFrameworks { get; }
   }

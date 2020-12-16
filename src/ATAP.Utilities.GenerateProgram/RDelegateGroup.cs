@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
 
     public static IR1Top RDelegateGroup(this IR1Top r1Top, GDelegateGroup gDelegateGroup) {

@@ -1,4 +1,4 @@
-namespace GenerateProgram.Tests
+namespace ATAP.Utilities.GenerateProgram.Tests
 {
     using GenerateProgram;
     using System;

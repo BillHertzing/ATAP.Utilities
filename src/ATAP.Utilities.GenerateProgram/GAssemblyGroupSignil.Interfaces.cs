@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
  public interface IGAssemblyGroupSignil  {
     string GName { get; }
     string GDescription { get; }

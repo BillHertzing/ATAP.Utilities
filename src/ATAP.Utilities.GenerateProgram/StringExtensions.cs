@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class Extensions {
     // https://stackoverflow.com/questions/8809354/replace-first-occurrence-of-pattern-in-a-string
     public static string ReplaceFirst(this string text, string search, string replace) {

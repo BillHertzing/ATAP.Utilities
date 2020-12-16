@@ -1,7 +1,7 @@
 using System.Text;
 using System.Threading;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
 
   public static partial class RenderExtensions {
     public static StringBuilder RenderNamespaceDeclarationStringBuilder(this StringBuilder sb, GNamespace gNamespace, StringBuilder indent, string eol, CancellationToken? ct = default) {

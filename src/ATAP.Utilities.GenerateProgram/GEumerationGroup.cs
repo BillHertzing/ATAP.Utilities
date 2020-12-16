@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GEnumerationGroup {
     public GEnumerationGroup(string gName = default, Dictionary<Philote<GEnumeration>, GEnumeration> gEnumerations = default) {
       GName = gName == default ? "" : gName;

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GMethodDeclaration {
     public GMethodDeclaration(string gName = default, string gType = default, string gVisibility = default, string gAccessModifier = default,
       bool isStatic = default,bool isConstructor = default,

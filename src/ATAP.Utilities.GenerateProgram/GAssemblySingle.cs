@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace GenerateProgram
+namespace ATAP.Utilities.GenerateProgram
 {
     /* public class GAssemblySingle -- being deprecated
     {

@@ -4,7 +4,7 @@ using System.Dynamic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GArgument {
     public GArgument(string gName, string gType, bool isRef = false, bool isOut = false) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));

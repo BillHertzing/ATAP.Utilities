@@ -3,7 +3,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
  
     public static StringBuilder RenderDisposesOfPreambleStringBuilder(this StringBuilder sb, List<string> gDisposesOf, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {

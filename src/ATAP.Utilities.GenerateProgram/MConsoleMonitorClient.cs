@@ -5,16 +5,16 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml.Schema;
 using ATAP.Utilities.Philote;
-using static GenerateProgram.GAssemblyGroupExtensions;
-using static GenerateProgram.StringConstants;
+using static ATAP.Utilities.GenerateProgram.GAssemblyGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.StringConstants;
 //using AutoMapper.Configuration;
-using static GenerateProgram.GPropertyGroupExtensions;
-using static GenerateProgram.GMethodExtensions;
-using static GenerateProgram.GMethodGroupExtensions;
-using static GenerateProgram.GUsingGroupExtensions;
-using static GenerateProgram.GAssemblyUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.GPropertyGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.GMethodExtensions;
+using static ATAP.Utilities.GenerateProgram.GMethodGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.GUsingGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.GAssemblyUnitExtensions;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     public static void MConsoleMonitorClient(GAssemblyGroup gAssemblyGroup, (
       IEnumerable<GAssemblyUnit> gAssemblyUnits,

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GAssemblyUnit {
+  public class GAssemblyUnit : IGAssemblyUnit {
     public GAssemblyUnit(string gName = default, string gRelativePath = default,
       GProjectUnit gProjectUnit = default,
       Dictionary<Philote<GCompilationUnit>, GCompilationUnit> gCompilationUnits = default,

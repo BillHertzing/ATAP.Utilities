@@ -4,15 +4,7 @@ using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
 namespace GenerateProgram {
-  public interface IGAssemblyGroupSignil : IEquatable<GAssemblyGroupSignil?> {
-    string GName { get; }
-    string GDescription { get; }
-    string GRelativePath { get; }
-    bool HasInterfacesAssembly { get; }
-    Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit> GAssemblyUnits { get; }
-    GPatternReplacement GPatternReplacement { get; }
-    GComment GComment { get; }
-  }
+ 
 
   public record GAssemblyGroupSignil : IGAssemblyGroupSignil {
     public GAssemblyGroupSignil(string gName = default, string gDescription = default, string gRelativePath = default,
@@ -24,7 +16,7 @@ namespace GenerateProgram {
       HasInterfacesAssembly = HasInterfacesAssembly == default ? true : hasInterfacesAssembly;
       GAssemblyUnits = gAssemblyUnits == default ? new Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit>() : gAssemblyUnits;
       GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
-      GComment = gComment == default ? new GComment() : gComment;
+      GComment = gComment == default ? new GComment() : gComment; 
     }
     public string GName { get; }
     public string GDescription { get; }
@@ -33,5 +25,7 @@ namespace GenerateProgram {
     public Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit> GAssemblyUnits { get; }
     public GPatternReplacement GPatternReplacement { get; }
     public GComment GComment { get; }
+        //Philote = new Philote<GSolutionSignil>();
+
   }
 }

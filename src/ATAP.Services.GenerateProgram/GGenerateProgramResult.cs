@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ATAP.Utilities.Philote;
 namespace GenerateProgram {
   public record GGenerateProgramResult : IGGenerateProgramResult {
     public GGenerateProgramResult(bool dBExtractionSuccess, bool buildSuccess, bool unitTestsSuccess, double unitTestsCoverage, string generatedSolutionFileDirectory, ICollection<GAssemblyGroup> collectionOfAssembliesBuilt, bool packagingSuccess, bool deploymentSuccess) {
@@ -11,6 +12,8 @@ namespace GenerateProgram {
       CollectionOfAssembliesBuilt = collectionOfAssembliesBuilt;
       PackagingSuccess = packagingSuccess;
       DeploymentSuccess = deploymentSuccess;
+      Philote = new Philote<GGenerateProgramResult>();
+
     }
 
     public bool DBExtractionSuccess { get; }
@@ -21,6 +24,6 @@ namespace GenerateProgram {
     public ICollection<GAssemblyGroup> CollectionOfAssembliesBuilt { get; }
     public bool PackagingSuccess { get; }
     public bool DeploymentSuccess { get; }
-
+    public Philote<GGenerateProgramResult> Philote { get; }
   }
 }

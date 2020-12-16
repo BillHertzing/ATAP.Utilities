@@ -41,7 +41,7 @@ namespace GenerateProgram {
       GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       GDependencyPackages = gDependencyPackages ?? throw new ArgumentNullException(nameof(gDependencyPackages));
       GDependencyProjects = gDependencyProjects ?? throw new ArgumentNullException(nameof(gDependencyProjects));
-      //Philote = new Philote<GSolutionSignil>();
+      Philote = new Philote<GSolutionSignil>();
     }
     public bool HasPropsAndTargets { get; }
     public bool HasEditorConfig { get; }

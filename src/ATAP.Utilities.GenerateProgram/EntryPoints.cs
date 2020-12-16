@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 namespace ATAP.Utilities.GenerateProgram {
-  public class EntryPoints {
+  public static class EntryPoints {
     public static IGGenerateProgramResult GenerateProgramEntryPoint1(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil) {
 
-      bool DBExtractionSuccess;
-      bool BuildSuccess;
-      bool UnitTestsSuccess;
-      double UnitTestsCoverage;
-      string GeneratedSolutionFileDirectory;
-      ICollection<GAssemblyGroup> CollectionOfAssembliesBuilt;
-      bool PackagingSuccess;
-      bool DeploymentSuccess;
+      bool DBExtractionSuccess = false;
+      bool BuildSuccess = false;
+      bool UnitTestsSuccess = false;
+      double UnitTestsCoverage = 0.0;
+      string GeneratedSolutionFileDirectory = "";
+      ICollection<GAssemblyGroup> CollectionOfAssembliesBuilt = new SortedSet<GAssemblyGroup>;
+      bool PackagingSuccess = false;
+      bool DeploymentSuccess = false;
       // create the MCreateSolutionGroupSignil from the GlobalSettingsSignil and the SolutionGroupSignil
       // call MCreateSolutionGroup for the SolutionGroupKey
       // execute the powershell program, passing it the dotnet build command
@@ -29,8 +29,8 @@ namespace ATAP.Utilities.GenerateProgram {
       // call MCreateAssemblyGroup for the ProgramKey
       // execute the powershell program, passing it the dotnet build command
 
-      GGenerateProgramResult gGenerateProgramResult = GenerateProgram(gAssemblyGroupSignil, gGlobalSettingsSignil, gGlobalKeysSignil);
-return gGenerateProgramResult;
+      GGenerateProgramResult gGenerateProgramResult = null;
+      return gGenerateProgramResult;
     }
   }
 }

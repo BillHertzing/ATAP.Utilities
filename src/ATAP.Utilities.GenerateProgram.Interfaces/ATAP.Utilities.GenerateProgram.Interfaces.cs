@@ -1,10 +1,11 @@
 using System;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGenerateProgram {
-    void Dispose();
-    Task StartAsync(CancellationToken externalCancellationToken);
-    Task StopAsync(CancellationToken cancellationToken);
+
     IGGenerateProgramResult GenerateProgramEntryPoint1(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil);
   }
 }

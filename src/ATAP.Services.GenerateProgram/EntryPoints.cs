@@ -1,36 +1,14 @@
 using System;
 using System.Collections.Generic;
 using ATAP.Utilities.GenerateProgram;
+using ATAP.Utilities.Philotes;
 namespace ATAP.Services.GenerateProgram {
-  public class EntryPoints {
-    public static IGGenerateProgramResult GenerateProgramEntryPoint1(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil) {
+   static class EntryPoints {
+    public static IGGenerateProgramResult GenerateProgramEntryPoint1(Philote<GAssemblyGroupSignil> gAssemblyGroupSignilKey, Philote<GGlobalSettingsSignil> gGlobalSettingsSignilKey, Philote<GSolutionSignil> gSolutionSignilKey) {
 
-      bool DBExtractionSuccess;
-      bool BuildSuccess;
-      bool UnitTestsSuccess;
-      double UnitTestsCoverage;
-      string GeneratedSolutionFileDirectory;
-      ICollection<GAssemblyGroup> CollectionOfAssembliesBuilt;
-      bool PackagingSuccess;
-      bool DeploymentSuccess;
-      // create the MCreateSolutionGroupSignil from the GlobalSettingsSignil and the SolutionGroupSignil
-      // call MCreateSolutionGroup for the SolutionGroupKey
-      // execute the powershell program, passing it the dotnet build command
-      // Get the AssemblyGroupKey from the DB using the ProgramKey
-      // For any dependencies that are in lifecyclestage other than production
-      // Get a collection of AssemblyGroupKeys from the DB using the ProgramKey and the list of dependencies that are in lifecyclestage Development
-      // Iterate the dependencies collection in parallel
-      // get the AssemblyGroupSignil from the DB for each AssemblyGroupKey
-      // create the MCreateAssemblyGroupSignil from the GlobalSettingsSignil and the AssemblyGroupSignil
-      // call MCreateAssemblyGroup for each AssemblygroupKey
-      // execute the powershell program, passing it the dotnet build command
-      // execute the powershell program, passing it the dotnet test command
-      // get the AssemblyGroupSignil from the DB for the ProgramKey
-      // create the MCreateAssemblyGroupSignil from the GlobalSettingsSignil and the AssemblyGroupSignil
-      // call MCreateAssemblyGroup for the ProgramKey
-      // execute the powershell program, passing it the dotnet build command
+      // Populate the 3 Signils from the DB using their respective Key
 
-      GGenerateProgramResult gGenerateProgramResult = GenerateProgram(gAssemblyGroupSignil, gGlobalSettingsSignil, gGlobalKeysSignil);
+      GGenerateProgramResult gGenerateProgramResult = ATAP.Utilities.GenerateProgramEntryPoint1(gAssemblyGroupSignil, gGlobalSettingsSignil, gGlobalKeysSignil);
 return gGenerateProgramResult;
     }
   }

@@ -1,7 +1,7 @@
 using System;
 
 using ATAP.Utilities.Philote;
-namespace GenerateProgram
+namespace ATAP.Utilities.GenerateProgram
 {
     public class GSolution{
 

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GEnumeration {
     public GEnumeration(string gName = default, string gUnderlyingBaseType = default, string gVisibility = default,  string gInheritance = default,
       bool isBitFlags = default,

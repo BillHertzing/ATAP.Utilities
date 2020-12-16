@@ -9,19 +9,19 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using ATAP.Utilities.Philote;
-using static GenerateProgram.Lookup;
-using static GenerateProgram.StringConstants;
-using static GenerateProgram.GItemGroupInProjectUnitExtensions;
-using static GenerateProgram.GPropertyGroupInProjectUnitExtensions;
-using static GenerateProgram.GAssemblyGroupExtensions;
-using static GenerateProgram.GAssemblyUnitExtensions;
-using static GenerateProgram.GCompilationUnitExtensions;
-using static GenerateProgram.GMacroExtensions;
+using static ATAP.Utilities.GenerateProgram.Lookup;
+using static ATAP.Utilities.GenerateProgram.StringConstants;
+using static ATAP.Utilities.GenerateProgram.GItemGroupInProjectUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.GPropertyGroupInProjectUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.GAssemblyGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.GAssemblyUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.GCompilationUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.GMacroExtensions;
 using static ATAP.Utilities.Collection.Extensions;
 
 //using AutoMapper.Configuration;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   class PService03 {
     delegate GAssemblyGroup MCreateAssemblyGroupDelegate(string name, string subDirectoryForGeneratedFiles,
       string baseNamespaceName, bool hasInterfaces);

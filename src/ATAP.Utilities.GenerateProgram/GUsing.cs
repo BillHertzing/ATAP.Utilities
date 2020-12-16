@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GUsing {
     public GUsing(string gName) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));

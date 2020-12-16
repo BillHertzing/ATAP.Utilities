@@ -3,7 +3,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
     public static IR1Top RAssemblyGroup(this IR1Top r1Top, GAssemblyGroup gAssemblyGroup, IW1Top w1Top) {
       foreach (var o in gAssemblyGroup.GAssemblyUnits) {

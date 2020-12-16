@@ -6,13 +6,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ATAP.Utilities.Philote;
-using GenerateProgram;
-using static GenerateProgram.GItemGroupInProjectUnitExtensions;
-using static GenerateProgram.Lookup;
-using static GenerateProgram.GMacroExtensions;
-using static GenerateProgram.GClassExtensions;
+using ATAP.Utilities.GenerateProgram;
+using static ATAP.Utilities.GenerateProgram.GItemGroupInProjectUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.Lookup;
+using static ATAP.Utilities.GenerateProgram.GMacroExtensions;
+using static ATAP.Utilities.GenerateProgram.GClassExtensions;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GAssemblyUnitExtensions {
 
     public static void GAssemblyGroupCommonFinalizer(GAssemblyGroupBasicConstructorResult gAssemblyGroupBasicConstructorResult) {

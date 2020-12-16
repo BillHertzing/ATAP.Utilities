@@ -8,7 +8,7 @@ using System.Threading;
 using ATAP.Utilities.Philote;
 //using Microsoft.FSharp.Core;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
 
 
   public interface IW1Top {

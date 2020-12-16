@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GBody {
     public GBody( List<string> gStatements = default, GComment gComment = default
     ) {

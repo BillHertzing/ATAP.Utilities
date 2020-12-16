@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
     public static StringBuilder RenderResourceInProjectUnitStringBuilder(this StringBuilder sb, GResourceUnit gResourceUnit, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();

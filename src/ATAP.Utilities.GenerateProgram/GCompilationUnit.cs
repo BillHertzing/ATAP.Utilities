@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GCompilationUnit {
     public GCompilationUnit(string gName = default, string gRelativePath=default, string gFileSuffix=default, Dictionary<Philote<GUsing>, GUsing> gUsings = default,
       Dictionary<Philote<GUsingGroup>, GUsingGroup> gUsingGroups = default,

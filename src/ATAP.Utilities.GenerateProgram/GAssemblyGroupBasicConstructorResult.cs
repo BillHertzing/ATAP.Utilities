@@ -1,4 +1,4 @@
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GAssemblyGroupBasicConstructorResult {
 
     public string subDirectoryForGeneratedFiles { get; set; }

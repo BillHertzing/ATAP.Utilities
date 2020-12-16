@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class FetchExtensions {
     public static StringBuilder FetchFileAsStringBuilder(this StringBuilder stringBuilder, string path,
       CancellationToken? ct = default) {

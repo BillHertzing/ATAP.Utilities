@@ -6,9 +6,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ATAP.Utilities.Philote;
-using GenerateProgram;
+using ATAP.Utilities.GenerateProgram;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GUsingGroupExtensions {
     public static GUsingGroup AddUsing(this GUsingGroup gUsingGroup, GUsing gUsing) {
       gUsingGroup.GUsings[gUsing.Philote] = (gUsing);

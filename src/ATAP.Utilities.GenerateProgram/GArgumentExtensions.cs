@@ -4,7 +4,7 @@ using System.Dynamic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GArgumentExtensions {
     public static string ToBaseString(this Dictionary<Philote<GArgument>, GArgument> gArguments) {
       var aList = new List<string>();

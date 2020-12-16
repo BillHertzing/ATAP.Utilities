@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     public static GMethod MCreateStartAsyncMethod( string gAccessModifier = "") {
       var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();

@@ -4,7 +4,7 @@ using System.Dynamic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GEnumerationMember {
     public GEnumerationMember(string gName = "", int? gValue = default,
 

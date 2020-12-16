@@ -3,7 +3,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
     public static StringBuilder RenderPropertyStringBuilder(this StringBuilder sb, GProperty gProperty, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();

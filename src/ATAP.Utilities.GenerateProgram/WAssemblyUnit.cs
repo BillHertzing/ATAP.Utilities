@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class WriteExtensions {
     public static IW1Top WAssemblyUnit(this IW1Top w1Top, GAssemblyUnit gAssemblyUnit, StringBuilder? sB = default, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();

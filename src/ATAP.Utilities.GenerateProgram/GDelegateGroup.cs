@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GDelegateGroup {
     public GDelegateGroup(string gName, Dictionary<Philote<GDelegate>, GDelegate>? gDelegates = default) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));

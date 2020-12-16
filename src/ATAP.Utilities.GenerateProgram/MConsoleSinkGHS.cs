@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ATAP.Utilities.Philote;
-using static GenerateProgram.GAssemblyGroupExtensions;
-using static GenerateProgram.GItemGroupInProjectUnitExtensions;
-using static GenerateProgram.Lookup;
+using static ATAP.Utilities.GenerateProgram.GAssemblyGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.GItemGroupInProjectUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.Lookup;
 //using AutoMapper.Configuration;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     public static GAssemblyGroup MConsoleSinkGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true) {

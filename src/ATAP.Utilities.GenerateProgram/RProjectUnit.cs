@@ -6,7 +6,7 @@ using System.Threading;
 using ATAP.Utilities.Philote;
 
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
     public static StringBuilder RenderProjectUnitPreambleStringBuilder(this StringBuilder sb, GProjectUnit gProjectUnit, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();

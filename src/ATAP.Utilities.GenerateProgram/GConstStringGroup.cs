@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GConstStringGroup {
     public GConstStringGroup(string gName = "", Dictionary<Philote<GConstString>, GConstString> gConstStrings = default) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));

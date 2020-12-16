@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GAssemblyGroup {
     public GAssemblyGroup(string gName = "", string gDescription = "", string gRelativePath = "",
       Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit> gAssemblyUnits = default,

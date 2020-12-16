@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
     public static IR1Top RAssemblyUnit(this IR1Top r1Top,GAssemblyUnit gAssemblyUnit, IW1Top w1Top) {
       r1Top.Ct?.ThrowIfCancellationRequested();

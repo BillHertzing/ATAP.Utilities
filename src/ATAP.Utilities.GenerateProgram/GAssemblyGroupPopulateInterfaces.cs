@@ -4,20 +4,20 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Schema;
 using ATAP.Utilities.Philote;
-using static GenerateProgram.GCompilationUnitExtensions;
-using static GenerateProgram.GClassExtensions;
-using static GenerateProgram.GItemGroupInProjectUnitExtensions;
-using static GenerateProgram.GPropertyGroupInProjectUnitExtensions;
-using static GenerateProgram.StringConstants;
+using static ATAP.Utilities.GenerateProgram.GCompilationUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.GClassExtensions;
+using static ATAP.Utilities.GenerateProgram.GItemGroupInProjectUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.GPropertyGroupInProjectUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.StringConstants;
 //using AutoMapper.Configuration;
-using static GenerateProgram.GMethodGroupExtensions;
-using static GenerateProgram.GMethodExtensions;
-using static GenerateProgram.GUsingGroupExtensions;
-using static GenerateProgram.GMacroExtensions;
-using static GenerateProgram.GArgumentExtensions;
-using static GenerateProgram.Lookup;
+using static ATAP.Utilities.GenerateProgram.GMethodGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.GMethodExtensions;
+using static ATAP.Utilities.GenerateProgram.GUsingGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.GMacroExtensions;
+using static ATAP.Utilities.GenerateProgram.GArgumentExtensions;
+using static ATAP.Utilities.GenerateProgram.Lookup;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     //public static void MAssemblyGroupPopulateBaseInterfaces(GAssemblyGroup gAssemblyGroup = default,
     //  ) {

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class WriteExtensions {
     public static IW1Top WProjectUnit(this IW1Top w1Top, GProjectUnit gProjectUnit, StringBuilder sB, CancellationToken? ct = default) {
       var pathToDir = Path.Combine(w1Top.BasePath, gProjectUnit.GRelativePath);

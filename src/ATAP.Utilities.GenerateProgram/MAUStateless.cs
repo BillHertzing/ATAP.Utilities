@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ATAP.Utilities.Philote;
-using static GenerateProgram.GAssemblyUnitExtensions;
-using static GenerateProgram.GItemGroupInProjectUnitExtensions;
-using static GenerateProgram.GPropertyGroupInProjectUnitExtensions;
-using static GenerateProgram.Lookup;
+using static ATAP.Utilities.GenerateProgram.GAssemblyUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.GItemGroupInProjectUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.GPropertyGroupInProjectUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.Lookup;
 
 //using AutoMapper.Configuration;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     public static GAssemblyGroup MAUStateless(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true) {

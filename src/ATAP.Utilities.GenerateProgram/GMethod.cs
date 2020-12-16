@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GMethod {
     public GMethod(GMethodDeclaration gDeclaration = default, GBody gBody = default,
       GComment gComment = default, bool isForInterface = false,

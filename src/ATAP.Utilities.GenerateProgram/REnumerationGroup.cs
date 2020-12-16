@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
 
     public static IR1Top REnumerationGroup(this IR1Top r1Top, GEnumerationGroup gEnumerationGroup) {

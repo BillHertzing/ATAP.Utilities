@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public interface IGGenerateProgramResult {
     public bool DBExtractionSuccess { get; }
     public bool BuildSuccess { get; }

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class IGSolutionSignil {
     public bool HasPropsAndTargets { get; }
     public bool HasEditorCofig { get; }

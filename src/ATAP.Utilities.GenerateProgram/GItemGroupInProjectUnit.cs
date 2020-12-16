@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ATAP.Utilities.Philote;
 
-namespace GenerateProgram {
+namespace ATAP.Utilities.GenerateProgram {
   public class GItemGroupInProjectUnit {
     public GItemGroupInProjectUnit(string gName = "", string gDescription = "", GBody gBody = default, GComment gComment = default) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));

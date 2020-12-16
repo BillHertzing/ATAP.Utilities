@@ -69,19 +69,19 @@
     <PackageReference Update="System.Reactive" Version="5.0.0" />
 
     <!-- ServiceStack  -->
-    <PackageReference Update="ServiceStack" Version="5.10" />
+    <PackageReference Update="ServiceStack" Version="5.10.3" />
     <!-- ServiceStack serializers and dump utility -->
     <PackageReference Update="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
-    <PackageReference Update="ServiceStack.Text" Version="5.10" />
+    <PackageReference Update="ServiceStack.Text" Version="5.10.3" />
     <!-- ServiceStack ORMLite and SQLServer -->
-    <PackageReference Update="ServiceStack.OrmLite" Version="5.10" />
-    <PackageReference Update="ServiceStack.OrmLite.SqlServer" Version="5.10" />
+    <PackageReference Update="ServiceStack.OrmLite" Version="5.10.3" />
+    <PackageReference Update="ServiceStack.OrmLite.SqlServer" Version="5.10.3" />
     <!-- ServiceStack HTTPClient for making HTTP calls -->
-    <PackageReference Update="ServiceStack.HttpClient" Version="5.10" />
+    <PackageReference Update="ServiceStack.HttpClient" Version="5.10.3" />
 
     <!-- Library of rich time and interval manipulation routines -->
     <PackageReference Update="TimePeriodLibrary.NET" Version="2.1.1" />
-    
+
     <!-- Packages necessary to run the Net Core Generic Host and web server hosts Server -->
     <PackageReference Update="Microsoft.Extensions.Configuration" Version="5.0.0" />
     <PackageReference Update="Microsoft.Extensions.Configuration.CommandLine" Version="5.0.0" />
@@ -125,18 +125,18 @@
     <!-- Packages to add xUnit Testing providers and extensions -->
     <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     <PackageReference Update="FluentAssertions" Version="5.10.2" />
-    <PackageReference Update="Moq" Version="4.13.1" />
+    <PackageReference Update="Moq" Version="4.15.2" />
     <PackageReference Update="xunit" Version="2.4.1" />
     <PackageReference Update="xunit.runner.console" Version="2.4.1"/>
     <PackageReference Update="xunit.runner.visualstudio" Version="2.4.1"/>
-    <PackageReference Update="coverlet.collector" Version="1.2.0"/>
+    <PackageReference Update="coverlet.collector" Version="1.3.0"/>
 
     <!-- Packages to add resilience policies to async and synchronous operations -->
     <PackageReference Update="Polly" Version="7.2.1" />
 
     <!-- To Be Sorted -->
-    <PackageReference Update="MedallionShell" Version="1.6.1" />
-    <PackageReference Update="UnitsNet" Version="4.58.0" />
+    <PackageReference Update="MedallionShell" Version="1.6.2" />
+    <PackageReference Update="UnitsNet" Version="4.77.0" />
     <PackageReference Update="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Update="NLog" Version="4.7.0" />
     <PackageReference Update="NLog.Config" Version="4.7.0" />

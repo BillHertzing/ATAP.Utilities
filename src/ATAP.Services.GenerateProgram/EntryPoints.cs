@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 namespace GenerateProgram {
   public static class EntryPoints {
-    public static IGGenerateProgramResult GenerateProgram(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionKeySignil gSolutionKeySignil) {
+    public static IGGenerateProgramResult GenerateProgram(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil) {
 
       bool DBExtractionSuccess;
       bool BuildSuccess;

@@ -12,8 +12,8 @@ using static ATAP.Utilities.GenerateProgram.GAttributeGroupExtensions;
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GEnumerationMemberExtensions {
 
-    public static GEnumerationMember LocalizableEnumerationMember(string gName = "", int gValue = default, string description = "", string visualDisplay = "", int  visualSortOrder = default) {
-      var gAttributeGroups = new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>();
+    public static IGEnumerationMember LocalizableEnumerationMember(string gName = "", int gValue = default, string description = "", string visualDisplay = "", int  visualSortOrder = default) {
+      var gAttributeGroups = new Dictionary<IPhilote<IGAttributeGroup>, IGAttributeGroup>();
       var gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: String.IsNullOrWhiteSpace(description)? gName:description,
         visualDisplay: String.IsNullOrWhiteSpace(visualDisplay)? gName: visualDisplay,
         visualSortOrder:visualSortOrder);

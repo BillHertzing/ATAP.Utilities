@@ -8,7 +8,7 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
 
-    public static IR1Top RDelegateGroup(this IR1Top r1Top, GDelegateGroup gDelegateGroup) {
+    public static IR1Top RDelegateGroup(this IR1Top r1Top, IGDelegateGroup gDelegateGroup) {
       r1Top.Sb.Append($"{r1Top.Indent}#region {gDelegateGroup.GName}{r1Top.Eol}");
       r1Top.Indent.Append(r1Top.IndentDelta);
       foreach (var o in gDelegateGroup.GDelegates) {
@@ -18,13 +18,13 @@ namespace ATAP.Utilities.GenerateProgram {
       r1Top.Sb.Append($"{r1Top.Indent}#endregion {r1Top.Eol}");
       return r1Top;
     }
-    public static IR1Top RDelegateGroup(this IR1Top r1Top, IEnumerable<GDelegateGroup> gDelegateGroups) {
+    public static IR1Top RDelegateGroup(this IR1Top r1Top, IEnumerable<IGDelegateGroup> gDelegateGroups) {
       foreach (var o in gDelegateGroups) {
         r1Top.RDelegateGroup(o);
       }
       return r1Top;
     }
-    public static IR1Top RDelegateGroup(this IR1Top r1Top, Dictionary<Philote<GDelegateGroup>, GDelegateGroup> gDelegateGroups) {
+    public static IR1Top RDelegateGroup(this IR1Top r1Top, IDictionary<IPhilote<IGDelegateGroup>, IGDelegateGroup> gDelegateGroups) {
       foreach (var o in gDelegateGroups) {
         r1Top.RDelegateGroup(o.Value);
       }

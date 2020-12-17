@@ -19,9 +19,9 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GAssemblyGroupExtensions {
-    public static GAssemblyGroupBasicConstructorResult MAssemblyGroupGHBSConstructor(string gAssemblyGroupName = default,
+    public static IGAssemblyGroupBasicConstructorResult MAssemblyGroupGHBSConstructor(string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespace = default, bool hasInterfaces = true,
-      GPatternReplacement gPatternReplacement = default) {
+      IGPatternReplacement gPatternReplacement = default) {
       var gCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName,
         subDirectoryForGeneratedFiles,
         baseNamespace, hasInterfaces, gPatternReplacement);
@@ -36,7 +36,7 @@ namespace ATAP.Utilities.GenerateProgram {
 
       return gCreateAssemblyGroupResult;
     }
-    public static void GAssemblyGroupGHBSFinalizer(GAssemblyGroupBasicConstructorResult mCreateAssemblyGroupResult) {
+    public static void GAssemblyGroupGHBSFinalizer(IGAssemblyGroupBasicConstructorResult mCreateAssemblyGroupResult) {
       //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor
       //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
       //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;

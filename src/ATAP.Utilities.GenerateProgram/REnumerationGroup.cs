@@ -8,7 +8,7 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
 
-    public static IR1Top REnumerationGroup(this IR1Top r1Top, GEnumerationGroup gEnumerationGroup) {
+    public static IR1Top REnumerationGroup(this IR1Top r1Top, IGEnumerationGroup gEnumerationGroup) {
       r1Top.Sb.Append($"{r1Top.Indent}#region {gEnumerationGroup.GName}{r1Top.Eol}");
       r1Top.Indent.Append(r1Top.IndentDelta);
       foreach (var o in gEnumerationGroup.GEnumerations) {
@@ -18,7 +18,7 @@ namespace ATAP.Utilities.GenerateProgram {
       r1Top.Sb.Append($"{r1Top.Indent}#endregion {r1Top.Eol}");
       return r1Top;
     }
-    public static IR1Top REnumerationGroup(this IR1Top r1Top, IEnumerable<GEnumerationGroup> gEnumerationGroups) {
+    public static IR1Top REnumerationGroup(this IR1Top r1Top, IEnumerable<IGEnumerationGroup> gEnumerationGroups) {
       foreach (var o in gEnumerationGroups) {
         r1Top.REnumerationGroup(o);
       }

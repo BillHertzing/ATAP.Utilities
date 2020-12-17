@@ -9,11 +9,11 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MTimerGHS(string gAssemblyGroupName,
+    public static IGAssemblyGroup MTimerGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true) {
       return MTimerGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, new GPatternReplacement()  );
     }
-    public static GAssemblyGroup MTimerGHS(string gAssemblyGroupName,
+    public static IGAssemblyGroup MTimerGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
@@ -83,7 +83,7 @@ namespace ATAP.Utilities.GenerateProgram {
     }
     /*******************************************************************************/
     /*******************************************************************************/
-    static GMethod MCreateRequestATimer(string gAccessModifier = "virtual") {
+    static IGMethod MCreateRequestATimer(string gAccessModifier = "virtual") {
       var gMethodArgumentList = new List<GArgument>() {
         new GArgument("requestorPhilote", "object"),
         new GArgument("callback", "object"),

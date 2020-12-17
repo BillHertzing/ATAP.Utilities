@@ -7,7 +7,7 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
 
   public static partial class GClassExtensions {
-    public static GClass AddTLocalizerConstructorAutoPropertyGroup(this GClass gClass, Philote<GMethod> gMethodId, string gAutoPropertyName, string assemblyUnitName, Philote<GPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get; }", string? gVisibility = default) {
+    public static IGClass AddTLocalizerConstructorAutoPropertyGroup(this IGClass gClass, Philote<IGMethod> gMethodId, string gAutoPropertyName, string assemblyUnitName, Philote<GPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get; }", string? gVisibility = default) {
       GMethod gMethod = default;
       if (gClass.GMethods != null && gClass.GMethods.ContainsKey(gMethodId)) {
         gMethod = gClass.GMethods[gMethodId];
@@ -24,7 +24,7 @@ namespace ATAP.Utilities.GenerateProgram {
         throw new Exception(string.Format("{0} not found in the Constructors, Methods or MethodGroups of {1}", gMethodId.ID.ToString(), gClass.GName));
       }
 
-      GMethodDeclaration gMethodDeclaration = gMethod.GDeclaration;
+      var gMethodDeclaration = gMethod.GDeclaration;
       string gName = gMethodDeclaration.GName;
       GProperty gProperty = new GProperty(gName: $"{gAutoPropertyName}", gType: $"IStringLocalizer", gAccessors: gAccessors);
       if (gClass.GPropertyGroups != null && gClass.GPropertyGroups.ContainsKey(gPropertyGroupId)) {

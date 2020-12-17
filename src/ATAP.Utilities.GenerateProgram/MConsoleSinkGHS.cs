@@ -9,11 +9,11 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MConsoleSinkGHS(string gAssemblyGroupName,
+    public static IGAssemblyGroup MConsoleSinkGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true) {
       return MConsoleSinkGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, new GPatternReplacement()  );
     }
-    public static GAssemblyGroup MConsoleSinkGHS(string gAssemblyGroupName,
+    public static IGAssemblyGroup MConsoleSinkGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
@@ -127,12 +127,12 @@ namespace ATAP.Utilities.GenerateProgram {
     }
     /*******************************************************************************/
     /*******************************************************************************/
-    //static GMethod MCreateWriteAsyncMethodInConsoleSink(string gAccessModifier = "") {
+    //static IGMethod MCreateWriteAsyncMethodInConsoleSink(string gAccessModifier = "") {
     //  var gMethodArgumentList = new List<GArgument>() {
     //    new GArgument("mesg","string"),
     //    new GArgument("ct","CancellationToken?")
     //  };
-    //  var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+    //  var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
     //  foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
     //  return new GMethod(
     //  new GMethodDeclaration(gName: "WriteAsync", gType: "Task",

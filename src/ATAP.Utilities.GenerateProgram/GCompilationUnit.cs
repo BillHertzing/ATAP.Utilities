@@ -13,12 +13,12 @@ namespace ATAP.Utilities.GenerateProgram {
       GName = gName == default ? "" : gName;
       GRelativePath = gRelativePath == default ? "" : gRelativePath;
       GFileSuffix = gFileSuffix == default ? ".cs" : gFileSuffix;
-      GUsings = gUsings == default ? new Dictionary<Philote<GUsing>, GUsing>() : gUsings;
-      GUsingGroups = gUsingGroups == default ? new Dictionary<Philote<GUsingGroup>, GUsingGroup>() : gUsingGroups;
-      GNamespaces = gNamespaces == default ? new Dictionary<Philote<GNamespace>, GNamespace>() : gNamespaces;
+      GUsings = gUsings == default ? new Dictionary<IPhilote<IGUsing>, IGUsing>() : gUsings;
+      GUsingGroups = gUsingGroups == default ? new Dictionary<IPhilote<IGUsingGroup>, IGUsingGroup>() : gUsingGroups;
+      GNamespaces = gNamespaces == default ? new Dictionary<IPhilote<IGNamespace>, IGNamespace>() : gNamespaces;
       GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       GComment = gComment == default ? new GComment() : gComment;
-      Philote = new Philote<GCompilationUnit>();
+      Philote = new Philote<IGCompilationUnit>();
     }
 
     public string GName { get; init; }

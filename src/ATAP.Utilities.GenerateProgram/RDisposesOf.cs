@@ -6,7 +6,7 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
  
-    public static StringBuilder RenderDisposesOfPreambleStringBuilder(this StringBuilder sb, List<string> gDisposesOf, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RenderDisposesOfPreambleStringBuilder(this StringBuilder sb, IEnumerable<string> gDisposesOf, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       sb.Append($"{indent}private bool _disposedValue = false; // To detect redundant calls{eol}");
       sb.Append($"{indent}protected virtual void Dispose(bool disposing) {{{eol}");
@@ -27,7 +27,7 @@ namespace ATAP.Utilities.GenerateProgram {
       sb.Append($"{indent}}}{eol}");
       return sb;
     }
-    public static IR1Top RDisposesOf(this IR1Top r1Top, List<string> gDisposesOf) {
+    public static IR1Top RDisposesOf(this IR1Top r1Top, IEnumerable<string> gDisposesOf) {
       r1Top.Sb.RenderDisposesOfPreambleStringBuilder(gDisposesOf, r1Top.Indent, r1Top.IndentDelta,r1Top.Eol, r1Top.Ct);
       return r1Top;
     }

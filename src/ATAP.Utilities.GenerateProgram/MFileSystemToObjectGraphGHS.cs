@@ -12,12 +12,12 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MFileSystemToObjectGraphGHS(string gAssemblyGroupName,
+    public static IGAssemblyGroup MFileSystemToObjectGraphGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true) {
       return MFileSystemToObjectGraphGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, new GPatternReplacement()  );
     }
 
-    public static GAssemblyGroup MFileSystemToObjectGraphGHS( string gAssemblyGroupName,
+    public static IGAssemblyGroup MFileSystemToObjectGraphGHS( string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
       IGPatternReplacement gPatternReplacement = default) {
       IGPatternReplacement _gPatternReplacement =
@@ -84,7 +84,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #endregion
       #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit 
       #region Add References used by both the Titular Derived and Titular Base CompilationUnits
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
+      foreach (var o in new List<IGItemGroupInProjectUnit>() {
           new GItemGroupInProjectUnit(
             "References common to both Titular and Base specific to {titularAssemblyUnitLookupPrimaryConstructorResults.gCompilationUnits.First().GName}",
             "References to the Hardware, Persistence, and Progress classes and methods",
@@ -130,7 +130,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #region Update the ProjectUnits in both the Titular AssemblyUnit and Titular InterfacesAssemblyUnit
       #region Add References for the Titular Interface ProjectUnit
       #region Add References common to both the Titular Derived Interface and Titular Base Interface
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
+      foreach (var o in new List<IGItemGroupInProjectUnit>() {
           new GItemGroupInProjectUnit(
             $"References common to both  {mCreateAssemblyGroupResult.gTitularDerivedCompilationUnit.GName} and {mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GName}",
             "References to the Hardware, Persistence, and Progress classes and methods",
@@ -157,7 +157,7 @@ namespace ATAP.Utilities.GenerateProgram {
     /*******************************************************************************/
     /*******************************************************************************/
 
-    public static void MPropertyGroupForFileSystemToObjectGraphBaseAssembly(GClass gClass) {
+    public static void MPropertyGroupForFileSystemToObjectGraphBaseAssembly(IGClass gClass) {
       var gPropertyGroup = new GPropertyGroup("Propertys specific to the FileSystemToObjectGraph");
       foreach (var o in new List<GProperty>() {
         // new GProperty("?", gType: "IDisposable",gAccessors: "{ get; set; }", gVisibility: "protected internal"),
@@ -169,22 +169,22 @@ namespace ATAP.Utilities.GenerateProgram {
     }
     public static void
       MPropertyGroupAndConstructorDeclarationAndInitializationForInjectedPropertyInFileSystemToObjectGraphBaseAssembly(
-        GClass gClass,
-        GMethod gConstructor) {
+        IGClass gClass,
+        IGMethod gConstructor) {
       var gPropertyGroup = new GPropertyGroup("Injected Propertys specific to the FileSystemToObjectGraph");
       gClass.AddPropertyGroups(gPropertyGroup);
       // foreach (var o in new List<string>() { "ConsoleMonitor" }) {
       // gClass.AddTConstructorAutoPropertyGroup(gConstructor.Philote, o, gPropertyGroupId: gPropertyGroup.Philote);
       // }
     }
-    public static void MMethodGroupForFileSystemToObjectGraphBaseAssembly(GClass gClass) {
+    public static void MMethodGroupForFileSystemToObjectGraphBaseAssembly(IGClass gClass) {
       var gMethodGroup =
         new GMethodGroup(gName: "MethodGroup specific to the FileSystemToObjectGraph");
       // None
       gClass.AddMethodGroup(gMethodGroup);
     }
     public static void
-      MProjectReferenceItemGroupInProjectUnitForFileSystemToObjectGraphBaseAssembly(GAssemblyUnit gAssemblyUnit) {
+      MProjectReferenceItemGroupInProjectUnitForFileSystemToObjectGraphBaseAssembly(IGAssemblyUnit gAssemblyUnit) {
       var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("ReferencesUsedByFileSystemToObjectGraph",
         "References used by the FileSystemToObjectGraph", new GBody(new List<string>() {
           "<PackageReference Include=\"ATAP.Utilities.ComputerInventory.Hardware.Extensions\" />",
@@ -197,16 +197,16 @@ namespace ATAP.Utilities.GenerateProgram {
       gAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(gItemGroupInProjectUnit.Philote,
         gItemGroupInProjectUnit);
     }
-    public static (GBody, GComment) MCreateProcessInputMethodForFileSystemToObjectGraphGHS() {
+    public static (IGBody, IGComment) MCreateProcessInputMethodForFileSystemToObjectGraphGHS() {
       GBody gBody = new GBody(gStatements: new List<string>() {"#region TBD", " #endregion",});
       GComment gComment = new GComment(new List<string>() {
         "///  Used to process inputStrings from the ConsoleMonitorPattern"
       });
       return (gBody, gComment);
     }
-    public static GMethod MCreateConvertFileSystemToObjectGraphAsync(GClass gClass) {
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
-      foreach (var o in new List<GArgument>() {
+    public static IGMethod MCreateConvertFileSystemToObjectGraphAsync(IGClass gClass) {
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
+      foreach (var o in new List<IGArgument>() {
         new GArgument("rootString", "string"),
         new GArgument("asyncFileReadBlockSize", "int"),
         new GArgument("enableHash", "bool"),

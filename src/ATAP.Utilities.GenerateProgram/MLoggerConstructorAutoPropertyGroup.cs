@@ -7,7 +7,7 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
 
   public static partial class GClassExtensions {
-    public static GClass AddTLoggerConstructorAutoPropertyGroup(this GClass gClass, Philote<GMethod> gMethodId, Philote<GPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get; }", string? gVisibility = default) {
+    public static IGClass AddTLoggerConstructorAutoPropertyGroup(this IGClass gClass, Philote<IGMethod> gMethodId, Philote<IGPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get; }", string? gVisibility = default) {
       GMethod gMethod = default;
        if (gClass.GMethods != null && gClass.GMethods.ContainsKey(gMethodId)) {
         gMethod = gClass.GMethods[gMethodId];
@@ -15,7 +15,7 @@ namespace ATAP.Utilities.GenerateProgram {
       else if (gClass.GMethodGroups != null) {
         foreach (var kvp in gClass.GMethodGroups) {
           if (kvp.Value.GMethods.ContainsKey(gMethodId)) {
-            GMethodGroup gMethodGroup = kvp.Value;
+            var gMethodGroup = kvp.Value;
             gMethod = gMethodGroup.GMethods[gMethodId];
           }
         }
@@ -24,7 +24,7 @@ namespace ATAP.Utilities.GenerateProgram {
         throw new Exception(string.Format("{0} not found in the Constructors, Methods or MethodGroups of {1}", gMethodId.ID.ToString(), gClass.GName));
       }
 
-      GMethodDeclaration gMethodDeclaration = gMethod.GDeclaration;
+      var gMethodDeclaration = gMethod.GDeclaration;
       string gName = gMethodDeclaration.GName;
       GProperty gProperty = new GProperty(gName:$"Logger", gType:$"ILogger<{gName}>",gAccessors:gAccessors);
       if (gClass.GPropertyGroups != null && gClass.GPropertyGroups.ContainsKey(gPropertyGroupId)) {

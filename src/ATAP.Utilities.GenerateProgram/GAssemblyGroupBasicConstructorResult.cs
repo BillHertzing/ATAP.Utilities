@@ -1,29 +1,29 @@
 namespace ATAP.Utilities.GenerateProgram {
-  public class GAssemblyGroupBasicConstructorResult {
+  public class GAssemblyGroupBasicConstructorResult : IGAssemblyGroupBasicConstructorResult {
 
     public string subDirectoryForGeneratedFiles { get; set; }
-      public string baseNamespaceName { get; set; }
-      public string gAssemblyGroupName { get; set; }
-      public string gTitularAssemblyUnitName { get; set; }
-      public string gTitularBaseCompilationUnitName { get; set; }
-      public GAssemblyGroup gAssemblyGroup { get; set; }
-      public GPatternReplacement gAssemblyGroupPatternReplacement { get; set; }
-      public GAssemblyUnit gTitularAssemblyUnit { get; set; }
-      public GPatternReplacement gTitularAssemblyUnitPatternReplacement { get; set; }
-      public GCompilationUnit gTitularDerivedCompilationUnit { get; set; }
-      public GPatternReplacement gTitularDerivedCompilationUnitPatternReplacement { get; set; }
-      public GCompilationUnit gTitularBaseCompilationUnit { get; set; }
-      public GPatternReplacement gTitularBaseCompilationUnitPatternReplacement { get; set; }
-      public GNamespace gNamespaceBase { get; set; }
-      public GNamespace gNamespaceDerived { get; set; }
-      public GClass gClassBase { get; set; }
-      public GClass gClassDerived { get; set; }
-      public GMethod gPrimaryConstructorBase { get; set; }
-      public GAssemblyUnit gTitularInterfaceAssemblyUnit { get; set; }
-      public GCompilationUnit gTitularInterfaceDerivedCompilationUnit { get; set; }
-      public GCompilationUnit gTitularInterfaceBaseCompilationUnit { get; set; }
-      public GInterface gTitularInterfaceDerivedInterface { get; set; }
-      public GInterface gTitularInterfaceBaseInterface { get; set; }
+    public string baseNamespaceName { get; set; }
+    public string gAssemblyGroupName { get; set; }
+    public string gTitularAssemblyUnitName { get; set; }
+    public string gTitularBaseCompilationUnitName { get; set; }
+    public IGAssemblyGroup gAssemblyGroup { get; set; }
+    public IGPatternReplacement gAssemblyGroupPatternReplacement { get; set; }
+    public IGAssemblyUnit gTitularAssemblyUnit { get; set; }
+    public IGPatternReplacement gTitularAssemblyUnitPatternReplacement { get; set; }
+    public IGCompilationUnit gTitularDerivedCompilationUnit { get; set; }
+    public IGPatternReplacement gTitularDerivedCompilationUnitPatternReplacement { get; set; }
+    public IGCompilationUnit gTitularBaseCompilationUnit { get; set; }
+    public IGPatternReplacement gTitularBaseCompilationUnitPatternReplacement { get; set; }
+    public IGNamespace gNamespaceBase { get; set; }
+    public IGNamespace gNamespaceDerived { get; set; }
+    public IGClass gClassBase { get; set; }
+    public IGClass gClassDerived { get; set; }
+    public IGMethod gPrimaryConstructorBase { get; set; }
+    public IGAssemblyUnit gTitularInterfaceAssemblyUnit { get; set; }
+    public IGCompilationUnit gTitularInterfaceDerivedCompilationUnit { get; set; }
+    public IGCompilationUnit gTitularInterfaceBaseCompilationUnit { get; set; }
+    public IGInterface gTitularInterfaceDerivedInterface { get; set; }
+    public IGInterface gTitularInterfaceBaseInterface { get; set; }
 
   }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using ATAP.Utilities.Philote;
@@ -8,7 +9,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public static StringBuilder RenderItemGroupInProjectUnit(this StringBuilder sb, IGItemGroupInProjectUnit gItemGroupInProjectUnit, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       sb.Append($"{indent}<!-- {gItemGroupInProjectUnit.GDescription} --> {eol}");  
-      if (gItemGroupInProjectUnit.GComment.GStatements.Count >0) {
+      if (gItemGroupInProjectUnit.GComment.GStatements.Any()) {
         foreach (var s in gItemGroupInProjectUnit.GComment.GStatements) {
           sb.Append($"{indent}<!-- {s} --> {eol}");
         }
@@ -27,7 +28,7 @@ namespace ATAP.Utilities.GenerateProgram {
       r1Top.Sb.Append(r1Top.Eol);
       return r1Top;
     }
-    public static IR1Top RItemGroupInProjectUnit(this IR1Top r1Top, IList<IGItemGroupInProjectUnit> gItemGroupInProjectUnits) {
+    public static IR1Top RItemGroupInProjectUnit(this IR1Top r1Top, IEnumerable<IGItemGroupInProjectUnit> gItemGroupInProjectUnits) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       foreach (var o in gItemGroupInProjectUnits) {
         r1Top.RItemGroupInProjectUnit(o);

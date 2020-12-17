@@ -19,11 +19,11 @@ namespace ATAP.Utilities.GenerateProgram {
       GVisibility = gVisibility == default ? "" : gVisibility;
       GInheritance = gInheritance == default ? "" : gInheritance; ;
       IsBitFlags = isBitFlags == default ? false : (bool)isBitFlags;
-      GEnumerationMembers = gEnumerationMembers == default ? new Dictionary<Philote<GEnumerationMember>, GEnumerationMember>() : gEnumerationMembers;
-      GAttributes = gAttributes == default ? new Dictionary<Philote<GAttribute>, GAttribute>() : gAttributes;
-      GAttributeGroups = gAttributeGroups == default ? new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>() : gAttributeGroups;
+      GEnumerationMembers = gEnumerationMembers == default ? new Dictionary<IPhilote<IGEnumerationMember>, IGEnumerationMember>() : gEnumerationMembers;
+      GAttributes = gAttributes == default ? new Dictionary<IPhilote<IGAttribute>, IGAttribute>() : gAttributes;
+      GAttributeGroups = gAttributeGroups == default ? new Dictionary<IPhilote<IGAttributeGroup>, IGAttributeGroup>() : gAttributeGroups;
       GComment = gComment == default ? new GComment() : gComment;
-      Philote = new Philote<GEnumeration>();
+      Philote = new Philote<IGEnumeration>();
     }
     public string GName { get; init; }
     public string GUnderlyingBaseType { get; init; }

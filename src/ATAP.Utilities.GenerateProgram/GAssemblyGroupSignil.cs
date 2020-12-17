@@ -12,7 +12,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GDescription = gDescription == default ? "" : gDescription;
       GRelativePath = gRelativePath == default ? "" : gRelativePath;
       HasInterfacesAssembly = HasInterfacesAssembly == default ? true : hasInterfacesAssembly;
-      GAssemblyUnits = gAssemblyUnits == default ? new Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit>() : gAssemblyUnits;
+      GAssemblyUnits = gAssemblyUnits == default ? new Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>() : gAssemblyUnits;
       GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       GComment = gComment == default ? new GComment() : gComment; 
       Philote = new Philote<GAssemblyGroupSignil>();

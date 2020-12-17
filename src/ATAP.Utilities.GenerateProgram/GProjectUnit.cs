@@ -16,12 +16,12 @@ namespace ATAP.Utilities.GenerateProgram {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
       GRelativePath = gRelativePath == default ? "" : gRelativePath;
       GFileSuffix = gFileSuffix == default ? ".csproj" : gFileSuffix;
-      GPropertyGroupInProjectUnits = gPropertyGroupInProjectUnits == default ? new Dictionary<Philote<GPropertyGroupInProjectUnit>, GPropertyGroupInProjectUnit>() : gPropertyGroupInProjectUnits;
-      GItemGroupInProjectUnits = gItemGroupInProjectUnits == default ? new Dictionary<Philote<GItemGroupInProjectUnit>, GItemGroupInProjectUnit>() : gItemGroupInProjectUnits;
-      GResourceUnits = gResourceUnits == default ? new Dictionary<Philote<GResourceUnit>, GResourceUnit>() : gResourceUnits;
+      GPropertyGroupInProjectUnits = gPropertyGroupInProjectUnits == default ? new Dictionary<IPhilote<IGPropertyGroupInProjectUnit>, IGPropertyGroupInProjectUnit>() : gPropertyGroupInProjectUnits;
+      GItemGroupInProjectUnits = gItemGroupInProjectUnits == default ? new Dictionary<IPhilote<IGItemGroupInProjectUnit>, IGItemGroupInProjectUnit>() : gItemGroupInProjectUnits;
+      GResourceUnits = gResourceUnits == default ? new Dictionary<IPhilote<IGResourceUnit>, IGResourceUnit>() : gResourceUnits;
       GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       GComment = gComment == default ? new GComment() : gComment;
-      Philote = new Philote<GProjectUnit>();
+      Philote = new Philote<IGProjectUnit>();
     }
 
     public string GName { get; init; }

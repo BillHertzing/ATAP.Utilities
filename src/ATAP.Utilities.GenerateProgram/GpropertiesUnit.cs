@@ -13,8 +13,8 @@ namespace ATAP.Utilities.GenerateProgram {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
       GRelativePath = gRelativePath == default ? "Properties/" : gRelativePath;
       GFileSuffix = gFileSuffix == default ? ".cs" : gFileSuffix;
-      //GUsings = gUsings == default ? new Dictionary<Philote<GUsing>, GUsing>() : gUsings;
-      Philote = new Philote<GPropertiesUnit>();
+      //GUsings = gUsings == default ? new Dictionary<IPhilote<IGUsing>, GUsing>() : gUsings;
+      Philote = new Philote<IGPropertiesUnit>();
     }
 
     public string GName { get; init; }

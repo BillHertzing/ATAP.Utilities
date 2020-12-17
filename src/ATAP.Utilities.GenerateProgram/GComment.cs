@@ -3,12 +3,12 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public class GComment : IGComment {
-    public GComment(List<string> gStatements = default)  {
+    public GComment(IEnumerable<string> gStatements = default)  {
       GStatements = gStatements == default ? new List<string>() : gStatements;
-      Philote = new Philote<GComment>();
+      Philote = new Philote<IGComment>();
     }
 
-    public IList<string> GStatements { get; init; }
+    public IEnumerable<string> GStatements { get; init; }
     public IPhilote<IGComment> Philote { get; init; }
   }
 }

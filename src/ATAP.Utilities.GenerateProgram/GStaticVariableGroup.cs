@@ -5,8 +5,8 @@ namespace ATAP.Utilities.GenerateProgram {
    public class GStaticVariableGroup : IGStaticVariableGroup {
     public GStaticVariableGroup(string gName = default, IDictionary<IPhilote<IGStaticVariable>, IGStaticVariable> gStaticVariables = default) {
       GName = gName == default ? "" : gName;
-      GStaticVariables = gStaticVariables == default ? new Dictionary<Philote<GStaticVariable>, GStaticVariable>() : gStaticVariables;
-      Philote = new Philote<GStaticVariableGroup>();
+      GStaticVariables = gStaticVariables == default ? new Dictionary<IPhilote<IGStaticVariable>, IGStaticVariable>() : gStaticVariables;
+      Philote = new Philote<IGStaticVariableGroup>();
     }
 
     public string GName { get; init; }

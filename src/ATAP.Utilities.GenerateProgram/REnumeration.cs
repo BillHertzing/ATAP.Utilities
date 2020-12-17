@@ -6,7 +6,7 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
-    public static StringBuilder RenderEnumerationPreambleStringBuilder(this StringBuilder sb, GEnumeration gEnumeration, StringBuilder indent, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RenderEnumerationPreambleStringBuilder(this StringBuilder sb, IGEnumeration gEnumeration, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       if (gEnumeration.IsBitFlags) {
         sb.Append($"{indent}[Flags]{eol}");
@@ -20,7 +20,7 @@ namespace ATAP.Utilities.GenerateProgram {
       }
       return sb;
     }
-    public static IR1Top REnumeration(this IR1Top r1Top, GEnumeration gEnumeration) {
+    public static IR1Top REnumeration(this IR1Top r1Top, IGEnumeration gEnumeration) {
       r1Top.RComment(gEnumeration.GComment);
       r1Top.RAttributeGroup(gEnumeration.GAttributeGroups);
       r1Top.RAttribute(gEnumeration.GAttributes);
@@ -32,13 +32,13 @@ namespace ATAP.Utilities.GenerateProgram {
       return r1Top;
     }
 
-    public static IR1Top REnumeration(this IR1Top r1Top, IEnumerable<GEnumeration> gEnumerations) {
+    public static IR1Top REnumeration(this IR1Top r1Top, IEnumerable<IGEnumeration> gEnumerations) {
       foreach (var o in gEnumerations) {
         r1Top.REnumeration(o);
       }
       return r1Top;
     }
-    public static IR1Top REnumeration(this IR1Top r1Top, Dictionary<Philote<GEnumeration>, GEnumeration> gEnumerations) {
+    public static IR1Top REnumeration(this IR1Top r1Top, IDictionary<IPhilote<IGEnumeration>, IGEnumeration> gEnumerations) {
       foreach (var kvp in gEnumerations) {
         r1Top.REnumeration(kvp.Value);
       }

@@ -11,19 +11,19 @@ using System.Text;
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     public static void MStateMachineConstructor(
-      GCompilationUnit gCompilationUnit = default, GNamespace gNamespace = default, GClass gClass = default,
-      GMethod gConstructor = default, List<string> initialDiGraphList = default) {
+      IGCompilationUnit gCompilationUnit = default, IGNamespace gNamespace = default, IGClass gClass = default,
+      IGMethod gConstructor = default, IList<string> initialDiGraphList = default) {
       #region UsingGroup
       var gUsingGroup = MUsingGroupForStatelessStateMachine();
       gCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
       #endregion
       #region Delegates
-      var gDelegates = new Dictionary<Philote<GDelegate>, GDelegate>();
-      var UnhandledTriggerDelegateArguments = new Dictionary<Philote<GArgument>, GArgument>();
-      foreach (var o in new List<GArgument>() {new GArgument("state", "State"), new GArgument("trigger", "Trigger"),}) {
+      var gDelegates = new Dictionary<IPhilote<IGDelegate>, IGDelegate>();
+      var UnhandledTriggerDelegateArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
+      foreach (var o in new List<IGArgument>() {new GArgument("state", "State"), new GArgument("trigger", "Trigger"),}) {
         UnhandledTriggerDelegateArguments.Add(o.Philote, o);
       }
-      foreach (var o in new List<GDelegate>() {
+      foreach (var o in new List<IGDelegate>() {
         new GDelegate(new GDelegateDeclaration("UnHandledTriggerDelegate", gType: "void", gVisibility: "public",
           gArguments: UnhandledTriggerDelegateArguments)),
         new GDelegate(new GDelegateDeclaration(gName: "EntryExitDelegate", gType: "void", gVisibility: "public")),
@@ -34,7 +34,7 @@ namespace ATAP.Utilities.GenerateProgram {
       gNamespace.AddDelegate(gDelegates);
       #endregion
 
-      #region StateMachine GPropertyGroup and its porperties
+      #region StateMachine GPropertyGroup and its properties
       var gPropertyGroup = new GPropertyGroup(gName: "StateMachine Properties");
       // StateMachine Property
       var gProperty = new GProperty(gName: "StateMachine", gType: "StateMachine<State,Trigger>", gAccessors: "{get;}");
@@ -56,7 +56,7 @@ namespace ATAP.Utilities.GenerateProgram {
       //// StateConfiguration Class for the provided namespace
       //// Define the properties for the StateConfiguration class
       //// ToDo: Move this type into ATAP.Utilities.StateMachine
-      //var gPropertys = new Dictionary<Philote<GProperty>, GProperty>();
+      //var gPropertys = new Dictionary<IPhilote<IGProperty>, GIProperty>();
       //gProperty = new GProperty("State", "State", gAccessors: "{get;}", gVisibility: "public");
       //gPropertys.Add(gProperty.Philote, gProperty);
       //gProperty = new GProperty("Trigger", "Trigger", gAccessors: "{get;}", gVisibility: "public");
@@ -65,7 +65,7 @@ namespace ATAP.Utilities.GenerateProgram {
       //gPropertys.Add(gProperty.Philote, gProperty);
       //var stateConfigurationClass = new GClass(gName: "StateConfiguration", gPropertys: gPropertys);
 
-      //var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      //var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       //foreach (var o in new List<GArgument>() {
       //  new GArgument("state", "State"), new GArgument("trigger", "Trigger"), new GArgument("nextState", "State"),
       //}) {
@@ -124,7 +124,7 @@ namespace ATAP.Utilities.GenerateProgram {
     //    mCreateAssemblyGroupResult.gNamespaceBase, mCreateAssemblyGroupResult.gClassBase,
     //    gStateConfiguration: mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfigurations);
     //}
-    public static void MStateMachineFinalizer(GAssemblyGroupBasicConstructorResult mCreateAssemblyGroupResult) {
+    public static void MStateMachineFinalizer(IGAssemblyGroupBasicConstructorResult mCreateAssemblyGroupResult) {
       #region Accumulate the StateConfigurations
       var finalGStateConfiguration = new GStateConfiguration();
       foreach (var gAU in mCreateAssemblyGroupResult.gAssemblyGroup.GAssemblyUnits) {
@@ -159,7 +159,7 @@ namespace ATAP.Utilities.GenerateProgram {
         //  LocalizableEnumerationMember("WaitingForInitialization",1,"Power-On State - waiting until minimal initialization condition has been met","Waiting For Initialization"),
         //  LocalizableEnumerationMember("InitiateContact",1,"Signal to the Console Monitor that we are a valid ConsoleSource","Initiate Contact"),
         //};
-        var gEnumerationMembers = new Dictionary<Philote<GEnumerationMember>, GEnumerationMember>();
+        var gEnumerationMembers = new Dictionary<IPhilote<IGEnumerationMember>, IGEnumerationMember>();
         foreach (var o in gEnumerationMemberList) {
           gEnumerationMembers.Add(o.Philote, o);
         }
@@ -179,7 +179,7 @@ namespace ATAP.Utilities.GenerateProgram {
         //  LocalizableEnumerationMember("InitializationCompleteReceived",1,"The minimal initialization conditions have been met","Initialization Complete Received"),
         //};
         gEnumerationMembers =
-          new Dictionary<Philote<GEnumerationMember>, GEnumerationMember
+          new Dictionary<IPhilote<IGEnumerationMember>, IGEnumerationMember
           >(); //{gEnumerationMemberList.ForEach(m=>m.Philote,m)};
         foreach (var o in gEnumerationMemberList) {
           gEnumerationMembers.Add(o.Philote, o);

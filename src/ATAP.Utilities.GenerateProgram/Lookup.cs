@@ -145,11 +145,11 @@ namespace ATAP.Utilities.GenerateProgram {
       return (gAssemblyUnits, gCompilationUnits, gNamespaces, gInterfaces);
     }
     public static (
-      IEnumerable<GAssemblyUnit> gAssemblyUnits,
-      IEnumerable<GProjectUnit> gProjectUnits
+      IEnumerable<IGAssemblyUnit> gAssemblyUnits,
+      IEnumerable<IGProjectUnit> gProjectUnits
       )
     LookupProjectUnits(
-      IEnumerable<GAssemblyGroup> gAssemblyGroups,
+      IEnumerable<IGAssemblyGroup> gAssemblyGroups,
       string gAssemblyGroupName = "",
       string gAssemblyUnitName = "",
       string gProjectUnitName = ""

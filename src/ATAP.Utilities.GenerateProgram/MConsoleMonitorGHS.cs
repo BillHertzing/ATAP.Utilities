@@ -166,11 +166,11 @@ namespace ATAP.Utilities.GenerateProgram {
     }
     /*******************************************************************************/
     /*******************************************************************************/
-    static GMethod MCreateWriteAsyncMethodInConsoleMonitor(string gAccessModifier = "") {
+    static IGMethod MCreateWriteAsyncMethodInConsoleMonitor(string gAccessModifier = "") {
       var gMethodArgumentList = new List<GArgument>() {
         new GArgument("mesg", "string"), new GArgument("ct", "CancellationToken?")
       };
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in gMethodArgumentList) {
         gMethodArguments.Add(o.Philote, o);
       }
@@ -190,11 +190,11 @@ namespace ATAP.Utilities.GenerateProgram {
           "// Used to asynchronously write a string to the WriteAsync method of the ConsoleSink service"
         }));
     }
-    static GMethod MCreateWriteMethodInConsoleMonitor(string gAccessModifier = "") {
-      var gMethodArgumentList = new List<GArgument>() {
+    static IGMethod MCreateWriteMethodInConsoleMonitor(string gAccessModifier = "") {
+      var gMethodArgumentList = new List<IGArgument>() {
         new GArgument("mesg", "string"), new GArgument("ct", "CancellationToken?")
       };
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in gMethodArgumentList) {
         gMethodArguments.Add(o.Philote, o);
       }
@@ -216,7 +216,7 @@ namespace ATAP.Utilities.GenerateProgram {
       var gMethodArgumentList = new List<GArgument>() {
         // None
       };
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in gMethodArgumentList) {
         gMethodArguments.Add(o.Philote, o);
       }

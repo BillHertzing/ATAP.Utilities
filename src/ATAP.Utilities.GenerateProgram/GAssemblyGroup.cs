@@ -7,9 +7,9 @@ namespace ATAP.Utilities.GenerateProgram {
 
   public class GAssemblyGroup : IGAssemblyGroup {
     public GAssemblyGroup(string gName = "", string gDescription = "", string gRelativePath = "",
-      Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit> gAssemblyUnits = default,
-      GPatternReplacement gPatternReplacement = default,
-      GComment gComment = default
+      Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit> gAssemblyUnits = default,
+      IGPatternReplacement gPatternReplacement = default,
+      IGComment gComment = default
     ) {
       GName = gName;
       GDescription = gDescription;
@@ -20,13 +20,13 @@ namespace ATAP.Utilities.GenerateProgram {
 
       Philote = new Philote<GAssemblyGroup>();
     }
-    public string GName { get; }
-    public string GDescription { get; }
-    public string GRelativePath { get; }
-    public Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit>? GAssemblyUnits { get; }
-    public GPatternReplacement GPatternReplacement { get; }
-    public GComment GComment { get; }
-    public Philote<GAssemblyGroup> Philote { get; }
+    public string GName { get; init; }
+    public string GDescription { get; init; }
+    public string GRelativePath { get; init; }
+    public Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>? GAssemblyUnits { get; init; }
+    public IGPatternReplacement GPatternReplacement { get; init; }
+    public IGComment GComment { get; init; }
+    public IPhilote<IGAssemblyGroup> Philote { get; init; }
 
   }
 }

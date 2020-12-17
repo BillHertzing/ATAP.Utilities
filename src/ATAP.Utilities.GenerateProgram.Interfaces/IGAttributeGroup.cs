@@ -1,0 +1,11 @@
+using System.Collections.Generic;
+using ATAP.Utilities.Philote;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public interface IGAttributeGroup {
+    string GName { get; init; }
+    Dictionary<IPhilote<IGAttribute>, IGAttribute> GAttributes { get; init; }
+    IGComment GComment { get; init; }
+    IPhilote<IGAttributeGroup> Philote { get; init; }
+  }
+}

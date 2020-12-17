@@ -5,37 +5,38 @@ using ATAP.Utilities.Philote;
 
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GEnumeration {
-    public GEnumeration(string gName = default, string gUnderlyingBaseType = default, string gVisibility = default,  string gInheritance = default,
+  
+  public class GEnumeration : IGEnumeration {
+    public GEnumeration(string gName = default, string gUnderlyingBaseType = default, string gVisibility = default, string gInheritance = default,
       bool isBitFlags = default,
-      Dictionary<Philote<GEnumerationMember>, GEnumerationMember> gEnumerationMembers = default,
-      Dictionary<Philote<GAttribute>, GAttribute> gAttributes = default,
-      Dictionary<Philote<GAttributeGroup>, GAttributeGroup> gAttributeGroups = default,
+      Dictionary<IPhilote<IGEnumerationMember>, IGEnumerationMember> gEnumerationMembers = default,
+      Dictionary<IPhilote<IGAttribute>, IGAttribute> gAttributes = default,
+      Dictionary<IPhilote<IGAttributeGroup>, IGAttributeGroup> gAttributeGroups = default,
       GComment gComment = default
       ) {
       GName = gName == default ? "" : gName;
       GUnderlyingBaseType = gUnderlyingBaseType == default ? "" : gUnderlyingBaseType;
       GVisibility = gVisibility == default ? "" : gVisibility;
-      GInheritance = gInheritance == default ? "" : gInheritance;;
-      IsBitFlags = isBitFlags == default ? false : (bool) isBitFlags;
+      GInheritance = gInheritance == default ? "" : gInheritance; ;
+      IsBitFlags = isBitFlags == default ? false : (bool)isBitFlags;
       GEnumerationMembers = gEnumerationMembers == default ? new Dictionary<Philote<GEnumerationMember>, GEnumerationMember>() : gEnumerationMembers;
       GAttributes = gAttributes == default ? new Dictionary<Philote<GAttribute>, GAttribute>() : gAttributes;
       GAttributeGroups = gAttributeGroups == default ? new Dictionary<Philote<GAttributeGroup>, GAttributeGroup>() : gAttributeGroups;
-      GComment = gComment == default? new GComment() : gComment;
+      GComment = gComment == default ? new GComment() : gComment;
       Philote = new Philote<GEnumeration>();
     }
-    public string GName { get; }
-    public string GUnderlyingBaseType { get; }
+    public string GName { get; init; }
+    public string GUnderlyingBaseType { get; init; }
     // ToDo: make this an enumeration
-    public string GAccessModifier { get; }
-    public string GVisibility { get; }
-    public string GInheritance { get; }
-    public bool IsBitFlags { get; }
-    public Dictionary<Philote<GEnumerationMember>, GEnumerationMember> GEnumerationMembers { get; }
-    public Dictionary<Philote<GAttribute>, GAttribute> GAttributes { get; }
-    public Dictionary<Philote<GAttributeGroup>, GAttributeGroup> GAttributeGroups { get; }
-    public GComment GComment { get; }
-    public Philote<GEnumeration> Philote { get; }
+    public string GAccessModifier { get; init; }
+    public string GVisibility { get; init; }
+    public string GInheritance { get; init; }
+    public bool IsBitFlags { get; init; }
+    public Dictionary<IPhilote<IGEnumerationMember>, IGEnumerationMember> GEnumerationMembers { get; init; }
+    public Dictionary<IPhilote<IGAttribute>, IGAttribute> GAttributes { get; init; }
+    public Dictionary<IPhilote<IGAttributeGroup>, IGAttributeGroup> GAttributeGroups { get; init; }
+    public IGComment GComment { get; init; }
+    public Philote<GEnumeration> Philote { get; init; }
 
   }
 }

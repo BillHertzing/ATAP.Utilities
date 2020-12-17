@@ -1,11 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Text;
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GProperty {
+  public class GProperty : IGProperty {
     public GProperty(string gName = default, string gType = default, string gAccessors = "{ get; set; }", string? gVisibility = default) {
       GName = gName == default ? "" : gName;
       GType = gType == default ? "" : gType;
@@ -14,11 +11,11 @@ namespace ATAP.Utilities.GenerateProgram {
       Philote = new Philote<GProperty>();
     }
 
-    public string GName { get;  }
-    public string GType { get;  }
-    public string GAccessors { get;  }
-    public string? GVisibility { get;  }
-    public Philote<GProperty> Philote { get; }
+    public string GName { get; }
+    public string GType { get; }
+    public string GAccessors { get; }
+    public string? GVisibility { get; }
+    public IPhilote<IGProperty> Philote { get; init; }
 
   }
 }

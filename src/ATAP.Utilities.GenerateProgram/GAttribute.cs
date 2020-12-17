@@ -1,22 +1,20 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GAttribute {
-    public GAttribute(string gName = "", string gValue ="",
-      GComment gComment = default
+  
+  public class GAttribute : IGAttribute {
+    public GAttribute(string gName = "", string gValue = "",
+      IGComment gComment = default
       ) {
-      GName = gName ;
-      GValue = gValue ;
-      GComment = gComment == default? new GComment() : gComment;
+      GName = gName;
+      GValue = gValue;
+      GComment = gComment == default ? new GComment() : gComment;
       Philote = new Philote<GAttribute>();
     }
 
-    public string GName { get; }
-    public string GValue { get; }
-    public GComment GComment { get; }
-    public Philote<GAttribute> Philote { get; }
+    public string GName { get; init; }
+    public string GValue { get; init; }
+    public IGComment GComment { get; init; }
+    public Philote<GAttribute> Philote { get; init; }
   }
 }

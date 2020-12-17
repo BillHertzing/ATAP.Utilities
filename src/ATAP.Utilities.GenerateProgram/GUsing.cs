@@ -4,13 +4,13 @@ using System.Text;
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GUsing {
-    public GUsing(string gName) {
+  public record GUsing : IGUsing {
+    public GUsing(string gName, IPhilote<IGUsing>? philote) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
       Philote = new Philote<GUsing>();
     }
 
-    public string GName { get; }
-    public Philote<GUsing> Philote { get; }
+    public string GName { get; init; }
+    public IPhilote<IGUsing> Philote { get; init; }
   }
 }

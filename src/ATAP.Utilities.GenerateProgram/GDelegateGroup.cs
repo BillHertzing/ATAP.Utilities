@@ -1,18 +1,17 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GDelegateGroup {
-    public GDelegateGroup(string gName, Dictionary<Philote<GDelegate>, GDelegate>? gDelegates = default) {
+  public class GDelegateGroup : IGDelegateGroup {
+    public GDelegateGroup(string gName, Dictionary<IPhilote<IGDelegate>, IGDelegate>? gDelegates = default) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
-      GDelegates = gDelegates == default ? new Dictionary<Philote<GDelegate>, GDelegate>() : gDelegates;
+      GDelegates = gDelegates == default ? new Dictionary<IPhilote<IGDelegate>, IGDelegate>() : gDelegates;
       Philote = new Philote<GDelegateGroup>();
     }
 
-    public string GName { get; }
-    public Dictionary<Philote<GDelegate>, GDelegate>? GDelegates { get; }
-    public  Philote<GDelegateGroup> Philote { get; }
+    public string GName { get; init; }
+    public Dictionary<IPhilote<IGDelegate>, IGDelegate>? GDelegates { get; init; }
+    public IPhilote<IGDelegateGroup> Philote { get; init; }
   }
 }

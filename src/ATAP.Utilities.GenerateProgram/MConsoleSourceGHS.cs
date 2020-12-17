@@ -10,12 +10,12 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MConsoleSourceGHS(string gAssemblyGroupName,
+    public static IGAssemblyGroup MConsoleSourceGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true) {
       return MConsoleSourceGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, 
         new GPatternReplacement());
     }
-    public static GAssemblyGroup MConsoleSourceGHS(string gAssemblyGroupName,
+    public static IGAssemblyGroup MConsoleSourceGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
@@ -99,7 +99,7 @@ namespace ATAP.Utilities.GenerateProgram {
     }
     /*******************************************************************************/
     /*******************************************************************************/
-    static GMethod CreateConsoleReadLineAsyncAsObservableMethod(string gAccessModifier = "") {
+    static IGMethod CreateConsoleReadLineAsyncAsObservableMethod(string gAccessModifier = "") {
       var gMethodArgumentList = new List<GArgument>() {
         // None
       };

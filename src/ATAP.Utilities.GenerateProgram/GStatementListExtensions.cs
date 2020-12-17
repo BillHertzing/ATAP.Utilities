@@ -11,21 +11,21 @@ using ATAP.Utilities.GenerateProgram;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GStatementListExtensions {
-    public static List<string> AddStatementList(this List<string> gStatementList, List<string> gAdditionalStatementList) {
+    public static IList<string> AddStatementList(this IList<string> gStatementList, IList<string> gAdditionalStatementList) {
       gStatementList.AddRange(gAdditionalStatementList);
       return gStatementList;
     }
-    public static List<string> AddStatementList(this List<string> gStatementList, IEnumerable<List<string>> gStatementLists) {
+    public static IList<string> AddStatementList(this IList<string> gStatementList, IEnumerable<IList<string>> gStatementLists) {
       foreach (var o in gStatementLists) {
         gStatementList.AddRange(o);
       }
       return gStatementList;
     }
-    //public static GStatementList AddStatementListGroups(this GStatementList gStatementList, GStatementListGroup gStatementListGroup) {
+    //public static IGStatementList AddStatementListGroups(this GStatementList gStatementList, GStatementListGroup gStatementListGroup) {
     //  gStatementList.GStatementListGroups[gStatementListGroup.Philote] = gStatementListGroup;
     //  return gStatementList;
     //}
-    //public static GStatementList AddStatementListGroups(this GStatementList gStatementList, IEnumerable<GStatementListGroup> gStatementListGroups) {
+    //public static IGStatementList AddStatementListGroups(this GStatementList gStatementList, IEnumerable<GStatementListGroup> gStatementListGroups) {
     //  foreach (var o in gStatementListGroups) {
     //    gStatementList.GStatementListGroups[o.Philote] = o;
     //  }

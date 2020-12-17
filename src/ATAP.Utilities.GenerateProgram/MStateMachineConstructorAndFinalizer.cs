@@ -150,7 +150,7 @@ namespace ATAP.Utilities.GenerateProgram {
         var gEnumerationGroup = new GEnumerationGroup(gName: "State and Trigger Enumerations for StateMachine");
         #region State Enumeration
         #region State Enumeration members
-        var gEnumerationMemberList = new List<GEnumerationMember>();
+        var gEnumerationMemberList = new List<IGEnumerationMember>();
         var enumerationValue = 1;
         foreach (var name in finalGStateConfiguration.GStateNames) {
           gEnumerationMemberList.Add(LocalizableEnumerationMember(name, enumerationValue++));
@@ -170,7 +170,7 @@ namespace ATAP.Utilities.GenerateProgram {
         gEnumerationGroup.GEnumerations.Add(gEnumeration.Philote, gEnumeration);
         #region Trigger Enumeration
         #region Trigger Enumeration members
-        gEnumerationMemberList = new List<GEnumerationMember>();
+        gEnumerationMemberList = new List<IGEnumerationMember>();
         enumerationValue = 1;
         foreach (var name in finalGStateConfiguration.GTriggerNames) {
           gEnumerationMemberList.Add(LocalizableEnumerationMember(name, enumerationValue++));

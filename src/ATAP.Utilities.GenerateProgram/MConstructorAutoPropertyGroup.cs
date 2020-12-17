@@ -15,7 +15,7 @@ namespace ATAP.Utilities.GenerateProgram {
       else {
         throw new Exception(string.Format("{0} not found in the PropertyGroups of {1}", gPropertyGroupId.ID.ToString(), gClass.GName));
       }
-      GMethod gMethod = default;
+      IGMethod gMethod = default;
       if (gClass.GMethods != null && gClass.GMethods.ContainsKey(gMethodId)) {
         gMethod = gClass.GMethods[gMethodId];
       }

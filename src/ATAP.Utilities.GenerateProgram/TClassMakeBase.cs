@@ -9,10 +9,9 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
 
   public static partial class GCompilationUnitExtensions {
-    public static GCompilationUnit TClassMakeBase(this GCompilationUnit gCompilationUnit, GClass gClass) {
-      GClass newGClass;
+    public static IGCompilationUnit TClassMakeBase(this IGCompilationUnit gCompilationUnit, IGClass gClass) {
       string name = gClass.GName + "Base";
-      List<GMethod> gMethods = new List<GMethod>();
+      List<IGMethod> gMethods = new List<IGMethod>();
       foreach (var kvp in gClass.GMethods) {
 
 

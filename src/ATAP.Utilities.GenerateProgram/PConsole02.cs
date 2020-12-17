@@ -23,7 +23,7 @@ using static ATAP.Utilities.Collection.Extensions;
 
 namespace ATAP.Utilities.GenerateProgram {
   class PConsole02 {
-    delegate GAssemblyGroup MCreateAssemblyGroupDelegate(string name, string subDirectoryForGeneratedFiles,
+    delegate IGAssemblyGroup MCreateAssemblyGroupDelegate(string name, string subDirectoryForGeneratedFiles,
       string baseNamespaceName, bool hasInterfaces = true);
 
     static void Main(string[] args) {

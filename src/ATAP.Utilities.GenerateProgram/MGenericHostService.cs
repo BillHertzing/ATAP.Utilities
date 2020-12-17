@@ -20,9 +20,9 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroupBasicConstructorResult MGenericHostService(string gAssemblyGroupName = default,
+    public static IGAssemblyGroupBasicConstructorResult MGenericHostService(string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
-      GPatternReplacement gPatternReplacement = default) {
+      IGPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var gCreateAssemblyGroupResult = MAssemblyGroupCommonConstructorForServicesAndConsolePrograms(gAssemblyGroupName,

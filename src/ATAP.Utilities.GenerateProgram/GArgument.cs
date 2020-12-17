@@ -19,7 +19,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public string GType { get; init; }
     public bool IsRef { get; init; }
     public bool IsOut { get; init; }
-    public Philote<GArgument> Philote { get; init; }
+    public IPhilote<IGArgument> Philote { get; init; }
 
 
   }

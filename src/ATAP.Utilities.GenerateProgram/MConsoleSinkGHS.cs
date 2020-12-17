@@ -150,11 +150,11 @@ namespace ATAP.Utilities.GenerateProgram {
     //"// Used to asynchronously write a string to the WriteAsync method of the Console instance"
     //  }));
     //}
-    static List<GMethod> MCreateWriteMethodInConsoleSink(string gAccessModifier = "") {
+    static IList<GMethod> MCreateWriteMethodInConsoleSink(string gAccessModifier = "") {
       var gMethodArgumentList = new List<GArgument>() {
         new GArgument("mesg", "string"), new GArgument("ct", "CancellationToken?")
       };
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in gMethodArgumentList) {
         gMethodArguments.Add(o.Philote, o);
       }
@@ -170,7 +170,7 @@ namespace ATAP.Utilities.GenerateProgram {
           }),
         new GComment(new List<string>() {"// Used to write a string to the Console instance"}));
 
-      gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       var privateWriteMethod = new GMethod(
         new GMethodDeclaration(gName: "Write", gType: "void",
           gVisibility: "private", gAccessModifier: gAccessModifier, isConstructor: false,

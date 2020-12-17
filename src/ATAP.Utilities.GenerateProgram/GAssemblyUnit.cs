@@ -6,8 +6,8 @@ namespace ATAP.Utilities.GenerateProgram {
     public GAssemblyUnit(string gName = default, string gRelativePath = default,
       IGProjectUnit gProjectUnit = default,
       Dictionary<IPhilote<IGCompilationUnit>, IGCompilationUnit> gCompilationUnits = default,
-      Dictionary<Philote<IGPropertiesUnit>, IGPropertiesUnit> gPropertiesUnits = default,
-      Dictionary<Philote<IGResourceUnit>,I GResourceUnit> gResourceUnits = default,
+      Dictionary<IPhilote<IGPropertiesUnit>, IGPropertiesUnit> gPropertiesUnits = default,
+      Dictionary<IPhilote<IGResourceUnit>, IGResourceUnit> gResourceUnits = default,
       IGPatternReplacement gPatternReplacement = default,
       IGComment gComment = default
     ) {
@@ -22,15 +22,15 @@ namespace ATAP.Utilities.GenerateProgram {
       Philote = new Philote<GAssemblyUnit>();
     }
 
-    public string GName { get; }
-    public string GRelativePath { get; }
-    public IGProjectUnit GProjectUnit { get; }
-    public Dictionary<IPhilote<IGCompilationUnit>, IGCompilationUnit> GCompilationUnits { get; }
-    public Dictionary<IPhilote<IGPropertiesUnit>, IGPropertiesUnit> GPropertiesUnits { get; }
-    public Dictionary<IPhilote<GResourceUnit>, IGResourceUnit> GResourceUnits { get; }
-    public IGPatternReplacement GPatternReplacement { get; }
-    public IGComment GComment { get; }
-    public IPhilote<IGAssemblyUnit> Philote { get; }
+    public string GName { get; init; }
+    public string GRelativePath { get; init; }
+    public IGProjectUnit GProjectUnit { get; init; }
+    public Dictionary<IPhilote<IGCompilationUnit>, IGCompilationUnit> GCompilationUnits { get; init; }
+    public Dictionary<IPhilote<IGPropertiesUnit>, IGPropertiesUnit> GPropertiesUnits { get; init; }
+    public Dictionary<IPhilote<IGResourceUnit>, IGResourceUnit> GResourceUnits { get; init; }
+    public IGPatternReplacement GPatternReplacement { get; init; }
+    public IGComment GComment { get; init; }
+    public IPhilote<IGAssemblyUnit> Philote { get; init; }
 
   }
 }

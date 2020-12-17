@@ -84,7 +84,7 @@ namespace ATAP.Utilities.GenerateProgram {
       //stateConfigurationClass.GMethods.Add(gConstructor.Philote, gConstructor);
       //gNamespace.GClasss.Add(stateConfigurationClass.Philote, stateConfigurationClass);
     }
-    public static void ParseDiGraphToStateMachine(GStateConfiguration gStateConfiguration = default) {
+    public static void ParseDiGraphToStateMachine(IGStateConfiguration gStateConfiguration = default) {
       const string pattern = @"\s*(?<State>.+?)\s*->\s*(?<NextState>.+?)\s*\[label\s*=\s*""(?<Trigger>[^""\]]+?)""\]";
       Regex regex = new Regex(pattern);
       //StringBuilder diGraphSB = new StringBuilder();

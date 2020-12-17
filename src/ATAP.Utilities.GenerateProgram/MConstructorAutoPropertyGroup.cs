@@ -7,8 +7,8 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
 
   public static partial class GClassExtensions {
-    public static GClass AddTConstructorAutoPropertyGroup(this GClass gClass, Philote<GMethod> gMethodId, string gAutoPropertyName, string gType, Philote<GPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get;}", string? gVisibility = default) {
-      GProperty gProperty= new GProperty(gAutoPropertyName.ToUpperFirstChar(), gType, gAccessors, gVisibility);
+    public static GClass AddTConstructorAutoPropertyGroup(this GClass gClass, IPhilote<IGMethod> gMethodId, string gAutoPropertyName, string gType, IPhilote<IGPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get;}", string? gVisibility = default) {
+      var gProperty= new GProperty(gAutoPropertyName.ToUpperFirstChar(), gType, gAccessors, gVisibility);
       if (gClass.GPropertyGroups != null && gClass.GPropertyGroups.ContainsKey(gPropertyGroupId)) {
         gClass.GPropertyGroups[gPropertyGroupId].GPropertys[gProperty.Philote] = gProperty;
       }

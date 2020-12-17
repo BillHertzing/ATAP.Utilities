@@ -19,8 +19,8 @@ namespace ATAP.Utilities.GenerateProgram {
 
     public static GAssemblyGroup MFileSystemToObjectGraphGHS( string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
-      GPatternReplacement gPatternReplacement = default) {
-      GPatternReplacement _gPatternReplacement =
+      IGPatternReplacement gPatternReplacement = default) {
+      IGPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, hasInterfaces, _gPatternReplacement);

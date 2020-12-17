@@ -5,7 +5,7 @@ namespace ATAP.Utilities.GenerateProgram
 {
   public static partial class RenderExtensions
   {
-    public static StringBuilder RenderMethodDeclarationPreambleStringBuilder(this StringBuilder sb, GMethodDeclaration gMethodDeclaration, StringBuilder indent, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RenderMethodDeclarationPreambleStringBuilder(this StringBuilder sb, IGMethodDeclaration gMethodDeclaration, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       sb.Append($"{indent}{gMethodDeclaration.GVisibility} ");
       sb.Append($"{gMethodDeclaration.GAccessModifier} ");
@@ -18,7 +18,7 @@ namespace ATAP.Utilities.GenerateProgram
       sb.Append($"{gMethodDeclaration.GName}(");
       return sb;
     }
-    public static IR1Top RMethodDeclaration(this IR1Top r1Top, GMethodDeclaration gMethodDeclaration)
+    public static IR1Top RMethodDeclaration(this IR1Top r1Top, IGMethodDeclaration gMethodDeclaration)
     {
       r1Top.Sb.RenderMethodDeclarationPreambleStringBuilder(gMethodDeclaration, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       r1Top.RArgument(gArguments: gMethodDeclaration.GArguments);

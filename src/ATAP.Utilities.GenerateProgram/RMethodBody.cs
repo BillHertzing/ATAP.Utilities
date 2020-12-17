@@ -10,7 +10,7 @@ namespace ATAP.Utilities.GenerateProgram {
       ct?.ThrowIfCancellationRequested();
       return sb.Append($"{indent}{statement}{eol}");
     }
-    public static IR1Top RBody(this IR1Top r1Top, GBody gBody) {
+    public static IR1Top RBody(this IR1Top r1Top, IGBody gBody) {
       r1Top.RComment(gBody.GComment);
       foreach (var s in gBody.GStatements) {
         r1Top.Sb.RenderBodyStatementStringBuilder(s, r1Top.Indent, r1Top.Eol, r1Top.Ct);

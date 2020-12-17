@@ -22,7 +22,7 @@ namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     public static GAssemblyGroupBasicConstructorResult MAssemblyGroupCommonConstructorForGHHSAndGHBS(string gAssemblyGroupName = default,
         string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
-        GPatternReplacement gPatternReplacement = default) {
+        IGPatternReplacement gPatternReplacement = default) {
       var gAssemblyGroupBasicConstructorResult = MAssemblyGroupBasicConstructor(gAssemblyGroupName,
         subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, gPatternReplacement);
       //var gTitularAssemblyUnitName = gAssemblyGroupName;

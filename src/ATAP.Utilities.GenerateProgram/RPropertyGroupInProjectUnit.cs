@@ -5,7 +5,7 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
-    public static StringBuilder RenderPropertyGroupInProjectUnit(this StringBuilder sb, GPropertyGroupInProjectUnit gPropertyGroupInProjectUnit, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RenderPropertyGroupInProjectUnit(this StringBuilder sb, IGPropertyGroupInProjectUnit gPropertyGroupInProjectUnit, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       sb.Append($"{indent}<!-- {gPropertyGroupInProjectUnit.GDescription} -->{eol}");
       sb.Append($"{indent}<PropertyGroup>{eol}");
@@ -15,13 +15,13 @@ namespace ATAP.Utilities.GenerateProgram {
       sb.Append($"{indent}</PropertyGroup>{eol}");
       return sb;
     }
-    public static IR1Top RPropertyGroupInProjectUnit(this IR1Top r1Top, GPropertyGroupInProjectUnit gPropertyGroupInProjectUnit) {
+    public static IR1Top RPropertyGroupInProjectUnit(this IR1Top r1Top, IGPropertyGroupInProjectUnit gPropertyGroupInProjectUnit) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       r1Top.Sb.RenderPropertyGroupInProjectUnit(gPropertyGroupInProjectUnit, r1Top.Indent, r1Top.IndentDelta, r1Top.Eol, r1Top.Ct);
       r1Top.Sb.Append(r1Top.Eol);
       return r1Top;
     }
-    public static IR1Top RPropertyGroupInProjectUnit(this IR1Top r1Top, List<GPropertyGroupInProjectUnit> gPropertyGroupInProjectUnits) {
+    public static IR1Top RPropertyGroupInProjectUnit(this IR1Top r1Top, IList<IGPropertyGroupInProjectUnit> gPropertyGroupInProjectUnits) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       foreach (var o in gPropertyGroupInProjectUnits) {
         r1Top.RPropertyGroupInProjectUnit(o);
@@ -29,7 +29,7 @@ namespace ATAP.Utilities.GenerateProgram {
       }
       return r1Top;
     }
-    public static IR1Top RPropertyGroupInProjectUnit(this IR1Top r1Top, Dictionary<Philote<GPropertyGroupInProjectUnit>, GPropertyGroupInProjectUnit> gPropertyGroupInProjectUnits) {
+    public static IR1Top RPropertyGroupInProjectUnit(this IR1Top r1Top, IDictionary<IPhilote<IGPropertyGroupInProjectUnit>, IGPropertyGroupInProjectUnit> gPropertyGroupInProjectUnits) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       foreach (var kvp in gPropertyGroupInProjectUnits) {
         r1Top.RPropertyGroupInProjectUnit(kvp.Value);

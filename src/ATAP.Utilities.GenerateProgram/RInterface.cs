@@ -7,7 +7,7 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
-    public static StringBuilder RInterfacePreambleStringBuilder(this StringBuilder sb, GInterface gInterface, StringBuilder indent, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RInterfacePreambleStringBuilder(this StringBuilder sb, IGInterface gInterface, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       sb.Append($"{indent}{gInterface.GVisibility} {gInterface.GAccessModifier} interface {gInterface.GName} ");
       if (gInterface.GInheritance != "" ||  gInterface.GImplements.Any()) { sb.Append(" : "); }
@@ -23,7 +23,7 @@ namespace ATAP.Utilities.GenerateProgram {
 
     }
 
-    public static IR1Top RInterface(this IR1Top r1Top, GInterface gInterface) {
+    public static IR1Top RInterface(this IR1Top r1Top, IGInterface gInterface) {
       r1Top.Sb.RInterfacePreambleStringBuilder(gInterface, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       r1Top.Indent.Append(r1Top.IndentDelta);
       if (gInterface.GPropertyGroups.Any()) {
@@ -70,19 +70,19 @@ namespace ATAP.Utilities.GenerateProgram {
       return r1Top;
     }
 
-    public static IR1Top RInterface(this IR1Top r1Top, Dictionary<Philote<GInterface>, GInterface> gInterfaces) {
+    public static IR1Top RInterface(this IR1Top r1Top, IDictionary<IPhilote<IGInterface>, IGInterface> gInterfaces) {
       foreach (var kvp in gInterfaces) {
         r1Top.RInterface(kvp.Value);
       }
       return r1Top;
     }
-    public static IR1Top RInterface(this IR1Top r1Top, IEnumerable<GInterface> gInterfaces) {
+    public static IR1Top RInterface(this IR1Top r1Top, IEnumerable<IGInterface> gInterfaces) {
       foreach (var o in gInterfaces) {
         r1Top.RInterface(o);
       }
       return r1Top;
     }
-    public static IR1Top RInterface(this IR1Top r1Top, IEnumerable<KeyValuePair<Philote<GInterface>, GInterface>> gInterfaces) {
+    public static IR1Top RInterface(this IR1Top r1Top, IEnumerable<KeyValuePair<IPhilote<IGInterface>, IGInterface>> gInterfaces) {
       foreach (var o in gInterfaces) {
         r1Top.RInterface(o.Value);
       }

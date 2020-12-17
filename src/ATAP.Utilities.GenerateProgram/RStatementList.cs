@@ -10,7 +10,7 @@ namespace ATAP.Utilities.GenerateProgram {
       ct?.ThrowIfCancellationRequested();
       return sb.Append($"{indent}{statement}{eol}");
     }
-    public static IR1Top RStatementList(this IR1Top r1Top, List<string> gStatementList) {
+    public static IR1Top RStatementList(this IR1Top r1Top, IEnumerable<string> gStatementList) {
       foreach (var s in gStatementList) {
         r1Top.Sb.RenderStatementListStatementStringBuilder(s, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       }

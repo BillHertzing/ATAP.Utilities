@@ -21,7 +21,7 @@ namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     public static GAssemblyGroupBasicConstructorResult MAssemblyGroupGHHSConstructor(string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,bool hasInterfaces = true,
-      GPatternReplacement gPatternReplacement = default) {
+      IGPatternReplacement gPatternReplacement = default) {
       var gAssemblyGroupBasicConstructorResult = MAssemblyGroupCommonConstructorForGHHSAndGHBS(gAssemblyGroupName,
         subDirectoryForGeneratedFiles,
         baseNamespaceName, hasInterfaces, gPatternReplacement);
@@ -34,7 +34,7 @@ namespace ATAP.Utilities.GenerateProgram {
       MAssemblyGroupCommonConstructorForGHHSAndGHBSPart2(gAssemblyGroupBasicConstructorResult);
       return gAssemblyGroupBasicConstructorResult;
     }
-    public static void GAssemblyGroupGHHSFinalizer(GAssemblyGroupBasicConstructorResult gAssemblyGroupBasicConstructorResult) {
+    public static void GAssemblyGroupGHHSFinalizer(IGAssemblyGroupBasicConstructorResult gAssemblyGroupBasicConstructorResult) {
       //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor
       //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
       //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>() {gAssemblyGroup}, gClassName: titularBaseClassName);

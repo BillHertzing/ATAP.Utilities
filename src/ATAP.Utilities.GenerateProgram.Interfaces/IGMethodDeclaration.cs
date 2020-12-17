@@ -9,7 +9,7 @@ namespace ATAP.Utilities.GenerateProgram {
     bool IsConstructor { get; init; }
     string GVisibility { get; init; }
     bool IsStatic { get; init; }
-    Dictionary<IPhilote<IGArgument>, IGArgument> GArguments { get; init; }
+    IDictionary<IPhilote<IGArgument>, IGArgument> GArguments { get; init; }
     string GBase { get; init; }
     string GThis { get; set; }
     bool IsForInterface { get; init; }

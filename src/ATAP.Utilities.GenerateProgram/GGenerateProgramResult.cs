@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
   public record GGenerateProgramResult : IGGenerateProgramResult {
-    public GGenerateProgramResult(bool dBExtractionSuccess, bool buildSuccess, bool unitTestsSuccess, double unitTestsCoverage, string generatedSolutionFileDirectory, ICollection<GAssemblyGroup> collectionOfAssembliesBuilt, bool packagingSuccess, bool deploymentSuccess) {
+    public GGenerateProgramResult(bool dBExtractionSuccess, bool buildSuccess, bool unitTestsSuccess, double unitTestsCoverage, string generatedSolutionFileDirectory, ICollection<IGAssemblyGroup> collectionOfAssembliesBuilt, bool packagingSuccess, bool deploymentSuccess) {
       DBExtractionSuccess = dBExtractionSuccess;
       BuildSuccess = buildSuccess;
       UnitTestsSuccess = unitTestsSuccess;
@@ -13,17 +13,16 @@ namespace ATAP.Utilities.GenerateProgram {
       PackagingSuccess = packagingSuccess;
       DeploymentSuccess = deploymentSuccess;
       Philote = new Philote<GGenerateProgramResult>();
-
     }
 
-    public bool DBExtractionSuccess { get; }
-    public bool BuildSuccess { get; }
-    public bool UnitTestsSuccess { get; }
-    public double UnitTestsCoverage { get; }
-    public string GeneratedSolutionFileDirectory { get; }
-    public ICollection<GAssemblyGroup> CollectionOfAssembliesBuilt { get; }
-    public bool PackagingSuccess { get; }
-    public bool DeploymentSuccess { get; }
-    public Philote<GGenerateProgramResult> Philote { get; }
+    public bool DBExtractionSuccess { get; init; }
+    public bool BuildSuccess { get; init; }
+    public bool UnitTestsSuccess { get; init; }
+    public double UnitTestsCoverage { get; init; }
+    public string GeneratedSolutionFileDirectory { get; init; }
+    public ICollection<IGAssemblyGroup> CollectionOfAssembliesBuilt { get; init; }
+    public bool PackagingSuccess { get; init; }
+    public bool DeploymentSuccess { get; init; }
+    public IPhilote<IGGenerateProgramResult> Philote { get; init; }
   }
 }

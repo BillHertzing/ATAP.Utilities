@@ -15,6 +15,6 @@ namespace ATAP.Utilities.GenerateProgram {
     public string GName { get; init; }
     public string GValue { get; init; }
     public IGComment GComment { get; init; }
-    public Philote<GAttribute> Philote { get; init; }
+    public IPhilote<IGAttribute> Philote { get; init; }
   }
 }

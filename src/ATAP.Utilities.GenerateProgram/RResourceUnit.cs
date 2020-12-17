@@ -7,7 +7,7 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
-    public static StringBuilder RResourceItemStringBuilder(this StringBuilder sb, GResourceItem gResourceItem, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RResourceItemStringBuilder(this StringBuilder sb, IGResourceItem gResourceItem, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       return sb.Append($"<data name=\"{gResourceItem.GName}\" xml:space=\"preserve\">{eol}<value>{gResourceItem.GValue}</value>{eol}</data>{eol}{eol}");
       //sb.Append($"<value>{gResourceItem.GValue}</value>{eol}</data>{eol}{eol}");

@@ -7,7 +7,7 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
 
   public static partial class GClassExtensions {
-    public static GClass AddTConstructorAutoPropertyGroup(this GClass gClass, IPhilote<IGMethod> gMethodId, string gAutoPropertyName, string gType, IPhilote<IGPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get;}", string? gVisibility = default) {
+    public static IGClass AddTConstructorAutoPropertyGroup(this IGClass gClass, IPhilote<IGMethod> gMethodId, string gAutoPropertyName, string gType, IPhilote<IGPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get;}", string? gVisibility = default) {
       var gProperty= new GProperty(gAutoPropertyName.ToUpperFirstChar(), gType, gAccessors, gVisibility);
       if (gClass.GPropertyGroups != null && gClass.GPropertyGroups.ContainsKey(gPropertyGroupId)) {
         gClass.GPropertyGroups[gPropertyGroupId].GPropertys[gProperty.Philote] = gProperty;
@@ -22,7 +22,7 @@ namespace ATAP.Utilities.GenerateProgram {
       else if (gClass.GMethodGroups != null) {
         foreach (var kvp in gClass.GMethodGroups) {
           if (kvp.Value.GMethods.ContainsKey(gMethodId)) {
-            GMethodGroup gMethodGroup = kvp.Value;
+            var gMethodGroup = kvp.Value;
             gMethod = gMethodGroup.GMethods[gMethodId];
           }
         }
@@ -39,7 +39,7 @@ namespace ATAP.Utilities.GenerateProgram {
       return gClass;
     }
 
-    public static GClass AddTConstructorAutoPropertyGroup(this GClass gClass, Philote<GMethod> gMethodId, string gAutoPropertyName, Philote<GPropertyGroup> gPropertyGroupId) {
+    public static IGClass AddTConstructorAutoPropertyGroup(this IGClass gClass, Philote<IGMethod> gMethodId, string gAutoPropertyName, Philote<IGPropertyGroup> gPropertyGroupId) {
       string gType = "I" + gAutoPropertyName;
       return gClass.AddTConstructorAutoPropertyGroup(gMethodId, gAutoPropertyName, gType, gPropertyGroupId);
     }

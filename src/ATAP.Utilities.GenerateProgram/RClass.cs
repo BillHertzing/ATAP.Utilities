@@ -7,7 +7,7 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
-    public static StringBuilder RenderClassFirstLineStringBuilder(this StringBuilder sb, GClass gClass, StringBuilder indent, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RenderClassFirstLineStringBuilder(this StringBuilder sb, IGClass gClass, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       sb.Append($"{indent}{gClass.GVisibility} {gClass.GAccessModifier} class {gClass.GName} ");
       if (gClass.GInheritance != "" ||  gClass.GImplements.Any()) { sb.Append(" : "); }
@@ -21,12 +21,12 @@ namespace ATAP.Utilities.GenerateProgram {
       sb.Append($" {{{eol}");
       return sb;
     }
-    public static StringBuilder RenderClassPreambleStringBuilder(this StringBuilder sb, GClass gClass, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RenderClassPreambleStringBuilder(this StringBuilder sb, IGClass gClass, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       sb.RenderClassFirstLineStringBuilder(gClass, indent, eol, ct);
       return sb;
     }
-    public static IR1Top RClass(this IR1Top r1Top, GClass gClass) {
+    public static IR1Top RClass(this IR1Top r1Top, IGClass gClass) {
 
       r1Top.Sb.RenderClassFirstLineStringBuilder(gClass, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       r1Top.Indent.Append(r1Top.IndentDelta);
@@ -154,7 +154,7 @@ namespace ATAP.Utilities.GenerateProgram {
       r1Top.Sb.Append($"{r1Top.Indent}}}{r1Top.Eol}");
       return r1Top;
     }
-    public static IR1Top RClass(this IR1Top r1Top, Dictionary<Philote<GClass>, GClass> gClasss) {
+    public static IR1Top RClass(this IR1Top r1Top, IDictionary<IPhilote<IGClass>, IGClass> gClasss) {
       foreach (var kvp in gClasss) {
         r1Top.RClass(kvp.Value);
       }

@@ -5,9 +5,9 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public record GUsing : IGUsing {
-    public GUsing(string gName, IPhilote<IGUsing>? philote) {
+    public GUsing(string gName) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
-      Philote = philote ?? new Philote<GUsing>();
+      Philote = new Philote<IGUsing>();
     }
 
     public string GName { get; init; }

@@ -12,74 +12,70 @@ using static ATAP.Utilities.GenerateProgram.GAttributeGroupExtensions;
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GNamespaceExtensions {
 
-    public static GNamespace AddDelegate(this GNamespace gNamespace, GDelegate gDelegate) {
+    public static IGNamespace AddDelegate(this IGNamespace gNamespace, IGDelegate gDelegate) {
       gNamespace.GDelegates[gDelegate.Philote] = (gDelegate);
       return gNamespace;
     }
-    public static GNamespace AddDelegate(this GNamespace gNamespace, IEnumerable<GDelegate> gDelegates) {
+    public static IGNamespace AddDelegate(this IGNamespace gNamespace, IEnumerable<IGDelegate> gDelegates) {
       foreach (var o in gDelegates) {
         gNamespace.GDelegates[o.Philote] = o;
       }
       return gNamespace;
     }
-    public static GNamespace AddDelegate(this GNamespace gNamespace, Dictionary<Philote<GDelegate>, GDelegate> gDelegates) {
+    public static IGNamespace AddDelegate(this IGNamespace gNamespace, IDictionary<IPhilote<IGDelegate>, IGDelegate> gDelegates) {
       foreach (var kvp in gDelegates) {
         gNamespace.AddDelegate(kvp.Value);
       }
       return gNamespace;
     }
-    public static GNamespace AddDelegateGroups(this GNamespace gNamespace, GDelegateGroup gDelegateGroup) {
+    public static IGNamespace AddDelegateGroups(this IGNamespace gNamespace, IGDelegateGroup gDelegateGroup) {
       gNamespace.GDelegateGroups[gDelegateGroup.Philote] = gDelegateGroup;
       return gNamespace;
     }
-    public static GNamespace AddDelegateGroups(this GNamespace gNamespace, IEnumerable<GDelegateGroup> gDelegateGroups) {
+    public static IGNamespace AddDelegateGroups(this IGNamespace gNamespace, IEnumerable<IGDelegateGroup> gDelegateGroups) {
       foreach (var o in gDelegateGroups) {
         gNamespace.GDelegateGroups[o.Philote] = o;
       }
       return gNamespace;
     }
-    public static GNamespace AddDelegateGroup(this GNamespace gNamespace, IEnumerable<GDelegateGroup> gDelegateGroups) {
+    public static IGNamespace AddDelegateGroup(this IGNamespace gNamespace, IEnumerable<IGDelegateGroup> gDelegateGroups) {
       foreach (var o in gDelegateGroups) {
         gNamespace.GDelegateGroups[o.Philote] = o;
       }
       return gNamespace;
     }
-    public static GNamespace AddEnumeration(this GNamespace gNamespace, GEnumeration gEnumeration) {
+    public static IGNamespace AddEnumeration(this IGNamespace gNamespace, IGEnumeration gEnumeration) {
       gNamespace.GEnumerations[gEnumeration.Philote] = (gEnumeration);
       return gNamespace;
     }
-    public static GNamespace AddEnumeration(this GNamespace gNamespace, IEnumerable<GEnumeration> gEnumerations) {
+    public static IGNamespace AddEnumeration(this IGNamespace gNamespace, IEnumerable<IGEnumeration> gEnumerations) {
       foreach (var o in gEnumerations) {
         gNamespace.GEnumerations[o.Philote] = o;
       }
       return gNamespace;
     }
-    public static GNamespace AddEnumeration(this GNamespace gNamespace, Dictionary<Philote<GEnumeration>, GEnumeration> gEnumerations) {
+    public static IGNamespace AddEnumeration(this IGNamespace gNamespace, IDictionary<IPhilote<IGEnumeration>, IGEnumeration> gEnumerations) {
       foreach (var kvp in gEnumerations) {
         gNamespace.AddEnumeration(kvp.Value);
       }
       return gNamespace;
     }
-    public static GNamespace AddEnumerationGroup(this GNamespace gNamespace, GEnumerationGroup gEnumerationGroup) {
+    public static IGNamespace AddEnumerationGroup(this IGNamespace gNamespace, IGEnumerationGroup gEnumerationGroup) {
       gNamespace.GEnumerationGroups[gEnumerationGroup.Philote] = gEnumerationGroup;
       return gNamespace;
     }
-    public static GNamespace AddEnumerationGroup(this GNamespace gNamespace, IEnumerable<GEnumerationGroup> gEnumerationGroups) {
+    public static IGNamespace AddEnumerationGroup(this IGNamespace gNamespace, IEnumerable<IGEnumerationGroup> gEnumerationGroups) {
       foreach (var o in gEnumerationGroups) {
         gNamespace.GEnumerationGroups[o.Philote] = o;
       }
       return gNamespace;
     }
-    public static GNamespace AddEnumeration(this GNamespace gNamespace, Dictionary<Philote<GEnumerationGroup>, GEnumerationGroup> gEnumerationGroups) {
+
+    public static IGNamespace AddEnumeration(this IGNamespace gNamespace, IDictionary<IPhilote<IGEnumerationGroup>, IGEnumerationGroup> gEnumerationGroups) {
       foreach (var kvp in gEnumerationGroups) {
         gNamespace.AddEnumerationGroup(kvp.Value);
       }
       return gNamespace;
     }
-
-   
   }
 }
-/*
-
-      */

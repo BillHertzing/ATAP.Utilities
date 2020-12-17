@@ -15,11 +15,11 @@ namespace ATAP.Utilities.GenerateProgram {
       GName = gName;
       GDescription = gDescription;
       GRelativePath = gRelativePath;
-      GAssemblyUnits = gAssemblyUnits == default ? new Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit>() : gAssemblyUnits;
+      GAssemblyUnits = gAssemblyUnits == default ? new Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>() : gAssemblyUnits;
       GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       GComment = gComment == default ? new GComment() : gComment;
 
-      Philote = new Philote<GAssemblyGroup>();
+      Philote = new Philote<IGAssemblyGroup>();
     }
     public string GName { get; init; }
     public string GDescription { get; init; }

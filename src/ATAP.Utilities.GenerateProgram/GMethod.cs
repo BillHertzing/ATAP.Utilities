@@ -10,7 +10,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GComment = gComment == default ? new GComment() : gComment;
       IsForInterface = isForInterface;
       GStateConfiguration = gStateConfiguration == default ? new GStateConfiguration() : gStateConfiguration;
-      Philote = new Philote<GMethod>();
+      Philote = new Philote<IGMethod>();
     }
     public IGMethodDeclaration GDeclaration { get; init; }
     public IGBody GBody { get; init; }

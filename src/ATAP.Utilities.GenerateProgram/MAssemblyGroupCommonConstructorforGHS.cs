@@ -20,7 +20,7 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroupBasicConstructorResult MAssemblyGroupCommonConstructorForGHHSAndGHBS(string gAssemblyGroupName = default,
+    public static IGAssemblyGroupBasicConstructorResult MAssemblyGroupCommonConstructorForGHHSAndGHBS(string gAssemblyGroupName = default,
         string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
         IGPatternReplacement gPatternReplacement = default) {
       var gAssemblyGroupBasicConstructorResult = MAssemblyGroupBasicConstructor(gAssemblyGroupName,
@@ -203,7 +203,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #region ResourceUnits
       GResourceUnit gResourceUnit;
       GResourceItem gResourceItem;
-      Dictionary<Philote<GResourceItem>, GResourceItem> gResourceItems;
+      Dictionary<IPhilote<IGResourceItem>, IGResourceItem> gResourceItems;
 
       GPatternReplacement gExceptionMessagesResourcePatternReplacement = new GPatternReplacement(
         gDictionary: new Dictionary<Regex, string>() {
@@ -212,7 +212,7 @@ namespace ATAP.Utilities.GenerateProgram {
       gExceptionMessagesResourcePatternReplacement.GDictionary.AddRange(mCreateAssemblyGroupResult.gTitularAssemblyUnitPatternReplacement.GDictionary);
       gResourceItem = new GResourceItem(gName: "ExceptionMessage1", gValue: "text for exception {0}",
         gComment: "{0} is the exception something?");
-      gResourceItems = new Dictionary<Philote<GResourceItem>, GResourceItem> {[gResourceItem.Philote] = gResourceItem};
+      gResourceItems = new Dictionary<IPhilote<IGResourceItem>, IGResourceItem> {[gResourceItem.Philote] = gResourceItem};
       gResourceUnit =
         new GResourceUnit("ExceptionMessages", gRelativePath: "Resources", gResourceItems: gResourceItems,
           gPatternReplacement: gExceptionMessagesResourcePatternReplacement);
@@ -225,7 +225,7 @@ namespace ATAP.Utilities.GenerateProgram {
       gUIMessagesResourcePatternReplacement.GDictionary.AddRange(mCreateAssemblyGroupResult.gTitularAssemblyUnitPatternReplacement.GDictionary);
       gResourceItem = new GResourceItem(gName: "Enter Selection>", gValue: "Enter Selection>",
         gComment: "Enter Selection prompt for Console UI");
-      gResourceItems = new Dictionary<Philote<GResourceItem>, GResourceItem> {[gResourceItem.Philote] = gResourceItem};
+      gResourceItems = new Dictionary<IPhilote<IGResourceItem>, IGResourceItem> {[gResourceItem.Philote] = gResourceItem};
       gResourceUnit = new GResourceUnit("UIMessages", gRelativePath: "Resources", gResourceItems: gResourceItems,
         gPatternReplacement: gUIMessagesResourcePatternReplacement);
       mCreateAssemblyGroupResult.gTitularAssemblyUnit.GResourceUnits.Add(gResourceUnit.Philote, gResourceUnit);

@@ -11,15 +11,15 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MAUStateless(string gAssemblyGroupName,
+    public static IGAssemblyGroup MAUStateless(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true) {
       return MAUStateless(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, 
         new GPatternReplacement());
     }
-    public static GAssemblyGroup MAUStateless(string gAssemblyGroupName,
+    public static IGAssemblyGroup MAUStateless(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
-      GPatternReplacement gPatternReplacement = default) {
-      GPatternReplacement _gPatternReplacement =
+      IGPatternReplacement gPatternReplacement = default) {
+      IGPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
 
 
@@ -65,7 +65,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #endregion
       #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit
       #region Add References used by both the Titular Derived and Titular Base CompilationUnits
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
+      foreach (var o in new List<IGItemGroupInProjectUnit>() {
           new GItemGroupInProjectUnit("StatelessPackageReferences",
             "Packages for the Stateless lightweight StateMachine library",
             new GBody(new List<string>() {"<PackageReference Include=\"Stateless\" />",})),
@@ -103,14 +103,14 @@ namespace ATAP.Utilities.GenerateProgram {
     }
 /*******************************************************************************/
 /*******************************************************************************/
-    static GClass MCreateStateConfigurationClass(string gVisibility = "public") {
+    static IGClass MCreateStateConfigurationClass(string gVisibility = "public") {
 //var gMethodArgumentList = new List<GArgument>() {
 //  new GArgument("requestorPhilote", "object"),
 //  new GArgument("callback", "object"),
 //  new GArgument("timerSignil", "object"),
 //  new GArgument("ct", "CancellationToken?")
 //};
-//var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+//var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
 //foreach (var o in gMethodArgumentList) {
 //  gMethodArguments.Add(o.Philote, o);
 //}
@@ -121,8 +121,8 @@ namespace ATAP.Utilities.GenerateProgram {
       gClass.GPropertys.Add(gProperty.Philote, gProperty);
       gProperty = new GProperty("NextState", "State", "{get;}", "public");
       gClass.GPropertys.Add(gProperty.Philote, gProperty);
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
-      foreach (var o in new List<GArgument>() {
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
+      foreach (var o in new List<IGArgument>() {
         new GArgument("state", "State"), new GArgument("trigger", "Trigger"), new GArgument("nextState", "State"),
       }) {
         gMethodArguments.Add(o.Philote, o);

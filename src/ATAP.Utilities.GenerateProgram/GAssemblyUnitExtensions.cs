@@ -15,7 +15,7 @@ using static ATAP.Utilities.GenerateProgram.GClassExtensions;
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GAssemblyUnitExtensions {
 
-    public static void GAssemblyGroupCommonFinalizer(GAssemblyGroupBasicConstructorResult gAssemblyGroupBasicConstructorResult) {
+    public static void GAssemblyGroupCommonFinalizer(IGAssemblyGroupBasicConstructorResult gAssemblyGroupBasicConstructorResult) {
       //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor,  GCompilationUnit gCompilationUnitDerived
       //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
       //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;

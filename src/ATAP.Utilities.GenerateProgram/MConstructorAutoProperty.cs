@@ -7,7 +7,7 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
 
   public static partial class GClassExtensions {
-    public static GClass AddTConstructorAutoProperty(this GClass gClass, Philote<GMethod> gMethodId, string gAutoPropertyName, string gType, string? gAccessors = "{ get;}", string? gVisibility = default) {
+    public static IGClass AddTConstructorAutoProperty(this IGClass gClass, Philote<IGMethod> gMethodId, string gAutoPropertyName, string gType, string? gAccessors = "{ get;}", string? gVisibility = default) {
       if (gClass.GPropertys != null) {
         GProperty gProperty = new GProperty(gAutoPropertyName.ToUpperFirstChar(), gType, gAccessors, gVisibility);
         gClass.GPropertys.Add(gProperty.Philote,gProperty);
@@ -19,7 +19,7 @@ namespace ATAP.Utilities.GenerateProgram {
       else if ( gClass.GMethodGroups != null) {
         foreach (var kvp in gClass.GMethodGroups) {
           if (kvp.Value.GMethods.ContainsKey(gMethodId)) {
-            GMethodGroup gMethodGroup = kvp.Value;
+            var gMethodGroup = kvp.Value;
             gMethod = gMethodGroup.GMethods[gMethodId];
           }
         }

@@ -6,8 +6,8 @@ namespace ATAP.Utilities.GenerateProgram {
   public class GUsingGroup : IGUsingGroup {
     public GUsingGroup(string gName = "", Dictionary<IPhilote<IGUsing>, IGUsing> gUsings = default) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
-      GUsings = gUsings == default ? new Dictionary<Philote<GUsing>, GUsing>() : gUsings;
-      Philote = new Philote<GUsingGroup>();
+      GUsings = gUsings == default ? new Dictionary<IPhilote<IGUsing>, IGUsing>() : gUsings;
+      Philote = new Philote<IGUsingGroup>();
     }
 
     public string GName { get; init; }

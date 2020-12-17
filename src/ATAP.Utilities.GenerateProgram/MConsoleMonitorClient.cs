@@ -81,8 +81,8 @@ namespace ATAP.Utilities.GenerateProgram {
       }
       gClass.AddPropertyGroups(gPropertyGroup);
     }
-    public static void MPropertyGroupAndConstructorDeclarationAndInitializationForInjectedConsoleMonitorGHS(GClass gClass,
-      GMethod gConstructor) {
+    public static void MPropertyGroupAndConstructorDeclarationAndInitializationForInjectedConsoleMonitorGHS(IGClass gClass,
+      IGMethod gConstructor) {
       var gPropertyGroup = new GPropertyGroup("Injected Property for ConsoleMonitorGHS");
       gClass.AddPropertyGroups(gPropertyGroup);
       foreach (var o in new List<string>() { "ConsoleMonitorGHS" }) {
@@ -135,7 +135,7 @@ namespace ATAP.Utilities.GenerateProgram {
     }
 
     public static GMethod MBuildMenuMethodForConsoleMonitorPattern() {
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in new List<GArgument>() {
         new GArgument("mesg","StringBuilder"),
         new GArgument("choices","IEnumerable<string>"),
@@ -165,10 +165,10 @@ namespace ATAP.Utilities.GenerateProgram {
         }));
     }
     public static GMethod MCreateReadLineMethodForConsoleMonitorPattern() {
-      var gMethodArgumentList = new List<GArgument>() {
+      var gMethodArgumentList = new List<IGArgument>() {
         new GArgument("ct","CancellationToken?")
       };
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
 
       return new GMethod(
@@ -187,11 +187,11 @@ namespace ATAP.Utilities.GenerateProgram {
     }
 
     public static GMethod MCreateProcessInputStringMethodForConsoleMonitorPattern(
-      (GBody gBody, GComment gComment) gBodyCommentTuple = default) {
-      var gMethodArgumentList = new List<GArgument>() {
+      (IGBody gBody, IGComment gComment) gBodyCommentTuple = default) {
+      var gMethodArgumentList = new List<IGArgument>() {
         new GArgument("inputString", "string"), new GArgument("ct", "CancellationToken?"),
       };
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in gMethodArgumentList) {
         gMethodArguments.Add(o.Philote, o);
       }
@@ -206,11 +206,11 @@ namespace ATAP.Utilities.GenerateProgram {
     }
 
     public static GMethod MCreateWriteAsyncMethodForConsoleMonitorPattern(string gAccessModifier = "") {
-      var gMethodArgumentList = new List<GArgument>() {
+      var gMethodArgumentList = new List<IGArgument>() {
     new GArgument("mesg","string"),
     new GArgument("ct","CancellationToken?")
   };
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
 
       return new GMethod(
@@ -246,12 +246,12 @@ namespace ATAP.Utilities.GenerateProgram {
         }));
     }
 
-    static GMethod MCreateWriteMethodForConsoleMonitorPattern(string gAccessModifier = "") {
+    static IGMethod MCreateWriteMethodForConsoleMonitorPattern(string gAccessModifier = "") {
       var gMethodArgumentList = new List<GArgument>() {
         new GArgument("mesg","string"),
         new GArgument("ct","CancellationToken?")
       };
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
 
       return new GMethod(
@@ -271,10 +271,10 @@ namespace ATAP.Utilities.GenerateProgram {
     }
 
     static GMethod MCreateInitiateContactWithConsoleMonitorMethodForConsoleMonitorPattern(string gAccessModifier = "") {
-      var gMethodArgumentList = new List<GArgument>() {
+      var gMethodArgumentList = new List<IGArgument>() {
         new GArgument("ct","CancellationToken?")
       };
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
 
       return new GMethod(
@@ -297,7 +297,7 @@ namespace ATAP.Utilities.GenerateProgram {
       var gMethodGroup = new GMethodGroup(gName: "Methods for ConsoleMonitorPattern StateMachine states");
       var gMethod = new GMethod(new GMethodDeclaration(gName: "InitiateContactWithConsoleMonitor", gType: "void",
           gVisibility: "private", gAccessModifier: "", isConstructor: false,
-          gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
+          gArguments: new Dictionary<IPhilote<IGArgument>, IGArgument>()),
         new GBody(gStatements: new List<string>() {
 
           "StateMachine.Fire(Trigger.ConsoleMonitorRequestContactSent);"
@@ -310,7 +310,7 @@ namespace ATAP.Utilities.GenerateProgram {
 
       gMethod = new GMethod(new GMethodDeclaration(gName: "AcknowledgeConsoleMonitorContact", gType: "void",
           gVisibility: "public", gAccessModifier: "", isConstructor: false,
-          gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
+          gArguments: new Dictionary<IPhilote<IGArgument>, IGArgument>()),
         new GBody(gStatements: new List<string>() { "// Called By Console Monitor",
           "// Just move to the next state",
           "StateMachine.Fire(Trigger.ConsoleMonitorRequestContactAcknowledgementReceived);" }),
@@ -320,7 +320,7 @@ namespace ATAP.Utilities.GenerateProgram {
 
       gMethod = new GMethod(new GMethodDeclaration(gName: "SubscribeToConsoleMonitor", gType: "void",
           gVisibility: "public", gAccessModifier: "", isConstructor: false,
-          gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
+          gArguments: new Dictionary<IPhilote<IGArgument>, IGArgument>()),
         new GBody(gStatements: new List<string>() {
           "// Called By ConsoleMonitor",
           "// Subscribe to ConsoleMonitor's ISObservable",
@@ -337,7 +337,7 @@ namespace ATAP.Utilities.GenerateProgram {
       var gDelegateGroup = new GDelegateGroup(gName: "Delegates for ConsoleMonitor Pattern states");
       var gDelegate = new GDelegate(new GDelegateDeclaration(gName: "ProcessInput", gType: "void",
           gVisibility: "private", 
-          gArguments: new Dictionary<Philote<GArgument>, GArgument>() ),
+          gArguments: new Dictionary<IPhilote<IGArgument>, IGArgument>() ),
         new GComment(new List<string>() {
           "//  Delegate for the method that will process each input line ",
         }));

@@ -5,12 +5,12 @@ namespace ATAP.Utilities.GenerateProgram
 {
   public static partial class RenderExtensions
   {
-    public static StringBuilder RenderDelegateDeclarationPreambleStringBuilder(this StringBuilder sb, GDelegateDeclaration gDelegateDeclaration, StringBuilder indent, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RenderDelegateDeclarationPreambleStringBuilder(this StringBuilder sb, IGDelegateDeclaration gDelegateDeclaration, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       sb.Append($"{indent}{gDelegateDeclaration.GVisibility} delegate {gDelegateDeclaration.GType} {gDelegateDeclaration.GName}(");
       return sb;
     }
-    public static IR1Top RDelegateDeclaration(this IR1Top r1Top, GDelegateDeclaration gDelegateDeclaration)
+    public static IR1Top RDelegateDeclaration(this IR1Top r1Top, IGDelegateDeclaration gDelegateDeclaration)
     {
       r1Top.Sb.RenderDelegateDeclarationPreambleStringBuilder(gDelegateDeclaration, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       r1Top.RArgument(gArguments: gDelegateDeclaration.GArguments);

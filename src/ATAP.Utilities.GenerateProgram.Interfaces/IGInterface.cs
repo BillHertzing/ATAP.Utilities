@@ -10,10 +10,10 @@ namespace ATAP.Utilities.GenerateProgram {
     string GAccessModifier { get; }
     string GInheritance { get; }
     IList<string> GImplements { get; }
-    Dictionary<IPhilote<IGProperty>, IGProperty> GPropertys { get; }
-    Dictionary<IPhilote<IGPropertyGroup>, IGPropertyGroup> GPropertyGroups { get; }
-    Dictionary<IPhilote<IGMethod>, IGMethod> GMethods { get; }
-    Dictionary<IPhilote<IGMethodGroup>, IGMethodGroup> GMethodGroups { get; }
+    IDictionary<IPhilote<IGProperty>, IGProperty> GPropertys { get; }
+    IDictionary<IPhilote<IGPropertyGroup>, IGPropertyGroup> GPropertyGroups { get; }
+    IDictionary<IPhilote<IGMethod>, IGMethod> GMethods { get; }
+    IDictionary<IPhilote<IGMethodGroup>, IGMethodGroup> GMethodGroups { get; }
     IPhilote<IGInterface> Philote { get; }
   }
 }

@@ -13,10 +13,10 @@ namespace ATAP.Utilities.GenerateProgram {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
       GRelativePath = gRelativePath == default ? "Resources" : gRelativePath;
       GFileSuffix = gFileSuffix == default ? ".resx" : gFileSuffix;
-      GResourceItems = gResourceItems == default ? new Dictionary<Philote<GResourceItem>, GResourceItem>() : gResourceItems;
+      GResourceItems = gResourceItems == default ? new Dictionary<IPhilote<IGResourceItem>, IGResourceItem>() : gResourceItems;
       GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       GComment = gComment == default ? new GComment() : gComment;
-      Philote = new Philote<GResourceUnit>();
+      Philote = new Philote<IGResourceUnit>();
     }
 
     public string GName { get; init; }

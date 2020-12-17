@@ -5,12 +5,12 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGNamespace {
     string GName { get; init; }
-    Dictionary<IPhilote<IGClass>, IGClass> GClasss { get; init; }
-    Dictionary<IPhilote<IGInterface>, IGInterface> GInterfaces { get; init; }
-    Dictionary<IPhilote<IGDelegate>, IGDelegate> GDelegates { get; init; }
-    Dictionary<IPhilote<IGDelegateGroup>, IGDelegateGroup> GDelegateGroups { get; init; }
-    Dictionary<IPhilote<IGEnumeration>, IGEnumeration> GEnumerations { get; init; }
-    Dictionary<IPhilote<IGEnumerationGroup>, IGEnumerationGroup> GEnumerationGroups { get; init; }
+    IDictionary<IPhilote<IGClass>, IGClass> GClasss { get; init; }
+    IDictionary<IPhilote<IGInterface>, IGInterface> GInterfaces { get; init; }
+    IDictionary<IPhilote<IGDelegate>, IGDelegate> GDelegates { get; init; }
+    IDictionary<IPhilote<IGDelegateGroup>, IGDelegateGroup> GDelegateGroups { get; init; }
+    IDictionary<IPhilote<IGEnumeration>, IGEnumeration> GEnumerations { get; init; }
+    IDictionary<IPhilote<IGEnumerationGroup>, IGEnumerationGroup> GEnumerationGroups { get; init; }
     IGComment GComment { get; init; }
     IPhilote<IGNamespace> Philote { get; init; }
   }

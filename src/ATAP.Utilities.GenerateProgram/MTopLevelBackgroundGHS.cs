@@ -12,15 +12,15 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MTopLevelBackgroundGHS(string gAssemblyGroupName,
+    public static IGAssemblyGroup MTopLevelBackgroundGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,bool hasInterfaces = true) {
       return MTopLevelBackgroundGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, new GPatternReplacement()  );
     }
 
-    public static GAssemblyGroup MTopLevelBackgroundGHS(string gAssemblyGroupName,
+    public static IGAssemblyGroup MTopLevelBackgroundGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
-      GPatternReplacement gPatternReplacement = default) {
-      GPatternReplacement _gPatternReplacement =
+      IGPatternReplacement gPatternReplacement = default) {
+      IGPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, hasInterfaces, _gPatternReplacement);

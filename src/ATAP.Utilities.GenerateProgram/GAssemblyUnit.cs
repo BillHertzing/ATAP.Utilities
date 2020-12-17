@@ -14,12 +14,12 @@ namespace ATAP.Utilities.GenerateProgram {
       GName = gName == default ? "" : gName;
       GRelativePath = gRelativePath == default ? "" : gRelativePath;
       GProjectUnit = gProjectUnit == default? new GProjectUnit(GName) : gProjectUnit;
-      GCompilationUnits = gCompilationUnits == default ? new Dictionary<Philote<GCompilationUnit>, GCompilationUnit>() : gCompilationUnits;
-      GPropertiesUnits = gPropertiesUnits == default ? new Dictionary<Philote<GPropertiesUnit>, GPropertiesUnit>() : gPropertiesUnits;
-      GResourceUnits = gResourceUnits == default ? new Dictionary<Philote<GResourceUnit>, GResourceUnit>() : gResourceUnits;
+      GCompilationUnits = gCompilationUnits == default ? new Dictionary<IPhilote<IGCompilationUnit>, IGCompilationUnit>() : gCompilationUnits;
+      GPropertiesUnits = gPropertiesUnits == default ? new Dictionary<IPhilote<IGPropertiesUnit>, IGPropertiesUnit>() : gPropertiesUnits;
+      GResourceUnits = gResourceUnits == default ? new Dictionary<IPhilote<IGResourceUnit>, IGResourceUnit>() : gResourceUnits;
       GComment = gComment == default? new GComment() : gComment;
       GPatternReplacement = gPatternReplacement == default? new GPatternReplacement() : gPatternReplacement;
-      Philote = new Philote<GAssemblyUnit>();
+      Philote = new Philote<IGAssemblyUnit>();
     }
 
     public string GName { get; init; }

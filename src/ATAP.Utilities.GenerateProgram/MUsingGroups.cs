@@ -10,7 +10,7 @@ using System.Text;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GUsingGroup MUsingGroupForMicrosoftGenericHostInGHHSAndGHBS() {
+    public static IGUsingGroup MUsingGroupForMicrosoftGenericHostInGHHSAndGHBS() {
       var _gUsingGroup = new GUsingGroup("Usings For Microsoft GenericHost in GHHS and GHBS");
       foreach (var gName in new List<string>() {
         "Microsoft.Extensions.Localization","Microsoft.Extensions.Options","Microsoft.Extensions.Configuration","Microsoft.Extensions.Logging",
@@ -21,7 +21,7 @@ namespace ATAP.Utilities.GenerateProgram {
       }
       return _gUsingGroup;
     }
-    public static GUsingGroup MUsingGroupForSystemGenericHostInGHHSAndGHBS() {
+    public static IGUsingGroup MUsingGroupForSystemGenericHostInGHHSAndGHBS() {
       var _gUsingGroup = new GUsingGroup("Using Group For System in GHHS and GHBS");
       foreach (var gName in new List<string>() {
         "System", "System.Collections.Generic", "System.Threading", "System.Threading.Tasks"
@@ -31,7 +31,7 @@ namespace ATAP.Utilities.GenerateProgram {
       }
       return _gUsingGroup;
     }
-    public static GUsingGroup MUsingGroupForConsoleMonitorPatternInInterfaces() {
+    public static IGUsingGroup MUsingGroupForConsoleMonitorPatternInInterfaces() {
       var _gUsingGroup = new GUsingGroup("Using Group For System in GHHS and GHBS");
       foreach (var gName in new List<string>() {
         "System.Text", 
@@ -41,7 +41,7 @@ namespace ATAP.Utilities.GenerateProgram {
       }
       return _gUsingGroup;
     }
-    public static GUsingGroup MUsingGroupForStatelessStateMachine() {
+    public static IGUsingGroup MUsingGroupForStatelessStateMachine() {
       return new GUsingGroup("Usings For Stateless implementation of StateMachine").AddUsing(new List<GUsing>() {
         new GUsing("System.Linq"),
         new GUsing("Stateless"),

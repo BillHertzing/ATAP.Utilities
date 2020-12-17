@@ -10,15 +10,15 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MConsoleMonitorGHS(string gAssemblyGroupName,
+    public static IGAssemblyGroup MConsoleMonitorGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true) {
       return MConsoleMonitorGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, 
         new GPatternReplacement());
     }
-    public static GAssemblyGroup MConsoleMonitorGHS(string gAssemblyGroupName,
+    public static IGAssemblyGroup MConsoleMonitorGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
-      GPatternReplacement gPatternReplacement = default) {
-      GPatternReplacement _gPatternReplacement =
+      IGPatternReplacement gPatternReplacement = default) {
+      IGPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, hasInterfaces, _gPatternReplacement);
@@ -212,7 +212,7 @@ namespace ATAP.Utilities.GenerateProgram {
           }),
         new GComment(new List<string>() {"// Used to write a string to Write method of the ConsoleSink service"}));
     }
-    static GMethod CreateConsoleSourceReadLineAsyncAsObservableMethod(string gAccessModifier = "") {
+    static IGMethod CreateConsoleSourceReadLineAsyncAsObservableMethod(string gAccessModifier = "") {
       var gMethodArgumentList = new List<GArgument>() {
         // None
       };

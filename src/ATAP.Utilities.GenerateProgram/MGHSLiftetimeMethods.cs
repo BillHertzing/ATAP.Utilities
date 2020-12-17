@@ -4,7 +4,7 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GMethod MCreateStartAsyncMethod( string gAccessModifier = "") {
+    public static IGMethod MCreateStartAsyncMethod( string gAccessModifier = "") {
       var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in new List<GArgument>() {
         new GArgument("genericHostsCancellationToken", "CancellationToken"),
@@ -41,7 +41,7 @@ namespace ATAP.Utilities.GenerateProgram {
       return newgMethod;
     }
 
-    public static GMethod MCreateStopAsyncMethod(string gAccessModifier = "") {
+    public static IGMethod MCreateStopAsyncMethod(string gAccessModifier = "") {
       var gMethodDeclaration = new GMethodDeclaration(gName: "StopAsync", gType: "Task",
         gVisibility: "public", gAccessModifier: gAccessModifier,  isConstructor: false,
         gArguments: new Dictionary<IPhilote<IGArgument>, IGArgument>());
@@ -71,7 +71,7 @@ namespace ATAP.Utilities.GenerateProgram {
       return new GMethod(gMethodDeclaration, gBody, gComment);
     }
 
-    public static GMethod MCreateExecuteAsyncMethod(string gAccessModifier = "") {
+    public static IGMethod MCreateExecuteAsyncMethod(string gAccessModifier = "") {
       var gMethodDeclaration = new GMethodDeclaration(gName: "ExecuteAsync", gType: "Task",
         gVisibility: "protected", gAccessModifier: gAccessModifier, isConstructor: false,
         gArguments: new Dictionary<IPhilote<IGArgument>, IGArgument>());
@@ -111,7 +111,7 @@ namespace ATAP.Utilities.GenerateProgram {
     }
 
 
-    public static GMethod MCreateOnStartedMethod() {
+    public static IGMethod MCreateOnStartedMethod() {
       var gMethodDeclaration = new GMethodDeclaration(gName: "OnStarted", gType: "void",
         gVisibility: "public", gAccessModifier: "virtual", isConstructor: false,
         gArguments: new Dictionary<IPhilote<IGArgument>, IGArgument>());
@@ -121,7 +121,7 @@ namespace ATAP.Utilities.GenerateProgram {
           "// Registered as a handler with the HostApplicationLifetime.ApplicationStarted event",
         }));
     }
-    public static GMethod MCreateOnStoppingMethod() {
+    public static IGMethod MCreateOnStoppingMethod() {
       return new GMethod(
         new GMethodDeclaration(gName: "OnStopping", gType: "void",
           gVisibility: "public", gAccessModifier: "virtual", isConstructor: false,
@@ -131,7 +131,7 @@ namespace ATAP.Utilities.GenerateProgram {
           "// Registered as a handler with the HostApplicationLifetime.ApplicationStarted event",
         }));
     }
-    public static GMethod MCreateOnStoppedMethod() {
+    public static IGMethod MCreateOnStoppedMethod() {
       return new GMethod(
         new GMethodDeclaration(gName: "OnStopped", gType: "void",
           gVisibility: "public", gAccessModifier: "virtual", isConstructor: false,
@@ -144,19 +144,19 @@ namespace ATAP.Utilities.GenerateProgram {
         }));
     }
 
-    public static GMethodGroup MCreateStartStopAsyncMethods(string gAccessModifier = "") {
+    public static IGMethodGroup MCreateStartStopAsyncMethods(string gAccessModifier = "") {
       GMethodGroup newgMethodGroup =
         new GMethodGroup(gName: "Start and Stop Async Methods for IHostedService (part of Generic Host)");
-      GMethod gMethod = MCreateStartAsyncMethod(gAccessModifier);
+      var gMethod = MCreateStartAsyncMethod(gAccessModifier);
       newgMethodGroup.GMethods[gMethod.Philote] = gMethod;
       gMethod = MCreateStopAsyncMethod(gAccessModifier);
       newgMethodGroup.GMethods[gMethod.Philote] = gMethod;
       return newgMethodGroup;
     }
-    public static GMethodGroup MCreateHostApplicationLifetimeEventHandlerMethods() {
+    public static IGMethodGroup MCreateHostApplicationLifetimeEventHandlerMethods() {
       GMethodGroup newgMethodGroup =
         new GMethodGroup(gName: "OnStarted, OnStopping, and OnStopped Event Handler Methods for HostApplicationLifetime events");
-      GMethod gMethod = MCreateOnStartedMethod();
+      IGMethod gMethod = MCreateOnStartedMethod();
       newgMethodGroup.GMethods[gMethod.Philote] = gMethod;
       gMethod = MCreateOnStoppingMethod();
       newgMethodGroup.GMethods[gMethod.Philote] = gMethod;

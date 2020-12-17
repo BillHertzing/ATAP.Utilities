@@ -157,7 +157,7 @@ namespace ATAP.Utilities.GenerateProgram {
       //    .ToDictionary<Philote<GPropertyGroup>, GPropertyGroup>(_ => true);
       return new Dictionary<IPhilote<IGPropertyGroup>, IGPropertyGroup>();
     }
-    public static GMethod ConvertMethodToInterfaceMethod(IGMethod gMethod) {
+    public static IGMethod ConvertMethodToInterfaceMethod(IGMethod gMethod) {
       GMethod gInterfaceMethod = default;
       if (!gMethod.GDeclaration.IsConstructor && gMethod.GDeclaration.GVisibility == "public") {
         var gAccessModifier = gMethod.GDeclaration.GAccessModifier;

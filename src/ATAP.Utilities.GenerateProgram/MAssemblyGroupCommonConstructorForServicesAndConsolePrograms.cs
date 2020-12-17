@@ -20,10 +20,10 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroupBasicConstructorResult MAssemblyGroupCommonConstructorForServicesAndConsolePrograms(
+    public static IGAssemblyGroupBasicConstructorResult MAssemblyGroupCommonConstructorForServicesAndConsolePrograms(
       string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
-      GPatternReplacement gPatternReplacement = default) {
+      IGPatternReplacement gPatternReplacement = default) {
       var gAssemblyGroupBasicConstructorResult = MAssemblyGroupBasicConstructor(gAssemblyGroupName,
         subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, gPatternReplacement);
       #region Upate the ProjectUnit

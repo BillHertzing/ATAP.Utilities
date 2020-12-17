@@ -118,8 +118,8 @@ namespace ATAP.Utilities.GenerateProgram {
     }
     /*******************************************************************************/
     /*******************************************************************************/
-    static GMethod MCreateRequestAFileSystemWatcher(string gAccessModifier = "virtual") {
-      var gMethodArgumentList = new List<GArgument>() {
+    static IGMethod MCreateRequestAFileSystemWatcher(string gAccessModifier = "virtual") {
+      var gMethodArgumentList = new List<IGArgument>() {
         new GArgument("requestorPhilote", "object"),
         new GArgument("callback", "object"),
         new GArgument("fileSystemWatcherSignil", "object"),

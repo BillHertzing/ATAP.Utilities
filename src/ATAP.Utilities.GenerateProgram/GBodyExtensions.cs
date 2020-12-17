@@ -11,21 +11,21 @@ using ATAP.Utilities.GenerateProgram;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GBodyExtensions {
-    public static GBody AddBody(this GBody gBody, GBody gAdditionalBody) {
+    public static IGBody AddBody(this IGBody gBody, IGBody gAdditionalBody) {
       gBody.GStatements.AddRange(gAdditionalBody.GStatements);
       return gBody;
     }
-    public static GBody AddBody(this GBody gBody, IEnumerable<GBody> gBodys) {
+    public static IGBody AddBody(this IGBody gBody, IEnumerable<IGBody> gBodys) {
       foreach (var o in gBodys) {
         gBody.GStatements.AddRange(o.GStatements);
       }
       return gBody;
     }
-    //public static GBody AddBodyGroups(this GBody gBody, GBodyGroup gBodyGroup) {
+    //public static IGBody AddBodyGroups(this IGBody gBody, IGBodyGroup gBodyGroup) {
     //  gBody.GBodyGroups[gBodyGroup.Philote] = gBodyGroup;
     //  return gBody;
     //}
-    //public static GBody AddBodyGroups(this GBody gBody, IEnumerable<GBodyGroup> gBodyGroups) {
+    //public static IGBody AddBodyGroups(this IGBody gBody, IEnumerable<IGBodyGroup> gBodyGroups) {
     //  foreach (var o in gBodyGroups) {
     //    gBody.GBodyGroups[o.Philote] = o;
     //  }

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GPropertyGroupInProjectUnitExtensions {
-    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForPackableLibraryVersionedConfigurations() {
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForPackableLibraryVersionedConfigurations() {
       return new GPropertyGroupInProjectUnit("PackableProductionV1.0.0Library", "what kind of an assembly",
         new List<string>() {
           "<OutputType>Library</OutputType>",
@@ -29,30 +29,30 @@ namespace ATAP.Utilities.GenerateProgram {
         });
     }
 
-    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsExecutable() {
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsExecutable() {
       return new GPropertyGroupInProjectUnit("Executable", "Creates a Executable Project", new List<string>() {
         "<OutputType>Exe</OutputType>"
       });
     }
 
-    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsLibrary() {
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsLibrary() {
       return new GPropertyGroupInProjectUnit("Library", "Creates a Library Project", new List<string>() {
         "<OutputType>Library</OutputType>"
       });
     }
 
-    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsExe() {
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsExe() {
       return new GPropertyGroupInProjectUnit("Executable", "Creates an Executable Project", new List<string>() {
         "<OutputType>Exe</OutputType>"
       });
     }
-    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForPackableOnBuild() {
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForPackableOnBuild() {
       return new GPropertyGroupInProjectUnit("PackableOnBuild", "The Assembly will be packed into a NuGet Package on every build", new List<string>() {
         "<GeneratePackageOnBuild>true</GeneratePackageOnBuild>",
         "<IsPackable>true</IsPackable>",
       });
     }
-    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForLifecycleStage() {
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForLifecycleStage() {
       return new GPropertyGroupInProjectUnit("LifecycleStage", "Describes the current stage in the development/Release lifecycle for this Assembly", new List<string>() {
         "<!-- Current Lifecycle stage for this assembly -->",
         "<PackageLifeCycleStage>Production</PackageLifeCycleStage>",
@@ -61,12 +61,12 @@ namespace ATAP.Utilities.GenerateProgram {
         "<PackageLabel>NA</PackageLabel>",
       });
     }
-    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForBuildConfigurations() {
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForBuildConfigurations() {
       return new GPropertyGroupInProjectUnit("BuildConfigurations", "The BuildConfigurations available for this assembly", new List<string>() {
         "<Configurations>Debug;Release;ReleaseWithTrace</Configurations>",
       });
     }
-    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForVersionInfo(Version version) {
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForVersionInfo(Version version) {
       return new GPropertyGroupInProjectUnit("Version", "The current version of this assembly", new List<string>() {
         "<!-- Assembly, File, and Package Information for this assembly-->",
         "<!-- Build and revision are created based on date-->",
@@ -75,10 +75,10 @@ namespace ATAP.Utilities.GenerateProgram {
         $"<PatchVersion>{version.Revision}</PatchVersion>",
       });
     }
-    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitForVersionInfo() {
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForVersionInfo() {
       return PropertyGroupInProjectUnitForVersionInfo(new Version());
     }
-    public static GPropertyGroupInProjectUnit PropertyGroupInProjectUnitFor() {
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitFor() {
       return new GPropertyGroupInProjectUnit("", "", new List<string>() {
       });
     }

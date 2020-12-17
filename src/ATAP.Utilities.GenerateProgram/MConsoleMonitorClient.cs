@@ -26,11 +26,11 @@ namespace ATAP.Utilities.GenerateProgram {
         lookupResultsTuple.gNamespacess.First(), lookupResultsTuple.gClasss.First(), lookupResultsTuple.gMethods.First(),
         baseNamespaceName:baseNamespaceName, rawDiGraph, gBodyCommentTuple);
     }
-    public static void MConsoleMonitorClient(GAssemblyGroup gAssemblyGroup, GAssemblyUnit gAssemblyUnit = default, GCompilationUnit gCompilationUnit = default,
-      GNamespace gNamespace = default, GClass gClass = default, GMethod gMethod = default,
+    public static void MConsoleMonitorClient(IGAssemblyGroup gAssemblyGroup, IGAssemblyUnit gAssemblyUnit = default, IGCompilationUnit gCompilationUnit = default,
+      IGNamespace gNamespace = default, IGClass gClass = default, IGMethod gMethod = default,
       string baseNamespaceName = "",
       List<string> rawDiGraph = default,
-        (GBody, GComment) gBodyCommentTuple = default
+        (IGBody, IGComment) gBodyCommentTuple = default
       ) {
       #region Titular Base Assembly Unit
       MConsoleMonitorClientBase(gAssemblyUnit, gCompilationUnit, gNamespace, gClass, gMethod, baseNamespaceName,rawDiGraph,gBodyCommentTuple);
@@ -38,11 +38,11 @@ namespace ATAP.Utilities.GenerateProgram {
 
     #endregion
 
-    public static void MConsoleMonitorClientBase(GAssemblyUnit gAssemblyUnit, GCompilationUnit gCompilationUnit,
-      GNamespace gNamespace, GClass gClass, GMethod gConstructor,
+    public static void MConsoleMonitorClientBase(IGAssemblyUnit gAssemblyUnit, IGCompilationUnit gCompilationUnit,
+      IGNamespace gNamespace, IGClass gClass, IGMethod gConstructor,
       string baseNamespaceName = "",
-      List<string> rawDiGraph = default,
-      (GBody, GComment) gBodyCommentTuple = default
+      IList<string> rawDiGraph = default,
+      (IGBody, IGComment) gBodyCommentTuple = default
       ) {
       #region UsingGroup
       MUsingsForConsoleMonitorPattern(gCompilationUnit, baseNamespaceName);
@@ -63,8 +63,8 @@ namespace ATAP.Utilities.GenerateProgram {
       MReferenceItemGroupInBaseProjectUnitForConsoleMonitorGHS(gAssemblyUnit);
       #endregion
     }
-    public static void MUsingsForConsoleMonitorPattern(GCompilationUnit gCompilationUnit, string baseNamespace) {
-      var gUsingGroup = new GUsingGroup("Usings For ConsoleMonitor Pattern").AddUsing(new List<GUsing>() {
+    public static void MUsingsForConsoleMonitorPattern(IGCompilationUnit gCompilationUnit, string baseNamespace) {
+      var gUsingGroup = new GUsingGroup("Usings For ConsoleMonitor Pattern").AddUsing(new List<IGUsing>() {
         new GUsing($"{baseNamespace}.ConsoleMonitorGHS"),
         new GUsing("System.Text"),
       });
@@ -134,9 +134,9 @@ namespace ATAP.Utilities.GenerateProgram {
         gItemGroupInProjectUnit);
     }
 
-    public static GMethod MBuildMenuMethodForConsoleMonitorPattern() {
+    public static IGMethod MBuildMenuMethodForConsoleMonitorPattern() {
       var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
-      foreach (var o in new List<GArgument>() {
+      foreach (var o in new List<IGArgument>() {
         new GArgument("mesg","StringBuilder"),
         new GArgument("choices","IEnumerable<string>"),
         new GArgument("cancellationToken","CancellationToken?")
@@ -164,7 +164,7 @@ namespace ATAP.Utilities.GenerateProgram {
           "/// <returns></returns>",
         }));
     }
-    public static GMethod MCreateReadLineMethodForConsoleMonitorPattern() {
+    public static IGMethod MCreateReadLineMethodForConsoleMonitorPattern() {
       var gMethodArgumentList = new List<IGArgument>() {
         new GArgument("ct","CancellationToken?")
       };
@@ -186,7 +186,7 @@ namespace ATAP.Utilities.GenerateProgram {
         }));
     }
 
-    public static GMethod MCreateProcessInputStringMethodForConsoleMonitorPattern(
+    public static IGMethod MCreateProcessInputStringMethodForConsoleMonitorPattern(
       (IGBody gBody, IGComment gComment) gBodyCommentTuple = default) {
       var gMethodArgumentList = new List<IGArgument>() {
         new GArgument("inputString", "string"), new GArgument("ct", "CancellationToken?"),
@@ -205,7 +205,7 @@ namespace ATAP.Utilities.GenerateProgram {
       );
     }
 
-    public static GMethod MCreateWriteAsyncMethodForConsoleMonitorPattern(string gAccessModifier = "") {
+    public static IGMethod MCreateWriteAsyncMethodForConsoleMonitorPattern(string gAccessModifier = "") {
       var gMethodArgumentList = new List<IGArgument>() {
     new GArgument("mesg","string"),
     new GArgument("ct","CancellationToken?")
@@ -270,7 +270,7 @@ namespace ATAP.Utilities.GenerateProgram {
         }));
     }
 
-    static GMethod MCreateInitiateContactWithConsoleMonitorMethodForConsoleMonitorPattern(string gAccessModifier = "") {
+    static IGMethod MCreateInitiateContactWithConsoleMonitorMethodForConsoleMonitorPattern(string gAccessModifier = "") {
       var gMethodArgumentList = new List<IGArgument>() {
         new GArgument("ct","CancellationToken?")
       };
@@ -292,7 +292,7 @@ namespace ATAP.Utilities.GenerateProgram {
         }));
     }
 
-    public static GMethodGroup MCreateStateTransitionMethodGroupForConsoleMonitorPattern() {
+    public static IGMethodGroup MCreateStateTransitionMethodGroupForConsoleMonitorPattern() {
       #region ConsoleMonitorPattern public methods
       var gMethodGroup = new GMethodGroup(gName: "Methods for ConsoleMonitorPattern StateMachine states");
       var gMethod = new GMethod(new GMethodDeclaration(gName: "InitiateContactWithConsoleMonitor", gType: "void",
@@ -332,7 +332,7 @@ namespace ATAP.Utilities.GenerateProgram {
       return gMethodGroup;
     }
 
-    public static GDelegateGroup MCreateStateTransitionDelegateGroupForConsoleMonitorPattern() {
+    public static IGDelegateGroup MCreateStateTransitionDelegateGroupForConsoleMonitorPattern() {
       #region ConsoleMonitorPattern public methods
       var gDelegateGroup = new GDelegateGroup(gName: "Delegates for ConsoleMonitor Pattern states");
       var gDelegate = new GDelegate(new GDelegateDeclaration(gName: "ProcessInput", gType: "void",

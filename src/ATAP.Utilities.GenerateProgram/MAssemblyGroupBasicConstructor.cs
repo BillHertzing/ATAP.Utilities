@@ -21,7 +21,7 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
         // If HasInterfaces
-    public static GAssemblyGroupBasicConstructorResult MAssemblyGroupBasicConstructor(string gAssemblyGroupName = default,
+    public static IGAssemblyGroupBasicConstructorResult MAssemblyGroupBasicConstructor(string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
       IGPatternReplacement gPatternReplacement = default) {
       var _gPatternReplacement =
@@ -349,19 +349,19 @@ namespace ATAP.Utilities.GenerateProgram {
       };
       return mCreateAssemblyGroupResult;
     }
-    public static GAssemblyGroup MAssemblyGroupBasicConstructorPart2(
+    public static IGAssemblyGroup MAssemblyGroupBasicConstructorPart2(
       (string subDirectoryForGeneratedFiles,
         string baseNamespaceName,
         string gAssemblyGroupName,
         string gAssemblyUnitName,
         string gCompilationUnitName,
-        GPatternReplacement gAssemblyGroupPatternReplacement,
-        GPatternReplacement gAssemblyUnitPatternReplacement,
-        GPatternReplacement gCompilationUnitPatternReplacement,
-        GAssemblyGroup gAssemblyGroup,
-        GAssemblyUnit gAssemblyUnit,
-        GCompilationUnit gCompilationUnit,
-        GNamespace gNamespace) part1Tuple,
+        IGPatternReplacement gAssemblyGroupPatternReplacement,
+        IGPatternReplacement gAssemblyUnitPatternReplacement,
+        IGPatternReplacement gCompilationUnitPatternReplacement,
+        IGAssemblyGroup gAssemblyGroup,
+        IGAssemblyUnit gAssemblyUnit,
+        IGCompilationUnit gCompilationUnit,
+        IGNamespace gNamespace) part1Tuple,
       GClass gClass
     ) {
       return MAssemblyGroupStringConstants(
@@ -380,7 +380,7 @@ namespace ATAP.Utilities.GenerateProgram {
         gClass
       );
     }
-    public static GAssemblyGroup MAssemblyGroupStringConstants(GAssemblyGroupBasicConstructorResult gAssemblyGroupBasicConstructorResult) {
+    public static IGAssemblyGroup MAssemblyGroupStringConstants(IGAssemblyGroupBasicConstructorResult gAssemblyGroupBasicConstructorResult) {
       return MAssemblyGroupStringConstants(
         gAssemblyGroupBasicConstructorResult.subDirectoryForGeneratedFiles,
         gAssemblyGroupBasicConstructorResult.baseNamespaceName,
@@ -397,20 +397,20 @@ namespace ATAP.Utilities.GenerateProgram {
         //gClass
       );
     }
-    public static GAssemblyGroup MAssemblyGroupStringConstants(
+    public static IGAssemblyGroup MAssemblyGroupStringConstants(
       string subDirectoryForGeneratedFiles = default,
       string baseNamespaceName = default,
       string gAssemblyGroupName = default,
       string gAssemblyUnitName = default,
       string gCompilationUnitName = default,
-      GPatternReplacement gAssemblyGroupPatternReplacement = default,
-      GPatternReplacement gAssemblyUnitPatternReplacement = default,
-      GPatternReplacement gCompilationUnitPatternReplacement = default,
-      GAssemblyGroup gAssemblyGroup = default,
-      GAssemblyUnit gAssemblyUnit = default,
-      GCompilationUnit gCompilationUnit = default,
-      GNamespace gNamespace = default,
-      GClass gClass = default
+      IGPatternReplacement gAssemblyGroupPatternReplacement = default,
+      IGPatternReplacement gAssemblyUnitPatternReplacement = default,
+      IGPatternReplacement gCompilationUnitPatternReplacement = default,
+      IGAssemblyGroup gAssemblyGroup = default,
+      IGAssemblyUnit gAssemblyUnit = default,
+      IGCompilationUnit gCompilationUnit = default,
+      IGNamespace gNamespace = default,
+      IGClass gClass = default
     ) {
       //GUsingGroup gUsingGroup; These seem to be unnecessary, deprecating
       //GPropertyGroup gPropertyGroup;
@@ -433,8 +433,8 @@ namespace ATAP.Utilities.GenerateProgram {
       #endregion
       return gAssemblyGroup;
     }
-    public static void MUpdateGPatternReplacement(GAssemblyGroup gAssemblyGroup,
-      GPatternReplacement gAssemblyGroupPatternReplacement) {
+    public static void MUpdateGPatternReplacement(IGAssemblyGroup gAssemblyGroup,
+      IGPatternReplacement gAssemblyGroupPatternReplacement) {
       gAssemblyGroup.GPatternReplacement.GDictionary.AddRange(gAssemblyGroupPatternReplacement.GDictionary);
       foreach (var gAssemblyUnitKVP in gAssemblyGroup.GAssemblyUnits) {
         gAssemblyUnitKVP.Value.GPatternReplacement.GDictionary.AddRange(gAssemblyGroupPatternReplacement.GDictionary);

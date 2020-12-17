@@ -12,7 +12,7 @@ namespace ATAP.Utilities.GenerateProgram {
         GProperty gProperty = new GProperty(gAutoPropertyName.ToUpperFirstChar(), gType, gAccessors, gVisibility);
         gClass.GPropertys.Add(gProperty.Philote,gProperty);
       }
-      GMethod gMethod = default;
+      IGMethod gMethod = default;
       if (gClass.GMethods != null && gClass.GMethods.ContainsKey(gMethodId)) {
         gMethod = gClass.GMethods[gMethodId];
       }
@@ -35,7 +35,7 @@ namespace ATAP.Utilities.GenerateProgram {
       return gClass;
     }
 
-    public static GClass AddTConstructorAutoProperty(this GClass gClass, Philote<GMethod> gMethodID,  string gAutoPropertyName) {
+    public static IGClass AddTConstructorAutoProperty(this IGClass gClass, Philote<IGMethod> gMethodID,  string gAutoPropertyName) {
       string gType = "I" + gAutoPropertyName;
       return gClass.AddTConstructorAutoProperty(gMethodID, gAutoPropertyName, gType);
     }

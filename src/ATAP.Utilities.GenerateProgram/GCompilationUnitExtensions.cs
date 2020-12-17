@@ -11,7 +11,7 @@ using ATAP.Utilities.GenerateProgram;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GCompilationUnitExtensions {
-    public static GCompilationUnit CompilationUnitStringConstantsConstructor(String gNamespaceName,
+    public static IGCompilationUnit CompilationUnitStringConstantsConstructor(String gNamespaceName,
       string gRelativePath = default, GPatternReplacement gPatternReplacement = default) {
       GClass gClass = new GClass("StringConstants", gVisibility: "public", "static");
       GConstStringGroup gConstStringGroup = new GConstStringGroup(gName: "Settings File Names");
@@ -38,7 +38,7 @@ namespace ATAP.Utilities.GenerateProgram {
       gCompilationUnit.GNamespaces.Add(gNamespace.Philote, gNamespace);
       return gCompilationUnit;
     }
-    public static GCompilationUnit CompilationUnitDefaultConfigurationConstructor(String gNamespaceName,
+    public static IGCompilationUnit CompilationUnitDefaultConfigurationConstructor(String gNamespaceName,
       string gRelativePath = default,
       List<string> gAdditionalStatements = default, GPatternReplacement gPatternReplacement = default) {
       GCompilationUnit gCompilationUnit = new GCompilationUnit(gName: "DefaultConfiguration", gRelativePath,

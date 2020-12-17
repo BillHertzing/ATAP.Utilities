@@ -8,8 +8,8 @@ using static ATAP.Utilities.GenerateProgram.GItemGroupInProjectUnitExtensions;
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
 
-    public static List<GItemGroupInProjectUnit> MGenericHostServiceCommonItemGroupInProjectUnitList() {
-      return new List<GItemGroupInProjectUnit>() {
+    public static IList<IGItemGroupInProjectUnit> MGenericHostServiceCommonItemGroupInProjectUnitList() {
+      return new List<IGItemGroupInProjectUnit>() {
         NetCoreGenericHostReferencesItemGroupInProjectUnit(),
         MStatelessStateMachineReferencesItemGroupInProjectUnit(),
         ATAPLoggingUtilitiesReferencesItemGroupInProjectUnit(),
@@ -17,7 +17,7 @@ namespace ATAP.Utilities.GenerateProgram {
       };
     }
 
-    public static GItemGroupInProjectUnit MStatelessStateMachineReferencesItemGroupInProjectUnit() {
+    public static IGItemGroupInProjectUnit MStatelessStateMachineReferencesItemGroupInProjectUnit() {
       return new GItemGroupInProjectUnit("StatelessPackageReferences",
         "Packages for the Stateless lightweight StateMachine library", new GBody(new List<string>() {
           "<PackageReference Include=\"Stateless\" />",
@@ -25,7 +25,7 @@ namespace ATAP.Utilities.GenerateProgram {
         }));
     }
 
-    public static GItemGroupInProjectUnit MFodyMethodBoundryReferencesItemGroupInProjectUnit() {
+    public static IGItemGroupInProjectUnit MFodyMethodBoundryReferencesItemGroupInProjectUnit() {
       return new GItemGroupInProjectUnit("ILWeavingUsingFodyPackageReferences",
         "Packages to implement ETW logging of Method Boundaries by using Fody for IL Weaving during the build process", new GBody(new List<string>() {
           "<PackageReference Include=\"MethodBoundaryAspect.Fody\" />",

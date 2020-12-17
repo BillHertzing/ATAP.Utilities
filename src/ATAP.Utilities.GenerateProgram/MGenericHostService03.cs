@@ -12,11 +12,11 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    public static GAssemblyGroup MGenericHostService03(string gAssemblyGroupName,
+    public static IGAssemblyGroup MGenericHostService03(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = false) {
       return MGenericHostService03(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, new GPatternReplacement()  );
     }
-    public static GAssemblyGroup MGenericHostService03(string gAssemblyGroupName,
+    public static IGAssemblyGroup MGenericHostService03(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
       GPatternReplacement gPatternReplacement = default) {
       GPatternReplacement _gPatternReplacement =

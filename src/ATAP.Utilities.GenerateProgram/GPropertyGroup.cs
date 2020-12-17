@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GPropertyGroup {
-    public GPropertyGroup(string gName, Dictionary<Philote<GProperty>, GProperty> gPropertys = default) {
+   public class GPropertyGroup : IGPropertyGroup {
+    public GPropertyGroup(string gName, Dictionary<IPhilote<IGProperty>, IGProperty> gPropertys = default) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
       if (gPropertys == default) {
         GPropertys = new Dictionary<Philote<GProperty>, GProperty>();
@@ -16,9 +15,9 @@ namespace ATAP.Utilities.GenerateProgram {
       Philote = new Philote<GPropertyGroup>();
     }
 
-    public string GName { get;  }
-    public Dictionary<Philote<GProperty>, GProperty> GPropertys { get; }
-    public Philote<GPropertyGroup> Philote { get; }
+    public string GName { get; }
+    public Dictionary<IPhilote<IGProperty>, IGProperty> GPropertys { get; init; }
+    public IPhilote<IGPropertyGroup> Philote { get; init; }
 
   }
 }

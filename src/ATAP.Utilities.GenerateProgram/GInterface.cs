@@ -1,30 +1,30 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
+
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GInterface {
-    public GInterface(string gName,string gVisibility = default,  string gAccessModifier = default, string gInheritance = default,
-      List<string> gImplements = default,
-      Dictionary<Philote<GProperty>, GProperty> gPropertys = default,
-      Dictionary<Philote<GPropertyGroup>, GPropertyGroup> gPropertyGroups = default,
+  public class GInterface : IGInterface {
+    public GInterface(string gName, string gVisibility = default, string gAccessModifier = default, string gInheritance = default,
+      IList<string> gImplements = default,
+      Dictionary<IPhilote<IGProperty>, IGProperty> gPropertys = default,
+      Dictionary<IPhilote<IGPropertyGroup>, IGPropertyGroup> gPropertyGroups = default,
 
-      Dictionary<Philote<GMethod>, GMethod> gMethods = default,
-    Dictionary<Philote<GMethodGroup>, GMethodGroup> gMethodGroups = default
-    //Dictionary<Philote<GException>, GException> gExceptions = default,
-    //  Dictionary<Philote<GExceptionGroup>, GExceptionGroup> gExceptionGroups = default,
-    //Dictionary<Philote<GEvent>, GEvent> gEvents = default,
-    //  Dictionary<Philote<GEventGroup>, GEventGroup> gEventGroups = default,
+      Dictionary<IPhilote<IGMethod>, IGMethod> gMethods = default,
+    Dictionary<IPhilote<IGMethodGroup>, IGMethodGroup> gMethodGroups = default
+    //Dictionary<IPhilote<IGException>, IGException> gExceptions = default,
+    //  Dictionary<IPhilote<IGExceptionGroup>, IGExceptionGroup> gExceptionGroups = default,
+    //Dictionary<IPhilote<IGEvent>, IGEvent> gEvents = default,
+    //  Dictionary<IPhilote<IGEventGroup>, IGEventGroup> gEventGroups = default,
       ) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
-      GVisibility = gVisibility == default ? "" : gVisibility;;
+      GVisibility = gVisibility == default ? "" : gVisibility; ;
       GAccessModifier = gAccessModifier == default ? "" : gAccessModifier;
-      GInheritance = gInheritance == default ? "" : gInheritance;;
-      GImplements = gImplements == default? new List<string>() : gImplements;
-      GPropertys = gPropertys  == default? new Dictionary<Philote<GProperty>, GProperty>() : gPropertys;
+      GInheritance = gInheritance == default ? "" : gInheritance; ;
+      GImplements = gImplements == default ? new List<string>() : gImplements;
+      GPropertys = gPropertys == default ? new Dictionary<Philote<GProperty>, GProperty>() : gPropertys;
       GPropertyGroups = gPropertyGroups == default ? new Dictionary<Philote<GPropertyGroup>, GPropertyGroup>() : gPropertyGroups;
-      GMethods = gMethods  == default? new Dictionary<Philote<GMethod>, GMethod>() : gMethods;
+      GMethods = gMethods == default ? new Dictionary<Philote<GMethod>, GMethod>() : gMethods;
       GMethodGroups = gMethodGroups == default ? new Dictionary<Philote<GMethodGroup>, GMethodGroup>() : gMethodGroups;
       //GExceptions = gExceptions  == default? new Dictionary<Philote<GException>, GException>() : gExceptions;
       //GExceptionGroups = gExceptionGroups == default ? new Dictionary<Philote<GExceptionGroup>, GExceptionGroup>() : gExceptionGroups;
@@ -34,20 +34,20 @@ namespace ATAP.Utilities.GenerateProgram {
       Philote = new Philote<GInterface>();
     }
     public string GName { get; }
-    public string GVisibility { get;  }
+    public string GVisibility { get; }
     // ToDo: make this an enumeration
     public string GAccessModifier { get; }
     public string GInheritance { get; }
-    public List<string> GImplements { get; }
-    public Dictionary<Philote<GProperty>, GProperty> GPropertys { get; }
-    public Dictionary<Philote<GPropertyGroup>, GPropertyGroup> GPropertyGroups { get; }
-    public Dictionary<Philote<GMethod>, GMethod> GMethods { get; }
-    public Dictionary<Philote<GMethodGroup>, GMethodGroup> GMethodGroups { get; }
-    //public Dictionary<Philote<GException>, GException> GExceptions { get; }
-    //public Dictionary<Philote<GExceptionGroup>, GExceptionGroup> GExceptionGroups { get; }
-    //public Dictionary<Philote<GEvent>, GEvent> GEvents { get; }
-    //public Dictionary<Philote<GEventGroup>, GEventGroup> GEventGroups { get; }
-    public Philote<GInterface> Philote { get; }
+    public IList<string> GImplements { get; }
+    public Dictionary<IPhilote<IGProperty>, IGProperty> GPropertys { get; }
+    public Dictionary<IPhilote<IGPropertyGroup>, IGPropertyGroup> GPropertyGroups { get; }
+    public Dictionary<IPhilote<IGMethod>, IGMethod> GMethods { get; }
+    public Dictionary<IPhilote<IGMethodGroup>, IGMethodGroup> GMethodGroups { get; }
+    //public Dictionary<IPhilote<IGException>, IGException> GExceptions { get; }
+    //public Dictionary<IPhilote<IGExceptionGroup>, IGExceptionGroup> GExceptionGroups { get; }
+    //public Dictionary<IPhilote<IGEvent>, IGEvent> GEvents { get; }
+    //public Dictionary<IPhilote<IGEventGroup>, IGEventGroup> GEventGroups { get; }
+    public IPhilote<IGInterface> Philote { get; }
   }
 }
 

@@ -1,29 +1,26 @@
-using System;
 using System.Collections.Generic;
-//cd using System.Management.Instrumentation;
 using ATAP.Utilities.Philote;
 
-
 namespace ATAP.Utilities.GenerateProgram {
-  public class GDelegateDeclaration {
-    public GDelegateDeclaration(string gName = default, string gType = default, string gVisibility = default, 
-      Dictionary<Philote<GArgument>, GArgument> gArguments = default,
-      GComment gComment = default) {
+  public class GDelegateDeclaration : IGDelegateDeclaration {
+    public GDelegateDeclaration(string gName = default, string gType = default, string gVisibility = default,
+      Dictionary<IPhilote<IGArgument>, IGArgument> gArguments = default,
+      IGComment gComment = default) {
       GName = gName == default ? "" : gName;
       GVisibility = gVisibility == default ? "" : gVisibility;
       GType = gType == default ? "" : gType;
-      GArguments = gArguments == default ? new Dictionary<Philote<GArgument>, GArgument>() : gArguments;
-      GComment = gComment == default? new GComment() : gComment;
+      GArguments = gArguments == default ? new Dictionary<IPhilote<IGArgument>, IGArgument>() : gArguments;
+      GComment = gComment == default ? new GComment() : gComment;
       Philote = new Philote<GDelegateDeclaration>();
     }
-    public string GName { get; }
-    public string GType { get; }
+    public string GName { get; init; }
+    public string GType { get; init; }
     // ToDo: make this an enumeration
-    public string GVisibility { get; }
-    public GComment GComment { get; }
-    public Dictionary<Philote<GArgument>, GArgument> GArguments { get; }
+    public string GVisibility { get; init; }
+    public IGComment GComment { get; init; }
+    public Dictionary<IPhilote<IGArgument>, IGArgument> GArguments { get; init; }
 
-    public Philote<GDelegateDeclaration> Philote { get; }
+    public IPhilote<IGDelegateDeclaration> Philote { get; init; }
 
   }
 }

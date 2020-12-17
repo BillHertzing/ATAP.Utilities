@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GMethod {
-    public GMethod(GMethodDeclaration gDeclaration = default, GBody gBody = default,
-      GComment gComment = default, bool isForInterface = false,
-      GStateConfiguration gStateConfiguration = default) {
+  public class GMethod : IGMethod {
+    public GMethod(IGMethodDeclaration gDeclaration = default, IGBody gBody = default,
+      IGComment gComment = default, bool isForInterface = false,
+      IGStateConfiguration gStateConfiguration = default) {
       GDeclaration = gDeclaration == default ? new GMethodDeclaration() : gDeclaration;
       GBody = gBody == default ? new GBody() : gBody;
       GComment = gComment == default ? new GComment() : gComment;
@@ -15,11 +12,11 @@ namespace ATAP.Utilities.GenerateProgram {
       GStateConfiguration = gStateConfiguration == default ? new GStateConfiguration() : gStateConfiguration;
       Philote = new Philote<GMethod>();
     }
-    public GMethodDeclaration GDeclaration { get; }
-    public GBody GBody { get; }
-    public GComment GComment { get; }
-    public bool IsForInterface { get; }
-    public GStateConfiguration GStateConfiguration { get; }
-    public Philote<GMethod> Philote { get; }
+    public IGMethodDeclaration GDeclaration { get; init; }
+    public IGBody GBody { get; init; }
+    public IGComment GComment { get; init; }
+    public bool IsForInterface { get; init; }
+    public IGStateConfiguration GStateConfiguration { get; init; }
+    public IPhilote<IGMethod> Philote { get; init; }
   }
 }

@@ -6,12 +6,12 @@ namespace ATAP.Utilities.GenerateProgram
 {
   public interface IGAssemblyGroup
   {
-    string GName { get; }
-    string GDescription { get; }
-    string GRelativePath { get; }
-    Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit>? GAssemblyUnits { get; }
-    GPatternReplacement GPatternReplacement { get; }
-    GComment GComment { get; }
-    Philote<GAssemblyGroup> Philote { get; }
+    string GName { get; init; }
+    string GDescription { get; init; }
+    string GRelativePath { get; init; }
+    Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit> GAssemblyUnits { get; init; }
+    IGPatternReplacement GPatternReplacement { get; init; }
+    IGComment GComment { get; init; }
+    IPhilote<IGAssemblyGroup> Philote { get; init; }
   }
 }

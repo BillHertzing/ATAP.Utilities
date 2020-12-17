@@ -1,18 +1,16 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GEnumerationGroup {
-    public GEnumerationGroup(string gName = default, Dictionary<Philote<GEnumeration>, GEnumeration> gEnumerations = default) {
+  public class GEnumerationGroup : IGEnumerationGroup {
+    public GEnumerationGroup(string gName = default, Dictionary<IPhilote<IGEnumeration>, IGEnumeration> gEnumerations = default) {
       GName = gName == default ? "" : gName;
       GEnumerations = gEnumerations == default ? new Dictionary<Philote<GEnumeration>, GEnumeration>() : gEnumerations;
       Philote = new Philote<GEnumerationGroup>();
     }
 
-    public string GName { get; }
-    public Dictionary<Philote<GEnumeration>, GEnumeration> GEnumerations { get; }
-    public  Philote<GEnumerationGroup> Philote { get; }
+    public string GName { get; init; }
+    public Dictionary<IPhilote<IGEnumeration>, IGEnumeration> GEnumerations { get; init; }
+    public IPhilote<IGEnumerationGroup> Philote { get; init; }
   }
 }

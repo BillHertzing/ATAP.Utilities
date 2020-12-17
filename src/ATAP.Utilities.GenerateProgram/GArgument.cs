@@ -5,7 +5,7 @@ using System.Text;
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GArgument {
+  public record GArgument : IGArgument {
     public GArgument(string gName, string gType, bool isRef = false, bool isOut = false) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
       GType = gType ?? throw new ArgumentNullException(nameof(gType));
@@ -15,11 +15,11 @@ namespace ATAP.Utilities.GenerateProgram {
 
     }
 
-    public string GName { get; }
-    public string GType { get; }
-    public bool IsRef { get; }
-    public bool IsOut { get; }
-    public Philote<GArgument> Philote { get; }
+    public string GName { get; init;}
+    public string GType { get; init; }
+    public bool IsRef { get; init; }
+    public bool IsOut { get; init; }
+    public Philote<GArgument> Philote { get; init; }
 
 
   }

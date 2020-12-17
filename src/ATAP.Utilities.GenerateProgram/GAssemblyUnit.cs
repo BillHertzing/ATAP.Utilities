@@ -4,12 +4,12 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
   public class GAssemblyUnit : IGAssemblyUnit {
     public GAssemblyUnit(string gName = default, string gRelativePath = default,
-      GProjectUnit gProjectUnit = default,
-      Dictionary<Philote<GCompilationUnit>, GCompilationUnit> gCompilationUnits = default,
-      Dictionary<Philote<GPropertiesUnit>, GPropertiesUnit> gPropertiesUnits = default,
-      Dictionary<Philote<GResourceUnit>, GResourceUnit> gResourceUnits = default,
-      GPatternReplacement gPatternReplacement = default,
-      GComment gComment = default
+      IGProjectUnit gProjectUnit = default,
+      Dictionary<IPhilote<IGCompilationUnit>, IGCompilationUnit> gCompilationUnits = default,
+      Dictionary<Philote<IGPropertiesUnit>, IGPropertiesUnit> gPropertiesUnits = default,
+      Dictionary<Philote<IGResourceUnit>,I GResourceUnit> gResourceUnits = default,
+      IGPatternReplacement gPatternReplacement = default,
+      IGComment gComment = default
     ) {
       GName = gName == default ? "" : gName;
       GRelativePath = gRelativePath == default ? "" : gRelativePath;
@@ -24,13 +24,13 @@ namespace ATAP.Utilities.GenerateProgram {
 
     public string GName { get; }
     public string GRelativePath { get; }
-    public GProjectUnit GProjectUnit { get; }
-    public Dictionary<Philote<GCompilationUnit>, GCompilationUnit> GCompilationUnits { get; }
-    public Dictionary<Philote<GPropertiesUnit>, GPropertiesUnit> GPropertiesUnits { get; }
-    public Dictionary<Philote<GResourceUnit>, GResourceUnit> GResourceUnits { get; }
-    public GPatternReplacement GPatternReplacement { get; }
-    public GComment GComment { get; }
-    public Philote<GAssemblyUnit> Philote { get; }
+    public IGProjectUnit GProjectUnit { get; }
+    public Dictionary<IPhilote<IGCompilationUnit>, IGCompilationUnit> GCompilationUnits { get; }
+    public Dictionary<IPhilote<IGPropertiesUnit>, IGPropertiesUnit> GPropertiesUnits { get; }
+    public Dictionary<IPhilote<GResourceUnit>, IGResourceUnit> GResourceUnits { get; }
+    public IGPatternReplacement GPatternReplacement { get; }
+    public IGComment GComment { get; }
+    public IPhilote<IGAssemblyUnit> Philote { get; }
 
   }
 }

@@ -8,15 +8,15 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
-    public static StringBuilder RenderProjectUnitPreambleStringBuilder(this StringBuilder sb, GProjectUnit gProjectUnit, StringBuilder indent, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RenderProjectUnitPreambleStringBuilder(this StringBuilder sb, IGProjectUnit gProjectUnit, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       return sb.Append($"{StringConstants.ProjectUnitSDKProjectStartTagStringDefault}{eol}");
     }
-    public static StringBuilder RenderProjectUnitPostambleStringBuilder(this StringBuilder sb, GProjectUnit gProjectUnit, StringBuilder indent, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RenderProjectUnitPostambleStringBuilder(this StringBuilder sb, IGProjectUnit gProjectUnit, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       return sb.Append($"{StringConstants.ProjectUnitSDKProjectEndTagStringDefault}{eol}");
     }
-    public static IR1Top RProjectUnit(this IR1Top r1Top,GProjectUnit gProjectUnit, IW1Top w1Top) {
+    public static IR1Top RProjectUnit(this IR1Top r1Top, IGProjectUnit gProjectUnit, IW1Top w1Top) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       r1Top.Sb.RenderProjectUnitPreambleStringBuilder(gProjectUnit, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       r1Top.Indent.Append(r1Top.IndentDelta);
@@ -48,14 +48,14 @@ namespace ATAP.Utilities.GenerateProgram {
       w1Top.WProjectUnit(gProjectUnit, r1Top.Sb);
       return r1Top;
     }
-    public static IR1Top RProjectUnit(this IR1Top r1Top, List<GProjectUnit> gProjectUnits,IW1Top w1Top) {
+    public static IR1Top RProjectUnit(this IR1Top r1Top, IList<IGProjectUnit> gProjectUnits,IW1Top w1Top) {
       foreach (var o in gProjectUnits) {
         r1Top.RProjectUnit(o, w1Top);
       }
       return r1Top;
     }
 
-    public static IR1Top RProjectUnit(this IR1Top r1Top, Dictionary<Philote<GProjectUnit>, GProjectUnit> gProjectUnits,IW1Top w1Top) {
+    public static IR1Top RProjectUnit(this IR1Top r1Top, IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> gProjectUnits,IW1Top w1Top) {
       foreach (var kvp in gProjectUnits) {
         r1Top.RProjectUnit(kvp.Value, w1Top);
       }

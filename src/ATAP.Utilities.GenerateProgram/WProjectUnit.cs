@@ -8,7 +8,7 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class WriteExtensions {
-    public static IW1Top WProjectUnit(this IW1Top w1Top, GProjectUnit gProjectUnit, StringBuilder sB, CancellationToken? ct = default) {
+    public static IW1Top WProjectUnit(this IW1Top w1Top, IGProjectUnit gProjectUnit, StringBuilder sB, CancellationToken? ct = default) {
       var pathToDir = Path.Combine(w1Top.BasePath, gProjectUnit.GRelativePath);
       var pathToFile = Path.Combine(w1Top.BasePath, gProjectUnit.GRelativePath, gProjectUnit.GName+gProjectUnit.GFileSuffix);
       var transformDictionary = gProjectUnit.GPatternReplacement.GDictionary;

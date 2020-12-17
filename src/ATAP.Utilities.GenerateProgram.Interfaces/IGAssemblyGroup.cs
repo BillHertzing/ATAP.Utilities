@@ -9,7 +9,7 @@ namespace ATAP.Utilities.GenerateProgram
     string GName { get; init; }
     string GDescription { get; init; }
     string GRelativePath { get; init; }
-    Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit> GAssemblyUnits { get; init; }
+    IDictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit> GAssemblyUnits { get; init; }
     IGPatternReplacement GPatternReplacement { get; init; }
     IGComment GComment { get; init; }
     IPhilote<IGAssemblyGroup> Philote { get; init; }

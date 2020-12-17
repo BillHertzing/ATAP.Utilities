@@ -6,7 +6,7 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
-    public static IR1Top RMethod(this IR1Top r1Top, GMethod gMethod) {
+    public static IR1Top RMethod(this IR1Top r1Top, IGMethod gMethod) {
       r1Top.RComment(gMethod.GComment);
       r1Top.RMethodDeclaration(gMethod.GDeclaration);
       if (!gMethod.IsForInterface) {
@@ -18,13 +18,13 @@ namespace ATAP.Utilities.GenerateProgram {
       return r1Top;
     }
 
-    public static IR1Top RMethod(this IR1Top r1Top, IEnumerable<GMethod> gMethods) {
+    public static IR1Top RMethod(this IR1Top r1Top, IEnumerable<IGMethod> gMethods) {
       foreach (var o in gMethods) {
         r1Top.RMethod(o);
       }
       return r1Top;
     }
-    public static IR1Top RMethod(this IR1Top r1Top, Dictionary<Philote<GMethod>, GMethod> gMethods) {
+    public static IR1Top RMethod(this IR1Top r1Top, IDictionary<IPhilote<IGMethod>, IGMethod> gMethods) {
       foreach (var kvp in gMethods) {
         r1Top.RMethod(kvp.Value);
       }

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 namespace ATAP.Utilities.GenerateProgram {
   public static class EntryPoints {
@@ -9,7 +8,7 @@ namespace ATAP.Utilities.GenerateProgram {
       bool UnitTestsSuccess = false;
       double UnitTestsCoverage = 0.0;
       string GeneratedSolutionFileDirectory = "";
-      ICollection<GAssemblyGroup> CollectionOfAssembliesBuilt = new SortedSet<GAssemblyGroup>;
+      ICollection<GAssemblyGroup> CollectionOfAssembliesBuilt = new SortedSet<GAssemblyGroup>();
       bool PackagingSuccess = false;
       bool DeploymentSuccess = false;
       // create the MCreateSolutionGroupSignil from the GlobalSettingsSignil and the SolutionGroupSignil

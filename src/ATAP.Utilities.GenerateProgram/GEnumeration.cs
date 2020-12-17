@@ -36,7 +36,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public Dictionary<IPhilote<IGAttribute>, IGAttribute> GAttributes { get; init; }
     public Dictionary<IPhilote<IGAttributeGroup>, IGAttributeGroup> GAttributeGroups { get; init; }
     public IGComment GComment { get; init; }
-    public Philote<GEnumeration> Philote { get; init; }
+    public IPhilote<IGEnumeration> Philote { get; init; }
 
   }
 }

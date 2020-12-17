@@ -7,7 +7,7 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
-    public static StringBuilder RenderResourceInProjectUnitStringBuilder(this StringBuilder sb, GResourceUnit gResourceUnit, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RenderResourceInProjectUnitStringBuilder(this StringBuilder sb, IGResourceUnit gResourceUnit, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       sb.Append(
         $"{indent}<EmbeddedResource Update=\"{gResourceUnit.GRelativePath}/{gResourceUnit.GName}{gResourceUnit.GFileSuffix}\">{eol}");
@@ -21,7 +21,7 @@ namespace ATAP.Utilities.GenerateProgram {
       sb.Append($"{indent}</Compile>{eol}");
       return sb;
     }
-    public static IR1Top RResourceUnitInProjectUnit(this IR1Top r1Top, GResourceUnit gResourceUnit) {
+    public static IR1Top RResourceUnitInProjectUnit(this IR1Top r1Top, IGResourceUnit gResourceUnit) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       r1Top.Sb.RenderResourceInProjectUnitStringBuilder(gResourceUnit, r1Top.Indent, r1Top.IndentDelta, r1Top.Eol, r1Top.Ct);
       return r1Top;

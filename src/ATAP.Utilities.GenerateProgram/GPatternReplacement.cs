@@ -10,7 +10,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GName = gName == default? "": gName;
       GDictionary = gDictionary == default? new Dictionary<Regex,string>() : gDictionary;
       GComment = gComment == default? new GComment() : gComment;
-      Philote = new Philote<IGPatternReplacement>();
+      Philote = new Philote<GPatternReplacement>();
     }
 
     public string? GName { get; init; }

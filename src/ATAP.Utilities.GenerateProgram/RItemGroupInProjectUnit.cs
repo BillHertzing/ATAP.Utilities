@@ -5,7 +5,7 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
-    public static StringBuilder RenderItemGroupInProjectUnit(this StringBuilder sb, GItemGroupInProjectUnit gItemGroupInProjectUnit, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RenderItemGroupInProjectUnit(this StringBuilder sb, IGItemGroupInProjectUnit gItemGroupInProjectUnit, StringBuilder indent, string indentDelta, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       sb.Append($"{indent}<!-- {gItemGroupInProjectUnit.GDescription} --> {eol}");  
       if (gItemGroupInProjectUnit.GComment.GStatements.Count >0) {
@@ -21,20 +21,20 @@ namespace ATAP.Utilities.GenerateProgram {
       return sb;
 
     }
-    public static IR1Top RItemGroupInProjectUnit(this IR1Top r1Top, GItemGroupInProjectUnit gItemGroupInProjectUnit) {
+    public static IR1Top RItemGroupInProjectUnit(this IR1Top r1Top, IGItemGroupInProjectUnit gItemGroupInProjectUnit) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       r1Top.Sb.RenderItemGroupInProjectUnit(gItemGroupInProjectUnit, r1Top.Indent, r1Top.IndentDelta, r1Top.Eol, r1Top.Ct);
       r1Top.Sb.Append(r1Top.Eol);
       return r1Top;
     }
-    public static IR1Top RItemGroupInProjectUnit(this IR1Top r1Top, List<GItemGroupInProjectUnit> gItemGroupInProjectUnits) {
+    public static IR1Top RItemGroupInProjectUnit(this IR1Top r1Top, IList<IGItemGroupInProjectUnit> gItemGroupInProjectUnits) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       foreach (var o in gItemGroupInProjectUnits) {
         r1Top.RItemGroupInProjectUnit(o);
       }
       return r1Top;
     }
-    public static IR1Top RItemGroupInProjectUnit(this IR1Top r1Top, Dictionary<Philote<GItemGroupInProjectUnit>, GItemGroupInProjectUnit> gItemGroupInProjectUnits) {
+    public static IR1Top RItemGroupInProjectUnit(this IR1Top r1Top, IDictionary<IPhilote<IGItemGroupInProjectUnit>, IGItemGroupInProjectUnit> gItemGroupInProjectUnits) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       foreach (var kvp in gItemGroupInProjectUnits) {
         r1Top.RItemGroupInProjectUnit(kvp.Value);

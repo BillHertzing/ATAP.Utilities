@@ -90,7 +90,7 @@ namespace ATAP.Utilities.GenerateProgram {
         new GArgument("timerSignil", "object"),
         new GArgument("ct", "CancellationToken?")
       };
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in gMethodArgumentList) {
         gMethodArguments.Add(o.Philote, o);
       }

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
-
+namespace ATAP.Utilities.GenerateProgram {
   public class GUsingGroup : IGUsingGroup {
     public GUsingGroup(string gName = "", Dictionary<IPhilote<IGUsing>, IGUsing> gUsings = default) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));

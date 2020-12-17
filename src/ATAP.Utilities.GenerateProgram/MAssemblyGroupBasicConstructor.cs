@@ -23,8 +23,8 @@ namespace ATAP.Utilities.GenerateProgram {
         // If HasInterfaces
     public static GAssemblyGroupBasicConstructorResult MAssemblyGroupBasicConstructor(string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
-      GPatternReplacement gPatternReplacement = default) {
-      GPatternReplacement _gPatternReplacement =
+      IGPatternReplacement gPatternReplacement = default) {
+      var _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
 
       #region Determine the names of the Titular Base and Derived CompilationUnits, Namespaces, Classes

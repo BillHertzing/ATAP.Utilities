@@ -6,7 +6,7 @@ namespace ATAP.Utilities.GenerateProgram {
   public class GMethodDeclaration : IGMethodDeclaration {
     public GMethodDeclaration(string gName = default, string gType = default, string gVisibility = default, string gAccessModifier = default,
       bool isStatic = default, bool isConstructor = default,
-      Dictionary<IPhilote<IGArgument>, IGArgument> gArguments = default,
+      IDictionary<IPhilote<IGArgument>, IGArgument> gArguments = default,
       string gBase = default, string gThis = default, bool isForInterface = false) {
       GName = gName == default ? "" : gName;
       GVisibility = gVisibility == default ? "" : gVisibility;
@@ -14,11 +14,11 @@ namespace ATAP.Utilities.GenerateProgram {
       GAccessModifier = gAccessModifier == default ? "" : gAccessModifier;
       IsStatic = isStatic == default ? false : (bool)isStatic;
       IsConstructor = isConstructor == default ? false : (bool)isConstructor;
-      GArguments = gArguments == default ? new Dictionary<Philote<GArgument>, GArgument>() : gArguments;
+      GArguments = gArguments == default ? new Dictionary<IPhilote<IGArgument>, IGArgument>() : gArguments;
       GBase = gBase == default ? "" : gBase;
       GThis = gThis == default ? "" : gThis;
       IsForInterface = isForInterface;
-      Philote = new Philote<GMethodDeclaration>();
+      Philote = new Philote<IGMethodDeclaration>();
     }
     public string GName { get; init; }
     public string GType { get; init; }
@@ -27,7 +27,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public bool IsConstructor { get; init; }
     public string GVisibility { get; init; }
     public bool IsStatic { get; init; }
-    public Dictionary<IPhilote<IGArgument>, IGArgument> GArguments { get; init; }
+    public IDictionary<IPhilote<IGArgument>, IGArgument> GArguments { get; init; }
     public string GBase { get; init; }
     public string GThis { get; set; }
     public bool IsForInterface { get; init; }

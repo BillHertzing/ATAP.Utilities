@@ -5,7 +5,7 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
-    public static IR1Top RPropertyGroup(this IR1Top r1Top, GPropertyGroup gPropertyGroup) {
+    public static IR1Top RPropertyGroup(this IR1Top r1Top, IGPropertyGroup gPropertyGroup) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       r1Top.Sb.Append($"{r1Top.Indent}#region {gPropertyGroup.GName}{r1Top.Eol}");
       r1Top.Indent.Append(r1Top.IndentDelta);
@@ -14,14 +14,14 @@ namespace ATAP.Utilities.GenerateProgram {
       r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
       return r1Top;
     }
-    public static IR1Top RPropertyGroup(this IR1Top r1Top, List<GPropertyGroup> gPropertyGroups) {
+    public static IR1Top RPropertyGroup(this IR1Top r1Top, IEnumerable<IGPropertyGroup> gPropertyGroups) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       foreach (var o in gPropertyGroups) {
         r1Top.RPropertyGroup(o);
       }
       return r1Top;
     }
-    public static IR1Top RPropertyGroup(this IR1Top r1Top, Dictionary<Philote<GPropertyGroup>, GPropertyGroup> gPropertyGroups) {
+    public static IR1Top RPropertyGroup(this IR1Top r1Top, IDictionary<IPhilote<IGPropertyGroup>, IGPropertyGroup> gPropertyGroups) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       foreach (var kvp in gPropertyGroups) {
         r1Top.RPropertyGroup(kvp.Value);

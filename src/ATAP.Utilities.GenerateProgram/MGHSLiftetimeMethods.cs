@@ -5,7 +5,7 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     public static GMethod MCreateStartAsyncMethod( string gAccessModifier = "") {
-      var gMethodArguments = new Dictionary<Philote<GArgument>, GArgument>();
+      var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in new List<GArgument>() {
         new GArgument("genericHostsCancellationToken", "CancellationToken"),
       }) {
@@ -44,7 +44,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public static GMethod MCreateStopAsyncMethod(string gAccessModifier = "") {
       var gMethodDeclaration = new GMethodDeclaration(gName: "StopAsync", gType: "Task",
         gVisibility: "public", gAccessModifier: gAccessModifier,  isConstructor: false,
-        gArguments: new Dictionary<Philote<GArgument>, GArgument>());
+        gArguments: new Dictionary<IPhilote<IGArgument>, IGArgument>());
       foreach (var kvp in new Dictionary<string, string>() { { "genericHostsCancellationToken", "CancellationToken " } }) {
         var gMethodArgument = new GArgument(kvp.Key, kvp.Value);
         gMethodDeclaration.GArguments[gMethodArgument.Philote] = gMethodArgument;
@@ -74,7 +74,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public static GMethod MCreateExecuteAsyncMethod(string gAccessModifier = "") {
       var gMethodDeclaration = new GMethodDeclaration(gName: "ExecuteAsync", gType: "Task",
         gVisibility: "protected", gAccessModifier: gAccessModifier, isConstructor: false,
-        gArguments: new Dictionary<Philote<GArgument>, GArgument>());
+        gArguments: new Dictionary<IPhilote<IGArgument>, IGArgument>());
       foreach (var kvp in new Dictionary<string, string>() { { "genericHostsCancellationToken", "CancellationToken " } }) {
         var gMethodArgument = new GArgument(kvp.Key, kvp.Value);
         gMethodDeclaration.GArguments[gMethodArgument.Philote] = gMethodArgument;
@@ -114,7 +114,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public static GMethod MCreateOnStartedMethod() {
       var gMethodDeclaration = new GMethodDeclaration(gName: "OnStarted", gType: "void",
         gVisibility: "public", gAccessModifier: "virtual", isConstructor: false,
-        gArguments: new Dictionary<Philote<GArgument>, GArgument>());
+        gArguments: new Dictionary<IPhilote<IGArgument>, IGArgument>());
       return new GMethod(gMethodDeclaration,
         new GBody(gStatements:new List<string>() { "// Post-startup code goes here", }),
         new GComment(new List<string>() {
@@ -125,7 +125,7 @@ namespace ATAP.Utilities.GenerateProgram {
       return new GMethod(
         new GMethodDeclaration(gName: "OnStopping", gType: "void",
           gVisibility: "public", gAccessModifier: "virtual", isConstructor: false,
-          gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
+          gArguments: new Dictionary<IPhilote<IGArgument>,IGArgument>()),
         new GBody(gStatements: new List<string>() { "// On-stopping code goes here", }),
         new GComment(new List<string>() {
           "// Registered as a handler with the HostApplicationLifetime.ApplicationStarted event",
@@ -135,7 +135,7 @@ namespace ATAP.Utilities.GenerateProgram {
       return new GMethod(
         new GMethodDeclaration(gName: "OnStopped", gType: "void",
           gVisibility: "public", gAccessModifier: "virtual", isConstructor: false,
-          gArguments: new Dictionary<Philote<GArgument>, GArgument>()),
+          gArguments: new Dictionary<IPhilote<IGArgument>, IGArgument>()),
         new GBody(gStatements: new List<string>() { "// On-stopped code goes here", }),
         new GComment(new List<string>() {
           "// Registered as a handler with the HostApplicationLifetime.ApplicationStarted event",

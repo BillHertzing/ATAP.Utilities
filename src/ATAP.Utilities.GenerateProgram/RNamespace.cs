@@ -22,7 +22,7 @@ namespace ATAP.Utilities.GenerateProgram {
       r1Top.REnumerationGroup(gNamespace.GEnumerationGroups);
       r1Top.REnumeration(gNamespace.GEnumerations);
       r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
-      r1Top.Sb.RenderNamespaceTerminationStringBuilder(gNamespace, r1Top.Indent, r1Top.Eol, r1Top.Ct);
+      r1Top.Sb.RenderNamespaceTerminationStringBuilder(r1Top.Indent, r1Top.Eol, r1Top.Ct);
       return r1Top;
     }
   }

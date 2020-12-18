@@ -16,6 +16,14 @@ namespace ATAP.Utilities.Collection {
       return dictionaries.SelectMany(x => x)
         .ToDictionary(x => x.Key, y => y.Value);
     }
+    /// Will take the first value if multiple keys appear
+    //public static Dictionary<K, V> Merge<K, V>(IEnumerable<Dictionary<K, V>> dictionaries)
+    //{
+    //	return dictionaries.SelectMany(x => x)
+    //					.GroupBy(d => d.Key)
+    //					.ToDictionary(x => x.Key, y => y.First().Value);
+    //}
+
     /// <summary>
     /// 
     /// </summary>
@@ -30,7 +38,6 @@ namespace ATAP.Utilities.Collection {
       if (collection == null) {
         return;
       }
-
       foreach (var item in collection) {
         if (!source.ContainsKey(item.Key)) {
           source.Add(item.Key, item.Value);
@@ -45,11 +52,7 @@ namespace ATAP.Utilities.Collection {
     /// <summary>
     /// 
     /// </summary>
-    /// <attribution>
-    /// https://stackoverflow.com/questions/3982448/adding-a-dictionary-to-another
-    /// </attribution>
-    /// <typeparam name="T"></typeparam>
-    /// <typeparam name="S"></typeparam>
+    /// <typeparam name="TValue"></typeparam>
     /// <param name="source"></param>
     /// <param name="collection"></param>
     public static void AddRange<TValue>(this IList<TValue> source, IEnumerable<TValue> collection) {
@@ -60,13 +63,16 @@ namespace ATAP.Utilities.Collection {
         source.Add(item);
       }
     }
-    /// Will take the first value if multiple keys appear
-
-    //public static Dictionary<K, V> Merge<K, V>(IEnumerable<Dictionary<K, V>> dictionaries)
-    //{
-    //	return dictionaries.SelectMany(x => x)
-    //					.GroupBy(d => d.Key)
-    //					.ToDictionary(x => x.Key, y => y.First().Value);
-    //}
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="source"></param>
+    /// <param name="action"></param>
+    public static void ForEach<T>(this IEnumerable<T> source, Action<T> action) {
+      foreach (T element in source) {
+        action(element);
+      }
+    }
   }
 }

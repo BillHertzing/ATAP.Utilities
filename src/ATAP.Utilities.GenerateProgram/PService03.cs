@@ -23,8 +23,8 @@ using static ATAP.Utilities.Collection.Extensions;
 
 namespace ATAP.Utilities.GenerateProgram {
   class PService03 {
-    delegate GAssemblyGroup MCreateAssemblyGroupDelegate(string name, string subDirectoryForGeneratedFiles,
-      string baseNamespaceName, bool hasInterfaces);
+    delegate IGAssemblyGroup MCreateAssemblyGroupDelegate(string name, string subDirectoryForGeneratedFiles,
+      string baseNamespaceName, bool hasInterfaces = true);
 
 
     static void Main(string[] args) {
@@ -174,7 +174,7 @@ namespace ATAP.Utilities.GenerateProgram {
 
       string assemblyGroupTestArtifactsPath;
       #region executable if present
-      GAssemblyGroup gPrimaryExecutableAssemblyGroup = gPrimaryExecutingProgram.mCreateAssemblyGroupDelegate(gPrimaryExecutingProgram.name,
+      IGAssemblyGroup gPrimaryExecutableAssemblyGroup = gPrimaryExecutingProgram.mCreateAssemblyGroupDelegate(gPrimaryExecutingProgram.name,
         gPrimaryExecutingProgram.subDirectoryForGeneratedFiles, gPrimaryExecutingProgram.baseNamespaceName, gPrimaryExecutingProgram.hasInterfaces);
       session.Add("assemblyUnits", gPrimaryExecutableAssemblyGroup.GAssemblyUnits);
       r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
@@ -183,7 +183,7 @@ namespace ATAP.Utilities.GenerateProgram {
       session.Clear();
       #endregion
 
-      GAssemblyGroup gAssemblyGroup;
+      IGAssemblyGroup gAssemblyGroup;
       foreach (var projectUnderDevelopment in projectsUnderDevelopment) {
         assemblyGroupTestArtifactsPath = projectUnderDevelopment.testRelativePath;
         gAssemblyGroup = projectUnderDevelopment.mCreateAssemblyGroupDelegate(projectUnderDevelopment.name,

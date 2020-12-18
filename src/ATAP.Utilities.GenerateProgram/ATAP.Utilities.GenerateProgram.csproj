@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
+ <!--
   <PropertyGroup>
   <StartupObject>GenerateProgram.PService03</StartupObject>
   </PropertyGroup>
-
+-->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net5.0;</TargetFrameworks> <!-- netcoreapp3.1 net47-->

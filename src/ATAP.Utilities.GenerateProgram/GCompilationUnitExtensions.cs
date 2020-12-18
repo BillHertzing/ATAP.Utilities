@@ -12,7 +12,7 @@ using ATAP.Utilities.GenerateProgram;
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GCompilationUnitExtensions {
     public static IGCompilationUnit CompilationUnitStringConstantsConstructor(String gNamespaceName,
-      string gRelativePath = default, GPatternReplacement gPatternReplacement = default) {
+      string gRelativePath = default, IGPatternReplacement gPatternReplacement = default) {
       GClass gClass = new GClass("StringConstants", gVisibility: "public", "static");
       GConstStringGroup gConstStringGroup = new GConstStringGroup(gName: "Settings File Names");
       foreach (var kvp in new Dictionary<string, string>() {
@@ -43,7 +43,7 @@ namespace ATAP.Utilities.GenerateProgram {
       List<string> gAdditionalStatements = default, GPatternReplacement gPatternReplacement = default) {
       GCompilationUnit gCompilationUnit = new GCompilationUnit(gName: "DefaultConfiguration", gRelativePath,
         gPatternReplacement: gPatternReplacement);
-      foreach (var o in new List<GUsing>() {new GUsing("System.Collections.Generic")}) {
+      foreach (var o in new List<IGUsing>() {new GUsing("System.Collections.Generic")}) {
         gCompilationUnit.GUsings.Add(o.Philote, o);
       }
       GNamespace gNamespace = new GNamespace(gNamespaceName);

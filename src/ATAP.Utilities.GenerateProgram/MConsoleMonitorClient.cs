@@ -70,9 +70,9 @@ namespace ATAP.Utilities.GenerateProgram {
       });
       gCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
     }
-    public static void MPropertyGroupForConsoleMonitorPattern(GClass gClass) {
+    public static void MPropertyGroupForConsoleMonitorPattern(IGClass gClass) {
       var gPropertyGroup = new GPropertyGroup("Propertys needed to interoperate with the ConsoleMonitorGHS Service");
-      foreach (var o in new List<GProperty>() {
+      foreach (var o in new List<IGProperty>() {
         new GProperty("SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle", gType: "IDisposable",
           gAccessors: "{ get; set; }", gVisibility: "protected internal"),
         // new GProperty("Choices", gType: "Dictionary<String,IEnumerable<string>>", gAccessors: "{ get; }", gVisibility: "protected internal"),
@@ -89,7 +89,7 @@ namespace ATAP.Utilities.GenerateProgram {
         gClass.AddTConstructorAutoPropertyGroup(gConstructor.Philote, o, gPropertyGroupId: gPropertyGroup.Philote);
       }
     }
-    public static void MMethodGroupForConsoleMonitorPattern(GClass gClass, (GBody, GComment) gBodyCommentTuple = default) {
+    public static void MMethodGroupForConsoleMonitorPattern(IGClass gClass, (IGBody, IGComment) gBodyCommentTuple = default) {
       var gMethodGroup =
         new GMethodGroup(gName: "MethodGroup For ConsoleMonitorPattern");
       //GMethod gMethod = MCreateWriteAsyncMethodForConsoleMonitorPattern();
@@ -107,13 +107,13 @@ namespace ATAP.Utilities.GenerateProgram {
       gClass.AddMethodGroup(gMethodGroup);
       gClass.AddMethodGroup(MCreateStateTransitionMethodGroupForConsoleMonitorPattern());
     }
-    public static void MDelegateGroupForConsoleMonitorPattern(GClass gClass) {
+    public static void MDelegateGroupForConsoleMonitorPattern(IGClass gClass) {
       var gDelegateGroup =
         new GDelegateGroup(gName: "DelegateGroup For ConsoleMonitorPattern");
       gClass.AddDelegateGroup(MCreateStateTransitionDelegateGroupForConsoleMonitorPattern());
     }
     public static void
-      MReferenceItemGroupInBaseProjectUnitForConsoleMonitorGHS(GAssemblyUnit gAssemblyUnit) {
+      MReferenceItemGroupInBaseProjectUnitForConsoleMonitorGHS(IGAssemblyUnit gAssemblyUnit) {
 
       var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("ReferencesUsedByConsoleMonitorGHSClients",
         "Packages referenced by Clients wishing to use the ConsoleMonitorGHS", new GBody(new List<string>() {
@@ -124,7 +124,7 @@ namespace ATAP.Utilities.GenerateProgram {
         gItemGroupInProjectUnit);
     }
     public static void
-      MReferenceItemGroupInInterfaceProjectUnitForConsoleMonitorGHS(GAssemblyUnit gAssemblyUnit) {
+      MReferenceItemGroupInInterfaceProjectUnitForConsoleMonitorGHS(IGAssemblyUnit gAssemblyUnit) {
 
       var gItemGroupInProjectUnit = new GItemGroupInProjectUnit("ReferencesUsedByConsoleMonitorGHSClients",
         "Packages referenced by Clients wishing to use the GHConsoleMonitorGHS", new GBody(new List<string>() {
@@ -247,7 +247,7 @@ namespace ATAP.Utilities.GenerateProgram {
     }
 
     static IGMethod MCreateWriteMethodForConsoleMonitorPattern(string gAccessModifier = "") {
-      var gMethodArgumentList = new List<GArgument>() {
+      var gMethodArgumentList = new List<IGArgument>() {
         new GArgument("mesg","string"),
         new GArgument("ct","CancellationToken?")
       };
@@ -341,7 +341,7 @@ namespace ATAP.Utilities.GenerateProgram {
         new GComment(new List<string>() {
           "//  Delegate for the method that will process each input line ",
         }));
-      foreach (var o in new List<GArgument>() {
+      foreach (var o in new List<IGArgument>() {
         new GArgument("inputString","string"),
         new GArgument("ct","CancellationToken?"),
       }) { gDelegate.GDelegateDeclaration.GArguments.Add(o.Philote, o); }

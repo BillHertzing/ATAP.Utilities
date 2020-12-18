@@ -11,7 +11,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GType = gType ?? throw new ArgumentNullException(nameof(gType));
       IsRef = isRef;
       IsOut = isOut;
-      Philote = new Philote<GArgument>();
+      Philote = new Philote<IGArgument>();
 
     }
 

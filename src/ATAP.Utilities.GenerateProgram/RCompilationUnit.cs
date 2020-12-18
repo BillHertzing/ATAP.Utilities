@@ -7,11 +7,11 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
-    public static StringBuilder RenderCompilationUnitStringBuilder(this StringBuilder sb, GCompilationUnit gCompilationUnit, StringBuilder indent, string eol, CancellationToken? ct = default) {
+    public static StringBuilder RenderCompilationUnitStringBuilder(this StringBuilder sb, IGCompilationUnit gCompilationUnit, StringBuilder indent, string eol, CancellationToken? ct = default) {
       ct?.ThrowIfCancellationRequested();
       return sb.Append($"{indent}{GCompilationUnit.Header}{eol}");
     }
-    public static IR1Top RCompilationUnit(this IR1Top r1Top,GCompilationUnit gCompilationUnit, IW1Top w1Top) {
+    public static IR1Top RCompilationUnit(this IR1Top r1Top, IGCompilationUnit gCompilationUnit, IW1Top w1Top) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       r1Top.Sb.RenderCompilationUnitStringBuilder(gCompilationUnit, r1Top.Indent, r1Top.Eol, r1Top.Ct);
       if (gCompilationUnit.GUsingGroups.Any()) {
@@ -30,14 +30,14 @@ namespace ATAP.Utilities.GenerateProgram {
       w1Top.WCompilationUnit(gCompilationUnit, r1Top.Sb);
       return r1Top;
     }
-    public static IR1Top RCompilationUnit(this IR1Top r1Top, List<GCompilationUnit> gCompilationUnits,IW1Top w1Top) {
+    public static IR1Top RCompilationUnit(this IR1Top r1Top, IList<IGCompilationUnit> gCompilationUnits, IW1Top w1Top) {
       foreach (var o in gCompilationUnits) {
         r1Top.RCompilationUnit(o, w1Top);
       }
       return r1Top;
     }
 
-    public static IR1Top RCompilationUnit(this IR1Top r1Top, Dictionary<Philote<GCompilationUnit>, GCompilationUnit> gCompilationUnits,IW1Top w1Top) {
+    public static IR1Top RCompilationUnit(this IR1Top r1Top, IDictionary<IPhilote<IGCompilationUnit>, IGCompilationUnit> gCompilationUnits, IW1Top w1Top) {
       foreach (var kvp in gCompilationUnits) {
         r1Top.RCompilationUnit(kvp.Value, w1Top);
       }

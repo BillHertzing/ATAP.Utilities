@@ -61,42 +61,45 @@ namespace ATAP.Utilities.GenerateProgram {
           case GUsing gUsing:
             this.RUsing(gUsing);
             break;
-          case List<GUsing> gUsings:
+          case IGUsing gUsing:
+            this.RUsing(gUsing);
+            break;
+          case IList<IGUsing> gUsings:
             foreach (var gu in gUsings) {
               this.RUsing(gu);
             }
             break;
-          case GUsingGroup gUsingGroup:
+          case IGUsingGroup gUsingGroup:
             this.RUsingGroup(gUsingGroup);
             break;
-          case Dictionary<Philote<GUsingGroup>, GUsingGroup> gUsingGroups:
+          case IDictionary<IPhilote<IGUsingGroup>, IGUsingGroup> gUsingGroups:
             this.RUsingGroup(gUsingGroups);
             break;
-          case GNamespace gNamespace:
+          case IGNamespace gNamespace:
             this.RNamespace(gNamespace);
             break;
-          case GClass gClass:
+          case IGClass gClass:
             this.RClass(gClass);
             break;
-          case GInterface gInterface:
+          case IGInterface gInterface:
             this.RInterface(gInterface);
             break;
-          case GProperty gProperty:
+          case IGProperty gProperty:
             this.RProperty(gProperty);
             break;
-          case GMethod gMethod:
+          case IGMethod gMethod:
             this.RMethod(gMethod);
             break;
-          case GCompilationUnit gCompilationUnit:
+          case IGCompilationUnit gCompilationUnit:
             this.RCompilationUnit(gCompilationUnit, w1Top);
             break;
-          case Dictionary<Philote<GCompilationUnit>, GCompilationUnit> gCompilationUnits:
+          case IDictionary<IPhilote<IGCompilationUnit>, IGCompilationUnit> gCompilationUnits:
             this.RCompilationUnit(gCompilationUnits, w1Top);
             break;
-          case GAssemblyUnit gAssemblyUnit:
+          case IGAssemblyUnit gAssemblyUnit:
             this.RAssemblyUnit(gAssemblyUnit, w1Top);
             break;
-          case Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit> gAssemblyUnits:
+          case IDictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit> gAssemblyUnits:
             this.RAssemblyUnit(gAssemblyUnits, w1Top);
             break;
           default:

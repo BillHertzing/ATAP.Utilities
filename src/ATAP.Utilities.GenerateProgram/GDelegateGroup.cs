@@ -7,7 +7,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public GDelegateGroup(string gName, Dictionary<IPhilote<IGDelegate>, IGDelegate>? gDelegates = default) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
       GDelegates = gDelegates == default ? new Dictionary<IPhilote<IGDelegate>, IGDelegate>() : gDelegates;
-      Philote = new Philote<GDelegateGroup>();
+      Philote = new Philote<IGDelegateGroup>();
     }
 
     public string GName { get; init; }

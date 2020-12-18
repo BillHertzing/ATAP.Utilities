@@ -12,7 +12,7 @@ namespace ATAP.Utilities.GenerateProgram {
       CollectionOfAssembliesBuilt = collectionOfAssembliesBuilt;
       PackagingSuccess = packagingSuccess;
       DeploymentSuccess = deploymentSuccess;
-      Philote = new Philote<GGenerateProgramResult>();
+      Philote = new Philote<IGGenerateProgramResult>();
     }
 
     public bool DBExtractionSuccess { get; init; }

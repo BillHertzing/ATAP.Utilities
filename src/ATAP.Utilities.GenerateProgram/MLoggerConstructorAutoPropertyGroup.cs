@@ -7,7 +7,7 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
 
   public static partial class GClassExtensions {
-    public static IGClass AddTLoggerConstructorAutoPropertyGroup(this IGClass gClass, Philote<IGMethod> gMethodId, Philote<IGPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get; }", string? gVisibility = default) {
+    public static IGClass AddTLoggerConstructorAutoPropertyGroup(this IGClass gClass, IPhilote<IGMethod> gMethodId, IPhilote<IGPropertyGroup> gPropertyGroupId = default, string? gAccessors = "{ get; }", string? gVisibility = default) {
       IGMethod gMethod = default;
        if (gClass.GMethods != null && gClass.GMethods.ContainsKey(gMethodId)) {
         gMethod = gClass.GMethods[gMethodId];

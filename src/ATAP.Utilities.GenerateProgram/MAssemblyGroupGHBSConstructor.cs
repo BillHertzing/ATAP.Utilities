@@ -39,11 +39,11 @@ namespace ATAP.Utilities.GenerateProgram {
     public static void GAssemblyGroupGHBSFinalizer(IGAssemblyGroupBasicConstructorResult mCreateAssemblyGroupResult) {
       //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor
       //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
-      //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
+      //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<IGAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
       //#endregion
       //#region Lookup the Derived GAssemblyUnit, GCompilationUnit, GNamespace, and GClass
       //var titularClassName = $"{gAssemblyGroup.GName}";
-      //var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
+      //var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<IGAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
       //#endregion
       // No Additional work needed, call CommonFinalizer
       GAssemblyGroupCommonFinalizer(mCreateAssemblyGroupResult);

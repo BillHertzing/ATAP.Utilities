@@ -17,7 +17,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public static IGAssemblyGroup MFileSystemWatcherGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default,bool hasInterfaces = true,
       IGPatternReplacement gPatternReplacement = default) {
-      var _gPatternReplacement =
+      IGPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, hasInterfaces, _gPatternReplacement);
@@ -72,8 +72,7 @@ namespace ATAP.Utilities.GenerateProgram {
         new GMethodGroup(
           gName:
           $"MethodGroup specific to {mCreateAssemblyGroupResult.gClassBase.GName}");
-      GMethod gMethod;
-      gMethod = MCreateRequestAFileSystemWatcher();
+      var gMethod = MCreateRequestAFileSystemWatcher();
       gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
       mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(gMethodGroup);
       #endregion

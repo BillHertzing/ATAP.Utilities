@@ -37,20 +37,20 @@ namespace ATAP.Utilities.GenerateProgram {
     public static void GAssemblyGroupGHHSFinalizer(IGAssemblyGroupBasicConstructorResult gAssemblyGroupBasicConstructorResult) {
       //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor
       //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
-      //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>() {gAssemblyGroup}, gClassName: titularBaseClassName);
+      //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<IGAssemblyGroup>() {gAssemblyGroup}, gClassName: titularBaseClassName);
       //var gClassBase = titularAssemblyUnitLookupPrimaryConstructorResults.gClasss.First();
       //#endregion
       //#region Lookup the Derived GAssemblyUnit, GCompilationUnit, GNamespace, and GClass
       //var titularClassName = $"{gAssemblyGroup.GName}";
-      //var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<GAssemblyGroup>() {gAssemblyGroup}, gClassName: titularClassName);
+      //var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<IGAssemblyGroup>() {gAssemblyGroup}, gClassName: titularClassName);
       //var gClassDerived = titularAssemblyUnitLookupDerivedClassResults.gClasss.First();
       //#endregion
       //#region Lookup the Interfaces
       //var titularInterfaceDerivedName = $"I{gAssemblyGroup.GName}";
-      //var titularAssemblyUnitLookupDerivedInterfacesResults = LookupInterfaces(new List<GAssemblyGroup>() {gAssemblyGroup}, gInterfaceName: titularInterfaceDerivedName);
+      //var titularAssemblyUnitLookupDerivedInterfacesResults = LookupInterfaces(new List<IGAssemblyGroup>() {gAssemblyGroup}, gInterfaceName: titularInterfaceDerivedName);
       //var gInterfaceDerived = titularAssemblyUnitLookupDerivedInterfacesResults.gInterfaces.First();
       //var titularInterfaceBaseName = $"I{gAssemblyGroup.GName}";
-      //var titularAssemblyUnitLookupBaseInterfacesResults = LookupInterfaces(new List<GAssemblyGroup>() {gAssemblyGroup}, gInterfaceName: titularInterfaceBaseName);
+      //var titularAssemblyUnitLookupBaseInterfacesResults = LookupInterfaces(new List<IGAssemblyGroup>() {gAssemblyGroup}, gInterfaceName: titularInterfaceBaseName);
       //var gInterfaceBase = titularAssemblyUnitLookupBaseInterfacesResults.gInterfaces.First();
       //#endregion
      // No Additional work needed, call CommonFinalizer
@@ -60,11 +60,11 @@ namespace ATAP.Utilities.GenerateProgram {
     //public static void GAssemblyGroupGHHSFinalizer( GAssemblyGroup gAssemblyGroup,  GClass gClassDerived, GClass gClassBase, GInterface gInterfaceDerived, GInterface gInterfaceBase) {
     //  //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor
     //  //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
-    //  //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
+    //  //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<IGAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
     //  //#endregion
     //  //#region Lookup the Derived GAssemblyUnit, GCompilationUnit, GNamespace, and GClass
     //  //var titularClassName = $"{gAssemblyGroup.GName}";
-    //  //var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
+    //  //var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<IGAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
     //  //#endregion
     //  // No Additional work needed, call CommonFinalizer
     //  GAssemblyGroupCommonFinalizer(gAssemblyGroup,  gClassDerived, gClassBase,  gInterfaceDerived,  gInterfaceBase);

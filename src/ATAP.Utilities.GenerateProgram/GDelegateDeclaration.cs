@@ -11,7 +11,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GType = gType == default ? "" : gType;
       GArguments = gArguments == default ? new Dictionary<IPhilote<IGArgument>, IGArgument>() : gArguments;
       GComment = gComment == default ? new GComment() : gComment;
-      Philote = new Philote<GDelegateDeclaration>();
+      Philote = new Philote<IGDelegateDeclaration>();
     }
     public string GName { get; init; }
     public string GType { get; init; }

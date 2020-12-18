@@ -15,7 +15,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GAssemblyUnits = gAssemblyUnits == default ? new Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>() : gAssemblyUnits;
       GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       GComment = gComment == default ? new GComment() : gComment; 
-      Philote = new Philote<GAssemblyGroupSignil>();
+      Philote = new Philote<IGAssemblyGroupSignil>();
     }
     public string GName { get; init; }
     public string GDescription { get; init; }

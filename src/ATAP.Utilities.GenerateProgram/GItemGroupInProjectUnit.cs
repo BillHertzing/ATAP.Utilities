@@ -9,7 +9,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GDescription = gDescription == default ? "" : gDescription;
       GBody = gBody == default ? new GBody() : gBody;
       GComment = gComment == default ? new GComment() : gComment;
-      Philote = new Philote<GItemGroupInProjectUnit>();
+      Philote = new Philote<IGItemGroupInProjectUnit>();
     }
     public string GName { get; init; }
     public string GDescription { get; init; }

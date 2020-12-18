@@ -7,24 +7,24 @@ using System.Threading.Tasks;
 namespace ATAP.Utilities.GenerateProgram {
   public static class Lookup {
     public static (
-      IEnumerable<GAssemblyUnit> gAssemblyUnits,
-      IEnumerable<GCompilationUnit> gCompilationUnits,
-      IEnumerable<GNamespace> gNamespacess,
-      IEnumerable<GClass> gClasss,
-      IEnumerable<GMethod> gMethods)
+      IEnumerable<IGAssemblyUnit> gAssemblyUnits,
+      IEnumerable<IGCompilationUnit> gCompilationUnits,
+      IEnumerable<IGNamespace> gNamespacess,
+      IEnumerable<IGClass> gClasss,
+      IEnumerable<IGMethod> gMethods)
       LookupPrimaryConstructorMethod(
-        IEnumerable<GAssemblyGroup> gAssemblyGroups,
+        IEnumerable<IGAssemblyGroup> gAssemblyGroups,
         string gAssemblyGroupName = "",
         string gAssemblyUnitName = "",
         string gCompilationUnitName = "",
         string gNamespaceName = "",
         string gClassName = ""
       ) {
-      List<GAssemblyUnit> gAssemblyUnits = new List<GAssemblyUnit>();
-      List<GCompilationUnit> gCompilationUnits = new List<GCompilationUnit>();
-      List<GNamespace> gNamespaces = new List<GNamespace>();
-      List<GClass> gClasss = new List<GClass>();
-      List<GMethod> gMethods = new List<GMethod>();
+      var gAssemblyUnits = new List<IGAssemblyUnit>();
+      var gCompilationUnits = new List<IGCompilationUnit>();
+      var gNamespaces = new List<IGNamespace>();
+      var gClasss = new List<IGClass>();
+      var gMethods = new List<IGMethod>();
       foreach (var gAg in gAssemblyGroups) {
         if (String.IsNullOrWhiteSpace(gAssemblyGroupName) || gAg.GName == gAssemblyGroupName) {
           foreach (var gAU in gAg.GAssemblyUnits) {
@@ -57,23 +57,23 @@ namespace ATAP.Utilities.GenerateProgram {
       return (gAssemblyUnits, gCompilationUnits, gNamespaces, gClasss, gMethods);
     }
     public static (
-      IEnumerable<GAssemblyUnit> gAssemblyUnits,
-      IEnumerable<GCompilationUnit> gCompilationUnits,
-      IEnumerable<GNamespace> gNamespacess,
-      IEnumerable<GClass> gClasss)
+      IEnumerable<IGAssemblyUnit> gAssemblyUnits,
+      IEnumerable<IGCompilationUnit> gCompilationUnits,
+      IEnumerable<IGNamespace> gNamespacess,
+      IEnumerable<IGClass> gClasss)
       LookupDerivedClass(
-        IEnumerable<GAssemblyGroup> gAssemblyGroups,
+        IEnumerable<IGAssemblyGroup> gAssemblyGroups,
         string gAssemblyGroupName = "",
         string gAssemblyUnitName = "",
         string gCompilationUnitName = "",
         string gNamespaceName = "",
         string gClassName = ""
       ) {
-      List<GAssemblyUnit> gAssemblyUnits = new List<GAssemblyUnit>();
-      List<GCompilationUnit> gCompilationUnits = new List<GCompilationUnit>();
-      List<GNamespace> gNamespaces = new List<GNamespace>();
-      List<GClass> gClasss = new List<GClass>();
-      List<GMethod> gMethods = new List<GMethod>();
+      var gAssemblyUnits = new List<IGAssemblyUnit>();
+      var gCompilationUnits = new List<IGCompilationUnit>();
+      var gNamespaces = new List<IGNamespace>();
+      var gClasss = new List<IGClass>();
+      var gMethods = new List<IGMethod>();
       foreach (var gAg in gAssemblyGroups) {
         if (String.IsNullOrWhiteSpace(gAssemblyGroupName) || gAg.GName == gAssemblyGroupName) {
           foreach (var gAU in gAg.GAssemblyUnits) {
@@ -101,23 +101,23 @@ namespace ATAP.Utilities.GenerateProgram {
       return (gAssemblyUnits, gCompilationUnits, gNamespaces, gClasss);
     }
     public static (
-      IEnumerable<GAssemblyUnit> gAssemblyUnits,
-      IEnumerable<GCompilationUnit> gCompilationUnits,
-      IEnumerable<GNamespace> gNamespacess,
-      IEnumerable<GInterface> gInterfaces
+      IEnumerable<IGAssemblyUnit> gAssemblyUnits,
+      IEnumerable<IGCompilationUnit> gCompilationUnits,
+      IEnumerable<IGNamespace> gNamespacess,
+      IEnumerable<IGInterface> gInterfaces
       )
       LookupInterfaces(
-        IEnumerable<GAssemblyGroup> gAssemblyGroups,
+        IEnumerable<IGAssemblyGroup> gAssemblyGroups,
         string gAssemblyGroupName = "",
         string gAssemblyUnitName = "",
         string gCompilationUnitName = "",
         string gNamespaceName = "",
         string gInterfaceName = ""
       ) {
-      List<GAssemblyUnit> gAssemblyUnits = new List<GAssemblyUnit>();
-      List<GCompilationUnit> gCompilationUnits = new List<GCompilationUnit>();
-      List<GNamespace> gNamespaces = new List<GNamespace>();
-      List<GInterface> gInterfaces = new List<GInterface>();
+      var gAssemblyUnits = new List<IGAssemblyUnit>();
+      var gCompilationUnits = new List<IGCompilationUnit>();
+      var gNamespaces = new List<IGNamespace>();
+      var gInterfaces = new List<IGInterface>();
       foreach (var gAg in gAssemblyGroups) {
         if (String.IsNullOrWhiteSpace(gAssemblyGroupName) || gAg.GName == gAssemblyGroupName) {
           foreach (var gAU in gAg.GAssemblyUnits) {
@@ -154,8 +154,8 @@ namespace ATAP.Utilities.GenerateProgram {
       string gAssemblyUnitName = "",
       string gProjectUnitName = ""
     ) {
-      List<GAssemblyUnit> gAssemblyUnits = new List<GAssemblyUnit>();
-      List<GProjectUnit> gProjectUnits = new List<GProjectUnit>();
+var gAssemblyUnits = new List<IGAssemblyUnit>();
+      var gProjectUnits = new List<IGProjectUnit>();
       foreach (var gAg in gAssemblyGroups) {
         if (String.IsNullOrWhiteSpace(gAssemblyGroupName) || gAg.GName == gAssemblyGroupName) {
           foreach (var gAU in gAg.GAssemblyUnits) {

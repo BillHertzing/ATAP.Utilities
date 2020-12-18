@@ -5,6 +5,7 @@ using ATAP.Utilities.Philote;
 using static ATAP.Utilities.GenerateProgram.GAssemblyGroupExtensions;
 using static ATAP.Utilities.GenerateProgram.GItemGroupInProjectUnitExtensions;
 using static ATAP.Utilities.GenerateProgram.Lookup;
+using static ATAP.Utilities.Collection.Extensions;
 //using AutoMapper.Configuration;
 
 namespace ATAP.Utilities.GenerateProgram {
@@ -128,7 +129,7 @@ namespace ATAP.Utilities.GenerateProgram {
     /*******************************************************************************/
     /*******************************************************************************/
     //static IGMethod MCreateWriteAsyncMethodInConsoleSink(string gAccessModifier = "") {
-    //  var gMethodArgumentList = new List<GArgument>() {
+    //  var gMethodArgumentList = new List<IGArgument>() {
     //    new GArgument("mesg","string"),
     //    new GArgument("ct","CancellationToken?")
     //  };
@@ -150,8 +151,8 @@ namespace ATAP.Utilities.GenerateProgram {
     //"// Used to asynchronously write a string to the WriteAsync method of the Console instance"
     //  }));
     //}
-    static IList<GMethod> MCreateWriteMethodInConsoleSink(string gAccessModifier = "") {
-      var gMethodArgumentList = new List<GArgument>() {
+    static IList<IGMethod> MCreateWriteMethodInConsoleSink(string gAccessModifier = "") {
+      var gMethodArgumentList = new List<IGArgument>() {
         new GArgument("mesg", "string"), new GArgument("ct", "CancellationToken?")
       };
       var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
@@ -178,7 +179,7 @@ namespace ATAP.Utilities.GenerateProgram {
         gBody: new GBody(gStatements:
           new List<string>() {"Console.Write(Mesg);", "StateMachine.Fire(Trigger.WriteFinished);",}),
         new GComment(new List<string>() {"// (private) Used to write a string to the Console instance"}));
-      return new List<GMethod>(){publicWriteMethod,privateWriteMethod};
+      return new List<IGMethod>(){publicWriteMethod,privateWriteMethod};
     }
   }
 }

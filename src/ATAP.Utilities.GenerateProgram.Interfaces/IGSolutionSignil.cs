@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
   public class IGSolutionSignil {
     public bool HasPropsAndTargets { get; init; }
@@ -16,6 +17,9 @@ namespace ATAP.Utilities.GenerateProgram {
     public ICollection<string> BuildConfigurations { get; init; }
     public ICollection<string> CPUConfigurations { get; init; }
     public IGPatternReplacement GPatternReplacement { get; init; }
+        public IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> GDependencyPackages { get;  init; }
+    public IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> GDependencyProjects { get;  init; }
+
     public IGComment GComment { get; init; }
 
   }

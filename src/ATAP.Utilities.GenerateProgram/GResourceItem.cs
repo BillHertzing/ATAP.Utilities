@@ -7,7 +7,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
       GValue = gValue ?? throw new ArgumentNullException(nameof(gValue));
       GComment = gComment == default ? "" : gComment;
-      Philote = new Philote<GResourceItem>();
+      Philote = new Philote<IGResourceItem>();
     }
 
     public string GName { get; init; }

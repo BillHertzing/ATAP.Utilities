@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using ATAP.Utilities.Philote;
+using static ATAP.Utilities.Collection.Extensions;
 //using AutoMapper.Configuration;
 using static ATAP.Utilities.GenerateProgram.GUsingGroupExtensions;
 using static ATAP.Utilities.GenerateProgram.GEnumerationMemberExtensions;
@@ -66,7 +67,7 @@ namespace ATAP.Utilities.GenerateProgram {
       //var stateConfigurationClass = new GClass(gName: "StateConfiguration", gPropertys: gPropertys);
 
       //var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
-      //foreach (var o in new List<GArgument>() {
+      //foreach (var o in new List<IGArgument>() {
       //  new GArgument("state", "State"), new GArgument("trigger", "Trigger"), new GArgument("nextState", "State"),
       //}) {
       //  gMethodArguments.Add(o.Philote, o);
@@ -155,7 +156,7 @@ namespace ATAP.Utilities.GenerateProgram {
         foreach (var name in finalGStateConfiguration.GStateNames) {
           gEnumerationMemberList.Add(LocalizableEnumerationMember(name, enumerationValue++));
         }
-        // gEnumerationMemberList = new List<GEnumerationMember>() {
+        // gEnumerationMemberList = new List<IGEnumerationMember>() {
         //  LocalizableEnumerationMember("WaitingForInitialization",1,"Power-On State - waiting until minimal initialization condition has been met","Waiting For Initialization"),
         //  LocalizableEnumerationMember("InitiateContact",1,"Signal to the Console Monitor that we are a valid ConsoleSource","Initiate Contact"),
         //};
@@ -175,7 +176,7 @@ namespace ATAP.Utilities.GenerateProgram {
         foreach (var name in finalGStateConfiguration.GTriggerNames) {
           gEnumerationMemberList.Add(LocalizableEnumerationMember(name, enumerationValue++));
         }
-        //gEnumerationMemberList = new List<GEnumerationMember>() {
+        //gEnumerationMemberList = new List<IGEnumerationMember>() {
         //  LocalizableEnumerationMember("InitializationCompleteReceived",1,"The minimal initialization conditions have been met","Initialization Complete Received"),
         //};
         gEnumerationMembers =

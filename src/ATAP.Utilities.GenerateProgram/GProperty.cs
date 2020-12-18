@@ -8,7 +8,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GType = gType == default ? "" : gType;
       GAccessors = gAccessors ?? throw new ArgumentNullException(nameof(gAccessors));
       GVisibility = gVisibility == default ? "" : gVisibility;
-      Philote = new Philote<GProperty>();
+      Philote = new Philote<IGProperty>();
     }
 
     public string GName { get; }

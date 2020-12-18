@@ -54,7 +54,7 @@ namespace ATAP.Utilities.GenerateProgram {
         new GMethodGroup(
           gName:
           $"MethodGroup specific to {mCreateAssemblyGroupResult.gClassBase.GName}");
-      GMethod gMethod;
+      IGMethod gMethod;
       gMethod = CreateConsoleReadLineAsyncAsObservableMethod();
       gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
       mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(gMethodGroup);
@@ -63,7 +63,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #endregion
       #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit
       #region Add References used by both the Titular Derived and Titular Base CompilationUnits
-      foreach (var o in new List<GItemGroupInProjectUnit>() {ReactiveUtilitiesReferencesItemGroupInProjectUnit(),}
+      foreach (var o in new List<IGItemGroupInProjectUnit>() {ReactiveUtilitiesReferencesItemGroupInProjectUnit(),}
       ) {
         mCreateAssemblyGroupResult.gTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
           .Add(o.Philote, o);
@@ -82,7 +82,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #endregion
       #region Add References for the Titular Interface ProjectUnit
       #region Add References common to both the Titular Derived Interface and Titular Base Interface
-      foreach (var o in new List<GItemGroupInProjectUnit>() {ReactiveUtilitiesReferencesItemGroupInProjectUnit()}
+      foreach (var o in new List<IGItemGroupInProjectUnit>() {ReactiveUtilitiesReferencesItemGroupInProjectUnit()}
       ) {
         mCreateAssemblyGroupResult.gTitularInterfaceAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
           .Add(o.Philote, o);
@@ -100,7 +100,7 @@ namespace ATAP.Utilities.GenerateProgram {
     /*******************************************************************************/
     /*******************************************************************************/
     static IGMethod CreateConsoleReadLineAsyncAsObservableMethod(string gAccessModifier = "") {
-      var gMethodArgumentList = new List<GArgument>() {
+      var gMethodArgumentList = new List<IGArgument>() {
         // None
       };
       var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();

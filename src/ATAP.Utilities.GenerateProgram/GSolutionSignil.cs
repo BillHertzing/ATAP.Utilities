@@ -19,10 +19,10 @@ namespace ATAP.Utilities.GenerateProgram {
     , bool hasDataBases = default
     , ICollection<string> buildConfigurations = default
     , ICollection<string> cPUConfigurations = default
-    , Dictionary<Philote<GProjectUnit>, GProjectUnit> gDependencyPackages = default
-    , Dictionary<Philote<GProjectUnit>, GProjectUnit> gDependencyProjects = default
-    , GComment gComment = default
-    , GPatternReplacement gPatternReplacement = default
+    , IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> gDependencyPackages = default
+    , IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> gDependencyProjects = default
+    , IGComment gComment = default
+    , IGPatternReplacement gPatternReplacement = default
 ) {
       HasPropsAndTargets = hasPropsAndTargets == default ? false : hasPropsAndTargets;
       HasEditorConfig = hasEditorConfig == default ? false : hasEditorConfig;
@@ -41,25 +41,25 @@ namespace ATAP.Utilities.GenerateProgram {
       GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       GDependencyPackages = gDependencyPackages ?? throw new ArgumentNullException(nameof(gDependencyPackages));
       GDependencyProjects = gDependencyProjects ?? throw new ArgumentNullException(nameof(gDependencyProjects));
-      Philote = new Philote<GSolutionSignil>();
+      Philote = new Philote<IGSolutionSignil>();
     }
-    public bool HasPropsAndTargets { get; }
-    public bool HasEditorConfig { get; }
-    public bool HasArtefacts { get; }
-    public bool HasDevLog { get; }
-    public bool HasDocumentation { get; }
-    public string SourceRelativePath { get; }
-    public string TestsRelativePath { get; }
-    public bool HasOmniSharpConfiguration { get; }
-    public bool HasVisualStudioCodeWorkspaceConfiguration { get; }
-    public bool HasVisualStudioIISApplicationHostConfiguration { get; }
-    public bool HasDataBases { get; }
-    public ICollection<string> BuildConfigurations { get; }
-    public ICollection<string> CPUConfigurations { get; }
-    public Dictionary<Philote<GProjectUnit>, GProjectUnit> GDependencyPackages { get; }
-    public Dictionary<Philote<GProjectUnit>, GProjectUnit> GDependencyProjects { get; }
-    public GPatternReplacement GPatternReplacement { get; }
-    public GComment GComment { get; }
-    public Philote<GSolutionSignil> Philote { get; }
+    public bool HasPropsAndTargets { get; init; }
+    public bool HasEditorConfig { get; init; }
+    public bool HasArtefacts { get; init; }
+    public bool HasDevLog { get; init; }
+    public bool HasDocumentation { get; init; }
+    public string SourceRelativePath { get; init; }
+    public string TestsRelativePath { get; init; }
+    public bool HasOmniSharpConfiguration { get; init; }
+    public bool HasVisualStudioCodeWorkspaceConfiguration { get; init; }
+    public bool HasVisualStudioIISApplicationHostConfiguration { get; init; }
+    public bool HasDataBases { get; init; }
+    public ICollection<string> BuildConfigurations { get; init; }
+    public ICollection<string> CPUConfigurations { get; init; }
+    public IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> GDependencyPackages { get; init; }
+    public IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> GDependencyProjects { get; init; }
+    public IGPatternReplacement GPatternReplacement { get; init; }
+    public IGComment GComment { get; init; }
+    public IPhilote<IGSolutionSignil> Philote { get; init; }
   }
 }

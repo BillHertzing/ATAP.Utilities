@@ -9,7 +9,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GName = gName == default ? "" : gName;
       GDescription = gDescription == default ? "" : gDescription;
       GPropertyGroupStatements = gPropertyGroupStatements == default ? new List<String>() : gPropertyGroupStatements;
-      Philote = new Philote<GPropertyGroupInProjectUnit>();
+      Philote = new Philote<IGPropertyGroupInProjectUnit>();
     }
     public string? GName { get; init; }
     public string? GDescription { get; init; }

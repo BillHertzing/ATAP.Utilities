@@ -24,7 +24,7 @@ namespace ATAP.Utilities.GenerateProgram {
       }
       return r1Top;
     }
-    public static IR1Top REnumerationGroup(this IR1Top r1Top, Dictionary<IPhilote<IGEnumerationGroup>, IGEnumerationGroup> gEnumerationGroups) {
+    public static IR1Top REnumerationGroup(this IR1Top r1Top, IDictionary<IPhilote<IGEnumerationGroup>, IGEnumerationGroup> gEnumerationGroups) {
       foreach (var o in gEnumerationGroups) {
         r1Top.REnumerationGroup(o.Value);
       }

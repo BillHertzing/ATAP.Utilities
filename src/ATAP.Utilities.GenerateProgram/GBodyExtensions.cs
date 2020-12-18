@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATAP.Utilities.Philote;
 using ATAP.Utilities.GenerateProgram;
+using static ATAP.Utilities.Collection.Extensions;
 
 
 namespace ATAP.Utilities.GenerateProgram {

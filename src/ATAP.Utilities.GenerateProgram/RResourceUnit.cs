@@ -13,7 +13,7 @@ namespace ATAP.Utilities.GenerateProgram {
       //sb.Append($"<value>{gResourceItem.GValue}</value>{eol}</data>{eol}{eol}");
       //return sb.Append($"</data>{eol}{eol}");
     }
-    public static IR1Top RResourceUnit(this IR1Top r1Top,GResourceUnit gResourceUnit, IW1Top w1Top) {
+    public static IR1Top RResourceUnit(this IR1Top r1Top, IGResourceUnit gResourceUnit, IW1Top w1Top) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       StringBuilder localStringBuilder = new StringBuilder();
       try {
@@ -37,14 +37,14 @@ namespace ATAP.Utilities.GenerateProgram {
       r1Top.Sb.Clear();
       return r1Top;
     }
-    public static IR1Top RResourceUnit(this IR1Top r1Top, List<GResourceUnit> gResourceUnits,IW1Top w1Top) {
+    public static IR1Top RResourceUnit(this IR1Top r1Top, List<IGResourceUnit> gResourceUnits,IW1Top w1Top) {
       foreach (var o in gResourceUnits) {
         r1Top.RResourceUnit(o, w1Top);
       }
       return r1Top;
     }
 
-    public static IR1Top RResourceUnit(this IR1Top r1Top, Dictionary<Philote<GResourceUnit>, GResourceUnit> gResourceUnits,IW1Top w1Top) {
+    public static IR1Top RResourceUnit(this IR1Top r1Top, IDictionary<IPhilote<IGResourceUnit>, IGResourceUnit> gResourceUnits, IW1Top w1Top) {
       foreach (var kvp in gResourceUnits) {
         r1Top.RResourceUnit(kvp.Value, w1Top);
       }

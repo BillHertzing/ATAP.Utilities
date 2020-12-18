@@ -8,7 +8,7 @@ namespace ATAP.Utilities.GenerateProgram {
     ) {
       GStatements = gStatements == default ? new List<string>() : gStatements;
       GComment = gComment == default ? new GComment() : gComment;
-      Philote = new Philote<GBody>();
+      Philote = new Philote<IGBody>();
     }
     public IGComment GComment { get; init; }
     public IList<string> GStatements { get; init; }

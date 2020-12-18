@@ -26,15 +26,15 @@ namespace ATAP.Utilities.GenerateProgram {
     //  /**************************************************************************************************/
     //  var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
     //  var titularBaseInterfaceName = $"I{gAssemblyGroup.GName}Base";
-    //  var titularAssemblyUnitLookupResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
-    //  var titularInterfaceAssemblyUnitLookupResults = LookupInterfaces(new List<GAssemblyGroup>(){gAssemblyGroup},gInterfaceName:titularBaseInterfaceName);
+    //  var titularAssemblyUnitLookupResults = LookupPrimaryConstructorMethod(new List<IGAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
+    //  var titularInterfaceAssemblyUnitLookupResults = LookupInterfaces(new List<IGAssemblyGroup>(){gAssemblyGroup},gInterfaceName:titularBaseInterfaceName);
     //  PopulateInterface(titularAssemblyUnitLookupResults.gClasss.First(),
     //    titularInterfaceAssemblyUnitLookupResults.gInterfaces.First());
       
     //  var titularClassName = $"{gAssemblyGroup.GName}";
     //  var titularInterfaceName = $"I{gAssemblyGroup.GName}";
-    //  titularAssemblyUnitLookupResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
-    //  titularInterfaceAssemblyUnitLookupResults = LookupInterfaces(new List<GAssemblyGroup>(){gAssemblyGroup},gInterfaceName:titularInterfaceName);
+    //  titularAssemblyUnitLookupResults = LookupPrimaryConstructorMethod(new List<IGAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
+    //  titularInterfaceAssemblyUnitLookupResults = LookupInterfaces(new List<IGAssemblyGroup>(){gAssemblyGroup},gInterfaceName:titularInterfaceName);
     //  PopulateInterface(titularAssemblyUnitLookupResults.gClasss.First(),
     //    titularInterfaceAssemblyUnitLookupResults.gInterfaces.First());
     //}

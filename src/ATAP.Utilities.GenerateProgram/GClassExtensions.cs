@@ -139,7 +139,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public static IEnumerable<KeyValuePair<IPhilote<IGProperty>, IGProperty>> ConvertToInterfacePropertys(
       this IGClass gClass) {
       //var IEKVP = gClass.GPropertys.Where(kvp => kvp.Value.GVisibility == "public");
-      //Dictionary<Philote<GProperty>, GProperty> t1 = IEKVP.ToDictionary(kvp=>kvp.Key,kvp=>kvp.Value);
+      //Dictionary<IPhilote<IGProperty>, GProperty> t1 = IEKVP.ToDictionary(kvp=>kvp.Key,kvp=>kvp.Value);
       //return gClass.GPropertys.Where(kvp => kvp.Value.GVisibility == "public").ToDictionary(kvp=>kvp.Key,kvp=>kvp.Value);
       return gClass.GPropertys.Where(kvp =>
         kvp.Value.GVisibility == "public");
@@ -150,11 +150,11 @@ namespace ATAP.Utilities.GenerateProgram {
         var newDictionary = new Dictionary<IPhilote<IGProperty>, IGProperty>();
         var IEKVP = pG.Value.GPropertys.Where(kvp => kvp.Value.GVisibility == "public");
       }
-      //var newDictionary = gClass.GPropertyGroups.Where(x=>x.Value.GVisibility == "public").ToDictionary<Philote<GPropertyGroup>, GPropertyGroup>(x=>x.Value.GVisibility == "public")
+      //var newDictionary = gClass.GPropertyGroups.Where(x=>x.Value.GVisibility == "public").ToDictionary<IPhilote<IGPropertyGroup>, GPropertyGroup>(x=>x.Value.GVisibility == "public")
       //var newDictionary = gClass.GPropertyGroups.SelectMany(kvp =>
       //  kvp.Value
       //    .Where(x => x.GVisibility == "public")
-      //    .ToDictionary<Philote<GPropertyGroup>, GPropertyGroup>(_ => true);
+      //    .ToDictionary<Philote<GPropertyGroup>, IGPropertyGroup>(_ => true);
       return new Dictionary<IPhilote<IGPropertyGroup>, IGPropertyGroup>();
     }
     public static IGMethod ConvertMethodToInterfaceMethod(IGMethod gMethod) {
@@ -182,8 +182,8 @@ namespace ATAP.Utilities.GenerateProgram {
     }
     public static IDictionary<IPhilote<IGMethodGroup>, IGMethodGroup> ConvertToInterfaceMethodGroups(this IGClass gClass) {
       var gInterfaceMethodGroups = new Dictionary<IPhilote<IGMethodGroup>, IGMethodGroup>();
-      GMethodGroup gInterfaceMethodGroup;
-      GMethod gInterfaceMethod = default;
+      IGMethodGroup gInterfaceMethodGroup;
+      IGMethod gInterfaceMethod = default;
       foreach (var kvp in gClass.GMethodGroups) {
         gInterfaceMethodGroup = new GMethodGroup(gName: kvp.Value.GName);
         foreach (var mkvp in kvp.Value.GMethods) {
@@ -212,7 +212,7 @@ namespace ATAP.Utilities.GenerateProgram {
     //public static IDictionary<IPhilote<IGEventGroup>, IGEventGroup> ConvertToInterfaceEventGroups(this IGClass gClass) {
     //  return new Dictionary<iPhilote<iGEventGroup>, IGEventGroup>();
     //}
-    static public void PopulateInterface(GClass gClass, IGInterface gInterface) {
+    static public void PopulateInterface(IGClass gClass, IGInterface gInterface) {
       //gClass.ConvertToInterfacePropertys().ForEach(x => gInterface.GPropertys.Add(x.Key, x.Value));
       //gClass.ConvertToInterfacePropertyGroups().ForEach(x => gInterface.GPropertyGroups.Add(x.Key, x.Value));
       //gClass.ConvertToInterfaceMethods().ForEach(x => gInterface.GMethods.Add(x.Key, x.Value));

@@ -83,7 +83,7 @@ namespace ATAP.Utilities.GenerateProgram {
         new GMethodGroup(
           gName:
           $"MethodGroup specific to {mCreateAssemblyGroupResult.gClassBase.GName}");
-      GMethod gMethod;
+      IGMethod gMethod;
       gMethod = CreateConsoleSourceReadLineAsyncAsObservableMethod();
       gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
       gMethod = MCreateWriteMethodInConsoleMonitor();
@@ -94,7 +94,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #endregion
       #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit
       #region Add References used by both the Titular Derived and Titular Base CompilationUnits
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
+      foreach (var o in new List<IGItemGroupInProjectUnit>() {
           ReactiveUtilitiesReferencesItemGroupInProjectUnit(),
           new GItemGroupInProjectUnit(
             "References used by both the {Derived} and {Base}",
@@ -110,7 +110,7 @@ namespace ATAP.Utilities.GenerateProgram {
       }
       #endregion
       #region Add References unique to the Titular Base CompilationUnit
-      foreach (var o in new List<GItemGroupInProjectUnit>() { }
+      foreach (var o in new List<IGItemGroupInProjectUnit>() { }
       ) {
         mCreateAssemblyGroupResult.gTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
           .Add(o.Philote, o);
@@ -140,7 +140,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #endregion
       #region Add References for the Titular Interface ProjectUnit
       #region Add References common to both the Titular Derived Interface and Titular Base Interface
-      foreach (var o in new List<GItemGroupInProjectUnit>() {
+      foreach (var o in new List<IGItemGroupInProjectUnit>() {
           ReactiveUtilitiesReferencesItemGroupInProjectUnit(),
           new GItemGroupInProjectUnit(
             "References used by both the {Derived} and {Base}",
@@ -167,7 +167,7 @@ namespace ATAP.Utilities.GenerateProgram {
     /*******************************************************************************/
     /*******************************************************************************/
     static IGMethod MCreateWriteAsyncMethodInConsoleMonitor(string gAccessModifier = "") {
-      var gMethodArgumentList = new List<GArgument>() {
+      var gMethodArgumentList = new List<IGArgument>() {
         new GArgument("mesg", "string"), new GArgument("ct", "CancellationToken?")
       };
       var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
@@ -213,7 +213,7 @@ namespace ATAP.Utilities.GenerateProgram {
         new GComment(new List<string>() {"// Used to write a string to Write method of the ConsoleSink service"}));
     }
     static IGMethod CreateConsoleSourceReadLineAsyncAsObservableMethod(string gAccessModifier = "") {
-      var gMethodArgumentList = new List<GArgument>() {
+      var gMethodArgumentList = new List<IGArgument>() {
         // None
       };
       var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();

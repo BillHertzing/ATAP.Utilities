@@ -9,7 +9,7 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class RenderExtensions {
-    public static IR1Top RAssemblyUnit(this IR1Top r1Top,GAssemblyUnit gAssemblyUnit, IW1Top w1Top) {
+    public static IR1Top RAssemblyUnit(this IR1Top r1Top, IGAssemblyUnit gAssemblyUnit, IW1Top w1Top) {
       r1Top.Ct?.ThrowIfCancellationRequested();
       // This primarly changes the path where the AssemblyUnits' child Units are written
       var _savepath = w1Top.BasePath;
@@ -41,14 +41,14 @@ namespace ATAP.Utilities.GenerateProgram {
 
       return r1Top;
     }
-    public static IR1Top RAssemblyUnit(this IR1Top r1Top, List<GAssemblyUnit> gAssemblyUnits,IW1Top w1Top) {
+    public static IR1Top RAssemblyUnit(this IR1Top r1Top, List<IGAssemblyUnit> gAssemblyUnits,IW1Top w1Top) {
       foreach (var o in gAssemblyUnits) {
         r1Top.RAssemblyUnit(o, w1Top);
       }
       return r1Top;
     }
 
-    public static IR1Top RAssemblyUnit(this IR1Top r1Top, Dictionary<Philote<GAssemblyUnit>, GAssemblyUnit> gAssemblyUnits,IW1Top w1Top) {
+    public static IR1Top RAssemblyUnit(this IR1Top r1Top, IDictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit> gAssemblyUnits,IW1Top w1Top) {
       foreach (var kvp in gAssemblyUnits) {
         r1Top.RAssemblyUnit(kvp.Value, w1Top);
       }

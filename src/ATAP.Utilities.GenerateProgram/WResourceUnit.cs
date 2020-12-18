@@ -9,7 +9,7 @@ using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class WriteExtensions {
-    public static IW1Top WResourceUnit(this IW1Top w1Top, GResourceUnit gResourceUnit, StringBuilder sB, CancellationToken? ct = default) {
+    public static IW1Top WResourceUnit(this IW1Top w1Top, IGResourceUnit gResourceUnit, StringBuilder sB, CancellationToken? ct = default) {
       var pathToDir = Path.Combine(w1Top.BasePath, gResourceUnit.GRelativePath);
       var pathToFile = Path.Combine(w1Top.BasePath, gResourceUnit.GRelativePath, gResourceUnit.GName+gResourceUnit.GFileSuffix);
       var transformDictionary = gResourceUnit.GPatternReplacement.GDictionary;

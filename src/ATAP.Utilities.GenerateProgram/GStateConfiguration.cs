@@ -13,7 +13,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GTriggerNames = gTriggerNames == default ? new List<string>() : gTriggerNames;
       GDiGraphStates = gDiGraphStates == default ? new List<(string gtate, string trigger, string nextstate, string predicate)>() : gDiGraphStates;
       GDOTGraphStatements = gDOTGraphStatements == default ? new List<string>() : gDOTGraphStatements;
-      Philote = new Philote<GStateConfiguration>();
+      Philote = new Philote<IGStateConfiguration>();
     }
 
     public IList<string> GStateNames { get; init; }

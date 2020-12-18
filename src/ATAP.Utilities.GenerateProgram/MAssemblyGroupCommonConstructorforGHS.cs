@@ -117,7 +117,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #region Standard Property Group for every GenericHostHostedService
       var gPropertyGroup = new GPropertyGroup("Standard Properties for every GenericHostHostedService");
       gAssemblyGroupBasicConstructorResult.gClassBase.AddPropertyGroups(gPropertyGroup);
-      foreach (var o in new List<GProperty>() {
+      foreach (var o in new List<IGProperty>() {
         new GProperty("ConfigurationRoot", gType: "ConfigurationRoot", gAccessors: "{ get; }",
           gVisibility: "protected internal"),
       }) {
@@ -184,7 +184,7 @@ namespace ATAP.Utilities.GenerateProgram {
     //  gClass.GMethods.Add(gConstructor.Philote,gConstructor);
     //  #endregion
     public static void MAssemblyGroupCommonConstructorForGHHSAndGHBSPart2(
-      GAssemblyGroupBasicConstructorResult mCreateAssemblyGroupResult)
+      IGAssemblyGroupBasicConstructorResult mCreateAssemblyGroupResult)
      {
       #region Add a StateMachine for the service
       #region Declare and populate the initial initialDiGraphList, which handles basic states for a GHS
@@ -357,7 +357,7 @@ namespace ATAP.Utilities.GenerateProgram {
       //  gPropertyGroupInProjectUnit;
       //#endregion
       #region ItemGroups for the ProjectUnit in the Interfaces AssemblyUnit
-       new List<GItemGroupInProjectUnit>() {
+       new List<IGItemGroupInProjectUnit>() {
         NetCoreGenericHostReferencesItemGroupInProjectUnit(),
       }.ForEach(o => mCreateAssemblyGroupResult.gTitularInterfaceAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote, o));
       #endregion
@@ -369,11 +369,11 @@ namespace ATAP.Utilities.GenerateProgram {
     //public static void GAssemblyGroupGHBSFinalizer(GAssemblyGroup gAssemblyGroup,  GClass gClassDerived, GClass gClassBase, GInterface gInterfaceDerived, GInterface gInterfaceBase) {
     //  //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor
     //  //var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
-    //  //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
+    //  //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<IGAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
     //  //#endregion
     //  //#region Lookup the Derived GAssemblyUnit, GCompilationUnit, GNamespace, and GClass
     //  //var titularClassName = $"{gAssemblyGroup.GName}";
-    //  //var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<GAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
+    //  //var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<IGAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
     //  //#endregion
     //  // No Additional work needed, call CommonFinalizer
     //  GAssemblyGroupCommonFinalizer(gAssemblyGroup,  gClassDerived,  gClassBase,  gInterfaceDerived,  gInterfaceBase);

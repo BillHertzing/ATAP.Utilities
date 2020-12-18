@@ -23,7 +23,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public static IGAssemblyGroupBasicConstructorResult MGenericHostService(string gAssemblyGroupName = default,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true,
       IGPatternReplacement gPatternReplacement = default) {
-      GPatternReplacement _gPatternReplacement =
+      IGPatternReplacement _gPatternReplacement =
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var gCreateAssemblyGroupResult = MAssemblyGroupCommonConstructorForServicesAndConsolePrograms(gAssemblyGroupName,
         subDirectoryForGeneratedFiles,

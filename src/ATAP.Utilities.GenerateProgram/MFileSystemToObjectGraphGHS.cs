@@ -75,8 +75,7 @@ namespace ATAP.Utilities.GenerateProgram {
         new GMethodGroup(
           gName:
           $"MethodGroup specific to {mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GName}");
-      GMethod gMethod;
-      gMethod = MCreateConvertFileSystemToObjectGraphAsync(mCreateAssemblyGroupResult.gClassBase);
+      var gMethod = MCreateConvertFileSystemToObjectGraphAsync(mCreateAssemblyGroupResult.gClassBase);
       gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
       mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(gMethodGroup);
       #endregion
@@ -159,7 +158,7 @@ namespace ATAP.Utilities.GenerateProgram {
 
     public static void MPropertyGroupForFileSystemToObjectGraphBaseAssembly(IGClass gClass) {
       var gPropertyGroup = new GPropertyGroup("Propertys specific to the FileSystemToObjectGraph");
-      foreach (var o in new List<GProperty>() {
+      foreach (var o in new List<IGProperty>() {
         // new GProperty("?", gType: "IDisposable",gAccessors: "{ get; set; }", gVisibility: "protected internal"),
         // new GProperty("Choices", gType: "Dictionary<String,IEnumerable<string>>", gAccessors: "{ get; }", gVisibility: "protected internal"),
       }) {

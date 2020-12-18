@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+
 using ATAP.Utilities.ETW;
 
 namespace ATAP.Utilities.Collection {
@@ -25,7 +26,7 @@ namespace ATAP.Utilities.Collection {
     /// <typeparam name="S"></typeparam>
     /// <param name="source"></param>
     /// <param name="collection"></param>
-    public static void AddRange<TKey, TValue>(this Dictionary<TKey, TValue> source, IEnumerable<KeyValuePair<TKey,TValue>> collection) {
+    public static void AddRange<TKey, TValue>(this Dictionary<TKey, TValue> source, IEnumerable<KeyValuePair<TKey, TValue>> collection) {
       if (collection == null) {
         return;
       }
@@ -40,13 +41,32 @@ namespace ATAP.Utilities.Collection {
         }
       }
     }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <attribution>
+    /// https://stackoverflow.com/questions/3982448/adding-a-dictionary-to-another
+    /// </attribution>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="S"></typeparam>
+    /// <param name="source"></param>
+    /// <param name="collection"></param>
+    public static void AddRange<TValue>(this IList<TValue> source, IEnumerable<TValue> collection) {
+      if (collection == null) {
+        return;
+      }
+      foreach (var item in collection) {
+        source.Add(item);
+      }
+    }
     /// Will take the first value if multiple keys appear
 
-//public static Dictionary<K, V> Merge<K, V>(IEnumerable<Dictionary<K, V>> dictionaries)
-//{
-//	return dictionaries.SelectMany(x => x)
-//					.GroupBy(d => d.Key)
-//					.ToDictionary(x => x.Key, y => y.First().Value);
-//}
+    //public static Dictionary<K, V> Merge<K, V>(IEnumerable<Dictionary<K, V>> dictionaries)
+    //{
+    //	return dictionaries.SelectMany(x => x)
+    //					.GroupBy(d => d.Key)
+    //					.ToDictionary(x => x.Key, y => y.First().Value);
+    //}
   }
 }

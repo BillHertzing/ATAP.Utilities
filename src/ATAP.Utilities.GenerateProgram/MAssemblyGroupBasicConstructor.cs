@@ -286,7 +286,7 @@ namespace ATAP.Utilities.GenerateProgram {
       /* ************************************************************************************ */
       #region Update the ProjectUnits for both AssemblyUnits
       #region PropertyGroups common to both AssemblyUnits
-      new List<GPropertyGroupInProjectUnit>() {
+      new List<IGPropertyGroupInProjectUnit>() {
         PropertyGroupInProjectUnitForProjectUnitIsLibrary(),
         PropertyGroupInProjectUnitForPackableOnBuild(),
         PropertyGroupInProjectUnitForLifecycleStage(),
@@ -298,7 +298,7 @@ namespace ATAP.Utilities.GenerateProgram {
       });
       #endregion
       #region ItemGroups common to both AssemblyUnits
-      new List<GItemGroupInProjectUnit>() {
+      new List<IGItemGroupInProjectUnit>() {
         //TBD
       }.ForEach(o => {
         gTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote, o);

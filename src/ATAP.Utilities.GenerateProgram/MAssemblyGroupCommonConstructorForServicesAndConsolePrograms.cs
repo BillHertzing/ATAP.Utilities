@@ -28,7 +28,7 @@ namespace ATAP.Utilities.GenerateProgram {
         subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, gPatternReplacement);
       #region Upate the ProjectUnit
       #region PropertyGroups 
-      new List<GPropertyGroupInProjectUnit>() {
+      new List<IGPropertyGroupInProjectUnit>() {
         PropertyGroupInProjectUnitForProjectUnitIsExecutable(),
         PropertyGroupInProjectUnitForPackableOnBuild(),
         PropertyGroupInProjectUnitForLifecycleStage(),
@@ -39,7 +39,7 @@ namespace ATAP.Utilities.GenerateProgram {
       });
       #endregion
       #region PropertyGroups only in Titular AssemblyUnit
-      new List<GItemGroupInProjectUnit>() {
+      new List<IGItemGroupInProjectUnit>() {
         //TBD
       }.ForEach(o => {
         gAssemblyGroupBasicConstructorResult.gTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits.Add(o.Philote, o);

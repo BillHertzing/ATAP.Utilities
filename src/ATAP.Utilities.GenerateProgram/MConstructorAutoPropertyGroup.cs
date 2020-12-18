@@ -39,7 +39,7 @@ namespace ATAP.Utilities.GenerateProgram {
       return gClass;
     }
 
-    public static IGClass AddTConstructorAutoPropertyGroup(this IGClass gClass, Philote<IGMethod> gMethodId, string gAutoPropertyName, Philote<IGPropertyGroup> gPropertyGroupId) {
+    public static IGClass AddTConstructorAutoPropertyGroup(this IGClass gClass, IPhilote<IGMethod> gMethodId, string gAutoPropertyName, IPhilote<IGPropertyGroup> gPropertyGroupId) {
       string gType = "I" + gAutoPropertyName;
       return gClass.AddTConstructorAutoPropertyGroup(gMethodId, gAutoPropertyName, gType, gPropertyGroupId);
     }

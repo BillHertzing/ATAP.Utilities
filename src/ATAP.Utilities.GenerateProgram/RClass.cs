@@ -46,7 +46,7 @@ namespace ATAP.Utilities.GenerateProgram {
         r1Top.Indent.ReplaceFirst(r1Top.IndentDelta, "");
         r1Top.Sb.Append($"{r1Top.Indent}#endregion{r1Top.Eol}");
       }
-      //var constructorsList = new List<GMethod>();
+      //var constructorsList = new List<IGMethod>();
       //constructorsList.AddRange(gClass.CombinedConstructors());
       //if (constructorsList.Any()) {
       //  r1Top.Sb.Append($"{r1Top.Indent}#region Constructors{r1Top.Eol}");

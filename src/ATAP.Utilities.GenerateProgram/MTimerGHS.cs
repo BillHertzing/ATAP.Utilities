@@ -47,7 +47,7 @@ namespace ATAP.Utilities.GenerateProgram {
         new GMethodGroup(
           gName:
           $"MethodGroup specific to {mCreateAssemblyGroupResult.gClassBase.GName}");
-      GMethod gMethod;
+      IGMethod gMethod;
       gMethod = MCreateRequestATimer();
       gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
       mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(gMethodGroup);
@@ -84,7 +84,7 @@ namespace ATAP.Utilities.GenerateProgram {
     /*******************************************************************************/
     /*******************************************************************************/
     static IGMethod MCreateRequestATimer(string gAccessModifier = "virtual") {
-      var gMethodArgumentList = new List<GArgument>() {
+      var gMethodArgumentList = new List<IGArgument>() {
         new GArgument("requestorPhilote", "object"),
         new GArgument("callback", "object"),
         new GArgument("timerSignil", "object"),

@@ -13,7 +13,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GBody = gBody == default ? new GBody() : gBody;
       GAdditionalStatements = gAdditionalStatements == default ? new List<string>() : gAdditionalStatements;
       GComment = gComment == default ? new GComment() : gComment;
-      Philote = new Philote<GStaticVariable>();
+      Philote = new Philote<IGStaticVariable>();
     }
 
     public string GName { get; init; }

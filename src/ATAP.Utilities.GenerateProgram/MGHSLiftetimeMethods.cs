@@ -6,7 +6,7 @@ namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     public static IGMethod MCreateStartAsyncMethod( string gAccessModifier = "") {
       var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
-      foreach (var o in new List<GArgument>() {
+      foreach (var o in new List<IGArgument>() {
         new GArgument("genericHostsCancellationToken", "CancellationToken"),
       }) {
         gMethodArguments.Add(o.Philote, o);

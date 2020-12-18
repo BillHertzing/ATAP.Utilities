@@ -10,31 +10,31 @@ using ATAP.Utilities.GenerateProgram;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GUsingGroupExtensions {
-    public static IGUsingGroup AddUsing(this GUsingGroup gUsingGroup, GUsing gUsing) {
+    public static IGUsingGroup AddUsing(this IGUsingGroup gUsingGroup, IGUsing gUsing) {
       gUsingGroup.GUsings[gUsing.Philote] = (gUsing);
       return gUsingGroup;
     }
-    public static IGUsingGroup AddUsing(this GUsingGroup gUsingGroup, IEnumerable<GUsing> gUsing) {
+    public static IGUsingGroup AddUsing(this IGUsingGroup gUsingGroup, IEnumerable<IGUsing> gUsing) {
       foreach (var o in gUsing) {
         gUsingGroup.GUsings[o.Philote] = o;
       }
       return gUsingGroup;
     }
 
-    public static IGUsingGroup AddUsing(this GUsingGroup gUsingGroup, Dictionary<Philote<GUsing>, GUsing> gUsing) {
+    public static IGUsingGroup AddUsing(this IGUsingGroup gUsingGroup, IDictionary<IPhilote<IGUsing>, IGUsing> gUsing) {
       foreach (var kvp in gUsing) {
         gUsingGroup.GUsings[kvp.Key] = kvp.Value;
       }
       return gUsingGroup;
     }
-    public static IGUsingGroup AddUsingGroup(this GUsingGroup gUsingGroup, GUsingGroup gUsingGroups) {
+    public static IGUsingGroup AddUsingGroup(this IGUsingGroup gUsingGroup, IGUsingGroup gUsingGroups) {
       foreach (var kvp in gUsingGroups.GUsings) {
         gUsingGroup.AddUsing(kvp.Value);
       }
       return gUsingGroup;
     }
 
-    public static IGUsingGroup AddUsingGroup(this GUsingGroup gUsingGroup, IEnumerable<GUsingGroup> gUsingGroups) {
+    public static IGUsingGroup AddUsingGroup(this IGUsingGroup gUsingGroup, IEnumerable<IGUsingGroup> gUsingGroups) {
       foreach (var o in gUsingGroups) {
         gUsingGroup.AddUsingGroup(o);
       }

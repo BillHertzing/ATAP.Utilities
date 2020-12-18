@@ -9,7 +9,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GName = gName;
       GValue = gValue;
       GComment = gComment == default ? new GComment() : gComment;
-      Philote = new Philote<GAttribute>();
+      Philote = new Philote<IGAttribute>();
     }
 
     public string GName { get; init; }

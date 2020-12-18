@@ -104,7 +104,7 @@ namespace ATAP.Utilities.GenerateProgram {
 /*******************************************************************************/
 /*******************************************************************************/
     static IGClass MCreateStateConfigurationClass(string gVisibility = "public") {
-//var gMethodArgumentList = new List<GArgument>() {
+//var gMethodArgumentList = new List<IGArgument>() {
 //  new GArgument("requestorPhilote", "object"),
 //  new GArgument("callback", "object"),
 //  new GArgument("timerSignil", "object"),

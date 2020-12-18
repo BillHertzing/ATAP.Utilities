@@ -33,19 +33,19 @@ using System.Reactive.Linq;
 //using PersistenceStaticExtensions = ATAP.Utilities.Persistence.Extensions;
 using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
 using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
-using appStringConstants = ATAP.Console.Console03.Console03StringConstants;
+using appStringConstants = ATAP.Console.Console02.Console02StringConstants;
 
-namespace ATAP.Console.Console03 {
+namespace ATAP.Console.Console02 {
   // This file contains the "boilerplate" code that creates the Background Service
 #if TRACE
   [ETWLogAttribute]
 #endif
-  public partial class Console03BackgroundService : BackgroundService {
+  public partial class Console02BackgroundService : BackgroundService {
     #region Common Constructor-injected Auto-Implemented Properties
     // These properties can only be set in the class constructor.
     // Class constructor for a BackgroundService is called from the GenericHost and the DI-injected services are referenced
     ILoggerFactory loggerFactory { get; }
-    ILogger<Console03BackgroundService> logger { get; }
+    ILogger<Console02BackgroundService> logger { get; }
     IStringLocalizerFactory stringLocalizerFactory { get; }
     IHostEnvironment hostEnvironment { get; }
     IConfiguration hostConfiguration { get; }
@@ -65,7 +65,7 @@ namespace ATAP.Console.Console03 {
     IConsoleSinkHostedService consoleSinkHostedService { get; }
     IConsoleSourceHostedService consoleSourceHostedService { get; }
     #endregion
-    #region Data for Console03
+    #region Data for Console02
     IStringLocalizer debugLocalizer { get; }
     IStringLocalizer exceptionLocalizer { get; }
     IStringLocalizer uiLocalizer { get; }
@@ -86,15 +86,15 @@ namespace ATAP.Console.Console03 {
     /// <param name="hostConfiguration"></param>
     /// <param name="hostLifetime"></param>
     /// <param name="hostApplicationLifetime"></param>
-    public Console03BackgroundService(IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration appConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
+    public Console02BackgroundService(IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration appConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
       this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
-      exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console03");
-      debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console03");
-      uiLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console03");
+      exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
+      debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
+      uiLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
       this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-      this.logger = loggerFactory.CreateLogger<Console03BackgroundService>();
-      // this.logger = (Logger<Console03BackgroundService>) ATAP.Utilities.Logging.LogProvider.GetLogger("Console03BackgroundService");
-      logger.LogDebug("Console03BackgroundService", ".ctor");
+      this.logger = loggerFactory.CreateLogger<Console02BackgroundService>();
+      // this.logger = (Logger<Console02BackgroundService>) ATAP.Utilities.Logging.LogProvider.GetLogger("Console02BackgroundService");
+      logger.LogDebug("Console02BackgroundService", ".ctor");
       this.hostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
       this.hostConfiguration = hostConfiguration ?? throw new ArgumentNullException(nameof(hostConfiguration));
       this.hostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostLifetime));
@@ -216,7 +216,7 @@ namespace ATAP.Console.Console03 {
       // check CancellationToken to see if this task is canceled
       CheckAndHandleCancellationToken(1);
 
-      logger.LogDebug(uiLocalizer["{0} {1} inputLineString = {2}", "Console03BackgroundService", "DoLoopAsync", inputLine]);
+      logger.LogDebug(uiLocalizer["{0} {1} inputLineString = {2}", "Console02BackgroundService", "DoLoopAsync", inputLine]);
 
       // Echo to stdOut the line that came in on stdIn
       mesg.Append(uiLocalizer["You selected: {0}", inputLine]);
@@ -244,7 +244,7 @@ namespace ATAP.Console.Console03 {
       #region tempout
       switch (inputLine) {
         case "1":
-          // ToDo: Get these from the Console03 application configuration 
+          // ToDo: Get these from the Console02 application configuration 
           // ToDo: Get these from the database or from a configurationRoot (priority?)
           string GenerateProgramDBConnectionString = "";
           Philote<GAssemblyGroup> assemblyGroupPhilote = new Philote<GAssemblyGroup>();
@@ -260,7 +260,7 @@ namespace ATAP.Console.Console03 {
           // var WithPickAndSaveNodeFileRelativePath = appConfiguration.GetValue<string>(appStringConstants.WithPickAndSaveNodeFileRelativePathConfigRootKey, appStringConstants.WithPickAndSaveNodeFileRelativePathDefault);
           // var filePathsPickAndSave = new string[1] { temporaryDirectoryBase + WithPickAndSaveNodeFileRelativePath };
 
-          mesg.Append(uiLocalizer["Running GenerateProgram Function on the AssemblyGroupKey {0}, with GlobalSettingsKey {1} and SolutionSignilKey {2}", "Console03Mechanical", "ATAPStandardGlobalSettingsKey", "ATAPStandardGSolutionSignilKey"]);
+          mesg.Append(uiLocalizer["Running GenerateProgram Function on the AssemblyGroupKey {0}, with GlobalSettingsKey {1} and SolutionSignilKey {2}", "Console02Mechanical", "ATAPStandardGlobalSettingsKey", "ATAPStandardGSolutionSignilKey"]);
 
           #region Write the mesg to stdout
           using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
@@ -298,7 +298,7 @@ namespace ATAP.Console.Console03 {
             convertFileSystemToGraphProgress = null;
           }
           #endregion
-          /* Persistence is not used in the Console03 Background Serveice nor in the GenerateProgram entry points it calls 
+          /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls 
 
           #region PersistenceViaFiles setup
           // Ensure the Node and Edge files are empty and can be written to
@@ -357,7 +357,7 @@ namespace ATAP.Console.Console03 {
           Persistence<IInsertResultsAbstract> persistence = new Persistence<IInsertResultsAbstract>(insertFunc);
           #endregion
           */
-          /* PickAndSave is not used in the Console03 Background Serveice nor in the GenerateProgram entry points it calls 
+          /* PickAndSave is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls 
           #region PickAndSaveViaFiles setup
           // Ensure the Archived files are empty and can be written to
           // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePathsPickAndSave as the argument
@@ -441,10 +441,10 @@ namespace ATAP.Console.Console03 {
           }
           finally {
             // Dispose of the objects that need disposing
-            /* PickAndSave is not used in the Console03 Background Serveice nor in the GenerateProgram entry points it calls 
+            /* PickAndSave is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls 
             setupResultsPickAndSave.Dispose();
             */
-            /* Persistence is not used in the Console03 Background Serveice nor in the GenerateProgram entry points it calls 
+            /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls 
             setupResultsPersistence.Dispose();
             */
           }
@@ -630,9 +630,9 @@ namespace ATAP.Console.Console03 {
       linkedCancellationToken = linkedCancellationTokenSource.Token;
       #endregion
       #region Register actions with the CancellationToken (s)
-      externalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "Console03BackgroundService", "externalCancellationToken"));
-      internalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} internalCancellationToken has signalled stopping."], "Console03BackgroundService", "internalCancellationToken"));
-      linkedCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} linkedCancellationToken has signalled stopping."], "Console03BackgroundService", "linkedCancellationToken"));
+      externalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "Console02BackgroundService", "externalCancellationToken"));
+      internalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} internalCancellationToken has signalled stopping."], "Console02BackgroundService", "internalCancellationToken"));
+      linkedCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} linkedCancellationToken has signalled stopping."], "Console02BackgroundService", "linkedCancellationToken"));
       #endregion
 
       // Create a list of choices
@@ -689,7 +689,7 @@ namespace ATAP.Console.Console03 {
       /*
 
 
-      logger.LogDebug(debugLocalizer["{0} {1} Console03BackgroundService is stopping due to "], "Console03BackgroundService", "ExecuteAsync"); // add third parameter for internal or external
+      logger.LogDebug(debugLocalizer["{0} {1} Console02BackgroundService is stopping due to "], "Console02BackgroundService", "ExecuteAsync"); // add third parameter for internal or external
       SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
 
     }

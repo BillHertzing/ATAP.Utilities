@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ATAP.Console.Console03 {
+namespace ATAP.Console.Console02 {
   static public class GenericHostDefaultConfiguration {
     // Create the minimal set of Configuration settings that the Generic Host needs to startup and run in production
     public static Dictionary<string, string> Production =

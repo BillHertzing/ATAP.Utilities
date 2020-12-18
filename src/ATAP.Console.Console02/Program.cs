@@ -38,7 +38,7 @@ using ILogger = Serilog.ILogger;
 
 using Microsoft.CodeAnalysis;
 
-namespace ATAP.Console.Console03 {
+namespace ATAP.Console.Console02 {
 
   /// <summary>
   /// This program is going to be a Console program reads the GenerateProgramDB and mechanically re-creates the Console01 program as Console01Mechanical, by populating Artefacts with mechanically created files, and then building the ATAP.Console,Console01Mechanical.csproj file
@@ -60,8 +60,8 @@ namespace ATAP.Console.Console03 {
         };
 
     // The list of environment prefixes this program wants to use
-    public static string[] hostEnvPrefixes = new string[1] { "Console03GenericHost_" };
-    public static string[] appEnvPrefixes = new string[1] { "Console03App_" };
+    public static string[] hostEnvPrefixes = new string[1] { "Console02GenericHost_" };
+    public static string[] appEnvPrefixes = new string[1] { "Console02App_" };
 
     // Use the Secrets pattern to access confidential information stored per-user
     public const string userSecretsID = "TBD a GUID GOES HERE";
@@ -76,7 +76,7 @@ namespace ATAP.Console.Console03 {
 
       #region Startup logger
       // Configure a startup logger, prior to getting the Logger configuration from the ConfigurationRoot
-      // Serilog is the logging provider I picked to provide a logging solution for the Console03 application
+      // Serilog is the logging provider I picked to provide a logging solution for the Console02 application
       // Enable Serilog's internal debug logging. Note that internal logging will not write to any user-defined Sources
       //  https://github.com/serilog/serilog-sinks-file/blob/dev/example/Sample/Program.cs
       Serilog.Debugging.SelfLog.Enable(System.Console.Out);
@@ -97,7 +97,7 @@ namespace ATAP.Console.Console03 {
         .Enrich.WithThreadId()
         .WriteTo.Console(outputTemplate: "Static startup Serilog {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}")
         .WriteTo.Seq(serverUrl: "http://localhost:5341")
-        .WriteTo.File(path: @"C:\Dropbox\whertzing\GitHub\ATAP.Utilities\devlog\Console02.{Date}.log", fileSizeLimitBytes: 1024, outputTemplate: "Static Serilog {Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, retainedFileCountLimit: 31)
+        .WriteTo.File(path: @"C:\Dropbox\whertzing\GitHub\ATAP.Utilities\devlog\A01Console.{Date}.log", fileSizeLimitBytes: 1024, outputTemplate: "Static Serilog {Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, retainedFileCountLimit: 31)
         .WriteTo.Debug();
       //.Enrich.WithHttpRequestId()
       //.Enrich.WithUserName()
@@ -107,13 +107,13 @@ namespace ATAP.Console.Console03 {
       Serilog.Core.Logger serilogLogger = serilogLoggerConfiguration.CreateLogger();
       // Set the Static logger called Log to use this LoggerConfiguration
       Serilog.Log.Logger = serilogLogger;
-      Log.Debug("{Program} {Main}: The program Console03 is starting", "Program", "Main");
+      Log.Debug("{Program} {Main}: The program Console02 is starting", "Program", "Main");
       Log.Debug("{Program} {Main}: LoggerFactory and local logger defined with a default startup configuration:", "Program", "Main");
 
       // Set the MEL LoggerFactory to use this LoggerConfiguration
       Microsoft.Extensions.Logging.ILoggerFactory mELoggerFactory = new Microsoft.Extensions.Logging.LoggerFactory().AddSerilog();
       Microsoft.Extensions.Logging.ILogger mELlogger = mELoggerFactory.CreateLogger("Program");
-      mELlogger.LogDebug("{0} {1}: The program Console03 is starting", "Program", "Main");
+      mELlogger.LogDebug("{0} {1}: The program Console02 is starting", "Program", "Main");
       mELlogger.LogDebug("{0} {1}: LoggerFactory and local logger defined with a default startup configuration:", "Program", "Main");
       #endregion
 
@@ -121,19 +121,19 @@ namespace ATAP.Console.Console03 {
       // populate the string localizers for Program
       options = Options.Create(new LocalizationOptions());
       stringLocalizerFactory = new ResourceManagerStringLocalizerFactory(options, NullLoggerFactory.Instance);
-      debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console03");
-      exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console03");
-      configLCL = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console03");
-      uILocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console03");
+      debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
+      exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
+      configLCL = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
+      uILocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
 
       // If localized non-string resources are needed, uncomment the following block
       // Load the ResourceManagers from the installation directory. These provide access to all localized resources including non-string resources
       // Cannot create more-derived types from a ResourceManager. Gets Invalid cast. See also https://stackoverflow.com/questions/2500280/invalidcastexception-for-two-objects-of-the-same-type/30623970, the invalid cast might be because ResourceManagers are not per-assembly?
-      // i.e., the following will no compile DebugResourceManager debugResourceManager = (DebugResourceManager)new ResourceManager("ATAP.Console.Console03.Properties.ConsoleDebugResources", typeof(ConsoleDebugResources).Assembly);
+      // i.e., the following will no compile DebugResourceManager debugResourceManager = (DebugResourceManager)new ResourceManager("ATAP.Console.Console02.Properties.ConsoleDebugResources", typeof(ConsoleDebugResources).Assembly);
       // These will compile if needed
-      //var debugResourceManager = new ResourceManager("ATAP.Console.Console03.Properties.ConsoleDebugResources", typeof(ConsoleDebugResources).Assembly);
-      //var exceptionResourceManager = new ResourceManager("ATAP.Console.Console03.Properties.ConsoleExceptionResources", typeof(ConsoleExceptionResources).Assembly);
-      //var uIResourceManager = new ResourceManager("ATAP.Console.Console03.Properties.ConsoleUIResources", typeof(ConsoleUIResources).Assembly);
+      //var debugResourceManager = new ResourceManager("ATAP.Console.Console02.Properties.ConsoleDebugResources", typeof(ConsoleDebugResources).Assembly);
+      //var exceptionResourceManager = new ResourceManager("ATAP.Console.Console02.Properties.ConsoleExceptionResources", typeof(ConsoleExceptionResources).Assembly);
+      //var uIResourceManager = new ResourceManager("ATAP.Console.Console02.Properties.ConsoleUIResources", typeof(ConsoleUIResources).Assembly);
       #endregion region
 
       #region initialStartup and loadedFrom directories
@@ -204,8 +204,8 @@ namespace ATAP.Console.Console03 {
       // Create the appConfigurationBuilder, either as Production or as some other environment specific
       IConfigurationBuilder appConfigurationBuilder;
       mELlogger.LogDebug(debugLocalizer["{0} {1}: Creating appConfigurationBuilder for Environment: {2}"], "Program", "Main", envNameFromConfiguration);
-      appConfigurationBuilder = ConfigurationExtensions.ATAPStandardConfigurationBuilder(Console03DefaultConfiguration.Production, envNameFromConfiguration == GenericHostStringConstants.EnvironmentProduction, envNameFromConfiguration,
-        Console03StringConstants.SettingsFileName, Console03StringConstants.SettingsFileNameSuffix, loadedFromDirectory, initialStartupDirectory, appEnvPrefixes, args, switchMappings);
+      appConfigurationBuilder = ConfigurationExtensions.ATAPStandardConfigurationBuilder(Console02DefaultConfiguration.Production, envNameFromConfiguration == GenericHostStringConstants.EnvironmentProduction, envNameFromConfiguration,
+        Console02StringConstants.SettingsFileName, Console02StringConstants.SettingsFileNameSuffix, loadedFromDirectory, initialStartupDirectory, appEnvPrefixes, args, switchMappings);
       #endregion
 
 
@@ -243,7 +243,7 @@ namespace ATAP.Console.Console03 {
       //// Set the LogFactory in the DI-Services
       //// ToDo: LoggerFactory loggerFactory.SetLogFactory(factory);
       //// redefine the local logger from this factory, configured with the startup logging as defined in the Logging section of the configurationRoot
-      //logger = factory.CreateLogger("Console03");
+      //logger = factory.CreateLogger("Console02");
       //serilogLogger.LogDebug(debugLocalizer["{0} {1}: LoggerFactory and local logger redefined per the Logging section in the configuration settings:"], "Program", "Main");
       //// Copy this tour "standard logger
       //// Create a LoggerFactory, configure it to use Serilog
@@ -252,7 +252,7 @@ namespace ATAP.Console.Console03 {
       //factory.AddSerilog(serilogLoggerConfiguration.CreateLogger());
       //LogProvider.SetLogFactory(factory);
       //// Create a local logger from this factory, configured with the startup logging defined above
-      //logger = factory.CreateLogger("Console03");
+      //logger = factory.CreateLogger("Console02");
       //// For this program, I've selected Serilog as the underlying serilogLogger.
       //genericHostBuilder.UseSerilog();
       #endregion
@@ -269,7 +269,7 @@ namespace ATAP.Console.Console03 {
         services.AddSingleton<IFileSystemWatchersHostedService, FileSystemWatchersHostedService>();
         services.AddSingleton<IObservableResetableTimersHostedService, ObservableResetableTimersHostedService>();
         // The primary service (loop) that this program does
-        services.AddHostedService<Console03BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
+        services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
       });
       #endregion
 

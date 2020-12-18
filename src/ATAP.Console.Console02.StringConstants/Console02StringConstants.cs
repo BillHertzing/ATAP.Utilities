@@ -1,17 +1,17 @@
 
-namespace ATAP.Console.Console03 {
-  public static class Console03StringConstants {
+namespace ATAP.Console.Console02 {
+  public static class Console02StringConstants {
     // ToDo: Localize the string constants
 
     #region Settings File Names
-    public const string SettingsFileName = "Console03Settings";
+    public const string SettingsFileName = "Console02Settings";
     public const string SettingsFileNameSuffix = "json";
     #endregion
     #region File Names
     public const string TemporaryDirectoryBaseConfigRootKey = "TemporaryDirectoryBase";
-    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\Console03\\";
+    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\Console02\\";
     #endregion
-    #region GenerateProgramConsole03MechanicalConfigRootKeys
+    #region GenerateProgramConsole02MechanicalConfigRootKeys
     public const string RootStringConfigRootKey = "RootString";
     public const string RootStringDefault = "E:\\";
     public const string DBConnectionStringConfigRootKey = "DBConnectionString";

@@ -1,5 +1,5 @@
 
-namespace ATAP.Console.Console03 {
+namespace ATAP.Console.Console02 {
   public static class GenericHostStringConstants {
     // ToDo: Localize the string constants
 
@@ -50,7 +50,7 @@ namespace ATAP.Console.Console03 {
     #endregion
 
     #region string constants: EnvironmentVariablePrefixs
-    public const string CustomEnvironmentVariablePrefix = "Console03_";
+    public const string CustomEnvironmentVariablePrefix = "Console02_";
     #endregion
 
     // ToDo: replace with newest "best practices" that use IHostEnvironment (i.e., deprecate these)

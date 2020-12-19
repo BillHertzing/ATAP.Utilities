@@ -7,7 +7,7 @@ using ATAP.Utilities.Logging;
 using ATAP.Utilities.Persistence;
 using ATAP.Utilities.Philote;
 using ATAP.Utilities.Reactive;
-using GenerateProgram;
+using ATAP.Utilities.GenerateProgram;
 
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;

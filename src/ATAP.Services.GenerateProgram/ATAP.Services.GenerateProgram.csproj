@@ -1,22 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-  <StartupObject>GenerateProgram.PService03</StartupObject>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>net5.0;</TargetFrameworks> <!-- netcoreapp3.1 net47-->
     <DefaultNamespace>ATAP.Services.GenerateProgram</DefaultNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Services.GenerateProgram.Interfaces\ATAP.Services.GenerateProgramInterfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.GenerateProgram.Interfaces\ATAP.Utilities.GenerateProgramInterfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.GenerateProgram\ATAP.Utilities.GenerateProgram.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Philote.DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj" />
+    <ProjectReference Include="..\ATAP.Services.GenerateProgram.Interfaces\ATAP.Services.GenerateProgram.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.GenerateProgram.Interfaces\ATAP.Utilities.GenerateProgram.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
+
   </ItemGroup>
 
   <ItemGroup>
@@ -43,7 +38,6 @@
     <PackageReference Include="Microsoft.Extensions.Localization" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
-
 
   <!-- large block of standard text included at the start of every generated resource file -->
   <ItemGroup>

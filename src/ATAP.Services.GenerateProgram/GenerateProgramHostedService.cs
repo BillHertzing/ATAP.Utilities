@@ -13,7 +13,7 @@ using ATAP.Utilities.Philote;
 using ATAP.Utilities.Persistence;
 using ATAP.Utilities.GenerateProgram;
 
-using hostedServiceStringConstants = GenerateProgramHostedService.StringConstants;
+//using hostedServiceStringConstants = GenerateProgramHostedService.StringConstants;
 
 namespace ATAP.Services.HostedService.GenerateProgram {
 
@@ -38,12 +38,12 @@ namespace ATAP.Services.HostedService.GenerateProgram {
 
     #endregion
     #region Internal and Linked CancellationTokenSource and Tokens
-    CancellationTokenSource internalCancellationTokenSource { get; } = new CancellationTokenSource();
-    CancellationToken internalCancellationToken { get; }
+    CancellationTokenSource InternalCancellationTokenSource { get; } = new CancellationTokenSource();
+    CancellationToken InternalCancellationToken { get; }
     // Set in the ExecuteAsync method
-    CancellationTokenSource linkedCancellationTokenSource { get; set; }
+    CancellationTokenSource LinkedCancellationTokenSource { get; set; }
     // Set in the ExecuteAsync method
-    CancellationToken linkedCancellationToken { get; set; }
+    CancellationToken LinkedCancellationToken { get; set; }
     #endregion
     /*
     #region Constructor-injected fields unique to this service. These represent other DI services used by this service that are expected to be present in the app's DI container, and are constructor-injected
@@ -80,7 +80,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       this.hostApplicationLifetime = hostApplicationLifetime ?? throw new ArgumentNullException(nameof(hostApplicationLifetime));
       //this.consoleSinkHostedService = consoleSinkHostedService ?? throw new ArgumentNullException(nameof(consoleSinkHostedService));
       //this.consoleSourceHostedService = consoleSourceHostedService ?? throw new ArgumentNullException(nameof(consoleSourceHostedService));
-      internalCancellationToken = internalCancellationTokenSource.Token;
+      InternalCancellationToken = InternalCancellationTokenSource.Token;
       Stopwatch = new Stopwatch();
       #region Create the serviceData and initialize it from the StringConstants or this service's ConfigRoot
       this.ServiceData = new GenerateProgramHostedServiceData(
@@ -139,6 +139,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
 
     public async Task<IGGenerateProgramResult> GenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil, IGGenerateProgramProgress generateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
       IGGenerateProgramResult gGenerateProgramResult;
+      // 
       #region Method timing setup
       Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
       stopWatch.Start();
@@ -171,13 +172,13 @@ namespace ATAP.Services.HostedService.GenerateProgram {
 
       #region create linkedCancellationSource and token
       // Combine the cancellation tokens,so that either can stop this HostedService
-      //linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, externalCancellationToken);
-      GenericHostsCancellationToken = genericHostsCancellationToken;
+      //LinkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(InternalCancellationToken, genericHostsCancellationToken);
+  
       #endregion
       #region Register actions with the CancellationToken (s)
-      GenericHostsCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} GenericHostsCancellationToken has signalled stopping."], "GenerateProgramHostedService", "StartAsync"));
-      internalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} internalCancellationToken has signalled stopping."], "GenerateProgramHostedService", "internalCancellationToken"));
-      linkedCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} linkedCancellationToken has signalled stopping."], "GenerateProgramHostedService", "linkedCancellationToken"));
+      genericHostsCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} genericHostsCancellationToken has signalled stopping."], "GenerateProgramHostedService", "genericHostsCancellationToken"));
+      InternalCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} InternalCancellationToken has signalled stopping."], "GenerateProgramHostedService", "InternalCancellationToken"));
+      LinkedCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} LinkedCancellationToken has signalled stopping."], "GenerateProgramHostedService", "LinkedCancellationToken"));
       #endregion
       #region register local event handlers with the IHostApplicationLifetime's events
       // Register the methods defined in this class with the three CancellationToken properties found on the IHostApplicationLifetime instance passed to this class in it's .ctor
@@ -236,13 +237,14 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     //  base.OnStop();
     //}
     #endregion
+
     #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls
 
     protected virtual void Dispose(bool disposing) {
       if (!disposedValue) {
         if (disposing) {
-          ConvertFileSystemGraphToDBData.Dispose();
+          ServiceData.Dispose();
         }
 
         // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.

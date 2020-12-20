@@ -13,6 +13,8 @@ using ATAP.Utilities.Philote;
 using ATAP.Utilities.Persistence;
 using ATAP.Utilities.GenerateProgram;
 
+using hostedServiceStringConstants = GenerateProgramHostedService.StringConstants;
+
 namespace ATAP.Services.HostedService.GenerateProgram {
 
 #if TRACE
@@ -48,7 +50,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     #endregion
     */
     #region Data for Service
-    public GenerateProgramHostedServiceData ServiceData { get; }
+    public IGenerateProgramHostedServiceData ServiceData { get; }
     #endregion
     #region Performance Monitoring data
     Stopwatch Stopwatch { get; } // ToDo: utilize a much more powerful and ubiquitous timing and profiling tool than a stopwatch
@@ -76,40 +78,48 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       this.hostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostLifetime));
       this.hostedServiceConfiguration = hostedServiceConfiguration ?? throw new ArgumentNullException(nameof(hostedServiceConfiguration));
       this.hostApplicationLifetime = hostApplicationLifetime ?? throw new ArgumentNullException(nameof(hostApplicationLifetime));
-      this.consoleSinkHostedService = consoleSinkHostedService ?? throw new ArgumentNullException(nameof(consoleSinkHostedService));
-      this.consoleSourceHostedService = consoleSourceHostedService ?? throw new ArgumentNullException(nameof(consoleSourceHostedService));
+      //this.consoleSinkHostedService = consoleSinkHostedService ?? throw new ArgumentNullException(nameof(consoleSinkHostedService));
+      //this.consoleSourceHostedService = consoleSourceHostedService ?? throw new ArgumentNullException(nameof(consoleSourceHostedService));
       internalCancellationToken = internalCancellationTokenSource.Token;
       Stopwatch = new Stopwatch();
       #region Create the serviceData and initialize it from the StringConstants or this service's ConfigRoot
       this.ServiceData = new GenerateProgramHostedServiceData(
-        TemporaryDirectoryBase = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.TemporaryDirectoryBaseConfigRootKey, hostedServiceStringConstants.TemporaryDirectoryBaseDefault),
-
-        // ToDo: Get the list from the StringConstants, and localize them
-        choices: new List<string>() { "1. Run FileSystemToObjectGrapAsyncTask", "2. Changeable", "99: Quit this service" },
-        stdInHandlerState: new StringBuilder(),
-        mesg: new StringBuilder()) {
-        AsyncFileReadBlockSize = hostedServiceConfiguration.GetValue<int>(hostedServiceStringConstants.AsyncFileReadBlockSizeConfigRootKey, int.Parse(hostedServiceStringConstants.AsyncFileReadBlockSizeDefault)),  // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
-        EnableHash = hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.EnableHashBoolConfigRootKey, bool.Parse(hostedServiceStringConstants.EnableHashBoolDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
+      ){
+      // The following parameters are for each invocation of a GenerateProgramAsync call
+      // invoking a GenerateProgram call may override any of these values, but absent an override, these are the 
+      //  default values that will be used for every GenerateProgramAsync call.
+      //  the default values come from the ICOnfiguration hostedServiceConfiguration that is DI injected at service startup
+      /// ToDo: Security: ensure the paths do not go above their Base directory
+        ArtifactsDirectoryBase = hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, bool.Parse(hostedServiceStringConstants.ArtifactsDirectoryBaseDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
+        ArtifactsFileRelativePath = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, hostedServiceStringConstants.ArtifactsFileRelativePathhDefault),
         EnablePersistence = hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(hostedServiceStringConstants.EnablePersistenceBoolDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
         EnablePickAndSave = hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(hostedServiceStringConstants.EnablePickAndSaveBoolDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
         EnableProgress = hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.EnableProgressBoolConfigRootKey, bool.Parse(hostedServiceStringConstants.EnableProgressBoolDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
-        DBConnectionString = "",
-        OrmLiteDialectProviderStringDefault = "",
+        TemporaryDirectoryBase = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.TemporaryDirectoryBaseConfigRootKey, hostedServiceStringConstants.TemporaryDirectoryBaseDefault),
+        PersistenceMessageFileRelativePath = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.PersistenceMessageFileRelativePathConfigRootKey, hostedServiceStringConstants.PersistenceMessageFileRelativePathDefault),
+        PickAndSaveMessageFileRelativePath = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.PickAndSaveMessageFileRelativePathConfigRootKey, hostedServiceStringConstants.PickAndSaveMessageFileRelativePathDefault),
+        DBConnectionString = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.DBConnectionStringPathConfigRootKey, hostedServiceStringConstants.DBConnectionStringDefault),
+        OrmLiteDialectProviderStringDefault = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.OrmLiteDialectProviderStringDefaultConfigRootKey, hostedServiceStringConstants.OrmLiteDialectProviderStringDefaultDefault)
       };
-      this.ServiceData.PersistenceFilePaths = new string[2] { ServiceData.TemporaryDirectoryBase + ServiceData.PersistenceNodeFileRelativePath, ServiceData.TemporaryDirectoryBase + ServiceData.PersistenceEdgeFileRelativePath };
-      //ToDo: setup Progress here?
+      this.ServiceData.ArtifactsFilePaths = new string[1] { ServiceData.ArtifactsDirectoryBase + ServiceData.ArtifactsFileRelativePath};
+      this.ServiceData.PersistenceFilePaths = new string[1] { ServiceData.TemporaryDirectoryBase + ServiceData.PersistenceMessageFileRelativePath};
+      this.ServiceData.PickAndSaveFilePaths = new string[1] { ServiceData.TemporaryDirectoryBase + ServiceData.PickAndSaveMessageFileRelativePath};
+      // ToDo ?: setup placeholders for the ProgressReport object
+      // ToDo ?: setup placeholders for the Persistence(File) 
+      // ToDo ?: setup placeholders for the PickAndSave object
+      // ToDo ?: setup placeholders for the DBConnection object
+      // ToDo ?: setup placeholders for the IATAPOrm shim object
       #endregion
     }
     #endregion
-
-    public async Task<IGGenerateProgramResult> GenerateProgramAsync(IPhilote<IGAssemblyGroupSignil> gAssemblyGroupSignilKey, IPhilote<IGGlobalSettingsSignil> gGlobalSettingsSignilKey, IPhilote<IGSolutionSignil> gSolutionSignilKey, IGenerateProgramProgress generateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
+    public async Task<IGGenerateProgramResult> GenerateProgramAsync(IPhilote<IGAssemblyGroupSignil> gAssemblyGroupSignilKey, IPhilote<IGGlobalSettingsSignil> gGlobalSettingsSignilKey, IPhilote<IGSolutionSignil> gSolutionSignilKey, IGGenerateProgramProgress generateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
       IGGenerateProgramResult gGenerateProgramResult;
       #region Method timing setup
       Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
       stopWatch.Start();
       #endregion
       try {
-        Func<Task<IGGenerateProgramResult>> run = () => ATAP.Utilities.GenerateProgramAsync(gAssemblyGroupSignilKey,  gGlobalSettingsSignilKey,  gSolutionSignilKey, generateProgramProgress, persistence, pickAndSave, cancellationToken);
+        Func<Task<IGGenerateProgramResult>> run = () => ATAP.Utilities.GenerateProgram.GenerateProgramAsync(gAssemblyGroupSignilKey, gGlobalSettingsSignilKey, gSolutionSignilKey, generateProgramProgress, persistence, pickAndSave, cancellationToken);
         gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);
         stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
                           // ToDo: put the results someplace
@@ -123,17 +133,18 @@ namespace ATAP.Services.HostedService.GenerateProgram {
         setupResultsPickAndSave.Dispose();
         setupResultsPersistence.Dispose();
       }
-      return  gGenerateProgramResult;
+      return gGenerateProgramResult;
     }
 
-    public async Task<IGGenerateProgramResult> GenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil, IGenerateProgramProgress generateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
+
+    public async Task<IGGenerateProgramResult> GenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil, IGGenerateProgramProgress generateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
       IGGenerateProgramResult gGenerateProgramResult;
       #region Method timing setup
       Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
       stopWatch.Start();
       #endregion
       try {
-        Func<Task<IGGenerateProgramResult>> run = () => ATAP.Utilities.GenerateProgramAsync(gAssemblyGroupSignil, gGlobalSettingsSignil, gGlobalKeysSignil, generateProgramProgress, persistence, pickAndSave, cancellationToken);
+        Func<Task<IGGenerateProgramResult>> run = () => ATAP.Utilities.GenerateProgram.GenerateProgramAsync(gAssemblyGroupSignil, gGlobalSettingsSignil, gSolutionSignil, generateProgramProgress, persistence, pickAndSave, cancellationToken);
         gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);
         stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
                           // ToDo: put the results someplace
@@ -147,7 +158,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
         setupResultsPickAndSave.Dispose();
         setupResultsPersistence.Dispose();
       }
-      return  gGenerateProgramResult;
+      return gGenerateProgramResult;
     }
 
     #region StartAsync and StopAsync methods as promised by IHostedService when IHostLifetime is ConsoleLifetime  // ToDo:, see if this is called by service and serviced
@@ -225,7 +236,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     //  base.OnStop();
     //}
     #endregion
-        #region IDisposable Support
+    #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls
 
     protected virtual void Dispose(bool disposing) {
@@ -257,5 +268,5 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     }
     #endregion
 
-    }
   }
+}

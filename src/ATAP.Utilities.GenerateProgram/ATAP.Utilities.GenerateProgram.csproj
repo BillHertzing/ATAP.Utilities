@@ -28,7 +28,11 @@
 
   <!-- ATAP Utility library for collection extensions (for Dictionary AddRange) -->
   <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.GenerateProgram.Interfaces\ATAP.Utilities.GenerateProgram.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.GenerateProgram.StringConstants\ATAP.Utilities.GenerateProgram.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
   </ItemGroup>
 
   <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->

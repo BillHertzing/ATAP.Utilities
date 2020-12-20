@@ -1,7 +1,13 @@
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+using ATAP.Utilities.ETW;
+using ATAP.Utilities.Philote;
+using ATAP.Utilities.Persistence;
 namespace ATAP.Utilities.GenerateProgram {
   public static class EntryPoints {
-    public static IGGenerateProgramResult GenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil) {
+    public static IGGenerateProgramResult GenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil, IGGenerateProgramProgress generateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
 
       bool DBExtractionSuccess = false;
       bool BuildSuccess = false;

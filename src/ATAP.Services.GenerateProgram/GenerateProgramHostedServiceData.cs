@@ -9,7 +9,8 @@ using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 using ATAP.Utilities.ETW;
-
+using ATAP.Utilities.Philote;
+using ATAP.Utilities.Persistence;
 using ATAP.Utilities.GenerateProgram;
 
 namespace ATAP.Services.HostedService.GenerateProgram {

@@ -290,12 +290,12 @@ namespace ATAP.Console.Console02 {
           // get the SolutionGroupSignil from the DB using the SolutionGroupKey
 
           #region ProgressReporting setup
-          ConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress; ;
+          GenerateProgramProgress? gGenerateProgramProgress;
           if (enableProgress) {
-            convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
+            gGenerateProgramProgress = new GenerateProgramProgress();
           }
           else {
-            convertFileSystemToGraphProgress = null;
+            gGenerateProgramProgress = null;
           }
           #endregion
           /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls 
@@ -430,7 +430,7 @@ namespace ATAP.Console.Console02 {
           stopWatch.Start();
           #endregion
           try {
-            Func<Task<GGenerateProgramResult>> run = () => GenerateProgram.GenerateProgram(gGenerateProgramSignil);
+            Func<Task<GGenerateProgramResult>> run = () => GenerateProgram.GenerateProgram(gGenerateProgramSignil,gGenerateProgramProgress);
             gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);
             stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
                               // ToDo: put the results someplace

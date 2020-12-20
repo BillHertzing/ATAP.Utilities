@@ -2,7 +2,19 @@ using System;
 using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
-  public record GGenerateProgramResult : IGGenerateProgramResult {
+  public interface IGGenerateProgramResult {
+    bool DBExtractionSuccess { get; init; }
+    bool BuildSuccess { get; init; }
+    bool UnitTestsSuccess { get; init; }
+    double UnitTestsCoverage { get; init; }
+    string GeneratedSolutionFileDirectory { get; init; }
+    ICollection<IGAssemblyGroup> CollectionOfAssembliesBuilt { get; init; }
+    bool PackagingSuccess { get; init; }
+    bool DeploymentSuccess { get; init; }
+    IPhilote<IGGenerateProgramResult> Philote { get; init; }
+  }
+
+  public class GGenerateProgramResult : IGGenerateProgramResult {
     public GGenerateProgramResult(bool dBExtractionSuccess, bool buildSuccess, bool unitTestsSuccess, double unitTestsCoverage, string generatedSolutionFileDirectory, ICollection<IGAssemblyGroup> collectionOfAssembliesBuilt, bool packagingSuccess, bool deploymentSuccess) {
       DBExtractionSuccess = dBExtractionSuccess;
       BuildSuccess = buildSuccess;

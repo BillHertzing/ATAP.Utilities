@@ -35,7 +35,7 @@
     <!-- when msbuild is run by Visual Studio 15.8.2, ($(MSBuildRuntimeType) != 'Core') the property $(SolutionDir) is already defined at this point, so this line is not executed -->
     <!-- when msbuild is run by dotnet command, ($(MSBuildRuntimeType) == 'Core') the property $(SolutionDir) is not defined at this point, so this line is executed -->
     <!-- ToDo: Major pain point, there is no way to know how far up SolutionDir may be.  In this repository, code is always two subdirectories down from the solution dir -->
-    
+
     <!-- the result is that the $(SolutionDir) is set properly regardless of the $(MSBuildRuntimeType) -->
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">$(MSBuildProjectDirectory)\..\..\</SolutionDir>
 
@@ -87,20 +87,25 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
 
-  <!--  Set MSBuild output verbosity and warnings to ignore. Half are NuGet issues, the other half is regarding the nullable reference types -->
-  <!-- Attribution: https://github.com/lecaillon/Evolve/blob/master/src/Evolve/Evolve.csproj has a working example to silence many nullability warnings, but similar does not work for NuGet package warninngs -->
+  <!-- Define the maximum number of CPUs to use when building in parallel. value of 1 indicates to not build anything in parallel -->
   <PropertyGroup>
-    <NoWarn>$(NoWarn);1602;1603;1701;1705;8600;8601;8602;8603;8605;8618;8625;8629</NoWarn>
+    <maxcpucount>10</maxcpucount>
+  </PropertyGroup>
+
+  <!--  Set MSBuild output verbosity and warnings to ignore. The disabled warnings are regarding the nullable reference types, until I can figure out the correct way to use them along with the 'default' argument specification -->
+  <!-- Attribution: https://github.com/lecaillon/Evolve/blob/master/src/Evolve/Evolve.csproj has a working example to silence many nullability warnings, but similar does not work for NuGet package warnings -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);8600;8601;8602;8603;8605;8618;8625;8629</NoWarn>
   </PropertyGroup>
   <!-- Attribution: many posts about this on the internet, nobody seems to have solved the problem. At least, my attempts using the following flags fails -->
-    <!-- disable the nullable warnings when compiling 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net35' OR '$(TargetFramework)' == 'net461' OR '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'net5.0'">
+    <!-- disable the nullable warnings when compiling
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net35' OR '$(TargetFramework)' == 'net461' OR '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'net5.0'">
     <NoWarn>$(NoWarn);8600;8601;8602;8603;8604</NoWarn>
     <Warninglevel>0</Warninglevel>
     <clp>NoSummary</clp>
     <clp>ErrorsOnly</clp>
     <clp>NoItemAndPropertyList</clp>
-  </PropertyGroup>
+    </PropertyGroup>
   -->
 
 

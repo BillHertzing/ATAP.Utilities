@@ -285,7 +285,7 @@ namespace ATAP.Console.Console01 {
           }
           #endregion
           #region ProgressReporting setup
-          ConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress; ;
+          ConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress;
           if (enableProgress) {
             convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
           }

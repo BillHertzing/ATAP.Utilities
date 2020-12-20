@@ -18,21 +18,38 @@ namespace ATAP.Services.HostedService.GenerateProgram {
   [ETWLogAttribute]
 #endif
   public partial class GenerateProgramHostedServiceData : IGenerateProgramHostedServiceData {
-    public bool Success { get; set; }
 
-    public int NonDisposedCount { get; }
+    public IGGenerateProgramResult GGenerateProgramResult { get; set; }
 
-    public GenerateProgramHostedServiceData(IEnumerable<string> choices, StringBuilder stdInHandlerState, StringBuilder mesg) {
-      Success = false;
+    public IGAssemblyGroupSignil? GAssemblyGroupSignil { get; set; }
+    public IGGlobalSettingsSignil? GGlobalSettingsSignil { get; set; }
+    public IGSolutionSignil? GSolutionSignil { get; set; }
+    public string ArtifactsDirectoryBase { get; set; }
+    public string ArtifactsFileRelativePath { get; set; }
+    public string[] ArtifactsFilePaths { get; set; }
+    public bool EnablePersistence { get; set; }
+    public bool EnablePickAndSave { get; set; }
+    public bool EnableProgress { get; set; }
+    public string TemporaryDirectoryBase { get; set; }
+    public string PersistenceMessageFileRelativePath { get; set; }
+    public string[] PersistenceFilePaths { get; set; }
+    public string PickAndSaveMessageFileRelativePath { get; set; }
+    public string[] PickAndSaveFilePaths { get; set; }
+    public string DBConnectionString { get; set; }
+    public string OrmLiteDialectProviderStringDefault { get; set; }
+    public GenerateProgramHostedServiceData() {
+      NonDisposedCount = 0;
     }
 
     #region IDisposable Support
+    private int NonDisposedCount { get; set; }
+
     private bool disposedValue = false; // To detect redundant calls
 
     protected virtual void Dispose(bool disposing) {
       if (!disposedValue) {
         if (disposing) {
-          ConvertFileSystemGraphToDBData.Dispose();
+          this.Dispose();
         }
 
         // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.

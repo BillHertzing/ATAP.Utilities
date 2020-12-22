@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,8 +8,18 @@ using ATAP.Utilities.Philote;
 using ATAP.Utilities.Persistence;
 namespace ATAP.Utilities.GenerateProgram {
   public static class EntryPoints {
-    public static IGGenerateProgramResult GenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil, IGGenerateProgramProgress generateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
+        public static IGGenerateProgramResult GenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil = default, IGGlobalSettingsSignil gGlobalSettingsSignil = default, IGSolutionSignil gSolutionSignil = default, IGGenerateProgramProgress generateProgramProgress = default, IPersistence<IInsertResultsAbstract> persistence = default, IPickAndSave<IInsertResultsAbstract> pickAndSave = default, CancellationToken cancellationToken = default) {
+        }
 
+    public static IGGenerateProgramResult GenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil = default, IGGlobalSettingsSignil gGlobalSettingsSignil = default, IGSolutionSignil gSolutionSignil = default, IGGenerateProgramProgress generateProgramProgress = default, IPersistence<IInsertResultsAbstract> persistence = default, IPickAndSave<IInsertResultsAbstract> pickAndSave = default, CancellationToken cancellationToken = default) {
+       IGAssemblyGroupSignil _gAssemblyGroupSignil = gAssemblyGroupSignil ?? throw new ArgumentNullException(nameof(gAssemblyGroupSignil));
+       IGGlobalSettingsSignil _gGlobalSettingsSignil = gGlobalSettingsSignil ?? throw new ArgumentNullException(nameof(gGlobalSettingsSignil));
+       IGSolutionSignil _gSolutionSignil = gSolutionSignil ?? throw new ArgumentNullException(nameof(gSolutionSignil));
+      //  IGGenerateProgramProgress _generateProgramProgress = generateProgramProgress == default ? newGGenerateProgramProgress : generateProgramProgress;
+      //  IPersistence<IInsertResultsAbstract> _persistence =
+      //  IPickAndSave<IInsertResultsAbstract> _pickAndSave =
+      //  CancellationToken _cancellationToken =
+      // local variables to be used in creating the results
       bool DBExtractionSuccess = false;
       bool BuildSuccess = false;
       bool UnitTestsSuccess = false;

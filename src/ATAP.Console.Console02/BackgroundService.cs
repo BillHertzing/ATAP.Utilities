@@ -172,7 +172,7 @@ namespace ATAP.Console.Console02 {
 
     }
     #endregion
-    #region PrettyPrintConvertFileSystemToGraphResults
+    #region PrettyPrintIGGenerateProgramResult
     // Format an instance of GenerateProgramResultsResults for UI presentation
     // // Uses the CurrentCulture
     void BuildGenerateProgramResults(StringBuilder mesg, IGGenerateProgramResult gGenerateProgramResult, Stopwatch? stopwatch) {

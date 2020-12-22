@@ -45,7 +45,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console01", "s
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console01.StringConstants", "src\ATAP.Console.Console01.StringConstants\ATAP.Console.Console01.StringConstants.csproj", "{1A921845-35F7-454E-99BE-573326CB5D31}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Console.Console02", "src\ATAP.Console.Console02\ATAP.Console.Console02.csproj", "{3C4064F2-FCB3-4638-886D-49E3099C4299}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console02", "src\ATAP.Console.Console02\ATAP.Console.Console02.csproj", "{3C4064F2-FCB3-4638-886D-49E3099C4299}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.AutoDoc", "src\ATAP.Utilities.AutoDoc\ATAP.Utilities.AutoDoc.csproj", "{DF414E11-E82C-4710-9DDD-9FE741E9C7FC}"
 EndProject
@@ -261,7 +261,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Service.Service01", "s
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{F42B91A1-68F4-40E6-BC1A-2C6194F2EA49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.FileIO", "src\ATAP.Utilities.FIleIO\ATAP.Utilities.FileIO.csproj", "{981D1A7A-DC30-4F93-8247-F2AD6D09E4EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.FileIO", "src\ATAP.Utilities.FIleIO\ATAP.Utilities.FileIO.csproj", "{981D1A7A-DC30-4F93-8247-F2AD6D09E4EC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Collection.Extensions", "src\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj", "{81B9E796-B04D-41F4-9F49-4EC1C0AA08E7}"
 EndProject
@@ -327,21 +327,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Serializer", "Serializer", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Resilience", "Resilience", "{F1D0F980-390B-11EB-993C-05D7FC15B653}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Services.TcpWithResilience.Interfaces", "src\ATAP.Services.TcpWithResilience.Interfaces\ATAP.Services.TcpWithResilience.Interfaces.csproj", "{95108E2E-60B2-47BB-9026-7EAC368BE9CD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.TcpWithResilience.Interfaces", "src\ATAP.Services.TcpWithResilience.Interfaces\ATAP.Services.TcpWithResilience.Interfaces.csproj", "{95108E2E-60B2-47BB-9026-7EAC368BE9CD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HttpWithResilience", "HttpWithResilience", "{AE497440-3B3F-11EB-8FD1-6B6F9A88CDDD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Databases", "Databases", "{1A75E3A0-3B78-11EB-8FD1-6B6F9A88CDDD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Console.Console02.StringConstants", "src\ATAP.Console.Console02.StringConstants\ATAP.Console.Console02.StringConstants.csproj", "{7E9D3E08-B004-4DEB-804A-DC54533AB06E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console02.StringConstants", "src\ATAP.Console.Console02.StringConstants\ATAP.Console.Console02.StringConstants.csproj", "{7E9D3E08-B004-4DEB-804A-DC54533AB06E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Services.GenerateProgram.Interfaces", "src\ATAP.Services.GenerateProgram.Interfaces\ATAP.Services.GenerateProgram.Interfaces.csproj", "{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.GenerateProgram.Interfaces", "src\ATAP.Services.GenerateProgram.Interfaces\ATAP.Services.GenerateProgram.Interfaces.csproj", "{8B54ACBB-78B7-4999-BF2A-F3AE88E0E519}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CodeGeneration", "CodeGeneration", "{2A8F8E30-3F65-11EB-9FD8-913B36525608}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.GenerateProgram.Interfaces", "src\ATAP.Utilities.GenerateProgram.Interfaces\ATAP.Utilities.GenerateProgram.Interfaces.csproj", "{A30E2562-8544-4460-9E6C-30EC1C004820}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GenerateProgram.Interfaces", "src\ATAP.Utilities.GenerateProgram.Interfaces\ATAP.Utilities.GenerateProgram.Interfaces.csproj", "{A30E2562-8544-4460-9E6C-30EC1C004820}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.GenerateProgram", "src\ATAP.Utilities.GenerateProgram\ATAP.Utilities.GenerateProgram.csproj", "{62B5C7B2-2377-4650-B306-D6507317B26E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.GenerateProgram", "src\ATAP.Utilities.GenerateProgram\ATAP.Utilities.GenerateProgram.csproj", "{62B5C7B2-2377-4650-B306-D6507317B26E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CodeGeneration", "CodeGeneration", "{11AD5420-3F69-11EB-9FD8-913B36525608}"
 EndProject
@@ -351,11 +351,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Timers", "Timers", "{60E1AA
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FileSystemWatchers", "FileSystemWatchers", "{79190190-3F69-11EB-9FD8-913B36525608}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Console.Console03", "src\ATAP.Console.Console03\ATAP.Console.Console03.csproj", "{5E48407C-9D88-486E-BB30-21195F5C94D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console03", "src\ATAP.Console.Console03\ATAP.Console.Console03.csproj", "{5E48407C-9D88-486E-BB30-21195F5C94D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Console.Console03.StringConstants", "src\ATAP.Console.Console03.StringConstants\ATAP.Console.Console03.StringConstants.csproj", "{280F901A-B248-4E1C-8137-B03AB2121870}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console03.StringConstants", "src\ATAP.Console.Console03.StringConstants\ATAP.Console.Console03.StringConstants.csproj", "{280F901A-B248-4E1C-8137-B03AB2121870}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Services.GenerateProgram.StringConstants", "src\ATAP.Services.GenerateProgram.StringConstants\ATAP.Services.GenerateProgram.StringConstants.csproj", "{9134633C-FA10-4A60-A28C-EF2878FCB2B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.GenerateProgram.StringConstants", "src\ATAP.Services.GenerateProgram.StringConstants\ATAP.Services.GenerateProgram.StringConstants.csproj", "{9134633C-FA10-4A60-A28C-EF2878FCB2B4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1596,7 +1596,7 @@ Global
 		{62B5C7B2-2377-4650-B306-D6507317B26E} = {2A8F8E30-3F65-11EB-9FD8-913B36525608}
 		{5E48407C-9D88-486E-BB30-21195F5C94D4} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 		{280F901A-B248-4E1C-8137-B03AB2121870} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
-		{9134633C-FA10-4A60-A28C-EF2878FCB2B4} = {B6F9F570-22C9-4DF5-B580-942C6C7BFE32}
+		{9134633C-FA10-4A60-A28C-EF2878FCB2B4} = {11AD5420-3F69-11EB-9FD8-913B36525608}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40986DA9-E8C6-49CE-B434-BE8625798C2C}

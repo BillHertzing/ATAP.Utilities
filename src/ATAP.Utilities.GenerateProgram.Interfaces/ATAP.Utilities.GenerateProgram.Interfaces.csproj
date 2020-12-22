@@ -3,12 +3,13 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net5.0;</TargetFrameworks> <!-- netcoreapp3.1 net47-->
+    <TargetFrameworks>net5.0;</TargetFrameworks>    <!-- netcoreapp3.1 net47-->
     <DefaultNamespace>ATAP.Utilities.GenerateProgram</DefaultNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

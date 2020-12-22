@@ -88,7 +88,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       // The following parameters are for each invocation of a GenerateProgramAsync call
       // invoking a GenerateProgram call may override any of these values, but absent an override, these are the
       //  default values that will be used for every GenerateProgramAsync call.
-      //  the default values come from the ICOnfiguration hostedServiceConfiguration that is DI injected at service startup
+      //  the default values come from the IConfiguration hostedServiceConfiguration that is DI injected at service startup
       /// ToDo: Security: ensure the paths do not go above their Base directory
         ArtifactsDirectoryBase = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, hostedServiceStringConstants.ArtifactsDirectoryBaseDefault), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
         ArtifactsFileRelativePath = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, hostedServiceStringConstants.ArtifactsFileRelativePathhDefault),
@@ -100,7 +100,10 @@ namespace ATAP.Services.HostedService.GenerateProgram {
         PickAndSaveMessageFileRelativePath = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.PickAndSaveMessageFileRelativePathConfigRootKey, hostedServiceStringConstants.PickAndSaveMessageFileRelativePathDefault),
         DBConnectionString = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.DBConnectionStringConfigRootKey, hostedServiceStringConstants.DBConnectionStringDefault),
         OrmLiteDialectProviderStringDefault = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.OrmLiteDialectProviderConfigRootKey, hostedServiceStringConstants.OrmLiteDialectProviderDefault)
+        // Every invocation to GenerateProgram needs an instance of an EntryPoint class
       };
+        // Every invocation to GenerateProgram needs an instance of an EntryPoint class
+      this.ServiceData.EntryPoints = new EntryPoints();
       this.ServiceData.ArtifactsFilePaths = new string[1] { ServiceData.ArtifactsDirectoryBase + ServiceData.ArtifactsFileRelativePath};
       this.ServiceData.PersistenceFilePaths = new string[1] { ServiceData.TemporaryDirectoryBase + ServiceData.PersistenceMessageFileRelativePath};
       this.ServiceData.PickAndSaveFilePaths = new string[1] { ServiceData.TemporaryDirectoryBase + ServiceData.PickAndSaveMessageFileRelativePath};

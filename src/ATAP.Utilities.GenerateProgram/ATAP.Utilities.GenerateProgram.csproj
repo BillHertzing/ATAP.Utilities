@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
- <!--
+  <!--
   <PropertyGroup>
   <StartupObject>GenerateProgram.PService03</StartupObject>
   </PropertyGroup>
 -->
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFrameworks>net5.0;</TargetFrameworks> <!-- netcoreapp3.1 net47-->
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net5.0;</TargetFrameworks>    <!-- netcoreapp3.1 net47-->
     <DefaultNamespace>GenerateProgram</DefaultNamespace>
   </PropertyGroup>
 
@@ -15,23 +15,22 @@
     <ProjectReference Include="..\ATAP.Utilities.Philote.DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Artifacts\Resources\" />
   </ItemGroup>
 
-<PropertyGroup>
-  <DefaultItemExcludes>Artifacts\**</DefaultItemExcludes>
-  <DefaultItemExcludes>$(DefaultItemExcludes);**\Resources\**</DefaultItemExcludes>
-</PropertyGroup>
+  <PropertyGroup>
+    <DefaultItemExcludes>Artifacts\**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);**\Resources\**</DefaultItemExcludes>
+  </PropertyGroup>
 
   <!-- ATAP Utility library for collection extensions (for Dictionary AddRange) -->
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.GenerateProgram.Interfaces\ATAP.Utilities.GenerateProgram.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
   </ItemGroup>
 
   <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->

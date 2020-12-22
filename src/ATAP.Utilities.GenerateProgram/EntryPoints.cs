@@ -8,14 +8,14 @@ using ATAP.Utilities.Philote;
 using ATAP.Utilities.Persistence;
 namespace ATAP.Utilities.GenerateProgram {
 
-  public  class EntryPoints  {
-    public IGGenerateProgramResult GenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil = default, IGGlobalSettingsSignil gGlobalSettingsSignil = default, IGSolutionSignil gSolutionSignil = default)  {
+  public class EntryPoints : IEntryPoints {
+    public IGGenerateProgramResult GenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil = default, IGGlobalSettingsSignil gGlobalSettingsSignil = default, IGSolutionSignil gSolutionSignil = default) {
       return GenerateProgramAsync(gAssemblyGroupSignil, gGlobalSettingsSignil, gSolutionSignil, default, default, default);
     }
     public IGGenerateProgramResult GenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil = default, IGGlobalSettingsSignil gGlobalSettingsSignil = default, IGSolutionSignil gSolutionSignil = default, IGGenerateProgramProgress generateProgramProgress = default, IPersistence<IInsertResultsAbstract> persistence = default, IPickAndSave<IInsertResultsAbstract> pickAndSave = default, CancellationToken cancellationToken = default) {
-       IGAssemblyGroupSignil _gAssemblyGroupSignil = gAssemblyGroupSignil ?? throw new ArgumentNullException(nameof(gAssemblyGroupSignil));
-       IGGlobalSettingsSignil _gGlobalSettingsSignil = gGlobalSettingsSignil ?? throw new ArgumentNullException(nameof(gGlobalSettingsSignil));
-       IGSolutionSignil _gSolutionSignil = gSolutionSignil ?? throw new ArgumentNullException(nameof(gSolutionSignil));
+      IGAssemblyGroupSignil _gAssemblyGroupSignil = gAssemblyGroupSignil ?? throw new ArgumentNullException(nameof(gAssemblyGroupSignil));
+      IGGlobalSettingsSignil _gGlobalSettingsSignil = gGlobalSettingsSignil ?? throw new ArgumentNullException(nameof(gGlobalSettingsSignil));
+      IGSolutionSignil _gSolutionSignil = gSolutionSignil ?? throw new ArgumentNullException(nameof(gSolutionSignil));
       //  IGGenerateProgramProgress _generateProgramProgress = generateProgramProgress == default ? newGGenerateProgramProgress : generateProgramProgress;
       //  IPersistence<IInsertResultsAbstract> _persistence =
       //  IPickAndSave<IInsertResultsAbstract> _pickAndSave =

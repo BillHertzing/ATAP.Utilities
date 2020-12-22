@@ -16,7 +16,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     IGGlobalSettingsSignil? GGlobalSettingsSignil { get; set; }
     IGSolutionSignil? GSolutionSignil { get; set; }
           // The following parameters are for each invocation of a GenerateProgramAsync call
-      // invoking a GenerateProgram call may override any of these values, but absent an override, these are the 
+      // invoking a GenerateProgram call may override any of these values, but absent an override, these are the
       //  default values that will be used for every GenerateProgramAsync call.
       //  the default values come from the ICOnfiguration hostedServiceConfiguration that is DI injected at service startup
       /// ToDo: Security: ensure the paths do not go above their Base directory
@@ -34,6 +34,8 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     string[] PickAndSaveFilePaths { get; set; }
     string DBConnectionString { get; set; }
     string OrmLiteDialectProviderStringDefault { get; set; }
+
+    IEntryPoints EntryPoints {get;set;}
 
   }
 }

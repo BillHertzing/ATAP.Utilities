@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+
 using ATAP.Utilities.Philote;
 
-namespace ATAP.Utilities.GenerateProgram {  public interface IGGenerateProgramResult {
+namespace ATAP.Utilities.GenerateProgram {
+  public interface IGGenerateProgramResult {
     bool DBExtractionSuccess { get; init; }
     bool BuildSuccess { get; init; }
     bool UnitTestsSuccess { get; init; }

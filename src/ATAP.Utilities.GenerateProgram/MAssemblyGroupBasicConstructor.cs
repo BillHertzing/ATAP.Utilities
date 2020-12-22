@@ -91,7 +91,7 @@ namespace ATAP.Utilities.GenerateProgram {
       gAssemblyGroup.GAssemblyUnits.Add(gTitularAssemblyUnit.Philote, gTitularAssemblyUnit);
       #region Titular Derived CompilationUnit
       #region Pattern Replacements for Titular Derived CompilationUnit
-      var gTitularDerivedCompilationUnitPatternReplacement = new GPatternReplacement(gName:"gTitularDerivedCompilationUnitPatternReplacement",
+      var gTitularDerivedCompilationUnitPatternReplacement = new GPatternReplacement(gName:"GTitularDerivedCompilationUnitPatternReplacement",
         gDictionary: new Dictionary<Regex, string>() {
           {new Regex("CompilationUnitNameReplacementPattern"), gTitularDerivedCompilationUnitName},
           //{new Regex("DataInitializationReplacementPattern"), tempdatainitialization},
@@ -118,7 +118,7 @@ namespace ATAP.Utilities.GenerateProgram {
       if (hasInterfaces) {
       gClassDerived = new GClass(gClassDerivedName, "public", gAccessModifier: "partial",
         gInheritance: gClassBaseName,
-        gImplements: new List<string> {gTitularInterfaceDerivedName} 
+        gImplements: new List<string> {gTitularInterfaceDerivedName}
         //gDisposesOf: new List<string> { "CompilationUnitNameReplacementPatternDerivedData" }
       );
       } else {
@@ -126,7 +126,7 @@ namespace ATAP.Utilities.GenerateProgram {
         gInheritance: gClassBaseName
         //Implements: new List<string> {gTitularInterfaceDerivedName}  -- No Interfaces in this AssemblyGroup
         //gDisposesOf: new List<string> { "CompilationUnitNameReplacementPatternDerivedData" }
-      );        
+      );
       }
 
       #endregion
@@ -135,7 +135,7 @@ namespace ATAP.Utilities.GenerateProgram {
 
       #region Titular Base CompilationUnit
       #region Pattern Replacements for Derived CompilationUnit
-      var gTitularBaseCompilationUnitPatternReplacement = new GPatternReplacement(gName:"gTitularBaseCompilationUnitPatternReplacement",
+      var gTitularBaseCompilationUnitPatternReplacement = new GPatternReplacement(gName:"GTitularBaseCompilationUnitPatternReplacement",
         gDictionary: new Dictionary<Regex, string>() {
           {new Regex("CompilationUnitNameReplacementPattern"), gTitularBaseCompilationUnitName},
           //{new Regex("DataInitializationReplacementPattern"), tempdatainitialization}, {
@@ -321,31 +321,31 @@ namespace ATAP.Utilities.GenerateProgram {
       #endregion
       #endregion
       GAssemblyGroupBasicConstructorResult mCreateAssemblyGroupResult = new GAssemblyGroupBasicConstructorResult() {
-        subDirectoryForGeneratedFiles = subDirectoryForGeneratedFiles,
-        baseNamespaceName = baseNamespaceName,
-        gAssemblyGroupName = gAssemblyGroupName,
-        gTitularAssemblyUnitName = gTitularAssemblyUnitName,
-        gTitularBaseCompilationUnitName = gTitularBaseCompilationUnitName,
-        gAssemblyGroup = gAssemblyGroup,
+        SubDirectoryForGeneratedFiles = subDirectoryForGeneratedFiles,
+        BaseNamespaceName = baseNamespaceName,
+        GAssemblyGroupName = gAssemblyGroupName,
+        GTitularAssemblyUnitName = gTitularAssemblyUnitName,
+        GTitularBaseCompilationUnitName = gTitularBaseCompilationUnitName,
+        GAssemblyGroup = gAssemblyGroup,
         gAssemblyGroupPatternReplacement = gAssemblyGroupPatternReplacement,
-        gTitularAssemblyUnit = gTitularAssemblyUnit,
-        gTitularAssemblyUnitPatternReplacement = gTitularAssemblyUnitPatternReplacement,
+        GTitularAssemblyUnit = gTitularAssemblyUnit,
+        GTitularAssemblyUnitPatternReplacement = gTitularAssemblyUnitPatternReplacement,
         gTitularDerivedCompilationUnit = gTitularDerivedCompilationUnit,
-        gTitularDerivedCompilationUnitPatternReplacement = gTitularDerivedCompilationUnitPatternReplacement,
-        gTitularBaseCompilationUnit = gTitularBaseCompilationUnit,
-        gTitularBaseCompilationUnitPatternReplacement = gTitularBaseCompilationUnitPatternReplacement,
-        gNamespaceDerived = gNamespaceDerived,
-        gNamespaceBase = gNamespaceBase,
-        gClassBase = gClassBase,
-        gClassDerived = gClassDerived,
-        gPrimaryConstructorBase = gPrimaryConstructorBase,
+        GTitularDerivedCompilationUnitPatternReplacement = gTitularDerivedCompilationUnitPatternReplacement,
+        GTitularBaseCompilationUnit = gTitularBaseCompilationUnit,
+        GTitularBaseCompilationUnitPatternReplacement = gTitularBaseCompilationUnitPatternReplacement,
+        GNamespaceDerived = gNamespaceDerived,
+        GNamespaceBase = gNamespaceBase,
+        GClassBase = gClassBase,
+        GClassDerived = gClassDerived,
+        GPrimaryConstructorBase = gPrimaryConstructorBase,
               // If HasInterfaces
 
         gTitularInterfaceAssemblyUnit = gTitularInterfaceAssemblyUnit,
-        gTitularInterfaceDerivedCompilationUnit = gTitularInterfaceDerivedCompilationUnit,
-        gTitularInterfaceBaseCompilationUnit = gTitularInterfaceBaseCompilationUnit,
-        gTitularInterfaceDerivedInterface = gTitularInterfaceDerivedInterface,
-        gTitularInterfaceBaseInterface = gTitularInterfaceBaseInterface
+        GTitularInterfaceDerivedCompilationUnit = gTitularInterfaceDerivedCompilationUnit,
+        GTitularInterfaceBaseCompilationUnit = gTitularInterfaceBaseCompilationUnit,
+        GTitularInterfaceDerivedInterface = gTitularInterfaceDerivedInterface,
+        GTitularInterfaceBaseInterface = gTitularInterfaceBaseInterface
       };
       return mCreateAssemblyGroupResult;
     }
@@ -382,18 +382,18 @@ namespace ATAP.Utilities.GenerateProgram {
     }
     public static IGAssemblyGroup MAssemblyGroupStringConstants(IGAssemblyGroupBasicConstructorResult gAssemblyGroupBasicConstructorResult) {
       return MAssemblyGroupStringConstants(
-        gAssemblyGroupBasicConstructorResult.subDirectoryForGeneratedFiles,
-        gAssemblyGroupBasicConstructorResult.baseNamespaceName,
-        gAssemblyGroupBasicConstructorResult.gAssemblyGroupName,
-        gAssemblyGroupBasicConstructorResult.gAssemblyGroupName,
-        gAssemblyGroupBasicConstructorResult.gTitularBaseCompilationUnitName,
+        gAssemblyGroupBasicConstructorResult.SubDirectoryForGeneratedFiles,
+        gAssemblyGroupBasicConstructorResult.BaseNamespaceName,
+        gAssemblyGroupBasicConstructorResult.GAssemblyGroupName,
+        gAssemblyGroupBasicConstructorResult.GAssemblyGroupName,
+        gAssemblyGroupBasicConstructorResult.GTitularBaseCompilationUnitName,
         gAssemblyGroupBasicConstructorResult.gAssemblyGroupPatternReplacement,
-        gAssemblyGroupBasicConstructorResult.gTitularAssemblyUnitPatternReplacement,
-        gAssemblyGroupBasicConstructorResult.gTitularDerivedCompilationUnitPatternReplacement,
-        gAssemblyGroupBasicConstructorResult.gAssemblyGroup,
-        gAssemblyGroupBasicConstructorResult.gTitularAssemblyUnit,
-        gAssemblyGroupBasicConstructorResult.gTitularBaseCompilationUnit,
-        gAssemblyGroupBasicConstructorResult.gNamespaceBase
+        gAssemblyGroupBasicConstructorResult.GTitularAssemblyUnitPatternReplacement,
+        gAssemblyGroupBasicConstructorResult.GTitularDerivedCompilationUnitPatternReplacement,
+        gAssemblyGroupBasicConstructorResult.GAssemblyGroup,
+        gAssemblyGroupBasicConstructorResult.GTitularAssemblyUnit,
+        gAssemblyGroupBasicConstructorResult.GTitularBaseCompilationUnit,
+        gAssemblyGroupBasicConstructorResult.GNamespaceBase
         //gClass
       );
     }

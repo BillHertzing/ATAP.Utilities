@@ -19,28 +19,28 @@ using static ATAP.Utilities.GenerateProgram.Lookup;
 
 namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
-    //public static void MAssemblyGroupPopulateBaseInterfaces(GAssemblyGroup gAssemblyGroup = default,
+    //public static void MAssemblyGroupPopulateBaseInterfaces(GAssemblyGroup GAssemblyGroup = default,
     //  ) {
-    //  if (gAssemblyGroup == default) {throw new ArgumentException(nameof(gAssemblyGroup));};
+    //  if (GAssemblyGroup == default) {throw new ArgumentException(nameof(GAssemblyGroup));};
 
     //  /**************************************************************************************************/
-    //  var titularBaseClassName = $"{gAssemblyGroup.GName}Base";
-    //  var titularBaseInterfaceName = $"I{gAssemblyGroup.GName}Base";
-    //  var titularAssemblyUnitLookupResults = LookupPrimaryConstructorMethod(new List<IGAssemblyGroup>(){gAssemblyGroup},gClassName:titularBaseClassName) ;
-    //  var titularInterfaceAssemblyUnitLookupResults = LookupInterfaces(new List<IGAssemblyGroup>(){gAssemblyGroup},gInterfaceName:titularBaseInterfaceName);
+    //  var titularBaseClassName = $"{GAssemblyGroup.GName}Base";
+    //  var titularBaseInterfaceName = $"I{GAssemblyGroup.GName}Base";
+    //  var titularAssemblyUnitLookupResults = LookupPrimaryConstructorMethod(new List<IGAssemblyGroup>(){GAssemblyGroup},gClassName:titularBaseClassName) ;
+    //  var titularInterfaceAssemblyUnitLookupResults = LookupInterfaces(new List<IGAssemblyGroup>(){GAssemblyGroup},gInterfaceName:titularBaseInterfaceName);
     //  PopulateInterface(titularAssemblyUnitLookupResults.gClasss.First(),
     //    titularInterfaceAssemblyUnitLookupResults.gInterfaces.First());
-      
-    //  var titularClassName = $"{gAssemblyGroup.GName}";
-    //  var titularInterfaceName = $"I{gAssemblyGroup.GName}";
-    //  titularAssemblyUnitLookupResults = LookupPrimaryConstructorMethod(new List<IGAssemblyGroup>(){gAssemblyGroup},gClassName:titularClassName) ;
-    //  titularInterfaceAssemblyUnitLookupResults = LookupInterfaces(new List<IGAssemblyGroup>(){gAssemblyGroup},gInterfaceName:titularInterfaceName);
+
+    //  var titularClassName = $"{GAssemblyGroup.GName}";
+    //  var titularInterfaceName = $"I{GAssemblyGroup.GName}";
+    //  titularAssemblyUnitLookupResults = LookupPrimaryConstructorMethod(new List<IGAssemblyGroup>(){GAssemblyGroup},gClassName:titularClassName) ;
+    //  titularInterfaceAssemblyUnitLookupResults = LookupInterfaces(new List<IGAssemblyGroup>(){GAssemblyGroup},gInterfaceName:titularInterfaceName);
     //  PopulateInterface(titularAssemblyUnitLookupResults.gClasss.First(),
     //    titularInterfaceAssemblyUnitLookupResults.gInterfaces.First());
     //}
-    //public static void MAssemblyGroupPopulateTitularInterfaces(GAssemblyGroup gAssemblyGroup = default
+    //public static void MAssemblyGroupPopulateTitularInterfaces(GAssemblyGroup GAssemblyGroup = default
     //) {
-    //  if (gAssemblyGroup == default) {throw new ArgumentException(nameof(gAssemblyGroup));};
+    //  if (GAssemblyGroup == default) {throw new ArgumentException(nameof(GAssemblyGroup));};
 
     //}
 

@@ -23,7 +23,7 @@ namespace ATAP.Utilities.GenerateProgram {
         gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       var gAssemblyGroupBasicConstructorResult = MGenericHostService(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, hasInterfaces, _gPatternReplacement);
-      return gAssemblyGroupBasicConstructorResult.gAssemblyGroup;
+      return gAssemblyGroupBasicConstructorResult.GAssemblyGroup;
     }
   }
 }

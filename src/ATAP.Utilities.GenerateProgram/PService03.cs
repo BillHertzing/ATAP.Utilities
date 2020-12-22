@@ -54,7 +54,7 @@ namespace ATAP.Utilities.GenerateProgram {
       (string name, string sourceRelativePath, string testRelativePath,
         string subDirectoryForGeneratedFiles,
         string baseNamespaceName, bool hasInterfaces, MCreateAssemblyGroupDelegate
-        mCreateAssemblyGroupDelegate) gPrimaryExecutingProgram = 
+        mCreateAssemblyGroupDelegate) gPrimaryExecutingProgram =
       ("Service03",
         Path.Combine(sourceArtifactsPath, genericHostProgramsRelativeNextPath, "Service03/"),
         Path.Combine(testArtifactsPath, genericHostProgramsRelativeNextPath, "Service03/"),
@@ -200,9 +200,9 @@ namespace ATAP.Utilities.GenerateProgram {
 
       //assemblyGroupName = "ATAP.Utilities.Stateless";
       // assemblyGroupSourceArtifactsPath = Path.Combine(artifactsPath, sourceRelativePath, assemblyGroupName);
-      //var gAssemblyGroup = MAUStateless(assemblyGroupName, subDirectoryForGeneratedFiles, "ATAP.Utilities",
+      //var GAssemblyGroup = MAUStateless(assemblyGroupName, SubDirectoryForGeneratedFiles, "ATAP.Utilities",
       //  gAssemblyGroupPatternReplacement);
-      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //session.Add("assemblyUnits", GAssemblyGroup.GAssemblyUnits);
       //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
       //r1Top.Render(w1Top);
@@ -211,51 +211,51 @@ namespace ATAP.Utilities.GenerateProgram {
       //string baseNamespaceNameForGHSServices = "ATAP.Utilities.GHS.Services";
       //string genericHostServicesPath = "GenericHostServices";
       //assemblyGroupSourceArtifactsPath = Path.Combine(artifactsPath, sourceRelativePath, genericHostServicesPath);
-      //gAssemblyGroup = MTimerGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //GAssemblyGroup = MTimerGHS(SubDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
       //  gAssemblyGroupPatternReplacement);
-      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //session.Add("assemblyUnits", GAssemblyGroup.GAssemblyUnits);
       //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
       //r1Top.Render(w1Top);
       //session.Clear();
-      //gAssemblyGroup = MFileSystemWatcherGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //GAssemblyGroup = MFileSystemWatcherGHS(SubDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
       //  gAssemblyGroupPatternReplacement);
-      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //session.Add("assemblyUnits", GAssemblyGroup.GAssemblyUnits);
       //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
       //r1Top.Render(w1Top);
       //session.Clear();
-      //gAssemblyGroup = MConsoleSourceGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //GAssemblyGroup = MConsoleSourceGHS(SubDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
       //  gPatternReplacement: gAssemblyGroupPatternReplacement);
-      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //session.Add("assemblyUnits", GAssemblyGroup.GAssemblyUnits);
       //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
       //r1Top.Render(w1Top);
       //session.Clear();
-      //gAssemblyGroup = MConsoleSinkGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //GAssemblyGroup = MConsoleSinkGHS(SubDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
       //  gPatternReplacement: gAssemblyGroupPatternReplacement);
-      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //session.Add("assemblyUnits", GAssemblyGroup.GAssemblyUnits);
       //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
       //r1Top.Render(w1Top);
       //session.Clear();
-      //gAssemblyGroup = MConsoleMonitorGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //GAssemblyGroup = MConsoleMonitorGHS(SubDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
       //  gPatternReplacement: gAssemblyGroupPatternReplacement);
-      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //session.Add("assemblyUnits", GAssemblyGroup.GAssemblyUnits);
       //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
       //r1Top.Render(w1Top);
       //session.Clear();
-      //gAssemblyGroup = MTopLevelBackgroundGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //GAssemblyGroup = MTopLevelBackgroundGHS(SubDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
       //  gPatternReplacement: gAssemblyGroupPatternReplacement);
-      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //session.Add("assemblyUnits", GAssemblyGroup.GAssemblyUnits);
       //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
       //r1Top.Render(w1Top);
       //session.Clear();
-      //gAssemblyGroup = MFileSystemToObjectGraphGHS(subDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
+      //GAssemblyGroup = MFileSystemToObjectGraphGHS(SubDirectoryForGeneratedFiles, baseNamespaceNameForGHSServices,
       //  gPatternReplacement: gAssemblyGroupPatternReplacement);
-      //session.Add("assemblyUnits", gAssemblyGroup.GAssemblyUnits);
+      //session.Add("assemblyUnits", GAssemblyGroup.GAssemblyUnits);
       //r1Top = new R1Top(session, sb, indent, indentDelta, eol, ct);
       //w1Top = new W1Top(basePath: assemblyGroupSourceArtifactsPath, force: true);
       //r1Top.Render(w1Top);

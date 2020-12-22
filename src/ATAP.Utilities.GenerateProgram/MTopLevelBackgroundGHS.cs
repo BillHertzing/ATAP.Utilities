@@ -25,7 +25,7 @@ namespace ATAP.Utilities.GenerateProgram {
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, hasInterfaces, _gPatternReplacement);
       #region Initial StateMachine Configuration
-      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
+      mCreateAssemblyGroupResult.GPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
     @"
           WaitingForInitialization ->InitiateContactWithConsoleMonitor [label = ""InitializationCompleteReceived""] // ToDo: move this to ConsoleMonitorClient
           Connected -> Execute [label = ""inputline == 1""]
@@ -49,7 +49,7 @@ namespace ATAP.Utilities.GenerateProgram {
         "
       );
       #endregion
-      #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits 
+      #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits
       #region Add UsingGroups common to both the Titular Derived and Titular Base CompilationUnits
       #endregion
       #region Add UsingGroups specific to the Titular Base CompilationUnit
@@ -57,11 +57,11 @@ namespace ATAP.Utilities.GenerateProgram {
       #endregion
       #region Injected PropertyGroup For ConsoleSinkAndConsoleSource
       #endregion
-      #region Add the MethodGroup containing new methods provided by this library to the Titular Base CompilationUnits 
+      #region Add the MethodGroup containing new methods provided by this library to the Titular Base CompilationUnits
       #endregion
       #region Add additional classes provided by this library to the Titular Base CompilationUnit
       #endregion
-      #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit 
+      #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit
       #region Add References used by both the Titular Derived and Titular Base CompilationUnits
       #endregion
       #region Add References unique to the Titular Base CompilationUnit
@@ -88,7 +88,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #region Finalize the GHHS
       GAssemblyGroupGHBSFinalizer(mCreateAssemblyGroupResult);
       #endregion
-      return mCreateAssemblyGroupResult.gAssemblyGroup;
+      return mCreateAssemblyGroupResult.GAssemblyGroup;
     }
     /*******************************************************************************/
     /*******************************************************************************/

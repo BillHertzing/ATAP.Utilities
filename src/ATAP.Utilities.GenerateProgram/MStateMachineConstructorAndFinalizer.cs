@@ -121,14 +121,14 @@ namespace ATAP.Utilities.GenerateProgram {
     //    lookupResults.gClasss.First(), lookupResults.gMethods.First(), finalGStateConfigurations);
     //}
     //public static void MStateMachineFinalizer() {
-    //  MStateMachineFinalizer(mCreateAssemblyGroupResult.gTitularBaseCompilationUnit,
-    //    mCreateAssemblyGroupResult.gNamespaceBase, mCreateAssemblyGroupResult.gClassBase,
-    //    gStateConfiguration: mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfigurations);
+    //  MStateMachineFinalizer(mCreateAssemblyGroupResult.GTitularBaseCompilationUnit,
+    //    mCreateAssemblyGroupResult.GNamespaceBase, mCreateAssemblyGroupResult.GClassBase,
+    //    gStateConfiguration: mCreateAssemblyGroupResult.GPrimaryConstructorBase.GStateConfigurations);
     //}
     public static void MStateMachineFinalizer(IGAssemblyGroupBasicConstructorResult mCreateAssemblyGroupResult) {
       #region Accumulate the StateConfigurations
       var finalGStateConfiguration = new GStateConfiguration();
-      foreach (var gAU in mCreateAssemblyGroupResult.gAssemblyGroup.GAssemblyUnits) {
+      foreach (var gAU in mCreateAssemblyGroupResult.GAssemblyGroup.GAssemblyUnits) {
         // finalGStateConfigurations.Add(gAu.GStateConfiguration);
         foreach (var gCU in gAU.Value.GCompilationUnits) {
           // finalGStateConfigurations.Add(gCu.GStateConfiguration);
@@ -191,7 +191,7 @@ namespace ATAP.Utilities.GenerateProgram {
             gEnumerationMembers: gEnumerationMembers);
         gEnumerationGroup.GEnumerations.Add(gEnumeration.Philote, gEnumeration);
         #endregion
-        mCreateAssemblyGroupResult.gNamespaceBase.AddEnumerationGroup(gEnumerationGroup);
+        mCreateAssemblyGroupResult.GNamespaceBase.AddEnumerationGroup(gEnumerationGroup);
         #endregion
 
         //#region StateMachine Transitions Static variable
@@ -265,7 +265,7 @@ namespace ATAP.Utilities.GenerateProgram {
         //"});",
         #endregion
         gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
-        mCreateAssemblyGroupResult.gClassBase.GMethodGroups.Add(gMethodGroup.Philote, gMethodGroup);
+        mCreateAssemblyGroupResult.GClassBase.GMethodGroups.Add(gMethodGroup.Philote, gMethodGroup);
         #region Add the statement that fires the InitializationCompleteReceived Trigger
         //var statementList = gClass.CombinedMethods().Where(x => x.GDeclaration.GName == "StartAsync").First().GBody
         //  .GStatements;

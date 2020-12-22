@@ -22,8 +22,8 @@ namespace ATAP.Utilities.GenerateProgram {
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, hasInterfaces, _gPatternReplacement);
       #region Initial StateMachine Configuration
-      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
-        @" 
+      mCreateAssemblyGroupResult.GPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
+        @"
           WaitingForInitialization -> WaitingForRequestToWriteSomething [label = ""InitializationCompleteReceived""]
           WaitingForRequestToWriteSomething -> WaitingForWriteToComplete [label = ""WriteStarted""]
           WaitingForWriteToComplete -> WaitingForRequestToWriteSomething [label = ""WriteFinished""]
@@ -69,7 +69,7 @@ namespace ATAP.Utilities.GenerateProgram {
         $";",
         @"StateMachine.Configure(State.ShutdownComplete);",
       };
-      #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits 
+      #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits
       #region Add UsingGroups common to both the Titular Derived and Titular Base CompilationUnits
       #endregion
       #region Add UsingGroups specific to the Titular Base CompilationUnit
@@ -78,24 +78,24 @@ namespace ATAP.Utilities.GenerateProgram {
       #region Injected PropertyGroup For ConsoleSinkAndConsoleSource
       #endregion
       #region Additional Properties needed by the Base  class
-      var lclPropertyGroup = new GPropertyGroup($"Private Properties part of {mCreateAssemblyGroupResult.gClassBase.GName}");
+      var lclPropertyGroup = new GPropertyGroup($"Private Properties part of {mCreateAssemblyGroupResult.GClassBase.GName}");
       var mesgProperty = new GProperty(gName:"Mesg",gType:"string",gVisibility:"private");
       lclPropertyGroup.GPropertys.Add(mesgProperty.Philote,mesgProperty);
-      mCreateAssemblyGroupResult.gClassBase.GPropertyGroups.Add(lclPropertyGroup.Philote,lclPropertyGroup);
+      mCreateAssemblyGroupResult.GClassBase.GPropertyGroups.Add(lclPropertyGroup.Philote,lclPropertyGroup);
       #endregion
       #region Add the MethodGroup containing new methods provided by this library to the Titular Base CompilationUnit
       var gMethodGroup =
         new GMethodGroup(
           gName:
-          $"MethodGroup specific to {mCreateAssemblyGroupResult.gClassBase.GName}");
+          $"MethodGroup specific to {mCreateAssemblyGroupResult.GClassBase.GName}");
       foreach (var gMethod in MCreateWriteMethodInConsoleSink()) {
         gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
       }
-      mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(gMethodGroup);
+      mCreateAssemblyGroupResult.GClassBase.AddMethodGroup(gMethodGroup);
       #endregion
       #region Add additional classes provided by this library to the Titular Base CompilationUnit
       #endregion
-      #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit 
+      #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit
       #region Add References used by both the Titular Derived and Titular Base CompilationUnits
       #endregion
       #region Add References unique to the Titular Base CompilationUnit
@@ -120,11 +120,11 @@ namespace ATAP.Utilities.GenerateProgram {
       GAssemblyGroupGHHSFinalizer(mCreateAssemblyGroupResult);
       #endregion
       #region Populate the ConfigureStateMachine method
-      mCreateAssemblyGroupResult.gClassBase.CombinedMethods()
+      mCreateAssemblyGroupResult.GClassBase.CombinedMethods()
         .Where(x => x.GDeclaration.GName == "ConfigureStateMachine").First().GBody.GStatements.AddRange(s1);
-      // mCreateAssemblyGroupResult.gPrimaryConstructorBase.GBody.GStatements.AddRange(s1); 
+      // mCreateAssemblyGroupResult.GPrimaryConstructorBase.GBody.GStatements.AddRange(s1);
       #endregion
-      return mCreateAssemblyGroupResult.gAssemblyGroup;
+      return mCreateAssemblyGroupResult.GAssemblyGroup;
     }
     /*******************************************************************************/
     /*******************************************************************************/

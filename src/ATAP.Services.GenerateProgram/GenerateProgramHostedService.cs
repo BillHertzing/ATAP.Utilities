@@ -13,7 +13,7 @@ using ATAP.Utilities.Philote;
 using ATAP.Utilities.Persistence;
 using ATAP.Utilities.GenerateProgram;
 
-//using hostedServiceStringConstants = GenerateProgramHostedService.StringConstants;
+using hostedServiceStringConstants = ATAP.Services.HostedService.GenerateProgram.StringConstants;
 
 namespace ATAP.Services.HostedService.GenerateProgram {
 
@@ -66,9 +66,9 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     /// <param name="hostApplicationLifetime"></param>
     public GenerateProgramHostedService(ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration hostedServiceConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
       this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
-      exceptionLocalizer = stringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "GenerateProgramHostedService");
-      debugLocalizer = stringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "GenerateProgramHostedService");
-      uiLocalizer = stringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "GenerateProgramHostedService");
+      //exceptionLocalizer = stringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "GenerateProgramHostedService");
+      //debugLocalizer = stringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "GenerateProgramHostedService");
+      //uiLocalizer = stringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "GenerateProgramHostedService");
       this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       this.logger = loggerFactory.CreateLogger<GenerateProgramHostedService>();
       // this.logger = (Logger<GenerateProgramHostedService>) ATAP.Utilities.Logging.LogProvider.GetLogger("GenerateProgramHostedService");
@@ -90,7 +90,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       //  default values that will be used for every GenerateProgramAsync call.
       //  the default values come from the ICOnfiguration hostedServiceConfiguration that is DI injected at service startup
       /// ToDo: Security: ensure the paths do not go above their Base directory
-        ArtifactsDirectoryBase = hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, bool.Parse(hostedServiceStringConstants.ArtifactsDirectoryBaseDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
+        ArtifactsDirectoryBase = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, hostedServiceStringConstants.ArtifactsDirectoryBaseDefault), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
         ArtifactsFileRelativePath = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, hostedServiceStringConstants.ArtifactsFileRelativePathhDefault),
         EnablePersistence = hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(hostedServiceStringConstants.EnablePersistenceBoolDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
         EnablePickAndSave = hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(hostedServiceStringConstants.EnablePickAndSaveBoolDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
@@ -98,8 +98,8 @@ namespace ATAP.Services.HostedService.GenerateProgram {
         TemporaryDirectoryBase = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.TemporaryDirectoryBaseConfigRootKey, hostedServiceStringConstants.TemporaryDirectoryBaseDefault),
         PersistenceMessageFileRelativePath = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.PersistenceMessageFileRelativePathConfigRootKey, hostedServiceStringConstants.PersistenceMessageFileRelativePathDefault),
         PickAndSaveMessageFileRelativePath = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.PickAndSaveMessageFileRelativePathConfigRootKey, hostedServiceStringConstants.PickAndSaveMessageFileRelativePathDefault),
-        DBConnectionString = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.DBConnectionStringPathConfigRootKey, hostedServiceStringConstants.DBConnectionStringDefault),
-        OrmLiteDialectProviderStringDefault = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.OrmLiteDialectProviderStringDefaultConfigRootKey, hostedServiceStringConstants.OrmLiteDialectProviderStringDefaultDefault)
+        DBConnectionString = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.DBConnectionStringConfigRootKey, hostedServiceStringConstants.DBConnectionStringDefault),
+        OrmLiteDialectProviderStringDefault = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.OrmLiteDialectProviderConfigRootKey, hostedServiceStringConstants.OrmLiteDialectProviderDefault)
       };
       this.ServiceData.ArtifactsFilePaths = new string[1] { ServiceData.ArtifactsDirectoryBase + ServiceData.ArtifactsFileRelativePath};
       this.ServiceData.PersistenceFilePaths = new string[1] { ServiceData.TemporaryDirectoryBase + ServiceData.PersistenceMessageFileRelativePath};

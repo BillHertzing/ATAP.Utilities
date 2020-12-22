@@ -5,7 +5,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     // ToDo: Localize the string constants
 
     #region Settings File Names
-    public const string SettingsFileName = "GenerateProgramHostedServiceSettings
+    public const string SettingsFileName = "GenerateProgramHostedServiceSettings";
     public const string SettingsFileNameSuffix = "json";
     #endregion
     #region File Names
@@ -30,7 +30,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     public const string DBConnectionStringConfigRootKey = "DBConnectionString";
     public const string DBConnectionStringDefault = @"Server=ncat016;Database=ATAPUtilities;Integrated Security=true";
     public const string OrmLiteDialectProviderConfigRootKey = "ORMLiteDialectProvider";
-    public const string OrmLiteDialectProvider = "SqlServerOrmLiteDialectProvider";
+    public const string OrmLiteDialectProviderDefault = "SqlServerOrmLiteDialectProvider";
     #endregion
 
 

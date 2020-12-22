@@ -29,7 +29,7 @@
     <ProjectReference Include="..\ATAP.Utilities.CryptoCoin.Models\ATAP.Utilities.CryptoCoin.Models.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Enumerations\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.CryptoMiner.Interfaces\ATAP.Utilities.CryptoMiner.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Tcp\ATAP.Utilities.Tcp.csproj" />
+    <ProjectReference Include="..\ATAP.Services.TcpWithResilience\ATAP.Services.TcpWithResilience.csproj" />
   </ItemGroup>
- 
+
 </Project>

@@ -1,27 +1,27 @@
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGAssemblyGroupBasicConstructorResult {
-    string subDirectoryForGeneratedFiles { get; set; }
-    string baseNamespaceName { get; set; }
-    string gAssemblyGroupName { get; set; }
-    string gTitularAssemblyUnitName { get; set; }
-    string gTitularBaseCompilationUnitName { get; set; }
-    IGAssemblyGroup gAssemblyGroup { get; set; }
+    string SubDirectoryForGeneratedFiles { get; set; }
+    string BaseNamespaceName { get; set; }
+    string GAssemblyGroupName { get; set; }
+    string GTitularAssemblyUnitName { get; set; }
+    string GTitularBaseCompilationUnitName { get; set; }
+    IGAssemblyGroup GAssemblyGroup { get; set; }
     IGPatternReplacement gAssemblyGroupPatternReplacement { get; set; }
-    IGAssemblyUnit gTitularAssemblyUnit { get; set; }
-    IGPatternReplacement gTitularAssemblyUnitPatternReplacement { get; set; }
-    IGCompilationUnit gTitularDerivedCompilationUnit { get; set; }
-    IGPatternReplacement gTitularDerivedCompilationUnitPatternReplacement { get; set; }
-    IGCompilationUnit gTitularBaseCompilationUnit { get; set; }
-    IGPatternReplacement gTitularBaseCompilationUnitPatternReplacement { get; set; }
-    IGNamespace gNamespaceBase { get; set; }
-    IGNamespace gNamespaceDerived { get; set; }
-    IGClass gClassBase { get; set; }
-    IGClass gClassDerived { get; set; }
-    IGMethod gPrimaryConstructorBase { get; set; }
+    IGAssemblyUnit GTitularAssemblyUnit { get; set; }
+    IGPatternReplacement GTitularAssemblyUnitPatternReplacement { get; set; }
+    IGCompilationUnit GTitularDerivedCompilationUnit { get; set; }
+    IGPatternReplacement GTitularDerivedCompilationUnitPatternReplacement { get; set; }
+    IGCompilationUnit GTitularBaseCompilationUnit { get; set; }
+    IGPatternReplacement GTitularBaseCompilationUnitPatternReplacement { get; set; }
+    IGNamespace GNamespaceBase { get; set; }
+    IGNamespace GNamespaceDerived { get; set; }
+    IGClass GClassBase { get; set; }
+    IGClass GClassDerived { get; set; }
+    IGMethod GPrimaryConstructorBase { get; set; }
     IGAssemblyUnit gTitularInterfaceAssemblyUnit { get; set; }
-    IGCompilationUnit gTitularInterfaceDerivedCompilationUnit { get; set; }
-    IGCompilationUnit gTitularInterfaceBaseCompilationUnit { get; set; }
-    IGInterface gTitularInterfaceDerivedInterface { get; set; }
-    IGInterface gTitularInterfaceBaseInterface { get; set; }
+    IGCompilationUnit GTitularInterfaceDerivedCompilationUnit { get; set; }
+    IGCompilationUnit GTitularInterfaceBaseCompilationUnit { get; set; }
+    IGInterface GTitularInterfaceDerivedInterface { get; set; }
+    IGInterface GTitularInterfaceBaseInterface { get; set; }
   }
 }

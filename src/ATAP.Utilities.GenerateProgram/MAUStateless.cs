@@ -13,7 +13,7 @@ namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     public static IGAssemblyGroup MAUStateless(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true) {
-      return MAUStateless(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, 
+      return MAUStateless(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces,
         new GPatternReplacement());
     }
     public static IGAssemblyGroup MAUStateless(string gAssemblyGroupName,
@@ -27,7 +27,7 @@ namespace ATAP.Utilities.GenerateProgram {
         subDirectoryForGeneratedFiles,
         baseNamespaceName, hasInterfaces, _gPatternReplacement);
       #region Initial StateMachine Configuration
-      gAssemblyGroupBasicConstructorResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
+      gAssemblyGroupBasicConstructorResult.GPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
         @"
               WaitingForARequestToGenerateAStateMachineConfiguration -> GeneratingAStateMachineConfiguration [label = ""RequestToGenerateAStateMachineReceived""]
               GeneratingAStateMachineConfiguration -> WaitingForARequestToGenerateAStateMachineConfiguration [label = ""ReadyToReturnAStateMachineConfigurationMethod""]
@@ -44,12 +44,12 @@ namespace ATAP.Utilities.GenerateProgram {
       #region Add UsingGroups specific to the Titular Base CompilationUnit
       var gUsingGroup =
         new GUsingGroup(
-          $"UsingGroup specific to {gAssemblyGroupBasicConstructorResult.gTitularBaseCompilationUnit.GName}");
+          $"UsingGroup specific to {gAssemblyGroupBasicConstructorResult.GTitularBaseCompilationUnit.GName}");
       foreach (var gName in new List<string>() {"Stateless", "System.Collections.Generic",}) {
         var gUsing = new GUsing(gName);
         gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
       }
-      gAssemblyGroupBasicConstructorResult.gTitularBaseCompilationUnit.GUsingGroups
+      gAssemblyGroupBasicConstructorResult.GTitularBaseCompilationUnit.GUsingGroups
         .Add(gUsingGroup.Philote, gUsingGroup);
       #endregion
       #endregion
@@ -60,7 +60,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #region Add additional classes provided by this library to the Titular Base CompilationUnit
       #region Add the StateConfiguration Class provided by this library to the Titular Base CompilationUnits
       //var gClass = MCreateStateConfigurationClass();
-      //mCreateAssemblyGroupResult.gNamespaceBase.GClasss.Add(gClass.Philote, gClass);
+      //mCreateAssemblyGroupResult.GNamespaceBase.GClasss.Add(gClass.Philote, gClass);
       #endregion
       #endregion
       #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit
@@ -71,7 +71,7 @@ namespace ATAP.Utilities.GenerateProgram {
             new GBody(new List<string>() {"<PackageReference Include=\"Stateless\" />",})),
         }
       ) {
-        gAssemblyGroupBasicConstructorResult.gTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
+        gAssemblyGroupBasicConstructorResult.GTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
           .Add(o.Philote, o);
       }
       #endregion
@@ -99,7 +99,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #region Finalize the Assemblygroup
       GAssemblyGroupCommonFinalizer(gAssemblyGroupBasicConstructorResult);
       #endregion
-      return gAssemblyGroupBasicConstructorResult.gAssemblyGroup;
+      return gAssemblyGroupBasicConstructorResult.GAssemblyGroup;
     }
 /*******************************************************************************/
 /*******************************************************************************/

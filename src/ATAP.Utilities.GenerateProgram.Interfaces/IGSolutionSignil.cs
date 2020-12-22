@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
-  public class IGSolutionSignil {
+  public interface IGSolutionSignil {
     public bool HasPropsAndTargets { get; init; }
     public bool HasEditorCofig { get; init; }
     public bool HasArtefacts { get; init; }

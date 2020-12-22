@@ -12,7 +12,7 @@ namespace ATAP.Utilities.GenerateProgram {
   public static partial class GMacroExtensions {
     public static IGAssemblyGroup MConsoleSourceGHS(string gAssemblyGroupName,
       string subDirectoryForGeneratedFiles = default, string baseNamespaceName = default, bool hasInterfaces = true) {
-      return MConsoleSourceGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces, 
+      return MConsoleSourceGHS(gAssemblyGroupName, subDirectoryForGeneratedFiles, baseNamespaceName, hasInterfaces,
         new GPatternReplacement());
     }
     public static IGAssemblyGroup MConsoleSourceGHS(string gAssemblyGroupName,
@@ -23,7 +23,7 @@ namespace ATAP.Utilities.GenerateProgram {
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, hasInterfaces, _gPatternReplacement);
       #region Initial StateMachine Configuration
-      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
+      mCreateAssemblyGroupResult.GPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
     @"
           WaitingForInitialization ->BlockingOnConsoleInReadLineAsync [label = ""InitializationCompleteReceived""]
           BlockingOnConsoleInReadLineAsync -> ServiceFaulted [label = ""ExceptionCaught""]
@@ -38,12 +38,12 @@ namespace ATAP.Utilities.GenerateProgram {
       #region Add UsingGroups specific to the Titular Base CompilationUnit
       var gUsingGroup =
         new GUsingGroup(
-          $"UsingGroup specific to {mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GName}");
+          $"UsingGroup specific to {mCreateAssemblyGroupResult.GTitularBaseCompilationUnit.GName}");
       foreach (var gName in new List<string>() {"System.Reactive.Linq", "System.Reactive.Concurrency",}) {
         var gUsing = new GUsing(gName);
         gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
       }
-      mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GUsingGroups
+      mCreateAssemblyGroupResult.GTitularBaseCompilationUnit.GUsingGroups
         .Add(gUsingGroup.Philote, gUsingGroup);
       #endregion
       #endregion
@@ -53,11 +53,11 @@ namespace ATAP.Utilities.GenerateProgram {
       var gMethodGroup =
         new GMethodGroup(
           gName:
-          $"MethodGroup specific to {mCreateAssemblyGroupResult.gClassBase.GName}");
+          $"MethodGroup specific to {mCreateAssemblyGroupResult.GClassBase.GName}");
       IGMethod gMethod;
       gMethod = CreateConsoleReadLineAsyncAsObservableMethod();
       gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
-      mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(gMethodGroup);
+      mCreateAssemblyGroupResult.GClassBase.AddMethodGroup(gMethodGroup);
       #endregion
       #region Add additional classes provided by this library to the Titular Base CompilationUnit
       #endregion
@@ -65,7 +65,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #region Add References used by both the Titular Derived and Titular Base CompilationUnits
       foreach (var o in new List<IGItemGroupInProjectUnit>() {ReactiveUtilitiesReferencesItemGroupInProjectUnit(),}
       ) {
-        mCreateAssemblyGroupResult.gTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
+        mCreateAssemblyGroupResult.GTitularAssemblyUnit.GProjectUnit.GItemGroupInProjectUnits
           .Add(o.Philote, o);
       }
       #endregion
@@ -95,7 +95,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #region Finalize the GHHS
       GAssemblyGroupGHHSFinalizer(mCreateAssemblyGroupResult);
       #endregion
-      return mCreateAssemblyGroupResult.gAssemblyGroup;
+      return mCreateAssemblyGroupResult.GAssemblyGroup;
     }
     /*******************************************************************************/
     /*******************************************************************************/

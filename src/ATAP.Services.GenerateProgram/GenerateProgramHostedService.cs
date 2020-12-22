@@ -66,9 +66,9 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     /// <param name="hostApplicationLifetime"></param>
     public GenerateProgramHostedService(ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration hostedServiceConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
       this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
-      //exceptionLocalizer = stringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "GenerateProgramHostedService");
-      //debugLocalizer = stringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "GenerateProgramHostedService");
-      //uiLocalizer = stringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "GenerateProgramHostedService");
+      //exceptionLocalizer = stringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "Resources");
+      //debugLocalizer = stringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "Resources");
+      //uiLocalizer = stringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "Resources");
       this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       this.logger = loggerFactory.CreateLogger<GenerateProgramHostedService>();
       // this.logger = (Logger<GenerateProgramHostedService>) ATAP.Utilities.Logging.LogProvider.GetLogger("GenerateProgramHostedService");
@@ -86,7 +86,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       this.ServiceData = new GenerateProgramHostedServiceData(
       ){
       // The following parameters are for each invocation of a GenerateProgramAsync call
-      // invoking a GenerateProgram call may override any of these values, but absent an override, these are the 
+      // invoking a GenerateProgram call may override any of these values, but absent an override, these are the
       //  default values that will be used for every GenerateProgramAsync call.
       //  the default values come from the ICOnfiguration hostedServiceConfiguration that is DI injected at service startup
       /// ToDo: Security: ensure the paths do not go above their Base directory
@@ -105,7 +105,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       this.ServiceData.PersistenceFilePaths = new string[1] { ServiceData.TemporaryDirectoryBase + ServiceData.PersistenceMessageFileRelativePath};
       this.ServiceData.PickAndSaveFilePaths = new string[1] { ServiceData.TemporaryDirectoryBase + ServiceData.PickAndSaveMessageFileRelativePath};
       // ToDo ?: setup placeholders for the ProgressReport object
-      // ToDo ?: setup placeholders for the Persistence(File) 
+      // ToDo ?: setup placeholders for the Persistence(File)
       // ToDo ?: setup placeholders for the PickAndSave object
       // ToDo ?: setup placeholders for the DBConnection object
       // ToDo ?: setup placeholders for the IATAPOrm shim object
@@ -139,7 +139,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
 
     public async Task<IGGenerateProgramResult> GenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil, IGGenerateProgramProgress generateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
       IGGenerateProgramResult gGenerateProgramResult;
-      // 
+      //
       #region Method timing setup
       Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
       stopWatch.Start();
@@ -164,7 +164,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
 
     #region StartAsync and StopAsync methods as promised by IHostedService when IHostLifetime is ConsoleLifetime  // ToDo:, see if this is called by service and serviced
     /// <summary>
-    /// Called to start the service. 
+    /// Called to start the service.
     /// </summary>
     /// <param name="genericHostsCancellationToken"></param> Used to signal FROM the GenericHost TO this IHostedService a request for cancelllation
     /// <returns></returns>
@@ -173,7 +173,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       #region create linkedCancellationSource and token
       // Combine the cancellation tokens,so that either can stop this HostedService
       //LinkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(InternalCancellationToken, genericHostsCancellationToken);
-  
+
       #endregion
       #region Register actions with the CancellationToken (s)
       genericHostsCancellationToken.Register(() => logger.LogDebug(debugLocalizer["{0} {1} genericHostsCancellationToken has signalled stopping."], "GenerateProgramHostedService", "genericHostsCancellationToken"));
@@ -212,19 +212,19 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     #region Event Handlers registered with the HostApplicationLifetime events
     // Registered as a handler with the HostApplicationLifetime.ApplicationStarted event
     private void OnStarted() {
-      // Post-startup code goes here  
+      // Post-startup code goes here
     }
 
     // Registered as a handler with the HostApplicationLifetime.Application event
     // This is NOT called if the ConsoleWindows ends when the connected browser (browser opened by LaunchSettings when starting with debugger) is closed (not applicable to ConsoleLifetime generic hosts
     // This IS called if the user hits ctrl-C in the ConsoleWindow
     private void OnStopping() {
-      // On-stopping code goes here  
+      // On-stopping code goes here
     }
 
     // Registered as a handler with the HostApplicationLifetime.ApplicationStarted event
     private void OnStopped() {
-      // Post-stopped code goes here  
+      // Post-stopped code goes here
     }
 
     // Called by base.Stop. This may be called multiple times by service Stop, ApplicationStopping, and StopAsync.

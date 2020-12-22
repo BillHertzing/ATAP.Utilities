@@ -22,7 +22,7 @@ namespace ATAP.Utilities.GenerateProgram {
       var mCreateAssemblyGroupResult = MAssemblyGroupGHHSConstructor(gAssemblyGroupName, subDirectoryForGeneratedFiles,
         baseNamespaceName, hasInterfaces, _gPatternReplacement);
       #region Initial StateMachine Configuration
-      mCreateAssemblyGroupResult.gPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
+      mCreateAssemblyGroupResult.GPrimaryConstructorBase.GStateConfiguration.GDOTGraphStatements.Add(
         @"
               WaitingForInitialization -> WaitingForARequestForAFileSystemWatcher [label = ""InitializationCompleteReceived""]
               WaitingForARequestForAFileSystemWatcher -> RespondingToARequestForAFileSystemWatcher [label = ""FileSystemWatcherRequested""]
@@ -35,33 +35,33 @@ namespace ATAP.Utilities.GenerateProgram {
             "
       );
       #endregion
-      #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits 
+      #region Add UsingGroups to the Titular Derived and Titular Base CompilationUnits
       #region Add UsingGroups common to both the Titular Derived and Titular Base CompilationUnits
       var gUsingGroup =
         new GUsingGroup(
-          $"UsingGroup common to both  {mCreateAssemblyGroupResult.gTitularDerivedCompilationUnit.GName} and {mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GName}");
+          $"UsingGroup common to both  {mCreateAssemblyGroupResult.GTitularDerivedCompilationUnit.GName} and {mCreateAssemblyGroupResult.GTitularBaseCompilationUnit.GName}");
       foreach (var gName in new List<string>() {
         "System.IO"
       }) {
         var gUsing = new GUsing(gName);
         gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
       }
-      mCreateAssemblyGroupResult.gTitularDerivedCompilationUnit.GUsingGroups
+      mCreateAssemblyGroupResult.GTitularDerivedCompilationUnit.GUsingGroups
         .Add(gUsingGroup.Philote, gUsingGroup);
-      mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GUsingGroups
+      mCreateAssemblyGroupResult.GTitularBaseCompilationUnit.GUsingGroups
         .Add(gUsingGroup.Philote, gUsingGroup);
       #endregion
       #region Add UsingGroups specific to the Titular Base CompilationUnit
       gUsingGroup =
         new GUsingGroup(
-          $"UsingGroup specific to {mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GName}");
+          $"UsingGroup specific to {mCreateAssemblyGroupResult.GTitularBaseCompilationUnit.GName}");
       foreach (var gName in new List<string>() {
         "System.IO"
       }) {
         var gUsing = new GUsing(gName);
         gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
       }
-      mCreateAssemblyGroupResult.gTitularBaseCompilationUnit.GUsingGroups
+      mCreateAssemblyGroupResult.GTitularBaseCompilationUnit.GUsingGroups
         .Add(gUsingGroup.Philote, gUsingGroup);
       #endregion
       #endregion
@@ -71,13 +71,13 @@ namespace ATAP.Utilities.GenerateProgram {
       var gMethodGroup =
         new GMethodGroup(
           gName:
-          $"MethodGroup specific to {mCreateAssemblyGroupResult.gClassBase.GName}");
+          $"MethodGroup specific to {mCreateAssemblyGroupResult.GClassBase.GName}");
       var gMethod = MCreateRequestAFileSystemWatcher();
       gMethodGroup.GMethods.Add(gMethod.Philote, gMethod);
-      mCreateAssemblyGroupResult.gClassBase.AddMethodGroup(gMethodGroup);
+      mCreateAssemblyGroupResult.GClassBase.AddMethodGroup(gMethodGroup);
       #endregion
 
-      #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit 
+      #region Add References used by the Titular Derived and Titular Base CompilationUnits to the ProjectUnit
       #region Add References used by both the Titular Derived and Titular Base CompilationUnits
       #endregion
       #region Add References unique to the Titular Base CompilationUnit
@@ -89,15 +89,15 @@ namespace ATAP.Utilities.GenerateProgram {
       #region Add UsingGroups for the Titular Derived Interface and Titular Base Interface
       #region Add UsingGroups common to both the Titular Derived Interface and the Titular Base Interface
       gUsingGroup =
-        new GUsingGroup($"UsingGroups common to both {mCreateAssemblyGroupResult.gTitularInterfaceDerivedCompilationUnit.GName} and {mCreateAssemblyGroupResult.gTitularInterfaceBaseCompilationUnit.GName}");
+        new GUsingGroup($"UsingGroups common to both {mCreateAssemblyGroupResult.GTitularInterfaceDerivedCompilationUnit.GName} and {mCreateAssemblyGroupResult.GTitularInterfaceBaseCompilationUnit.GName}");
       foreach (var gName in new List<string>() {
         "System.IO",
       }) {
         var gUsing = new GUsing(gName);
         gUsingGroup.GUsings.Add(gUsing.Philote, gUsing);
       }
-      mCreateAssemblyGroupResult.gTitularInterfaceDerivedCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
-      mCreateAssemblyGroupResult.gTitularInterfaceBaseCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
+      mCreateAssemblyGroupResult.GTitularInterfaceDerivedCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
+      mCreateAssemblyGroupResult.GTitularInterfaceBaseCompilationUnit.GUsingGroups.Add(gUsingGroup.Philote, gUsingGroup);
       #endregion
       #region Add UsingGroups specific to the Titular Base Interface
       #endregion
@@ -113,7 +113,7 @@ namespace ATAP.Utilities.GenerateProgram {
       #region Finalize the GHHS
       GAssemblyGroupGHHSFinalizer(mCreateAssemblyGroupResult);
       #endregion
-      return mCreateAssemblyGroupResult.gAssemblyGroup;
+      return mCreateAssemblyGroupResult.GAssemblyGroup;
     }
     /*******************************************************************************/
     /*******************************************************************************/

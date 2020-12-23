@@ -40,15 +40,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ATAP.Console.Console02.StringConstants\ATAP.Console.Console02.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.DataBaseManagement\ATAP.Utilities.DatabaseManagement.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Hardware.Extensions\ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.ProcessInfo.Models\ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.ComputerInventory.Software.Enumerations\ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
-    <ProjectReference Include="..\ATAP.Console.Console02.StringConstants\ATAP.Console.Console02.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.GenericHost.Extensions.Interfaces\ATAP.Utilities.GenericHost.Extensions.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.GenericHost.Extensions\ATAP.Utilities.GenericHost.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Services.GenerateProgram\GenerateProgram.csproj" />
@@ -61,6 +58,7 @@
     <ProjectReference Include="..\ATAP.Services.Timers.Interfaces\Timers.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Services.Timers\Timers.csproj" />
     <ProjectReference Include="..\ATAP.Services.GenerateProgram\ATAP.Services.GenerateProgram.csproj" />
+    <ProjectReference Include="..\ATAP.Services.GenerateProgram.StringConstants\ATAP.Services.GenerateProgram.StringConstantsc.sproj" />
   </ItemGroup>
 
 
@@ -134,7 +132,7 @@
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
-  <!-- Embed resx file information as embedded resources into the output of this assembly -->
+  <!-- Embed resx file information as embedded resources into the output of this assembly
   <ItemGroup>
     <EmbeddedResource Update="Resources\ConfigStrings.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -153,8 +151,8 @@
       <LastGenOutput>UIMessages.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-
-  <!-- Create Designer Files during design time modifications of resx files, to support interactive Resources population/viewing inside Visual Studio -->
+ -->
+  <!-- Create Designer Files during design time modifications of resx files, to support interactive Resources population/viewing inside Visual Studio
   <ItemGroup>
     <Compile Update="Resources\ConfigStrings.Designer.cs">
       <DesignTime>True</DesignTime>
@@ -177,5 +175,5 @@
       <DependentUpon>UIMessages.resx</DependentUpon>
     </Compile>
   </ItemGroup>
-
+  -->
 </Project>

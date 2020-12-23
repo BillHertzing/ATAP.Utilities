@@ -5,9 +5,10 @@
 
   <!-- ItemGroup for automatically generating Designer files and embedding resources in an assembly -->
   <!-- Attribution: https://stackoverflow.com/questions/46584499/how-to-add-a-glob-for-resx-files-for-new-sdk-csproj-file -->
-  <!-- ToDo: Make the Generator Value conditional, iif run under VS, use PublicResXFileCodeGenerator or ResXFileCodeGenerator. 
+  <!-- ToDo: Make the Generator Value conditional, iif run under VS, use PublicResXFileCodeGenerator or ResXFileCodeGenerator.
           if not run under CS (for example dotnet build or dotnet msbuild, use resgen)
   -->
+  <!--
   <ItemGroup>
     <Compile Include="**\*.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -19,7 +20,7 @@
       <LastGenOutput>$([System.String]::Copy('%(FileName)')).Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-
+-->
   <Target Name="Resources">
   <GenerateResource
     Sources="@(Resx)"
@@ -29,7 +30,7 @@
         ItemName="Resources"/>
 </GenerateResource>
 </Target>
-  
+
 
   <!-- Targets for multiframework publishing courtesy of
     this stackoverflow answer https://stackoverflow.com/questions/43947599/how-to-publish-for-all-target-frameworks

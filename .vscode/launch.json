@@ -4,15 +4,15 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
+
         {
             "name": ".NET Core Launch (console)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/ATAP.Console.Console01/bin/Debug/net5.0/ATAP.Utilities.Console01.dll",
+            "program": "${workspaceFolder}/src/ATAP.Console.Console02/bin/Debug/net5.0/ATAP.Console.Console02.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/src/ATAP.Console.Console01/bin/Debug/net5.0/",
+            "cwd": "${workspaceFolder}/src/ATAP.Console.Console02/bin/Debug/net5.0/",
             "console": "internalConsole",
             "stopAtEntry": true
         },

@@ -18,10 +18,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
 #if TRACE
   [ETWLogAttribute]
 #endif
-  public partial class GenerateProgramHostedServiceData : IGenerateProgramHostedServiceData {
-
-    public IGGenerateProgramResult GGenerateProgramResult { get; set; }
-
+  public partial class GInvokeGenerateCodeSignil : IGInvokeGenerateCodeSignil {
     public IGAssemblyGroupSignil? GAssemblyGroupSignil { get; set; }
     public IGGlobalSettingsSignil? GGlobalSettingsSignil { get; set; }
     public IGSolutionSignil? GSolutionSignil { get; set; }
@@ -34,17 +31,36 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     public string TemporaryDirectoryBase { get; set; }
     public string PersistenceMessageFileRelativePath { get; set; }
     public string[] PersistenceFilePaths { get; set; }
+
     public string PickAndSaveMessageFileRelativePath { get; set; }
     public string[] PickAndSaveFilePaths { get; set; }
+    IPersistence<IInsertResultsAbstract>? Persistence { get; set; }
+    IPickAndSave<IInsertResultsAbstract>? PickAndSave { get; set; }
     public string DBConnectionString { get; set; }
     public string OrmLiteDialectProviderStringDefault { get; set; }
-    public IEntryPoints EntryPoints {get;set;}
-    public GenerateProgramHostedServiceData() {
-      NonDisposedCount = 0;
-    }
-
-    public GenerateProgramHostedServiceData(IGGenerateProgramResult gGenerateProgramResult, IGAssemblyGroupSignil? gAssemblyGroupSignil, IGGlobalSettingsSignil? gGlobalSettingsSignil, IGSolutionSignil? gSolutionSignil, string artifactsDirectoryBase, string artifactsFileRelativePath, string[] artifactsFilePaths, bool enablePersistence, bool enablePickAndSave, bool enableProgress, string temporaryDirectoryBase, string persistenceMessageFileRelativePath, string[] persistenceFilePaths, string pickAndSaveMessageFileRelativePath, string[] pickAndSaveFilePaths, string dBConnectionString, string ormLiteDialectProviderStringDefault, IEntryPoints entryPoints, int nonDisposedCount, bool disposedValue) {
-      GGenerateProgramResult = gGenerateProgramResult;
+    public IEntryPoints EntryPoints { get; set; }
+    public GInvokeGenerateCodeSignil(
+      IGAssemblyGroupSignil? gAssemblyGroupSignil = default
+      , IGGlobalSettingsSignil? gGlobalSettingsSignil = default
+      , IGSolutionSignil? gSolutionSignil = default
+      , string artifactsDirectoryBase = default
+      , string artifactsFileRelativePath = default
+      , string[] artifactsFilePaths = default
+      , bool enablePersistence = default
+      , bool enablePickAndSave = default
+      , bool enableProgress = default
+      , string temporaryDirectoryBase = default
+      , string persistenceMessageFileRelativePath = default
+      , string[] persistenceFilePaths = default
+      , string pickAndSaveMessageFileRelativePath = default
+      , string[] pickAndSaveFilePaths = default
+      , IPersistence<IInsertResultsAbstract>? persistence = default
+      , IPickAndSave<IInsertResultsAbstract>? pickAndSave = default
+      , string dBConnectionString = default
+      , string ormLiteDialectProviderStringDefault = default
+      , IEntryPoints entryPoints = default
+      ) {
+      // ToDo: use the ATAP normal method of parameter->Property settings
       GAssemblyGroupSignil = gAssemblyGroupSignil;
       GGlobalSettingsSignil = gGlobalSettingsSignil;
       GSolutionSignil = gSolutionSignil;
@@ -62,8 +78,19 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       DBConnectionString = dBConnectionString;
       OrmLiteDialectProviderStringDefault = ormLiteDialectProviderStringDefault;
       EntryPoints = entryPoints;
-      NonDisposedCount = nonDisposedCount;
-      this.disposedValue = disposedValue;
+      Persistence = persistence;
+    }
+  }
+
+
+
+  public partial class GenerateProgramHostedServiceData : IGenerateProgramHostedServiceData {
+
+    public IList<(IGInvokeGenerateCodeSignil, IGGenerateProgramResult)> GenerateCodeTasks { get; init; }
+
+    public GenerateProgramHostedServiceData() {
+      NonDisposedCount = 0;
+      GenerateCodeTasks = new List<(IGInvokeGenerateCodeSignil, IGGenerateProgramResult)>();
     }
 
     #region IDisposable Support
@@ -76,6 +103,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
         if (disposing) {
           this.Dispose();
         }
+        // ToDo: Dispose each running task of the GenerateCodeTasks
 
         // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
         // TODO: set large fields to null.

@@ -5,7 +5,7 @@ namespace ATAP.Utilities.GenerateProgram
 {
   public static partial class RenderExtensions
   {
-  //  public static StringBuilder RenderInterfaceMethodDeclarationStringBuilder(this StringBuilder sb, GMethodDeclaration gMethodDeclaration, StringBuilder indent, string eol, CancellationToken? ct = default) {
+  //  public static StringBuilder RenderInterfaceMethodDeclarationStringBuilder(this StringBuilder sb, GMethodDeclaration gMethodDeclaration, StringBuilder indent, string eol, CancellationTokenFromCaller? ct = default) {
   //    ct?.ThrowIfCancellationRequested();
   //    sb.Append($"{indent}{gMethodDeclaration.GVisibility} ");
   //    if (gMethodDeclaration.IsStatic!=null && (bool)gMethodDeclaration.IsStatic) {

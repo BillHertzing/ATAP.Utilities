@@ -330,7 +330,7 @@ namespace ATAP.Utilities.GenerateProgram {
         gAssemblyGroupPatternReplacement = gAssemblyGroupPatternReplacement,
         GTitularAssemblyUnit = gTitularAssemblyUnit,
         GTitularAssemblyUnitPatternReplacement = gTitularAssemblyUnitPatternReplacement,
-        gTitularDerivedCompilationUnit = gTitularDerivedCompilationUnit,
+        GTitularDerivedCompilationUnit = gTitularDerivedCompilationUnit,
         GTitularDerivedCompilationUnitPatternReplacement = gTitularDerivedCompilationUnitPatternReplacement,
         GTitularBaseCompilationUnit = gTitularBaseCompilationUnit,
         GTitularBaseCompilationUnitPatternReplacement = gTitularBaseCompilationUnitPatternReplacement,

@@ -34,7 +34,6 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     string[] PickAndSaveFilePaths { get; set; }
     string DBConnectionString { get; set; }
     string OrmLiteDialectProviderStringDefault { get; set; }
-
     IEntryPoints EntryPoints {get;set;}
 
   }

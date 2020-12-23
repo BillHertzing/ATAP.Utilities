@@ -29,11 +29,11 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 
-//using ComputerInventoryHardwareStaticExtensions = ATAP.Utilities.ComputerInventory.Hardware.StaticExtensions;
 //using PersistenceStaticExtensions = ATAP.Utilities.Persistence.Extensions;
 using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
 using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
 using appStringConstants = ATAP.Console.Console02.Console02StringConstants;
+using GenerateProgramServiceStringConstants = ATAP.Services.HostedService.GenerateProgramStringConstants;
 
 namespace ATAP.Console.Console02 {
   // This file contains the "boilerplate" code that creates the Background Service
@@ -173,7 +173,7 @@ namespace ATAP.Console.Console02 {
     }
     #endregion
     #region PrettyPrintIGGenerateProgramResult
-    // Format an instance of GenerateProgramResultsResults for UI presentation
+    // Format an instance of GenerateProgramResults for UI presentation
     // // Uses the CurrentCulture
     void BuildGenerateProgramResults(StringBuilder mesg, IGGenerateProgramResult gGenerateProgramResult, Stopwatch? stopwatch) {
       mesg.Clear();
@@ -244,23 +244,40 @@ namespace ATAP.Console.Console02 {
       #region tempout
       switch (inputLine) {
         case "1":
-          // ToDo: Get these from the Console02 application configuration 
+          // ToDo: Get these from the Console02 application configuration
           // ToDo: Get these from the database or from a configurationRoot (priority?)
+          // ToDo: should validate in case the appStringConstants assembly is messed up?
+                   // ToDo: should validate in case the GenerateProgramServiceStringConstants assembly is messed up?
+          // Create the instance of the GGenerateCodeSignil
+          var gGenerateCodeSignil = new GGenerateCodeSignil(
+            gAssemblyGroupSignil : new GAssemblyGroupSignil()
+            , gGlobalSettingsSignil :new GGlobalSettingsSignil()
+      , gSolutionSignil : new GSolutionSignil()
+        ,artifactsDirectoryBase: appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseDefault)
+        , artifactsFileRelativePath: appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsFileRelativePathhDefault)
+       , artifactsFilePaths : default
+       , enablePersistence :appConfiguration.GetValue<bool>(appStringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(appStringConstants.EnablePersistenceBoolDefault))
+       , enablePickAndSave :enablePickAndSave = appConfiguration.GetValue<bool>(appStringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(appStringConstants.EnablePickAndSaveBoolDefault))
+       , enableProgress : appConfiguration.GetValue<bool>(appStringConstants.EnableProgressBoolConfigRootKey, bool.Parse(appStringConstants.EnableProgressBoolDefault))
+       , temporaryDirectoryBase :appConfiguration.GetValue<string>(appStringConstants.TemporaryDirectoryBaseConfigRootKey, appStringConstants.TemporaryDirectoryBaseDefault)
+       , persistenceMessageFileRelativePath :hostedServiceConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathDefault)
+       , persistenceFilePaths : default
+       , pickAndSaveMessageFileRelativePath :hostedServiceConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathDefault)
+       , pickAndSaveFilePaths : default
+       , persistence :default
+       , pickAndSave :default
+      , dBConnectionString : hostedServiceConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.DBConnectionStringConfigRootKey, GenerateProgramServiceStringConstants.DBConnectionStringDefault)
+       , ormLiteDialectProviderStringDefault : hostedServiceConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.OrmLiteDialectProviderConfigRootKey, GenerateProgramServiceStringConstants.OrmLiteDialectProviderDefault)
+       , entryPoints :default
+
+
+          );
           string GenerateProgramDBConnectionString = "";
           Philote<GAssemblyGroup> assemblyGroupPhilote = new Philote<GAssemblyGroup>();
           Philote<GSolutionGroupSignil> solutionGroupSignilPhilote = new Philote<GSolutionGroupSignil>();
           Philote<GGlobalCreateBuildtestDeployKVPs> gGlobalCreateBuildtestDeployKVPsPhilote = new Philote<GGlobalCreateBuildtestDeployKVPs>();
-          var enableProgress = appConfiguration.GetValue<bool>(appStringConstants.EnableProgressBoolConfigRootKey, bool.Parse(appStringConstants.EnableProgressBoolDefault));// ToDo: should validate in case the appStringConstants assembly is messed up?
-          // var enablePersistence = appConfiguration.GetValue<bool>(appStringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(appStringConstants.EnablePersistenceBoolDefault));// ToDo: should validate in case the appStringConstants assembly is messed up?
-          // var enablePickAndSave = appConfiguration.GetValue<bool>(appStringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(appStringConstants.EnablePickAndSaveBoolDefault));// ToDo: should validate in case the appStringConstants assembly is messed up?
-          var temporaryDirectoryBase = appConfiguration.GetValue<string>(appStringConstants.TemporaryDirectoryBaseConfigRootKey, appStringConstants.TemporaryDirectoryBaseDefault);
-          // var WithPersistenceNodeFileRelativePath = appConfiguration.GetValue<string>(appStringConstants.WithPersistenceNodeFileRelativePathConfigRootKey, appStringConstants.WithPersistenceNodeFileRelativePathDefault);
-          // var WithPersistenceEdgeFileRelativePath = appConfiguration.GetValue<string>(appStringConstants.WithPersistenceEdgeFileRelativePathConfigRootKey, appStringConstants.WithPersistenceEdgeFileRelativePathDefault);
-          // var filePathsPersistence = new string[2] { temporaryDirectoryBase + WithPersistenceNodeFileRelativePath, temporaryDirectoryBase + WithPersistenceEdgeFileRelativePath };
-          // var WithPickAndSaveNodeFileRelativePath = appConfiguration.GetValue<string>(appStringConstants.WithPickAndSaveNodeFileRelativePathConfigRootKey, appStringConstants.WithPickAndSaveNodeFileRelativePathDefault);
-          // var filePathsPickAndSave = new string[1] { temporaryDirectoryBase + WithPickAndSaveNodeFileRelativePath };
 
-          mesg.Append(uiLocalizer["Running GenerateProgram Function on the AssemblyGroupKey {0}, with GlobalSettingsKey {1} and SolutionSignilKey {2}", "Console02Mechanical", "ATAPStandardGlobalSettingsKey", "ATAPStandardGSolutionSignilKey"]);
+          mesg.Append(uiLocalizer["Running GenerateProgram Function on the AssemblyGroupSignil {0}, with GlobalSettingsKey {1} and SolutionSignilKey {2}", "Console02Mechanical", "ATAPStandardGlobalSettingsKey", "ATAPStandardGSolutionSignilKey"]);
 
           #region Write the mesg to stdout
           using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
@@ -298,13 +315,13 @@ namespace ATAP.Console.Console02 {
             gGenerateProgramProgress = null;
           }
           #endregion
-          /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls 
+          /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls
 
           #region PersistenceViaFiles setup
-          // Ensure the Node and Edge files are empty and can be written to
+          // Ensure the Message file is empty and can be written to
           // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-          // ToDo: create a function that will create subdirectories if needed to fulfill path, and use that function when creating the temp files
-          //ToDo: add exception handling if the setup function fails
+          // ToDo: create a function variation that will create subdirectories if needed to fulfill path, and use that function when creating the temp files
+          // ToDo: add exception handling if the setup function fails
           ISetupViaFileResults setupResultsPersistence;
           try {
             setupResultsPersistence = PersistenceStaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePathsPersistence));
@@ -357,9 +374,9 @@ namespace ATAP.Console.Console02 {
           Persistence<IInsertResultsAbstract> persistence = new Persistence<IInsertResultsAbstract>(insertFunc);
           #endregion
           */
-          /* PickAndSave is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls 
+          /* PickAndSave is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls
           #region PickAndSaveViaFiles setup
-          // Ensure the Archived files are empty and can be written to
+          // Ensure the Message file is empty and can be written to
           // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePathsPickAndSave as the argument
           // ToDo: create a function that will create subdirectories if needed to fulfill path, and use that function when creating the temp files
           ISetupViaFileResults setupResultsPickAndSave;
@@ -399,7 +416,7 @@ namespace ATAP.Console.Console02 {
           }
           // Create a pickFunc (AKA Predicate)
           var pickFuncPickAndSave = new Func<object, bool>((objToTest) => {
-            return FileIOExtensions.IsArchiveFile(objToTest.ToString()) || FileIOExtensions.IsMailFile(objToTest.ToString());
+            return objToTest.ToString() -match "Error";
           });
           // Create an insert Func
           var insertFuncPickAndSave = new Func<IEnumerable<IEnumerable<object>>, IInsertViaFileResults>((insertData) => {
@@ -425,6 +442,7 @@ namespace ATAP.Console.Console02 {
           */
 
           GGenerateProgramResult gGenerateProgramResult;
+
           #region Method timing setup
           Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
           stopWatch.Start();
@@ -441,10 +459,10 @@ namespace ATAP.Console.Console02 {
           }
           finally {
             // Dispose of the objects that need disposing
-            /* PickAndSave is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls 
+            /* PickAndSave is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls
             setupResultsPickAndSave.Dispose();
             */
-            /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls 
+            /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls
             setupResultsPersistence.Dispose();
             */
           }
@@ -636,7 +654,7 @@ namespace ATAP.Console.Console02 {
       #endregion
 
       // Create a list of choices
-      // ToDo: Get the list from the StringConstants, and localize them 
+      // ToDo: Get the list from the StringConstants, and localize them
       choices = new List<string>() { "1. Run ConvertFileSystemToGraphAsyncTask", "2. Subscribe ConsoleOut to ConsoleIn", "3. Unsubscribe ConsoleOut from ConsoleIn", "99: Quit" };
 
       #region Buildmenu

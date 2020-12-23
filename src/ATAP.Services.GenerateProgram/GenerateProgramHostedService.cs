@@ -85,9 +85,9 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       #region Create the serviceData and initialize it from the StringConstants or this service's ConfigRoot
       this.ServiceData = new GenerateProgramHostedServiceData(
       ){
-      // The following parameters are for each invocation of a GenerateProgramAsync call
+      // The following parameters are for each invocation of a InvokeGenerateProgramAsync call
       // invoking a GenerateProgram call may override any of these values, but absent an override, these are the
-      //  default values that will be used for every GenerateProgramAsync call.
+      //  default values that will be used for every InvokeGenerateProgramAsync call.
       //  the default values come from the IConfiguration hostedServiceConfiguration that is DI injected at service startup
       /// ToDo: Security: ensure the paths do not go above their Base directory
         ArtifactsDirectoryBase = hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, hostedServiceStringConstants.ArtifactsDirectoryBaseDefault), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
@@ -103,7 +103,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
         // Every invocation to GenerateProgram needs an instance of an EntryPoint class
       };
         // Every invocation to GenerateProgram needs an instance of an EntryPoint class
-      this.ServiceData.EntryPoints = new EntryPoints();
+      this.ServiceData.EntryPoints = new ATAP.Utilities.GenerateProgram.EntryPoints();
       this.ServiceData.ArtifactsFilePaths = new string[1] { ServiceData.ArtifactsDirectoryBase + ServiceData.ArtifactsFileRelativePath};
       this.ServiceData.PersistenceFilePaths = new string[1] { ServiceData.TemporaryDirectoryBase + ServiceData.PersistenceMessageFileRelativePath};
       this.ServiceData.PickAndSaveFilePaths = new string[1] { ServiceData.TemporaryDirectoryBase + ServiceData.PickAndSaveMessageFileRelativePath};
@@ -115,32 +115,8 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       #endregion
     }
     #endregion
-    public async Task<IGGenerateProgramResult> GenerateProgramAsync(IPhilote<IGAssemblyGroupSignil> gAssemblyGroupSignilKey, IPhilote<IGGlobalSettingsSignil> gGlobalSettingsSignilKey, IPhilote<IGSolutionSignil> gSolutionSignilKey, IGGenerateProgramProgress generateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
-      IGGenerateProgramResult gGenerateProgramResult;
-      #region Method timing setup
-      Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
-      stopWatch.Start();
-      #endregion
-      try {
-        Func<Task<IGGenerateProgramResult>> run = () => ATAP.Utilities.GenerateProgram.GenerateProgramAsync(gAssemblyGroupSignilKey, gGlobalSettingsSignilKey, gSolutionSignilKey, generateProgramProgress, persistence, pickAndSave, cancellationToken);
-        gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);
-        stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
-                          // ToDo: put the results someplace
-      }
-      catch (Exception) { // ToDo: define explicit exceptions to catch and report upon
-                          // ToDo: catch FileIO.FileNotFound, sometimes the file disappears
-        throw;
-      }
-      finally {
-        // Dispose of the objects that need disposing
-        setupResultsPickAndSave.Dispose();
-        setupResultsPersistence.Dispose();
-      }
-      return gGenerateProgramResult;
-    }
 
-
-    public async Task<IGGenerateProgramResult> GenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil, IGGenerateProgramProgress generateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
+    public IGGenerateProgramResult InvokeGenerateProgram(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil, IGGenerateProgramProgress generateProgramProgress = default, IPersistence<IInsertResultsAbstract> persistence = default, IPickAndSave<IInsertResultsAbstract> pickAndSave = default, CancellationToken cancellationToken = default) {
       IGGenerateProgramResult gGenerateProgramResult;
       //
       #region Method timing setup
@@ -148,7 +124,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       stopWatch.Start();
       #endregion
       try {
-        Func<Task<IGGenerateProgramResult>> run = () => ATAP.Utilities.GenerateProgram.GenerateProgramAsync(gAssemblyGroupSignil, gGlobalSettingsSignil, gSolutionSignil, generateProgramProgress, persistence, pickAndSave, cancellationToken);
+        Func<Task<IGGenerateProgramResult>> run = () => ServiceData.EntryPoints.GenerateProgramAsync(gAssemblyGroupSignil, gGlobalSettingsSignil, gSolutionSignil, generateProgramProgress, persistence, pickAndSave, cancellationToken);
         gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);
         stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
                           // ToDo: put the results someplace
@@ -164,6 +140,59 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       }
       return gGenerateProgramResult;
     }
+
+    // public async Task<IGGenerateProgramResult> InvokeGenerateProgramAsync(IPhilote<IGAssemblyGroupSignil> gAssemblyGroupSignilKey, IPhilote<IGGlobalSettingsSignil> gGlobalSettingsSignilKey, IPhilote<IGSolutionSignil> gSolutionSignilKey, IGGenerateProgramProgress generateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
+    //   IGGenerateProgramResult gGenerateProgramResult;
+    //   #region Method timing setup
+    //   Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
+    //   stopWatch.Start();
+    //   #endregion
+    //   try {
+    //     Func<Task<IGGenerateProgramResult>> run = () =>
+    //       ServiceData.EntryPoints.GenerateProgramAsync(gAssemblyGroupSignilKey, gGlobalSettingsSignilKey, gSolutionSignilKey, generateProgramProgress, persistence, pickAndSave, cancellationToken);
+
+    //     Task<IGGenerateProgramResult> completedTask = await Task.WhenAny(task, taskCompletionSource.Task);
+    //     gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);
+    //     stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
+    //                       // ToDo: put the results someplace
+    //   }
+    //   catch (Exception) { // ToDo: define explicit exceptions to catch and report upon
+    //                       // ToDo: catch FileIO.FileNotFound, sometimes the file disappears
+    //     throw;
+    //   }
+    //   finally {
+    //     // Dispose of the objects that need disposing
+    //     setupResultsPickAndSave.Dispose();
+    //     setupResultsPersistence.Dispose();
+    //   }
+    //   return completedTask;
+    // }
+
+
+    // public async Task<IGGenerateProgramResult> InvokeGenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil, IGGenerateProgramProgress generateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
+    //   IGGenerateProgramResult gGenerateProgramResult;
+    //   //
+    //   #region Method timing setup
+    //   Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
+    //   stopWatch.Start();
+    //   #endregion
+    //   try {
+    //     Func<Task<IGGenerateProgramResult>> run = () => ServiceData.EntryPoints.GenerateProgramAsync(gAssemblyGroupSignil, gGlobalSettingsSignil, gSolutionSignil, generateProgramProgress, persistence, pickAndSave, cancellationToken);
+    //     gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);
+    //     stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
+    //                       // ToDo: put the results someplace
+    //   }
+    //   catch (Exception) { // ToDo: define explicit exceptions to catch and report upon
+    //                       // ToDo: catch FileIO.FileNotFound, sometimes the file disappears
+    //     throw;
+    //   }
+    //   finally {
+    //     // Dispose of the objects that need disposing
+    //     setupResultsPickAndSave.Dispose();
+    //     setupResultsPersistence.Dispose();
+    //   }
+    //   return gGenerateProgramResult;
+    // }
 
     #region StartAsync and StopAsync methods as promised by IHostedService when IHostLifetime is ConsoleLifetime  // ToDo:, see if this is called by service and serviced
     /// <summary>

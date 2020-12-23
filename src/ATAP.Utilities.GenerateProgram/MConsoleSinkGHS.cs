@@ -131,7 +131,7 @@ namespace ATAP.Utilities.GenerateProgram {
     //static IGMethod MCreateWriteAsyncMethodInConsoleSink(string gAccessModifier = "") {
     //  var gMethodArgumentList = new List<IGArgument>() {
     //    new GArgument("mesg","string"),
-    //    new GArgument("ct","CancellationToken?")
+    //    new GArgument("ct","CancellationTokenFromCaller?")
     //  };
     //  var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
     //  foreach (var o in gMethodArgumentList) { gMethodArguments.Add(o.Philote, o); }
@@ -153,7 +153,7 @@ namespace ATAP.Utilities.GenerateProgram {
     //}
     static IList<IGMethod> MCreateWriteMethodInConsoleSink(string gAccessModifier = "") {
       var gMethodArgumentList = new List<IGArgument>() {
-        new GArgument("mesg", "string"), new GArgument("ct", "CancellationToken?")
+        new GArgument("mesg", "string"), new GArgument("ct", "CancellationTokenFromCaller?")
       };
       var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in gMethodArgumentList) {

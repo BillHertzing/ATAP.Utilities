@@ -38,8 +38,32 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     public string[] PickAndSaveFilePaths { get; set; }
     public string DBConnectionString { get; set; }
     public string OrmLiteDialectProviderStringDefault { get; set; }
+    public IEntryPoints EntryPoints {get;set;}
     public GenerateProgramHostedServiceData() {
       NonDisposedCount = 0;
+    }
+
+    public GenerateProgramHostedServiceData(IGGenerateProgramResult gGenerateProgramResult, IGAssemblyGroupSignil? gAssemblyGroupSignil, IGGlobalSettingsSignil? gGlobalSettingsSignil, IGSolutionSignil? gSolutionSignil, string artifactsDirectoryBase, string artifactsFileRelativePath, string[] artifactsFilePaths, bool enablePersistence, bool enablePickAndSave, bool enableProgress, string temporaryDirectoryBase, string persistenceMessageFileRelativePath, string[] persistenceFilePaths, string pickAndSaveMessageFileRelativePath, string[] pickAndSaveFilePaths, string dBConnectionString, string ormLiteDialectProviderStringDefault, IEntryPoints entryPoints, int nonDisposedCount, bool disposedValue) {
+      GGenerateProgramResult = gGenerateProgramResult;
+      GAssemblyGroupSignil = gAssemblyGroupSignil;
+      GGlobalSettingsSignil = gGlobalSettingsSignil;
+      GSolutionSignil = gSolutionSignil;
+      ArtifactsDirectoryBase = artifactsDirectoryBase;
+      ArtifactsFileRelativePath = artifactsFileRelativePath;
+      ArtifactsFilePaths = artifactsFilePaths;
+      EnablePersistence = enablePersistence;
+      EnablePickAndSave = enablePickAndSave;
+      EnableProgress = enableProgress;
+      TemporaryDirectoryBase = temporaryDirectoryBase;
+      PersistenceMessageFileRelativePath = persistenceMessageFileRelativePath;
+      PersistenceFilePaths = persistenceFilePaths;
+      PickAndSaveMessageFileRelativePath = pickAndSaveMessageFileRelativePath;
+      PickAndSaveFilePaths = pickAndSaveFilePaths;
+      DBConnectionString = dBConnectionString;
+      OrmLiteDialectProviderStringDefault = ormLiteDialectProviderStringDefault;
+      EntryPoints = entryPoints;
+      NonDisposedCount = nonDisposedCount;
+      this.disposedValue = disposedValue;
     }
 
     #region IDisposable Support

@@ -9,11 +9,11 @@ namespace ATAP.Utilities.GenerateProgram {
   //  StringBuilder Indent { get; set; }
   //  string IndentDelta { get; set; }
   //  string Eol { get; set; }
-  //  CancellationToken? Ct { get; set; }
+  //  CancellationTokenFromCaller? Ct { get; set; }
   //}
 
   //public class R1TopData : IR1TopData {
-  //  public R1TopData(StringBuilder indent, string indentDelta, string eol, CancellationToken ct = default) {
+  //  public R1TopData(StringBuilder indent, string indentDelta, string eol, CancellationTokenFromCaller ct = default) {
   //    Indent = indent ?? throw new ArgumentNullException(nameof(indent));
   //    IndentDelta = indentDelta ?? throw new ArgumentNullException(nameof(indentDelta));
   //    Eol = eol ?? throw new ArgumentNullException(nameof(eol));
@@ -23,7 +23,7 @@ namespace ATAP.Utilities.GenerateProgram {
   //  public StringBuilder Indent { get; set; }
   //  public string IndentDelta { get; set; }
   //  public string Eol { get; set; }
-  //  public CancellationToken? Ct { get; set; }
+  //  public CancellationTokenFromCaller? Ct { get; set; }
   //}
 
   public interface IR1Top {

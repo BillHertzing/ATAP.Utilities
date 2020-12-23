@@ -7,7 +7,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public static IGMethod MCreateStartAsyncMethod( string gAccessModifier = "") {
       var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in new List<IGArgument>() {
-        new GArgument("genericHostsCancellationToken", "CancellationToken"),
+        new GArgument("genericHostsCancellationToken", "CancellationTokenFromCaller"),
       }) {
         gMethodArguments.Add(o.Philote, o);
       }
@@ -21,13 +21,13 @@ namespace ATAP.Utilities.GenerateProgram {
         "  //linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, externalCancellationToken);",
         "  //GenericHostsCancellationToken = genericHostsCancellationToken;",
         "#endregion",
-        "#region Register actions with the CancellationToken (s)",
+        "#region Register actions with the CancellationTokenFromCaller (s)",
         "  //GenericHostsCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer[\"{0} {1} GenericHostsCancellationToken has signalled stopping.\"], \"FileSystemToObjectGraphService\", \"StartAsync\"));",
         "  //internalCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer[\"{0} {1} internalCancellationToken has signalled stopping.\"], \"FileSystemToObjectGraphService\", \"internalCancellationToken\"));",
         "  //linkedCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer[\"{0} {1} GenericHostsCancellationToken has signalled stopping.\"], \"FileSystemToObjectGraphService\",\"GenericHostsCancellationToken\"));",
         "#endregion",
         "#region Register local event handlers with the IHostApplicationLifetime's events",
-        "  // Register the methods defined in this class with the three CancellationToken properties found on the IHostApplicationLifetime instance passed to this class in it's .ctor",
+        "  // Register the methods defined in this class with the three CancellationTokenFromCaller properties found on the IHostApplicationLifetime instance passed to this class in it's .ctor",
         "  HostApplicationLifetime.ApplicationStarted.Register(OnStarted);",
         "  HostApplicationLifetime.ApplicationStopping.Register(OnStopping);",
         "  HostApplicationLifetime.ApplicationStopped.Register(OnStopped);",
@@ -45,7 +45,7 @@ namespace ATAP.Utilities.GenerateProgram {
       var gMethodDeclaration = new GMethodDeclaration(gName: "StopAsync", gType: "Task",
         gVisibility: "public", gAccessModifier: gAccessModifier,  isConstructor: false,
         gArguments: new Dictionary<IPhilote<IGArgument>, IGArgument>());
-      foreach (var kvp in new Dictionary<string, string>() { { "genericHostsCancellationToken", "CancellationToken " } }) {
+      foreach (var kvp in new Dictionary<string, string>() { { "genericHostsCancellationToken", "CancellationTokenFromCaller " } }) {
         var gMethodArgument = new GArgument(kvp.Key, kvp.Value);
         gMethodDeclaration.GArguments[gMethodArgument.Philote] = gMethodArgument;
       }
@@ -75,7 +75,7 @@ namespace ATAP.Utilities.GenerateProgram {
       var gMethodDeclaration = new GMethodDeclaration(gName: "ExecuteAsync", gType: "Task",
         gVisibility: "protected", gAccessModifier: gAccessModifier, isConstructor: false,
         gArguments: new Dictionary<IPhilote<IGArgument>, IGArgument>());
-      foreach (var kvp in new Dictionary<string, string>() { { "genericHostsCancellationToken", "CancellationToken " } }) {
+      foreach (var kvp in new Dictionary<string, string>() { { "genericHostsCancellationToken", "CancellationTokenFromCaller " } }) {
         var gMethodArgument = new GArgument(kvp.Key, kvp.Value);
         gMethodDeclaration.GArguments[gMethodArgument.Philote] = gMethodArgument;
       }
@@ -86,7 +86,7 @@ namespace ATAP.Utilities.GenerateProgram {
         "  //linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, externalCancellationToken);",
         "  //var linkedCancellationToken = linkedCancellationTokenSource.Token;",
         "#endregion",
-        "#region Register actions with the CancellationToken (s)",
+        "#region Register actions with the CancellationTokenFromCaller (s)",
         "  //externalCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer[\"{0} {1} externalCancellationToken has signalled stopping.\"], \"ConsoleMonitorBackgroundService\", \"externalCancellationToken\"));",
         "  //internalCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer[\"{0} {1} internalCancellationToken has signalled stopping.\"], \"ConsoleMonitorBackgroundService\", \"internalCancellationToken\"));",
         "  //linkedCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer[\"{0} {1} linkedCancellationToken has signalled stopping.\"], \"ConsoleMonitorBackgroundService\", \"linkedCancellationToken\"));",

@@ -88,7 +88,7 @@ namespace ATAP.Utilities.GenerateProgram {
         new GArgument("requestorPhilote", "object"),
         new GArgument("callback", "object"),
         new GArgument("timerSignil", "object"),
-        new GArgument("ct", "CancellationToken?")
+        new GArgument("ct", "CancellationTokenFromCaller?")
       };
       var gMethodArguments = new Dictionary<IPhilote<IGArgument>, IGArgument>();
       foreach (var o in gMethodArgumentList) {

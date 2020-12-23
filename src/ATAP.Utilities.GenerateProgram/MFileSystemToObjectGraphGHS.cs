@@ -210,9 +210,9 @@ namespace ATAP.Utilities.GenerateProgram {
         new GArgument("asyncFileReadBlockSize", "int"),
         new GArgument("enableHash", "bool"),
         new GArgument("convertFileSystemToGraphProgress", "ConvertFileSystemToGraphProgress"),
-        new GArgument("persistence", "Persistence<IInsertResultsAbstract>"),
-        new GArgument("pickAndSave", "PickAndSave<IInsertResultsAbstract>"),
-        new GArgument("cancellationToken", "CancellationToken?"),
+        new GArgument("Persistence", "Persistence<IInsertResultsAbstract>"),
+        new GArgument("PickAndSave", "PickAndSave<IInsertResultsAbstract>"),
+        new GArgument("cancellationToken", "CancellationTokenFromCaller?"),
       }) {
         gMethodArguments.Add(o.Philote, o);
       }

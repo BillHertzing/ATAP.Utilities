@@ -10,7 +10,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public IGPatternReplacement gAssemblyGroupPatternReplacement { get; set; }
     public IGAssemblyUnit GTitularAssemblyUnit { get; set; }
     public IGPatternReplacement GTitularAssemblyUnitPatternReplacement { get; set; }
-    public IGCompilationUnit gTitularDerivedCompilationUnit { get; set; }
+    public IGCompilationUnit GTitularDerivedCompilationUnit { get; set; }
     public IGPatternReplacement GTitularDerivedCompilationUnitPatternReplacement { get; set; }
     public IGCompilationUnit GTitularBaseCompilationUnit { get; set; }
     public IGPatternReplacement GTitularBaseCompilationUnitPatternReplacement { get; set; }

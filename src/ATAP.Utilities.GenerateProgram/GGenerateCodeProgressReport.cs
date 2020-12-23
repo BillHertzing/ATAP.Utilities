@@ -4,12 +4,15 @@ using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
 
-  public class GGenerateProgamProgress :  IGGenerateProgramProgress {
-    public GGenerateProgamProgress() {
-      Philote = new Philote<IGGenerateProgramProgress>();
+  public class GGenerateCodeProgressReport :  IGGenerateCodeProgressReport {
+    public GGenerateCodeProgressReport() {
+      Philote = new Philote<IGGenerateCodeProgressReport>();
     }
 
-    public void Report(string message) {  }
-    public IPhilote<IGGenerateProgramProgress> Philote { get; init; }
+    public IPhilote<IGGenerateCodeProgressReport> Philote { get; init; }
+
+    void IProgress<string>.Report(string value) {
+      throw new NotImplementedException();
+    }
   }
 }

@@ -4,7 +4,7 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGSolutionSignil {
     public bool HasPropsAndTargets { get; init; }
-    public bool HasEditorCofig { get; init; }
+    public bool HasEditorConfig { get; init; }
     public bool HasArtefacts { get; init; }
     public bool HasDevLog { get; init; }
     public bool HasDocumentation { get; init; }

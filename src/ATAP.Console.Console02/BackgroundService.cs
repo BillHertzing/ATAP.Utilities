@@ -32,8 +32,9 @@ using System.Reactive.Linq;
 //using PersistenceStaticExtensions = ATAP.Utilities.Persistence.Extensions;
 using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
 using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
-using appStringConstants = ATAP.Console.Console02.Console02StringConstants;
-using GenerateProgramServiceStringConstants = ATAP.Services.HostedService.GenerateProgramStringConstants;
+using appStringConstants = ATAP.Console.Console02.StringConstants;
+using GenerateProgramServiceStringConstants = ATAP.Services.GenerateCode.StringConstants;
+using PersistenceStringConstants = ATAP.Utilities.Persistence.StringConstants;
 
 namespace ATAP.Console.Console02 {
   // This file contains the "boilerplate" code that creates the Background Service
@@ -197,7 +198,7 @@ namespace ATAP.Console.Console02 {
       }
       mesg.Append(uiLocalizer["Packaging was successful: {0}", gGenerateProgramResult.PackagingSuccess.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(uiLocalizer["Deployment was successful: {0}", gGenerateProgramResult.DeploymentSuccess.ToString(CultureInfo.CurrentCulture)]);
-      mesg.Append(uiLocalizer["Number of AcceptableExceptions: {0}", gGenerateProgramResult.AcceptableExceptions.Count]);
+      //mesg.Append(uiLocalizer["Number of AcceptableExceptions: {0}", gGenerateProgramResult.AcceptableExceptions.Count]);
       mesg.Append(Environment.NewLine);
       // List the acceptable Exceptions that occurred
       //ToDo: break out AcceptableExceptions by type
@@ -248,8 +249,8 @@ namespace ATAP.Console.Console02 {
           // ToDo: Get these from the database or from a configurationRoot (priority?)
           // ToDo: should validate in case the appStringConstants assembly is messed up?
           // ToDo: should validate in case the GenerateProgramServiceStringConstants assembly is messed up?
-          // Create the instance of the GGenerateCodeSignil
-          var gGenerateCodeSignil = new GGenerateCodeSignil(
+          // Create the instance of the GInvokeGenerateCodeSignil
+          var gInvokeGenerateCodeSignil = new GInvokeGenerateCodeSignil(
             gAssemblyGroupSignil : new GAssemblyGroupSignil()
             , gGlobalSettingsSignil :new GGlobalSettingsSignil()
       , gSolutionSignil : new GSolutionSignil()
@@ -270,11 +271,7 @@ namespace ATAP.Console.Console02 {
        , ormLiteDialectProviderStringDefault : hostedServiceConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.OrmLiteDialectProviderConfigRootKey, GenerateProgramServiceStringConstants.OrmLiteDialectProviderDefault)
        , entryPoints :default
 
-
           );
-          Philote<GAssemblyGroup> assemblyGroupPhilote = new Philote<GAssemblyGroup>();
-          Philote<GSolutionGroupSignil> solutionGroupSignilPhilote = new Philote<GSolutionGroupSignil>();
-          Philote<GGlobalCreateBuildtestDeployKVPs> gGlobalCreateBuildtestDeployKVPsPhilote = new Philote<GGlobalCreateBuildtestDeployKVPs>();
 
           mesg.Append(uiLocalizer["Running GenerateProgram Function on the AssemblyGroupSignil {0}, with GlobalSettingsKey {1} and SolutionSignilKey {2}", "Console02Mechanical", "ATAPStandardGlobalSettingsKey", "ATAPStandardGSolutionSignilKey"]);
 
@@ -449,7 +446,7 @@ namespace ATAP.Console.Console02 {
           stopWatch.Start();
           #endregion
           try {
-            Func<Task<GGenerateProgramResult>> run = () => InvokeGenerateProgramAsync(gGenerateProgramSignil,gGenerateProgramProgress);
+            Func<Task<GGenerateProgramResult>> run = () => InvokeGenerateProgramAsync(gInvokeGenerateCodeSignil);
 
 
             gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);

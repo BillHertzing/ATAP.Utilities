@@ -9,7 +9,7 @@ namespace ATAP.Utilities.GenerateProgram {
     bool UnitTestsSuccess { get; init; }
     double UnitTestsCoverage { get; init; }
     string GeneratedSolutionFileDirectory { get; init; }
-    ICollection<IGAssemblyGroup> CollectionOfAssembliesBuilt { get; init; }
+    IDictionary<IPhilote<IGAssemblyGroup>,IGAssemblyGroup> CollectionOfAssembliesBuilt { get; init; }
     bool PackagingSuccess { get; init; }
     bool DeploymentSuccess { get; init; }
     IPhilote<IGGenerateProgramResult> Philote { get; init; }

@@ -3,7 +3,7 @@ using ATAP.Utilities.ETW;
 using ATAP.Utilities.Philote;
 using ATAP.Utilities.Persistence;
 using ATAP.Utilities.GenerateProgram;
-namespace ATAP.Services.HostedService.GenerateProgram
+namespace ATAP.Services.GenerateCode
 {
   public interface IGInvokeGenerateCodeSignil : IGGenerateCodeSignil {
     string PersistenceMessageFileRelativePath { get; set; }

@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using ATAP.Utilities.GenerateProgram;
-namespace ATAP.Services.HostedService.GenerateProgram {
+namespace ATAP.Services.GenerateCode {
 
   public partial class GenerateProgramHostedService : IHostedService, IDisposable, IGenerateProgramHostedService {
 
@@ -15,9 +15,8 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       #endregion
       try {
         Func<Task<IGGenerateProgramResult>> run = () =>
-          gInvokeGenerateCodeSignil.EntryPoints.GenerateProgramAsync(gAssemblyGroupSignilKey, gGlobalSettingsSignilKey, gSolutionSignilKey, gGenerateProgramProgress, persistence, pickAndSave, cancellationToken);
-
-        Task<IGGenerateProgramResult> completedTask = await Task.WhenAny(task, taskCompletionSource.Task);
+          //gInvokeGenerateCodeSignil.EntryPoints.GenerateProgramAsync(gAssemblyGroupSignilKey, gGlobalSettingsSignilKey, gSolutionSignilKey, gGenerateProgramProgress, persistence, pickAndSave, cancellationToken);
+          gInvokeGenerateCodeSignil.EntryPoints.GenerateProgramAsync(gInvokeGenerateCodeSignil);
         gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);
         stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
                           // ToDo: put the results someplace
@@ -28,10 +27,8 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       }
       finally {
         // Dispose of the objects that need disposing
-        setupResultsPickAndSave.Dispose();
-        setupResultsPersistence.Dispose();
       }
-      return completedTask;
+      return gGenerateProgramResult;
     }
 
     }

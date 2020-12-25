@@ -4,7 +4,7 @@ using ATAP.Utilities.Persistence;
 using ATAP.Utilities.Philote;
 using ATAP.Utilities.GenerateProgram;
 
-namespace ATAP.Services.HostedService.GenerateProgram {
+namespace ATAP.Services.GenerateCode {
 
 #if TRACE
   [ETWLogAttribute]

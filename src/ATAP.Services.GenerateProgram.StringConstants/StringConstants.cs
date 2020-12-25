@@ -1,5 +1,5 @@
 
-namespace ATAP.Services.HostedService.GenerateProgram {
+namespace ATAP.Services.GenerateCode {
 
   public static class StringConstants {
     // ToDo: Localize the string constants

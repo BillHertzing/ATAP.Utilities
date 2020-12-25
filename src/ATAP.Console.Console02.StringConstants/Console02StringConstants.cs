@@ -1,6 +1,6 @@
 
 namespace ATAP.Console.Console02 {
-  public static class Console02StringConstants {
+  public static class StringConstants {
     // ToDo: Localize the string constants
 
     #region Settings File Names

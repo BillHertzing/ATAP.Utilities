@@ -5,7 +5,8 @@ using ATAP.Utilities.Persistence;
 namespace ATAP.Utilities.GenerateProgram {
   public interface IEntryPoints {
     IGGenerateProgramResult GenerateProgram(IGGenerateCodeSignil gGenerateCodeSignil = default);
-    IGGenerateProgramResult GenerateProgram(IGAssemblyGroupSignil gAssemblyGroupSignil = null, IGGlobalSettingsSignil gGlobalSettingsSignil = null, IGSolutionSignil gSolutionSignil = null);
+    Task<IGGenerateProgramResult> GenerateProgramAsync(IGGenerateCodeSignil gGenerateCodeSignil = default);
+    IGGenerateProgramResult GenerateProgram(IGAssemblyGroupSignil gAssemblyGroupSignil = default, IGGlobalSettingsSignil gGlobalSettingsSignil = default, IGSolutionSignil gSolutionSignil = default);
     IGGenerateProgramResult GenerateProgram(IGAssemblyGroupSignil gAssemblyGroupSignil = default, IGGlobalSettingsSignil gGlobalSettingsSignil = default, IGSolutionSignil gSolutionSignil = default, IGGenerateCodeProgress gGenerateCodeProgressReport = default, IPersistence<IInsertResultsAbstract> persistence = default , IPickAndSave<IInsertResultsAbstract> pickAndSave = default , CancellationToken cancellationToken = default);
   }
 }

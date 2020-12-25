@@ -62,7 +62,7 @@
     <ProjectReference Include="..\ATAP.Utilities.GenerateProgram.Interfaces\ATAP.Utilities.GenerateProgram.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.GenerateProgram\ATAP.Utilities.GenerateProgram.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Persistence.StringConstants\ATAP.Utilities.Persistence.StringConstantscd ...csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence.StringConstants\ATAP.Utilities.Persistence.StringConstants.csproj" />
      </ItemGroup>
   <!--
 -->
@@ -127,7 +127,6 @@
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Seq.Extensions.Logging" />
   </ItemGroup>
-
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>

@@ -193,7 +193,7 @@ namespace ATAP.Console.Console02 {
       mesg.Append(uiLocalizer["Generated Solution File Directory: {0}", gGenerateProgramResult.GeneratedSolutionFileDirectory.ToString(CultureInfo.CurrentCulture)]);
       mesg.Append(Environment.NewLine);
       foreach (var assemblyBuilt in gGenerateProgramResult.CollectionOfAssembliesBuilt) {
-        mesg.Append(uiLocalizer["Assembly Built: {0}", assemblyBuilt.ToString(CultureInfo.CurrentCulture)]);
+        mesg.Append(uiLocalizer["Assembly Built: {0}", assemblyBuilt.Value.ToString(CultureInfo.CurrentCulture)]);
         mesg.Append(Environment.NewLine);
       }
       mesg.Append(uiLocalizer["Packaging was successful: {0}", gGenerateProgramResult.PackagingSuccess.ToString(CultureInfo.CurrentCulture)]);
@@ -257,18 +257,18 @@ namespace ATAP.Console.Console02 {
         ,artifactsDirectoryBase: appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseDefault)
         , artifactsFileRelativePath: appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsFileRelativePathhDefault)
        , artifactsFilePaths : default
-       , enablePersistence :appConfiguration.GetValue<bool>(appStringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(appStringConstants.EnablePersistenceBoolDefault))
-       , enablePickAndSave :enablePickAndSave = appConfiguration.GetValue<bool>(appStringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(appStringConstants.EnablePickAndSaveBoolDefault))
+       , enablePersistence :appConfiguration.GetValue<bool>(PersistenceStringConstants.EnablePersistenceConfigRootKey, bool.Parse(PersistenceStringConstants.EnablePersistenceDefault))
+       , enablePickAndSave :  appConfiguration.GetValue<bool>(PersistenceStringConstants.EnablePickAndSaveConfigRootKey, bool.Parse(PersistenceStringConstants.EnablePickAndSaveDefault))
        , enableProgress : appConfiguration.GetValue<bool>(appStringConstants.EnableProgressBoolConfigRootKey, bool.Parse(appStringConstants.EnableProgressBoolDefault))
        , temporaryDirectoryBase :appConfiguration.GetValue<string>(appStringConstants.TemporaryDirectoryBaseConfigRootKey, appStringConstants.TemporaryDirectoryBaseDefault)
-       , persistenceMessageFileRelativePath :hostedServiceConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathDefault)
+       , persistenceMessageFileRelativePath :appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathDefault)
        , persistenceFilePaths : default
-       , pickAndSaveMessageFileRelativePath :hostedServiceConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathDefault)
+       , pickAndSaveMessageFileRelativePath :appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathDefault)
        , pickAndSaveFilePaths : default
        , persistence :default
        , pickAndSave :default
-      , dBConnectionString : hostedServiceConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.DBConnectionStringConfigRootKey, GenerateProgramServiceStringConstants.DBConnectionStringDefault)
-       , ormLiteDialectProviderStringDefault : hostedServiceConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.OrmLiteDialectProviderConfigRootKey, GenerateProgramServiceStringConstants.OrmLiteDialectProviderDefault)
+      , dBConnectionString : appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.DBConnectionStringConfigRootKey, GenerateProgramServiceStringConstants.DBConnectionStringDefault)
+       , ormLiteDialectProviderStringDefault : appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.OrmLiteDialectProviderConfigRootKey, GenerateProgramServiceStringConstants.OrmLiteDialectProviderDefault)
        , entryPoints :default
 
           );

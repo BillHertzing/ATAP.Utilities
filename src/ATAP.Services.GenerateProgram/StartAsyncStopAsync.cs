@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ATAP.Services.HostedService.GenerateProgram {
+namespace ATAP.Services.GenerateCode {
   public partial class GenerateProgramHostedService {
     #region StartAsync and StopAsync methods as promised by IHostedService when IHostLifetime is ConsoleLifetime  // ToDo:, see if this is called by service and serviced
     /// <summary>
@@ -42,7 +42,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     // Attribution to https://stackoverflow.com/questions/52915015/how-to-apply-hostoptions-shutdowntimeout-when-configuring-net-core-generic-host for OperationCanceledException notes
 
     public async Task StopAsync(CancellationToken cancellationToken) {
-      Logger.LogDebug(DebugLocalizer["{0} {1}  StopAsync ."], "GenerateProgramHostedService", "StopAsync");
+      //Logger.LogDebug(DebugLocalizer["{0} {1}  StopAsync ."], "GenerateProgramHostedService", "StopAsync");
       //InternalCancellationTokenSource.Cancel();
       // Defer completion promise, until our application has reported it is done.
       // return TaskCompletionSource.Task;

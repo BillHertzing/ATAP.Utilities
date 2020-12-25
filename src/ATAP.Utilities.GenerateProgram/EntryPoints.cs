@@ -12,7 +12,7 @@ namespace ATAP.Utilities.GenerateProgram {
     IGSolutionSignil GSolutionSignil { get; set; }
     IGGlobalSettingsSignil GGlobalSettingsSignil { get; set; }
     IGAssemblyGroupSignil GAssemblyGroupSignil { get; set; }
-    IGGenerateCodeProgress? GenerateCodeProgressReport { get; set; }
+    IGGenerateCodeProgress? GenerateCodeProgress { get; set; }
     IPersistence<IInsertResultsAbstract>? Persistence { get; set; }
     IPickAndSave<IInsertResultsAbstract>? PickAndSave { get; set; }
     CancellationToken? CancellationTokenFromCaller { get; set; }
@@ -21,7 +21,7 @@ namespace ATAP.Utilities.GenerateProgram {
     bool UnitTestsSuccess { get; set; }
     double UnitTestsCoverage { get; set; }
     string GeneratedSolutionFileDirectory { get; set; }
-    ICollection<GAssemblyGroup> CollectionOfAssembliesBuilt { get; set; }
+    IDictionary<IPhilote<IGAssemblyGroup>,IGAssemblyGroup> CollectionOfAssembliesBuilt { get; set; }
     bool PackagingSuccess { get; set; }
     bool DeploymentSuccess { get; set; }
     public IGGenerateProgramResult GenerateProgram(IGGenerateCodeSignil gGenerateCodeSignil = default){
@@ -47,19 +47,18 @@ namespace ATAP.Utilities.GenerateProgram {
       GAssemblyGroupSignil = gAssemblyGroupSignil ?? throw new ArgumentNullException(nameof(gAssemblyGroupSignil));
       GGlobalSettingsSignil = gGlobalSettingsSignil ?? throw new ArgumentNullException(nameof(gGlobalSettingsSignil));
       GSolutionSignil = gSolutionSignil ?? throw new ArgumentNullException(nameof(gSolutionSignil));
-      GenerateCodeProgressReport = gGenerateCodeProgress == default ? new GGenerateCodeProgress() : gGenerateCodeProgress;
+      GenerateCodeProgress = gGenerateCodeProgress == default ? new GGenerateCodeProgress() : gGenerateCodeProgress;
       Persistence = persistence == default ? null : persistence;
       PickAndSave = pickAndSave == default ? null : pickAndSave;
       CancellationTokenFromCaller = cancellationTokenFromCaller == default ? null: cancellationTokenFromCaller;
-     // local variables to be used in creating the results
-     bool DBExtractionSuccess = false;
-      bool BuildSuccess = false;
-      bool UnitTestsSuccess = false;
-      double UnitTestsCoverage = 0.0;
-      string GeneratedSolutionFileDirectory = "";
-      ICollection<IGAssemblyGroup> CollectionOfAssembliesBuilt = new SortedSet<IGAssemblyGroup>();
-      bool PackagingSuccess = false;
-      bool DeploymentSuccess = false;
+     DBExtractionSuccess = false;
+       BuildSuccess = false;
+       UnitTestsSuccess = false;
+       UnitTestsCoverage = 0.0;
+       GeneratedSolutionFileDirectory = "";
+       CollectionOfAssembliesBuilt = new Dictionary<IPhilote<IGAssemblyGroup>,IGAssemblyGroup>();
+       PackagingSuccess = false;
+       DeploymentSuccess = false;
       // create the MCreateSolutionGroupSignil from the GlobalSettingsSignil and the SolutionGroupSignil
       // call MCreateSolutionGroup for the SolutionGroupKey
       // execute the powershell program, passing it the dotnet build command
@@ -76,9 +75,34 @@ namespace ATAP.Utilities.GenerateProgram {
       // create the MCreateAssemblyGroupSignil from the GlobalSettingsSignil and the AssemblyGroupSignil
       // call MCreateAssemblyGroup for the ProgramKey
       // execute the powershell program, passing it the dotnet build command
-      
+
       GGenerateProgramResult gGenerateProgramResult = new GGenerateProgramResult(DBExtractionSuccess, BuildSuccess, UnitTestsSuccess, UnitTestsCoverage, GeneratedSolutionFileDirectory, CollectionOfAssembliesBuilt, PackagingSuccess, DeploymentSuccess);
       return gGenerateProgramResult;
     }
+        public async Task<IGGenerateProgramResult> GenerateProgramAsync(IGGenerateCodeSignil gGenerateCodeSignil = default){
+        GAssemblyGroupSignil = gGenerateCodeSignil.GAssemblyGroupSignil ?? throw new ArgumentNullException(nameof(gGenerateCodeSignil.GAssemblyGroupSignil));
+      GGlobalSettingsSignil = gGenerateCodeSignil.GGlobalSettingsSignil ?? throw new ArgumentNullException(nameof(gGenerateCodeSignil.GGlobalSettingsSignil));
+      GSolutionSignil = gGenerateCodeSignil.GSolutionSignil ?? throw new ArgumentNullException(nameof(gGenerateCodeSignil.GSolutionSignil));
+      GenerateCodeProgress = gGenerateCodeSignil.Progress == default ? new GGenerateCodeProgress() : gGenerateCodeSignil.Progress;
+      Persistence =  gGenerateCodeSignil.Persistence == default ? null :  gGenerateCodeSignil.Persistence;
+      PickAndSave = gGenerateCodeSignil.PickAndSave == default ? null : gGenerateCodeSignil.PickAndSave;
+      CancellationTokenFromCaller = gGenerateCodeSignil.CancellationTokenFromCaller == default ? null: gGenerateCodeSignil.CancellationTokenFromCaller;
+      DBExtractionSuccess = false;
+       BuildSuccess = false;
+       UnitTestsSuccess = false;
+       UnitTestsCoverage = 0.0;
+       GeneratedSolutionFileDirectory = "";
+       CollectionOfAssembliesBuilt = new Dictionary<IPhilote<IGAssemblyGroup>,IGAssemblyGroup>();
+       PackagingSuccess = false;
+       DeploymentSuccess = false;
+       // Check Cancellation
+      // if (CancellationTokenFromCaller)
+      // Progress if not null
+      if (GenerateCodeProgress != null){GenerateCodeProgress.Report("Step1 needs localization");}
+      await Task.Delay(1000);
+      GGenerateProgramResult gGenerateProgramResult = new GGenerateProgramResult(DBExtractionSuccess, BuildSuccess, UnitTestsSuccess, UnitTestsCoverage, GeneratedSolutionFileDirectory, CollectionOfAssembliesBuilt, PackagingSuccess, DeploymentSuccess);
+      return gGenerateProgramResult;
+
+      }
   }
 }

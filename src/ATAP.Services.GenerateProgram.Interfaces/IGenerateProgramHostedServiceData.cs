@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using ATAP.Utilities.ETW;
 using ATAP.Utilities.GenerateProgram;
 using ATAP.Utilities.Philote;
-namespace ATAP.Services.HostedService.GenerateProgram {
+namespace ATAP.Services.GenerateCode {
   public interface IGenerateProgramHostedServiceData : IDisposable {
     IDictionary<IPhilote<IGInvokeGenerateCodeSignil>,IGGenerateProgramResult> GenerateCodeTasks { get; init; }
 

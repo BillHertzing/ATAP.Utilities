@@ -28,11 +28,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Text;
 using System.Linq;
-using ComputerInventoryHardwareStaticExtensions = ATAP.Utilities.ComputerInventory.Hardware.StaticExtensions;
 using PersistenceStaticExtensions = ATAP.Utilities.Persistence.Extensions;
 using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
 using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
-
+using appStringConstants = ATAP.Console.Console02.StringConstants;
+using GenerateProgramServiceStringConstants = ATAP.Services.GenerateCode.StringConstants;
 using Serilog;
 using ILogger = Serilog.ILogger;
 
@@ -205,7 +205,7 @@ namespace ATAP.Console.Console02 {
       IConfigurationBuilder appConfigurationBuilder;
       mELlogger.LogDebug(debugLocalizer["{0} {1}: Creating appConfigurationBuilder for Environment: {2}"], "Program", "Main", envNameFromConfiguration);
       appConfigurationBuilder = ConfigurationExtensions.ATAPStandardConfigurationBuilder(Console02DefaultConfiguration.Production, envNameFromConfiguration == GenericHostStringConstants.EnvironmentProduction, envNameFromConfiguration,
-        Console02StringConstants.SettingsFileName, Console02StringConstants.SettingsFileNameSuffix, loadedFromDirectory, initialStartupDirectory, appEnvPrefixes, args, switchMappings);
+        appStringConstants.SettingsFileName, appStringConstants.SettingsFileNameSuffix, loadedFromDirectory, initialStartupDirectory, appEnvPrefixes, args, switchMappings);
       #endregion
 
 
@@ -262,11 +262,11 @@ namespace ATAP.Console.Console02 {
         // Localization for the services
         services.AddLocalization(options => options.ResourcesPath = "Resources");
         // Asynchronous wrappers around stdin and stdout
-        services.AddSingleton<IConsoleSinkHostedService, ConsoleSinkHostedService>();
-        services.AddSingleton<IConsoleSourceHostedService, ConsoleSourceHostedService>();
+        services.AddSingleton<IConsoleSinkHostedService, ConsoleSinkHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
+        services.AddSingleton<IConsoleSourceHostedService, ConsoleSourceHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
         services.AddHostedService<ConsoleMonitorBackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
         //services.AddSingleton<IFileSystemWatchersAsObservableFactoryService, FileSystemWatchersAsObservableFactoryService>();
-        services.AddSingleton<IFileSystemWatchersHostedService, FileSystemWatchersHostedService>();
+        //services.AddSingleton<IFileSystemWatchersHostedService, FileSystemWatchersHostedService>();
         services.AddSingleton<IObservableResetableTimersHostedService, ObservableResetableTimersHostedService>();
         // The primary service (loop) that this program does
         services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.

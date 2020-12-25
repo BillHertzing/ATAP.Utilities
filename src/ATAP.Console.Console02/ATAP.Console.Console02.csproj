@@ -43,24 +43,29 @@
     <ProjectReference Include="..\ATAP.Console.Console02.StringConstants\ATAP.Console.Console02.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.DataBaseManagement\ATAP.Utilities.DatabaseManagement.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.GenericHost.Extensions.Interfaces\ATAP.Utilities.GenericHost.Extensions.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.GenericHost.Interfaces\ATAP.Utilities.GenericHost.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.GenericHost.Extensions\ATAP.Utilities.GenericHost.Extensions.csproj" />
-    <ProjectReference Include="..\ATAP.Services.GenerateProgram\GenerateProgram.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Configuration.Extensions\ATAP.Utilities.Configuration.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Reactive.Extensions\ATAP.Utilities.Reactive.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Services.ConsoleSink.Interfaces\ConsoleSink.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Services.ConsoleSink\ConsoleSink.csproj" />
     <ProjectReference Include="..\ATAP.Services.ConsoleSource.Interfaces\ConsoleSource.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Services.ConsoleSource\ConsoleSource.csproj" />
     <ProjectReference Include="..\ATAP.Services.ConsoleMonitor.Interfaces\ConsoleMonitor.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Services.ConsoleSink\ConsoleSink.csproj" />
+    <ProjectReference Include="..\ATAP.Services.ConsoleSource\ConsoleSource.csproj" />
     <ProjectReference Include="..\ATAP.Services.ConsoleMonitor\ConsoleMonitor.csproj" />
     <ProjectReference Include="..\ATAP.Services.Timers.Interfaces\Timers.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Services.Timers\Timers.csproj" />
+    <ProjectReference Include="..\ATAP.Services.GenerateProgram.Interfaces\ATAP.Services.GenerateProgram.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Services.GenerateProgram.StringConstants\ATAP.Services.GenerateProgram.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Services.GenerateProgram\ATAP.Services.GenerateProgram.csproj" />
-    <ProjectReference Include="..\ATAP.Services.GenerateProgram.StringConstants\ATAP.Services.GenerateProgram.StringConstantsc.sproj" />
-  </ItemGroup>
-
+    <ProjectReference Include="..\ATAP.Utilities.GenerateProgram.Interfaces\ATAP.Utilities.GenerateProgram.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.GenerateProgram\ATAP.Utilities.GenerateProgram.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Persistence.StringConstants\ATAP.Utilities.Persistence.StringConstantscd ...csproj" />
+     </ItemGroup>
+  <!--
+-->
 
   <!-- Packages to persist data to QuickGraph -->
   <ItemGroup>

@@ -13,9 +13,9 @@ using ATAP.Utilities.Philote;
 using ATAP.Utilities.Persistence;
 using ATAP.Utilities.GenerateProgram;
 
-using hostedServiceStringConstants = ATAP.Services.HostedService.GenerateProgram.StringConstants;
+using hostedServiceStringConstants = ATAP.Services.GenerateCode.StringConstants;
 
-namespace ATAP.Services.HostedService.GenerateProgram {
+namespace ATAP.Services.GenerateCode {
 
 #if TRACE
   [ETWLogAttribute]

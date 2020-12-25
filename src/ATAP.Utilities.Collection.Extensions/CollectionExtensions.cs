@@ -25,7 +25,7 @@ namespace ATAP.Utilities.Collection {
     //}
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <attribution>
     /// https://stackoverflow.com/questions/3982448/adding-a-dictionary-to-another
@@ -50,7 +50,7 @@ namespace ATAP.Utilities.Collection {
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <typeparam name="TValue"></typeparam>
     /// <param name="source"></param>
@@ -63,8 +63,8 @@ namespace ATAP.Utilities.Collection {
         source.Add(item);
       }
     }
-    /// <summary>
-    /// 
+       /// <summary>
+    ///
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="source"></param>

@@ -247,7 +247,7 @@ namespace ATAP.Console.Console02 {
           // ToDo: Get these from the Console02 application configuration
           // ToDo: Get these from the database or from a configurationRoot (priority?)
           // ToDo: should validate in case the appStringConstants assembly is messed up?
-                   // ToDo: should validate in case the GenerateProgramServiceStringConstants assembly is messed up?
+          // ToDo: should validate in case the GenerateProgramServiceStringConstants assembly is messed up?
           // Create the instance of the GGenerateCodeSignil
           var gGenerateCodeSignil = new GGenerateCodeSignil(
             gAssemblyGroupSignil : new GAssemblyGroupSignil()
@@ -272,7 +272,6 @@ namespace ATAP.Console.Console02 {
 
 
           );
-          string GenerateProgramDBConnectionString = "";
           Philote<GAssemblyGroup> assemblyGroupPhilote = new Philote<GAssemblyGroup>();
           Philote<GSolutionGroupSignil> solutionGroupSignilPhilote = new Philote<GSolutionGroupSignil>();
           Philote<GGlobalCreateBuildtestDeployKVPs> gGlobalCreateBuildtestDeployKVPsPhilote = new Philote<GGlobalCreateBuildtestDeployKVPs>();
@@ -307,6 +306,8 @@ namespace ATAP.Console.Console02 {
           // get the SolutionGroupSignil from the DB using the SolutionGroupKey
 
           #region ProgressReporting setup
+          // ToDo: Use the ConsoleMonitor Service to write progress to ConsoleOut
+          // Use the ConsoleOut service to report progress
           GenerateProgramProgress? gGenerateProgramProgress;
           if (enableProgress) {
             gGenerateProgramProgress = new GenerateProgramProgress();
@@ -448,7 +449,9 @@ namespace ATAP.Console.Console02 {
           stopWatch.Start();
           #endregion
           try {
-            Func<Task<GGenerateProgramResult>> run = () => GenerateProgram.GenerateProgram(gGenerateProgramSignil,gGenerateProgramProgress);
+            Func<Task<GGenerateProgramResult>> run = () => InvokeGenerateProgramAsync(gGenerateProgramSignil,gGenerateProgramProgress);
+
+
             gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);
             stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
                               // ToDo: put the results someplace

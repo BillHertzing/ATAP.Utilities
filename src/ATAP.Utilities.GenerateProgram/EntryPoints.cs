@@ -12,7 +12,7 @@ namespace ATAP.Utilities.GenerateProgram {
     IGSolutionSignil GSolutionSignil { get; set; }
     IGGlobalSettingsSignil GGlobalSettingsSignil { get; set; }
     IGAssemblyGroupSignil GAssemblyGroupSignil { get; set; }
-    IGGenerateCodeProgressReport? GenerateCodeProgressReport { get; set; }
+    IGGenerateCodeProgress? GenerateCodeProgressReport { get; set; }
     IPersistence<IInsertResultsAbstract>? Persistence { get; set; }
     IPickAndSave<IInsertResultsAbstract>? PickAndSave { get; set; }
     CancellationToken? CancellationTokenFromCaller { get; set; }
@@ -24,15 +24,30 @@ namespace ATAP.Utilities.GenerateProgram {
     ICollection<GAssemblyGroup> CollectionOfAssembliesBuilt { get; set; }
     bool PackagingSuccess { get; set; }
     bool DeploymentSuccess { get; set; }
+    public IGGenerateProgramResult GenerateProgram(IGGenerateCodeSignil gGenerateCodeSignil = default){
+      return GenerateProgram(
+         gAssemblyGroupSignil: gGenerateCodeSignil.GAssemblyGroupSignil
+        , gGlobalSettingsSignil: gGenerateCodeSignil.GGlobalSettingsSignil
+        , gSolutionSignil: gGenerateCodeSignil.GSolutionSignil
+        , gGenerateCodeProgress: gGenerateCodeSignil.Progress
+        , persistence: gGenerateCodeSignil.Persistence
+        , pickAndSave: gGenerateCodeSignil.PickAndSave
+        , cancellationTokenFromCaller: gGenerateCodeSignil.CancellationTokenFromCaller
+      );
+      }
     public IGGenerateProgramResult GenerateProgram(IGAssemblyGroupSignil gAssemblyGroupSignil = default, IGGlobalSettingsSignil gGlobalSettingsSignil = default, IGSolutionSignil gSolutionSignil = default) {
       return GenerateProgram(gAssemblyGroupSignil, gGlobalSettingsSignil, gSolutionSignil, default, default, default);
     }
     public IGGenerateProgramResult GenerateProgram(IGAssemblyGroupSignil gAssemblyGroupSignil = default,
-    IGGlobalSettingsSignil gGlobalSettingsSignil = default, IGSolutionSignil gSolutionSignil = default, IGGenerateCodeProgressReport gGenerateCodeProgressReport = default, IPersistence<IInsertResultsAbstract> persistence = default, IPickAndSave<IInsertResultsAbstract> pickAndSave = default, CancellationToken cancellationTokenFromCaller = default) {
+    IGGlobalSettingsSignil gGlobalSettingsSignil = default, IGSolutionSignil gSolutionSignil = default
+    , IGGenerateCodeProgress gGenerateCodeProgress = default
+    , IPersistence<IInsertResultsAbstract> persistence = default
+    , IPickAndSave<IInsertResultsAbstract> pickAndSave = default
+    , CancellationToken cancellationTokenFromCaller = default) {
       GAssemblyGroupSignil = gAssemblyGroupSignil ?? throw new ArgumentNullException(nameof(gAssemblyGroupSignil));
       GGlobalSettingsSignil = gGlobalSettingsSignil ?? throw new ArgumentNullException(nameof(gGlobalSettingsSignil));
       GSolutionSignil = gSolutionSignil ?? throw new ArgumentNullException(nameof(gSolutionSignil));
-      GenerateCodeProgressReport = gGenerateCodeProgressReport == default ? new GGenerateCodeProgressReport() : gGenerateCodeProgressReport;
+      GenerateCodeProgressReport = gGenerateCodeProgress == default ? new GGenerateCodeProgress() : gGenerateCodeProgress;
       Persistence = persistence == default ? null : persistence;
       PickAndSave = pickAndSave == default ? null : pickAndSave;
       CancellationTokenFromCaller = cancellationTokenFromCaller == default ? null: cancellationTokenFromCaller;
@@ -61,7 +76,7 @@ namespace ATAP.Utilities.GenerateProgram {
       // create the MCreateAssemblyGroupSignil from the GlobalSettingsSignil and the AssemblyGroupSignil
       // call MCreateAssemblyGroup for the ProgramKey
       // execute the powershell program, passing it the dotnet build command
-
+      
       GGenerateProgramResult gGenerateProgramResult = new GGenerateProgramResult(DBExtractionSuccess, BuildSuccess, UnitTestsSuccess, UnitTestsCoverage, GeneratedSolutionFileDirectory, CollectionOfAssembliesBuilt, PackagingSuccess, DeploymentSuccess);
       return gGenerateProgramResult;
     }

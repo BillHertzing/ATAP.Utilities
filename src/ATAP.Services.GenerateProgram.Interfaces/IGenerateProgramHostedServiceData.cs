@@ -9,9 +9,10 @@ using Microsoft.Extensions.Logging;
 
 using ATAP.Utilities.ETW;
 using ATAP.Utilities.GenerateProgram;
+using ATAP.Utilities.Philote;
 namespace ATAP.Services.HostedService.GenerateProgram {
   public interface IGenerateProgramHostedServiceData : IDisposable {
-    IList<(IGInvokeGenerateCodeSignil, IGGenerateProgramResult)> GenerateCodeTasks { get; init; }
+    IDictionary<IPhilote<IGInvokeGenerateCodeSignil>,IGGenerateProgramResult> GenerateCodeTasks { get; init; }
 
     void Dispose();
   }

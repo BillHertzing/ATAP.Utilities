@@ -50,7 +50,7 @@ namespace ATAP.Services.HostedService.GenerateProgram {
     #endregion
     */
     #region Data for Service
-    public IGenerateProgramHostedServiceData ServiceData { get; }
+    public IGenerateProgramHostedServiceData ServiceData { get; init; }
     #endregion
     #region Performance Monitoring data
     Stopwatch Stopwatch { get; } // ToDo: utilize a much more powerful and ubiquitous timing and profiling tool than a stopwatch
@@ -117,16 +117,13 @@ namespace ATAP.Services.HostedService.GenerateProgram {
 
     public IGGenerateProgramResult InvokeGenerateProgram(IGInvokeGenerateCodeSignil gInvokeGenerateCodeSignil = default) {
       IGGenerateProgramResult gGenerateProgramResult = default;
-
-      // ToDo: This becomes a Task returning a tuple
-      ServiceData.GenerateCodeTasks.Add<(GInvokeGenerateCodeSignil, GGenerateProgramResult)>(((GInvokeGenerateCodeSignil)gInvokeGenerateCodeSignil, (GGenerateProgramResult)gGenerateProgramResult));
-      ServiceData.GenerateCodeTasks.Add((GInvokeGenerateCodeSignil: gInvokeGenerateCodeSignil, GGenerateProgramResult: gGenerateProgramResult));
       #region Method timing setup
       Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
       stopWatch.Start();
+
       #endregion
       try {
-        gGenerateProgramResult = ServiceData.EntryPoints.GenerateProgram(gInvokeGenerateCodeSignil);
+        gGenerateProgramResult = gInvokeGenerateCodeSignil.EntryPoints.GenerateProgram(gInvokeGenerateCodeSignil);
         stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
                           // ToDo: put the results someplace
       }
@@ -136,39 +133,10 @@ namespace ATAP.Services.HostedService.GenerateProgram {
       }
       finally {
         // Dispose of the objects that need disposing
-        if (SetupResultsPickAndSave != null) { SetupResultsPickAndSave.Dispose(); }
-        SetupResultsPersistence.Dispose();
+        // SetupResults for PickAndSave, Persistence,and Progress (?) should be disposed in the routine that created them
       }
       return gGenerateProgramResult;
     }
-
-    // public async Task<IGGenerateProgramResult> InvokeGenerateProgramAsync(IPhilote<IGAssemblyGroupSignil> gAssemblyGroupSignilKey, IPhilote<IGGlobalSettingsSignil> gGlobalSettingsSignilKey, IPhilote<IGSolutionSignil> gSolutionSignilKey, IGGenerateProgramProgress gGenerateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
-    //   IGGenerateProgramResult gGenerateProgramResult;
-    //   #region Method timing setup
-    //   Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
-    //   stopWatch.Start();
-    //   #endregion
-    //   try {
-    //     Func<Task<IGGenerateProgramResult>> run = () =>
-    //       ServiceData.EntryPoints.GenerateProgramAsync(gAssemblyGroupSignilKey, gGlobalSettingsSignilKey, gSolutionSignilKey, gGenerateProgramProgress, persistence, pickAndSave, cancellationToken);
-
-    //     Task<IGGenerateProgramResult> completedTask = await Task.WhenAny(task, taskCompletionSource.Task);
-    //     gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);
-    //     stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
-    //                       // ToDo: put the results someplace
-    //   }
-    //   catch (Exception) { // ToDo: define explicit exceptions to catch and report upon
-    //                       // ToDo: catch FileIO.FileNotFound, sometimes the file disappears
-    //     throw;
-    //   }
-    //   finally {
-    //     // Dispose of the objects that need disposing
-    //     setupResultsPickAndSave.Dispose();
-    //     setupResultsPersistence.Dispose();
-    //   }
-    //   return completedTask;
-    // }
-
 
     // public async Task<IGGenerateProgramResult> InvokeGenerateProgramAsync(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil, IGGenerateProgramProgress gGenerateProgramProgress, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken) {
     //   IGGenerateProgramResult gGenerateProgramResult;

@@ -9,7 +9,7 @@ namespace ATAP.Utilities.Persistence {
     #endregion
     #region PersistenceConfigRootKeys
     public const string EnablePersistenceConfigRootKey = "EnablePersistence";
-    public const string EnablePickAndSaveDefault = "false";
+    public const string EnablePersistenceDefault = "false";
     public const string EnablePickAndSaveConfigRootKey = "EnablePickAndSave";
     public const string EnablePickAndSaveDefault = "false";
     #endregion

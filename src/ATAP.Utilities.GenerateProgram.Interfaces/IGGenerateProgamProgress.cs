@@ -1,8 +1,8 @@
 using System;
 using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
-  public interface IGGenerateCodeProgressReport : IProgress<string> {
-  
-    IPhilote<IGGenerateCodeProgressReport> Philote { get; init; }
+  public interface IGGenerateCodeProgress : IProgress<string> {
+
+    IPhilote<IGGenerateCodeProgress> Philote { get; init; }
   }
 }

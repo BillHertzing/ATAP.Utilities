@@ -8,6 +8,7 @@ using ATAP.Utilities.Persistence;
 using ATAP.Utilities.Philote;
 using ATAP.Utilities.Reactive;
 using ATAP.Utilities.GenerateProgram;
+using ATAP.Services.GenerateCode;
 
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
@@ -63,6 +64,7 @@ namespace ATAP.Console.Console02 {
     CancellationToken linkedCancellationToken { get; set; }
     #endregion
     #region Constructor-injected fields unique to this service. These represent other services used by this service that are expected to be present in the app's DI container, and constructor-injected
+    IGenerateProgramHostedService generateProgramHostedService { get; }
     IConsoleSinkHostedService consoleSinkHostedService { get; }
     IConsoleSourceHostedService consoleSourceHostedService { get; }
     #endregion
@@ -87,7 +89,7 @@ namespace ATAP.Console.Console02 {
     /// <param name="hostConfiguration"></param>
     /// <param name="hostLifetime"></param>
     /// <param name="hostApplicationLifetime"></param>
-    public Console02BackgroundService(IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration appConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
+    public Console02BackgroundService(IGenerateProgramHostedService generateProgramHostedService, IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration appConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
       this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
       exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
       debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
@@ -101,6 +103,7 @@ namespace ATAP.Console.Console02 {
       this.hostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostLifetime));
       this.appConfiguration = appConfiguration ?? throw new ArgumentNullException(nameof(appConfiguration));
       this.hostApplicationLifetime = hostApplicationLifetime ?? throw new ArgumentNullException(nameof(hostApplicationLifetime));
+      this.generateProgramHostedService = generateProgramHostedService ?? throw new ArgumentNullException(nameof(generateProgramHostedService));
       this.consoleSinkHostedService = consoleSinkHostedService ?? throw new ArgumentNullException(nameof(consoleSinkHostedService));
       this.consoleSourceHostedService = consoleSourceHostedService ?? throw new ArgumentNullException(nameof(consoleSourceHostedService));
       internalCancellationToken = internalCancellationTokenSource.Token;
@@ -245,31 +248,31 @@ namespace ATAP.Console.Console02 {
       #region tempout
       switch (inputLine) {
         case "1":
-          // ToDo: Get these from the Console02 application configuration
+          // Get these from the Console02 application configuration
           // ToDo: Get these from the database or from a configurationRoot (priority?)
           // ToDo: should validate in case the appStringConstants assembly is messed up?
-          // ToDo: should validate in case the GenerateProgramServiceStringConstants assembly is messed up?
+          // ToDo: should validate in case the ATAP.Services.GenerateCode.StringConstants assembly is messed up?
           // Create the instance of the GInvokeGenerateCodeSignil
           var gInvokeGenerateCodeSignil = new GInvokeGenerateCodeSignil(
             gAssemblyGroupSignil : new GAssemblyGroupSignil()
             , gGlobalSettingsSignil :new GGlobalSettingsSignil()
-      , gSolutionSignil : new GSolutionSignil()
-        ,artifactsDirectoryBase: appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseDefault)
-        , artifactsFileRelativePath: appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsFileRelativePathhDefault)
-       , artifactsFilePaths : default
-       , enablePersistence :appConfiguration.GetValue<bool>(PersistenceStringConstants.EnablePersistenceConfigRootKey, bool.Parse(PersistenceStringConstants.EnablePersistenceDefault))
-       , enablePickAndSave :  appConfiguration.GetValue<bool>(PersistenceStringConstants.EnablePickAndSaveConfigRootKey, bool.Parse(PersistenceStringConstants.EnablePickAndSaveDefault))
-       , enableProgress : appConfiguration.GetValue<bool>(appStringConstants.EnableProgressBoolConfigRootKey, bool.Parse(appStringConstants.EnableProgressBoolDefault))
-       , temporaryDirectoryBase :appConfiguration.GetValue<string>(appStringConstants.TemporaryDirectoryBaseConfigRootKey, appStringConstants.TemporaryDirectoryBaseDefault)
-       , persistenceMessageFileRelativePath :appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathDefault)
-       , persistenceFilePaths : default
-       , pickAndSaveMessageFileRelativePath :appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathDefault)
-       , pickAndSaveFilePaths : default
-       , persistence :default
-       , pickAndSave :default
-      , dBConnectionString : appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.DBConnectionStringConfigRootKey, GenerateProgramServiceStringConstants.DBConnectionStringDefault)
-       , ormLiteDialectProviderStringDefault : appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.OrmLiteDialectProviderConfigRootKey, GenerateProgramServiceStringConstants.OrmLiteDialectProviderDefault)
-       , entryPoints :default
+            , gSolutionSignil : new GSolutionSignil()
+            , artifactsDirectoryBase: appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseDefault)
+            , artifactsFileRelativePath: appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsFileRelativePathhDefault)
+            , artifactsFilePaths : default
+            , temporaryDirectoryBase :appConfiguration.GetValue<string>(appStringConstants.TemporaryDirectoryBaseConfigRootKey, appStringConstants.TemporaryDirectoryBaseDefault)
+            , enableProgress : appConfiguration.GetValue<bool>(appStringConstants.EnableProgressConfigRootKey, bool.Parse(appStringConstants.EnableProgressDefault))
+            , enablePersistence :appConfiguration.GetValue<bool>(PersistenceStringConstants.EnablePersistenceConfigRootKey, bool.Parse(PersistenceStringConstants.EnablePersistenceDefault))
+            , enablePickAndSave :  appConfiguration.GetValue<bool>(PersistenceStringConstants.EnablePickAndSaveConfigRootKey, bool.Parse(PersistenceStringConstants.EnablePickAndSaveDefault))
+            , persistenceMessageFileRelativePath :appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathDefault)
+            , persistenceFilePaths : default
+            , pickAndSaveMessageFileRelativePath :appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathDefault)
+            , pickAndSaveFilePaths : default
+            , persistence :default
+            , pickAndSave :default
+            , dBConnectionString : appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.DBConnectionStringConfigRootKey, GenerateProgramServiceStringConstants.DBConnectionStringDefault)
+            , ormLiteDialectProviderStringDefault : appConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.OrmLiteDialectProviderConfigRootKey, GenerateProgramServiceStringConstants.OrmLiteDialectProviderDefault)
+            , entryPoints :default
 
           );
 
@@ -304,10 +307,34 @@ namespace ATAP.Console.Console02 {
 
           #region ProgressReporting setup
           // ToDo: Use the ConsoleMonitor Service to write progress to ConsoleOut
-          // Use the ConsoleOut service to report progress
-          GenerateProgramProgress? gGenerateProgramProgress;
-          if (enableProgress) {
-            gGenerateProgramProgress = new GenerateProgramProgress();
+          // Use the ConsoleOut service to report progress, object based
+          void reportToConsoleOut(object progressDataToReport) {
+            mesg.Append(progressDataToReport.ToString());
+      #region Write the mesg to stdout
+      using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
+        if (!task.IsCompletedSuccessfully) {
+          if (task.IsCanceled) {
+            // Ignore if user cancelled the operation during output to stdout (internal cancellation)
+            // re-throw if the cancellation request came from outside the stdInLineMonitorAction
+            /// ToDo: evaluate the linked, inner, and external tokens
+            throw new OperationCanceledException();
+          }
+          else if (task.IsFaulted) {
+            //ToDo: Go through the inner exception
+            //foreach (var e in t.Exception) {
+            //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
+            // ToDo figure out what to do if the output stream is closed
+            throw new Exception("ToDo: WriteMessageSafelyAsync returned an AggregateException");
+            //}
+          }
+        }
+        mesg.Clear();
+      }
+      #endregion
+          }
+          IProgress<object>? gGenerateProgramProgress;
+          if (gInvokeGenerateCodeSignil.EnableProgress) {
+            gGenerateProgramProgress = new Progress<object>(reportToConsoleOut);
           }
           else {
             gGenerateProgramProgress = null;
@@ -439,14 +466,14 @@ namespace ATAP.Console.Console02 {
           #endregion
           */
 
-          GGenerateProgramResult gGenerateProgramResult;
+          IGGenerateProgramResult gGenerateProgramResult;
 
           #region Method timing setup
           Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
           stopWatch.Start();
           #endregion
           try {
-            Func<Task<GGenerateProgramResult>> run = () => InvokeGenerateProgramAsync(gInvokeGenerateCodeSignil);
+            Func<Task<IGGenerateProgramResult>> run = () => generateProgramHostedService.InvokeGenerateProgramAsync(gInvokeGenerateCodeSignil);
 
 
             gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);

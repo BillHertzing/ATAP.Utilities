@@ -11,6 +11,11 @@ namespace ATAP.Console.Console02 {
     public const string TemporaryDirectoryBaseConfigRootKey = "TemporaryDirectoryBase";
     public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\Console02\\";
     #endregion
+    #region ToDo migrate to an ATAP Abstract class for Progress,and its stringconstants assembly
+        public const string EnableProgressConfigRootKey = "EnableProgress";
+    public const string EnableProgressDefault = "true";
+    #endregion
+    
     #region GenerateProgramConsole02MechanicalConfigRootKeys
     public const string RootStringConfigRootKey = "RootString";
     public const string RootStringDefault = "E:\\";

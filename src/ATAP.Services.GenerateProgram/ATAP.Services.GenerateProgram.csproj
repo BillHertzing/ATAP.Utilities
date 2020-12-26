@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>net5.0;</TargetFrameworks> <!-- netcoreapp3.1 net47-->
-    <DefaultNamespace>ATAP.Services.GenerateProgram</DefaultNamespace>
+    <DefaultNamespace>ATAP.Services.GenerateCode</DefaultNamespace>
   </PropertyGroup>
 
   <ItemGroup>

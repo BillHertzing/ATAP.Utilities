@@ -20,9 +20,11 @@
     </Compile>
         -->
     <EmbeddedResource Include="**\*.resource"/>
+      </ItemGroup>
 
+<!-- It appears that there is no solution for building/embedding resourfes in the dotnet toolchain for V5.0-->
+<!--
   </ItemGroup>
-
   <Target Name="Resources" BeforeTargets="Compile">
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="_TargetFrameworks = @(_TargetFrameworks -> '%(Identity)')" />
     <ItemGroup>
@@ -35,7 +37,9 @@
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="testStr =  'testStr'" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="testStrReplace =  $([System.String]::Copy('testStr').Replace('test','replace'))" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="_IntermediateOutputPathPlusTargetFramework = @(_IntermediateOutputPathPlusTargetFramework->'%(Identity)')" />
+    -->
     <!-- ToDo: Add Runtime Identifier -->
+    <!--
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ListOfResxFiles = @(Resx)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ListOfDesignerFiles = @(Resx -> '%(Identity)')" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ListOfDesignerFiles = @(Resx -> $([System.String]::Copy('%(Resx.Identity)').Replace('resx','Generated.cs'))" />
@@ -64,7 +68,7 @@
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputResources = @(Resources)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="FilesWritten = @(FileWrites)" />
   </Target>
-
+  -->
 
   <!-- Targets for multiframework publishing courtesy of
     this stackoverflow answer https://stackoverflow.com/questions/43947599/how-to-publish-for-all-target-frameworks

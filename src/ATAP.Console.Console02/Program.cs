@@ -121,10 +121,9 @@ namespace ATAP.Console.Console02 {
       // populate the string localizers for Program
       options = Options.Create(new LocalizationOptions());
       stringLocalizerFactory = new ResourceManagerStringLocalizerFactory(options, NullLoggerFactory.Instance);
-      debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
-      exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
-      configLCL = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
-      uILocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
+      debugLocalizer = stringLocalizerFactory.Create(nameof(ATAP.Console.Console2.DebugResources), "ATAP.Console.Console02");
+      exceptionLocalizer = stringLocalizerFactory.Create(nameof(ATAP.Console.Console2.ExceptionResources), "ATAP.Console.Console02");
+      uILocalizer = stringLocalizerFactory.Create(nameof(ATAP.Console.Console2.UIResources), "ATAP.Console.Console02");
 
       // If localized non-string resources are needed, uncomment the following block
       // Load the ResourceManagers from the installation directory. These provide access to all localized resources including non-string resources
@@ -351,7 +350,6 @@ namespace ATAP.Console.Console02 {
     static ResourceManagerStringLocalizerFactory stringLocalizerFactory { get; set; }
     static IStringLocalizer debugLocalizer { get; set; }
     static IStringLocalizer exceptionLocalizer { get; set; }
-    static IStringLocalizer configLCL { get; set; }
     static IStringLocalizer uILocalizer { get; set; }
     // MEL logger;
     static Microsoft.Extensions.Logging.ILogger mELLogger { get; set; }

@@ -91,9 +91,9 @@ namespace ATAP.Console.Console02 {
     /// <param name="hostApplicationLifetime"></param>
     public Console02BackgroundService(IGenerateProgramHostedService generateProgramHostedService, IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration appConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
       this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
-      exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
-      debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
-      uiLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Console.Console02");
+      exceptionLocalizer = stringLocalizerFactory.Create("ATAP.Console.Console2.ExceptionResources", "ATAP.Console.Console02");
+      debugLocalizer = stringLocalizerFactory.Create(nameof(ATAP.Console.Console2.DebugResources), "ATAP.Console.Console02");
+      uiLocalizer = stringLocalizerFactory.Create(nameof(ATAP.Console.Console2.UIResources), "ATAP.Console.Console02");
       this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       this.logger = loggerFactory.CreateLogger<Console02BackgroundService>();
       // this.logger = (Logger<Console02BackgroundService>) ATAP.Utilities.Logging.LogProvider.GetLogger("Console02BackgroundService");
@@ -308,7 +308,7 @@ namespace ATAP.Console.Console02 {
           #region ProgressReporting setup
           // ToDo: Use the ConsoleMonitor Service to write progress to ConsoleOut
           // Use the ConsoleOut service to report progress, object based
-          void reportToConsoleOut(object progressDataToReport) {
+          async void reportToConsoleOut(object progressDataToReport) {
             mesg.Append(progressDataToReport.ToString());
       #region Write the mesg to stdout
       using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {

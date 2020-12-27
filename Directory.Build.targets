@@ -8,28 +8,62 @@
   <!-- ToDo: Make the Generator Value conditional, iif run under VS, use PublicResXFileCodeGenerator or ResXFileCodeGenerator.
           if not run under CS (for example dotnet build or dotnet msbuild, use resgen)
   -->
-  <!--
+
   <ItemGroup>
+    <Resx Include="**\*.resx" />
+    <Compile Include="**\*GeneratedStronglyTypedFile.cs" />
+    <!--
     <Compile Include="**\*.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>$([System.String]::Copy('%(FileName)').Replace('.Designer', '.resx'))</DependentUpon>
     </Compile>
-    <EmbeddedResource Include="**\*.resx">
-      <Generator>PublicResXFileCodeGenerator</Generator>
-      <LastGenOutput>$([System.String]::Copy('%(FileName)')).Designer.cs</LastGenOutput>
-    </EmbeddedResource>
+        -->
+    <EmbeddedResource Include="**\*.resource"/>
+
   </ItemGroup>
--->
-  <Target Name="Resources">
-  <GenerateResource
-    Sources="@(Resx)"
-    OutputResources="@(Resx->'$(IntermediateOutputPath)%(Identity).resources')">
-    <Output
-        TaskParameter="OutputResources"
-        ItemName="Resources"/>
-</GenerateResource>
-</Target>
+
+  <Target Name="Resources" BeforeTargets="Compile">
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="_TargetFrameworks = @(_TargetFrameworks -> '%(Identity)')" />
+    <ItemGroup>
+      <_TargetFrameworks Include="$(TargetFrameworks.Split(';'))" />
+    </ItemGroup>
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="_TargetFrameworks = @(_TargetFrameworks -> '%(Identity)')" />
+    <ItemGroup>
+      <_IntermediateOutputPathPlusTargetFramework Include="@(_TargetFrameworks -> '$(IntermediateOutputPath)%(Identity)')" />
+    </ItemGroup>
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="testStr =  'testStr'" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="testStrReplace =  $([System.String]::Copy('testStr').Replace('test','replace'))" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="_IntermediateOutputPathPlusTargetFramework = @(_IntermediateOutputPathPlusTargetFramework->'%(Identity)')" />
+    <!-- ToDo: Add Runtime Identifier -->
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ListOfResxFiles = @(Resx)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ListOfDesignerFiles = @(Resx -> '%(Identity)')" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ListOfDesignerFiles = @(Resx -> $([System.String]::Copy('%(Resx.Identity)').Replace('resx','Generated.cs'))" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputResources = @(Resx->'$(IntermediateOutputPath)%(TargetFrameworks)%(FileName).resources')" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputResources = @($([System.String]::Copy('%(Resx.Identity)').Replace('.resx', '.resource')))" />
+    <PropertyGroup>
+    <SingleResxFile>Resources/DebugMessages.resx</SingleResxFile>
+    <SingleResourceFile>Resources/ATAP.Services.GenerateProgram.DebugMessages.resources</SingleResourceFile>
+    <SingleStronglyTypedFilename>Resources/ATAP.Services.GenerateProgram.DebugMessages.GeneratedStronglyTypedFile.cs</SingleStronglyTypedFilename>
+    <StronglyTypedNamespace>ATAP.Services.GenerateProgram</StronglyTypedNamespace>
+    <StronglyTypedClassName>DebugMessages</StronglyTypedClassName>
+    </PropertyGroup>
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="SingleResxFile = $(SingleResxFile); SingleResourceFile = $(SingleResourceFile); SingleStronglyTypedFilename = $(SingleStronglyTypedFilename)" />
+    <GenerateResource Condition="Exists('$(SingleResxFile)')"
+      Sources="$(SingleResxFile)"
+       OutputResources="$(SingleResourceFile)"
+       PublicClass="true"
+       StronglyTypedLanguage="C#"
+       StronglyTypedNamespace = '$(StronglyTypedNamespace)'
+       StronglyTypedClassName = '$(StronglyTypedClassName)'
+       StronglyTypedFilename = '$(SingleStronglyTypedFilename)'
+       >
+      <Output TaskParameter="OutputResources" ItemName="Resources" />
+      <Output TaskParameter="FilesWritten" ItemName="FileWrites" />
+    </GenerateResource>
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="OutputResources = @(Resources)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="FilesWritten = @(FileWrites)" />
+  </Target>
 
 
   <!-- Targets for multiframework publishing courtesy of
@@ -51,11 +85,10 @@
     <MSBuild Projects="$(MSBuildProjectFile)" Targets="PublishAll" Properties="TargetFramework=%(_PublishFramework.Identity)" />
   </Target>
 
-  <Target Name="PublishAll"
-        DependsOnTargets="PublishProjectIfFrameworkSet;PublishProjectForAllRIDsIfTargetFrameworkSet;PublishProjectForAllFrameworksIfFrameworkUnset" />
+  <Target Name="PublishAll" DependsOnTargets="PublishProjectIfFrameworkSet;PublishProjectForAllRIDsIfTargetFrameworkSet;PublishProjectForAllFrameworksIfFrameworkUnset" />
   <Target Name="PublishProjectIfFrameworkSet" DependsOnTargets="Publish" Condition=" '$(TargetFramework)' != '' " />
 
-<!-- Microsoft Source Link for every project -->
+  <!-- Microsoft Source Link for every project -->
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub">
       <PrivateAssets>all</PrivateAssets>
@@ -149,9 +182,9 @@
     <PackageReference Update="FluentAssertions" Version="5.10.2" />
     <PackageReference Update="Moq" Version="4.15.2" />
     <PackageReference Update="xunit" Version="2.4.1" />
-    <PackageReference Update="xunit.runner.console" Version="2.4.1"/>
-    <PackageReference Update="xunit.runner.visualstudio" Version="2.4.1"/>
-    <PackageReference Update="coverlet.collector" Version="1.3.0"/>
+    <PackageReference Update="xunit.runner.console" Version="2.4.1" />
+    <PackageReference Update="xunit.runner.visualstudio" Version="2.4.1" />
+    <PackageReference Update="coverlet.collector" Version="1.3.0" />
 
     <!-- Packages to add resilience policies to async and synchronous operations -->
     <PackageReference Update="Polly" Version="7.2.1" />
@@ -172,7 +205,7 @@
     <PackageReference Update="docfx" Version="2.56.5" />
 
     <!-- Packages to play with CSharpSyntaxTree  -->
-      <PackageReference Update="Microsoft.CodeAnalysis.Common" Version="3.5.0" />
+    <PackageReference Update="Microsoft.CodeAnalysis.Common" Version="3.5.0" />
 
   </ItemGroup>
 

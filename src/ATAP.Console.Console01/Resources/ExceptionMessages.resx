@@ -121,4 +121,31 @@
     <value>StringLocalizer for culture {0} Not Found</value>
     <comment>{0}: string represntation of CurrentCulture</comment>
   </data>
+  <data name="InvalidCircularEnvironment" xml:space="preserve">
+    <value>The Environment "Production" should not be reached here</value>
+  </data>
+  <data name="InvalidGenericHostLifetimeString" xml:space="preserve">
+    <value>The GenericHostLifeTimeString does not match any member of the SupportedGenericHostLifetimes enumeration.{0}</value>
+    <comment>{genericHostLifetimeString}</comment>
+  </data>
+  <data name="InvalidKindOfHostBuilderToBuildString" xml:space="preserve">
+    <value>The KindOfHostBuilderToBuildString {0} specified in the GenericHostConfigurationRoot does not match any member of the KindOfHostBuilderToBuild enumeration.</value>
+    <comment>kindOfHostBuilderToBuild</comment>
+  </data>
+  <data name="InvalidRedeclarationOfEnvironment" xml:space="preserve">
+    <value>The initial Environment from the initialConfigurationRoot is {0}, and after reconfiguration, the Environment is {1}. this is a mis-match, and indicates a problem with the environment-specific configuration providers. Environment-specific configuration providers are not allowed to change the environment.</value>
+  </data>
+  <data name="InvalidSupportedEnvironment" xml:space="preserve">
+    <value>The Environment enumeration argument specified {0} is not supported.</value>
+  </data>
+  <data name="InvalidWebHostBuilderToBuildString" xml:space="preserve">
+    <value>The WebHostBuilder string {0} specified in the GenericHostConfigurationRoot does not match any member of the SupportedWebHostBuilders enumeration.</value>
+  </data>
+  <data name="UnsupportedGenericHostLifetime" xml:space="preserve">
+    <value>The genericHostLifetime enumeration value specified  is not supported. {0}</value>
+    <comment>{genericHostLifetime}</comment>
+  </data>
+  <data name="UnsupportedWebHostBuilderToBuild" xml:space="preserve">
+    <value>The WebHostBuilder enumeration argument specified {0} is not supported.</value>
+  </data>
 </root>

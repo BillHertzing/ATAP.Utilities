@@ -67,7 +67,7 @@ namespace ATAP.Services.GenerateCode {
     public GenerateProgramHostedService(ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration hostedServiceConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
       StringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
       //ExceptionLocalizer = StringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "Resources");
-      //DebugLocalizer = StringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "Resources");
+      DebugLocalizer = StringLocalizerFactory.Create(nameof(ATAP.Services.GenerateCode), "Resources");
       //UiLocalizer = StringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "Resources");
       LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       Logger = loggerFactory.CreateLogger<GenerateProgramHostedService>();

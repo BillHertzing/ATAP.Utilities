@@ -59,6 +59,15 @@
     <!-- The Roslyn Code Analyzers for FxCop Rules should be installed as a Nuget Package at the Solution level, per this article https://docs.microsoft.com/en-us/visualstudio/code-quality/install-fxcop-analyzers?view=vs-2019 -->
     <!-- Per this article https://docs.microsoft.com/en-us/visualstudio/code-quality/roslyn-analyzers-overview?view=vs-2019#nuget-package-versus-vsix-extension the legacy post-build code analysis tools should be turned off -->
     <RunCodeAnalysis>false</RunCodeAnalysis>
+
+    <!-- Enable or disable MSBuild's Binary Build Log for all projects in the solution -->
+    <binaryLogger>
+    <LogFile>msbuild.binlog</LogFile>
+    </binaryLogger>
+    <!-- Enable or disable MSBuild's file-based Build Log for all projects in the solution -->
+    <fileLogger>
+    <LogFile>msbuild.log</LogFile>
+    </fileLogger>
   </PropertyGroup>
 
   <!-- NuGet Package information for all assemblies in the solution -->
@@ -89,7 +98,7 @@
 
   <!-- Define the maximum number of CPUs to use when building in parallel. value of 1 indicates to not build anything in parallel -->
   <PropertyGroup>
-    <maxcpucount>10</maxcpucount>
+    <maxcpucount>1</maxcpucount>
   </PropertyGroup>
 
   <!--  Set MSBuild output verbosity and warnings to ignore. The disabled warnings are regarding the nullable reference types, until I can figure out the correct way to use them along with the 'default' argument specification -->

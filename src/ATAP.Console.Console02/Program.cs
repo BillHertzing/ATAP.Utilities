@@ -4,6 +4,7 @@ using ATAP.Utilities.ETW;
 using ATAP.Utilities.HostedServices;
 using ATAP.Utilities.HostedServices.ConsoleSourceHostedService;
 using ATAP.Utilities.HostedServices.ConsoleSinkHostedService;
+using ATAP.Services.GenerateCode;
 //using GenerateProgram;
 using ATAP.Utilities.Logging;
 using ATAP.Utilities.Persistence;
@@ -41,7 +42,7 @@ using Microsoft.CodeAnalysis;
 namespace ATAP.Console.Console02 {
 
   /// <summary>
-  /// This program is going to be a Console program reads the GenerateProgramDB and mechanically re-creates the Console01 program as Console01Mechanical, by populating Artefacts with mechanically created files, and then building the ATAP.Console,Console01Mechanical.csproj file
+  /// This program is going to be a Console program reads the GenerateProgramDB and mechanically re-creates the Console01 program as Console01Mechanical, by populating Artifacts with mechanically created files, and then building the ATAP.Console,Console01Mechanical.csproj file
   /// </summary>
   static partial class Program {
 
@@ -75,7 +76,7 @@ namespace ATAP.Console.Console02 {
     public static async Task Main(string[] args) {
 
       #region Startup logger
-      // Configure a startup logger, prior to getting the Logger configuration from the ConfigurationRoot
+      // Configure a startup Logger, prior to getting the Logger configuration from the ConfigurationRoot
       // Serilog is the logging provider I picked to provide a logging solution for the Console02 application
       // Enable Serilog's internal debug logging. Note that internal logging will not write to any user-defined Sources
       //  https://github.com/serilog/serilog-sinks-file/blob/dev/example/Sample/Program.cs
@@ -88,9 +89,9 @@ namespace ATAP.Console.Console02 {
       // Another is https://nblumhardt.com/2019/10/serilog-in-aspnetcore-3/
       // Creating a `LoggerProviderCollection` lets Serilog optionally write events through other dynamically-added MEL ILoggerProviders.
       //var providers = new LoggerProviderCollection();
-      // Setup Serilog's static logger with an initial configuration sufficient to log startup errors
+      // Setup Serilog's static Logger with an initial configuration sufficient to log startup errors
 
-      // create a local Serilog logger for use during Program startup
+      // create a local Serilog Logger for use during Program startup
       var serilogLoggerConfiguration = new Serilog.LoggerConfiguration()
         .MinimumLevel.Verbose()
         .Enrich.FromLogContext()
@@ -105,16 +106,16 @@ namespace ATAP.Console.Console02 {
       //.WriteTo.Providers(providers)
 
       Serilog.Core.Logger serilogLogger = serilogLoggerConfiguration.CreateLogger();
-      // Set the Static logger called Log to use this LoggerConfiguration
+      // Set the Static Logger called Log to use this LoggerConfiguration
       Serilog.Log.Logger = serilogLogger;
       Log.Debug("{Program} {Main}: The program Console02 is starting", "Program", "Main");
-      Log.Debug("{Program} {Main}: LoggerFactory and local logger defined with a default startup configuration:", "Program", "Main");
+      Log.Debug("{Program} {Main}: LoggerFactory and local Logger defined with a default startup configuration:", "Program", "Main");
 
       // Set the MEL LoggerFactory to use this LoggerConfiguration
       Microsoft.Extensions.Logging.ILoggerFactory mELoggerFactory = new Microsoft.Extensions.Logging.LoggerFactory().AddSerilog();
       Microsoft.Extensions.Logging.ILogger mELlogger = mELoggerFactory.CreateLogger("Program");
       mELlogger.LogDebug("{0} {1}: The program Console02 is starting", "Program", "Main");
-      mELlogger.LogDebug("{0} {1}: LoggerFactory and local logger defined with a default startup configuration:", "Program", "Main");
+      mELlogger.LogDebug("{0} {1}: LoggerFactory and local Logger defined with a default startup configuration:", "Program", "Main");
       #endregion
 
       #region stringLocalizers and optionally resource managers for InternationalizatioN (AKA I18N)
@@ -232,6 +233,7 @@ namespace ATAP.Console.Console02 {
       });
       // Build the GH configuration
       //genericHostConfigurationRoot = genericHostConfigurationBuilder.Build();
+      // Various experiments with trying to get the Logger(s) to work as hoped for
       //// Create a LoggerFactory, configure it to use Serilog
       //loggerConfiguration = genericHostConfigurationRoot.GetSection("Logging");
       //// redefine the factory according to the new configuration
@@ -240,19 +242,19 @@ namespace ATAP.Console.Console02 {
       //// Set the LogFactory in the ATP.Utilities.Logging class
       //LogProvider.SetLogFactory(factory);
       //// Set the LogFactory in the DI-Services
-      //// ToDo: LoggerFactory loggerFactory.SetLogFactory(factory);
-      //// redefine the local logger from this factory, configured with the startup logging as defined in the Logging section of the configurationRoot
-      //logger = factory.CreateLogger("Console02");
-      //serilogLogger.LogDebug(debugLocalizer["{0} {1}: LoggerFactory and local logger redefined per the Logging section in the configuration settings:"], "Program", "Main");
-      //// Copy this tour "standard logger
+      //// ToDo: LoggerFactory LoggerFactory.SetLogFactory(factory);
+      //// redefine the local Logger from this factory, configured with the startup logging as defined in the Logging section of the configurationRoot
+      //Logger = factory.CreateLogger("Console02");
+      //serilogLogger.LogDebug(DebugLocalizer["{0} {1}: LoggerFactory and local Logger redefined per the Logging section in the configuration settings:"], "Program", "Main");
+      //// Copy this tour "standard Logger
       //// Create a LoggerFactory, configure it to use Serilog
       //var factory = new LoggerFactory();
-      //var x = serilogLoggerConfiguration..CreateLoggerF();
+      //var x = serilogLoggerConfiguration.CreateLoggerF();
       //factory.AddSerilog(serilogLoggerConfiguration.CreateLogger());
       //LogProvider.SetLogFactory(factory);
-      //// Create a local logger from this factory, configured with the startup logging defined above
-      //logger = factory.CreateLogger("Console02");
-      //// For this program, I've selected Serilog as the underlying serilogLogger.
+      //// Create a local Logger from this factory, configured with the startup logging defined above
+      //Logger = factory.CreateLogger("Console02");
+      //// For this program, I've selected Serilog as the underlying Logger.
       //genericHostBuilder.UseSerilog();
       #endregion
 
@@ -267,6 +269,9 @@ namespace ATAP.Console.Console02 {
         //services.AddSingleton<IFileSystemWatchersAsObservableFactoryService, FileSystemWatchersAsObservableFactoryService>();
         //services.AddSingleton<IFileSystemWatchersHostedService, FileSystemWatchersHostedService>();
         services.AddSingleton<IObservableResetableTimersHostedService, ObservableResetableTimersHostedService>();
+        // The service for generating code
+        services.AddSingleton<IGenerateProgramHostedService, GenerateProgramHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
+
         // The primary service (loop) that this program does
         services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
       });
@@ -315,7 +320,7 @@ namespace ATAP.Console.Console02 {
               //ToDo: Add Error level or category to ATAPUtilitiesETWProvider, and make OperationCanceled one of the categories
               // Specifically log the details of the cancellation (where it originated)
               // ATAPUtilitiesETWProvider.Log.Information($"Exception in Program.Main: {e.Exception.GetType()}: {e.Exception.Message}");
-          } // Other kinds of exceptions bubble up to the catch block for the surrounding try, where the Serilog logger records it
+          } // Other kinds of exceptions bubble up to the catch block for the surrounding try, where the Serilog Logger records it
           finally {
             // Dispose of any resources held directly by this program. Resources held by services in the DI-Container will be disposed of by the genericHost as it tears down
             //if (DisposeThis != null) { DisposeThis.Dispose(); }
@@ -333,7 +338,7 @@ namespace ATAP.Console.Console02 {
         throw ex;
       }
       finally {
-        // ToDo: How to do something similar for MEL logger?
+        // ToDo: How to do something similar for MEL Logger?
         Log.CloseAndFlush();
       }
 
@@ -351,7 +356,7 @@ namespace ATAP.Console.Console02 {
     static IStringLocalizer debugLocalizer { get; set; }
     static IStringLocalizer exceptionLocalizer { get; set; }
     static IStringLocalizer uILocalizer { get; set; }
-    // MEL logger;
+    // MEL Logger;
     static Microsoft.Extensions.Logging.ILogger mELLogger { get; set; }
 
   }
@@ -378,9 +383,9 @@ namespace ATAP.Console.Console02 {
 
   //    public IHostEnvironment HostEnvironment { get; }
 
-  //    public Startup(ILoggerFactory loggerFactory, IConfiguration configuration, IHostEnvironment hostEnvironment, IHostApplicationLifetime hostApplicationLifetime) {
+  //    public Startup(ILoggerFactory LoggerFactory, IConfiguration configuration, IHostEnvironment HostEnvironment, IHostApplicationLifetime HostApplicationLifetime) {
   //      Configuration = configuration;
-  //      HostEnvironment = hostEnvironment;
+  //      HostEnvironment = HostEnvironment;
   //    }
 
   //    // This method gets called by the runtime. Use this method to add servicesGenericHostBuilder to the container.

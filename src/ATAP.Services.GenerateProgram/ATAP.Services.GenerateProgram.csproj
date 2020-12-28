@@ -15,6 +15,7 @@
     <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
   </ItemGroup>
 
+<!--
   <ItemGroup>
     <None Update="GenerateProgramHostedServiceSettings.Development.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -23,44 +24,14 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Resources\DebugResources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DebugResources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\ExceptionResources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>ExceptionResources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\UIResources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>UIResources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <Compile Update="Resources\DebugResources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>DebugResources.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Resources\ExceptionResources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ExceptionResources.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Resources\UIResources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>UIResources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
+-->
+    <ItemGroup>
     <Folder Include="Artifacts\Resources\" />
   </ItemGroup>
 
 <PropertyGroup>
   <DefaultItemExcludes>Artifacts\**</DefaultItemExcludes>
-  <DefaultItemExcludes>$(DefaultItemExcludes);**\Resources\**</DefaultItemExcludes>
+
 </PropertyGroup>
 
   <!-- ATAP Utility library for collection extensions (for Dictionary AddRange) -->

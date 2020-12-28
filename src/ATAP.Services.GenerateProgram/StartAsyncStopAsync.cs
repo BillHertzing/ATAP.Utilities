@@ -1,9 +1,13 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 
 namespace ATAP.Services.GenerateCode {
-  public partial class GenerateProgramHostedService {
+  public partial class GenerateProgramHostedService : IHostedService, IDisposable, IGenerateProgramHostedService {
     #region StartAsync and StopAsync methods as promised by IHostedService when IHostLifetime is ConsoleLifetime  // ToDo:, see if this is called by service and serviced
     /// <summary>
     /// Called to start the service.
@@ -18,9 +22,9 @@ namespace ATAP.Services.GenerateCode {
 
       #endregion
       #region Register actions with the CancellationToken (s)
-      //externalCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "GenerateProgramHostedService", "externalCancellationToken"));
-      //InternalCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} InternalCancellationToken has signalled stopping."], "GenerateProgramHostedService", "InternalCancellationToken"));
-      //LinkedCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} LinkedCancellationToken has signalled stopping."], "GenerateProgramHostedService", "LinkedCancellationToken"));
+      externalCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "GenerateProgramHostedService", "externalCancellationToken"));
+      InternalCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} InternalCancellationToken has signalled stopping."], "GenerateProgramHostedService", "InternalCancellationToken"));
+      LinkedCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} LinkedCancellationToken has signalled stopping."], "GenerateProgramHostedService", "LinkedCancellationToken"));
       #endregion
       #region register local event handlers with the IHostApplicationLifetime's events
       // Register the methods defined in this class with the three CancellationToken properties found on the IHostApplicationLifetime instance passed to this class in it's .ctor

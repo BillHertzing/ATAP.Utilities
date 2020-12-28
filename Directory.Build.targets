@@ -70,6 +70,12 @@
   </Target>
   -->
 
+  <!-- Solutionwide, copy newer .json files that exist in the project directoryinto the output directory-->
+  <ItemGroup>
+    <JsonSettings Include="*.json" />
+    <None Update="%(JsonSettings)"  CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- Targets for multiframework publishing courtesy of
     this stackoverflow answer https://stackoverflow.com/questions/43947599/how-to-publish-for-all-target-frameworks
     this GIST:https://gist.github.com/dasMulli/b14026437468ce4b56ef93e010f24a36

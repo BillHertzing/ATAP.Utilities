@@ -1,7 +1,9 @@
-﻿using MethodBoundaryAspect.Fody.Attributes;
+﻿using System.Diagnostics;
+using MethodBoundaryAspect.Fody.Attributes;
 
 namespace ATAP.Utilities.ETW {
     public sealed class ETWLogAttribute : OnMethodBoundaryAspect {
+       [DebuggerStepThrough]
         // public override void OnEntry(MethodExecutionArgs args, [System.Runtime.CompilerServices.CallerMemberName] string memberName = "") {
         public override void OnEntry(MethodExecutionArgs args) {
             ATAPUtilitiesETWProvider.Log.MethodBoundryFromAspect($"<{args.Method.DeclaringType.FullName}.{args.Method.Name}");

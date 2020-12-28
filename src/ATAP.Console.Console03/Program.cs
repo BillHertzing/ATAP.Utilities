@@ -41,7 +41,7 @@ using Microsoft.CodeAnalysis;
 namespace ATAP.Console.Console03 {
 
   /// <summary>
-  /// This program is going to be a Console program reads the GenerateProgramDB and mechanically re-creates the Console01 program as Console01Mechanical, by populating Artefacts with mechanically created files, and then building the ATAP.Console,Console01Mechanical.csproj file
+  /// This program is going to be a Console program reads the GenerateProgramDB and mechanically re-creates the Console01 program as Console01Mechanical, by populating Artifacts with mechanically created files, and then building the ATAP.Console,Console01Mechanical.csproj file
   /// </summary>
   static partial class Program {
 

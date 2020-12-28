@@ -31,7 +31,6 @@
 
 <PropertyGroup>
   <DefaultItemExcludes>Artifacts\**</DefaultItemExcludes>
-
 </PropertyGroup>
 
   <!-- ATAP Utility library for collection extensions (for Dictionary AddRange) -->

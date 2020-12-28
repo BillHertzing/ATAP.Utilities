@@ -8,10 +8,10 @@
   <!-- ToDo: Make the Generator Value conditional, iif run under VS, use PublicResXFileCodeGenerator or ResXFileCodeGenerator.
           if not run under CS (for example dotnet build or dotnet msbuild, use resgen)
   -->
-
   <ItemGroup>
     <Resx Include="**\*.resx" />
-    <Compile Include="**\*GeneratedStronglyTypedFile.cs" />
+    <EmbeddedResource Include="**\*.resource"/>
+
     <!--
     <Compile Include="**\*.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -19,7 +19,6 @@
       <DependentUpon>$([System.String]::Copy('%(FileName)').Replace('.Designer', '.resx'))</DependentUpon>
     </Compile>
         -->
-    <EmbeddedResource Include="**\*.resource"/>
       </ItemGroup>
 
 <!-- It appears that there is no solution for building/embedding resourfes in the dotnet toolchain for V5.0-->
@@ -70,11 +69,16 @@
   </Target>
   -->
 
-  <!-- Solutionwide, copy newer .json files that exist in the project directoryinto the output directory-->
+  <!-- Solution-wide, copy newer .json settings files that exist in the project directory into the output directory -->
+    <PropertyGroup>
+    <PrepareForRunDependsOn>$(PrepareForRunDependsOn);CopyJSONSettingsFilesToOutputDirectory</PrepareForRunDependsOn>
+  </PropertyGroup>
   <ItemGroup>
-    <JsonSettings Include="*.json" />
-    <None Update="%(JsonSettings)"  CopyToOutputDirectory="PreserveNewest" />
+    <JsonSettingsFiles Include="*.json" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch(%(Filename), 'settings.*json$'))"/>
   </ItemGroup>
+  <Target Name="CopyJSONSettingsFilesToOutputDirectory">
+    <Copy SourceFiles="@(JsonSettingsFiles)" DestinationFolder="$(OutDir)" />
+  </Target>
 
   <!-- Targets for multiframework publishing courtesy of
     this stackoverflow answer https://stackoverflow.com/questions/43947599/how-to-publish-for-all-target-frameworks

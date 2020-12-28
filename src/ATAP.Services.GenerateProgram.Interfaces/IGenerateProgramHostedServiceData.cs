@@ -12,7 +12,7 @@ using ATAP.Utilities.GenerateProgram;
 using ATAP.Utilities.Philote;
 namespace ATAP.Services.GenerateCode {
   public interface IGenerateProgramHostedServiceData : IDisposable {
-    IDictionary<IPhilote<IGInvokeGenerateCodeSignil>,IGGenerateProgramResult> GenerateCodeTasks { get; init; }
+    IDictionary<IPhilote<IGInvokeGenerateCodeSignil>,IGGenerateProgramResult> GenerateCodeTasks { get; set; }
 
     void Dispose();
   }

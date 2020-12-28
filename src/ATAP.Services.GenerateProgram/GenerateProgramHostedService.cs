@@ -50,7 +50,7 @@ namespace ATAP.Services.GenerateCode {
     #endregion
     */
     #region Data for Service
-    public IGenerateProgramHostedServiceData ServiceData { get; init; }
+    public IGenerateProgramHostedServiceData ServiceData { get; set; }
     #endregion
     #region Performance Monitoring data
     Stopwatch Stopwatch { get; } // ToDo: utilize a much more powerful and ubiquitous timing and profiling tool than a stopwatch
@@ -66,9 +66,9 @@ namespace ATAP.Services.GenerateCode {
     /// <param name="hostApplicationLifetime"></param>
     public GenerateProgramHostedService(ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration hostedServiceConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
       StringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
-      //ExceptionLocalizer = StringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "Resources");
-      //DebugLocalizer = StringLocalizerFactory.Create(nameof(ATAP.Services.GenerateCode), "Resources");
-      //UiLocalizer = StringLocalizerFactory.Create(nameof(GenerateProgramHostedService.Resources), "Resources");
+      ExceptionLocalizer = StringLocalizerFactory.Create(typeof(ATAP.Services.GenerateProgram.ExceptionResources));
+      DebugLocalizer = StringLocalizerFactory.Create(typeof(ATAP.Services.GenerateProgram.DebugResources));
+      UiLocalizer = StringLocalizerFactory.Create(typeof(ATAP.Services.GenerateProgram.UIResources));
       LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       Logger = loggerFactory.CreateLogger<GenerateProgramHostedService>();
       // Logger = (Logger<GenerateProgramHostedService>) ATAP.Utilities.Logging.LogProvider.GetLogger("GenerateProgramHostedService");
@@ -81,6 +81,8 @@ namespace ATAP.Services.GenerateCode {
       InternalCancellationToken = InternalCancellationTokenSource.Token;
       Stopwatch = new Stopwatch();
       #region Create the serviceData and initialize it from the StringConstants or this service's ConfigRoot
+      Logger.LogDebug(DebugLocalizer["Creating ServiceData"]);
+
       ServiceData = new GenerateProgramHostedServiceData();
       // populate the servicedata tasks list with a single tuple for development
 

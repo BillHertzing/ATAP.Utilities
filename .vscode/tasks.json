@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/src/ATAP.Console.Console01/ATAP.Console.Console01.csproj",
+                "${workspaceFolder}/src/ATAP.Console.Console02/ATAP.Console.Console02.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -23,7 +23,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/src/AService01/AService01.csproj",
+                "${workspaceFolder}/src/ATAP.Console.Console02/ATAP.Console.Console02.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],

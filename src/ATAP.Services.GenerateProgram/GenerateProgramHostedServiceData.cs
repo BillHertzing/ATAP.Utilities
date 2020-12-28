@@ -16,7 +16,7 @@ namespace ATAP.Services.GenerateCode {
 
   public partial class GenerateProgramHostedServiceData : IGenerateProgramHostedServiceData {
 
-    public IDictionary<IPhilote<IGInvokeGenerateCodeSignil>,IGGenerateProgramResult>  GenerateCodeTasks { get; init; }
+    public IDictionary<IPhilote<IGInvokeGenerateCodeSignil>,IGGenerateProgramResult>  GenerateCodeTasks { get; set; }
 
     public GenerateProgramHostedServiceData() {
       NonDisposedCount = 0;

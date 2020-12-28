@@ -13,7 +13,7 @@ using ATAP.Utilities.Persistence;
 using ATAP.Utilities.GenerateProgram;
 namespace ATAP.Services.GenerateCode {
   public interface IGenerateProgramHostedService {
-    IGenerateProgramHostedServiceData ServiceData { get; init; }
+    IGenerateProgramHostedServiceData ServiceData { get; set; }
     IGGenerateProgramResult InvokeGenerateProgram(IGInvokeGenerateCodeSignil gInvokeGenerateCodeSignil);
     Task<IGGenerateProgramResult> InvokeGenerateProgramAsync(IGInvokeGenerateCodeSignil gInvokeGenerateCodeSignil);
     // IGGenerateProgramResult InvokeGenerateProgram(IGAssemblyGroupSignil gAssemblyGroupSignil, IGGlobalSettingsSignil gGlobalSettingsSignil, IGSolutionSignil gSolutionSignil, IGGenerateCodeProgress gGenerateCodeProgressReport, IPersistence<IInsertResultsAbstract> persistence, IPickAndSave<IInsertResultsAbstract> pickAndSave, CancellationToken cancellationToken);

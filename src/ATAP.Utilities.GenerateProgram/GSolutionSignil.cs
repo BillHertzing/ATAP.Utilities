@@ -8,7 +8,7 @@ namespace ATAP.Utilities.GenerateProgram {
   public class GSolutionSignil  : IGSolutionSignil {
     public GSolutionSignil(bool hasPropsAndTargets = default
     , bool hasEditorConfig = default
-    , bool hasArtefacts = default
+    , bool hasArtifacts = default
     , bool hasDevLog = default
     , bool hasDocumentation = default
     , string sourceRelativePath = default
@@ -26,7 +26,7 @@ namespace ATAP.Utilities.GenerateProgram {
 ) {
       HasPropsAndTargets = hasPropsAndTargets == default ? false : hasPropsAndTargets;
       HasEditorConfig = hasEditorConfig == default ? false : hasEditorConfig;
-      HasArtefacts = hasArtefacts == default ? false : hasArtefacts;
+      HasArtifacts = hasArtifacts == default ? false : hasArtifacts;
       HasDevLog = hasDevLog == default ? false : hasDevLog;
       HasDocumentation = hasDocumentation == default ? false : hasDocumentation;
       SourceRelativePath = sourceRelativePath == default ? "" : sourceRelativePath;
@@ -45,7 +45,7 @@ namespace ATAP.Utilities.GenerateProgram {
     }
     public bool HasPropsAndTargets { get; init; }
     public bool HasEditorConfig { get; init; }
-    public bool HasArtefacts { get; init; }
+    public bool HasArtifacts { get; init; }
     public bool HasDevLog { get; init; }
     public bool HasDocumentation { get; init; }
     public string SourceRelativePath { get; init; }

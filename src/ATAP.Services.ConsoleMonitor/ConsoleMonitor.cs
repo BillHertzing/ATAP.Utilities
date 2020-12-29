@@ -20,7 +20,7 @@ namespace ATAP.Utilities.HostedServices {
 #if TRACE
   [ETWLogAttribute]
 #endif
-  // A Background service that consumes stdin (Console.In) and acts on the value delivered according to the 
+  // A Background service that consumes stdin (Console.In) and acts on the value delivered according to the
   public class ConsoleMonitorBackgroundService : BackgroundService {
     #region Common Constructor-injected Auto-Implemented Properties
     // These properteis can only be set in the class constructor.
@@ -75,6 +75,7 @@ namespace ATAP.Utilities.HostedServices {
 
       this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       this.logger = loggerFactory.CreateLogger<ConsoleMonitorBackgroundService>();
+      this.logger.LogDebug("ConsoleMonitorBackgroundService", ".ctor");  // ToDo Fody for tracing constructors, via an optional switch
       this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
       this.hostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
       this.hostConfiguration = hostConfiguration ?? throw new ArgumentNullException(nameof(hostConfiguration));
@@ -85,7 +86,7 @@ namespace ATAP.Utilities.HostedServices {
       internalCancellationToken = internalCancellationTokenSource.Token;
 
     }
-  
+
     public void Create(Func<string,Task> consoleMonitorFunc) {
       this.consoleMonitorFunc = consoleMonitorFunc;
     }

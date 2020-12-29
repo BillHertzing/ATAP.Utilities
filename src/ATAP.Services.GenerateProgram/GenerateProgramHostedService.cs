@@ -92,27 +92,27 @@ namespace ATAP.Services.GenerateCode {
       //  the default values come from the IConfiguration HostedServiceConfiguration that is DI injected at service startup
       /// ToDo: Security: ensure the paths do not go above their Base directory
 
-      var gInvokeGenerateCodeSignilDefault = new GInvokeGenerateCodeSignil(
-        new GAssemblyGroupSignil(), new GGlobalSettingsSignil(), new GSolutionSignil(),
-        artifactsDirectoryBase: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, hostedServiceStringConstants.ArtifactsDirectoryBaseDefault), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
-        artifactsFileRelativePath: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, hostedServiceStringConstants.ArtifactsFileRelativePathhDefault),
-        enablePersistence: hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(hostedServiceStringConstants.EnablePersistenceBoolDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
-        enablePickAndSave: hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(hostedServiceStringConstants.EnablePickAndSaveBoolDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
-        enableProgress: hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.EnableProgressBoolConfigRootKey, bool.Parse(hostedServiceStringConstants.EnableProgressBoolDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
-        temporaryDirectoryBase: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.TemporaryDirectoryBaseConfigRootKey, hostedServiceStringConstants.TemporaryDirectoryBaseDefault),
-        persistenceMessageFileRelativePath: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.PersistenceMessageFileRelativePathConfigRootKey, hostedServiceStringConstants.PersistenceMessageFileRelativePathDefault),
-        pickAndSaveMessageFileRelativePath: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.PickAndSaveMessageFileRelativePathConfigRootKey, hostedServiceStringConstants.PickAndSaveMessageFileRelativePathDefault),
-        dBConnectionString: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.DBConnectionStringConfigRootKey, hostedServiceStringConstants.DBConnectionStringDefault),
-        ormLiteDialectProviderStringDefault: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.OrmLiteDialectProviderConfigRootKey, hostedServiceStringConstants.OrmLiteDialectProviderDefault)
-      );
-      // Every invocation to GenerateProgram needs an instance of an EntryPoint class
-      gInvokeGenerateCodeSignilDefault.EntryPoints = new ATAP.Utilities.GenerateProgram.EntryPoints();
-      gInvokeGenerateCodeSignilDefault.ArtifactsFilePaths = new string[1] { gInvokeGenerateCodeSignilDefault.ArtifactsDirectoryBase + gInvokeGenerateCodeSignilDefault.ArtifactsFileRelativePath };
-      gInvokeGenerateCodeSignilDefault.PersistenceFilePaths = new string[1] { gInvokeGenerateCodeSignilDefault.TemporaryDirectoryBase + gInvokeGenerateCodeSignilDefault.PersistenceMessageFileRelativePath };
-      gInvokeGenerateCodeSignilDefault.PickAndSaveFilePaths = new string[1] { gInvokeGenerateCodeSignilDefault.TemporaryDirectoryBase + gInvokeGenerateCodeSignilDefault.PickAndSaveMessageFileRelativePath };
-      // ToDo ?: setup placeholders for the ProgressReport object
-      // ToDo ?: setup placeholders for the Persistence(File)
-      // ToDo ?: setup placeholders for the PickAndSave object
+      // var gInvokeGenerateCodeSignilDefault = new GInvokeGenerateCodeSignil(
+      //   new GAssemblyGroupSignil(), new GGlobalSettingsSignil(), new GSolutionSignil(),
+      //   artifactsDirectoryBase: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, hostedServiceStringConstants.ArtifactsDirectoryBaseDefault), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
+      //   artifactsFileRelativePath: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, hostedServiceStringConstants.ArtifactsFileRelativePathDefault),
+      //   enablePersistence: hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(hostedServiceStringConstants.EnablePersistenceBoolDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
+      //   enablePickAndSave: hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(hostedServiceStringConstants.EnablePickAndSaveBoolDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
+      //   enableProgress: hostedServiceConfiguration.GetValue<bool>(hostedServiceStringConstants.EnableProgressBoolConfigRootKey, bool.Parse(hostedServiceStringConstants.EnableProgressBoolDefault)), // ToDo: should validate in case the hostedServiceStringConstants assembly is messed up?
+      //   temporaryDirectoryBase: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.TemporaryDirectoryBaseConfigRootKey, hostedServiceStringConstants.TemporaryDirectoryBaseDefault),
+      //   persistenceMessageFileRelativePath: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.PersistenceMessageFileRelativePathConfigRootKey, hostedServiceStringConstants.PersistenceMessageFileRelativePathDefault),
+      //   pickAndSaveMessageFileRelativePath: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.PickAndSaveMessageFileRelativePathConfigRootKey, hostedServiceStringConstants.PickAndSaveMessageFileRelativePathDefault),
+      //   dBConnectionString: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.DBConnectionStringConfigRootKey, hostedServiceStringConstants.DBConnectionStringDefault),
+      //   ormLiteDialectProviderStringDefault: hostedServiceConfiguration.GetValue<string>(hostedServiceStringConstants.OrmLiteDialectProviderConfigRootKey, hostedServiceStringConstants.OrmLiteDialectProviderDefault)
+      // );
+      // // Every invocation to GenerateProgram needs an instance of an EntryPoint class
+      // gInvokeGenerateCodeSignilDefault.EntryPoints = new ATAP.Utilities.GenerateProgram.EntryPoints();
+      // gInvokeGenerateCodeSignilDefault.ArtifactsFilePaths = new string[1] { gInvokeGenerateCodeSignilDefault.ArtifactsDirectoryBase + gInvokeGenerateCodeSignilDefault.ArtifactsFileRelativePath };
+      // gInvokeGenerateCodeSignilDefault.PersistenceFilePaths = new string[1] { gInvokeGenerateCodeSignilDefault.TemporaryDirectoryBase + gInvokeGenerateCodeSignilDefault.PersistenceMessageFileRelativePath };
+      // gInvokeGenerateCodeSignilDefault.PickAndSaveFilePaths = new string[1] { gInvokeGenerateCodeSignilDefault.TemporaryDirectoryBase + gInvokeGenerateCodeSignilDefault.PickAndSaveMessageFileRelativePath };
+      // // ToDo ?: setup placeholders for the ProgressReport object
+      // // ToDo ?: setup placeholders for the Persistence(File)
+      // // ToDo ?: setup placeholders for the PickAndSave object
       #endregion
     }
     #endregion

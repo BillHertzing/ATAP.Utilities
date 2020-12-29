@@ -16,7 +16,7 @@ namespace ATAP.Services.GenerateCode {
     public const string ArtifactsDirectoryBaseConfigRootKey = "ArtifactsDirectoryBase";
     public const string ArtifactsDirectoryBaseDefault = ".\\Artifacts\\";
     public const string ArtifactsFileRelativePathConfigRootKey = "ArtifactsFileRelativePath";
-    public const string ArtifactsFileRelativePathhDefault = ".\\";
+    public const string ArtifactsFileRelativePathDefault = ".\\";
     public const string EnableProgressBoolConfigRootKey = "EnableProgress";
     public const string EnableProgressBoolDefault = "true";
     public const string EnablePersistenceBoolConfigRootKey = "EnablePersistence";

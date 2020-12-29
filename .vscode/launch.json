@@ -2,9 +2,13 @@
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    // [Debug a .NET console application using Visual Studio Code](https://docs.microsoft.com/en-us/dotnet/core/tutorials/debugging-with-visual-studio-code)
+    //    use `integratedTerminal` instead of `internalConsole` if using this filke to launch a Console program that uses terminal input
     "version": "0.2.0",
     "configurations": [
+
         {
+
             "name": ".NET Core Launch (console)",
             "type": "coreclr",
             "request": "launch",
@@ -13,7 +17,7 @@
             "args": [],
             "cwd": "${workspaceFolder}/src/ATAP.Console.Console02/bin/Debug/net5.0/",
             "console": "internalConsole",
-            "stopAtEntry": true
+            "stopAtEntry": false
         },
         {
             "name": ".NET Core Attach",

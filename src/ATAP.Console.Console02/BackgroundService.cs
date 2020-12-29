@@ -72,7 +72,7 @@ namespace ATAP.Console.Console02 {
     IStringLocalizer UiLocalizer { get; }
 
     IEnumerable<string> choices;
-    StringBuilder mesg = new StringBuilder();
+    StringBuilder mesg = new();
     IDisposable SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle { get; set; }
     Stopwatch stopWatch; // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
     #endregion
@@ -93,9 +93,9 @@ namespace ATAP.Console.Console02 {
       ExceptionLocalizer = stringLocalizerFactory.Create("ATAP.Console.Console2.ExceptionResources", "ATAP.Console.Console02");
       DebugLocalizer = stringLocalizerFactory.Create(nameof(ATAP.Console.Console2.DebugResources), "ATAP.Console.Console02");
       UiLocalizer = stringLocalizerFactory.Create(nameof(ATAP.Console.Console2.UIResources), "ATAP.Console.Console02");
-      LoggerFactory = LoggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-      Logger = LoggerFactory.CreateLogger<Console02BackgroundService>();
+      LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       // Logger = (Logger<Console02BackgroundService>) ATAP.Utilities.Logging.LogProvider.GetLogger("Console02BackgroundService");
+      Logger = LoggerFactory.CreateLogger<Console02BackgroundService>();
       Logger.LogDebug("Console02BackgroundService", ".ctor");
       HostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
       HostConfiguration = hostConfiguration ?? throw new ArgumentNullException(nameof(hostConfiguration));
@@ -259,7 +259,7 @@ namespace ATAP.Console.Console02 {
             , gGlobalSettingsSignil: new GGlobalSettingsSignil()
             , gSolutionSignil: new GSolutionSignil()
             , artifactsDirectoryBase: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseDefault)
-            , artifactsFileRelativePath: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsFileRelativePathhDefault)
+            , artifactsFileRelativePath: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsFileRelativePathDefault)
             , artifactsFilePaths: default
             , temporaryDirectoryBase: AppConfiguration.GetValue<string>(appStringConstants.TemporaryDirectoryBaseConfigRootKey, appStringConstants.TemporaryDirectoryBaseDefault)
             , enableProgress: AppConfiguration.GetValue<bool>(appStringConstants.EnableProgressConfigRootKey, bool.Parse(appStringConstants.EnableProgressDefault))
@@ -340,6 +340,8 @@ namespace ATAP.Console.Console02 {
           else {
             gGenerateProgramProgress = null;
           }
+          // Send first Progress report
+          gGenerateProgramProgress.Report("ToDo: localize the first Progress Report message, and any others");
           #endregion
           /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls
 
@@ -550,7 +552,7 @@ namespace ATAP.Console.Console02 {
         //        #region PersistenceViaIORMSetup
         //        // Call the SetupViaIORMFuncBuilder here, execute the Func that comes back, with dBConnectionString as the argument
         //        // Ensure the NNode and Edge Tables for this PartitionInfo are empty and can be written to
-        //        // ToDo: create a function that will create Node and Edge tables if they don't yet exist, and use that function when creating the temp fiiles
+        //        // ToDo: create a function that will create Node and Edge tables if they don't yet exist, and use that function when creating the temp files
         //        // ToDo: add exception handling if the setup function fails
         //        var setupResultsPersistence = PersistenceStaticExtensions.SetupViaORMFuncBuilder()(new SetupViaORMData(dBConnectionString, dBProvider, LinkedCancellationToken));
 
@@ -716,7 +718,7 @@ namespace ATAP.Console.Console02 {
             // OnNext function:
             inputline => {
               try {
-                DoLoopAsync(inputline);
+                await DoLoopAsync(inputline);
               }
               catch (Exception ex) {
 

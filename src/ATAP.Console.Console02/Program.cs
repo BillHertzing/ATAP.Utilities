@@ -75,6 +75,7 @@ namespace ATAP.Console.Console02 {
 
     public static async Task Main(string[] args) {
 
+
       #region Startup logger
       // Configure a startup Logger, prior to getting the Logger configuration from the ConfigurationRoot
       // Serilog is the logging provider I picked to provide a logging solution for the Console02 application
@@ -175,10 +176,16 @@ namespace ATAP.Console.Console02 {
       var envNameFromConfiguration = genericHostConfigurationRoot.GetValue<string>(GenericHostStringConstants.EnvironmentConfigRootKey, GenericHostStringConstants.EnvironmentDefault);
       mELlogger.LogDebug(debugLocalizer["{0} {1}: Initial environment name: {2}", "Program", "Main", envNameFromConfiguration]);
 
+
       // optional: Validate that the environment provided is one this program understands how to use
       // Accepting any string for envNameFromConfiguration might pose a security risk, as it will allow arbitrary files to be loaded into the configuration root
       switch (envNameFromConfiguration) {
         case GenericHostStringConstants.EnvironmentDevelopment:
+        // ToDo: Make the launching of the debugger conditional
+        if (!Debugger.IsAttached)
+            {
+                Debugger.Launch();
+            }
           // ToDo: Programmers can add things here
           break;
         case GenericHostStringConstants.EnvironmentProduction:
@@ -265,13 +272,12 @@ namespace ATAP.Console.Console02 {
         // Asynchronous wrappers around stdin and stdout
         services.AddSingleton<IConsoleSinkHostedService, ConsoleSinkHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
         services.AddSingleton<IConsoleSourceHostedService, ConsoleSourceHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
-        services.AddHostedService<ConsoleMonitorBackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
+        //services.AddHostedService<ConsoleMonitorBackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
         //services.AddSingleton<IFileSystemWatchersAsObservableFactoryService, FileSystemWatchersAsObservableFactoryService>();
         //services.AddSingleton<IFileSystemWatchersHostedService, FileSystemWatchersHostedService>();
-        services.AddSingleton<IObservableResetableTimersHostedService, ObservableResetableTimersHostedService>();
+        //services.AddSingleton<IObservableResetableTimersHostedService, ObservableResetableTimersHostedService>();
         // The service for generating code
         services.AddSingleton<IGenerateProgramHostedService, GenerateProgramHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
-
         // The primary service (loop) that this program does
         services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
       });
@@ -284,8 +290,8 @@ namespace ATAP.Console.Console02 {
       //services.Configure<ConsoleLifetimeOptions>(opts opts.SuppressStatusMessages = Configuration["SuppressStatusMessages"] != null)
 
       // Start it going
-      try {
-        mELlogger.LogDebug(debugLocalizer["{0} {1}: \"using\" the genericHost.", "Program", "Main"]);
+      try {mELlogger.LogDebug(debugLocalizer["{0} {1}: \"using\" the genericHost.", "Program", "Main"]);
+
         using (genericHost) {
           mELlogger.LogDebug(debugLocalizer["{0} {1}: Calling StartAsync on the genericHost.", "Program", "Main"]);
 

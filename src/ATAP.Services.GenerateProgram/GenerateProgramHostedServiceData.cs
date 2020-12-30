@@ -16,24 +16,25 @@ namespace ATAP.Services.GenerateCode {
 
   public partial class GenerateProgramHostedServiceData : IGenerateProgramHostedServiceData {
 
-    public IDictionary<IPhilote<IGInvokeGenerateCodeSignil>,IGGenerateProgramResult>  GenerateCodeTasks { get; set; }
+    public IDictionary<IPhilote<IGInvokeGenerateCodeSignil>,Task<IGGenerateProgramResult>>  GenerateCodeTasks { get; set; }
 
     public GenerateProgramHostedServiceData() {
-      NonDisposedCount = 0;
-      GenerateCodeTasks = new Dictionary<IPhilote<IGInvokeGenerateCodeSignil>,IGGenerateProgramResult>();
+      GenerateCodeTasks = new Dictionary<IPhilote<IGInvokeGenerateCodeSignil>,Task<IGGenerateProgramResult>>();
     }
 
     #region IDisposable Support
-    private int NonDisposedCount { get; set; }
+    // ToDo: this should be the count of dictionary elements whose value (Task) is not Task.Completed or Task.Faulted (maybe Task.Running?)
+    private int NonDisposedCount { get => GenerateCodeTasks.Count;  }
 
     private bool disposedValue = false; // To detect redundant calls
 
     protected virtual void Dispose(bool disposing) {
       if (!disposedValue) {
         if (disposing) {
-          this.Dispose();
+          // Loop over every dictionary entry, disposing of any that are left behind
+          foreach (var value in GenerateCodeTasks.Values) { value.CompositeDisposable.Dispose(); }
+          GC.SuppressFinalize(this);
         }
-        // ToDo: Dispose each running task of the GenerateCodeTasks
 
         // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
         // TODO: set large fields to null.

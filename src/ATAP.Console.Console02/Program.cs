@@ -90,27 +90,27 @@ namespace ATAP.Console.Console02 {
       // Another is https://nblumhardt.com/2019/10/serilog-in-aspnetcore-3/
       // Creating a `LoggerProviderCollection` lets Serilog optionally write events through other dynamically-added MEL ILoggerProviders.
       //var providers = new LoggerProviderCollection();
-      // Setup Serilog's static Logger with an initial configuration sufficient to log startup errors
 
+      // Setup Serilog's static Logger with an initial configuration sufficient to log startup errors
       // create a local Serilog Logger for use during Program startup
       var serilogLoggerConfiguration = new Serilog.LoggerConfiguration()
         .MinimumLevel.Verbose()
         .Enrich.FromLogContext()
+        //.Enrich.WithExceptionDetails()
         .Enrich.WithThreadId()
         .WriteTo.Console(outputTemplate: "Static startup Serilog {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}")
         .WriteTo.Seq(serverUrl: "http://localhost:5341")
-        .WriteTo.File(path: @"C:\Dropbox\whertzing\GitHub\ATAP.Utilities\devlog\A01Console.{Date}.log", fileSizeLimitBytes: 1024, outputTemplate: "Static Serilog {Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, retainedFileCountLimit: 31)
+        .WriteTo.File(path: @"C:\Dropbox\whertzing\GitHub\ATAP.Utilities\devlog\ATAP.Console.Console02.{Timestamp:yyyy-MM-dd HH:mm:ss}.log", fileSizeLimitBytes: 1024, outputTemplate: "Static startup Serilog {Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, retainedFileCountLimit: 31)
         .WriteTo.Debug();
       //.Enrich.WithHttpRequestId()
       //.Enrich.WithUserName()
-      //.WithExceptionDetails()
       //.WriteTo.Providers(providers)
 
       Serilog.Core.Logger serilogLogger = serilogLoggerConfiguration.CreateLogger();
       // Set the Static Logger called Log to use this LoggerConfiguration
       Serilog.Log.Logger = serilogLogger;
-      Log.Debug("{Program} {Main}: The program Console02 is starting", "Program", "Main");
-      Log.Debug("{Program} {Main}: LoggerFactory and local Logger defined with a default startup configuration:", "Program", "Main");
+      Serilog.Log.Debug("{Program} {Main}: The program Console02 is starting", "Program", "Main");
+      Serilog.Log.Debug("{Program} {Main}: LoggerFactory and local Logger defined with a default startup configuration:", "Program", "Main");
 
       // Set the MEL LoggerFactory to use this LoggerConfiguration
       Microsoft.Extensions.Logging.ILoggerFactory mELoggerFactory = new Microsoft.Extensions.Logging.LoggerFactory().AddSerilog();
@@ -184,7 +184,8 @@ namespace ATAP.Console.Console02 {
         // ToDo: Make the launching of the debugger conditional
         if (!Debugger.IsAttached)
             {
-                Debugger.Launch();
+                // ToDo: Figure out how to make this launch a VSC debugger instead of a VS debugger
+                // Debugger.Launch();
             }
           // ToDo: Programmers can add things here
           break;

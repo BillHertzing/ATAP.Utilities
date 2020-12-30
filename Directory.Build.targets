@@ -70,7 +70,7 @@
   -->
 
   <!-- Solution-wide, copy newer .json settings files that exist in the project directory into the output directory -->
-    <PropertyGroup>
+  <PropertyGroup>
     <PrepareForRunDependsOn>$(PrepareForRunDependsOn);CopyJSONSettingsFilesToOutputDirectory</PrepareForRunDependsOn>
   </PropertyGroup>
   <ItemGroup>

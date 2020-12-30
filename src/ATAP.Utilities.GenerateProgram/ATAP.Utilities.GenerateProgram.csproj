@@ -6,7 +6,6 @@
 -->
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net5.0;</TargetFrameworks>    <!-- netcoreapp3.1 net47-->
     <DefaultNamespace>GenerateProgram</DefaultNamespace>
   </PropertyGroup>
 

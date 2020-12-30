@@ -44,7 +44,7 @@ namespace ATAP.Console.Console02 {
       // check CancellationToken to see if this task is canceled
       CheckAndHandleCancellationToken(1);
 
-      Logger.LogDebug(UiLocalizer["{0} {1} inputLineString = {2}", "Console02BackgroundService", "DoLoopAsync", inputLine]);
+      Logger.LogDebug(DebugLocalizer["{0} {1} inputLineString = {2}"], "Console02BackgroundService", "DoLoopAsync", inputLine);
 
       // Echo to Console.Out the line that came in on stdIn
       Message.Append(UiLocalizer["You selected: {0}", inputLine]);
@@ -78,6 +78,7 @@ namespace ATAP.Console.Console02 {
           // ToDo: should validate in case the ATAP.Services.GenerateCode.StringConstants assembly is messed up?
           // Create the instance of the GInvokeGenerateCodeSignil
           var gInvokeGenerateCodeSignil = GetGInvokeGenerateCodeSignilFromSettings();
+      Logger.LogDebug(DebugLocalizer["{0} {1} gInvokeGenerateCodeSignil = {2}"], "Console02BackgroundService", "DoLoopAsync", gInvokeGenerateCodeSignil.ToString());
 
           Message.Append(UiLocalizer["Running GenerateProgram Function on the AssemblyGroupSignil {0}, with GlobalSettingsKey {1} and SolutionSignilKey {2}", "Console02Mechanical", "ATAPStandardGlobalSettingsKey", "ATAPStandardGSolutionSignilKey"]);
 

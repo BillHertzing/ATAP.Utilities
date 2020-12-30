@@ -71,8 +71,8 @@ namespace ATAP.Console.Console02 {
     IStringLocalizer ExceptionLocalizer { get; }
     IStringLocalizer UiLocalizer { get; }
 
-    IEnumerable<string> choices;
-    StringBuilder mesg = new();
+    IEnumerable<string> Choices;
+    StringBuilder Message = new();
     IDisposable SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle { get; set; }
     Stopwatch stopWatch; // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
     #endregion
@@ -127,11 +127,11 @@ namespace ATAP.Console.Console02 {
     }
     #endregion
     #region WriteMessageSafelyAsync
-    // Output a message, wrapped with exception handling
+    // Output the Message to Console.Out, wrapped with exception handling and cancellationToken checking
     async Task<Task> WriteMessageSafelyAsync() {
       // check CancellationToken to see if this task is cancelled
       CheckAndHandleCancellationToken("WriteMessageSafelyAsync");
-      var task = await ConsoleSinkHostedService.WriteMessageAsync(mesg).ConfigureAwait(false);
+      var task = await ConsoleSinkHostedService.WriteMessageAsync(Message).ConfigureAwait(false);
       if (!task.IsCompletedSuccessfully) {
         if (task.IsCanceled) {
           // Ignore if user cancelled the operation during a large file output (internal cancellation)
@@ -153,57 +153,50 @@ namespace ATAP.Console.Console02 {
     #endregion
     #region Build and write menu
     /// <summary>
-    /// Build a multiline menu from the choices, and send to stdout
+    /// Build a multiline menu from the Choices property into the Message Property
     /// </summary>
-    /// <param name="mesg"></param>
-    /// <param name="choices"></param>
-    /// <param name="consoleSinkHostedService"></param>
-    /// <param name="uILocalizer"></param>
-    /// <param name="exceptionLocalizer"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    async Task BuildMenu() {
+    /// <returns>void</returns>
+    void BuildMenu() {
       // check CancellationToken to see if this task is cancelled
       CheckAndHandleCancellationToken("BuildAndWriteMenu");
-      mesg.Clear();
-
-      foreach (var choice in choices) {
-        mesg.Append(choice);
-        mesg.Append(Environment.NewLine);
+      Message.Clear();
+      foreach (var choice in Choices) {
+        Message.Append(choice);
+        Message.Append(Environment.NewLine);
       }
-      mesg.Append(UiLocalizer["Enter a number for a choice, Ctrl-C to Exit"]);
+      Message.Append(UiLocalizer["Enter a number for a choice, Ctrl-C to Exit"]);
 
     }
     #endregion
     #region PrettyPrintIGGenerateProgramResult
     // Format an instance of GenerateProgramResults for UI presentation
     // // Uses the CurrentCulture
-    void BuildGenerateProgramResults(StringBuilder mesg, IGGenerateProgramResult gGenerateProgramResult, Stopwatch? stopwatch) {
-      mesg.Clear();
+    void BuildGenerateProgramResults(IGGenerateProgramResult gGenerateProgramResult, Stopwatch? stopwatch) {
+      Message.Clear();
       if (stopwatch != null) {
-        mesg.Append(UiLocalizer["Running the function took {0} milliseconds", stopwatch.ElapsedMilliseconds.ToString(CultureInfo.CurrentCulture)]);
-        mesg.Append(Environment.NewLine);
+        Message.Append(UiLocalizer["Running the function took {0} milliseconds", stopwatch.ElapsedMilliseconds.ToString(CultureInfo.CurrentCulture)]);
+        Message.Append(Environment.NewLine);
       }
-      mesg.Append(UiLocalizer["DB extraction was successful: {0}", gGenerateProgramResult.DBExtractionSuccess.ToString(CultureInfo.CurrentCulture)]);
-      mesg.Append(Environment.NewLine);
-      mesg.Append(UiLocalizer["Build was successful: {0}", gGenerateProgramResult.BuildSuccess.ToString(CultureInfo.CurrentCulture)]);
-      mesg.Append(Environment.NewLine);
-      mesg.Append(UiLocalizer["Unit Tests were successful: {0}", gGenerateProgramResult.UnitTestsSuccess.ToString(CultureInfo.CurrentCulture)]);
-      mesg.Append(Environment.NewLine);
-      mesg.Append(UiLocalizer["Unit Tests coverage was: {0}", gGenerateProgramResult.UnitTestsCoverage.ToString(CultureInfo.CurrentCulture)]);
-      mesg.Append(Environment.NewLine);
-      mesg.Append(UiLocalizer["Generated Solution File Directory: {0}", gGenerateProgramResult.GeneratedSolutionFileDirectory.ToString(CultureInfo.CurrentCulture)]);
-      mesg.Append(Environment.NewLine);
+      Message.Append(UiLocalizer["DB extraction was successful: {0}", gGenerateProgramResult.DBExtractionSuccess.ToString(CultureInfo.CurrentCulture)]);
+      Message.Append(Environment.NewLine);
+      Message.Append(UiLocalizer["Build was successful: {0}", gGenerateProgramResult.BuildSuccess.ToString(CultureInfo.CurrentCulture)]);
+      Message.Append(Environment.NewLine);
+      Message.Append(UiLocalizer["Unit Tests were successful: {0}", gGenerateProgramResult.UnitTestsSuccess.ToString(CultureInfo.CurrentCulture)]);
+      Message.Append(Environment.NewLine);
+      Message.Append(UiLocalizer["Unit Tests coverage was: {0}", gGenerateProgramResult.UnitTestsCoverage.ToString(CultureInfo.CurrentCulture)]);
+      Message.Append(Environment.NewLine);
+      Message.Append(UiLocalizer["Generated Solution File Directory: {0}", gGenerateProgramResult.GeneratedSolutionFileDirectory.ToString(CultureInfo.CurrentCulture)]);
+      Message.Append(Environment.NewLine);
       foreach (var assemblyBuilt in gGenerateProgramResult.CollectionOfAssembliesBuilt) {
         // ToDo: display the container and its contents, staarting with its Name and ID,
         // ToDo: declare and implement ToString for the IPhilote<T> interface that accepts a CultureInfo argument
-        mesg.Append(UiLocalizer["Assembly Built: {0} {1}", assemblyBuilt.Value.GName.ToString(CultureInfo.CurrentCulture), assemblyBuilt.Key.ID.ToString()]);
-        mesg.Append(Environment.NewLine);
+        Message.Append(UiLocalizer["Assembly Built: {0} {1}", assemblyBuilt.Value.GName.ToString(CultureInfo.CurrentCulture), assemblyBuilt.Key.ID.ToString()]);
+        Message.Append(Environment.NewLine);
       }
-      mesg.Append(UiLocalizer["Packaging was successful: {0}", gGenerateProgramResult.PackagingSuccess.ToString(CultureInfo.CurrentCulture)]);
-      mesg.Append(UiLocalizer["Deployment was successful: {0}", gGenerateProgramResult.DeploymentSuccess.ToString(CultureInfo.CurrentCulture)]);
-      //mesg.Append(UiLocalizer["Number of AcceptableExceptions: {0}", gGenerateProgramResult.AcceptableExceptions.Count]);
-      mesg.Append(Environment.NewLine);
+      Message.Append(UiLocalizer["Packaging was successful: {0}", gGenerateProgramResult.PackagingSuccess.ToString(CultureInfo.CurrentCulture)]);
+      Message.Append(UiLocalizer["Deployment was successful: {0}", gGenerateProgramResult.DeploymentSuccess.ToString(CultureInfo.CurrentCulture)]);
+      //Message.Append(UiLocalizer["Number of AcceptableExceptions: {0}", gGenerateProgramResult.AcceptableExceptions.Count]);
+      Message.Append(Environment.NewLine);
       // List the acceptable Exceptions that occurred
       //ToDo: break out AcceptableExceptions by type
       // ToDo: DBExtraction Details, warnings, and Errors
@@ -214,455 +207,52 @@ namespace ATAP.Console.Console02 {
       // ToDo: Deployment Details
     }
     #endregion
-    #endregion
 
-    async Task DoLoopAsync(string inputLine) {
-
-      // check CancellationToken to see if this task is canceled
-      CheckAndHandleCancellationToken(1);
-
-      Logger.LogDebug(UiLocalizer["{0} {1} inputLineString = {2}", "Console02BackgroundService", "DoLoopAsync", inputLine]);
-
-      // Echo to stdOut the line that came in on stdIn
-      mesg.Append(UiLocalizer["You selected: {0}", inputLine]);
-      #region Write the mesg to stdout
-      using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
-        if (!task.IsCompletedSuccessfully) {
-          if (task.IsCanceled) {
-            // Ignore if user cancelled the operation during output to stdout (internal cancellation)
-            // re-throw if the cancellation request came from outside the stdInLineMonitorAction
-            /// ToDo: evaluate the linked, inner, and external tokens
-            throw new OperationCanceledException();
-          }
-          else if (task.IsFaulted) {
-            //ToDo: Go through the inner exception
-            //foreach (var e in t.Exception) {
-            //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
-            // ToDo figure out what to do if the output stream is closed
-            throw new Exception("ToDo: WriteMessageSafelyAsync returned an AggregateException");
-            //}
-          }
-        }
-        mesg.Clear();
-      }
-      #endregion
-      #region tempout
-      switch (inputLine) {
-        case "1":
-          // Get these from the Console02 application configuration
-          // ToDo: Get these from the database or from a configurationRoot (priority?)
-          // ToDo: should validate in case the appStringConstants assembly is messed up?
-          // ToDo: should validate in case the ATAP.Services.GenerateCode.StringConstants assembly is messed up?
-          // Create the instance of the GInvokeGenerateCodeSignil
-          var gInvokeGenerateCodeSignil = new GInvokeGenerateCodeSignil(
-            gAssemblyGroupSignil: new GAssemblyGroupSignil()
-            , gGlobalSettingsSignil: new GGlobalSettingsSignil()
-            , gSolutionSignil: new GSolutionSignil()
-            , artifactsDirectoryBase: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseDefault)
-            , artifactsFileRelativePath: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsFileRelativePathDefault)
-            , artifactsFilePaths: default
-            , temporaryDirectoryBase: AppConfiguration.GetValue<string>(appStringConstants.TemporaryDirectoryBaseConfigRootKey, appStringConstants.TemporaryDirectoryBaseDefault)
-            , enableProgress: AppConfiguration.GetValue<bool>(appStringConstants.EnableProgressConfigRootKey, bool.Parse(appStringConstants.EnableProgressDefault))
-            , enablePersistence: AppConfiguration.GetValue<bool>(PersistenceStringConstants.EnablePersistenceConfigRootKey, bool.Parse(PersistenceStringConstants.EnablePersistenceDefault))
-            , enablePickAndSave: AppConfiguration.GetValue<bool>(PersistenceStringConstants.EnablePickAndSaveConfigRootKey, bool.Parse(PersistenceStringConstants.EnablePickAndSaveDefault))
-            , persistenceMessageFileRelativePath: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathDefault)
-            , persistenceFilePaths: default
-            , pickAndSaveMessageFileRelativePath: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathDefault)
-            , pickAndSaveFilePaths: default
-            , persistence: default
-            , pickAndSave: default
-            , dBConnectionString: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.DBConnectionStringConfigRootKey, GenerateProgramServiceStringConstants.DBConnectionStringDefault)
-            , ormLiteDialectProviderStringDefault: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.OrmLiteDialectProviderConfigRootKey, GenerateProgramServiceStringConstants.OrmLiteDialectProviderDefault)
-            , entryPoints: default
-
-          );
-
-          mesg.Append(UiLocalizer["Running GenerateProgram Function on the AssemblyGroupSignil {0}, with GlobalSettingsKey {1} and SolutionSignilKey {2}", "Console02Mechanical", "ATAPStandardGlobalSettingsKey", "ATAPStandardGSolutionSignilKey"]);
-
-          #region Write the mesg to stdout
-          using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
-            if (!task.IsCompletedSuccessfully) {
-              if (task.IsCanceled) {
-                // Ignore if user cancelled the operation during output to stdout (internal cancellation)
-                // re-throw if the cancellation request came from outside the stdInLineMonitorAction
-                /// ToDo: evaluate the linked, inner, and external tokens
-                throw new OperationCanceledException();
-              }
-              else if (task.IsFaulted) {
-                //ToDo: Go through the inner exception
-                //foreach (var e in t.Exception) {
-                //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
-                // ToDo figure out what to do if the output stream is closed
-                throw new Exception("ToDo: WriteMessageSafelyAsync returned an AggregateException");
-                //}
-              }
-            }
-            mesg.Clear();
-          }
-          #endregion
-          // Connect to the GenerateProgramDB
-
-          // Get GlobalSettingsSignil using GlobalSettingsKey
-          // Get the SolutionGroupKey from the DB using the ProgramKey
-          // get the SolutionGroupSignil from the DB using the SolutionGroupKey
-
-          #region ProgressReporting setup
-          // ToDo: Use the ConsoleMonitor Service to write progress to ConsoleOut
-          // Use the ConsoleOut service to report progress, object based
-          async void reportToConsoleOut(object progressDataToReport) {
-            mesg.Append(progressDataToReport.ToString());
-            #region Write the mesg to stdout
-            using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
-              if (!task.IsCompletedSuccessfully) {
-                if (task.IsCanceled) {
-                  // Ignore if user cancelled the operation during output to stdout (internal cancellation)
-                  // re-throw if the cancellation request came from outside the stdInLineMonitorAction
-                  /// ToDo: evaluate the linked, inner, and external tokens
-                  throw new OperationCanceledException();
-                }
-                else if (task.IsFaulted) {
-                  //ToDo: Go through the inner exception
-                  //foreach (var e in t.Exception) {
-                  //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
-                  // ToDo figure out what to do if the output stream is closed
-                  throw new Exception("ToDo: WriteMessageSafelyAsync returned an AggregateException");
-                  //}
-                }
-              }
-              mesg.Clear();
-            }
-            #endregion
-          }
-          IProgress<object>? gGenerateProgramProgress;
-          if (gInvokeGenerateCodeSignil.EnableProgress) {
-            gGenerateProgramProgress = new Progress<object>(reportToConsoleOut);
-          }
-          else {
-            gGenerateProgramProgress = null;
-          }
-          // Send first Progress report
-          gGenerateProgramProgress.Report("ToDo: localize the first Progress Report message, and any others");
-          #endregion
-          /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls
-
-          #region PersistenceViaFiles setup
-          // Ensure the Message file is empty and can be written to
-          // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-          // ToDo: create a function variation that will create subdirectories if needed to fulfill path, and use that function when creating the temp files
-          // ToDo: add exception handling if the setup function fails
-          ISetupViaFileResults setupResultsPersistence;
-          try {
-            setupResultsPersistence = PersistenceStaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePathsPersistence));
-          }
-          catch (System.IO.IOException ex) {
-            // prepare message for UI interface
-            // ToDo: custom exception,  and include its message here
-            mesg.Append(UiLocalizer["IOException trying to setup PersistenceViaFiles"]);
-
-            #region Write the mesg to stdout
-            using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
-              if (!task.IsCompletedSuccessfully) {
-                if (task.IsCanceled) {
-                  // Ignore if user cancelled the operation during output to stdout (internal cancellation)
-                  // re-throw if the cancellation request came from outside the stdInLineMonitorAction
-                  /// ToDo: evaluate the linked, inner, and external tokens
-                  throw new OperationCanceledException();
-                }
-                else if (task.IsFaulted) {
-                  //ToDo: Go through the inner exception
-                  //foreach (var e in t.Exception) {
-                  //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
-                  // ToDo figure out what to do if the output stream is closed
-                  throw new Exception("ToDo: WriteMessageSafelyAsync returned an AggregateException");
-                  //}
-                }
-              }
-              mesg.Clear();
-            }
-            #endregion
-            // Throw exception, Cancel the entire service (internal CTS), or swallow and Continue (possibly offering hints as to resolution), client's choice
-            throw ex;
-            // InternalCancellationTokenSource.Signal ????
-            // or just continue and let the user make another selection or go fix the problem
-            //break;
-          }
-          // Create an insertFunc that references the local variable setupResults, closing over it
-          var insertFunc = new Func<IEnumerable<IEnumerable<object>>, IInsertViaFileResults>((insertData) => {
-            int numberOfDatas = insertData.ToArray().Length;
-            int numberOfStreamWriters = setupResultsPersistence.StreamWriters.Length;
-            for (var i = 0; i < numberOfDatas; i++) {
-              foreach (string str in insertData.ToArray()[i]) {
-                //ToDo: add async versions await setupResults.StreamWriters[i].WriteLineAsync(str);
-                //ToDo: exception handling
-                setupResultsPersistence.StreamWriters[i].WriteLine(str);
-              }
-            }
-            return new InsertViaFileResults(true);
-          });
-          Persistence<IInsertResultsAbstract> persistence = new Persistence<IInsertResultsAbstract>(insertFunc);
-          #endregion
-          */
-          /* PickAndSave is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls
-          #region PickAndSaveViaFiles setup
-          // Ensure the Message file is empty and can be written to
-          // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePathsPickAndSave as the argument
-          // ToDo: create a function that will create subdirectories if needed to fulfill path, and use that function when creating the temp files
-          ISetupViaFileResults setupResultsPickAndSave;
-          try {
-            setupResultsPickAndSave = PersistenceStaticExtensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePathsPickAndSave));
-          }
-          catch (System.IO.IOException ex) {
-            // prepare message for UI interface
-            // ToDo: custom exception,  and include its message here
-            mesg.Append(UiLocalizer["IOException trying to setup PickAndSaveViaFiles"]);
-            #region Write the mesg to stdout
-            using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
-              if (!task.IsCompletedSuccessfully) {
-                if (task.IsCanceled) {
-                  // Ignore if user cancelled the operation during output to stdout (internal cancellation)
-                  // re-throw if the cancellation request came from outside the stdInLineMonitorAction
-                  /// ToDo: evaluate the linked, inner, and external tokens
-                  throw new OperationCanceledException();
-                }
-                else if (task.IsFaulted) {
-                  //ToDo: Go through the inner exception
-                  //foreach (var e in t.Exception) {
-                  //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
-                  // ToDo figure out what to do if the output stream is closed
-                  throw new Exception("ToDo: WriteMessageSafelyAsync returned an AggregateException");
-                  //}
-                }
-              }
-              mesg.Clear();
-            }
-            #endregion
-            // Throw exception, Cancel the entire service (internal CTS), or swallow and Continue (possibly offering hints as to resolution), client's choice
-            throw ex;
-            // InternalCancellationTokenSource.Signal ????
-            // or just continue and let the user make another selection or go fix the problem
-            //break;
-          }
-          // Create a pickFunc (AKA Predicate)
-          var pickFuncPickAndSave = new Func<object, bool>((objToTest) => {
-            return objToTest.ToString() -match "Error";
-          });
-          // Create an insert Func
-          var insertFuncPickAndSave = new Func<IEnumerable<IEnumerable<object>>, IInsertViaFileResults>((insertData) => {
-            int numberOfStreamWriters = setupResultsPickAndSave.StreamWriters.Length;
-            for (var i = 0; i < numberOfStreamWriters; i++) {
-              foreach (string str in insertData.ToArray()[i]) {
-                //ToDo: add async versions await setupResults.StreamWriters[i].WriteLineAsync(str);
-                //ToDo: exception handling
-                // ToDo: Make formatting a parameter
-                try {
-                  setupResultsPickAndSave.StreamWriters[i].WriteLine(str);
-                }
-                catch (System.IO.IOException ex) {
-
-                  throw;
-                }
-              }
-            }
-            return new InsertViaFileResults(true);
-          });
-          PickAndSave<IInsertResultsAbstract> pickAndSave = new PickAndSave<IInsertResultsAbstract>(pickFuncPickAndSave, insertFuncPickAndSave);
-          #endregion
-          */
-
-          IGGenerateProgramResult gGenerateProgramResult;
-
-          #region Method timing setup
-          Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
-          stopWatch.Start();
-          #endregion
-          try {
-            Func<Task<IGGenerateProgramResult>> run = () => GenerateProgramHostedService.InvokeGenerateProgramAsync(gInvokeGenerateCodeSignil);
-
-
-            gGenerateProgramResult = await run.Invoke().ConfigureAwait(false);
-            stopWatch.Stop(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
-                              // ToDo: put the results someplace
-          }
-          catch (Exception) { // ToDo: define explicit exceptions to catch and report upon
-                              // ToDo: catch FileIO.FileNotFound, sometimes the file disappears
-            throw;
-          }
-          finally {
-            // Dispose of the objects that need disposing
-            /* PickAndSave is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls
-            setupResultsPickAndSave.Dispose();
-            */
-            /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls
-            setupResultsPersistence.Dispose();
-            */
-          }
-          #region Build the results
-          BuildGenerateProgramResults(mesg, gGenerateProgramResult, stopWatch);
-          #endregion
-
-          break;
-        //    case "2":
-        //      #region define the Func<string,Task> to be executed when the ConsoleSourceHostedService.ConsoleReadLineAsyncAsObservable produces a sequence element
-        //      // This Action closes over the current local variables' values
-        //      Func<string, Task> SimpleEchoToConsoleOutFunc = new Func<string, Task>(async (inputLineString) => {
-        //        #region Write the mesg to stdout
-        //        using (Task task = await WriteMessageSafelyAsync(inputLineString, ConsoleSinkHostedService, LinkedCancellationToken).ConfigureAwait(false)) {
-        //          if (!task.IsCompletedSuccessfully) {
-        //            if (task.IsCanceled) {
-        //              // Ignore if user cancelled the operation during output to stdout (internal cancellation)
-        //              // re-throw if the cancellation request came from outside the stdInLineMonitorAction
-        //              /// ToDo: evaluate the linked, inner, and external tokens
-        //              throw new OperationCanceledException();
-        //            }
-        //            else if (task.IsFaulted) {
-        //              //ToDo: Go through the inner exception
-        //              //foreach (var e in t.Exception) {
-        //              //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
-        //              // ToDo figure out what to do if the output stream is closed
-        //              throw new Exception("ToDo: WriteMessageSafelyAsync returned an AggregateException");
-        //              //}
-        //            }
-        //          }
-        //        }
-        //        #endregion
-
-        //      });
-        //      #endregion
-        //      break;
-        //    case "10":
-        //      #region setup a local block for handling this choice
-        //      try {
-        //        var enableHash = configurationRoot.GetValue<bool>(ConsoleMonitorStringConstants.EnableHashBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnableHashBoolConfigRootKeyDefault));  // ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-        //        var enableProgress = configurationRoot.GetValue<bool>(ConsoleMonitorStringConstants.EnableProgressBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnableProgressBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-        //        var enablePersistence = configurationRoot.GetValue<bool>(ConsoleMonitorStringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnablePersistenceBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-        //        var enablePickAndSave = configurationRoot.GetValue<bool>(ConsoleMonitorStringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnablePickAndSaveBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-        //        var dBConnectionString = configurationRoot.GetValue<string>(ConsoleMonitorStringConstants.DBConnectionStringConfigRootKey, ConsoleMonitorStringConstants.DBConnectionStringDefault);// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-        //                                                                                                                                                                                            // ToDo: This should be a string representation of a known enumeration of ORMLite DB providers that this service can support
-        //        var dBProvider = configurationRoot.GetValue<string>(ConsoleMonitorStringConstants.DBConnectionStringConfigRootKey, ConsoleMonitorStringConstants.DBConnectionStringDefault);// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-        //        dBProvider = SqlServerOrmLiteDialectProvider.Instance;
-        //        #region ProgressReporting setup
-        //        ConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress;
-        //        if (enableProgress) {
-        //          convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
-        //        }
-        //        else {
-        //          convertFileSystemToGraphProgress = null;
-        //        }
-        //        #endregion
-        //        #region PersistenceViaIORMSetup
-        //        // Call the SetupViaIORMFuncBuilder here, execute the Func that comes back, with dBConnectionString as the argument
-        //        // Ensure the NNode and Edge Tables for this PartitionInfo are empty and can be written to
-        //        // ToDo: create a function that will create Node and Edge tables if they don't yet exist, and use that function when creating the temp files
-        //        // ToDo: add exception handling if the setup function fails
-        //        var setupResultsPersistence = PersistenceStaticExtensions.SetupViaORMFuncBuilder()(new SetupViaORMData(dBConnectionString, dBProvider, LinkedCancellationToken));
-
-        //        // Create an insertFunc that references the local variable setupResults, closing over it
-        //        var insertFunc = new Func<IEnumerable<IEnumerable<object>>, IInsertViaORMResults>((insertData) => {
-        //          int numberOfDatas = insertData.ToArray().Length;
-        //          int numberOfStreamWriters = setupResultsPersistence.StreamWriters.Length;
-        //          for (var i = 0; i < numberOfDatas; i++) {
-        //            foreach (string str in insertData.ToArray()[i]) {
-        //              //ToDo: add async versions await setupResults.StreamWriters[i].WriteLineAsync(str);
-        //              //ToDo: exception handling
-        //              setupResultsPersistence.Tables[i].SQLCmd(str);
-        //            }
-        //          }
-        //          return new InsertViaORMResults(true);
-        //        });
-        //        Persistence<IInsertResultsAbstract> persistence = new Persistence<IInsertResultsAbstract>(insertFunc);
-        //        #endregion
-        //        #region PickAndSaveViaIORM setup
-        //        // Ensure the Node and Edge files are empty and can be written to
-
-        //        // Call the SetupViaIORMFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-        //        // ToDo: create a function that will create subdirectories if needed to fulfill path, and use that function when creating the temp files
-        //        var setupResultsPickAndSave = PersistenceStaticExtensions.SetupViaORMFuncBuilder()(new SetupViaORMData(dBConnectionString, dBProvider, LinkedCancellationToken));
-        //        // Create a pickFunc
-        //        var pickFuncPickAndSave = new Func<object, bool>((objToTest) => {
-        //          return FileIOExtensions.IsArchiveFile(objToTest.ToString()) || FileIOExtensions.IsMailFile(objToTest.ToString());
-        //        });
-        //        // Create an insert Func
-        //        var insertFuncPickAndSave = new Func<IEnumerable<IEnumerable<object>>, IInsertViaORMResults>((insertData) => {
-        //          //int numberOfStreamWriters = setupResultsPickAndSave.StreamWriters.Length;
-        //          //for (var i = 0; i < numberOfStreamWriters; i++) {
-        //          //  foreach (string str in insertData.ToArray()[i]) {
-        //          //    //ToDo: add async versions await setupResults.StreamWriters[i].WriteLineAsync(str);
-        //          //    //ToDo: exception handling
-        //          //    // ToDo: Make formatting a parameter
-        //          //    setupResultsPickAndSave.StreamWriters[i].WriteLine(str);
-        //          //  }
-        //          //}
-        //          return new InsertViaORMResults(true);
-        //        });
-        //        PickAndSave<IInsertResultsAbstract> pickAndSave = new PickAndSave<IInsertResultsAbstract>(pickFuncPickAndSave, insertFuncPickAndSave);
-        //        #endregion
-        //      }
-        //      // To Catch specific exceptions that might occur
-        //      catch {
-        //      }
-        //      // ToDo: dispose
-        //      finally { }
-        //      #endregion
-        //      break;
-        case "99":
-          #region Quit the program
-          //internalcancellationtoken.
-          #endregion
-          break;
-
-        default:
-          mesg.Clear();
-          mesg.Append(UiLocalizer["InvalidInputDoesNotMatchAvailableChoices {0}", inputLine]);
-          break;
-      }
-
-      #region Write the mesg to stdout
-      using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
-        if (!task.IsCompletedSuccessfully) {
-          if (task.IsCanceled) {
-            // Ignore if user cancelled the operation during output to stdout (internal cancellation)
-            // re-throw if the cancellation request came from outside the stdInLineMonitorAction
-            /// ToDo: evaluate the linked, inner, and external tokens
-            throw new OperationCanceledException();
-          }
-          else if (task.IsFaulted) {
-            //ToDo: Go through the inner exception
-            //foreach (var e in t.Exception) {
-            //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
-            // ToDo figure out what to do if the output stream is closed
-            throw new Exception("ToDo: WriteMessageSafelyAsync returned an AggregateException");
-            //}
-          }
-        }
-      }
-      #endregion
-
-      #endregion
-      #region Buildmenu
-      await BuildMenu();
-      #endregion
-      #region Write the mesg to stdout
-      using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
-        if (!task.IsCompletedSuccessfully) {
-          if (task.IsCanceled) {
-            // Ignore if user cancelled the operation during output to stdout (internal cancellation)
-            // re-throw if the cancellation request came from outside the stdInLineMonitorAction
-            /// ToDo: evaluate the linked, inner, and external tokens
-            throw new OperationCanceledException();
-          }
-          else if (task.IsFaulted) {
-            //ToDo: Go through the inner exception
-            //foreach (var e in t.Exception) {
-            //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
-            // ToDo figure out what to do if the output stream is closed
-            throw new Exception("ToDo: WriteMessageSafelyAsync returned an AggregateException");
-            //}
-          }
-        }
-        mesg.Clear();
-      }
-      #endregion
+    #region Signils From Settings
+    // Helper methods to read the settings into Signils
+    // Helper method to read the settings into an instance of a GInvokeGenerateCodeSignil
+    GInvokeGenerateCodeSignil GetGInvokeGenerateCodeSignilFromSettings() {
+      var gInvokeGenerateCodeSignil = new GInvokeGenerateCodeSignil(
+        gAssemblyGroupSignil: GetGAssemblyGroupSignilFromSettings()
+        , gGlobalSettingsSignil: GetGGlobalSettingsSignilFromSettings()
+        , gSolutionSignil: GetGSolutionSignilFromSettings()
+        , artifactsDirectoryBase: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseDefault)
+        , artifactsFileRelativePath: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsFileRelativePathDefault)
+        , artifactsFilePaths: default
+        , temporaryDirectoryBase: AppConfiguration.GetValue<string>(appStringConstants.TemporaryDirectoryBaseConfigRootKey, appStringConstants.TemporaryDirectoryBaseDefault)
+        , enableProgress: AppConfiguration.GetValue<bool>(appStringConstants.EnableProgressConfigRootKey, bool.Parse(appStringConstants.EnableProgressDefault))
+        , enablePersistence: AppConfiguration.GetValue<bool>(PersistenceStringConstants.EnablePersistenceConfigRootKey, bool.Parse(PersistenceStringConstants.EnablePersistenceDefault))
+        , enablePickAndSave: AppConfiguration.GetValue<bool>(PersistenceStringConstants.EnablePickAndSaveConfigRootKey, bool.Parse(PersistenceStringConstants.EnablePickAndSaveDefault))
+        , persistenceMessageFileRelativePath: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PersistenceMessageFileRelativePathDefault)
+        , persistenceFilePaths: default
+        , pickAndSaveMessageFileRelativePath: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.PickAndSaveMessageFileRelativePathDefault)
+        , pickAndSaveFilePaths: default
+        , persistence: default
+        , pickAndSave: default
+        , dBConnectionString: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.DBConnectionStringConfigRootKey, GenerateProgramServiceStringConstants.DBConnectionStringDefault)
+        , ormLiteDialectProviderStringDefault: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.OrmLiteDialectProviderConfigRootKey, GenerateProgramServiceStringConstants.OrmLiteDialectProviderDefault)
+        , entryPoints: default
+      );
+      return gInvokeGenerateCodeSignil;
     }
+
+    GAssemblyGroupSignil GetGAssemblyGroupSignilFromSettings() {
+      var gAssemblyGroupSignil = new GAssemblyGroupSignil(
+      );
+      return gAssemblyGroupSignil;
+    }
+    GGlobalSettingsSignil GetGGlobalSettingsSignilFromSettings() {
+      var gGlobalSettingsSignil = new GGlobalSettingsSignil(
+      );
+      return gGlobalSettingsSignil;
+    }
+    GSolutionSignil GetGSolutionSignilFromSettings() {
+      var gSolutionSettingsSignil = new GSolutionSignil(
+      );
+      return gSolutionSettingsSignil;
+    }
+    #endregion
+    #endregion
 
     #region ExecuteAsync, called by the GenericHost StartAsync method, when IHostLifetime is ConsoleLifetime  // ToDo:, see if this is called by service and serviced
     /// <summary>
@@ -671,7 +261,6 @@ namespace ATAP.Console.Console02 {
     /// <param name="externalCancellationToken"></param> Used to signal FROM the GenericHost TO this BackgroundService a request for cancelllation
     /// <returns></returns>
     protected override async Task ExecuteAsync(CancellationToken externalCancellationToken) {
-
       #region create linkedCancellationSource and token
       // Combine the cancellation tokens,so that either can stop this HostedService
       LinkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(InternalCancellationToken, externalCancellationToken);
@@ -682,19 +271,22 @@ namespace ATAP.Console.Console02 {
       InternalCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} InternalCancellationToken has signalled stopping."], "Console02BackgroundService", "InternalCancellationToken"));
       LinkedCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} LinkedCancellationToken has signalled stopping."], "Console02BackgroundService", "LinkedCancellationToken"));
       #endregion
-
+      #region Define the inputs to respond to
       // Create a list of choices
-      // ToDo: Get the list from the StringConstants, and localize them
-      choices = new List<string>() { "1. Run ConvertFileSystemToGraphAsyncTask", "2. Subscribe ConsoleOut to ConsoleIn", "3. Unsubscribe ConsoleOut from ConsoleIn", "99: Quit" };
-
-      #region Buildmenu
-      await BuildMenu();
+      Choices = new List<string>() {
+          UiLocalizer["1. Run GenerateCodeAsync"]
+        , UiLocalizer["2. Roundtrip Settings"]
+        , UiLocalizer["99: Quit"]
+      };
       #endregion
-      #region Write the mesg to stdout
+      #region initial presentation of the Choices to the user
+      // Format the Choices for presentation into Message
+      BuildMenu();
+      #region Write the Message to Console.Out
       using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
         if (!task.IsCompletedSuccessfully) {
           if (task.IsCanceled) {
-            // Ignore if user cancelled the operation during output to stdout (internal cancellation)
+            // Ignore if user cancelled the operation during output to Console.Out (internal cancellation)
             // re-throw if the cancellation request came from outside the stdInLineMonitorAction
             /// ToDo: evaluate the linked, inner, and external tokens
             throw new OperationCanceledException();
@@ -704,33 +296,34 @@ namespace ATAP.Console.Console02 {
             //foreach (var e in t.Exception) {
             //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
             // ToDo figure out what to do if the output stream is closed
-            throw new Exception("ToDo: WriteMessageSafelyAsync returned an AggregateException");
+            throw new Exception(ExceptionLocalizer["ToDo: WriteMessageSafelyAsync returned an AggregateException"]);
             //}
           }
         }
-        mesg.Clear();
+        Message.Clear();
       }
       #endregion
-
+      #endregion
+      #region attach to Console.In via the ConsoleSourceHostedService and call DoLoopAsync everytime an input is received
       // Subscribe to ConsoleSourceHostedService. Run the DoLoopAsync every time ConsoleReadLineAsyncAsObservable() produces a sequence element
       SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle = ConsoleSourceHostedService.ConsoleReadLineAsyncAsObservable()
           .Subscribe(
             // OnNext function:
             inputline => {
               try {
-                await DoLoopAsync(inputline);
+                DoLoopAsync(inputline);
               }
               catch (Exception ex) {
 
-                throw ex;
+                throw;
               }
             },
             // OnError
             ex => { Logger.LogDebug("got an exception"); },
-            // OnCompleted
+            // OnCompleted (this happens if the Console.In is closed)
             () => { Logger.LogDebug("stdIn completed"); SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose(); }
             );
-
+      #endregion
     }
 
     Func<string, Task> stdInLineMonitorAction = new Func<string, Task>(async (inputLineString) => {

@@ -94,7 +94,7 @@ namespace ATAP.Console.Console02 {
       // Setup Serilog's static Logger with an initial configuration sufficient to log startup errors
       // create a local Serilog Logger for use during Program startup
       var serilogLoggerConfiguration = new Serilog.LoggerConfiguration()
-        .MinimumLevel.Verbose()
+        .MinimumLevel.Information()
         .Enrich.FromLogContext()
         //.Enrich.WithExceptionDetails()
         .Enrich.WithThreadId()
@@ -109,8 +109,8 @@ namespace ATAP.Console.Console02 {
       Serilog.Core.Logger serilogLogger = serilogLoggerConfiguration.CreateLogger();
       // Set the Static Logger called Log to use this LoggerConfiguration
       Serilog.Log.Logger = serilogLogger;
-      Serilog.Log.Debug("{Program} {Main}: The program Console02 is starting", "Program", "Main");
-      Serilog.Log.Debug("{Program} {Main}: LoggerFactory and local Logger defined with a default startup configuration:", "Program", "Main");
+      Serilog.Log.Debug("{0} {1}: The program Console02 is starting", "Program", "Main");
+      Serilog.Log.Debug("{0} {1}: LoggerFactory and local Logger defined with a default startup configuration:", "Program", "Main");
 
       // Set the MEL LoggerFactory to use this LoggerConfiguration
       Microsoft.Extensions.Logging.ILoggerFactory mELoggerFactory = new Microsoft.Extensions.Logging.LoggerFactory().AddSerilog();
@@ -145,9 +145,9 @@ namespace ATAP.Console.Console02 {
       // get the initial startup directory
       // get the directory where the executing assembly (usually .exe) and possibly machine-wide configuration files are installed to.
       var initialStartupDirectory = Directory.GetCurrentDirectory(); //ToDo: Catch exceptions
-      mELlogger.LogDebug(debugLocalizer["{0} {1}: initialStartupDirectory: {2}", "Program", "Main", initialStartupDirectory]);
+      mELlogger.LogDebug(debugLocalizer["{0} {1}: initialStartupDirectory: {2}"], "Program", "Main", initialStartupDirectory);
       var loadedFromDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location); //ToDo: Catch exceptions
-      mELlogger.LogDebug(debugLocalizer["{0} {1}: loadedFromDirectory: {2}", "Program", "Main", loadedFromDirectory]);
+      mELlogger.LogDebug(debugLocalizer["{0} {1}: loadedFromDirectory: {2}"], "Program", "Main", loadedFromDirectory);
       #endregion region
 
       #region initial genericHostConfigurationBuilder and genericHostConfigurationRoot
@@ -163,18 +163,18 @@ namespace ATAP.Console.Console02 {
 
       #region (optional) Debugging the  Configuration
       // for debugging and education, uncomment this region and inspect the two section Lists (using debugger Locals) to see exactly what is in the configuration
-      //    var sections = genericHostConfigurationRoot.GetChildren();
-      //    List<IConfigurationSection> sectionsAsListOfIConfigurationSections = new List<IConfigurationSection>();
-      //    List<ConfigurationSection> sectionsAsListOfConfigurationSections = new List<ConfigurationSection>();
-      //    foreach (var iSection in sections) sectionsAsListOfIConfigurationSections.Add(iSection);
-      //    foreach (var iSection in sectionsAsListOfIConfigurationSections) sectionsAsListOfConfigurationSections.Add((ConfigurationSection)iSection);
+         var sections = genericHostConfigurationRoot.GetChildren();
+         List<IConfigurationSection> sectionsAsListOfIConfigurationSections = new List<IConfigurationSection>();
+         List<ConfigurationSection> sectionsAsListOfConfigurationSections = new List<ConfigurationSection>();
+         foreach (var iSection in sections) sectionsAsListOfIConfigurationSections.Add(iSection);
+         foreach (var iSection in sectionsAsListOfIConfigurationSections) sectionsAsListOfConfigurationSections.Add((ConfigurationSection)iSection);
       #endregion
 
       #region Environment determination and validation
       // ToDo: Before the genericHost is built, have to use a StringConstant for the string that means "Production", and hope the ConfigurationRoot value for Environment matches the StringConstant
       // Determine the environment (Debug, TestingUnit, TestingX, QA, QA1, QA2, ..., Staging, Production) to use from the initialGenericHostConfigurationRoot
       var envNameFromConfiguration = genericHostConfigurationRoot.GetValue<string>(GenericHostStringConstants.EnvironmentConfigRootKey, GenericHostStringConstants.EnvironmentDefault);
-      mELlogger.LogDebug(debugLocalizer["{0} {1}: Initial environment name: {2}", "Program", "Main", envNameFromConfiguration]);
+      mELlogger.LogDebug(debugLocalizer["{0} {1}: Initial environment name: {2}"], "Program", "Main", envNameFromConfiguration);
 
 
       // optional: Validate that the environment provided is one this program understands how to use
@@ -237,8 +237,9 @@ namespace ATAP.Console.Console02 {
       #region Configure the GenericHost logging per the Logging section in ConfigurationRoot
       genericHostBuilder.ConfigureLogging((hostContext, loggingBuilder) => {
         loggingBuilder.AddConfiguration(genericHostConfigurationRoot.GetSection("Logging"));
-        //loggingBuilder.UseSerilog
       });
+      genericHostBuilder.UseSerilog();
+
       // Build the GH configuration
       //genericHostConfigurationRoot = genericHostConfigurationBuilder.Build();
       // Various experiments with trying to get the Logger(s) to work as hoped for
@@ -247,7 +248,7 @@ namespace ATAP.Console.Console02 {
       //// redefine the factory according to the new configuration
       //factory = new LoggerFactory();
       //factory.AddSerilog(loggerConfiguration.CreateLogger());
-      //// Set the LogFactory in the ATP.Utilities.Logging class
+      //// Set the LogFactory in the ATAP.Utilities.Logging class
       //LogProvider.SetLogFactory(factory);
       //// Set the LogFactory in the DI-Services
       //// ToDo: LoggerFactory LoggerFactory.SetLogFactory(factory);
@@ -291,10 +292,10 @@ namespace ATAP.Console.Console02 {
       //services.Configure<ConsoleLifetimeOptions>(opts opts.SuppressStatusMessages = Configuration["SuppressStatusMessages"] != null)
 
       // Start it going
-      try {mELlogger.LogDebug(debugLocalizer["{0} {1}: \"using\" the genericHost.", "Program", "Main"]);
+      try {mELlogger.LogDebug(debugLocalizer["{0} {1}: \"using\" the genericHost."], "Program", "Main");
 
         using (genericHost) {
-          mELlogger.LogDebug(debugLocalizer["{0} {1}: Calling StartAsync on the genericHost.", "Program", "Main"]);
+          mELlogger.LogDebug(debugLocalizer["{0} {1}: Calling StartAsync on the genericHost."], "Program", "Main");
 
           // Start the generic host running all its services and setup listeners for stopping
           // all the rigamarole in https://andrewlock.net/introducing-ihostlifetime-and-untangling-the-generic-host-startup-interactions/

@@ -13,6 +13,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
     <TargetFrameworks>netstandard2.0;netstandard2.1;net5.0;</TargetFrameworks>
     <RuntimeIdentifiers>win10-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>

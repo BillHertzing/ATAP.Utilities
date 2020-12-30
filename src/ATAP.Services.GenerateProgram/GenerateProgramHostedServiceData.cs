@@ -31,8 +31,9 @@ namespace ATAP.Services.GenerateCode {
     protected virtual void Dispose(bool disposing) {
       if (!disposedValue) {
         if (disposing) {
-          // Loop over every dictionary entry, disposing of any that are left behind
-          foreach (var value in GenerateCodeTasks.Values) { value.CompositeDisposable.Dispose(); }
+          // Loop over every dictionary entry, cancelling any that are running,
+          // ToDo: expand this safely cancel any running tasks and dispose of any resources they hold
+          // foreach (var value in GenerateCodeTasks.Values) { value.Dispose(); }
           GC.SuppressFinalize(this);
         }
 

@@ -1,6 +1,6 @@
 {
   "Logging": {
-    "PathFormat": "./Logs/Serilog/eStartupLog.{Date}.log",
+    "PathFormat": "D:/DevLogs/Console02/MELLog.{Date}.log",
     "LogLevel": {
       "Default": "Debug",
       "System": "Information",
@@ -10,8 +10,8 @@
       {
         "Name": "File",
         "Args": {
-          "outputTemplate": "MEL GH logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}",
-          "path": "@\"C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\devlog\\Console02.{Date}.log\"",
+          "outputTemplate": "MEL GH file logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}",
+          "path": "D:\\DevLogs\\Console02\\MELLog2.{Date}.log",
           "fileSizeLimitBytes": 1024,
           "rollingInterval": "RollingInterval.Day",
           "rollOnFileSizeLimit": true,
@@ -21,13 +21,18 @@
       {
         "Name": "Console",
         "Args": {
-          "outputTemplate": "MEL GH logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}"
+          "outputTemplate": "MEL GH console logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "Debug",
+        "Args": {
         }
       },
       {
         "Name": "Seq",
         "Args": {
-          "outputTemplate": "MEL GH logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}",
+          "outputTemplate": "MEL GH seq logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}",
           "serverUrl": "http://localhost:5341"
         }
       }
@@ -44,8 +49,8 @@
       {
         "Name": "File",
         "Args": {
-          "outputTemplate": "Serilog GHS logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}",
-          "path": "@\"C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\devlog\\Console02.{Date}.log\"",
+          "outputTemplate": "Serilog GHS file logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}",
+          "path": "D:\\DevLogs\\Console02\\MELLog2.{Date}.log",
           "fileSizeLimitBytes": 1024,
           "rollingInterval": "RollingInterval.Day",
           "rollOnFileSizeLimit": true,
@@ -55,13 +60,18 @@
       {
         "Name": "Console",
         "Args": {
-          "outputTemplate": "Serilog GHS logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}"
+          "outputTemplate": "Serilog GHS console logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "Debug",
+        "Args": {
         }
       },
       {
         "Name": "Seq",
         "Args": {
-          "outputTemplate": "Serilog GHS logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}",
+          "outputTemplate": "Serilog GHS seq logger {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}",
           "serverUrl": "http://localhost:5341"
         }
       }

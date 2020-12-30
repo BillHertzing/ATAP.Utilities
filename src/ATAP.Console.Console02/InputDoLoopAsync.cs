@@ -130,6 +130,8 @@ namespace ATAP.Console.Console02 {
             }
             #endregion
           }
+
+          // Create the IProgress object
           IProgress<object>? gGenerateProgramProgress;
           if (gInvokeGenerateCodeSignil.EnableProgress) {
             gGenerateProgramProgress = new Progress<object>(reportToConsoleOut);
@@ -137,12 +139,16 @@ namespace ATAP.Console.Console02 {
           else {
             gGenerateProgramProgress = null;
           }
+
           // Send first Progress report
           gGenerateProgramProgress.Report("ToDo: localize the first Progress Report message, and any others");
           #endregion
-          /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls
 
           #region PersistenceViaFiles setup
+          // This Console program will persist string data to a single temporary file on the filesystem
+          // filePathsPersistence will have one element
+          //   the Temporary directory from the appConfiguration, combined with the PersistenceMessageFile from the appConfiguration
+          /*
           // Ensure the Message file is empty and can be written to
           // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
           // ToDo: create a function variation that will create subdirectories if needed to fulfill path, and use that function when creating the temp files
@@ -199,7 +205,8 @@ namespace ATAP.Console.Console02 {
           Persistence<IInsertResultsAbstract> persistence = new Persistence<IInsertResultsAbstract>(insertFunc);
           #endregion
           */
-          /* PickAndSave is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls
+
+          /*
           #region PickAndSaveViaFiles setup
           // Ensure the Message file is empty and can be written to
           // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePathsPickAndSave as the argument
@@ -298,7 +305,7 @@ namespace ATAP.Console.Console02 {
           #endregion
 
           break;
-        //    case "2":
+          case "2" :
         //      #region define the Func<string,Task> to be executed when the ConsoleSourceHostedService.ConsoleReadLineAsyncAsObservable produces a sequence element
         //      // This Action closes over the current local variables' values
         //      Func<string, Task> SimpleEchoToConsoleOutFunc = new Func<string, Task>(async (inputLineString) => {
@@ -412,7 +419,7 @@ namespace ATAP.Console.Console02 {
           Message.Append(UiLocalizer["InvalidInputDoesNotMatchAvailableChoices {0}", inputLine]);
           break;
       }
-
+#endregion
       #region Write the Message to Console.Out
       using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
         if (!task.IsCompletedSuccessfully) {

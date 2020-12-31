@@ -45,11 +45,12 @@ namespace ATAP.Utilities.HostedServices.ConsoleSourceHostedService {
   // Can the external CTS go here instead of in StartAsync?
   ) {
       this.stringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
-      //exceptionLocalizer = stringLocalizerFactory.Create(nameof(Resources), "ATAP.Utilities.ConsoleSourceHostedService");
-      //debugLocalizer = stringLocalizerFactory.Create(nameof(Resources), "AService01");
+      //exceptionLocalizer = stringLocalizerFactory.Create(typeof(ATAP.Utilities.HostedServices.ConsoleSinkHostedService.ExceptionResources);
+      //debugLocalizer = stringLocalizerFactory.Create(typeof(ATAP.Utilities.HostedServices.ConsoleSinkHostedService.DebugResources));
       this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       this.logger = loggerFactory.CreateLogger<ConsoleSourceHostedService>();
-      logger.LogDebug("ConsoleSourceHostedService", ".ctor");
+      //logger.LogDebug(this.debugLocalizer["{0} {1}: Starting"],"ConsoleSinkHostedService", ".ctor");  // ToDo Fody for tracing constructors, via an optional switch
+      logger.LogDebug("{0} {1}: Starting","ConsoleSourceHostedService", ".ctor");
       this.hostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
       this.hostApplicationLifetime = hostApplicationLifetime ?? throw new ArgumentNullException(nameof(hostApplicationLifetime));
       this.hostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostEnvironment));
@@ -72,7 +73,7 @@ namespace ATAP.Utilities.HostedServices.ConsoleSourceHostedService {
       #endregion
       #region TBD
       // Register on that cancellationToken an Action that will call TrySetCanceled method on the _delayStart task.
-      // This lets the cancellationToken passed into this method signal to the genericHost an overall request for cancellation 
+      // This lets the cancellationToken passed into this method signal to the genericHost an overall request for cancellation
       //CancellationToken.Register(() => _delayStart.TrySetCanceled());
       #endregion
       // Register the methods defined in this class with the three CancellationToken properties found on the IHostApplicationLifetime instance passed to this class in it's .ctor
@@ -101,19 +102,19 @@ namespace ATAP.Utilities.HostedServices.ConsoleSourceHostedService {
     #region Event Handlers registered with the HostApplicationLifetime events
     // Registered as a handler with the HostApplicationLifetime.ApplicationStarted event
     private void OnStarted() {
-      // Post-startup code goes here  
+      // Post-startup code goes here
     }
 
     // Registered as a handler with the HostApplicationLifetime.Application event
     // This is NOT called if the ConsoleWindows ends when the connected browser (browser opened by LaunchSettings when starting with debugger) is closed (not applicable to ConsoleLifetime generic hosts
     // This IS called if the user hits ctrl-C in the ConsoleWindow
     private void OnStopping() {
-      // On-stopping code goes here  
+      // On-stopping code goes here
     }
 
     // Registered as a handler with the HostApplicationLifetime.ApplicationStarted event
     private void OnStopped() {
-      // Post-stopped code goes here  
+      // Post-stopped code goes here
     }
 
     // Called by base.Stop. This may be called multiple times by service Stop, ApplicationStopping, and StopAsync.

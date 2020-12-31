@@ -72,7 +72,7 @@ namespace ATAP.Services.GenerateCode {
       LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       Logger = loggerFactory.CreateLogger<GenerateProgramHostedService>();
       // Logger = (Logger<GenerateProgramHostedService>) ATAP.Utilities.Logging.LogProvider.GetLogger("GenerateProgramHostedService");
-      Logger.LogDebug("GenerateProgramHostedService", ".ctor");  // ToDo Fody for tracing constructors, via an optional switch
+      Logger.LogDebug(DebugLocalizer["{0} {1}: Starting"],"GenerateProgramHostedService", ".ctor");  // ToDo Fody for tracing constructors, via an optional switch
       HostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
       HostConfiguration = hostConfiguration ?? throw new ArgumentNullException(nameof(hostConfiguration));
       HostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostLifetime));
@@ -81,7 +81,7 @@ namespace ATAP.Services.GenerateCode {
       InternalCancellationToken = InternalCancellationTokenSource.Token;
       Stopwatch = new Stopwatch();
       #region Create the serviceData and initialize it from the StringConstants or this service's ConfigRoot
-      Logger.LogDebug(DebugLocalizer["Creating ServiceData"]);
+      Logger.LogDebug(DebugLocalizer["{0} {1}: Creating the ServiceData"],"GenerateProgramHostedService" , ".ctor");
 
       ServiceData = new GenerateProgramHostedServiceData();
       // populate the servicedata tasks list with a single tuple for development

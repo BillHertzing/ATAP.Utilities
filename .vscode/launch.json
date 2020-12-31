@@ -16,7 +16,7 @@
             "program": "${workspaceFolder}/src/ATAP.Console.Console02/bin/Debug/net5.0/ATAP.Console.Console02.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/ATAP.Console.Console02/bin/Debug/net5.0/",
-            "console": "internalConsole",
+            "console": "integratedTerminal",
             "stopAtEntry": false
         },
         {

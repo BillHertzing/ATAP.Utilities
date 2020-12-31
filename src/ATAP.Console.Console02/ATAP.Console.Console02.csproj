@@ -63,18 +63,6 @@
     <ProjectReference Include="..\ATAP.Utilities.GenerateProgram.Interfaces\ATAP.Utilities.GenerateProgram.Interfaces.csproj" />
      </ItemGroup>
 
-  <!-- Packages to persist data to QuickGraph -->
-  <ItemGroup>
-    <PackageReference Include="YC.QuickGraph" />
-    <PackageReference Include="FSharp.Core" />
-  </ItemGroup>
-
-  <!-- Packages to ensure persisting data to QuickGraph uses the correct version of dependent packages-->
-  <ItemGroup>
-    <PackageReference Include="DotNet.Contracts" />
-    <PackageReference Include="FSharpx.Collections.Experimental" />
-  </ItemGroup>
-
   <!-- Reactive Extensions -->
   <ItemGroup>
     <PackageReference Include="System.Reactive" />
@@ -124,56 +112,6 @@
     <PackageReference Include="Seq.Extensions.Logging" />
   </ItemGroup>
 
-  <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
-  <ItemGroup>
-    <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
-    <PackageReference Include="MethodBoundaryAspect.Fody" Version="2.0.118" />
-    <!-- Project Reference to the ETW attribute and log provider -->
-    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
-  </ItemGroup>
 
-  <!-- Embed resx file information as embedded resources into the output of this assembly
-  <ItemGroup>
-    <EmbeddedResource Update="Resources\ConfigStrings.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>ConfigStrings.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\DebugMessages.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DebugMessages.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\ExceptionMessages.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>ExceptionMessages.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\UIMessages.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>UIMessages.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
- -->
-  <!-- Create Designer Files during design time modifications of resx files, to support interactive Resources population/viewing inside Visual Studio
-  <ItemGroup>
-    <Compile Update="Resources\ConfigStrings.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ConfigStrings.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Resources\DebugMessages.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>DebugMessages.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Resources\ExceptionMessages.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ExceptionMessages.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Resources\UIMessages.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>UIMessages.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-  -->
+
 </Project>

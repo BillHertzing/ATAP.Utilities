@@ -43,23 +43,23 @@ namespace ATAP.Utilities.GenerateProgram {
       GDependencyProjects = gDependencyProjects ?? throw new ArgumentNullException(nameof(gDependencyProjects));
       Philote = new Philote<IGSolutionSignil>();
     }
-    public bool HasPropsAndTargets { get; init; }
-    public bool HasEditorConfig { get; init; }
-    public bool HasArtifacts { get; init; }
-    public bool HasDevLog { get; init; }
-    public bool HasDocumentation { get; init; }
-    public string SourceRelativePath { get; init; }
-    public string TestsRelativePath { get; init; }
-    public bool HasOmniSharpConfiguration { get; init; }
-    public bool HasVisualStudioCodeWorkspaceConfiguration { get; init; }
-    public bool HasVisualStudioIISApplicationHostConfiguration { get; init; }
-    public bool HasDataBases { get; init; }
-    public ICollection<string> BuildConfigurations { get; init; }
-    public ICollection<string> CPUConfigurations { get; init; }
-    public IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> GDependencyPackages { get; init; }
-    public IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> GDependencyProjects { get; init; }
-    public IGPatternReplacement GPatternReplacement { get; init; }
-    public IGComment GComment { get; init; }
-    public IPhilote<IGSolutionSignil> Philote { get; init; }
+    public bool HasPropsAndTargets { get; }
+    public bool HasEditorConfig { get; }
+    public bool HasArtifacts { get; }
+    public bool HasDevLog { get; }
+    public bool HasDocumentation { get; }
+    public string SourceRelativePath { get; }
+    public string TestsRelativePath { get; }
+    public bool HasOmniSharpConfiguration { get; }
+    public bool HasVisualStudioCodeWorkspaceConfiguration { get; }
+    public bool HasVisualStudioIISApplicationHostConfiguration { get; }
+    public bool HasDataBases { get; }
+    public ICollection<string> BuildConfigurations { get; }
+    public ICollection<string> CPUConfigurations { get; }
+    public IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> GDependencyPackages { get; }
+    public IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> GDependencyProjects { get; }
+    public IGPatternReplacement GPatternReplacement { get; }
+    public IGComment GComment { get; }
+    public IPhilote<IGSolutionSignil> Philote { get; }
   }
 }

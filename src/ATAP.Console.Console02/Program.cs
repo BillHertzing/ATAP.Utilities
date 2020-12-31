@@ -1,4 +1,4 @@
-
+#undef TRACE
 using ATAP.Utilities.ComputerInventory.Hardware;
 using ATAP.Utilities.ETW;
 using ATAP.Utilities.HostedServices;
@@ -94,7 +94,7 @@ namespace ATAP.Console.Console02 {
       // Setup Serilog's static Logger with an initial configuration sufficient to log startup errors
       // create a local Serilog Logger for use during Program startup
       var serilogLoggerConfiguration = new Serilog.LoggerConfiguration()
-        .MinimumLevel.Information()
+        .MinimumLevel.Verbose()
         .Enrich.FromLogContext()
         //.Enrich.WithExceptionDetails()
         .Enrich.WithThreadId()
@@ -111,6 +111,13 @@ namespace ATAP.Console.Console02 {
       Serilog.Log.Logger = serilogLogger;
       Serilog.Log.Debug("{0} {1}: The program Console02 is starting", "Program", "Main");
       Serilog.Log.Debug("{0} {1}: LoggerFactory and local Logger defined with a default startup configuration:", "Program", "Main");
+      // Temp
+#if TRACE
+Log.Debug("TRACE is defined");
+#else
+Log.Debug("TRACE is NOT defined");
+#endif
+      // end temp
 
       // Set the MEL LoggerFactory to use this LoggerConfiguration
       Microsoft.Extensions.Logging.ILoggerFactory mELoggerFactory = new Microsoft.Extensions.Logging.LoggerFactory().AddSerilog();

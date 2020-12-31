@@ -411,7 +411,7 @@ namespace ATAP.Console.Console02 {
               break;
         case "99":
           #region Quit the program
-          //internalcancellationtoken.
+          InternalCancellationTokenSource.Cancel();
           #endregion
           break;
 

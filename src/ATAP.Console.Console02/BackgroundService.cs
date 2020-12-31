@@ -37,9 +37,9 @@ using PersistenceStringConstants = ATAP.Utilities.Persistence.StringConstants;
 
 namespace ATAP.Console.Console02 {
   // This file contains the "boilerplate" code that creates the Background Service
-#if TRACE
-  [ETWLogAttribute]
-#endif
+//#if TRACE
+//  [ETWLogAttribute]
+//#endif
   public partial class Console02BackgroundService : BackgroundService {
     #region Common Constructor-injected Auto-Implemented Properties
     // These properties can only be set in the class constructor.
@@ -66,11 +66,12 @@ namespace ATAP.Console.Console02 {
     IConsoleSinkHostedService ConsoleSinkHostedService { get; }
     IConsoleSourceHostedService ConsoleSourceHostedService { get; }
     #endregion
-    #region Data for Console02
+    #region Resource Localizers
     IStringLocalizer DebugLocalizer { get; }
     IStringLocalizer ExceptionLocalizer { get; }
     IStringLocalizer UiLocalizer { get; }
-
+    #endregion
+    #region Data for Console02
     IEnumerable<string> Choices;
     StringBuilder Message = new();
     IDisposable SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle { get; set; }
@@ -96,7 +97,7 @@ namespace ATAP.Console.Console02 {
       LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       // Logger = (Logger<Console02BackgroundService>) ATAP.Utilities.Logging.LogProvider.GetLogger("Console02BackgroundService");
       Logger = LoggerFactory.CreateLogger<Console02BackgroundService>();
-      Logger.LogDebug("Console02BackgroundService", ".ctor");
+      Logger.LogDebug(DebugLocalizer["{0} {1}: Starting"],"Console02BackgroundService", ".ctor");  // ToDo Fody for tracing constructors, via an optional switch
       HostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
       HostConfiguration = hostConfiguration ?? throw new ArgumentNullException(nameof(hostConfiguration));
       HostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostLifetime));
@@ -268,7 +269,11 @@ namespace ATAP.Console.Console02 {
       #endregion
       #region Register actions with the CancellationToken (s)
       externalCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "Console02BackgroundService", "externalCancellationToken"));
-      InternalCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} InternalCancellationToken has signalled stopping."], "Console02BackgroundService", "InternalCancellationToken"));
+      InternalCancellationToken.Register(() => {
+        Logger.LogDebug(DebugLocalizer["{0} {1} InternalCancellationToken has signalled stopping."], "Console02BackgroundService", "InternalCancellationToken");
+        Logger.LogDebug(DebugLocalizer["{0} {1} Need to figure out how to call the parent Console02 and tell it to gracefully shutdown."], "Console02BackgroundService", "InternalCancellationToken");
+        //StopAsync()
+      });
       LinkedCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} LinkedCancellationToken has signalled stopping."], "Console02BackgroundService", "LinkedCancellationToken"));
       #endregion
       #region Define the inputs to respond to

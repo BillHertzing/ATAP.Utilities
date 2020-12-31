@@ -162,7 +162,7 @@ namespace ATAP.Console.Console01 {
 
       #region (optional) Debugging the  Configuration
       // for debugging and education, uncomment this region and inspect the two section Lists (using debugger Locals) to see exactly what is in the configuration
-      //    var sections = genericHostConfigurationRoot.GetChildren(); 
+      //    var sections = genericHostConfigurationRoot.GetChildren();
       //    List<IConfigurationSection> sectionsAsListOfIConfigurationSections = new List<IConfigurationSection>();
       //    List<ConfigurationSection> sectionsAsListOfConfigurationSections = new List<ConfigurationSection>();
       //    foreach (var iSection in sections) sectionsAsListOfIConfigurationSections.Add(iSection);
@@ -179,7 +179,7 @@ namespace ATAP.Console.Console01 {
       // Accepting any string for envNameFromConfiguration might pose a security risk, as it will allow arbitrary files to be loaded into the configuration root
       switch (envNameFromConfiguration) {
         case GenericHostStringConstants.EnvironmentDevelopment:
-          // ToDo: Programmers can add things here 
+          // ToDo: Programmers can add things here
           break;
         case GenericHostStringConstants.EnvironmentProduction:
           // This is the expected leg for Production environment
@@ -211,7 +211,7 @@ namespace ATAP.Console.Console01 {
 
       #region Configure the genericHostBuilder, including DI-Container, IHostLifetime, services in the services collection, genericHostConfiguration, and appConfiguration
 
-      // Make a GenericHostBuilder with the Configuration (as above), and chose a specific instance of an IHostLifetime 
+      // Make a GenericHostBuilder with the Configuration (as above), and chose a specific instance of an IHostLifetime
       var genericHostBuilder = GenericHostExtensions.ATAPStandardGenericHostBuilderForConsoleLifetime(genericHostConfigurationBuilder, appConfigurationBuilder);
 
       // Add the specific IHostLifetime for this program (or service)
@@ -223,7 +223,7 @@ namespace ATAP.Console.Console01 {
 
       // in Production, surpress the startup messages appearing on the Console stdout
       if (envNameFromConfiguration == GenericHostStringConstants.EnvironmentProduction) {
-        //genericHostBuilder.Configure<ConsoleLifetimeOptions>(Options => Options.SuppressStatusMessages = true); // 
+        //genericHostBuilder.Configure<ConsoleLifetimeOptions>(Options => Options.SuppressStatusMessages = true); //
       }
 
       #region Configure the GenericHost logging per the Logging section in ConfigurationRoot
@@ -242,10 +242,10 @@ namespace ATAP.Console.Console01 {
       //LogProvider.SetLogFactory(factory);
       //// Set the LogFactory in the DI-Services
       //// ToDo: LoggerFactory loggerFactory.SetLogFactory(factory);
-      //// redefine the local logger from this factory, configured with the startup logging as defined in the Logging section of the configurationRoot 
+      //// redefine the local logger from this factory, configured with the startup logging as defined in the Logging section of the configurationRoot
       //logger = factory.CreateLogger("Console01");
       //serilogLogger.LogDebug(DebugLocalizer["{0} {1}: LoggerFactory and local logger redefined per the Logging section in the configuration settings:"], "Program", "Main");
-      //// Copy this tour "standard logger 
+      //// Copy this tour "standard logger
       //// Create a LoggerFactory, configure it to use Serilog
       //var factory = new LoggerFactory();
       //var x = serilogLoggerConfiguration..CreateLoggerF();
@@ -356,7 +356,7 @@ namespace ATAP.Console.Console01 {
 
   }
 
-  //// ToDo: move this into an ATAP extension assembly 
+  //// ToDo: move this into an ATAP extension assembly
   //// This static method is an extension on a ResourceManager, that validates the requested string resource and formats it. Exceptions here usually mean a invalid/incorrect satelite assembly
   //public static class ResourceManagerExtensions {
   //  public static string FromRM(this ResourceManager rm, string key, params string[] args) {

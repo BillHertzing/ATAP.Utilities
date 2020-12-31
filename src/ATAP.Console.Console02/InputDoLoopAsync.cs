@@ -34,6 +34,9 @@ using appStringConstants = ATAP.Console.Console02.StringConstants;
 using GenerateProgramServiceStringConstants = ATAP.Services.GenerateCode.StringConstants;
 using PersistenceStringConstants = ATAP.Utilities.Persistence.StringConstants;
 
+// Provides the .Dump utility to export complex .net objects into JSON
+//using ServiceStack.Text;
+using System.Text.Json;
 
 namespace ATAP.Console.Console02 {
   // This file contains the code to be executed in response to each selection by the user from the list of choices
@@ -78,7 +81,7 @@ namespace ATAP.Console.Console02 {
           // ToDo: should validate in case the ATAP.Services.GenerateCode.StringConstants assembly is messed up?
           // Create the instance of the GInvokeGenerateCodeSignil
           var gInvokeGenerateCodeSignil = GetGInvokeGenerateCodeSignilFromSettings();
-      Logger.LogDebug(DebugLocalizer["{0} {1} gInvokeGenerateCodeSignil = {2}"], "Console02BackgroundService", "DoLoopAsync", gInvokeGenerateCodeSignil.ToString());
+          Logger.LogDebug(DebugLocalizer["{0} {1} gInvokeGenerateCodeSignil = {2}"], "Console02BackgroundService", "DoLoopAsync", gInvokeGenerateCodeSignil.ToString());
 
           Message.Append(UiLocalizer["Running GenerateProgram Function on the AssemblyGroupSignil {0}, with GlobalSettingsKey {1} and SolutionSignilKey {2}", "Console02Mechanical", "ATAPStandardGlobalSettingsKey", "ATAPStandardGSolutionSignilKey"]);
 
@@ -306,109 +309,15 @@ namespace ATAP.Console.Console02 {
           #endregion
 
           break;
-          case "2" :
-        //      #region define the Func<string,Task> to be executed when the ConsoleSourceHostedService.ConsoleReadLineAsyncAsObservable produces a sequence element
-        //      // This Action closes over the current local variables' values
-        //      Func<string, Task> SimpleEchoToConsoleOutFunc = new Func<string, Task>(async (inputLineString) => {
-        //        #region Write the Message to Console.Out
-        //        using (Task task = await WriteMessageSafelyAsync(inputLineString, ConsoleSinkHostedService, LinkedCancellationToken).ConfigureAwait(false)) {
-        //          if (!task.IsCompletedSuccessfully) {
-        //            if (task.IsCanceled) {
-        //              // Ignore if user cancelled the operation during output to Console.Out (internal cancellation)
-        //              // re-throw if the cancellation request came from outside the stdInLineMonitorAction
-        //              /// ToDo: evaluate the linked, inner, and external tokens
-        //              throw new OperationCanceledException();
-        //            }
-        //            else if (task.IsFaulted) {
-        //              //ToDo: Go through the inner exception
-        //              //foreach (var e in t.Exception) {
-        //              //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
-        //              // ToDo figure out what to do if the output stream is closed
-        //              throw new Exception(ExceptionLocalizer["ToDo: WriteMessageSafelyAsync returned an AggregateException"]);
-        //              //}
-        //            }
-        //          }
-        //        }
-        //        #endregion
+        case "2" :
+            Logger.LogDebug(DebugLocalizer["{0} {1}: Creating Signil from Settings"], "Console02BackgroundService", "DoLoopAsync");
+              IGInvokeGenerateCodeSignil gInvokeGenerateCodeSignilFromSettings = GetGInvokeGenerateCodeSignilFromSettings();
+            Logger.LogDebug(DebugLocalizer["{0} {1}: SignilFromSettings in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", JsonSerializer.Serialize(gInvokeGenerateCodeSignilFromSettings));
+          break;
+        case "3":
+          BuildJSONSettingsFromInstance();
 
-        //      });
-        //      #endregion
-        //      break;
-        //    case "10":
-        //      #region setup a local block for handling this choice
-        //      try {
-        //        var enableHash = configurationRoot.GetValue<bool>(ConsoleMonitorStringConstants.EnableHashBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnableHashBoolConfigRootKeyDefault));  // ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-        //        var enableProgress = configurationRoot.GetValue<bool>(ConsoleMonitorStringConstants.EnableProgressBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnableProgressBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-        //        var enablePersistence = configurationRoot.GetValue<bool>(ConsoleMonitorStringConstants.EnablePersistenceBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnablePersistenceBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-        //        var enablePickAndSave = configurationRoot.GetValue<bool>(ConsoleMonitorStringConstants.EnablePickAndSaveBoolConfigRootKey, bool.Parse(ConsoleMonitorStringConstants.EnablePickAndSaveBoolDefault));// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-        //        var dBConnectionString = configurationRoot.GetValue<string>(ConsoleMonitorStringConstants.DBConnectionStringConfigRootKey, ConsoleMonitorStringConstants.DBConnectionStringDefault);// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-        //                                                                                                                                                                                            // ToDo: This should be a string representation of a known enumeration of ORMLite DB providers that this service can support
-        //        var dBProvider = configurationRoot.GetValue<string>(ConsoleMonitorStringConstants.DBConnectionStringConfigRootKey, ConsoleMonitorStringConstants.DBConnectionStringDefault);// ToDo: should validate in case the ConsoleMonitorStringConstants assembly is messed up?
-        //        dBProvider = SqlServerOrmLiteDialectProvider.Instance;
-        //        #region ProgressReporting setup
-        //        ConvertFileSystemToGraphProgress? convertFileSystemToGraphProgress;
-        //        if (enableProgress) {
-        //          convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
-        //        }
-        //        else {
-        //          convertFileSystemToGraphProgress = null;
-        //        }
-        //        #endregion
-        //        #region PersistenceViaIORMSetup
-        //        // Call the SetupViaIORMFuncBuilder here, execute the Func that comes back, with dBConnectionString as the argument
-        //        // Ensure the NNode and Edge Tables for this PartitionInfo are empty and can be written to
-        //        // ToDo: create a function that will create Node and Edge tables if they don't yet exist, and use that function when creating the temp files
-        //        // ToDo: add exception handling if the setup function fails
-        //        var setupResultsPersistence = PersistenceStaticExtensions.SetupViaORMFuncBuilder()(new SetupViaORMData(dBConnectionString, dBProvider, LinkedCancellationToken));
-
-        //        // Create an insertFunc that references the local variable setupResults, closing over it
-        //        var insertFunc = new Func<IEnumerable<IEnumerable<object>>, IInsertViaORMResults>((insertData) => {
-        //          int numberOfDatas = insertData.ToArray().Length;
-        //          int numberOfStreamWriters = setupResultsPersistence.StreamWriters.Length;
-        //          for (var i = 0; i < numberOfDatas; i++) {
-        //            foreach (string str in insertData.ToArray()[i]) {
-        //              //ToDo: add async versions await setupResults.StreamWriters[i].WriteLineAsync(str);
-        //              //ToDo: exception handling
-        //              setupResultsPersistence.Tables[i].SQLCmd(str);
-        //            }
-        //          }
-        //          return new InsertViaORMResults(true);
-        //        });
-        //        Persistence<IInsertResultsAbstract> persistence = new Persistence<IInsertResultsAbstract>(insertFunc);
-        //        #endregion
-        //        #region PickAndSaveViaIORM setup
-        //        // Ensure the Node and Edge files are empty and can be written to
-
-        //        // Call the SetupViaIORMFuncBuilder here, execute the Func that comes back, with filePaths as the argument
-        //        // ToDo: create a function that will create subdirectories if needed to fulfill path, and use that function when creating the temp files
-        //        var setupResultsPickAndSave = PersistenceStaticExtensions.SetupViaORMFuncBuilder()(new SetupViaORMData(dBConnectionString, dBProvider, LinkedCancellationToken));
-        //        // Create a pickFunc
-        //        var pickFuncPickAndSave = new Func<object, bool>((objToTest) => {
-        //          return FileIOExtensions.IsArchiveFile(objToTest.ToString()) || FileIOExtensions.IsMailFile(objToTest.ToString());
-        //        });
-        //        // Create an insert Func
-        //        var insertFuncPickAndSave = new Func<IEnumerable<IEnumerable<object>>, IInsertViaORMResults>((insertData) => {
-        //          //int numberOfStreamWriters = setupResultsPickAndSave.StreamWriters.Length;
-        //          //for (var i = 0; i < numberOfStreamWriters; i++) {
-        //          //  foreach (string str in insertData.ToArray()[i]) {
-        //          //    //ToDo: add async versions await setupResults.StreamWriters[i].WriteLineAsync(str);
-        //          //    //ToDo: exception handling
-        //          //    // ToDo: Make formatting a parameter
-        //          //    setupResultsPickAndSave.StreamWriters[i].WriteLine(str);
-        //          //  }
-        //          //}
-        //          return new InsertViaORMResults(true);
-        //        });
-        //        PickAndSave<IInsertResultsAbstract> pickAndSave = new PickAndSave<IInsertResultsAbstract>(pickFuncPickAndSave, insertFuncPickAndSave);
-        //        #endregion
-        //      }
-        //      // To Catch specific exceptions that might occur
-        //      catch {
-        //      }
-        //      // ToDo: dispose
-        //      finally { }
-        //      #endregion
-              break;
+          break;
         case "99":
           #region Quit the program
           InternalCancellationTokenSource.Cancel();
@@ -464,6 +373,23 @@ namespace ATAP.Console.Console02 {
           }
         }
         Message.Clear();
+      }
+
+      void BuildJSONSettingsFromInstance() {
+        Logger.LogDebug(DebugLocalizer["{0} {1}: Creating JSON from a Signil"], "Console02BackgroundService", "DoLoopAsync");
+        IGGlobalSettingsSignil gGlobalSettingsSignilFromCode = new GGlobalSettingsSignil(new List<string>() { "netstandard2.1;", "net5.0" });
+        //Logger.LogDebug(DebugLocalizer["{0} {1}: SignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", gGlobalSettingsSignilFromCode.Dump());
+        Logger.LogDebug(DebugLocalizer["{0} {1}: gGlobalSettingsSignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", JsonSerializer.Serialize(gGlobalSettingsSignilFromCode));
+        var _buildConfigurations = new SortedSet<string>() { "Debug", "ReleaseWithTrace", "Release" };
+        var _cPUConfigurations = new SortedSet<string>() { "Any CPU" };
+        IGSolutionSignil gSolutionSignilFromCode = new GSolutionSignil(
+            buildConfigurations: _buildConfigurations
+          , cPUConfigurations: _cPUConfigurations
+        );
+        Logger.LogDebug(DebugLocalizer["{0} {1}: gSolutionSignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", JsonSerializer.Serialize(gSolutionSignilFromCode));
+        IGAssemblyGroupSignil gAssemblyGroupSignilFromCode = new GAssemblyGroupSignil(
+        );
+        Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyGroupSignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", JsonSerializer.Serialize(gAssemblyGroupSignilFromCode));
       }
       #endregion
     }

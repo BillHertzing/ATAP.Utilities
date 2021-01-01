@@ -5,9 +5,9 @@ using ATAP.Utilities.HostedServices;
 using ATAP.Utilities.HostedServices.ConsoleSourceHostedService;
 using ATAP.Utilities.HostedServices.ConsoleSinkHostedService;
 using ATAP.Services.GenerateCode;
-//using GenerateProgram;
 using ATAP.Utilities.Logging;
 using ATAP.Utilities.Persistence;
+using ATAP.Utilities.Serializer.Interfaces;
 
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
@@ -115,7 +115,7 @@ namespace ATAP.Console.Console02 {
 #if TRACE
 Log.Debug("TRACE is defined");
 #else
-Log.Debug("TRACE is NOT defined");
+      Log.Debug("TRACE is NOT defined");
 #endif
       // end temp
 
@@ -170,11 +170,11 @@ Log.Debug("TRACE is NOT defined");
 
       #region (optional) Debugging the  Configuration
       // for debugging and education, uncomment this region and inspect the two section Lists (using debugger Locals) to see exactly what is in the configuration
-         var sections = genericHostConfigurationRoot.GetChildren();
-         List<IConfigurationSection> sectionsAsListOfIConfigurationSections = new List<IConfigurationSection>();
-         List<ConfigurationSection> sectionsAsListOfConfigurationSections = new List<ConfigurationSection>();
-         foreach (var iSection in sections) sectionsAsListOfIConfigurationSections.Add(iSection);
-         foreach (var iSection in sectionsAsListOfIConfigurationSections) sectionsAsListOfConfigurationSections.Add((ConfigurationSection)iSection);
+      var sections = genericHostConfigurationRoot.GetChildren();
+      List<IConfigurationSection> sectionsAsListOfIConfigurationSections = new List<IConfigurationSection>();
+      List<ConfigurationSection> sectionsAsListOfConfigurationSections = new List<ConfigurationSection>();
+      foreach (var iSection in sections) sectionsAsListOfIConfigurationSections.Add(iSection);
+      foreach (var iSection in sectionsAsListOfIConfigurationSections) sectionsAsListOfConfigurationSections.Add((ConfigurationSection)iSection);
       #endregion
 
       #region Environment determination and validation
@@ -188,12 +188,11 @@ Log.Debug("TRACE is NOT defined");
       // Accepting any string for envNameFromConfiguration might pose a security risk, as it will allow arbitrary files to be loaded into the configuration root
       switch (envNameFromConfiguration) {
         case GenericHostStringConstants.EnvironmentDevelopment:
-        // ToDo: Make the launching of the debugger conditional
-        if (!Debugger.IsAttached)
-            {
-                // ToDo: Figure out how to make this launch a VSC debugger instead of a VS debugger
-                // Debugger.Launch();
-            }
+          // ToDo: Make the launching of the debugger conditional
+          if (!Debugger.IsAttached) {
+            // ToDo: Figure out how to make this launch a VSC debugger instead of a VS debugger
+            // Debugger.Launch();
+          }
           // ToDo: Programmers can add things here
           break;
         case GenericHostStringConstants.EnvironmentProduction:
@@ -222,7 +221,6 @@ Log.Debug("TRACE is NOT defined");
       appConfigurationBuilder = ConfigurationExtensions.ATAPStandardConfigurationBuilder(Console02DefaultConfiguration.Production, envNameFromConfiguration == GenericHostStringConstants.EnvironmentProduction, envNameFromConfiguration,
         appStringConstants.SettingsFileName, appStringConstants.SettingsFileNameSuffix, loadedFromDirectory, initialStartupDirectory, appEnvPrefixes, args, switchMappings);
       #endregion
-
 
       #region Configure the genericHostBuilder, including DI-Container, IHostLifetime, services in the services collection, genericHostConfiguration, and appConfiguration
 
@@ -274,22 +272,59 @@ Log.Debug("TRACE is NOT defined");
       //genericHostBuilder.UseSerilog();
       #endregion
 
+      #region Configure the Serializer library per the Serializer section in ConfigurationRoot
+        // ToDo: get from Configuration
+        // appConfiguration.GetValue<string>(appStringConstants.SerializerAssemblyConfigRootKey, appStringConstants.SerializerAssemblyDefault)
+        // appConfiguration.GetValue<string>(appStringConstants.SerializerNamespaceConfigRootKey, appStringConstants.SerializerNamespaceDefault)
+        //var _serializerShimName = "ATAP.Utilities.Serializer.Shim.ServiceStackJson, Version=1.0.0.0, Culture=neutral";
+        var _serializerShimName = "ATAP.Utilities.Serializer.Shim.ServiceStackJson.dll";
+        var _serializerShimNameSpace = "ATAP.Utilities.Serializer";
+      #endregion
+
       // Add specific services for this application
       genericHostBuilder.ConfigureServices((hostContext, services) => {
         // Localization for the services
         services.AddLocalization(options => options.ResourcesPath = "Resources");
-        // Asynchronous wrappers around stdin and stdout
+        // Asynchronous wrappers around stdin and stdout as DI-injected services
         services.AddSingleton<IConsoleSinkHostedService, ConsoleSinkHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
         services.AddSingleton<IConsoleSourceHostedService, ConsoleSourceHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
         //services.AddHostedService<ConsoleMonitorBackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
+        // ObservableFileSystemWatchers as a DI-injected service
         //services.AddSingleton<IFileSystemWatchersAsObservableFactoryService, FileSystemWatchersAsObservableFactoryService>();
         //services.AddSingleton<IFileSystemWatchersHostedService, FileSystemWatchersHostedService>();
+        // ObservableTimers as a DI-injected service
         //services.AddSingleton<IObservableResetableTimersHostedService, ObservableResetableTimersHostedService>();
         // The service for generating code
         services.AddSingleton<IGenerateProgramHostedService, GenerateProgramHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
         // The primary service (loop) that this program does
         services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
-      });
+        // Serialization library as a DI-injected service
+        //Attribution: http://codebuckets.com/2020/05/29/dynamically-loading-assemblies-for-dependency-injection-in-net-core/ , Comment by 'David'
+        Assembly a = typeof(Program).Assembly;
+        foreach (AssemblyName an in a.GetReferencedAssemblies() )
+        {
+          mELlogger.LogDebug(debugLocalizer["{0} {1}: ReferencedAssemblies Name={2}, Version={3}, Culture={4}, PublicKey token={5}"], "Program", "Main", an.Name, an.Version, an.CultureInfo.Name, (BitConverter.ToString (an.GetPublicKeyToken())));
+          mELlogger.LogDebug(debugLocalizer["{0} {1}: ReferencedAssemblies FullName={2}"], "Program", "Main", an.FullName);
+        }
+        Assembly.LoadFrom(_serializerShimName)
+        //Assembly.Load(_serializerShimName)
+          .GetTypes()
+          .Where(w => w.Namespace == _serializerShimNameSpace && w.IsClass)
+          .ToList()
+          .ForEach(t => {
+          services.AddTransient(t.GetInterface("I" + t.Name, false), t);
+          });
+      //   List<Assembly> assemblies = new List<Assembly>();
+      //   foreach (string assemblyPath in Directory.GetFiles(System.AppDomain.CurrentDomain.BaseDirectory, "*.dll", SearchOption.AllDirectories)) {
+      //     Assembly assembly = Assembly.LoadFile(assemblyPath);
+      //     assemblies.Add(assembly);
+      //   }
+      //   services.Scan(scan => scan
+      //     .FromAssemblies(assemblies)
+      //     .AddClasses(classes => classes.AssignableTo<ISerializer>(), publicOnly: false)
+      //     .AsImplementedInterfaces()
+      //     .WithTransientLifetime());
+       });
       #endregion
 
       // Build the Host
@@ -299,7 +334,8 @@ Log.Debug("TRACE is NOT defined");
       //services.Configure<ConsoleLifetimeOptions>(opts opts.SuppressStatusMessages = Configuration["SuppressStatusMessages"] != null)
 
       // Start it going
-      try {mELlogger.LogDebug(debugLocalizer["{0} {1}: \"using\" the genericHost."], "Program", "Main");
+      try {
+        mELlogger.LogDebug(debugLocalizer["{0} {1}: \"using\" the genericHost."], "Program", "Main");
 
         using (genericHost) {
           mELlogger.LogDebug(debugLocalizer["{0} {1}: Calling StartAsync on the genericHost."], "Program", "Main");
@@ -350,11 +386,12 @@ Log.Debug("TRACE is NOT defined");
       }
       catch (Exception ex) {
         mELLogger.LogCritical(exceptionLocalizer["{0} {1}: genericHost start-up failed. ExceptionMessage: {2}", "Program", "Main", ex.Message]);
-        throw ex;
+        throw ;
       }
       finally {
-        // ToDo: How to do something similar for MEL Logger?
         Log.CloseAndFlush();
+        // ToDo: Figure out how to do a similar CloseAndFlush for the mELLogger
+        //mELLogger.Dispose();
       }
 
       #region Playing with CSharpSyntaxTree

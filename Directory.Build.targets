@@ -10,7 +10,7 @@
   -->
   <ItemGroup>
     <Resx Include="**\*.resx" />
-    <EmbeddedResource Include="**\*.resource"/>
+    <EmbeddedResource Include="**\*.resource" />
 
     <!--
     <Compile Include="**\*.Designer.cs">
@@ -19,10 +19,10 @@
       <DependentUpon>$([System.String]::Copy('%(FileName)').Replace('.Designer', '.resx'))</DependentUpon>
     </Compile>
         -->
-      </ItemGroup>
+  </ItemGroup>
 
-<!-- It appears that there is no solution for building/embedding resourfes in the dotnet toolchain for V5.0-->
-<!--
+  <!-- It appears that there is no solution for building/embedding resourfes in the dotnet toolchain for V5.0-->
+  <!--
   </ItemGroup>
   <Target Name="Resources" BeforeTargets="Compile">
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="_TargetFrameworks = @(_TargetFrameworks -> '%(Identity)')" />
@@ -37,8 +37,8 @@
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="testStrReplace =  $([System.String]::Copy('testStr').Replace('test','replace'))" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="_IntermediateOutputPathPlusTargetFramework = @(_IntermediateOutputPathPlusTargetFramework->'%(Identity)')" />
     -->
-    <!-- ToDo: Add Runtime Identifier -->
-    <!--
+  <!-- ToDo: Add Runtime Identifier -->
+  <!--
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ListOfResxFiles = @(Resx)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ListOfDesignerFiles = @(Resx -> '%(Identity)')" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="ListOfDesignerFiles = @(Resx -> $([System.String]::Copy('%(Resx.Identity)').Replace('resx','Generated.cs'))" />
@@ -52,11 +52,7 @@
     <StronglyTypedClassName>DebugMessages</StronglyTypedClassName>
     </PropertyGroup>
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Text="SingleResxFile = $(SingleResxFile); SingleResourceFile = $(SingleResourceFile); SingleStronglyTypedFilename = $(SingleStronglyTypedFilename)" />
-    <GenerateResource Condition="Exists('$(SingleResxFile)')"
-      Sources="$(SingleResxFile)"
-       OutputResources="$(SingleResourceFile)"
-       PublicClass="true"
-       StronglyTypedLanguage="C#"
+    <GenerateResource Condition="Exists('$(SingleResxFile)')" Sources="$(SingleResxFile)" OutputResources="$(SingleResourceFile)" PublicClass="true" StronglyTypedLanguage="C#"
        StronglyTypedNamespace = '$(StronglyTypedNamespace)'
        StronglyTypedClassName = '$(StronglyTypedClassName)'
        StronglyTypedFilename = '$(SingleStronglyTypedFilename)'
@@ -74,7 +70,7 @@
     <PrepareForRunDependsOn>$(PrepareForRunDependsOn);CopyJSONSettingsFilesToOutputDirectory</PrepareForRunDependsOn>
   </PropertyGroup>
   <ItemGroup>
-    <JsonSettingsFiles Include="*.json" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch(%(Filename), 'settings.*json$'))"/>
+    <JsonSettingsFiles Include="*.json" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch(%(Filename), 'settings.*json$'))" />
   </ItemGroup>
   <Target Name="CopyJSONSettingsFilesToOutputDirectory">
     <Copy SourceFiles="@(JsonSettingsFiles)" DestinationFolder="$(OutDir)" />
@@ -159,8 +155,10 @@
     <PackageReference Update="Microsoft.Extensions.Hosting" Version="5.0.0" />
     <PackageReference Update="Microsoft.Extensions.Localization" Version="5.0.0" />
     <PackageReference Update="Microsoft.Extensions.Logging" Version="5.0.0" />
-
     <!-- <PackageReference Update="Microsoft.AspNetCore.Hosting.Abstractions" Version="5.0.0" /> -->
+
+    <!-- Package to extend Microsoft.Extensions.DependencyInjection with Scan and Decorate methods -->
+    <PackageReference Update="Scrutor" Version="3.3.0" />
 
     <!-- Packages used for custom build tasks -->
     <PackageReference Update="Microsoft.Build.Framework" Version="16.8.0" />

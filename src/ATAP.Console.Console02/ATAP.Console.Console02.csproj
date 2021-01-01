@@ -42,6 +42,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Console.Console02.StringConstants\ATAP.Console.Console02.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.DataBaseManagement\ATAP.Utilities.DatabaseManagement.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence.StringConstants\ATAP.Utilities.Persistence.StringConstants.csproj" />
@@ -61,16 +62,19 @@
     <ProjectReference Include="..\ATAP.Services.GenerateProgram.StringConstants\ATAP.Services.GenerateProgram.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Services.GenerateProgram\ATAP.Services.GenerateProgram.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.GenerateProgram.Interfaces\ATAP.Utilities.GenerateProgram.Interfaces.csproj" />
-     </ItemGroup>
+  </ItemGroup>
 
   <!-- Reactive Extensions -->
   <ItemGroup>
     <PackageReference Include="System.Reactive" />
   </ItemGroup>
 
-  <!-- ServiceStack Serilization and dump utility -->
+
+  <!-- Copy all Serialization libraries for the ISerializer DI-injected service to the outputdir-->
   <ItemGroup>
-    <PackageReference Include="ServiceStack.Text" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.NewtonsoftJsonJson\ATAP.Utilities.Serializer.NewtonsoftJson.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.ServiceStackJson\ATAP.Utilities.Serializer.ServiceStackJson.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.SystemTextJson.csproj" />
   </ItemGroup>
 
   <!-- ServiceStack ORMLite (database) utilities -->
@@ -89,6 +93,11 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Localization" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <!-- Package to extend Microsoft.Extensions.DependencyInjection with scan and Decorate methods -->
+  <ItemGroup>
+    <PackageReference Include="Scrutor" />
   </ItemGroup>
 
   <!-- Packages to implement Serilog as logging provider -->

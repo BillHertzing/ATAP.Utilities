@@ -9,6 +9,7 @@ using ATAP.Utilities.Philote;
 using ATAP.Utilities.Reactive;
 using ATAP.Utilities.GenerateProgram;
 using ATAP.Services.GenerateCode;
+using ATAP.Utilities.Serializer.Interfaces;
 
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
@@ -37,9 +38,9 @@ using PersistenceStringConstants = ATAP.Utilities.Persistence.StringConstants;
 
 namespace ATAP.Console.Console02 {
   // This file contains the "boilerplate" code that creates the Background Service
-//#if TRACE
-//  [ETWLogAttribute]
-//#endif
+  //#if TRACE
+  //  [ETWLogAttribute]
+  //#endif
   public partial class Console02BackgroundService : BackgroundService {
     #region Common Constructor-injected Auto-Implemented Properties
     // These properties can only be set in the class constructor.
@@ -71,6 +72,9 @@ namespace ATAP.Console.Console02 {
     IStringLocalizer ExceptionLocalizer { get; }
     IStringLocalizer UiLocalizer { get; }
     #endregion
+    #region Serializer
+    ISerializer Serializer { get; }
+    #endregion
     #region Data for Console02
     IEnumerable<string> Choices;
     StringBuilder Message = new();
@@ -79,7 +83,7 @@ namespace ATAP.Console.Console02 {
     #endregion
     #region Constructor
     /// <summary>
-    /// Constructor that populates all the injected services provided by a GenericHost, along with teh injected services specific to this program that are needed by this HostedService (or derivitive like BackgroundService)
+    /// Constructor that populates all the injected services provided by a GenericHost, along with the injected services specific to this program that are needed by this HostedService (or a like BackgroundService)
     /// </summary>
     /// <param name="generateProgramHostedService"></param>
     /// <param name="consoleSinkHostedService"></param>
@@ -89,7 +93,7 @@ namespace ATAP.Console.Console02 {
     /// <param name="hostConfiguration"></param>
     /// <param name="hostLifetime"></param>
     /// <param name="hostApplicationLifetime"></param>
-    public Console02BackgroundService(IGenerateProgramHostedService generateProgramHostedService, IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration appConfiguration, IHostApplicationLifetime hostApplicationLifetime) {
+    public Console02BackgroundService(IGenerateProgramHostedService generateProgramHostedService, IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration appConfiguration, IHostApplicationLifetime hostApplicationLifetime, ISerializer serializer) {
       StringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
       ExceptionLocalizer = stringLocalizerFactory.Create("ATAP.Console.Console2.ExceptionResources", "ATAP.Console.Console02");
       DebugLocalizer = stringLocalizerFactory.Create(nameof(ATAP.Console.Console2.DebugResources), "ATAP.Console.Console02");
@@ -97,12 +101,13 @@ namespace ATAP.Console.Console02 {
       LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
       // Logger = (Logger<Console02BackgroundService>) ATAP.Utilities.Logging.LogProvider.GetLogger("Console02BackgroundService");
       Logger = LoggerFactory.CreateLogger<Console02BackgroundService>();
-      Logger.LogDebug(DebugLocalizer["{0} {1}: Starting"],"Console02BackgroundService", ".ctor");  // ToDo Fody for tracing constructors, via an optional switch
+      Logger.LogDebug(DebugLocalizer["{0} {1}: Starting"], "Console02BackgroundService", ".ctor");  // ToDo Fody for tracing constructors, via an optional switch
       HostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
       HostConfiguration = hostConfiguration ?? throw new ArgumentNullException(nameof(hostConfiguration));
       HostLifetime = hostLifetime ?? throw new ArgumentNullException(nameof(hostLifetime));
       AppConfiguration = appConfiguration ?? throw new ArgumentNullException(nameof(appConfiguration));
       HostApplicationLifetime = hostApplicationLifetime ?? throw new ArgumentNullException(nameof(hostApplicationLifetime));
+      Serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
       GenerateProgramHostedService = generateProgramHostedService ?? throw new ArgumentNullException(nameof(generateProgramHostedService));
       ConsoleSinkHostedService = consoleSinkHostedService ?? throw new ArgumentNullException(nameof(consoleSinkHostedService));
       ConsoleSourceHostedService = consoleSourceHostedService ?? throw new ArgumentNullException(nameof(consoleSourceHostedService));

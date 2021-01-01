@@ -6,18 +6,15 @@ using ATAP.Utilities.GenerateProgram;
 
 namespace ATAP.Services.GenerateCode {
 
-#if TRACE
-  [ETWLogAttribute]
-#endif
   public partial class GInvokeGenerateCodeSignil : GGenerateCodeSignil, IGInvokeGenerateCodeSignil {
-    public string PersistenceMessageFileRelativePath { get; set; }
-    public string[] PersistenceFilePaths { get; set; }
-    public string PickAndSaveMessageFileRelativePath { get; set; }
-    public string[] PickAndSaveFilePaths { get; set; }
-    public string DBConnectionString { get; set; }
-    public string OrmLiteDialectProviderStringDefault { get; set; }
+    public string PersistenceMessageFileRelativePath { get; }
+    public string[] PersistenceFilePaths { get; }
+    public string PickAndSaveMessageFileRelativePath { get; }
+    public string[] PickAndSaveFilePaths { get; }
+    public string DBConnectionString { get; }
+    public string OrmLiteDialectProviderStringDefault { get; }
 
-    public new IPhilote<IGInvokeGenerateCodeSignil> Philote {get; init;}
+    public new IPhilote<IGInvokeGenerateCodeSignil> Philote {get; }
     public GInvokeGenerateCodeSignil(
       IGAssemblyGroupSignil? gAssemblyGroupSignil = default
       , IGGlobalSettingsSignil? gGlobalSettingsSignil = default

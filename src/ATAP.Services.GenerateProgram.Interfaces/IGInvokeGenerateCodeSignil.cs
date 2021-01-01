@@ -6,13 +6,13 @@ using ATAP.Utilities.GenerateProgram;
 namespace ATAP.Services.GenerateCode
 {
   public interface IGInvokeGenerateCodeSignil : IGGenerateCodeSignil {
-    string PersistenceMessageFileRelativePath { get; set; }
-    string[] PersistenceFilePaths { get; set; }
-    string PickAndSaveMessageFileRelativePath { get; set; }
-    string[] PickAndSaveFilePaths { get; set; }
-    string DBConnectionString { get; set; }
-    string OrmLiteDialectProviderStringDefault { get; set; }
-    new IPhilote<IGInvokeGenerateCodeSignil> Philote {get; init;}
+    string PersistenceMessageFileRelativePath { get; }
+    string[] PersistenceFilePaths { get; }
+    string PickAndSaveMessageFileRelativePath { get; }
+    string[] PickAndSaveFilePaths { get; }
+    string DBConnectionString { get; }
+    string OrmLiteDialectProviderStringDefault { get; }
+    new IPhilote<IGInvokeGenerateCodeSignil> Philote {get; }
   }
 
 }

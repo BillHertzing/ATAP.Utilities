@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
- <PropertyGroup>
-   <TargetFrameworks>netstandard2.1</TargetFrameworks>
+  <PropertyGroup>
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
@@ -17,17 +16,11 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
-<!-- The System JSON Library to use -->
+  <!-- The System JSON Library to use -->
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="4.7.1" />
+    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 
-  <!-- Documentation generation -->
-  <ItemGroup>
-    <PackageReference Include="docfx" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>
-  
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
   </ItemGroup>

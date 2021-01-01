@@ -29,6 +29,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- The BuildConfigurations available be built for every assembly -->
+  <PropertyGroup>
+    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
+  </PropertyGroup>
+
 
   <!-- solution-wide properties to include in every project -->
   <PropertyGroup>

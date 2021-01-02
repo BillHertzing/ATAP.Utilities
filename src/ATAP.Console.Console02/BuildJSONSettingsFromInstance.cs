@@ -45,9 +45,9 @@ namespace ATAP.Console.Console02 {
   public partial class Console02BackgroundService : BackgroundService {
 
     void BuildJSONSettingsFromInstance() {
-      
+
       Logger.LogDebug(DebugLocalizer["{0} {1}: Creating JSON from a Signil"], "Console02BackgroundService", "DoLoopAsync");
-      var options = new JsonSerializerOptions
+      var options = new SerializerOptions
         {
             WriteIndented = true,
         };

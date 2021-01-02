@@ -277,7 +277,7 @@ Log.Debug("TRACE is defined");
         // appConfiguration.GetValue<string>(appStringConstants.SerializerAssemblyConfigRootKey, appStringConstants.SerializerAssemblyDefault)
         // appConfiguration.GetValue<string>(appStringConstants.SerializerNamespaceConfigRootKey, appStringConstants.SerializerNamespaceDefault)
         //var _serializerShimName = "ATAP.Utilities.Serializer.Shim.ServiceStackJson, Version=1.0.0.0, Culture=neutral";
-        var _serializerShimName = "ATAP.Utilities.Serializer.Shim.ServiceStackJson.dll";
+        var _serializerShimName = "ATAP.Utilities.Serializer.Shim.SystemTextJson.dll";
         var _serializerShimNameSpace = "ATAP.Utilities.Serializer";
       #endregion
 
@@ -300,19 +300,22 @@ Log.Debug("TRACE is defined");
         services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
         // Serialization library as a DI-injected service
         //Attribution: http://codebuckets.com/2020/05/29/dynamically-loading-assemblies-for-dependency-injection-in-net-core/ , Comment by 'David'
+        // For debugging: uncomment to see all referenced assemblies and their full name
+        /*
         Assembly a = typeof(Program).Assembly;
         foreach (AssemblyName an in a.GetReferencedAssemblies() )
         {
           mELlogger.LogDebug(debugLocalizer["{0} {1}: ReferencedAssemblies Name={2}, Version={3}, Culture={4}, PublicKey token={5}"], "Program", "Main", an.Name, an.Version, an.CultureInfo.Name, (BitConverter.ToString (an.GetPublicKeyToken())));
           mELlogger.LogDebug(debugLocalizer["{0} {1}: ReferencedAssemblies FullName={2}"], "Program", "Main", an.FullName);
         }
+        */
+        // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
         Assembly.LoadFrom(_serializerShimName)
-        //Assembly.Load(_serializerShimName)
           .GetTypes()
           .Where(w => w.Namespace == _serializerShimNameSpace && w.IsClass)
           .ToList()
           .ForEach(t => {
-          services.AddTransient(t.GetInterface("I" + t.Name, false), t);
+          services.AddSingleton(t.GetInterface("I" + t.Name, false), t);
           });
       //   List<Assembly> assemblies = new List<Assembly>();
       //   foreach (string assemblyPath in Directory.GetFiles(System.AppDomain.CurrentDomain.BaseDirectory, "*.dll", SearchOption.AllDirectories)) {

@@ -1,5 +1,3 @@
-using ATAP.Utilities.Serializer.Interfaces;
-using ATAP.Utilities.Serializer.Options;
 using System.Text.Json;
 
 namespace ATAP.Utilities.Serializer {

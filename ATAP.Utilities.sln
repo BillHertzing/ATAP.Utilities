@@ -363,6 +363,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Serializer.S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Serializer.Options", "src\ATAP.Utilities.Serializer.Options\ATAP.Utilities.Serializer.Options.csproj", "{14616E42-9ADA-423C-8916-47BCF2C42DD5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Serializer.Options.Interfaces", "src\ATAP.Utilities.Serializer.Options.Interfaces\ATAP.Utilities.Serializer.Options.Interfaces.csproj", "{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1473,6 +1475,16 @@ Global
 		{14616E42-9ADA-423C-8916-47BCF2C42DD5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{14616E42-9ADA-423C-8916-47BCF2C42DD5}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{14616E42-9ADA-423C-8916-47BCF2C42DD5}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}.RELEASE NET40|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}.RELEASE NET40|Any CPU.Build.0 = Debug|Any CPU
+		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}.RELEASE NET45|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}.RELEASE NET45|Any CPU.Build.0 = Debug|Any CPU
+		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1636,6 +1648,7 @@ Global
 		{DA3CA34F-68BB-4B3C-86B3-720B2FE225C5} = {6CA48A6B-4910-4DD7-92D1-F079CD34A13B}
 		{C447A64E-FBE5-4420-B698-EC6EC3A42636} = {DC413220-33A6-11EB-9C14-5132EBA7B73D}
 		{14616E42-9ADA-423C-8916-47BCF2C42DD5} = {DC413220-33A6-11EB-9C14-5132EBA7B73D}
+		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D} = {DC413220-33A6-11EB-9C14-5132EBA7B73D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40986DA9-E8C6-49CE-B434-BE8625798C2C}

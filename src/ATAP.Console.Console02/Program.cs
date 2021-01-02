@@ -7,7 +7,6 @@ using ATAP.Utilities.HostedServices.ConsoleSinkHostedService;
 using ATAP.Services.GenerateCode;
 using ATAP.Utilities.Logging;
 using ATAP.Utilities.Persistence;
-using ATAP.Utilities.Serializer.Interfaces;
 
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;

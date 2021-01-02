@@ -1,6 +1,6 @@
 
 
-namespace ATAP.Utilities.Serializer.Interfaces {
+namespace ATAP.Utilities.Serializer {
   public interface ISerializer {
     string Serialize(object obj);
     string Serialize(object obj, ISerializerOptions options);
@@ -12,13 +12,8 @@ namespace ATAP.Utilities.Serializer.Interfaces {
       bool AllowTrailingCommas = false
       ,bool WriteIndented = false
       ,bool IgnoreNullValues = false
-      );
-  }
+    );
 
-  public interface ISerializerOptions {
-    bool AllowTrailingCommas { get; set; }
-    bool WriteIndented { get; set; }
-    bool IgnoreNullValues { get; set; }
   }
 
 }

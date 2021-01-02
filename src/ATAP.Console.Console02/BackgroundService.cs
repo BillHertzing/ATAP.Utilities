@@ -9,7 +9,7 @@ using ATAP.Utilities.Philote;
 using ATAP.Utilities.Reactive;
 using ATAP.Utilities.GenerateProgram;
 using ATAP.Services.GenerateCode;
-using ATAP.Utilities.Serializer.Interfaces;
+using ATAP.Utilities.Serializer;
 
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;

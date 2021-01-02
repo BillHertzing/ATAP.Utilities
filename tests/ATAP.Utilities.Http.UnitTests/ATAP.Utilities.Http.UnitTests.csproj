@@ -13,9 +13,9 @@
     <PackageLifeCycleStage>Production</PackageLifeCycleStage>
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <PackageLabel>NA</PackageLabel>
-    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
+  <!-- Packages to add xUnit Testing providers and extensions -->
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="FluentAssertions" />
@@ -33,7 +33,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
+  </ItemGroup>
+
+  <!-- Packages to add xUnit Testing dotnet tool -->
+  <ItemGroup>
+    <DotNetCliToolReference Include="dotnet-xunit" />
   </ItemGroup>
 
   <ItemGroup>

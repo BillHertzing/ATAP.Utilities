@@ -36,22 +36,17 @@ namespace ATAP.Utilities.Serializer {
       return ServiceStack.Text.JsonSerializer.DeserializeFromString<T>(str);
     }
 
+
     public void Configure() {
-      JsConfig.TextCase = TextCase.PascalCase;
-      JsConfig.TreatEnumAsInteger = true;
-      JsConfig.ExcludeDefaultValues = false;
-      JsConfig.IncludeNullValues = true;
-      JsConfig.ExcludeTypeInfo = true;
-      //    new EnumSerializerConfigurator()
-      //.WithAssemblies(AppDomain.CurrentDomain.GetAssemblies())
-      //.WithNamespaceFilter(ns => ns.StartsWith("ATAP"))
-      //.Configure();
-    }
-    
-    public void Configure() {
-      JsonSerializerOptionsCurrent = new JsonSerializerOptions {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true,
+      JsonSerializerOptionsCurrent = new ServiceStack.Text.Config {
+        TextCase = TextCase.CamelCase,
+        TreatEnumAsInteger = true,
+        ExcludeDefaultValues = false,
+        IncludeNullValues = true,
+        ExcludeTypeInfo = true,
+        //    new EnumSerializerConfigurator()
+        //.WithAssemblies(AppDomain.CurrentDomain.GetAssemblies())
+        //.WithNamespaceFilter(ns => ns.StartsWith("ATAP"))
       };
     }
     public void Configure(ISerializerOptions options) {
@@ -65,22 +60,22 @@ namespace ATAP.Utilities.Serializer {
       JsonSerializerOptionsCurrent = ConvertOptions(allowTrailingCommas, writeIndented, ignoreNullValues);
     }
 
-    private JsonSerializerOptions ConvertOptions(
+    private ServiceStack.Text.Config ConvertOptions(
         bool allowTrailingCommas = false
       , bool ignoreNullValues = false
       , bool writeIndented = false
     ) {
-      return new JsonSerializerOptions {
-        AllowTrailingCommas = allowTrailingCommas,
-        IgnoreNullValues = ignoreNullValues,
-        WriteIndented = writeIndented,
+      return new ServiceStack.Text.Config {
+        // AllowTrailingCommas = allowTrailingCommas,
+        IncludeNullValues = !ignoreNullValues,
+        //WriteIndented = writeIndented,
       };
     }
-    private JsonSerializerOptions ConvertOptions(ISerializerOptions options) {
-      return new JsonSerializerOptions {
-        AllowTrailingCommas = options.AllowTrailingCommas,
-        IgnoreNullValues = options.IgnoreNullValues,
-        WriteIndented = options.WriteIndented
+    private ServiceStack.Text.Config ConvertOptions(ISerializerOptions options) {
+      return new ServiceStack.Text.Config {
+        //AllowTrailingCommas = options.AllowTrailingCommas,
+        IncludeNullValues = !options.IgnoreNullValues,
+        //WriteIndented = options.WriteIndented
       };
     }
   }

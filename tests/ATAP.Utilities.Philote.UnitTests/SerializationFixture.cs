@@ -1,11 +1,7 @@
-
-
-
 using ATAP.Utilities.Testing;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
-
 
 namespace ATAP.Utilities.Philote.UnitTests
 {

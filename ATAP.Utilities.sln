@@ -365,6 +365,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Serializer.O
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Serializer.Options.Interfaces", "src\ATAP.Utilities.Serializer.Options.Interfaces\ATAP.Utilities.Serializer.Options.Interfaces.csproj", "{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Philote.Converters.Interfaces", "src\ATAP.Utilities.Philote.Converters.Interfaces\ATAP.Utilities.Philote.Converters.Interfaces.csproj", "{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Philote.Converters", "src\ATAP.Utilities.Philote.Converters\ATAP.Utilities.Philote.Converters.csproj", "{7662AA40-4E1B-453B-931C-4CD954B9E658}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1485,6 +1489,26 @@ Global
 		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.RELEASE NET40|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.RELEASE NET40|Any CPU.Build.0 = Debug|Any CPU
+		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.RELEASE NET45|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.RELEASE NET45|Any CPU.Build.0 = Debug|Any CPU
+		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{7662AA40-4E1B-453B-931C-4CD954B9E658}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7662AA40-4E1B-453B-931C-4CD954B9E658}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7662AA40-4E1B-453B-931C-4CD954B9E658}.RELEASE NET40|Any CPU.ActiveCfg = Debug|Any CPU
+		{7662AA40-4E1B-453B-931C-4CD954B9E658}.RELEASE NET40|Any CPU.Build.0 = Debug|Any CPU
+		{7662AA40-4E1B-453B-931C-4CD954B9E658}.RELEASE NET45|Any CPU.ActiveCfg = Debug|Any CPU
+		{7662AA40-4E1B-453B-931C-4CD954B9E658}.RELEASE NET45|Any CPU.Build.0 = Debug|Any CPU
+		{7662AA40-4E1B-453B-931C-4CD954B9E658}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7662AA40-4E1B-453B-931C-4CD954B9E658}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7662AA40-4E1B-453B-931C-4CD954B9E658}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{7662AA40-4E1B-453B-931C-4CD954B9E658}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1649,6 +1673,8 @@ Global
 		{C447A64E-FBE5-4420-B698-EC6EC3A42636} = {DC413220-33A6-11EB-9C14-5132EBA7B73D}
 		{14616E42-9ADA-423C-8916-47BCF2C42DD5} = {DC413220-33A6-11EB-9C14-5132EBA7B73D}
 		{0F564043-9EC6-44B6-B97D-CCD2111FFA5D} = {DC413220-33A6-11EB-9C14-5132EBA7B73D}
+		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF} = {D27866D0-340C-11EB-B0F3-8BBCA7824458}
+		{7662AA40-4E1B-453B-931C-4CD954B9E658} = {D27866D0-340C-11EB-B0F3-8BBCA7824458}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40986DA9-E8C6-49CE-B434-BE8625798C2C}

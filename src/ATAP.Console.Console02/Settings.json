@@ -1,3 +1,4 @@
 {
-  
+    "SerializerAssembly": "ATAP.Utilities.Serializer.Shim.ServiceStackJson"
+  , "SerializerNamespace":"ATAP.Utilities.Serializer"
 }

@@ -25,11 +25,6 @@
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
-  <!-- The BuildConfigurations available for this assembly -->
-  <PropertyGroup>
-    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
-  </PropertyGroup>
-
   <!-- The current version of this assembly -->
   <PropertyGroup>
     <!-- Assembly, File, and Package Information for this assembly-->

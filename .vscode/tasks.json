@@ -36,7 +36,7 @@
             "args": [
                 "watch",
                 "run",
-                "${workspaceFolder}/src/AService01/AService01.csproj",
+                "${workspaceFolder}/src/ATAP.Console.Console02/ATAP.Console.Console02.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],

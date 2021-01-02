@@ -12,15 +12,12 @@
     <UpdatePackageVersionLockFilePath Condition=" '$(UpdatePackageVersionLockFilePath)' == '' ">$(MSBuildProjectDirectory)\$(MSBuildProjectName).UpdatePackageVersion.lock</UpdatePackageVersionLockFilePath>
   </PropertyGroup>
 
+  <!-- The Build Configuration properties common for every assembly, can be overwritten in individual .csproj files -->
   <PropertyGroup>
-    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
+    <Configurations>Debug;Release;ReleaseWithTrace;</Configurations>
     <TargetFrameworks>netstandard2.0;netstandard2.1;net5.0;</TargetFrameworks>
     <RuntimeIdentifiers>win10-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
-    <!--
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <TargetFrameworks>net47;netstandard2.1;netcoreapp3.1</TargetFrameworks>
-	-->
   </PropertyGroup>
 
 
@@ -28,12 +25,6 @@
   <PropertyGroup>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
-  <!-- The BuildConfigurations available be built for every assembly -->
-  <PropertyGroup>
-    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
-  </PropertyGroup>
-
 
   <!-- solution-wide properties to include in every project -->
   <PropertyGroup>

@@ -1,80 +1,16 @@
 {
-  "sourceRelativePath" : "src/"
-  , "testRelativePath" : "tests/"
-  , "subDirectoryForGeneratedFiles" : "Artifacts"
-  , "baseNamespaceName" : "ATAP.Console.Console02"
-  "gPrimaryExecutingProgram":
-    {
-      "Name":"Console02"
-      "src/",
-      "tests/"
-        #region Projects under development, their relative paths under the source and tests directory, and the delegate to create each
-        string genericHostProgramsRelativeNextPath = "GenericHostPrograms/";
-        string genericHostProgramsRelativeNextNamespace = "GenericHostPrograms.";
-        string gHPBaseNamespaceName = baseNamespaceName + genericHostProgramsRelativeNextNamespace;
-
-        string genericHostServicesRelativeNextPath = "GenericHostServices/";
-        string genericHostServicesRelativeNextNamespace = "GenericHostServices.";
-        string gHSBaseNamespaceName = baseNamespaceName + genericHostServicesRelativeNextNamespace;
-        (string name, string sourceRelativePath, string testRelativePath,
-          string subDirectoryForGeneratedFiles,
-          string baseNamespaceName, bool hasInterfaces, MCreateAssemblyGroupDelegate
-          mCreateAssemblyGroupDelegate) gPrimaryExecutingProgram =
-        ("Console02",
-          Path.Combine(sourceArtifactsPath, genericHostProgramsRelativeNextPath, "Service03/"),
-          Path.Combine(testArtifactsPath, genericHostProgramsRelativeNextPath, "Service03/"),
-          subDirectoryForGeneratedFiles, gHSBaseNamespaceName, false,
-          new MCreateAssemblyGroupDelegate(MGenericHostService03));
-
-        var projectsUnderDevelopment =  new List<(string name, string sourceRelativePath, string testRelativePath, string subDirectoryForGeneratedFiles,
-            string baseNamespaceName, bool hasInterfaces, MCreateAssemblyGroupDelegate
-            mCreateAssemblyGroupDelegate )>() {
-            ("ATAP.Utilities.Stateless", Path.Combine(sourceArtifactsPath, "StateMachine/"),
-              Path.Combine(testArtifactsPath, "StateMachine/"), subDirectoryForGeneratedFiles, baseNamespaceName, true,
-              new MCreateAssemblyGroupDelegate(MAUStateless)),
-
-            ("TimerGHS", Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "TimerGHS/"),
-              Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "TimerGHS/"),
-              subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
-              new MCreateAssemblyGroupDelegate(MTimerGHS)),
-
-            ("FileSystemWatcherGHS",
-              Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemWatcherGHS/"),
-              Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemWatcherGHS/"),
-              subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
-              new MCreateAssemblyGroupDelegate(MFileSystemWatcherGHS)),
-
-            ("ConsoleSourceGHS",
-              Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSourceGHS/"),
-              Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSourceGHS/"),
-              subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
-              new MCreateAssemblyGroupDelegate(MConsoleSourceGHS)),
-
-            ("ConsoleSinkGHS",
-              Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSinkGHS/"),
-              Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleSinkGHS/"),
-              subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
-              new MCreateAssemblyGroupDelegate(MConsoleSinkGHS)),
-
-            ("ConsoleMonitorGHS",
-              Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleMonitorGHS/"),
-              Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "ConsoleMonitorGHS/"),
-              subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
-              new MCreateAssemblyGroupDelegate(MConsoleMonitorGHS)),
-
-            ("TopLevelBackgroundGHS",
-              Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "TopLevelBackgroundGHS/"),
-              Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "TopLevelBackgroundGHS/"),
-              subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
-              new MCreateAssemblyGroupDelegate(MTopLevelBackgroundGHS)),
-
-            ("FileSystemToObjectGraphGHS",
-              Path.Combine(sourceArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemToObjectGraphGHS/"),
-              Path.Combine(testArtifactsPath, genericHostServicesRelativeNextPath, "FileSystemToObjectGraphGHS/"),
-              subDirectoryForGeneratedFiles, gHSBaseNamespaceName, true,
-              new MCreateAssemblyGroupDelegate(MFileSystemToObjectGraphGHS)),
-          };
-        #endregion
-
+  "GInvokeGenerateCodeSignil": {
+    "PersistenceMessageFileRelativePath":null
+    ,"PersistenceFilePaths":null
+    ,"PickAndSaveMessageFileRelativePath":null
+    ,"PickAndSaveFilePaths":null
+    ,"DBConnectionString": "TBD"
+    ,"OrmLiteDialectProviderStringDefault": "TBD"
+    ,"Philote": {
+        "ID":{}
+        ,"AdditionalIDs":{}
+        ,"TimeBlocks":[]
     }
+  }
+
 }

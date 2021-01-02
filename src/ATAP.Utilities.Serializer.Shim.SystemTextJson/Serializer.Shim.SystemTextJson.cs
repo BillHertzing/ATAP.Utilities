@@ -60,6 +60,18 @@ namespace ATAP.Utilities.Serializer {
 
   }
 
+  public abstract class SerializerConverterFactory {
+public abstract bool CanConvert(Type typeToConvert);
+public abstract JsonConverter CreateConverter(
+            Type type,
+            JsonSerializerOptions options)
+        {
+  }
+
+  public abstract class SerializerConverter {
+
+  }
+
   public class SerializerOptions : ISerializerOptions {
     public bool AllowTrailingCommas { get; set; }
     public bool WriteIndented { get; set; }

@@ -10,7 +10,7 @@ using ATAP.Utilities.Reactive;
 using ATAP.Utilities.GenerateProgram;
 using ATAP.Services.GenerateCode;
 using ATAP.Utilities.Serializer;
-using ATAP.Utilities.Serializer.Interfaces;
+
 
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
@@ -36,26 +36,21 @@ using appStringConstants = ATAP.Console.Console02.StringConstants;
 using GenerateProgramServiceStringConstants = ATAP.Services.GenerateCode.StringConstants;
 using PersistenceStringConstants = ATAP.Utilities.Persistence.StringConstants;
 
-// Provides the .Dump utility to export complex .net objects into JSON
-//using ServiceStack.Text;
-using System.Text.Json;
-
 namespace ATAP.Console.Console02 {
   // This file contains the code to be executed in response to each selection by the user from the list of choices
   public partial class Console02BackgroundService : BackgroundService {
 
     void BuildJSONSettingsFromInstance() {
-
       Logger.LogDebug(DebugLocalizer["{0} {1}: Creating JSON from a Signil"], "Console02BackgroundService", "DoLoopAsync");
-      var options = new SerializerOptions
-        {
-            WriteIndented = true,
-        };
+      var options = new SerializerOptions {
+        WriteIndented = true,
+      };
+
       var _defaultTargetFrameworks = new List<string>() { "netstandard2.1;", "net5.0" };
       IGGlobalSettingsSignil gGlobalSettingsSignilFromCode = new GGlobalSettingsSignil(
         defaultTargetFrameworks: _defaultTargetFrameworks
       );
-      var gGlobalSettingsSignilFromCodeAsSettingsString = JsonSerializer.Serialize(gGlobalSettingsSignilFromCode);
+      var gGlobalSettingsSignilFromCodeAsSettingsString = Serializer.Serialize(gGlobalSettingsSignilFromCode, options);
       //Logger.LogDebug(DebugLocalizer["{0} {1}: SignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", gGlobalSettingsSignilFromCode.Dump());
       Logger.LogDebug(DebugLocalizer["{0} {1}: gGlobalSettingsSignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", gGlobalSettingsSignilFromCodeAsSettingsString);
 
@@ -69,23 +64,21 @@ namespace ATAP.Console.Console02 {
         , gDependencyPackages: _gDependencyPackages
         , gDependencyProjects: _gDependencyProjects
       );
-      var gSolutionSignilFromCodeAsSettingsString = JsonSerializer.Serialize(gSolutionSignilFromCode);
+      var gSolutionSignilFromCodeAsSettingsString = Serializer.Serialize(gSolutionSignilFromCode, options);
       Logger.LogDebug(DebugLocalizer["{0} {1}: gSolutionSignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", gSolutionSignilFromCodeAsSettingsString);
 
       IGAssemblyGroupSignil gAssemblyGroupSignilFromCode = new GAssemblyGroupSignil(
       );
-      var gAssemblyGroupSignilFromCodeAsSettingsString = JsonSerializer.Serialize(gAssemblyGroupSignilFromCode);
+      var gAssemblyGroupSignilFromCodeAsSettingsString = Serializer.Serialize(gAssemblyGroupSignilFromCode, options);
       Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyGroupSignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", gAssemblyGroupSignilFromCodeAsSettingsString);
 
       IGInvokeGenerateCodeSignil gInvokeGenerateCodeSignilFromCode = new GInvokeGenerateCodeSignil(
         gAssemblyGroupSignil: gAssemblyGroupSignilFromCode
-        , gGlobalSettingsSignil : gGlobalSettingsSignilFromCode
+        , gGlobalSettingsSignil: gGlobalSettingsSignilFromCode
         , gSolutionSignil: gSolutionSignilFromCode
       );
-      var gInvokeGenerateCodeSignilFromCodeAsSettingsString = JsonSerializer.Serialize(gInvokeGenerateCodeSignilFromCode);
+      var gInvokeGenerateCodeSignilFromCodeAsSettingsString = Serializer.Serialize(gInvokeGenerateCodeSignilFromCode, options);
       Logger.LogDebug(DebugLocalizer["{0} {1}: gInvokeGenerateCodeSignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", gInvokeGenerateCodeSignilFromCodeAsSettingsString);
     }
-
-
-}
+  }
 }

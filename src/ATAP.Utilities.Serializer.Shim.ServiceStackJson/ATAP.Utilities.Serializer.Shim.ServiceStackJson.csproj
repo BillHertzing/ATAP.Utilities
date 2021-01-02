@@ -16,8 +16,15 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
+  <!-- The ServiceStack JSON Library to use -->
+  <ItemGroup>
+    <PackageReference Include="ServiceStack.Text" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Options.Interfaces\ATAP.Utilities.Serializer.Options.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Options\ATAP.Utilities.Serializer.Options.csproj" />
   </ItemGroup>
 
 </Project>

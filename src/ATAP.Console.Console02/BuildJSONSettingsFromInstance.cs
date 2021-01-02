@@ -42,10 +42,20 @@ namespace ATAP.Console.Console02 {
 
     void BuildJSONSettingsFromInstance() {
       Logger.LogDebug(DebugLocalizer["{0} {1}: Creating JSON from a Signil"], "Console02BackgroundService", "DoLoopAsync");
+
+      #region SerializerOptions for all calls to Serialize used by this method
       var options = new SerializerOptions {
         WriteIndented = true,
       };
+      #endregion
 
+      #region Philote Serialization Test
+      var philoteOfTypeGGlobalSettingsSignil = new Philote<GGlobalSettingsSignil>();
+      var philoteOfTypeGGlobalSettingsSignilAsString = Serializer.Serialize(philoteOfTypeGGlobalSettingsSignil, options);
+      Logger.LogDebug(DebugLocalizer["{0} {1}: philoteOfTypeGGlobalSettingsSignilAsString in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", philoteOfTypeGGlobalSettingsSignilAsString);
+      #endregion
+
+      #region GGlobalSettingsSignil to JSON string
       var _defaultTargetFrameworks = new List<string>() { "netstandard2.1;", "net5.0" };
       IGGlobalSettingsSignil gGlobalSettingsSignilFromCode = new GGlobalSettingsSignil(
         defaultTargetFrameworks: _defaultTargetFrameworks
@@ -53,7 +63,9 @@ namespace ATAP.Console.Console02 {
       var gGlobalSettingsSignilFromCodeAsSettingsString = Serializer.Serialize(gGlobalSettingsSignilFromCode, options);
       //Logger.LogDebug(DebugLocalizer["{0} {1}: SignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", gGlobalSettingsSignilFromCode.Dump());
       Logger.LogDebug(DebugLocalizer["{0} {1}: gGlobalSettingsSignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", gGlobalSettingsSignilFromCodeAsSettingsString);
+      #endregion
 
+      #region GSolutionSignil to JSON string
       var _buildConfigurations = new SortedSet<string>() { "Debug", "ReleaseWithTrace", "Release" };
       var _cPUConfigurations = new SortedSet<string>() { "Any CPU" };
       var _gDependencyPackages = new Dictionary<IPhilote<IGProjectUnit>, IGProjectUnit>();
@@ -66,12 +78,16 @@ namespace ATAP.Console.Console02 {
       );
       var gSolutionSignilFromCodeAsSettingsString = Serializer.Serialize(gSolutionSignilFromCode, options);
       Logger.LogDebug(DebugLocalizer["{0} {1}: gSolutionSignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", gSolutionSignilFromCodeAsSettingsString);
+      #endregion
 
+      #region GAssemblyGroupSignil to JSON string
       IGAssemblyGroupSignil gAssemblyGroupSignilFromCode = new GAssemblyGroupSignil(
       );
       var gAssemblyGroupSignilFromCodeAsSettingsString = Serializer.Serialize(gAssemblyGroupSignilFromCode, options);
       Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyGroupSignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", gAssemblyGroupSignilFromCodeAsSettingsString);
+      #endregion
 
+      #region GInvokeGenerateCodeSignil to JSON string
       IGInvokeGenerateCodeSignil gInvokeGenerateCodeSignilFromCode = new GInvokeGenerateCodeSignil(
         gAssemblyGroupSignil: gAssemblyGroupSignilFromCode
         , gGlobalSettingsSignil: gGlobalSettingsSignilFromCode
@@ -79,6 +95,7 @@ namespace ATAP.Console.Console02 {
       );
       var gInvokeGenerateCodeSignilFromCodeAsSettingsString = Serializer.Serialize(gInvokeGenerateCodeSignilFromCode, options);
       Logger.LogDebug(DebugLocalizer["{0} {1}: gInvokeGenerateCodeSignilFromCode in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", gInvokeGenerateCodeSignilFromCodeAsSettingsString);
+      #endregion
     }
   }
 }

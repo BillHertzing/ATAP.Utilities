@@ -157,15 +157,18 @@
     <PackageReference Update="Microsoft.Extensions.Logging" Version="5.0.0" />
     <!-- <PackageReference Update="Microsoft.AspNetCore.Hosting.Abstractions" Version="5.0.0" /> -->
 
+    <!-- Standalone reference to Microsoft.Extensions.DependencyInjection is used by unitTest projects-->
+    <PackageReference Update="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
+
     <!-- Package to extend Microsoft.Extensions.DependencyInjection with Scan and Decorate methods -->
     <PackageReference Update="Scrutor" Version="3.3.0" />
+
+    <!-- alternate DI container used in UnitTest projects-->
+    <PackageReference Update="Ninject" Version="3.3.4" />
 
     <!-- Packages used for custom build tasks -->
     <PackageReference Update="Microsoft.Build.Framework" Version="16.8.0" />
     <PackageReference Update="Microsoft.Build.Utilities.Core" Version="16.8.0" />
-
-    <!-- alternate DI container -->
-    <PackageReference Update="Ninject" Version="3.3.4" />
 
     <!-- Roslyn Code Analyzers -->
     <PackageReference Update="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.2"></PackageReference>
@@ -195,10 +198,10 @@
     <PackageReference Update="Moq" Version="4.15.2" />
     <PackageReference Update="xunit" Version="2.4.1" />
     <PackageReference Update="xunit.runner.console" Version="2.4.1" />
-    <PackageReference Update="xunit.runner.visualstudio" Version="2.4.1" />
+    <PackageReference Update="xunit.runner.visualstudio" Version="2.4.3" />
     <PackageReference Update="coverlet.collector" Version="1.3.0" />
 
-      <!-- Packages to add xUnit Testing dotnet tool -->
+    <!-- Packages to add xUnit Testing dotnet tool -->
     <DotNetCliToolReference Update="dotnet-xunit" Version="2.3.1" />
 
     <!-- Packages to add resilience policies to async and synchronous operations -->

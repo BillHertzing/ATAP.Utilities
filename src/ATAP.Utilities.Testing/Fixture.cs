@@ -1,6 +1,5 @@
 using System;
 using ATAP.Utilities.Serializer;
-using ATAP.Utilities.Serializer.Interfaces;
 using Ninject;
 
 namespace ATAP.Utilities.Testing

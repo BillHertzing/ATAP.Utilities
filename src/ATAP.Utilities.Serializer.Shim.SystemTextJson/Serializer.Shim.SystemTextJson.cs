@@ -1,4 +1,6 @@
+using System;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ATAP.Utilities.Serializer {
   public class Serializer : ISerializer {
@@ -60,17 +62,17 @@ namespace ATAP.Utilities.Serializer {
 
   }
 
-  public abstract class SerializerConverterFactory {
-public abstract bool CanConvert(Type typeToConvert);
-public abstract JsonConverter CreateConverter(
-            Type type,
-            JsonSerializerOptions options)
-        {
+  public abstract class SerializerConverterFactory<T> {
+    public abstract bool CanConvert(Type typeToConvert);
+    public abstract JsonConverter<T> CreateConverter(
+                Type type,
+                JsonSerializerOptions options);
   }
 
-  public abstract class SerializerConverter {
+  public abstract class SerializerConverter<T> : JsonConverter<T> {
 
   }
+
 
   public class SerializerOptions : ISerializerOptions {
     public bool AllowTrailingCommas { get; set; }

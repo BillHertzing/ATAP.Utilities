@@ -17,23 +17,47 @@
 
   <!-- Packages to add xUnit Testing providers and extensions -->
   <ItemGroup>
-    <PackageReference Include="ATAP.Utilities.Testing" Version="1.0.0" />
-    <PackageReference Include="FluentAssertions" Version="5.10.2" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
-    <PackageReference Include="Moq" Version="4.13.1" />
-    <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="Xunit.DependencyInjection" />
+    <PackageReference Include="xunit.runner.console">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-   <PackageReference Include="coverlet.collector" Version="1.2.0">
+    <PackageReference Include="coverlet.collector">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+
+  <!-- Packages to add xUnit Testing dotnet tool -->
   <ItemGroup>
-      <DotNetCliToolReference Include="dotnet-xunit" />
-    </ItemGroup>
+    <DotNetCliToolReference Include="dotnet-xunit" />
+  </ItemGroup>
+
+    <!-- Standalone reference to Microsoft.Extensions.DependencyInjection is used by unitTest projects
+            that inject a Serializer via Dependency Injection-->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+
+  <!-- ToDo: Copy specified DLLs and PDFs of specific Shim assemblies for Serializer to inject -->
+    <!-- Copy all Serialization libraries for the ISerializer DI-injected service to the outputdir-->
+  <ItemGroup>
+  <!--
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.Shim.NewtonsoftJson.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.ServiceStackJson\ATAP.Utilities.Serializer.Shim.ServiceStackJson.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
+    -->
+  </ItemGroup>
+
+
 
     <ItemGroup>
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />

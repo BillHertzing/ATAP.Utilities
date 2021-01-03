@@ -1,6 +1,4 @@
 
-
-
 using ATAP.Utilities.Testing;
 using FluentAssertions;
 using Xunit;

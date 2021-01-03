@@ -35,11 +35,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Ninject" />
   </ItemGroup>
 
 
   <ItemGroup>
-    <PackageReference Include="Ninject" />
 
     <PackageReference Include="TimePeriodLibrary.NET" />
 

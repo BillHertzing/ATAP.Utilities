@@ -70,9 +70,9 @@
 
   <!-- Copy all Serialization libraries for the ISerializer DI-injected service to the outputdir-->
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.NewtonsoftJson.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.ServiceStackJson\ATAP.Utilities.Serializer.ServiceStackJson.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.SystemTextJson.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.Shim.NewtonsoftJson.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.ServiceStackJson\ATAP.Utilities.Serializer.Shim.ServiceStackJson.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
   </ItemGroup>
 
   <!-- ServiceStack ORMLite (database) utilities -->

@@ -1,4 +1,3 @@
-using ATAP.Utilities.Serializer.Interfaces;
 using System;
 using System.Runtime.Serialization;
 

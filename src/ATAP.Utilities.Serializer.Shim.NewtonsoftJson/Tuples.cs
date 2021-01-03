@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using ATAP.Utilities.Serializer.Interfaces;
 
 namespace ATAP.Utilities.Serializer
 {

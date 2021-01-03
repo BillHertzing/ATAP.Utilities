@@ -10,16 +10,8 @@ using Xunit.Abstractions;
 namespace ATAP.Utilities.TypedGuids.UnitTests
 {
 
-  public class IntGuid_UnitTests001 : IClassFixture<Fixture>
+  public partial class IntGuidUnitTests001 : IClassFixture<TypedGuidsFixture>
   {
-    protected Fixture Fixture { get; }
-    protected ITestOutputHelper TestOutput { get; }
-
-    public IntGuid_UnitTests001(ITestOutputHelper testOutput, Fixture fixture)
-    {
-      Fixture = fixture;
-      TestOutput = testOutput;
-    }
 
     [Theory]
     [MemberData(nameof(IntGuidTestDataGenerator.IntGuidTestData), MemberType = typeof(IntGuidTestDataGenerator))]
@@ -42,6 +34,8 @@ namespace ATAP.Utilities.TypedGuids.UnitTests
     [MemberData(nameof(IntGuidTestDataGenerator.IntGuidTestData), MemberType = typeof(IntGuidTestDataGenerator))]
     public void IntGuidSerializeToJSON(IntGuidTestData inIntGuidTestData)
     {
+      var nameOfShim = Fixture.Serializer.ToString();
+      TestOutput.WriteLine("Fixture.Serializer = {0}", nameOfShim);
       // GUIDS are random, two sets of test data have fixed, non-random guids, the rest are random
       if (inIntGuidTestData.IntGuid.ToString().StartsWith("0000") | inIntGuidTestData.IntGuid.ToString().StartsWith("01234"))
       {

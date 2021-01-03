@@ -35,7 +35,7 @@ namespace ATAP.Utilities.TypedGuids.UnitTests
     public void IntGuidSerializeToJSON(IntGuidTestData inIntGuidTestData)
     {
       var nameOfShim = Fixture.Serializer.ToString();
-      TestOutput.WriteLine("Fixture.Serializer = {0}", nameOfShim);
+      TestOutput.WriteLine("DiFixture.Serializer = {0}", nameOfShim);
       // GUIDS are random, two sets of test data have fixed, non-random guids, the rest are random
       if (inIntGuidTestData.IntGuid.ToString().StartsWith("0000") | inIntGuidTestData.IntGuid.ToString().StartsWith("01234"))
       {

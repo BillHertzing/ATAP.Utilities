@@ -5,10 +5,10 @@ using ATAP.Utilities.Testing;
 namespace ATAP.Utilities.Logging.UnitTests {
 
 
-    public class LoggingUnitTests001 : IClassFixture<Fixture> {
-        Fixture fixture;
+    public class LoggingUnitTests001 : IClassFixture<DiFixture> {
+        DiFixture diFixture;
 
-        public LoggingUnitTests001(Fixture fixture) {
+        public LoggingUnitTests001(DiFixture diFixture) {
       fixture = fixture;
         }
 

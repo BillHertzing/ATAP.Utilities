@@ -16,7 +16,7 @@ namespace ATAP.Utilities.ComputerInventory.Configuration.UnitTests
     [MemberData(nameof(DefaultConfigurationTestDataGenerator.DefaultConfigurationTestData), MemberType = typeof(DefaultConfigurationTestDataGenerator))]
     public void DefaultConfigurationSerializeToJSON(DefaultConfigurationTestData inDefaultConfigurationTestData)
     {
-      string str = Fixture.Serializer.Serialize(DefaultConfiguration.Production);
+      string str = DiFixture.Serializer.Serialize(DefaultConfiguration.Production);
       // TestOutput.WriteLine(str);
       str.Should().Be(inDefaultConfigurationTestData.SerializedDefaultConfiguration);
     }

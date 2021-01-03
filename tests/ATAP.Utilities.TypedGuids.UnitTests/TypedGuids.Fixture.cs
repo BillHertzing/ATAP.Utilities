@@ -10,7 +10,7 @@ using System.Reflection;
 
 
 namespace ATAP.Utilities.TypedGuids.UnitTests {
-  public class TypedGuidsFixture : Fixture { }
+  public class TypedGuidsFixture : DiFixture { }
   public partial class IntGuidUnitTests001 : IClassFixture<TypedGuidsFixture> {
     protected TypedGuidsFixture Fixture { get; }
     protected ITestOutputHelper TestOutput { get; }

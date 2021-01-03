@@ -21,7 +21,7 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
 
   internal void ComputerInventorySerializeToJSON(ComputerInventoryTestData inComputerInventoryTestData)
   {
-    Fixture.Serializer.Serialize(inComputerInventoryTestData.ComputerInventory).Should().Be(inComputerInventoryTestData.SerializedComputerInventory);
+    DiFixture.Serializer.Serialize(inComputerInventoryTestData.ComputerInventory).Should().Be(inComputerInventoryTestData.SerializedComputerInventory);
 
     string str;
     ATAP.Utilities.ComputerInventory.Models.ComputerInventory computerInventory;
@@ -41,11 +41,11 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
                                                               false,
                                                               false,
                                                               false);
-    str = Fixture.Serializer.Serialize(computerSoftwareProgram);
+    str = DiFixture.Serializer.Serialize(computerSoftwareProgram);
     List<IComputerSoftwareProgram> computerSoftwarePrograms = new List<IComputerSoftwareProgram> {
           computerSoftwareProgram
           };
-    str = Fixture.Serializer.Serialize(computerSoftwarePrograms);
+    str = DiFixture.Serializer.Serialize(computerSoftwarePrograms);
     List<IComputerSoftwareDriver> computerSoftwareDrivers = new List<IComputerSoftwareDriver> {
           new ComputerSoftwareDriver("genericvideo",
                                      "1.0"),
@@ -55,15 +55,15 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
               ComputerSoftwareDriver("NVideaVideoDriver",
                                      "1.0")
           };
-    str = Fixture.Serializer.Serialize(computerSoftwareDrivers);
+    str = DiFixture.Serializer.Serialize(computerSoftwareDrivers);
     // OperatingSystem os = Environment.OSVersion;
-    //str = Fixture.Serializer.Serialize(os);
+    //str = DiFixture.Serializer.Serialize(os);
     computerSoftware = new ComputerSoftware(computerSoftwareDrivers, computerSoftwarePrograms);
-    str = Fixture.Serializer.Serialize(computerSoftware);
+    str = DiFixture.Serializer.Serialize(computerSoftware);
     computerProcesses = new ComputerProcesses();
-    str = Fixture.Serializer.Serialize(computerProcesses);
-    computerInventory = new ATAP.Utilities.ComputerInventory.Models.ComputerInventory(Fixture.ComputerHardware, computerSoftware, computerProcesses);
-    str = Fixture.Serializer.Serialize(computerInventory);
+    str = DiFixture.Serializer.Serialize(computerProcesses);
+    computerInventory = new ATAP.Utilities.ComputerInventory.Models.ComputerInventory(DiFixture.ComputerHardware, computerSoftware, computerProcesses);
+    str = DiFixture.Serializer.Serialize(computerInventory);
     str.Should()
         .NotBeNull();
     str.Should()
@@ -75,15 +75,15 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
 
 }
 
-/*  public class ComputerInventoryModelsHardwareUnitTests001 : IClassFixture<Fixture>
+/*  public class ComputerInventoryModelsHardwareUnitTests001 : IClassFixture<DiFixture>
   {
 
-    protected Fixture Fixture { get; }
+    protected DiFixture DiFixture { get; }
     protected ITestOutputHelper TestOutput { get; }
 
-    public ComputerInventoryModelsHardwareUnitTests001(ITestOutputHelper testOutput, Fixture fixture)
+    public ComputerInventoryModelsHardwareUnitTests001(ITestOutputHelper testOutput, DiFixture diFixture)
     {
-      Fixture = fixture;
+      DiFixture = diFixture;
       TestOutput = testOutput;
     }
 
@@ -95,7 +95,7 @@ namespace ATAP.Utilities.ComputerInventory.UnitTests
 public async void ComputerProcessesStartStopTest001(string _testdatainput)
 {
   int specifiedTestRunTime = int.Parse(_testdatainput);
-  // ToDo: Need to create a ComputerSoftwareProgram for PowerShell as a builtin, and figure out how to get its path "the right way" 
+  // ToDo: Need to create a ComputerSoftwareProgram for PowerShell as a builtin, and figure out how to get its path "the right way"
   ComputerSoftwareProgram powerShell = new ComputerSoftwareProgram("powershell",
                                                                    @"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
                                                                    ".",
@@ -109,19 +109,19 @@ public async void ComputerProcessesStartStopTest001(string _testdatainput)
                                                                    false,
                                                                    false,
                                                                    false);
-  Fixture.computerProcesses = new ComputerProcesses();
+  DiFixture.computerProcesses = new ComputerProcesses();
   // stop the program in 1/2 of the specified test run time (specifiedTestRunTime is in seconds, timers are in milliseconds)
   Timer aTimer = new Timer(specifiedTestRunTime * 500);
   aTimer.Elapsed += new ElapsedEventHandler(HandleTimer);
   TimeInterval ti = new TimeInterval(System.DateTime.Now);
-  Fixture.pidUnderTest = Fixture.computerProcesses.Start(powerShell,
+  DiFixture.pidUnderTest = DiFixture.computerProcesses.Start(powerShell,
                                                            new object[2] {
             "-Command",
                 $"&{{start-sleep -s {_testdatainput}; exit}}"
   });
   aTimer.Start();
   // wait for the program to stop. The event handler should stop it.
-  var p = Fixture.computerProcesses.ComputerProcessDictionary[Fixture.pidUnderTest];
+  var p = DiFixture.computerProcesses.ComputerProcessDictionary[DiFixture.pidUnderTest];
   await p.Command.Task;
   ti.ExpandTo(System.DateTime.Now);
   // Dispose of the timer
@@ -140,7 +140,7 @@ public async void ComputerProcessesStartStopTest001(string _testdatainput)
 public async void ComputerProcessesStartTest001(string _testdatainput)
 {
   int specifiedTestRunTime = int.Parse(_testdatainput);
-  // ToDo: Need to create a ComputerSoftwareProgram for PowerShell as a builtin, and figure out how to get its path "the right way" 
+  // ToDo: Need to create a ComputerSoftwareProgram for PowerShell as a builtin, and figure out how to get its path "the right way"
   ComputerSoftwareProgram powerShell = new ComputerSoftwareProgram("powershell",
                                                                    @"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
                                                                    ".",
@@ -154,15 +154,15 @@ public async void ComputerProcessesStartTest001(string _testdatainput)
                                                                    false,
                                                                    false,
                                                                    false);
-  Fixture.computerProcesses = new ComputerProcesses();
+  DiFixture.computerProcesses = new ComputerProcesses();
   TimeInterval ti = new TimeInterval(System.DateTime.Now);
-  Fixture.pidUnderTest = Fixture.computerProcesses.Start(powerShell,
+  DiFixture.pidUnderTest = DiFixture.computerProcesses.Start(powerShell,
                                                            new object[2] {
             "-Command",
                 $"&{{start-sleep -s {_testdatainput}; exit}}"
   });
   // wait for the program to stop
-  var p = Fixture.computerProcesses.ComputerProcessDictionary[Fixture.pidUnderTest];
+  var p = DiFixture.computerProcesses.ComputerProcessDictionary[DiFixture.pidUnderTest];
   await p.Command.Task;
   ti.ExpandTo(System.DateTime.Now);
   var processResult = p.Command.Task.Result;

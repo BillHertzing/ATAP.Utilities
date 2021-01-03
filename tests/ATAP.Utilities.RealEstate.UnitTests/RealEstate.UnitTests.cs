@@ -9,7 +9,7 @@ using ATAP.Utilities.Testing;
 
 namespace ATAP.Utilities.RealEstate.Enumerations.UnitTests
 {
-  public class RealEstateFixture : Fixture
+  public class RealEstateFixture : DiFixture
   {
     // The correct answer to the test OperationEnumerationCountIsAsExpected
     public int NumberOfOperationEnumerations { get; }
@@ -69,7 +69,7 @@ namespace ATAP.Utilities.RealEstate.Enumerations.UnitTests
       Array.Sort(result);
       var str1 = result.ToString();
       var str2 = descriptionStrings.ToString();
-      str1.Should().Match(str2); 
+      str1.Should().Match(str2);
     }
     */
   }

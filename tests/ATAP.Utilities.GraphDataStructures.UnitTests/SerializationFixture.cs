@@ -9,12 +9,12 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.GraphDataStructures.UnitTests
 {
-  public class SerializationFixture : DiFixture { }
-  public partial class SerializationUnitTests001 : IClassFixture<SerializationFixture>
+  public class GraphDataStructuresFixture : DiFixture { }
+  public partial class GraphDataStructuresUnitTests001 : IClassFixture<GraphDataStructuresFixture>
   {
-    protected SerializationFixture Fixture { get; }
+    protected GraphDataStructuresFixture Fixture { get; }
     protected ITestOutputHelper TestOutput { get; }
-    public SerializationUnitTests001(ITestOutputHelper testOutput, SerializationFixture fixture)
+    public GraphDataStructuresUnitTests001(ITestOutputHelper testOutput, GraphDataStructuresFixture fixture)
     {
       Fixture = fixture;
       TestOutput = testOutput;

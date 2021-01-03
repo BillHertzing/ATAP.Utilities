@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.GraphDataStructures.UnitTests
 {
-  public partial class SerializationUnitTests001 : IClassFixture<SerializationFixture>
+  public partial class GraphDataStructuresUnitTests001 : IClassFixture<GraphDataStructuresFixture>
   {
     [Theory]
     [MemberData(nameof(GraphDataStructuresSerializationTestDataGenerator.TestData), MemberType = typeof(GraphDataStructuresSerializationTestDataGenerator))]

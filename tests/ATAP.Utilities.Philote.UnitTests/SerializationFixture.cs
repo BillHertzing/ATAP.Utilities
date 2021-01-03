@@ -5,12 +5,12 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.Philote.UnitTests
 {
-  public class SerializationFixture : DiFixture { }
-  public partial class SerializationUnitTests001 : IClassFixture<SerializationFixture>
+  public class PhiloteFixture : DiFixture { }
+  public partial class PhiloteUnitTests001 : IClassFixture<PhiloteFixture>
   {
-    protected SerializationFixture Fixture { get; }
+    protected PhiloteFixture Fixture { get; }
     protected ITestOutputHelper TestOutput { get; }
-    public SerializationUnitTests001(ITestOutputHelper testOutput, SerializationFixture fixture)
+    public PhiloteUnitTests001(ITestOutputHelper testOutput, PhiloteFixture fixture)
     {
       Fixture = fixture;
       TestOutput = testOutput;

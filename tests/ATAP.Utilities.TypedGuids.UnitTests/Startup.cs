@@ -1,4 +1,6 @@
 using System;
+using System.Reflection;
+using System.Linq;
 
 namespace ATAP.Utilities.TypedGuids.UnitTests
 {
@@ -12,7 +14,6 @@ namespace ATAP.Utilities.TypedGuids.UnitTests
           .Where(w => w.Namespace == _serializerShimNameSpace && w.IsClass)
           .ToList()
           .ForEach(t => {
-            TestOutput
             services.AddSingleton(t.GetInterface("I" + t.Name, false), t);
           });
       }

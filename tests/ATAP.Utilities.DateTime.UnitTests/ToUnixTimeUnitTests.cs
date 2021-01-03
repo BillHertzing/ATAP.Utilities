@@ -27,16 +27,16 @@ namespace ATAP.Utilities.DateTime.UnitTests
     [MemberData(nameof(ToUnixTimeTestDataGenerator.TestData), MemberType = typeof(ToUnixTimeTestDataGenerator))]
     public void UnitsNetInformationDeserializeFromJSON(UnitsNetInformationTestData inTestData)
     {
-      var obj = Fixture.DateTime.Deserialize<UnitsNet.Information>(inTestData.SerializedTestData);
+      var obj = DiFixture.DateTime.Deserialize<UnitsNet.Information>(inTestData.SerializedTestData);
       obj.Should().BeOfType(typeof(UnitsNet.Information));
-      Fixture.DateTime.Deserialize<UnitsNet.Information>(inTestData.SerializedTestData).Should().BeEquivalentTo(inTestData.ObjTestData);
+      DiFixture.DateTime.Deserialize<UnitsNet.Information>(inTestData.SerializedTestData).Should().BeEquivalentTo(inTestData.ObjTestData);
     }
 
     [Theory]
     [MemberData(nameof(ToUnixTimeTestDataGenerator.TestData), MemberType = typeof(ToUnixTimeTestDataGenerator))]
     public void UnitsNetInformationSerializeToJSON(UnitsNetInformationTestData inTestData)
     {
-      Fixture.DateTime.Serialize(inTestData.ObjTestData).Should().Be(inTestData.SerializedTestData);
+      DiFixture.DateTime.Serialize(inTestData.ObjTestData).Should().Be(inTestData.SerializedTestData);
     }
     */
   }

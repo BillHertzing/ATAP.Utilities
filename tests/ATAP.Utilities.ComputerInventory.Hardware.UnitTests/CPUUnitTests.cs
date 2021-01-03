@@ -19,11 +19,11 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
     {
 #if DEBUG
       TestOutput.WriteLine("SerializedTestData is:" + inTestData.SerializedTestDataArray[0]);
-      TestOutput.WriteLine("Serialized ObjTestData is:" + Fixture.Serializer.Serialize(inTestData.ObjTestDataArray[0]));
+      TestOutput.WriteLine("Serialized ObjTestData is:" + DiFixture.Serializer.Serialize(inTestData.ObjTestDataArray[0]));
 #endif
-      var obj = Fixture.Serializer.Deserialize<CPU[]>(inTestData.SerializedTestDataArray[0]);
+      var obj = DiFixture.Serializer.Deserialize<CPU[]>(inTestData.SerializedTestDataArray[0]);
       obj.Should().BeOfType(typeof(CPU[]));
-      Fixture.Serializer.Deserialize<CPU>(inTestData.SerializedTestDataArray[0]).Should().BeEquivalentTo(inTestData.ObjTestDataArray[0]);
+      DiFixture.Serializer.Deserialize<CPU>(inTestData.SerializedTestDataArray[0]).Should().BeEquivalentTo(inTestData.ObjTestDataArray[0]);
     }
 
     [Theory]
@@ -32,9 +32,9 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
     {
 #if DEBUG
       TestOutput.WriteLine("SerializedTestData is:" + inTestData.SerializedTestDataArray[0]);
-      TestOutput.WriteLine("Serialized ObjTestData is:" + Fixture.Serializer.Serialize(inTestData.ObjTestDataArray[0]));
+      TestOutput.WriteLine("Serialized ObjTestData is:" + DiFixture.Serializer.Serialize(inTestData.ObjTestDataArray[0]));
 #endif
-      Fixture.Serializer.Serialize(inTestData.ObjTestDataArray[0]).Should().BeEquivalentTo(inTestData.SerializedTestDataArray[0]);
+      DiFixture.Serializer.Serialize(inTestData.ObjTestDataArray[0]).Should().BeEquivalentTo(inTestData.SerializedTestDataArray[0]);
     }
     */
   }

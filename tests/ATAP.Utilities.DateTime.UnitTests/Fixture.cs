@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.DateTime.UnitTests
 {
-  public class DateTimeFixture : Fixture { }
+  public class DateTimeFixture : DiFixture { }
   public partial class DateTimeUnitTests001 : IClassFixture<DateTimeFixture>
   {
     protected DateTimeFixture Fixture { get; }

@@ -9,14 +9,14 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.CryptoCoin.UnitTests
 {
- 
 
-  public class CryptoCoinUnitTests001 : IClassFixture<Fixture>
+
+  public class CryptoCoinUnitTests001 : IClassFixture<DiFixture>
   {
     readonly ITestOutputHelper output;
-    protected Fixture fixture;
+    protected DiFixture diFixture;
 
-    public CryptoCoinUnitTests001(ITestOutputHelper output, Fixture fixture)
+    public CryptoCoinUnitTests001(ITestOutputHelper output, DiFixture diFixture)
     {
       this.output = output;
       this.fixture = fixture;

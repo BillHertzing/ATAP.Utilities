@@ -18,7 +18,7 @@ using ATAP.Utilities.Testing;
 namespace ATAP.Utilities.ComputerInventory.ProcessInfo.UnitTests
 {
 
-  public class ProcessInfofixture : Fixture
+  public class ProcessInfofixture : DiFixture
   {
     public ProcessInfofixture() : base()
     {
@@ -90,17 +90,17 @@ namespace ATAP.Utilities.ComputerInventory.ProcessInfo.UnitTests
     public async void ComputerProcessesStartTest001(string _testdatainput)
     {
       int specifiedTestRunTime = int.Parse(_testdatainput);
-      // ToDo: Need to create a ComputerSoftwareProgram for PowerShell as a builtin, and figure out how to get its path "the right way" 
+      // ToDo: Need to create a ComputerSoftwareProgram for PowerShell as a builtin, and figure out how to get its path "the right way"
       ComputerSoftwareProgram powerShell = new ComputerSoftwareProgram(DefaultConfiguration.Production["PowerShell"],new Philote.Philote<IComputerSoftwareProgram>());
-      Fixture.ComputerProcesses = new ComputerProcesses();
+      DiFixture.ComputerProcesses = new ComputerProcesses();
       TimeInterval ti = new TimeInterval(System.DateTime.Now);
-      Fixture.pidUnderTest = Fixture.ComputerProcesses.Start(powerShell,
+      DiFixture.pidUnderTest = DiFixture.ComputerProcesses.Start(powerShell,
                                                                new object[2] {
             "-Command",
                 $"&{{start-sleep -s {_testdatainput}; exit}}"
       });
       // wait for the program to stop
-      var p = Fixture.ComputerProcesses.ComputerProcessDictionary[Fixture.pidUnderTest];
+      var p = DiFixture.ComputerProcesses.ComputerProcessDictionary[DiFixture.pidUnderTest];
       await Task.Delay(10); //ToDo Fix this test
       /*
       await p.Command.Task;

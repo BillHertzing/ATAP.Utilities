@@ -6,7 +6,7 @@ namespace ATAP.Utilities.Testing
 {
 
 
-  public interface IFixture
+  public interface IDiFixture
   {
     ISerializer Serializer { get; set; }
   }
@@ -19,9 +19,9 @@ namespace ATAP.Utilities.Testing
       Bind<ISerializer>().To<Serializer.Serializer>();
     }
   }
-  public class Fixture : IFixture
+  public class DiFixture : IDiFixture
   {
-    public Fixture()
+    public DiFixture()
     {
       Kernel = new StandardKernel(new SerializerInjectionModule());
       Serializer = Kernel.Get<ISerializer>();

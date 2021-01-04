@@ -14,13 +14,15 @@
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>NA</PackageLabel>
-    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-<ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.ServiceStackJson\ATAP.Utilities.Serializer.Shim.ServiceStackJson.csproj" />
+    <!-- Standalone reference to Microsoft.Extensions.DependencyInjection is used by unitTest projects-->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+  </ItemGroup>
 
 </Project>

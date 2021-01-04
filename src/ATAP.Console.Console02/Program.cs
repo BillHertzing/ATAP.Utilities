@@ -277,7 +277,7 @@ Log.Debug("TRACE is defined");
         // appConfiguration.GetValue<string>(appStringConstants.SerializerNamespaceConfigRootKey, appStringConstants.SerializerNamespaceDefault)
         //var _serializerShimName = "ATAP.Utilities.Serializer.Shim.ServiceStackJson, Version=1.0.0.0, Culture=neutral";
         var _serializerShimName = "ATAP.Utilities.Serializer.Shim.SystemTextJson.dll";
-        var _serializerShimNameSpace = "ATAP.Utilities.Serializer";
+        var _serializerShimNamespace = "ATAP.Utilities.Serializer";
       #endregion
 
       // Add specific services for this application
@@ -311,7 +311,7 @@ Log.Debug("TRACE is defined");
         // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
         Assembly.LoadFrom(_serializerShimName)
           .GetTypes()
-          .Where(w => w.Namespace == _serializerShimNameSpace && w.IsClass)
+          .Where(w => w.Namespace == _serializerShimNamespace && w.IsClass)
           .ToList()
           .ForEach(t => {
           services.AddSingleton(t.GetInterface("I" + t.Name, false), t);

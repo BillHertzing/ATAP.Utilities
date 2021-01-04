@@ -43,7 +43,7 @@ namespace ATAP.Utilities.TypedGuids.UnitTests
       }
       else
       {
-        // ServiceStack Shim serialzes this structure with a preceeding and trailing doublequote ("guid")
+        // ServiceStack Shim serializes this structure with a preceding and trailing doublequote ("guid")
         Fixture.Serializer.Serialize(inIntGuidTestData.IntGuid).Should().MatchRegex("^\"[0-9A-Fa-f]{8}-?([0-9A-Fa-f]{4}-?){3}[0-9A-Fa-f]{12}\"$");
       }
     }

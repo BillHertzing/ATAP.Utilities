@@ -10,7 +10,7 @@ namespace ATAP.Utilities.Serializer.UnitTests
 {
 
 
-  public partial class SerializerUnitTests001 : IClassFixture<SerializerFixture>
+  public partial class SerializerUnitTests001 : IClassFixture<Fixture>
   {
     [Theory]
     [MemberData(nameof(IntegerTestDataGenerator.TestData), MemberType = typeof(IntegerTestDataGenerator))]

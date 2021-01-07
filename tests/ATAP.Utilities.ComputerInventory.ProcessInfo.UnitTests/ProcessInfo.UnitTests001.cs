@@ -18,9 +18,9 @@ using ATAP.Utilities.Testing;
 namespace ATAP.Utilities.ComputerInventory.ProcessInfo.UnitTests
 {
 
-  public class ProcessInfofixture : DiFixture
+  public class Fixture : DiFixture
   {
-    public ProcessInfofixture() : base()
+    public Fixture() : base()
     {
     }
 
@@ -29,13 +29,13 @@ namespace ATAP.Utilities.ComputerInventory.ProcessInfo.UnitTests
 
   }
 
-  public class ModelsProcessInfoUnitTests001 : IClassFixture<ProcessInfofixture>
+  public class ModelsProcessInfoUnitTests001 : IClassFixture<Fixture>
   {
 
-    protected ProcessInfofixture Fixture { get; }
+    protected Fixture Fixture { get; }
     protected ITestOutputHelper TestOutput { get; }
 
-    public ModelsProcessInfoUnitTests001(ITestOutputHelper testOutput, ProcessInfofixture fixture)
+    public ModelsProcessInfoUnitTests001(ITestOutputHelper testOutput, Fixture fixture)
     {
       Fixture = fixture;
       TestOutput = testOutput;

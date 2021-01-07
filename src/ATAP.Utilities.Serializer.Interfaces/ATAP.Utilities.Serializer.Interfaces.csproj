@@ -16,8 +16,4 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Options.Interfaces\ATAP.Utilities.Serializer.Options.Interfaces.csproj" />
-  </ItemGroup>
-
 </Project>

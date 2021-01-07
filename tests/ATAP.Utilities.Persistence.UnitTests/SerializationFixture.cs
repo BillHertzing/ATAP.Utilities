@@ -9,12 +9,12 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.Persistence.UnitTests
 {
-  public class PersistenceFixture : DiFixture { }
-  public partial class PersistenceUnitTests001 : IClassFixture<PersistenceFixture>
+  public class Fixture : DiFixture { }
+  public partial class PersistenceUnitTests001 : IClassFixture<Fixture>
   {
-    protected PersistenceFixture Fixture { get; }
+    protected Fixture Fixture { get; }
     protected ITestOutputHelper TestOutput { get; }
-    public PersistenceUnitTests001(ITestOutputHelper testOutput, PersistenceFixture fixture)
+    public PersistenceUnitTests001(ITestOutputHelper testOutput, Fixture fixture)
     {
       Fixture = fixture;
       TestOutput = testOutput;

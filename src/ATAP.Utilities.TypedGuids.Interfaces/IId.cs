@@ -4,4 +4,8 @@ namespace ATAP.Utilities.TypedGuids
   {
 
   }
+
+  public interface IIdConverter<T> IIdConverterFactory : ISerializerConverterAbstractFactory
+    {
+    }
 }

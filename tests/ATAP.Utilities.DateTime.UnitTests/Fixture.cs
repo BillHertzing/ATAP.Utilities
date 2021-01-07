@@ -9,12 +9,12 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.DateTime.UnitTests
 {
-  public class DateTimeFixture : DiFixture { }
-  public partial class DateTimeUnitTests001 : IClassFixture<DateTimeFixture>
+  public class Fixture : DiFixture { }
+  public partial class DateTimeUnitTests001 : IClassFixture<Fixture>
   {
-    protected DateTimeFixture Fixture { get; }
+    protected Fixture Fixture { get; }
     protected ITestOutputHelper TestOutput { get; }
-    public DateTimeUnitTests001(ITestOutputHelper testOutput, DateTimeFixture fixture)
+    public DateTimeUnitTests001(ITestOutputHelper testOutput, Fixture fixture)
     {
       Fixture = fixture;
       TestOutput = testOutput;

@@ -7,9 +7,9 @@ namespace ATAP.Utilities.ComputerInventory.Software.UnitTests
 {
 
 
-  public partial class ComputerInventorySoftwareUnitTests001 : IClassFixture<ComputerInventorySoftwareFixture>
+  public partial class ComputerInventorySoftwareUnitTests001 : IClassFixture<Fixture>
   {
- 
+
     [Theory]
     [MemberData(nameof(ComputerSoftwareProgramSerializationTestDataGenerator.TestData), MemberType = typeof(ComputerSoftwareProgramSerializationTestDataGenerator))]
     public void ComputerSoftwareProgramDeserialize(ComputerSoftwareSerializationProgramTestData inComputerSoftwareProgramTestData)

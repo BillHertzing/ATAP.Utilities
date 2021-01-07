@@ -9,24 +9,24 @@ using ATAP.Utilities.Testing;
 
 namespace ATAP.Utilities.RealEstate.Enumerations.UnitTests
 {
-  public class RealEstateFixture : DiFixture
+  public class Fixture : DiFixture
   {
     // The correct answer to the test OperationEnumerationCountIsAsExpected
     public int NumberOfOperationEnumerations { get; }
 
-    public RealEstateFixture()
+    public Fixture()
     {
       NumberOfOperationEnumerations = 3;
     }
   }
 
 
-  public class RealEstateUnitTests001 : IClassFixture<RealEstateFixture>
+  public class RealEstateUnitTests001 : IClassFixture<Fixture>
     {
-    protected RealEstateFixture Fixture { get; }
+    protected Fixture Fixture { get; }
     protected ITestOutputHelper TestOutput { get; }
 
-    public RealEstateUnitTests001(ITestOutputHelper testOutput, RealEstateFixture fixture)
+    public RealEstateUnitTests001(ITestOutputHelper testOutput, Fixture fixture)
     {
       Fixture = fixture;
       TestOutput = testOutput;

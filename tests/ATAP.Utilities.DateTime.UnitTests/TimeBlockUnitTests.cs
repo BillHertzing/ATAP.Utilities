@@ -11,7 +11,7 @@ namespace ATAP.Utilities.DateTime.UnitTests
 {
 
 
-  public partial class DateTimeUnitTests001 : IClassFixture<DateTimeFixture>
+  public partial class DateTimeUnitTests001 : IClassFixture<Fixture>
   {
     [Theory]
     [MemberData(nameof(TimeBlockTestDataGenerator.TestData), MemberType = typeof(TimeBlockTestDataGenerator))]

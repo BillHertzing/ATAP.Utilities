@@ -13,7 +13,7 @@ using Itenso.TimePeriod;
 namespace ATAP.Utilities.ComputerInventory.UnitTests
 {
 
-  public partial class ComputerInventoryUnitTests001 : IClassFixture<ComputerInventoryFixture>
+  public partial class ComputerInventoryUnitTests001 : IClassFixture<Fixture>
   {
     /*
   [SkipBecauseNotWorkingTheory]

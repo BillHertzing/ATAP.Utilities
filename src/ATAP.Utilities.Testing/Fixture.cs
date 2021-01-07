@@ -41,6 +41,8 @@ namespace ATAP.Utilities.Testing {
     public DiFixture() {
       Kernel = new StandardKernel(new SerializerInjectionModule());
       Serializer = Kernel.Get<ISerializer>();
+      // Set Serializer options for unit tests that use this base DiFixture class
+      Serializer.Configure(WriteIndented : false);
     }
     public DiFixture(IConfiguration configuration) {
       Kernel = new StandardKernel(new SerializerInjectionModule(configuration:configuration));
@@ -62,6 +64,5 @@ namespace ATAP.Utilities.Testing {
 
     public ISerializer Serializer { get; set; }
     private Ninject.IKernel Kernel { get; set; }
-
   }
 }

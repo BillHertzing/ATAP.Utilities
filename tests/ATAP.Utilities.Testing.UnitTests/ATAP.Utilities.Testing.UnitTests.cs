@@ -10,15 +10,15 @@ using ATAP.Utilities.Serializer;
 
 namespace ATAP.Utilities.Testing.UnitTests
 {
-  
-    public partial class TestingUnitTests001 : IClassFixture<TestingFixture>
+
+    public partial class TestingUnitTests001 : IClassFixture<Fixture>
     {
     [Fact]
     void Dummytest() {
       var dummy = "abc";
       dummy.Should().Be("abc");
     }
-    /*    
+    /*
       [Theory]
       [InlineData("{\"Item1\":\"k1\",\"Item2\":\"k2\"}")]
       void StringInJSONFormatToSimpleTuple(string inTestData)
@@ -55,7 +55,7 @@ namespace ATAP.Utilities.Testing.UnitTests
               var x = (k1: "k1", term1: new Dictionary<string, double>() { { "c1", 10.0 } });
               bool passed = (r.k1 == x.k1) && (r.term1.Count == x.term1.Count);
               // ToDo: figure out a link query that will produce "false" if the keys and values of both dictionaries are not the same
-              // bool t = r.Item2.Where(d => x.Item2.ContainsKey(r.Item2.Key) && 
+              // bool t = r.Item2.Where(d => x.Item2.ContainsKey(r.Item2.Key) &&
               Assert.True(passed);
 
           }
@@ -80,7 +80,7 @@ namespace ATAP.Utilities.Testing.UnitTests
               var x = (k1: "k1", term1: readOnlyDict);
               bool passed = (r.k1 == x.k1) && (r.term1.Count == x.term1.Count);
               // ToDo: figure out a link query that will produce "false" if the keys and values of both dictionaries are not the same
-              // bool t = r.Item2.Where(d => x.Item2.ContainsKey(r.Item2.Key) && 
+              // bool t = r.Item2.Where(d => x.Item2.ContainsKey(r.Item2.Key) &&
               Assert.True(passed);
               // Validate term1 is ReadOnly - uncomment the following for a compile-time error
               // r.term1["new"] = 5.0; ;

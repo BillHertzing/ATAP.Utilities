@@ -1,5 +1,7 @@
 
-
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using ATAP.Utilities.Testing;
 using ATAP.Utilities.TypedGuids;
 using FluentAssertions;
@@ -10,7 +12,7 @@ using Xunit.Abstractions;
 namespace ATAP.Utilities.TypedGuids.UnitTests
 {
 
-  public partial class IntGuidUnitTests001 : IClassFixture<TypedGuidsFixture>
+  public partial class IntGuidUnitTests001 : IClassFixture<Fixture>
   {
 
     [Theory]

@@ -14,11 +14,11 @@ namespace ATAP.Utilities.TypedGuids {
         _value = Guid.NewGuid();
       }
       else {
-        // Hack, used becaaue only ServiceStack Json serializers add extra enclosing ".
-        //  but, neither simpleJson nor NetwtonSoft will serial[ze this at all
+        // Hack, used because only ServiceStack Json serializers add extra enclosing ".
+        //  but, neither simpleJson nor NewtonSoft will serialize this at all
         iValue = value.Trim('"');
         success = Guid.TryParse(iValue, out Guid newValue);
-        if (!success) { throw new NotSupportedException($"Guid.TryParse failed,, newValue {value} cannot be parsed as a GUID"); }
+        if (!success) { throw new NotSupportedException($"Guid.TryParse failed, value {value} cannot be parsed as a GUID"); }
         _value = newValue;
       }
     }
@@ -49,7 +49,7 @@ namespace ATAP.Utilities.TypedGuids {
       return !(left == right);
     }
   }
-  public class TypedGuidConverterFactory<T> : ATAP.Utilities.Serializer.ISerializerConverterFactory<Id<T>> {
+  public class TypedGuidConverterFactory<T> : SerializerConverterAbstract<Id<T>> {
     bool ISerializerConverterFactory<Id<T>>.CanConvert(Type typeToConvert) {
       throw new NotImplementedException();
     }

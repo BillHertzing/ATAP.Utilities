@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 {
 
-  public partial class ComputerInventoryHardwareUnitTests001 : IClassFixture<ComputerInventoryHardwareFixture>
+  public partial class ComputerInventoryHardwareUnitTests001 : IClassFixture<Fixture>
   {
     [Theory]
     [MemberData(nameof(DiskDriveMakerTestDataGenerator.TestData), MemberType = typeof(DiskDriveMakerTestDataGenerator))]

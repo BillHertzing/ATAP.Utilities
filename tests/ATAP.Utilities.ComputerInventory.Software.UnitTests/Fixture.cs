@@ -8,13 +8,13 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.ComputerInventory.Software.UnitTests
 {
-  public class ComputerInventorySoftwareFixture : DiFixture { }
-  public partial class ComputerInventorySoftwareUnitTests001 : IClassFixture<ComputerInventorySoftwareFixture>
+  public class Fixture : DiFixture { }
+  public partial class ComputerInventorySoftwareUnitTests001 : IClassFixture<Fixture>
   {
-    protected ComputerInventorySoftwareFixture Fixture { get; }
+    protected Fixture Fixture { get; }
     protected ITestOutputHelper TestOutput { get; }
 
-    public ComputerInventorySoftwareUnitTests001(ITestOutputHelper testOutput, ComputerInventorySoftwareFixture fixture)
+    public ComputerInventorySoftwareUnitTests001(ITestOutputHelper testOutput, Fixture fixture)
     {
       Fixture = fixture;
       TestOutput = testOutput;

@@ -10,7 +10,6 @@ using ATAP.Utilities.Reactive;
 using ATAP.Utilities.GenerateProgram;
 using ATAP.Services.GenerateCode;
 
-
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Configuration;
@@ -35,9 +34,6 @@ using appStringConstants = ATAP.Console.Console02.StringConstants;
 using GenerateProgramServiceStringConstants = ATAP.Services.GenerateCode.StringConstants;
 using PersistenceStringConstants = ATAP.Utilities.Persistence.StringConstants;
 
-// Provides the .Dump utility to export complex .net objects into JSON
-//using ServiceStack.Text;
-using System.Text.Json;
 
 namespace ATAP.Console.Console02 {
   // This file contains the code to be executed in response to each selection by the user from the list of choices
@@ -73,15 +69,16 @@ namespace ATAP.Console.Console02 {
         Message.Clear();
       }
       #endregion
-      #region tempout
       switch (inputLine) {
         case "1":
+          #region Generate Code from Settings in ConfigRoot
           // Get these from the Console02 application configuration
           // ToDo: Get these from the database or from a configurationRoot (priority?)
           // ToDo: should validate in case the appStringConstants assembly is messed up?
           // ToDo: should validate in case the ATAP.Services.GenerateCode.StringConstants assembly is messed up?
           // Create the instance of the GInvokeGenerateCodeSignil
           var gInvokeGenerateCodeSignil = GetGInvokeGenerateCodeSignilFromSettings();
+          // ToDo: use Serializer instead of ToString
           Logger.LogDebug(DebugLocalizer["{0} {1} gInvokeGenerateCodeSignil = {2}"], "Console02BackgroundService", "DoLoopAsync", gInvokeGenerateCodeSignil.ToString());
 
           Message.Append(UiLocalizer["Running GenerateProgram Function on the AssemblyGroupSignil {0}, with GlobalSettingsKey {1} and SolutionSignilKey {2}", "Console02Mechanical", "ATAPStandardGlobalSettingsKey", "ATAPStandardGSolutionSignilKey"]);
@@ -275,15 +272,16 @@ namespace ATAP.Console.Console02 {
             return new InsertViaFileResults(true);
           });
           PickAndSave<IInsertResultsAbstract> pickAndSave = new PickAndSave<IInsertResultsAbstract>(pickFuncPickAndSave, insertFuncPickAndSave);
-          #endregion
           */
-
-          IGGenerateProgramResult gGenerateProgramResult;
+          #endregion
 
           #region Method timing setup
           Stopwatch stopWatch = new Stopwatch(); // ToDo: utilize a much more powerfull and ubiquitous timing and profiling tool than a stopwatch
           stopWatch.Start();
           #endregion
+
+          #region Call the service to generate the code
+          IGGenerateProgramResult gGenerateProgramResult;
           try {
             Func<Task<IGGenerateProgramResult>> run = () => GenerateProgramHostedService.InvokeGenerateProgramAsync(gInvokeGenerateCodeSignil);
 
@@ -298,27 +296,28 @@ namespace ATAP.Console.Console02 {
           }
           finally {
             // Dispose of the objects that need disposing
-            /* PickAndSave is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls
+            /* PickAndSave is not used in the Console02 Background Service nor in the GenerateProgram entry points it calls
             setupResultsPickAndSave.Dispose();
             */
-            /* Persistence is not used in the Console02 Background Serveice nor in the GenerateProgram entry points it calls
+            /* Persistence is not used in the Console02 Background Service nor in the GenerateProgram entry points it calls
             setupResultsPersistence.Dispose();
             */
           }
+          #endregion
+
           #region Build the results
           BuildGenerateProgramResults(gGenerateProgramResult, stopWatch);
           #endregion
-
+          #endregion
           break;
-        case "2" :
+          case "2" :
             Logger.LogDebug(DebugLocalizer["{0} {1}: Creating Signil from Settings"], "Console02BackgroundService", "DoLoopAsync");
               IGInvokeGenerateCodeSignil gInvokeGenerateCodeSignilFromSettings = GetGInvokeGenerateCodeSignilFromSettings();
             Logger.LogDebug(DebugLocalizer["{0} {1}: SignilFromSettings in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", JsonSerializer.Serialize(gInvokeGenerateCodeSignilFromSettings));
           break;
         case "3":
           BuildJSONSettingsFromInstance();
-
-          break;
+              break;
         case "99":
           #region Quit the program
           InternalCancellationTokenSource.Cancel();
@@ -330,7 +329,7 @@ namespace ATAP.Console.Console02 {
           Message.Append(UiLocalizer["InvalidInputDoesNotMatchAvailableChoices {0}", inputLine]);
           break;
       }
-#endregion
+      #endregion
       #region Write the Message to Console.Out
       using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
         if (!task.IsCompletedSuccessfully) {
@@ -375,7 +374,6 @@ namespace ATAP.Console.Console02 {
         }
         Message.Clear();
       }
-
       #endregion
     }
     #endregion

@@ -17,7 +17,7 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.Persistence.UnitTests
 {
-  public partial class PersistenceUnitTests001 : IClassFixture<PersistenceFixture>
+  public partial class PersistenceUnitTests001 : IClassFixture<Fixture>
   {
 
     // // Common constructor method for the InsertViaFileFunc used in these tests

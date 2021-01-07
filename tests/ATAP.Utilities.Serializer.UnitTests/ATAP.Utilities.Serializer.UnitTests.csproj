@@ -44,8 +44,6 @@
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Options\ATAP.Utilities.Serializer.Options.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Options.Interfaces\ATAP.Utilities.Serializer.Options.Interfaces.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
   </ItemGroup>
 

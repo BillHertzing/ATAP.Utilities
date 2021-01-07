@@ -111,7 +111,7 @@ namespace ATAP.Utilities.Philote.UnitTests
     End of block for StackOverflow */
 
 
-  public partial class PhiloteUnitTests001 : IClassFixture<PhiloteFixture>
+  public partial class PhiloteUnitTests001 : IClassFixture<Fixture>
   {
 
     [Theory]

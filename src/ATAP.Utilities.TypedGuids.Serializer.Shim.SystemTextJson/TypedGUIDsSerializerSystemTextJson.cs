@@ -1,6 +1,6 @@
 using System;
-
 using ATAP.Utilities.Serializer;
+using System.Text.Json;
 namespace ATAP.Utilities.TypedGuids.Serializer.SystemTextJson {
   public class TypedGuidConverterFactory<T> : SerializerConverterAbstract<Id<T>> {
     bool ISerializerConverterFactory<Id<T>>.CanConvert(Type typeToConvert) {
@@ -29,6 +29,29 @@ namespace ATAP.Utilities.TypedGuids.Serializer.SystemTextJson {
       throw new NotImplementedException();
     }
   }
+
+  public class TypedGuidJsonConverter<T> : JsonConverter<T>
+    where T : StronglyTypedId<TValue>
+    where TValue : notnull
+{
+    public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType is JsonTokenType.Null)
+            return null;
+
+        var value = JsonSerializer.Deserialize<Guid>(ref reader, options);
+        var factory = StronglyTypedIdHelper.GetFactory<Guid>(typeToConvert);
+        return (T)factory(value);
+    }
+
+    public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+    {
+        if (value is null)
+            writer.WriteNullValue();
+        else
+            JsonSerializer.Serialize(writer, value.Value, options);
+    }
+}
   /*
       public class ResultConverter<T> : JsonConverter {
       public override bool CanWrite => false;

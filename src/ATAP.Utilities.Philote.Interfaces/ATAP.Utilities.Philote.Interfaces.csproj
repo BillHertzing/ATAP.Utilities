@@ -22,7 +22,7 @@
 </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.TypedGuids\ATAP.Utilities.TypedGuids.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.TypedGuids.Interfaces\ATAP.Utilities.TypedGuids.Interfaces.csproj" />
   </ItemGroup>
 
 

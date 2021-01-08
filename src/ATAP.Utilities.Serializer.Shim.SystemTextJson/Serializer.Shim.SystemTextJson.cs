@@ -1,8 +1,11 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ATAP.Utilities.Serializer;
 
-namespace ATAP.Utilities.Serializer {
+namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
   public class Serializer : ISerializer {
     private JsonSerializerOptions JsonSerializerOptionsCurrent { get; set; }
     public Serializer() {
@@ -41,7 +44,7 @@ namespace ATAP.Utilities.Serializer {
         bool allowTrailingCommas = false
       , bool writeIndented = false
       , bool ignoreNullValues = false
-      , IList<ISerializerConverter<T>>? Converters
+      , IList<ISerializerConverterAbstract<T>>? Converters
     ) {
       JsonSerializerOptionsCurrent = ConvertOptions(allowTrailingCommas, writeIndented, ignoreNullValues);
     }

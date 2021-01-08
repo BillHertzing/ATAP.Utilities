@@ -137,6 +137,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Http", "src\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Logging", "src\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj", "{B8DDB1DA-F124-4DF3-9497-2927F73B678D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Philote", "Philote", "{D27866D0-340C-11EB-B0F3-8BBCA7824458}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Philote.Interfaces", "src\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj", "{74108D0E-5022-43AF-B859-E47E5D09B40F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Philote", "src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj", "{1DEE66E8-EF9D-40F7-9945-9CD55EF24D6D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Philote.DefaultConfiguration", "src\ATAP.Utilities.Philote.DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj", "{EE877675-2FB7-416D-AE38-E3B5E4292251}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence", "Persistence", "{6CA48A6B-4910-4DD7-92D1-F079CD34A13B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Persistence", "src\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj", "{208E54AF-C24F-4235-B367-967BF9F6437B}"
@@ -147,13 +155,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Persistence.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.RealEstate.Enumerations", "src\ATAP.Utilities.RealEstate.Enumerations\ATAP.Utilities.RealEstate.Enumerations.csproj", "{A9F0F4DF-94D3-49F4-8A47-7768D9D49950}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Serializer", "Serializer", "{DC413220-33A6-11EB-9C14-5132EBA7B73D}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Interfaces", "src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj", "{CECCF4F9-C220-4F5E-88F0-FEF8CCB7D2BA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.NewtonsoftJson", "src\ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.Shim.NewtonsoftJson.csproj", "{B4259A1F-B02C-42F5-B22F-40B61C5F6823}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Philote.Serializer.Shim.SystemTextJson", "src\ATAP.Utilities.Philote.Serializer.Shim.SystemTextJson\ATAP.Utilities.Philote.Serializer.Shim.SystemTextJson.csproj", "{7662AA40-4E1B-453B-931C-4CD954B9E658}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.ServiceStackJson", "src\ATAP.Utilities.Serializer.Shim.ServiceStackJson\ATAP.Utilities.Serializer.Shim.ServiceStackJson.csproj", "{C2FFEDF1-281F-41A1-99CA-D235C105BF7C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.SerializerLoader", "src\ATAP.Utilities.SerializerLoader\ATAP.Utilities.SerializerLoader.csproj", "{F3487177-AE97-4BC5-AA1C-3E86176505B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer", "src\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj", "{F3487177-AE97-4BC5-AA1C-3E86176505B5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.String", "src\ATAP.Utilities.String\ATAP.Utilities.String.csproj", "{16742D2A-7546-4534-884D-F386A09DCB3B}"
 EndProject
@@ -167,13 +179,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ZSandbox", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenHardwareMonitorLib", "OpenHardwareMonitorLib\OpenHardwareMonitorLib.csproj", "{B0403790-9BEE-4EC7-979A-5895E151B9BC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Philote.Interfaces", "src\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj", "{74108D0E-5022-43AF-B859-E47E5D09B40F}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Philote", "src\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj", "{1DEE66E8-EF9D-40F7-9945-9CD55EF24D6D}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.TypedGuids.Interfaces", "src\ATAP.Utilities.TypedGuids.Interfaces\ATAP.Utilities.TypedGuids.Interfaces.csproj", "{5F890922-C0DE-49F8-8C2C-DDE96075F2B6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Philote.DefaultConfiguration", "src\ATAP.Utilities.Philote.DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj", "{EE877675-2FB7-416D-AE38-E3B5E4292251}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.TypedGuids.Serializer.Shim.SystemTextJson", "src\ATAP.Utilities.TypedGuids.Serializer.Shim.SystemTextJson\ATAP.Utilities.TypedGuids.Serializer.Shim.SystemTextJson.csproj", "{5D1671EC-18A8-4882-AB50-4541DEB88060}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{984B3A90-8771-486E-9BC3-66D2F35963C2}"
 EndProject
@@ -271,8 +279,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CryptoCoin", "CryptoCoin", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CryptoMiner", "CryptoMiner", "{BDD59150-33A6-11EB-9C14-5132EBA7B73D}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Serializer", "Serializer", "{DC413220-33A6-11EB-9C14-5132EBA7B73D}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Reactive", "Reactive", "{80F0147B-1F56-4BCF-8A2D-6502290DF0C2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ConcurrentObservableCollections", "ConcurrentObservableCollections", "{408FCBA0-33A8-11EB-9C14-5132EBA7B73D}"
@@ -286,8 +292,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CryptoCoin", "CryptoCoin", "{1F443DF0-340C-11EB-B0F3-8BBCA7824458}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CryptoMiner", "CryptoMiner", "{2B511C80-340C-11EB-B0F3-8BBCA7824458}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Philote", "Philote", "{D27866D0-340C-11EB-B0F3-8BBCA7824458}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Enumeration", "Enumeration", "{B50EFAC0-38A1-11EB-993C-05D7FC15B653}"
 EndProject
@@ -353,13 +357,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Persistence.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Serializer.Shim.SystemTextJson", "src\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj", "{C447A64E-FBE5-4420-B698-EC6EC3A42636}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Philote.Converters.Interfaces", "src\ATAP.Utilities.Philote.Converters.Interfaces\ATAP.Utilities.Philote.Converters.Interfaces.csproj", "{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Philote.Converters", "src\ATAP.Utilities.Philote.Converters\ATAP.Utilities.Philote.Converters.csproj", "{7662AA40-4E1B-453B-931C-4CD954B9E658}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence", "Persistence", "{CC4A74E0-4D31-11EB-8AC3-33928AC602A3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.TypedGuids.Converters.Interfaces", "src\ATAP.Utilities.TypedGuids.Converters.Interfaces\ATAP.Utilities.TypedGuids.Converters.Interfaces.csproj", "{27508D9B-3C28-4696-B19F-5705BE7E8A6B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1461,16 +1459,6 @@ Global
 		{C447A64E-FBE5-4420-B698-EC6EC3A42636}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C447A64E-FBE5-4420-B698-EC6EC3A42636}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{C447A64E-FBE5-4420-B698-EC6EC3A42636}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
-		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.RELEASE NET40|Any CPU.ActiveCfg = Debug|Any CPU
-		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.RELEASE NET40|Any CPU.Build.0 = Debug|Any CPU
-		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.RELEASE NET45|Any CPU.ActiveCfg = Debug|Any CPU
-		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.RELEASE NET45|Any CPU.Build.0 = Debug|Any CPU
-		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
-		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 		{7662AA40-4E1B-453B-931C-4CD954B9E658}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7662AA40-4E1B-453B-931C-4CD954B9E658}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7662AA40-4E1B-453B-931C-4CD954B9E658}.RELEASE NET40|Any CPU.ActiveCfg = Debug|Any CPU
@@ -1481,16 +1469,16 @@ Global
 		{7662AA40-4E1B-453B-931C-4CD954B9E658}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7662AA40-4E1B-453B-931C-4CD954B9E658}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{7662AA40-4E1B-453B-931C-4CD954B9E658}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
-		{27508D9B-3C28-4696-B19F-5705BE7E8A6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{27508D9B-3C28-4696-B19F-5705BE7E8A6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{27508D9B-3C28-4696-B19F-5705BE7E8A6B}.RELEASE NET40|Any CPU.ActiveCfg = Debug|Any CPU
-		{27508D9B-3C28-4696-B19F-5705BE7E8A6B}.RELEASE NET40|Any CPU.Build.0 = Debug|Any CPU
-		{27508D9B-3C28-4696-B19F-5705BE7E8A6B}.RELEASE NET45|Any CPU.ActiveCfg = Debug|Any CPU
-		{27508D9B-3C28-4696-B19F-5705BE7E8A6B}.RELEASE NET45|Any CPU.Build.0 = Debug|Any CPU
-		{27508D9B-3C28-4696-B19F-5705BE7E8A6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{27508D9B-3C28-4696-B19F-5705BE7E8A6B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{27508D9B-3C28-4696-B19F-5705BE7E8A6B}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
-		{27508D9B-3C28-4696-B19F-5705BE7E8A6B}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
+		{5D1671EC-18A8-4882-AB50-4541DEB88060}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D1671EC-18A8-4882-AB50-4541DEB88060}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D1671EC-18A8-4882-AB50-4541DEB88060}.RELEASE NET40|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D1671EC-18A8-4882-AB50-4541DEB88060}.RELEASE NET40|Any CPU.Build.0 = Debug|Any CPU
+		{5D1671EC-18A8-4882-AB50-4541DEB88060}.RELEASE NET45|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D1671EC-18A8-4882-AB50-4541DEB88060}.RELEASE NET45|Any CPU.Build.0 = Debug|Any CPU
+		{5D1671EC-18A8-4882-AB50-4541DEB88060}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D1671EC-18A8-4882-AB50-4541DEB88060}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D1671EC-18A8-4882-AB50-4541DEB88060}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
+		{5D1671EC-18A8-4882-AB50-4541DEB88060}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1651,9 +1639,8 @@ Global
 		{9134633C-FA10-4A60-A28C-EF2878FCB2B4} = {11AD5420-3F69-11EB-9FD8-913B36525608}
 		{DA3CA34F-68BB-4B3C-86B3-720B2FE225C5} = {6CA48A6B-4910-4DD7-92D1-F079CD34A13B}
 		{C447A64E-FBE5-4420-B698-EC6EC3A42636} = {DC413220-33A6-11EB-9C14-5132EBA7B73D}
-		{8A8CBC34-A9D3-4A17-A508-737F8513E8BF} = {D27866D0-340C-11EB-B0F3-8BBCA7824458}
 		{7662AA40-4E1B-453B-931C-4CD954B9E658} = {D27866D0-340C-11EB-B0F3-8BBCA7824458}
-		{27508D9B-3C28-4696-B19F-5705BE7E8A6B} = {D7990800-38A2-11EB-993C-05D7FC15B653}
+		{5D1671EC-18A8-4882-AB50-4541DEB88060} = {D7990800-38A2-11EB-993C-05D7FC15B653}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40986DA9-E8C6-49CE-B434-BE8625798C2C}

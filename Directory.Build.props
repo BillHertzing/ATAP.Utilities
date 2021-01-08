@@ -15,7 +15,9 @@
   <!-- The Build Configuration properties common for every assembly, can be overwritten in individual .csproj files -->
   <PropertyGroup>
     <Configurations>Debug;Release;ReleaseWithTrace;</Configurations>
+    <!-- Whne building against anything excpet net5.0, the c# V9 keyword 'init' throws errors-->
     <TargetFrameworks>netstandard2.0;netstandard2.1;net5.0;</TargetFrameworks>
+    <TargetFrameworks>net5.0;</TargetFrameworks>
     <RuntimeIdentifiers>win10-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>

@@ -14,7 +14,7 @@ namespace ATAP.Utilities.Serializer {
       bool AllowTrailingCommas = false
       , bool WriteIndented = false
       , bool IgnoreNullValues = false
-      , IList<ISerializerConverterAbstract>? Converters = default
+      //, IList<ISerializerConverterAbstract>? Converters = default
     );
 
   }

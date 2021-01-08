@@ -1,6 +1,5 @@
 using System;
 
-using ATAP.Utilities.Serializer;
 namespace ATAP.Utilities.TypedGuids {
   //Attribution: taken from answers provided to this question: https://stackoverflow.com/questions/53748675/strongly-typed-guid-as-generic-struct
   // Modifications:  CheckValue and all references removed, because our use case requires Guid.Empty to be a valid value

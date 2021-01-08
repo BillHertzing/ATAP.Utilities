@@ -350,7 +350,6 @@ namespace ATAP.Console.Console02 {
         }
       }
       #endregion
-      #endregion
       #region presentation of the current Choices to the user after processing last input
       // Format the Choices for presentation into Message
       BuildMenu();
@@ -378,5 +377,4 @@ namespace ATAP.Console.Console02 {
     }
     #endregion
   }
-  #endregion
 }

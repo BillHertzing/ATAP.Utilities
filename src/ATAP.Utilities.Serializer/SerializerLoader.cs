@@ -1,8 +1,9 @@
 using System;
-using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
+
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ATAP.Utilities.Serializer {
   public static class SerializerLoader {

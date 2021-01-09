@@ -31,24 +31,15 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
       JsonSerializerOptionsCurrent = new JsonSerializerOptions {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
-        Converters = {
-          new TypedGuidsConverter()
-        }
+        // Converters = {
+        //   new TypedGuidsConverter()
+        // }
 
       };
     }
     public void Configure(ISerializerOptions options) {
       JsonSerializerOptionsCurrent = ConvertOptions(options);
     }
-    public void Configure(
-        bool allowTrailingCommas = false
-      , bool writeIndented = false
-      , bool ignoreNullValues = false
-      , IList<ISerializerConverterAbstract<T>>? Converters
-    ) {
-      JsonSerializerOptionsCurrent = ConvertOptions(allowTrailingCommas, writeIndented, ignoreNullValues);
-    }
-
     private JsonSerializerOptions ConvertOptions(
         bool allowTrailingCommas = false
       , bool ignoreNullValues = false
@@ -70,39 +61,39 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
 
   }
 
- public class TypedGuidsConverter
-        : JsonConverter<Id<T>>
-    {
-        public override object Read(
-            ref Utf8JsonReader reader,
-            Type typeToConvert,
-            JsonSerializerOptions options) => reader.TokenType switch
-            {
-                JsonTokenType.True => true,
-                JsonTokenType.False => false,
-                JsonTokenType.Number when reader.TryGetInt64(out long l) => l,
-                JsonTokenType.Number => reader.GetDouble(),
-                JsonTokenType.String when reader.TryGetDateTime(out DateTime datetime) => datetime,
-                JsonTokenType.String => reader.GetString(),
-                _ => JsonDocument.ParseValue(ref reader).RootElement.Clone()
-            };
+//  public class TypedGuidsConverter
+//         : JsonConverter<Id<T>>
+//     {
+//         public override object Read(
+//             ref Utf8JsonReader reader,
+//             Type typeToConvert,
+//             JsonSerializerOptions options) => reader.TokenType switch
+//             {
+//                 JsonTokenType.True => true,
+//                 JsonTokenType.False => false,
+//                 JsonTokenType.Number when reader.TryGetInt64(out long l) => l,
+//                 JsonTokenType.Number => reader.GetDouble(),
+//                 JsonTokenType.String when reader.TryGetDateTime(out DateTime datetime) => datetime,
+//                 JsonTokenType.String => reader.GetString(),
+//                 _ => JsonDocument.ParseValue(ref reader).RootElement.Clone()
+//             };
 
-        public override void Write(
-            Utf8JsonWriter writer,
-            object objectToWrite,
-            JsonSerializerOptions options) =>
-            throw new InvalidOperationException("Should not get here.");
-    }
+//         public override void Write(
+//             Utf8JsonWriter writer,
+//             object objectToWrite,
+//             JsonSerializerOptions options) =>
+//             throw new InvalidOperationException("Should not get here.");
+//     }
 
-  public abstract class SerializerConverterFactory<T> {
-    public abstract bool CanConvert(Type typeToConvert);
-    public abstract JsonConverter<T> CreateConverter(
-                Type type,
-                JsonSerializerOptions options);
-  }
+//   public abstract class SerializerConverterFactory<T> {
+//     public abstract bool CanConvert(Type typeToConvert);
+//     public abstract JsonConverter<T> CreateConverter(
+//                 Type type,
+//                 JsonSerializerOptions options);
+//   }
 
-  public abstract class SerializerConverter<T> : JsonConverter<T> {
+//   public abstract class SerializerConverter<T> : JsonConverter<T> {
 
-  }
+//   }
 
 }

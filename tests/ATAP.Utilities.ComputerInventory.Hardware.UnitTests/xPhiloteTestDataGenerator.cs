@@ -27,7 +27,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
               new Philote<T>() ,
               "{\"ID\":\"00000000-0000-0000-0000-000000000000\",\"AdditionalIDs\":[],\"TimeBlocks\":[]}" ) };
       yield return new PhiloteTestData<T>[] {new PhiloteTestData<T>(
-              new Philote<T>(new Id<T>(),new Dictionary<string, IId<T>>(), new List<ITimeBlock>() ) ,
+              new Philote<T>(new IdAsStruct<T>(),new Dictionary<string, IIdAsStruct<T>>(), new List<ITimeBlock>() ) ,
               "{\"ID\":\"00000000-0000-0000-0000-000000000000\",\"AdditionalIDs\":[],\"TimeBlocks\":[]}" ) };
       yield return new PhiloteTestData<T>[] {new PhiloteTestData<T>(
               new Philote<T>().Now() ,

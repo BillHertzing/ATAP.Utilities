@@ -27,40 +27,40 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
   }
 }
 /*
- 
+
 // ToDo: try creating these collections as a dictionary of interfaces keyed by interface
-// A Concurrent dictionary structure that participates in R over Observable consisting of the identify collection of PartitionInfoEx(s), keyed by ID<IPartitionInfoEx> 
+// A Concurrent dictionary structure that participates in R over Observable consisting of the identify collection of PartitionInfoEx(s), keyed by ID<IPartitionInfoEx>
 public interface IPartitionInfoExs
   {
-    ConcurrentObservableDictionary<Id<PartitionInfoEx>, PartitionInfoEx> PartitionInfoExCOD { get; set; }
+    ConcurrentObservableDictionary<IdAsStruct<PartitionInfoEx>, PartitionInfoEx> PartitionInfoExCOD { get; set; }
   }
 
   public class PartitionInfoExs : IPartitionInfoExs
   {
-    public PartitionInfoExs() : this(new ConcurrentObservableDictionary<Id<PartitionInfoEx>, PartitionInfoEx>()) { }
+    public PartitionInfoExs() : this(new ConcurrentObservableDictionary<IdAsStruct<PartitionInfoEx>, PartitionInfoEx>()) { }
 
-    public PartitionInfoExs(ConcurrentObservableDictionary<Id<PartitionInfoEx>, PartitionInfoEx> partitionInfoExCOD)
+    public PartitionInfoExs(ConcurrentObservableDictionary<IdAsStruct<PartitionInfoEx>, PartitionInfoEx> partitionInfoExCOD)
     {
       PartitionInfoExCOD = partitionInfoExCOD ?? throw new ArgumentNullException(nameof(partitionInfoExCOD));
     }
 
-    public ConcurrentObservableDictionary<Id<PartitionInfoEx>, PartitionInfoEx> PartitionInfoExCOD { get; set; }
+    public ConcurrentObservableDictionary<IdAsStruct<PartitionInfoEx>, PartitionInfoEx> PartitionInfoExCOD { get; set; }
   }
 
-  /* 
+  /*
   // The dictionary that associates multiple PartitionInfoEx with DiskDrive
       public interface IDiskDrivePartitionIdentifier {
-          ConcurrentObservableDictionary<Id<DiskDrive>, IPartitionInfoExs> DiskDriveOneToManyIPartitionInfoExsCOD { get; set; }
+          ConcurrentObservableDictionary<IdAsStruct<DiskDrive>, IPartitionInfoExs> DiskDriveOneToManyIPartitionInfoExsCOD { get; set; }
       }
 
       public class DiskDrivePartitionIdentifier : IEquatable<DiskDrivePartitionIdentifier>, IDiskDrivePartitionIdentifier {
-          public DiskDrivePartitionIdentifier() :this (new ConcurrentObservableDictionary<Id<DiskDrive>, IPartitionInfoExs>()) {}
+          public DiskDrivePartitionIdentifier() :this (new ConcurrentObservableDictionary<IdAsStruct<DiskDrive>, IPartitionInfoExs>()) {}
 
-          public DiskDrivePartitionIdentifier(ConcurrentObservableDictionary<Id<DiskDrive>, IPartitionInfoExs> diskDriveInfoPartitionInfoCOD) {
+          public DiskDrivePartitionIdentifier(ConcurrentObservableDictionary<IdAsStruct<DiskDrive>, IPartitionInfoExs> diskDriveInfoPartitionInfoCOD) {
               DiskDriveInfoPartitionInfoCOD=diskDriveInfoPartitionInfoCOD??throw new ArgumentNullException(nameof(diskDriveInfoPartitionInfoCOD));
           }
 
-          public ConcurrentObservableDictionary<Id<DiskDrive>, IPartitionInfoExs> DiskDriveInfoPartitionInfoCOD { get; set; }
+          public ConcurrentObservableDictionary<IdAsStruct<DiskDrive>, IPartitionInfoExs> DiskDriveInfoPartitionInfoCOD { get; set; }
 
       }
 

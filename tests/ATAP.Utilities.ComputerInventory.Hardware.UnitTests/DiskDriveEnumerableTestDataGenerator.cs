@@ -26,12 +26,12 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
       /*
        *foreach (DiskDriveSignilTestData[] signil in DiskDriveSignilTestDataGenerator.TestData())
             {
-                var id1 = new List<Id<IDiskDrive>> { new Id<IDiskDrive>(Guid.NewGuid()), new Id<IDiskDrive>(Guid.NewGuid()) };
-        var id2 = new List<Id<IDiskDrive>> { new Id<IDiskDrive>(Guid.NewGuid()), new Id<IDiskDrive>(Guid.NewGuid()) };
+                var id1 = new List<IdAsStruct<IDiskDrive>> { new IdAsStruct<IDiskDrive>(Guid.NewGuid()), new IdAsStruct<IDiskDrive>(Guid.NewGuid()) };
+        var id2 = new List<IdAsStruct<IDiskDrive>> { new IdAsStruct<IDiskDrive>(Guid.NewGuid()), new IdAsStruct<IDiskDrive>(Guid.NewGuid()) };
         var timeBlocks = TimeBlockTestDataGenerator.TestData();
                 //DiskDrive DiskDrive = new DiskDrive(signil,id1.G)
                 for (int i = 0; i<numObjects; i++) {
-                //foreach (Id<IDiskDrive>id[] in IdTestDataGenerator.TestData(IDiskDrive))
+                //foreach (IdAsStruct<IDiskDrive>id[] in IdTestDataGenerator.TestData(IDiskDrive))
                 //{
                   //str[i].Clear();
                   //str[i].Append($"{{\"DiskDriveSignil\":{signil[0].SerializedTestData},\"ID\":\"{id[i]}\",\"TimeBlock\":{timeBlock[0].SerializedTestData}}}");

@@ -45,12 +45,12 @@ namespace ATAP.Utilities.Philote.UnitTests
   //======================================
   public interface IP<T>
   {
-    XId<T> Id { get;  }
+    XId<T> IdAsStruct { get;  }
     IEnumerable<XId<T>> AdditionalIDs { get; }
   }
   public class P<T> : IP<T>
   {
-    public XId<T> Id { get; private set; }
+    public XId<T> IdAsStruct { get; private set; }
     public IEnumerable<XId<T>> AdditionalIDs { get; private set; }
   }
 

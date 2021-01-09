@@ -21,10 +21,10 @@ namespace ATAP.Utilities.TypedGuids.UnitTests
     {
       if (inIntGuidTestData.IntGuid.ToString().StartsWith("0000") | inIntGuidTestData.IntGuid.ToString().StartsWith("01234"))
       {
-        var intID = Fixture.Serializer.Deserialize<Id<int>>(inIntGuidTestData.SerializedIntGuid);
-        intID.Should().BeOfType(typeof(Id<int>));
+        var intID = Fixture.Serializer.Deserialize<IdAsStruct<int>>(inIntGuidTestData.SerializedIntGuid);
+        intID.Should().BeOfType(typeof(IdAsStruct<int>));
         // GUIDS are random, two sets of test data have fixed, non-random guids, the rest are random
-        Fixture.Serializer.Deserialize<Id<int>>(inIntGuidTestData.SerializedIntGuid).Should().Be(inIntGuidTestData.IntGuid);
+        Fixture.Serializer.Deserialize<IdAsStruct<int>>(inIntGuidTestData.SerializedIntGuid).Should().Be(inIntGuidTestData.IntGuid);
       }
       else
       {

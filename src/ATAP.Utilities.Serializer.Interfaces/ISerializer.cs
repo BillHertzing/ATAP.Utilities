@@ -10,12 +10,12 @@ namespace ATAP.Utilities.Serializer {
     T Deserialize<T>(string str, ISerializerOptions options);
     void Configure();
     void Configure(ISerializerOptions options);
-    void Configure(
-      bool AllowTrailingCommas = false
-      , bool WriteIndented = false
-      , bool IgnoreNullValues = false
-      //, IList<ISerializerConverterAbstract>? Converters = default
-    );
+    // void Configure(
+    //   bool AllowTrailingCommas = false
+    //   , bool WriteIndented = false
+    //   , bool IgnoreNullValues = false
+    //   //, IList<ISerializerConverterAbstract>? Converters = default
+    // );
 
   }
 }

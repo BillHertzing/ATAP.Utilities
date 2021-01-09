@@ -31,11 +31,11 @@ namespace ATAP.Utilities.Philote.UnitTests {
               "00000000-0000-0000-0000-000000000000"+
               Regex.Escape(rm.GetString("SerializedPhilotePart2"))) };
       yield return new PhiloteTestData<T>[] {new PhiloteTestData<T>(
-              // new Philote<T>(new Id<T>(new Guid("01234567-abcd-9876-cdef-456789abcdef")),new Dictionary<string, IId<T>>(), new List<ITimeBlock>() ) ,
+              // new Philote<T>(new IdAsStruct<T>(new Guid("01234567-abcd-9876-cdef-456789abcdef")),new Dictionary<string, IIdAsStruct<T>>(), new List<ITimeBlock>() ) ,
               DefaultConfiguration<T>.Production["Contrived"],
               Regex.Escape(rm.GetString("SerializedPhilotePart1"))+"01234567-abcd-9876-cdef-456789abcdef" + Regex.Escape(rm.GetString("SerializedPhilotePart2")) ) };
       yield return new PhiloteTestData<T>[] {new PhiloteTestData<T>(
-              new Philote<T>(new Id<T>(new Guid("01234567-abcd-9876-cdef-456789abcdef"))).Now() ,
+              new Philote<T>(new IdAsStruct<T>(new Guid("01234567-abcd-9876-cdef-456789abcdef"))).Now() ,
               Regex.Escape(rm.GetString("SerializedPhilotePart1"))+"[0-9A-Fa-f]{8}-?([0-9A-Fa-f]{4}-?){3}[0-9A-Fa-f]{12}" + Regex.Escape(rm.GetString("SerializedPhilotePart2")) ) };
     }
     public IEnumerator<object[]> GetEnumerator() { return TestData().GetEnumerator(); }

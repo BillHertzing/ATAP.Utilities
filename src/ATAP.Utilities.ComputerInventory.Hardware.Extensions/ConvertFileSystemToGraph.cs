@@ -530,7 +530,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware {
       });
 
       // Create self's Philote for self's LongRunningTaskInfo
-      // Philote<LongRunningTaskInfo> longRunningTaskPhilote = new Philote<LongRunningTaskInfo>(new Id<LongRunningTaskInfo>(Guid.NewGuid(), new List<>(), new IList<ITimeBlock);
+      // Philote<LongRunningTaskInfo> longRunningTaskPhilote = new Philote<LongRunningTaskInfo>(new IdAsStruct<LongRunningTaskInfo>(Guid.NewGuid(), new List<>(), new IList<ITimeBlock);
       // Create LongRunningTaskInfo
       //LongRunningTaskInfo longRunningTaskInfo = new LongRunningTaskInfo(longRunningTaskID, task, cancellationTokenSource);
       // Record this task (plus additional information about it) in the longRunningTasks dictionary in the BaseServicesData found in the Container
@@ -552,7 +552,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware {
     // MD5=mD5??throw new ArgumentNullException(nameof(mD5));
   }
   /*  Move this stuff to teh Expression for the Action that will validate the DB
-   *  The block below is somewhat out of date, the structures carry two, 
+   *  The block below is somewhat out of date, the structures carry two,
    *  separate GUIDs for DB id and in-memory id
   if (DBFetch==null) {
       diskInfoEx.DiskIdentityId=0;
@@ -661,7 +661,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware {
         throw new ArgumentException();
       }
     }
-    // Create the HashFunction that can be called to incrementally 
+    // Create the HashFunction that can be called to incrementally
     Func < HashFunction = new Func<byte[], string>(ba)    {
     string hashResult;
     switch (HashAlgorithm)

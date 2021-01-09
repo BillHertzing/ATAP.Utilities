@@ -35,21 +35,21 @@ namespace ATAP.Utilities.ComputerInventory.Hardware
 
 /*
 // ToDo: try creating these collections as a dictionary of interfaces keyed by interface
-// A Concurrent dictionary structure that participates in R over Observable consisting of the identify collection of PartitionInfoEx(s), keyed by ID<IPartitionInfoEx> 
+// A Concurrent dictionary structure that participates in R over Observable consisting of the identify collection of PartitionInfoEx(s), keyed by ID<IPartitionInfoEx>
 public interface IDiskDrives
 {
-  ConcurrentObservableDictionary<Id<DiskDrive>, DiskDrive> DiskDriveCOD { get; set; }
+  ConcurrentObservableDictionary<IdAsStruct<DiskDrive>, DiskDrive> DiskDriveCOD { get; set; }
 }
 
 public class DiskDrives : IDiskDrives
 {
-  public DiskDrives() : this(new ConcurrentObservableDictionary<Id<DiskDrive>, DiskDrive>()) { }
+  public DiskDrives() : this(new ConcurrentObservableDictionary<IdAsStruct<DiskDrive>, DiskDrive>()) { }
 
-  public DiskDrives(ConcurrentObservableDictionary<Id<DiskDrive>, DiskDrive> diskDiskDriveCOD)
+  public DiskDrives(ConcurrentObservableDictionary<IdAsStruct<DiskDrive>, DiskDrive> diskDiskDriveCOD)
   {
     DiskDriveCOD = diskDiskDriveCOD ?? throw new ArgumentNullException(nameof(diskDiskDriveCOD));
   }
 
-  public ConcurrentObservableDictionary<Id<DiskDrive>, DiskDrive> DiskDriveCOD { get; set; }
+  public ConcurrentObservableDictionary<IdAsStruct<DiskDrive>, DiskDrive> DiskDriveCOD { get; set; }
 }
 */

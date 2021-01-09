@@ -17,14 +17,20 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-<ItemGroup>
+  <ItemGroup>
     <PackageReference Include="TimePeriodLibrary.NET" />
-</ItemGroup>
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.TypedGuids.Interfaces\ATAP.Utilities.TypedGuids.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.TypedGuids\ATAP.Utilities.TypedGuids.csproj" />
+  </ItemGroup>
+
+   <!-- The System JSON Library to use -->
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 
 </Project>

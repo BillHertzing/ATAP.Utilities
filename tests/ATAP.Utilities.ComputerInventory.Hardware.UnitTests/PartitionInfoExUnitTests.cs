@@ -53,7 +53,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
       var convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
       // Cancellation token for the task
       var cancellationTokenSource = new CancellationTokenSource();
-      var cancellationTokenSourceId = new Id<CancellationTokenSource>(Guid.NewGuid());
+      var cancellationTokenSourceId = new IdAsStruct<CancellationTokenSource>(Guid.NewGuid());
       var cancellationToken = cancellationTokenSource.Token;
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
       Stopwatch stopWatch = new Stopwatch();
@@ -87,7 +87,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
       var convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
       // Cancellation token for the task
       var cancellationTokenSource = new CancellationTokenSource();
-      var cancellationTokenSourceId = new Id<CancellationTokenSource>(Guid.NewGuid());
+      var cancellationTokenSourceId = new IdAsStruct<CancellationTokenSource>(Guid.NewGuid());
       var cancellationToken = cancellationTokenSource.Token;
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
       Stopwatch stopWatch = new Stopwatch();
@@ -121,7 +121,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
       var convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
       // Cancellation token for the task
       var cancellationTokenSource = new CancellationTokenSource();
-      var cancellationTokenSourceId = new Id<CancellationTokenSource>(Guid.NewGuid());
+      var cancellationTokenSourceId = new IdAsStruct<CancellationTokenSource>(Guid.NewGuid());
       var cancellationToken = cancellationTokenSource.Token;
       ConvertFileSystemToGraphResult convertFileSystemToGraphResult;
       Stopwatch stopWatch = new Stopwatch();
@@ -171,7 +171,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests {
       var convertFileSystemToGraphProgress = new ConvertFileSystemToGraphProgress();
       // Cancellation token for the task
       var cancellationTokenSource = new CancellationTokenSource();
-      var cancellationTokenSourceId = new Id<CancellationTokenSource>(Guid.NewGuid());
+      var cancellationTokenSourceId = new IdAsStruct<CancellationTokenSource>(Guid.NewGuid());
       var cancellationToken = cancellationTokenSource.Token;
       // PersistenceViaFiles
       // Create temporary files to hold the persistence data

@@ -39,6 +39,8 @@
     <ProjectReference Include="..\ATAP.Console.Console02.StringConstants\ATAP.Console.Console02.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.StringConstants\ATAP.Utilities.Serializer.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.DataBaseManagement\ATAP.Utilities.DatabaseManagement.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence.StringConstants\ATAP.Utilities.Persistence.StringConstants.csproj" />

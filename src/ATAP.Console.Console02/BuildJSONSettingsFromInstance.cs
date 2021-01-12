@@ -33,8 +33,8 @@ using System.Reactive;
 using System.Reactive.Linq;
 
 using appStringConstants = ATAP.Console.Console02.StringConstants;
-using GenerateProgramServiceStringConstants = ATAP.Services.GenerateCode.StringConstants;
-using PersistenceStringConstants = ATAP.Utilities.Persistence.StringConstants;
+using generateProgramServiceStringConstants = ATAP.Services.GenerateCode.StringConstants;
+using persistenceStringConstants = ATAP.Utilities.Persistence.StringConstants;
 
 namespace ATAP.Console.Console02 {
   // This file contains the code to be executed in response to each selection by the user from the list of choices
@@ -44,7 +44,7 @@ namespace ATAP.Console.Console02 {
       Logger.LogDebug(DebugLocalizer["{0} {1}: Creating JSON from a Signil"], "Console02BackgroundService", "DoLoopAsync");
 
       #region SerializerOptions for all calls to Serialize used by this method
-      var options = new SerializerOptions {
+      var options = new SerializerOptions() {
         WriteIndented = true,
       };
       #endregion

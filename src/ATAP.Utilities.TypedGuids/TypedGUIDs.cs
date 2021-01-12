@@ -13,22 +13,52 @@ namespace ATAP.Utilities.TypedGuids {
   // Attribution 1/8/2021:[Using C# 9 records as strongly-typed ids](https://thomaslevesque.com/2020/10/30/using-csharp-9-records-as-strongly-typed-ids/)
 
 
-  [TypeConverter(typeof(StronglyTypedIdConverter))]
+  //[TypeConverter(typeof(StronglyTypedIdConverter))]
+  public record GuidStronglyTypedId : StronglyTypedId<Guid>, IGuidStronglyTypedId { }
+  public record IntStronglyTypedId : StronglyTypedId<int>, IIntStronglyTypedId { }
   public abstract record StronglyTypedId<TValue> : IStronglyTypedId<TValue> where TValue : notnull {
     public TValue Value { get; init; }
     public override string ToString() => Value.ToString();
+    public StronglyTypedId() { }
+    // public StronglyTypedId() {
+    //   Value = (typeof(TValue)) switch {
+    //     Type inttype when typeof(TValue) == typeof(int) =>  new Random().Next(),
+    //     Type guidtype when typeof(TValue) == typeof(Guid) => Guid.NewGuid(),
+    //     _ => throw new Exception(String.Format("Invalid TValue type {0}", typeof(TValue)))
+    //   };
+    // }
+    public StronglyTypedId(TValue value) {
+      Value = value;
+    }
+    /*
+    public static bool AllowedTValue() {
+      return (typeof(TValue)) switch {
+        Type intType when intType == typeof(int) => true,
+        Type GuidType when GuidType == typeof(Guid) => true,
+        _ => false,
+      };
+    }
+    private static TValue RandomTValue() {
+      if (!AllowedTValue()) {
+        throw new Exception(String.Format("Invalid TValue type {0}", typeof(TValue)));
+      }
+      return (typeof(TValue)) switch {
+        Type intType when intType == typeof(int) => new Random().Next as TValue; // Compiletime error
+            Type GuidType when GuidType == typeof(Guid) => (TValue)Guid.NewGuid(), // Compiletime error
+      };
+    }
+    */
   }
-
   public class StronglyTypedIdConverter<TValue> : TypeConverter
-      where TValue : notnull {
+    where TValue : notnull {
     private static readonly TypeConverter IdValueConverter = GetIdValueConverter();
 
     private static TypeConverter GetIdValueConverter() {
       var converter = TypeDescriptor.GetConverter(typeof(TValue));
-      if (!converter.CanConvertFrom(typeof(string)))
-        throw new InvalidOperationException(
-            $"Type '{typeof(TValue)}' doesn't have a converter that can convert from string");
-      return converter;
+      return !converter.CanConvertFrom(typeof(string))
+        ? throw new InvalidOperationException(
+            $"Type '{typeof(TValue)}' doesn't have a converter that can convert from string")
+        : converter;
     }
 
     private readonly Type _type;
@@ -62,15 +92,20 @@ namespace ATAP.Utilities.TypedGuids {
     }
 
     public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType) {
-      if (value is null)
+      if (value is null) {
         throw new ArgumentNullException(nameof(value));
+      }
 
       var stronglyTypedId = (StronglyTypedId<TValue>)value;
       TValue idValue = stronglyTypedId.Value;
-      if (destinationType == typeof(string))
+      if (destinationType == typeof(string)) {
         return idValue.ToString()!;
-      if (destinationType == typeof(TValue))
+      }
+
+      if (destinationType == typeof(TValue)) {
         return idValue;
+      }
+
       return base.ConvertTo(context, culture, value, destinationType);
     }
   }

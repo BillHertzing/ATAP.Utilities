@@ -20,7 +20,7 @@ namespace ATAP.Utilities.TypedGuids.Serializer.SystemTextJson {
       }
 
       var value = JsonSerializer.Deserialize<TValue>(ref reader, options);
-      var factory = StronglyTypedIdHelper.GetFactory<TValue>(typeToConvert);
+      var factory = TypedGuids.StronglyTypedIdHelper.GetFactory<TValue>(typeToConvert);
       return (TStronglyTypedId)factory(value);
     }
 

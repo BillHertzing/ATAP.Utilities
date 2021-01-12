@@ -7,6 +7,7 @@ using ATAP.Utilities.HostedServices.ConsoleSinkHostedService;
 using ATAP.Services.GenerateCode;
 using ATAP.Utilities.Logging;
 using ATAP.Utilities.Persistence;
+using ATAP.Utilities.Serializer;
 
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
@@ -32,6 +33,8 @@ using PersistenceStaticExtensions = ATAP.Utilities.Persistence.Extensions;
 using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
 using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
 using appStringConstants = ATAP.Console.Console02.StringConstants;
+using serializerStringConstants = ATAP.Utilities.Serializer.StringConstants;
+using SerializerLoader = ATAP.Utilities.Serializer.SerializerLoader;
 using GenerateProgramServiceStringConstants = ATAP.Services.GenerateCode.StringConstants;
 using Serilog;
 using ILogger = Serilog.ILogger;
@@ -166,7 +169,7 @@ Log.Debug("TRACE is defined");
       // Create this program's initial genericHost's ConfigurationRoot
       var genericHostConfigurationRoot = genericHostConfigurationBuilder.Build();
       #endregion
-
+      /*
       #region (optional) Debugging the  Configuration
       // for debugging and education, uncomment this region and inspect the two section Lists (using debugger Locals) to see exactly what is in the configuration
       var sections = genericHostConfigurationRoot.GetChildren();
@@ -175,13 +178,12 @@ Log.Debug("TRACE is defined");
       foreach (var iSection in sections) sectionsAsListOfIConfigurationSections.Add(iSection);
       foreach (var iSection in sectionsAsListOfIConfigurationSections) sectionsAsListOfConfigurationSections.Add((ConfigurationSection)iSection);
       #endregion
-
+      */
       #region Environment determination and validation
       // ToDo: Before the genericHost is built, have to use a StringConstant for the string that means "Production", and hope the ConfigurationRoot value for Environment matches the StringConstant
       // Determine the environment (Debug, TestingUnit, TestingX, QA, QA1, QA2, ..., Staging, Production) to use from the initialGenericHostConfigurationRoot
       var envNameFromConfiguration = genericHostConfigurationRoot.GetValue<string>(GenericHostStringConstants.EnvironmentConfigRootKey, GenericHostStringConstants.EnvironmentDefault);
       mELlogger.LogDebug(debugLocalizer["{0} {1}: Initial environment name: {2}"], "Program", "Main", envNameFromConfiguration);
-
 
       // optional: Validate that the environment provided is one this program understands how to use
       // Accepting any string for envNameFromConfiguration might pose a security risk, as it will allow arbitrary files to be loaded into the configuration root
@@ -219,6 +221,8 @@ Log.Debug("TRACE is defined");
       mELlogger.LogDebug(debugLocalizer["{0} {1}: Creating appConfigurationBuilder for Environment: {2}"], "Program", "Main", envNameFromConfiguration);
       appConfigurationBuilder = ConfigurationExtensions.ATAPStandardConfigurationBuilder(Console02DefaultConfiguration.Production, envNameFromConfiguration == GenericHostStringConstants.EnvironmentProduction, envNameFromConfiguration,
         appStringConstants.SettingsFileName, appStringConstants.SettingsFileNameSuffix, loadedFromDirectory, initialStartupDirectory, appEnvPrefixes, args, switchMappings);
+      // Create a local instance of the appConfiguration
+      var appConfiguration = appConfigurationBuilder.Build();
       #endregion
 
       #region Configure the genericHostBuilder, including DI-Container, IHostLifetime, services in the services collection, genericHostConfiguration, and appConfiguration
@@ -271,13 +275,15 @@ Log.Debug("TRACE is defined");
       //genericHostBuilder.UseSerilog();
       #endregion
 
-      #region Configure the Serializer library per the Serializer section in ConfigurationRoot
-        // ToDo: get from Configuration
-        // appConfiguration.GetValue<string>(appStringConstants.SerializerAssemblyConfigRootKey, appStringConstants.SerializerAssemblyDefault)
-        // appConfiguration.GetValue<string>(appStringConstants.SerializerNamespaceConfigRootKey, appStringConstants.SerializerNamespaceDefault)
-        //var _serializerShimName = "ATAP.Utilities.Serializer.Shim.ServiceStackJson, Version=1.0.0.0, Culture=neutral";
-        var _serializerShimName = "ATAP.Utilities.Serializer.Shim.SystemTextJson.dll";
-        var _serializerShimNamespace = "ATAP.Utilities.Serializer";
+      #region Get the full list of places to probe for assemblies (include plug-in references)
+      #endregion
+
+      #region Select the desired Serializer library per the Serializer section in the appConfiguration
+      var _serializerShimName = appConfiguration.GetValue<string>(serializerStringConstants.SerializerAssemblyConfigRootKey, serializerStringConstants.SerializerAssemblyDefault);
+      var _serializerShimNamespace = appConfiguration.GetValue<string>(serializerStringConstants.SerializerNamespaceConfigRootKey, serializerStringConstants.SerializerNamespaceDefault);
+      mELlogger.LogDebug(debugLocalizer["{0} {1}: from appConfiguration ShimName: {2} and ShimNamespace {3}"], "Program", "Main", _serializerShimName, _serializerShimNamespace);
+      // ToDo: Test to ensure the assembly specified in the Configuration exists in at least one of the places probed by assembly load
+
       #endregion
 
       // Add specific services for this application
@@ -295,10 +301,8 @@ Log.Debug("TRACE is defined");
         //services.AddSingleton<IObservableResetableTimersHostedService, ObservableResetableTimersHostedService>();
         // The service for generating code
         services.AddSingleton<IGenerateProgramHostedService, GenerateProgramHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
-        // The primary service (loop) that this program does
-        services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
-        // Serialization library as a DI-injected service
-        //Attribution: http://codebuckets.com/2020/05/29/dynamically-loading-assemblies-for-dependency-injection-in-net-core/ , Comment by 'David'
+        // The Serialization library service, dynamically loaded based on configuration settings
+        // Attribution: http://codebuckets.com/2020/05/29/dynamically-loading-assemblies-for-dependency-injection-in-net-core/ , Comment by 'David'
         // For debugging: uncomment to see all referenced assemblies and their full name
         /*
         Assembly a = typeof(Program).Assembly;
@@ -308,25 +312,10 @@ Log.Debug("TRACE is defined");
           mELlogger.LogDebug(debugLocalizer["{0} {1}: ReferencedAssemblies FullName={2}"], "Program", "Main", an.FullName);
         }
         */
-        // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
-        Assembly.LoadFrom(_serializerShimName)
-          .GetTypes()
-          .Where(w => w.Namespace == _serializerShimNamespace && w.IsClass)
-          .ToList()
-          .ForEach(t => {
-          services.AddSingleton(t.GetInterface("I" + t.Name, false), t);
-          });
-      //   List<Assembly> assemblies = new List<Assembly>();
-      //   foreach (string assemblyPath in Directory.GetFiles(System.AppDomain.CurrentDomain.BaseDirectory, "*.dll", SearchOption.AllDirectories)) {
-      //     Assembly assembly = Assembly.LoadFile(assemblyPath);
-      //     assemblies.Add(assembly);
-      //   }
-      //   services.Scan(scan => scan
-      //     .FromAssemblies(assemblies)
-      //     .AddClasses(classes => classes.AssignableTo<ISerializer>(), publicOnly: false)
-      //     .AsImplementedInterfaces()
-      //     .WithTransientLifetime());
-       });
+        SerializerLoader.LoadSerializerFromAssembly(_serializerShimName, _serializerShimNamespace, services);
+        // The primary service (loop) that this program does
+        services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
+      });
       #endregion
 
       // Build the Host
@@ -388,7 +377,7 @@ Log.Debug("TRACE is defined");
       }
       catch (Exception ex) {
         mELLogger.LogCritical(exceptionLocalizer["{0} {1}: genericHost start-up failed. ExceptionMessage: {2}", "Program", "Main", ex.Message]);
-        throw ;
+        throw;
       }
       finally {
         Log.CloseAndFlush();
@@ -405,6 +394,8 @@ Log.Debug("TRACE is defined");
       mELlogger.LogDebug(debugLocalizer["{0} {1}: Program:Main is exiting", "Program", "Main"]);
 
     }
+
+    #region Static properties of the program
     static IOptions<LocalizationOptions> options { get; set; }
     static ResourceManagerStringLocalizerFactory stringLocalizerFactory { get; set; }
     static IStringLocalizer debugLocalizer { get; set; }
@@ -412,6 +403,7 @@ Log.Debug("TRACE is defined");
     static IStringLocalizer uILocalizer { get; set; }
     // MEL Logger;
     static Microsoft.Extensions.Logging.ILogger mELLogger { get; set; }
+    #endregion
 
   }
 

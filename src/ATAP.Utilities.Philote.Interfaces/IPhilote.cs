@@ -1,9 +1,13 @@
+using System;
 using ATAP.Utilities.TypedGuids;
 using Itenso.TimePeriod;
 using System.Collections.Generic;
 
 namespace ATAP.Utilities.Philote
 {
+    public interface IGuidPhilote2<T> : IPhilote2<T, Guid> where T : notnull{}
+    public interface IIntPhilote2<T> : IPhilote2<T, int> where T : notnull{}
+
   public interface IPhilote2<T, TValue> where T : notnull where TValue : notnull
   {
     IStronglyTypedId<TValue> ID { get; }

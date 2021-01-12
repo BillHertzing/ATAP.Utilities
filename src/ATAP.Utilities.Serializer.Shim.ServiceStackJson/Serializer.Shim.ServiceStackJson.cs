@@ -2,9 +2,9 @@ using ServiceStack.Text;
 
 using System;
 
-namespace ATAP.Utilities.Serializer {
+namespace ATAP.Utilities.Serializer.Shim.ServiceStack {
   public class Serializer : ISerializer {
-    private ServiceStack.Text.Config JsonSerializerOptionsCurrent { get; set; }
+    private Config JsonSerializerOptionsCurrent { get; set; }
     public Serializer() {
       this.Configure();
     }
@@ -17,9 +17,9 @@ namespace ATAP.Utilities.Serializer {
       var jsonSerializerOptions = ConvertOptions(options);
       return this.Serialize(obj, jsonSerializerOptions);
     }
-    public string Serialize(object obj, ServiceStack.Text.Config options) {
+    public string Serialize(object obj, Config options) {
       //ToDo: set servicestack options to the jsonSerializerOptions
-      return ServiceStack.Text.JsonSerializer.SerializeToString(obj);
+      return JsonSerializer.SerializeToString(obj);
     }
 
     public T Deserialize<T>(string str) {
@@ -31,14 +31,14 @@ namespace ATAP.Utilities.Serializer {
       return this.Deserialize<T>(str, jsonSerializerOptions);
     }
 
-    public T Deserialize<T>(string str, ServiceStack.Text.Config options) {
+    public T Deserialize<T>(string str, Config options) {
       // ToDo: update the servicestack config with options
-      return ServiceStack.Text.JsonSerializer.DeserializeFromString<T>(str);
+      return JsonSerializer.DeserializeFromString<T>(str);
     }
 
 
     public void Configure() {
-      JsonSerializerOptionsCurrent = new ServiceStack.Text.Config {
+      JsonSerializerOptionsCurrent = new Config {
         TextCase = TextCase.CamelCase,
         TreatEnumAsInteger = true,
         ExcludeDefaultValues = false,
@@ -60,19 +60,19 @@ namespace ATAP.Utilities.Serializer {
       JsonSerializerOptionsCurrent = ConvertOptions(allowTrailingCommas, writeIndented, ignoreNullValues);
     }
 
-    private ServiceStack.Text.Config ConvertOptions(
+    private Config ConvertOptions(
         bool allowTrailingCommas = false
       , bool ignoreNullValues = false
       , bool writeIndented = false
     ) {
-      return new ServiceStack.Text.Config {
+      return new Config {
         // AllowTrailingCommas = allowTrailingCommas,
         IncludeNullValues = !ignoreNullValues,
         //WriteIndented = writeIndented,
       };
     }
-    private ServiceStack.Text.Config ConvertOptions(ISerializerOptions options) {
-      return new ServiceStack.Text.Config {
+    private Config ConvertOptions(ISerializerOptions options) {
+      return new Config {
         //AllowTrailingCommas = options.AllowTrailingCommas,
         IncludeNullValues = !options.IgnoreNullValues,
         //WriteIndented = options.WriteIndented

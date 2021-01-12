@@ -7,46 +7,51 @@ using System.Linq;
 namespace ATAP.Utilities.Philote
 {
 
+record TestClassGuidTypedId  : StronglyTypedId<Guid>  {
+
+}
+record TestClassIntTypedId  : StronglyTypedId<int>  {
+}
 class Testclass {
-  Philote2<Testclass,Guid> Philote2Guid {get;}
-  Philote2<Testclass,int> Philote2Int {get;}
+
+  Philote2<Testclass,Guid> Philote2GuidEmpty {get;}
+  Philote2<Testclass,int> Philote2IntEmpty {get;}
+  Philote2<Testclass,Guid> Philote2GuidRandom {get;}
+  Philote2<Testclass,int> Philote2IntRandom {get;}
   Philote2<Testclass,Guid> Philote2GuidNow {get;}
   Philote2<Testclass,int> Philote2IntNow {get;}
   Testclass(){
-    Philote2Guid = new Philote2<Testclass,Guid>();
-    Philote2Int = new Philote2<Testclass,int>();
-    Philote2GuidNow = new Philote2<Testclass,Guid>(new List<ITimeBlock>() { new TimeBlock(DateTime.Now) });
-    Philote2IntNow = new Philote2<Testclass,int>().Now();
+    Philote2GuidEmpty = new Philote2<Testclass,Guid>();
+    Philote2IntEmpty = new Philote2<Testclass,int>();
+    Philote2GuidRandom = new Philote2<Testclass,Guid>(){ID = new GuidStronglyTypedId(){Value =  Guid.NewGuid()}};
+    Philote2IntRandom = new Philote2<Testclass,int>() {ID = new IntStronglyTypedId(){Value =  new Random().Next()}};
+    Philote2GuidNow = new Philote2<Testclass,Guid>() {ID = new GuidStronglyTypedId(){Value =  Guid.NewGuid()}, TimeBlocks = new List<ITimeBlock>() { new TimeBlock(DateTime.Now) }};
+    Philote2IntNow = new Philote2<Testclass,int>(){ID = new IntStronglyTypedId(){Value =  new Random().Next()}, TimeBlocks = new List<ITimeBlock>() { new TimeBlock(DateTime.Now) }};
   }
 }
-  public record Philote2<T, TValue> : IPhilote2<T, TValue> where T : notnull where TValue : notnull
+  public class Philote2<T, TValue> : IPhilote2<T, TValue> where T : notnull where TValue : notnull
   {
-
-    public Philote2<T, TValue> Now() {
-      return new Philote2<T, TValue>((IStronglyTypedId<TValue>) randomTValue(), new Dictionary<string, IStronglyTypedId<TValue>>(), new List<ITimeBlock>() { new TimeBlock(DateTime.Now) });
-    }
-
-    private static TValue randomTValue()  {
-      switch (typeof(TValue)) {
-        case Type intType when intType == typeof(int):
-        var random = new Random();
-        return (TValue) random.Next(); // Compiletime error
-        case Type GuidType when GuidType == typeof(Guid):
-        return (TValue)Guid.NewGuid();  // Compiletime error
-        default:
-        throw new Exception(String.Format("Invalid TValue type {0}", typeof(TValue)));
-      }
-    }
-
-    public Philote2() : this ((IStronglyTypedId<TValue>) randomTValue(), new Dictionary<string, IStronglyTypedId<TValue>>(), new List<ITimeBlock>()) { }
-    public Philote2(StronglyTypedId<TValue> id) : this(id, new Dictionary<string, IStronglyTypedId<TValue>>(), new List<ITimeBlock>()) { }
-    public Philote2(IList<ITimeBlock> timeBlocks) : this((IStronglyTypedId<TValue>) randomTValue(), new Dictionary<string, IStronglyTypedId<TValue>>(), timeBlocks) { }
-    public Philote2(StronglyTypedId<TValue> id, IList<ITimeBlock> timeBlocks) : this(id, new Dictionary<string, IStronglyTypedId<TValue>>(), timeBlocks) { }
-    public Philote2(IStronglyTypedId<TValue> iD, IDictionary<string, IStronglyTypedId<TValue>> additionalIDs, IEnumerable<ITimeBlock> timeBlocks)
+    // public Philote2() : this ((IStronglyTypedId<TValue>) randomTValue(), new Dictionary<string, IStronglyTypedId<TValue>>(), new List<ITimeBlock>()) { }
+    // public Philote2(StronglyTypedId<TValue> id) : this(id, new Dictionary<string, IStronglyTypedId<TValue>>(), new List<ITimeBlock>()) { }
+    // public Philote2(IList<ITimeBlock> timeBlocks) : this((IStronglyTypedId<TValue>) randomTValue(), new Dictionary<string, IStronglyTypedId<TValue>>(), timeBlocks) { }
+    // public Philote2(StronglyTypedId<TValue> id, IList<ITimeBlock> timeBlocks) : this(id, new Dictionary<string, IStronglyTypedId<TValue>>(), timeBlocks) { }
+    // public Philote2(IStronglyTypedId<TValue> iD, IDictionary<string, IStronglyTypedId<TValue>> additionalIDs, IEnumerable<ITimeBlock> timeBlocks)
+    // {
+    //   ID = iD;
+    //   AdditionalIDs = additionalIDs;
+    //   TimeBlocks = timeBlocks;
+    // }
+    public Philote2(IStronglyTypedId<TValue> iD = default, IDictionary<string, IStronglyTypedId<TValue>> additionalIDs = default, IEnumerable<ITimeBlock> timeBlocks = default)
     {
-      ID = iD;
-      AdditionalIDs = additionalIDs;
-      TimeBlocks = timeBlocks;
+      if (iD != default) {ID = iD;} else {
+            ID = (typeof(TValue)) switch {
+        Type intType when typeof(TValue)  == typeof(int) => (IStronglyTypedId<TValue>)new IntStronglyTypedId(){Value =  new Random().Next()},
+        Type GuidType when typeof(TValue)  == typeof(Guid) => (IStronglyTypedId<TValue>)new GuidStronglyTypedId(){Value =  Guid.NewGuid()},
+        _ => throw new Exception(String.Format("Invalid TValue type {0}", typeof(TValue))),
+      };
+      }
+      AdditionalIDs = additionalIDs != default ? additionalIDs : new Dictionary<string, IStronglyTypedId<TValue>>();
+      TimeBlocks = timeBlocks  != default ? timeBlocks :new List<ITimeBlock>();
     }
 
     public IStronglyTypedId<TValue> ID { get; init; }

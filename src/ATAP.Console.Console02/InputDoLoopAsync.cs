@@ -313,7 +313,7 @@ namespace ATAP.Console.Console02 {
           case "2" :
             Logger.LogDebug(DebugLocalizer["{0} {1}: Creating Signil from Settings"], "Console02BackgroundService", "DoLoopAsync");
               IGInvokeGenerateCodeSignil gInvokeGenerateCodeSignilFromSettings = GetGInvokeGenerateCodeSignilFromSettings();
-            Logger.LogDebug(DebugLocalizer["{0} {1}: SignilFromSettings in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", JsonSerializer.Serialize(gInvokeGenerateCodeSignilFromSettings));
+            Logger.LogDebug(DebugLocalizer["{0} {1}: SignilFromSettings in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", Serializer.Serialize(gInvokeGenerateCodeSignilFromSettings));
           break;
         case "3":
           BuildJSONSettingsFromInstance();

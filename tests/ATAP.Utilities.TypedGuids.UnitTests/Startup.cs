@@ -1,13 +1,14 @@
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 
 using System.Reflection;
 using System.Linq;
 
 namespace ATAP.Utilities.TypedGuids.UnitTests {
   public class Startup {
-    public void ConfigureServices(IServiceCollection services) {
+    public void ConfigureServices(IConfigurationRoot configurationRoot, IServiceCollection services) {
       var _serializerShimName = "ATAP.Utilities.Serializer.Shim.SystemTextJson.dll";
       var _serializerShimNamespace = "ATAP.Utilities.Serializer";
       // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
@@ -22,7 +23,6 @@ namespace ATAP.Utilities.TypedGuids.UnitTests {
         .GetTypes()
         .Where(w => w.Namespace == _serializerShimNamespace && w.IsClass)
         .ToList();
-
     }
   }
 

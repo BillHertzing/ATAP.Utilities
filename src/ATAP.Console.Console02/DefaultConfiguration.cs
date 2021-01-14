@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using appStringConstants = ATAP.Console.Console02.StringConstants;
 
 namespace ATAP.Console.Console02 {
   #region Console02 Default Configuration settings
@@ -7,6 +8,7 @@ namespace ATAP.Console.Console02 {
     public static Dictionary<string, string> Production =
     new Dictionary<string, string> {
       {GenericHostStringConstants.SupressConsoleHostStartupMessagesConfigKey, GenericHostStringConstants.SupressConsoleHostStartupMessagesStringDefault},
+      {appStringConstants.PluginsDirectoryBaseConfigRootKey, appStringConstants.PluginsDirectoryBaseDefault},
     #endregion
     };
   }

@@ -41,7 +41,7 @@
   -->
   <ItemGroup>
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
-    <PackageReference Include="MethodBoundaryAspect.Fody" Version="2.0.118" />
+    <PackageReference Include="MethodBoundaryAspect.Fody" />
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>

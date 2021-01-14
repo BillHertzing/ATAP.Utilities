@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Linq;
+using System.IO;
 
 using Microsoft.Extensions.Configuration;
+
+using McMaster.NETCore.Plugins;
 
 using serializerStringConstants = ATAP.Utilities.Serializer.StringConstants;
 
@@ -84,8 +87,8 @@ namespace ATAP.Utilities.Serializer {
     public static void LoadSerializerFromAssembly(string serializerShimName, string serializerShimNamespace, IServiceCollection services) {
       //ToDo: validation of arguments
       // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
-
-      Assembly.LoadFrom(AppDomain.CurrentDomain.BaseDirectory + "Serializers\\" + serializerShimName + ".dll")
+      var fullpath = AppDomain.CurrentDomain.BaseDirectory + "Serializers\\" + serializerShimName + ".dll";
+      Assembly.LoadFrom(fullpath)
         .GetTypes()
         .Where(w => w.Namespace == serializerShimNamespace && w.IsClass)
         .ToList()
@@ -100,44 +103,76 @@ namespace ATAP.Utilities.Serializer {
       // return that type
       return;
     }
-    public static void LoadSerializerFromAssembly(IConfiguration configuration, IServiceCollection services) {
-      var _serializerShimName = configuration.GetValue<string>(serializerStringConstants.SerializerAssemblyConfigRootKey, serializerStringConstants.SerializerAssemblyDefault);
-      var _serializerShimNamespace = configuration.GetValue<string>(serializerStringConstants.SerializerNamespaceConfigRootKey, serializerStringConstants.SerializerNamespaceDefault);
-
+    public static void LoadSerializerFromAssembly(string serializerShimName, string serializerShimNamespace, string[] relativePathsToProbe, IServiceCollection services) {
       // ToDo: validation of arguments
       // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
-      Assembly.LoadFrom(_serializerShimName)
-        .GetTypes()
-        .Where(w => w.Namespace == _serializerShimNamespace && w.IsClass)
-        .ToList()
-        .ForEach(t => {
-          services.AddSingleton(t.GetInterface("I" + t.Name, false), t);
-        });
+      var loaders = new List<PluginLoader>();
 
-      // Search for all assemblies that have a class implements ISerializer
-      // ToDo: get the one that matches configuration, otherwise get the first one
-      // ToDo: Load that assembly
-      // Get the type that implements ISerializer from the loaded assembly
-      // return that type
+      // create serializer plugin loader for the serializerShimName
+      foreach (var pathToProbe in relativePathsToProbe) {
+
+        var pluginsDir = Path.Combine(AppContext.BaseDirectory, pathToProbe);
+        foreach (string directory in Directory.GetDirectories(pluginsDir)) {
+          var serializerShimDll = Path.Combine(directory, serializerShimName + ".dll");
+          if (File.Exists(serializerShimDll)) {
+            var loader = PluginLoader.CreateFromAssemblyFile(
+                serializerShimDll,
+                sharedTypes: new[] { typeof(ISerializer) });
+            loaders.Add(loader);
+          }
+        }
+        // Create an instance of serializer types
+        foreach (var loader in loaders) {
+          foreach (var pluginType in loader
+              .LoadDefaultAssembly()
+              .GetTypes()
+              .Where(t => typeof(ISerializer).IsAssignableFrom(t) && !t.IsAbstract && t.Namespace == serializerShimNamespace)) {
+            // ToDo: validate that only one is returned
+            // This assumes the implementation of IPlugin has a parameterless constructor
+            services.AddSingleton(pluginType, Activator.CreateInstance(pluginType) as ISerializer);
+          }
+        }
+      }
       return;
     }
-    // Assembly.LoadFrom(_serializerShimName)
-    //   .GetTypes()
-    //   .Where(w => w.Namespace == _serializerShimNamespace && w.IsClass)
-    //   .ToList()
-    //   .ForEach(t => {
-    //     services.AddSingleton(t.GetInterface("I" + t.Name, false), t);
-    //   });
-    //   List<Assembly> assemblies = new List<Assembly>();
-    //   foreach (string assemblyPath in Directory.GetFiles(System.AppDomain.CurrentDomain.BaseDirectory, "*.dll", SearchOption.AllDirectories)) {
-    //     Assembly assembly = Assembly.LoadFile(assemblyPath);
-    //     assemblies.Add(assembly);
-    //   }
-    //   services.Scan(scan => scan // Scan comes fro Scrutor package
-    //     .FromAssemblies(assemblies)
-    //     .AddClasses(classes => classes.AssignableTo<ISerializer>(), publicOnly: false)
-    //     .AsImplementedInterfaces()
-    //     .WithTransientLifetime());
+  public static void LoadSerializerFromAssembly(IConfiguration configuration, IServiceCollection services) {
+    var _serializerShimName = configuration.GetValue<string>(serializerStringConstants.SerializerAssemblyConfigRootKey, serializerStringConstants.SerializerAssemblyDefault);
+    var _serializerShimNamespace = configuration.GetValue<string>(serializerStringConstants.SerializerNamespaceConfigRootKey, serializerStringConstants.SerializerNamespaceDefault);
 
+    // ToDo: validation of arguments
+    // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
+    Assembly.LoadFrom(_serializerShimName)
+      .GetTypes()
+      .Where(w => w.Namespace == _serializerShimNamespace && w.IsClass)
+      .ToList()
+      .ForEach(t => {
+        services.AddSingleton(t.GetInterface("I" + t.Name, false), t);
+      });
+
+    // Search for all assemblies that have a class implements ISerializer
+    // ToDo: get the one that matches configuration, otherwise get the first one
+    // ToDo: Load that assembly
+    // Get the type that implements ISerializer from the loaded assembly
+    // return that type
+    return;
   }
+  // Assembly.LoadFrom(_serializerShimName)
+  //   .GetTypes()
+  //   .Where(w => w.Namespace == _serializerShimNamespace && w.IsClass)
+  //   .ToList()
+  //   .ForEach(t => {
+  //     services.AddSingleton(t.GetInterface("I" + t.Name, false), t);
+  //   });
+  //   List<Assembly> assemblies = new List<Assembly>();
+  //   foreach (string assemblyPath in Directory.GetFiles(System.AppDomain.CurrentDomain.BaseDirectory, "*.dll", SearchOption.AllDirectories)) {
+  //     Assembly assembly = Assembly.LoadFile(assemblyPath);
+  //     assemblies.Add(assembly);
+  //   }
+  //   services.Scan(scan => scan // Scan comes fro Scrutor package
+  //     .FromAssemblies(assemblies)
+  //     .AddClasses(classes => classes.AssignableTo<ISerializer>(), publicOnly: false)
+  //     .AsImplementedInterfaces()
+  //     .WithTransientLifetime());
+
+}
 }

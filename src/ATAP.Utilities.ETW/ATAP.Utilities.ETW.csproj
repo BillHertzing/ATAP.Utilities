@@ -20,7 +20,7 @@
   <!-- Packages for this project's use of Fody during the build process -->
   <ItemGroup>
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
-    <PackageReference Include="MethodBoundaryAspect.Fody" Version="2.0.118" />
+    <PackageReference Include="MethodBoundaryAspect.Fody" />
   </ItemGroup>
 
 </Project>

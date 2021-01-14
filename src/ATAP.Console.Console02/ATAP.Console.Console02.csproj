@@ -35,6 +35,7 @@
     <PatchVersion>0</PatchVersion>
   </PropertyGroup>
 
+
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Console.Console02.StringConstants\ATAP.Console.Console02.StringConstants.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Logging\ATAP.Utilities.Logging.csproj" />
@@ -67,13 +68,26 @@
     <PackageReference Include="System.Reactive" />
   </ItemGroup>
 
+  <!-- "Publish" all of the Serializer shims, for all Run-time identifiers for the ISerializer DI-injected service to a serializers subdirectory of the Outputdir before build -->
+  <Target Name="BuildSerializer" BeforeTargets="Build">
+    <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(OutputPath)/Serializers/" />
+    <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.Shim.NewtonsoftJson.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(OutputPath)/Serializers/" />
+  </Target>
+
+  <!-- Publish all Plugin libraries and shims, for all Run-time identifiers, to a plugins subdirectory of the Outputdir before build-->
+  <!--
+    <Target Name="BuildPlugin" BeforeTargets="Build">
+    <MSBuild Projects="..\MyPlugin\MyPlugin.csproj" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(OutputPath)/Plugins/" />
+  </Target>
+  -->
 
   <!-- Copy all Serialization libraries for the ISerializer DI-injected service to the outputdir-->
-  <ItemGroup>
+
+  <!-- <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.Shim.NewtonsoftJson.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.ServiceStackJson\ATAP.Utilities.Serializer.Shim.ServiceStackJson.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
-  </ItemGroup>
+  </ItemGroup> -->
 
   <!-- ServiceStack ORMLite (database) utilities -->
   <ItemGroup>
@@ -119,6 +133,9 @@
     <PackageReference Include="Seq.Extensions.Logging" />
   </ItemGroup>
 
-
+  <!-- Plugin Framework -->
+  <ItemGroup>
+    <PackageReference Include="McMaster.NETCore.Plugins" />
+  </ItemGroup>
 
 </Project>

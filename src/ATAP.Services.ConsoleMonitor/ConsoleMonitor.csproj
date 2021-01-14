@@ -33,31 +33,10 @@
     </None>
   </ItemGroup>
 
-  <!-- Persistence Projects -->
-
-  <!-- Packages to persist data to QuickGraph -->
-  <ItemGroup>
-    <PackageReference Include="YC.QuickGraph" />
-    <PackageReference Include="DotNet.Contracts" />
-    <PackageReference Include="FSharp.Core" />
-    <PackageReference Include="FSharpx.Collections.Experimental" />
-  </ItemGroup>
-
-  <!-- Packages to persist data to ServiceStack ORM -->
-  <ItemGroup>
-    <PackageReference Include="ServiceStack.OrmLite" />
-    <PackageReference Include="ServiceStack.OrmLite.SqlServer" />
-  </ItemGroup>
-
 
   <!-- Reactive Extensions -->
   <ItemGroup>
     <PackageReference Include="System.Reactive" />
-  </ItemGroup>
-
-  <!-- ServiceStack dump utility -->
-  <ItemGroup>
-    <PackageReference Include="ServiceStack.Text" />
   </ItemGroup>
 
   <!-- Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server -->
@@ -79,7 +58,7 @@
   -->
   <ItemGroup>
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
-    <PackageReference Include="MethodBoundaryAspect.Fody" Version="2.0.118" />
+    <PackageReference Include="MethodBoundaryAspect.Fody" />
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>

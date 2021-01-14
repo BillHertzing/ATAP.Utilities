@@ -15,6 +15,10 @@ namespace ATAP.Console.Console02 {
     public const string EnableProgressConfigRootKey = "EnableProgress";
     public const string EnableProgressDefault = "true";
     #endregion
+    #region Plugins subdirecotry
+    public const string PluginsDirectoryBaseConfigRootKey = "PluginsDirectoryBase";
+    public const string PluginsDirectoryBaseDefault = ".\\Plugins\\";
+    #endregion
     #region Serializer library to use
     public const string SerializerAssemblyConfigRootKey = "SerializerAssembly";
     public const string SerializerAssemblyDefault = "ATAP.Utilities.Serializer.Shim.SystemTextJson";

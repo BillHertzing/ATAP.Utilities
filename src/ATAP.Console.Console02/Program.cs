@@ -276,6 +276,8 @@ Log.Debug("TRACE is defined");
       #endregion
 
       #region Get the full list of places to probe for assemblies (include plug-in references)
+      /// ToDo: make this either a string[] or a delimited string
+      var pluginsDirectory = appConfiguration.GetValue<string>(appStringConstants.PluginsDirectoryBaseConfigRootKey, appStringConstants.PluginsDirectoryBaseDefault);
       #endregion
 
       #region Select the desired Serializer library per the Serializer section in the appConfiguration
@@ -312,7 +314,8 @@ Log.Debug("TRACE is defined");
           mELlogger.LogDebug(debugLocalizer["{0} {1}: ReferencedAssemblies FullName={2}"], "Program", "Main", an.FullName);
         }
         */
-        SerializerLoader.LoadSerializerFromAssembly(_serializerShimName, _serializerShimNamespace, services);
+
+        SerializerLoader.LoadSerializerFromAssembly(_serializerShimName, _serializerShimNamespace, new string[] {pluginsDirectory}, services);
         // The primary service (loop) that this program does
         services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
       });

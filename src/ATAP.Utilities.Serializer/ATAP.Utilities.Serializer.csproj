@@ -32,4 +32,10 @@
     <ProjectReference Include="..\ATAP.Utilities.Serializer.StringConstants\ATAP.Utilities.Serializer.StringConstants.csproj" />
   </ItemGroup>
 
+  <!-- Plugin Framework -->
+  <ItemGroup>
+    <PackageReference Include="McMaster.NETCore.Plugins" />
+  </ItemGroup>
+
+
 </Project>

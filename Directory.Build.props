@@ -90,6 +90,11 @@
     <NuGetLocalFeedPath Condition=" '$(NuGetLocalFeedPath)' == '' ">C:\Dropbox\NuGetLocalFeed</NuGetLocalFeedPath>
   </PropertyGroup>
 
+  <!-- Do not allow the compiler to generate Binding Redirects -->
+  <PropertyGroup>
+    <AutoGenerateBindingRedirects Condition=" '$(AutoGenerateBindingRedirects)' == '' ">false</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
   <!-- To support Microsoft Source Link, allow .pdf files in the generated NuGet package -->
   <PropertyGroup>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>

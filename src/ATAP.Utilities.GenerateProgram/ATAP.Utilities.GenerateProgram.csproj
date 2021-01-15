@@ -43,15 +43,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
-  <!-- Packages to persist data to QuickGraph -->
-  <ItemGroup>
-    <PackageReference Include="YC.QuickGraph" />
-    <PackageReference Include="DotNet.Contracts" />
-    <PackageReference Include="FSharp.Core" />
-    <PackageReference Include="FSharpx.Collections.Experimental" />
-  </ItemGroup>
-
-  <!-- Library of rich time and interval manipulation routines -->
+<!-- Library of rich time and interval manipulation routines -->
   <ItemGroup>
     <PackageReference Update="TimePeriodLibrary.NET" />
   </ItemGroup>

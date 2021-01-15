@@ -25,14 +25,6 @@
     <ProjectReference Include="..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
   </ItemGroup>
 
-  <!-- Packages to persist data to QuickGraph -->
-  <ItemGroup>
-    <PackageReference Include="YC.QuickGraph" />
-    <PackageReference Include="DotNet.Contracts" />
-    <PackageReference Include="FSharp.Core" />
-    <PackageReference Include="FSharpx.Collections.Experimental" />
-  </ItemGroup>
-
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->

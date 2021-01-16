@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "ATAP.Utilities.1Console": {
+      "commandName": "Project",
+      "commandLineArgs": "-C",
+      "environmentVariables": {
+        "Console02GenericHost_Environment": "Development"
+      }
+    }
+  }
+}

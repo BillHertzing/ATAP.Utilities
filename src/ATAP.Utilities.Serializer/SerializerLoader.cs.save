@@ -51,20 +51,6 @@ namespace ATAP.Utilities.Serializer {
       // ToDo: end of this block of code is temporary
     }
 
-    // Search for all assemblies that have a class that implements ISerializer
-    // add the first one to the IServices collection
-    // public static void LoadSerializerFromAssembly(IServiceCollection services) {
-    //   // ToDo: get the one that matches configuration, otherwise get the first one
-    //   // ToDo: Load that assembly
-    //   var _serializerShimName = "ATAP.Utilities.Serializer.Shim.SystemTextJson.dll";
-    //   var _serializerShimNamespace = "ATAP.Utilities.Serializer";
-    //   var types = Assembly.LoadFrom(_serializerShimName)
-    //     .GetTypes()
-    //     .Where(w => w.Namespace == _serializerShimNamespace && w.IsClass)
-    //     .ToList();
-    //     services.AddSingleton(types[0].GetInterface("I" + types[0].Name, false), types[0]);
-    //   // ToDo: end of this block of code is temporary
-    // }
     public static ISerializer LoadSerializerFromAssembly(string serializerShimName, string serializerShimNamespace) {
       //ToDo: validation of arguments
       // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
@@ -103,7 +89,6 @@ namespace ATAP.Utilities.Serializer {
       // return that type
       return;
     }
-    
     public static void LoadSerializerFromAssembly(string serializerShimName, string serializerShimNamespace, string[] relativePathsToProbe, IServiceCollection services) {
       // ToDo: validation of arguments
       // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
@@ -139,9 +124,13 @@ namespace ATAP.Utilities.Serializer {
               .GetTypes()
               .Where(t => typeof(ISerializer).IsAssignableFrom(t) && !t.IsAbstract && t.Namespace == serializerShimNamespace)) {
             // ToDo: validate that only one is returned
-            // This assumes the implementation of IPlugin has a parameterless constructor
+            // This assumes the implementation of ISerializer has a parameterless constructor
             ISerializer serializer = (ISerializer)Activator.CreateInstance(pluginType);
-            services.AddSingleton(typeof(ISerializer), (ISerializer)Activator.CreateInstance(pluginType));
+            // find any serializer type converters in any loaded assembly
+            //ToDo: make this generic not specific
+            serializer.LoadJsonSerializerConverters(serializerShimName, serializerShimNamespace);
+            services.AddSingleton(typeof(ISerializer), serializer);
+
           }
         }
       }
@@ -180,7 +169,7 @@ namespace ATAP.Utilities.Serializer {
     //     Assembly assembly = Assembly.LoadFile(assemblyPath);
     //     assemblies.Add(assembly);
     //   }
-    //   services.Scan(scan => scan // Scan comes fro Scrutor package
+    //   services.Scan(scan => scan // Scan comes from the Scrutor package
     //     .FromAssemblies(assemblies)
     //     .AddClasses(classes => classes.AssignableTo<ISerializer>(), publicOnly: false)
     //     .AsImplementedInterfaces()

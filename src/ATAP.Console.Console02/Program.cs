@@ -5,6 +5,7 @@ using ATAP.Utilities.HostedServices;
 using ATAP.Utilities.HostedServices.ConsoleSourceHostedService;
 using ATAP.Utilities.HostedServices.ConsoleSinkHostedService;
 using ATAP.Services.GenerateCode;
+using ATAP.Utilities.Loader;
 using ATAP.Utilities.Logging;
 using ATAP.Utilities.Persistence;
 using ATAP.Utilities.Serializer;
@@ -34,7 +35,6 @@ using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
 using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
 using appStringConstants = ATAP.Console.Console02.StringConstants;
 using serializerStringConstants = ATAP.Utilities.Serializer.StringConstants;
-using SerializerLoader = ATAP.Utilities.Serializer.SerializerLoader;
 using GenerateProgramServiceStringConstants = ATAP.Services.GenerateCode.StringConstants;
 using Serilog;
 using ILogger = Serilog.ILogger;
@@ -159,6 +159,28 @@ Log.Debug("TRACE is defined");
       mELlogger.LogDebug(debugLocalizer["{0} {1}: loadedFromDirectory: {2}"], "Program", "Main", loadedFromDirectory);
       #endregion region
 
+      #region Probing Paths
+      // for debugging, uncomment to see the Host Configured Probing Properties for finding dynamically loaded assemblies
+      /*
+      mELlogger.LogDebug(debugLocalizer["{0} {1}: The list of all *.deps.json files used by the application = {2}"], "Program", "Main", System.AppContext.GetData("APP_CONTEXT_DEPS_FILES"));
+      mELlogger.LogDebug(debugLocalizer["{0} {1}: The list of TRUSTED_PLATFORM_ASSEMBLIES = {2}"], "Program", "Main", System.AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES"));
+      mELlogger.LogDebug(debugLocalizer["{0} {1}: The list of PLATFORM_RESOURCE_ROOTS = {2}"], "Program", "Main", System.AppContext.GetData("PLATFORM_RESOURCE_ROOTS"));
+      mELlogger.LogDebug(debugLocalizer["{0} {1}: The list of NATIVE_DLL_SEARCH_DIRECTORIES = {2}"], "Program", "Main", System.AppContext.GetData("NATIVE_DLL_SEARCH_DIRECTORIES"));
+      mELlogger.LogDebug(debugLocalizer["{0} {1}: The list of APP_PATHS = {2}"], "Program", "Main", System.AppContext.GetData("APP_PATHS"));
+      mELlogger.LogDebug(debugLocalizer["{0} {1}: The list of APP_NI_PATHS = {2}"], "Program", "Main", System.AppContext.GetData("APP_NI_PATHS"));
+      mELlogger.LogDebug(debugLocalizer["{0} {1}: The Environment variable ADDITIONAL_DEPS = {2}"], "Program", "Main", System.Environment.GetEnvironmentVariable("ADDITIONAL_DEPS"));
+      */
+      // For debugging: uncomment to see all referenced assemblies and their full name
+      /*
+      Assembly a = typeof(Program).Assembly;
+      foreach (AssemblyName an in a.GetReferencedAssemblies() )
+      {
+        mELlogger.LogDebug(debugLocalizer["{0} {1}: ReferencedAssemblies Name={2}, Version={3}, Culture={4}, PublicKey token={5}"], "Program", "Main", an.Name, an.Version, an.CultureInfo.Name, (BitConverter.ToString (an.GetPublicKeyToken())));
+        mELlogger.LogDebug(debugLocalizer["{0} {1}: ReferencedAssemblies FullName={2}"], "Program", "Main", an.FullName);
+      }
+      */
+      #endregion
+
       #region initial genericHostConfigurationBuilder and genericHostConfigurationRoot
       // Create the initial genericHostConfigurationBuilder for this genericHost's ConfigurationRoot. This creates an ordered chain of configuration providers. The first providers in the chain have the lowest priority, the last providers in the chain have a higher priority.
       // Initial configuration does not take Environment into account.
@@ -275,17 +297,16 @@ Log.Debug("TRACE is defined");
       //genericHostBuilder.UseSerilog();
       #endregion
 
-      #region Get the full list of places to probe for assemblies (include plug-in references)
+      #region Get the full list of places to probe for Plugin assemblies
       /// ToDo: make this either a string[] or a delimited string
       var pluginsDirectory = appConfiguration.GetValue<string>(appStringConstants.PluginsDirectoryBaseConfigRootKey, appStringConstants.PluginsDirectoryBaseDefault);
       #endregion
 
       #region Select the desired Serializer library per the Serializer section in the appConfiguration
-      var _serializerShimName = appConfiguration.GetValue<string>(serializerStringConstants.SerializerAssemblyConfigRootKey, serializerStringConstants.SerializerAssemblyDefault);
+      var _serializerShimName = appConfiguration.GetValue<string>(serializerStringConstants.SerializerNameConfigRootKey, serializerStringConstants.SerializerNameDefault);
       var _serializerShimNamespace = appConfiguration.GetValue<string>(serializerStringConstants.SerializerNamespaceConfigRootKey, serializerStringConstants.SerializerNamespaceDefault);
       mELlogger.LogDebug(debugLocalizer["{0} {1}: from appConfiguration ShimName: {2} and ShimNamespace {3}"], "Program", "Main", _serializerShimName, _serializerShimNamespace);
       // ToDo: Test to ensure the assembly specified in the Configuration exists in at least one of the places probed by assembly load
-
       #endregion
 
       // Add specific services for this application
@@ -303,19 +324,12 @@ Log.Debug("TRACE is defined");
         //services.AddSingleton<IObservableResetableTimersHostedService, ObservableResetableTimersHostedService>();
         // The service for generating code
         services.AddSingleton<IGenerateProgramHostedService, GenerateProgramHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
+        // Plugin services, added to the IIServices collection simply because they exist in somewhere in the pluginsDirectory tree
         // The Serialization library service, dynamically loaded based on configuration settings
         // Attribution: http://codebuckets.com/2020/05/29/dynamically-loading-assemblies-for-dependency-injection-in-net-core/ , Comment by 'David'
-        // For debugging: uncomment to see all referenced assemblies and their full name
-        /*
-        Assembly a = typeof(Program).Assembly;
-        foreach (AssemblyName an in a.GetReferencedAssemblies() )
-        {
-          mELlogger.LogDebug(debugLocalizer["{0} {1}: ReferencedAssemblies Name={2}, Version={3}, Culture={4}, PublicKey token={5}"], "Program", "Main", an.Name, an.Version, an.CultureInfo.Name, (BitConverter.ToString (an.GetPublicKeyToken())));
-          mELlogger.LogDebug(debugLocalizer["{0} {1}: ReferencedAssemblies FullName={2}"], "Program", "Main", an.FullName);
-        }
-        */
-
-        SerializerLoader.LoadSerializerFromAssembly(_serializerShimName, _serializerShimNamespace, new string[] {pluginsDirectory}, services);
+        // ToDo: Move this to a dedicated "PluginsLoader" assembly
+        // ToDo: improve to cover more cases, e.g., if only one implementation per interface is found, or if multiple implementations of an interface are in the Plugin path(s), add just the one matching a namespace from configuration
+        ATAP.Utilities.Loader.Loader<ISerializer>.LoadFromAssembly(_serializerShimName, _serializerShimNamespace, new string[] { pluginsDirectory }, services);
         // The primary service (loop) that this program does
         services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
       });

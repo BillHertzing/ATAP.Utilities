@@ -16,6 +16,6 @@ namespace ATAP.Utilities.Serializer {
     //   , bool IgnoreNullValues = false
     //   //, IList<ISerializerConverterAbstract>? Converters = default
     // );
-
+    //void LoadJsonSerializerConverters(string serializerShimName, string serializerShimNamespace);
   }
 }

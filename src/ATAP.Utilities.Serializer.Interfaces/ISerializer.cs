@@ -10,6 +10,8 @@ namespace ATAP.Utilities.Serializer {
     T Deserialize<T>(string str, ISerializerOptions options);
     void Configure();
     void Configure(ISerializerOptions options);
+
+    void LoadSubModules(string subModuleShimName, string subModuleShimNamespace, string[] relativePathsToProbe);
     // void Configure(
     //   bool AllowTrailingCommas = false
     //   , bool WriteIndented = false

@@ -324,12 +324,11 @@ Log.Debug("TRACE is defined");
         //services.AddSingleton<IObservableResetableTimersHostedService, ObservableResetableTimersHostedService>();
         // The service for generating code
         services.AddSingleton<IGenerateProgramHostedService, GenerateProgramHostedService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
-        // Plugin services, added to the IIServices collection simply because they exist in somewhere in the pluginsDirectory tree
         // The Serialization library service, dynamically loaded based on configuration settings
         // Attribution: http://codebuckets.com/2020/05/29/dynamically-loading-assemblies-for-dependency-injection-in-net-core/ , Comment by 'David'
-        // ToDo: Move this to a dedicated "PluginsLoader" assembly
         // ToDo: improve to cover more cases, e.g., if only one implementation per interface is found, or if multiple implementations of an interface are in the Plugin path(s), add just the one matching a namespace from configuration
         ATAP.Utilities.Loader.Loader<ISerializer>.LoadFromAssembly(_serializerShimName, _serializerShimNamespace, new string[] { pluginsDirectory }, services);
+        // ToDo: Plugin services, added to the IServices collection simply because they exist somewhere in the plugins Directory tree
         // The primary service (loop) that this program does
         services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.
       });

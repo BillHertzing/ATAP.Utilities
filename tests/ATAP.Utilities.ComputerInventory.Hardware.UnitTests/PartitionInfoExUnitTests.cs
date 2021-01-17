@@ -1,6 +1,6 @@
 using ATAP.Utilities.ComputerInventory.Hardware;
 using ATAP.Utilities.Testing;
-using ATAP.Utilities.TypedGuids;
+using ATAP.Utilities.StronglyTypedIDs;
 using ATAP.Utilities.Persistence;
 using FluentAssertions;
 using Itenso.TimePeriod;

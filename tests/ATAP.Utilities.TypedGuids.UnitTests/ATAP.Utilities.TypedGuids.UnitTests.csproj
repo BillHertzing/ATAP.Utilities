@@ -61,7 +61,7 @@
 
     <ItemGroup>
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.TypedGuids\ATAP.Utilities.TypedGuids.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedIDs\ATAP.Utilities.StronglyTypedIDs.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.StringConstants\ATAP.Utilities.Serializer.StringConstants.csproj" />
   </ItemGroup>

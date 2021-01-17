@@ -5,7 +5,7 @@ namespace ATAP.Console.Console02 {
 
     #region Settings File Names
     public const string SettingsFileName = "Console02Settings";
-    public const string SettingsFileNameSuffix = "json";
+    public const string SettingsFileNameSuffix = ".json";
     #endregion
     #region File Names
     public const string TemporaryDirectoryBaseConfigRootKey = "TemporaryDirectoryBase";
@@ -23,7 +23,7 @@ namespace ATAP.Console.Console02 {
     public const string SerializerAssemblyConfigRootKey = "SerializerAssembly";
     public const string SerializerAssemblyDefault = "ATAP.Utilities.Serializer.Shim.SystemTextJson";
     public const string SerializerNamespaceConfigRootKey = "SerializerNamespace";
-    public const string SerializerNamespaceDefault = "ATAP.Utilities.Serializer";
+    public const string SerializerNamespaceDefault = "ATAP.Utilities.Serializer.Shim.SystemTextJson";
     #endregion
 
     #region GenerateProgramConsole02MechanicalConfigRootKeys
@@ -34,9 +34,6 @@ namespace ATAP.Console.Console02 {
     public const string OrmLiteDialectProviderConfigRootKey = "ORMLiteDialectProvider";
     public const string OrmLiteDialectProviderDefault = "SqlServerOrmLiteDialectProvider";
     #endregion
-
-
-
   }
 }
 

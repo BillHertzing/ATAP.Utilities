@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Collections;
-using ATAP.Utilities.TypedGuids;
+using ATAP.Utilities.StronglyTypedIDs;
 using System;
 
 
-namespace ATAP.Utilities.TypedGuids.UnitTests
+namespace ATAP.Utilities.StronglyTypedIDs.UnitTests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes

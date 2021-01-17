@@ -1,4 +1,4 @@
 {
-    "SerializerAssembly": "ATAP.Utilities.Serializer.Shim.ServiceStackJson"
-  , "SerializerNamespace":"ATAP.Utilities.Serializer"
+    "SerializerAssembly": "ATAP.Utilities.Serializer.Shim.SystemTextJson"
+  , "SerializerNamespace":"ATAP.Utilities.Serializer.Shim.SystemTextJson"
 }

@@ -10,6 +10,7 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
 
   public class Serializer : ISerializer {
     private List<JsonConverterFactory> JsonConverterFactorysCache { get; set; }
+    private List<JsonConverter> JsonConvertersCache { get; set; }
     private JsonSerializerOptions JsonSerializerOptionsCurrent { get; set; }
     public Serializer() {
       this.Configure();
@@ -32,10 +33,12 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
 
     public void Configure() {
       JsonConverterFactorysCache = new List<JsonConverterFactory>();
+      JsonConvertersCache = new List<JsonConverter>();
       JsonSerializerOptionsCurrent = new JsonSerializerOptions {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
       };
+      PopulateConverters(JsonSerializerOptionsCurrent, JsonConvertersCache, JsonConverterFactorysCache);
     }
     public void Configure(ISerializerOptions options) {
       JsonSerializerOptionsCurrent = ConvertOptions(options);
@@ -50,7 +53,7 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
         IgnoreNullValues = ignoreNullValues,
         WriteIndented = writeIndented,
       };
-      PopulateConverters(jsonSerializerOptions, JsonConverterFactorysCache);
+      PopulateConverters(jsonSerializerOptions, JsonConvertersCache, JsonConverterFactorysCache);
       return jsonSerializerOptions;
 
     }
@@ -60,25 +63,52 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
         IgnoreNullValues = options.IgnoreNullValues,
         WriteIndented = options.WriteIndented
       };
-      PopulateConverters(jsonSerializerOptions, JsonConverterFactorysCache);
+      PopulateConverters(jsonSerializerOptions, JsonConvertersCache, JsonConverterFactorysCache);
       return jsonSerializerOptions;
     }
-    private static void PopulateConverters(JsonSerializerOptions jsonSerializerOptions, List<JsonConverterFactory> jsonSerializerConverters) {
+    private static void PopulateConverters(JsonSerializerOptions jsonSerializerOptions, List<JsonConverter> jsonConverters = default, List<JsonConverterFactory> jsonConverterFactorys = default) {
       jsonSerializerOptions.Converters.Clear();
-      foreach (var converter in jsonSerializerConverters) {
+      foreach (var converter in jsonConverters) {
         jsonSerializerOptions.Converters.Add(converter);
+      }
+      foreach (var converterFactory in jsonConverterFactorys) {
+        jsonSerializerOptions.Converters.Add(converterFactory);
+      }
+    }
+    // ToDo: enhancement to allow a loaded modules to ask for additional modules to be loaded
+    // ToDo: another method with a signature that allows for a IDictionary<Type, ILoaderShimNameAndNamespace>
+    // ToDo: another method with a signature that allows for a IDictionary<Type, ILoaderShimNameAndNamespaceConfigurationRootKeyAndDefaultValue>
+    public static void LoadSubModules(ISerializer instance, Type subModuleType, string subModuleShimName, string subModuleShimNamespace, string[] relativePathsToProbe) {
+      switch (subModuleType) {
+        case Type jsonConverterType when jsonConverterType == typeof(JsonConverter): {
+            LoadJsonConverters(subModuleShimName, subModuleShimNamespace, relativePathsToProbe);
+            break;
+          }
+        case Type jsonConverterFactoryType when jsonConverterFactoryType == typeof(JsonConverterFactory): {
+            LoadJsonConverterFactorys(subModuleShimName, subModuleShimNamespace, relativePathsToProbe);
+            break;
+          }
+        default: {
+            throw new ArgumentException($"toDo:Put in string localizer for argument {nameof(subModuleType)} value is unsupported");
+          }
       }
     }
 
-    public void LoadJsonSerializerConverters(string serializerShimName, string serializerShimNamespace) {
-      // Load all Plugin Assemblies with a name that includes the serializerShimName
-      // get all types that implement JsonConverter and JsonConverter<T>
+    public  void LoadJsonConverters(string jsonConverterShimName, string jsonConverterShimNamespace, string[] relativePathsToProbe) {
+      // Load all Plugin Assemblies with a name that matches the serializerShimName
+      // get all types that implement JsonConverter
+      // cache them and also add them to the JsonSerializerOptionsCurrent
+      //JsonConverterFactorysCache.Add();
+    }
+    public  void LoadJsonConverterFactorys(string jsonConverterFactoryShimName, string jsonConverterFactoryShimNamespace, string[] relativePathsToProbe) {
+      // Load all Plugin Assemblies with a name that matches the serializerShimName
+      // get all types that implement JsonConverterFactory (aka the open generic JsonConverter<T>)
       // cache them and also add them to the JsonSerializerOptionsCurrent
       //JsonConverterFactorysCache.Add();
     }
   }
 
-  //  public class TypedGuidsConverter
+  //  public class StronglyTypedIDsConverter
   //         : JsonConverter<Id<T>>
   //     {
   //         public override object Read(

@@ -1,38 +1,38 @@
+using System;
 using System.Collections.Generic;
 using System.Collections;
 using ATAP.Utilities.StronglyTypedIDs;
-using System;
 
 
 namespace ATAP.Utilities.StronglyTypedIDs.UnitTests
 {
 
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
-  public class IntGuidTestData
+  public class IntIdTestData
   {
-    public IdAsStruct<int> IntGuid;
-    public string SerializedIntGuid;
+    public IntStronglyTypedId IntId;
+    public string SerializedIntId;
 
-    public IntGuidTestData()
+    public IntIdTestData()
     {
     }
 
-    public IntGuidTestData(IdAsStruct<int> intGuid, string serializedIntGuid)
+    public IntIdTestData(IntStronglyTypedId intId, string serializedIntId)
     {
-      IntGuid = intGuid;
-      SerializedIntGuid = serializedIntGuid ?? throw new ArgumentNullException(nameof(serializedIntGuid));
+      IntId = intId;
+      SerializedIntId = serializedIntId ?? throw new ArgumentNullException(nameof(serializedIntId));
     }
   }
 
-  public class IntGuidTestDataGenerator : IEnumerable<object[]>
+  public class IntIdTestDataGenerator : IEnumerable<object[]>
   {
-    public static IEnumerable<object[]> IntGuidTestData()
+    public static IEnumerable<object[]> IntIdTestData()
     {
-      yield return new IntGuidTestData[] { new IntGuidTestData { IntGuid = new IdAsStruct<int>(Guid.Empty), SerializedIntGuid = "00000000-0000-0000-0000-000000000000" } };
-      yield return new IntGuidTestData[] { new IntGuidTestData { IntGuid = new IdAsStruct<int>(new Guid("01234567-abcd-9876-cdef-456789abcdef")), SerializedIntGuid = "01234567-abcd-9876-cdef-456789abcdef" } };
-      yield return new IntGuidTestData[] { new IntGuidTestData { IntGuid = new IdAsStruct<int>(Guid.NewGuid()), SerializedIntGuid = "Random, so ignore this property of the test data" } };
+      yield return new IntIdTestData[] { new IntIdTestData { intId = new IntStronglyTypedId(0), SerializedIntId = "0" } };
+      yield return new IntIdTestData[] { new IntIdTestData { IntId = new IntStronglyTypedId(1234567), SerializedIntId = "1234567" } };
+      yield return new IntIdTestData[] { new IntIdTestData { IntId = new IntStronglyTypedId(new Random().Next()), SerializedIntId = "Random, so ignore this property of the test data" } };
     }
-    public IEnumerator<object[]> GetEnumerator() { return IntGuidTestData().GetEnumerator(); }
+    public IEnumerator<object[]> GetEnumerator() { return IntIdTestData().GetEnumerator(); }
     IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
   }
 }

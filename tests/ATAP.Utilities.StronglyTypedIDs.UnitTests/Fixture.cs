@@ -11,11 +11,11 @@ using System.Reflection;
 
 namespace ATAP.Utilities.StronglyTypedIDs.UnitTests {
   public class Fixture : DiFixture { }
-  public partial class IntGuidUnitTests001 : IClassFixture<Fixture> {
+  public partial class IntIdUnitTests001 : IClassFixture<Fixture> {
     protected Fixture Fixture { get; }
     protected ITestOutputHelper TestOutput { get; }
 
-    public IntGuidUnitTests001(ITestOutputHelper testOutput, Fixture fixture) {
+    public IntIdUnitTests001(ITestOutputHelper testOutput, Fixture fixture) {
       Fixture = fixture;
       TestOutput = testOutput;
     }

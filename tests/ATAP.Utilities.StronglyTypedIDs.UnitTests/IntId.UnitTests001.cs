@@ -12,19 +12,19 @@ using Xunit.Abstractions;
 namespace ATAP.Utilities.StronglyTypedIDs.UnitTests
 {
 
-  public partial class IntGuidUnitTests001 : IClassFixture<Fixture>
+  public partial class IntIdUnitTests001 : IClassFixture<Fixture>
   {
 
     [Theory]
-    [MemberData(nameof(IntGuidTestDataGenerator.IntGuidTestData), MemberType = typeof(IntGuidTestDataGenerator))]
-    public void IntGuidDeserializeFromJSON(IntGuidTestData inIntGuidTestData)
+    [MemberData(nameof(IntIdTestDataGenerator.IntIdTestData), MemberType = typeof(IntIdTestDataGenerator))]
+    public void IntIdDeserializeFromJSON(IntIdTestData inIntIdTestData)
     {
-      if (inIntGuidTestData.IntGuid.ToString().StartsWith("0000") | inIntGuidTestData.IntGuid.ToString().StartsWith("01234"))
+      if (inIntIdTestData.IntId.ToString().StartsWith("0000") | inIntIdTestData.IntId.ToString().StartsWith("01234"))
       {
-        var intID = Fixture.Serializer.Deserialize<IdAsStruct<int>>(inIntGuidTestData.SerializedIntGuid);
+        var intID = Fixture.Serializer.Deserialize<IntStronglyTypedId>(inIntIdTestData.SerializedIntId);
         intID.Should().BeOfType(typeof(IdAsStruct<int>));
         // GUIDS are random, two sets of test data have fixed, non-random guids, the rest are random
-        Fixture.Serializer.Deserialize<IdAsStruct<int>>(inIntGuidTestData.SerializedIntGuid).Should().Be(inIntGuidTestData.IntGuid);
+        Fixture.Serializer.Deserialize<IdAsStruct<int>>(inIntIdTestData.SerializedIntId).Should().Be(inIntIdTestData.IntId);
       }
       else
       {
@@ -33,20 +33,20 @@ namespace ATAP.Utilities.StronglyTypedIDs.UnitTests
     }
 
     [Theory]
-    [MemberData(nameof(IntGuidTestDataGenerator.IntGuidTestData), MemberType = typeof(IntGuidTestDataGenerator))]
-    public void IntGuidSerializeToJSON(IntGuidTestData inIntGuidTestData)
+    [MemberData(nameof(IntIdTestDataGenerator.IntIdTestData), MemberType = typeof(IntIdTestDataGenerator))]
+    public void IntIdSerializeToJSON(IntIdTestData inIntIdTestData)
     {
       var nameOfShim = Fixture.Serializer.ToString();
       TestOutput.WriteLine("DiFixture.Serializer = {0}", nameOfShim);
       // GUIDS are random, two sets of test data have fixed, non-random guids, the rest are random
-      if (inIntGuidTestData.IntGuid.ToString().StartsWith("0000") | inIntGuidTestData.IntGuid.ToString().StartsWith("01234"))
+      if (inIntIdTestData.IntId.ToString().StartsWith("0000") | inIntIdTestData.IntId.ToString().StartsWith("01234"))
       {
-        Fixture.Serializer.Serialize(inIntGuidTestData.IntGuid).Should().Be(inIntGuidTestData.SerializedIntGuid);
+        Fixture.Serializer.Serialize(inIntIdTestData.IntId).Should().Be(inIntIdTestData.SerializedIntId);
       }
       else
       {
         // ServiceStack Shim serializes this structure with a preceding and trailing doublequote ("guid")
-        Fixture.Serializer.Serialize(inIntGuidTestData.IntGuid).Should().MatchRegex("^\"[0-9A-Fa-f]{8}-?([0-9A-Fa-f]{4}-?){3}[0-9A-Fa-f]{12}\"$");
+        Fixture.Serializer.Serialize(inIntIdTestData.IntId).Should().MatchRegex("^\"[0-9A-Fa-f]{8}-?([0-9A-Fa-f]{4}-?){3}[0-9A-Fa-f]{12}\"$");
       }
     }
 

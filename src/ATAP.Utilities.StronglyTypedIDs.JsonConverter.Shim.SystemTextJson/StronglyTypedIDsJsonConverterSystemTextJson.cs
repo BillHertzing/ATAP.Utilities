@@ -6,9 +6,9 @@ using System.Text.Json.Serialization;
 // For the NotNullWhenAttribute used in code
 using System.Diagnostics.CodeAnalysis;
 
-using ATAP.Utilities.TypedGuids;
+using ATAP.Utilities.StronglyTypedIDs;
 
-namespace ATAP.Utilities.TypedGuids.Serializer.SystemTextJson {
+namespace ATAP.Utilities.StronglyTypedIDs.Serializer.SystemTextJson {
   // Attribution https://thomaslevesque.com/2020/12/07/csharp-9-records-as-strongly-typed-ids-part-3-json-serialization/
 
   public class StronglyTypedIdJsonConverter<TStronglyTypedId, TValue> : JsonConverter<TStronglyTypedId>
@@ -20,7 +20,7 @@ namespace ATAP.Utilities.TypedGuids.Serializer.SystemTextJson {
       }
 
       var value = JsonSerializer.Deserialize<TValue>(ref reader, options);
-      var factory = TypedGuids.StronglyTypedIdHelper.GetFactory<TValue>(typeToConvert);
+      var factory = StronglyTypedIDs.StronglyTypedIdHelper.GetFactory<TValue>(typeToConvert);
       return (TStronglyTypedId)factory(value);
     }
 

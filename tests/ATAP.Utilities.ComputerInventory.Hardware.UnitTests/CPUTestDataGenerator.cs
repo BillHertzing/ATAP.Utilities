@@ -4,7 +4,7 @@ using ATAP.Utilities.ComputerInventory.Hardware;
 using System;
 using System.Text;
 using ATAP.Utilities.Testing;
-using ATAP.Utilities.TypedGuids;
+using ATAP.Utilities.StronglyTypedIDs;
 using Itenso.TimePeriod;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests

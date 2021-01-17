@@ -1,9 +1,14 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
-using System;
+using ATAP.Utilities.Serializer;
 
 namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
   public class Serializer : ISerializer {
+    //private List<JsonConverterFactory> JsonConverterFactorysCache { get; set; }
+
     private JsonSerializerSettings JsonSerializerSettingsCurrent { get; set; }
     public Serializer() {
       this.Configure();
@@ -29,10 +34,11 @@ namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
     }
 
     public void Configure() {
+      //JsonConverterFactorysCache = new List<JsonConverterFactory>();
       JsonSerializerSettingsCurrent = new JsonSerializerSettings();// Func<JsonSerializerSettings>
       // ToDo: newtonsoft configuration for PascalCase
       // ToDo: newtonsoft configuration for Enumerations using Value (int)
-      // ToDo: newtonsoft configuration to ensure default values are added to teh serialization (?maybe?)
+      // ToDo: newtonsoft configuration to ensure default values are added to the serialization (?maybe?)
     }
     public void Configure(ISerializerOptions options) {
       JsonSerializerSettingsCurrent = ConvertOptions(options);

@@ -92,18 +92,18 @@ namespace ATAP.Utilities.Loader {
     public static void LoadFromAssembly(string loaderShimName, string loaderShimNamespace, string[] relativePathsToProbe, IServiceCollection services) {
       IType instance = LoadFromAssembly(loaderShimName, loaderShimNamespace, relativePathsToProbe);
       // ToDo: Support Transient and Scoped
-        services.AddSingleton(typeof(IType), instance);
+      services.AddSingleton(typeof(IType), instance);
     }
-
-    public static IType LoadFromAssembly(string loaderShimName, string LoaderShimNamespace, string[] relativePathsToProbe) {
+    //     public static IType LoadFromAssembly(string loaderShimName, string LoaderShimNamespace, string[] relativePathsToProbe) {
+    // return LoadFromAssembly(loaderShimName, )
+    //     }
+    public static IType LoadFromAssembly(string loaderShimName, string LoaderShimNamespace, string subModuleShimName = default, string subModuleShimNamespace = default, string[] relativePathsToProbe) {
 
       // ToDo: validation of arguments
-      // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
       var loaders = new List<PluginLoader>();
-      List<IType> instances = new List<IType>();
+      List<IType> instances = new();
       // create Loader plugin loader for the loaderShimName
       foreach (var pathToProbe in relativePathsToProbe) {
-
         var pluginsDir = Path.Combine(AppContext.BaseDirectory, pathToProbe);
         // DLLs not in any subdirectory
         string pathToLoaderShimDll = Path.Combine(pluginsDir, loaderShimName + ".dll");
@@ -123,7 +123,8 @@ namespace ATAP.Utilities.Loader {
             loaders.Add(loader);
           }
         }
-        // DLLs found in any child subdirectory tree
+        // ToDo: DLLs found in any child subdirectory tree
+        // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
         // Create an instance of IType
         foreach (var loader in loaders) {
           foreach (var pluginType in loader
@@ -141,25 +142,34 @@ namespace ATAP.Utilities.Loader {
         }
       }
       // ToDo: validate that only one is returned
-      return instances.First<IType>();
+      var instance = instances.First<IType>();
+      if (subModuleShimName != default && subModuleShimNamespace != default) {
+        //  ToDo: need to enforce that the interface and instance supply LoadSubModules(IEnumerable<ModuleNameAndNamespacePair>)
+        instance.LoadSubModules(subModuleShimName, subModuleShimNamespace, relativePathsToProbe);
+      }
+      return instance;
     }
 
-  // class LoaderLoadContext : AssemblyLoadContext {
-  //   private AssemblyDependencyResolver _resolver;
+    // public static void LoadSubModules(IType instance, string loaderShimName, string LoaderShimNamespace, string[] relativePathsToProbe) {
 
-  //   public LoaderLoadContext(string LoaderPath) {
-  //     _resolver = new AssemblyDependencyResolver(LoaderPath);
-  //   }
+    //  }
 
-  //   protected override Assembly Load(AssemblyName assemblyName) {
-  //     string assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
-  //     if (assemblyPath != null) {
-  //       //ToDo: wrap in try/catch and handle exceptions
-  //       return LoadFromAssemblyPath(assemblyPath);
-  //     }
-  //     return null;
-  //   }
-  // }
+    // class LoaderLoadContext : AssemblyLoadContext {
+    //   private AssemblyDependencyResolver _resolver;
+
+    //   public LoaderLoadContext(string LoaderPath) {
+    //     _resolver = new AssemblyDependencyResolver(LoaderPath);
+    //   }
+
+    //   protected override Assembly Load(AssemblyName assemblyName) {
+    //     string assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
+    //     if (assemblyPath != null) {
+    //       //ToDo: wrap in try/catch and handle exceptions
+    //       return LoadFromAssemblyPath(assemblyPath);
+    //     }
+    //     return null;
+    //   }
+    // }
 
     // Assembly.LoadFrom(_LoaderShimName)
     //   .GetTypes()
@@ -179,108 +189,108 @@ namespace ATAP.Utilities.Loader {
     //     .AsImplementedInterfaces()
     //     .WithTransientLifetime());
 
-        /*
-    Obsolete now, I think
-        public static ILoader LoadFromAssembly() {
-          // ToDo: get the one that matches configuration, otherwise get the first one
-          // ToDo: Load that assembly
-          // Get the type that implements ILoader from the loaded assembly
-          // return that type
-          // ToDo: this block of code is temporary
+    /*
+Obsolete now, I think
+    public static ILoader LoadFromAssembly() {
+      // ToDo: get the one that matches configuration, otherwise get the first one
+      // ToDo: Load that assembly
+      // Get the type that implements ILoader from the loaded assembly
+      // return that type
+      // ToDo: this block of code is temporary
 
-          var _LoaderShimName = "ATAP.Utilities.Loader.Shim.SystemTextJson.dll";
-          var _LoaderShimNamespace = "ATAP.Utilities.Loader";
-          var types = Assembly.LoadFrom(_LoaderShimName)
-            .GetTypes()
-            .Where(w => w.Namespace == _LoaderShimNamespace && w.IsClass)
-            .ToList();
-          return types[0] as ILoader;
-          // ToDo: end of this block of code is temporary
-        }
+      var _LoaderShimName = "ATAP.Utilities.Loader.Shim.SystemTextJson.dll";
+      var _LoaderShimNamespace = "ATAP.Utilities.Loader";
+      var types = Assembly.LoadFrom(_LoaderShimName)
+        .GetTypes()
+        .Where(w => w.Namespace == _LoaderShimNamespace && w.IsClass)
+        .ToList();
+      return types[0] as ILoader;
+      // ToDo: end of this block of code is temporary
+    }
 
-        public static ILoader LoadFromAssembly(string loaderShimName, string LoaderShimNamespace) {
-          //ToDo: validation of arguments
-          // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
-          var types = Assembly.LoadFrom(loaderShimName)
-            .GetTypes()
-            .Where(w => w.Namespace == LoaderShimNamespace && w.IsClass)
-            .ToList();
-          //ToDo: verify the list of types always starts with a Loader
-          //ToDo: wrap in a try/catch block and handle exceptions, including probing additional paths
-          ILoader Loader = (ILoader)Activator.CreateInstance(types[0]);
-          return Loader;
+    public static ILoader LoadFromAssembly(string loaderShimName, string LoaderShimNamespace) {
+      //ToDo: validation of arguments
+      // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
+      var types = Assembly.LoadFrom(loaderShimName)
+        .GetTypes()
+        .Where(w => w.Namespace == LoaderShimNamespace && w.IsClass)
+        .ToList();
+      //ToDo: verify the list of types always starts with a Loader
+      //ToDo: wrap in a try/catch block and handle exceptions, including probing additional paths
+      ILoader Loader = (ILoader)Activator.CreateInstance(types[0]);
+      return Loader;
 
-          // Search for all assemblies that have a class implements ILoader
-          // ToDo: get the one that matches configuration, otherwise get the first one
-          // ToDo: Load that assembly
-          // Get the type that implements ILoader from the loaded assembly
-          // return that type
+      // Search for all assemblies that have a class implements ILoader
+      // ToDo: get the one that matches configuration, otherwise get the first one
+      // ToDo: Load that assembly
+      // Get the type that implements ILoader from the loaded assembly
+      // return that type
 
-        }
+    }
 
-        public static void LoadFromAssembly(string loaderShimName, string LoaderShimNamespace, IServiceCollection services) {
-          //ToDo: validation of arguments
-          // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
-          var fullpath = AppDomain.CurrentDomain.BaseDirectory + "Plugins\\" + loaderShimName + ".dll";
-          Assembly.LoadFrom(fullpath)
-            .GetTypes()
-            .Where(w => w.Namespace == LoaderShimNamespace && w.IsClass)
-            .ToList()
-            .ForEach(t => {
-              services.AddSingleton(t.GetInterface("I" + t.Name, false), t);
-            });
+    public static void LoadFromAssembly(string loaderShimName, string LoaderShimNamespace, IServiceCollection services) {
+      //ToDo: validation of arguments
+      // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
+      var fullpath = AppDomain.CurrentDomain.BaseDirectory + "Plugins\\" + loaderShimName + ".dll";
+      Assembly.LoadFrom(fullpath)
+        .GetTypes()
+        .Where(w => w.Namespace == LoaderShimNamespace && w.IsClass)
+        .ToList()
+        .ForEach(t => {
+          services.AddSingleton(t.GetInterface("I" + t.Name, false), t);
+        });
 
-          // Search for all assemblies that have a class implements ILoader
-          // ToDo: get the one that matches configuration, otherwise get the first one
-          // ToDo: Load that assembly
-          // Get the type that implements ILoader from the loaded assembly
-          // return that type
-          return;
-        }
-        public static void LoadFromAssembly(IConfiguration configuration, IServiceCollection services) {
-          var _LoaderShimName = configuration.GetValue<string>(LoaderStringConstants.LoaderAssemblyConfigRootKey, LoaderStringConstants.LoaderAssemblyDefault);
-          var _LoaderShimNamespace = configuration.GetValue<string>(LoaderStringConstants.LoaderNamespaceConfigRootKey, LoaderStringConstants.LoaderNamespaceDefault);
+      // Search for all assemblies that have a class implements ILoader
+      // ToDo: get the one that matches configuration, otherwise get the first one
+      // ToDo: Load that assembly
+      // Get the type that implements ILoader from the loaded assembly
+      // return that type
+      return;
+    }
+    public static void LoadFromAssembly(IConfiguration configuration, IServiceCollection services) {
+      var _LoaderShimName = configuration.GetValue<string>(LoaderStringConstants.LoaderAssemblyConfigRootKey, LoaderStringConstants.LoaderAssemblyDefault);
+      var _LoaderShimNamespace = configuration.GetValue<string>(LoaderStringConstants.LoaderNamespaceConfigRootKey, LoaderStringConstants.LoaderNamespaceDefault);
 
-          // ToDo: validation of arguments
-          // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
-          Assembly.LoadFrom(_LoaderShimName)
-            .GetTypes()
-            .Where(w => w.Namespace == _LoaderShimNamespace && w.IsClass)
-            .ToList()
-            .ForEach(t => {
-              services.AddSingleton(t.GetInterface("I" + t.Name, false), t);
-            });
+      // ToDo: validation of arguments
+      // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
+      Assembly.LoadFrom(_LoaderShimName)
+        .GetTypes()
+        .Where(w => w.Namespace == _LoaderShimNamespace && w.IsClass)
+        .ToList()
+        .ForEach(t => {
+          services.AddSingleton(t.GetInterface("I" + t.Name, false), t);
+        });
 
-          // Search for all assemblies that have a class implements ILoader
-          // ToDo: get the one that matches configuration, otherwise get the first one
-          // ToDo: Load that assembly
-          // Get the type that implements ILoader from the loaded assembly
-          // return that type
-          return;
-        }
+      // Search for all assemblies that have a class implements ILoader
+      // ToDo: get the one that matches configuration, otherwise get the first one
+      // ToDo: Load that assembly
+      // Get the type that implements ILoader from the loaded assembly
+      // return that type
+      return;
+    }
 
-        public static void LoadFromAssembly(IConfiguration configuration, IServiceCollection services) {
-          var _LoaderShimName = configuration.GetValue<string>(LoaderStringConstants.LoaderAssemblyConfigRootKey, LoaderStringConstants.LoaderAssemblyDefault);
-          var _LoaderShimNamespace = configuration.GetValue<string>(LoaderStringConstants.LoaderNamespaceConfigRootKey, LoaderStringConstants.LoaderNamespaceDefault);
+    public static void LoadFromAssembly(IConfiguration configuration, IServiceCollection services) {
+      var _LoaderShimName = configuration.GetValue<string>(LoaderStringConstants.LoaderAssemblyConfigRootKey, LoaderStringConstants.LoaderAssemblyDefault);
+      var _LoaderShimNamespace = configuration.GetValue<string>(LoaderStringConstants.LoaderNamespaceConfigRootKey, LoaderStringConstants.LoaderNamespaceDefault);
 
-          // ToDo: validation of arguments
-          // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
-          Assembly.LoadFrom(_LoaderShimName)
-            .GetTypes()
-            .Where(w => w.Namespace == _LoaderShimNamespace && w.IsClass)
-            .ToList()
-            .ForEach(t => {
-              services.AddSingleton(t.GetInterface("I" + t.Name, false), t);
-            });
+      // ToDo: validation of arguments
+      // ToDo: Test to ensure the assembly specified in the Configuration exists in any of the places probed by assembly load
+      Assembly.LoadFrom(_LoaderShimName)
+        .GetTypes()
+        .Where(w => w.Namespace == _LoaderShimNamespace && w.IsClass)
+        .ToList()
+        .ForEach(t => {
+          services.AddSingleton(t.GetInterface("I" + t.Name, false), t);
+        });
 
-          // Search for all assemblies that have a class implements ILoader
-          // ToDo: get the one that matches configuration, otherwise get the first one
-          // ToDo: Load that assembly
-          // Get the type that implements ILoader from the loaded assembly
-          // return that type
-          return;
-        }
-        */
+      // Search for all assemblies that have a class implements ILoader
+      // ToDo: get the one that matches configuration, otherwise get the first one
+      // ToDo: Load that assembly
+      // Get the type that implements ILoader from the loaded assembly
+      // return that type
+      return;
+    }
+    */
 
 
   }

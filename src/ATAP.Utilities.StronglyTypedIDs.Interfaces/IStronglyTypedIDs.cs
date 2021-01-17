@@ -1,6 +1,6 @@
 using System;
 
-namespace ATAP.Utilities.TypedGuids {
+namespace ATAP.Utilities.StronglyTypedIDs {
   public interface IIdAsStruct<T> { }
   public interface IStronglyTypedId<TValue> where TValue : notnull {
     TValue Value { get; init; }

@@ -5,8 +5,8 @@
 
   <!-- ItemGroup for automatically generating Designer files and embedding resources in an assembly -->
   <!-- Attribution: https://stackoverflow.com/questions/46584499/how-to-add-a-glob-for-resx-files-for-new-sdk-csproj-file -->
-  <!-- ToDo: Make the Generator Value conditional, iif run under VS, use PublicResXFileCodeGenerator or ResXFileCodeGenerator.
-          if not run under CS (for example dotnet build or dotnet msbuild, use resgen)
+  <!-- ToDo: Make the Generator Value conditional, if run under VS, use PublicResXFileCodeGenerator or ResXFileCodeGenerator.
+          if not run under CS (for example dotnet build or dotnet msbuild, use resgen.exe)
   -->
   <ItemGroup>
     <Resx Include="**\*.resx" />
@@ -70,7 +70,7 @@
     <PrepareForRunDependsOn>$(PrepareForRunDependsOn);CopyJSONSettingsFilesToOutputDirectory</PrepareForRunDependsOn>
   </PropertyGroup>
   <ItemGroup>
-    <JsonSettingsFiles Include="*.json" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch(%(Filename), 'settings.*json$'))" />
+    <JsonSettingsFiles Include="*.json" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch(%(Filename), '[Ss]ettings.*json$'))" />
   </ItemGroup>
   <Target Name="CopyJSONSettingsFilesToOutputDirectory">
     <Copy SourceFiles="@(JsonSettingsFiles)" DestinationFolder="$(OutDir)" />

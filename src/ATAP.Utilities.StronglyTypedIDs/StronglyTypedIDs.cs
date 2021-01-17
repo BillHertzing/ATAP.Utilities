@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 // For the NotNullWhenAttribute used in code
 using System.Diagnostics.CodeAnalysis;
 
-namespace ATAP.Utilities.TypedGuids {
+namespace ATAP.Utilities.StronglyTypedIDs {
   // Attribution (earlier): taken from answers provided to this question: https://stackoverflow.com/questions/53748675/strongly-typed-guid-as-generic-struct
   // Modifications:  CheckValue and all references removed, because our use case requires Guid.Empty to be a valid value
   // Attribution 1/8/2021:[Using C# 9 records as strongly-typed ids](https://thomaslevesque.com/2020/10/30/using-csharp-9-records-as-strongly-typed-ids/)
@@ -20,6 +20,7 @@ namespace ATAP.Utilities.TypedGuids {
     public TValue Value { get; init; }
     public override string ToString() => Value.ToString();
     public StronglyTypedId() { }
+    // ToDo: figure out how to generate a random value for the StronglyTypedId in the parameterless constructor
     // public StronglyTypedId() {
     //   Value = (typeof(TValue)) switch {
     //     Type inttype when typeof(TValue) == typeof(int) =>  new Random().Next(),

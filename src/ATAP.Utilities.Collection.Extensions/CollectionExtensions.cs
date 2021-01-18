@@ -63,7 +63,7 @@ namespace ATAP.Utilities.Collection {
         source.Add(item);
       }
     }
-       /// <summary>
+    /// <summary>
     ///
     /// </summary>
     /// <typeparam name="T"></typeparam>
@@ -72,6 +72,19 @@ namespace ATAP.Utilities.Collection {
     public static void ForEach<T>(this IEnumerable<T> source, Action<T> action) {
       foreach (T element in source) {
         action(element);
+      }
+    }
+
+    /// <summary>
+    /// Static extension that adds any enumerable to any collection (handles AddRange for IList<T> to IList<T>)
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="source"></param>
+    /// <param name="action"></param>
+    /// Attribution: [Is there an easy way to append one IList<MyType> to another?](https://stackoverflow.com/questions/9520291/is-there-an-easy-way-to-append-one-ilistmytype-to-another)
+    public static void AddRange<T>(this ICollection<T> collection, IEnumerable<T> enumerable) {
+      foreach (var cur in enumerable) {
+        collection.Add(cur);
       }
     }
   }

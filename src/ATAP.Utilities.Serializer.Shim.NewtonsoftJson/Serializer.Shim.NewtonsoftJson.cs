@@ -4,10 +4,9 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 
 using ATAP.Utilities.Serializer;
-
+using static ATAP.Utilities.Collection.Extensions;
 namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
   public class Serializer : ISerializer {
-    //private List<JsonConverterFactory> JsonConverterFactorysCache { get; set; }
 
     private JsonSerializerSettings JsonSerializerSettingsCurrent { get; set; }
     public Serializer() {
@@ -51,6 +50,5 @@ namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
         // WriteIndented is handeled by Formatting Enumeration passed to Newtonsoft's Serialize method
       };
     }
-
   }
 }

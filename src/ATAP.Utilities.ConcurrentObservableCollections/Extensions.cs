@@ -190,13 +190,13 @@ namespace ATAP.Utilities.ConcurrentObservableCollections
     /// </summary>
     /// <remarks>
     /// <para>
-    ///     If there are n items in the collection, n-1 comparisons are done. 
+    ///     If there are n items in the collection, n-1 comparisons are done.
     /// </para>
     /// <para>
     ///     Every valid [i] and [i+1] pair are passed into <paramref name="compare"/>.
     /// </para>
     /// <para>
-    ///     If <paramref name="source"/> has 0 or 1 items, true is returned. 
+    ///     If <paramref name="source"/> has 0 or 1 items, true is returned.
     /// </para>
     /// </remarks>
     public static bool TrueForAllAdjacentPairs<T>(this IList<T> source, Func<T, T, bool> compare)
@@ -218,7 +218,7 @@ namespace ATAP.Utilities.ConcurrentObservableCollections
     //--------------------------------------------------------------------------------------------
 
     /// <summary>
-    ///     Returns true if all of the items in <paramref name="source"/> are not 
+    ///     Returns true if all of the items in <paramref name="source"/> are not
     ///     null or empty.
     /// </summary>
     /// <exception cref="ArgumentNullException">if <param name="source"/> is null.</exception>
@@ -256,9 +256,9 @@ namespace ATAP.Utilities.ConcurrentObservableCollections
     /// <para>
     ///     Yes, this does basically the same thing as the
     ///     <see cref="System.Linq.Enumerable.Any{TSource}(IEnumerable{TSource})"/>
-    ///     extention. The differences: 'IsEmpty' is easier to remember and it leverages 
+    ///     extention. The differences: 'IsEmpty' is easier to remember and it leverages
     ///     <see cref="ICollection{TSource}.Count">ICollection.Count</see> if it exists.
-    /// </para>    
+    /// </para>
     /// </remarks>
     public static bool IsEmpty<TSource>(this IEnumerable<TSource> source)
     {
@@ -323,7 +323,7 @@ namespace ATAP.Utilities.ConcurrentObservableCollections
     //--------------------------------------------------------------------------------------------
 
     /// <summary>
-    ///     Performs the specified <paramref name="action"/>  
+    ///     Performs the specified <paramref name="action"/>
     ///     on each element of the specified <paramref name="source"/>.
     /// </summary>
     /// <typeparam name="TSource">The type of the elements of <paramref name="source"/>.</typeparam>
@@ -471,7 +471,7 @@ namespace ATAP.Utilities.ConcurrentObservableCollections
     public static string GetEnumDescription(this Enum currentEnum)
     {
       return GetEnumAttribute<DescriptionAttribute>(currentEnum)
-        ?.Description 
+        ?.Description
         ?? currentEnum.ToString();
     }
 
@@ -483,7 +483,7 @@ namespace ATAP.Utilities.ConcurrentObservableCollections
         enumAttr = (TAttr)Attribute.GetCustomAttribute(fieldInfo, typeof(TAttr));
       return enumAttr;
     }
-    
+
     //--------------------------------------------------------------------------------------------
 
     public static T XmlSerializeClone<T>(this T source)
@@ -517,9 +517,9 @@ namespace ATAP.Utilities.ConcurrentObservableCollections
     ///     Console.ReadLine();
     ///   }
     /// }
-    /// 
+    ///
     /// Gives the following output
-    /// 
+    ///
     /// 1.234567890123E-18 -> 0.00123aHz
     /// 1.234567890123E-17 -> 0.0123aHz
     /// 1.234567890123E-16 -> 0.123aHz
@@ -681,7 +681,7 @@ namespace ATAP.Utilities.ConcurrentObservableCollections
     }
 
     /// <summary>
-    /// returns a string with the first letter capitalized. 
+    /// returns a string with the first letter capitalized.
     /// </summary>
     public static string FirstCharUpper(this string aString)
     {
@@ -1056,7 +1056,7 @@ namespace ATAP.Utilities.ConcurrentObservableCollections
 
 
     /// <summary>
-    /// Jon Skeet http://stackoverflow.com/questions/3683105/calculate-difference-from-previous-item-with-linq/3683217 
+    /// Jon Skeet http://stackoverflow.com/questions/3683105/calculate-difference-from-previous-item-with-linq/3683217
     /// </summary>
     /// <typeparam name="TSource"></typeparam>
     /// <typeparam name="TResult"></typeparam>

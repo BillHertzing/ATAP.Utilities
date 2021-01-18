@@ -2,6 +2,7 @@ using System;
 
 using Microsoft.Extensions.Configuration;
 using ATAP.Utilities.Serializer;
+using Loader = ATAP.Utilities.Loader.Loader;
 
 using Ninject;
 
@@ -30,7 +31,8 @@ namespace ATAP.Utilities.Testing {
 
     public override void Load() {
       // ToDo make this lazy ISerializer t = ATAP.Utilities.Serializer.SerializerLoader.LoadSerializerFromAssembly();
-      var serializer = ATAP.Utilities.Serializer.SerializerLoader.LoadSerializerFromAssembly(SerializerShimName, SerializerShimNamespace);
+      var serializer = ATAP.Utilities.Loader.Loader<ISerializer>.LoadFromAssembly(SerializerShimName, SerializerShimNamespace, new string[] { pluginsDirectory }, services);
+//     var serializer = Loader.LoadFromAssembly(SerializerShimName, SerializerShimNamespace);
       //attribution: https://stackoverflow.com/questions/16916140/ninject-registering-an-already-created-instance-with-ninject
       Bind<ISerializer>().ToConstant(serializer);
       //Bind<ISerializer>().To<Serializer.Serializer>();

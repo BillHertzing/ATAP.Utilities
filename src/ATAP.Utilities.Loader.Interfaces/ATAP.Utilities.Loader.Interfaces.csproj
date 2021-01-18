@@ -16,4 +16,9 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
+  <!-- Extensions methods on FIle and Directory types, along with a Globbing library -->
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.FIleIO\ATAP.Utilities.FileIO.csproj" />
+  </ItemGroup>
+
 </Project>

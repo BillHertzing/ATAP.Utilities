@@ -16,46 +16,61 @@ using LoaderStringConstants = ATAP.Utilities.Loader.StringConstants;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ATAP.Utilities.Loader {
-  public record LoaderShimNameAndNamespaceConfigurationRootKeyAndDefaultValue(string LoaderShimNameConfigurationRootKey, string LoaderShimNameConfigurationDefault, string LoaderShimNamespaceConfigurationRootKey, string LoaderShimNamespaceConfigurationDefault) : ILoaderShimNameAndNamespaceConfigurationRootKeyAndDefaultValue;
-  public record LoaderShimNameAndNamespace(string LoaderShimName, string LoaderShimNamespace) : ILoaderShimNameAndNamespace;
+
+
+
+  public record DynamicShimNameAndNamespaceConfigRootKeyAndDefaultValue(string DynamicShimNameConfigRootKey, string DynamicShimNameConfigDefault, string DynamicShimNamespaceConfigRootKey, string DynamicShimNamespaceConfigurationDefault) : IDynamicShimNameAndNamespaceConfigRootKeyAndDefaultValue;
+  public record DynamicShimNameAndNamespace(string DynamicShimName, string DynamicShimNamespace) : IDynamicShimNameAndNamespace;
+  public record DynamicShimNameAndNamespaceWithSubModules(string DynamicShimName, string DynamicShimNamespace) : IDynamicShimNameAndNamespace;
+  // toDo: figure out how to supply the functions needed for IEquality and others needed to make DynamicTypeToShimDictionary a record instead of a class
+  public class DynamicTypeToShimDictionary : IDynamicTypeToShimDictionary {
+    public IDictionary<Type, IEnumerable<IDynamicShimNameAndNamespace>> DynamicTypeToShimCollection { get; init; }
+  }
 
 
   /// Finds assemblies that meet a criteria, imports them, gets Types that meet a criteria, either return them or add them to a IServices collection
   public static class Loader<IType> {
     // Search for all assemblies that have a class that implements the IType interface
     // return the first one
-    public static void LoadFromAssembly(IEnumerable<LoaderShimNameAndNamespaceConfigurationRootKeyAndDefaultValue> configurationShimPairKeyCollection, IConfiguration configuration, string[] relativePathsToProbe, IServiceCollection services) {
+    public static void LoadFromAssembly(IEnumerable<DynamicShimNameAndNamespaceConfigRootKeyAndDefaultValue> configurationShimPairKeyCollection, IConfiguration configuration, string[] relativePathsToProbe, IServiceCollection services) {
+      //ToDo: wrap in a try/catch, and throw a LoaderException on failure
       IEnumerable<IType> instances = LoadFromAssembly(configurationShimPairKeyCollection, configuration, relativePathsToProbe);
       foreach (IType instance in instances) {
         // ToDo: Support Transient and Scoped
-        services.AddSingleton(typeof(IType), instance);
+        services.AddSingleton(typeof(IType), instance!);
       }
       return;
     }
-    public static IEnumerable<IType> LoadFromAssembly(IEnumerable<LoaderShimNameAndNamespaceConfigurationRootKeyAndDefaultValue> configurationShimPairKeyCollection, IConfiguration configuration, string[] relativePathsToProbe) {
+    public static IEnumerable<IType> LoadFromAssembly(IEnumerable<DynamicShimNameAndNamespaceConfigRootKeyAndDefaultValue> configurationShimPairKeyCollection, IConfiguration configuration, string[] relativePathsToProbe) {
+      //ToDo: wrap in a try/catch, and throw a LoaderException on failure
       IEnumerable<IType> instances = LoadFromAssembly(configurationShimPairKeyCollection, configuration, relativePathsToProbe);
       return instances;
     }
-    public static void LoadFromAssembly(IEnumerable<LoaderShimNameAndNamespace> shimPairCollection, string[] relativePathsToProbe, IServiceCollection services) {
+    public static void LoadFromAssembly(IEnumerable<DynamicShimNameAndNamespace> shimPairCollection, string[] relativePathsToProbe, IServiceCollection services) {
+      //ToDo: wrap in a try/catch, and throw a LoaderException on failure
       IEnumerable<IType> instances = LoadFromAssembly(shimPairCollection, relativePathsToProbe);
+      // ToDo: test for at least one element in the collection, and throw a LoaderException on failure
       foreach (IType instance in instances) {
         // ToDo: Support Transient and Scoped
-        services.AddSingleton(typeof(IType), instance);
+        services.AddSingleton(typeof(IType), instance!);
       }
       return;
     }
-    public static IEnumerable<IType> LoadFromAssembly(IEnumerable<LoaderShimNameAndNamespace> shimPairCollection, string[] relativePathsToProbe) {
+    public static IEnumerable<IType> LoadFromAssembly(IEnumerable<DynamicShimNameAndNamespace> shimPairCollection, string[] relativePathsToProbe) {
+      //ToDo: wrap in a try/catch, and throw a LoaderException on failure
       IEnumerable<IType> instances = LoadFromAssembly(shimPairCollection, relativePathsToProbe);
       return instances;
     }
-    public static void LoadFromAssembly(IEnumerable<LoaderShimNameAndNamespace>? shimPairCollection, IEnumerable<LoaderShimNameAndNamespaceConfigurationRootKeyAndDefaultValue>? configurationShimPairKeyCollection, string[] relativePathsToProbe, IConfiguration configuration, IServiceCollection services) {
+    public static void LoadFromAssembly(IEnumerable<DynamicShimNameAndNamespace>? shimPairCollection, IEnumerable<DynamicShimNameAndNamespaceConfigRootKeyAndDefaultValue>? configurationShimPairKeyCollection, string[] relativePathsToProbe, IConfiguration configuration, IServiceCollection services) {
+      //ToDo: wrap in a try/catch, and throw a LoaderException on failure
       IEnumerable<IType> instances = LoadFromAssembly(shimPairCollection, configurationShimPairKeyCollection, relativePathsToProbe, configuration);
+      // ToDo: test for at least one element in the collection, and throw a LoaderException on failure
       foreach (IType instance in instances) {
         // ToDo: Support Transient and Scoped
-        services.AddSingleton(typeof(IType), instance);
+        services.AddSingleton(typeof(IType), instance!);
       }
     }
-    public static IEnumerable<IType> LoadFromAssembly(IEnumerable<LoaderShimNameAndNamespace>? shimPairCollection, IEnumerable<LoaderShimNameAndNamespaceConfigurationRootKeyAndDefaultValue>? configurationShimPairKeyCollection, string[] relativePathsToProbe, IConfiguration configuration) {
+    public static IEnumerable<IType> LoadFromAssembly(IEnumerable<DynamicShimNameAndNamespace>? shimPairCollection, IEnumerable<DynamicShimNameAndNamespaceConfigRootKeyAndDefaultValue>? configurationShimPairKeyCollection, string[] relativePathsToProbe, IConfiguration configuration) {
       if ((shimPairCollection == null) && (configurationShimPairKeyCollection == null || configuration == null)) {
         // ToDo: figure out how to get a stringlocalizer service visible here, so a localized exception message about the null arguments can be generated
         throw new ArgumentNullException("TBD: localized message that both selector mechanisms cannot be null");
@@ -66,22 +81,22 @@ namespace ATAP.Utilities.Loader {
       }
       List<IType> instances = new List<IType>();
       if (shimPairCollection != null) {
-        foreach (LoaderShimNameAndNamespace shimPair in shimPairCollection) {
+        foreach (DynamicShimNameAndNamespace shimPair in shimPairCollection) {
           instances.Add(LoadFromAssembly(shimPair.LoaderShimName, shimPair.LoaderShimNamespace, relativePathsToProbe));
         }
       }
       else {
-        List<LoaderShimNameAndNamespace> _shimPairCollection = new List<LoaderShimNameAndNamespace>();
+        List<DynamicShimNameAndNamespace> _shimPairCollection = new List<DynamicShimNameAndNamespace>();
         // ToDo: Can this foreach loop be replaced with AddRange and a bit of Linq?
-        foreach (LoaderShimNameAndNamespaceConfigurationRootKeyAndDefaultValue configurationRootKeyAndDefaultValue in configurationShimPairKeyCollection) {
-          var loaderShimNameAndNamespace = new LoaderShimNameAndNamespace(
-              configuration.GetValue<string>(configurationRootKeyAndDefaultValue.LoaderShimNameConfigurationRootKey,
-               configurationRootKeyAndDefaultValue.LoaderShimNameConfigurationDefault),
-              configuration.GetValue<string>(configurationRootKeyAndDefaultValue.LoaderShimNameConfigurationRootKey,
-               configurationRootKeyAndDefaultValue.LoaderShimNameConfigurationDefault));
-          _shimPairCollection.Add(loaderShimNameAndNamespace);
+        foreach (DynamicShimNameAndNamespaceConfigRootKeyAndDefaultValue ConfigRootKeyAndDefaultValue in configurationShimPairKeyCollection) {
+          var DynamicShimNameAndNamespace = new DynamicShimNameAndNamespace(
+              configuration.GetValue<string>(ConfigRootKeyAndDefaultValue.DynamicShimNameConfigRootKey,
+               ConfigRootKeyAndDefaultValue.DynamicShimNameConfigDefault),
+              configuration.GetValue<string>(ConfigRootKeyAndDefaultValue.DynamicShimNameConfigRootKey,
+               ConfigRootKeyAndDefaultValue.DynamicShimNameConfigDefault));
+          _shimPairCollection.Add(DynamicShimNameAndNamespace);
         }
-        foreach (LoaderShimNameAndNamespace shimPair in _shimPairCollection) {
+        foreach (DynamicShimNameAndNamespace shimPair in _shimPairCollection) {
           instances.Add(LoadFromAssembly(shimPair.LoaderShimName, shimPair.LoaderShimNamespace, relativePathsToProbe));
         }
       }
@@ -97,7 +112,11 @@ namespace ATAP.Utilities.Loader {
     //     public static IType LoadFromAssembly(string loaderShimName, string LoaderShimNamespace, string[] relativePathsToProbe) {
     // return LoadFromAssembly(loaderShimName, )
     //     }
-    public static IType LoadFromAssembly(string loaderShimName, string LoaderShimNamespace, string subModuleShimName = default, string subModuleShimNamespace = default, string[] relativePathsToProbe) {
+    public static IEnumerable<(Type,IEnumerable<Object>)> LoadFromAssembly(IDictionary<Type, DynamicShimCollection> DynamicShimCollectionForType, string[] relativePathsToProbe = default) {
+    }
+    public static (Type,IEnumerable<Object>> LoadFromAssembly(Type type, IEnumerable<DynamicShimNameAndNamespace> DynamicShimNameAndNamespaceCollectionForType, string[] relativePathsToProbe = default) {
+    }
+    public static IType LoadFromAssembly(string loaderShimName, string LoaderShimNamespace, string subModuleShimName = default, string subModuleShimNamespace = default, string[] relativePathsToProbe = default) {
 
       // ToDo: validation of arguments
       var loaders = new List<PluginLoader>();
@@ -130,12 +149,27 @@ namespace ATAP.Utilities.Loader {
           foreach (var pluginType in loader
               .LoadDefaultAssembly()
               .GetTypes()
-              .Where(t => typeof(IType).IsAssignableFrom(t) && !t.IsAbstract && t.Namespace == LoaderShimNamespace)) {
+              .Where(t => typeof(IType).IsAssignableFrom(t) && !t.IsAbstract && t.Namespace == LoaderShimNamespace))
+              // ToDo: Add test and exception if more than one is found
+              {
             // This assumes the implementation of IType has a parameterless constructor
-            instances.Add((IType)Activator.CreateInstance(pluginType));
+            var initialInstance = (IType)Activator.CreateInstance(pluginType);
+            // Does the instance (or pluginLoader) indicate that instance implements the ILoadSubModules interface
+            bool hasSubModules = loader.LoadDefaultAssembly().GetTypes().Where(t => typeof(ILoadSubModules).IsAssignableFrom(t) && typeof(IType).IsAssignableFrom(t) && !t.IsAbstract && t.Namespace == LoaderShimNamespace).Any();
+            if (hasSubModules){
+              // find and load any additional dynamic modules to load as specified by the actual instance
+            // Get the dictionary (by Type) of (functions (by enueration expected cardinalityofresults (0,1,many) to be applied to each Cardinailty:(collection or individual) submodule Types, using relativePathsToProbe, pattern for finding the submodule .dll files in the existing relativePathsToProbe, , subModuleNamespace
+              var subTypesToFunctionCriteriaDictionary = ((ILoadSubModules)initialInstance).GetSubModulesInfo();
+              // Iterate
+              foreach (var kvp in subTypesToFunctionCriteriaDictionary) {
+                ATAP.Utilities.Loader.Loader<.>.LoadFromAssembly(_serializerShimName, _serializerShimNamespace, new string[] { pluginsDirectory }
+              }
 
-            // ToDo: find and load any additional dynamic modules to load as specified by the actual instance
+                          // This may iterate multiple submodules to load
+            // ToDo: add upperbound test for number of iterations/depth that submodules can be loaded, raise custom exception if it happens
+            }
             // find any Loader type converters in any loaded assembly
+            instances.Add(initialInstance);
             //ToDo: make this generic not specific
             // instance.LoadDynamicSubModules(loaderShimName, LoaderShimNamespace);
           }
@@ -150,6 +184,9 @@ namespace ATAP.Utilities.Loader {
       return instance;
     }
 
+public abstract static IDictionary<Type, ISubModulesInfo<Type>> GetSubModulesInfo(){
+
+}
     // public static void LoadSubModules(IType instance, string loaderShimName, string LoaderShimNamespace, string[] relativePathsToProbe) {
 
     //  }

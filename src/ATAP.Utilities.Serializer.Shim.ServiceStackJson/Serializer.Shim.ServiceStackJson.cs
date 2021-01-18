@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
+
 using ServiceStack.Text;
 
-using System;
+using static ATAP.Utilities.Collection.Extensions;
+
 
 namespace ATAP.Utilities.Serializer.Shim.ServiceStack {
   public class Serializer : ISerializer {

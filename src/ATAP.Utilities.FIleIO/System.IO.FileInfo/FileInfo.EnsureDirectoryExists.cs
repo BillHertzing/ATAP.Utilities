@@ -3,7 +3,7 @@
 // Issues: https://github.com/zzzprojects/Z.ExtensionMethods/issues
 // License (MIT): https://github.com/zzzprojects/Z.ExtensionMethods/blob/master/LICENSE
 // More projects: https://zzzprojects.com/
-// Copyright © ZZZ Projects Inc. All rights reserved.
+// Copyright ï¿½ ZZZ Projects Inc. All rights reserved.
 using System.IO;
 #if !NETSTANDARD
 using System.Security.AccessControl;
@@ -102,9 +102,10 @@ public static partial class Extensions
     ///     <paramref name="this" /> contains a colon character (:) that
     ///     is not part of a drive label ("C:\").
     /// </exception>
-    public static DirectoryInfo EnsureDirectoryExists(this FileInfo @this, DirectorySecurity directorySecurity)
-    {
-        return Directory.CreateDirectory(@this.Directory.FullName, directorySecurity);
-    }
+    // ToDo: enhance to support target frameworks net5.0, netstandard2.1 and .Net4.5+
+    // public static DirectoryInfo EnsureDirectoryExists(this FileInfo @this, DirectorySecurity directorySecurity)
+    // {
+    //     return Directory.CreateDirectory(@this.Directory.FullName, directorySecurity);
+    // }
 #endif
 }

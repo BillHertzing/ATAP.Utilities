@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using  ATAP.Utilities.Loader;
+
 using static ATAP.Utilities.Collection.Extensions;
 
 using static ATAP.Utilities.Serializer.Shim.SystemTextJson.Extensions;
@@ -47,7 +49,7 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
 
 
   }
-  public class Serializer : ISerializer {
+  public class Serializer : ISerializer, ILoadSubModules {
     private List<JsonConverter> JsonConvertersCache { get; set; }
     // attribution: [Avoid performance issues with JsonSerializer by reusing the same JsonSerializerOptions instance](https://www.meziantou.net/avoid-performance-issue-with-jsonserializer-by-reusing-the-same-instance-of-json.htm)
     private JsonSerializerOptions JsonSerializerOptionsCurrent { get; set; }

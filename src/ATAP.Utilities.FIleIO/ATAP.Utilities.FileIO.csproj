@@ -17,4 +17,12 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
+  <!-- FileIO Extension to provide file and direcotry Globbing requires System.IO.Abstractions -->
+  <ItemGroup>
+    <PackageReference Include="System.IO.Abstractions" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
+  </ItemGroup>
+
 </Project>

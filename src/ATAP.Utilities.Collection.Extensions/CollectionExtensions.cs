@@ -87,5 +87,41 @@ namespace ATAP.Utilities.Collection {
         collection.Add(cur);
       }
     }
+
+    public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source,
+    Func<TSource, TKey> keySelector) {
+      var knownKeys = new HashSet<TKey>();
+      foreach (TSource element in source) {
+        if (knownKeys.Add(keySelector(element))) {
+          yield return element;
+        }
+      }
+    }
+
+// attribution:[How do I check if IEnumerable has a single element?](https://stackoverflow.com/questions/47830766/how-do-i-check-if-ienumerable-has-a-single-element)
+public static bool HasSingle<T>(this IEnumerable<T> sequence, out T value)
+{
+    if (sequence is IList<T> list)
+    {
+        if(list.Count == 1)
+        {
+            value = list[0];
+            return true;
+        }
+    }
+    else
+    {
+        using (var iter = sequence.GetEnumerator())
+        {
+            if (iter.MoveNext())
+            {
+                value = iter.Current;
+                if (!iter.MoveNext()) return true;
+            }
+        }
+    }
+    value = default(T);
+    return false;
+}
   }
 }

@@ -21,11 +21,11 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
 
-<!-- ToDo move the configuration into extensions on loader objects -->
+  <!-- ToDo move the configuration into extensions on loader objects -->
   <ItemGroup>
     <!-- The LoaderLoader has a method that accepts an IConfiguration object -->
-      <PackageReference Include="Microsoft.Extensions.Configuration" />
-      <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
   </ItemGroup>
 
   <ItemGroup>

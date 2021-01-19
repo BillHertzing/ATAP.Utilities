@@ -3,7 +3,7 @@
 // Issues: https://github.com/zzzprojects/Z.ExtensionMethods/issues
 // License (MIT): https://github.com/zzzprojects/Z.ExtensionMethods/blob/master/LICENSE
 // More projects: https://zzzprojects.com/
-// Copyright © ZZZ Projects Inc. All rights reserved.
+// Copyright ï¿½ ZZZ Projects Inc. All rights reserved.
 using System.IO;
 #if !NETSTANDARD
 using System.Security.AccessControl;
@@ -11,6 +11,7 @@ using System.Security.AccessControl;
 
 public static partial class Extensions
 {
+  // ToDo: rework these static extensions to support Core and .Net 4.x framework
 #if !NETSTANDARD
     /// <summary>
     ///     Creates all directories and subdirectories in the specified @this.
@@ -98,9 +99,10 @@ public static partial class Extensions
     ///     <paramref name="this" /> contains a colon character (:) that
     ///     is not part of a drive label ("C:\").
     /// </exception>
-    public static DirectoryInfo CreateAllDirectories(this DirectoryInfo @this, DirectorySecurity directorySecurity)
-    {
-        return Directory.CreateDirectory(@this.FullName, directorySecurity);
-    }
+    // ToDo: move this into FileSystemACLExtensions for Net 5.0
+    // public static DirectoryInfo CreateAllDirectories(this DirectoryInfo @this, DirectorySecurity directorySecurity)
+    // {
+    //     return Directory.CreateDirectory(@this.FullName, directorySecurity);
+    // }
 #endif
 }

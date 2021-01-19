@@ -11,7 +11,6 @@ namespace ATAP.Utilities.Serializer {
     void Configure();
     void Configure(ISerializerOptions options);
 
-    void LoadSubModules(string subModuleShimName, string subModuleShimNamespace, string[] relativePathsToProbe);
     // void Configure(
     //   bool AllowTrailingCommas = false
     //   , bool WriteIndented = false

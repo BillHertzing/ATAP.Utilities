@@ -1,9 +1,17 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using ATAP.Utilities.FileIO
+using System.Reflection;
+using System.Runtime.Loader;
+using ATAP.Utilities.FileIO;
 
 namespace ATAP.Utilities.Loader {
+  public interface IDynamicGlobAndPredicate {
+    Glob Glob {get;}
+    Predicate<Type> Predicate {get;}
+  }
+
+
   public interface IDynamicShimNameAndNamespaceConfigRootKeyAndDefaultValue {
     string DynamicShimNameConfigRootKey { get; }
     string DynamicShimNameConfigDefault { get; }

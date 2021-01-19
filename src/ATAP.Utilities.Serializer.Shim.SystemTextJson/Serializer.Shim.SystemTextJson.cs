@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
-using  ATAP.Utilities.Loader;
+// This module, if loaded dynamically, has submodules which must be loaded dynamically as well
+// ToDo: make a separate assembly for subloading, to be included only if the code will be loaded dynamically
+using ATAP.Utilities.Loader;
+using ATAP.Utilities.FileIO;
+using System.Reflection;
 
 using static ATAP.Utilities.Collection.Extensions;
-
-using static ATAP.Utilities.Serializer.Shim.SystemTextJson.Extensions;
 
 namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
 
@@ -35,7 +36,7 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
       , bool allowTrailingCommas = default
       , bool ignoreNullValues = default
       , bool writeIndented = default
-      ,List<JsonConverter> jsonConverters = default
+      , List<JsonConverter> jsonConverters = default
       ) {
       jsonSerializerOptions.AllowTrailingCommas = allowTrailingCommas;
       jsonSerializerOptions.IgnoreNullValues = ignoreNullValues;
@@ -44,9 +45,6 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
       jsonSerializerOptions.Converters.AddRange(jsonConverters);
       return jsonSerializerOptions;
     }
-
-
-
 
   }
   public class Serializer : ISerializer, ILoadSubModules {
@@ -111,9 +109,36 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
     //   }
     // }
 
-    public override static IDictionary<Type, ISubModulesInfo<Type>> GetSubModulesInfo() {
+    // This module, if loaded dynamically, has submodules which must be loaded dynamically asa well
+    // ToDo: make a separate assembly, to be included only if the code will be loaded dynamically
+    class SubModulesInfo<Type> : ISubModulesInfo<Type> {
+      public Glob Glob { get; }
+      public Action<Type, object> Function { get; }
+      public Predicate<Type> Pred { get; }
+      public SubModulesInfo(Action<Type, object> function, Predicate<Type> pred) {
+        // ToDo: validate parameters
+        Function = function;
+        Pred = pred;
+      }
 
     }
+    public IDictionary<Type, ISubModulesInfo<Type>> GetSubModulesInfo() {
+      Dictionary<Type, ISubModulesInfo<Type>> subModulesInfoDictionary = new();
+      // subModulesInfoDictionary[typeof(JsonConverter)] = new SubModulesInfo<JsonConverter>(
+      //   new Action<Type, object>((x, y) => { return; }),
+      //   new Predicate<Type>(
+      //     _type => {
+      //       return
+      //         typeof(JsonConverter).IsAssignableFrom(_type)
+      //         && !_type.IsAbstract
+      //         && _type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson"
+      //       ;
+      //     }
+      //   )
+      // );
+      return subModulesInfoDictionary;
+    }
+
     public void LoadJsonConverters(string jsonConverterShimName, string jsonConverterShimNamespace, string[] relativePathsToProbe) {
       // Load all Plugin Assemblies with a name that matches the serializerShimName
       // get all types that implement JsonConverter

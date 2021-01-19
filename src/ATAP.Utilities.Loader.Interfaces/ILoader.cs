@@ -28,22 +28,25 @@ namespace ATAP.Utilities.Loader {
     IDictionary<Type, IEnumerable<IDynamicShimNameAndNamespace>> DynamicTypeToShimCollection { get; }
   }
   public interface ISubModulesInfo<Type> {
-    Action<object> Function {get;}
-    Predicate<IEnumerable<ILoaderAbstract<Type>>> Pred {get;}
+
+    Glob Glob {get;}
+    Action<Type, object> Function {get;}
+
+    Predicate<Type> Pred {get;}
   }
 
   public interface ILoadSubModules {
     IDictionary<Type, ISubModulesInfo<Type>> GetSubModulesInfo();
     /// uses list of types and dynamicShimNameAndNamespaceCollection built in to the dynamically loaded instance
     /// searches from the directory from which the dynamic shim module was loaded, downward
-    void LoadSubModules();
-    // as above, allows additional probingPaths before the default ones
-    void LoadSubModules(string[] relativePathsToProbe = default);
-    // as above, allows specifing one type and a collection of shim constraints that seek to identify a dynamic module to fulfill it
-    void LoadSubModules(Type type, IEnumerable<IDynamicShimNameAndNamespace> dynamicShimNameAndNamespaceCollection, string[] relativePathsToProbe);
-    // as above, allows specifing a dictionary of types and corresponding collections of shim constraints,
-    // so that multiple types can be dynamically loaded
-    void LoadSubModules(IDynamicTypeToShimDictionary DynamicTypeToShimDictionary, string[] relativePathsToProbe);
+    // void LoadSubModules();
+    // // as above, allows additional probingPaths before the default ones
+    // void LoadSubModules(string[] relativePathsToProbe = default);
+    // // as above, allows specifing one type and a collection of shim constraints that seek to identify a dynamic module to fulfill it
+    // void LoadSubModules(Type type, IEnumerable<IDynamicShimNameAndNamespace> dynamicShimNameAndNamespaceCollection, string[] relativePathsToProbe);
+    // // as above, allows specifing a dictionary of types and corresponding collections of shim constraints,
+    // // so that multiple types can be dynamically loaded
+    // void LoadSubModules(IDynamicTypeToShimDictionary DynamicTypeToShimDictionary, string[] relativePathsToProbe);
   }
   public interface ILoaderAbstract<IType> {
     IType Load(IDynamicShimNameAndNamespace dynamicShimNameAndNamespace);

@@ -9,6 +9,7 @@ using ATAP.Utilities.Loader;
 using ATAP.Utilities.Logging;
 using ATAP.Utilities.Persistence;
 using ATAP.Utilities.Serializer;
+using ATAP.Utilities.FileIO;
 
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
@@ -327,7 +328,13 @@ Log.Debug("TRACE is defined");
         // The Serialization library service, dynamically loaded based on configuration settings
         // Attribution: http://codebuckets.com/2020/05/29/dynamically-loading-assemblies-for-dependency-injection-in-net-core/ , Comment by 'David'
         // ToDo: improve to cover more cases, e.g., if only one implementation per interface is found, or if multiple implementations of an interface are in the Plugin path(s), add just the one matching a namespace from configuration
-        ATAP.Utilities.Loader.Loader<ISerializer>.LoadFromAssembly(_serializerShimName, _serializerShimNamespace, new string[] { pluginsDirectory }, services);
+        var SerializerLoader = new Loader<ISerializer>();
+        //bool isISerializerWithMatchingNamespace(Type type) { return typeof(ISerializer).IsAssignableFrom(type) && !type.IsAbstract && type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson"; }
+        SerializerLoader.LoadExactlyOneInstanceOfITypeFromAssemblyGlobAsSingleton(new DynamicGlobAndPredicate() {
+          Glob = new Glob(){Pattern = ".\\Plugins\\ATAP.Utilities.Serializer.Shim.SystemTextJson.dll"},
+          Predicate =
+        new Predicate<Type>(type=>{return typeof(ISerializer).IsAssignableFrom(type) && !type.IsAbstract && type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson"; })
+        }, services);
         // ToDo: Plugin services, added to the IServices collection simply because they exist somewhere in the plugins Directory tree
         // The primary service (loop) that this program does
         services.AddHostedService<Console02BackgroundService>(); // Only use this service in a GenericHost having a DI-injected IHostLifetime of type ConsoleLifetime.

@@ -111,31 +111,50 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
 
     // This module, if loaded dynamically, has submodules which must be loaded dynamically asa well
     // ToDo: make a separate assembly, to be included only if the code will be loaded dynamically
-    class SubModulesInfo<Type> : ISubModulesInfo<Type> {
+
+    /// <summary>
+    /// detailed information for loading submodules for a specific dynamic Type,
+    /// </summary>
+    class SubModulesInfo : ISubModulesInfo {
+      /// <summary>
+      /// The Glob property contains a globbing pattern to find libraries to load
+      /// </summary>
       public Glob Glob { get; }
+      /// <summary>
+      /// The Function property contains an Action delegate called for each dynamic type that gets instantiated
+      /// </summary>
       public Action<Type, object> Function { get; }
+      /// <summary>
+      ///  The Predicate property contains a boolen delegate that accepts a Type argument, and returns true if the delegate returns true
+      /// </summary>
       public Predicate<Type> Pred { get; }
-      public SubModulesInfo(Action<Type, object> function, Predicate<Type> pred) {
+      public SubModulesInfo(Glob glob, Action<Type, object> function, Predicate<Type> pred) {
         // ToDo: validate parameters
+        Glob = glob;
         Function = function;
         Pred = pred;
       }
 
     }
-    public IDictionary<Type, ISubModulesInfo<Type>> GetSubModulesInfo() {
-      Dictionary<Type, ISubModulesInfo<Type>> subModulesInfoDictionary = new();
-      // subModulesInfoDictionary[typeof(JsonConverter)] = new SubModulesInfo<JsonConverter>(
-      //   new Action<Type, object>((x, y) => { return; }),
-      //   new Predicate<Type>(
-      //     _type => {
-      //       return
-      //         typeof(JsonConverter).IsAssignableFrom(_type)
-      //         && !_type.IsAbstract
-      //         && _type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson"
-      //       ;
-      //     }
-      //   )
-      // );
+    /// <summary>
+    /// returns a dictionary, keyed by type, with a SubModulesInfo for each type
+    /// </summary>
+    /// <returns>IDictionary<Type, ISubModulesInfo></returns>
+    public IDictionary<Type, ISubModulesInfo> GetSubModulesInfo() {
+      Dictionary<Type, ISubModulesInfo> subModulesInfoDictionary = new();
+      subModulesInfoDictionary[typeof(JsonConverter)] = new SubModulesInfo(
+        glob: new Glob() { Pattern = ".\\Plugins\\*JsonConverter.Shim.SystemTextJson.dll" },
+        function: new Action<Type, object>((x, y) => { return; }),
+         new Predicate<Type>(
+          _type => {
+            return
+              typeof(JsonConverter).IsAssignableFrom(_type)
+              && !_type.IsAbstract
+              && _type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson"
+            ;
+          }
+        )
+      );
       return subModulesInfoDictionary;
     }
 

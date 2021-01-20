@@ -17,20 +17,10 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="FSharp.Core" />
-    <PackageReference Include="YC.QuickGraph" />
-  </ItemGroup>
-
 
   <!-- Reactive Extensions -->
   <ItemGroup>
     <PackageReference Include="System.Reactive" />
-  </ItemGroup>
-
-  <!-- ServiceStack dump utility -->
-  <ItemGroup>
-    <PackageReference Include="ServiceStack.Text" />
   </ItemGroup>
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->

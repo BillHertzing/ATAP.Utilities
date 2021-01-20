@@ -65,6 +65,13 @@
   </Target>
   -->
 
+<!-- when creating Console programs or services, if they dynamicallly load Plugins, define where the Plugins subdirectory is located -->
+    <PropertyGroup>
+    <PluginsRelativeDir Condition="$(PluginsRelativeDir) == '' Or $(PluginsRelativeDir) == '*Undefined*'">Plugins\</PluginsRelativeDir>
+    <PluginsDir Condition="$(PluginsDir) == '' Or $(PluginsDir) == '*Undefined*'">$(OutputPath)$(PluginsRelativeDir)</PluginsDir>
+  </PropertyGroup>
+
+
   <!-- Solution-wide, copy newer .json settings files that exist in the project directory into the output directory -->
   <PropertyGroup>
     <PrepareForRunDependsOn>$(PrepareForRunDependsOn);CopyJSONSettingsFilesToOutputDirectory</PrepareForRunDependsOn>

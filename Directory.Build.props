@@ -36,7 +36,7 @@
     <!-- ToDo: Major pain point, there is no way to know how far up SolutionDir may be.  In this repository, code is always two subdirectories down from the solution dir -->
 
     <!-- the result is that the $(SolutionDir) is set properly regardless of the $(MSBuildRuntimeType) -->
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">$(MSBuildProjectDirectory)\..\..\</SolutionDir>
+    <SolutionDir >$(MSBuildProjectDirectory)\..\..\</SolutionDir>
 
     <!-- Directory where all of the custom build tools are stored -->
     <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)Build\</SolutionBuildToolsBaseDir>

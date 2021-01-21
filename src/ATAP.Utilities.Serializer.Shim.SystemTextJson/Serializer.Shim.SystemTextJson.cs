@@ -29,7 +29,9 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
       jsonSerializerOptions.AllowTrailingCommas = options.AllowTrailingCommas;
       jsonSerializerOptions.IgnoreNullValues = options.IgnoreNullValues;
       jsonSerializerOptions.WriteIndented = options.WriteIndented;
-      jsonSerializerOptions.PopulateConverters(jsonConverters);
+      if (jsonConverters != null) {
+        jsonSerializerOptions.PopulateConverters(jsonConverters);
+      }
       return jsonSerializerOptions;
     }
     public static JsonSerializerOptions ConvertOptions(this JsonSerializerOptions jsonSerializerOptions
@@ -42,12 +44,14 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
       jsonSerializerOptions.IgnoreNullValues = ignoreNullValues;
       jsonSerializerOptions.WriteIndented = writeIndented;
       jsonSerializerOptions.Converters.Clear();
-      jsonSerializerOptions.Converters.AddRange(jsonConverters);
+      if (jsonConverters != null) {
+        jsonSerializerOptions.Converters.AddRange(jsonConverters);
+      }
       return jsonSerializerOptions;
     }
 
   }
-  public class Serializer : ISerializer, ILoadSubModules {
+  public class Serializer : ISerializer, ILoadDynamicSubModules {
     private List<JsonConverter> JsonConvertersCache { get; set; }
     // attribution: [Avoid performance issues with JsonSerializer by reusing the same JsonSerializerOptions instance](https://www.meziantou.net/avoid-performance-issue-with-jsonserializer-by-reusing-the-same-instance-of-json.htm)
     private JsonSerializerOptions JsonSerializerOptionsCurrent { get; set; }
@@ -83,69 +87,28 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
     public void Configure(ISerializerOptions options) {
       JsonSerializerOptionsCurrent = new JsonSerializerOptions().ConvertOptions(options);
     }
-    private static void PopulateConverters(JsonSerializerOptions jsonSerializerOptions, List<JsonConverter> jsonConverters = default) {
+    private void PopulateConverters(JsonSerializerOptions jsonSerializerOptions, List<JsonConverter> jsonConverters = default) {
       // ToDo: Add parameter checking
       jsonSerializerOptions.Converters.Clear();
       foreach (var converter in jsonConverters) {
         jsonSerializerOptions.Converters.Add(converter);
       }
     }
-    // ToDo: enhancement to allow a loaded modules to ask for additional modules to be loaded
-    // ToDo: another method with a signature that allows for a IDictionary<Type, ILoaderShimNameAndNamespace>
-    // ToDo: another method with a signature that allows for a IDictionary<Type, ILoaderShimNameAndNamespaceConfigRootKeyAndDefaultValue>
-    // public static void LoadSubModules(ISerializer instance, Type subModuleType, string subModuleShimName, string subModuleShimNamespace, string[] relativePathsToProbe) {
-    //   switch (subModuleType) {
-    //     case Type jsonConverterType when jsonConverterType == typeof(JsonConverter): {
-    //         LoadJsonConverters(subModuleShimName, subModuleShimNamespace, relativePathsToProbe);
-    //         break;
-    //       }
-    //     case Type jsonConverterFactoryType when jsonConverterFactoryType == typeof(JsonConverterFactory): {
-    //         LoadJsonConverterFactorys(subModuleShimName, subModuleShimNamespace, relativePathsToProbe);
-    //         break;
-    //       }
-    //     default: {
-    //         throw new ArgumentException($"toDo:Put in string localizer for argument {nameof(subModuleType)} value is unsupported");
-    //       }
-    //   }
-    // }
 
-    // This module, if loaded dynamically, has submodules which must be loaded dynamically asa well
+    // This module, if loaded dynamically, has submodules which must be loaded dynamically as well
     // ToDo: make a separate assembly, to be included only if the code will be loaded dynamically
-
     /// <summary>
-    /// detailed information for loading submodules for a specific dynamic Type,
-    /// </summary>
-    class SubModulesInfo : ISubModulesInfo {
-      /// <summary>
-      /// The Glob property contains a globbing pattern to find libraries to load
-      /// </summary>
-      public Glob Glob { get; }
-      /// <summary>
-      /// The Function property contains an Action delegate called for each dynamic type that gets instantiated
-      /// </summary>
-      public Action<Type, object> Function { get; }
-      /// <summary>
-      ///  The Predicate property contains a boolen delegate that accepts a Type argument, and returns true if the delegate returns true
-      /// </summary>
-      public Predicate<Type> Pred { get; }
-      public SubModulesInfo(Glob glob, Action<Type, object> function, Predicate<Type> pred) {
-        // ToDo: validate parameters
-        Glob = glob;
-        Function = function;
-        Pred = pred;
-      }
-
-    }
-    /// <summary>
-    /// returns a dictionary, keyed by type, with a SubModulesInfo for each type
+    /// returns a dictionary, keyed by type, with a DynamicSubModulesInfo for each type
     /// </summary>
     /// <returns>IDictionary<Type, ISubModulesInfo></returns>
-    public IDictionary<Type, ISubModulesInfo> GetSubModulesInfo() {
-      Dictionary<Type, ISubModulesInfo> subModulesInfoDictionary = new();
-      subModulesInfoDictionary[typeof(JsonConverter)] = new SubModulesInfo(
-        glob: new Glob() { Pattern = ".\\Plugins\\*JsonConverter.Shim.SystemTextJson.dll" },
-        function: new Action<Type, object>((x, y) => { return; }),
-         new Predicate<Type>(
+    public IDictionary<Type, IDynamicSubModulesInfo> GetDynamicSubModulesInfo() {
+      Dictionary<Type, IDynamicSubModulesInfo> dynamicSubModulesInfoDictionary = new();
+      dynamicSubModulesInfoDictionary[typeof(JsonConverter)] = new DynamicSubModulesInfo() {
+        DynamicGlobAndPredicate = new DynamicGlobAndPredicate() {
+          Glob = new Glob() {
+            Pattern = ".\\Plugins\\*JsonConverter.Shim.SystemTextJson.dll"
+          },
+          Predicate = new Predicate<Type>(
           _type => {
             return
               typeof(JsonConverter).IsAssignableFrom(_type)
@@ -153,9 +116,11 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
               && _type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson"
             ;
           }
-        )
-      );
-      return subModulesInfoDictionary;
+         )
+        },
+        Function = new Action<object>((instance) => { JsonConvertersCache.Add((JsonConverter)instance); return; })
+      };
+      return dynamicSubModulesInfoDictionary;
     }
 
     public void LoadJsonConverters(string jsonConverterShimName, string jsonConverterShimNamespace, string[] relativePathsToProbe) {

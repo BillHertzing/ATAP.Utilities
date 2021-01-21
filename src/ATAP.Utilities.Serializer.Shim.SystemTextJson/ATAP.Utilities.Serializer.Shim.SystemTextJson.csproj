@@ -26,9 +26,10 @@
     <ProjectReference Include="..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
   </ItemGroup>
 
-  <!-- Loader interfaces for any Assembly that may be loaded by the dynamic Loader -->
+  <!-- Loader interfaces and actuals for any Assembly that may be loaded by the dynamic Loader -->
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
   </ItemGroup>
 
 </Project>

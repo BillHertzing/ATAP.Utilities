@@ -179,7 +179,7 @@
     <!-- Packages to add resilience policies to async and synchronous operations -->
     <PackageReference Update="Polly" Version="7.2.1" />
 
-    <!-- The Serializer Libraries available (See also SereviceStack.Text) -->
+    <!-- The Serializer Libraries available (See also ServiceStack.Text) -->
     <PackageReference Update="System.Text.Json" Version="5.0.0" />
     <PackageReference Update="Newtonsoft.Json" Version="12.0.3" />
 
@@ -191,7 +191,6 @@
 
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
     <PackageReference Update="MethodBoundaryAspect.Fody" Version="2.0.138" />
-
 
     <!-- Packages used for custom build tasks -->
     <PackageReference Update="Microsoft.Build.Framework" Version="16.8.0" />

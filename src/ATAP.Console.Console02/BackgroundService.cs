@@ -273,19 +273,20 @@ namespace ATAP.Console.Console02 {
       LinkedCancellationToken = LinkedCancellationTokenSource.Token;
       #endregion
       #region Register actions with the CancellationToken (s)
+      LinkedCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} LinkedCancellationToken has signalled stopping."], "Console02BackgroundService", "LinkedCancellationToken"));
       externalCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "Console02BackgroundService", "externalCancellationToken"));
       InternalCancellationToken.Register(() => {
         Logger.LogDebug(DebugLocalizer["{0} {1} InternalCancellationToken has signalled stopping."], "Console02BackgroundService", "InternalCancellationToken");
         Logger.LogDebug(DebugLocalizer["{0} {1} Need to figure out how to call the parent Console02 and tell it to gracefully shutdown."], "Console02BackgroundService", "InternalCancellationToken");
         //StopAsync()
       });
-      LinkedCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} LinkedCancellationToken has signalled stopping."], "Console02BackgroundService", "LinkedCancellationToken"));
       #endregion
       #region Define the inputs to respond to
       // Create a list of choices
       Choices = new List<string>() {
-          UiLocalizer["1. Run GenerateCodeAsync"]
-        , UiLocalizer["2. Roundtrip Settings"]
+         UiLocalizer["1. PrettyPrint a GenerateCodeSignil"]
+        , UiLocalizer["2. Roundtrip a GenerateCodeSignil to Settings file and back"]
+        , UiLocalizer["3. Run GenerateCodeAsync on a Settings file"]
         , UiLocalizer["99: Quit"]
       };
       #endregion

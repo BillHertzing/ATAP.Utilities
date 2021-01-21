@@ -71,6 +71,16 @@ namespace ATAP.Console.Console02 {
       #endregion
       switch (inputLine) {
         case "1":
+          Logger.LogDebug(DebugLocalizer["{0} {1}: Both PrettyPrint and Serialize a GInvokeGenerateCodeSignil from declared instance"], "Console02BackgroundService", "DoLoopAsync");
+          BuildJSONSettingsFromInstance();
+          break;
+        case "2":
+          Logger.LogDebug(DebugLocalizer["{0} {1}: Create a GInvokeGenerateCodeSignil instance from Settings"], "Console02BackgroundService", "DoLoopAsync");
+          IGInvokeGenerateCodeSignil gInvokeGenerateCodeSignilFromSettings = GetGInvokeGenerateCodeSignilFromSettings();
+          Logger.LogDebug(DebugLocalizer["{0} {1}: PrettyPrint gInvokeGenerateCodeSignilFromSettings {2}"], "Console02BackgroundService", "DoLoopAsync", Serializer.Serialize(gInvokeGenerateCodeSignilFromSettings));
+          break;
+        case "3":
+          Logger.LogDebug(DebugLocalizer["{0} {1}: Invoke the GenerateCodeService passing it a GInvokeGenerateCodeSignil instance from Settings"], "Console02BackgroundService", "DoLoopAsync");
           #region Generate Code from Settings in ConfigRoot
           // Get these from the Console02 application configuration
           // ToDo: Get these from the database or from a configurationRoot (priority?)
@@ -310,14 +320,7 @@ namespace ATAP.Console.Console02 {
           #endregion
           #endregion
           break;
-          case "2" :
-            Logger.LogDebug(DebugLocalizer["{0} {1}: Creating Signil from Settings"], "Console02BackgroundService", "DoLoopAsync");
-              IGInvokeGenerateCodeSignil gInvokeGenerateCodeSignilFromSettings = GetGInvokeGenerateCodeSignilFromSettings();
-            Logger.LogDebug(DebugLocalizer["{0} {1}: SignilFromSettings in JSON {2}"], "Console02BackgroundService", "DoLoopAsync", Serializer.Serialize(gInvokeGenerateCodeSignilFromSettings));
-          break;
-        case "3":
-          BuildJSONSettingsFromInstance();
-              break;
+
         case "99":
           #region Quit the program
           InternalCancellationTokenSource.Cancel();

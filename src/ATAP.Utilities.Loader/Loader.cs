@@ -22,15 +22,47 @@ using LoaderStringConstants = ATAP.Utilities.Loader.StringConstants;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ATAP.Utilities.Loader {
+  /// <summary>
+  /// The  <see cref="DynamicGlobAndPredicate"> record identifies assemblies to load and from that assembly a predicate to match specific types
+  /// </summary>
   public record DynamicGlobAndPredicate : IDynamicGlobAndPredicate {
     public Glob Glob { get; init; }
     public Predicate<Type> Predicate { get; init; }
   }
 
+  /// <summary>
+  /// detailed information for loading submodules for a specific dynamic Type,
+  /// </summary>
+  public record DynamicSubModulesInfo : IDynamicSubModulesInfo {
+    /// <summary>
+    /// The  <see cref="DynamicGlobAndPredicate"> property contains a globbing pattern to find libraries and then types to load
+    /// </summary>
+    public IDynamicGlobAndPredicate DynamicGlobAndPredicate { get; init; }
+    /// <summary>
+    /// The <see cref="Function"> property contains an Action delegate called for each dynamic type that gets instantiated
+    /// </summary>
+    public Action<object> Function { get; init; }
+  }
+
+  public abstract class LoaderAbstract<IType> {
+    public abstract void LoadExactlyOneInstanceOfITypeFromAssemblyGlobAsSingleton(IDynamicGlobAndPredicate dynamicGlobAndPredicate, IServiceCollection services);
+    public abstract IType LoadExactlyOneInstanceOfITypeFromAssemblyGlob(IDynamicGlobAndPredicate dynamicGlobAndPredicate = default);
+    public abstract void LoadAndProcessZeroOrMoreInstanceOfITypeFromAssemblyGlob(IDynamicGlobAndPredicate dynamicGlobAndPredicate, Action<Type, object> action);
+  }
+
+  public class LoaderFactory {
+    // public LoaderAbstract<Type> GetLoader(Type TypeToLoad) {
+    //   Type genericLoaderType = typeof(Loader<>);
+    //   Type constructedLoaderType = genericLoaderType.MakeGenericType(TypeToLoad);
+    //   return new Loader<constructedLoaderType>();
+    // }
+  }
+
   // todo: constructor injection of Logger and exception_Localizer
-  public class Loader<IType> {
-    public void LoadExactlyOneInstanceOfITypeFromAssemblyGlobAsSingleton(IDynamicGlobAndPredicate dynamicGlobAndPredicate, IServiceCollection services) {
-      if (dynamicGlobAndPredicate == default) { throw new ArgumentNullException("ToDo:Localize nameof(dynamicGlobAndPredicate) cannot be null (default)"); }
+  public class Loader<IType> : LoaderAbstract<IType> {
+    public override void LoadExactlyOneInstanceOfITypeFromAssemblyGlobAsSingleton(IDynamicGlobAndPredicate dynamicGlobAndPredicate, IServiceCollection services) {
+      // ToDo: Localize this exception
+      if (dynamicGlobAndPredicate == default) { throw new ArgumentNullException(nameof(dynamicGlobAndPredicate)); }
       IType instance;
       // allow any exception thrown in lower level to bubble up through here
       instance = LoadExactlyOneInstanceOfITypeFromAssemblyGlob(dynamicGlobAndPredicate);
@@ -39,7 +71,7 @@ namespace ATAP.Utilities.Loader {
       services.AddSingleton(typeof(IType), instance);
       return;
     }
-    public IType LoadExactlyOneInstanceOfITypeFromAssemblyGlob(IDynamicGlobAndPredicate dynamicGlobAndPredicate = default) {
+    public override IType LoadExactlyOneInstanceOfITypeFromAssemblyGlob(IDynamicGlobAndPredicate dynamicGlobAndPredicate = default) {
       var loaders = new List<PluginLoader>();
       var allShimNames = dynamicGlobAndPredicate.Glob.ExpandNames();
       IType singleInstance;
@@ -74,22 +106,64 @@ namespace ATAP.Utilities.Loader {
       }
       // This assumes the implementation of IType has a parameterless constructor
       singleInstance = (IType)Activator.CreateInstance(singleType);
-      // Does the instance (or pluginLoader) indicate that instance implements the ILoadSubModules interface
-      bool hasSubModules = singleLoader.LoadDefaultAssembly().GetTypes().Where(_type => typeof(ILoadSubModules).IsAssignableFrom(_type) && dynamicGlobAndPredicate.Predicate(_type)).Any();
-      if (hasSubModules) {
+      // Does the instance (or pluginLoader) indicate that instance implements the ILoadDynamicSubModules interface
+      bool hasDynamicSubModules = singleLoader.LoadDefaultAssembly().GetTypes().Where(_type => typeof(ILoadDynamicSubModules).IsAssignableFrom(_type) && dynamicGlobAndPredicate.Predicate(_type)).Any();
+      if (hasDynamicSubModules) {
         // find and load any additional dynamic modules to load as specified by the actual instance
         // Get the dictionary (by Type) of (functions (by enumeration expected cardinalityofresults (0,1,many) to be applied to each Cardinailty:(collection or individual) submodule Types, using relativePathsToProbe, pattern for finding the submodule .dll files in the existing relativePathsToProbe, , subModuleNamespace
-        var subTypesToFunctionGlobCriteriaDictionary = ((ILoadSubModules)singleInstance).GetSubModulesInfo();
+        var subTypesToFunctionGlobCriteriaDictionary = ((ILoadDynamicSubModules)singleInstance).GetDynamicSubModulesInfo();
         // Iterate
         foreach (var subModuleIType in subTypesToFunctionGlobCriteriaDictionary.Keys) {
           var subModulesInfo = subTypesToFunctionGlobCriteriaDictionary[subModuleIType];
-          //   var subModuleLoader = new LoaderFactory(subModuleIType);
-          //   subModuleLoader.LoadManyInstanceOfITypeFromAssemblyGlob(subModuleIType, subModuleDynamicGlobAndPredicate);
+          // var genericLoaderType = typeof(Loader<subModuleIType.GetType() >).MakeGenericType(subModuleIType.GetType());
+          // var genericLoaderInstance = Activator.CreateInstance(typeof(genericLoaderType));
+          // var iType = subModuleIType.GetType();
+          // var genericLoader = typeof(Loader<>).MakeGenericType(subModuleIType.GetType());
+          // var subModuleLoader = (Loader<type>)Activator.CreateInstance(type);
+          // subModuleLoader.LoadAndProcessZeroOrMoreInstanceOfITypeFromAssemblyGlob(subModulesInfo.DynamicGlobAndPredicate, subModulesInfo.Function);
+          // subModuleLoader.LoadManyInstanceOfITypeFromAssemblyGlob(subModuleIType, subModuleDynamicGlobAndPredicate);
           // ToDo: add upperbound test for number of iterations/depth that submodules can be loaded, raise custom exception if it happens
         }
       }
 
       return singleInstance;
+    }
+    public override void LoadAndProcessZeroOrMoreInstanceOfITypeFromAssemblyGlob(IDynamicGlobAndPredicate dynamicGlobAndPredicate, Action<Type, object> action) {
+      // ToDo: add parameter checking
+      var loaders = new List<PluginLoader>();
+      var allShimNames = dynamicGlobAndPredicate.Glob.ExpandNames();
+      //IEnumerable ZeroOrMoreInstanceCollection;
+      // ToDo: fix an issue if the Glob pattern (file suffix) differs in case from the actual file name, it throws an exception
+      foreach (string shimName in allShimNames) {
+        var loader = PluginLoader.CreateFromAssemblyFile(
+        shimName,
+        sharedTypes: new[] { typeof(IType) });
+        loaders.Add(loader);
+      }
+      var loaderHavingTypeMatchingPredicateCollection = new List<PluginLoader>();
+      foreach (var loader in loaders) {
+        var typesFromDynamicallyLoadedAssemblyMatchingPredicate = loader
+             .LoadDefaultAssembly()
+             .GetTypes()
+             .Where(_type => dynamicGlobAndPredicate.Predicate(_type));
+        if (typesFromDynamicallyLoadedAssemblyMatchingPredicate.Any()) {
+          loaderHavingTypeMatchingPredicateCollection.Add(loader);
+        }
+      }
+      foreach (PluginLoader loader in loaderHavingTypeMatchingPredicateCollection) {
+        var typeMatchesPredicateCollection = loader
+            .LoadDefaultAssembly()
+            .GetTypes()
+            .Where(_type => dynamicGlobAndPredicate.Predicate(_type));
+        // a single assembly may contain many types that match the predicate
+        foreach (Type matchingType in typeMatchesPredicateCollection) {
+          // This assumes the implementation of IType has a parameterless constructor
+          // ToDo: wrap in a try/catch and handle exceptions
+          var singleInstance = (IType)Activator.CreateInstance(matchingType);
+          // pass the singleInstance of the matchingType to the Action
+          action(matchingType, singleInstance!);
+        }
+      }
     }
   }
 
@@ -228,12 +302,12 @@ namespace ATAP.Utilities.Loader {
   //           {
   //         // This assumes the implementation of IType has a parameterless constructor
   //         var initialInstance = (IType)Activator.CreateInstance(pluginType);
-  //         // Does the instance (or pluginLoader) indicate that instance implements the ILoadSubModules interface
-  //         bool hasSubModules = loader.LoadDefaultAssembly().GetTypes().Where(t => typeof(ILoadSubModules).IsAssignableFrom(t) && typeof(IType).IsAssignableFrom(t) && !t.IsAbstract && t.Namespace == LoaderShimNamespace).Any();
-  //         if (hasSubModules) {
+  //         // Does the instance (or pluginLoader) indicate that instance implements the ILoadDynamicSubModules interface
+  //         bool hasDynamicSubModules = loader.LoadDefaultAssembly().GetTypes().Where(t => typeof(ILoadDynamicSubModules).IsAssignableFrom(t) && typeof(IType).IsAssignableFrom(t) && !t.IsAbstract && t.Namespace == LoaderShimNamespace).Any();
+  //         if (hasDynamicSubModules) {
   //           // find and load any additional dynamic modules to load as specified by the actual instance
   //           // // Get the dictionary (by Type) of (functions (by enumeration expected CardinalityOfResults (0,1,many) to be applied to each Cardinailty:(collection or individual) submodule Types, using relativePathsToProbe, pattern for finding the submodule .dll files in the existing relativePathsToProbe, , subModuleNamespace
-  //           // var subTypesToFunctionCriteriaDictionary = ((ILoadSubModules)initialInstance).GetSubModulesInfo();
+  //           // var subTypesToFunctionCriteriaDictionary = ((ILoadDynamicSubModules)initialInstance).GetDynamicSubModulesInfo();
   //           // // Iterate
   //           // foreach (var kvp in subTypesToFunctionCriteriaDictionary) {
   //           //   ATAP.Utilities.Loader.Loader <.>.LoadFromAssembly(_serializerShimName, _serializerShimNamespace, new string[] { pluginsDirectory }
@@ -258,7 +332,7 @@ namespace ATAP.Utilities.Loader {
   //   return instance;
   // }
 
-  // public abstract static IDictionary<Type, ISubModulesInfo<Type>> GetSubModulesInfo() {
+  // public abstract static IDictionary<Type, IDynamicSubModulesInfo<Type>> GetDynamicSubModulesInfo() {
 
   // }
   // public static void LoadSubModules(IType instance, string loaderShimName, string LoaderShimNamespace, string[] relativePathsToProbe) {

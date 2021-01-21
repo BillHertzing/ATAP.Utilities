@@ -12,7 +12,6 @@ namespace ATAP.Utilities.Loader {
     Predicate<Type> Predicate { get; }
   }
 
-
   public interface IDynamicShimNameAndNamespaceConfigRootKeyAndDefaultValue {
     string DynamicShimNameConfigRootKey { get; }
     string DynamicShimNameConfigDefault { get; }
@@ -20,37 +19,13 @@ namespace ATAP.Utilities.Loader {
     string DynamicShimNamespaceConfigurationDefault { get; }
   }
 
-  // public interface IDynamicShimNameAndNamespace {
-  //   string DynamicShimName { get; }
-  //   string DynamicShimNamespace { get; }
-  // }
-
-  // public interface IDynamicTypeToShimDictionary {
-  //   IDictionary<Type, IEnumerable<IDynamicShimNameAndNamespace>> DynamicTypeToShimCollection { get; }
-  // }
-  public interface ISubModulesInfo{
-
-    Glob Glob { get; }
-    Action<Type, object> Function { get; }
-
-    Predicate<Type> Pred { get; }
+  public interface IDynamicSubModulesInfo {
+    IDynamicGlobAndPredicate DynamicGlobAndPredicate { get; }
+    Action<object> Function { get; }
   }
 ///
-  public interface ILoadSubModules {
-    IDictionary<Type, ISubModulesInfo> GetSubModulesInfo();
+  public interface ILoadDynamicSubModules {
+    IDictionary<Type, IDynamicSubModulesInfo> GetDynamicSubModulesInfo();
   }
-
-  // public interface ILoaderAbstract<IType> {
-  //   IType Load(IDynamicShimNameAndNamespace dynamicShimNameAndNamespace);
-  //   void Configure();
-  //   void Configure(ILoaderOptions options);
-  // }
-
-  // public abstract class LoaderAbstract<IType> : ILoaderAbstract<IType> {
-  //   public abstract IType Load(IDynamicShimNameAndNamespace dynamicShimNameAndNamespace);
-  //   public abstract IType Load(Glob shimGlob, Predicate<Type> pred);
-  //   public abstract void Configure();
-  //   public abstract void Configure(ILoaderOptions options);
-  // }
 
 }

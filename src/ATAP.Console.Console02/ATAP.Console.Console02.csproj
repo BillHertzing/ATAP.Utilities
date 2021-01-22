@@ -70,7 +70,7 @@
   </ItemGroup>
 
   <!-- print MSBuild debugging information -->
-  <Target Name="PrintMSBuildDebuggingInformationForDynamicShims" BeforeTargets="_InnerBuild">
+  <Target Name="PrintMSBuildDebuggingInformationForDynamicShims" BeforeTargets="Build">
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="Running Target PrintMSBuildDebuggingInformationForDynamicShims before _InnerBuild" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="Configuration = $(Configuration)" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="OutputPath = $(OutputPath)" />
@@ -144,14 +144,6 @@
   </Target>
   -->
 
-  <!-- Copy all Serialization libraries for the ISerializer DI-injected service to the outputdir-->
-
-  <!-- <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.Shim.NewtonsoftJson.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.ServiceStackJson\ATAP.Utilities.Serializer.Shim.ServiceStackJson.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
-  </ItemGroup> -->
-
   <!-- ServiceStack ORMLite (database) utilities -->
   <ItemGroup>
     <PackageReference Include="ServiceStack" />
@@ -200,5 +192,15 @@
   <ItemGroup>
     <PackageReference Include="McMaster.NETCore.Plugins" />
   </ItemGroup>
+
+  <!-- Testing detection of Design-Time builds under VS Code (Omnisharp) -->
+  <Target Name="DetectDesignTimeBuild" >
+    <PropertyGroup Condition="'$(DesignTimeBuild)' == 'true' OR ('$(BuildingProject)' != '' AND'$(BuildingProject)' != 'true')">
+      <_DesignTimeBuild>true</_DesignTimeBuild>
+    </PropertyGroup>
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="DesignTimeBuild = $(DesignTimeBuild)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="BuildingProject = $(BuildingProject)" />
+    <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="_DesignTimeBuild = $(_DesignTimeBuild)" />
+  </Target>
 
 </Project>

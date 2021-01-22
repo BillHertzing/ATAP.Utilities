@@ -1,8 +1,9 @@
 using System;
 
 using Microsoft.Extensions.Configuration;
+using ATAP.Utilities.FileIO;
+using ATAP.Utilities.Loader;
 using ATAP.Utilities.Serializer;
-using Loader = ATAP.Utilities.Loader.Loader;
 
 using Ninject;
 
@@ -15,14 +16,14 @@ namespace ATAP.Utilities.Testing {
   public class SerializerInjectionModule : Ninject.Modules.NinjectModule {
     string SerializerShimName { get; set; }
     string SerializerShimNamespace { get; set; }
-    public SerializerInjectionModule() : this("ATAP.Utilities.Serializer.Shim.SystemTextJson.dll", "ATAP.Utilities.Serializer") {}
-    public SerializerInjectionModule(IConfiguration configuration = default){
+    public SerializerInjectionModule() : this("ATAP.Utilities.Serializer.Shim.SystemTextJson.dll", "ATAP.Utilities.Serializer") { }
+    public SerializerInjectionModule(IConfiguration configuration = default) {
       if (configuration == null) {
         throw new ArgumentNullException("configuration");
       }
       // ToDo:Use stringconstants from Serializer.StringConstants to read from the configurationroot
       SerializerShimName = "ATAP.Utilities.Serializer.Shim.SystemTextJson.dll";
-      SerializerShimNamespace ="ATAP.Utilities.Serializer";
+      SerializerShimNamespace = "ATAP.Utilities.Serializer";
     }
     public SerializerInjectionModule(string serializerShimName = default, string serializerShimNamespace = default) {
       if (String.IsNullOrWhiteSpace(serializerShimName)) { throw new ArgumentNullException(nameof(serializerShimName)); } else { SerializerShimName = serializerShimName; }
@@ -31,8 +32,19 @@ namespace ATAP.Utilities.Testing {
 
     public override void Load() {
       // ToDo make this lazy ISerializer t = ATAP.Utilities.Serializer.SerializerLoader.LoadSerializerFromAssembly();
-      var serializer = ATAP.Utilities.Loader.Loader<ISerializer>.LoadFromAssembly(SerializerShimName, SerializerShimNamespace, new string[] { pluginsDirectory }, services);
-//     var serializer = Loader.LoadFromAssembly(SerializerShimName, SerializerShimNamespace);
+
+      var serializer = ATAP.Utilities.Loader.Loader<ISerializer>.LoadExactlyOneInstanceOfITypeFromAssemblyGlob(
+        new DynamicGlobAndPredicate() {
+          Glob = new Glob() { Pattern = ".\\Plugins\\ATAP.Utilities.Serializer.Shim.SystemTextJson.dll" },
+          Predicate =
+            new Predicate<Type>(type => {
+              return typeof(ISerializer).IsAssignableFrom(type) && !type.IsAbstract && type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson";
+            }
+
+        }
+        , new string[] { pluginsDirectory }, services);
+      //var serializer = ATAP.Utilities.Loader.Loader<ISerializer>.LoadFromAssembly(SerializerShimName, SerializerShimNamespace, new string[] { pluginsDirectory }, services);
+      //     var serializer = Loader.LoadFromAssembly(SerializerShimName, SerializerShimNamespace);
       //attribution: https://stackoverflow.com/questions/16916140/ninject-registering-an-already-created-instance-with-ninject
       Bind<ISerializer>().ToConstant(serializer);
       //Bind<ISerializer>().To<Serializer.Serializer>();
@@ -44,11 +56,11 @@ namespace ATAP.Utilities.Testing {
       Kernel = new StandardKernel(new SerializerInjectionModule());
       Serializer = Kernel.Get<ISerializer>();
       // Set Serializer options for unit tests that use this base DiFixture class
-      SerializerOptions options = new (){WriteIndented = false};
-      Serializer.Configure(new SerializerOptions(){WriteIndented = false});
+      SerializerOptions options = new() { WriteIndented = false };
+      Serializer.Configure(new SerializerOptions() { WriteIndented = false });
     }
     public DiFixture(IConfiguration configuration) {
-      Kernel = new StandardKernel(new SerializerInjectionModule(configuration:configuration));
+      Kernel = new StandardKernel(new SerializerInjectionModule(configuration: configuration));
       // Bind the Serializer implementation to the interface using Ninject conventions
       Serializer = Kernel.Get<ISerializer>();
     }

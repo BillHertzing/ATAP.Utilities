@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
@@ -14,7 +15,7 @@ namespace ATAP.Utilities.GenerateProgram {
       HasInterfacesAssembly = HasInterfacesAssembly == default ? true : hasInterfacesAssembly;
       GAssemblyUnits = gAssemblyUnits == default ? new Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>() : gAssemblyUnits;
       GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
-      GComment = gComment == default ? new GComment() : gComment; 
+      GComment = gComment == default ? new GComment() : gComment;
       Philote = new Philote<IGAssemblyGroupSignil>();
     }
     public string GName { get; init; }

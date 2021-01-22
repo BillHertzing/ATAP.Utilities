@@ -134,7 +134,7 @@ namespace ATAP.Utilities.HostedServices.ConsoleSourceHostedService {
               .FromAsync(() => Console.In.ReadLineAsync()) // This is actually a BLOCKING operation, see ?? for workaround
               .Repeat()
               .Publish()
-              .RefCount()2
+              .RefCount()
               .SubscribeOn(Scheduler.Default);
     }
 

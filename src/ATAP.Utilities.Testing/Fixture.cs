@@ -19,9 +19,9 @@ namespace ATAP.Utilities.Testing {
     public SerializerInjectionModule() : this("ATAP.Utilities.Serializer.Shim.SystemTextJson.dll", "ATAP.Utilities.Serializer") { }
     public SerializerInjectionModule(IConfiguration configuration = default) {
       if (configuration == null) {
-        throw new ArgumentNullException("configuration");
+        throw new ArgumentNullException(nameof(configuration));
       }
-      // ToDo:Use stringconstants from Serializer.StringConstants to read from the configurationroot
+      // ToDo:Use stringconstants from Serializer.StringConstants to read the Serializer to use from the configurationroot
       SerializerShimName = "ATAP.Utilities.Serializer.Shim.SystemTextJson.dll";
       SerializerShimNamespace = "ATAP.Utilities.Serializer";
     }
@@ -32,17 +32,17 @@ namespace ATAP.Utilities.Testing {
 
     public override void Load() {
       // ToDo make this lazy ISerializer t = ATAP.Utilities.Serializer.SerializerLoader.LoadSerializerFromAssembly();
-
-      var serializer = ATAP.Utilities.Loader.Loader<ISerializer>.LoadExactlyOneInstanceOfITypeFromAssemblyGlob(
+      var loader = new ATAP.Utilities.Loader.Loader<ISerializer>();
+      var serializer = loader.LoadExactlyOneInstanceOfITypeFromAssemblyGlob(
         new DynamicGlobAndPredicate() {
           Glob = new Glob() { Pattern = ".\\Plugins\\ATAP.Utilities.Serializer.Shim.SystemTextJson.dll" },
           Predicate =
             new Predicate<Type>(type => {
               return typeof(ISerializer).IsAssignableFrom(type) && !type.IsAbstract && type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson";
-            }
+            })
 
         }
-        , new string[] { pluginsDirectory }, services);
+        );
       //var serializer = ATAP.Utilities.Loader.Loader<ISerializer>.LoadFromAssembly(SerializerShimName, SerializerShimNamespace, new string[] { pluginsDirectory }, services);
       //     var serializer = Loader.LoadFromAssembly(SerializerShimName, SerializerShimNamespace);
       //attribution: https://stackoverflow.com/questions/16916140/ninject-registering-an-already-created-instance-with-ninject

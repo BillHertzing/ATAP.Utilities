@@ -75,6 +75,14 @@ namespace ATAP.Console.Console02 {
     #region Serializer
     ISerializer Serializer { get; }
     #endregion
+    #region Progress
+    IProgress<object>? ProgressObject;
+    #endregion
+    #region Persistence
+    ISetupViaFileResults? SetupResultsPersistence;
+    string? PersistencePathBase;
+    Persistence<IInsertResultsAbstract>? PersistenceObject;
+    #endregion
     #region Data for Console02
     IEnumerable<string> Choices;
     StringBuilder Message = new();
@@ -214,6 +222,33 @@ namespace ATAP.Console.Console02 {
     }
     #endregion
 
+    #region Progress
+    async void ReportToConsoleOut(object progressDataToReport) {
+      Message.Append(progressDataToReport.ToString());
+      #region Write the Message to Console.Out
+      using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
+        if (!task.IsCompletedSuccessfully) {
+          if (task.IsCanceled) {
+            // Ignore if user cancelled the operation during output to Console.Out (internal cancellation)
+            // re-throw if the cancellation request came from outside the stdInLineMonitorAction
+            /// ToDo: evaluate the linked, inner, and external tokens
+            throw new OperationCanceledException();
+          }
+          else if (task.IsFaulted) {
+            //ToDo: Go through the inner exception
+            //foreach (var e in t.Exception) {
+            //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
+            // ToDo figure out what to do if the output stream is closed
+            throw new Exception(message: ExceptionLocalizer["ToDo: WriteMessageSafelyAsync returned an AggregateException"]);
+            //}
+          }
+        }
+        Message.Clear();
+      }
+      #endregion
+    }
+    #endregion
+
     #region Signils From Settings
     // Helper methods to read the settings into Signils
     // Helper method to read the settings into an instance of a GInvokeGenerateCodeSignil
@@ -242,112 +277,120 @@ namespace ATAP.Console.Console02 {
       return gInvokeGenerateCodeSignil;
     }
 
-  GAssemblyGroupSignil GetGAssemblyGroupSignilFromSettings() {
-    var gAssemblyGroupSignil = new GAssemblyGroupSignil(
-    );
-    return gAssemblyGroupSignil;
-  }
-  GGlobalSettingsSignil GetGGlobalSettingsSignilFromSettings() {
-    var gGlobalSettingsSignil = new GGlobalSettingsSignil(
-    );
-    return gGlobalSettingsSignil;
-  }
-  GSolutionSignil GetGSolutionSignilFromSettings() {
-    var gSolutionSettingsSignil = new GSolutionSignil(
-    );
-    return gSolutionSettingsSignil;
-  }
-  #endregion
-  #endregion
+    GAssemblyGroupSignil GetGAssemblyGroupSignilFromSettings() {
+      var gAssemblyGroupSignil = new GAssemblyGroupSignil(
+      );
+      return gAssemblyGroupSignil;
+    }
+    GGlobalSettingsSignil GetGGlobalSettingsSignilFromSettings() {
+      var gGlobalSettingsSignil = new GGlobalSettingsSignil(
+      );
+      return gGlobalSettingsSignil;
+    }
+    GSolutionSignil GetGSolutionSignilFromSettings() {
+      var gSolutionSettingsSignil = new GSolutionSignil(
+      );
+      return gSolutionSettingsSignil;
+    }
+    #endregion
+    #endregion
 
-  #region ExecuteAsync, called by the GenericHost StartAsync method, when IHostLifetime is ConsoleLifetime  // ToDo:, see if this is called by service and serviced
-  /// <summary>
-  /// Called to start the service. This is the main body of the code to execute for this background service
-  /// </summary>
-  /// <param name="externalCancellationToken"></param> Used to signal FROM the GenericHost TO this BackgroundService a request for cancelllation
-  /// <returns></returns>
-  protected override async Task ExecuteAsync(CancellationToken externalCancellationToken) {
-    #region create linkedCancellationSource and token
-    // Combine the cancellation tokens,so that either can stop this HostedService
-    LinkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(InternalCancellationToken, externalCancellationToken);
-    LinkedCancellationToken = LinkedCancellationTokenSource.Token;
-    #endregion
-    #region Register actions with the CancellationToken (s)
-    LinkedCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} LinkedCancellationToken has signalled stopping."], "Console02BackgroundService", "LinkedCancellationToken"));
-    externalCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "Console02BackgroundService", "externalCancellationToken"));
-    InternalCancellationToken.Register(() => {
-      Logger.LogDebug(DebugLocalizer["{0} {1} InternalCancellationToken has signalled stopping."], "Console02BackgroundService", "InternalCancellationToken");
-      Logger.LogDebug(DebugLocalizer["{0} {1} Need to figure out how to call the parent Console02 and tell it to gracefully shutdown."], "Console02BackgroundService", "InternalCancellationToken");
-      //StopAsync()
-    });
-    #endregion
-    #region Define the inputs to respond to
-    // Create a list of choices
-    Choices = new List<string>() {
+    #region ExecuteAsync, called by the GenericHost StartAsync method, when IHostLifetime is ConsoleLifetime  // ToDo:, see if this is called by service and serviced
+    /// <summary>
+    /// Called to start the service. This is the main body of the code to execute for this background service
+    /// </summary>
+    /// <param name="externalCancellationToken"></param> Used to signal FROM the GenericHost TO this BackgroundService a request for cancelllation
+    /// <returns></returns>
+    protected override async Task ExecuteAsync(CancellationToken externalCancellationToken) {
+      #region create linkedCancellationSource and token
+      // Combine the cancellation tokens,so that either can stop this HostedService
+      LinkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(InternalCancellationToken, externalCancellationToken);
+      LinkedCancellationToken = LinkedCancellationTokenSource.Token;
+      #endregion
+      #region Register actions with the CancellationToken (s)
+      LinkedCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} LinkedCancellationToken has signalled stopping."], "Console02BackgroundService", "LinkedCancellationToken"));
+      externalCancellationToken.Register(() => Logger.LogDebug(DebugLocalizer["{0} {1} externalCancellationToken has signalled stopping."], "Console02BackgroundService", "externalCancellationToken"));
+      InternalCancellationToken.Register(() => {
+        Logger.LogDebug(DebugLocalizer["{0} {1} InternalCancellationToken has signalled stopping."], "Console02BackgroundService", "InternalCancellationToken");
+        Logger.LogDebug(DebugLocalizer["{0} {1} Need to figure out how to call the parent Console02 and tell it to gracefully shutdown."], "Console02BackgroundService", "InternalCancellationToken");
+        //StopAsync()
+      });
+      #endregion
+      #region Define the inputs to respond to
+      // Create a list of choices
+      Choices = new List<string>() {
          UiLocalizer["1. PrettyPrint a GenerateCodeSignil"]
         , UiLocalizer["2. Roundtrip a GenerateCodeSignil to Settings file and back"]
         , UiLocalizer["3. Run GenerateCodeAsync on a Settings file"]
         , UiLocalizer["99: Quit"]
       };
-    #endregion
-    #region initial presentation of the Choices to the user
-    // Format the Choices for presentation into Message
-    BuildMenu();
-    #region Write the Message to Console.Out
-    using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
-      if (!task.IsCompletedSuccessfully) {
-        if (task.IsCanceled) {
-          // Ignore if user cancelled the operation during output to Console.Out (internal cancellation)
-          // re-throw if the cancellation request came from outside the stdInLineMonitorAction
-          /// ToDo: evaluate the linked, inner, and external tokens
-          throw new OperationCanceledException();
+      #endregion
+      #region Initialize Progress
+      // Initialize the ProgressObject first time through
+      if (ProgressObject == null) { ProgressObject = new Progress<object>(ReportToConsoleOut); }
+      #endregion
+      #region Initialize Persistence
+      // setup the base path of the PersistenceObject
+      PersistencePathBase = AppConfiguration.GetValue<string>(appStringConstants.PersistencePathBaseConfigRootKey, appStringConstants.PersistencePathBaseDefault);
+      #endregion
+      #region initial presentation of the Choices to the user
+      // Format the Choices for presentation into Message
+      BuildMenu();
+      #region Write the Message to Console.Out
+      using (Task task = await WriteMessageSafelyAsync().ConfigureAwait(false)) {
+        if (!task.IsCompletedSuccessfully) {
+          if (task.IsCanceled) {
+            // Ignore if user cancelled the operation during output to Console.Out (internal cancellation)
+            // re-throw if the cancellation request came from outside the stdInLineMonitorAction
+            /// ToDo: evaluate the linked, inner, and external tokens
+            throw new OperationCanceledException();
+          }
+          else if (task.IsFaulted) {
+            //ToDo: Go through the inner exception
+            //foreach (var e in t.Exception) {
+            //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
+            // ToDo figure out what to do if the output stream is closed
+            throw new Exception(ExceptionLocalizer["ToDo: WriteMessageSafelyAsync returned an AggregateException"]);
+            //}
+          }
         }
-        else if (task.IsFaulted) {
-          //ToDo: Go through the inner exception
-          //foreach (var e in t.Exception) {
-          //  https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
-          // ToDo figure out what to do if the output stream is closed
-          throw new Exception(ExceptionLocalizer["ToDo: WriteMessageSafelyAsync returned an AggregateException"]);
-          //}
-        }
+        Message.Clear();
       }
-      Message.Clear();
+      #endregion
+      #endregion
+      #region attach to Console.In via the ConsoleSourceHostedService and call DoLoopAsync everytime an input is received
+      // Subscribe to ConsoleSourceHostedService. Run the DoLoopAsync every time ConsoleReadLineAsyncAsObservable() produces a sequence element
+      SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle = ConsoleSourceHostedService.ConsoleReadLineAsyncAsObservable()
+          .Subscribe(
+            // OnNext function:
+            inputline => {
+              try {
+                DoLoopAsync(inputline);
+              }
+              catch (Exception ex) {
+
+                throw;
+              }
+            },
+            // OnError
+            ex => { Logger.LogDebug("got an exception"); },
+            // OnCompleted (this happens if the Console.In is closed)
+            () => { Logger.LogDebug("stdIn completed"); SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose(); }
+            );
+      #endregion
+    }
+
+    Func<string, Task> stdInLineMonitorAction = new Func<string, Task>(async (inputLineString) => {
+      /*
+
+
+      Logger.LogDebug(DebugLocalizer["{0} {1} Console02BackgroundService is stopping due to "], "Console02BackgroundService", "ExecuteAsync"); // add third parameter for internal or external
+      SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
+
     }
     #endregion
-    #endregion
-    #region attach to Console.In via the ConsoleSourceHostedService and call DoLoopAsync everytime an input is received
-    // Subscribe to ConsoleSourceHostedService. Run the DoLoopAsync every time ConsoleReadLineAsyncAsObservable() produces a sequence element
-    SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle = ConsoleSourceHostedService.ConsoleReadLineAsyncAsObservable()
-        .Subscribe(
-          // OnNext function:
-          inputline => {
-            try {
-              DoLoopAsync(inputline);
-            }
-            catch (Exception ex) {
-
-              throw;
-            }
-          },
-          // OnError
-          ex => { Logger.LogDebug("got an exception"); },
-          // OnCompleted (this happens if the Console.In is closed)
-          () => { Logger.LogDebug("stdIn completed"); SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose(); }
-          );
+          */
+    });
     #endregion
   }
-
-  Func<string, Task> stdInLineMonitorAction = new Func<string, Task>(async (inputLineString) => {
-    /*
-
-
-    Logger.LogDebug(DebugLocalizer["{0} {1} Console02BackgroundService is stopping due to "], "Console02BackgroundService", "ExecuteAsync"); // add third parameter for internal or external
-    SubscriptionToConsoleReadLineAsyncAsObservableDisposeHandle.Dispose();
-
-  }
-  #endregion
-        */
-  });
-  #endregion
-}
 }

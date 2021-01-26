@@ -1,0 +1,1 @@
+resgen.exe DebugResources.resx ATAP.Services.GenerateProgram.DebugResources.resources /str:c#,ATAP.Services.GenerateProgram,DebugResources

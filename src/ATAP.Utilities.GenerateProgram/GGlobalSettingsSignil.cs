@@ -11,7 +11,8 @@ namespace ATAP.Utilities.GenerateProgram {
      ICollection<string> defaultTargetFrameworks = default
     ) {
       DefaultTargetFrameworks = defaultTargetFrameworks ?? throw new ArgumentNullException(nameof(defaultTargetFrameworks));
-      Philote = new Philote<IGGlobalSettingsSignil>();
+
+      
     }
     public ICollection<string> DefaultTargetFrameworks { get; }
     public IPhilote<IGGlobalSettingsSignil> Philote { get; }

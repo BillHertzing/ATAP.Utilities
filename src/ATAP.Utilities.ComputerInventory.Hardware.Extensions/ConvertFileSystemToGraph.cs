@@ -160,8 +160,8 @@ namespace ATAP.Utilities.ComputerInventory.Hardware {
         if (convertFileSystemToGraphPersistence != null) {
           IInsertResultsAbstract results = new InsertViaFileResults(false);
           try {
-            //results = convertFileSystemToGraphPersistence.InsertFunc(new string[][] { new string[] { currentContainerVertex.Obj.GetFullName() } });
-            results = convertFileSystemToGraphPersistence.InsertFunc(new string[][] { new string[] { currentContainerVertex.GetFullName() } });
+            //results = convertFileSystemToGraphPersistence.InsertEnumerableFunc(new string[][] { new string[] { currentContainerVertex.Obj.GetFullName() } });
+            results = convertFileSystemToGraphPersistence.InsertEnumerableFunc(new string[][] { new string[] { currentContainerVertex.GetFullName() } });
           }
           catch (Exception e) //when (e is PersistenceInsertException)
           {
@@ -216,7 +216,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware {
             IInsertResultsAbstract results = new InsertViaFileResults(false);
             string[] edgeStrings = new string[] { $"{edge.Source.GetFullName()} -> {edge.Target.GetFullName()}" };
             try {
-              results = convertFileSystemToGraphPersistence.InsertFunc(new string[][] { Array.Empty<string>(), edgeStrings });
+              results = convertFileSystemToGraphPersistence.InsertEnumerableFunc(new string[][] { Array.Empty<string>(), edgeStrings });
             }
             catch (Exception e) //when (e is PersistenceInsertException)
             {
@@ -314,7 +314,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware {
             string vertexString = vertex.GetFullName();
             string[] edgeStrings = new string[] { $"{edge.Source.GetFullName()} -> {edge.Target.GetFullName()}" };
             try {
-              results = convertFileSystemToGraphPersistence.InsertFunc(new string[][] { new string[] { vertexString }, edgeStrings });
+              results = convertFileSystemToGraphPersistence.InsertEnumerableFunc(new string[][] { new string[] { vertexString }, edgeStrings });
             }
             catch (Exception e) //when (e is PersistenceInsertException)
             {
@@ -344,7 +344,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware {
                 pickAndSaveStringbuilder.Append(fileVertex.FileInfo.CreationTimeUtc.ToString("yyyy/MM").PadRight(11));
                 pickAndSaveStringbuilder.Append(fileVertex.FileInfo.LastWriteTimeUtc.ToString("yyyy/MM").PadRight(11));
                 pickAndSaveStringbuilder.Append(fileVertex.FileInfo.Length);
-                results = convertFileSystemToGraphPickAndSave.InsertFunc(new string[][] { new string[] { pickAndSaveStringbuilder.ToString() }, Array.Empty<string>() });
+                results = convertFileSystemToGraphPickAndSave.InsertEnumerableFunc(new string[][] { new string[] { pickAndSaveStringbuilder.ToString() }, Array.Empty<string>() });
               }
               catch (Exception e) //when (e is PersistenceInsertException)
               {

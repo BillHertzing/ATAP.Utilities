@@ -37,7 +37,7 @@ using hostedServiceStringConstants = FileSystemGraphToDBService.StringConstants;
 using ServiceStack;
 
 namespace FileSystemGraphToDBService {
-  
+
   public interface IFileSystemGraphToDBService {
 
     Task<ConvertFileSystemGraphToDBResults> ConvertFileSystemGraphToDBAsync(string[] filePaths, int asyncFileReadBlockSize, bool enableProgress, IConvertFileSystemGraphToDBProgress fileSystemToGraphToDBProgress);
@@ -116,7 +116,7 @@ namespace FileSystemGraphToDBService {
       Stopwatch = new Stopwatch();
       #region Create the serviceData and initialize it from the StringConstants or this service's ConfigRoot
       this.serviceData = new FileSystemGraphToDBServiceData(
-        // ToDo: Get the list from the StringConstants, and localize them 
+        // ToDo: Get the list from the StringConstants, and localize them
         choices: new List<string>() { "1. Run ConvertFileSystemGraphToDBAsyncTask", "2. Changeable", "99: Quit this service" },
         stdInHandlerState: new StringBuilder(),
         mesg: new StringBuilder(),
@@ -150,13 +150,10 @@ namespace FileSystemGraphToDBService {
       #region File Validation and opening
       // Validate the source file(s) exist and are readable
       int numberOfFiles = filePaths.Length;
-
-      FileStream[] fileStreams = new FileStream[1];
-      StreamReader[] streamReaders = new StreamReader[1];
+(FileStream fileStream, StreamWriter streamWriter)[] fileStreamStreamWriterPairs = new (FileStream fileStream, StreamWriter streamWriter)[numberOfFiles]
       for (var i = 0; i < numberOfFiles; i++) {
         try {
-          fileStreams[i] = new FileStream(filePaths[i], FileMode.Open, FileAccess.Read);
-        }
+fileStreamStreamWriterPairs[i].fileStream = new FileStream(filePathsAsArray[i], FileMode.Create, FileAccess.Write);        }
         catch (System.IO.IOException ex) {
           // ToDo: Better fine-grained exception handling and UI presentation of the error
           serviceData.Mesg.Append(uiLocalizer["IOException opening source files: {0}", ex.Message]);
@@ -184,7 +181,7 @@ namespace FileSystemGraphToDBService {
           break;
         }
         try {
-          streamReaders[i] = new StreamReader(fileStreams[i]);
+          fileStreamStreamWriterPairs[i].streamWriter = new StreamWriter(fileStreamStreamWriterPairs[i].fileStream, Encoding.UTF8);
         }
         catch (System.IO.IOException ex) {
           // ToDo: Dispose the FileStreams
@@ -469,7 +466,7 @@ namespace FileSystemGraphToDBService {
 
     #region StartAsync and StopAsync methods as promised by IHostedService when IHostLifetime is ConsoleLifetime  // ToDo:, see if this is called by service and serviced
     /// <summary>
-    /// Called to start the service. 
+    /// Called to start the service.
     /// </summary>
     /// <param name="genericHostsCancellationToken"></param> Used to signal FROM the GenericHost TO this IHostedService a request for cancelllation
     /// <returns></returns>
@@ -516,19 +513,19 @@ namespace FileSystemGraphToDBService {
     #region Event Handlers registered with the HostApplicationLifetime events
     // Registered as a handler with the HostApplicationLifetime.ApplicationStarted event
     private void OnStarted() {
-      // Post-startup code goes here  
+      // Post-startup code goes here
     }
 
     // Registered as a handler with the HostApplicationLifetime.Application event
     // This is NOT called if the ConsoleWindows ends when the connected browser (browser opened by LaunchSettings when starting with debugger) is closed (not applicable to ConsoleLifetime generic hosts
     // This IS called if the user hits ctrl-C in the ConsoleWindow
     private void OnStopping() {
-      // On-stopping code goes here  
+      // On-stopping code goes here
     }
 
     // Registered as a handler with the HostApplicationLifetime.ApplicationStarted event
     private void OnStopped() {
-      // Post-stopped code goes here  
+      // Post-stopped code goes here
     }
 
     // Called by base.Stop. This may be called multiple times by service Stop, ApplicationStopping, and StopAsync.

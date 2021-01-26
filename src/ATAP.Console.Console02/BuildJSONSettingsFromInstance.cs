@@ -40,8 +40,8 @@ namespace ATAP.Console.Console02 {
   // This file contains the code to be executed in response to each selection by the user from the list of choices
   public partial class Console02BackgroundService : BackgroundService {
 
-    void BuildJSONSettingsFromInstance(IProgress<object>? progress = default, IPersistence<IInsertResultsAbstract> persistence = default) {
-      Logger.LogDebug(DebugLocalizer["{0} {1}: Creating JSON from a Signil"], "Console02BackgroundService", "BuildJSONSettingsFromInstance");
+    void SerializeAndSaveMultipleGGenerateCodeInstances(IPersistence<IInsertResultsAbstract> persistence = default) {
+      Logger.LogDebug(DebugLocalizer["{0} {1}: Creating JSON from a Signil"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances");
 
       #region SerializerOptions for all calls to Serialize used by this method
       // Create a new options from the current Serializer options, and change write-indented to true, for all of the LpgDebug statements
@@ -54,7 +54,12 @@ namespace ATAP.Console.Console02 {
       #region Philote Serialization
       var philoteOfTypeGGlobalSettingsSignil = new Philote<GGlobalSettingsSignil>();
       var philoteOfTypeGGlobalSettingsSignilAsString = Serializer.Serialize(philoteOfTypeGGlobalSettingsSignil, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: philoteOfTypeGGlobalSettingsSignilAsString in JSON {2}"], "Console02BackgroundService", "BuildJSONSettingsFromInstance", philoteOfTypeGGlobalSettingsSignilAsString);
+      Logger.LogDebug(DebugLocalizer["{0} {1}: philoteOfTypeGGlobalSettingsSignilAsString in JSON {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", philoteOfTypeGGlobalSettingsSignilAsString);
+      ProgressObject!.Report(UiLocalizer["The default constructor of {0} = {1}", "new Philote<GGlobalSettingsSignil>()", philoteOfTypeGGlobalSettingsSignilAsString]);
+      // write string to persistence file keyed by philoteOfTypeGGlobalSettingsSignilAsString
+       var insertResults  = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+        {"philoteOfTypeGGlobalSettingsSignilAsString", new List<string>() {philoteOfTypeGGlobalSettingsSignilAsString}}
+       });
       #endregion
 
       #region GGlobalSettingsSignil to JSON string
@@ -63,8 +68,9 @@ namespace ATAP.Console.Console02 {
         defaultTargetFrameworks: _defaultTargetFrameworks
       );
       var gGlobalSettingsSignilFromCodeAsSettingsString = Serializer.Serialize(gGlobalSettingsSignilFromCode, options);
-      //Logger.LogDebug(DebugLocalizer["{0} {1}: SignilFromCode in JSON {2}"], "Console02BackgroundService", "BuildJSONSettingsFromInstance", gGlobalSettingsSignilFromCode.Dump());
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gGlobalSettingsSignilFromCode in JSON {2}"], "Console02BackgroundService", "BuildJSONSettingsFromInstance", gGlobalSettingsSignilFromCodeAsSettingsString);
+      //Logger.LogDebug(DebugLocalizer["{0} {1}: SignilFromCode in JSON {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gGlobalSettingsSignilFromCode.Dump());
+      Logger.LogDebug(DebugLocalizer["{0} {1}: gGlobalSettingsSignilFromCode in JSON {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gGlobalSettingsSignilFromCodeAsSettingsString);
+      ProgressObject!.Report(UiLocalizer["The default constructor of {0} = {1}", "new GGlobalSettingsSignil(defaultTargetFrameworks)", gGlobalSettingsSignilFromCodeAsSettingsString]);
       #endregion
 
       #region GSolutionSignil to JSON string
@@ -79,14 +85,14 @@ namespace ATAP.Console.Console02 {
         , gDependencyProjects: _gDependencyProjects
       );
       var gSolutionSignilFromCodeAsSettingsString = Serializer.Serialize(gSolutionSignilFromCode, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gSolutionSignilFromCode in JSON {2}"], "Console02BackgroundService", "BuildJSONSettingsFromInstance", gSolutionSignilFromCodeAsSettingsString);
+      Logger.LogDebug(DebugLocalizer["{0} {1}: gSolutionSignilFromCode in JSON {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gSolutionSignilFromCodeAsSettingsString);
       #endregion
 
       #region GAssemblyGroupSignil to JSON string
       IGAssemblyGroupSignil gAssemblyGroupSignilFromCode = new GAssemblyGroupSignil(
       );
       var gAssemblyGroupSignilFromCodeAsSettingsString = Serializer.Serialize(gAssemblyGroupSignilFromCode, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyGroupSignilFromCode in JSON {2}"], "Console02BackgroundService", "BuildJSONSettingsFromInstance", gAssemblyGroupSignilFromCodeAsSettingsString);
+      Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyGroupSignilFromCode in JSON {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gAssemblyGroupSignilFromCodeAsSettingsString);
       #endregion
 
       #region GInvokeGenerateCodeSignil to JSON string
@@ -96,7 +102,7 @@ namespace ATAP.Console.Console02 {
         , gSolutionSignil: gSolutionSignilFromCode
       );
       var gInvokeGenerateCodeSignilFromCodeAsSettingsString = Serializer.Serialize(gInvokeGenerateCodeSignilFromCode, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gInvokeGenerateCodeSignilFromCode in JSON {2}"], "Console02BackgroundService", "BuildJSONSettingsFromInstance", gInvokeGenerateCodeSignilFromCodeAsSettingsString);
+      Logger.LogDebug(DebugLocalizer["{0} {1}: gInvokeGenerateCodeSignilFromCode in JSON {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gInvokeGenerateCodeSignilFromCodeAsSettingsString);
       #endregion
     }
   }

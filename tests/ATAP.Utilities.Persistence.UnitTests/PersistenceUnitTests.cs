@@ -26,7 +26,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
     // {
       // Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults> ret = new Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults>((insertData, setupResults) =>
       // {
-        // int numberOfFiles = insertData.DataToInsert[0].Length;
+        // int numberOfFiles = insertData.EnumerableDataToInsert[0].Length;
 // #if DEBUG
         // TestOutput.WriteLine($"Got {numberOfFiles} arrays of data to write");
 // #endif
@@ -36,7 +36,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
 // #endif
         // for (var i = 0; i < numberOfFiles; i++)
         // {
-          // foreach (string str in insertData.DataToInsert[i])
+          // foreach (string str in insertData.EnumerableDataToInsert[i])
           // {
             // //await setupResults.StreamWriters[i].WriteLineAsync(str);
             // setupResults.StreamWriters[i].WriteLine(str);
@@ -76,8 +76,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
       var setupResults = ATAP.Utilities.Persistence.Extensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
 
       setupResults.Success.Should().Be(true);
-      setupResults.FileStreams.Length.Should().Be(inTestData);
-      setupResults.StreamWriters.Length.Should().Be(inTestData);
+      setupResults.FileStreamStreamWriterPairs.Length.Should().Be(inTestData);
       setupResults.Dispose();
     }
 
@@ -100,10 +99,10 @@ namespace ATAP.Utilities.Persistence.UnitTests
       for (int i = 0; i < inTestData; i++)
       {
         // Any access to a disposed object should result in an exception
-        Invoking(() => { setupResults.StreamWriters[i].Write("Should Throw ObjectDisposedException"); })
+        Invoking(() => { setupResults.FileStreamStreamWriterPairs[i].streamWriter.Write("Should Throw ObjectDisposedException"); })
           .Should().Throw<ObjectDisposedException>()
           .WithMessage("Cannot write to a closed TextWriter.*");
-        Invoking(() => { var fsl = setupResults.FileStreams[i].Length; })
+        Invoking(() => { var fsl = setupResults.FileStreamStreamWriterPairs[i].fileStream.Length; })
           .Should().Throw<ObjectDisposedException>()
           .WithMessage("Cannot access a closed file.");
       }
@@ -133,17 +132,17 @@ namespace ATAP.Utilities.Persistence.UnitTests
 #if DEBUG
         TestOutput.WriteLine($"Got {numberOfFiles} arrays of data to write");
 #endif
-        int numberOfStreamWriters = setupResults.StreamWriters.Length;
+        int numberOfFileStreamStreamWriterPairs = setupResults.FileStreamStreamWriterPairs.Length;
 #if DEBUG
-        TestOutput.WriteLine($"Got {numberOfStreamWriters} streamwriters to write to");
+        TestOutput.WriteLine($"Got {numberOfFileStreamStreamWriterPairs} streamwriters to write to");
 #endif
-        for (var i = 0; i < numberOfFiles; i++)
+        for (var i = 0; i < numberOfFileStreamStreamWriterPairs; i++)
         {
           foreach (string str in insertData.ToArray()[i])
           {
             //ToDo: add async versions await setupResults.StreamWriters[i].WriteLineAsync(str);
             //ToDo: exception handling
-            setupResults.StreamWriters[i].WriteLine(str);
+            setupResults.FileStreamStreamWriterPairs[i].streamWriter.WriteLine(str);
 #if DEBUG
             TestOutput.WriteLine($"writing {str} to file {i}");
 #endif
@@ -189,8 +188,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
       var setupResults = ATAP.Utilities.Persistence.Extensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
       // Validate the results are as expected
       setupResults.Success.Should().Be(true);
-      setupResults.FileStreams.Length.Should().Be(inTestData.NumberOfContainers);
-      setupResults.StreamWriters.Length.Should().Be(inTestData.NumberOfContainers);
+      setupResults.FileStreamStreamWriterPairs.Length.Should().Be(inTestData.NumberOfContainers);
       // Create an insertFunc that references the local variable setupResults, closing over it
       var insertFunc = new Func<IEnumerable<IEnumerable<object>>, IInsertViaFileResults>((insertData) =>
         {
@@ -198,9 +196,9 @@ namespace ATAP.Utilities.Persistence.UnitTests
 #if DEBUG
           TestOutput.WriteLine($"Got {numberOfFiles} arrays of data to write");
 #endif
-          int numberOfStreamWriters = setupResults.StreamWriters.Length;
+          int numberOfFileStreamStreamWriterPairs = setupResults.FileStreamStreamWriterPairs.Length;
 #if DEBUG
-          TestOutput.WriteLine($"Got {numberOfStreamWriters} streamwriters to write to");
+          TestOutput.WriteLine($"Got {numberOfFileStreamStreamWriterPairs} streamwriters to write to");
 #endif
           for (var i = 0; i < numberOfFiles; i++)
           {
@@ -208,7 +206,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
             {
               //ToDo: add async versions await setupResults.StreamWriters[i].WriteLineAsync(str);
               //ToDo: exception handling
-              setupResults.StreamWriters[i].WriteLine(str);
+              setupResults.FileStreamStreamWriterPairs[i].streamWriter.WriteLine(str);
 #if DEBUG
               TestOutput.WriteLine($"writing {str} to file {i}");
 #endif
@@ -222,7 +220,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
       Action<IPersistence<IInsertViaFileResults>> SimpleAction = new Action<IPersistence<IInsertViaFileResults>>((persistence) =>
       {
         // Insert the data to the persistence mechanism
-        var insertResults = persistence.InsertFunc(inTestData.ObjectsForEachContainer);
+        var insertResults = persistence.InsertEnumerableFunc(inTestData.ObjectsForEachContainer);
         insertResults.Success.Should().Be(true); // Only inside of tests
       });
 
@@ -257,8 +255,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
       var setupResults = ATAP.Utilities.Persistence.Extensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePaths));
       // Validate the results are as expected
       setupResults.Success.Should().Be(true);
-      setupResults.FileStreams.Length.Should().Be(inTestData.NumberOfContainers);
-      setupResults.StreamWriters.Length.Should().Be(inTestData.NumberOfContainers);
+      setupResults.FileStreamStreamWriterPairs.Length.Should().Be(inTestData.NumberOfContainers);
       // Create an insertFunc that references the local variable setupResults, closing over it
       var insertFunc = new Func<IEnumerable<IEnumerable<object>>, IInsertViaFileResults>((insertData) =>
       {
@@ -266,9 +263,9 @@ namespace ATAP.Utilities.Persistence.UnitTests
 #if DEBUG
         TestOutput.WriteLine($"Got {numberOfFiles} arrays of data to write");
 #endif
-        int numberOfStreamWriters = setupResults.StreamWriters.Length;
+        int numberOfFileStreamStreamWriterPairs = setupResults.FileStreamStreamWriterPairs.Length;
 #if DEBUG
-        TestOutput.WriteLine($"Got {numberOfStreamWriters} streamwriters to write to");
+        TestOutput.WriteLine($"Got {numberOfFileStreamStreamWriterPairs} streamwriters to write to");
 #endif
         for (var i = 0; i < numberOfFiles; i++)
         {
@@ -276,7 +273,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
           {
             //ToDo: add async versions await setupResults.StreamWriters[i].WriteLineAsync(str);
             //ToDo: exception handling
-            setupResults.StreamWriters[i].WriteLine(str);
+            setupResults.FileStreamStreamWriterPairs[i].streamWriter.WriteLine(str);
 #if DEBUG
             TestOutput.WriteLine($"writing {str} to file {i}");
 #endif
@@ -290,7 +287,7 @@ namespace ATAP.Utilities.Persistence.UnitTests
       Action<IPersistence<IInsertResultsAbstract>> SimpleAction = new Action<IPersistence<IInsertResultsAbstract>>((persistence) =>
       {
         // Insert the data to the persistence mechanism
-        var insertResults = persistence.InsertFunc(inTestData.ObjectsForEachContainer);
+        var insertResults = persistence.InsertEnumerableFunc(inTestData.ObjectsForEachContainer);
         insertResults.Success.Should().Be(true); // Only inside of tests
       });
 

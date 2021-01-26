@@ -15,6 +15,10 @@ namespace ATAP.Console.Console02 {
     public const string EnableProgressConfigRootKey = "EnableProgress";
     public const string EnableProgressDefault = "true";
     #endregion
+    #region Persistence directory
+    public const string PersistencePathBaseDefault = "D:\\Temp\\Console02\\SerializedObjects\\";
+    public const string PersistencePathBaseConfigRootKey = "PersistencePathBase";
+    #endregion
     #region Plugins subdirecotry
     public const string PluginsDirectoryBaseConfigRootKey = "PluginsDirectoryBase";
     public const string PluginsDirectoryBaseDefault = ".\\Plugins\\";

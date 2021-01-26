@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -11,35 +12,75 @@ namespace ATAP.Utilities.Persistence {
     // Common constructor method for the SetupViaFileFunc
     public static Func<SetupViaFileData, SetupViaFileResults> SetupViaFileFuncBuilder() {
       Func<SetupViaFileData, SetupViaFileResults> ret = new Func<SetupViaFileData, SetupViaFileResults>((setupData) => {
-        var filePathsAsArray = setupData.FilePaths.ToArray();
-        int numberOfFiles = filePathsAsArray.Length;
-        FileStream[] fileStreams = new FileStream[numberOfFiles];
-        StreamWriter[] streamWriters = new StreamWriter[numberOfFiles];
-        for (var i = 0; i < numberOfFiles; i++) {
-          try {
-            fileStreams[i] = new FileStream(filePathsAsArray[i], FileMode.Create, FileAccess.Write);
-          }
-          catch (System.IO.FileNotFoundException) {
-            // have to serialize the filepaths
-            throw new System.IO.FileNotFoundException("The FilePaths enumerable passed could not be created");
-            // Let the caller format the UI presentation
-            // ToDo:Need a new exception here SetupViaFileFuncBuilderIOFileNotFoundException
-          }
-          //ToDo: exception handling
-          try {
-            streamWriters[i] = new StreamWriter(fileStreams[i], Encoding.UTF8);
-          }
-          catch (System.IO.IOException ex) {
-            // Let the caller format the UI presentation
-            // ToDo:Need a new exception here SetupViaFileFuncBuilderIOStreamwriterCreationExcpetion
-            // var newEx  = new SetupViaFileFuncBuilderIOStreamwriterCreationExcpetion("Report in Results: StreamWriter (s) could not be created", ex);
-            var newEx = new System.IO.IOException("Report in Results: StreamWriter (s) could not be created ToDo: return the inner exception");
-            return new SetupViaFileResults(false, fileStreams, streamWriters); // ToDo add a constructor that takes an IO.Exception
+        if (setupData.FilePathsEnumerable != null) {
 
-            throw;
+          var filePathsAsArray = setupData.FilePathsEnumerable.ToArray();
+          int numberOfFiles = filePathsAsArray.Length;
+          (FileStream fileStream, StreamWriter streamWriter)[] fileStreamStreamWriterPairs = new (FileStream fileStream, StreamWriter streamWriter)[numberOfFiles];
+          for (var i = 0; i < numberOfFiles; i++) {
+            try {
+              fileStreamStreamWriterPairs[i].fileStream = new FileStream(filePathsAsArray[i], FileMode.Create, FileAccess.Write);
+            }
+            catch (System.IO.FileNotFoundException) {
+              // have to serialize the filepaths
+              // ToDo: localize this
+              throw new System.IO.FileNotFoundException($"The item {i} value {filePathsAsArray[i]} of the FilePathsEnumerable enumerable passed could not be created");
+              // Let the caller format the UI presentation
+              // ToDo:Need a new exception here SetupViaFileFuncBuilderIOFileNotFoundException
+            }
+            //ToDo: exception handling
+            try {
+              fileStreamStreamWriterPairs[i].streamWriter = new StreamWriter(fileStreamStreamWriterPairs[i].fileStream, Encoding.UTF8);
+            }
+            catch (System.IO.IOException ex) {
+              // Let the caller format the UI presentation
+              // ToDo:Need a new exception here SetupViaFileFuncBuilderIOStreamwriterCreationExcpetion
+              // var newEx  = new SetupViaFileFuncBuilderIOStreamwriterCreationExcpetion("Report in Results: StreamWriter (s) could not be created", ex);
+              // ToDo: localize this
+              var newEx = new System.IO.IOException("Report in Results: The item {i} value {filePathsAsArray[i]} of the FilePathsEnumerable enumerable StreamWriter (s) could not be created ToDo: return the inner exception", ex);
+              throw newEx;
+              // ToDo: Resilience, and retry
+              return new SetupViaFileResults(false, fileStreamStreamWriterPairs); // ToDo add a constructor that takes an IO.Exception
+            }
           }
+          return new SetupViaFileResults(true, fileStreamStreamWriterPairs);
         }
-        return new SetupViaFileResults(true, fileStreams, streamWriters);
+        else if (setupData.FilePathsDictionary != null) {
+          FileStream fileStream;
+          StreamWriter streamWriter;
+          var setupViaFileDict = new Dictionary<string, (FileStream fileStream, StreamWriter streamWriter)>();
+          foreach (var key in setupData.FilePathsDictionary.Keys) {
+            try {
+              // ToDo: fix exception that occurs if file already exists
+              // ToDo: fix exception that occurs if path includes missing directories
+              fileStream = new FileStream(setupData.FilePathsDictionary[key], FileMode.Create, FileAccess.Write);
+            }
+            catch (System.IO.FileNotFoundException) {
+              // Let the caller format the UI presentation
+              // ToDo:Need a new exception here SetupViaFileFuncBuilderIOFilestreamCreationExcepetion
+              throw new System.IO.FileNotFoundException("The file could not be created", setupData.FilePathsDictionary[key]);
+              // Let the caller format the UI presentation
+              // ToDo:Need a new exception here SetupViaFileFuncBuilderIOFileNotFoundException
+            }
+            try {
+              streamWriter = new StreamWriter(fileStream, Encoding.UTF8);
+            }
+            catch (System.IO.IOException ex) {
+              // Let the caller format the UI presentation
+              // ToDo:Need a new exception here SetupViaFileFuncBuilderIOStreamwriterCreationExcepetion
+              // var newEx  = new SetupViaFileFuncBuilderIOStreamwriterCreationExcpetion("Report in Results: StreamWriter (s) could not be created", ex);
+              // ToDo: decide if failure to open one is complete failure, or if we should open as many as possible, and return an aggregate exception indicating the ones that could not be opened
+              throw new System.IO.IOException("Report in Results: StreamWriter (s) could not be created ToDo: return the inner exception");
+            }
+            setupViaFileDict[key] = (fileStream, streamWriter);
+          }
+          return new SetupViaFileResults(true, setupViaFileDict);
+        }
+        else {
+          // Let the caller format the UI presentation
+          // ToDo:Need a new exception here SetupViaFileFuncBuilderInvalidSetupDataExcepetion
+          throw new DataException("Report in Results: persistence setup data both properties were null");
+        }
       });
       return ret;
     }
@@ -48,14 +89,32 @@ namespace ATAP.Utilities.Persistence {
     // expects setupResults instance setup by the SetupViaFileFuncBuilder, and closes over it
     public static Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults> InsertViaFileFuncBuilder() {
       Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults> ret = new Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults>((insertData, setupResults) => {
-        int numberOfFiles = insertData.DataToInsert[0].Length;
-        for (var i = 0; i < numberOfFiles; i++) {
-          foreach (string str in insertData.DataToInsert[i]) {
-            //ToDo: create async version await setupResults.StreamWriters[i].WriteLineAsync(str);
-            setupResults.StreamWriters[i].WriteLine(str);
+        if (setupResults.FileStreamStreamWriterPairs != null) {
+var dataToInsertList = insertData.EnumerableDataToInsert.ToList<IEnumerable<object>>();
+          int numberOfFiles = dataToInsertList.Count();
+          for (var i = 0; i < numberOfFiles; i++) {
+            foreach (string str in insertData.EnumerableDataToInsert.ElementAt(i)) {
+              //ToDo: create async version await setupResults.StreamWriters[i].WriteLineAsync(str);
+              setupResults.FileStreamStreamWriterPairs[i].streamWriter.WriteLine(str);
+            }
           }
+          return new InsertViaFileResults(true);
         }
-        return new InsertViaFileResults(true);
+        else if (setupResults.DictionaryFileStreamStreamWriterPairs! != null) {
+          foreach (var key in insertData.DictionaryDataToInsert.Keys) {
+            //ToDo: create async version await setupResults.StreamWriters[i].WriteLineAsync(str);
+            // ToDo: extension in FileIO to support writing a WriteLine that accepts an  IEnumerable
+            foreach (var str in insertData.DictionaryDataToInsert[key]) {
+              setupResults.DictionaryFileStreamStreamWriterPairs[key].streamWriter.WriteLine(str);
+            }
+          }
+          return new InsertViaFileResults(true);
+        }
+        else {
+          // Let the caller format the UI presentation
+          // ToDo:Need a new exception here InsertViaFileFuncBuilderInvalidSetupSetupresultsExcepetion
+          throw new DataException("Report in Results: InsertEnumerableFunc SetupResults data both properties were null");
+        }
       });
       return ret;
     }
@@ -88,9 +147,9 @@ namespace ATAP.Utilities.Persistence {
     // expects setupResults instance setup by the SetupViaORMFuncBuilder,  and closes over it
     public static Func<IInsertViaORMData, ISetupViaORMResults, InsertViaORMResults> InsertViaORMFuncBuilder() {
       Func<IInsertViaORMData, ISetupViaORMResults, InsertViaORMResults> ret = new Func<IInsertViaORMData, ISetupViaORMResults, InsertViaORMResults>((insertData, setupResults) => {
-        //int numberOfORMs = insertData.DataToInsert[0].Length;
+        //int numberOfORMs = insertData.EnumerableDataToInsert[0].Length;
         //for (var i = 0; i < numberOfORMs; i++) {
-        //  foreach (string str in insertData.DataToInsert[i]) {
+        //  foreach (string str in insertData.EnumerableDataToInsert[i]) {
         //    //ToDo: create async version await setupResults.StreamWriters[i].WriteLineAsync(str);
         //    setupResults.StreamWriters[i].WriteLine(str);
         //  }

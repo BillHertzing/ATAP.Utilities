@@ -111,6 +111,8 @@ namespace ATAP.Console.Console02 {
         {"gAssemblyUnitDefault", new List<string>() {gAssemblyUnitAsString}}
        });
       #endregion
+
+
       #region GAssemblyGroupSignil Serialization (default)
       IGAssemblyGroupSignil gAssemblyGroupSignil = new GAssemblyGroupSignil(
       );

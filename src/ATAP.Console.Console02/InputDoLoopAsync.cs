@@ -82,7 +82,18 @@ namespace ATAP.Console.Console02 {
           #region create persistence files and delegate
           // Create PersistenceObject
           var filePathsDictionary = new Dictionary<string, string>() {
-            {"philoteOfTypeGGlobalSettingsSignilAsString", PersistencePathBase + "philoteOfTypeGGlobalSettingsSignil.json"}
+            {"philoteOfTypeInvokeGenerateCodeSignil", PersistencePathBase + "philoteOfTypeInvokeGenerateCodeSignil.json"}
+            , {"gCommentDefault", PersistencePathBase + "gCommentDefault.json" }
+            , {"gCommentWithData", PersistencePathBase + "gCommentWithData.json" }
+            , {"gBodyDefault", PersistencePathBase + "gBodyDefault.json" }
+            , {"gBodyWithData", PersistencePathBase + "gBodyWithData.json" }
+            , {"gAssemblyUnitDefault", PersistencePathBase + "gAssemblyUnitDefault.json" }
+            , {"gAssemblyUnitWithData", PersistencePathBase + "gAssemblyUnitWithData.json" }
+            , {"gAssemblyGroupSignilDefault", PersistencePathBase + "gAssemblyGroupSignilDefault.json" }
+            , {"gAssemblyGroupSignilWithData", PersistencePathBase + "gAssemblyGroupSignilWithData.json" }
+            , {"gGlobalSettingsSignilFromCodeAsSettings", PersistencePathBase + "gGlobalSettingsSignilFromCode.json"}
+            , {"gSolutionSignilFromCodeAsSettings", PersistencePathBase + "gSolutionSignilFromCode.json"}
+            , {"gInvokeGenerateCodeSignil", PersistencePathBase + "gInvokeGenerateCodeSignil.json"}
           };
           // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
           SetupResultsPersistence = ATAP.Utilities.Persistence.Extensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePathsDictionary));
@@ -98,7 +109,6 @@ namespace ATAP.Console.Console02 {
             return new InsertViaFileResults(true);
           });
           PersistenceObject = new Persistence<IInsertResultsAbstract>(insertFunc);
-
           #endregion
           SerializeAndSaveMultipleGGenerateCodeInstances();
           SetupResultsPersistence.Dispose();

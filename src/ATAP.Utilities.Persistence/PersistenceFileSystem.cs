@@ -61,8 +61,8 @@ namespace ATAP.Utilities.Persistence {
           }
           else if (DictionaryFileStreamStreamWriterPairs! != null && DictionaryFileStreamStreamWriterPairs.Keys.Any()) {
             foreach (var key in DictionaryFileStreamStreamWriterPairs.Keys) {
-              DictionaryFileStreamStreamWriterPairs[key].fileStream.Dispose();
               DictionaryFileStreamStreamWriterPairs[key].streamWriter.Dispose();
+              DictionaryFileStreamStreamWriterPairs[key].fileStream.Dispose();
             }
           }
           else {

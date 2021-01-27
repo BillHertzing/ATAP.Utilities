@@ -90,7 +90,7 @@ namespace ATAP.Utilities.Persistence {
     public static Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults> InsertViaFileFuncBuilder() {
       Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults> ret = new Func<IInsertViaFileData, ISetupViaFileResults, InsertViaFileResults>((insertData, setupResults) => {
         if (setupResults.FileStreamStreamWriterPairs != null) {
-var dataToInsertList = insertData.EnumerableDataToInsert.ToList<IEnumerable<object>>();
+          var dataToInsertList = insertData.EnumerableDataToInsert.ToList<IEnumerable<object>>();
           int numberOfFiles = dataToInsertList.Count();
           for (var i = 0; i < numberOfFiles; i++) {
             foreach (string str in insertData.EnumerableDataToInsert.ElementAt(i)) {

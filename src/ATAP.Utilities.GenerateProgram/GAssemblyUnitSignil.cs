@@ -8,14 +8,15 @@ namespace ATAP.Utilities.GenerateProgram {
     // ToDo:  Add GDescription to the AssemblyUnit
 
   public record GAssemblyUnitSignil : IGAssemblyUnitSignil {
-    public GAssemblyUnitSignil(string gName = default,  string gRelativePath = default,
+    public GAssemblyUnitSignil(string gName = default, string gRelativePath = default,
+    IGProjectUnit gProjectUnit = default,
       IDictionary<IPhilote<IGCompilationUnit>, IGCompilationUnit>  gCompilationUnits = default,
       IDictionary<IPhilote<IGPropertiesUnit>, IGPropertiesUnit> gPropertiesUnits = default,
       IDictionary<IPhilote<IGResourceUnit>, IGResourceUnit> gResourceUnits  = default,
       GPatternReplacement gPatternReplacement = default, GComment gComment = default) {
       GName = gName == default ? "" : gName;
-          // ToDo:  Add GDescription to the AssemblyUnit
-
+      // ToDo:  Add GDescription to the AssemblyUnit
+      GProjectUnit = gProjectUnit == default ? new GProjectUnit() : gProjectUnit;
       GCompilationUnits = gCompilationUnits == default ? new Dictionary<IPhilote<IGCompilationUnit>, IGCompilationUnit>() : gCompilationUnits;
       GPropertiesUnits = gPropertiesUnits == default ? new Dictionary<IPhilote<IGPropertiesUnit>, IGPropertiesUnit>() : gPropertiesUnits;
       GResourceUnits = gResourceUnits == default ? new Dictionary<IPhilote<IGResourceUnit>, IGResourceUnit>() : gResourceUnits;
@@ -25,8 +26,9 @@ namespace ATAP.Utilities.GenerateProgram {
       Philote = new Philote<IGAssemblyUnitSignil>();
     }
     public string GName { get; init; }
-        // ToDo:  Add GDescription to the AssemblyUnit public string GDescription { get; init; }
+    // ToDo:  Add GDescription to the AssemblyUnit public string GDescription { get; init; }
     public string GRelativePath { get; init; }
+     public IGProjectUnit GProjectUnit { get; init; }
     public IDictionary<IPhilote<IGCompilationUnit>, IGCompilationUnit> GCompilationUnits { get; init; }
     public IDictionary<IPhilote<IGPropertiesUnit>, IGPropertiesUnit> GPropertiesUnits { get; init; }
     public IDictionary<IPhilote<IGResourceUnit>, IGResourceUnit> GResourceUnits { get; init; }

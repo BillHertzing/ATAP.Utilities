@@ -7,7 +7,7 @@ using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGGenerateCodeSignil {
     IGAssemblyGroupSignil? GAssemblyGroupSignil { get; set; }
-    IGGlobalSettingsSignil? GGlobalSettingsSignil { get; set; }
+    //IGGlobalSettingsSignil? GGlobalSettingsSignil { get; set; }
     IGSolutionSignil? GSolutionSignil { get; set; }
     string ArtifactsDirectoryBase { get; set; }
     string ArtifactsFileRelativePath { get; set; }

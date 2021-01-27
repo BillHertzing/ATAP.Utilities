@@ -17,7 +17,7 @@ namespace ATAP.Services.GenerateCode {
     public new IPhilote<IGInvokeGenerateCodeSignil> Philote {get; }
     public GInvokeGenerateCodeSignil(
       IGAssemblyGroupSignil? gAssemblyGroupSignil = default
-      , IGGlobalSettingsSignil? gGlobalSettingsSignil = default
+     // , IGGlobalSettingsSignil? gGlobalSettingsSignil = default
       , IGSolutionSignil? gSolutionSignil = default
       , string artifactsDirectoryBase = default
       , string artifactsFileRelativePath = default
@@ -39,7 +39,7 @@ namespace ATAP.Services.GenerateCode {
       ) {
       // ToDo: use the ATAP normal method of parameter->Property settings
       GAssemblyGroupSignil = gAssemblyGroupSignil;
-      GGlobalSettingsSignil = gGlobalSettingsSignil;
+      //GGlobalSettingsSignil = gGlobalSettingsSignil;
       GSolutionSignil = gSolutionSignil;
       ArtifactsDirectoryBase = artifactsDirectoryBase;
       ArtifactsFileRelativePath = artifactsFileRelativePath;

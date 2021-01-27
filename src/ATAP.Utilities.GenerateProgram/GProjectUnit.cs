@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
 
   public class GProjectUnit : IGProjectUnit {
-    public GProjectUnit(string gName, string gRelativePath = default, string gFileSuffix = default,
+    public GProjectUnit(string gName = default, string gRelativePath = default, string gFileSuffix = default,
     Dictionary<IPhilote<IGPropertyGroupInProjectUnit>, IGPropertyGroupInProjectUnit> gPropertyGroupInProjectUnits = default,
     Dictionary<IPhilote<IGItemGroupInProjectUnit>, IGItemGroupInProjectUnit> gItemGroupInProjectUnits = default,
     Dictionary<IPhilote<IGResourceUnit>, IGResourceUnit> gResourceUnits = default,
@@ -13,7 +14,7 @@ namespace ATAP.Utilities.GenerateProgram {
     IGComment gComment = default
 
     ) {
-      GName = gName ?? throw new ArgumentNullException(nameof(gName));
+      GName = gName == default ? "" : gName;
       GRelativePath = gRelativePath == default ? "" : gRelativePath;
       GFileSuffix = gFileSuffix == default ? ".csproj" : gFileSuffix;
       GPropertyGroupInProjectUnits = gPropertyGroupInProjectUnits == default ? new Dictionary<IPhilote<IGPropertyGroupInProjectUnit>, IGPropertyGroupInProjectUnit>() : gPropertyGroupInProjectUnits;

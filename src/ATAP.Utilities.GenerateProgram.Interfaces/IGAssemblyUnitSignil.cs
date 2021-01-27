@@ -7,6 +7,7 @@ namespace ATAP.Utilities.GenerateProgram {
     string GName { get; init; }
     // ToDo:  Add GDescription to the AssemblyUnit
     string GRelativePath { get; init; }
+    IGProjectUnit GProjectUnit { get; init; }
     IDictionary<IPhilote<IGCompilationUnit>, IGCompilationUnit> GCompilationUnits { get; init; }
     IDictionary<IPhilote<IGPropertiesUnit>, IGPropertiesUnit> GPropertiesUnits { get; init; }
     IDictionary<IPhilote<IGResourceUnit>, IGResourceUnit> GResourceUnits { get; init; }

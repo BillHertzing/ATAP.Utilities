@@ -51,165 +51,262 @@ namespace ATAP.Console.Console02 {
       };
       #endregion
 
-      #region Philote Serialization
-      var philoteOfTypeInvokeGenerateCodeSignil = new Philote<GGlobalSettingsSignil>();
-      var philoteOfTypeInvokeGenerateCodeSignilAsString = Serializer.Serialize(philoteOfTypeInvokeGenerateCodeSignil, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: philoteOfTypeInvokeGenerateCodeSignilAsString = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", philoteOfTypeInvokeGenerateCodeSignilAsString);
-      ProgressObject!.Report(UiLocalizer["The default constructor of {0} = {1}", "new Philote<GGlobalSettingsSignil>()", philoteOfTypeInvokeGenerateCodeSignilAsString]);
-      //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
-      var insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
-        {"philoteOfTypeInvokeGenerateCodeSignil", new List<string>() {philoteOfTypeInvokeGenerateCodeSignilAsString}}
-       });
-      #endregion
-      #region GComment Serialization (default)
-      IGComment gComment = new GComment();
-      var gCommentAsString = Serializer.Serialize(gComment, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gComment = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gCommentAsString);
-      ProgressObject!.Report(UiLocalizer["The default constructor  {0} = {1}", "new GComment()", gCommentAsString]);
-      //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
-      insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
-        {"gCommentDefault", new List<string>() {gCommentAsString}}
-       });
-      #endregion
-      #region GComment Serialization (with data)
-      gComment = new GComment(new List<string>() { "This is a GComment, line1", "This is a GComment line, line2" });
-      gCommentAsString = Serializer.Serialize(gComment, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gComment = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gCommentAsString);
-      ProgressObject!.Report(UiLocalizer["The constructor  {0} = {1}", "new GComment(new List<string>())", gCommentAsString]);
-      //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
-      insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
-        {"gCommentWithData", new List<string>() {gCommentAsString}}
-       });
-      #endregion
-      #region GBody Serialization (default)
-      IGBody gBody = new GBody();
-      var gBodyAsString = Serializer.Serialize(gBody, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gBody = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gBodyAsString);
-      ProgressObject!.Report(UiLocalizer["The default constructor  {0} = {1}", "new GBody()", gBodyAsString]);
-      //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
-      insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
-        {"gBodyDefault", new List<string>() {gBodyAsString}}
-       });
-      #endregion
-      #region GBody Serialization (with Data)
-      gBody = new GBody(new List<string>() { "Body Line 1", "BodyLine 2" });
-      gBodyAsString = Serializer.Serialize(gBody, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gBody = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gBodyAsString);
-      ProgressObject!.Report(UiLocalizer["The default constructor  {0} = {1}", "new GBody(newList() {{stuff})", gBodyAsString]);
-      //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
-      insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
-        {"gBodyWithData", new List<string>() {gBodyAsString}}
-       });
-      #endregion
-      #region GAssemblyUnit Serialization (default)
-      IGAssemblyUnit gAssemblyUnit = new GAssemblyUnit();
-      var gAssemblyUnitAsString = Serializer.Serialize(gAssemblyUnit, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyUnit = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gAssemblyUnitAsString);
-      ProgressObject!.Report(UiLocalizer["The default constructor  {0} = {1}", "new GAssemblyUnit()", gAssemblyUnitAsString]);
-      //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
-      insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
-        {"gAssemblyUnitDefault", new List<string>() {gAssemblyUnitAsString}}
-       });
-      #endregion
-      #region GAssemblyUnit Serialization (With Data)
-      gAssemblyUnit = new GAssemblyUnit(
-        gName: "ATAP.Console.Console01-Mechanical"
-            // ToDo:  Add GDescription to the AssemblyUnit, gDescription: "mechanically generated AssemblyUnit For Console01"
-        , gPatternReplacement: new GPatternReplacement(
-            gName: "gPatternReplacementAssemblyUnitForATAP.Console.Console01-Mechanical"
-            , new Dictionary<System.Text.RegularExpressions.Regex, string>()
-            , gComment: new GComment(new List<string>() { "Pattern replacement Dictionary for the gAssemblyUnit having gName = ATAP.Console.Console01-Mechanical" }))
-        , gComment: new GComment(new List<string>() { "Primary executable AssemblyUnit for the mechanically generated version of Console01" })
-      );
-      gAssemblyUnitAsString = Serializer.Serialize(gAssemblyUnit, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyUnit = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gAssemblyUnitAsString);
-      ProgressObject!.Report(UiLocalizer["The constructor  {0} = {1}", "new GAssemblyUnit(stuff)", gAssemblyUnitAsString]);
-      //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
-      insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
-        {"gAssemblyUnitWithData", new List<string>() {gAssemblyUnitAsString}}
-       });
-      #endregion
+      #region temp
+      /*
+            #region Philote Serialization
+            var philoteOfTypeInvokeGenerateCodeSignil = new Philote<GGlobalSettingsSignil>();
+            var philoteOfTypeInvokeGenerateCodeSignilAsString = Serializer.Serialize(philoteOfTypeInvokeGenerateCodeSignil, options);
+            Logger.LogDebug(DebugLocalizer["{0} {1}: philoteOfTypeInvokeGenerateCodeSignilAsString = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", philoteOfTypeInvokeGenerateCodeSignilAsString);
+            ProgressObject!.Report(UiLocalizer["The default constructor of {0} = {1}", "new Philote<GGlobalSettingsSignil>()", philoteOfTypeInvokeGenerateCodeSignilAsString]);
+            //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+            var insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+              {"philoteOfTypeInvokeGenerateCodeSignil", new List<string>() {philoteOfTypeInvokeGenerateCodeSignilAsString}}
+             });
+            #endregion
+            #region GComment Serialization (default)
+            IGComment gComment = new GComment();
+            var gCommentAsString = Serializer.Serialize(gComment, options);
+            Logger.LogDebug(DebugLocalizer["{0} {1}: gComment = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gCommentAsString);
+            ProgressObject!.Report(UiLocalizer["The default constructor  {0} = {1}", "new GComment()", gCommentAsString]);
+            //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+            insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+              {"gCommentDefault", new List<string>() {gCommentAsString}}
+             });
+            #endregion
+            #region GComment Serialization (with data)
+            gComment = new GComment(new List<string>() { "This is a GComment, line1", "This is a GComment line, line2" });
+            gCommentAsString = Serializer.Serialize(gComment, options);
+            Logger.LogDebug(DebugLocalizer["{0} {1}: gComment = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gCommentAsString);
+            ProgressObject!.Report(UiLocalizer["The constructor  {0} = {1}", "new GComment(new List<string>())", gCommentAsString]);
+            //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+            insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+              {"gCommentWithData", new List<string>() {gCommentAsString}}
+             });
+            #endregion
+            #region GBody Serialization (default)
+            IGBody gBody = new GBody();
+            var gBodyAsString = Serializer.Serialize(gBody, options);
+            Logger.LogDebug(DebugLocalizer["{0} {1}: gBody = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gBodyAsString);
+            ProgressObject!.Report(UiLocalizer["The default constructor  {0} = {1}", "new GBody()", gBodyAsString]);
+            //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+            insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+              {"gBodyDefault", new List<string>() {gBodyAsString}}
+             });
+            #endregion
+            #region GBody Serialization (with Data)
+            gBody = new GBody(new List<string>() { "Body Line 1", "BodyLine 2" });
+            gBodyAsString = Serializer.Serialize(gBody, options);
+            Logger.LogDebug(DebugLocalizer["{0} {1}: gBody = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gBodyAsString);
+            ProgressObject!.Report(UiLocalizer["The default constructor  {0} = {1}", "new GBody(newList() {{stuff})", gBodyAsString]);
+            //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+            insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+              {"gBodyWithData", new List<string>() {gBodyAsString}}
+             });
+            #endregion
+            #region GProjectUnit Serialization (default)
+            IGProjectUnit gProjectUnit = new GProjectUnit();
+            var gProjectUnitAsString = Serializer.Serialize(gProjectUnit, options);
+            Logger.LogDebug(DebugLocalizer["{0} {1}: gProjectUnit = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gProjectUnitAsString);
+            ProgressObject!.Report(UiLocalizer["The default constructor  {0} = {1}", "new GProjectUnit()", gProjectUnitAsString]);
+            //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+            insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+              {"gProjectUnitDefault", new List<string>() {gProjectUnitAsString}}
+             });
+            #endregion
+            #region GProjectUnit Serialization (With Data)
+            gProjectUnit = new GProjectUnit(
+              gName: "ATAP.Console.Console01-Mechanical"
+              , gRelativePath: ".\\"
+              , gFileSuffix: ".csproj"
+              , gPropertyGroupInProjectUnits: new Dictionary<IPhilote<IGPropertyGroupInProjectUnit>, IGPropertyGroupInProjectUnit>() { }
+              , gItemGroupInProjectUnits: new Dictionary<IPhilote<IGItemGroupInProjectUnit>, IGItemGroupInProjectUnit>() { }
+              , gResourceUnits: new Dictionary<IPhilote<IGResourceUnit>, IGResourceUnit>() { }
+              , gPatternReplacement: new GPatternReplacement(
+                  gName: "gPatternReplacementProjectUnitForATAP.Console.Console01-Mechanical"
+                  , new Dictionary<System.Text.RegularExpressions.Regex, string>()
+                  , gComment: new GComment(new List<string>() { "Pattern replacement Dictionary for the gProjectUnit having gName = ATAP.Console.Console01-Mechanical" }))
+              , gComment: new GComment(new List<string>() { "Project (.csproj) file for the Primary executable AssemblyUnit for the mechanically generated version of Console01" })
+            );
+            gProjectUnitAsString = Serializer.Serialize(gProjectUnit, options);
+            Logger.LogDebug(DebugLocalizer["{0} {1}: gProjectUnit = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gProjectUnitAsString);
+            ProgressObject!.Report(UiLocalizer["The constructor {0} = {1}", "new GProjectUnit(stuff)", gProjectUnitAsString]);
+            //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+            insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+              {"gProjectUnitWithData", new List<string>() {gProjectUnitAsString}}
+             });
+            #endregion
+            #region GAssemblyUnit Serialization (default)
+            IGAssemblyUnit gAssemblyUnit = new GAssemblyUnit();
+            var gAssemblyUnitAsString = Serializer.Serialize(gAssemblyUnit, options);
+            Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyUnit = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gAssemblyUnitAsString);
+            ProgressObject!.Report(UiLocalizer["The default constructor  {0} = {1}", "new GAssemblyUnit()", gAssemblyUnitAsString]);
+            //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+            insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+              {"gAssemblyUnitDefault", new List<string>() {gAssemblyUnitAsString}}
+             });
+            #endregion
+            #region GAssemblyUnit Serialization (With Data)
+            gAssemblyUnit = new GAssemblyUnit(
+              gName: "ATAP.Console.Console01-Mechanical"
+              // ToDo:  Add GDescription to the AssemblyUnit, gDescription: "mechanically generated AssemblyUnit For Console01"
+              , gRelativePath: ".\\"
+              //, gProjectUnit: new GProjectUnit()
+              , gProjectUnit: gProjectUnit
+              , gPatternReplacement: new GPatternReplacement(
+                  gName: "gPatternReplacementAssemblyUnitForATAP.Console.Console01-Mechanical"
+                  , new Dictionary<System.Text.RegularExpressions.Regex, string>()
+                  , gComment: new GComment(new List<string>() { "Pattern replacement Dictionary for the gAssemblyUnit having gName = ATAP.Console.Console01-Mechanical" }))
+              , gComment: new GComment(new List<string>() { "Primary executable AssemblyUnit for the mechanically generated version of Console01" })
+            );
+            gAssemblyUnitAsString = Serializer.Serialize(gAssemblyUnit, options);
+            Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyUnit = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gAssemblyUnitAsString);
+            ProgressObject!.Report(UiLocalizer["The constructor  {0} = {1}", "new GAssemblyUnit(stuff)", gAssemblyUnitAsString]);
+            //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+            insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+              {"gAssemblyUnitWithData", new List<string>() {gAssemblyUnitAsString}}
+             });
+            #endregion
 
 
-      #region GAssemblyGroupSignil Serialization (default)
-      IGAssemblyGroupSignil gAssemblyGroupSignil = new GAssemblyGroupSignil(
-      );
-      var gAssemblyGroupSignilAsString = Serializer.Serialize(gAssemblyGroupSignil, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyGroupSignil (default) = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gAssemblyGroupSignilAsString);
-      //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
-      insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
-        {"gAssemblyGroupSignilDefault", new List<string>() {gAssemblyGroupSignilAsString}}
-       });
+            #region GAssemblyGroupSignil Serialization (default)
+            IGAssemblyGroupSignil gAssemblyGroupSignil = new GAssemblyGroupSignil(
+            );
+            var gAssemblyGroupSignilAsString = Serializer.Serialize(gAssemblyGroupSignil, options);
+            Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyGroupSignil (default) = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gAssemblyGroupSignilAsString);
+            //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+            insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+              {"gAssemblyGroupSignilDefault", new List<string>() {gAssemblyGroupSignilAsString}}
+             });
+            #endregion
+            #region GAssemblyGroupSignil Serialization (with data)
+            gAssemblyGroupSignil = new GAssemblyGroupSignil(
+              gName: "ATAP.Console.Console01-Mechanical"
+              , gDescription: "mechanically generated AssemblyGroup For Console01"
+              , gRelativePath: ".\\"
+              , gAssemblyUnits: new Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>() { }
+              // , gAssemblyUnits: new Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>() { { gAssemblyUnit.Philote, gAssemblyUnit } }
+              , gPatternReplacement: new GPatternReplacement(
+                  gName: "gPatternReplacementAssemblyGroupForATAP.Console.Console01-Mechanical"
+                  , new Dictionary<System.Text.RegularExpressions.Regex, string>()
+                  , gComment: new GComment(new List<string>() { "Pattern replacement Dictionary for the gAssemblyGroup having gName = ATAP.Console.Console01-Mechanical" }))
+              , gComment: new GComment(new List<string>() { "Primary executable AssemblyGroup for the mechanically generated version of Console01" })
+              , hasInterfacesAssembly: false
+            );
+            gAssemblyGroupSignilAsString = Serializer.Serialize(gAssemblyGroupSignil, options);
+            Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyGroupSignil (with data) = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gAssemblyGroupSignilAsString);
+            //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+            insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+              {"gAssemblyGroupSignilWithData", new List<string>() {gAssemblyGroupSignilAsString}}
+             });
+            #endregion
+
+            var _defaultTargetFrameworks = new List<string>() { "netstandard2.1;", "net5.0" };
+
+            #region GSolutionSignil Serialization (default)
+            var _buildConfigurations = new SortedSet<string>() { "Debug", "ReleaseWithTrace", "Release" };
+            var _cPUConfigurations = new SortedSet<string>() { "Any CPU" };
+            var _gDependencyPackages = new Dictionary<IPhilote<IGProjectUnit>, IGProjectUnit>();
+            var _gDependencyProjects = new Dictionary<IPhilote<IGProjectUnit>, IGProjectUnit>();
+            var _gProjectUnits = new Dictionary<IPhilote<IGProjectUnit>, IGProjectUnit>();
+            var _gComment = new GComment(new List<string>() { "ToDo: add SolutionSignil Comments here" });
+            IGSolutionSignil gSolutionSignilFromCode = new GSolutionSignil(
+              hasPropsAndTargets: true
+              , hasEditorConfig: true
+              , hasArtifacts: true
+              , hasDevLog: true
+              , sourceRelativePath: "src"
+              , testsRelativePath: "tests"
+              , hasOmniSharpConfiguration: true
+              , hasVisualStudioCodeWorkspaceConfiguration: true
+              , buildConfigurations: _buildConfigurations
+              , cPUConfigurations: _cPUConfigurations
+              , gDependencyPackages: _gDependencyPackages
+              , gDependencyProjects: _gDependencyProjects
+              , gComment: _gComment
+            );
+            var gSolutionSignilFromCodeAsSettingsString = Serializer.Serialize(gSolutionSignilFromCode, options);
+            Logger.LogDebug(DebugLocalizer["{0} {1}: gSolutionSignilFromCode in JSON {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gSolutionSignilFromCodeAsSettingsString);
+            ProgressObject!.Report(UiLocalizer["The default constructor of {0} = {1}", "new GSolutionSignil(defaultTargetFrameworks)", gSolutionSignilFromCodeAsSettingsString]);
+            //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+            insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+              {"gSolutionSignilFromCodeAsSettings", new List<string>() {gSolutionSignilFromCodeAsSettingsString}}
+             });
+            #endregion
+      */
+
+#endregion temp
+      #region GInvokeGenerateCodeSignil Serialization (default)
+      IGInvokeGenerateCodeSignil gInvokeGenerateCodeSignil = new GInvokeGenerateCodeSignil();
+      // Many entities are declared not-null
+      // var gInvokeGenerateCodeSignilAsString = Serializer.Serialize(gInvokeGenerateCodeSignil, options);
+      // Logger.LogDebug(DebugLocalizer["{0} {1}: gInvokeGenerateCodeSignil () = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gInvokeGenerateCodeSignilAsString);
+      // //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+      // insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+      //   {"gInvokeGenerateCodeSignilDefault", new List<string>() {gInvokeGenerateCodeSignilAsString}}
+      //  });
       #endregion
-      #region GAssemblyGroupSignil Serialization (with data)
-      gAssemblyGroupSignil = new GAssemblyGroupSignil(
-        gName: "ATAP.Console.Console01-Mechanical"
-        , gDescription: "mechanically generated AssemblyGroup For Console01"
-        , gRelativePath: ".\\"
-        , gAssemblyUnits: new Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>() { }
-        , gPatternReplacement: new GPatternReplacement(
-            gName: "gPatternReplacementAssemblyGroupForATAP.Console.Console01-Mechanical"
-            , new Dictionary<System.Text.RegularExpressions.Regex, string>()
-            , gComment: new GComment(new List<string>() { "Pattern replacement Dictionary for the gAssemblyGroup having gName = ATAP.Console.Console01-Mechanical" }))
-        , gComment: new GComment(new List<string>() { "Primary executable AssemblyGroup for the mechanically generated version of Console01" })
-        , hasInterfacesAssembly: false
-      );
-      gAssemblyGroupSignilAsString = Serializer.Serialize(gAssemblyGroupSignil, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyGroupSignil (with data) = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gAssemblyGroupSignilAsString);
-      //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
-      insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
-        {"gAssemblyGroupSignilWithData", new List<string>() {gAssemblyGroupSignilAsString}}
-       });
-      #endregion
+      #region GInvokeGenerateCodeSignil Serialization (with data)
+      gInvokeGenerateCodeSignil = new GInvokeGenerateCodeSignil(
+        gAssemblyGroupSignil : new GAssemblyGroupSignil(
+          gName: "ATAP.Console.Console01-Mechanical"
+          , gDescription: "mechanically generated AssemblyGroup For Console01"
+          , gRelativePath: ".\\"
+          , gAssemblyUnits: new Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>() {
 
-      var _defaultTargetFrameworks = new List<string>() { "netstandard2.1;", "net5.0" };
+          }
+          // , gAssemblyUnits: new Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>() { { gAssemblyUnit.Philote, gAssemblyUnit } }
+          , gPatternReplacement: new GPatternReplacement(
+              gName: "gPatternReplacementAssemblyGroupForATAP.Console.Console01-Mechanical"
+              , new Dictionary<System.Text.RegularExpressions.Regex, string>()
+              , gComment: new GComment(new List<string>() { "Pattern replacement Dictionary for the gAssemblyGroup having gName = ATAP.Console.Console01-Mechanical" }))
+          , gComment: new GComment(new List<string>() { "Primary executable AssemblyGroup for the mechanically generated version of Console01" })
+          , hasInterfacesAssembly: false
+          )
 
-      #region GSolutionSignil Serialization (default)
-      var _buildConfigurations = new SortedSet<string>() { "Debug", "ReleaseWithTrace", "Release" };
-      var _cPUConfigurations = new SortedSet<string>() { "Any CPU" };
-      var _gDependencyPackages = new Dictionary<IPhilote<IGProjectUnit>, IGProjectUnit>();
-      var _gDependencyProjects = new Dictionary<IPhilote<IGProjectUnit>, IGProjectUnit>();
-      var _gProjectUnits = new Dictionary<IPhilote<IGProjectUnit>, IGProjectUnit>();
-      var _gComment = new GComment(new List<string>() { "ToDo: add SolutionSignil Comments here" });
-      IGSolutionSignil gSolutionSignilFromCode = new GSolutionSignil(
-        hasPropsAndTargets: true
-        , hasEditorConfig: true
-        , hasArtifacts: true
-        , hasDevLog: true
-        , sourceRelativePath: "src"
-        , testsRelativePath: "tests"
-        , hasOmniSharpConfiguration: true
-        , hasVisualStudioCodeWorkspaceConfiguration: true
-        , buildConfigurations: _buildConfigurations
-        , cPUConfigurations: _cPUConfigurations
-        , gDependencyPackages: _gDependencyPackages
-        , gDependencyProjects: _gDependencyProjects
-        , gComment: _gComment
-      );
-      var gSolutionSignilFromCodeAsSettingsString = Serializer.Serialize(gSolutionSignilFromCode, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gSolutionSignilFromCode in JSON {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gSolutionSignilFromCodeAsSettingsString);
-      ProgressObject!.Report(UiLocalizer["The default constructor of {0} = {1}", "new GSolutionSignil(defaultTargetFrameworks)", gSolutionSignilFromCodeAsSettingsString]);
-      // write string to persistence file keyed by gGlobalSettingsSignilFromCodeAsSettings
-      insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
-        {"gSolutionSignilFromCodeAsSettings", new List<string>() {gSolutionSignilFromCodeAsSettingsString}}
-       });
-      // ToDo: Test for and handle failure of Persistence InsertFunc
-      #endregion
+        //, new GGlobalSettingsSignil()
 
+        , new GSolutionSignil(
+          hasPropsAndTargets: true
+          , hasEditorConfig: true
+          , hasArtifacts: true
+          , hasDevLog: true
+          , hasDocumentation: true
+          , sourceRelativePath: "src"
+          , testsRelativePath: "tests"
+          , hasOmniSharpConfiguration: true
+          , hasVisualStudioCodeWorkspaceConfiguration: true
+          , hasVisualStudioIISApplicationHostConfiguration: false
+          , hasDataBases: false
+          , buildConfigurations: new List<string>() {
 
-      #region GInvokeGenerateCodeSignil to JSON string
-      IGInvokeGenerateCodeSignil gInvokeGenerateCodeSignil = new GInvokeGenerateCodeSignil(
-        gAssemblyGroupSignil: gAssemblyGroupSignil
-        //, gGlobalSettingsSignil: gGlobalSettingsSignilFromCode
-        , gSolutionSignil: gSolutionSignilFromCode
+          }
+          ,  cPUConfigurations: new SortedSet<string>() { "Any CPU" }
+          , gDependencyPackages: new Dictionary<IPhilote<IGProjectUnit>, IGProjectUnit>() {
+
+          }
+          , gDependencyProjects: new Dictionary<IPhilote<IGProjectUnit>, IGProjectUnit>() {
+
+          }
+    , gComment: new GComment(new List<string>() { "The Solution for the mechanically generated version of Console01" })
+    , gPatternReplacement: new GPatternReplacement(
+        gName: "gPatternReplacementSolutionForATAP.Console.Console01-Mechanical"
+        , new Dictionary<System.Text.RegularExpressions.Regex, string>() { }
+        , gComment: new GComment(new List<string>() { "Pattern replacement Dictionary for the Solution having gName = ATAP.Console.Console01-Mechanical" }))
+      )
+      , artifactsDirectoryBase: "Artifacts/"
+      , artifactsFileRelativePath: "Console02-choice1"
+      , artifactsFilePaths: new string[1] { "FirstArtifactsFile" }
+      , temporaryDirectoryBase: "D:/Temp/Console02/"
+      , enableProgress: false
+      , enablePersistence: false
+      , enablePickAndSave: false
       );
       var gInvokeGenerateCodeSignilAsString = Serializer.Serialize(gInvokeGenerateCodeSignil, options);
-      Logger.LogDebug(DebugLocalizer["{0} {1}: gInvokeGenerateCodeSignil in JSON {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gInvokeGenerateCodeSignilAsString);
-      // write string to persistence file keyed by gGlobalSettingsSignilFromCodeAsSettings
-      insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
-        {"gInvokeGenerateCodeSignil", new List<string>() {gInvokeGenerateCodeSignilAsString}}
+      Logger.LogDebug(DebugLocalizer["{0} {1}: gInvokeGenerateCodeSignil () = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gInvokeGenerateCodeSignilAsString);
+      //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+      var insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+        {"gInvokeGenerateCodeSignilWithData", new List<string>() {gInvokeGenerateCodeSignilAsString}}
        });
-      // ToDo: Test for and handle failure of Persistence InsertFunc
       #endregion
 
       /*

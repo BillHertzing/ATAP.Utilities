@@ -6,7 +6,8 @@ using System.Text;
 using ATAP.Utilities.Philote;
 namespace ATAP.Utilities.GenerateProgram {
   public class GSolutionSignil  : IGSolutionSignil {
-    public GSolutionSignil(bool hasPropsAndTargets = default
+    public GSolutionSignil(
+      bool hasPropsAndTargets = default
     , bool hasEditorConfig = default
     , bool hasArtifacts = default
     , bool hasDevLog = default

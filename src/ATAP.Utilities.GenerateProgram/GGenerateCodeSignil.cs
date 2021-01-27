@@ -11,7 +11,7 @@ namespace ATAP.Utilities.GenerateProgram {
 #endif
   public partial class GGenerateCodeSignil : IGGenerateCodeSignil {
     public IGAssemblyGroupSignil? GAssemblyGroupSignil { get; set; }
-    public IGGlobalSettingsSignil? GGlobalSettingsSignil { get; set; }
+    //public IGGlobalSettingsSignil? GGlobalSettingsSignil { get; set; }
     public IGSolutionSignil? GSolutionSignil { get; set; }
     public string ArtifactsDirectoryBase { get; set; }
     public string ArtifactsFileRelativePath { get; set; }
@@ -28,7 +28,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public IPhilote<IGGenerateCodeSignil> Philote { get; init; }
     public GGenerateCodeSignil(
       IGAssemblyGroupSignil? gAssemblyGroupSignil = default
-      , IGGlobalSettingsSignil? gGlobalSettingsSignil = default
+      //, IGGlobalSettingsSignil? gGlobalSettingsSignil = default
       , IGSolutionSignil? gSolutionSignil = default
       , string artifactsDirectoryBase = default
       , string artifactsFileRelativePath = default
@@ -45,7 +45,7 @@ namespace ATAP.Utilities.GenerateProgram {
 ) {
       // ToDo: use the ATAP normal method of parameter->Property settings
       GAssemblyGroupSignil = gAssemblyGroupSignil;
-      GGlobalSettingsSignil = gGlobalSettingsSignil;
+     // GGlobalSettingsSignil = gGlobalSettingsSignil;
       GSolutionSignil = gSolutionSignil;
       ArtifactsDirectoryBase = artifactsDirectoryBase;
       ArtifactsFileRelativePath = artifactsFileRelativePath;

@@ -255,7 +255,7 @@ namespace ATAP.Console.Console02 {
     GInvokeGenerateCodeSignil GetGInvokeGenerateCodeSignilFromSettings(IProgress<object>? progress, IPersistence<IInsertResultsAbstract>? persistence) {
       var gInvokeGenerateCodeSignil = new GInvokeGenerateCodeSignil(
         gAssemblyGroupSignil: GetGAssemblyGroupSignilFromSettings()
-        , gGlobalSettingsSignil: GetGGlobalSettingsSignilFromSettings()
+        //, gGlobalSettingsSignil: GetGGlobalSettingsSignilFromSettings()
         , gSolutionSignil: GetGSolutionSignilFromSettings()
         , artifactsDirectoryBase: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsDirectoryBaseDefault)
         , artifactsFileRelativePath: AppConfiguration.GetValue<string>(GenerateProgramServiceStringConstants.ArtifactsFileRelativePathConfigRootKey, GenerateProgramServiceStringConstants.ArtifactsFileRelativePathDefault)

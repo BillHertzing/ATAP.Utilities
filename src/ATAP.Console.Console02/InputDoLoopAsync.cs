@@ -82,18 +82,21 @@ namespace ATAP.Console.Console02 {
           #region create persistence files and delegate
           // Create PersistenceObject
           var filePathsDictionary = new Dictionary<string, string>() {
-            {"philoteOfTypeInvokeGenerateCodeSignil", PersistencePathBase + "philoteOfTypeInvokeGenerateCodeSignil.json"}
-            , {"gCommentDefault", PersistencePathBase + "gCommentDefault.json" }
-            , {"gCommentWithData", PersistencePathBase + "gCommentWithData.json" }
-            , {"gBodyDefault", PersistencePathBase + "gBodyDefault.json" }
-            , {"gBodyWithData", PersistencePathBase + "gBodyWithData.json" }
-            , {"gAssemblyUnitDefault", PersistencePathBase + "gAssemblyUnitDefault.json" }
-            , {"gAssemblyUnitWithData", PersistencePathBase + "gAssemblyUnitWithData.json" }
-            , {"gAssemblyGroupSignilDefault", PersistencePathBase + "gAssemblyGroupSignilDefault.json" }
-            , {"gAssemblyGroupSignilWithData", PersistencePathBase + "gAssemblyGroupSignilWithData.json" }
-            , {"gGlobalSettingsSignilFromCodeAsSettings", PersistencePathBase + "gGlobalSettingsSignilFromCode.json"}
-            , {"gSolutionSignilFromCodeAsSettings", PersistencePathBase + "gSolutionSignilFromCode.json"}
-            , {"gInvokeGenerateCodeSignil", PersistencePathBase + "gInvokeGenerateCodeSignil.json"}
+            // {"philoteOfTypeInvokeGenerateCodeSignil", PersistencePathBase + "philoteOfTypeInvokeGenerateCodeSignil.json"}
+            // , {"gCommentDefault", PersistencePathBase + "gCommentDefault.json" }
+            // , {"gCommentWithData", PersistencePathBase + "gCommentWithData.json" }
+            // , {"gBodyDefault", PersistencePathBase + "gBodyDefault.json" }
+            // , {"gBodyWithData", PersistencePathBase + "gBodyWithData.json" }
+            // , {"gProjectUnitDefault", PersistencePathBase + "gProjectUnitDefault.json" }
+            // , {"gProjectUnitWithData", PersistencePathBase + "gProjectUnitWithData.json" }
+            // , {"gAssemblyUnitDefault", PersistencePathBase + "gAssemblyUnitDefault.json" }
+            // , {"gAssemblyUnitWithData", PersistencePathBase + "gAssemblyUnitWithData.json" }
+            // , {"gAssemblyGroupSignilDefault", PersistencePathBase + "gAssemblyGroupSignilDefault.json" }
+            // , {"gAssemblyGroupSignilWithData", PersistencePathBase + "gAssemblyGroupSignilWithData.json" }
+            // , {"gGlobalSettingsSignilFromCodeAsSettings", PersistencePathBase + "gGlobalSettingsSignilFromCode.json"}
+            // , {"gSolutionSignilFromCodeAsSettings", PersistencePathBase + "gSolutionSignilFromCode.json"}
+            // , {"gInvokeGenerateCodeSignilDefault", PersistencePathBase + "gInvokeGenerateCodeSignilDefault.json"}
+            , {"gInvokeGenerateCodeSignilWithData", PersistencePathBase + "gInvokeGenerateCodeSignilWithData.json"}
           };
           // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
           SetupResultsPersistence = ATAP.Utilities.Persistence.Extensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePathsDictionary));
@@ -140,7 +143,7 @@ namespace ATAP.Console.Console02 {
           Logger.LogDebug(DebugLocalizer["{0} {1} gInvokeGenerateCodeSignil = {2}"], "Console02BackgroundService", "DoLoopAsync", Serializer.Serialize(gInvokeGenerateCodeSignil));
           Message.Append(UiLocalizer["Running GenerateProgram Function on the AssemblyGroupSignil {0}, with GlobalSettingsKey {1} and SolutionSignilKey {2}"
           , Serializer.Serialize(gInvokeGenerateCodeSignil.GAssemblyGroupSignil)
-          , Serializer.Serialize(gInvokeGenerateCodeSignil.GGlobalSettingsSignil)
+          //, Serializer.Serialize(gInvokeGenerateCodeSignil.GGlobalSettingsSignil)
           , Serializer.Serialize(gInvokeGenerateCodeSignil.GSolutionSignil)
            ]);
           #region Write the Message to Console.Out

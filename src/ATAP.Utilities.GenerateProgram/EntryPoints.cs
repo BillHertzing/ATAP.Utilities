@@ -27,7 +27,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public IGGenerateProgramResult GenerateProgram(IGGenerateCodeSignil gGenerateCodeSignil = default){
       return GenerateProgram(
          gAssemblyGroupSignil: gGenerateCodeSignil.GAssemblyGroupSignil
-        , gGlobalSettingsSignil: gGenerateCodeSignil.GGlobalSettingsSignil
+        //, gGlobalSettingsSignil: gGenerateCodeSignil.GGlobalSettingsSignil
         , gSolutionSignil: gGenerateCodeSignil.GSolutionSignil
         , gGenerateCodeProgress: gGenerateCodeSignil.Progress
         , persistence: gGenerateCodeSignil.Persistence
@@ -81,7 +81,7 @@ namespace ATAP.Utilities.GenerateProgram {
     }
         public async Task<IGGenerateProgramResult> GenerateProgramAsync(IGGenerateCodeSignil gGenerateCodeSignil = default){
         GAssemblyGroupSignil = gGenerateCodeSignil.GAssemblyGroupSignil ?? throw new ArgumentNullException(nameof(gGenerateCodeSignil.GAssemblyGroupSignil));
-      GGlobalSettingsSignil = gGenerateCodeSignil.GGlobalSettingsSignil ?? throw new ArgumentNullException(nameof(gGenerateCodeSignil.GGlobalSettingsSignil));
+      //GGlobalSettingsSignil = gGenerateCodeSignil.GGlobalSettingsSignil ?? throw new ArgumentNullException(nameof(gGenerateCodeSignil.GGlobalSettingsSignil));
       GSolutionSignil = gGenerateCodeSignil.GSolutionSignil ?? throw new ArgumentNullException(nameof(gGenerateCodeSignil.GSolutionSignil));
       GenerateCodeProgress = gGenerateCodeSignil.Progress == default ? new GGenerateCodeProgress() : gGenerateCodeSignil.Progress;
       Persistence =  gGenerateCodeSignil.Persistence == default ? null :  gGenerateCodeSignil.Persistence;

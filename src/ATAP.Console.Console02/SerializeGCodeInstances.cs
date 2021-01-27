@@ -111,6 +111,24 @@ namespace ATAP.Console.Console02 {
         {"gAssemblyUnitDefault", new List<string>() {gAssemblyUnitAsString}}
        });
       #endregion
+      #region GAssemblyUnit Serialization (With Data)
+      gAssemblyUnit = new GAssemblyUnit(
+        gName: "ATAP.Console.Console01-Mechanical"
+            // ToDo:  Add GDescription to the AssemblyUnit, gDescription: "mechanically generated AssemblyUnit For Console01"
+        , gPatternReplacement: new GPatternReplacement(
+            gName: "gPatternReplacementAssemblyUnitForATAP.Console.Console01-Mechanical"
+            , new Dictionary<System.Text.RegularExpressions.Regex, string>()
+            , gComment: new GComment(new List<string>() { "Pattern replacement Dictionary for the gAssemblyUnit having gName = ATAP.Console.Console01-Mechanical" }))
+        , gComment: new GComment(new List<string>() { "Primary executable AssemblyUnit for the mechanically generated version of Console01" })
+      );
+      gAssemblyUnitAsString = Serializer.Serialize(gAssemblyUnit, options);
+      Logger.LogDebug(DebugLocalizer["{0} {1}: gAssemblyUnit = {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gAssemblyUnitAsString);
+      ProgressObject!.Report(UiLocalizer["The constructor  {0} = {1}", "new GAssemblyUnit(stuff)", gAssemblyUnitAsString]);
+      //ToDo: wrap in try/catch, handle failure of Persistence InsertFunc
+      insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
+        {"gAssemblyUnitWithData", new List<string>() {gAssemblyUnitAsString}}
+       });
+      #endregion
 
 
       #region GAssemblyGroupSignil Serialization (default)
@@ -130,7 +148,7 @@ namespace ATAP.Console.Console02 {
         , gRelativePath: ".\\"
         , gAssemblyUnits: new Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>() { }
         , gPatternReplacement: new GPatternReplacement(
-            gName: "gPatternReplacementForATAP.Console.Console01-Mechanical"
+            gName: "gPatternReplacementAssemblyGroupForATAP.Console.Console01-Mechanical"
             , new Dictionary<System.Text.RegularExpressions.Regex, string>()
             , gComment: new GComment(new List<string>() { "Pattern replacement Dictionary for the gAssemblyGroup having gName = ATAP.Console.Console01-Mechanical" }))
         , gComment: new GComment(new List<string>() { "Primary executable AssemblyGroup for the mechanically generated version of Console01" })
@@ -189,7 +207,7 @@ namespace ATAP.Console.Console02 {
       Logger.LogDebug(DebugLocalizer["{0} {1}: gInvokeGenerateCodeSignil in JSON {2}"], "Console02BackgroundService", "SerializeAndSaveMultipleGGenerateCodeInstances", gInvokeGenerateCodeSignilAsString);
       // write string to persistence file keyed by gGlobalSettingsSignilFromCodeAsSettings
       insertResults = PersistenceObject.InsertDictionaryFunc(new Dictionary<string, IEnumerable<object>>() {
-        {"gInvokeGenerateCodeSignil", new List<string>() {gInvokeGenerateCodeSignilAsStringUnitSign}}
+        {"gInvokeGenerateCodeSignil", new List<string>() {gInvokeGenerateCodeSignilAsString}}
        });
       // ToDo: Test for and handle failure of Persistence InsertFunc
       #endregion

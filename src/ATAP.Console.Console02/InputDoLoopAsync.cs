@@ -96,7 +96,7 @@ namespace ATAP.Console.Console02 {
             // , {"gGlobalSettingsSignilFromCodeAsSettings", PersistencePathBase + "gGlobalSettingsSignilFromCode.json"}
             // , {"gSolutionSignilFromCodeAsSettings", PersistencePathBase + "gSolutionSignilFromCode.json"}
             // , {"gInvokeGenerateCodeSignilDefault", PersistencePathBase + "gInvokeGenerateCodeSignilDefault.json"}
-            , {"gInvokeGenerateCodeSignilWithData", PersistencePathBase + "gInvokeGenerateCodeSignilWithData.json"}
+             {"gInvokeGenerateCodeSignilWithData", PersistencePathBase + "gInvokeGenerateCodeSignilWithData.json"}
           };
           // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePaths as the argument
           SetupResultsPersistence = ATAP.Utilities.Persistence.Extensions.SetupViaFileFuncBuilder()(new SetupViaFileData(filePathsDictionary));

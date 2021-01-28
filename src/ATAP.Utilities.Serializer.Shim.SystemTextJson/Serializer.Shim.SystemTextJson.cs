@@ -76,8 +76,10 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
 
     // ToDo: add a Configure which has default values of the JsonSerializerOptionsCurrent should come from an IConfiguration object, and keys/default values should come from a StringConstants
     // ToDo: ConvertOptions should be expanded to include a set of extensions for JsonSerializerOptions class to promote reuse of the instance
+
     public void Configure() {
-      JsonConvertersCache = new List<JsonConverter>();
+      // 
+      JsonConvertersCache = new List<JsonConverter>() { DictionaryJsonConverterFactory.Default };
       JsonSerializerOptionsCurrent = new JsonSerializerOptions {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,

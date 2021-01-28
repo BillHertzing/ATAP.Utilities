@@ -234,7 +234,7 @@ namespace ATAP.Console.Console02 {
             #endregion
       */
 
-#endregion temp
+      #endregion temp
       #region GInvokeGenerateCodeSignil Serialization (default)
       IGInvokeGenerateCodeSignil gInvokeGenerateCodeSignil = new GInvokeGenerateCodeSignil();
       // Many entities are declared not-null
@@ -246,15 +246,38 @@ namespace ATAP.Console.Console02 {
       //  });
       #endregion
       #region GInvokeGenerateCodeSignil Serialization (with data)
+      var gAssemblyUnit = new GAssemblyUnit(
+        gName: "ATAP.Console.Console01-Mechanical"
+        // ToDo:  Add GDescription to the AssemblyUnit, gDescription: "mechanically generated AssemblyUnit For Console01"
+        , gRelativePath: ".\\"
+        , gProjectUnit: new GProjectUnit(
+          gName: "ATAP.Console.Console01-Mechanical"
+          , gRelativePath: ".\\"
+          , gFileSuffix: ".csproj"
+          , gPropertyGroupInProjectUnits: new Dictionary<IPhilote<IGPropertyGroupInProjectUnit>, IGPropertyGroupInProjectUnit>() { }
+          , gItemGroupInProjectUnits: new Dictionary<IPhilote<IGItemGroupInProjectUnit>, IGItemGroupInProjectUnit>() { }
+          , gResourceUnits: new Dictionary<IPhilote<IGResourceUnit>, IGResourceUnit>() { }
+          , gPatternReplacement: new GPatternReplacement(
+              gName: "gPatternReplacementProjectUnitForATAP.Console.Console01-Mechanical"
+              , new Dictionary<System.Text.RegularExpressions.Regex, string>()
+              , gComment: new GComment(new List<string>() { "Pattern replacement Dictionary for the gProjectUnit having gName = ATAP.Console.Console01-Mechanical" }))
+          , gComment: new GComment(new List<string>() { "Project (.csproj) file for the Primary executable AssemblyUnit for the mechanically generated version of Console01" })
+        )
+        , gPatternReplacement: new GPatternReplacement(
+            gName: "gPatternReplacementAssemblyUnitForATAP.Console.Console01-Mechanical"
+            , new Dictionary<System.Text.RegularExpressions.Regex, string>()
+            , gComment: new GComment(new List<string>() { "Pattern replacement Dictionary for the gAssemblyUnit having gName = ATAP.Console.Console01-Mechanical" }))
+        , gComment: new GComment(new List<string>() { "Primary executable AssemblyUnit for the mechanically generated version of Console01" })
+      );
       gInvokeGenerateCodeSignil = new GInvokeGenerateCodeSignil(
-        gAssemblyGroupSignil : new GAssemblyGroupSignil(
+        gAssemblyGroupSignil: new GAssemblyGroupSignil(
           gName: "ATAP.Console.Console01-Mechanical"
           , gDescription: "mechanically generated AssemblyGroup For Console01"
           , gRelativePath: ".\\"
-          , gAssemblyUnits: new Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>() {
 
+          , gAssemblyUnits: new Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>() {
+            { gAssemblyUnit.Philote, gAssemblyUnit }
           }
-          // , gAssemblyUnits: new Dictionary<IPhilote<IGAssemblyUnit>, IGAssemblyUnit>() { { gAssemblyUnit.Philote, gAssemblyUnit } }
           , gPatternReplacement: new GPatternReplacement(
               gName: "gPatternReplacementAssemblyGroupForATAP.Console.Console01-Mechanical"
               , new Dictionary<System.Text.RegularExpressions.Regex, string>()
@@ -280,7 +303,7 @@ namespace ATAP.Console.Console02 {
           , buildConfigurations: new List<string>() {
 
           }
-          ,  cPUConfigurations: new SortedSet<string>() { "Any CPU" }
+          , cPUConfigurations: new SortedSet<string>() { "Any CPU" }
           , gDependencyPackages: new Dictionary<IPhilote<IGProjectUnit>, IGProjectUnit>() {
 
           }

@@ -80,24 +80,6 @@ namespace ATAP.Console.Console02 {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 1. PrettyPrint a GenerateCodeSignil.
-        /// </summary>
-        internal static string _1__PrettyPrint_a_GenerateCodeSignil {
-            get {
-                return ResourceManager.GetString("1. PrettyPrint a GenerateCodeSignil", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 99: Quit.
-        /// </summary>
-        internal static string _99__Quit {
-            get {
-                return ResourceManager.GetString("99: Quit", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to in Program.Main: extend genericHostBuilder by calling extension method .ConfigureServices and adding to the DI Container a singleton instance of type IHostLifetime. the instance is of type {0}..
         /// </summary>
         internal static string AddingAnIHostLifetimeToGenericHostDI {
@@ -220,15 +202,6 @@ namespace ATAP.Console.Console02 {
         internal static string WebHostBuilderToBuildDetails {
             get {
                 return ResourceManager.GetString("WebHostBuilderToBuildDetails", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to You selected: {0}.
-        /// </summary>
-        internal static string You_selected___0_ {
-            get {
-                return ResourceManager.GetString("You selected: {0}", resourceCulture);
             }
         }
     }

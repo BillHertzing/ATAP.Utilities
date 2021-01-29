@@ -78,7 +78,7 @@ namespace ATAP.Console.Console02 {
         case "1":
           Logger.LogDebug(DebugLocalizer["{0} {1}: Both PrettyPrint and Serialize to files multiple GGenerateCode types from declared instances"], "Console02BackgroundService", "DoLoopAsync");
           // Send first Progress report for the user's choice
-          ProgressObject!.Report(UiLocalizer["first Progress Report message from input=1"]);
+          ProgressObject!.Report(UiLocalizer["first Progress Report message from input 1"]);
           #region create persistence files and delegate
           // Create PersistenceObject
           var filePathsDictionary = new Dictionary<string, string>() {

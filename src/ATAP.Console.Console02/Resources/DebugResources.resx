@@ -168,19 +168,10 @@
   <data name="{0} {1} inputLineString : {2}" xml:space="preserve">
     <value>{0} {1} inputLineString = {2}</value>
   </data>
-  <data name="You selected: {0}" xml:space="preserve">
-    <value>You selected: {0}</value>
-  </data>
   <data name="{0} {1}: Both PrettyPrint and Serialize to files multiple GGenerateCode types from declared instances" xml:space="preserve">
     <value>{0} {1}: Both PrettyPrint and Serialize to files multiple GGenerateCode types from declared instances</value>
   </data>
   <data name="first Progress Report message from input 1" xml:space="preserve">
     <value>first Progress Report message from input=1</value>
-  </data>
-  <data name="1. PrettyPrint a GenerateCodeSignil" xml:space="preserve">
-    <value>1. PrettyPrint a GenerateCodeSignil</value>
-  </data>
-  <data name="99: Quit" xml:space="preserve">
-    <value>99: Quit</value>
   </data>
 </root>

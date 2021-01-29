@@ -70,6 +70,24 @@ namespace ATAP.Console.Console02 {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 2. Roundtrip a GenerateCodeSignil to Settings file and back.
+        /// </summary>
+        internal static string _2__Roundtrip_a_GenerateCodeSignil_to_Settings_file_and_back {
+            get {
+                return ResourceManager.GetString("2. Roundtrip a GenerateCodeSignil to Settings file and back", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 3. Run GenerateCodeAsync on a Settings file.
+        /// </summary>
+        internal static string _3__Run_GenerateCodeAsync_on_a_Settings_file {
+            get {
+                return ResourceManager.GetString("3. Run GenerateCodeAsync on a Settings file", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 99: Quit.
         /// </summary>
         internal static string _99__Quit {
@@ -79,7 +97,16 @@ namespace ATAP.Console.Console02 {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to first Progress Report message from input=1.
+        ///   Looks up a localized string similar to Enter a number for a choice, Ctrl-C to Exit.
+        /// </summary>
+        internal static string Enter_a_number_for_a_choice__Ctrl_C_to_Exit {
+            get {
+                return ResourceManager.GetString("Enter a number for a choice, Ctrl-C to Exit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to first Progress Report message from input 1.
         /// </summary>
         internal static string first_Progress_Report_message_from_input_1 {
             get {

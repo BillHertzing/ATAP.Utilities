@@ -78,7 +78,7 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
     // ToDo: ConvertOptions should be expanded to include a set of extensions for JsonSerializerOptions class to promote reuse of the instance
 
     public void Configure() {
-      // 
+      //
       JsonConvertersCache = new List<JsonConverter>() { DictionaryJsonConverterFactory.Default };
       JsonSerializerOptionsCurrent = new JsonSerializerOptions {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -139,7 +139,7 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
     }
   }
 
-  //  public class StronglyTypedIDsConverter
+  //  public class StronglyTypedIDConverter
   //         : JsonConverter<Id<T>>
   //     {
   //         public override object Read(

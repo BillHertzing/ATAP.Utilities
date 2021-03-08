@@ -3,13 +3,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using ATAP.Utilities.Testing;
-using ATAP.Utilities.StronglyTypedIDs;
+using ATAP.Utilities.StronglyTypedID;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
 
-namespace ATAP.Utilities.StronglyTypedIDs.UnitTests
+namespace ATAP.Utilities.StronglyTypedID.UnitTests
 {
 
   public partial class IntIdUnitTests001 : IClassFixture<Fixture>

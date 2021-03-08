@@ -1,7 +1,7 @@
 using ATAP.Utilities.ETW;
 
 using ATAP.Utilities.Persistence;
-using ATAP.Utilities.StronglyTypedIDs;
+using ATAP.Utilities.StronglyTypedID;
 using System;
 using System.Collections.Generic;
 using System.Linq;

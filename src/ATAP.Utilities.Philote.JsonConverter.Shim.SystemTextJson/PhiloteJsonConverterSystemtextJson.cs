@@ -1,4 +1,4 @@
-using ATAP.Utilities.StronglyTypedIDs;
+using ATAP.Utilities.StronglyTypedID;
 
 using Itenso.TimePeriod;
 
@@ -33,7 +33,7 @@ namespace ATAP.Utilities.Philote.JsonConverter.SystemTextJson {
       return Cache.GetOrAdd(typeToConvert, CreateConverter);
     }
     private static System.Text.Json.Serialization.JsonConverter CreateConverter(Type typeToConvert) {
-      // if (!PhiloteHelper.IsStronglyTypedId(typeToConvert, out var valueType)) {
+      // if (!PhiloteHelper.IsStronglyTypedID(typeToConvert, out var valueType)) {
       //   throw new InvalidOperationException($"Cannot create converter for '{typeToConvert}'");
       // }
 

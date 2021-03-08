@@ -9,7 +9,7 @@ using System.Linq;
 using System.Reflection;
 
 
-namespace ATAP.Utilities.StronglyTypedIDs.UnitTests {
+namespace ATAP.Utilities.StronglyTypedID.UnitTests {
   public class Fixture : DiFixture { }
   public partial class IntIdUnitTests001 : IClassFixture<Fixture> {
     protected Fixture Fixture { get; }

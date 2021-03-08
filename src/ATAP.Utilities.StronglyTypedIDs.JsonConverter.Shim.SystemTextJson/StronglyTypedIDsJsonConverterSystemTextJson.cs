@@ -6,25 +6,25 @@ using System.Collections.Concurrent;
 // For the NotNullWhenAttribute used in code
 using System.Diagnostics.CodeAnalysis;
 
-using ATAP.Utilities.StronglyTypedIDs;
+using ATAP.Utilities.StronglyTypedID;
 
-namespace ATAP.Utilities.StronglyTypedIDs.JsonConverter.SystemTextJson {
+namespace ATAP.Utilities.StronglyTypedID.JsonConverter.SystemTextJson {
   // Attribution https://thomaslevesque.com/2020/12/07/csharp-9-records-as-strongly-typed-ids-part-3-json-serialization/
 
-  public class StronglyTypedIdJsonConverter<TStronglyTypedId, TValue> : JsonConverter<TStronglyTypedId>
-      where TStronglyTypedId : IStronglyTypedId<TValue>
+  public class StronglyTypedIDJsonConverter<TStronglyTypedID, TValue> : JsonConverter<TStronglyTypedID>
+      where TStronglyTypedID : IStronglyTypedID<TValue>
       where TValue : notnull {
-    public override TStronglyTypedId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+    public override TStronglyTypedID Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
       if (reader.TokenType is JsonTokenType.Null) {
         return default;
       }
 
       var value = JsonSerializer.Deserialize<TValue>(ref reader, options);
-      var factory = StronglyTypedIDs.StronglyTypedIdHelper.GetFactory<TValue>(typeToConvert);
-      return (TStronglyTypedId)factory(value);
+      var factory = StronglyTypedID.StronglyTypedIDHelper.GetFactory<TValue>(typeToConvert);
+      return (TStronglyTypedID)factory(value);
     }
 
-    public override void Write(Utf8JsonWriter writer, TStronglyTypedId value, JsonSerializerOptions options) {
+    public override void Write(Utf8JsonWriter writer, TStronglyTypedID value, JsonSerializerOptions options) {
       if (value is null) {
         writer.WriteNullValue();
       }
@@ -34,11 +34,11 @@ namespace ATAP.Utilities.StronglyTypedIDs.JsonConverter.SystemTextJson {
     }
   }
 
-  public class StronglyTypedIdJsonConverterFactory : JsonConverterFactory {
+  public class StronglyTypedIDJsonConverterFactory : JsonConverterFactory {
     private static readonly ConcurrentDictionary<Type, System.Text.Json.Serialization.JsonConverter> Cache = new();
 
     public override bool CanConvert(Type typeToConvert) {
-      return StronglyTypedIdHelper.IsStronglyTypedId(typeToConvert);
+      return StronglyTypedIDHelper.IsStronglyTypedID(typeToConvert);
     }
 
     public override System.Text.Json.Serialization.JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options) {
@@ -46,11 +46,11 @@ namespace ATAP.Utilities.StronglyTypedIDs.JsonConverter.SystemTextJson {
     }
 
     private static System.Text.Json.Serialization.JsonConverter CreateConverter(Type typeToConvert) {
-      if (!StronglyTypedIdHelper.IsStronglyTypedId(typeToConvert, out var valueType)) {
+      if (!StronglyTypedIDHelper.IsStronglyTypedID(typeToConvert, out var valueType)) {
         throw new InvalidOperationException($"Cannot create converter for '{typeToConvert}'");
       }
 
-      var type = typeof(StronglyTypedIdJsonConverter<,>).MakeGenericType(typeToConvert, valueType);
+      var type = typeof(StronglyTypedIDJsonConverter<,>).MakeGenericType(typeToConvert, valueType);
       return (System.Text.Json.Serialization.JsonConverter)Activator.CreateInstance(type);
     }
   }

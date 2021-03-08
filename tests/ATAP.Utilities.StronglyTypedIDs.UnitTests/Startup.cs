@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 using System.Reflection;
 using System.Linq;
 
-namespace ATAP.Utilities.StronglyTypedIDs.UnitTests {
+namespace ATAP.Utilities.StronglyTypedID.UnitTests {
   public class Startup {
     public void ConfigureServices(IConfigurationRoot configurationRoot, IServiceCollection services) {
       var _serializerShimName = "ATAP.Utilities.Serializer.Shim.SystemTextJson.dll";

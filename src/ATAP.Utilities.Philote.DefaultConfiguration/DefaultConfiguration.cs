@@ -1,4 +1,4 @@
-using ATAP.Utilities.StronglyTypedIDs;
+using ATAP.Utilities.StronglyTypedID;
 using Itenso.TimePeriod;
 using System;
 using System.Collections.Generic;

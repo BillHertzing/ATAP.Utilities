@@ -3,13 +3,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using ATAP.Utilities.Testing;
-using ATAP.Utilities.StronglyTypedIDs;
+using ATAP.Utilities.StronglyTypedID;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
 
-namespace ATAP.Utilities.StronglyTypedIDs.UnitTests
+namespace ATAP.Utilities.StronglyTypedID.UnitTests
 {
 
   public partial class GuidIdUnitTests001 : IClassFixture<Fixture>
@@ -21,10 +21,10 @@ namespace ATAP.Utilities.StronglyTypedIDs.UnitTests
     {
       if (inGuidIdTestData.GuidId.ToString().StartsWith("0000") | inGuidIdTestData.GuidId.ToString().StartsWith("01234"))
       {
-        var GuidId = Fixture.Serializer.Deserialize<GuidStronglyTypedId>(inGuidIdTestData.SerializedGuidId);
-        GuidId.Should().BeOfType(GuidStronglyTypedId);
+        var GuidId = Fixture.Serializer.Deserialize<GuidStronglyTypedID>(inGuidIdTestData.SerializedGuidId);
+        GuidId.Should().BeOfType(GuidStronglyTypedID);
         // GUIDS are random, two sets of test data have fixed, non-random guids, the rest are random
-        Fixture.Serializer.Deserialize<GuidStronglyTypedId>(inGuidIdTestData.SerializedGuidId).Should().Be(inGuidIdTestData.GuidId);
+        Fixture.Serializer.Deserialize<GuidStronglyTypedID>(inGuidIdTestData.SerializedGuidId).Should().Be(inGuidIdTestData.GuidId);
       }
       else
       {

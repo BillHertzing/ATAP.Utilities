@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Text;
 using ATAP.Utilities.Testing;
-using ATAP.Utilities.StronglyTypedIDs;
+using ATAP.Utilities.StronglyTypedID;
 
 namespace ATAP.Utilities.ComputerInventory.Hardware.UnitTests
 {

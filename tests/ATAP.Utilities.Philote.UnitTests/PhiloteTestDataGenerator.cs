@@ -4,7 +4,7 @@ using System;
 using System.Text;
 using ATAP.Utilities.Testing;
 using ATAP.Utilities.Philote;
-using ATAP.Utilities.StronglyTypedIDs;
+using ATAP.Utilities.StronglyTypedID;
 using Itenso.TimePeriod;
 using System.Resources;
 using System.Text.RegularExpressions;

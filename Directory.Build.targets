@@ -219,7 +219,7 @@
     <PackageReference Update="Seq.Extensions.Logging" Version="6.0.0" />
 
     <!-- Packages to add xUnit Testing providers and extensions -->
-    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.7.1" />
     <PackageReference Update="FluentAssertions" Version="5.10.2" />
     <PackageReference Update="Moq" Version="4.15.2" />
     <PackageReference Update="Xunit.DependencyInjection" Version="7.1.0" />

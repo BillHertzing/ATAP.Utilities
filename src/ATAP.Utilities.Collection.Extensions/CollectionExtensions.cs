@@ -98,30 +98,67 @@ namespace ATAP.Utilities.Collection {
       }
     }
 
-// attribution:[How do I check if IEnumerable has a single element?](https://stackoverflow.com/questions/47830766/how-do-i-check-if-ienumerable-has-a-single-element)
-public static bool HasSingle<T>(this IEnumerable<T> sequence, out T value)
-{
-    if (sequence is IList<T> list)
-    {
-        if(list.Count == 1)
-        {
-            value = list[0];
-            return true;
+    // attribution:[How do I check if IEnumerable has a single element?](https://stackoverflow.com/questions/47830766/how-do-i-check-if-ienumerable-has-a-single-element)
+    public static bool HasSingle<T>(this IEnumerable<T> sequence, out T value) {
+      if (sequence is IList<T> list) {
+        if (list.Count == 1) {
+          value = list[0];
+          return true;
         }
-    }
-    else
-    {
-        using (var iter = sequence.GetEnumerator())
-        {
-            if (iter.MoveNext())
-            {
-                value = iter.Current;
-                if (!iter.MoveNext()) return true;
-            }
+      }
+      else {
+        using (var iter = sequence.GetEnumerator()) {
+          if (iter.MoveNext()) {
+            value = iter.Current;
+            if (!iter.MoveNext()) return true;
+          }
         }
+      }
+      value = default(T);
+      return false;
     }
-    value = default(T);
-    return false;
-}
+
+    // three Extension methods for Collections that travers a hierarchy
+    // Attribution: https://stackoverflow.com/questions/20974248/recursive-hierarchy-recursive-query-using-linq Duane McKinney
+    // Attribution: https://dotnetfiddle.net/hse92w Duane McKinney
+
+    public static IEnumerable<T> Traverse<T>(this T item, Func<T, T> childSelector) {
+      var stack = new Stack<T>(new T[] { item });
+
+      while (stack.Any()) {
+        var next = stack.Pop();
+        if (next != null) {
+          yield return next;
+          stack.Push(childSelector(next));
+        }
+      }
+    }
+
+    public static IEnumerable<T> Traverse<T>(this T item, Func<T, IEnumerable<T>> childSelector) {
+      var stack = new Stack<T>(new T[] { item });
+
+      while (stack.Any()) {
+        var next = stack.Pop();
+        //if(next != null)
+        //{
+        yield return next;
+        foreach (var child in childSelector(next)) {
+          stack.Push(child);
+        }
+        //}
+      }
+    }
+
+    public static IEnumerable<T> Traverse<T>(this IEnumerable<T> items,
+      Func<T, IEnumerable<T>> childSelector) {
+      var stack = new Stack<T>(items);
+      while (stack.Any()) {
+        var next = stack.Pop();
+        yield return next;
+        foreach (var child in childSelector(next))
+          stack.Push(child);
+      }
+    }
+
   }
 }

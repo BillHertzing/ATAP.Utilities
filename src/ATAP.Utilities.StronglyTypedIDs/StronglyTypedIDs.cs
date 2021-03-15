@@ -12,8 +12,8 @@ namespace ATAP.Utilities.StronglyTypedID {
   // Modifications:  CheckValue and all references removed, because our use case requires Guid.Empty to be a valid value
   // Attribution 1/8/2021:[Using C# 9 records as strongly-typed ids](https://thomaslevesque.com/2020/10/30/using-csharp-9-records-as-strongly-typed-ids/)
 
-  public record GuidStronglyTypedID : StronglyTypedID<Guid>, IGuidStronglyTypedID { }
-  public record IntStronglyTypedID : StronglyTypedID<int>, IIntStronglyTypedID { }
+  public record GuidStronglyTypedID : StronglyTypedID<Guid> { }
+  public record IntStronglyTypedID : StronglyTypedID<int> { }
   public abstract record StronglyTypedID<TValue> : IStronglyTypedID<TValue> where TValue : notnull {
     public TValue Value { get; init; }
     public override string ToString() => Value.ToString();

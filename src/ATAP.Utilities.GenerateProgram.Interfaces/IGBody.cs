@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using ATAP.Utilities.Philote;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public interface IGBody {
+  public interface IGBody<TValue> where TValue : notnull {
     IList<string> GStatements { get; init; }
     IGComment GComment { get; init; }
-    IPhilote<IGBody> Philote { get; init; }
+    IAbstractPhilote<IGBody<TValue>, TValue>   Philote { get; init; }
   }
 }

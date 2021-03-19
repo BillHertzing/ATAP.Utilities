@@ -43,8 +43,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Enumerations.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Extensions.csproj"  />
+  <!-- 
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Enumerations\ATAP.Utilities.ComputerInventory.Enumerations.csproj"  />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj"  />
     <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Models.csproj"  />
     <ProjectReference Include="..\..\src\ATAP.Utilities.ConcurrentObservableCollections.csproj"  />
     <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Enumerations.csproj"  />
@@ -55,11 +56,11 @@
     <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Models.csproj"  />
     <ProjectReference Include="..\..\src\ATAP.Utilities.DateTime.csproj"  />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Enumeration.csproj"  />
-
     <ProjectReference Include="..\..\src\ATAP.Utilities.Http.csproj"  />
     <ProjectReference Include="..\..\src\ATAP.Utilities.String.csproj"  />
     <ProjectReference Include="..\..\src\ATAP.Services.TcpWithResilience.csproj"  />
     <ProjectReference Include="..\..\src\ATAP.Utilities.ZSandbox.csproj"  />
+    -->
   </ItemGroup>
 
 </Project>

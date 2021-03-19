@@ -21,7 +21,7 @@ namespace ATAP.Utilities.Collection.UnitTests {
   public partial class StronglyTypedIDSerializationSystemTextJsonUnitTests001 : IClassFixture<SerializationFixtureSystemTextJson> {
 
     [Theory]
-    [MemberData(nameof(GuidStronglyTypedIdSerializationTestDataGenerator.StronglyTypedIdSerializationTestData), MemberType = typeof(GuidStronglyTypedIdSerializationTestDataGenerator))]
+    [MemberData(nameof(GuidStronglyTypedIDSerializationTestDataGenerator.StronglyTypedIdSerializationTestData), MemberType = typeof(GuidStronglyTypedIDSerializationTestDataGenerator))]
     public void GuidIdSerializeToJSON(GuidStronglyTypedIdSerializationTestData inTestData) {
       // GUIDS are random, two sets of test data have fixed, non-random guids, the rest are random
       if (inTestData.SerializedTestData.StartsWith("\"0000", System.StringComparison.InvariantCulture) || inTestData.SerializedTestData.StartsWith("\"01234", System.StringComparison.InvariantCulture)) {
@@ -35,7 +35,7 @@ namespace ATAP.Utilities.Collection.UnitTests {
     }
 
     [Theory]
-    [MemberData(nameof(GuidStronglyTypedIdSerializationTestDataGenerator.StronglyTypedIdSerializationTestData), MemberType = typeof(GuidStronglyTypedIdSerializationTestDataGenerator))]
+    [MemberData(nameof(GuidStronglyTypedIDSerializationTestDataGenerator.StronglyTypedIdSerializationTestData), MemberType = typeof(GuidStronglyTypedIDSerializationTestDataGenerator))]
     public void GuidIdDeserializeFromJSON(GuidStronglyTypedIdSerializationTestData inTestData) {
       if (String.IsNullOrEmpty(inTestData.SerializedTestData)) {
         Action act = () => JsonSerializer.Deserialize<GuidStronglyTypedId>(inTestData.SerializedTestData, SerializationFixture.JsonSerializerOptions);

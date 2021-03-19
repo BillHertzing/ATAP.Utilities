@@ -28,7 +28,7 @@ namespace ATAP.Utilities.StronglyTypedID.UnitTests
   {
     public static IEnumerable<object[]> IntIdTestData()
     {
-      yield return new IntIdTestData[] { new IntIdTestData { intId = new IntStronglyTypedID(0), SerializedIntId = "0" } };
+      yield return new IntIdTestData[] { new IntIdTestData { IntId = new IntStronglyTypedID(0), SerializedIntId = "0" } };
       yield return new IntIdTestData[] { new IntIdTestData { IntId = new IntStronglyTypedID(1234567), SerializedIntId = "1234567" } };
       yield return new IntIdTestData[] { new IntIdTestData { IntId = new IntStronglyTypedID(new Random().Next()), SerializedIntId = "Random, so ignore this property of the test data" } };
     }

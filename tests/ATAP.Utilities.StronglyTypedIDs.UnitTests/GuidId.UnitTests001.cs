@@ -22,7 +22,7 @@ namespace ATAP.Utilities.StronglyTypedID.UnitTests
       if (inGuidIdTestData.GuidId.ToString().StartsWith("0000") | inGuidIdTestData.GuidId.ToString().StartsWith("01234"))
       {
         var GuidId = Fixture.Serializer.Deserialize<GuidStronglyTypedID>(inGuidIdTestData.SerializedGuidId);
-        GuidId.Should().BeOfType(GuidStronglyTypedID);
+        GuidId.Should().BeOfType(typeof(GuidStronglyTypedID));
         // GUIDS are random, two sets of test data have fixed, non-random guids, the rest are random
         Fixture.Serializer.Deserialize<GuidStronglyTypedID>(inGuidIdTestData.SerializedGuidId).Should().Be(inGuidIdTestData.GuidId);
       }

@@ -49,7 +49,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Console.Console02", "s
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.AutoDoc", "src\ATAP.Utilities.AutoDoc\ATAP.Utilities.AutoDoc.csproj", "{DF414E11-E82C-4710-9DDD-9FE741E9C7FC}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Collections", "Collections", "{49B057C0-0D3E-49BF-A908-09A75066A373}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Collection", "Collection", "{49B057C0-0D3E-49BF-A908-09A75066A373}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ConcurrentObservableCollections", "src\ATAP.Utilities.ConcurrentObservableCollections\ATAP.Utilities.ConcurrentObservableCollections.csproj", "{43810099-C65B-413E-B11A-07679830D867}"
 EndProject
@@ -171,15 +171,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.TcpWithResili
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing", "src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj", "{9D765FA6-44DB-4A1E-8886-D2FEFF8DCA13}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.StronglyTypedIDs", "src\ATAP.Utilities.StronglyTypedIDs\ATAP.Utilities.StronglyTypedIDs.csproj", "{0A955373-6DDF-4EC5-B6BC-F9525D4BADDF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.StronglyTypedIds", "src\ATAP.Utilities.StronglyTypedIds\ATAP.Utilities.StronglyTypedIds.csproj", "{0A955373-6DDF-4EC5-B6BC-F9525D4BADDF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ZSandbox", "src\ATAP.Utilities.ZSandbox\ATAP.Utilities.ZSandbox.csproj", "{2854F171-F406-4731-8C11-137E9284262B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenHardwareMonitorLib", "OpenHardwareMonitorLib\OpenHardwareMonitorLib.csproj", "{B0403790-9BEE-4EC7-979A-5895E151B9BC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.StronglyTypedIDs.Interfaces", "src\ATAP.Utilities.StronglyTypedIDs.Interfaces\ATAP.Utilities.StronglyTypedIDs.Interfaces.csproj", "{5F890922-C0DE-49F8-8C2C-DDE96075F2B6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.StronglyTypedIds.Interfaces", "src\ATAP.Utilities.StronglyTypedIds.Interfaces\ATAP.Utilities.StronglyTypedIds.Interfaces.csproj", "{5F890922-C0DE-49F8-8C2C-DDE96075F2B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.StronglyTypedIDs.JsonConverter.Shim.SystemTextJson", "src\ATAP.Utilities.StronglyTypedIDs.JsonConverter.Shim.SystemTextJson\ATAP.Utilities.StronglyTypedIDs.JsonConverter.Shim.SystemTextJson.csproj", "{5D1671EC-18A8-4882-AB50-4541DEB88060}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.StronglyTypedIds.JsonConverter.Shim.SystemTextJson", "src\ATAP.Utilities.StronglyTypedIds.JsonConverter.Shim.SystemTextJson\ATAP.Utilities.StronglyTypedIds.JsonConverter.Shim.SystemTextJson.csproj", "{5D1671EC-18A8-4882-AB50-4541DEB88060}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{984B3A90-8771-486E-9BC3-66D2F35963C2}"
 EndProject
@@ -225,7 +225,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Services.TcpWithResili
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Testing.UnitTests", "tests\ATAP.Utilities.Testing.UnitTests\ATAP.Utilities.Testing.UnitTests.csproj", "{2AAC7546-88A5-4F9D-B0C8-FBA851E6A50E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.StronglyTypedIDs.UnitTests", "tests\ATAP.Utilities.StronglyTypedIDs.UnitTests\ATAP.Utilities.StronglyTypedIDs.UnitTests.csproj", "{D925C274-C957-4781-B549-C120AA1D9DBD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.StronglyTypedIds.UnitTests", "tests\ATAP.Utilities.StronglyTypedIds.UnitTests\ATAP.Utilities.StronglyTypedIds.UnitTests.csproj", "{D925C274-C957-4781-B549-C120AA1D9DBD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.ZSandbox.UnitTests", "tests\ATAP.Utilities.ZSandbox.UnitTests\ATAP.Utilities.ZSandbox.UnitTests.csproj", "{0A301C4A-9886-48E9-AA39-085D07E66482}"
 EndProject
@@ -319,9 +319,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Testing", "Testing", "{AF40
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Testing", "Testing", "{BB0A3D80-38A2-11EB-993C-05D7FC15B653}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "StronglyTypedIDs", "StronglyTypedIDs", "{D7990800-38A2-11EB-993C-05D7FC15B653}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "StronglyTypedIds", "StronglyTypedIds", "{D7990800-38A2-11EB-993C-05D7FC15B653}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "StronglyTypedIDs", "StronglyTypedIDs", "{DDC402C0-38A2-11EB-993C-05D7FC15B653}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "StronglyTypedIds", "StronglyTypedIds", "{DDC402C0-38A2-11EB-993C-05D7FC15B653}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Serializer", "Serializer", "{FCD75540-38A2-11EB-993C-05D7FC15B653}"
 EndProject
@@ -368,6 +368,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Loader", "Loader", "{08E1C810-578A-11EB-8BEC-313999507D9E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson", "src\ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson\ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson.csproj", "{B11FF8C5-60FD-4AEA-9021-0861D8F820FC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Collection", "Collection", "{A06E63D0-88FB-11EB-95D0-61F0A548C6DF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1534,6 +1536,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{A06E63D0-88FB-11EB-95D0-61F0A548C6DF} = {984B3A90-8771-486E-9BC3-66D2F35963C2}
 		{08E1C810-578A-11EB-8BEC-313999507D9E} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 		{CC4A74E0-4D31-11EB-8AC3-33928AC602A3} = {984B3A90-8771-486E-9BC3-66D2F35963C2}
 		{79190190-3F69-11EB-9FD8-913B36525608} = {B6F9F570-22C9-4DF5-B580-942C6C7BFE32}

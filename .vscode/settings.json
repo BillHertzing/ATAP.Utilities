@@ -9,9 +9,7 @@
     "nxunitExplorer.modules": [
         "tests/**/bin/**/**/*.{dll,exe}"
     ],
-    "yaml.schemas": {
-        "file:///toc.schema.json": "/toc\\.yml/i"
-    },
+    "yaml.schemas": {},
     "cSpell.enableFiletypes": [
         "sql"
     ],

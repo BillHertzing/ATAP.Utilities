@@ -3,7 +3,7 @@
 #
 [CmdletBinding(SupportsShouldProcess=$true)]
 param (
-    
+
 )
 
 function Set_PerceivedTypeInRegistryForPreviewPane {
@@ -11,14 +11,18 @@ function Set_PerceivedTypeInRegistryForPreviewPane {
 param (
 
 )
-    $suffixes= @('.ps1','.psm1','.targets','.props','.psproj','.csproj','.sln')
+    $suffixes= @('.csproj', '.dot', '.go', '.html', '.json', '.log', '.md', '.props', '.ps1', '.psd1', '.psm1', '.psproj', '.pubxml', '.reg', '.saas', '.sccs', '.sln', '.targets', '.yml')
     $RegHiveType = [Microsoft.Win32.RegistryHive]::"ClassesRoot"
     $OpenBaseRegKey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey($RegHiveType, $env:COMPUTERNAME)
     $suffixes | %{$suffix = $_
         $OpenRegSubKey = $OpenBaseRegKey.OpenSubKey($suffix)
         If ($OpenRegSubKey) {
-            $GetRegKeyVal = Foreach($RegKeyValue in $OpenRegSubKey.GetValueNames()){$RegKeyValue}
-            $GetRegKeyVal
+              # If 'PerceivedType' is NOT present in the list of all RegKeyVal (s), add a new Key named PerceivedType of type String with Data (value) of 'text
+              # If 'PerceivedType' IS present in the list of all RegKeyVal (s), and -force is true, ensure it is of type String with Data (value) of 'text'
+              # If 'PerceivedType' IS present in the list of all RegKeyVal (s), and -force is false, do nothing to the RegSubKey, accumulate it for output later
+            $GetRegKeyVal = Foreach($RegKeyValue in $OpenRegSubKey.GetValueNames()){
+              $GetRegKeyVal
+            }
         } else {
             Write-Output "error, could not open registry class for suffix $suffix"
         }

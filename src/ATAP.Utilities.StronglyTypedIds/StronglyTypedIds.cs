@@ -14,9 +14,11 @@ namespace ATAP.Utilities.StronglyTypedID {
 
   public record GuidStronglyTypedID : StronglyTypedID<Guid> {
     public GuidStronglyTypedID(Guid value) : base(value) { }
+      public GuidStronglyTypedID() : base() {      }
   }
   public record IntStronglyTypedID : StronglyTypedID<int> {
       public IntStronglyTypedID(int value) : base(value) {      }
+      public IntStronglyTypedID() : base() {      }
     }
     public abstract record StronglyTypedID<TValue> : IStronglyTypedID<TValue> where TValue : notnull {
       public TValue Value { get; init; }
@@ -188,7 +190,7 @@ namespace ATAP.Utilities.StronglyTypedID {
     }
 
 
-    public struct IdAsStruct<T> : IEquatable<IdAsStruct<T>>, IIdAsStruct<T> {
+    public struct IdAsStruct<T> : IEquatable<IdAsStruct<T>>, IIdAsStruct<T> where T : notnull{
       private readonly Guid _value;
 
       public IdAsStruct(string value) {

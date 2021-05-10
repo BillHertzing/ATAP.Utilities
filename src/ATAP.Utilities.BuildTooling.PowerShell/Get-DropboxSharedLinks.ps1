@@ -30,16 +30,15 @@ function Get-DropboxSharedLinks {
   Write-Verbose("localDropBoxPathPrefix = $localDropBoxPathPrefix")
   # validate path exists
   if (!(test-path -Path $path)) { throw "$path was not found" }
-  # Get list of files, excluding the $linksFile file
-  $files = get-childitem  $path -exclude $linksFile
+  # Get list of files, excluding the $linksFile file and any video files
+  $files = get-childitem  $path -exclude $linksFile, *.mov, *.mpg, *.mp4
   # does the links .csv file exists
   $linksFileFullPath = Join-path $path $linksFile
   $currentlinksFileContent = ""
   if (test-path -Path $linksFileFullPath) {
     # yes, get its contents
-    Write-Verbose "file $linksFileFullPath contains: "
     $currentlinksFileContent = @(Import-csv $linksFileFullPath)
-    Write-Verbose "file $linksFileFullPath has $($currentlinksFileContent.count) elements "
+    Write-Verbose "file $linksFileFullPath has $($currentlinksFileContent.count) elements.  "
     # Does it have the expected contents
     if (!($currentlinksFileContent.fullname)) {
       throw "$($linksFileFullPath) does not have '.fullname' member"
@@ -114,12 +113,12 @@ function Get-DropboxSharedLinks {
       }
       if ($PSCmdlet.ShouldProcess("$Path", "Create sharing link")) {
         try {
-          $result = Invoke-RestMethod -Uri $URIForListSharedLinks -Method Post -Headers $headers -Body (ConvertTo-Json -InputObject $Body) -Proxy 'http://127.0.0.1:8888' # for Fiddler capture
+          $result = Invoke-RestMethod -Uri $URIForListSharedLinks -Method Post -Headers $headers -Body (ConvertTo-Json -InputObject $Body) # -Proxy 'http://127.0.0.1:8888' # for Fiddler capture
         }
         catch {
           $resultException = $_.Exception
-          $ResultError = $resultException.Response.GetResponseStream()
-          Get-DropboxError -Result $ResultError
+          $ResultExceptionMessage = $resultException.Message #$ResultError = $resultException.Response.GetResponseStream()
+          Write-Error $ResultExceptionMessage # Get-DropboxError -Result $ResultError
         }
         # $result is a JSON object if there were no errors
         if ($result.links.Length) {
@@ -133,15 +132,15 @@ function Get-DropboxSharedLinks {
               path     = $dropboxPath
               settings = $sharedLinkSettings
             }
-            $result = Invoke-RestMethod -Uri $URIForCreateSharedLinks -Method Post -Headers $headers -Body (ConvertTo-Json -InputObject $Body) -Proxy 'http://127.0.0.1:8888' # for Fiddler capture
+            $result = Invoke-RestMethod -Uri $URIForCreateSharedLinks -Method Post -Headers $headers -Body (ConvertTo-Json -InputObject $Body) # -Proxy 'http://127.0.0.1:8888' # for Fiddler capture
             #update Links File hash with DropBox link
             # Write-Verbose "localpath = {$localpath}, currentLinksFileHash[$localpath].DropBoxLinkToOriginal = {$currentLinksFileHash[$localpath].DropBoxLinkToOriginal}, $result.links[0].url = {$result.links[0].url}"
             $currentLinksFileHash[$localpath].DropBoxLinkToOriginal = $result.links[0].url -replace "dl=0", "raw=1"
           }
           catch {
             $resultException = $_.Exception
-            $ResultError = $resultException.Response.GetResponseStream()
-            Get-DropboxError -Result $ResultError
+            $ResultExceptionMessage = $resultException.Message
+            Write-Error $ResultExceptionMessage # Get-DropboxError -Result $ResultError
           }
         }
       }
@@ -164,18 +163,19 @@ function Get-DropboxSharedLinks {
 
   write-output 'gallery:'
 
-  $currentlinksFileContent | ForEach-Object { $linksobj = $_
+  $currentlinksFileContent | sort-object $_.basename | ForEach-Object { $linksobj = $_
     write-output @"
-  - url: $($linksobj.DropBoxLinkToOriginal)
-    image_path: $($linksobj.DropBoxLinkToOriginal)
-    alt: $($linksobj.basename)
-    title: $($linksobj.basename)
+    - url: $($linksobj.DropBoxLinkToOriginal) 
+      image_path: $($linksobj.DropBoxLinkToOriginal)
+      alt: $($linksobj.basename)
+      title: $($linksobj.basename)
 "@
 }
 
 write-output @"
-  'Embed this'
-  '{% include gallery id="gallery" caption="Molly" %}'
+
+  Embed this at the gallery's location
+  {% include gallery id="gallery" %}
 "@
 
 1;

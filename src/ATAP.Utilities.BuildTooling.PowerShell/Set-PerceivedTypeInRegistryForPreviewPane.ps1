@@ -11,7 +11,10 @@ function Set_PerceivedTypeInRegistryForPreviewPane {
 param (
 
 )
-    $suffixes= @('.csproj', '.dot', '.go', '.html', '.json', '.log', '.md', '.props', '.ps1', '.psd1', '.psm1', '.psproj', '.pubxml', '.reg', '.saas', '.sccs', '.sln', '.targets', '.yml')
+  $suffixesString= @"
+  "@
+  $suffixes =
+  ('config'.'.csproj', '.dot', '.go', '.html', '.json', '.lock', '.log', '.md', '.props', '.ps1', '.psd1', '.psm1', '.psproj', '.pubxml', '.rb', '.reg', '.saas', '.sccs', '.sln', '.targets', '.xml', '.yml')
     $RegHiveType = [Microsoft.Win32.RegistryHive]::"ClassesRoot"
     $OpenBaseRegKey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey($RegHiveType, $env:COMPUTERNAME)
     $suffixes | %{$suffix = $_

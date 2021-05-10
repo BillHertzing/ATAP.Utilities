@@ -2,20 +2,16 @@
 param (
 	[parameter(mandatory=$true)]
     [ValidateNotNullOrEmpty()]
-    [string]$itempath
-	,[parameter(mandatory=$true)]
-    [ValidateNotNullOrEmpty()]
-    [string]$solutionpath
-	,[parameter(mandatory=$true)]
-    [ValidateNotNullOrEmpty()]
-    [string]$projectpath
+    [string]$path
 )
 
 # The BuildTooling Module contains all PowerShell code that assists MSBild or Visual Studio tasks
 # The standard place to find it is from the $solutiondir/.build/TBD
+$splitpsModulePath = $env:psmodulepath.Split( ';')
+write-verbose "psModulePath = $($splitpsModulePath -join [environment]::NewLine) "
 Import-Module ATAP.Utilities.BuildTooling.psm1
 
-Remove-ObjAndBinSubdirs $itempath $solutionpath
+Remove-ObjAndBinSubdirs $path -WhatIf:$WhatIfPreference -Verbose:$VerbosePreference
 
 
 

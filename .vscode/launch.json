@@ -30,7 +30,9 @@
       "name": "PowerShell Launch Current File w/Args Prompt",
       "script": "${file}",
       "args": [
-        "${command:SpecifyScriptArgs}"
+          "-WhatIf"
+        , "-verbose"
+        , "${command:SpecifyScriptArgs}"
       ],
       "cwd": "${file}"
     },

@@ -12,7 +12,10 @@
       "request": "launch",
       "name": "PowerShell Launch Current File",
       "script": "${file}",
-      "args": [],
+      "args": [
+        "-WhatIf"
+        , "-verbose"
+      ],
       "cwd": "${file}"
     },
     {
@@ -20,7 +23,8 @@
       "request": "launch",
       "name": "PowerShell Launch Current File in Temporary Console",
       "script": "${file}",
-      "args": [],
+      "args": [        "-WhatIf"
+        , "-verbose"],
       "cwd": "${file}",
       "createTemporaryIntegratedConsole": true
     },

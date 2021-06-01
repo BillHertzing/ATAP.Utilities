@@ -1,17 +1,10 @@
 [CmdletBinding(SupportsShouldProcess=$true)]
 param (
-	[parameter(mandatory=$true)]
-    [ValidateNotNullOrEmpty()]
     [string]$path
 )
 
-# The BuildTooling Module contains all PowerShell code that assists MSBild or Visual Studio tasks
-# The standard place to find it is from the $solutiondir/.build/TBD
-$splitpsModulePath = $env:psmodulepath.Split( ';')
-write-verbose "psModulePath = $($splitpsModulePath -join [environment]::NewLine) "
-Import-Module ATAP.Utilities.BuildTooling.psm1
+# The ATAP.Utilities.BuildTooling.psm1 Module contains all PowerShell code that assists MSBuild or Visual Studio / Visual Studio Code tasks
+# If the solution uses the ATAP.Utilities.BuildTooling.psm1 module, it is typicallly found somewhere within the $PSModulePath.
+write-verbose "psModulePath = $($env:psmodulepath.Split(';') -join [environment]::NewLine)"
 
 Remove-ObjAndBinSubdirs $path -WhatIf:$WhatIfPreference -Verbose:$VerbosePreference
-
-
-

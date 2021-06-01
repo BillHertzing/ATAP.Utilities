@@ -1,32 +1,360 @@
+
+#############################################################################
+#region Remove-ObjAndBinSubdirs
 <#
-	Remove-ObjAndBinSubdirs
+.SYNOPSIS
+ToDo: write Help SYNOPSIS For this function
+.DESCRIPTION
+ToDo: write Help DESCRIPTION For this function
+.PARAMETER Name
+ToDo: write Help For the parameter X
+.PARAMETER Extension
+ToDo: write Help For the parameter X
+.INPUTS
+ToDo: write Help For the function's inputs
+.OUTPUTS
+ToDo: write Help For the function's outputs
+.EXAMPLE
+ToDo: write Help For example 1 of using this function
+.EXAMPLE
+ToDo: write Help For example 2 of using this function
+.EXAMPLE
+ToDo: write Help For example 2 of using this function
+.ATTRIBUTION
+ToDo: write text describing the ideas and codes that are attributed to others
+.LINK
+ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
+.LINK
+ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
+.SCM
+ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
 Function Remove-ObjAndBinSubdirs {
+#region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
-    [parameter(mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
-    [string] $path = "D:\Temp\GenerateProgramArtifacts"
+    [parameter()]
+    [string] $path = './'
   )
+#endregion FunctionParameters
+#region FunctionBeginBlock
+########################################
+BEGIN {
   $dirsToDelete = 'obj', 'bin'
-  write-verbose "path = $path "
+  write-verbose "path = $path"
   # validate path exists
   if (!(test-path -Path $path)) { throw "$path was not found" }
   write-verbose "Removing obj and bin subdirs recursively below $path"
   # build alternation (OR) pattern for directory names as returned by gci, anchored to the end : (\\obj|\\bin)$
-  $MatchRegex = "(" + (($dirstodelete | %{"\\"+$_}) -Join('|'))
-  $MatchRegex= $MatchRegex + ")$"
+  $MatchRegex = "(" + (($dirstodelete | ForEach-Object{"\\"+$_}) -Join('|')) + ")$"
   $pathsToDelete = Get-ChildItem -Recurse -Directory $path | where-object { $_.psISContainer -and ($_.fullname -match $MatchRegex) }
-  write-verbose "Removing $($pathsToDelete.Length) directories:  $pathsTo$($pathsToDelete -join [environment]::NewLine)"
-  $pathsToDelete | Foreach-object {
+}
+#endregion FunctionBeginBlock
+
+#region FunctionProcessBlock
+########################################
+PROCESS {
+}
+#endregion FunctionProcessBlock
+
+#region FunctionEndBlock
+########################################
+END {
+  write-verbose "Removing $($pathsToDelete.Length) directories:  $($pathsToDelete -join [environment]::NewLine)"
+  $pathsToDelete | ForEach-Object {
     $dirToDelete = $_
-    if ($PSCmdlet.ShouldProcess("$dirToDelete", "Delete Directory")) {
-      #remove-item -WhatIf:$WhatIfPreference -recurse $dirToDelete
-      write-verbose "remove-item -WhatIf:$WhatIfPreference -recurse $dirToDelete"
+    if ($PSCmdlet.ShouldProcess("$dirToDelete", "remove-item -recurse -force ")) {
+      remove-item -recurse -force $dirToDelete -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference
+      #write-verbose "remove-item -recurse -force $dirToDelete -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference"
     }
   }
 }
+#endregion FunctionEndBlock
+}
+#endregion Remove-ObjAndBinSubdirs
+#############################################################################
 
+#############################################################################
+#region Set_PerceivedTypeInRegistryForPreviewPane
+<#
+.SYNOPSIS
+ToDo: write Help SYNOPSIS For this function
+.DESCRIPTION
+ToDo: write Help DESCRIPTION For this function
+.PARAMETER Name
+ToDo: write Help For the parameter X
+.PARAMETER Extension
+ToDo: write Help For the parameter X
+.INPUTS
+ToDo: write Help For the function's inputs
+.OUTPUTS
+ToDo: write Help For the function's outputs
+.EXAMPLE
+ToDo: write Help For example 1 of using this function
+.EXAMPLE
+ToDo: write Help For example 2 of using this function
+.EXAMPLE
+ToDo: write Help For example 2 of using this function
+.ATTRIBUTION
+ToDo: write text describing the ideas and codes that are attributed to others
+.LINK
+ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
+.LINK
+ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
+.SCM
+ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
+#>
+function Set_PerceivedTypeInRegistryForPreviewPane {
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  param (
+
+  )
+  $suffixesString =
+  @"
+bak,cache,code-workspace,config,cs,csproj,css,cs-template,dot,editorconfig,eot,gitignore,go,graph,html,info,js,json,liquid,md,nuspec,partial,playlist,pp,proj,props,ps1,psd1,psm1,pssproj,pubxml,rb,reg,resources,saas,sccs,save,sln,sql,targets,tmpl,ts-template,txt,user,vb-template,xml,xsd,xslt,yml
+"@
+  $perceivedType = 'PerceivedType'
+  if ($suffixesString.Length -eq 0) { throw "The $suffixesString is empty" }
+  $suffixes = ($suffixesString.Trim() -split (',')).Trim() | % { '.' + $_ }
+  $RegHiveType = [Microsoft.Win32.RegistryHive]::"ClassesRoot"
+  $OpenBaseRegKey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey($RegHiveType, $env:COMPUTERNAME)
+  $result = @{}
+  $accGood = @();
+  $accMissingSuffix = @()
+  $accMissingPT = @()
+  $accWrongPTValue = @{}
+  $suffixes | % { $suffix = $_
+    $OpenRegSubKey = $OpenBaseRegKey.OpenSubKey($suffix)
+    If ($OpenRegSubKey) {
+      # If 'PerceivedType' is NOT present in the list of all RegKeyVal (s), add a new Key named PerceivedType of type String with Data (value) of 'text
+      # If 'PerceivedType' IS present in the list of all RegKeyVal (s), and -force is true, ensure it is of type String with Data (value) of 'text'
+      # If 'PerceivedType' IS present in the list of all RegKeyVal (s), and -force is false, do nothing to the RegSubKey, accumulate it for output later
+      if ($OpenRegSubKey.GetValueNames() -match $perceivedType) {
+        $GetPerceivedTypeValue = $OpenRegSubKey.GetValue($perceivedType)
+        if ($GetPerceivedTypeValue -eq 'text') {
+          # This suffix is good
+          $accGood += $suffix
+          Write-Verbose "Good : $suffix"
+        }
+        else {
+          # the PerceivedType for this suffix is not text
+          Write-Verbose "Incorrect 'PerceivedType' Value : $suffix , $GetPerceivedTypeValue"
+          $accWrongPTValue[ $suffix] = $GetPerceivedTypeValue
+        }
+      }
+      else {
+        # 'PerceivedType' is NOT present in the list of all RegKeyVal
+        Write-Verbose "Missing 'PerceivedType' : $suffix"
+        $accMissingPT += $suffix
+      }
+    }
+    else {
+      # the complete suffix subkey is missing
+      $accMissingSuffix += $suffix
+      Write-Verbose "Missing completely : $suffix"
+    }
+  }
+  $result['Good'] = $accGood
+  $result['MissingSuffix'] = $accMissingSuffix
+  $result['MissingPT'] = $accMissingPT
+  $result['WrongPTValue'] = $accWrongPTValue
+  Write-Verbose "Good = $($result['Good'] -join ', ')"
+  Write-Verbose "MissingSuffix = $($result['MissingSuffix'] -join ', ')"
+  Write-Verbose "MissingPT = $($result['MissingPT'] -join ', ')"
+  # Write-Verbose "WrongPTValue = $($result['WrongPTValue'].keys | %{$_  , $result['WrongPTValue'][$_]})" #  $([environment]::NewLine)
+
+  $result['MissingSuffix'] | % {
+    $suffix = $_
+    if ($PSCmdlet.ShouldProcess("$suffix", "Will add suffix")) {
+      # Add the suffix
+      Write-Verbose "add $suffix"
+    }
+  }
+  $result['MissingPT'] | % {
+    $suffix = $_
+    if ($PSCmdlet.ShouldProcess("$suffix", "Will add PerceivedType ")) {
+      # If 'PerceivedType' is NOT present in the list of all RegKeyVal (s), add a new Key named PerceivedType of type String with Data (value) of 'text
+      Write-Verbose "add PerceivedType for $suffix"
+    }
+  }
+  # don't mess with wrong value of 'PerceivedType'
+  $result
+}
+#endregion Set_PerceivedTypeInRegistryForPreviewPane
+#############################################################################
+
+# useage: $results = Get-BrokenGitSubDirs ; $results.keys | %{$key = $_;  $results[$key].keys | %{"$key $_ $($($($results[$key])[$_]) -join [environment]::NewLine)" }}
+# does not get any stderr message
+Function Get-BrokenGitSubDirs {
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  $results = @{}
+  Get-ChildItem |
+  Where-Object { $_.psiscontainer -and ($_.name -notmatch '^\.') -and (test-path -Path $(join-path -Path $_.name -ChildPath ".git")) } |
+  ForEach-Object { Set-Location $_.name
+    $errors = git fsck
+    $results[$_.name] = @{"ErrorCount" = $errors.length; "ErrorList" = $errors }
+    Set-Location ..
+  }
+  $results
+}
+
+
+
+Function Get-CoreInfo {
+  if(Test-Path "$env:programfiles/dotnet/"){
+      try{
+
+          [Collections.Generic.List[string]] $info = dotnet --info
+
+          # the line after the line containing this string holds the DotNet version
+          $DotNetSDKVersionLineIndex = $info.FindIndex( {$args[0].ToString().ToLower() -like ".NET SDK (reflecting any global.json):"} ) + 1
+          # to the right of the colon and trimmed
+          $DotNetSDKVersion = (($info[$DotNetSDKVersionLineIndex]).Split(':')[1]).Trim()
+
+          # the line after the line containing this string holds the DotNet Core version
+          $DotNetCoreSDKVersionLineIndex = $info.FindIndex( {$args[0].ToString().ToLower() -like ".NET Core SDK (reflecting any global.json):"} ) + 1
+          # to the right of the colon and trimmed
+          $DotNetCoreSDKVersion = (($info[$DotNetCoreSDKVersionLineIndex]).Split(':')[1]).Trim()
+
+          $OSVersionLineIndex = $info.FindIndex( {$args[0].ToString().ToLower() -match "^\s+OS\s+Version:\s+"} )
+          $OSVersion = (($info[$OSVersionLineIndex]).Split(':')[1]).Trim()
+          $OSNameLineIndex = $info.FindIndex( {$args[0].ToString().ToLower() -match "^\s+OS\s+Name:\s+"} )
+          $OSName = (($info[$OSNameLineIndex]).Split(':')[1]).Trim()
+          $OSPlatformLineIndex = $info.FindIndex( {$args[0].ToString().ToLower() -match "^\s+OS\s+Platform:\s+"} )
+          $OSPlatform = (($info[$OSPlatformLineIndex]).Split(':')[1]).Trim()
+          $RIDLineIndex = $info.FindIndex( {$args[0].ToString().ToLower() -match "^\s+RID:\s+"} )
+          $RID = (($info[$RIDLineIndex]).Split(':')[1]).Trim()
+
+          # the lines after the line containing this string holds the installed runtimes
+          $DotNetCoreSDKVersionLineIndex = $info.FindIndex( {$args[0].ToString().ToLower() -like ".NET Core runtimes installed:"} ) + 1
+# ToDo: Include the list of DotNet sdk s and the list of DotNet runtimes installed
+# ToDo: validate the information returned byt dotnet --info matches the subdirectories  found on disk
+          $runtimes = (ls "$env:programfiles/dotnet/shared/Microsoft.NETCore.App").Name | Out-String
+          $object = New-Object -TypeName pscustomobject -Property (@{
+            'DotNetSDKVersion'=$DotNetSDKVersion;
+            'DotNetCoreSDKVersion'=$DotNetCoreSDKVersion;
+            'OSName'=$OSName;
+            'OSVersion'=$OSVersion;
+            'OSPlatform'=$OSPlatform;
+            'RID'=$RID;
+            'BIOSSerial'=$bios.SerialNumber
+            })
+
+          return  $object
+      }
+      catch{
+          $errorMessage = $_.Exception.Message
+
+          Write-Host "Something went wrong`r`nError: $errorMessage"
+      }
+  }
+  else{
+      Write-Host 'No SDK installed'
+      return ""
+  }
+}
+
+
+Function Get-FileEncoding {
+  ##############################################################################
+##
+## Get-FileEncoding
+##
+## From Windows PowerShell Cookbook (O'Reilly)
+## by Lee Holmes (http://www.leeholmes.com/guide)
+##
+##############################################################################
+
+<#
+
+.SYNOPSIS
+
+Gets the encoding of a file
+
+.EXAMPLE
+
+Get-FileEncoding.ps1 .\UnicodeScript.ps1
+
+BodyName          : unicodeFFFE
+EncodingName      : Unicode (Big-Endian)
+HeaderName        : unicodeFFFE
+WebName           : unicodeFFFE
+WindowsCodePage   : 1200
+IsBrowserDisplay  : False
+IsBrowserSave     : False
+IsMailNewsDisplay : False
+IsMailNewsSave    : False
+IsSingleByte      : False
+EncoderFallback   : System.Text.EncoderReplacementFallback
+DecoderFallback   : System.Text.DecoderReplacementFallback
+IsReadOnly        : True
+CodePage          : 1201
+
+#>
+
+param(
+    ## The path of the file to get the encoding of.
+    $Path
+)
+
+
+## First, check if the file is binary. That is, if the first
+## 5 lines contain any non-printable characters.
+$nonPrintable = [char[]] (0..8 + 10..31 + 127 + 129 + 141 + 143 + 144 + 157)
+$lines = Get-Content $Path -ErrorAction Ignore -TotalCount 5
+$result = @($lines | Where-Object { $_.IndexOfAny($nonPrintable) -ge 0 })
+if($result.Count -gt 0)
+{
+    "Binary"
+    return
+}
+
+## Next, check if it matches a well-known encoding.
+
+## The hashtable used to store our mapping of encoding bytes to their
+## name. For example, "255-254 = Unicode"
+$encodings = @{}
+
+## Find all of the encodings understood by the .NET Framework. For each,
+## determine the bytes at the start of the file (the preamble) that the .NET
+## Framework uses to identify that encoding.
+foreach($encoding in [System.Text.Encoding]::GetEncodings())
+{
+    $preamble = $encoding.GetEncoding().GetPreamble()
+    if($preamble)
+    {
+        $encodingBytes = $preamble -join '-'
+        $encodings[$encodingBytes] = $encoding.GetEncoding()
+    }
+}
+
+## Find out the lengths of all of the preambles.
+$encodingLengths = $encodings.Keys | Where-Object { $_ } |
+    Foreach-Object { ($_ -split "-").Count }
+
+## Assume the encoding is UTF7 by default
+$result = [System.Text.Encoding]::UTF7
+
+## Go through each of the possible preamble lengths, read that many
+## bytes from the file, and then see if it matches one of the encodings
+## we know about.
+foreach($encodingLength in $encodingLengths | Sort -Descending)
+{
+    $bytes = Get-Content -encoding byte -readcount $encodingLength $path | Select -First 1
+    $encoding = $encodings[$bytes -join '-']
+
+    ## If we found an encoding that had the same preamble bytes,
+    ## save that output and break.
+    if($encoding)
+    {
+        $result = $encoding
+        break
+    }
+}
+
+## Finally, output the encoding.
+$result
+}
 
 # Function Remove_VSComponentCache {
 #   [CmdletBinding(SupportsShouldProcess = $true)]

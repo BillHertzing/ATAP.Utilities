@@ -98,4 +98,13 @@ CodePage          : 1201
   $result
 }
 
-
+$ModuleFunctions = @(Get-ChildItem -Path $PSScriptRoot\public\*.ps1 -ErrorAction SilentlyContinue)
+# Dot-source the files.
+foreach ($import in $ModuleFunctions) {
+    try {
+        Write-Verbose "Importing $($import.FullName)"
+        . $import.FullName
+    } catch {
+        Write-Error "Failed to import function $($import.FullName): $_"
+    }
+}

@@ -1,12 +1,43 @@
+#############################################################################
+#region FunctionName
+<#
+.SYNOPSIS
+ToDo: write Help SYNOPSIS For this function
+.DESCRIPTION
+ToDo: write Help DESCRIPTION For this function
+.PARAMETER Name
+ToDo: write Help For the parameter X
+.PARAMETER Extension
+ToDo: write Help For the parameter X
+.INPUTS
+ToDo: write Help For the function's inputs
+.OUTPUTS
+ToDo: write Help For the function's outputs
+.EXAMPLE
+ToDo: write Help For example 1 of using this function
+.EXAMPLE
+ToDo: write Help For example 2 of using this function
+.EXAMPLE
+ToDo: write Help For example 2 of using this function
+.ATTRIBUTION
+ToDo: write text describing the ideas and codes that are attributed to others
+.LINK
+ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
+.LINK
+ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
+.SCM
+ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
+#>
 
-##############################################################################
-##
-## Get-FileEncoding
-##
-## From Windows PowerShell Cookbook (O'Reilly)
-## by Lee Holmes (http://www.leeholmes.com/guide)
-##
-##############################################################################
+Function Get-FileEncoding {
+  ##############################################################################
+  ##
+  ## Get-FileEncoding
+  ##
+  ## From Windows PowerShell Cookbook (O'Reilly)
+  ## by Lee Holmes (http://www.leeholmes.com/guide)
+  ##
+  ##############################################################################
 
 <#
 

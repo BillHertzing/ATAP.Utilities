@@ -1,5 +1,5 @@
 #############################################################################
-#region Empty-NuGetCaches
+#region Create-DocFilesIfNotPresent
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,13 +28,15 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Empty-NuGetCaches {
+Function Create-DocFilesIfNotPresent {
   #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
-  param (
-    [parameter()]
-    [string] $path = './'
-  )
+  [parameter(mandatory = $true)]
+  [ValidateNotNullOrEmpty()]
+  [string]$DocsPath
+  , [parameter(mandatory = $true)]
+  [ValidateNotNullOrEmpty()]
+  #    [string[]]$DocFileNames
   #endregion FunctionParameters
   #region FunctionBeginBlock
   ########################################
@@ -53,22 +55,24 @@ Function Empty-NuGetCaches {
   #region FunctionEndBlock
   ########################################
   END {
-	   Write-Verbose "Removing ($ENV:\AppData)\Local\NuGet\v3-cache"
-    if ($PSCmdlet.ShouldProcess("($ENV:\AppData)\Local\NuGet\v3-cache", 'Delete')) {
-      Write-Host "really would delete ($ENV:\AppData)\Local\NuGet\v3-cache"
-    }
-    Write-Verbose "Removing ($ENV:\USERPROFILE)\.nuget\packages"
-    if ($PSCmdlet.ShouldProcess("($ENV:\USERPROFILE)\.nuget\packages", 'Delete')) {
-      Write-Host "really would delete ($ENV:\USERPROFILE)\.nuget\packages"
-    }
-    Write-Verbose "Removing ($ENV:\AppData)\Local\Temp\NuGetScratch"
-    if ($PSCmdlet.ShouldProcess("($ENV:\AppData)\Local\Temp\NuGetScratch", 'Delete')) {
-      #				write-host "really would delete ($ENV:\AppData)\Local\Temp\NuGetScratch"
+	   Write-Verbose "DocsPath is $DocsPath, error if not present"
+    if (!Test-Path -Path $DocsPath) { throw "$DocsPath is not present" }
+    $DocFileNames | % { $dfn = $_;
+      $dfp = Join-Path $DocsPath $dfn
+      if (Test-Path -Path $dfp) {
+        Write-Verbose "DocFullPath $dfp already exists"
+      }
+      else {
+        if ($PSCmdlet.ShouldProcess("$dfp", 'Create')) {
+          Write-Verbose "Creating empty file $dfp, utf-8 encoding, no BOM"
+          [io.file]::WriteAllText($dfp, '', (New-Object System.Text.UTF8Encoding($false)))
+        }
+      }
     }
 
     Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
   }
   #endregion FunctionEndBlock
 }
-#endregion Empty-NuGetCaches
+#endregion Create-DocFilesIfNotPresent
 #############################################################################

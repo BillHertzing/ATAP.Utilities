@@ -40,12 +40,6 @@ Function FunctionName {
 ########################################
 BEGIN {
   Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-  write-verbose "path = $path"
-  # validate path exists
-  if (!(test-path -Path $path)) { throw "$path was not found" }
-  #write-verbose -Message "Removing obj and bin subdirs recursively below $path"
-  # build alternation (OR) pattern for directory names as returned by gci, anchored to the end : (\\obj|\\bin)$
-  #$MatchRegex = "(" + (($dirstodelete | ForEach-Object{"\\"+$_}) -Join('|')) + ")$"
 }
 #endregion FunctionBeginBlock
 
@@ -64,6 +58,4 @@ END {
 #endregion FunctionEndBlock
 }
 #endregion FunctionName
-#############################################################################
-
 #############################################################################

@@ -1,5 +1,5 @@
 #############################################################################
-#region FunctionName
+#region Get-FileEncoding
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,7 +28,6 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-
 Function Get-FileEncoding {
   ##############################################################################
   ##
@@ -65,11 +64,17 @@ IsReadOnly        : True
 CodePage          : 1201
 
 #>
-
+  #region FunctionParameters
 param(
-    ## The path of the file to get the encoding of.
+    # The path of the file to get the encoding of.
     $Path
 )
+  #endregion FunctionParameters
+  #region FunctionBeginBlock
+  ########################################
+  BEGIN {
+    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+
 
 Set-StrictMode -Version 3
 

@@ -1,83 +1,83 @@
-[CmdletBinding(SupportsShouldProcess=$true)]
+[CmdletBinding(SupportsShouldProcess = $true)]
 param (
-    [string]$path = "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\*.sln",
+  [string]$path = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\*.sln',
 )
 Function ParseStructure-FromSLN {
-[CmdletBinding(SupportsShouldProcess=$true)]
-param (
-    [string]$path = "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\*.sln",
-)
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  param (
+    [string]$path = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\*.sln',
+  )
 
-function New-Tuple { #https://stackoverflow.com/questions/54373785/tuples-arraylist-of-pairs
+  function New-Tuple { #https://stackoverflow.com/questions/54373785/tuples-arraylist-of-pairs
     Param(
-        [Parameter(
-            Mandatory=$true,
-            ValueFromPipeline=$true,
-            ValueFromPipelineByPropertyName=$true
-        )]
-        [ValidateCount(2,20)]
-        [array]$Values
+      [Parameter(
+        Mandatory = $true,
+        ValueFromPipeline = $true,
+        ValueFromPipelineByPropertyName = $true
+      )]
+      [ValidateCount(2, 20)]
+      [array]$Values
     )
 
     Process {
-        $types = ($Values | ForEach-Object { $_.GetType().Name }) -join ','
-        New-Object "Tuple[$types]" $Values
+      $types = ($Values | ForEach-Object { $_.GetType().Name }) -join ','
+      New-Object "Tuple[$types]" $Values
     }
-}
+  }
 
-function Convert-WhitespaceToRegex {
+  function Convert-WhitespaceToRegex {
     Param(
-        [Parameter(
-            Mandatory=$true,
-            ValueFromPipeline=$true,
-            ValueFromPipelineByPropertyName=$true
-        )]
-        $string
+      [Parameter(
+        Mandatory = $true,
+        ValueFromPipeline = $true,
+        ValueFromPipelineByPropertyName = $true
+      )]
+      $string
     )
 
     Process {
       $string -replace '(\\\s+)+', '\s*'
     }
-}
-function Add-LeadingAndTrailingWhitespace {
+  }
+  function Add-LeadingAndTrailingWhitespace {
     Param(
-        [Parameter(
-            Mandatory=$true,
-            ValueFromPipeline=$true,
-            ValueFromPipelineByPropertyName=$true
-        )]
-        $string
+      [Parameter(
+        Mandatory = $true,
+        ValueFromPipeline = $true,
+        ValueFromPipelineByPropertyName = $true
+      )]
+      $string
     )
 
     Process {
-      ' '+$string:' '
+      ' ' + $string:' '
     }
-}
+  }
 
-$extractlist = (
-#
-(Convert-WhitespaceToRegex([Regex]::Escape(Add-LeadingAndTrailingWhitespace(@"
+  $extractlist = (
+    #
+    (Convert-WhitespaceToRegex([Regex]::Escape(Add-LeadingAndTrailingWhitespace(@'
 " VisualStudioVersion = (?<CurrentVisualStudioVersion>16.0.28729.10)  "
-"@))), "CurrentVisualStudioVersion")
-#
-(Convert-WhitespaceToRegex([Regex]::Escape(Add-LeadingAndTrailingWhitespace(@"
+'@))), 'CurrentVisualStudioVersion')
+    #
+    (Convert-WhitespaceToRegex([Regex]::Escape(Add-LeadingAndTrailingWhitespace(@'
 <PackageReference Include="MedallionShell" Version="1.5.1" />
-"@))), "<PackageReference Include=""MedallionShell"" />`n"
-)
-) | New-Tuple
+'@))), "<PackageReference Include=""MedallionShell"" />`n"
+    )
+  ) | New-Tuple
 
-$sln = gci $path "*.sln";
-#ToDo validate only one
-$text = [IO.File]::ReadAllText($sln)
-foreach ($line in $text) {
-foreach ($kvp in $extractlist){
- # replace each
- $m = $kvp.Item1.Match($line)
- $line = ' '+$line
-    $text = $text -replace $kvp.Item1, $kvp.Item2
+  $sln = gci $path '*.sln';
+  #ToDo validate only one
+  $text = [IO.File]::ReadAllText($sln)
+  foreach ($line in $text) {
+    foreach ($kvp in $extractlist) {
+      # replace each
+      $m = $kvp.Item1.Match($line)
+      $line = ' ' + $line
+      $text = $text -replace $kvp.Item1, $kvp.Item2
     }
-}
-    #$text
+  }
+  #$text
 }
 }
 

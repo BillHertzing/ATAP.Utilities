@@ -1,10 +1,13 @@
 
+# Intersting Links to study and incorporate
+
 ## Coding Information for the Common Language Runtime (CLR)
 
-[What Every CLR Developer Must Know Before Writing Code](https://github.com/dotnet/coreclr/blob/master/Documentation/coding-guidelines/clr-code-guide.md) https://github.com/dotnet/coreclr/blob/master/Documentation/coding-guidelines/clr-code-guide.md  Old but a must-read for understanding safe coding practices in managed code
+[What Every CLR Developer Must Know Before Writing Code](https://github.com/dotnet/coreclr/blob/master/Documentation/coding-guidelines/clr-code-guide.md) Old but a must-read for understanding safe coding practices in managed code
 
 ## Icons
-[Icons for everything] (https://thenounproject.com/) https://thenounproject.com/
+
+[Icons for everything](https://thenounproject.com/)
 [File Icons](https://github.com/madskristensen/FileIcons) a bunch of free file icons for many types of files
 
 ## ASP NET Core Generic Host
@@ -14,10 +17,12 @@ https://wakeupandcode.com/generic-host-builder-in-asp-net-core/
 https://github.com/aspnet/AspNetCore.Docs/blob/master/aspnetcore/fundamentals/host/generic-host/samples/2.x/GenericHostSample/Program.cs
 
 [Running async tasks on app startup in ASP.NET Core 3.0](https://andrewlock.net/running-async-tasks-on-app-startup-in-asp-net-core-3/) Good stuff on running a hostedservice's startasync method to perform stuff before the webserver (including SS)starts handling requests
-[Task asynchronous programming model](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/task-asynchronous-programming-model) Top-level doc from Microsoft
-[Process asynchronous tasks as they complete (C#)](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/start-multiple-async-tasks-and-process-them-as-they-complete)
-[Understanding Control Flow with Async and Await in C#](https://www.pluralsight.com/guides/understand-control-flow-async-await)
 
+[Task asynchronous programming model](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/task-asynchronous-programming-model) Top-level doc from Microsoft
+
+[Process asynchronous tasks as they complete (C#)](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/start-multiple-async-tasks-and-process-them-as-they-complete)
+
+[Understanding Control Flow with Async and Await in C#](https://www.pluralsight.com/guides/understand-control-flow-async-await)
 
 ### Issues in Generic Host builder
 IsDev environment   https://github.com/aspnet/AspNetCore/issues/4150
@@ -33,7 +38,6 @@ https://docs.microsoft.com/en-us/aspnet/core/fundamentals/environments?view=aspn
 https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.hosting.ihostingenvironment.environmentname?view=aspnetcore-2.2
 
 https://aspnetcore.readthedocs.io/en/stable/fundamentals/hosting.html (2.x, pertaining to IWebHosts)
-
 https://jmezach.github.io/2017/10/29/having-fun-with-the-.net-core-generic-host/ (2.x, old info about CreateDefaultBuilder for WebHost)
 
 ## Configuration in a Generic Host
@@ -49,89 +53,105 @@ https://davidpine.net/blog/asp-net-core-configuration/ (binding to classes)
 https://stackoverflow.com/questions/46364293/automatically-set-appsettings-json-for-dev-and-release-environments-in-asp-net-c
 
 https://www.c-sharpcorner.com/article/net-core-load-environment-specific-custom-config-file/
+
 [FileConfigurationExtensions.SetFileLoadExceptionHandler(IConfigurationBuilder, Action<FileLoadExceptionContext>) Method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.configuration.fileconfigurationextensions.setfileloadexceptionhandler?view=dotnet-plat-ext-3.1&viewFallbackFrom=netstandard-2.1#Microsoft_Extensions_Configuration_FileConfigurationExtensions_SetFileLoadExceptionHandler_Microsoft_Extensions_Configuration_IConfigurationBuilder_System_Action_Microsoft_Extensions_Configuration_FileLoadExceptionContext__) How to handle problems loading and external configuration file
 
 ## Dependency Injection in a Generic Host
+
 [Understanding How Assemblies Load in C# .NET](https://michaelscodingspot.com/assemblies-load-in-dotnet/) Good overview article
 [How to resolve .NET reference and NuGet package version conflicts](https://michaelscodingspot.com/how-to-resolve-net-reference-and-nuget-package-version-conflicts/)
 [Dynamically Loading Assemblies for Dependency Injection in .Net Core](http://codebuckets.com/2020/05/29/dynamically-loading-assemblies-for-dependency-injection-in-net-core/)
 [How to load assemblies located in a folder in .net core console app](https://stackoverflow.com/questions/37895278/how-to-load-assemblies-located-in-a-folder-in-net-core-console-app)
 
 ### Ninject
+
 [Dependency Injection Using Ninject in .NET](https://www.c-sharpcorner.com/UploadFile/4d9083/dependency-injection-using-ninject-in-net/) Net 4.x tool but works with core
-[How to Refactor for Dependency Injection, Part 6: Binding by Convention](https://visualstudiomagazine.com/articles/2014/10/01/binding-by-convention.aspx) dynaic assembly loading and di BINDING 
+[How to Refactor for Dependency Injection, Part 6: Binding by Convention](https://visualstudiomagazine.com/articles/2014/10/01/binding-by-convention.aspx) dynaic assembly loading and di BINDING
 
 ## Assembly binding and loading
+
 [.Net Framework NuGet Packages - Solving Assembly Redirection From Package vs Assembly Versioning, Dependency Resolution, and Strong-Naming](
 https://www.softwaremeadows.com/posts/net_framework_nuget_packages_-_versioning__dependency_resolution__and/)
 
-## Web Server Hosting Models 
+## Web Server Hosting Models
+
 Good Pictures of the three models(https://stackoverflow.com/questions/53688154/host-restapi-inside-iis) https://stackoverflow.com/questions/53688154/host-restapi-inside-iis
 
 ## Hosting a Web Server in a GenericHost under Windows Service Sample/Program
+
 https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/windows-service?view=aspnetcore-3.0
 
 ## Specifying the IP or Host that ASP.Net Core ListensOn
+
 https://josephwoodward.co.uk/2017/02/many-different-ways-specifying-host-port-asp-net-core
 
 ## Validation of Configuration objects-comparer-to-compare-complex-objects
+
 https://andrewlock.net/adding-validation-to-strongly-typed-configuration-objects-in-asp-net-core/
 
-## Using Options pattern with configuration 
+## Using Options pattern with configuration
+
 https://stackoverflow.com/questions/39231951/how-do-i-access-configuration-in-any-class-in-asp-net-core (see comments)
 
 ## Data Protection and security in configuration
+
 https://docs.microsoft.com/en-us/aspnet/core/security/data-protection/introduction?view=aspnetcore-2.1
 
 # Security
-[ASP.NET CORE UNIT TESTING FOR SECURITY ATTRIBUTES](https://davidpine.net/blog/asp-net-core-security-unit-testing/ ) https://davidpine.net/blog/asp-net-core-security-unit-testing/
+
+[ASP.NET CORE UNIT TESTING FOR SECURITY ATTRIBUTES](https://davidpine.net/blog/asp-net-core-security-unit-testing/ )
 [OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/index.html) Large project with many ways to address a lot of security flaws and problems
 
 ## Logging
 
 ### General logging guidelines
+
 [Java Best Practices for Smarter Application Logging & Exception Handling](https://stackify.com/java-logging-best-practices/) https://stackify.com/java-logging-best-practices/
 
-[30 best practices for logging at scale](https://www.loggly.com/blog/30-best-practices-logging-scale/) https://www.loggly.com/blog/30-best-practices-logging-scale/ 
+[30 best practices for logging at scale](https://www.loggly.com/blog/30-best-practices-logging-scale/) https://www.loggly.com/blog/30-best-practices-logging-scale/
 
 [How to Log a Log: Application Logging Best Practices](https://logz.io/blog/logging-best-practices/) https://logz.io/blog/logging-best-practices/
 
-[Tips on Logging Microservices](https://logz.io/blog/logging-microservices/) https://logz.io/blog/logging-microservices/ (See Also Commercial LogZ package below)
+[Tips on Logging Microservices](https://logz.io/blog/logging-microservices/) (See Also Commercial LogZ package below)
 
-[.NET Logging Tools and Libraries, The definitive directory and guide to .NET logging tools, frameworks and article](http://www.dotnetlogging.com/) http://www.dotnetlogging.com/
+[.NET Logging Tools and Libraries, The definitive directory and guide to .NET logging tools, frameworks and article](http://www.dotnetlogging.com/)
 
 ### Logging in ASP.Net Core
-[Logging in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-3.0) https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-3.0
+
+[Logging in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-3.0)
 
 https://wakeupandcode.com/logging-in-asp-net-core/
 
-[ASP.NET Core Logging Tutorial – What Still Works and What Changed?] (https://stackify.com/asp-net-core-logging-what-changed/) https://stackify.com/asp-net-core-logging-what-changed/
+[ASP.NET Core Logging Tutorial – What Still Works and What Changed?] (https://stackify.com/asp-net-core-logging-what-changed/)
 
 [Using ETW tracing on Windows 10 IoT Core] (https://gunnarpeipman.com/iot/iot-etw-trace/) https://gunnarpeipman.com/iot/iot-etw-trace/ Interesting hacks for IoT and the ETW tools
 
-[Logging with ILogger in .NET: Recommendations and best practices] (https://blog.rsuter.com/logging-with-ilogger-recommendations-and-best-practices/) https://blog.rsuter.com/logging-with-ilogger-recommendations-and-best-practices/ Good stuff here
+[Logging with ILogger in .NET: Recommendations and best practices] (https://blog.rsuter.com/logging-with-ilogger-recommendations-and-best-practices/) Good stuff here
 [How to create a LoggerFactory with a ConsoleLoggerProvider?(https://stackoverflow.com/questions/53690820/how-to-create-a-loggerfactory-with-a-consoleloggerprovider] one good point about LoggerFactory.Create
 [How to unit test with ILogger in ASP.NET Core](https://stackoverflow.com/questions/43424095/how-to-unit-test-with-ilogger-in-asp-net-core) Unit testing Core methods that use an ILogger, how to moq or fake around it. Also discussion of NullLogger
 
 ### Windows ETW Event Logging facility
+
 https://docs.microsoft.com/en-us/windows/desktop/ETW/event-tracing-portal
 
-[Event Tracing for Windows: Reducing Everest to Pike's Peak](https://www.codeproject.com/Articles/1190759/Event-Tracing-for-Windows-Reducing-Everest-to-Pike) https://www.codeproject.com/Articles/1190759/Event-Tracing-for-Windows-Reducing-Everest-to-Pike
+[Event Tracing for Windows: Reducing Everest to Pike's Peak](https://www.codeproject.com/Articles/1190759/Event-Tracing-for-Windows-Reducing-Everest-to-Pike)
 
 https://www.fireeye.com/blog/threat-research/2019/03/silketw-because-free-telemetry-is-free.html (FireEye's silkETW tool for ETW data)
 
 https://github.com/fireeye/SilkETW (FireEye's silkETW tool for ETW data)
 
-[Reporting Metrics Using .Net (Core) EventSource and EventCounter](https://dev.to/expecho/reporting-metrics-using-net-core-eventsource-and-eventcounter-23dn) https://dev.to/expecho/reporting-metrics-using-net-core-eventsource-and-eventcounter-23dn 
+[Reporting Metrics Using .Net (Core) EventSource and EventCounter](https://dev.to/expecho/reporting-metrics-using-net-core-eventsource-and-eventcounter-23dn)
 
-[In-process CLR event listeners with .NET Core 2.2] (https://medium.com/criteo-labs/c-in-process-clr-event-listeners-with-net-core-2-2-ef4075c14e87) https://medium.com/criteo-labs/c-in-process-clr-event-listeners-with-net-core-2-2-ef4075c14e87 
+[In-process CLR event listeners with .NET Core 2.2](https://medium.com/criteo-labs/c-in-process-clr-event-listeners-with-net-core-2-2-ef4075c14e87)
 
-[Grab ETW Session, Providers and Events](http://labs.criteo.com/2018/07/grab-etw-session-providers-and-events/) http://labs.criteo.com/2018/07/grab-etw-session-providers-and-events/
+[Grab ETW Session, Providers and Events](http://labs.criteo.com/2018/07/grab-etw-session-providers-and-events/)
 
 ### Linux Event Logging Facility (tracing and big files)
+
 https://lttng.org/
 
 ### Windows EventLog Logging
+
 [Event Logging in a .NET Web Service](http://aspalliance.com/987_Event_Logging_in_a_NET_Web_Service.all) http://aspalliance.com/987_Event_Logging_in_a_NET_Web_Service.all (very old, installutil is "new", manual registry edits)
 
 #### Security implications and permissions for writing to the Windows EventLog
@@ -166,7 +186,7 @@ https://github.com/dotnet/coreclr/blob/master/Documentation/coding-guidelines/cr
 
 [TraceLogging](https://docs.microsoft.com/en-us/windows/desktop/tracelogging/trace-logging-portal) https://docs.microsoft.com/en-us/windows/desktop/tracelogging/trace-logging-portal - New Windows 10 tracing framework extends ETW
 
-[.NET Tracelogging Examples](https://docs.microsoft.com/en-us/windows/desktop/tracelogging/tracelogging-net-examples) https://docs.microsoft.com/en-us/windows/desktop/tracelogging/tracelogging-net-examples used in fist testing/
+[.NET Tracelogging Examples](https://docs.microsoft.com/en-us/windows/desktop/tracelogging/tracelogging-net-examples)  used in first testing/
 
 [TraceLogging Managed Quick Start](https://docs.microsoft.com/en-us/windows/desktop/tracelogging/tracelogging-managed-quick-start) https://docs.microsoft.com/en-us/windows/desktop/tracelogging/tracelogging-managed-quick-start
 
@@ -174,56 +194,58 @@ https://github.com/dotnet/coreclr/blob/master/Documentation/coding-guidelines/cr
 
 [How to Download and Install Windows Performance Toolkit in Windows 10] (https://www.tenforums.com/tutorials/117625-download-install-windows-performance-toolkit-windows-10-a.html) https://www.tenforums.com/tutorials/117625-download-install-windows-performance-toolkit-windows-10-a.html - WPA tool for viewing ETL files
 
-[What's New in the Windows Performance Toolkit](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/whats-new-in-the-windows-performance-toolkit) https://docs.microsoft.com/en-us/windows-hardware/test/wpt/whats-new-in-the-windows-performance-toolkit 2017 article, explains WPA
+[What's New in the Windows Performance Toolkit](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/whats-new-in-the-windows-performance-toolkit)  2017 article, explains WPA
 
-[Windows Performance Toolkit Technical Reference](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-toolkit-technical-reference) https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-toolkit-technical-reference
+[Windows Performance Toolkit Technical Reference](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-toolkit-technical-reference)
 
-[Windows Performance Analyzer](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-analyzer) https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-analyzer How to use the Traceloogin data collected by a WPR
+[Windows Performance Analyzer](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-analyzer)  How to use the Traceloogin data collected by a WPR
 
-[Download and install the Windows ADK](https://docs.microsoft.com/en-us/windows-hardware/get-started/adk-install) https://docs.microsoft.com/en-us/windows-hardware/get-started/adk-install Windows ADK has both teh WPR and WPF tools
+[Download and install the Windows ADK](https://docs.microsoft.com/en-us/windows-hardware/get-started/adk-install) Windows ADK has both teh WPR and WPF tools
 
-[Windows 10 ADK versions and download links](https://www.prajwaldesai.com/windows-10-adk-versions/) https://www.prajwaldesai.com/windows-10-adk-versions/ - download reference for the windows ADK
+[Windows 10 ADK versions and download links](https://www.prajwaldesai.com/windows-10-adk-versions/) download reference for the windows ADK
 
-[Event Tracing](https://docs.microsoft.com/en-us/windows/desktop/ETW/event-tracing-portal) https://docs.microsoft.com/en-us/windows/desktop/ETW/event-tracing-portal - highest level overview
+[Event Tracing](https://docs.microsoft.com/en-us/windows/desktop/ETW/event-tracing-portal) highest level overview
 
-[Windows Event Log](https://docs.microsoft.com/en-us/windows/desktop/WES/windows-event-log) https://docs.microsoft.com/en-us/windows/desktop/WES/windows-event-log Good Overview 
+[Windows Event Log](https://docs.microsoft.com/en-us/windows/desktop/WES/windows-event-log) Good Overview
 
-[CoreClr Event Logging Design](https://github.com/dotnet/coreclr/blob/master/Documentation/coding-guidelines/EventLogging.md) https://github.com/dotnet/coreclr/blob/master/Documentation/coding-guidelines/EventLogging.md Short and very high-level
+[CoreClr Event Logging Design](https://github.com/dotnet/coreclr/blob/master/Documentation/coding-guidelines/EventLogging.md) Short and very high-level
 
-[Writing an Instrumentation Manifest](https://docs.microsoft.com/en-us/windows/desktop/WES/writing-an-instrumentation-manifest) https://docs.microsoft.com/en-us/windows/desktop/WES/writing-an-instrumentation-manifest 
+[Writing an Instrumentation Manifest](https://docs.microsoft.com/en-us/windows/desktop/WES/writing-an-instrumentation-manifest)
 
-[coreclr/src/vm/ClrEtwAll.man](https://github.com/dotnet/coreclr/blob/master/src/vm/ClrEtwAll.man) https://github.com/dotnet/coreclr/blob/master/src/vm/ClrEtwAll.man A full list of all ETW events define for the CLR
+[coreclr/src/vm/ClrEtwAll.man](https://github.com/dotnet/coreclr/blob/master/src/vm/ClrEtwAll.man) A full list of all ETW events define for the CLR
 
-[Microsoft.Diagnostics.EventFlow](https://github.com/Azure/diagnostics-eventflow) https://github.com/Azure/diagnostics-eventflow The EventFlow library suite allows applications to define what diagnostics data to collect,  
+[Microsoft.Diagnostics.EventFlow](https://github.com/Azure/diagnostics-eventflow) The EventFlow library suite allows applications to define what diagnostics data to collect,
 
-[System.Diagnostics.Tracing Namespace](https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.tracing) https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.tracing
+[System.Diagnostics.Tracing Namespace](https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.tracing)
 
-[ET4W](https://github.com/ohadschn/ET4W/blob/master/README.md#et4w) https://github.com/ohadschn/ET4W/blob/master/README.md#et4w ET4W is a T4 Text Template code generator for C# ETW (Event Tracing for Windows) classes.
+[ET4W](https://github.com/ohadschn/ET4W/blob/master/README.md#et4w) ET4W is a T4 Text Template code generator for C# ETW (Event Tracing for Windows) classes.
 
-[EventSource User’s Guide](https://github.com/microsoft/dotnet-samples/blob/master/Microsoft.Diagnostics.Tracing/EventSource/docs/EventSource.md#eventsource-users-guide) https://github.com/microsoft/dotnet-samples/blob/master/Microsoft.Diagnostics.Tracing/EventSource/docs/EventSource.md#eventsource-users-guide 
+[EventSource User’s Guide](https://github.com/microsoft/dotnet-samples/blob/master/Microsoft.Diagnostics.Tracing/EventSource/docs/EventSource.md#eventsource-users-guide)
 
-[Event Tracing for Windows](https://www.magicsplat.com/book/event_tracing.html) https://www.magicsplat.com/book/event_tracing.html targetd towards TCL language-understanding-intelligent-service-luis/
+[Event Tracing for Windows](https://www.magicsplat.com/book/event_tracing.html)  targeted towards TCL language-understanding-intelligent-service-luis/
 
 [Proposal: Expand supported Caller Info Attributes #87](https://github.com/dotnet/csharplang/issues/87) https://github.com/dotnet/csharplang/issues/87 c# language issue to expand the CallerInfo class to include a property with the full type name. If implemented, will make tracing easier to log the fully qualified method name, instead of just the method name, with no type info.
 
-[A Look at ETW – Part 3](https://aroundtuitblog.wordpress.com/2014/11/03/a-look-at-etw-part-3/) https://aroundtuitblog.wordpress.com/2014/11/03/a-look-at-etw-part-3/ ETW tracing using AOP and requires PostSharp for AOP processing
+[A Look at ETW – Part 3](https://aroundtuitblog.wordpress.com/2014/11/03/a-look-at-etw-part-3/) ETW tracing using AOP and requires PostSharp for AOP processing
 
-[Visualize EventSource events as markers](https://docs.microsoft.com/en-us/visualstudio/profiling/visualizing-eventsource-events-as-markers?view=vs-2019) https://docs.microsoft.com/en-us/visualstudio/profiling/visualizing-eventsource-events-as-markers?view=vs-2019 a debugging tool eventually
+[Visualize EventSource events as markers](https://docs.microsoft.com/en-us/visualstudio/profiling/visualizing-eventsource-events-as-markers?view=vs-2019) a debugging tool eventually
 
 # Extending Logging for Method Entry and Exit
-[Logging Method Entry and Exit Points Dynamically](https://www.codeproject.com/Articles/859035/Logging-Method-Entry-and-Exit-Points-Dynamically) https://www.codeproject.com/Articles/859035/Logging-Method-Entry-and-Exit-Points-Dynamically  about extending a MLE ILoogger, same idea may be good for WPP
 
-### SQL Server Logging
+[Logging Method Entry and Exit Points Dynamically](https://www.codeproject.com/Articles/859035/Logging-Method-Entry-and-Exit-Points-Dynamically) about extending a MLE ILogger, same idea may be good for WPP
 
-[Integrated Logging with the Integration Services Package Log Providers](https://www.mssqltips.com/sqlservertip/4070/integrated-logging-with-the-integration-services-package-log-providers/) https://www.mssqltips.com/sqlservertip/4070/integrated-logging-with-the-integration-services-package-log-providers/ (2015, Logging to a SQL  Server table, both SQL Server details, and also from an external C# method using the DTS.Log method)
+## SQL Server Logging
+
+[Integrated Logging with the Integration Services Package Log Providers](https://www.mssqltips.com/sqlservertip/4070/integrated-logging-with-the-integration-services-package-log-providers/) 2015, Logging to a SQL  Server table, both SQL Server details, and also from an external C# method using the DTS.Log method)
 
 ## High performance logging
-[High-performance logging with LoggerMessage in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/loggermessage?view=aspnetcore-3.1) built-in for windows net cacheable delegates for logging, in place of LogDebug
 
+[High-performance logging with LoggerMessage in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/loggermessage?view=aspnetcore-3.1) built-in for windows net cacheable delegates for logging, in place of LogDebug
 
 ### Specific Logging Frameworks and commercial tools
 
 #### LogZ.io
+
 [Machine data analytics built on ELK and Grafana] (https://logz.io/product/) https://logz.io/product/
 
 [LogZ Community Edition](https://logz.io/pricing/) https://logz.io/pricing/
@@ -231,53 +253,64 @@ https://github.com/dotnet/coreclr/blob/master/Documentation/coding-guidelines/cr
 [The Complete Guide to the ELK Stack] (https://logz.io/learn/complete-guide-elk-stack/#intro) https://logz.io/learn/complete-guide-elk-stack/#intro
 
 #### Stackify
+
 [Stackify Retrace] (https://stackify.com/why-stackify/) https://stackify.com/why-stackify/ Log File hosting and analysis
 
 #### Serilog
-[Serilog Tutorial for .NET Logging: 16 Best Practices and Tips](https://stackify.com/serilog-tutorial-net-logging/) https://stackify.com/serilog-tutorial-net-logging/
+
+[Serilog Tutorial for .NET Logging: 16 Best Practices and Tips](https://stackify.com/serilog-tutorial-net-logging/)
 
 #### NLog
+
 [Structured Logging with NLog 4.5](https://blog.datalust.co/nlog-4-5-structured-logging/) https://blog.datalust.co/nlog-4-5-structured-logging/
 
 ### Log Viewing and analysis
-Stackify Prefix[] (https://stackify.com/prefix/) https://stackify.com/prefix/ 
+
+Stackify Prefix[] (https://stackify.com/prefix/) https://stackify.com/prefix/
 
 [visuallogparser](https://archive.codeplex.com/?p=visuallogparser) https://archive.codeplex.com/?p=visuallogparser = older, free tool to query (SQL query) across log file(s) or other log source
 
 [SEQ](https://datalust.co/seq) https://datalust.co/seq  centralizing, searching, and alerting on structured application logs.
 
-[ NLog configuration for SEQ](https://docs.datalust.co/docs/using-nlog) https://docs.datalust.co/docs/using-nlog Configuring NLog to write to SEQ
+[NLog configuration for SEQ](https://docs.datalust.co/docs/using-nlog) https://docs.datalust.co/docs/using-nlog Configuring NLog to write to SEQ
 
 # Home of all the microsoft .Extension classes
+
 [.NET Extensions](https://github.com/dotnet/extensions) .NET Extensions is an open-source, cross-platform set of APIs for commonly used programming patterns and utilities, such as dependency injection, logging, and app configuration. This the OSS source code for all this stuff owned by Microsoft
+
 [Z.ExtensionMethods/cheat-sheet/cheat-sheet.pdf](https://github.com/zzzprojects/Z.ExtensionMethods/blob/master/cheat-sheet/cheat-sheet.pdf) opensource community for extensions
 
 ## Cross-platform debugging
-[Debugging .NET Core on Linux with LLDB](https://www.raydbg.com/2018/Debugging-Net-Core-on-Linux-with-LLDB/) https://www.raydbg.com/2018/Debugging-Net-Core-on-Linux-with-LLDB/
 
-##Net Core Generic Host App as a Windows Console Service
+[Debugging .NET Core on Linux with LLDB](https://www.raydbg.com/2018/Debugging-Net-Core-on-Linux-with-LLDB/)
+
+## Net Core Generic Host App as a Windows Console Service
+
 [Get started with .NET Generic Host](https://snede.net/get-started-with-net-generic-host/) Good overview of program startup
 [USING HOSTBUILDER AND THE GENERIC HOST IN .NET CORE MICROSERVICES](https://www.stevejgordon.co.uk/using-generic-host-in-dotnet-core-console-based-microservices) 2018 and 2.11 but nice on overview
-[Generic Host Builder in ASP .NET Core 3.1](https://wakeupandcode.com/generic-host-builder-in-asp-net-core-3-1/) Explanation of Functional Style in BUilder, and great snippets for 
+[Generic Host Builder in ASP .NET Core 3.1](https://wakeupandcode.com/generic-host-builder-in-asp-net-core-3-1/) Explanation of Functional Style in BUilder, and great snippets for
 
 ## Hosting a web server in a Generic Host
+
 https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/web-host?view=aspnetcore-3.0
 
 ## Configuring a web server in a Generic Host
-[Host ASP.NET Core on Windows with IIS](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/?view=aspnetcore-3.0) https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/?view=aspnetcore-3.0
+
+[Host ASP.NET Core on Windows with IIS](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/?view=aspnetcore-3.0)
 
 ## Implementing a ServiceLifetime Interface in a Generic Host that is hosting a Web Server
-[Graceful shutdown with Generic Host in .NET Core 2.1] (https://stackoverflow.com/questions/51044781/graceful-shutdown-with-generic-host-in-net-core-2-1) https://stackoverflow.com/questions/51044781/graceful-shutdown-with-generic-host-in-net-core-2-1
+
+[Graceful shutdown with Generic Host in .NET Core 2.1] (https://stackoverflow.com/questions/51044781/graceful-shutdown-with-generic-host-in-net-core-2-1)
 
 ## CancellationTokens
 
-[Recommended patterns for CancellationToken](https://devblogs.microsoft.com/premier-developer/recommended-patterns-for-cancellationtoken/)  https://devblogs.microsoft.com/premier-developer/recommended-patterns-for-cancellationtoken/
+[Recommended patterns for CancellationToken](https://devblogs.microsoft.com/premier-developer/recommended-patterns-for-cancellationtoken/)
 
-[Cancellation in Managed Threads](https://docs.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads) https://docs.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads
+[Cancellation in Managed Threads](https://docs.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads)
 
-[How to: Cancel a Task and Its Children](https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/how-to-cancel-a-task-and-its-children) https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/how-to-cancel-a-task-and-its-children
+[How to: Cancel a Task and Its Children](https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/how-to-cancel-a-task-and-its-children)
 
-[cancel-asynchronous-operation-in-csharp](cancel-asynchronous-operation-in-csharp) https://johnthiriet.com/cancel-asynchronous-operation-in-csharp/#
+[cancel-asynchronous-operation-in-csharp](https://johnthiriet.com/cancel-asynchronous-operation-in-csharp/#)
 
 https://stackoverflow.com/questions/18760252/timeout-an-async-method-implemented-with-taskcompletionsource
 
@@ -291,8 +324,7 @@ https://www.stevejgordon.co.uk/running-net-core-generic-host-applications-as-a-w
 
 https://dejanstojanovic.net/aspnet/2015/november/debugging-windows-service-application-with-console-in-c/
 
-[NetCore 2.1 Generic Host as a service](https://stackoverflow.com/questions/50848141/netcore-2-1-generic-host-as-a-service) https://stackoverflow.com/questions/50848141/netcore-2-1-generic-host-as-a-service
-
+[NetCore 2.1 Generic Host as a service](https://stackoverflow.com/questions/50848141/netcore-2-1-generic-host-as-a-service)
 
 ## NET Core Generic Host App as a Windows Service and Linux daemon
 
@@ -307,9 +339,11 @@ https://dejanstojanovic.net/aspnet/2018/may/the-fastest-way-to-setup-net-core-2-
 https://www.strathweb.com/2019/03/elegant-way-of-producing-http-responses-in-asp-net-core-outside-of-mvc-controllers/
 
 ## Handling Exceptions during request processing
+
 https://docs.microsoft.com/en-us/aspnet/core/fundamentals/error-handling?view=aspnetcore-2.2#developer-exception-page
 
 ## Git and GitHub tricks and tips
+
 https://www.hanselman.com/blog/CarriageReturnsAndLineFeedsWillUltimatelyBiteYouSomeGitTips.aspx
 
 ## ASP Net Core 2.1
@@ -375,7 +409,7 @@ https://github.com/filipw/dotnet-script
 
 https://dzone.com/articles/using-objects-comparer-to-compare-complex-objects
 
-## Andriod Native: 
+## Andriod Native:
 https://blogs.msdn.microsoft.com/vsappcenter/guest-blog-fixing-disasters-asap-with-instant-updates/
 
 https://visualstudio.microsoft.com/app-center/faq/
@@ -391,11 +425,13 @@ C# 6.0 cookbook
 [Why can I use a lambda expression in place of a callback delegate?](https://stackoverflow.com/questions/4487454/why-can-i-use-a-lambda-expression-in-place-of-a-callback-delegate)
 
 ## LINQ
+
 https://www.codingame.com/playgrounds/213/using-c-linq---a-practical-overview/combined-exercise-1
 
 [how-to-await-a-list-of-tasks-asynchronously-using-linq](https://stackoverflow.com/questions/21868087/how-to-await-a-list-of-tasks-asynchronously-using-linq) https://stackoverflow.com/questions/21868087/how-to-await-a-list-of-tasks-asynchronously-using-linq
 
 ## Serialization
+
 [Common Newtonsoft.Json options in System.Text.Json](https://makolyte.com/common-newtonsoft-json-options-in-system-text-json/)
 [Example of substituting JSON serializers](https://github.com/kiyote/RiftDrive/blob/master/src/RiftDrive.Client.Service/ExtensionMethods.cs)
 [ServiceStack Json type converters] (https://forums.servicestack.net/t/how-to-create-jsonconverter-with-servicestack/5152/2) How to customize the Json that gets emitted from ServiceStack
@@ -411,7 +447,8 @@ https://www.codingame.com/playgrounds/213/using-c-linq---a-practical-overview/co
 [An introduction to strongly-typed entity IDs](https://andrewlock.net/using-strongly-typed-entity-ids-to-avoid-primitive-obsession-part-1/) Andrew Lock - great article on strongly typed IDs, and serialization
 [Deserialization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html) Security considerations when Deserializing
 
-#Polly (Resilience policies)
+# Polly (Resilience policies)
+
 [Using Execution Context in Polly](http://www.thepollyproject.org/2017/05/04/putting-the-context-into-polly/) Sharing mutable information throughout an execution using Context
 [Implementing retry and circuit breaker pattern using Polly](https://codingcanvas.com/implementing-retry-and-circuit-breaker-pattern-using-polly/) Retry and Circuit Break example
 [Check string content of response before retrying with Polly](https://stackoverflow.com/questions/50835992/check-string-content-of-response-before-retrying-with-polly) requires using two, nested, policies
@@ -428,6 +465,7 @@ https://www.codingame.com/playgrounds/213/using-c-linq---a-practical-overview/co
 [Authoring a reactive Polly policy (Custom policies Part III)](http://www.thepollyproject.org/2019/02/13/authoring-a-reactive-polly-policy-custom-policies-part-iii-2/) the policy will log any exception or fault and then just rethrow or bubble it outwards.  a flexible logging construct that can be injected into any position in a PolicyWrap, also notes on context
 
 ## Progress Reporting in Async
+
 [The Task-based Asynchronous Pattern](https://talagozis.com/net/the-task-based-asynchronous-pattern) Blog about TAP with info on reporting progress. Good big writeup
 [Reporting Progress from Async Tasks](https://blog.stephencleary.com/2012/02/reporting-progress-from-async-tasks.html) Stephen Cleary on Progress events and async tasks, includes reference to an Observer Progress Reporter Implementation
 [An Improved Stream.CopyToAsync() that Reports Progress](https://www.codeproject.com/Tips/5274597/An-Improved-Stream-CopyToAsync-that-Reports-Progre) good recent (2020) example
@@ -450,7 +488,7 @@ https://www.codingame.com/playgrounds/213/using-c-linq---a-practical-overview/co
 
 ## IL disassembly / viewing
 
-[ILDasm with .Net Core](https://intellitect.com/ildasm-with-net-core/) https://intellitect.com/ildasm-with-net-core/ How to install another dotnet tool , ILDasm, and have it available on dotnet CLI 
+[ILDasm with .Net Core](https://intellitect.com/ildasm-with-net-core/) https://intellitect.com/ildasm-with-net-core/ How to install another dotnet tool , ILDasm, and have it available on dotnet CLI
 
 ILSpy vsix
 
@@ -458,11 +496,11 @@ ILSpy vsix
 
 [Simplifies logging through a static class and some IL manipulation](https://github.com/Fody/Anotar) https://github.com/Fody/Anotar
 
-[Fody Async MethodDecorator to Handle Exceptions](https://stackoverflow.com/questions/35120430/fody-async-methoddecorator-to-handle-exceptions) https://stackoverflow.com/questions/35120430/fody-async-methoddecorator-to-handle-exceptionsIn-depth article on Fody with Async exception handling. 
+[Fody Async MethodDecorator to Handle Exceptions](https://stackoverflow.com/questions/35120430/fody-async-methoddecorator-to-handle-exceptions) https://stackoverflow.com/questions/35120430/fody-async-methoddecorator-to-handle-exceptionsIn-depth article on Fody with Async exception handling.
 
 [MethodBoundaryAspect.Fody](https://github.com/vescon/MethodBoundaryAspect.Fody) https://github.com/vescon/MethodBoundaryAspect.Fody well recommended fody add in for hooking into method start, stop, and exceptions
 
-[AOP - Method and property interception in C#](https://www.codeproject.com/Articles/1223461/AOP-Method-and-property-interception-in-Csharp) https://www.codeproject.com/Articles/1223461/AOP-Method-and-property-interception-in-Csharp how to use Cauldron.Interception.Fody, another way to decorate methods. Aslo has examples for PropertyChanged event decration for a property setter
+[AOP - Method and property interception in C#](https://www.codeproject.com/Articles/1223461/AOP-Method-and-property-interception-in-Csharp) how to use Cauldron.Interception.Fody, another way to decorate methods. Also has examples for PropertyChanged event decration for a property setter
 
 [Welcome to the Cauldron wiki!](https://github.com/Capgemini/Cauldron/wiki) https://github.com/Capgemini/Cauldron/wiki
 [encapsulating addins with costura.fody](https://archi-lab.net/encapsulating-addins-with-costura-fody/) Bundle DLLs into one, good for PLugins
@@ -475,6 +513,7 @@ ILSpy vsix
 [Visual Studio Code (VS Code) for SQL Server development](https://www.sqlshack.com/visual-studio-code-vs-code-for-sql-server-development/) Overview and Snippets
 
 ## Monitor SQL Server health
+
 [Database File Changes](https://jasonbrimhall.info/2019/06/25/database-file-changes/) https://jasonbrimhall.info/2019/06/25/database-file-changes/ good example of a Session and logging file size changes
 
 ## SQL database migration and version controller
@@ -482,19 +521,21 @@ ILSpy vsix
 [Flyway Community edition]()
 
 # Reactive Rx Framework (Progress Typos)
+
 [Introduction to Rx](Testable timers with Reactive Extensions for .Net) overview and introductory material
 [101 Rx Samples - a work in progress](http://rxwiki.wikidot.com/101samples#toc25) good overview of receipes for Rx
 [Reporting Progress from Async Tasks](https://blog.stephencleary.com/2012/02/reporting-progress-from-async-tasks.html) Stephen Cleary on Progress events and async tasks, includes reference to an Observer Progress Reporter Implementation
-[Testing and Debugging Observable Sequences](https://docs.microsoft.com/en-us/previous-versions/dotnet/reactive-extensions/hh242967(v=vs.103)) Testing Rx 
+[Testing and Debugging Observable Sequences](https://docs.microsoft.com/en-us/previous-versions/dotnet/reactive-extensions/hh242967(v=vs.103)) Testing Rx
 [Reactive Extensions Observables Versus Regular .NET Events Part 2]*https://markheath.net/post/reactive-extensions-observables-versus_24
 [Testable timers with Reactive Extensions for .Net](Testable timers with Reactive Extensions for .Net) - better way for timers that generate a stream
 [Response has good ideas for parser based on rx](https://social.msdn.microsoft.com/Forums/en-US/193e65d2-29d7-4548-bbc5-5c95c99e23d9/how-do-i-process-an-observable-with-multiple-subscribers-in-sequence?forum=rx) splitting an individual sequence into sequential sub-aggregations and projections, and combining them into a final projection.
 [Async / Await with IObserver<T>](https://github.com/dotnet/reactive/issues/459) very good explanation of FromAsync and why to us it instead of ToObservable
-[Console.ReadLine() passed to C# event](https://stackoverflow.com/questions/31376721/console-readline-passed-to-c-sharp-event) Sample implementation of Console ReadlineAsync to an IObservable 
+[Console.ReadLine() passed to C# event](https://stackoverflow.com/questions/31376721/console-readline-passed-to-c-sharp-event) Sample implementation of Console ReadlineAsync to an IObservable
 [Testing and Debugging Observable Sequences](https://reactiveui.net/reactive-extensions/testing/testing) From the ReactiveUI project
-[Observable Cancellation and passing state to observables] (http://introtorx.com/Content/v1.0.10621.0/15_SchedulingAndThreading.html#Cancellation) Advanced topics for observable cancellation (uses schedulers), and passing state
+[Observable Cancellation and passing state to observables](http://introtorx.com/Content/v1.0.10621.0/15_SchedulingAndThreading.html#Cancellation) Advanced topics for observable cancellation (uses schedulers), and passing state
 
 # Code Generation From Expression Trees
+
 [Dave Sexton's Blog](https://www.davesexton.com/blog/) Theory on Monads, CoMonads, Iobservable, Ienumerable, and Rx. Underpinning of LINQ queries across both enumerables and observables, entrance amd exit. WOW!
 [Using Code Analysis with Visual Studio 2019 to Improve Code Quality](https://azuredevopslabs.com/labs/devopsserver/codeanalysi) overview of Visual Studio  Analysis tools
 [Explore code with the Roslyn syntax visualizer in Visual Studio](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/syntax-visualizer?tabs=csharp) includes installation instructions
@@ -506,34 +547,39 @@ ILSpy vsix
 [Get started with syntax analysis](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/get-started/syntax-analysis) How to setup visualstudio to provide the syntax visualizer and see a file
 [Expression Tree Visualizer](https://github.com/zspitz/ExpressionTreeVisualizer) addin library for Visual Studio
 [Expression Tree To String](https://github.com/zspitz/ExpressionTreeToString) Provides a ToString extension method which returns a string representation of an expression tree
-[Reactive Testing Helper methods ](https://www.nuget.org/packages/Microsoft.Reactive.Testing/) 
+[Reactive Testing Helper methods ](https://www.nuget.org/packages/Microsoft.Reactive.Testing/)
 [Testing Reactive Extension code using the TestScheduler](https://putridparrot.com/blog/testing-reactive-extension-code-using-the-testscheduler/)  also mentions Throttle as a way to only pickup user's typeing  after they pause for a period (for typeahead), or slecting in a multiselect (prefetching info about selected items if the user pauses
 [Testing Rx](http://introtorx.com/Content/v1.0.10621.0/16_TestingRx.html) more about testing Rx , and the Rx TestScheduler pattern
 
 # Graphviz for visualizing graph data structures
+
 [WebGraphviz is Graphviz in the Browser](http://www.webgraphviz.com/) Online digraph visualizer
 
-#Graph Libraries
+# Graph Libraries
+
 [Working With Graph Data Structures (In .Net)](http://blog.boxofbolts.com/dotnet/graphs/2015/08/31/working_with_graph_data_structures_dot_net/)
 [The list of graph visualization libraries](https://www.experfy.com/blog/the-list-of-graph-visualization-libraries)
 [QuickGraph, Graph Data Structures And Algorithms for .NET](https://archive.codeplex.com/?p=quickgraph)
 [QuickGraph](https://github.com/YaccConstructor/QuickGraph) Latest Quickgraph project
 
 # Graph Databases
+
 [Create a graph database and run some pattern matching queries using T-SQL](https://docs.microsoft.com/en-us/sql/relational-databases/graphs/sql-graph-sample?view=sql-server-ver15)
 [Integration Testing with Neo4j using C#](https://dzone.com/articles/integration-testing-with-neo4j-using-c)
 [Introduction to SQL Server 2017 Graph Databases] (https://prog.world/introduction-to-sql-server-2017-graph-databases/) Introductory material for Graph DB
 [How to track data lineage with SQL Server Graph Tables – Part 1 Create Nodes and Edges]https://anthonypresents.blog/2020/01/19/how-to-track-data-lineage-with-sql-server-graph-tables-part-1-create-nodes-and-edges/ Tracking Data Lineage (Provenance) from multiple sources to a final data analysis/display system
-[How to track data lineage with SQL Server Graph Tables – Part 2 Create Database Procedures](https://anthonypresents.blog/2020/01/26/how-to-track-data-lineage-with-sql-server-graph-tables-part-2-create-database-procedures/) stored procedures 
+[How to track data lineage with SQL Server Graph Tables – Part 2 Create Database Procedures](https://anthonypresents.blog/2020/01/26/how-to-track-data-lineage-with-sql-server-graph-tables-part-2-create-database-procedures/) stored procedures
 [How to track data lineage with SQL Server Graph Tables – Part 3 Populate Graph Tables](https://anthonypresents.blog/2020/02/02/how-to-track-data-lineage-with-sql-server-graph-tables-part-3-populate-graph-tables/) populate the tables based on data flow between systems
 [How to track data lineage with SQL Server Graph Tables – Part 4 Querying the Graph Tables](https://anthonypresents.blog/2020/05/17/how-to-track-data-lineage-with-sql-server-graph-tables-part-4-querying-the-graph-tables/) query to determine every downstream place/process/field a particular source field impacts
 
-# Testing 
-[Testing and Debugging Observable Sequences](https://docs.microsoft.com/en-us/previous-versions/dotnet/reactive-extensions/hh242967(v=vs.103)) Testing Rx 
+# Testing
 
-# Unit Tesing with XUnit
+[Testing and Debugging Observable Sequences](https://docs.microsoft.com/en-us/previous-versions/dotnet/reactive-extensions/hh242967(v=vs.103)) Testing Rx
+
+# Unit Testing with XUnit
+
 [Wrap test Framework in an outer Framework] (https://stackoverflow.com/questions/13829737/run-code-once-before-and-after-all-tests-in-xunit-net) interesting way to wrap up existing tests and run code before and after
-[Running xUnit.net tests in MSBuild] (https://xunit.net/docs/running-tests-in-msbuild) Run multiple test assemblies as the MSBuild <xUnit> task the Project File r
+[Running xUnit.net tests in MSBuild](https://xunit.net/docs/running-tests-in-msbuild) Run multiple test assemblies as the MSBuild <xUnit> task in the Project File
 [Configure unit tests by using a .runsettings file](https://docs.microsoft.com/en-us/visualstudio/test/configure-unit-tests-by-using-a-dot-runsettings-file?branch=release-16.4&view=vs-2019) includes setting a runtime identifier
 [Build Quality Checks](https://marketplace.visualstudio.com/items?itemName=mspremier.BuildQualityChecks) MSBuild Tasks for testing the quality of a build, good for azure too
 [Run unit tests with Test Explorer](https://docs.microsoft.com/en-us/visualstudio/test/run-unit-tests-with-test-explorer?view=vs-2019) basic explanation of the test explorer in Visual Studio
@@ -543,46 +589,59 @@ ILSpy vsix
 [Creating your own XUnit Extension](https://blog.benhall.me.uk/2008/01/creating-your-own-xunit-extension/) Very old, but explains how to get stuff before and after a test, and get a test name from inside the test
 
 # Testing in VS Code and other testing tools
-[.Net Core Unit Test and Code Coverage with Visual Studio Code](.Net Core Unit Test and Code Coverage with Visual Studio Code) also references some other testing tip and libraries
+
+[.Net Core Unit Test and Code Coverage with Visual Studio Code]() also references some other testing tip and libraries
 
 # Docker and Containers
+
 [Deliver your development environment in a Docker Container](https://www.freecodecamp.org/news/put-your-dev-env-in-github/) How to use Visual Studio Code to create a Docker container that has your development environment configuration information. AKA VS Code and Remote-Containers
 
 # UnitsNet
+
 [How to use UnitsNet Structures as bound values in a MVC View / controller (custom binder)](https://stackoverflow.com/questions/53401720/unitsnet-how-to-use-it-in-mvc) Good info on creating a custom binder for Temperature
 
 # Benchmarking and Profiling
+
 [BenchmarkDotNet](https://github.com/dotnet/BenchmarkDotNet) Library for benchmarking code
 [Measure application performance by analyzing CPU usage](https://docs.microsoft.com/en-us/visualstudio/profiling/beginners-guide-to-performance-profiling?view=vs-2019) Basics of profiling in Visual studio
-[List of .Net Profilers: 3 Different Types and Why You Need All of Them](https://stackify.com/three-types-of-net-profilers/) Stackiffy's Free Prefix tool and where it is useful-svg-editor/
+[List of .Net Profilers: 3 Different Types and Why You Need All of Them](https://stackify.com/three-types-of-net-profilers/) Stackify's Free Prefix tool and where it is useful-svg-editor/
 [Understand what your code is doing and find bugs you didn’t even know existed.](https://stackify.com/prefix/) Stackify product page for Prefix profiler
+
 # Positioning and Interacting with a Console Window on Windows
+
 [How to use Windows API and PInvoke to position a small console window to the bottom left of a screen](https://stackoverflow.com/questions/27715004/position-a-small-console-window-to-the-bottom-left-of-the-screen) Full working example
 
 # Database
 
 ## Output Clause in a Query
+
 [OUTPUT Clause (Transact-SQL)](https://docs.microsoft.com/en-us/sql/t-sql/queries/output-clause-transact-sql?view=sql-server-ver15) How to get back data after selects and inserts
 
 ## Database Repository Pattern for IDbConnection
-[Repository Pattern and db connections](https://forums.servicestack.net/t/repository-pattern-and-db-connections/5243/12) Applies to 
+
+[Repository Pattern and db connections](https://forums.servicestack.net/t/repository-pattern-and-db-connections/5243/12) Applies to
 
 ## ServiceStack ORM
+
 [Using multiple databases in a ServiceStack project](https://docs.servicestack.net/multitenancy) declaratively specify which database a Service should be configured to use,
 [MultiTennantAppHostTests.cs](https://github.com/ServiceStack/ServiceStack/blob/master/tests/ServiceStack.WebHost.Endpoints.Tests/MultiTennantAppHostTests.cs) example show IDbConnectionFactory and DBConnection
 
 ## Using PowerShell and Databases
+
 [Test connectivity to SQL Server](https://octopus.com/blog/sql-server-powershell)
-[How To Quickly Test a SQL Connection with PowerShell](https://mcpmag.com/articles/2018/12/10/test-sql-connection-with-powershell.aspx) Adam Bertram article, cmdlet should be in my toolbox
+[How To Quickly Test a SQL Connection with PowerShell](https://mcpmag.com/articles/2018/12/10/test-sql-connection-with-powershell.aspx) Adam Bertram article, Cmdlet should be in my toolbox
 [Connecting SQL Database Using Windows Powershell](https://github.com/ServiceStack/ServiceStack/blob/master/tests/ServiceStack.WebHost.Endpoints.Tests/MultiTennantAppHostTests.cs) also shows how to fill a dataset in powershell (complicated!)
 
 ## Hierarchy ID in SQL Server
+
 [How to Use SQL Server HierarchyID Through Easy Examples](https://codingsight.com/how-to-use-sql-server-hierarchyid-through-easy-examples/) hierarchyID is a built-in data type designed to represent trees
 
 ## Identity Column
+
 [SQL Server Identity Insert to Keep Tables Synchronized](https://www.mssqltips.com/sqlservertip/1061/sql-server-identity-insert-to-keep-tables-synchronized/) Like tables in two different tables need to keep the Idenity value synchronized
 
 ## Connection Strings
+
 [Network Protocol for SQL Server Connection](https://www.connectionstrings.com/define-sql-server-network-protocol/) How to force TCP  protocol a the connection string
 [SQL Server Connection Strings](https://www.connectionstrings.com/sql-server/) Many examples of connection strings for various providerss, clits (MSDataShape, SQLClient .Net Framework, etc)
 
@@ -590,30 +649,36 @@ ILSpy vsix
 [Why use Threenine.Map](https://threeninemap.readthedocs.io/en/latest/Getting-started.html)  Library on top of auto-mapper
 
 # Build and Package
+
 [Sharing MSBuild Tasks as NuGet Packages with](https://channel9.msdn.com/Shows/Code-Conversations/Sharing-MSBuild-Tasks-as-NuGet-Packages-with-Nate-McMaster)
 [How to suppress specific MSBuild warning](https://stackoverflow.com/questions/1023858/how-to-suppress-specific-msbuild-warning) But the technique doesn't seem to work :-(
 [dotnet-tools](https://github.com/natemcmaster/dotnet-tools) A list of tool extensions for .NET Core Command Line (dotnet CLI), aka '.NET Core global tools'.
-[Forcing Nuget Package Usage in Visual Studio/MSBuild](https://developertown.com/forcing-nuget-package-usage-in-visual-studio-msbuild) article on some gotchas ensuring that packages are found on both developer and on build machines
+[Forcing NuGet Package Usage in Visual Studio/MSBuild](https://developertown.com/forcing-nuget-package-usage-in-visual-studio-msbuild) article on some gotchas ensuring that packages are found on both developer and on build machines
 [FastUpdateCheck: how to add inputs implicitly added by an imported targets file](https://github.com/dotnet/project-system/issues/3444) discussion on how to tell if a project will need to be built
 [MSBuild Structured Log: record and visualize your builds](https://www.hanselman.com/blog/msbuild-structured-log-record-and-visualize-your-builds) overview on structured build logging
 [MSBuilder : Reusable Build Blocks](https://github.com/MobileEssentials/MSBuilder/tree/master/src) Building Blocks for adding additional MSBuild capabilities
 
 # Code Analysis tools
+
 [MSBuildWorkspace](https://gist.github.com/DustinCampbell/32cd69d04ea1c08a16ae5c4cd21dd3a3) older article on MSBuildWorkspace for Framework projects
 [Improving C# Source Generation Performance with a Custom Roslyn Workspace](https://jaylee.org/archive/2019/03/04/custom-roslyn-msbuild-workspace.html)
 [Example code for MSBuildWorkspace](https://gitter.im/dotnet/roslyn?at=5de83da9c3d6795b9f242541) Down a bit in the gitter discussion someone posted their working example code
 [How to use MSBuildWorkspace on Ubuntu](https://www.gitmemory.com/issue/dotnet/roslyn/35766/498215179)
 
 # Task scheduling
+
 [Coraval](https://github.com/jamesmh/coravel) Near-zero config .NET Core micro-framework that makes advanced application features like Task Scheduling, Caching, Queuing, Event Broadcasting, and more a breeze!
 
 # Hashing Algorithms
+
 [HashLib](https://archive.codeplex.com/?p=hashlib) library of hash algorithm implementations
 
 # C# Parser
+
 [Pidgin](https://github.com/benjamin-hodgson/Pidgin) C#'s fastest parser combinator library, developed at Stack Overflow
 
 # Build tools for .Net and for "Visual studio code"
+
 [Tools for Net Development](https://oz-code.com/blog/net-c-tips/top-10-open-source-nuget-tools-net-development) Good tools for building and net test coverage, GitVersion (SemVer), static code analysis
 [GitVersion](https://gitversion.net/) Create and auto-update SemVer information for projects
 [XUnit](https://www.nuget.org/packages/xunit.runner.utility/) xunit.runner.utility
@@ -622,9 +687,11 @@ ILSpy vsix
 [Integrate with External Tools via Tasks](https://code.visualstudio.com/docs/editor/tasks) Create additional tasks to be run by keyboard shortcuts
 
 # NuGet
+
 [Managing the global packages, cache, and temp folders](https://docs.microsoft.com/en-us/nuget/consume-packages/managing-the-global-packages-and-cache-folders)
 
 # Visual Studio Code Tips
+
 [Hidden features of OmniSharp and C# extension for VS Code](https://www.strathweb.com/2020/02/hidden-features-of-omnisharp-and-c-extension-for-vs-code/)
 [NXunit Test Explorer](https://marketplace.visualstudio.com/items?itemName=wghats.vscode-nxunit-test-adapter) VSC extension for xunit tests
 
@@ -636,12 +703,18 @@ https://stackoverflow.com/questions/43732061/how-to-check-whether-port-is-open-i
 
 https://www.itprotoday.com/powershell/windows-powershell-range-operator-tricks
 
+## Powershell packages and distribution
+
+[Creating a portable and embedded Chocolatey Package](https://weblog.west-wind.com/posts/2017/jan/29/creating-a-portable-and-embedded-chocolatey-package)
+[Creating Reusable PowerShell Modules with PsGet and Chocolatey](https://patrickhuber.github.io/2015/03/17/creating-reusable-powershell-modules-with-psget-and-chocolatey.html)
+
 # HttpClient
+
 [Singleton httpclient vs creating new httpclient request](https://stackoverflow.com/questions/48778580/singleton-httpclient-vs-creating-new-httpclient-request) Good stuff, using a single static instance of HttpClient doesn't respect DNS changes, so the solution is to use HttpClientFactory
 [Use IHttpClientFactory to implement resilient HTTP requests](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests) explains socket exhaustion and DNS changes, how to use HTTPClientFactory, and Typed Clients
 
-
 ## ShouldProcess
+
 [Everything you wanted to know about ShouldProcess](https://docs.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-shouldprocess?view=powershell-7.1) how to implemen/support the -WhatIf Common argument
 
 # Globalization and Lcalization
@@ -663,6 +736,7 @@ https://www.itprotoday.com/powershell/windows-powershell-range-operator-tricks
 [Measuring DevOps Success with Four Key Metrics](https://stelligent.com/2018/12/21/measuring-devops-success-with-four-key-metrics/)
 
 # Github Pages for Blog
+
 [Getting Started with GitHub Pages](https://guides.github.com/features/pages/) GitHubs own getting started guide
 [How to Create a Blog Using Jekyll and GitHub Pages on Windows](https://www.kiltandcode.com/2020/04/30/how-to-create-a-blog-using-jekyll-and-github-pages-on-windows/) Good instructions
 [Walktrough: How I am using Github for my blog comments](https://eiriksm.dev/walkthrough-github-comments) Uses Docker containers
@@ -1099,7 +1173,7 @@ https://docs.microsoft.com/en-us/windows-hardware/test/wpt/
 [Solution examples for crossplatform building a stylecop rules](https://github.com/dotnet/iot/tree/master/eng) Good Information for building solutions and stylecop analyzers
 [Enumerable.Empty() vs new ‘IEnumerable’()](https://agirlamonggeeks.com/2019/03/22/enumerable-empty-vs-new-ienumerable-whats-better/) nitty gritty on creating an empty IEnumerable<T>
 [Example Build.ps for using Cake Build tool](https://github.com/oldrev/Sandwych.QuickGraph/blob/master/build.ps1) Example powershell build.ps for bootstrapping Cake build
-[Property Graphs Explained-The Universal Data Model Paradigm](http://graphdatamodeling.com/Graph%20Data%20Modeling/GraphDataModeling/page/PropertyGraphs.html) Graph data structures 
+[Property Graphs Explained-The Universal Data Model Paradigm](http://graphdatamodeling.com/Graph%20Data%20Modeling/GraphDataModeling/page/PropertyGraphs.html) Graph data structures
 [Consuming the Task-based Asynchronous Pattern](https://docs.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/consuming-the-task-based-asynchronous-pattern) how to call async tasks
 [Using Generic Extension Methods](https://www.codeproject.com/Articles/29079/Using-Generic-Extension-Methods) how to use AS in generic extensions
 [Abstract class with constructor, force inherited class to call it](https://stackoverflow.com/questions/28568391/abstract-class-with-constructor-force-inherited-class-to-call-it) interesting about parameterless constructors in an abstract class

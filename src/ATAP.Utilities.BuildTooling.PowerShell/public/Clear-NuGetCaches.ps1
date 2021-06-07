@@ -1,5 +1,5 @@
 #############################################################################
-#region Empty-NuGetCaches
+#region Clear-NuGetCaches
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,7 +28,7 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Empty-NuGetCaches {
+Function Clear-NuGetCaches {
   #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
@@ -53,16 +53,16 @@ Function Empty-NuGetCaches {
   #region FunctionEndBlock
   ########################################
   END {
-	   Write-Verbose "Removing ($ENV:\AppData)\Local\NuGet\v3-cache"
-    if ($PSCmdlet.ShouldProcess("($ENV:\AppData)\Local\NuGet\v3-cache", 'Delete')) {
-      Write-Host "really would delete ($ENV:\AppData)\Local\NuGet\v3-cache"
+	   Write-Verbose "Removing ($ENV:AppData)\Local\NuGet\v3-cache"
+    if ($PSCmdlet.ShouldProcess("($ENV:AppData)\Local\NuGet\v3-cache", 'Delete')) {
+      Write-Host "really would delete ($ENV:AppData)\Local\NuGet\v3-cache"
     }
-    Write-Verbose "Removing ($ENV:\USERPROFILE)\.nuget\packages"
-    if ($PSCmdlet.ShouldProcess("($ENV:\USERPROFILE)\.nuget\packages", 'Delete')) {
-      Write-Host "really would delete ($ENV:\USERPROFILE)\.nuget\packages"
+    Write-Verbose "Removing ($ENV:USERPROFILE)\.nuget\packages"
+    if ($PSCmdlet.ShouldProcess("($ENV:USERPROFILE)\.nuget\packages", 'Delete')) {
+      Write-Host "really would delete ($ENV:USERPROFILE)\.nuget\packages"
     }
-    Write-Verbose "Removing ($ENV:\AppData)\Local\Temp\NuGetScratch"
-    if ($PSCmdlet.ShouldProcess("($ENV:\AppData)\Local\Temp\NuGetScratch", 'Delete')) {
+    Write-Verbose "Removing ($ENV:AppData)\Local\Temp\NuGetScratch"
+    if ($PSCmdlet.ShouldProcess("($ENV:AppData)\Local\Temp\NuGetScratch", 'Delete')) {
       #				write-host "really would delete ($ENV:\AppData)\Local\Temp\NuGetScratch"
     }
 
@@ -70,5 +70,5 @@ Function Empty-NuGetCaches {
   }
   #endregion FunctionEndBlock
 }
-#endregion Empty-NuGetCaches
+#endregion Clear-NuGetCaches
 #############################################################################

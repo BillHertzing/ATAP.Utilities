@@ -1,5 +1,5 @@
 #############################################################################
-#region Create-DocFilesIfNotPresent
+#region New-DocFilesIfNotPresent
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,7 +28,7 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Create-DocFilesIfNotPresent {
+Function New-DocFilesIfNotPresent {
   #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
   [parameter(mandatory = $true)]
@@ -36,7 +36,7 @@ Function Create-DocFilesIfNotPresent {
   [string]$DocsPath
   , [parameter(mandatory = $true)]
   [ValidateNotNullOrEmpty()]
-  #    [string[]]$DocFileNames
+      [string[]]$DocFileNames
   #endregion FunctionParameters
   #region FunctionBeginBlock
   ########################################
@@ -74,5 +74,5 @@ Function Create-DocFilesIfNotPresent {
   }
   #endregion FunctionEndBlock
 }
-#endregion Create-DocFilesIfNotPresent
+#endregion New-DocFilesIfNotPresent
 #############################################################################

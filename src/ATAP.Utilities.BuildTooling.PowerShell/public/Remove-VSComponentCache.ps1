@@ -49,10 +49,10 @@ Function Remove_VSComponentCache {
 
   #region FunctionEndBlock
   ########################################
-  2END {
-    Write-Verbose "removing ($env:\appdata)\local\microsoft\visualstudio\15.0\componentmodelcache"
-    if ($pscmdlet.shouldprocess("($env:\appdata)\local\microsoft\visualstudio\15.0\componentmodelcache", 'delete')) {
-      Write-Host "really would delete ($env:\appdata)\local\microsoft\visualstudio\15.0\componentmodelcache"
+  END {
+    Write-Verbose "removing ($env:appdata)\local\microsoft\visualstudio\15.0\componentmodelcache"
+    if ($pscmdlet.shouldprocess("($env:appdata)\local\microsoft\visualstudio\15.0\componentmodelcache", 'delete')) {
+      Write-Host "really would delete ($env:appdata)\local\microsoft\visualstudio\15.0\componentmodelcache"
     }
     Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
   }

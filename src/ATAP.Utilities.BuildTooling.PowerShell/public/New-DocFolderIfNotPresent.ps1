@@ -1,5 +1,5 @@
 #############################################################################
-#region Create-DocFolderIfNotPresent
+#region New-DocFolderIfNotPresent
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,7 +28,7 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Create-DocFolderIfNotPresent {
+Function New-DocFolderIfNotPresent {
   #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
@@ -68,5 +68,5 @@ Function Create-DocFolderIfNotPresent {
   }
   #endregion FunctionEndBlock
 }
-#endregion Create-DocFolderIfNotPresent
+#endregion New-DocFolderIfNotPresent
 #############################################################################

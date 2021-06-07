@@ -195,7 +195,7 @@ Function Replace-InCsproj {
 
 
 
-  $files = gci $path -Recurse -Include $include -Exclude $exclude | ? { $_.fullname -notmatch $excludeRegex }
+  $files = Get-ChildItem $path -Recurse -Include $include -Exclude $exclude | ? { $_.fullname -notmatch $excludeRegex }
   foreach ($fn in $files) {
     $text = [IO.File]::ReadAllText($fn)
     foreach ($kvp in $replacementlist) {

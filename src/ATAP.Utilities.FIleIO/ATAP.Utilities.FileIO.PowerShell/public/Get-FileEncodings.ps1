@@ -2,7 +2,7 @@
 #region Get-FileEncoding
 <#
 .SYNOPSIS
-ToDo: write Help SYNOPSIS For this function
+Gets the encoding of a file
 .DESCRIPTION
 ToDo: write Help DESCRIPTION For this function
 .PARAMETER Name
@@ -14,38 +14,6 @@ ToDo: write Help For the function's inputs
 .OUTPUTS
 ToDo: write Help For the function's outputs
 .EXAMPLE
-ToDo: write Help For example 1 of using this function
-.EXAMPLE
-ToDo: write Help For example 2 of using this function
-.EXAMPLE
-ToDo: write Help For example 2 of using this function
-.ATTRIBUTION
-ToDo: write text describing the ideas and codes that are attributed to others
-.LINK
-ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
-.LINK
-ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
-.SCM
-ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
-#>
-Function Get-FileEncoding {
-  ##############################################################################
-  ##
-  ## Get-FileEncoding
-  ##
-  ## From Windows PowerShell Cookbook (O'Reilly)
-  ## by Lee Holmes (http://www.leeholmes.com/guide)
-  ##
-  ##############################################################################
-
-<#
-
-.SYNOPSIS
-
-Gets the encoding of a file
-
-.EXAMPLE
-
 Get-FileEncoding.ps1 .\UnicodeScript.ps1
 
 BodyName          : unicodeFFFE
@@ -63,74 +31,93 @@ DecoderFallback   : System.Text.DecoderReplacementFallback
 IsReadOnly        : True
 CodePage          : 1201
 
+.EXAMPLE
+ToDo: write Help For example 2 of using this function
+.EXAMPLE
+ToDo: write Help For example 2 of using this function
+.ATTRIBUTION
+ From Windows PowerShell Cookbook (O'Reilly) by Lee Holmes
+.LINK
+ (http://www.leeholmes.com/guide)
+.SCM
+ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
+Function Get-FileEncoding {
+
   #region FunctionParameters
-param(
+  #region FunctionParameters
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  param(
     # The path of the file to get the encoding of.
     $Path
-)
+  )
   #endregion FunctionParameters
   #region FunctionBeginBlock
   ########################################
   BEGIN {
     Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Set-StrictMode -Version 3
+  }
+  #endregion FunctionBeginBlock
 
+  #region FunctionProcessBlock
+  ########################################
+  PROCESS {
+  }
+  #endregion FunctionProcessBlock
+  #region FunctionEndBlock
+  ########################################
+  END {
+    ## First, check if the file is binary. That is, if the first
+    ## 5 lines contain any non-printable characters.
+    $nonPrintable = [char[]] (0..8 + 10..31 + 127 + 129 + 141 + 143 + 144 + 157)
+    $lines = Get-Content $Path -ErrorAction Ignore -TotalCount 5
+    $result = @($lines | Where-Object { $_.IndexOfAny($nonPrintable) -ge 0 })
+    if ($result.Count -gt 0) {
+      'Binary'
+      return
+    }
 
-Set-StrictMode -Version 3
+    ## Next, check if it matches a well-known encoding.
 
-## First, check if the file is binary. That is, if the first
-## 5 lines contain any non-printable characters.
-$nonPrintable = [char[]] (0..8 + 10..31 + 127 + 129 + 141 + 143 + 144 + 157)
-$lines = Get-Content $Path -ErrorAction Ignore -TotalCount 5
-$result = @($lines | Where-Object { $_.IndexOfAny($nonPrintable) -ge 0 })
-if($result.Count -gt 0)
-{
-    "Binary"
-    return
-}
+    ## The hashtable used to store our mapping of encoding bytes to their
+    ## name. For example, "255-254 = Unicode"
+    $encodings = @{}
 
-## Next, check if it matches a well-known encoding.
-
-## The hashtable used to store our mapping of encoding bytes to their
-## name. For example, "255-254 = Unicode"
-$encodings = @{}
-
-## Find all of the encodings understood by the .NET Framework. For each,
-## determine the bytes at the start of the file (the preamble) that the .NET
-## Framework uses to identify that encoding.
-foreach($encoding in [System.Text.Encoding]::GetEncodings())
-{
-    $preamble = $encoding.GetEncoding().GetPreamble()
-    if($preamble)
-    {
+    ## Find all of the encodings understood by the .NET Framework. For each,
+    ## determine the bytes at the start of the file (the preamble) that the .NET
+    ## Framework uses to identify that encoding.
+    foreach ($encoding in [System.Text.Encoding]::GetEncodings()) {
+      $preamble = $encoding.GetEncoding().GetPreamble()
+      if ($preamble) {
         $encodingBytes = $preamble -join '-'
         $encodings[$encodingBytes] = $encoding.GetEncoding()
+      }
     }
-}
 
-## Find out the lengths of all of the preambles.
-$encodingLengths = $encodings.Keys | Where-Object { $_ } |
-    Foreach-Object { ($_ -split "-").Count }
+    ## Find out the lengths of all of the preambles.
+    $encodingLengths = $encodings.Keys | Where-Object { $_ } |
+    ForEach-Object { ($_ -split '-').Count }
 
-## Assume the encoding is UTF7 by default
-$result = [System.Text.Encoding]::UTF7
+    ## Assume the encoding is UTF7 by default
+    $result = [System.Text.Encoding]::UTF7
 
-## Go through each of the possible preamble lengths, read that many
-## bytes from the file, and then see if it matches one of the encodings
-## we know about.
-foreach($encodingLength in $encodingLengths | Sort -Descending)
-{
-    $bytes = Get-Content -encoding byte -readcount $encodingLength $path | Select -First 1
-    $encoding = $encodings[$bytes -join '-']
+    ## Go through each of the possible preamble lengths, read that many
+    ## bytes from the file, and then see if it matches one of the encodings
+    ## we know about.
+    foreach ($encodingLength in $encodingLengths | Sort-Object -Descending) {
+      $bytes = Get-Content -Encoding byte -ReadCount $encodingLength $path | Select-Object -First 1
+      $encoding = $encodings[$bytes -join '-']
 
-    ## If we found an encoding that had the same preamble bytes,
-    ## save that output and break.
-    if($encoding)
-    {
+      ## If we found an encoding that had the same preamble bytes,
+      ## save that output and break.
+      if ($encoding) {
         $result = $encoding
         break
+      }
     }
-}
 
-## Finally, output the encoding.
-$result
+    ## Finally, output the encoding.
+    $result
+  }
+}

@@ -12,7 +12,7 @@
 
 ## ASP NET Core Generic Host
 
-https://wakeupandcode.com/generic-host-builder-in-asp-net-core/
+[generic-host-builder-in-asp-net-core](https://wakeupandcode.com/generic-host-builder-in-asp-net-core/)
 
 https://github.com/aspnet/AspNetCore.Docs/blob/master/aspnetcore/fundamentals/host/generic-host/samples/2.x/GenericHostSample/Program.cs
 
@@ -476,9 +476,10 @@ https://www.codingame.com/playgrounds/213/using-c-linq---a-practical-overview/co
 
 # Database access tips
 
-[select query helper for nolock and no change tracking](https://codereview.stackexchange.com/questions/132931/select-query-helper-for-nolock-and-no-change-tracking) https://codereview.stackexchange.com/questions/132931/select-query-helper-for-nolock-and-no-change-tracking (SOLID principle)
+[select query helper for nolock and no change tracking](https://codereview.stackexchange.com/questions/132931/select-query-helper-for-nolock-and-no-change-tracking) h77  (SOLID principle)
 
 [https://visualstudiomagazine.com/articles/2019/05/24/core-sql-server.aspx](https://visualstudiomagazine.com/articles/2019/05/24/core-sql-server.aspx) https://visualstudiomagazine.com/articles/2019/05/24/core-sql-server.aspx
+
 
 # Code Weaving
 
@@ -507,14 +508,15 @@ ILSpy vsix
 
 # SQLServer
 
-## SQLK Server extensions for Visual Studio Code (VSC)
+## SQL Server extensions for Visual Studio Code (VSC)
+
 [mssql extension for Visual Studio Code](https://github.com/microsoft/vscode-mssql/wiki) Extension for VSC that bring Intellisense to writing SQL
 [Use Visual Studio Code to create and run Transact-SQL scripts](https://docs.microsoft.com/en-us/sql/tools/visual-studio-code/sql-server-develop-use-vscode?view=sql-server-ver15) MS documentation on how to use the mssql extension
 [Visual Studio Code (VS Code) for SQL Server development](https://www.sqlshack.com/visual-studio-code-vs-code-for-sql-server-development/) Overview and Snippets
 
 ## Monitor SQL Server health
 
-[Database File Changes](https://jasonbrimhall.info/2019/06/25/database-file-changes/) https://jasonbrimhall.info/2019/06/25/database-file-changes/ good example of a Session and logging file size changes
+[Database File Changes](https://jasonbrimhall.info/2019/06/25/database-file-changes/)  good example of a Session and logging file size changes
 
 ## SQL database migration and version controller
 
@@ -567,7 +569,7 @@ ILSpy vsix
 [Create a graph database and run some pattern matching queries using T-SQL](https://docs.microsoft.com/en-us/sql/relational-databases/graphs/sql-graph-sample?view=sql-server-ver15)
 [Integration Testing with Neo4j using C#](https://dzone.com/articles/integration-testing-with-neo4j-using-c)
 [Introduction to SQL Server 2017 Graph Databases] (https://prog.world/introduction-to-sql-server-2017-graph-databases/) Introductory material for Graph DB
-[How to track data lineage with SQL Server Graph Tables – Part 1 Create Nodes and Edges]https://anthonypresents.blog/2020/01/19/how-to-track-data-lineage-with-sql-server-graph-tables-part-1-create-nodes-and-edges/ Tracking Data Lineage (Provenance) from multiple sources to a final data analysis/display system
+[How to track data lineage with SQL Server Graph Tables – Part 1 Create Nodes and Edges](https://anthonypresents.blog/2020/01/19/how-to-track-data-lineage-with-sql-server-graph-tables-part-1-create-nodes-and-edges/) Tracking Data Lineage (Provenance) from multiple sources to a final data analysis/display system
 [How to track data lineage with SQL Server Graph Tables – Part 2 Create Database Procedures](https://anthonypresents.blog/2020/01/26/how-to-track-data-lineage-with-sql-server-graph-tables-part-2-create-database-procedures/) stored procedures
 [How to track data lineage with SQL Server Graph Tables – Part 3 Populate Graph Tables](https://anthonypresents.blog/2020/02/02/how-to-track-data-lineage-with-sql-server-graph-tables-part-3-populate-graph-tables/) populate the tables based on data flow between systems
 [How to track data lineage with SQL Server Graph Tables – Part 4 Querying the Graph Tables](https://anthonypresents.blog/2020/05/17/how-to-track-data-lineage-with-sql-server-graph-tables-part-4-querying-the-graph-tables/) query to determine every downstream place/process/field a particular source field impacts
@@ -578,7 +580,7 @@ ILSpy vsix
 
 # Unit Testing with XUnit
 
-[Wrap test Framework in an outer Framework] (https://stackoverflow.com/questions/13829737/run-code-once-before-and-after-all-tests-in-xunit-net) interesting way to wrap up existing tests and run code before and after
+[Wrap test Framework in an outer Framework](https://stackoverflow.com/questions/13829737/run-code-once-before-and-after-all-tests-in-xunit-net) interesting way to wrap up existing tests and run code before and after
 [Running xUnit.net tests in MSBuild](https://xunit.net/docs/running-tests-in-msbuild) Run multiple test assemblies as the MSBuild <xUnit> task in the Project File
 [Configure unit tests by using a .runsettings file](https://docs.microsoft.com/en-us/visualstudio/test/configure-unit-tests-by-using-a-dot-runsettings-file?branch=release-16.4&view=vs-2019) includes setting a runtime identifier
 [Build Quality Checks](https://marketplace.visualstudio.com/items?itemName=mspremier.BuildQualityChecks) MSBuild Tasks for testing the quality of a build, good for azure too
@@ -821,23 +823,23 @@ https://docs.microsoft.com/en-us/windows/wsl/interop
 
 [For value types, you need to perform the boxing explicitly (i.e. convert to Object)](https://stackoverflow.com/questions/9860620/creating-dynamic-expressionfunct-y) https://stackoverflow.com/questions/9860620/creating-dynamic-expressionfunct-y
 
-[Cool lambda and expression Func trick] (https://stackoverflow.com/questions/17738499/create-dynamic-funct-tresult-from-object) https://stackoverflow.com/questions/17738499/create-dynamic-funct-tresult-from-object
+[Cool lambda and expression Func trick](https://stackoverflow.com/questions/17738499/create-dynamic-funct-tresult-from-object)
 
-[Blazor Pretty Code](https://chanan.github.io/BlazorPrettyCode/) https://chanan.github.io/BlazorPrettyCode/
+[Blazor Pretty Code](https://chanan.github.io/BlazorPrettyCode/)
 
-[Create a Trimmed Self-Contained Single Executable in .NET Core 3.0](https://www.talkingdotnet.com/create-trimmed-self-contained-executable-in-net-core-3-0/) https://www.talkingdotnet.com/create-trimmed-self-contained-executable-in-net-core-3-0/
+[Create a Trimmed Self-Contained Single Executable in .NET Core 3.0](https://www.talkingdotnet.com/create-trimmed-self-contained-executable-in-net-core-3-0/)
 
-[Creating A Step-By-Step End-To-End Database Server-Side Blazor Application](http://lightswitchhelpwebsite.com/Blog/tabid/61/EntryId/4318/Server-Side-Blazor-Reading-And-Inserting-Data-Into-A-Database-End-To-End.aspx) http://lightswitchhelpwebsite.com/Blog/tabid/61/EntryId/4318/Server-Side-Blazor-Reading-And-Inserting-Data-Into-A-Database-End-To-End.aspx
+[Creating A Step-By-Step End-To-End Database Server-Side Blazor Application](http://lightswitchhelpwebsite.com/Blog/tabid/61/EntryId/4318/Server-Side-Blazor-Reading-And-Inserting-Data-Into-A-Database-End-To-End.aspx)
 
-[How to resize animated GIF with HTML/CSS?](https://stackoverflow.com/questions/34331351/how-to-resize-animated-gif-with-html-css) https://stackoverflow.com/questions/34331351/how-to-resize-animated-gif-with-html-css
+[How to resize animated GIF with HTML/CSS?](https://stackoverflow.com/questions/34331351/how-to-resize-animated-gif-with-html-css)
 
-[Scaling Responsive Animations](https://css-tricks.com/scaling-responsive-animations/) https://css-tricks.com/scaling-responsive-animations/ Good CSS Tricks, nice looking site
+[Scaling Responsive Animations](https://css-tricks.com/scaling-responsive-animations/)  Good CSS Tricks, nice looking site
 
-[SASS: @import](https://sass-lang.com/documentation/at-rules/import) https://sass-lang.com/documentation/at-rules/import
+[SASS: @import](https://sass-lang.com/documentation/at-rules/import)
 
-[How to override get accessor of a dynamic object's property] (https://stackoverflow.com/questions/29923280/how-to-override-get-accessor-of-a-dynamic-objects-property) https://stackoverflow.com/questions/29923280/how-to-override-get-accessor-of-a-dynamic-objects-property
+[How to override get accessor of a dynamic object's property](https://stackoverflow.com/questions/29923280/how-to-override-get-accessor-of-a-dynamic-objects-property) https://stackoverflow.com/questions/29923280/how-to-override-get-accessor-of-a-dynamic-objects-property
 
-[Blazor: Working with Events](https://visualstudiomagazine.com/articles/2018/10/01/blazor-event-handling.aspx) https://visualstudiomagazine.com/articles/2018/10/01/blazor-event-handling.aspx
+[Blazor: Working with Events](https://visualstudiomagazine.com/articles/2018/10/01/blazor-event-handling.aspx)
 
 [dynamic nested example?](https://gist.github.com/pbdesk/1771028) https://gist.github.com/pbdesk/1771028
 
@@ -849,13 +851,13 @@ https://docs.microsoft.com/en-us/dotnet/api/system.dynamic.expandoobject?view=ne
 
 https://stackoverflow.com/questions/29923280/how-to-override-get-accessor-of-a-dynamic-objects-property
 
-[Boxy SVG: A Fast, Simple, Insanely Useful, FREE SVG Editor](https://www.sitepoint.com/boxy-svg-a-fast-simple-insanely-useful-svg-editor/) https://www.sitepoint.com/boxy-svg-a-fast-simple-insanely-useful-svg-editor/
+[Boxy SVG: A Fast, Simple, Insanely Useful, FREE SVG Editor](https://www.sitepoint.com/boxy-svg-a-fast-simple-insanely-useful-svg-editor/)
 
-[Constraints on type parameters (C# Programming Guide)](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters)https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters
+[Constraints on type parameters (C# Programming Guide)](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters)
 
-[The C# WebScraping Library](https://ironsoftware.com/csharp/webscraper/) https://ironsoftware.com/csharp/webscraper/
+[The C# WebScraping Library](https://ironsoftware.com/csharp/webscraper/)
 
-[General DynamicObject Proxy and Fast Reflection Proxy](https://www.codeproject.com/Articles/109868/General-DynamicObject-Proxy-and-Fast-Reflection-Pr) https://www.codeproject.com/Articles/109868/General-DynamicObject-Proxy-and-Fast-Reflection-Pr
+[General DynamicObject Proxy and Fast Reflection Proxy](https://www.codeproject.com/Articles/109868/General-DynamicObject-Proxy-and-Fast-Reflection-Pr)
 
 https://social.msdn.microsoft.com/Forums/vstudio/en-US/2b855369-a721-4010-9e33-72d699960994/how-to-fix-missing-compiler-member-error-microsoftcsharpruntimebindercsharpargumentinfocreate?forum=visualstudiogeneral
 

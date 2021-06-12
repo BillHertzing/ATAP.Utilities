@@ -23,8 +23,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIDs.Interfaces\ATAP.Utilities.StronglyTypedIDs.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIDs\ATAP.Utilities.StronglyTypedIDs.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIds.Interfaces\ATAP.Utilities.StronglyTypedIds.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIds\ATAP.Utilities.StronglyTypedIds.csproj" />
   </ItemGroup>
 
 </Project>

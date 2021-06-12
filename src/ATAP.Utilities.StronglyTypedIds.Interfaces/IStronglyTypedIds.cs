@@ -1,10 +1,11 @@
 using System;
 
-namespace ATAP.Utilities.StronglyTypedID {
-  public interface IIdAsStruct<T> { }
-  public interface IStronglyTypedID<TValue> where TValue : notnull {
+namespace ATAP.Utilities.StronglyTypedIds {
+  public interface IIdAsStruct<T> { } // Deprecated
+  public interface IAbstractStronglyTypedId<TValue> where TValue : notnull {
     TValue Value { get; init; }
   }
-  public interface IGuidStronglyTypedID : IStronglyTypedID<Guid> {  }
-  public interface IIntStronglyTypedID : IStronglyTypedID<int> {  }
+  public interface IGuidStronglyTypedId : IAbstractStronglyTypedId<Guid> { }
+  public interface IIntStronglyTypedId : IAbstractStronglyTypedId<int> { }
+
 }

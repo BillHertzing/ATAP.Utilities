@@ -2,102 +2,54 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
-using ATAP.Utilities.StronglyTypedID;
+using System.Reflection;
+using ATAP.Utilities.StronglyTypedIds;
 using Itenso.TimePeriod;
 
-namespace ATAP.Utilities.Philote
-{
-  public abstract record AbstractPhilote<T, TValue> : IAbstractPhilote<T, TValue> where T : class where TValue : notnull {
+namespace ATAP.Utilities.Philote {
 
-    public AbstractPhilote(IStronglyTypedID<TValue> iD = default, ConcurrentDictionary<string, IStronglyTypedID<TValue>>? additionalIDs = default, IEnumerable<ITimeBlock>? timeBlocks = default) {
-      if (iD != default) { ID = iD; }
+
+  public abstract record AbstractPhilote<TId, TValue> : IAbstractPhilote<TId, TValue> where TId : AbstractStronglyTypedId<TValue>, new() where TValue : notnull {
+
+    public AbstractPhilote(TId iD = default, ConcurrentDictionary<string, IAbstractStronglyTypedId<TValue>>? additionalIDs = default, IEnumerable<ITimeBlock>? timeBlocks = default) {
+      if (iD != null) { ID = iD; }
       else {
         ID = (typeof(TValue)) switch {
-          Type intType when typeof(TValue) == typeof(int) => (IStronglyTypedID<TValue>)new IntStronglyTypedID() { Value = new Random().Next() },
-          Type GuidType when typeof(TValue) == typeof(Guid) => (IStronglyTypedID<TValue>)new GuidStronglyTypedID() { Value = Guid.NewGuid() },
+
+          Type intType when typeof(TValue) == typeof(int) => new IntStronglyTypedId() { Value = new Random().Next() } as TId,
+          // The following fails to work because Guid lacks a new()
+          // Type GuidType when typeof(TValue) == typeof(Guid) => Activator.CreateInstance(typeof(Guid), new object[] { Guid.NewGuid() }) as TId,
+          // The two following fails because there is no way to simply cast from the AbstractStronglyTypedId to the concrete TId
+          // Type intType when typeof(TValue) == typeof(int) => (TId)(object)(AbstractStronglyTypedId<int>)new IntStronglyTypedId() { Value = new Random().Next() },
+          // Type GuidType when typeof(TValue) == typeof(Guid) => (TId)(object)(AbstractStronglyTypedId<Guid>)new GuidStronglyTypedId(),
+          // Attribution: [Activator.CreateInstance Alternative](https://trenki2.github.io/blog/2018/12/28/activator-createinstance-faster-alternative/) by Trenki
+          Type GuidType when typeof(TValue) == typeof(Guid) => (TId) InstanceFactory.CreateInstance(typeof(TId)),
           // ToDo: replace with new custom exception and localization of exception message
           _ => throw new Exception(FormattableString.Invariant($"Invalid TValue type {typeof(TValue)}")),
 
         };
       }
-      AdditionalIDs = additionalIDs != default ? additionalIDs : new ConcurrentDictionary<string, IStronglyTypedID<TValue>>();
+      // Attribution [Linq ToDictionary will not implicitly convert class to interface](https://stackoverflow.com/questions/25136049/linq-todictionary-will-not-implicitly-convert-class-to-interface) Educational but ultimately fails
+      // The ToDictionary extension method available in LINQ for generic Dictionaries is NOT availabe for ConcurrentDictionaries, the following won't work...
+      //  additionalIDs.ToDictionary(kvp => kvp.Key, kvp => (IAbstractStronglyTypedId<TValue>) kvp.Value)
+      // A this is a concurrent operation we will need to put a semaphore around the argument passed in
+      // attribution [How do you convert a dictionary to a ConcurrentDictionary?](https://stackoverflow.com/questions/27063889/how-do-you-convert-a-dictionary-to-a-concurrentdictionary) from a comment on a question, contributed by Panagiotis Kanavos
+      // we have to convert the parameter's value to a cast to a less derived interface
+
+      if (additionalIDs != default) {
+        // ToDo : add write semaphore around the parameter before enumerating the Dictionary
+        AdditionalIDs = new ConcurrentDictionary<string, IAbstractStronglyTypedId<TValue>>(additionalIDs.Select(kvp => new KeyValuePair<string, IAbstractStronglyTypedId<TValue>>(kvp.Key, (IAbstractStronglyTypedId<TValue>)kvp.Value)));
+      }
+      else {
+        AdditionalIDs = new ConcurrentDictionary<string, IAbstractStronglyTypedId<TValue>>();
+      }
       TimeBlocks = timeBlocks != default ? timeBlocks : new List<ITimeBlock>();
     }
 
-    public IStronglyTypedID<TValue> ID { get; init; }
-    public ConcurrentDictionary<string, IStronglyTypedID<TValue>>? AdditionalIDs { get; init; }
+    public TId ID { get; init; }
+    public ConcurrentDictionary<string, IAbstractStronglyTypedId<TValue>>? AdditionalIDs { get; init; }
     public IEnumerable<ITimeBlock>? TimeBlocks { get; init; }
   }
-
-// record TestClassGuidTypedId  : StronglyTypedID<Guid>  {
-
-// }
-// record TestClassIntTypedId  : StronglyTypedID<int>  {
-// }
-// class Testclass {
-
-  // Philote2<Testclass,Guid> Philote2GuidEmpty {get;}
-  // Philote2<Testclass,int> Philote2IntEmpty {get;}
-  // Philote2<Testclass,Guid> Philote2GuidRandom {get;}
-  // Philote2<Testclass,int> Philote2IntRandom {get;}
-  // Philote2<Testclass,Guid> Philote2GuidNow {get;}
-  // Philote2<Testclass,int> Philote2IntNow {get;}
-  // Testclass(){
-    // Philote2GuidEmpty = new Philote2<Testclass,Guid>();
-    // Philote2IntEmpty = new Philote2<Testclass,int>();
-    // Philote2GuidRandom = new Philote2<Testclass,Guid>(){ID = new GuidStronglyTypedID(){Value =  Guid.NewGuid()}};
-    // Philote2IntRandom = new Philote2<Testclass,int>() {ID = new IntStronglyTypedID(){Value =  new Random().Next()}};
-    // Philote2GuidNow = new Philote2<Testclass,Guid>() {ID = new GuidStronglyTypedID(){Value =  Guid.NewGuid()}, TimeBlocks = new List<ITimeBlock>() { new TimeBlock(DateTime.Now) }};
-    // Philote2IntNow = new Philote2<Testclass,int>(){ID = new IntStronglyTypedID(){Value =  new Random().Next()}, TimeBlocks = new List<ITimeBlock>() { new TimeBlock(DateTime.Now) }};
-  // }
-// }
-  // public class Philote2<T, TValue> : IPhilote2<T, TValue> where T : notnull where TValue : notnull
-  // {
-    // // public Philote2() : this ((IStronglyTypedID<TValue>) randomTValue(), new Dictionary<string, IStronglyTypedID<TValue>>(), new List<ITimeBlock>()) { }
-    // // public Philote2(StronglyTypedID<TValue> id) : this(id, new Dictionary<string, IStronglyTypedID<TValue>>(), new List<ITimeBlock>()) { }
-    // // public Philote2(IList<ITimeBlock> timeBlocks) : this((IStronglyTypedID<TValue>) randomTValue(), new Dictionary<string, IStronglyTypedID<TValue>>(), timeBlocks) { }
-    // // public Philote2(StronglyTypedID<TValue> id, IList<ITimeBlock> timeBlocks) : this(id, new Dictionary<string, IStronglyTypedID<TValue>>(), timeBlocks) { }
-    // // public Philote2(IStronglyTypedID<TValue> iD, IDictionary<string, IStronglyTypedID<TValue>> additionalIDs, IEnumerable<ITimeBlock> timeBlocks)
-    // // {
-    // //   ID = iD;
-    // //   AdditionalIDs = additionalIDs;
-    // //   TimeBlocks = timeBlocks;
-    // // }
-    // public Philote2(IStronglyTypedID<TValue> iD = default, IDictionary<string, IStronglyTypedID<TValue>> additionalIDs = default, IEnumerable<ITimeBlock> timeBlocks = default)
-    // {
-      // if (iD != default) {ID = iD;} else {
-            // ID = (typeof(TValue)) switch {
-        // Type intType when typeof(TValue)  == typeof(int) => (IStronglyTypedID<TValue>)new IntStronglyTypedID(){Value =  new Random().Next()},
-        // Type GuidType when typeof(TValue)  == typeof(Guid) => (IStronglyTypedID<TValue>)new GuidStronglyTypedID(){Value =  Guid.NewGuid()},
-        // _ => throw new Exception(String.Format("Invalid TValue type {0}", typeof(TValue))),
-      // };
-      // }
-      // AdditionalIDs = additionalIDs != default ? additionalIDs : new Dictionary<string, IStronglyTypedID<TValue>>();
-      // TimeBlocks = timeBlocks  != default ? timeBlocks :new List<ITimeBlock>();
-    // }
-
-    // public IStronglyTypedID<TValue> ID { get; init; }
-    // public IDictionary<string, IStronglyTypedID<TValue>> AdditionalIDs { get; init; }
-    // //public IConcurrentObservableDictionary<string,IStronglyTypedID<TValue>) SecondaryIDs { get; private set; }
-    // public IEnumerable<ITimeBlock> TimeBlocks { get; init; }
-  // }
-
-  // public class Philote<T> : IPhilote<T>
-  // {
-    // public Philote<T> Now() {
-      // return new Philote<T>(new IdAsStruct<T>(Guid.NewGuid()), new Dictionary<string, IIdAsStruct<T>>(), new List<ITimeBlock>() { new TimeBlock(DateTime.Now) });
-    // }
-
-    // public Philote() : this (new IdAsStruct<T>(Guid.NewGuid()), new Dictionary<string, IIdAsStruct<T>>(), new List<ITimeBlock>()) { }
-
-    // public Philote(IdAsStruct<T> id) : this(id, new Dictionary<string, IIdAsStruct<T>>(), new List<ITimeBlock>()) { }
-
-    // public Philote(IIdAsStruct<T> iD, IDictionary<string, IIdAsStruct<T>> additionalIDs, IEnumerable<ITimeBlock> timeBlocks)
-    // {
-      // ID = iD;
-      // AdditionalIDs = additionalIDs;
-      // TimeBlocks = timeBlocks;
-    // }
 
     // public IIdAsStruct<T> ID { get; private set; }
     // public IDictionary<string, IIdAsStruct<T>> AdditionalIDs { get; private set; }

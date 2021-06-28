@@ -77,6 +77,19 @@
       "type": "coreclr",
       "request": "attach",
       "processId": "${command:pickProcess}"
-    }
+    },
+            {
+            "name": ".NET Script Debug",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "dotnet",
+            "args": [
+                "exec",
+                "C:/Users/whertzing/.dotnet/tools/.store/dotnet-script/1.1.0/dotnet-script/1.1.0/tools/net5.0/any/dotnet-script.dll",
+                "${file}"
+            ],
+            "cwd": "${workspaceRoot}",
+            "stopAtEntry": true
+        }
   ]
 }

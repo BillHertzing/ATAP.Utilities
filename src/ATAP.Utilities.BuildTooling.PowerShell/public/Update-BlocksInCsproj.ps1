@@ -1,11 +1,5 @@
-[CmdletBinding(SupportsShouldProcess = $true)]
-param (
-  [string]$include = '\.csproj$',
-  [string]$path = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\',
-  [string]$exclude = '*.bin,*.obj,*Backup*,*OpenHardwareMonitorLib*',
-  [string]$excludeRegEx = '(?:\.bin|\.obj|Backup|OpenHardwareMonitorLib)'
-)
-Function Replace-InCsproj {
+
+Function Update-BlocksInCsproj {
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
     [string]$include = '*.csproj',
@@ -207,4 +201,4 @@ Function Replace-InCsproj {
   }
 
 }
-Replace-InCsproj
+

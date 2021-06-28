@@ -40,6 +40,7 @@ Function Clear-NuGetCaches {
   ########################################
   BEGIN {
     Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Caches may be locked! Stop any IDEs or CI processes. )"
   }
   #endregion FunctionBeginBlock
 
@@ -53,19 +54,33 @@ Function Clear-NuGetCaches {
   #region FunctionEndBlock
   ########################################
   END {
-	   Write-Verbose "Removing ($ENV:AppData)\Local\NuGet\v3-cache"
-    if ($PSCmdlet.ShouldProcess("($ENV:AppData)\Local\NuGet\v3-cache", 'Delete')) {
-      Write-Host "really would delete ($ENV:AppData)\Local\NuGet\v3-cache"
+    $path = join-path $env:USERPROFILE '.nuget/packages'
+    Write-Verbose "Removing $path"
+    if ((test-path $path) -AND ($path -match 'nuget')) {
+      if ($PSCmdlet.ShouldProcess("$path", "-Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
+        Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference
+      }
+    } else {
+       Write-Output "Either $path does not exist or $path does not contain the case-insensitive substring nuget!"
     }
-    Write-Verbose "Removing ($ENV:USERPROFILE)\.nuget\packages"
-    if ($PSCmdlet.ShouldProcess("($ENV:USERPROFILE)\.nuget\packages", 'Delete')) {
-      Write-Host "really would delete ($ENV:USERPROFILE)\.nuget\packages"
+    $path = join-path $ENV:tmp 'NuGetScratch'
+    Write-Verbose "Removing $path"
+    if ((test-path $path) -AND ($path -match 'nuget')) {
+      if ($PSCmdlet.ShouldProcess("$path", "-Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
+        Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference
+      }
+    } else {
+       Write-Output "Either $path does not exist or $path does not contain the case-insensitive substring nuget!"
     }
-    Write-Verbose "Removing ($ENV:AppData)\Local\Temp\NuGetScratch"
-    if ($PSCmdlet.ShouldProcess("($ENV:AppData)\Local\Temp\NuGetScratch", 'Delete')) {
-      #				write-host "really would delete ($ENV:\AppData)\Local\Temp\NuGetScratch"
+    $path = join-path $ENV:LOCALAPPDATA 'NuGet/v3-cache'
+    Write-Verbose "Removing $path"
+    if ((test-path $path) -AND ($path -match 'nuget')) {
+      if ($PSCmdlet.ShouldProcess("$path", "-Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
+        Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference
+      }
+    } else {
+       Write-Output "Either $path does not exist or $path does not contain the case-insensitive substring nuget!"
     }
-
     Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
   }
   #endregion FunctionEndBlock

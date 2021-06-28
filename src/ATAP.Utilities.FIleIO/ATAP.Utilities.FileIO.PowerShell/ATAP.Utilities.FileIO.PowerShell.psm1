@@ -1,106 +1,12 @@
 # ToDo : Module comment-based help
 
-# ToDo: Function Based Help
+# get the fileIO info for each file in the public and private subdirectories
+$publicFunctions = @(Get-ChildItem -Path $PSScriptRoot\public\*.ps1 -ErrorAction SilentlyContinue -Exclude '*GetProjects-FromSLN*')
 
-ion Get-FileEncoding {
-  ##############################################################################
-  ##
-  ## Get-FileEncoding
-  ##
-  ## From Windows PowerShell Cookbook (O'Reilly)
-  ## by Lee Holmes (http://www.leeholmes.com/guide)
-  ##
-  ##############################################################################
-
-  <#
-
-.SYNOPSIS
-
-Gets the encoding of a file
-
-.EXAMPLE
-
-Get-FileEncoding.ps1 .\UnicodeScript.ps1
-
-BodyName          : unicodeFFFE
-EncodingName      : Unicode (Big-Endian)
-HeaderName        : unicodeFFFE
-WebName           : unicodeFFFE
-WindowsCodePage   : 1200
-IsBrowserDisplay  : False
-IsBrowserSave     : False
-IsMailNewsDisplay : False
-IsMailNewsSave    : False
-IsSingleByte      : False
-EncoderFallback   : System.Text.EncoderReplacementFallback
-DecoderFallback   : System.Text.DecoderReplacementFallback
-IsReadOnly        : True
-CodePage          : 1201
-
-#>
-
-  param(
-    ## The path of the file to get the encoding of.
-    $Path
-  )
-
-
-  ## First, check if the file is binary. That is, if the first
-  ## 5 lines contain any non-printable characters.
-  $nonPrintable = [char[]] (0..8 + 10..31 + 127 + 129 + 141 + 143 + 144 + 157)
-  $lines = Get-Content $Path -ErrorAction Ignore -TotalCount 5
-  $result = @($lines | Where-Object { $_.IndexOfAny($nonPrintable) -ge 0 })
-  if ($result.Count -gt 0) {
-    'Binary'
-    return
-  }
-
-  ## Next, check if it matches a well-known encoding.
-
-  ## The hashtable used to store our mapping of encoding bytes to their
-  ## name. For example, "255-254 = Unicode"
-  $encodings = @{}
-
-  ## Find all of the encodings understood by the .NET Framework. For each,
-  ## determine the bytes at the start of the file (the preamble) that the .NET
-  ## Framework uses to identify that encoding.
-  foreach ($encoding in [System.Text.Encoding]::GetEncodings()) {
-    $preamble = $encoding.GetEncoding().GetPreamble()
-    if ($preamble) {
-      $encodingBytes = $preamble -join '-'
-      $encodings[$encodingBytes] = $encoding.GetEncoding()
-    }
-  }
-
-  ## Find out the lengths of all of the preambles.
-  $encodingLengths = $encodings.Keys | Where-Object { $_ } |
-  ForEach-Object { ($_ -split '-').Count }
-
-  ## Assume the encoding is UTF7 by default
-  $result = [System.Text.Encoding]::UTF7
-
-  ## Go through each of the possible preamble lengths, read that many
-  ## bytes from the file, and then see if it matches one of the encodings
-  ## we know about.
-  foreach ($encodingLength in $encodingLengths | sort -Descending) {
-    $bytes = Get-Content -Encoding byte -ReadCount $encodingLength $path | select -First 1
-    $encoding = $encodings[$bytes -join '-']
-
-    ## If we found an encoding that had the same preamble bytes,
-    ## save that output and break.
-    if ($encoding) {
-      $result = $encoding
-      break
-    }
-  }
-
-  ## Finally, output the encoding.
-  $result
-}
-
-$ModuleFunctions = @(Get-ChildItem -Path $PSScriptRoot\public\*.ps1 -ErrorAction SilentlyContinue)
-# Dot-source the files.
-foreach ($import in $ModuleFunctions) {
+$privateFunctions = @(Get-ChildItem -Path $PSScriptRoot\private\*.ps1 -ErrorAction SilentlyContinue)
+$allFunctions = $publicFunctions + $privateFunctions
+# Dot-source the public and private files.
+foreach ($import in $allFunctions) {
     try {
         Write-Verbose "Importing $($import.FullName)"
         . $import.FullName
@@ -108,3 +14,5 @@ foreach ($import in $ModuleFunctions) {
         Write-Error "Failed to import function $($import.FullName): $_"
     }
 }
+# list the public functions names for including into a .psd1 file (ToDo: automate the .psd1 file creation as part of the CI/CD/CD pipeline)
+# list the private cmdlet names for including into a .psd1 file (ToDo: automate the .psd1 file creation as part of the CI/CD/CD pipeline)

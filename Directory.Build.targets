@@ -136,21 +136,22 @@
     <PackageReference Update="YC.QuickGraph" Version="3.7.4" />
     <PackageReference Update="DotNet.Contracts" Version="1.10.20606.1" />
     <PackageReference Update="FSharp.Core" Version="2.5.0" />
+    <!-- <PackageReference Update="FSharp.Core" Version="3.0.2" />-->
     <PackageReference Update="FSharpx.Collections.Experimental" Version="2.1.3" />
 
     <!-- Reactive Extensions -->
     <PackageReference Update="System.Reactive" Version="5.0.0" />
 
     <!-- ServiceStack  -->
-    <PackageReference Update="ServiceStack" Version="5.10.4" />
+    <PackageReference Update="ServiceStack" Version="5.11.0" />
     <!-- ServiceStack serializers and dump utility -->
     <PackageReference Update="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
-    <PackageReference Update="ServiceStack.Text" Version="5.10.4" />
+    <PackageReference Update="ServiceStack.Text" Version="5.11.0" />
     <!-- ServiceStack ORMLite and SQLServer -->
-    <PackageReference Update="ServiceStack.OrmLite" Version="5.10.4" />
-    <PackageReference Update="ServiceStack.OrmLite.SqlServer" Version="5.10.4" />
-    <!-- ServiceStack HTTPClient for making HTTP calls -->
-    <PackageReference Update="ServiceStack.HttpClient" Version="5.10.4" />
+    <PackageReference Update="ServiceStack.OrmLite.Core" Version="5.11.0" />
+    <PackageReference Update="ServiceStack.OrmLite.SqlServer.Core" Version="5.11.0" />
+    <PackageReference Update="ServiceStack.OrmLite.MySQL.Core" Version="5.11.0" />
+    <PackageReference Update="ServiceStack.OrmLite.SQLite.Core" Version="5.11.0" />
 
     <!-- Library of rich time and interval manipulation routines -->
     <PackageReference Update="TimePeriodLibrary.NET" Version="2.1.1" />

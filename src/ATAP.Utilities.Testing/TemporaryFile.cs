@@ -55,7 +55,7 @@ namespace ATAP.Utilities.Testing
 
 
   }
-  public static class Extensions
+  public static partial class Extensions
   {
     public static TemporaryFile CreateTemporaryFileEmpty(this TemporaryFile tf) {
       try

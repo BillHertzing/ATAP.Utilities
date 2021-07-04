@@ -47,11 +47,42 @@
     <PackageReference Include="TimePeriodLibrary.NET" />
   </ItemGroup>
 
+  <!-- ATAP Utility Packages that handle IConfiguration, and dynamic loading plugin assemblies, and plugins for Serializers -->
   <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Configuration.Extensions/ATAP.Utilities.Configuration.Extensions.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.FIleIO/ATAP.Utilities.FileIO.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Loader.StringConstants/ATAP.Utilities.Loader.StringConstants.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Serializer.StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
+
   </ItemGroup>
+
+    <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
+    <!-- ETW is not used inTesting (yet), but ATAP libraries used by the testing package have a reference to this. UYnitl I can figure out how to include these as dependent packages in the appropriate `ATAP.Utilitiies.` librarirys, they are included specifically, here -->
+    <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
+  <ItemGroup>
+    <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
+    <PackageReference Include="MethodBoundaryAspect.Fody" />
+    <!-- Project Reference to the ETW attribute and log provider -->
+    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+  </ItemGroup>
+
+  <!-- Packages for tests that use ServiceStack-->
+  <ItemGroup>
+    <!-- ServiceStack  -->
+    <PackageReference Include="ServiceStack" />
+    <!-- ServiceStack serializers and dump utility -->
+    <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" />
+    <PackageReference Include="ServiceStack.Text" />
+    <!-- ServiceStack ORMLite and SQLServer -->
+    <PackageReference Include="ServiceStack.OrmLite.Core" />
+    <PackageReference Include="ServiceStack.OrmLite.SqlServer.Core" />
+
+    <PackageReference Include="ServiceStack.OrmLite.SQLite.Core" />
+  </ItemGroup>
+
 
 </Project>

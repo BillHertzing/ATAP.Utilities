@@ -1,0 +1,19 @@
+@startuml Fixtures
+
+ ConfigurableFixture <|--  SimpleFixture :" inherits"
+
+DatabaseFixture <|-- ConfigurableFixture :" inherits"
+
+Class DatabaseFixture {
+  +ConnectionString
+  +DatabaseName
+  +Db
+  +Constructor
+  }
+
+Class ConfigurableFixture {
+  +ConfigurationBuilder
+  +ConfigurationRoot
+  +Constructor
+  }
+@enduml

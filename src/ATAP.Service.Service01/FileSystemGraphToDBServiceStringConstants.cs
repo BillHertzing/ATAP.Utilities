@@ -15,8 +15,8 @@ namespace FileSystemGraphToDBService {
     #endregion
 
     #region FileSystemGraphToDBService ConfigRootKeys
-    public const string DBNameConfigRootKey = "DatabaseName";
-    public const string DBNameStringDefault = "FileSystemGraph";
+    public const string DatabaseNameConfigRootKey = "DatabaseName";
+    public const string DatabaseNameDefault = "FileSystemGraph";
     public const string AsyncFileReadBlockSizeConfigRootKey = "AsyncFileReadBlockSize";
     public const string AsyncFileReadBlockSizeDefault = "4096";
     public const string EnableHashBoolConfigRootKey = "EnableHash";

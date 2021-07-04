@@ -36,7 +36,7 @@ namespace ATAP.Utilities.Collection {
     /// <param name="collection"></param>
     public static void AddRange<TKey, TValue>(this Dictionary<TKey, TValue> source, IEnumerable<KeyValuePair<TKey, TValue>> collection) where TKey : notnull {
       // ToDo: Localize the exception message
-      if (source == null) { throw new ArgumentNullException($"{nameof(source)} argument should never be null"); }
+      if (source == null) { throw new ArgumentNullException(nameof(source)); }
       if (collection == null) {
         return;
       }
@@ -59,7 +59,7 @@ namespace ATAP.Utilities.Collection {
     /// <param name="collection"></param>
     public static void AddRange<TValue>(this IList<TValue> source, IEnumerable<TValue> collection) {
       // ToDo: Localize the exception message
-      if (source == null) { throw new ArgumentNullException($"{nameof(source)} argument should never be null"); }
+      if (source == null) { throw new ArgumentNullException(nameof(source)); }
       if (collection == null) {
         return;
       }
@@ -75,9 +75,9 @@ namespace ATAP.Utilities.Collection {
     /// <param name="action"></param>
     public static void ForEach<T>(this IEnumerable<T> source, Action<T> action) {
       // ToDo: Localize the exception message
-      if (source == null) { throw new ArgumentNullException($"{nameof(source)} argument should never be null"); }
+      if (source == null) { throw new ArgumentNullException(nameof(source)); }
       // ToDo: Localize the exception message
-      if (action == null) { throw new ArgumentNullException($"{nameof(action)} argument should never be null"); }
+      if (action == null) { throw new ArgumentNullException(nameof(action)); }
       foreach (T element in source) {
         action(element);
       }
@@ -94,9 +94,9 @@ namespace ATAP.Utilities.Collection {
     /// </attribution>
     public static void AddRange<T>(this ICollection<T> collection, IEnumerable<T> enumerable) {
       // ToDo: Localize the exception message
-      if (enumerable == null) { throw new ArgumentNullException($"{nameof(enumerable)} argument should never be null"); }
+      if (enumerable == null) { throw new ArgumentNullException(nameof(enumerable)); }
       // ToDo: Localize the exception message
-      if (collection == null) { throw new ArgumentNullException($"{nameof(collection)} argument should never be null"); }
+      if (collection == null) { throw new ArgumentNullException(nameof(collection)); }
       foreach (var cur in enumerable) {
         collection.Add(cur);
       }
@@ -105,9 +105,9 @@ namespace ATAP.Utilities.Collection {
     public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source,
     Func<TSource, TKey> keySelector) {
       // ToDo: Localize the exception message
-      if (source == null) { throw new ArgumentNullException($"{nameof(source)} argument should never be null"); }
+      if (source == null) { throw new ArgumentNullException(nameof(source)); }
       // ToDo: Localize the exception message
-      if (keySelector == null) { throw new ArgumentNullException($"{nameof(keySelector)} argument should never be null"); }
+      if (keySelector == null) { throw new ArgumentNullException(nameof(keySelector)); }
       var knownKeys = new HashSet<TKey>();
       foreach (TSource element in source) {
         if (knownKeys.Add(keySelector(element))) {
@@ -119,7 +119,7 @@ namespace ATAP.Utilities.Collection {
     // attribution:[How do I check if IEnumerable has a single element?](https://stackoverflow.com/questions/47830766/how-do-i-check-if-ienumerable-has-a-single-element)
     public static bool HasSingle<T>(this IEnumerable<T> sequence, out T value) {
       // ToDo: Localize the exception message
-      if (sequence == null) { throw new ArgumentNullException($"{nameof(sequence)} argument should never be null"); }
+      if (sequence == null) { throw new ArgumentNullException(nameof(sequence)); }
       if (sequence is IList<T> list) {
         if (list.Count == 1) {
           value = list[0];
@@ -144,7 +144,7 @@ namespace ATAP.Utilities.Collection {
 
     public static IEnumerable<T> Traverse<T>(this T item, Func<T, T> childSelector) {
       // ToDo: Localize the exception message
-      if (childSelector == null) { throw new ArgumentNullException($"{nameof(childSelector)} argument should never be null"); }
+      if (childSelector == null) { throw new ArgumentNullException(nameof(childSelector)); }
       var stack = new Stack<T>(new T[] { item });
       while (stack.Any()) {
         var next = stack.Pop();
@@ -157,7 +157,7 @@ namespace ATAP.Utilities.Collection {
 
     public static IEnumerable<T> Traverse<T>(this T item, Func<T, IEnumerable<T>> childSelector) {
       // ToDo: Localize the exception message
-      if (childSelector == null) { throw new ArgumentNullException($"{nameof(childSelector)} argument should never be null"); }
+      if (childSelector == null) { throw new ArgumentNullException(nameof(childSelector)); }
       var stack = new Stack<T>(new T[] { item });
 
       while (stack.Any()) {
@@ -175,7 +175,7 @@ namespace ATAP.Utilities.Collection {
     public static IEnumerable<T> Traverse<T>(this IEnumerable<T> items,
       Func<T, IEnumerable<T>> childSelector) {
               // ToDo: Localize the exception message
-      if (childSelector == null) { throw new ArgumentNullException($"{nameof(childSelector)} argument should never be null"); }
+      if (childSelector == null) { throw new ArgumentNullException(nameof(childSelector)); }
       var stack = new Stack<T>(items);
       while (stack.Any()) {
         var next = stack.Pop();

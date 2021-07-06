@@ -36,8 +36,10 @@ namespace ATAP.Utilities.Testing {
     #endregion
 
     #region string constants: EnvironmentVariablePrefixs
-    public const string CustomEnvironmentVariablePrefixConfigRootKey = "GenericTest_";
-    public const string CustomEnvironmentVariablePrefixDefault= "GenericTest_";
+    public const string GenericTestEnvironmentVariablePrefixConfigRootKey = "GenericTest_";
+    public const string GenericTestEnvironmentVariablePrefixDefault = "GenericTest_";
+    public const string SpecificTestEnvironmentVariablePrefixConfigRootKey = "SpecificTest_";
+    public const string SpecificTestEnvironmentVariablePrefixDefault = "SpecificTest_";
     #endregion
 
     // ToDo: replace with newest "best practices" that use IHostEnvironment (i.e., deprecate these)
@@ -46,18 +48,17 @@ namespace ATAP.Utilities.Testing {
     public const string EnvironmentDefault = EnvironmentUnitTest;
     public const string EnvironmentProductionTest = "ProductionTest"; // ToDo: Implement these tests
     public const string EnvironmentUnitTest = "UnitTest"; // Run Unit tests
-    public const string EnvironmentMSSQLIntegrationTest = "MSSQLIntegrationTest";
-    public const string EnvironmentMySQLIntegrationTest = "MySQLIntegrationTest"; // ToDo: Implement these tests
+    public const string EnvironmentMSSQLIntegrationTest = "MSSQLIntegrationTest";  // ToDo: Implement these tests
+    public const string EnvironmentMySQLIntegrationTest = "MySQLIntegrationTest";  // ToDo: Implement these tests
     public const string EnvironmentSQLLiteIntegrationTest = "SQLiteIntegrationTest"; // ToDo: Implement these tests
-    public const string EnvironmentSSOrmLiteSQLLiteIntegrationTest = "SSSOrmLiteSQLiteIntegrationTest"; // ToDo: Implement these tests
     public const string EnvironmentSSOrmLiteMSSQLIntegrationTest = "SSOrmLiteMSSQLIntegrationTest";
-    public const string EnvironmentSSOrmLiteMySQLIntegrationTest = "SSOrmLiteMySQLIntegrationTest"; // ToDo: Implement these tests
+    public const string EnvironmentSSOrmLiteMySQLIntegrationTest = "SSOrmLiteMySQLIntegrationTest";
+    public const string EnvironmentSSOrmLiteSQLLiteIntegrationTest = "SSOrmLiteSQLiteIntegrationTest";
     public const string EnvironmentDapperMSSQLIntegrationTest = "DapperMSSQLIntegrationTest"; // ToDo: Implement these tests
     public const string EnvironmentDapperMySQLIntegrationTest = "DapperMySQLIntegrationTest"; // ToDo: Implement these tests
     public const string EnvironmentDapperSQLiteIntegrationTest = "DapperSQLiteIntegrationTest"; // ToDo: Implement these tests
     public const string EnvironmentEFCoreIntegrationTest = "EFCoreIntegrationTest"; // ToDo: Implement these tests
     #endregion
-
 
   }
 }

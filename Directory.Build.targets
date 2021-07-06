@@ -151,7 +151,7 @@
     <PackageReference Update="ServiceStack.OrmLite.Core" Version="5.11.0" />
     <PackageReference Update="ServiceStack.OrmLite.SqlServer.Core" Version="5.11.0" />
     <PackageReference Update="ServiceStack.OrmLite.MySQL.Core" Version="5.11.0" />
-    <PackageReference Update="ServiceStack.OrmLite.SQLite.Core" Version="5.11.0" />
+    <PackageReference Update="ServiceStack.OrmLite.Sqlite.Core" Version="5.11.0" />
 
     <!-- Library of rich time and interval manipulation routines -->
     <PackageReference Update="TimePeriodLibrary.NET" Version="2.1.1" />

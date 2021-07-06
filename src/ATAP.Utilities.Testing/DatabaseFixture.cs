@@ -16,7 +16,7 @@ namespace ATAP.Utilities.Testing {
   /// <summary>
   /// A Test Fixture that adds support for Databases
   /// </summary>
-  public partial class DatabaseFixture : ConfigurableFixture, IDatabaseFixture {
+  public class DatabaseFixture : ConfigurableFixture, IDatabaseFixture {
 
     public string ConnectionString { get; set; }
     public string DatabaseName { get; set; }

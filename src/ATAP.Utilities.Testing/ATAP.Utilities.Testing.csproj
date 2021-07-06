@@ -80,8 +80,8 @@
     <!-- ServiceStack ORMLite and SQLServer -->
     <PackageReference Include="ServiceStack.OrmLite.Core" />
     <PackageReference Include="ServiceStack.OrmLite.SqlServer.Core" />
-
-    <PackageReference Include="ServiceStack.OrmLite.SQLite.Core" />
+    <PackageReference Include="ServiceStack.OrmLite.MySql.Core" />
+    <PackageReference Include="ServiceStack.OrmLite.Sqlite.Core" />
   </ItemGroup>
 
 

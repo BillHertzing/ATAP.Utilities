@@ -1,5 +1,5 @@
 #############################################################################
-#region FunctionName
+#region Get-JenkinsEnvSettings
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -14,13 +14,16 @@ ToDo: write Help For the function's inputs
 .OUTPUTS
 ToDo: write Help For the function's outputs
 .EXAMPLE
-ToDo: write Help For example 1 of using this function
+
+ToDo! - Insert PlantUML diagram here how this Jenkins Powershell script fits into the Jenkins pipeline
+Write-Verbose 'Starting Get-JenkinsEnvSettings'
+
 .EXAMPLE
 ToDo: write Help For example 2 of using this function
 .EXAMPLE
-ToDo: write Help For example 2 of using this function
+ToDo: write Help For example 3 of using this function
 .ATTRIBUTION
-ToDo: write text describing the ideas and codes that are attributed to others
+
 .LINK
 ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
 .LINK
@@ -28,28 +31,32 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function FunctionName {
+Function Get-JenkinsEnvSettings {
 #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
-  [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $InDir
-  ,[alias('InBusinessName1FilePattern')]
-  [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $InFn1
-  ,[alias('InBusinessName2FilePattern')]
-  [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $InFn2
-  ,[parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $OutDir
-  ,[alias('OutFNBusinessName1')]
-  [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $OutFn1
-  ,[alias('OutFNBusinessName2')]
-  [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $OutFn2
-)
+  )
 #endregion FunctionParameters
 #region FunctionBeginBlock
 ########################################
 BEGIN {
   Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-   $DebugPreference = 'Continue'
-
+  # default values for settings
+  $settings=@{
+    RIDList = $[]
+    RuntimeTargets = $[]
+    EnableBuild = $true
+    EnableIncrementalBuild = $false
+    EnableXUnitTests = $true
+    EnableCodeGraphAnalysis = $true
+    PathForDevLogs = DefaultPathForDevLogs
+    CmdForBuild = $Defaults.CmdForBuild
+    InBusinessName1FilePattern = 'statistics'
+    InBusinessName2FilePattern = 'unused'
+    OutDir = '.'
+    OutFNBusinessName1 = 'OutName1-'+(Get-Date).ToString('yyyyMMdd')+'.cfg'
+    OutFNBusinessName2 = 'OutName2-'+(Get-Date).ToString('yyyyMMdd')+'.cfg'
+  }
   # default values for settings
   $settings=@{
     InDir = '..\Data'
@@ -95,10 +102,15 @@ BEGIN {
   #Get the latest of each file that matches an alternate
   $InDataFile = (@(ls $settings.InDir | ?{$_ -match $settings.InBusinessName1FilePattern} | sort -Descending -Property 'LastWriteTime')[0]).Fullname
 
+  # Absolute path to copy files to and create folders in
+$absolutePath = @($copyTo + '/App_Config/Include')
+# Set paths we will be copy files from
+$featureDirectory = Join-Path $solutionDirectory '/Feature/*/App_Config/Include'
+$foundationDirectory = Join-Path $solutionDirectory '/Foundation/*/App_Config/Include'
+
 $results = @{}
 }
 #endregion FunctionBeginBlock
-
 #region FunctionProcessBlock
 ########################################
 PROCESS {
@@ -109,11 +121,11 @@ PROCESS {
 #region FunctionEndBlock
 ########################################
 END {
+	  $path = $absolutePath
   Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
 }
 #endregion FunctionEndBlock
 }
-#endregion FunctionName
+#endregion Get-JenkinsEnvSettings
 #############################################################################
-
 

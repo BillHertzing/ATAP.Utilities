@@ -1,0 +1,231 @@
+pipeline{
+  // setup a custom workspace on the fastest drive (outside of any cloud share)
+    agent {
+      node {
+        label 'ncat016Node'
+        customWorkspace 'D:/Temp/Jenkins'
+      }
+    }
+    stages{
+      // Clean the workspace
+        stage("Cleaning Workspace"){
+            steps{
+                echo "======== Cleaning Workspace ========"
+                echo "NODE_NAME = ${env.NODE_NAME}"
+                echo "workspace directory is ${workspace}"
+                cleanWs()
+            }
+            post{
+                always{
+                    echo "======== Cleaning Workspace completed ========"
+                }
+                success{
+                    echo "======== Cleaning Workspace executed successfully ========"
+                }
+                failure{
+                    echo "======== Cleaning Workspace execution failed ========"
+                }
+            }
+        }
+
+      // Checkout the code
+        stage("Checkout Solution"){
+            steps{
+                echo "======== Checkout solution ========"
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'C:\\Dropbox\\whertzing\\GitHub\\StronglyTypedPhilote\\.git']]])
+            }
+            post{
+                always{
+                    echo "======== Checkout solution always ========"
+                }
+                success{
+                    echo "======== Checkout solution executed successfully ========"
+                }
+                failure{
+                    echo "======== Checkout solution execution failed ========"
+                }
+            }
+        }
+
+      // Build the code
+        stage("Build"){
+            steps{
+                echo "======== Build ========"
+                pwsh 'dotnet build'
+            }
+            post{
+                always{
+                    echo "======== Build always ========"
+                }
+                success{
+                    echo "======== Build executed successfully ========"
+                }
+                failure{
+                    echo "======== Build execution failed ========"
+                }
+            }
+        }
+
+      // test the code
+        stage("Test"){
+            steps{
+                echo "======== Test 2========"
+                echo "LogFileName = TestResults.xml"
+                pwsh 'dotnet test --logger "trx;LogFileName=TestResults.xml"`
+                xunit thresholds: [failed(failureThreshold: '4')], tools: [xUnitDotNet(excludesPattern: '', pattern: 'TestResults.xml', stopProcessingIfError: true)]
+            }
+            post{
+                always{
+                    echo "======== Test always ========"
+                }
+                success{
+                    echo "======== Test executed successfully ========"
+                }
+                failure{
+                    echo "======== Test execution failed ========"
+                }
+            }
+        }
+
+        /* Set Key:value pairs common to all nodes
+            Jenkins Controller URL and User
+            SCM GitHub URL and User
+            NuGet Public Feed Push URL and User
+            NuGet Development Feed URL and User
+            Symbols Server Public Feed Push URL and User
+            Symbols Server Development Feed URL and User
+            Secrets
+              SCM GitHub User access token
+              Jenkins User's password?
+              NuGet Public Feed User's password
+              NuGet Development Feed User's password
+              Symbols Server Public Feed User's password
+              Symbols Server Development Feed User's password
+              ServiceStack License
+        */
+
+        /* Set Key:value pairs specific to a Solution and recursivly to the Projects
+            FS location for the SolutionDocumentation
+            FS location of Source (src)
+            FS location of Tests (tests)
+            FS location for intermediate output path (obj)
+              Common (global) intermediate output path for all projects
+              Overidable location on a per-project basis
+            FS location for output path (bin)
+              Common (global) output path for all projects
+              Overidable location on a per-project basis
+            FS location for the DevLogs
+              Common (global) DevLogs path for all projects
+              Overidable location on a per-project basis
+            FS location for the CodeGraphData
+              Common (global) CodeGraphData path for all projects
+              Overidable location on a per-project basis
+            FS location for the static documentation site (_site)
+              Common (global) site path for all projects
+              Overidable location on a per-project basis
+            FS location for the Documentation folder under each project
+              Common (global) Documentation path for all projects
+              Overidable location on a per-project basis
+            FS location for Plugins path (./Plugins)
+              Common (global) intermediate output path for all projects
+              Overidable location on a per-project basis
+        */
+
+        /* Set Key:value pairs specific to nodes
+            FS location of a high-speed Temp dir for the workspace (customWorkspace)
+            Location of a Nuget LocalFeed (LocalFeed)
+              URL of NuGet server thatprovides Localfeed, and User
+              FS location of a Localfeed
+            NuGet list of package sources URLs
+            Minimum version of tools listed below
+        */
+
+        /* List of necessary tools, and minimum versions
+          DotNet Core SDK and runtime
+          PowerShell Core V
+          Roslynn Compiler
+          XUnit
+          Java
+          PlantUML jar file
+          DocFx
+          CodeGraph Analysis
+          ATAP.Utilities.BuildTooling.Powershell
+          ATAP.Utilities.BuildTooling.CSharp
+          Databases
+            SQLServer
+            MySQL
+            SQLite
+          Web Testing tools
+            Selenium
+          Powershell testing tools
+            Pester
+          Jenkins Plugins
+            https://www.lambdatest.com/support/docs/jenkins-with-lambdatest/ paid tool for selenium testing with multiple browsers
+        */
+
+        /* Validate that necessary tools are present with minimum version
+
+        */
+
+        /* NuGet Restore at the solution level
+          Specify location of package sources, including LocalFeed
+        */
+        /* Build the solution.
+          Current Build scripts will recurse into each project.
+          Successful builds will create a NuGet package, and push it to the LocalFeed
+         */
+
+        // Create NuGet packages for each project/package
+
+        // Push NuGet packages
+
+        // Run Xunit Unit tests
+          // Get list of acceptable failed tests
+
+        // Run Xunit Integration tests
+          // Get list of acceptable failed tests
+
+          // Iterate over the set of known serializers
+
+          // Iterate over the set of knowen persistence providers (all database technologies, message queue technologies)
+
+        // Convert c# code to plantUML diagrams
+        // [Generate diagrams from C# source code using Roslyn](https://tomassetti.me/generate-diagrams-csharp/)
+        /* [PlantUmlClassDiagramGenerator](https://github.com/pierre3/PlantUmlClassDiagramGenerator)
+            dotnet tool install --global PlantUmlClassDiagramGenerator
+            puml-gen "./" "./Documentation/_generated/plantuml"-dir -excludePaths bin,obj,Properties -createAssociation
+        */
+
+
+
+        /* generate .png (or .svg) files for all diagrams,
+          either .puml files, or .md files with embedded diagrams (@startXYZ),
+          in Documentation subdirectory and its subdirectories, except for `assets`,
+          and place the output in Documentation/_generated/assets/images (or svg).
+          following the subdirectory structure under
+        */
+        //java -jar plantuml.jar -config "./config.cfg" -failfast2 "Documentation/**.md" "Documentation/_generated/plantuml/**.puml" -o "Documentation/_generated/asests"
+        // cat somefile.puml | java -jar plantuml.jar -pipe > somefile.png
+
+        // Run DocFX to generate documentation
+
+        // Publish package and all dependencies
+
+        // Create SHA for security
+
+        // Publlish SHA for each package
+
+    }
+    // post{
+    //     always{
+    //         echo "========always========"
+    //     }
+    //     success{
+    //         echo "========pipeline executed successfully ========"
+    //     }
+    //     failure{
+    //         echo "========pipeline execution failed========"
+    //     }
+    //     // cleanup { cleanWs() }
+    // }
+}

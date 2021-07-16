@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>netstandard2.1;net471</TargetFrameworks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly-->
+    <!-- Build and revision are created based on date-->
+    <MajorVersion>1</MajorVersion>
+    <MinorVersion>0</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <!-- Current Lifecycle stage for this assembly-->
+    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
+    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
+    <PackageLabel>NA</PackageLabel>
+    <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
+  </PropertyGroup>
+  
+    <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Framework"/>
+    <PackageReference Include="Microsoft.Build.Utilities.Core" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="ATAP.Utilities.BuildTooling.targets">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

@@ -37,20 +37,19 @@ Function FunctionName {
   [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $InFn1
   ,[alias('InBusinessName2FilePattern')]
   [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $InFn2
-  ,[parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $OutDir  
+  ,[parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $OutDir
   ,[alias('OutFNBusinessName1')]
-  [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $OutFn1  
+  [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $OutFn1
   ,[alias('OutFNBusinessName2')]
-  [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $OutFn2  
+  [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $OutFn2
 )
-
 #endregion FunctionParameters
 #region FunctionBeginBlock
 ########################################
 BEGIN {
   Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
    $DebugPreference = 'Continue'
-  
+
   # default values for settings
   $settings=@{
     InDir = '..\Data'
@@ -85,17 +84,17 @@ BEGIN {
   $testOutFn = $settings.OutDir + 'test.txt'
   try {new-item $testOutFn -force -type file >$null}
   catch {
-    #Log('Error', "Can't write to file $testOutFn"); 
+    #Log('Error', "Can't write to file $testOutFn");
     throw "Can't write to file $testOutFn"
   }
   # Remove the test file
   Remove-Item $testOutFn
   $OutFnName1 = join-path $settings.OutDir $settings.OutFnBusinessName1
   $OutFnName2 = join-path $settings.OutDir $settings.OutFnBusinessName2
-  
+
   #Get the latest of each file that matches an alternate
   $InDataFile = (@(ls $settings.InDir | ?{$_ -match $settings.InBusinessName1FilePattern} | sort -Descending -Property 'LastWriteTime')[0]).Fullname
-  
+
 $results = @{}
 }
 #endregion FunctionBeginBlock
@@ -118,4 +117,3 @@ END {
 #############################################################################
 
 
- 

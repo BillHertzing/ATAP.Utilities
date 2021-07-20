@@ -977,7 +977,7 @@ https://www.mgtek.com/traceview/backgrounder
 
 https://www.tutorialdocs.com/article/aspnet-core-log-components.html
 
-
+[ConfD User guide](http://66.218.245.39/doc/html/index.html) -Tail-f's ConfD is a device configuration toolkit meant to be integrated as a management sub-system in network devices
 
 https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
 

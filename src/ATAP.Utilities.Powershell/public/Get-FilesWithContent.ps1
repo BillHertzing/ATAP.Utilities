@@ -48,6 +48,8 @@ Function Get-FilesWithContent {
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)][switch] $Recurse
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)][int][ValidateRange(1, [int]::MaxValue)] $Depth
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)][switch] $Force
+    # ToDo: Makethis an array of property names, and validate the acceptable ones
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)][string] $FileSortProperty
   )
   #endregion FunctionParameters
   #region FunctionBeginBlock
@@ -65,6 +67,7 @@ Function Get-FilesWithContent {
       Recurse            = ''
       Depth            = 0
       Force              = ''
+      FileSortProperty              = 'LastWriteTime'
     }
 
     # Things to be initialized after settings are processed
@@ -75,6 +78,7 @@ Function Get-FilesWithContent {
     if ($Recurse) { $Settings.Recurse = $Recurse }
     if ($Depth) { $Settings.Depth = $Depth }
     if ($Force) { $Settings.Force = $Force }
+    if ($LastWriteTime) { $Settings.LastWriteTime = $LastWriteTime }
 
     # Turn any input file name patterns that are of the form (..[,..]*) into arrays
     if ($settings.FileNamePattern -match '^\(.*\)$') { $settings.FileNamePattern = $settings.FileNamePattern -replace ',', '|' }
@@ -99,7 +103,9 @@ Function Get-FilesWithContent {
   END {
 
     $acc = @{}
+    $orderedAcc = [ordered]@{}
     $gciCommand = 'Get-ChildItem ' `
+     + "-file " `
      + "-Path " + $settings.Path + ' ' `
      + $(if($settings.Recurse) {'-Recurse '}) `
      + $(if($settings.Depth -gt 0) {"-Depth " + $settings.Depth + ' '}) `
@@ -107,22 +113,31 @@ Function Get-FilesWithContent {
      + $(if(-not [string]::IsNullOrWhiteSpace($settings.IncludeFilterPattern)) {"-Include " + $settings.IncludeFilterPattern + ' '})
 
     $time = Measure-Command {
-      Invoke-Expression $gciCommand |
+      Invoke-Expression $gciCommand | select-object -Property FullName, LastWriteTime |
       Where-Object { ($_.fullname -notmatch '\\WPK\\') -AND ($_.fullname -match $Settings.FileNamePattern) } |
-      ForEach-Object { $fullname= $_.fullname; Get-Content $fullname | ForEach-Object { $line = $_;
+      ForEach-Object {
+         $fullname= $_.fullname;
+         $LastWriteTime= $_.LastWriteTime;
+         $key = [PSCustomObject] @{
+          FullName = $_.FullName
+          LastWriteTime       = $_.LastWriteTime
+        }
+         Get-Content $fullname | ForEach-Object { $line = $_;
           if ($line -match $Settings.FileContentPattern) {
-            $entry = [PSCustomObject]@{
+            $entry = [PSCustomObject] @{
               LineNumber = $line.ReadCount
               Line       = $line.ToString()
             }
-            if (! $acc.containskey($fullname)) { $acc[$fullname] = @($entry) } else { $acc[$fullname] += $entry }
+            if (! $acc.containskey($key)) { $acc[$key] = @($entry) } else { $acc[$key] += $entry }
           }
         }
       }
+      # Sort
+      $orderedAcc = $acc.GetEnumerator() | sort-object {$_.key.$FileSortProperty}
     }
 
     $OutObj = [PSCustomObject]@{
-      Results = $acc
+      Results = $orderedAcc # sort according to sort requested
       Time    = $time
       gciCommand = $gciCommand
     }

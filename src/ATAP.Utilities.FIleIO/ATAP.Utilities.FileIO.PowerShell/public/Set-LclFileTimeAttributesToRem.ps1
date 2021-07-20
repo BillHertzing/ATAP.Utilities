@@ -49,7 +49,7 @@ Function Set-LclFileTimeAttributesToRem {
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Starting $($MyInvocation)"
 
   }
   #endregion FunctionBeginBlock

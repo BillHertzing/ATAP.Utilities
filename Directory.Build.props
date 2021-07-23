@@ -15,13 +15,12 @@
   <!-- The Build Configuration properties common for every assembly, can be overwritten in individual .csproj files -->
   <PropertyGroup>
     <Configurations>Debug;Release;ReleaseWithTrace;</Configurations>
-    <!-- Whne building against anything excpet net5.0, the c# V9 keyword 'init' throws errors-->
+    <!-- When building against anything except net5.0, the c# V9 keyword 'init' throws errors-->
     <TargetFrameworks>netstandard2.0;netstandard2.1;net5.0;</TargetFrameworks>
     <TargetFrameworks>net5.0;</TargetFrameworks>
     <RuntimeIdentifiers>win10-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
-
 
   <!-- Nullable Reference Type support solution-wide -->
   <PropertyGroup>
@@ -100,7 +99,7 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
 
-  <!-- Define the maximum number of CPUs to use when building in parallel. value of 1 indicates to not build anything in parallel -->
+  <!-- Define the maximum number of CPUs to use when building in parallel. value of 1 indicates to not build anything in parallel, and makes reading the build log linear -->
   <PropertyGroup>
     <maxcpucount>1</maxcpucount>
   </PropertyGroup>
@@ -108,7 +107,7 @@
   <!--  Set MSBuild output verbosity and warnings to ignore. The disabled warnings are regarding the nullable reference types, until I can figure out the correct way to use them along with the 'default' argument specification -->
   <!-- Attribution: https://github.com/lecaillon/Evolve/blob/master/src/Evolve/Evolve.csproj has a working example to silence many nullability warnings, but similar does not work for NuGet package warnings -->
   <PropertyGroup>
-    <NoWarn>$(NoWarn);8600;8601;8602;8603;8605;8618;8625;8629</NoWarn>
+    <NoWarn>$(NoWarn);8600;8601;8602;8603;8604;8605;8618;8625;8629</NoWarn>
   </PropertyGroup>
   <!-- Attribution: many posts about this on the internet, nobody seems to have solved the problem. At least, my attempts using the following flags fails -->
     <!-- disable the nullable warnings when compiling
@@ -120,7 +119,6 @@
     <clp>NoItemAndPropertyList</clp>
     </PropertyGroup>
   -->
-
 
   <!-- Release Configuration compilation symbols, flags and build options -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

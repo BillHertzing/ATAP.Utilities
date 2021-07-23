@@ -5,7 +5,7 @@ This package contains the ATAP Utilities Jenkins library modules and a Jenkinsfi
 
 ## Controlling Jenkins
 
-Jenkins runs as a Windows service. Te Jenkins service may, at almost any time, be busy running jobs. To cleanly shutdown Jenkins, we need to tell it to stop accepting new jobvs, finish any running jobs, and/or/terminate certain jobs, then stop the service.
+Jenkins runs as a Windows service. The Jenkins service may, at almost any time, be busy running jobs. To cleanly shutdown Jenkins, we need to tell it to stop accepting new jobvs, finish any running jobs, and/or/terminate certain jobs, then stop the service.
 
 
 Attributions:
@@ -18,4 +18,18 @@ http://yourjenkins/quietDown - Keep current jbs running but disallow any new one
 http://[jenkins-server]/exit - To shutdown
 
 (Administering Jenkins](https://wiki.jenkins.io/display/JENKINS/Administering+Jenkins) - Backup / restore; Copy/Move/Rename jobs; Jenkins directory structure; exit/restart/reload URL commands
+```plantuml
+@startuml
 
+start
+
+if (Settings.SqlServer installed?) then (yes)
+  :process all\ndiagrams;
+else (no)
+  :process only
+  __sequence__ and __activity__ diagrams;
+endif
+
+stop
+@enduml
+```

@@ -15,6 +15,7 @@ http://www.somewhere.com/attribution.html
 .LINK
 <Another link>
 .ATTRIBUTION
+[Customize Prompt](https://www.networkadm.in/customize-pscmdprompt/) adding info to the prompt and terminal window
 ToDo: Need attribution for IsElevated = ((whoami /all) -match $'S-1-5-32-544|S-1-16-12288') Magic SId's
 ToDo: Need attribution for Console Settings
 <Where the ideas came from>
@@ -50,20 +51,22 @@ Write-Verbose ('Final PSModulePath profile is: ' + "`r`n`t" + (($Env:PSModulePat
 
 # Set these for debugging the profile
 # Don't Print any debug messages to the console
-$DebugPreference = 'SilentlyContinue'
+$DebugPreference = 'Continue'
 # Don't Print any verbose messages to the console
-$VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
+$VerbosePreference = 'Continue' # SilentlyContinue Continue
 
 $settings = @{
   # ToDo: Move this to the Machine profile settings
   # Is this script elevated (RegEx pattern for Magic Window's SIDs  )
-  IsElevated = ((whoami /all) -match 'S-1-5-32-544|S-1-16-12288')
+  IsElevated = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
 }
 
 # Call the machine-profile function Get-Settings to setup the $settings object for this script
 #Get-Settings $SettingsFile
 
-if ($settings.IsElevated) {Write-Verbose 'Elevated permisions' }
+# Debug the final settings
+
+if ($settings.IsElevated) { Write-Verbose 'Elevated permisions' }
 
 # Setup Logging for script execution and debugging, after settings are processed
 #$LogFn =$settings.LogFnPath + $settings.LogFnPattern;
@@ -77,6 +80,7 @@ if ($settings.IsElevated) {Write-Verbose 'Elevated permisions' }
 ##############################
 # Number of commands to keep in the commandHistory
 $global:MaxHistoryCount = 1000
+
 # Size of the console's user interface
 Function ConsoleSettings {
   $console = $host.ui.Rawui
@@ -84,10 +88,29 @@ Function ConsoleSettings {
   ($console.BufferSize).height = 3000
   ($console.windowSize).width = 200
   ($console.windowSize).height = 100
-  # ToDo; change window border to yellow if IsElevated is true
+  ($console.WindowTitle) = "Current Folder: $pwd"
+  # ToDo; change window border to yellow if IsElevated is true, but see https://github.com/vercel/hyper/issues/4529 and https://github.com/microsoft/terminal/issues/1859 for discussion
 }
 if ($host.ui.Rawui.WindowTitle -notmatch 'ISE') { ConsoleSettings }
 
+Function prompt {
+  #Assign Windows Title Text
+  $host.ui.RawUI.WindowTitle = "Current Folder: $pwd"
+
+  #Configure current user, current folder and date outputs
+  $CmdPromptCurrentFolder = Split-Path -Path $pwd -Leaf
+  $CmdPromptUser = [Security.Principal.WindowsIdentity]::GetCurrent();
+  # Test for Admin / Elevated
+  $IsElevated = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+  #Decorate the CMD Prompt
+  Write-Host ''
+  Write-Host ($(if ($IsElevated) { 'Elevated ' } else { '' })) -BackgroundColor DarkRed -ForegroundColor White -NoNewline
+  Write-Host " USER:$($CmdPromptUser.Name.split('\')[1]) " -BackgroundColor DarkBlue -ForegroundColor White -NoNewline
+  If ($CmdPromptCurrentFolder -like '*:*')
+  { Write-Host " $CmdPromptCurrentFolder " -ForegroundColor White -BackgroundColor DarkGray -NoNewline }
+  else { Write-Host ".\$CmdPromptCurrentFolder\ " -ForegroundColor White -BackgroundColor DarkGray -NoNewline }
+  return '> '
+}
 
 # set the Cloud Location variables
 Function Set-CloudDirectoryLocations {
@@ -158,17 +181,17 @@ Write-Verbose ("PsScriptRoot: $psScriptRoot")
 
 
 #todo: solve the puzzle why my own modules won't autoload
-  #region PrivateFunctions
-  Function CreateSymbolicLink {
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    param (
-      [ValidateNotNullOrEmpty()][String] $path
-      ,[ValidateNotNullOrEmpty()][String] $target
-      )
-    # Todo: Add LiteralPath
-    New-Item -ItemType SymbolicLink -Path $path -Target $target > $null
-  }
-  #endregion PrivateFunctions
+#region PrivateFunctions
+Function CreateSymbolicLink {
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  param (
+    [ValidateNotNullOrEmpty()][String] $path
+    , [ValidateNotNullOrEmpty()][String] $target
+  )
+  # Todo: Add LiteralPath
+  New-Item -ItemType SymbolicLink -Path $path -Target $target > $null
+}
+#endregion PrivateFunctions
 
 # ToDo: The following is a 'cheat' for a developer who wants to work on Powershell modules, whose SCM repository is reachabe via SymbolicLink
 #  ToDo: Usually, an ATAP powershell package is restored from the NuGet Feed sources, then ipmo'd
@@ -177,13 +200,15 @@ Function Get-ModulesForUserProfileAsSymbolicLinks {
   #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
-    # ToDo: Paramter set to suport LiteralPath
+    # ToDo: Parameter set to suport LiteralPath
     [alias('source')]
     [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [ValidateNotNullOrEmpty()][String] $profileModulePath
     , [alias('target')]
     [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [ValidateNotNullOrEmpty()][String] $targetModulePath
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
+    [ValidateNotNullOrEmpty()][switch] $Force
   )
   #endregion FunctionParameters
   #region FunctionBeginBlock
@@ -196,13 +221,18 @@ Function Get-ModulesForUserProfileAsSymbolicLinks {
     $settings = @{
       ProfileModulePath    = ''
       TargetModulePath     = ''
+      Force                = $false
       UserModulePath       = Join-Path ([Environment]::GetFolderPath('MyDocuments')) '\PowerShell\Modules\'
       LinksToCreatePattern = '(public|private|\.*ps[md]1)'
+
+      # ToDo: should be populated from global:settings via Get-Settings
+      IsElevated           = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
     }
 
     # Things to be initialized after settings are processed
     if ($profileModulePath) { $Settings.profileModulePath = $profileModulePath }
     if ($targetModulePath) { $Settings.targetModulePath = $targetModulePath }
+    if ($Force) { $Settings.Force = $Force }
   }
   #endregion FunctionBeginBlock
   #region FunctionProcessBlock
@@ -215,20 +245,26 @@ Function Get-ModulesForUserProfileAsSymbolicLinks {
     ForEach-Object { if (-not (Test-Path $_.name)) {
         # If it doesn't exist, it needs to be created, but only administror's can create symboliclinks
         if ($settings.IsElevated) {
-          CreateSymbolicLink -Path $_.name -Target $_.fullname > $null
-        } else {
+          if ($PSCmdlet.ShouldProcess(@($_.name, $_.fullname), 'CreateSymbolicLink -Path $_.name -Target $_.fullname > $null')) {
+            # Add the suffix
+            CreateSymbolicLink -Path $_.name -Target $_.fullname > $null
+          }
+        }
+        else {
           Write-Verbose "$_.name needs to be created as a SymbolicLink, but this user is not an administrator"
           Write-Debug "$_.name needs to be created as a SymbolicLink, but this user is not an administrator"
         }
-      } else {
+      }
+      else {
         # only recreate it if the -Force argument is set
-        # ToDo
-        # if ($settings.Force -and $settings.IsElevated) {
-          Remove-Item $_.name -ErrorAction SilentlyContinue -WhatIf -Verbose
-          CreateSymbolicLink -Path $_.name -Target $_.fullname > $null
+        if ($settings.Force -and $settings.IsElevated) {
+          if ($PSCmdlet.ShouldProcess(@($_.name, $_.fullname), 'Force: Remove and recreate CreateSymbolicLink -Path $_.name -Target $_.fullname > $null')) {
+            Remove-Item $_.name -ErrorAction SilentlyContinue -WhatIf -Verbose
+            CreateSymbolicLink -Path $_.name -Target $_.fullname > $null
+          }
         }
       }
-
+    }
   }
   #endregion FunctionProcessBlock
   #region FunctionEndBlock
@@ -241,21 +277,28 @@ Function Get-ModulesForUserProfileAsSymbolicLinks {
 $ModulesToLoad = @(
   # User Functions
   [PSCustomObject]@{
+    profileModuleName = 'ATAP.Utilities.PowerShell'
     profileModulePath = 'ATAP.Utilities.PowerShell\0.1.0\'
     targetModulePath  = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell'
   },
   # Developer and CI/CD powershel modules for building and CI/CD
   [PSCustomObject]@{
+    profileModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'
     profileModulePath = 'ATAP.Utilities.BuildTooling.PowerShell\0.1.0\'
     targetModulePath  = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.Powershell'
   },
   # Functions specific to FileIO
   [PSCustomObject]@{
+    profileModuleName = 'ATAP.Utilities.FileIO.PowerShell'
     profileModulePath = 'ATAP.Utilities.FileIO.PowerShell\0.1.0\'
     targetModulePath  = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO/ATAP.Utilities.FileIO.PowerShell'
   })
 
 $ModulesToLoad | Get-ModulesForUserProfileAsSymbolicLinks
+
+# ToDo replace with just module name
+$ModulesToLoad | ForEach-Object{$name = $_.ProfileModuleName; $name; Import-Module "$name" -Force -Verbose}
+# $ModulesToLoad | ForEach-Object{$name = (join-path -Path $_.profileModulePath -ChildPath $_.profileModuleName) + '.psm1' ; $name; Import-Module "$name" -Force -Verbose}
 # see cheat below to make the profle module a link to thte github module
 #Import-Module c:\Dropbox\whertzing\PowerShell\Modules\ATAP.Utilities.PowerShell\0.1.0\ATAP.Utilities.PowerShell.psm1 -Force -Verbose
 #Import-Module c:\Dropbox\whertzing\PowerShell\Modules\ATAP.Utilities.BuildTooling.PowerShell\0.1.0\ATAP.Utilities.BuildTooling.PowerShell.psm1 -Force -Verbose

@@ -14,12 +14,18 @@ $DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
 $VerbosePreference = 'Continue' # SilentlyContinue Continue
 
+#ToDo: document expected values when run under profile, Module cmdlet/function, script.
+Write-Verbose -Message ("PSScriptRoot = $PSScriptRoot")
+
+# ToDo: Incorporate a set of constant strings for the keys to the settings, and constant default values (always strings?)
+
 # Read in the ./MachineAndNodeSettings.ps1 file
-Write-Verbose -Message ("PSScriptRoot = $MyInvocation.PSScriptRoot")
+$mANS = Load()
 
 # Define a global settings hash, populate with machine-specific information
 $global:settings = @{
   DropBoxDir = 'C:/DropBox/'
+  # OneDriveDir = 'C:\Users\whertzing\OneDrive'  ## Move to personal user profile, or move drive to common location on machine 
   FastTempBasePath = 'C:/Temp'
   BigTempBasePath = 'C:/Temp'
 }
@@ -42,6 +48,11 @@ $global:settings += @{
   docfxPath = 'C:\ProgramData\chocolatey\bin\docfx.exe'
 }
 
+########################################################
+# Function Definitions *global* scope
+########################################################
+
+
 Function Get-Settings {}
 
 Function ValidateTools {
@@ -53,6 +64,7 @@ Function ValidateTools {
     # dotnet tool install --global PlantUmlClassDiagramGenerator --version 1.2.4
 
 }
+
 
 # Uncomment to see the $global:settings and Environment variables at the completion of this profile
 #Write-Verbose ('$global:settings are: ' +  [Environment]::NewLine + (foreach ($kvp in ($global:settings).GetEnumerator()){"{0}:{1}" -f $kvp.name, $kvp.name,[Environment]::NewLine} ))

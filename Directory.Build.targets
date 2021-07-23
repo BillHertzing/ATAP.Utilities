@@ -21,7 +21,7 @@
         -->
   </ItemGroup>
 
-  <!-- It appears that there is no solution for building/embedding resourfes in the dotnet toolchain for V5.0-->
+  <!-- It appears that there is no solution for building/embedding resources in the dotnet toolchain for V5.0-->
   <!--
   </ItemGroup>
   <Target Name="Resources" BeforeTargets="Compile">
@@ -65,7 +65,7 @@
   </Target>
   -->
 
-<!-- when creating Console programs or services, if they dynamicallly load Plugins, define where the Plugins subdirectory is located -->
+<!-- when creating Console programs or services, if they dynamically load Plugins, define where the Plugins subdirectory is located -->
     <PropertyGroup>
     <PluginsRelativeDir Condition="$(PluginsRelativeDir) == '' Or $(PluginsRelativeDir) == '*Undefined*'">Plugins\</PluginsRelativeDir>
     <PluginsDir Condition="$(PluginsDir) == '' Or $(PluginsDir) == '*Undefined*'">$(OutputPath)$(PluginsRelativeDir)</PluginsDir>
@@ -83,7 +83,7 @@
     <Copy SourceFiles="@(JsonSettingsFiles)" DestinationFolder="$(OutDir)" />
   </Target>
 
-  <!-- Targets for multiframework publishing courtesy of
+  <!-- Targets for multiframework and multiple Runtime Identifiers publishing courtesy of
     this stackoverflow answer https://stackoverflow.com/questions/43947599/how-to-publish-for-all-target-frameworks
     this GIST:https://gist.github.com/dasMulli/b14026437468ce4b56ef93e010f24a36
     and this issue: https://github.com/dotnet/sdk/issues/9363
@@ -115,9 +115,12 @@
   </ItemGroup>
 
   <!-- Include Roslyn Code Analysis for every project -->
-  <!--<ItemGroup>
+   <!-- FxCopAnalyzers package has been deprecated in favor of 'Microsoft.CodeAnalysis.NetAnalyzers', hence this is now commented out -->
+   <!--
+  <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers"></PackageReference>
-  </ItemGroup>-->
+  </ItemGroup>
+  -->
 
   <!-- Include Documentation generation for every project, but only when built with Net47, as docfx 2.51.2  is only supported on net47 -->
   <!--<ItemGroup Condition="$(TargetFramework.Contains('net47'))>
@@ -127,7 +130,7 @@
   <!-- documentation generation  -->
   <!--<PackageReference Update="docfx" Version="2.51.2" />-->
 
-  <!-- https://www.strathweb.com/2018/07/solution-wide-nuget-package-version-handling-with-msbuild-15/ -->
+<!-- Centrally manage package versions for all NuGet package dependencies, courtesy of https://www.strathweb.com/2018/07/solution-wide-nuget-package-version-handling-with-msbuild-15/ -->
   <ItemGroup>
     <!--Stateless lightweight StateMachine library -->
     <PackageReference Update="Stateless" Version="5.1.2" />
@@ -135,12 +138,16 @@
     <!-- QuickGraph and its dependencies -->
     <PackageReference Update="YC.QuickGraph" Version="3.7.4" />
     <PackageReference Update="DotNet.Contracts" Version="1.10.20606.1" />
-    <PackageReference Update="FSharp.Core" Version="2.5.0" />
-    <!-- <PackageReference Update="FSharp.Core" Version="3.0.2" />-->
+    <!-- <PackageReference Update="FSharp.Core" Version="2.5.0" />
+    <PackageReference Update="FSharp.Core" Version="3.0.2" />-->
+    <PackageReference Update="FSharp.Core" Version="4.3.4" />
     <PackageReference Update="FSharpx.Collections.Experimental" Version="2.1.3" />
 
     <!-- Reactive Extensions -->
     <PackageReference Update="System.Reactive" Version="5.0.0" />
+
+    <!-- Immutable collections -->
+    <PackageReference Update="System.Collections.Immutable" Version="5.0.0" />
 
     <!-- ServiceStack  -->
     <PackageReference Update="ServiceStack" Version="5.11.0" />
@@ -198,7 +205,10 @@
     <PackageReference Update="Microsoft.Build.Utilities.Core" Version="16.8.0" />
 
     <!-- Roslyn Code Analyzers -->
+    <!-- FxCopAnalyzers package has been deprecated in favor of 'Microsoft.CodeAnalysis.NetAnalyzers', hence this is now commented out -->
+    <!--
     <PackageReference Update="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.2"></PackageReference>
+    -->
 
     <!-- Microsoft Source Link -->
     <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.0.0" />
@@ -238,7 +248,6 @@
     <PackageReference Update="UnitsNet" Version="4.77.0" />
     <PackageReference Update="NLog" Version="4.7.0" />
     <PackageReference Update="NLog.Config" Version="4.7.0" />
-    <PackageReference Update="System.Collections.Immutable" Version="5.0.0" />
 
     <!-- Dynamic Types -->
     <PackageReference Update="Microsoft.CSharp" Version="4.7.0" />

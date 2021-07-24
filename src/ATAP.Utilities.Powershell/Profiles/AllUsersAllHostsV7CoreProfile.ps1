@@ -20,7 +20,7 @@ Write-Verbose -Message ("PSScriptRoot = $PSScriptRoot")
 # ToDo: Incorporate a set of constant strings for the keys to the settings, and constant default values (always strings?)
 
 # Read in the ./MachineAndNodeSettings.ps1 file
-$mANS = Load()
+# $mANS = Load()
 
 # Define a global settings hash, populate with machine-specific information
 $global:settings = @{

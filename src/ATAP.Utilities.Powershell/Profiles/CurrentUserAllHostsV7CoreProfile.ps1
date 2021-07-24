@@ -346,8 +346,12 @@ filter unlike( $glob ) {
   { $_ }
 }
 
+# A function that will set-Location to 'MyDocuments`
+Function cdMy {$x= [Environment]::GetFolderPath('MyDocuments');Set-Location -Path $x}
+
 # Final (user) directory to leave the interpreter
-Set-Location (Join-Path ([Environment]::GetFolderPath('MyDocuments')) '')
+cdMy
+
 <# To Be Moved Somewhere else #>
 
 <#

@@ -51,9 +51,9 @@ Write-Verbose ('Final PSModulePath profile is: ' + "`r`n`t" + (($Env:PSModulePat
 
 # Set these for debugging the profile
 # Don't Print any debug messages to the console
-$DebugPreference = 'Continue'
+$DebugPreference = 'Continue' # SilentlyContinue Continue
 # Don't Print any verbose messages to the console
-$VerbosePreference = 'Continue' # SilentlyContinue Continue
+$VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
 
 $settings = @{
   # ToDo: Move this to the Machine profile settings
@@ -274,30 +274,43 @@ Function Get-ModulesForUserProfileAsSymbolicLinks {
   }
 }
 
-$ModulesToLoad = @(
+$ModulesToLoadAsSymbolicLinks = @(
   # User Functions
   [PSCustomObject]@{
     profileModuleName = 'ATAP.Utilities.PowerShell'
     profileModulePath = 'ATAP.Utilities.PowerShell\0.1.0\'
     targetModulePath  = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell'
+    usePreRelease = $true
   },
   # Developer and CI/CD powershel modules for building and CI/CD
   [PSCustomObject]@{
     profileModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'
     profileModulePath = 'ATAP.Utilities.BuildTooling.PowerShell\0.1.0\'
     targetModulePath  = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.Powershell'
+    usePreRelease = $true
   },
   # Functions specific to FileIO
   [PSCustomObject]@{
     profileModuleName = 'ATAP.Utilities.FileIO.PowerShell'
     profileModulePath = 'ATAP.Utilities.FileIO.PowerShell\0.1.0\'
     targetModulePath  = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO/ATAP.Utilities.FileIO.PowerShell'
+    usePreRelease = $true
   })
 
-$ModulesToLoad | Get-ModulesForUserProfileAsSymbolicLinks
+$ModulesToLoadAsSymbolicLinks | Get-ModulesForUserProfileAsSymbolicLinks
+
+$ModulesToLoad = $ModulesToLoadAsSymbolicLinks + @(
+    # Powershell Community Extensions
+    [PSCustomObject]@{
+      profileModuleName = 'pscx'
+      profileModulePath = ''
+      targetModulePath  = ''
+      usePreRelease = $true
+    }
+)
 
 # ToDo replace with just module name
-$ModulesToLoad | ForEach-Object{$name = $_.ProfileModuleName; $name; Import-Module "$name" -Force -Verbose}
+$ModulesToLoad | ForEach-Object{$name = $_.ProfileModuleName; $_.ProfileModuleName; Import-Module "$($_.ProfileModuleName)"  -Verbose}
 # $ModulesToLoad | ForEach-Object{$name = (join-path -Path $_.profileModulePath -ChildPath $_.profileModuleName) + '.psm1' ; $name; Import-Module "$name" -Force -Verbose}
 # see cheat below to make the profle module a link to thte github module
 #Import-Module c:\Dropbox\whertzing\PowerShell\Modules\ATAP.Utilities.PowerShell\0.1.0\ATAP.Utilities.PowerShell.psm1 -Force -Verbose
@@ -349,8 +362,13 @@ filter unlike( $glob ) {
 # A function that will set-Location to 'MyDocuments`
 Function cdMy {$x= [Environment]::GetFolderPath('MyDocuments');Set-Location -Path $x}
 
+# A function that will set-Location to 'MyDocuments`
+Function getconflicted {gci  -Recurse. | where-object -property fullname -match 'conflicted'}
+
+
 # Final (user) directory to leave the interpreter
 cdMy
+
 
 <# To Be Moved Somewhere else #>
 

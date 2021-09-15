@@ -2,7 +2,6 @@
 
 # get the fileIO info for each file in the public and private subdirectories
 $publicFunctions = @(Get-ChildItem -Path $PSScriptRoot\public\*.ps1 -ErrorAction SilentlyContinue -Exclude '*GetProjects-FromSLN*')
-
 $privateFunctions = @(Get-ChildItem -Path $PSScriptRoot\private\*.ps1 -ErrorAction SilentlyContinue)
 $allFunctions = $publicFunctions + $privateFunctions
 # Dot-source the public and private files.

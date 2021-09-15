@@ -12,7 +12,7 @@
 # Don't Print any debug messages to the console
 $DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
-$VerbosePreference = 'Continue' # SilentlyContinue Continue
+$VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
 
 #ToDo: document expected values when run under profile, Module cmdlet/function, script.
 Write-Verbose -Message ("PSScriptRoot = $PSScriptRoot")
@@ -25,7 +25,7 @@ Write-Verbose -Message ("PSScriptRoot = $PSScriptRoot")
 # Define a global settings hash, populate with machine-specific information
 $global:settings = @{
   DropBoxDir = 'C:/DropBox/'
-  # OneDriveDir = 'C:\Users\whertzing\OneDrive'  ## Move to personal user profile, or move drive to common location on machine 
+  # OneDriveDir = 'C:\Users\whertzing\OneDrive'  ## Move to personal user profile, or move drive to common location on machine
   FastTempBasePath = 'C:/Temp'
   BigTempBasePath = 'C:/Temp'
 }

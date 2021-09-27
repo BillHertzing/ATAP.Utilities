@@ -8,7 +8,7 @@ using System.Text;
 namespace AOEPlugin
 {
 
-    public class VoiceAttackPlugin
+    public class VoiceAttackAOEPlugin
     {
         //NOTE THAT THIS IS A SAMPLE CLASS AND IS NOT FOR ANY MEANINGFUL USE.
         //You will want to gut this completely if you plan on using it... lol

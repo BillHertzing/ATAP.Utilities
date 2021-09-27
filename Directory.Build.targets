@@ -1,5 +1,7 @@
 <Project>
+
   <!-- import the non-default targets files -->
+
   <Import Project="$(MSBuildCommunityTasksPath)\MSBuildTasks.Targets" />
   <Import Project="$(ATAPUtilitiesBuildToolingTargetsPath)\ATAP.Utilities.BuildTooling.Targets" />
 

@@ -32,7 +32,7 @@
     <!-- specify the root directory of the solution, relative to the location where the current project is found -->
     <!-- when msbuild is run by Visual Studio 15.8.2, ($(MSBuildRuntimeType) != 'Core') the property $(SolutionDir) is already defined at this point, so this line is not executed -->
     <!-- when msbuild is run by dotnet command, ($(MSBuildRuntimeType) == 'Core') the property $(SolutionDir) is not defined at this point, so this line is executed -->
-    <!-- ToDo: Major pain point, there is no way to know how far up SolutionDir may be.  In this repository, code is always two subdirectories down from the solution dir -->
+    <!-- ToDo: Major pain point, there is no way to know how far up SolutionDir may be.  In this repository, code is (alomost) always two subdirectories down from the solution dir -->
 
     <!-- the result is that the $(SolutionDir) is set properly regardless of the $(MSBuildRuntimeType) -->
     <SolutionDir >$(MSBuildProjectDirectory)\..\..\</SolutionDir>
@@ -41,7 +41,7 @@
     <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)Build\</SolutionBuildToolsBaseDir>
 
     <!-- bring in the build tasks extensions defined in the MSBuild.Community project-->
-    <MSBuildCommunityTasksPath>$(SolutionBuildToolsBaseDir)MSBuildTasks.*\build</MSBuildCommunityTasksPath>
+    <MSBuildCommunityTasksPath Condition=" '$(MSBuildCommunityTasksPath)' == '' ">$(SolutionBuildToolsBaseDir)MSBuildTasks.*\build</MSBuildCommunityTasksPath>
 
     <!-- bring in the build tasks extensions defined in the ATAP.Utilities.BuildTooling project-->
     <!-- ATAPBuildToolingConfiguration is normally set to Release; use Debug if developing the BuildTooling assemblies and scripts -->

@@ -174,6 +174,7 @@
     <PackageReference Update="Microsoft.Extensions.Hosting" Version="5.0.0" />
     <PackageReference Update="Microsoft.Extensions.Localization" Version="5.0.0" />
     <PackageReference Update="Microsoft.Extensions.Logging" Version="5.0.0" />
+    <PackageReference Update="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
     <!-- <PackageReference Update="Microsoft.AspNetCore.Hosting.Abstractions" Version="5.0.0" /> -->
 
     <!-- Standalone reference to Microsoft.Extensions.DependencyInjection is used by unitTest projects-->
@@ -217,11 +218,12 @@
 
     <!-- Serilog packages -->
     <PackageReference Update="Serilog" Version="2.10.0" />
-    <PackageReference Update="Serilog.Settings.Configuration" Version="3.2.0-dev-00264" />
+    <PackageReference Update="Serilog.Settings.Configuration" Version="3.3.0-dev-00291" />
     <PackageReference Update="Serilog.Enrichers.Thread" Version="3.2.0-dev-00747" />
-    <PackageReference Update="Serilog.Extensions.Logging" Version="3.0.2-dev-10281" />
-    <PackageReference Update="Serilog.Exceptions" Version="6.0.0+build.159" />
-    <PackageReference Update="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
+    <PackageReference Update="Serilog.Extensions.Hosting" Version="4.1.2" />
+    <PackageReference Update="Serilog.Extensions.Logging" Version="3.0.1" />
+    <PackageReference Update="Serilog.Exceptions" Version="7.1.0" />
+    <PackageReference Update="Serilog.Sinks.Console" Version="4.0.0" />
     <PackageReference Update="Serilog.Sinks.Debug" Version="1.0.2-dev-00020" />
     <PackageReference Update="Serilog.Sinks.File" Version="5.0.0-dev-00905" />
     <PackageReference Update="Serilog.Sinks.Seq" Version="5.0.0-dev-00174" />

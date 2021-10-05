@@ -17,24 +17,24 @@ namespace ATAP.Utilities.HostedServices {
 
   [ETWLogAttribute]
   public class ObservableResetableTimer {
-    // https://stackoverflow.com/questions/54309176/how-to-extend-the-duration-time-of-observable-timer-in-rx-net
+    // https://stackoverflow.com/questions/54309176/how-to-extend-the-Duration-time-of-observable-timer-in-rx-net
 
-    public TimeSpan duration;
-    public Subject<Unit> resetSignal;
+    public TimeSpan Duration;
+    public Subject<Unit> ResetSignal;
     //Scheduler scheduler; figure this out for testing
 
-    public ObservableResetableTimer(TimeSpan duration) : this(duration, new Subject<Unit>()) { } // for testing?, Scheduler.Default)
+    public ObservableResetableTimer(TimeSpan duration, IScheduler scheduler = null) : this(duration, new Subject<Unit>(), new Action( () => { }), scheduler) { } // for testing?, Scheduler.Default)
+    public ObservableResetableTimer(TimeSpan duration, Action DoSomething, IScheduler scheduler = null) : this(duration, new Subject<Unit>(), DoSomething, scheduler) { } // for testing?, Scheduler.Default)
 
-    public ObservableResetableTimer(TimeSpan duration, Subject<Unit> resetSignal) {//, Scheduler scheduler) {
-      this.duration = duration;
-      this.resetSignal = resetSignal ?? throw new ArgumentNullException(nameof(resetSignal));
-      //this.scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
-      var DoNothing = new Action(() => { });
-      resetSignal
+    public ObservableResetableTimer(TimeSpan duration, Subject<Unit> resetSignal, Action DoSomething, IScheduler scheduler = null) {
+      Duration = duration;
+      ResetSignal = resetSignal ?? throw new ArgumentNullException(nameof(resetSignal));
+      var timerScheduler = scheduler ?? Scheduler.Default;
+      ResetSignal
         .Select(_ => Observable.Timer(duration))
         .Switch()
-        .ObserveOn(Scheduler.Default) // Figure out how topass in a scheduler for testing
-        .Subscribe(_ => DoNothing());
+        .ObserveOn(timerScheduler)
+        .Subscribe(_ => DoSomething());
     }
   }
 
@@ -46,6 +46,7 @@ namespace ATAP.Utilities.HostedServices {
     public void Dispose() {
       GC.SuppressFinalize(this);
     }
+
 
   }
 #if TRACE
@@ -97,7 +98,7 @@ namespace ATAP.Utilities.HostedServices {
 
 
     // to reset or start a ObservableResetableTimer:
-    //HostedServiceObservableResetableTimersData.timer.resetSignal.OnNext(Unit.Default);
+    //HostedServiceObservableResetableTimersData.timer.ResetSignal.OnNext(Unit.Default);
 
 
     // method to add a ObservableResetableTimer to the collection
@@ -115,7 +116,7 @@ namespace ATAP.Utilities.HostedServices {
       linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(internalCancellationToken, externalCancellationToken);
       #region TBD LinkedCancellation
       // Register on that cancellationToken an Action that will call TrySetCanceled method on the _delayStart task.
-      // This lets the cancellationToken passed into this method signal to the genericHost an overall request for cancellation 
+      // This lets the cancellationToken passed into this method signal to the genericHost an overall request for cancellation
       //CancellationToken.Register(() => _delayStart.TrySetCanceled());
       #endregion
       // Register the methods defined in this class with the three CancellationToken properties found on the IHostApplicationLifetime instance passed to this class in it's .ctor
@@ -142,19 +143,19 @@ namespace ATAP.Utilities.HostedServices {
     #region Event Handlers registered with the HostApplicationLifetime events
     // Registered as a handler with the HostApplicationLifetime.ApplicationStarted event
     private void OnStarted() {
-      // Post-startup code goes here  
+      // Post-startup code goes here
     }
 
     // Registered as a handler with the HostApplicationLifetime.ApplicationStopping event
     // This is NOT called if the ConsoleWindows ends when the connected browser (browser opened by LaunchSettings when starting with debugger) is closed (not applicable to ConsoleLifetime generic hosts
     // This IS called if the user hits ctrl-C in the ConsoleWindow
     private void OnStopping() {
-      // On-stopping code goes here  
+      // On-stopping code goes here
     }
 
     // Registered as a handler with the HostApplicationLifetime.ApplicationStopped event
     private void OnStopped() {
-      // Post-stopped code goes here  
+      // Post-stopped code goes here
     }
 
     // Called by base.Stop. This may be called multiple times by service Stop, ApplicationStopping, and StopAsync.

@@ -27,17 +27,16 @@
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
-  <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
-  <!--
+  <!-- Packages and projects to implement IL Weaving using Fody during the build process
   <PropertyGroup>
-  <ATAP.Utilities.ETW.ETWLogAttribute>True</ATAP.Utilities.ETW.ETWLogAttribute>
+    <ATAP.Utilities.ETW.ETWLogAttribute>True</ATAP.Utilities.ETW.ETWLogAttribute>
   </PropertyGroup>
   -->
+
   <ItemGroup>
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
     <PackageReference Include="MethodBoundaryAspect.Fody" />
     <!-- Project Reference to the ETW attribute and log provider -->
-    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.GenericHost.Interfaces\ATAP.Utilities.GenericHost.Interfaces.csproj" />
+     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 </Project>

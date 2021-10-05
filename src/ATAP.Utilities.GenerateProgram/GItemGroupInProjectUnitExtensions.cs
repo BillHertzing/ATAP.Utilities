@@ -63,9 +63,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public static IGItemGroupInProjectUnit ATAPGenericHostUtilitiesReferencesItemGroupInProjectUnit() {
       return new GItemGroupInProjectUnit("ProjectReferencesForTGenericHostUtilities",
         "Projects in this solution for the GenericHost Utilities", new GBody(new List<string>() {
-          "<PackageReference Include=\"Extensions.GenericHost.Interfaces\" />",
           "<PackageReference Include=\"Extensions.GenericHost\" />",
-          //$"<ProjectReference Include=\"{basePathToSolution}src/GenericHost/Extensions.GenericHost.Interfaces/Extensions.GenericHost.Interfaces.csproj\" />",
           //$"<ProjectReference Include=\"{basePathToSolution}src/GenericHost/Extensions.GenericHost/Extensions.GenericHost.csproj\" />",
         }));
     }
@@ -151,6 +149,6 @@ namespace ATAP.Utilities.GenerateProgram {
         }));
     }
 
-   
+
   }
 }

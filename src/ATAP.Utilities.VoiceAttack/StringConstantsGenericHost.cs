@@ -1,15 +1,18 @@
 
 namespace ATAP.Utilities.VoiceAttack {
-  public static class GenericHostStringConstants {
+  public static class StringConstantsGenericHost {
     // ToDo: Localize the string constants
 
     #region string constants: File Names
-    public const string genericHostSettingsFileName = "genericHostSettings";
+    public const string GenericHostSettingsFileName = "VoiceAttackSettingsGenericHostSettings";
+    public const string GenericHostSettingsFileNameSuffix = "json";
     public const string webHostSettingsFileName = "webHostSettings";
     public const string settingsTextFileSuffix = ".txt";
     public const string sSAppHostSettingsTextFileName = "SSAppHostSettings";
     public const string agentSettingsTextFileName = "Agent.BaseServicesSettings";
     public const string hostSettingsFileNameSuffix = ".json";
+     public const string SettingsFileName = "VoiceAttackSettings";
+
     //It would be nice if ServiceStack implemented the User Secrets pattern that ASP Core provides
     // Without that, the following string constant identifies an Environmental variable that can be populated with the name of a file
     public const string agentEnvironmentIndirectSettingsTextFileNameKey = "Agent.BaseServices.IndirectSettings.Path";
@@ -45,8 +48,8 @@ namespace ATAP.Utilities.VoiceAttack {
     public const string configKeyGoogleMapsAPIKey = "GoogleMapsAPIKey";
     #endregion
 
-    #region string constants: EnvironmentVariablePrefixs
-    public const string CustomEnvironmentVariablePrefix = "Console01Host_";
+    #region ConfigurationRoot EnvironmentVariable Prefix
+    public const string CustomEnvironmentVariablePrefix = "ATAPUtilitiesVoiceAttack";
     #endregion
 
     // ToDo: replace with newest "best practices" that use IHostEnvironment

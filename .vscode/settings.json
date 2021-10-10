@@ -1,5 +1,5 @@
 {
-  
+
     "omnisharp.enableEditorConfigSupport": true,
     "omnisharp.useGlobalMono": "never",
     "git.enableSmartCommit": true,
@@ -39,7 +39,9 @@
         "whertzing"
     ],
     "cSpell.words": [
+        "AOEII",
         "globbing",
+        "Prefixs",
         "serializers"
     ]
 }

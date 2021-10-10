@@ -51,9 +51,12 @@ Write-Verbose ('Final PSModulePath profile is: ' + "`r`n`t" + (($Env:PSModulePat
 
 # Set these for debugging the profile
 # Don't Print any debug messages to the console
-$DebugPreference = 'Continue' # SilentlyContinue Continue
+$DebugPreference = 'SilentlyContinue' # SilentlyContinue Continue
 # Don't Print any verbose messages to the console
 $VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
+
+# Store the current directory, where the profile was started from...
+$storedInitialDir = pwd
 
 $settings = @{
   # ToDo: Move this to the Machine profile settings
@@ -362,12 +365,13 @@ filter unlike( $glob ) {
 # A function that will set-Location to 'MyDocuments`
 Function cdMy {$x= [Environment]::GetFolderPath('MyDocuments');Set-Location -Path $x}
 
-# A function that will set-Location to 'MyDocuments`
+# A function that will return files with names matching the string 'conflicted'
 Function getconflicted {gci  -Recurse. | where-object -property fullname -match 'conflicted'}
 
 
 # Final (user) directory to leave the interpreter
-cdMy
+#cdMy
+Set-Location -Path (join-path -Path $global:DropBoxBaseDir -ChildPath 'whertzing' -AdditionalChildPath 'GitHub','ATAP.Utilities')
 
 
 <# To Be Moved Somewhere else #>

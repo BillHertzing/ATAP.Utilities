@@ -4,26 +4,36 @@ using System.Collections.Generic;
 
 namespace ATAP.Utilities.VoiceAttack
 {
-  public static class DefaultConfiguration
+  public static class DefaultConfigurationGenericHost
   {
-    public static Dictionary<string, string> Production = new Dictionary<string, string>() {
-        { StringConstants.ProfileConfigRootKey, StringConstants.ProfileNameDefault},
-        { StringConstants.TemporaryDirectoryBaseConfigRootKey, StringConstants.TemporaryDirectoryBaseDefault},
-        { StringConstants.PluginPathBaseConfigRootKey, StringConstants.PluginPathBaseDefault},
-        { StringConstants.EnableProgressConfigRootKey, StringConstants.EnableProgressDefault},
-        { StringConstants.PersistencePathBaseDefault, StringConstants.PersistencePathBaseConfigRootKey},
+    public static Dictionary<string, string> Production = new() {
+        { StringConstantsVA.ProfileConfigRootKey, StringConstantsVA.ProfileNameDefault},
+        { StringConstantsVA.TemporaryDirectoryBaseConfigRootKey, StringConstantsVA.TemporaryDirectoryBaseDefault},
+        { StringConstantsVA.PluginPathBaseConfigRootKey, StringConstantsVA.PluginPathBaseDefault},
+        { StringConstantsVA.EnableProgressConfigRootKey, StringConstantsVA.EnableProgressDefault},
+        { StringConstantsVA.PersistencePathBaseDefault, StringConstantsVA.PersistencePathBaseConfigRootKey},
       };
   }
 
-  public static class DefaultConfigurationAOE
+  public static class DefaultConfigurationVA
   {
-    public static Dictionary<string, string> Production = new Dictionary<string, string>() {
-        { StringConstants.ProfileConfigRootKey, StringConstants.ProfileNameDefault},
-        { StringConstants.TemporaryDirectoryBaseConfigRootKey, StringConstants.TemporaryDirectoryBaseDefault},
-        { StringConstants.PluginPathBaseConfigRootKey, StringConstants.PluginPathBaseDefault},
-        { StringConstants.EnableProgressConfigRootKey, StringConstants.EnableProgressDefault},
-        { StringConstants.PersistencePathBaseDefault, StringConstants.PersistencePathBaseConfigRootKey},
+    public static Dictionary<string, string> Production = new () {
+        { StringConstantsVA.MainTimerTimeSpanConfigRootKey, StringConstantsVA.MainTimerTimeSpanDefault},
       };
   }
+}
 
+namespace ATAP.Utilities.VoiceAttack.Game {
+  public static class DefaultConfiguration {
+  }
+}
+
+namespace ATAP.Utilities.VoiceAttack.Game.AOE {
+  public static class DefaultConfiguration {
+  }
+}
+
+namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
+  public static class DefaultConfiguration {
+  }
 }

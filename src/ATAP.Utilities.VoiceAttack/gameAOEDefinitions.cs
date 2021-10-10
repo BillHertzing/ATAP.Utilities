@@ -1,13 +1,33 @@
-namespace ATAP.Utilities.VoiceAttack {
 
-    public enum KindOfStructure {
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Diagnostics;
+using System.Timers;
+using System.Reflection;
+
+using Serilog;
+
+using Microsoft.Extensions.Configuration;
+//using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Logging.Abstractions;
+
+using System.Reactive;
+
+using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
+using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
+using AOEStringConstants = ATAP.Utilities.VoiceAttack.Game.AOE.StringConstants;
+
+namespace ATAP.Utilities.VoiceAttack.Game.AOE {
+
+  public enum KindOfStructure {
     Dock,
     House,
     LumberCamp,
     MiningCamp,
     TownCenter,
   }
-
 
   public abstract class Structure {
     public Structure(KindOfStructure kind, decimal buildTimeInSeconds) {
@@ -35,6 +55,9 @@ namespace ATAP.Utilities.VoiceAttack {
 
   public static class T {
     public static void StartGame() {
+     Serilog.Log.Debug("{0} {1}: StartGame", "T", "StartGame");
+     //Data.StoredVAProxy
+
 
     }
   }

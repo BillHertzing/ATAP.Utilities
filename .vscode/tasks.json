@@ -1,46 +1,104 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "build",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "build",
-                "${workspaceFolder}/src/ATAP.Console.Console02/ATAP.Console.Console02.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        },
-        {
-            "label": "publish",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "publish",
-                "${workspaceFolder}/src/ATAP.Console.Console02/ATAP.Console.Console02.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "watch",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "watch",
-                "run",
-                "${workspaceFolder}/src/ATAP.Console.Console02/ATAP.Console.Console02.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "startVA",
+      "command": "C:\\Program Files\\VoiceAttack\\VoiceAttack.exe",
+      "type": "process",
+      "args": [
+        "-bypassimpropershutdowncheck"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "echo": true
+      },
+    },
+    {
+      "label": "stopVA",
+      "command": "pwsh",
+      "type": "shell",
+      "args": [
+        "-ExecutionPolicy",
+        "Unrestricted",
+        "-Command",
+        "stopVA",
+      ],
+      "presentation": {
+        "reveal": "always",
+        "echo": true
+      },
+    },
+    {
+      "label": "publishPluginAndStartVA",
+      "command": "pwsh",
+      "type": "shell",
+      "args": [
+        "-ExecutionPolicy",
+        "Unrestricted",
+        "-Command",
+        "psva",
+      ],
+      "presentation": {
+        "reveal": "always",
+        "echo": true
+      },
+    },
+    {
+      "label": "buildVA",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "src/ATAP.Utilities.VoiceAttack/ATAP.Utilities.VoiceAttack.csproj",
+        "/p:GenerateFullPaths=true",
+        "/p:Configuration=Debug",
+        "/p:DeployOnBuild=true",
+        "/p:PublishProfile=\"properties/publishProfiles/Development.pubxml\"",
+        "/p:TargetFramework=net4.8",
+        "/bl:_devlogs/msbuild.binlog",
+        "/clp:NoSummary"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "echo": true
+      },
+      "problemMatcher": "$msCompile",
+      "group": "build"
+    },
+    {
+      "label": "publishVA",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "publish",
+        "src/ATAP.Utilities.VoiceAttack/ATAP.Utilities.VoiceAttack.csproj",
+        "/p:Configuration=Debug",
+        "/p:DeployOnBuild=true",
+        "/p:PublishProfile=\"properties/publishProfiles/Development.pubxml\"",
+        "/p:TargetFramework=net4.8",
+        "/bl:_devlogs/msbuild.binlog"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "watch",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "watch",
+        "run",
+        "${workspaceFolder}/${fileDirname}.csproj",
+        "/p:Configuration=Debug",
+        "/p:DeployOnBuild=true",
+        "/p:PublishProfile=\"properties/publishProfiles/Development.pubxml\"",
+        "/p:TargetFramework=net4.8",
+        "/bl:_devlogs/msbuild.binlog"
+      ],
+      "problemMatcher": "$msCompile"
+    }
+  ]
 }

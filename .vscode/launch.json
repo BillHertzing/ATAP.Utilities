@@ -6,15 +6,14 @@
   //    use `integratedTerminal` instead of `internalConsole` if using this filke to launch a Console program that uses terminal input
   "version": "0.2.0",
   "configurations": [
-
     {
       "type": "PowerShell",
       "request": "launch",
       "name": "PowerShell Launch Current File",
       "script": "${file}",
       "args": [
-        "-WhatIf"
-        , "-verbose"
+        "-WhatIf",
+        "-verbose"
       ],
       "cwd": "${file}"
     },
@@ -23,8 +22,10 @@
       "request": "launch",
       "name": "PowerShell Launch Current File in Temporary Console",
       "script": "${file}",
-      "args": [        "-WhatIf"
-        , "-verbose"],
+      "args": [
+        "-WhatIf",
+        "-verbose"
+      ],
       "cwd": "${file}",
       "createTemporaryIntegratedConsole": true
     },
@@ -34,9 +35,9 @@
       "name": "PowerShell Launch Current File w/Args Prompt",
       "script": "${file}",
       "args": [
-          "-WhatIf"
-        , "-verbose"
-        , "${command:SpecifyScriptArgs}"
+        "-WhatIf",
+        "-verbose",
+        "${command:SpecifyScriptArgs}"
       ],
       "cwd": "${file}"
     },
@@ -62,7 +63,7 @@
       "runspaceId": 1
     },
     {
-      "name": ".NET Core Launch (console)",
+      "name": "Launch Console02",
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
@@ -78,18 +79,35 @@
       "request": "attach",
       "processId": "${command:pickProcess}"
     },
-            {
-            "name": ".NET Script Debug",
-            "type": "coreclr",
-            "request": "launch",
-            "program": "dotnet",
-            "args": [
-                "exec",
-                "C:/Users/whertzing/.dotnet/tools/.store/dotnet-script/1.1.0/dotnet-script/1.1.0/tools/net5.0/any/dotnet-script.dll",
-                "${file}"
-            ],
-            "cwd": "${workspaceRoot}",
-            "stopAtEntry": true
-        }
+    {
+      "name": ".NET Script Debug",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "dotnet",
+      "args": [
+        "exec",
+        "C:/Users/whertzing/.dotnet/tools/.store/dotnet-script/1.1.0/dotnet-script/1.1.0/tools/net5.0/any/dotnet-script.dll",
+        "${file}"
+      ],
+      "cwd": "${workspaceRoot}",
+      "stopAtEntry": true
+    },
+    {
+      "name": "BuildPublishPluginAndLaunchVA",
+      "type": "clr",
+      "request": "attach",
+      "preLaunchTask": "publishPluginAndStartVA",
+      "processName": "VoiceAttack.exe",
+      "stopAtEntry" : true,
+      "postLaunchTask": "stopVA",
+    }
+  ],
+  "compounds": [
+    {
+      "name": "BuildPublishLaunchAndDriver",
+      "configurations": ["BuildPublishPluginAndLaunchVA", "Driver"],
+      "preLaunchTask": "publishPluginAndStartVA",
+      "postLaunchTask": "stopVA",
+    }
   ]
 }

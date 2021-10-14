@@ -31,8 +31,7 @@ namespace ATAP.Utilities.VoiceAttack {
 
     public static ATAP.Utilities.VoiceAttack.IData Data { get; set; }
     public static string VA_DisplayName() {
-      return
-        "ATAP Utilities Plugin for Age Of Empires V0.1.0-alpha"; // this is displayed in dropdowns as well as in the log file to indicate the name of the plugin
+      return "ATAP Utilities Plugin for VA\r\n"; // this is displayed in dropdowns as well as in the log file to indicate the name of the plugin
     }
 
     public static string VA_DisplayInfo() {
@@ -53,75 +52,11 @@ namespace ATAP.Utilities.VoiceAttack {
 
     // the plugin interface has only a single dynamic parameter.
     public static void VA_Init1(dynamic vaProxy) {
-      #region Startup logger
-
-      // Configure a startup Logger, prior to getting the Logger configuration from the ConfigurationRoot
-      // Serilog is the logging provider I picked to provide a logging solution for the VoiceAttack ATAP Plugin
-      // Enable Serilog's internal debug logging. Note that internal logging will not write to any user-defined Sources
-      //  https://github.com/serilog/serilog-sinks-file/blob/dev/example/Sample/Program.cs
-      Serilog.Debugging.SelfLog.Enable(System.Console.Out);
-      // Another example is at https://stackify.com/serilog-tutorial-net-logging/
-      //  This brings in the System.Diagnostics.Debug namespace and writes the SelfLog there
-      Serilog.Debugging.SelfLog.Enable(msg => Debug.WriteLine(msg));
-      Serilog.Debugging.SelfLog.WriteLine("in Program.Main(Serilog Self Log)");
-      // Another example is at https://github.com/serilog/serilog-extensions-logging/blob/dev/samples/Sample/Program.cs
-      // Another is https://nblumhardt.com/2019/10/serilog-in-aspnetcore-3/
-      // Creating a `LoggerProviderCollection` lets Serilog optionally write events through other dynamically-added MEL ILoggerProviders.
-      // var providers = new LoggerProviderCollection();
-
-      // Setup Serilog's static Logger with an initial configuration sufficient to log startup errors
-      // create a local Serilog Logger for use during Program startup
-      var serilogLoggerConfiguration = new Serilog.LoggerConfiguration()
-        .MinimumLevel.Verbose()
-        .Enrich.FromLogContext()
-        //.Enrich.WithExceptionDetails()
-        .Enrich.WithThreadId()
-        // .WriteTo.Console(outputTemplate: "Static startup Serilog {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}")
-        .WriteTo.Seq(serverUrl: "http://localhost:5341")
-        .WriteTo.File(
-          path:
-          @"C:\Dropbox\whertzing\GitHub\ATAP.Utilities\_devlogs\ATAP.Utilities.VoiceAttack.{Timestamp:yyyy-MM-dd HH:mm:ss}.log",
-          fileSizeLimitBytes: 1024,
-          outputTemplate:
-          "Static startup Serilog {Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}",
-          rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, retainedFileCountLimit: 31)
-        .WriteTo.Debug();
-      //.Enrich.WithHttpRequestId()
-      //.Enrich.WithUserName()
-      //.WriteTo.Providers(providers)
-
-      Serilog.Core.Logger serilogLogger = serilogLoggerConfiguration.CreateLogger();
-      // Set the Static Logger called Log to use this LoggerConfiguration
-      Serilog.Log.Logger = serilogLogger;
-      Serilog.Log.Debug("{0} {1}: The VoiceAttack Plugin ATAP.Utilities.VoiceAttack is starting", "PluginVA", "VA_Init1");
-      Serilog.Log.Debug("{0} {1}: LoggerFactory and local Logger defined with a default startup configuration:",
-        "PluginVA", "VA_Init1");
-
-      // Temp for testing the build configurations and the Trace #define
-#if TRACE
-      Serilog.Log.Debug("TRACE is defined");
-#else
-      Serilog.Log.Debug("TRACE is NOT defined");
-#endif
-      // end temp
-
-      // MEL Logging causes problem with Logging.Abstractions assembly versions, neither net.5 V5.0.0 nor Net Desktop 4.8 3.16 version
-      // Set the MEL LoggerFactory to use this LoggerConfiguration
-      // Microsoft.Extensions.Logging.ILoggerFactory mELoggerFactory = new Microsoft.Extensions.Logging.LoggerFactory().AddSerilog();
-      // Microsoft.Extensions.Logging.ILogger mELlogger = mELoggerFactory.CreateLogger("Program");
-      #endregion
+      Serilog.Log.Debug("{0} {1}: VA_Init1 received at {2}", "PluginVA", "VA_Init1", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
 
       // The list of environment prefixes this program wants to use
-      string[] envPrefixes = new string[1] { StringConstantsVA.CustomEnvironmentVariablePrefix};
+      string[] envPrefixes = new string[1] { StringConstantsVA.CustomEnvironmentVariablePrefix };
 
-      // Instantiate the Data and store away the reference to the VAProxy
-      //Data = new Data(configurationRoot, vaProxy);
-      //Data = new Data(configurationRoot, vaProxy);
-      //Serilog.Log.Debug("{0} {1}: static Data instance created", "Program", "Main");
-      //Data.StoredVAProxy.WriteToLog("static Data instance created", "Blue");
-
-      //vaProxy.SessionState.Add("new state value", 369); //set whatever private state information you want to maintain (note this is a dictionary of (string, object)
-      //vaProxy.SessionState.Add("second new state value", "hello");
     }
 
     public static void VA_Exit1(dynamic vaProxy) {
@@ -138,6 +73,11 @@ namespace ATAP.Utilities.VoiceAttack {
       vaProxy.WriteToLog($"{iVal} command received by PluginVA at {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
 
       switch (iVal) {
+        case StringConstantsVA.Debug:
+          Handle_Debug();
+          break;
+
+
         default:  //the catch-all for for the bottom of the plugin stack, is to write a log entry that the command is unrecognized
           Serilog.Log.Debug("{0} {1}: ATAP.Utilities.VoiceAttack Plugin Error: \"{2}\" is not a known command", "PluginVA", "VA_Invoke1", iVal);
           vaProxy.WriteToLog("ATAP.Utilities.VoiceAttack Plugin Error: \"" + iVal + "\" is not a known command", "red");
@@ -189,14 +129,19 @@ namespace ATAP.Utilities.VoiceAttack {
       //hope that helps some!
       #endregion
     }
+
+    public static void Handle_Debug() {
+      Data.StoredVAProxy.Command.Execute("Say Debug");
+    }
+
     #region Configuration sections
-    public static (List<object>, List<(string, string)>, List<string>) GetConfigurationSections() {
+    public static (List<Dictionary<string, string>>, List<(string, string)>, List<string>) GetConfigurationSections() {
       // ToDo: add commandline arguments.
       Serilog.Log.Debug("{0} {1}: GetConfigurationSections Enter at {2}", "PluginVA", "GetConfigurationSections", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
-      List<object> DefaultConfigurations = new();
+      List<Dictionary<string, string>> DefaultConfigurations = new();
       List<(string, string)> SettingsFiles = new();
       List<string> CustomEnvironmentVariablePrefixs = new();
-      DefaultConfigurations.Add(typeof(ATAP.Utilities.VoiceAttack.DefaultConfigurationVA));
+      DefaultConfigurations.Add(ATAP.Utilities.VoiceAttack.DefaultConfigurationVA.Production);
       SettingsFiles.Add((StringConstantsGenericHost.GenericHostSettingsFileName, StringConstantsGenericHost.GenericHostSettingsFileNameSuffix));
       SettingsFiles.Add((StringConstantsVA.SettingsFileName, StringConstantsVA.SettingsFileNameSuffix));
       CustomEnvironmentVariablePrefixs.Add(StringConstantsVA.CustomEnvironmentVariablePrefix);
@@ -205,10 +150,74 @@ namespace ATAP.Utilities.VoiceAttack {
     #endregion
 
     #region Populate the Data Property
-    public static void InitializeData(IData newData) {
+    public static void SetData(IData newData) {
+      Serilog.Log.Debug("{0} {1}: SetData Enter at {2}", "PluginVA", "SetData", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
+      Data = (Data)newData;
+    }
+    #endregion
+
+
+    #region Initialize the Data's Autoproperties
+    public static void InitializeData() {
       Serilog.Log.Debug("{0} {1}: InitializeData Enter at {2}", "PluginVA", "InitializeData", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
-      // ToDo: add parameter tests
-      Data = newData;
+    }
+    #endregion
+
+    #region Setup the loggers
+    public static void InitializeLogger() {
+      // Configure a startup Logger, prior to getting the Logger configuration from the ConfigurationRoot
+      #region Startup logger
+      // Serilog is the logging provider I picked to provide a logging solution for the VoiceAttack ATAP Plugin
+      // Enable Serilog's internal debug logging. Note that internal logging will not write to any user-defined Sources
+      //  https://github.com/serilog/serilog-sinks-file/blob/dev/example/Sample/Program.cs
+      Serilog.Debugging.SelfLog.Enable(System.Console.Out);
+      // Another example is at https://stackify.com/serilog-tutorial-net-logging/
+      //  This brings in the System.Diagnostics.Debug namespace and writes the SelfLog there
+      Serilog.Debugging.SelfLog.Enable(msg => Debug.WriteLine(msg));
+      Serilog.Debugging.SelfLog.WriteLine("in InitializeLogger(Serilog Self Log)");
+      // Another example is at https://github.com/serilog/serilog-extensions-logging/blob/dev/samples/Sample/Program.cs
+      // Another is https://nblumhardt.com/2019/10/serilog-in-aspnetcore-3/
+      // Creating a `LoggerProviderCollection` lets Serilog optionally write events through other dynamically-added MEL ILoggerProviders.
+      // var providers = new LoggerProviderCollection();
+
+      // Setup Serilog's static Logger with an initial configuration sufficient to log startup errors
+      // create a local Serilog Logger for use during Program startup
+      var serilogLoggerConfiguration = new Serilog.LoggerConfiguration()
+        .MinimumLevel.Verbose()
+        .Enrich.FromLogContext()
+        //.Enrich.WithExceptionDetails()
+        .Enrich.WithThreadId()
+        // .WriteTo.Console(outputTemplate: "Static startup Serilog {Timestamp:HH:mm:ss zzz} [{Level}] ({Name:l}) {Message}{NewLine}{Exception}")
+        .WriteTo.Seq(serverUrl: "http://localhost:5341")
+        .WriteTo.File(
+          path:
+          @"C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\_devlogs\\ATAP.Utilities.VoiceAttack.{Timestamp:yyyy-MM-dd HH:mm:ss}.log",
+          fileSizeLimitBytes: 1024,
+          outputTemplate:
+          "Static startup Serilog {Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}",
+          rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, retainedFileCountLimit: 31)
+        .WriteTo.Debug();
+      //.Enrich.WithHttpRequestId()
+      //.Enrich.WithUserName()
+      //.WriteTo.Providers(providers)
+
+      Serilog.Core.Logger serilogLogger = serilogLoggerConfiguration.CreateLogger();
+      // Set the Static Logger called Log to use this LoggerConfiguration
+      Serilog.Log.Logger = serilogLogger;
+      Serilog.Log.Debug("{0} {1}: The Serilog startup logger is defined with a default startup configuration", "PluginVA", "InitializeLogger");
+      // Temp for testing the build configurations and the Trace #define
+#if TRACE
+      Serilog.Log.Debug("TRACE is defined");
+#else
+      Serilog.Log.Debug("TRACE is NOT defined");
+#endif
+      // end temp
+
+      // MEL Logging causes problem with Logging.Abstractions assembly versions, neither net.5 V5.0.0 nor Net Desktop 4.8 3.16 version
+      // Set the MEL LoggerFactory to use this LoggerConfiguration
+      // Microsoft.Extensions.Logging.ILoggerFactory mELoggerFactory = new Microsoft.Extensions.Logging.LoggerFactory().AddSerilog();
+      // Microsoft.Extensions.Logging.ILogger mELlogger = mELoggerFactory.CreateLogger("Program");
+      #endregion
     }
     #endregion
   }

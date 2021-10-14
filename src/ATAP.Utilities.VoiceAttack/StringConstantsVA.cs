@@ -51,5 +51,9 @@ namespace ATAP.Utilities.VoiceAttack {
     public const string MainTimerTimeSpanConfigRootKey = "MainTimerTimeSpan";
     public const string MainTimerTimeSpanDefault = "0:0:02";
     #endregion
+
+    #region Debugging tools
+    public const string Debug = "Debug";
+    #endregion
   }
 }

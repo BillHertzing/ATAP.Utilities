@@ -7,7 +7,9 @@ using System.Reactive.Subjects;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+
 using ATAP.Utilities.ETW;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Localization;
@@ -15,26 +17,32 @@ using Microsoft.Extensions.Logging;
 
 namespace ATAP.Utilities.HostedServices {
 
+#if TRACE
   [ETWLogAttribute]
+#endif
   public class ObservableResetableTimer {
     // https://stackoverflow.com/questions/54309176/how-to-extend-the-Duration-time-of-observable-timer-in-rx-net
 
-    public TimeSpan Duration;
-    public Subject<Unit> ResetSignal;
-    //Scheduler scheduler; figure this out for testing
+    public TimeSpan Duration { get; set; }
+    public Subject<Unit> ResetSignal { get; set; }
+    public List<Action> ActionList { get; set; }
+    IScheduler MyScheduler { get; set; }
 
-    public ObservableResetableTimer(TimeSpan duration, IScheduler scheduler = null) : this(duration, new Subject<Unit>(), new Action( () => { }), scheduler) { } // for testing?, Scheduler.Default)
-    public ObservableResetableTimer(TimeSpan duration, Action DoSomething, IScheduler scheduler = null) : this(duration, new Subject<Unit>(), DoSomething, scheduler) { } // for testing?, Scheduler.Default)
-
-    public ObservableResetableTimer(TimeSpan duration, Subject<Unit> resetSignal, Action DoSomething, IScheduler scheduler = null) {
+    public ObservableResetableTimer(TimeSpan duration, IScheduler scheduler = null) : this(duration, new Subject<Unit>(), new List<Action>() { new Action(() => { }) }, scheduler) { }
+    public ObservableResetableTimer(TimeSpan duration, Action DoSomething, IScheduler scheduler = null) : this(duration, new Subject<Unit>(), new List<Action>() { DoSomething }, scheduler) { }
+    public ObservableResetableTimer(TimeSpan duration, Subject<Unit> resetSignal, Action DoSomething, IScheduler scheduler = null) : this(duration, resetSignal, new List<Action>() { DoSomething }, scheduler) { }
+    public ObservableResetableTimer(TimeSpan duration, Subject<Unit> resetSignal, List<Action> ThingsToDo, IScheduler scheduler = null) {
       Duration = duration;
       ResetSignal = resetSignal ?? throw new ArgumentNullException(nameof(resetSignal));
-      var timerScheduler = scheduler ?? Scheduler.Default;
+      ActionList = ThingsToDo;
+      MyScheduler = scheduler ?? Scheduler.Default;
       ResetSignal
         .Select(_ => Observable.Timer(duration))
         .Switch()
-        .ObserveOn(timerScheduler)
-        .Subscribe(_ => DoSomething());
+        .ObserveOn(MyScheduler);
+      foreach (var somethingToDo in ThingsToDo) {
+        ResetSignal.Subscribe(_ => somethingToDo());
+      }
     }
   }
 
@@ -42,12 +50,55 @@ namespace ATAP.Utilities.HostedServices {
   [ETWLogAttribute]
 #endif
   public class ObservableResetableTimersHostedServiceData : IDisposable {
-    public ObservableResetableTimer timer;
-    public void Dispose() {
-      GC.SuppressFinalize(this);
+    //public ObservableResetableTimer timer { get; set; }
+    public Dictionary<string, ObservableResetableTimer> TimerDisposeHandles { get; set; }
+    public ObservableResetableTimersHostedServiceData() : this(new Dictionary<string, ObservableResetableTimer>()) { }
+    public ObservableResetableTimersHostedServiceData(Dictionary<string, ObservableResetableTimer> timerDisposeHandles) {
+      TimerDisposeHandles = timerDisposeHandles ?? throw new ArgumentNullException(nameof(timerDisposeHandles));
     }
 
+    // to reset or start a ObservableResetableTimer:
+    //HostedServiceObservableResetableTimersData.TimerDisposeHandles[key].ResetSignal.OnNext(Unit.Default);
 
+
+    // methods to add a ObservableResetableTimer to the collection
+    public void AddTimer(string key, bool hot, TimeSpan duration,  Action somethingToDo, IScheduler scheduler = null) {
+      AddTimer(key, hot, duration, new Subject<Unit>(), new List<Action>() { somethingToDo }, Scheduler.Default);
+    }
+    public void AddTimer(string key, bool hot, TimeSpan duration, Subject<Unit> resetSignal, Action somethingToDo, IScheduler scheduler = null) {
+      AddTimer(key, hot, duration, resetSignal, new List<Action>() { somethingToDo }, Scheduler.Default);
+    }
+
+    public void AddTimer(string key, bool hot, TimeSpan duration, Subject<Unit> resetSignal, List<Action> thingsToDo, IScheduler scheduler = null) {
+      TimerDisposeHandles[key] = new ObservableResetableTimer(duration, resetSignal, thingsToDo, scheduler);
+      //   if cold just allocate it but don't start it,  if hot, start it,
+      if (hot) { TimerDisposeHandles[key].ResetSignal.OnNext(Unit.Default); }
+    }
+
+    // method to remove a ObservableResetableTimer from the collection
+
+
+
+    #region IDisposable Support
+    private bool disposedValue = false; // To detect redundant calls
+    protected virtual void Dispose(bool disposing) {
+      if (!disposedValue) {
+        if (disposing) {
+          // dispose of the TimerDisposeHandle collection
+          //GetEnumerator
+          foreach (var timerName in TimerDisposeHandles.Keys) {
+            TimerDisposeHandles.Remove(timerName);
+          }
+        }
+        disposedValue = true;
+      }
+    }
+    // This code added to correctly implement the disposable pattern.
+    public void Dispose() {
+      // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+      Dispose(true);
+    }
+    #endregion
   }
 #if TRACE
   [ETWLogAttribute]
@@ -88,25 +139,13 @@ namespace ATAP.Utilities.HostedServices {
 
     // public data structure for this service
     // collection of timers
-    public ObservableResetableTimersHostedServiceData HostedServiceObservableResetableTimersData;
+    public ObservableResetableTimersHostedServiceData HostedServiceObservableResetableTimersData { get; set; }
 
     public void Startup() {
-      HostedServiceObservableResetableTimersData = new ObservableResetableTimersHostedServiceData();
-      HostedServiceObservableResetableTimersData.timer = new ObservableResetableTimer(new TimeSpan(0, 0, 1));
-
+      HostedServiceObservableResetableTimersData = new();
+      //HostedServiceObservableResetableTimersData.timer = new ObservableResetableTimer(new TimeSpan(0, 0, 1));
+      HostedServiceObservableResetableTimersData.TimerDisposeHandles = new();
     }
-
-
-    // to reset or start a ObservableResetableTimer:
-    //HostedServiceObservableResetableTimersData.timer.ResetSignal.OnNext(Unit.Default);
-
-
-    // method to add a ObservableResetableTimer to the collection
-    //   if hot start it
-    //   if cold just allocate it
-
-    // method to remove a ObservableResetableTimer from the collection
-
 
     #region StartAsync and StopAsync methods as promised by IHostedService
     public Task StartAsync(CancellationToken externalCancellationToken) {

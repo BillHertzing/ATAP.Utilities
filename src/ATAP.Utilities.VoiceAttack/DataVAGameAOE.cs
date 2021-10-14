@@ -33,52 +33,6 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
     public TimeSpan CurrentVillagerBuildTimeSpan { get; set; }
     public short CurrentNumVillagers { get; set; }
     public Data(IConfigurationRoot configurationRoot, dynamic vaProxy) : base(configurationRoot, (object)vaProxy) {
-      #region Local Variables used inside .ctor
-      TimeSpan ts;
-      string durationAsString;
-      short n;
-      string shortAsString;
-      #endregion
-      #region Initialize data for the create villagers loop
-      // Initial value of CurrentVillagerBuildTimeSpan duration is from configuration
-      durationAsString = configurationRoot.GetValue<string>(StringConstantsVAGameAOE.VillagerBuildTimeSpanConfigRootKey, StringConstantsVAGameAOE.VillagerBuildTimeSpanDefault);
-      try {
-        ts = TimeSpan.Parse(durationAsString);
-      }
-      catch (FormatException) {
-        Serilog.Log.Debug("{0} {1}: durationAsString is {2} and cannot be parsed as a TimeSpan", "ATAPPluginGameAOE", "Data(.ctor)", durationAsString);
-        StoredVAProxy.WriteToLog($"durationAsString is {durationAsString} and cannot be parsed as a TimeSpan", "Red");
-        throw new InvalidDataException($"durationAsString is {durationAsString} and cannot be parsed as a TimeSpan");
-      }
-      catch (OverflowException) {
-        Serilog.Log.Debug("{0} {1}: durationAsString is {2} and is outside the range of a TimeSpan", "ATAPPluginGameAOE", "Data(.ctor)", durationAsString);
-        StoredVAProxy.WriteToLog($"durationAsString is {durationAsString} and is outside the range of a TimeSpan", "Red");
-        throw new InvalidDataException($"durationAsString is {durationAsString} and is outside the range of a TimeSpan");
-      }
-
-      CurrentVillagerBuildTimeSpan = ts;
-
-      shortAsString = configurationRoot.GetValue<string>(StringConstantsVAGameAOE.InitialNumVillagersConfigRootKey, StringConstantsVAGameAOE.InitialNumVillagersDefault);
-      try {
-        n = short.Parse(shortAsString);
-      }
-      catch (FormatException) {
-        Serilog.Log.Debug("{0} {1}: shortAsString is {2} and cannot be parsed as a short", "ATAPPluginGameAOE", "Data(.ctor)", shortAsString);
-        StoredVAProxy.WriteToLog($"shortAsString is {shortAsString} and cannot be parsed as a short", "Red");
-        throw new InvalidDataException($"shortAsString is {shortAsString} and cannot be parsed as a TishortmeSpan");
-      }
-      catch (OverflowException) {
-        Serilog.Log.Debug("{0} {1}: shortAsString is {2} and is outside the range of a short", "ATAPPluginGameAOE", "Data(.ctor)", shortAsString);
-        StoredVAProxy.WriteToLog($"shortAsString is {shortAsString} and is outside the range of a short", "Red");
-        throw new InvalidDataException($"shortAsString is {shortAsString} and is outside the range of a short");
-      }
-      CurrentNumVillagers = n;
-      #endregion
-
-      #region Initialize Structures
-      Structures = new();
-      Structures.Add(new TownCenter());
-      #endregion
     }
     #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls

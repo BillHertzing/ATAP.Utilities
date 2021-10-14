@@ -368,6 +368,21 @@ Function cdMy {$x= [Environment]::GetFolderPath('MyDocuments');Set-Location -Pat
 # A function that will return files with names matching the string 'conflicted'
 Function getconflicted {gci  -Recurse. | where-object -property fullname -match 'conflicted'}
 
+# A function and alias to kill the VoiceAttack process
+function PublishPluginAndStartVAProcess
+{
+
+  dotnet publish src/ATAP.Utilities.VoiceAttack/ATAP.Utilities.VoiceAttack.csproj /p:Configuration=Debug /p:DeployOnBuild=true /p:PublishProfile="properties/publishProfiles/Development.pubxml" /p:TargetFramework=net4.8 /bl:_devlogs/msbuild.binlog
+  & 'C:\Users\whertzing\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\VoiceAttack.lnk'  -bypassimpropershutdowncheck
+}
+set-item -path alias:pSVA -value PublishPluginAndStartVAProcess
+
+# A function and alias to kill the VoiceAttack process
+function StopVoiceAttackProcess
+{
+  Get-Process | Where-Object {$_.Path -match 'VoiceAttack'} | Stop-Process -force
+}
+set-item -path alias:stopVA -value StopVoiceAttackProcess
 
 # Final (user) directory to leave the interpreter
 #cdMy

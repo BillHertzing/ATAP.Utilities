@@ -25,7 +25,7 @@ namespace ATAP.Utilities.VoiceAttack.Game {
     public new static ATAP.Utilities.VoiceAttack.Game.IData Data { get; set; }
 
     public new static string VA_DisplayName() {
-      var str = "ATAP Utilities Plugin for Games\r\n" + ATAP.Utilities.VoiceAttack.Plugin.VA_DisplayName();
+      var str = "ATAP Utilities Plugin for VAGames\r\n" + ATAP.Utilities.VoiceAttack.Plugin.VA_DisplayName();
       return str;
     }
 
@@ -75,6 +75,7 @@ namespace ATAP.Utilities.VoiceAttack.Game {
 
     public static void Handle_StartGame() {
       Data.GameRunning = true;
+      Data.StoredVAProxy.Command.Execute("Say Game Started");
     }
     public static void Handle_PauseGame() {
     }
@@ -91,30 +92,37 @@ namespace ATAP.Utilities.VoiceAttack.Game {
       Data.GameRunning = false;
     }
     #region Configuration sections
-    public static new(List<object>, List<(string, string)>, List<string>) GetConfigurationSections() {
+    public static new (List<Dictionary<string, string>>, List<(string, string)>, List<string>) GetConfigurationSections() {
       Serilog.Log.Debug("{0} {1}: GetConfigurationSections Enter at {2}", "PluginVAGame", "GetConfigurationSections", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
 
-      (List<object> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) = ATAP.Utilities.VoiceAttack.Plugin.GetConfigurationSections();
-      List<object> DefaultConfigurations = new();
+      (List<Dictionary<string, string>> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) = ATAP.Utilities.VoiceAttack.Plugin.GetConfigurationSections();
+      List<Dictionary<string, string>> DefaultConfigurations = new();
       List<(string, string)> SettingsFiles = new();
       List<string> CustomEnvironmentVariablePrefixs = new();
       DefaultConfigurations.AddRange(lDCs);
       SettingsFiles.AddRange(lSFTs);
       CustomEnvironmentVariablePrefixs.AddRange(lEVPs);
       SettingsFiles.Add((StringConstants.SettingsFileName, StringConstants.SettingsFileNameSuffix));
-      DefaultConfigurations.Add(typeof(ATAP.Utilities.VoiceAttack.Game.DefaultConfiguration));
+      DefaultConfigurations.Add(ATAP.Utilities.VoiceAttack.Game.DefaultConfiguration.Production);
 
       CustomEnvironmentVariablePrefixs.Add(StringConstants.CustomEnvironmentVariablePrefix);
       return (DefaultConfigurations, SettingsFiles, CustomEnvironmentVariablePrefixs);
     }
     #endregion
-    
+
     #region Populate the Data Property
-    public static void InitializeData(IData newData) {
+    public static void SetData(IData newData) {
+      Serilog.Log.Debug("{0} {1}: SetData Enter at {2}", "PluginVAGame", "SetData", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
+      Data = (Data) newData;
+      ATAP.Utilities.VoiceAttack.Plugin.SetData(newData);
+    }
+    #endregion
+
+    #region Initialize the Data's Autoproperties
+    public new static void InitializeData() {
       Serilog.Log.Debug("{0} {1}: InitializeData Enter at {2}", "PluginVAGame", "InitializeData", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
       // ToDo: add parameter tests
-      Data = newData;
-      ATAP.Utilities.VoiceAttack.Plugin.InitializeData(newData);
+      ATAP.Utilities.VoiceAttack.Plugin.InitializeData();
     }
     #endregion
 

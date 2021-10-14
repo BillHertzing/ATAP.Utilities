@@ -19,6 +19,7 @@ using ATAP.Utilities.HostedServices;
 using CollectionExtensions = ATAP.Utilities.Collection.Extensions;
 using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
 
+using StringConstantsVAGameAOE = ATAP.Utilities.VoiceAttack.Game.AOE.StringConstants;
 using StringConstantsVAGame = ATAP.Utilities.VoiceAttack.Game.StringConstants;
 using StringConstantsVA = ATAP.Utilities.VoiceAttack.StringConstantsVA;
 using StringConstantsGenericHost = ATAP.Utilities.VoiceAttack.StringConstantsGenericHost;
@@ -32,7 +33,7 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
 
 
     public new static string VA_DisplayName() {
-      var str = "ATAP Utilities Plugin for Age Of Empires\r\n" + ATAP.Utilities.VoiceAttack.Game.Plugin.VA_DisplayName();
+      var str = "ATAP Utilities Plugin for VAGamesAOE\r\n" + ATAP.Utilities.VoiceAttack.Game.Plugin.VA_DisplayName();
       return str;
     }
 
@@ -47,7 +48,6 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
     }
 
     public new static void VA_Invoke1(dynamic vaProxy) {
-
       string iVal = vaProxy.Context;
 
       Serilog.Log.Debug("{0} {1}: {2} command received at {3}", "PluginVAGameAOE", "VA_Invoke1", iVal, DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
@@ -73,7 +73,7 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
 
     private static void Handle_CreateVillagersLoop(int upperLimit, int numTownCenters) {
 
-      if (Data.TimerDisposeHandles.ContainsKey(StringConstants.CreateVillagersLoopTimerName)) {
+      if (Data.ObservableResetableTimersHostedServiceData.TimerDisposeHandles.ContainsKey(StringConstants.CreateVillagersLoopTimerName)) {
         // Timer already exists, write to log
 
         Serilog.Log.Debug("{0} {1}: Data.TimerDisposeHandles already contains a not-null DisposeHandle for {2}", "Plugin", "Handle_CreateVillagersLoop", StringConstants.CreateVillagersLoopTimerName);
@@ -86,42 +86,41 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
       else {
         // Duration is from Data configuration
         var durationAsString = Data.CurrentVillagerBuildTimeSpan;
-        Data.TimerDisposeHandles.Add(StringConstants.CreateVillagersLoopTimerName, new ObservableResetableTimer(Data.CurrentVillagerBuildTimeSpan,
-  new Action(() => {
-    // Handle the timer event in this lambda Action. This lambda closes over a local variable set to the value of numTownCenters, and another which counts the number of villagers created in this loop, and the upperLimiit parameter
-    // This lambda writes to the dynamic StoredVAProxy Command
-    // This lambda calls another command to stop the loop when the upperlimit of villagers has been built
+        Data.ObservableResetableTimersHostedServiceData.AddTimer(StringConstants.CreateVillagersLoopTimerName, true, Data.CurrentVillagerBuildTimeSpan, new Action(() => {
+          // Handle the timer event in this lambda Action. This lambda closes over a local variable set to the value of numTownCenters, and another which counts the number of villagers created in this loop, and the upperLimiit parameter
+          // This lambda writes to the dynamic StoredVAProxy Command
+          // This lambda calls another command to stop the loop when the upperlimit of villagers has been built
 
-    // Serilog.Log.Debug("{0} {1}: The CreateVillagersLoopObservableResetableTimer fired at {2}", "Plugin", "OnCreateVillagersLoopObservableResetableTimerEvent", e.SignalTime.ToString(StringConstantsVA.DATE_FORMAT));
-    // StoredVAProxy.Command.WriteToLog($"The CreateVillagersLoopObservableResetableTimer fired at {e.SignalTime.ToString(StringConstantsVA.DATE_FORMAT)}", "Blue");
-    Serilog.Log.Debug("{0} {1}: The {2}} fired", "Plugin", "CreateVillagersLoopTimer", StringConstants.CreateVillagersLoopTimerName);
-    Data.StoredVAProxy.Command.WriteToLog($"The {StringConstants.CreateVillagersLoopTimerName} fired", "Purple");
-    //  numVillagersBuiltInThisLoop += numTownCenters; // ToDo: account for non zero upperlimit mod numTownCenters
-    //                                                 // ToDo: fire the unit created event numTownCenters times
-    //  for (var i = 0; i < numTownCenters; i++) {
-    //    //UnitCreated
-    //  }
-    //  // ToDo: if numVillagersBuiltInThisLoop equals or exceeds upperlimit
-    //  if (numVillagersBuiltInThisLoop >= upperLimit) {
-    //    Serilog.Log.Debug($"The CreateVillagersLoop should stop by itself now", "Blue");
-    //    StoredVAProxy.WriteToLog($"The CreateVillagersLoop should stop by itself now", "Blue");
-    //  }
+          // Serilog.Log.Debug("{0} {1}: The CreateVillagersLoopObservableResetableTimer fired at {2}", "Plugin", "OnCreateVillagersLoopObservableResetableTimerEvent", e.SignalTime.ToString(StringConstantsVA.DATE_FORMAT));
+          // StoredVAProxy.Command.WriteToLog($"The CreateVillagersLoopObservableResetableTimer fired at {e.SignalTime.ToString(StringConstantsVA.DATE_FORMAT)}", "Blue");
+          Serilog.Log.Debug("{0} {1}: The {2}} fired", "Plugin", "CreateVillagersLoopTimer", StringConstants.CreateVillagersLoopTimerName);
+          Data.StoredVAProxy.Command.WriteToLog($"The {StringConstants.CreateVillagersLoopTimerName} fired", "Purple");
+          //  numVillagersBuiltInThisLoop += numTownCenters; // ToDo: account for non zero upperlimit mod numTownCenters
+          //                                                 // ToDo: fire the unit created event numTownCenters times
+          //  for (var i = 0; i < numTownCenters; i++) {
+          //    //UnitCreated
+          //  }
+          //  // ToDo: if numVillagersBuiltInThisLoop equals or exceeds upperlimit
+          //  if (numVillagersBuiltInThisLoop >= upperLimit) {
+          //    Serilog.Log.Debug($"The CreateVillagersLoop should stop by itself now", "Blue");
+          //    StoredVAProxy.WriteToLog($"The CreateVillagersLoop should stop by itself now", "Blue");
+          //  }
 
-  })));
+        }));
 
       }
       // Start timer
-      Data.TimerDisposeHandles[StringConstants.CreateVillagersLoopTimerName].ResetSignal.OnNext(Unit.Default);
+      Data.ObservableResetableTimersHostedServiceData.TimerDisposeHandles[StringConstants.CreateVillagersLoopTimerName].ResetSignal.OnNext(Unit.Default);
       // Boolean to test for loop running is the presence of the key and a non-null value not disposing or disposed
     }
     private static void Handle_StopVillagersLoop() {
-      if (Data.TimerDisposeHandles.ContainsKey(StringConstants.CreateVillagersLoopTimerName)) {
+      if (Data.ObservableResetableTimersHostedServiceData.TimerDisposeHandles.ContainsKey(StringConstants.CreateVillagersLoopTimerName)) {
         Serilog.Log.Debug("{0} {1}: Data.TimerDisposeHandles contains a not-null DisposeHandle for {2}", "Plugin", "Handle_StopVillagersLoop", StringConstants.CreateVillagersLoopTimerName);
         Data.StoredVAProxy.WriteToLog($"Data.TimerDisposeHandles contains a not-null DisposeHandle for {StringConstants.CreateVillagersLoopTimerName}", "Blue");
         // TimerDisposeHandle exists, Dispose of it
         // Data.TimerDisposeHandles[StringConstants.CreateVillagersLoopTimerName].Dispose();
         // Remove the Key:ValueTuple from the Dictionary, implicitly will dispose of the Rx Timer
-        Data.TimerDisposeHandles.Remove(StringConstants.CreateVillagersLoopTimerName);
+        Data.ObservableResetableTimersHostedServiceData.TimerDisposeHandles.Remove(StringConstants.CreateVillagersLoopTimerName);
 
       }
       else {
@@ -131,22 +130,21 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
 
       // set upperLimit and numTownCenters
 
-
       // Start timer, villager build time in seconds, handle increment NumVillagers
       // increment
     }
     #region Configuration sections
-    public static new(List<object>, List<(string, string)>, List<string>) GetConfigurationSections() {
+    public static new (List<Dictionary<string, string>>, List<(string, string)>, List<string>) GetConfigurationSections() {
       Serilog.Log.Debug("{0} {1}: GetConfigurationSections Enter at {2}", "PluginVAGameAOE", "GetConfigurationSections", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
-      (List<object> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) = ATAP.Utilities.VoiceAttack.Game.Plugin.GetConfigurationSections();
-      List<object> DefaultConfigurations = new();
+      (List<Dictionary<string, string>> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) = ATAP.Utilities.VoiceAttack.Game.Plugin.GetConfigurationSections();
+      List<Dictionary<string, string>> DefaultConfigurations = new();
       List<(string, string)> SettingsFiles = new();
       List<string> CustomEnvironmentVariablePrefixs = new();
       DefaultConfigurations.AddRange(lDCs);
       // Use the version of merge that throws an error if a duplicate key exists
       SettingsFiles.AddRange(lSFTs);
       CustomEnvironmentVariablePrefixs.AddRange(lEVPs);
-      DefaultConfigurations.Add(typeof(ATAP.Utilities.VoiceAttack.Game.AOE.DefaultConfiguration));
+      DefaultConfigurations.Add(ATAP.Utilities.VoiceAttack.Game.AOE.DefaultConfiguration.Production);
       SettingsFiles.Add((StringConstants.SettingsFileName, StringConstants.SettingsFileNameSuffix));
       CustomEnvironmentVariablePrefixs.Add(StringConstants.CustomEnvironmentVariablePrefix);
       return (DefaultConfigurations, SettingsFiles, CustomEnvironmentVariablePrefixs);
@@ -154,11 +152,74 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
     #endregion
 
     #region Populate the Data Property
-    public static void InitializeData(IData newData) {
+    public static void SetData(IData newData) {
+      Serilog.Log.Debug("{0} {1}: SetData Enter at {2}", "PluginVAGameAOE", "SetData", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
+      Data = (Data)newData;
+      ATAP.Utilities.VoiceAttack.Game.Plugin.SetData(newData);
+    }
+    #endregion
+
+    #region Initialize the Data's Autoproperties
+    public new static void InitializeData() {
       Serilog.Log.Debug("{0} {1}: InitializeData Enter at {2}", "PluginVAGameAOE", "InitializeData", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
       // ToDo: add parameter tests
-      Data = newData;
-      ATAP.Utilities.VoiceAttack.Game.Plugin.InitializeData(newData);
+      // Any data that is taken from Configuration sections must be vetted.
+      #region Local Variables used inside .ctor
+      TimeSpan ts;
+      string durationAsString;
+      short n;
+      string shortAsString;
+      #endregion
+      #region Initialize data for the CreateVillagers Action
+      Serilog.Log.Debug("{0} {1}: InitializeData Enter at {2}", "PluginVAGameAOE", "InitializeData", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
+      // Initial value of CurrentVillagerBuildTimeSpan duration is from configuration
+      durationAsString = Data.ConfigurationRoot.GetValue<string>(StringConstantsVAGameAOE.VillagerBuildTimeSpanConfigRootKey, StringConstantsVAGameAOE.VillagerBuildTimeSpanDefault);
+      try {
+        ts = TimeSpan.Parse(durationAsString);
+      }
+      catch (FormatException) {
+        Serilog.Log.Debug("{0} {1}: durationAsString is {2} and cannot be parsed as a TimeSpan", "ATAPPluginGameAOE", "Data(.ctor)", durationAsString);
+        Data.StoredVAProxy.WriteToLog($"durationAsString is {durationAsString} and cannot be parsed as a TimeSpan", "Red");
+        throw new InvalidDataException($"durationAsString is {durationAsString} and cannot be parsed as a TimeSpan");
+      }
+      catch (OverflowException) {
+        Serilog.Log.Debug("{0} {1}: durationAsString is {2} and is outside the range of a TimeSpan", "ATAPPluginGameAOE", "Data(.ctor)", durationAsString);
+        Data.StoredVAProxy.WriteToLog($"durationAsString is {durationAsString} and is outside the range of a TimeSpan", "Red");
+        throw new InvalidDataException($"durationAsString is {durationAsString} and is outside the range of a TimeSpan");
+      }
+
+      Data.CurrentVillagerBuildTimeSpan = ts;
+
+      shortAsString = Data.ConfigurationRoot.GetValue<string>(StringConstantsVAGameAOE.InitialNumVillagersConfigRootKey, StringConstantsVAGameAOE.InitialNumVillagersDefault);
+      try {
+        n = short.Parse(shortAsString);
+      }
+      catch (FormatException) {
+        Serilog.Log.Debug("{0} {1}: shortAsString is {2} and cannot be parsed as a short", "ATAPPluginGameAOE", "Data(.ctor)", shortAsString);
+        Data.StoredVAProxy.WriteToLog($"shortAsString is {shortAsString} and cannot be parsed as a short", "Red");
+        throw new InvalidDataException($"shortAsString is {shortAsString} and cannot be parsed as a TishortmeSpan");
+      }
+      catch (OverflowException) {
+        Serilog.Log.Debug("{0} {1}: shortAsString is {2} and is outside the range of a short", "ATAPPluginGameAOE", "Data(.ctor)", shortAsString);
+        Data.StoredVAProxy.WriteToLog($"shortAsString is {shortAsString} and is outside the range of a short", "Red");
+        throw new InvalidDataException($"shortAsString is {shortAsString} and is outside the range of a short");
+      }
+      Data.CurrentNumVillagers = n;
+      #endregion
+
+      #region Initialize Structures, Units, Technologies
+      Data.Structures = new();
+      //Data.Units = new();
+      //Data.Technologies = new();
+
+      Data.Structures.Add(new TownCenter());
+      #endregion
+
+      #region Initial Build Order
+      //Data.StoredVAProxy.
+      #endregion
+
+      ATAP.Utilities.VoiceAttack.Game.Plugin.InitializeData();
     }
     #endregion
 

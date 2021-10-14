@@ -31,7 +31,7 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
 
     public new static ATAP.Utilities.VoiceAttack.Game.AOE.II.Data Data { get; set; }
     public new static string VA_DisplayName() {
-      var str = "ATAP Utilities Plugin for Age Of Empires II V0.1.0-alpha\r\n" + ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.VA_DisplayName();
+      var str = "ATAP Utilities Plugin for VAGamesAOEII V0.1.0-alpha01\r\n" + ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.VA_DisplayName();
       return str;
     }
 
@@ -54,9 +54,26 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
 
     // the plugin interface has only a single dynamic parameter.
     public new static void VA_Init1(dynamic vaProxy) {
+      // Configure a startup Logger, prior to getting the Logger configuration from the ConfigurationRoot
+      InitializeLogger();
       Serilog.Log.Debug("{0} {1}: VA_Init1 received at {2}", "PluginVAGameAOEII", "VA_Init1", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
       ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.VA_Init1((object)vaProxy);
-      InitializeData((object)vaProxy);
+      // Traverse the inheritance chain, accumulate the config sections at each level
+      var configSections = GetConfigurationSections();
+      #region initial ConfigurationBuilder and ConfigurationRoot
+      // Create the final ConfigurationRoot, taking into account all environments, default values, settings files, and environment variables This creates an ordered chain of configuration providers. The first providers in the chain have the lowest priority, the last providers in the chain have a higher priority.
+      ConfigurationRoot configurationRoot = (ConfigurationRoot)GetConfigurationRootFromConfigurationSections(configSections);
+      // Create the Data object (most specific of the inheritance tree)
+      Data = new ATAP.Utilities.VoiceAttack.Game.AOE.II.Data(configurationRoot, vaProxy);
+      SetData((IData) Data);
+      InitializeData((object) vaProxy);
+      AttachToMainTimer((o, e) => {
+        // If PresentOnPriorityQueue
+        //If PresentOnNormalQueue
+        // Write message to user via vaProxy
+        vaProxy.WriteToLog($"MainTimerFired, {Data.MainTimerElapsedTimeSpan.ToString(StringConstantsVA.DATE_FORMAT)}  {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
+        Serilog.Log.Debug("{0} {1}: MainTimerFired at {2}", "MainTimerFired", "MainTimerDelegate", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
+      });
     }
 
     public new static void VA_Exit1(dynamic vaProxy) {
@@ -81,17 +98,24 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
       }
     }
 
+    #region
+    public static void AttachToMainTimer(Action<object, EventArgs> DoSomething) {
+      // Attach the action specified as a method parameter to the main timer
+      // Data.TimerDisposeHandles[StringConstantsVA.MainTimerName].Subscribe(DoSomething);
+
+    }
+    #endregion
     #region Traverse the inheritance chain and get the various configurationSections from each
-    public static new(List<object>, List<(string, string)>, List<string>) GetConfigurationSections() {
+    public static new (List<Dictionary<string, string>>, List<(string, string)>, List<string>) GetConfigurationSections() {
       Serilog.Log.Debug("{0} {1}: GetConfigurationSections Enter at {2}", "PluginVAGameAOEII", "GetConfigurationSections", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
-      (List<object> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) = ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.GetConfigurationSections();
-      List<object> DefaultConfigurations = new();
+      (List<Dictionary<string, string>> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) = ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.GetConfigurationSections();
+      List<Dictionary<string, string>> DefaultConfigurations = new();
       List<(string, string)> SettingsFiles = new();
       List<string> CustomEnvironmentVariablePrefixs = new();
       DefaultConfigurations.AddRange(lDCs);
       SettingsFiles.AddRange(lSFTs);
       CustomEnvironmentVariablePrefixs.AddRange(lEVPs);
-      DefaultConfigurations.Add(typeof(ATAP.Utilities.VoiceAttack.Game.AOE.II.DefaultConfiguration));
+      DefaultConfigurations.Add(ATAP.Utilities.VoiceAttack.Game.AOE.II.DefaultConfiguration.Production);
       SettingsFiles.Add((StringConstants.SettingsFileName, StringConstants.SettingsFileNameSuffix));
 
       CustomEnvironmentVariablePrefixs.Add(StringConstants.CustomEnvironmentVariablePrefix);
@@ -100,7 +124,7 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
     #endregion
 
     #region Build the configurationRoot
-    public static IConfigurationRoot GetConfigurationRootFromConfigurationSections((List<object> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) configSections) {
+    public static IConfigurationRoot GetConfigurationRootFromConfigurationSections((List<Dictionary<string, string>> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) configSections) {
       bool isProduction = true; //Initial pass
       string? envNameFromConfiguration = StringConstantsGenericHost.EnvironmentProduction;
       #region initialStartup and loadedFrom directories
@@ -116,8 +140,7 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
       Serilog.Log.Debug("{0} {1}: loadedFromDirectory: {2}", "PluginVAGameAOEII", "GetConfigurationRootFromConfigurationSections", loadedFromDirectory);
       #endregion
       #region Initial ConfigurationRoot
-      ConfigurationBuilder configurationBuilder = new();
-      configurationBuilder.Add(isProduction, envNameFromConfiguration, configSections, loadedFromDirectory, initialStartupDirectory); // This is implemented as a extension on the IConfigurationBuilder type
+      ConfigurationBuilder configurationBuilder = (ConfigurationBuilder)ConfigurationExtensions.ATAPStandardConfigurationBuilder(isProduction, envNameFromConfiguration, configSections, loadedFromDirectory, initialStartupDirectory);
       // Create this program's initial ConfigurationRoot
       var configurationRoot = configurationBuilder.Build();
       #endregion
@@ -160,8 +183,7 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
         // Recreate the ConfigurationBuilder for this overall plugin, this time including environment-specific configuration providers.
         Serilog.Log.Debug("{0} {1}: Recreating configurationBuilder for Environment: {2}", "PluginVAGameAOEII", "GetConfigurationRootFromConfigurationSections", envNameFromConfiguration);
 
-        configurationBuilder = new();
-        configurationBuilder.Add(isProduction, envNameFromConfiguration, configSections, loadedFromDirectory, initialStartupDirectory); // This is implemented as a extension on the IConfigurationBuilder type
+        configurationBuilder = (ConfigurationBuilder)ConfigurationExtensions.ATAPStandardConfigurationBuilder(isProduction, envNameFromConfiguration, configSections, loadedFromDirectory, initialStartupDirectory);
 
         // Create this program's final ConfigurationRoot from the 2nd (final) configurationBuilder
         configurationRoot = configurationBuilder.Build();
@@ -171,19 +193,21 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
       return configurationRoot;
     }
     #endregion
+        #region Populate the Data Property
+    public static void SetData(IData newData) {
+      Data = (Data) newData;
+      ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.SetData(newData);
+    }
+    #endregion
 
-    #region Data
+    #region Initialize the Data's Autoproperties
     public static void InitializeData(dynamic vaProxy) {
       Serilog.Log.Debug("{0} {1}: InitializeData Enter at {2}", "PluginVAGameAOEII", "InitializeData", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
-      // Traverse the inheritance chain, accumulate the config sections at each level
-      var configSections = GetConfigurationSections();
-      #region initial ConfigurationBuilder and ConfigurationRoot
-      // Create the final ConfigurationRoot, taking into account all environments, default values, settings files, and environment variables This creates an ordered chain of configuration providers. The first providers in the chain have the lowest priority, the last providers in the chain have a higher priority.
-      ConfigurationRoot configurationRoot = (ConfigurationRoot)GetConfigurationRootFromConfigurationSections(configSections);
-      // Create the Data object (most specific of the inheritance tree)
-      Data = new ATAP.Utilities.VoiceAttack.Game.AOE.II.Data(configurationRoot, vaProxy);
+      // Copy a reference to this data object down the inheritance tree)
+      ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.SetData(Data);
+
       // Populate the properties of the Data object, including Current values of objects from Configuration items
-      ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.InitializeData(Data);
+      ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.InitializeData();
     }
     #endregion
 
@@ -191,4 +215,4 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
 
   }
 }
-    #endregion
+#endregion

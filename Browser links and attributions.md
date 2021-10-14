@@ -774,6 +774,9 @@ https://www.itprotoday.com/powershell/windows-powershell-range-operator-tricks
 # Chrome Bookmarks
 [Export Chrome Bookmarks to CSV file using PowerShell](https://stackoverflow.com/questions/47345612/export-chrome-bookmarks-to-csv-file-using-powershell)
 
+
+## VoiceAttack
+[Using Voice Dictation for In-Game Chatting with VoiceAttack & Google](https://forum.il2sturmovik.com/topic/61552-using-voice-dictation-for-in-game-chatting-with-voiceattack-google/)
 # To Be sorted
 
 
@@ -1201,6 +1204,10 @@ https://docs.microsoft.com/en-us/windows-hardware/test/wpt/
 [Gui.cs - Terminal UI toolkit for .NET](https://github.com/migueldeicaza/gui.cs) GUI over curses for terminals windows and linux
 [Cool article on JWT Tokens, and general cryptogrtaphic functions to encryupt, and validate] https://blog.thea.codes/building-a-stateless-api-proxy/
 [more on Lazy and using it in a GHHS](https://thomaslevesque.com/2020/03/18/lazily-resolving-services-to-fix-circular-dependencies-in-net-core/)
+
+## Security stuff
+[Pentesting Notes](https://github.com/picheljitsu/pentestnotes)
+
 
 //#if TRACE
 //  [ETWLogAttribute]

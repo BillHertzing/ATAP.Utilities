@@ -6,6 +6,7 @@ using ATAP.Utilities.ETW;
 using Microsoft.Extensions.Localization;
 using System.Threading;
 using System.IO;
+using System.Diagnostics; // breakpoint insertion
 
 namespace ATAP.Utilities.Configuration {
 #if TRACE
@@ -128,9 +129,9 @@ namespace ATAP.Utilities.Configuration {
       return configurationBuilder;
     }
 
-    public static ConfigurationBuilder Add(this ConfigurationBuilder configurationBuilder, bool isProduction, string? envNameFromConfiguration, (List<object> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) configurationTuple, string loadedFromDirectory, string initialStartupDirectory) {
+    public static IConfigurationBuilder ATAPStandardConfigurationBuilder(bool isProduction, string? envNameFromConfiguration, (List<Dictionary<string, string>> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) configurationTuple, string loadedFromDirectory, string initialStartupDirectory) {
       // ToDo: Parameter null checking, also the tuple elements
-      // IConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+      IConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
       foreach (Dictionary<string, string> compiledInConfiguration in configurationTuple.lDCs) {
         configurationBuilder.AddInMemoryCollection(compiledInConfiguration);
       }

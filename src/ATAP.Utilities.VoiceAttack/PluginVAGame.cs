@@ -43,7 +43,7 @@ namespace ATAP.Utilities.VoiceAttack.Game {
       string iVal = vaProxy.Context;
 
       Serilog.Log.Debug("{0} {1}: {2} command received at {3}", "PluginVAGame", "VA_Invoke1", iVal, DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
-      vaProxy.WriteToLog($"{iVal} command received by PluginVAGame  at {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
+      Data.StoredVAProxy.WriteToLog($"{iVal} command received by PluginVAGame  at {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
 
       switch (iVal) {
         case StringConstants.Context_StartGame:
@@ -75,11 +75,18 @@ namespace ATAP.Utilities.VoiceAttack.Game {
 
     public static void Handle_StartGame() {
       Data.GameRunning = true;
+
+      Serilog.Log.Debug("{0} {1}: Number of Command Queues currently available {2}", "PluginVAGame", "Handle_StartGame", Data.StoredVAProxy.Queue.Count());
+      Serilog.Log.Debug("{0} {1}: Queue {2} Status is {3}", "PluginVAGame", "Handle_StartGame", "OperationsQueue", Data.StoredVAProxy.Queue.Status("OperationsQueue"));
+      // If the operationsQueue has not yet been initialized, initialize it
+      //Data.StoredVAProxy.Queue
       Data.StoredVAProxy.Command.Execute("Say Game Started");
     }
     public static void Handle_PauseGame() {
+      // Pause all Game queues
     }
     public static void Handle_ResumeGame() {
+      // Un-pause all Game queues
     }
     public static void Handle_RestartGame() {
     }
@@ -91,6 +98,8 @@ namespace ATAP.Utilities.VoiceAttack.Game {
     public static void Handle_QuitGame() {
       Data.GameRunning = false;
     }
+    // Stop all Game queues
+
     #region Configuration sections
     public static new (List<Dictionary<string, string>>, List<(string, string)>, List<string>) GetConfigurationSections() {
       Serilog.Log.Debug("{0} {1}: GetConfigurationSections Enter at {2}", "PluginVAGame", "GetConfigurationSections", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
@@ -113,7 +122,7 @@ namespace ATAP.Utilities.VoiceAttack.Game {
     #region Populate the Data Property
     public static void SetData(IData newData) {
       Serilog.Log.Debug("{0} {1}: SetData Enter at {2}", "PluginVAGame", "SetData", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
-      Data = (Data) newData;
+      Data = (Data)newData;
       ATAP.Utilities.VoiceAttack.Plugin.SetData(newData);
     }
     #endregion
@@ -124,6 +133,22 @@ namespace ATAP.Utilities.VoiceAttack.Game {
       // ToDo: add parameter tests
       ATAP.Utilities.VoiceAttack.Plugin.InitializeData();
     }
+    #endregion
+    #region Attach Event Handlers specific to Game
+    public new static void AttachEventHandlers() {
+      ATAP.Utilities.VoiceAttack.Plugin.AttachEventHandlers();
+    }
+
+    public new static void ProfileChangingAction(Guid? FromInternalID, Guid? ToInternalID, String FromName, String ToName) {
+      Serilog.Log.Debug("{0} {1}: Profile Changing Event Handler, Profile changing from {2}, ID: {3} to {4}, ID: {5}", "PluginVAGame", "ProfileChangingAction", FromName, FromInternalID.ToString(), ToName, ToInternalID.ToString());
+    }
+    public new static void ProfileChangedAction(Guid? FromInternalID, Guid? ToInternalID, String FromName, String ToName) {
+      Serilog.Log.Debug("{0} {1}: Profile Changing Event Handler, Profile changed from {2}, ID: {3} to {4}, ID: {5}", "PluginVAGame", "ProfileChangedAction", FromName, FromInternalID.ToString(), ToName, ToInternalID.ToString());
+    }
+    public new static void ApplicationFocusChangedAction(System.Diagnostics.Process Process, String TopmostWindowTitle) {
+      Serilog.Log.Debug("{0} {1}: ApplicationFocus Changed Event Handler, Application focus changed to {2}", "PluginVAGameAOE", "ApplicationFocusChangedAction", TopmostWindowTitle);
+    }
+
     #endregion
 
   }

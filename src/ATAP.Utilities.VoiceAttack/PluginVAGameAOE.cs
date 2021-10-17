@@ -51,16 +51,20 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
       string iVal = vaProxy.Context;
 
       Serilog.Log.Debug("{0} {1}: {2} command received at {3}", "PluginVAGameAOE", "VA_Invoke1", iVal, DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
-      vaProxy.WriteToLog($"{iVal} command received by PluginVAGameAOE at {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
+      Data.StoredVAProxy.WriteToLog($"{iVal} command received by PluginVAGameAOE at {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
 
       switch (iVal) {
+        case StringConstantsVAGame.Context_StartGame:
+          Handle_StartGame();
+          break;
+
         case StringConstants.Context_CreateVillagersLoop_Default:
           int upperLimit = 26; // ToDo set int in command, read int from proxy
           int numStructures = 1; // ToDo set int in command, read int from proxy
           Handle_CreateVillagersLoop(upperLimit, numStructures);
           break;
         case StringConstants.Context_CreateFishingBoatsLoop_Default:
-          vaProxy.WriteToLog($"Create CreateFishingBoatsLoop Loops started {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
+          Data.StoredVAProxy.WriteToLog($"Create CreateFishingBoatsLoop Loops started {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
           break;
         default:  //the catch-all for an unrecognized Context is send it down one layer in the plugin stack
           ATAP.Utilities.VoiceAttack.Game.Plugin.VA_Invoke1((object)vaProxy);
@@ -68,8 +72,68 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
       }
     }
 
-    ///////////////////////////////
 
+    public new static void Handle_StartGame() {
+      // Start with letting the Game level plugin do its thing
+      ATAP.Utilities.VoiceAttack.Game.Plugin.Handle_StartGame();
+      int VillagerBuildTimeInSeconds = 20;
+      short InitialNumberOfVillagers = 3;
+      int InterCommandPauseInMilliseconds = 500;
+
+      // Now build a list of Actions to perform for AOE
+      var StartVoiceAttackActionList = new List<VoiceAttackActionWithDelay>(){
+        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionCommand(StringConstants.Command_Create_Villagers_In_One_Limit_22), null),
+        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_First_Six_Villagers_on_Sheep), new TimeSpan(0,0,((6-InitialNumberOfVillagers)*VillagerBuildTimeInSeconds))),
+        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Four_Villagers_on_Wood), new TimeSpan(0,0,(4*VillagerBuildTimeInSeconds))),
+        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Villager_Lure_Boar), new TimeSpan(0,0,VillagerBuildTimeInSeconds)),
+        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_To_Berries_Build_House_Build_Mill), new TimeSpan(0,0,VillagerBuildTimeInSeconds)),
+        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Two_Villagers_To_Berries), new TimeSpan(0,0,(2*VillagerBuildTimeInSeconds))),
+        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Wood_Villager_Build_House), null),
+        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Villager_Lure_Boar), new TimeSpan(0,0,VillagerBuildTimeInSeconds)),
+        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Two_Villagers_To_Boar), new TimeSpan(0,0,(2*VillagerBuildTimeInSeconds))),
+        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Three_Villagers_To_Wood), new TimeSpan(0,0,(3*VillagerBuildTimeInSeconds))),
+        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Villager_To_Sheep), new TimeSpan(0,0,VillagerBuildTimeInSeconds)),
+        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay("On Your own now!"), null)
+      };
+      foreach (var a in StartVoiceAttackActionList) {
+        switch (a.VoiceAttackAction.VoiceAttackActionKind) {
+          // Debugging, uncomment to see the list of actions prior to sending to teh message queue
+          case VoiceAttackActionKind.Say:
+            Serilog.Log.Debug("{0} {1}: VoiceAttackAction Say {2}", "PluginVAGameAOE", "Handle_StartGame",((VoiceAttackActionSay) a.VoiceAttackAction).Phrase);
+            break;
+          case VoiceAttackActionKind.Command:
+            Serilog.Log.Debug("{0} {1}: VoiceAttackAction Command {2}", "PluginVAGameAOE", "Handle_StartGame",((VoiceAttackActionCommand) a.VoiceAttackAction).Command);
+            break;
+          case VoiceAttackActionKind.Delay:
+            break;
+             default:
+            throw new InvalidDataException($"Invalid VoiceAttackActionKind {a.VoiceAttackAction.VoiceAttackActionKind.ToString()}");
+        }
+        // End debugging block
+        // Send to the Operations MessageQueue
+
+        //a.Invoke();
+      }
+    }
+
+    // Data.SpeechSynthesizer.Speak("First Six Villagers on Sheep");
+    //   Data.SpeechSynthesizer.Speak("Next Four Villagers on Wood");
+    //   //PAUSE 4*VillagerBuildtimeinseconds
+    //   Data.SpeechSynthesizer.Speak("Next Villager Lure Boar");
+    //   //PAUSE VillagerBuildtimeinseconds
+    //   Data.SpeechSynthesizer.Speak("Next To Berries, Build House, Build Mill");
+    //   //PAUSE VillagerBuildtimeinseconds
+    //   Data.SpeechSynthesizer.Speak("Next Two Villagers To Berries");
+    //   //PAUSE 5 seconds (minimum intra-suggestion pause)
+    //   Data.SpeechSynthesizer.Speak("Wood Villager Build House");
+    //   //PAUSE 2*VillagerBuildtimeinseconds - (minimum intra-suggestion pause)
+    //   Data.SpeechSynthesizer.Speak("Next Villager Lure Boar");
+    //   //PAUSE VillagerBuildtimeinseconds
+    //   Data.SpeechSynthesizer.Speak("Next Two Villagers To Boar");
+    //   //PAUSE 2 * VillagerBuildtimeinseconds
+    //   Data.SpeechSynthesizer.Speak("Next Three Villagers To Wood");
+    //   //PAUSE 3 * VillagerBuildtimeinseconds
+    //   Data.SpeechSynthesizer.Speak("Next Villager To Sheep");
 
     private static void Handle_CreateVillagersLoop(int upperLimit, int numTownCenters) {
 
@@ -92,9 +156,9 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
           // This lambda calls another command to stop the loop when the upperlimit of villagers has been built
 
           // Serilog.Log.Debug("{0} {1}: The CreateVillagersLoopObservableResetableTimer fired at {2}", "Plugin", "OnCreateVillagersLoopObservableResetableTimerEvent", e.SignalTime.ToString(StringConstantsVA.DATE_FORMAT));
-          // StoredVAProxy.Command.WriteToLog($"The CreateVillagersLoopObservableResetableTimer fired at {e.SignalTime.ToString(StringConstantsVA.DATE_FORMAT)}", "Blue");
+          // StoredVAProxy.WriteToLog($"The CreateVillagersLoopObservableResetableTimer fired at {e.SignalTime.ToString(StringConstantsVA.DATE_FORMAT)}", "Blue");
           Serilog.Log.Debug("{0} {1}: The {2}} fired", "Plugin", "CreateVillagersLoopTimer", StringConstants.CreateVillagersLoopTimerName);
-          Data.StoredVAProxy.Command.WriteToLog($"The {StringConstants.CreateVillagersLoopTimerName} fired", "Purple");
+          Data.StoredVAProxy.WriteToLog($"The {StringConstants.CreateVillagersLoopTimerName} fired", "Purple");
           //  numVillagersBuiltInThisLoop += numTownCenters; // ToDo: account for non zero upperlimit mod numTownCenters
           //                                                 // ToDo: fire the unit created event numTownCenters times
           //  for (var i = 0; i < numTownCenters; i++) {
@@ -103,7 +167,7 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
           //  // ToDo: if numVillagersBuiltInThisLoop equals or exceeds upperlimit
           //  if (numVillagersBuiltInThisLoop >= upperLimit) {
           //    Serilog.Log.Debug($"The CreateVillagersLoop should stop by itself now", "Blue");
-          //    StoredVAProxy.WriteToLog($"The CreateVillagersLoop should stop by itself now", "Blue");
+          //    Data.StoredVAProxy.WriteToLog($"The CreateVillagersLoop should stop by itself now", "Blue");
           //  }
 
         }));
@@ -220,6 +284,30 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
       #endregion
 
       ATAP.Utilities.VoiceAttack.Game.Plugin.InitializeData();
+    }
+    #endregion
+
+    #region Attach Event Handlers specific to GameAOE
+    public new static void AttachEventHandlers() {
+      Data.StoredVAProxy.ProfileChanging += new Action<Guid?, Guid?, String, String>(ProfileChangingAction);
+      Data.StoredVAProxy.ProfileChanged += new Action<Guid?, Guid?, String, String>(ProfileChangedAction);
+      Data.StoredVAProxy.ApplicationFocusChanged += new Action<System.Diagnostics.Process, String>(ApplicationFocusChangedAction);
+      ATAP.Utilities.VoiceAttack.Game.Plugin.AttachEventHandlers();
+
+    }
+    public new static void ProfileChangingAction(Guid? FromInternalID, Guid? ToInternalID, String FromName, String ToName) {
+      Serilog.Log.Debug("{0} {1}: Profile Changing Event Handler, Profile changing from {2}, ID: {3} to {4}, ID: {5}", "PluginVAGameAOE", "ProfileChangingAction", FromName, FromInternalID.ToString(), ToName, ToInternalID.ToString());
+      ATAP.Utilities.VoiceAttack.Game.Plugin.ProfileChangingAction(FromInternalID, ToInternalID, FromName, ToName);
+
+    }
+    public new static void ProfileChangedAction(Guid? FromInternalID, Guid? ToInternalID, String FromName, String ToName) {
+      Serilog.Log.Debug("{0} {1}: Profile Changing Event Handler, Profile changed from {2}, ID: {3} to {4}, ID: {5}", "PluginVAGameAOE", "ProfileChangedAction", FromName, FromInternalID.ToString(), ToName, ToInternalID.ToString());
+      ATAP.Utilities.VoiceAttack.Game.Plugin.ProfileChangedAction(FromInternalID, ToInternalID, FromName, ToName);
+    }
+
+    public new static void ApplicationFocusChangedAction(System.Diagnostics.Process Process, String TopmostWindowTitle) {
+      Serilog.Log.Debug("{0} {1}: ApplicationFocus Changed Event Handler, Application focus changed to {2}", "PluginVAGameAOE", "ApplicationFocusChangedAction", TopmostWindowTitle);
+      ATAP.Utilities.VoiceAttack.Game.Plugin.ApplicationFocusChangedAction(Process, TopmostWindowTitle);
     }
     #endregion
 

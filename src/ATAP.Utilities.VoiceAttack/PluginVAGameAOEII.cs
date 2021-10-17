@@ -65,15 +65,17 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
       ConfigurationRoot configurationRoot = (ConfigurationRoot)GetConfigurationRootFromConfigurationSections(configSections);
       // Create the Data object (most specific of the inheritance tree)
       Data = new ATAP.Utilities.VoiceAttack.Game.AOE.II.Data(configurationRoot, vaProxy);
-      SetData((IData) Data);
-      InitializeData((object) vaProxy);
+      SetData((IData)Data);
+      InitializeData((object)vaProxy);
       AttachToMainTimer((o, e) => {
-        // If PresentOnPriorityQueue
-        //If PresentOnNormalQueue
+        // If Main Queue is not empty
+        // If PresentOnNormalQueue
         // Write message to user via vaProxy
-        vaProxy.WriteToLog($"MainTimerFired, {Data.MainTimerElapsedTimeSpan.ToString(StringConstantsVA.DATE_FORMAT)}  {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
+        Data.StoredVAProxy.WriteToLog($"MainTimerFired, {Data.MainTimerElapsedTimeSpan.ToString(StringConstantsVA.DATE_FORMAT)}  {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
         Serilog.Log.Debug("{0} {1}: MainTimerFired at {2}", "MainTimerFired", "MainTimerDelegate", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
       });
+      // Attach any event handlers specific to GameAOEII
+      AttachEventHandlers();
     }
 
     public new static void VA_Exit1(dynamic vaProxy) {
@@ -88,23 +90,24 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
       string iVal = vaProxy.Context;
 
       Serilog.Log.Debug("{0} {1}: {2} command received at {3}", "PluginVAGameAOEII", "VA_Invoke1", iVal, DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
-      vaProxy.WriteToLog($"{iVal} command received by PluginVAGameAOEII at {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
+      Data.StoredVAProxy.WriteToLog($"{iVal} command received by PluginVAGameAOEII at {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
 
       switch (iVal) {
         default:  //the catch-all for an unrecognized Context is send it down one layer in the plugin stack
           ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.VA_Invoke1((object)vaProxy);
-          vaProxy.WriteToLog("VoiceAttack ATAP.Utilities.VoiceAttack Plugin Error: \"" + iVal + "\" is not a known command", "red");
           break;
       }
     }
 
-    #region
+    #region Additional Actions to occur when MainTimer fires
+
     public static void AttachToMainTimer(Action<object, EventArgs> DoSomething) {
       // Attach the action specified as a method parameter to the main timer
       // Data.TimerDisposeHandles[StringConstantsVA.MainTimerName].Subscribe(DoSomething);
-
+      // Read MainCommandQueue and execute any Actions there
     }
     #endregion
+
     #region Traverse the inheritance chain and get the various configurationSections from each
     public static new (List<Dictionary<string, string>>, List<(string, string)>, List<string>) GetConfigurationSections() {
       Serilog.Log.Debug("{0} {1}: GetConfigurationSections Enter at {2}", "PluginVAGameAOEII", "GetConfigurationSections", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
@@ -193,9 +196,9 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
       return configurationRoot;
     }
     #endregion
-        #region Populate the Data Property
+    #region Populate the Data Property
     public static void SetData(IData newData) {
-      Data = (Data) newData;
+      Data = (Data)newData;
       ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.SetData(newData);
     }
     #endregion
@@ -211,8 +214,12 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
     }
     #endregion
 
+    #region Attach event handlers unique to AOEII
+        public new static void AttachEventHandlers() {
+          ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.AttachEventHandlers();
+    }
 
-
+    #endregion
   }
 }
 #endregion

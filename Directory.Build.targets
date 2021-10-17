@@ -67,8 +67,8 @@
   </Target>
   -->
 
-<!-- when creating Console programs or services, if they dynamically load Plugins, define where the Plugins subdirectory is located -->
-    <PropertyGroup>
+  <!-- when creating Console programs or services, if they dynamically load Plugins, define where the Plugins subdirectory is located -->
+  <PropertyGroup>
     <PluginsRelativeDir Condition="$(PluginsRelativeDir) == '' Or $(PluginsRelativeDir) == '*Undefined*'">Plugins\</PluginsRelativeDir>
     <PluginsDir Condition="$(PluginsDir) == '' Or $(PluginsDir) == '*Undefined*'">$(OutputPath)$(PluginsRelativeDir)</PluginsDir>
   </PropertyGroup>
@@ -117,8 +117,8 @@
   </ItemGroup>
 
   <!-- Include Roslyn Code Analysis for every project -->
-   <!-- FxCopAnalyzers package has been deprecated in favor of 'Microsoft.CodeAnalysis.NetAnalyzers', hence this is now commented out -->
-   <!--
+  <!-- FxCopAnalyzers package has been deprecated in favor of 'Microsoft.CodeAnalysis.NetAnalyzers', hence this is now commented out -->
+  <!--
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers"></PackageReference>
   </ItemGroup>
@@ -132,7 +132,7 @@
   <!-- documentation generation  -->
   <!--<PackageReference Update="docfx" Version="2.51.2" />-->
 
-<!-- Centrally manage package versions for all NuGet package dependencies, courtesy of https://www.strathweb.com/2018/07/solution-wide-nuget-package-version-handling-with-msbuild-15/ -->
+  <!-- Centrally manage package versions for all NuGet package dependencies, courtesy of https://www.strathweb.com/2018/07/solution-wide-nuget-package-version-handling-with-msbuild-15/ -->
   <ItemGroup>
     <!--Stateless lightweight StateMachine library -->
     <PackageReference Update="Stateless" Version="5.1.2" />
@@ -147,6 +147,9 @@
 
     <!-- Reactive Extensions -->
     <PackageReference Update="System.Reactive" Version="5.0.0" />
+
+    <!-- Text-To-Speech (TTS) packages -->
+    <PackageReference Update="System.Speech.Synthesis" Version="5.0.0" />
 
     <!-- Immutable collections -->
     <PackageReference Update="System.Collections.Immutable" Version="5.0.0" />
@@ -202,6 +205,9 @@
 
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
     <PackageReference Update="MethodBoundaryAspect.Fody" Version="2.0.138" />
+
+    <!-- Package to implement the c# client library for the RabbitMQ message queue provider-->
+    <PackageReference Update="RabbitMQ.Client" Version="6.2.2" />
 
     <!-- Packages used for custom build tasks -->
     <PackageReference Update="Microsoft.Build.Framework" Version="16.8.0" />

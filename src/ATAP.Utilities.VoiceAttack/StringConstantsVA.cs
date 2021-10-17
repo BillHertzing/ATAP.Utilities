@@ -12,6 +12,10 @@ namespace ATAP.Utilities.VoiceAttack {
     #endregion
     #endregion
 
+    #region Debugging tools
+    public const string Debug = "Debug";
+    #endregion
+
     #region Exception Messages (string constants)
     public const string StartExceptionMessage = "ATAP.Utilities.VoiceAttackStartupException";
     public const string KillExceptionMessage = "ATAP.Utilities.VoiceAttackKillException";
@@ -31,7 +35,6 @@ namespace ATAP.Utilities.VoiceAttack {
     public const string EnableProgressConfigRootKey = "EnableProgress";
     public const string EnableProgressDefault = "true";
     #endregion
-
     #region Persistence directory
     public const string PersistencePathBaseDefault = "D:\\Temp\\VoiceAttack\\SerializedObjects\\";
     public const string PersistencePathBaseConfigRootKey = "PersistencePathBase";
@@ -52,8 +55,8 @@ namespace ATAP.Utilities.VoiceAttack {
     public const string MainTimerTimeSpanDefault = "0:0:02";
     #endregion
 
-    #region Debugging tools
-    public const string Debug = "Debug";
+    #region Queue Definitions
+    public const string MainQueueName = "MainQueue";
     #endregion
   }
 }

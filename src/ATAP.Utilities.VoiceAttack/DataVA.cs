@@ -2,10 +2,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reactive;
+using System.Reactive.Concurrency;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 
 using Microsoft.Extensions.Configuration;
 using ATAP.Utilities.HostedServices;
+
+using System.Speech.Synthesis;
 
 using StringConstantsVA = ATAP.Utilities.VoiceAttack.StringConstantsVA;
 
@@ -15,6 +21,8 @@ namespace ATAP.Utilities.VoiceAttack {
     public IConfigurationRoot ConfigurationRoot { get; set; }
     public dynamic StoredVAProxy { get; set; }
     public ObservableResetableTimersHostedServiceData ObservableResetableTimersHostedServiceData { get; set; }
+    // The object for controlling the speech synthesis engine (voice).
+    public SpeechSynthesizer SpeechSynthesizer { get; set; }
     public void Dispose();
   }
 
@@ -22,11 +30,14 @@ namespace ATAP.Utilities.VoiceAttack {
     public IConfigurationRoot ConfigurationRoot { get; set; }
     public dynamic StoredVAProxy { get; set; }
     public ObservableResetableTimersHostedServiceData ObservableResetableTimersHostedServiceData { get; set; }
+    // The object for controlling the speech synthesis engine (voice).
+    public SpeechSynthesizer SpeechSynthesizer { get; set; }
     public TimeSpan MainTimerElapsedTimeSpan { get; set; }
     public Data(IConfigurationRoot configurationRoot, dynamic storedVAProxy) {
       ConfigurationRoot = configurationRoot;
       StoredVAProxy = storedVAProxy;
       ObservableResetableTimersHostedServiceData = new();
+      SpeechSynthesizer = new();
       #region Local Variables used inside .ctor
       string durationAsString;
       #endregion
@@ -48,10 +59,10 @@ namespace ATAP.Utilities.VoiceAttack {
         throw new InvalidDataException($"durationAsString is {durationAsString} and is outside the range of a TimeSpan");
       }
 
-      ObservableResetableTimersHostedServiceData.AddTimer(StringConstantsVA.MainTimerName, false, durationAsTimeSpan, new Action(() => {
+      ObservableResetableTimersHostedServiceData.AddInterval(StringConstantsVA.MainTimerName, true, durationAsTimeSpan, new Action(() => {
         MainTimerElapsedTimeSpan += durationAsTimeSpan;
         Serilog.Log.Debug("{0} {1}: The MainObservableResetableTimer fired, the MainTimerElapsedTimeSpan is {2}", "PluginVA", "MainTimerSubscriptionAction", MainTimerElapsedTimeSpan);
-        StoredVAProxy.Command.WriteToLog($"The MainObservableResetableTimer fired, the MainTimerElapsedTimeSpan is {MainTimerElapsedTimeSpan}", "Purple");
+        StoredVAProxy.WriteToLog($"The MainObservableResetableTimer fired, the MainTimerElapsedTimeSpan is {MainTimerElapsedTimeSpan}", "Purple");
       }));
 
     }

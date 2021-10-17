@@ -31,5 +31,23 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
     public const string CreateFishingBoatsLoopTimerName = "CreateFishingBoatsLoopTimer";
     #endregion
 
+    #region Phrases To Say
+      public const string Say_First_Six_Villagers_on_Sheep = "First Six Villagers on Sheep";
+      public const string Say_Next_Four_Villagers_on_Wood = "Next Four Villagers on Wood";
+      public const string Say_Next_To_Berries_Build_House_Build_Mill = "Next To Berries, Build House, Build Mill";
+      public const string Say_Next_Two_Villagers_To_Berries = "Next Two Villagers To Berries";
+      public const string Say_Wood_Villager_Build_House = "Wood Villager Build House";
+      public const string Say_Next_Villager_Lure_Boar = "Next Villager Lure Boar";
+      public const string Say_Next_Two_Villagers_To_Boar = "Next Two Villagers To Boar";
+      public const string Say_Next_Three_Villagers_To_Wood = "Next Three Villagers To Wood";
+      public const string Say_Next_Villager_To_Sheep = "Next Villager To Sheep";
+
+    #endregion
+
+    #region VA Commands for this profile
+      public const string Command_Create_Villagers_In_One_Limit_22 = "Create Villagers In One Limit 22";
+
+    #endregion
+
   }
 }

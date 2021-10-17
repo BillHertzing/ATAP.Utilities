@@ -20,24 +20,31 @@ namespace ATAP.Utilities.HostedServices {
 #if TRACE
   [ETWLogAttribute]
 #endif
-  public class ObservableResetableTimer {
-    // https://stackoverflow.com/questions/54309176/how-to-extend-the-Duration-time-of-observable-timer-in-rx-net
-
+  public abstract class ObservableResetableTOI {
     public TimeSpan Duration { get; set; }
     public Subject<Unit> ResetSignal { get; set; }
     public List<Action> ActionList { get; set; }
-    IScheduler MyScheduler { get; set; }
-
-    public ObservableResetableTimer(TimeSpan duration, IScheduler scheduler = null) : this(duration, new Subject<Unit>(), new List<Action>() { new Action(() => { }) }, scheduler) { }
-    public ObservableResetableTimer(TimeSpan duration, Action DoSomething, IScheduler scheduler = null) : this(duration, new Subject<Unit>(), new List<Action>() { DoSomething }, scheduler) { }
-    public ObservableResetableTimer(TimeSpan duration, Subject<Unit> resetSignal, Action DoSomething, IScheduler scheduler = null) : this(duration, resetSignal, new List<Action>() { DoSomething }, scheduler) { }
-    public ObservableResetableTimer(TimeSpan duration, Subject<Unit> resetSignal, List<Action> ThingsToDo, IScheduler scheduler = null) {
+    public IScheduler MyScheduler { get; set; }
+    public ObservableResetableTOI(int kind, TimeSpan duration, Subject<Unit> resetSignal, List<Action> ThingsToDo, IScheduler scheduler = null) {
       Duration = duration;
       ResetSignal = resetSignal ?? throw new ArgumentNullException(nameof(resetSignal));
       ActionList = ThingsToDo;
       MyScheduler = scheduler ?? Scheduler.Default;
-      ResetSignal
-        .Select(_ => Observable.Timer(duration))
+      IObservable<IObservable<long>> ResetSignalAfterSelect;
+      switch (kind) {
+        case 1:
+          ResetSignalAfterSelect = ResetSignal
+    .Select(_ => Observable.Timer(duration));
+          break;
+        case 2:
+          ResetSignalAfterSelect = ResetSignal
+             .Select(_ => Observable.Interval(duration));
+          break;
+        default:
+          // ToDo: Add error handling
+          throw new ArgumentOutOfRangeException($"Kind {kind} is unknown");
+      }
+      ResetSignalAfterSelect
         .Switch()
         .ObserveOn(MyScheduler);
       foreach (var somethingToDo in ThingsToDo) {
@@ -46,31 +53,58 @@ namespace ATAP.Utilities.HostedServices {
     }
   }
 
+  public class ObservableResetableTimer : ObservableResetableTOI {
+    // https://stackoverflow.com/questions/54309176/how-to-extend-the-Duration-time-of-observable-timer-in-rx-net
+
+
+    public ObservableResetableTimer(TimeSpan duration, IScheduler scheduler = null) : this(duration, new Subject<Unit>(), new List<Action>() { new Action(() => { }) }, scheduler) { }
+    public ObservableResetableTimer(TimeSpan duration, Action DoSomething, IScheduler scheduler = null) : this(duration, new Subject<Unit>(), new List<Action>() { DoSomething }, scheduler) { }
+    public ObservableResetableTimer(TimeSpan duration, Subject<Unit> resetSignal, Action DoSomething, IScheduler scheduler = null) : this(duration, resetSignal, new List<Action>() { DoSomething }, scheduler) { }
+    public ObservableResetableTimer(TimeSpan duration, Subject<Unit> resetSignal, List<Action> thingsToDo, IScheduler scheduler = null) : base(1, duration, resetSignal, thingsToDo, scheduler) { }
+  }
+  public class ObservableResetableInterval : ObservableResetableTOI {
+    public ObservableResetableInterval(TimeSpan duration, IScheduler scheduler = null) : this(duration, new Subject<Unit>(), new List<Action>() { new Action(() => { }) }, scheduler) { }
+    public ObservableResetableInterval(TimeSpan duration, Action DoSomething, IScheduler scheduler = null) : this(duration, new Subject<Unit>(), new List<Action>() { DoSomething }, scheduler) { }
+    public ObservableResetableInterval(TimeSpan duration, Subject<Unit> resetSignal, Action DoSomething, IScheduler scheduler = null) : this(duration, resetSignal, new List<Action>() { DoSomething }, scheduler) { }
+    public ObservableResetableInterval(TimeSpan duration, Subject<Unit> resetSignal, List<Action> thingsToDo, IScheduler scheduler = null) : base(2, duration, resetSignal, thingsToDo, scheduler) { }
+  }
+
 #if TRACE
   [ETWLogAttribute]
 #endif
   public class ObservableResetableTimersHostedServiceData : IDisposable {
     //public ObservableResetableTimer timer { get; set; }
-    public Dictionary<string, ObservableResetableTimer> TimerDisposeHandles { get; set; }
-    public ObservableResetableTimersHostedServiceData() : this(new Dictionary<string, ObservableResetableTimer>()) { }
-    public ObservableResetableTimersHostedServiceData(Dictionary<string, ObservableResetableTimer> timerDisposeHandles) {
+    public Dictionary<string, ObservableResetableTOI> TimerDisposeHandles { get; set; }
+    public ObservableResetableTimersHostedServiceData() : this(new Dictionary<string, ObservableResetableTOI>()) { }
+    public ObservableResetableTimersHostedServiceData(Dictionary<string, ObservableResetableTOI> timerDisposeHandles) {
       TimerDisposeHandles = timerDisposeHandles ?? throw new ArgumentNullException(nameof(timerDisposeHandles));
     }
 
-    // to reset or start a ObservableResetableTimer:
-    //HostedServiceObservableResetableTimersData.TimerDisposeHandles[key].ResetSignal.OnNext(Unit.Default);
+    // to reset or start a ObservableResetableObservableResetableTOI:
+    //ObservableResetableTimersHostedServiceData.TimerDisposeHandles[key].ResetSignal.OnNext(Unit.Default);
 
 
-    // methods to add a ObservableResetableTimer to the collection
-    public void AddTimer(string key, bool hot, TimeSpan duration,  Action somethingToDo, IScheduler scheduler = null) {
+    // methods to add a ObservableResetableTOI to the collection
+    public void AddTimer(string key, bool hot, TimeSpan duration, Action somethingToDo, IScheduler scheduler = null) {
       AddTimer(key, hot, duration, new Subject<Unit>(), new List<Action>() { somethingToDo }, Scheduler.Default);
     }
     public void AddTimer(string key, bool hot, TimeSpan duration, Subject<Unit> resetSignal, Action somethingToDo, IScheduler scheduler = null) {
       AddTimer(key, hot, duration, resetSignal, new List<Action>() { somethingToDo }, Scheduler.Default);
     }
+    public void AddInterval(string key, bool hot, TimeSpan duration, Action somethingToDo, IScheduler scheduler = null) {
+      AddInterval(key, hot, duration, new Subject<Unit>(), new List<Action>() { somethingToDo }, Scheduler.Default);
+    }
+    public void AddInterval(string key, bool hot, TimeSpan duration, Subject<Unit> resetSignal, Action somethingToDo, IScheduler scheduler = null) {
+      AddInterval(key, hot, duration, resetSignal, new List<Action>() { somethingToDo }, Scheduler.Default);
+    }
 
     public void AddTimer(string key, bool hot, TimeSpan duration, Subject<Unit> resetSignal, List<Action> thingsToDo, IScheduler scheduler = null) {
       TimerDisposeHandles[key] = new ObservableResetableTimer(duration, resetSignal, thingsToDo, scheduler);
+      //   if cold just allocate it but don't start it,  if hot, start it,
+      if (hot) { TimerDisposeHandles[key].ResetSignal.OnNext(Unit.Default); }
+    }
+    public void AddInterval(string key, bool hot, TimeSpan duration, Subject<Unit> resetSignal, List<Action> thingsToDo, IScheduler scheduler = null) {
+      TimerDisposeHandles[key] = new ObservableResetableInterval(duration, resetSignal, thingsToDo, scheduler);
       //   if cold just allocate it but don't start it,  if hot, start it,
       if (hot) { TimerDisposeHandles[key].ResetSignal.OnNext(Unit.Default); }
     }

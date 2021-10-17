@@ -84,4 +84,15 @@
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
   </ItemGroup>
 
+  <!-- Text-To-Speech (TTS) packages -->
+  <ItemGroup>
+    <PackageReference Include="System.Speech" />
+  </ItemGroup>
+
+    <!-- Package to implement the c# client library for the RabbitMQ message queue provider -->
+  <ItemGroup>
+    <PackageReference Include="RabbitMQ.Client" />
+  </ItemGroup>
+
+
 </Project>

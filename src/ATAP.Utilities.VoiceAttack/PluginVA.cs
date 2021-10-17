@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
-using System.Timers;
 using System.Reflection;
 
 using Serilog;
@@ -23,6 +22,10 @@ using CollectionExtensions = ATAP.Utilities.Collection.Extensions;
 using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
 
 using ATAP.Utilities.HostedServices;
+
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using System.Text;
 
 namespace ATAP.Utilities.VoiceAttack {
 
@@ -70,7 +73,7 @@ namespace ATAP.Utilities.VoiceAttack {
       string iVal = vaProxy.Context;
 
       Serilog.Log.Debug("{0} {1}: {2} command received at {3}", "PluginVA", "VA_Init1", iVal, DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
-      vaProxy.WriteToLog($"{iVal} command received by PluginVA at {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
+      Data.StoredVAProxy.WriteToLog($"{iVal} command received by PluginVA at {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
 
       switch (iVal) {
         case StringConstantsVA.Debug:
@@ -80,7 +83,7 @@ namespace ATAP.Utilities.VoiceAttack {
 
         default:  //the catch-all for for the bottom of the plugin stack, is to write a log entry that the command is unrecognized
           Serilog.Log.Debug("{0} {1}: ATAP.Utilities.VoiceAttack Plugin Error: \"{2}\" is not a known command", "PluginVA", "VA_Invoke1", iVal);
-          vaProxy.WriteToLog("ATAP.Utilities.VoiceAttack Plugin Error: \"" + iVal + "\" is not a known command", "red");
+          Data.StoredVAProxy.WriteToLog("ATAP.Utilities.VoiceAttack Plugin Error: \"" + iVal + "\" is not a known command", "red");
           break;
       }
 
@@ -160,6 +163,8 @@ namespace ATAP.Utilities.VoiceAttack {
     #region Initialize the Data's Autoproperties
     public static void InitializeData() {
       Serilog.Log.Debug("{0} {1}: InitializeData Enter at {2}", "PluginVA", "InitializeData", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
+      // Configure the audio output.
+      Data.SpeechSynthesizer.SetOutputToDefaultAudioDevice();
     }
     #endregion
 
@@ -218,6 +223,54 @@ namespace ATAP.Utilities.VoiceAttack {
       // Microsoft.Extensions.Logging.ILoggerFactory mELoggerFactory = new Microsoft.Extensions.Logging.LoggerFactory().AddSerilog();
       // Microsoft.Extensions.Logging.ILogger mELlogger = mELoggerFactory.CreateLogger("Program");
       #endregion
+    }
+    #endregion
+    #region Attach Event Handlers specific to GameAOE
+    public static void AttachEventHandlers() { }
+
+    public static void ProfileChangingAction(Guid? FromInternalID, Guid? ToInternalID,
+     String FromName, String ToName) {
+      Serilog.Log.Debug("{0} {1}: Profile Changing Event Handler, Profile changing from {2}, ID: {3} to {4}, ID: {5}", "PluginVA", "ProfileChangingAction", FromName, FromInternalID.ToString(), ToName, ToInternalID.ToString());
+    }
+    public static void ProfileChangedAction(Guid? FromInternalID, Guid? ToInternalID,
+     String FromName, String ToName) {
+      Serilog.Log.Debug("{0} {1}: Profile Changing Event Handler, Profile changed from {2}, ID: {3} to {4}, ID: {5}", "PluginVA", "ProfileChangedAction", FromName, FromInternalID.ToString(), ToName, ToInternalID.ToString());
+    }
+    public static void ApplicationFocusChangedAction(System.Diagnostics.Process Process, String TopmostWindowTitle) {
+      Serilog.Log.Debug("{0} {1}: ApplicationFocus Changed Event Handler, Application focus changed to {2}", "PluginVA", "ApplicationFocusChangedAction", TopmostWindowTitle);
+    }
+
+    #endregion
+    #region RabbitMQ interfaces
+    public static void SendMessage(string message) {
+      var factory = new ConnectionFactory() { HostName = "localhost" };
+      using (var connection = factory.CreateConnection())
+      using (var channel = connection.CreateModel()) {
+        channel.QueueDeclare(queue: "OperationsQueue", durable: false, exclusive: false, autoDelete: false, arguments: null);
+
+        var body = Encoding.UTF8.GetBytes(message);
+
+        channel.BasicPublish(exchange: "", routingKey: "hello", basicProperties: null, body: body);
+        Serilog.Log.Debug("{0} {1}: Message sent {2}", "PluginVA", "SendToMQ.SendMessage", message);
+      }
+    }
+    public static void ReceiveMessage(string message) {
+       var factory = new ConnectionFactory() { HostName = "localhost" };
+        using(var connection = factory.CreateConnection())
+        using(var channel = connection.CreateModel())
+        {
+            channel.QueueDeclare(queue: "hello", durable: false, exclusive: false, autoDelete: false, arguments: null);
+        Serilog.Log.Debug("{0} {1}: Waiting for Messages", "PluginVA", "SendToMQ.ReceiveMessage");
+            var consumer = new EventingBasicConsumer(channel);
+            consumer.Received += (model, ea) =>
+            {
+                var body = ea.Body.ToArray();
+                var message = Encoding.UTF8.GetString(body);
+        Serilog.Log.Debug("{0} {1}: Message received {2}", "PluginVA", "SendToMQ.ReceiveMessage", message);
+            };
+            channel.BasicConsume(queue: "hello", autoAck: true, consumer: consumer);
+
+        }
     }
     #endregion
   }

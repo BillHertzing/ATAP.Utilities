@@ -120,15 +120,23 @@ https://docs.microsoft.com/en-us/aspnet/core/security/data-protection/introducti
 
 [Logging in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-3.0)
 
-https://wakeupandcode.com/logging-in-asp-net-core/
+[Logging in ASP.NET Core](https://wakeupandcode.com/logging-in-asp-net-core/)
 
-[ASP.NET Core Logging Tutorial – What Still Works and What Changed?] (https://stackify.com/asp-net-core-logging-what-changed/)
+[ASP.NET Core Logging Tutorial – What Still Works and What Changed?](https://stackify.com/asp-net-core-logging-what-changed/)
 
-[Using ETW tracing on Windows 10 IoT Core] (https://gunnarpeipman.com/iot/iot-etw-trace/) https://gunnarpeipman.com/iot/iot-etw-trace/ Interesting hacks for IoT and the ETW tools
+[Using ETW tracing on Windows 10 IoT Core](https://gunnarpeipman.com/iot/iot-etw-trace/)  Interesting hacks for IoT and the ETW tools
 
-[Logging with ILogger in .NET: Recommendations and best practices] (https://blog.rsuter.com/logging-with-ilogger-recommendations-and-best-practices/) Good stuff here
-[How to create a LoggerFactory with a ConsoleLoggerProvider?(https://stackoverflow.com/questions/53690820/how-to-create-a-loggerfactory-with-a-consoleloggerprovider] one good point about LoggerFactory.Create
+[Logging with ILogger in .NET: Recommendations and best practices](https://blog.rsuter.com/logging-with-ilogger-recommendations-and-best-practices/) Good stuff here
+
+[How to create a LoggerFactory with a ConsoleLoggerProvider](https://stackoverflow.com/questions/53690820/how-to-create-a-loggerfactory-with-a-consoleloggerprovider) one good point about LoggerFactory.Create
+
 [How to unit test with ILogger in ASP.NET Core](https://stackoverflow.com/questions/43424095/how-to-unit-test-with-ilogger-in-asp-net-core) Unit testing Core methods that use an ILogger, how to moq or fake around it. Also discussion of NullLogger
+
+[L is for Logging in ASP .NET Core](https://wakeupandcode.com/logging-in-asp-net-core/) - examples of json logging configuration files
+
+[Logging in ASP .NET Core](https://wakeupandcode.com/logging-in-asp-net-core/#config)
+
+[Configuring and Starting an Event Tracing Session](https://docs.microsoft.com/en-us/windows/win32/etw/configuring-and-starting-an-event-tracing-session)
 
 ### Windows ETW Event Logging facility
 
@@ -145,6 +153,24 @@ https://github.com/fireeye/SilkETW (FireEye's silkETW tool for ETW data)
 [In-process CLR event listeners with .NET Core 2.2](https://medium.com/criteo-labs/c-in-process-clr-event-listeners-with-net-core-2-2-ef4075c14e87)
 
 [Grab ETW Session, Providers and Events](http://labs.criteo.com/2018/07/grab-etw-session-providers-and-events/)
+
+[Logging to ETW from IIS](https://docs.microsoft.com/en-us/iis/get-started/whats-new-in-iis-85/logging-to-etw-in-iis-85)
+
+[Configuring and Starting an Event Tracing Session](https://docs.microsoft.com/en-us/windows/desktop/etw/configuring-and-starting-an-event-tracing-session)
+
+[https://maximelabelle.wordpress.com/2012/09/05/creating-strongly-typed-c-event-tracing-for-windows-etw-assemblies-with-visual-studio/](Creating Strongly-Typed C# Event Tracing for Windows (ETW) Assemblies with Visual Studio)
+
+https://www.simba.com/products/SEN/doc/development_guides/sql/content/productize/etwlogging.htm
+
+https://docs.microsoft.com/en-us/windows-hardware/drivers/devtest/tools-for-software-tracing#when-should-i-use-wpp-software-tracing-or-the-event-tracing-for-windows-etw-api
+
+https://en.wikipedia.org/wiki/Windows_software_trace_preprocessor
+
+https://www.mgtek.com/traceview/backgrounder
+
+[Creating Strongly-Typed C# Event Tracing for Windows (ETW) Assemblies with Visual Studio](https://maximelabelle.wordpress.com/2012/09/05/creating-strongly-typed-c-event-tracing-for-windows-etw-assemblies-with-visual-studio/) -written in 2012
+
+[SourceSwitch Class](https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.sourceswitch?WT.mc_id=-blog-shchowd&view=net-5.0)
 
 ### Linux Event Logging Facility (tracing and big files)
 
@@ -536,6 +562,13 @@ ILSpy vsix
 [Testing and Debugging Observable Sequences](https://reactiveui.net/reactive-extensions/testing/testing) From the ReactiveUI project
 [Observable Cancellation and passing state to observables](http://introtorx.com/Content/v1.0.10621.0/15_SchedulingAndThreading.html#Cancellation) Advanced topics for observable cancellation (uses schedulers), and passing state
 
+[Resettable timer with System.Reactive](https://stackoverflow.com/questions/44729339/resettable-timer-with-system-reactive)
+
+[Creating and Subscribing to Simple Observable Sequences](https://www.reactiveui.net/reactive-extensions/creating/creating)
+
+[Reactive Extensions: The Power of T](https://www.davesexton.com/blog/)
+[LINQ to Cloud - IQbservable Over the Wire](https://www.davesexton.com/blog/post/LINQ-to-Cloud-IQbservable-Over-the-Wire.aspx)
+
 # Code Generation From Expression Trees
 
 [Dave Sexton's Blog](https://www.davesexton.com/blog/) Theory on Monads, CoMonads, Iobservable, Ienumerable, and Rx. Underpinning of LINQ queries across both enumerables and observables, entrance amd exit. WOW!
@@ -647,7 +680,7 @@ ILSpy vsix
 [Network Protocol for SQL Server Connection](https://www.connectionstrings.com/define-sql-server-network-protocol/) How to force TCP  protocol a the connection string
 [SQL Server Connection Strings](https://www.connectionstrings.com/sql-server/) Many examples of connection strings for various providerss, clits (MSDataShape, SQLClient .Net Framework, etc)
 
-#Object-Object mapper
+# Object-Object mapper
 [Why use Threenine.Map](https://threeninemap.readthedocs.io/en/latest/Getting-started.html)  Library on top of auto-mapper
 
 # Build and Package
@@ -777,6 +810,17 @@ https://www.itprotoday.com/powershell/windows-powershell-range-operator-tricks
 
 ## VoiceAttack
 [Using Voice Dictation for In-Game Chatting with VoiceAttack & Google](https://forum.il2sturmovik.com/topic/61552-using-voice-dictation-for-in-game-chatting-with-voiceattack-google/)
+
+[CODING BY VOICE WITH VOICE ATTACK: A PRACTICAL GUIDE FOR PROGRAMMERS](https://www.learncodebygaming.com/blog/coding-by-voice-with-voice-attack-a-practical-guide-for-programmers)
+
+[Using Voice Dictation for In-Game Chatting with VoiceAttack & Google](https://forum.il2sturmovik.com/topic/61552-using-voice-dictation-for-in-game-chatting-with-voiceattack-google/)
+
+[Speaking numbers](https://forum.voiceattack.com/smf/index.php?topic=3872.0)
+
+[Lerk's Voice Attack HTTP Plugin](https://github.com/Faek/voice-attack-mq-plugin) Rabbit MQ integration
+
+[Command queue possible?](https://forum.voiceattack.com/smf/index.php?topic=2090.0)
+
 # To Be sorted
 
 
@@ -934,14 +978,6 @@ http://www.dotnetlogging.com/
 
 https://stackify.com/prefix/
 
-https://github.com/fireeye/SilkETW
-
-https://docs.microsoft.com/en-us/iis/get-started/whats-new-in-iis-85/logging-to-etw-in-iis-85
-
-https://docs.microsoft.com/en-us/windows/desktop/etw/configuring-and-starting-an-event-tracing-session
-
-https://www.simba.com/products/SEN/doc/development_guides/sql/content/productize/etwlogging.htm
-
 
 
 https://docs.microsoft.com/en-us/previous-versions/windows/hardware/previsioning-framework/ff545650(v=vs.85)
@@ -971,12 +1007,6 @@ https://itnext.io/loggly-in-asp-net-core-using-serilog-dc0e2c7d52eb
 https://jacksowter.net/serilog-config/
 
 https://docs.microsoft.com/en-us/windows-hardware/drivers/devtest/tools-for-software-tracing
-
-https://docs.microsoft.com/en-us/windows-hardware/drivers/devtest/tools-for-software-tracing#when-should-i-use-wpp-software-tracing-or-the-event-tracing-for-windows-etw-api
-
-https://en.wikipedia.org/wiki/Windows_software_trace_preprocessor
-
-https://www.mgtek.com/traceview/backgrounder
 
 https://www.tutorialdocs.com/article/aspnet-core-log-components.html
 

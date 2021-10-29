@@ -13,6 +13,7 @@
     "cSpell.enableFiletypes": [
         "sql"
     ],
+    "dotnet-test-explorer.testProjectPath":"tests/**/*Tests.csproj",
     "cSpell.allowCompoundWords": true,
     "cSpell.userWords": [
         "Finalizer",

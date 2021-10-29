@@ -10,11 +10,11 @@ using System.Reactive.Subjects;
 
 using Microsoft.Extensions.Configuration;
 using ATAP.Utilities.HostedServices;
+using ATAP.Utilities.MessageQueue;
 
 using System.Speech.Synthesis;
 
 using StringConstantsVA = ATAP.Utilities.VoiceAttack.StringConstantsVA;
-
 
 namespace ATAP.Utilities.VoiceAttack {
   public interface IData {
@@ -37,7 +37,11 @@ namespace ATAP.Utilities.VoiceAttack {
       ConfigurationRoot = configurationRoot;
       StoredVAProxy = storedVAProxy;
       ObservableResetableTimersHostedServiceData = new();
+
       SpeechSynthesizer = new();
+      // Configure MessageQueue per configurationRoot if needed at this level someday.
+      // Currint (initial) development effort is towards AOEII and AOEIV, and only uses one message queue, kept at the VA.Game.AOE data
+
       #region Local Variables used inside .ctor
       string durationAsString;
       #endregion
@@ -64,7 +68,7 @@ namespace ATAP.Utilities.VoiceAttack {
         Serilog.Log.Debug("{0} {1}: The MainObservableResetableTimer fired, the MainTimerElapsedTimeSpan is {2}", "PluginVA", "MainTimerSubscriptionAction", MainTimerElapsedTimeSpan);
         StoredVAProxy.WriteToLog($"The MainObservableResetableTimer fired, the MainTimerElapsedTimeSpan is {MainTimerElapsedTimeSpan}", "Purple");
       }));
-
+      // debug
     }
     #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls

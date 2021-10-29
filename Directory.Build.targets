@@ -149,21 +149,23 @@
     <PackageReference Update="System.Reactive" Version="5.0.0" />
 
     <!-- Text-To-Speech (TTS) packages -->
-    <PackageReference Update="System.Speech.Synthesis" Version="5.0.0" />
-
-    <!-- Immutable collections -->
-    <PackageReference Update="System.Collections.Immutable" Version="5.0.0" />
+    <PackageReference Update="System.Speech" Version="5.0.0" />
 
     <!-- ServiceStack  -->
-    <PackageReference Update="ServiceStack" Version="5.11.0" />
+    <PackageReference Update="ServiceStack" Version="5.12.0" />
     <!-- ServiceStack serializers and dump utility -->
     <PackageReference Update="ServiceStack.Text.EnumMemberSerializer" Version="3.0.0.50044" />
-    <PackageReference Update="ServiceStack.Text" Version="5.11.0" />
+    <PackageReference Update="ServiceStack.Text" Version="5.12.0" />
+    <PackageReference Update="ServiceStack.HttpClient" Version="5.12.0" />
     <!-- ServiceStack ORMLite and SQLServer -->
-    <PackageReference Update="ServiceStack.OrmLite.Core" Version="5.11.0" />
-    <PackageReference Update="ServiceStack.OrmLite.SqlServer.Core" Version="5.11.0" />
-    <PackageReference Update="ServiceStack.OrmLite.MySQL.Core" Version="5.11.0" />
-    <PackageReference Update="ServiceStack.OrmLite.Sqlite.Core" Version="5.11.0" />
+    <PackageReference Update="ServiceStack.OrmLite" Version="5.12.0" />
+    <PackageReference Update="ServiceStack.OrmLite.SqlServer" Version="5.12.0" />
+    <PackageReference Update="ServiceStack.OrmLite.MySQL" Version="5.12.0" />
+    <PackageReference Update="ServiceStack.OrmLite.Sqlite" Version="5.12.0" />
+    <PackageReference Update="ServiceStack.OrmLite.Core" Version="5.12.0" />
+    <PackageReference Update="ServiceStack.OrmLite.SqlServer.Core" Version="5.12.0" />
+    <PackageReference Update="ServiceStack.OrmLite.MySQL.Core" Version="5.12.0" />
+    <PackageReference Update="ServiceStack.OrmLite.Sqlite.Core" Version="5.12.0" />
 
     <!-- Library of rich time and interval manipulation routines -->
     <PackageReference Update="TimePeriodLibrary.NET" Version="2.1.1" />
@@ -190,15 +192,11 @@
     <PackageReference Update="Ninject" Version="3.3.4" />
     <PackageReference Update="Ninject.extensions.conventions" Version="3.3.0" />
 
-    <!-- Packages to add resilience policies to async and synchronous operations -->
+    <!-- Packages to add resilience policies to async and synchronous operations whihc may have transient exceptions -->
     <PackageReference Update="Polly" Version="7.2.1" />
 
-    <!-- The Serializer Libraries available (See also ServiceStack.Text) -->
-    <PackageReference Update="System.Text.Json" Version="5.0.0" />
-    <PackageReference Update="Newtonsoft.Json" Version="12.0.3" />
-
     <!-- FileIO Extension to provide file and directory Globbing requires System.IO.Abstractions -->
-    <PackageReference Update="System.IO.Abstractions" Version="13.2.9" />
+    <PackageReference Update="System.IO.Abstractions" Version="13.2.47" />
 
     <!-- Plugin Framework -->
     <PackageReference Update="McMaster.NETCore.Plugins" Version="1.3.1" />
@@ -208,6 +206,9 @@
 
     <!-- Package to implement the c# client library for the RabbitMQ message queue provider-->
     <PackageReference Update="RabbitMQ.Client" Version="6.2.2" />
+    <!-- Task Parallel (TPL) Library-->
+    <PackageReference Update="System.Threading.Tasks.Dataflow" Version="5.0.0" />
+
 
     <!-- Packages used for custom build tasks -->
     <PackageReference Update="Microsoft.Build.Framework" Version="16.8.0" />
@@ -224,30 +225,30 @@
 
     <!-- Serilog packages -->
     <PackageReference Update="Serilog" Version="2.10.0" />
-    <PackageReference Update="Serilog.Settings.Configuration" Version="3.3.0-dev-00291" />
-    <PackageReference Update="Serilog.Enrichers.Thread" Version="3.2.0-dev-00747" />
+    <PackageReference Update="Serilog.Settings.Configuration" Version="3.3.0" />
+    <PackageReference Update="Serilog.Enrichers.Thread" Version="3.2.0-dev-00752" />
     <PackageReference Update="Serilog.Extensions.Hosting" Version="4.1.2" />
     <PackageReference Update="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Update="Serilog.Exceptions" Version="7.1.0" />
     <PackageReference Update="Serilog.Sinks.Console" Version="4.0.0" />
-    <PackageReference Update="Serilog.Sinks.Debug" Version="1.0.2-dev-00020" />
-    <PackageReference Update="Serilog.Sinks.File" Version="5.0.0-dev-00905" />
-    <PackageReference Update="Serilog.Sinks.Seq" Version="5.0.0-dev-00174" />
+    <PackageReference Update="Serilog.Sinks.Debug" Version="2.0" />
+    <PackageReference Update="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Update="Serilog.Sinks.Seq" Version="5.0.0" />
     <PackageReference Update="SerilogAnalyzer" Version="0.15.0" />
 
     <!-- Packages to add Serilog and SEQ as Microsoft.Extensions.Logging providers -->
-    <PackageReference Update="Serilog.Extensions.Hosting" Version="4.0.0-dev-00051" />
+    <PackageReference Update="Serilog.Extensions.Hosting" Version="4.1.2" />
     <PackageReference Update="Seq.Extensions.Logging" Version="6.0.0" />
 
     <!-- Packages to add xUnit Testing providers and extensions -->
-    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.7.1" />
-    <PackageReference Update="FluentAssertions" Version="5.10.2" />
-    <PackageReference Update="Moq" Version="4.15.2" />
+    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.0.0" />
+    <PackageReference Update="FluentAssertions" Version="6.2.0" />
+    <PackageReference Update="Moq" Version="4.16.1" />
     <PackageReference Update="Xunit.DependencyInjection" Version="7.1.0" />
     <PackageReference Update="xunit" Version="2.4.1" />
     <PackageReference Update="xunit.runner.console" Version="2.4.1" />
     <PackageReference Update="xunit.runner.visualstudio" Version="2.4.3" />
-    <PackageReference Update="coverlet.collector" Version="1.3.0" />
+    <PackageReference Update="coverlet.collector" Version="3.1.0" />
 
     <!-- Packages to add xUnit Testing dotnet tool -->
     <DotNetCliToolReference Update="dotnet-xunit" Version="2.3.1" />
@@ -255,7 +256,7 @@
 
     <!-- To Be Sorted -->
     <PackageReference Update="MedallionShell" Version="1.6.2" />
-    <PackageReference Update="UnitsNet" Version="4.77.0" />
+    <PackageReference Update="UnitsNet" Version="4.102.0" />
     <PackageReference Update="NLog" Version="4.7.0" />
     <PackageReference Update="NLog.Config" Version="4.7.0" />
 
@@ -269,6 +270,24 @@
     <!-- Packages to play with CSharpSyntaxTree  -->
     <PackageReference Update="Microsoft.CodeAnalysis.Common" Version="3.5.0" />
 
+  </ItemGroup>
+
+  <!-- This item group is for package versions specific to .Net Standard or Core -->
+  <ItemGroup Condition="$(TargetFramework.Contains('netstandard')) OR $(TargetFramework.Contains('netcore'))">
+  <!-- Immutable Collestionsfor .Net Core-->
+    <PackageReference Update="System.Collections.Immutable" Version="5.0.0" />
+        <!-- The Serializer Libraries available (See also ServiceStack.Text) -->
+    <PackageReference Update="System.Text.Json" Version="5.0.0" />
+    <PackageReference Update="Newtonsoft.Json" Version="12.0.3" />
+
+  </ItemGroup>
+
+  <!-- This item group is for package versions specific to .Net Desktop -->
+  <ItemGroup Condition="!($(TargetFramework.Contains('netstandard')) OR $(TargetFramework.Contains('netcore')))">
+  <!-- Immutable Collestions for .Net desktop-->
+    <PackageReference Update="System.Collections.Immutable" Version="1.7.1" />
+        <!-- The Serializer Libraries available (See also ServiceStack.Text) -->
+    <PackageReference Update="System.Text.Json" Version="4.7.2" />
   </ItemGroup>
 
 </Project>

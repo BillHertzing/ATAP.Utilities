@@ -53,14 +53,6 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
     }
   }
 
-  public static class T {
-    public static void StartGame() {
-     Serilog.Log.Debug("{0} {1}: StartGame", "T", "StartGame");
-     //Data.StoredVAProxy
-
-
-    }
-  }
 }
 
 

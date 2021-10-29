@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netstandard2.1;net471</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;net5.0;net471</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
@@ -16,7 +16,7 @@
     <PackageLabel>NA</PackageLabel>
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
-  
+
     <!-- Include NuGet PackageReferenfces to the required DLLs for custom msbuild tasks-->
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Framework"/>

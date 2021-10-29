@@ -7,6 +7,7 @@
 
   <!-- This project will run under the following target frameworks -->
   <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
     <TargetFrameworks>net5.0;</TargetFrameworks>
   </PropertyGroup>
 
@@ -193,7 +194,7 @@
   </ItemGroup>
 
   <!-- Testing detection of Design-Time builds under VS Code (Omnisharp) -->
-  <Target Name="DetectDesignTimeBuild" >
+  <Target Name="DetectDesignTimeBuild">
     <PropertyGroup Condition="'$(DesignTimeBuild)' == 'true' OR ('$(BuildingProject)' != '' AND'$(BuildingProject)' != 'true')">
       <_DesignTimeBuild>true</_DesignTimeBuild>
     </PropertyGroup>

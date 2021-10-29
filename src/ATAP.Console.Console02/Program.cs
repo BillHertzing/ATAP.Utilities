@@ -5,11 +5,9 @@ using ATAP.Utilities.HostedServices;
 using ATAP.Utilities.HostedServices.ConsoleSourceHostedService;
 using ATAP.Utilities.HostedServices.ConsoleSinkHostedService;
 using ATAP.Services.GenerateCode;
-using ATAP.Utilities.Loader;
 using ATAP.Utilities.Logging;
 using ATAP.Utilities.Persistence;
 using ATAP.Utilities.Serializer;
-using ATAP.Utilities.FileIO;
 
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
@@ -41,6 +39,14 @@ using Serilog;
 using ILogger = Serilog.ILogger;
 
 using Microsoft.CodeAnalysis;
+
+// ToDo: make a separate assembly for subloading, to be included only if the code will be loaded dynamically
+#if NETCORE
+using ATAP.Utilities.Loader;
+using ATAP.Utilities.FileIO;
+//using System.Reflection;
+#endif
+
 
 namespace ATAP.Console.Console02 {
 

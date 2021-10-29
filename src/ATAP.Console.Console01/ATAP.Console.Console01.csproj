@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
     <TargetFrameworks>net5.0;</TargetFrameworks>
     <RootNamespace>ATAP.Utilities.Console01</RootNamespace>
   </PropertyGroup>
@@ -9,7 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Console.Console01.StringConstants\ATAP.Console.Console01.StringConstants.csproj" />
-<!--    <ProjectReference Include="..\ATAP.Services.GenerateProgram\ATAP.Services.GenerateProgram.csproj" /> -->
+    <!--    <ProjectReference Include="..\ATAP.Services.GenerateProgram\ATAP.Services.GenerateProgram.csproj" /> -->
     <ProjectReference Include="..\ATAP.Services.ConsoleMonitor.Interfaces\ConsoleMonitor.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Services.ConsoleMonitor\ConsoleMonitor.csproj" />
     <ProjectReference Include="..\ATAP.Services.Timers.Interfaces\Timers.Interfaces.csproj" />

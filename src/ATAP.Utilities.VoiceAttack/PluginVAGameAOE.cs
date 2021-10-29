@@ -24,13 +24,17 @@ using StringConstantsVAGame = ATAP.Utilities.VoiceAttack.Game.StringConstants;
 using StringConstantsVA = ATAP.Utilities.VoiceAttack.StringConstantsVA;
 using StringConstantsGenericHost = ATAP.Utilities.VoiceAttack.StringConstantsGenericHost;
 
+using ATAP.Utilities.MessageQueue;
+// Used to Serialize objects for the MessageQueue
+using ATAP.Utilities.Serializer;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ATAP.Utilities.VoiceAttack.Game.AOE {
 
   public abstract class Plugin : ATAP.Utilities.VoiceAttack.Game.Plugin {
 
     public new static ATAP.Utilities.VoiceAttack.Game.AOE.IData Data { get; set; }
-
 
     public new static string VA_DisplayName() {
       var str = "ATAP Utilities Plugin for VAGamesAOE\r\n" + ATAP.Utilities.VoiceAttack.Game.Plugin.VA_DisplayName();
@@ -82,58 +86,43 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
 
       // Now build a list of Actions to perform for AOE
       var StartVoiceAttackActionList = new List<VoiceAttackActionWithDelay>(){
-        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionCommand(StringConstants.Command_Create_Villagers_In_One_Limit_22), null),
-        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_First_Six_Villagers_on_Sheep), new TimeSpan(0,0,((6-InitialNumberOfVillagers)*VillagerBuildTimeInSeconds))),
-        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Four_Villagers_on_Wood), new TimeSpan(0,0,(4*VillagerBuildTimeInSeconds))),
-        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Villager_Lure_Boar), new TimeSpan(0,0,VillagerBuildTimeInSeconds)),
-        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_To_Berries_Build_House_Build_Mill), new TimeSpan(0,0,VillagerBuildTimeInSeconds)),
-        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Two_Villagers_To_Berries), new TimeSpan(0,0,(2*VillagerBuildTimeInSeconds))),
-        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Wood_Villager_Build_House), null),
-        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Villager_Lure_Boar), new TimeSpan(0,0,VillagerBuildTimeInSeconds)),
-        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Two_Villagers_To_Boar), new TimeSpan(0,0,(2*VillagerBuildTimeInSeconds))),
-        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Three_Villagers_To_Wood), new TimeSpan(0,0,(3*VillagerBuildTimeInSeconds))),
-        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Villager_To_Sheep), new TimeSpan(0,0,VillagerBuildTimeInSeconds)),
-        new VoiceAttackActionWithDelay(null, (IVoiceAttackActionAbstract)new VoiceAttackActionSay("On Your own now!"), null)
+        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionCommand(StringConstants.Command_Create_Villagers_In_One_Limit_22), new TimeSpan(0,0,0,InterCommandPauseInMilliseconds)),
+        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_First_Six_Villagers_on_Sheep), new TimeSpan(0,0,((6-InitialNumberOfVillagers)*VillagerBuildTimeInSeconds))),
+        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Four_Villagers_on_Wood), new TimeSpan(0,0,(4*VillagerBuildTimeInSeconds))),
+        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Villager_Lure_Boar), new TimeSpan(0,0,VillagerBuildTimeInSeconds)),
+        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_To_Berries_Build_House_Build_Mill), new TimeSpan(0,0,VillagerBuildTimeInSeconds)),
+        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Two_Villagers_To_Berries), new TimeSpan(0,0,(2*VillagerBuildTimeInSeconds))),
+        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Wood_Villager_Build_House), new TimeSpan(0,0,0,InterCommandPauseInMilliseconds)),
+        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Villager_Lure_Boar), new TimeSpan(0,0,VillagerBuildTimeInSeconds)),
+        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Two_Villagers_To_Boar), new TimeSpan(0,0,(2*VillagerBuildTimeInSeconds))),
+        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Three_Villagers_To_Wood), new TimeSpan(0,0,(3*VillagerBuildTimeInSeconds))),
+        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionSay(StringConstants.Say_Next_Villager_To_Sheep), new TimeSpan(0,0,VillagerBuildTimeInSeconds)),
+        new VoiceAttackActionWithDelay(new TimeSpan(0,0,0,InterCommandPauseInMilliseconds), (IVoiceAttackActionAbstract)new VoiceAttackActionSay("On Your own now!"), new TimeSpan(0,0,0,InterCommandPauseInMilliseconds))
       };
       foreach (var a in StartVoiceAttackActionList) {
+        // Debugging, uncomment to see the list of actions prior to sending to the message queue
         switch (a.VoiceAttackAction.VoiceAttackActionKind) {
-          // Debugging, uncomment to see the list of actions prior to sending to teh message queue
           case VoiceAttackActionKind.Say:
-            Serilog.Log.Debug("{0} {1}: VoiceAttackAction Say {2}", "PluginVAGameAOE", "Handle_StartGame",((VoiceAttackActionSay) a.VoiceAttackAction).Phrase);
+            Serilog.Log.Debug("{0} {1}: VoiceAttackAction Say {2}", "PluginVAGameAOE", "Handle_StartGame", ((VoiceAttackActionSay)a.VoiceAttackAction).Phrase);
             break;
           case VoiceAttackActionKind.Command:
-            Serilog.Log.Debug("{0} {1}: VoiceAttackAction Command {2}", "PluginVAGameAOE", "Handle_StartGame",((VoiceAttackActionCommand) a.VoiceAttackAction).Command);
+            Serilog.Log.Debug("{0} {1}: VoiceAttackAction Command {2}", "PluginVAGameAOE", "Handle_StartGame", ((VoiceAttackActionCommand)a.VoiceAttackAction).Command);
             break;
           case VoiceAttackActionKind.Delay:
             break;
-             default:
-            throw new InvalidDataException($"Invalid VoiceAttackActionKind {a.VoiceAttackAction.VoiceAttackActionKind.ToString()}");
+          default:
+            throw new InvalidDataException($"Invalid VoiceAttackActionKind {a.VoiceAttackAction.VoiceAttackActionKind}");
         }
-        // End debugging block
-        // Send to the Operations MessageQueue
-
-        //a.Invoke();
+      }
+      // End debugging block
+      foreach (var vaa in StartVoiceAttackActionList) {
+        // For a DI Injected service,cast to the concrete implementation from the service factory???
+        // Cast the IAbstract to the concrete implementation
+        // ((ATAP.Utilities.MessageQueue.Shim.RabbitMQT.RabbitMQMessageQueue<SendMessageResults>)Data.MessageQueue).SendMessage(((ATAP.Utilities.VoiceAttack.Game.AOE.Data)Data).ToByteArray(vaa));
+        ((ATAP.Utilities.MessageQueue.Shim.TPL.TPLMessageQueue<SendMessageResults>)Data.MessageQueue).SendMessage(((ATAP.Utilities.VoiceAttack.Game.AOE.Data)Data).ToByteArray(vaa));
       }
     }
 
-    // Data.SpeechSynthesizer.Speak("First Six Villagers on Sheep");
-    //   Data.SpeechSynthesizer.Speak("Next Four Villagers on Wood");
-    //   //PAUSE 4*VillagerBuildtimeinseconds
-    //   Data.SpeechSynthesizer.Speak("Next Villager Lure Boar");
-    //   //PAUSE VillagerBuildtimeinseconds
-    //   Data.SpeechSynthesizer.Speak("Next To Berries, Build House, Build Mill");
-    //   //PAUSE VillagerBuildtimeinseconds
-    //   Data.SpeechSynthesizer.Speak("Next Two Villagers To Berries");
-    //   //PAUSE 5 seconds (minimum intra-suggestion pause)
-    //   Data.SpeechSynthesizer.Speak("Wood Villager Build House");
-    //   //PAUSE 2*VillagerBuildtimeinseconds - (minimum intra-suggestion pause)
-    //   Data.SpeechSynthesizer.Speak("Next Villager Lure Boar");
-    //   //PAUSE VillagerBuildtimeinseconds
-    //   Data.SpeechSynthesizer.Speak("Next Two Villagers To Boar");
-    //   //PAUSE 2 * VillagerBuildtimeinseconds
-    //   Data.SpeechSynthesizer.Speak("Next Three Villagers To Wood");
-    //   //PAUSE 3 * VillagerBuildtimeinseconds
-    //   Data.SpeechSynthesizer.Speak("Next Villager To Sheep");
 
     private static void Handle_CreateVillagersLoop(int upperLimit, int numTownCenters) {
 
@@ -284,6 +273,74 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
       #endregion
 
       ATAP.Utilities.VoiceAttack.Game.Plugin.InitializeData();
+    }
+    #endregion
+
+    #region Create message queues unique to AOE
+    public static Action<byte[]> ReceiveActionHelper() {
+      return new Action<byte[]>((message) => {
+        Serilog.Log.Debug("{0} {1}: Message Received Handler, Message is {2}", "PluginVAGameAOE", "ReceiveMessage", System.Text.Encoding.UTF8.GetString(message, 0, message.Length));
+        // Convert byte[] to an Game AOE message
+        VoiceAttackActionWithDelay voiceAttackActionWithDelay = ((ATAP.Utilities.VoiceAttack.Game.AOE.Data)Data).FromByteArray(message);
+        switch (voiceAttackActionWithDelay.VoiceAttackAction.VoiceAttackActionKind) {
+          case VoiceAttackActionKind.Say:
+            Serilog.Log.Debug("{0} {1}: VoiceAttackAction Say {2}", "PluginVAGameAOE", "ReceiveMessage", ((VoiceAttackActionSay)voiceAttackActionWithDelay.VoiceAttackAction).Phrase);
+            // toDo: PreDelay
+            Data.SpeechSynthesizer.Speak(((VoiceAttackActionSay)voiceAttackActionWithDelay.VoiceAttackAction).Phrase);
+            // toDo: PostDelay
+            break;
+          case VoiceAttackActionKind.Command:
+            Serilog.Log.Debug("{0} {1}: VoiceAttackAction Command {2}", "PluginVAGameAOE", "ReceiveMessage", ((VoiceAttackActionCommand)voiceAttackActionWithDelay.VoiceAttackAction).Command);
+            // toDo: PreDelay
+            Data.StoredVAProxy.Command.Execute(((VoiceAttackActionCommand)voiceAttackActionWithDelay.VoiceAttackAction).Command);
+            // toDo: PostDelay
+            break;
+          case VoiceAttackActionKind.Delay:
+            break;
+          // ToDo: Delay command
+          default:
+            throw new InvalidDataException($"Invalid VoiceAttackActionKind {voiceAttackActionWithDelay.VoiceAttackAction.VoiceAttackActionKind.ToString()}");
+        };
+      });
+    }
+    public new static void CreateMessageQueues() {
+      ATAP.Utilities.VoiceAttack.Game.Plugin.CreateMessageQueues();
+      // In a DI Injected context, a MessageQueue object for this game would be requested from a Service
+      // This VA PLugin implementation requires .Net 4.7.2+, and directly calls the MessageQueue Shim.
+      // For the TPL Shim
+
+      Data.MessageQueue = new ATAP.Utilities.MessageQueue.Shim.TPL.TPLMessageQueue<SendMessageResults>(
+      // Action to be taken when a message is received
+      receiveAction: ReceiveActionHelper()
+      );
+      // For the RabbitMQ Shim
+      // Data.MessageQueue = new ATAP.Utilities.MessageQueue.Shim.RabbitMQT.RabbitMQMessageQueue<SendMessageResults>(
+      // // Server Information, In a DI context from ConfigurationRoot, From StringConstants when using the Shim directly, or just take defaults from Shim
+      // // Shim defaults correspond to the RabbitMQ tutorial values
+      // // ToDo: get from string constants
+      // rabbitMQMessageServerOptions: null,
+      // // Queue Information, In a DI context from ConfigurationRoot, From StringConstants when using the Shim directly
+      // // Shim defaults correspond to the RabbitMQ tutorial values
+      // // ToDo: get from string constants
+      // rabbitMQMessageQueueOptions: null,
+      // // Action to be taken when a message is received
+      // receiveAction: ReceiveActionHelper()
+      // );
+    }
+    #endregion
+
+    #region Create Serializer for the Messages specific to GameAOE
+    public static void CreateSerializer() {
+      var jsonSerializerOptions = new JsonSerializerOptions() {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, // Handle nullable properties in an object
+        WriteIndented = true,
+      };
+      // Add converter for the VoiceAttackAction type
+      //jsonSerializerOptions.Converters.Add();
+      // A serializer with the jsonSerializerOptions defined above
+      Data.Serializer = new ATAP.Utilities.Serializer.Shim.SystemTextJson.Serializer(jsonSerializerOptions);
+      // A serializer with just defaults.
+      //Data.Serializer = new ATAP.Utilities.Serializer.Shim.SystemTextJson.Serializer();
     }
     #endregion
 

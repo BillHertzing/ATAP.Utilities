@@ -6,14 +6,14 @@
     <IsPackable>true</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
-    <MajorVersion>1</MajorVersion>
-    <MinorVersion>0</MinorVersion>
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
     <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>NA</PackageLabel>
+    <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,10 +32,17 @@
     <ProjectReference Include="..\ATAP.Utilities.Serializer.StringConstants\ATAP.Utilities.Serializer.StringConstants.csproj" />
   </ItemGroup>
 
-  <!-- Plugin Framework -->
+  <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>
-    <PackageReference Include="McMaster.NETCore.Plugins" />
+    <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
+    <PackageReference Include="MethodBoundaryAspect.Fody" />
+    <!-- Project Reference to the ETW attribute and log provider -->
+    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
+  <!-- Plugin Framework for .Net Core, but not.Net desktop- nor standard -->
+  <ItemGroup Condition="$(TargetFramework.Contains('netcore'))" >
+    <PackageReference Include="McMaster.NETCore.Plugins" />
+  </ItemGroup>
 
 </Project>

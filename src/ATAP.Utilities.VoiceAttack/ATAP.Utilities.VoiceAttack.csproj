@@ -2,6 +2,7 @@
 
 
   <PropertyGroup>
+  
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
@@ -20,12 +21,12 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Configurations>Debug;Release;ReleaseWithTrace;</Configurations>
-    <!-- When building against anything except net5.0, the c# V9 keyword 'init' throws errors-->
-    <TargetFrameworks>net4.8;</TargetFrameworks>
     <RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
+    <AppConfig>VoiceAttack.exe.config</AppConfig>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
   </PropertyGroup>
+
   <!-- Packages to implement Serilog as logging provider -->
   <ItemGroup>
     <PackageReference Include="Serilog" />
@@ -67,6 +68,24 @@
     <ProjectReference Include="..\ATAP.Utilities.Reactive.Extensions\ATAP.Utilities.Reactive.Extensions.csproj" />
     <ProjectReference Include="..\ATAP.Services.Timers.Interfaces\Timers.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Services.Timers\Timers.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.StringConstants\ATAP.Utilities.Serializer.StringConstants.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.MessageQueue.Interfaces\ATAP.Utilities.MessageQueue.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.MessageQueue.StringConstants\ATAP.Utilities.MessageQueue.StringConstants.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.MessageQueue\ATAP.Utilities.MessageQueue.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.MessageQueue.Extensions\ATAP.Utilities.MessageQueue.Extensions.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.MessageQueue.Shim.RabbitMQ\ATAP.Utilities.MessageQueue.Shim.RabbitMQ.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.MessageQueue.Shim.TPL\ATAP.Utilities.MessageQueue.Shim.TPL.csproj" />
+  </ItemGroup>
+
+  <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
+  <ItemGroup>
+    <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
+    <PackageReference Include="MethodBoundaryAspect.Fody" />
+    <!-- Project Reference to the ETW attribute and log provider -->
+    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
   <!-- Configuration Settings files -->
@@ -88,11 +107,5 @@
   <ItemGroup>
     <PackageReference Include="System.Speech" />
   </ItemGroup>
-
-    <!-- Package to implement the c# client library for the RabbitMQ message queue provider -->
-  <ItemGroup>
-    <PackageReference Include="RabbitMQ.Client" />
-  </ItemGroup>
-
 
 </Project>

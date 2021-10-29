@@ -1,11 +1,16 @@
 using System;
 
 using Microsoft.Extensions.Configuration;
-using ATAP.Utilities.FileIO;
-using ATAP.Utilities.Loader;
 using ATAP.Utilities.Serializer;
 
 using Ninject;
+
+// ToDo: make a separate assembly for subloading, to be included only if the code will be loaded dynamically
+#if NETCORE
+using ATAP.Utilities.Loader;
+using ATAP.Utilities.FileIO;
+using System.Reflection;
+#endif
 
 namespace ATAP.Utilities.Testing {
 

@@ -71,9 +71,13 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
         // If Main Queue is not empty
         // If PresentOnNormalQueue
         // Write message to user via vaProxy
-        Data.StoredVAProxy.WriteToLog($"MainTimerFired, {Data.MainTimerElapsedTimeSpan.ToString(StringConstantsVA.DATE_FORMAT)}  {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
         Serilog.Log.Debug("{0} {1}: MainTimerFired at {2}", "MainTimerFired", "MainTimerDelegate", DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT));
+        Data.StoredVAProxy.WriteToLog($"MainTimerFired, {Data.MainTimerElapsedTimeSpan.ToString(StringConstantsVA.DATE_FORMAT)}  {DateTime.Now.ToString(StringConstantsVA.DATE_FORMAT)}", "blue");
       });
+      // Create all Message Queues
+      CreateMessageQueues();
+      // Create all Serializers
+      CreateSerializer();
       // Attach any event handlers specific to GameAOEII
       AttachEventHandlers();
     }
@@ -218,7 +222,11 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
         public new static void AttachEventHandlers() {
           ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.AttachEventHandlers();
     }
-
+    #endregion
+    #region Create message queues unique to AOEII
+        public new static void CreateMessageQueues() {
+          ATAP.Utilities.VoiceAttack.Game.AOE.Plugin.CreateMessageQueues();
+    }
     #endregion
   }
 }

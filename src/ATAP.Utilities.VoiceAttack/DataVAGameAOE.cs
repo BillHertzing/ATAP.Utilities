@@ -13,6 +13,11 @@ using Microsoft.Extensions.Configuration;
 
 using System.Reactive;
 
+using ATAP.Utilities.MessageQueue;
+using ATAP.Utilities.MessageQueue.Shim.RabbitMQT;
+
+using ATAP.Utilities.Serializer;
+
 using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
 using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
 using StringConstantsVAGameAOE = ATAP.Utilities.VoiceAttack.Game.AOE.StringConstants;
@@ -20,11 +25,15 @@ using StringConstantsVAGameAOE = ATAP.Utilities.VoiceAttack.Game.AOE.StringConst
 
 namespace ATAP.Utilities.VoiceAttack.Game.AOE {
 
+
   public interface IData : ATAP.Utilities.VoiceAttack.Game.IData {
-    public List<Structure> Structures { get; set; }
-    public TimeSpan CurrentVillagerBuildTimeSpan { get; set; }
-    public short CurrentNumVillagers { get; set; }
-    public new void Dispose();
+     List<Structure> Structures { get; set; }
+     TimeSpan CurrentVillagerBuildTimeSpan { get; set; }
+     short CurrentNumVillagers { get; set; }
+     IMessageQueueAbstract<SendMessageResults> MessageQueue { get; set; }
+     ISerializer Serializer { get; set; }
+
+      new void Dispose();
 
   }
 
@@ -32,14 +41,36 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
     public List<Structure> Structures { get; set; }
     public TimeSpan CurrentVillagerBuildTimeSpan { get; set; }
     public short CurrentNumVillagers { get; set; }
+    public IMessageQueueAbstract<SendMessageResults> MessageQueue { get; set; }
+    public ISerializer Serializer { get; set; }
+
     public Data(IConfigurationRoot configurationRoot, dynamic vaProxy) : base(configurationRoot, (object)vaProxy) {
     }
+
+    public VoiceAttackActionWithDelay FromJson(string jsonString) {
+      // Serialize from JSON using specified Serializer
+      return Serializer.Deserialize<VoiceAttackActionWithDelay>(jsonString);
+    }
+    public string ToJson(VoiceAttackActionWithDelay voiceAttackActionWithDelay) {
+      // Serialize to JSON using specified Serializer
+      return Serializer.Serialize(voiceAttackActionWithDelay);
+    }
+    public byte[] ToByteArray(VoiceAttackActionWithDelay voiceAttackActionWithDelay) {
+      // Serialize to JSON using specified Serializer
+      return System.Text.Encoding.UTF8.GetBytes(Serializer.Serialize(voiceAttackActionWithDelay));
+    }
+    public VoiceAttackActionWithDelay FromByteArray(byte[] message) {
+      return FromJson(BitConverter.ToString(message));
+    }
+
+
     #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls
     protected new virtual void Dispose(bool disposing) {
       if (!disposedValue) {
         if (disposing) {
           // dispose of anything needing disposing
+          MessageQueue.Dispose();
           base.Dispose();
         }
       }

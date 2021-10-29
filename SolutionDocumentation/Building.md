@@ -121,8 +121,8 @@ Every solution has a directory wide props and targets file. the targets file sim
 
 Custom tasks written in C sharp that help build Solutions and projects, are found in the project atsp.utilities. buikdtooljng. This is compiled into a dll, and package into a nougat package. Built in Drbug and release mode. is there or issue with Dell to installation, for when building something similar to Bill to him before the first version to ever exist.  CC top targets file has examples on turning on and turning off conditionally calls to the custom task.
 
-ATAP.Utilities.BuildTooling.CSharp 
-C's files contains the code for tasks It demonstrates 3 custom tasks. One task gets the version file information to get the current information. Another tasks knows how to update the version file. A third task, UpdateVersion 
+ATAP.Utilities.BuildTooling.CSharp
+C's files contains the code for tasks It demonstrates 3 custom tasks. One task gets the version file information to get the current information. Another tasks knows how to update the version file. A third task, UpdateVersion
 , Knows how to get version information from the current .csproj file, calls Get version for version information, compares the  two,  decides what the new version information should be, and sets that information into the version file.
 
 The version information is inspected once for each project involved on every build. .
@@ -139,3 +139,36 @@ Click on the "play" button.
 This will cause design time builds to show up in the build logging tool window. If you have the MSBuild Binary and Structured Log Viewer installed, you can double-click on a log to view it in the viewer, otherwise you can right-click and choose Save As... to save the log in the new binary log format.
 ### Installing the structure log vieweer
 https://github.com/KirillOsenkov/MSBuildStructuredLog/releases/download/v2.0.46/MSBuildStructuredLogSetup.exe
+
+
+## Deterministic builds
+
+[Deterministic Builds](https://github.com/clairernovotny/DeterministicBuilds) - needed for traceability, also related to Source Link and Symbol Packages. Or another option is to pass it to msbuild or dotnet with /p:ContinuousIntegrationBuild=true (not for Debug configuration, just Release and ReleaseWithTrace)
+
+## app.config in project files
+
+Only goes into .csproj files for executables, not libraries.
+For Plugins (which are loaded at runtime), you may need an app.config for the Main.exe. put  specific .app
+
+[app.config file in the new .csproj format](https://stackoverflow.com/questions/59959513/app-config-file-in-the-new-csproj-format) - Martin Ullrich - good instructions and explanation. the PrepareForBuild msbuild target will automatically pick up the file and subsequent build steps can also edit this file as the logical file. 
+
+<AppConfig>App.config</AppConfig>
+
+
+[How to not copy app.config file to output directory](https://www.py4u.net/discuss/730689)
+1.Choose the value $(AppConfig) set in the main project.
+1.Choose @(None) App.Config in the same folder as the project.
+1.Choose @(Content) App.Config in the same folder as the project
+
+
+
+## Signing the Code (Authticode Signing Service)
+
+Nice article here [Authenticode Signing Service and Client](https://github.com/dotnet/SignService) a Azure-based service that allows a CI/CD pipeline to sign artifacts using a key held in an Azure HSM vault.
+
+[RSAKeyVaultProvider](https://github.com/novotnyllc/RSAKeyVaultProvider) info on RSA key vaults in Azure
+
+
+# Image Optimization
+
+[imgbot](imgbot.net) - lossless compression, but only in GitHub. Automatically sends a pull request to the repository.

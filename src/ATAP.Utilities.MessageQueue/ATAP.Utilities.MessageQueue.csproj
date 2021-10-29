@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly-->
+    <!-- Build and revision are created based on date-->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <!-- Current Lifecycle stage for this assembly-->
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
+    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
+    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
+    <PackageLabel>Alpha</PackageLabel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.MessageQueue.Interfaces\ATAP.Utilities.MessageQueue.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.MessageQueue.StringConstants\ATAP.Utilities.MessageQueue.StringConstants.csproj" />
+  </ItemGroup>
+
+  <!-- Packages to utilize static Serilog as logging provider -->
+  <ItemGroup>
+    <PackageReference Include="Serilog" />
+  </ItemGroup>
+
+
+</Project>

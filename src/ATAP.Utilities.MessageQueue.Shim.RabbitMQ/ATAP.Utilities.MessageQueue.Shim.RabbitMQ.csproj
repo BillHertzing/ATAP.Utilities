@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly-->
+    <!-- Build and revision are created based on date-->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <!-- Current Lifecycle stage for this assembly-->
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
+    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
+    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
+    <PackageLabel>Alpha</PackageLabel>
+  </PropertyGroup>
+
+  <!-- The abstract generic MessageQueue packages -->
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.MessageQueue.StringConstants\ATAP.Utilities.MessageQueue.StringConstants.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.MessageQueue.Interfaces\ATAP.Utilities.MessageQueue.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.MessageQueue\ATAP.Utilities.MessageQueue.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
+  </ItemGroup>
+
+  <!-- The MessageQueue Library to use -->
+  <ItemGroup>
+    <PackageReference Include="RabbitMQ.Client" />
+  </ItemGroup>
+
+  <!-- Packages to add resilience policies to async and synchronous operations which may have transient exceptions -->
+  <ItemGroup>
+    <PackageReference Include="Polly" />
+  </ItemGroup>
+
+  <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
+  <ItemGroup>
+    <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
+    <PackageReference Include="MethodBoundaryAspect.Fody" />
+    <!-- Project Reference to the ETW attribute and log provider -->
+    <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+  </ItemGroup>
+
+  <!-- Packages to utilize static Serilog as logging provider -->
+  <ItemGroup>
+    <PackageReference Include="Serilog" />
+  </ItemGroup>
+
+
+
+  <!-- Loader interfaces and actuals for any Assembly that may be loaded by the dynamic Loader // Commented out for Desktop net 4.8, loader is incompatable
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
+  </ItemGroup>
+ -->
+</Project>

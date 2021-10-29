@@ -1,19 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- The Loader Utility uses a Net 5.0 specific library for Plugin Management -->
+    <TargetFramework>net5.0</TargetFramework>
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
-    <MajorVersion>1</MajorVersion>
-    <MinorVersion>0</MinorVersion>
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
     <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>NA</PackageLabel>
+    <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,8 +35,8 @@
     <ProjectReference Include="..\ATAP.Utilities.Loader.StringConstants\ATAP.Utilities.Loader.StringConstants.csproj" />
   </ItemGroup>
 
-  <!-- Plugin Framework -->
-  <ItemGroup>
+  <!-- Plugin Framework for .Net Core, but not.Net desktop- nor standard -->
+  <ItemGroup Condition="$(TargetFramework.Contains('netcore'))" >
     <PackageReference Include="McMaster.NETCore.Plugins" />
   </ItemGroup>
 

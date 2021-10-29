@@ -6,14 +6,14 @@
     <IsPackable>true</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
-    <MajorVersion>1</MajorVersion>
-    <MinorVersion>0</MinorVersion>
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
     <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>NA</PackageLabel>
+    <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
   <!-- The System JSON Library to use -->
@@ -23,13 +23,19 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
   </ItemGroup>
 
-  <!-- Loader interfaces and actuals for any Assembly that may be loaded by the dynamic Loader -->
   <ItemGroup>
+    <PackageReference Include="System.Collections.Immutable" />
+  </ItemGroup>
+
+  <!-- Loader interfaces and actuals for any Assembly that may be loaded by the dynamic Loader -->
+  <ItemGroup Condition="$(TargetFramework.Contains('netcore'))">
     <ProjectReference Include="..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
   </ItemGroup>
+
 
 </Project>

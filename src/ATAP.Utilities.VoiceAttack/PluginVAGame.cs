@@ -134,6 +134,12 @@ namespace ATAP.Utilities.VoiceAttack.Game {
       ATAP.Utilities.VoiceAttack.Plugin.InitializeData();
     }
     #endregion
+    #region Create message queues unique to games
+    public new static void CreateMessageQueues() {
+      ATAP.Utilities.VoiceAttack.Plugin.CreateMessageQueues();
+    }
+    #endregion
+
     #region Attach Event Handlers specific to Game
     public new static void AttachEventHandlers() {
       ATAP.Utilities.VoiceAttack.Plugin.AttachEventHandlers();

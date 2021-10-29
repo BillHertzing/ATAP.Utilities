@@ -8,7 +8,7 @@ using Serilog;
 using CollectionExtensions = ATAP.Utilities.Collection.Extensions;
 using System.Text.Json;
 
-namespace ATAP.Utilities.VoiceAttack {
+namespace ATAP.Utilities.VoiceAttack.Game.AOE {
 
   public interface IVoiceAttackActionAbstract {
     VoiceAttackActionKind VoiceAttackActionKind { get; set; }
@@ -20,7 +20,6 @@ namespace ATAP.Utilities.VoiceAttack {
       VoiceAttackActionKind = voiceAttackActionKind;
     }
   }
-
 
   public interface IVoiceAttackActionSay {
     public string Phrase { get; set; }
@@ -51,7 +50,13 @@ namespace ATAP.Utilities.VoiceAttack {
 
   }
 
-  public class VoiceAttackActionWithDelay {
+  public interface IVoiceAttackActionWithDelay {
+    public TimeSpan? PreActionDelay { get; set; }
+    public IVoiceAttackActionAbstract VoiceAttackAction { get; set; }
+    public TimeSpan? PostActionDelay { get; set; }
+  }
+
+  public class VoiceAttackActionWithDelay : IVoiceAttackActionWithDelay {
     public TimeSpan? PreActionDelay { get; set; }
     public IVoiceAttackActionAbstract VoiceAttackAction { get; set; }
     public TimeSpan? PostActionDelay { get; set; }
@@ -60,7 +65,6 @@ namespace ATAP.Utilities.VoiceAttack {
       VoiceAttackAction = voiceAttackAction;
       PostActionDelay = postActionDelay;
     }
-
   }
-
 }
+

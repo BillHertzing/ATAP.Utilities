@@ -15,12 +15,19 @@
   <!-- The Build Configuration properties common for every assembly, can be overwritten in individual .csproj files -->
   <PropertyGroup>
     <Configurations>Debug;Release;ReleaseWithTrace;</Configurations>
-    <!-- When building against anything except net5.0, the c# V9 keyword 'init' throws errors-->
+    <!-- When building against anything except net5.0, the c# V9 keyword 'init' throws errors.-->
     <TargetFrameworks>netstandard2.0;netstandard2.1;net5.0;net4.8:</TargetFrameworks>
-    <TargetFrameworks>net4.8;net5.0;</TargetFrameworks>
     <RuntimeIdentifiers>win10-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+
+ <!-- Because these are specified later, they overwrite the values set in the earlier section -->
+    <PropertyGroup>
+    <!-- When building against NetDesktop targets, the c# V9 keyword 'init' throws errors, this is compensated for in the AssenmblyInfo.cs file -->
+    <TargetFrameworks>netstandard2.1</TargetFrameworks>
+    <RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+
 
   <!-- Nullable Reference Type support solution-wide -->
   <PropertyGroup>
@@ -89,14 +96,18 @@
     <NuGetLocalFeedPath Condition=" '$(NuGetLocalFeedPath)' == '' ">C:\Dropbox\NuGetLocalFeed</NuGetLocalFeedPath>
   </PropertyGroup>
 
-  <!-- Do not allow the compiler to generate Binding Redirects -->
-  <PropertyGroup>
-    <AutoGenerateBindingRedirects Condition=" '$(AutoGenerateBindingRedirects)' == '' ">false</AutoGenerateBindingRedirects>
-  </PropertyGroup>
-
   <!-- To support Microsoft Source Link, allow .pdf files in the generated NuGet package -->
+  <!-- To support Microsoft Source Link, allow Untracked sources (generated .cs files) in the generated NuGet package -->
   <PropertyGroup>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <!-- Do not allow the compiler to generate Binding Redirects -->
+  <PropertyGroup>
+    <AutoGenerateBindingRedirects Condition=" '$(AutoGenerateBindingRedirects)' == '' ">true</AutoGenerateBindingRedirects>
+      <GenerateBindingRedirectsOutputType Condition=" '$(GenerateBindingRedirectsOutputType)' == '' ">true</GenerateBindingRedirectsOutputType>
+
   </PropertyGroup>
 
   <!-- Define the maximum number of CPUs to use when building in parallel. value of 1 indicates to not build anything in parallel, and makes reading the build log linear -->
@@ -146,12 +157,12 @@
   </PropertyGroup>
 
   <!-- .NET Standard 2.0 references, compilation flags and build options -->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <DefineConstants>NETSTANDARD2_0</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Standard 2.1 references, compilation flags and build options -->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.1'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
     <DefineConstants>NETSTANDARD2_1</DefineConstants>
   </PropertyGroup>
 
@@ -161,22 +172,22 @@
   </PropertyGroup>
 
   <!-- .NET Core 2.0 references, compilation flags and build options -->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
     <DefineConstants>NETCOREAPP2_0</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Core 2.1 references, compilation flags and build options -->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1'">
     <DefineConstants>NETCOREAPP2_1</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Core 3.0 references, compilation flags and build options -->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.0'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
     <DefineConstants>NETCOREAPP3_0</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Core 3.1 references, compilation flags and build options -->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
     <DefineConstants>NETCOREAPP3_1</DefineConstants>
   </PropertyGroup>
 
@@ -219,9 +230,21 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'net471' ">
   </ItemGroup>
 
+  <!-- Any Core-compatable TargetFramework -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('netcore')) OR $(TargetFramework.Contains('netstandard'))">
+    <DefineConstants>NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <!-- Any Desktop TargetFramework -->
+  <PropertyGroup Condition="($(TargetFramework.Contains('netcore')) OR $(TargetFramework.Contains('netstandard')))">
+    <DefineConstants>NETDESKTOP</DefineConstants>
+  </PropertyGroup>
+
+
+
   <!-- Demonstrate the difference between a msbuild run from inside Visual Studio, and a msbuild called from dotnet CLI
        Replace Never with Clean -->
-  <Target Name="HighlightDifferencesBetweenMSBuild" BeforeTargets="Clean">
+  <Target Name="HighlightDifferencesBetweenMSBuild" BeforeTargets="Never">
     <Message  Text="MSBuildRuntimeType = $(MSBuildRuntimeType)" />
     <Message Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'" Text="SolutionDir undefined or null"/>
     <Message Condition="$(SolutionDir) != '' And $(SolutionDir) != '*Undefined*'" Text="SolutionDir =$(SolutionDir)"/>

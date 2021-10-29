@@ -13,6 +13,8 @@ using Microsoft.Extensions.Configuration;
 
 using System.Reactive;
 
+using ATAP.Utilities.MessageQueue;
+
 
 namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
 

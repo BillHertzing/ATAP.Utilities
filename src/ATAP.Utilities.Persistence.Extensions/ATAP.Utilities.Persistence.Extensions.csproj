@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ServiceStack.OrmLite" Version="5.8.0" />
+    <PackageReference Include="ServiceStack.OrmLite" />
   </ItemGroup>
 
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->

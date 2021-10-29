@@ -7,6 +7,7 @@
 
   <!-- This project will run under the following target frameworks -->
   <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
     <TargetFrameworks>net5.0;</TargetFrameworks>
   </PropertyGroup>
 
@@ -84,7 +85,7 @@
   <!-- ServiceStack ORMLite (database) utilities -->
   <ItemGroup>
     <PackageReference Include="ServiceStack" />
-    <PackageReference Include="ServiceStack.ORMLite" />
+    <PackageReference Include="ServiceStack.OrmLite" />
     <PackageReference Include="ServiceStack.OrmLite.SqlServer" />
   </ItemGroup>
 

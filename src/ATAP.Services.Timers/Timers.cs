@@ -119,10 +119,12 @@ namespace ATAP.Utilities.HostedServices {
       if (!disposedValue) {
         if (disposing) {
           // dispose of the TimerDisposeHandle collection
-          //GetEnumerator
-          foreach (var timerName in TimerDisposeHandles.Keys) {
-            TimerDisposeHandles.Remove(timerName);
-          }
+          // ToDo: Definitive answer
+          // hmmm many StackOverflow answers indicate that dispose is not needed on the dictionary of observable dispose handles (subscriptions)
+          // var ke = ((IEnumerable<string>)TimerDisposeHandles.Keys).GetEnumerator();
+          // while (ke.MoveNext()) {
+          //   TimerDisposeHandles.Remove(ke.Current);
+          // }
         }
         disposedValue = true;
       }

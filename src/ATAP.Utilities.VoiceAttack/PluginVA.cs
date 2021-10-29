@@ -23,8 +23,8 @@ using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
 
 using ATAP.Utilities.HostedServices;
 
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
+using ATAP.Utilities.MessageQueue;
+
 using System.Text;
 
 namespace ATAP.Utilities.VoiceAttack {
@@ -224,7 +224,15 @@ namespace ATAP.Utilities.VoiceAttack {
       // Microsoft.Extensions.Logging.ILogger mELlogger = mELoggerFactory.CreateLogger("Program");
       #endregion
     }
+
     #endregion
+    #region Create message queues for the Plugin base abstract class
+    public static void CreateMessageQueues() {
+
+      //CreateConnection();
+    }
+    #endregion
+
     #region Attach Event Handlers specific to GameAOE
     public static void AttachEventHandlers() { }
 
@@ -241,38 +249,6 @@ namespace ATAP.Utilities.VoiceAttack {
     }
 
     #endregion
-    #region RabbitMQ interfaces
-    public static void SendMessage(string message) {
-      var factory = new ConnectionFactory() { HostName = "localhost" };
-      using (var connection = factory.CreateConnection())
-      using (var channel = connection.CreateModel()) {
-        channel.QueueDeclare(queue: "OperationsQueue", durable: false, exclusive: false, autoDelete: false, arguments: null);
-
-        var body = Encoding.UTF8.GetBytes(message);
-
-        channel.BasicPublish(exchange: "", routingKey: "hello", basicProperties: null, body: body);
-        Serilog.Log.Debug("{0} {1}: Message sent {2}", "PluginVA", "SendToMQ.SendMessage", message);
-      }
-    }
-    public static void ReceiveMessage(string message) {
-       var factory = new ConnectionFactory() { HostName = "localhost" };
-        using(var connection = factory.CreateConnection())
-        using(var channel = connection.CreateModel())
-        {
-            channel.QueueDeclare(queue: "hello", durable: false, exclusive: false, autoDelete: false, arguments: null);
-        Serilog.Log.Debug("{0} {1}: Waiting for Messages", "PluginVA", "SendToMQ.ReceiveMessage");
-            var consumer = new EventingBasicConsumer(channel);
-            consumer.Received += (model, ea) =>
-            {
-                var body = ea.Body.ToArray();
-                var message = Encoding.UTF8.GetString(body);
-        Serilog.Log.Debug("{0} {1}: Message received {2}", "PluginVA", "SendToMQ.ReceiveMessage", message);
-            };
-            channel.BasicConsume(queue: "hello", autoAck: true, consumer: consumer);
-
-        }
-    }
-    #endregion
   }
-
 }
+

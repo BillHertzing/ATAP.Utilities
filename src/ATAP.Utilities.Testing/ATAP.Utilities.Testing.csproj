@@ -57,14 +57,9 @@
   <ItemGroup>
     <ProjectReference Include="../ATAP.Utilities.Configuration.Extensions/ATAP.Utilities.Configuration.Extensions.csproj" />
     <ProjectReference Include="../ATAP.Utilities.FIleIO/ATAP.Utilities.FileIO.csproj" />
-    <!--
     <ProjectReference Include="../ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="../ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
-    <ProjectReference Include="../ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
-    <ProjectReference Include="../ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
-    <ProjectReference Include="../ATAP.Utilities.Loader.StringConstants/ATAP.Utilities.Loader.StringConstants.csproj" />
     <ProjectReference Include="../ATAP.Utilities.Serializer.StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
--->
   </ItemGroup>
 
     <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
@@ -91,12 +86,10 @@
     <PackageReference Include="ServiceStack.OrmLite.Sqlite.Core" />
   </ItemGroup>
 
-  <!-- Loader interfaces and actuals for any Assembly that may be loaded by the dynamic Loader -->
+  <!-- Loader interfaces and actuals for any Assembly that may be loaded by the dynamic Loader, only works for TargetFramework NetCore -->
   <ItemGroup Condition="$(TargetFramework.Contains('netcore'))">
     <ProjectReference Include="..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
   </ItemGroup>
-
-
 
 </Project>

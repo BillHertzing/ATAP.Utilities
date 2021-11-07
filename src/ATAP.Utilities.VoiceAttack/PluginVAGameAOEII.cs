@@ -24,7 +24,6 @@ using StringConstantsGenericHost = ATAP.Utilities.VoiceAttack.StringConstantsGen
 
 using ATAP.Utilities.HostedServices;
 
-
 namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
 
   public class Plugin : ATAP.Utilities.VoiceAttack.Game.AOE.Plugin {
@@ -67,7 +66,7 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
       Data = new ATAP.Utilities.VoiceAttack.Game.AOE.II.Data(configurationRoot, vaProxy);
       SetData((IData)Data);
       InitializeData((object)vaProxy);
-      AttachToMainTimer((o, e) => {
+      AttachToMainTimer(() => {
         // If Main Queue is not empty
         // If PresentOnNormalQueue
         // Write message to user via vaProxy
@@ -102,15 +101,6 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
           break;
       }
     }
-
-    #region Additional Actions to occur when MainTimer fires
-
-    public static void AttachToMainTimer(Action<object, EventArgs> DoSomething) {
-      // Attach the action specified as a method parameter to the main timer
-      // Data.TimerDisposeHandles[StringConstantsVA.MainTimerName].Subscribe(DoSomething);
-      // Read MainCommandQueue and execute any Actions there
-    }
-    #endregion
 
     #region Traverse the inheritance chain and get the various configurationSections from each
     public static new (List<Dictionary<string, string>>, List<(string, string)>, List<string>) GetConfigurationSections() {

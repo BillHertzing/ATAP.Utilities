@@ -16,7 +16,7 @@ namespace ATAP.Utilities.MessageQueue.Shim.TPL {
 
     private ActionBlock<Byte[]> Messages { get; set; }
 
-    public TPLMessageQueue(Action<Byte[]> receiveAction) : base(receiveAction, null) { }
+    public TPLMessageQueue(Action<Byte[]> receiveAction) : this(receiveAction, null) { }
     public TPLMessageQueue(Action<Byte[]> receiveAction, CancellationToken? cancellationToken) : base(receiveAction, cancellationToken) {
       Messages = new ActionBlock<Byte[]>((message) => {
         // ToDO: Wrap in try catch and/or  Polly
@@ -43,16 +43,18 @@ namespace ATAP.Utilities.MessageQueue.Shim.TPL {
     public void Configure() { }
     #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls
-    protected virtual void Dispose(bool disposing) {
+    protected new virtual void Dispose(bool disposing) {
       if (!disposedValue) {
         if (disposing) {
           Messages.Complete();
+          // Dispose of downlevel
+          base.Dispose();
         }
         disposedValue = true;
       }
     }
     // This code added to correctly implement the disposable pattern.
-    public void Dispose() {
+    public new void Dispose() {
       // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
       Dispose(true);
     }

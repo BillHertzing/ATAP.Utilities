@@ -22,7 +22,6 @@ using GenericHostExtensions = ATAP.Utilities.GenericHost.Extensions;
 using ConfigurationExtensions = ATAP.Utilities.Configuration.Extensions;
 using StringConstantsVAGameAOE = ATAP.Utilities.VoiceAttack.Game.AOE.StringConstants;
 
-
 namespace ATAP.Utilities.VoiceAttack.Game.AOE {
 
 

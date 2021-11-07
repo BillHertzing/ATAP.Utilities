@@ -1,8 +1,8 @@
 ﻿// cd 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.VoiceAttack'
-// $src = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.VoiceAttack\bin\Debug\net4.8\*.dll'
+// $src = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.VoiceAttack\bin\Debug\netstandard2.1\*.dll'
 // $target = 'C:\Program Files\VoiceAttack\Apps\ATAP.Utilities.VoiceAttack'
 
-//dotnet build publish ATAP.Utilities.VoiceAttack.csproj /p:Configuration=Release Debug /p:DeployOnBuild=true /p:PublishProfile="properties/publishProfiles/Development.pubxml" /p:VisualStudioVersion=12.0 /p:TargetFramework=net4.8 /bl:../../_devlogs/msbuild.binlog
+//dotnet build publish ATAP.Utilities.VoiceAttack.csproj /p:Configuration=Release Debug /p:DeployOnBuild=true /p:PublishProfile="properties/publishProfiles/Development.pubxml" /p:VisualStudioVersion=12.0 /p:TargetFramework=netstandard2.1 /bl:../../_devlogs/msbuild.binlog
 
 using System;
 using System.Collections.Generic;
@@ -233,7 +233,51 @@ namespace ATAP.Utilities.VoiceAttack {
     }
     #endregion
 
-    #region Attach Event Handlers specific to GameAOE
+
+    #region Action to occur when MainTimer fires
+    public static Action<TimeSpan> GetMainTimerAction = new Action<TimeSpan>((durationAsTimeSpan) => {
+      Data.MainTimerElapsedTimeSpan += durationAsTimeSpan;
+      Serilog.Log.Debug("{0} {1}: The MainObservableResetableTimer fired, the MainTimerElapsedTimeSpan is {2}", "PluginVA", "MainTimerSubscriptionAction", Data.MainTimerElapsedTimeSpan);
+      Data.StoredVAProxy.WriteToLog($"The MainObservableResetableTimer fired, the MainTimerElapsedTimeSpan is {Data.MainTimerElapsedTimeSpan}", "Purple");
+    });
+    #endregion
+    #region Create the MainTimer
+    public static void CreateMainTimer(IConfigurationRoot configurationRoot) {
+
+      #region Local Variables used inside .ctor
+      string durationAsString;
+      #endregion
+      // Create the MainTimer
+      // Duration is from configuration
+      durationAsString = configurationRoot.GetValue<string>(StringConstantsVA.MainTimerTimeSpanConfigRootKey, StringConstantsVA.MainTimerTimeSpanDefault);
+      TimeSpan durationAsTimeSpan;
+      try {
+        durationAsTimeSpan = TimeSpan.Parse(durationAsString);
+      }
+      catch (FormatException) {
+        Serilog.Log.Debug("{0} {1}: durationAsString is {2} and cannot be parsed as a TimeSpan", "PluginVA", "Data(.ctor)", durationAsString);
+        Data.StoredVAProxy.WriteToLog($"durationAsString is {durationAsString} and cannot be parsed as a TimeSpan", "Red");
+        throw new InvalidDataException($"durationAsString is {durationAsString} and cannot be parsed as a TimeSpan");
+      }
+      catch (OverflowException) {
+        Serilog.Log.Debug("{0} {1}: durationAsString is {2} and is outside the range of a TimeSpan", "PluginVA", "Data(.ctor)", durationAsString);
+        Data.StoredVAProxy.WriteToLog($"durationAsString is {durationAsString} and is outside the range of a TimeSpan", "Red");
+        throw new InvalidDataException($"durationAsString is {durationAsString} and is outside the range of a TimeSpan");
+      }
+
+      ObservableResetableTimersHostedServiceData.AddInterval(StringConstantsVA.MainTimerName, true, durationAsTimeSpan, GetMainTimerAction(durationAsTimeSpan));
+      // debug
+
+
+      Data.ObservableResetableTimersHostedServiceData.TimerDisposeHandles[StringConstantsVA.MainTimerName].ActionList.Add()
+      // Attach the action specified as a method parameter to the main timer
+      // Data.TimerDisposeHandles[StringConstantsVA.MainTimerName].Subscribe(DoSomething);
+      // Read MainCommandQueue and execute any Actions there
+    }
+    #endregion
+
+
+    #region Attach Event Handlers specific to Lowest level of the Plugin
     public static void AttachEventHandlers() { }
 
     public static void ProfileChangingAction(Guid? FromInternalID, Guid? ToInternalID,

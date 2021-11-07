@@ -2,7 +2,7 @@
 
 
   <PropertyGroup>
-  
+
     <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
@@ -86,6 +86,11 @@
     <PackageReference Include="MethodBoundaryAspect.Fody" />
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
+  </ItemGroup>
+
+  <!-- The Automapper Package -->
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" />
   </ItemGroup>
 
   <!-- Configuration Settings files -->

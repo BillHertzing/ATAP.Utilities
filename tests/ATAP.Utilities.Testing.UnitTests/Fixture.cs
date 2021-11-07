@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.Testing.UnitTests
 {
-  public class Fixture : DiFixture { }
+  public class Fixture : DiFixtureNInject { }
   public partial class TestingUnitTests001 : IClassFixture<Fixture>
   {
     protected Fixture Fixture { get; }

@@ -31,11 +31,10 @@
     <PackageReference Include="System.Collections.Immutable" />
   </ItemGroup>
 
-  <!-- Loader interfaces and actuals for any Assembly that may be loaded by the dynamic Loader -->
+  <!-- Loader interfaces and actuals for any Assembly that may be loaded by the dynamic Loader, only works for TargetFramework NetCore -->
   <ItemGroup Condition="$(TargetFramework.Contains('netcore'))">
     <ProjectReference Include="..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
   </ItemGroup>
-
 
 </Project>

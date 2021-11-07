@@ -2,12 +2,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 using ATAP.Utilities.Serializer;
 
-namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
+namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
 
   public class SerializerOptions : ATAP.Utilities.Serializer.ISerializerOptions {
     public object ShimSpecificOptions { get; set; }
@@ -16,11 +15,11 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
     }
 
     public SerializerOptions(ISerializerOptions options) {
-      ShimSpecificOptions = (JsonSerializerOptions)options.ShimSpecificOptions;
+      ShimSpecificOptions = (JsonSerializerSettings)options.ShimSpecificOptions;
     }
 
-    public SerializerOptions(JsonSerializerOptions jsonSerializerOptions) {
-      ShimSpecificOptions = jsonSerializerOptions;
+    public SerializerOptions(JsonSerializerSettings jsonSerializerSettings) {
+      ShimSpecificOptions = jsonSerializerSettings;
     }
   }
 }

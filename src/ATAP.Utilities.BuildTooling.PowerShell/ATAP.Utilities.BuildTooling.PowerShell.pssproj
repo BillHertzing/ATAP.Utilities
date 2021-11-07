@@ -5,6 +5,7 @@
     <ATAPUtilitiesBuildToolingPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.*\build</ATAPUtilitiesBuildToolingPath>
     <ProjectHome />
   </PropertyGroup>
+  <!--
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
@@ -34,10 +35,12 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'ReleaseWithTrace' ">
     <OutputPath>bin\ReleaseWithTrace\</OutputPath>
   </PropertyGroup>
+  -->
   <ItemGroup>
     <Folder Include="Documentation\" />
     <Folder Include="tools\" />
   </ItemGroup>
+  <!--
   <ItemGroup>
     <Compile Include="Get-CoreInfo.ps1" />
     <Compile Include="Initialize-AssemblyInfoFiles.ps1" />
@@ -51,6 +54,7 @@
     <Content Include="toc.yml" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  -->
   <Target Name="Build" />
   <Import Project="$(MSBuildExtensionsPath)\PowerShell Tools for Visual Studio\PowerShellTools.targets" Condition="Exists('$(MSBuildExtensionsPath)\PowerShell Tools for Visual Studio\PowerShellTools.targets')" />
 </Project>

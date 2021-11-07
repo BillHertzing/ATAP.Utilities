@@ -1,6 +1,7 @@
 using System;
 
 using Serilog;
+using AutoMapper;
 
 //using Microsoft.Extensions.Logging;
 //using Microsoft.Extensions.Logging.Abstractions;
@@ -51,20 +52,24 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
   }
 
   public interface IVoiceAttackActionWithDelay {
-    public TimeSpan? PreActionDelay { get; set; }
+    public TimeSpanDto? PreActionDelay { get; set; }
     public IVoiceAttackActionAbstract VoiceAttackAction { get; set; }
-    public TimeSpan? PostActionDelay { get; set; }
+    public TimeSpanDto? PostActionDelay { get; set; }
   }
 
   public class VoiceAttackActionWithDelay : IVoiceAttackActionWithDelay {
-    public TimeSpan? PreActionDelay { get; set; }
+    public TimeSpanDto? PreActionDelay { get; set; }
     public IVoiceAttackActionAbstract VoiceAttackAction { get; set; }
-    public TimeSpan? PostActionDelay { get; set; }
+    public TimeSpanDto? PostActionDelay { get; set; }
     public VoiceAttackActionWithDelay(TimeSpan? preActionDelay, IVoiceAttackActionAbstract voiceAttackAction, TimeSpan? postActionDelay) {
-      PreActionDelay = preActionDelay;
+      PreActionDelay = new() { TotalMilliseconds = 1000 };//{TotalMilliseconds =  preActionDelay.TotalMilliseconds }; //Data.Mapper.Map<TimeSpanDto>(preActionDelay);
       VoiceAttackAction = voiceAttackAction;
-      PostActionDelay = postActionDelay;
+      PostActionDelay = new(){ TotalMilliseconds = 1000 }; // {TotalMilliseconds =  postActionDelay.TotalMilliseconds };; //Data.Mapper.Map<TimeSpanDto>(postActionDelay);
     }
+  }
+
+  public class TimeSpanDto {
+    public double TotalMilliseconds { get; set; }
   }
 }
 

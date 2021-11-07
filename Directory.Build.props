@@ -16,17 +16,11 @@
   <PropertyGroup>
     <Configurations>Debug;Release;ReleaseWithTrace;</Configurations>
     <!-- When building against anything except net5.0, the c# V9 keyword 'init' throws errors.-->
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net5.0;net4.8:</TargetFrameworks>
+    <TargetFrameworks>net47;net48;netstandard2.0;netstandard2.1;net5.0</TargetFrameworks>
     <RuntimeIdentifiers>win10-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
- <!-- Because these are specified later, they overwrite the values set in the earlier section -->
-    <PropertyGroup>
-    <!-- When building against NetDesktop targets, the c# V9 keyword 'init' throws errors, this is compensated for in the AssenmblyInfo.cs file -->
-    <TargetFrameworks>netstandard2.1</TargetFrameworks>
-    <RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
-  </PropertyGroup>
 
 
   <!-- Nullable Reference Type support solution-wide -->
@@ -151,8 +145,18 @@
     <DefineConstants>DEBUG;</DefineConstants>
   </PropertyGroup>
 
+    <!-- Any Core TargetFramework -->
+  <PropertyGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^net[56]'))">
+    <DefineConstants>NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <!-- Any Desktop TargetFramework -->
+  <PropertyGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^net4'))">
+    <DefineConstants>NETDESKTOP</DefineConstants>
+  </PropertyGroup>
+
   <!-- .NET Standard any version references, compilation flags and build options -->
-  <PropertyGroup Condition="$(TargetFramework.Contains('netstandard'))">
+  <PropertyGroup Condition="$(TargetFramework.Contains('standard'))">
     <DefineConstants>NETSTANDARD</DefineConstants>
   </PropertyGroup>
 
@@ -229,16 +233,6 @@
   <!-- .NET 471 solution-wide items to include in every project -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net471' ">
   </ItemGroup>
-
-  <!-- Any Core-compatable TargetFramework -->
-  <PropertyGroup Condition="$(TargetFramework.Contains('netcore')) OR $(TargetFramework.Contains('netstandard'))">
-    <DefineConstants>NETCORE</DefineConstants>
-  </PropertyGroup>
-
-  <!-- Any Desktop TargetFramework -->
-  <PropertyGroup Condition="($(TargetFramework.Contains('netcore')) OR $(TargetFramework.Contains('netstandard')))">
-    <DefineConstants>NETDESKTOP</DefineConstants>
-  </PropertyGroup>
 
 
 

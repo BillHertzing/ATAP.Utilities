@@ -5,7 +5,7 @@
       "executablePath": "C:\\Program Files\\VoiceAttack\\VoiceAttack.exe",
       "commandLineArgs": "",
       "workingDirectory": "C:\\Program Files\\VoiceAttack\\",
-      "symbolSearchPath": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\src\\ATAP.Utilities.VoiceAttack\\bin\\Debug\\net4.8\\",
+      "symbolSearchPath": "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\src\\ATAP.Utilities.VoiceAttack\\bin\\Debug\\netstandard2.1\\",
       "environmentVariables": {
         "VoiceAttackPlugin_Environment": "Development"
       }

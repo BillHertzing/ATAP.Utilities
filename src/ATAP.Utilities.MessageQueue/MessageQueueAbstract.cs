@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+#if NETDESKTOP
+using System.ComponentModel;
+#endif
 
 namespace ATAP.Utilities.MessageQueue {
 
@@ -34,15 +37,15 @@ namespace ATAP.Utilities.MessageQueue {
   }
 
   public abstract class MessageQueueAbstract<TSendMessageResults> : IMessageQueueAbstract<TSendMessageResults> where TSendMessageResults : ISendMessageResultsAbstract {
-    public IMessageQueueOptions MessageQueueOptions { get; init; }
-    public CancellationToken? CancellationToken { get; init; }
-    public Func<Byte[], TSendMessageResults> SendFunc { get; init; }
-    //public Func<IEnumerable<IEnumerable<Byte[]>>, TSendMessageResults> SendEnumerableFunc { get; init; }
-    //public Func<IDictionary<string, IEnumerable<Byte[]>>, TSendMessageResults> SendDictionaryFunc { get; init; }
+    public IMessageQueueOptions MessageQueueOptions { get; set; }
+    public CancellationToken? CancellationToken { get; set; }
+    public Func<Byte[], TSendMessageResults> SendFunc { get; set; }
+    //public Func<IEnumerable<IEnumerable<Byte[]>>, TSendMessageResults> SendEnumerableFunc { get; set; }
+    //public Func<IDictionary<string, IEnumerable<Byte[]>>, TSendMessageResults> SendDictionaryFunc { get; set; }
 
-    protected Action<Byte[]> ReceiveAction { get; init; }
-    //private Action<IEnumerable<Byte[]>> ReceiveEnumerableAction { get; init; }
-    //private Action<IDictionary<string, IEnumerable<Byte[]>>> ReceiveDictionaryAction { get; init; }
+    protected Action<Byte[]> ReceiveAction { get; set; }
+    //private Action<IEnumerable<Byte[]>> ReceiveEnumerableAction { get; set; }
+    //private Action<IDictionary<string, IEnumerable<Byte[]>>> ReceiveDictionaryAction { get; set; }
 
     public MessageQueueAbstract(Action<Byte[]> receiveAction, CancellationToken? cancellationToken) {
       if (receiveAction == null ) {throw new NullReferenceException(nameof(receiveAction));}
@@ -57,7 +60,7 @@ namespace ATAP.Utilities.MessageQueue {
 
     #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls
-    protected new virtual void Dispose(bool disposing) {
+    protected virtual void Dispose(bool disposing) {
       if (!disposedValue) {
         if (disposing) {
           // dispose of anything needing disposing
@@ -86,4 +89,14 @@ namespace ATAP.Utilities.MessageQueue {
     // }
 
   }
+  #region Support public init only setters on Net Desktop runtime
+#if NETDESKTOP
+// Add IsExternalInit if the TargetFramework is a Net Desktop runtime
+namespace System.Runtime.CompilerServices {
+  [EditorBrowsable(EditorBrowsableState.Never)]
+  internal static class IsExternalInit { }
+}
+#endif
+#endregion
+
 }

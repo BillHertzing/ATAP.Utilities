@@ -16,7 +16,7 @@ using static ATAP.Utilities.Collection.Extensions;
 
 namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
 
-#if NETSTANDARD || NETCORE
+#if NETCORE
   public class Serializer : ISerializer, ILoadDynamicSubModules {
 #else
   public class Serializer : ISerializer {
@@ -79,7 +79,7 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
       }
     }
 
-#if NETSTANDARD || NETCORE
+#if NETCORE
     // This module, if loaded dynamically, has submodules which must be loaded dynamically as well
     // ToDo: make a separate assembly, to be included only if the code will be loaded dynamically
     /// <summary>

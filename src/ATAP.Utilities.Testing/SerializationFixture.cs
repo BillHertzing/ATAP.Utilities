@@ -60,7 +60,7 @@ namespace ATAP.Utilities.Testing {
     public SerializationFixture() : base() {
       Serializer = Kernel.Get<ISerializer>();
       // Set Serializer options for unit tests that use this base DiFixture class
-      SerializerOptions options = new() { WriteIndented = false };
+      ISerializerOptions options = new() { WriteIndented = false };
       Serializer.Configure(new SerializerOptions() { WriteIndented = false });
     }
     public SerializationFixture(IConfiguration configuration) : base(configuration) {

@@ -55,7 +55,7 @@
         "/p:Configuration=Debug",
         "/p:DeployOnBuild=true",
         "/p:PublishProfile=\"properties/publishProfiles/Development.pubxml\"",
-        "/p:TargetFramework=net4.8",
+        "/p:TargetFramework=net48",
         "/bl:_devlogs/msbuild.binlog",
         "/clp:NoSummary"
       ],
@@ -76,7 +76,7 @@
         "/p:Configuration=Debug",
         "/p:DeployOnBuild=true",
         "/p:PublishProfile=\"properties/publishProfiles/Development.pubxml\"",
-        "/p:TargetFramework=net4.8",
+        "/p:TargetFramework=net48",
         "/bl:_devlogs/msbuild.binlog"
       ],
       "problemMatcher": "$msCompile",
@@ -96,7 +96,7 @@
         "/p:Configuration=Debug",
         "/p:DeployOnBuild=true",
         "/p:PublishProfile=\"properties/publishProfiles/Development.pubxml\"",
-        "/p:TargetFramework=net4.8",
+        "/p:TargetFramework=net48",
         "/bl:_devlogs/msbuild.binlog"
       ],
       "problemMatcher": "$msCompile"

@@ -198,9 +198,6 @@
     <!-- FileIO Extension to provide file and directory Globbing requires System.IO.Abstractions -->
     <PackageReference Update="System.IO.Abstractions" Version="13.2.47" />
 
-    <!-- Plugin Framework -->
-    <PackageReference Update="McMaster.NETCore.Plugins" Version="1.3.1" />
-
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
     <PackageReference Update="MethodBoundaryAspect.Fody" Version="2.0.138" />
 
@@ -209,6 +206,8 @@
     <!-- Task Parallel (TPL) Library-->
     <PackageReference Update="System.Threading.Tasks.Dataflow" Version="5.0.0" />
 
+    <!-- The Automapper Package -->
+    <PackageReference Update="AutoMapper" Version="10.1.1" />
 
     <!-- Packages used for custom build tasks -->
     <PackageReference Update="Microsoft.Build.Framework" Version="16.8.0" />
@@ -272,22 +271,39 @@
 
   </ItemGroup>
 
+  <!-- The Serializer Libraries available versions are highly dependent on the traget framework being used (See also ServiceStack.Text) -->
+  <!-- https://docs.microsoft.com/en-us/answers/questions/65502/which-net-framework-needed-to-use-systemtextjson.html -->
+  <!-- The regex should match net472, net48, netstandard, netcore, nad net5.0, but something is wrong.this workaround always matches-->
+  <PropertyGroup>
+    <tfr><![CDATA[^(net)]]></tfr>
+  </PropertyGroup>
+  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '$(tfr)'))">
+    <!-- V 5.0.0 supports framework 4.7.2 and later -->
+    <PackageReference Update="System.Text.Json" Version="5.0.0" />
+  </ItemGroup>
+
   <!-- This item group is for package versions specific to .Net Standard or Core -->
   <ItemGroup Condition="$(TargetFramework.Contains('netstandard')) OR $(TargetFramework.Contains('netcore'))">
-  <!-- Immutable Collestionsfor .Net Core-->
+    <!-- Immutable Collestionsfor .Net Core-->
     <PackageReference Update="System.Collections.Immutable" Version="5.0.0" />
-        <!-- The Serializer Libraries available (See also ServiceStack.Text) -->
-    <PackageReference Update="System.Text.Json" Version="5.0.0" />
+    <!-- The Serializer Libraries available (See also ServiceStack.Text) -->
     <PackageReference Update="Newtonsoft.Json" Version="12.0.3" />
 
   </ItemGroup>
 
   <!-- This item group is for package versions specific to .Net Desktop -->
   <ItemGroup Condition="!($(TargetFramework.Contains('netstandard')) OR $(TargetFramework.Contains('netcore')))">
-  <!-- Immutable Collestions for .Net desktop-->
+    <!-- Immutable Collestions for .Net desktop-->
     <PackageReference Update="System.Collections.Immutable" Version="1.7.1" />
-        <!-- The Serializer Libraries available (See also ServiceStack.Text) -->
-    <PackageReference Update="System.Text.Json" Version="4.7.2" />
+    <!-- The Serializer Libraries available (See also ServiceStack.Text) -->
+    <PackageReference Update="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
+
+  <!-- This item group is for package versions specific to .Net Core and Net 5.0 -->
+  <ItemGroup Condition="$(TargetFramework.Contains('netcore'))">
+    <!-- Plugin Framework -->
+    <PackageReference Update="McMaster.NETCore.Plugins" Version="1.3.1" />
+  </ItemGroup>
+
 
 </Project>

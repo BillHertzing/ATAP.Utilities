@@ -30,6 +30,8 @@ using ATAP.Utilities.Serializer;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using AutoMapper;
+
 namespace ATAP.Utilities.VoiceAttack.Game.AOE {
 
   public abstract class Plugin : ATAP.Utilities.VoiceAttack.Game.Plugin {
@@ -341,6 +343,13 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
       Data.Serializer = new ATAP.Utilities.Serializer.Shim.SystemTextJson.Serializer(jsonSerializerOptions);
       // A serializer with just defaults.
       //Data.Serializer = new ATAP.Utilities.Serializer.Shim.SystemTextJson.Serializer();
+    }
+    #endregion
+
+    #region Create AutoMapper configuration
+    public static void CreateAutoMapperConfiguration() {
+      var config = new MapperConfiguration(cfg => cfg.CreateMap<TimeSpan, TimeSpanDto>());
+      Data.Mapper = config.CreateMapper();
     }
     #endregion
 

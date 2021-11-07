@@ -48,10 +48,10 @@
     <PackageReference Include="Serilog" />
   </ItemGroup>
 
-  <!-- Loader interfaces and actuals for any Assembly that may be loaded by the dynamic Loader // Commented out for Desktop net 4.8, loader is incompatable
-  <ItemGroup>
+  <!-- Loader interfaces and actuals for any Assembly that may be loaded by the dynamic Loader, only works for TargetFramework NetCore -->
+  <ItemGroup Condition="$(TargetFramework.Contains('netcore'))">
     <ProjectReference Include="..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
   </ItemGroup>
- -->
+
 </Project>

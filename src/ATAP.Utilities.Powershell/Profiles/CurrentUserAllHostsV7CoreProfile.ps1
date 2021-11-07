@@ -372,7 +372,7 @@ Function getconflicted {gci  -Recurse. | where-object -property fullname -match 
 function PublishPluginAndStartVAProcess
 {
 
-  dotnet publish src/ATAP.Utilities.VoiceAttack/ATAP.Utilities.VoiceAttack.csproj /p:Configuration=Debug /p:DeployOnBuild=true /p:PublishProfile="properties/publishProfiles/Development.pubxml" /p:TargetFramework=net4.8 /bl:_devlogs/msbuild.binlog
+  dotnet publish src/ATAP.Utilities.VoiceAttack/ATAP.Utilities.VoiceAttack.csproj /p:Configuration=Debug /p:DeployOnBuild=true /p:PublishProfile="properties/publishProfiles/Development.pubxml" /p:TargetFramework=net48 /bl:_devlogs/msbuild.binlog
   & 'C:\Users\whertzing\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\VoiceAttack.lnk'  -bypassimpropershutdowncheck
 }
 set-item -path alias:pSVA -value PublishPluginAndStartVAProcess

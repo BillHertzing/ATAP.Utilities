@@ -20,7 +20,7 @@ namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
   public class Serializer : ISerializer {
 #endif
     public ISerializerOptions Options { get;  set; }
-    private NewtonsoftSerializerOptions NewtonsoftSerializerOptions { get; set; }
+    private JsonSerializerSettings NewtonsoftSerializerSettings { get; set; }
     public Serializer() {
       this.Configure();
     }
@@ -28,7 +28,7 @@ namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
     public Serializer(ISerializerOptions options) {
       this.Configure(options);
     }
-    public Serializer(NewtonsoftSerializerOptions options) {
+    public Serializer(JsonSerializerSettings options) {
       this.Configure(options);
     }
     // public Serializer(List<JsonConverter> jsonConverters) {
@@ -36,22 +36,22 @@ namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
     // }
 
     public string Serialize(object obj) {
-      return JsonConvert.Serialize(obj, (NewtonsoftSerializerOptions)Options.ShimSpecificOptions);
+      return JsonConvert.SerializeObject(obj, (JsonSerializerSettings)Options.ShimSpecificOptions);
     }
     public T Deserialize<T>(string str) {
-      return JsonConvert.DeserializeObject<T>(str, (NewtonsoftSerializerOptions)Options.ShimSpecificOptions);
+      return JsonConvert.DeserializeObject<T>(str, (JsonSerializerSettings)Options.ShimSpecificOptions);
     }
     public string Serialize(object obj, ISerializerOptions options) {
-      return JsonConvert.SerializeObject(obj, (NewtonsoftSerializerOptions)options.ShimSpecificOptions);
+      return JsonConvert.SerializeObject(obj, (JsonSerializerSettings)options.ShimSpecificOptions);
     }
     public T Deserialize<T>(string str, ISerializerOptions options) {
-      return JsonConvert.DeserializeObject<T>(str, (NewtonsoftSerializerOptions)options.ShimSpecificOptions);
+      return JsonConvert.DeserializeObject<T>(str, (JsonSerializerSettings)options.ShimSpecificOptions);
     }
 
     // ToDo: add a Configure which has default values of the Options should come from an IConfiguration object, and keys/default values should come from a StringConstants
     public void Configure() {
       //
-      Options = new SerializerOptions(new NewtonsoftSerializerOptions());
+      Options = new SerializerOptions(new JsonSerializerSettings());
       // ToDo: Add a method that returns a specific list of JsonConverter which would be the default for ATAP utilities
       //JsonConvertersCache = new List<JsonConverter>() {
       // DictionaryJsonConverterFactory.Default
@@ -63,7 +63,7 @@ namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
       //JsonConvertersCache.AddRange(((JsonSerializerOptions)Options).ShimSpecificOptions.Converters)
       //((JsonSerializerOptions)Options).ShimSpecificOptions.PopulateConverters(JsonConvertersCache);
     }
-    public void Configure(NewtonsoftSerializerOptions newtonsoftSerializerOptions) {
+    public void Configure(JsonSerializerSettings newtonsoftSerializerOptions) {
       Options = new SerializerOptions(newtonsoftSerializerOptions);
     }
     // public void Configure(List<JsonConverter> jsonConverters) {
@@ -76,7 +76,7 @@ namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
       // }
     // }
 
-#if NETSTANDARD || NETCORE
+#if NETCORE
     // This module, if loaded dynamically, has submodules which must be loaded dynamically as well
     // ToDo: make a separate assembly, to be included only if the code will be loaded dynamically
     /// <summary>

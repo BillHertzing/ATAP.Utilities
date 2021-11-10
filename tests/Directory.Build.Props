@@ -1,0 +1,13 @@
+<Project >
+  <!-- This is a child Directory.Build.Props. It applies to all projects in this subdirectory -->
+  <!-- Import parent Directory.build.props -->
+  <Import Project="../Directory.Build.props" />
+
+  <!-- overwrite or add properties common to all test projects -->
+  <!-- Test may not target NetStandard, they must (like an application) target one or more runtimes -->
+  <!-- Target the most recent frameworks for building a test .dll -->
+  <PropertyGroup>
+    <TargetFrameworks>net47;net48;net5.0</TargetFrameworks>
+  </PropertyGroup>
+
+</Project>

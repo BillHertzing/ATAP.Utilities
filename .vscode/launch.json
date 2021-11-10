@@ -63,6 +63,17 @@
       "runspaceId": 1
     },
     {
+      "name": "Launch CodeAnalysis",
+      "type": "clr",
+      "request": "launch",
+      "preLaunchTask": "BuildCodeAnalysis",
+      "program": "${workspaceFolder}/src/ATAP.Console.CodeAnalysis/bin/Debug/net48/ATAP.Console.CodeAnalysis.exe",
+      "args": ["C:/Dropbox/whertzing/GitHub/ATAP.Utilities/ATAP.Utilities.sln"],
+      "cwd": "${workspaceFolder}/src/ATAP.Console.CodeAnalysis/bin/Debug/net48/",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
       "name": "Launch Console02",
       "type": "coreclr",
       "request": "launch",

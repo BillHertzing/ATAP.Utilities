@@ -146,8 +146,6 @@
     <PackageReference Include="Seq.Extensions.Logging" />
   </ItemGroup>
 
-
-
   <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
   <ItemGroup>
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->

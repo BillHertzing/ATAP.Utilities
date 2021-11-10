@@ -9,8 +9,8 @@ namespace ATAP.Utilities.Philote {
   public interface IIntPhilote<TId> : IAbstractPhilote<TId, int> where TId : IAbstractStronglyTypedId<int>, new() { }
 
   public interface IAbstractPhilote<TId, TValue> where TId: IAbstractStronglyTypedId<TValue>, new() where TValue : notnull {
-    TId ID { get; }
-    ConcurrentDictionary<string, IAbstractStronglyTypedId<TValue>>? AdditionalIDs { get; }
+    TId Id { get; }
+    ConcurrentDictionary<string, IAbstractStronglyTypedId<TValue>>? AdditionalIds { get; }
     IEnumerable<ITimeBlock>? TimeBlocks { get; }
   }
 }

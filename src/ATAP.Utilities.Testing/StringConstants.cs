@@ -1,7 +1,7 @@
 
 
 namespace ATAP.Utilities.Testing {
-  public static class TestingStringConstants {
+  public static class StringConstants {
     // ToDo: Localize the string constants
 
     #region string constants: File Names
@@ -19,22 +19,6 @@ namespace ATAP.Utilities.Testing {
     public const string CannotReadEnvironmentVariablesSecurityExceptionMessage = "Test cannot read from the environment variables (Security)";
     #endregion
 
-    #region ConfigKeys and default values for Databasename and Connection Strings
-    public const string DatabaseConnectionStringConfigRootKey = "DatabaseConnectionString";
-    public const string DatabaseConnectionStringDefault = "ConnectionStringMustBeDefinedElsewhere";
-    public const string DatabaseNameConfigRootKey = "DatabaseName";
-    public const string DatabaseNameDefault = "DefaultDatabaseName";
-    #endregion
-
-    #region ConfigKeys and default values for strings related to ServiceStack OrmLite Databases (only database technology agnostic/common)
-    /// <summary>
-    /// DatabaseProvider is only used by the ServiceStack OrmLite integration test
-    /// </summary>
-    public const string DatabaseProviderConfigRootKey = "DatabaseProvider";
-    public const string DatabaseProviderDefault = "EmptyDefaultDatabaseProvider";
-
-    #endregion
-
     #region string constants: EnvironmentVariablePrefixs
     public const string GenericTestEnvironmentVariablePrefixConfigRootKey = "GenericTest_";
     public const string GenericTestEnvironmentVariablePrefixDefault = "GenericTest_";
@@ -44,20 +28,10 @@ namespace ATAP.Utilities.Testing {
 
     // ToDo: replace with newest "best practices" that use IHostEnvironment (i.e., deprecate these)
     #region string constants: Environments
-    public const string EnvironmentConfigRootKey = "Environment";
-    public const string EnvironmentDefault = EnvironmentUnitTest;
     public const string EnvironmentProductionTest = "ProductionTest"; // ToDo: Implement these tests
     public const string EnvironmentUnitTest = "UnitTest"; // Run Unit tests
-    public const string EnvironmentMSSQLIntegrationTest = "MSSQLIntegrationTest";  // ToDo: Implement these tests
-    public const string EnvironmentMySQLIntegrationTest = "MySQLIntegrationTest";  // ToDo: Implement these tests
-    public const string EnvironmentSQLLiteIntegrationTest = "SQLiteIntegrationTest"; // ToDo: Implement these tests
-    public const string EnvironmentSSOrmLiteMSSQLIntegrationTest = "SSOrmLiteMSSQLIntegrationTest";
-    public const string EnvironmentSSOrmLiteMySQLIntegrationTest = "SSOrmLiteMySQLIntegrationTest";
-    public const string EnvironmentSSOrmLiteSQLLiteIntegrationTest = "SSOrmLiteSQLiteIntegrationTest";
-    public const string EnvironmentDapperMSSQLIntegrationTest = "DapperMSSQLIntegrationTest"; // ToDo: Implement these tests
-    public const string EnvironmentDapperMySQLIntegrationTest = "DapperMySQLIntegrationTest"; // ToDo: Implement these tests
-    public const string EnvironmentDapperSQLiteIntegrationTest = "DapperSQLiteIntegrationTest"; // ToDo: Implement these tests
-    public const string EnvironmentEFCoreIntegrationTest = "EFCoreIntegrationTest"; // ToDo: Implement these tests
+    public const string EnvironmentConfigRootKey = "Environment";
+    public const string EnvironmentDefault = EnvironmentUnitTest;
     #endregion
 
   }

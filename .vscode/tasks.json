@@ -86,6 +86,28 @@
       }
     },
     {
+      "label": "BuildCodeAnalysis",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "src/ATAP.Console.CodeAnalysis/ATAP.Console.CodeAnalysis.csproj",
+        "/p:GenerateFullPaths=true",
+        "/p:Configuration=Debug",
+        "/p:DeployOnBuild=true",
+        "/p:PublishProfile=\"properties/publishProfiles/Development.pubxml\"",
+        "/p:TargetFramework=net48",
+        "/bl:_devlogs/msbuild.binlog",
+        "/clp:NoSummary"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "echo": true
+      },
+      "problemMatcher": "$msCompile",
+      "group": "build"
+    },
+    {
       "label": "watch",
       "command": "dotnet",
       "type": "process",

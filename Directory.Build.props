@@ -15,15 +15,14 @@
   <!-- The Build Configuration properties common for every assembly, can be overwritten in individual .csproj files -->
   <PropertyGroup>
     <Configurations>Debug;Release;ReleaseWithTrace;</Configurations>
-    <!-- When building against anything except net5.0, the c# V9 keyword 'init' throws errors.-->
+    <!-- When building against anything except net5.0 and higher, the c# V9 keyword 'init' throws errors. This is resolved in the AssemblyInfo.cs file for each project-->
     <TargetFrameworks>net47;net48;netstandard2.0;netstandard2.1;net5.0</TargetFrameworks>
     <RuntimeIdentifiers>win10-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
 
-
-  <!-- Nullable Reference Type support solution-wide -->
+  <!-- Enable Nullable Reference Type support solution-wide -->
   <PropertyGroup>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -33,7 +32,7 @@
     <!-- specify the root directory of the solution, relative to the location where the current project is found -->
     <!-- when msbuild is run by Visual Studio 15.8.2, ($(MSBuildRuntimeType) != 'Core') the property $(SolutionDir) is already defined at this point, so this line is not executed -->
     <!-- when msbuild is run by dotnet command, ($(MSBuildRuntimeType) == 'Core') the property $(SolutionDir) is not defined at this point, so this line is executed -->
-    <!-- ToDo: Major pain point, there is no way to know how far up SolutionDir may be.  In this repository, code is (alomost) always two subdirectories down from the solution dir -->
+    <!-- ToDo: Major pain point, there is no way to know how far up SolutionDir may be.  In this repository, code is (almost) always two subdirectories down from the solution dir -->
 
     <!-- the result is that the $(SolutionDir) is set properly regardless of the $(MSBuildRuntimeType) -->
     <SolutionDir >$(MSBuildProjectDirectory)\..\..\</SolutionDir>
@@ -47,13 +46,14 @@
     <!-- bring in the build tasks extensions defined in the ATAP.Utilities.BuildTooling project-->
     <!-- ATAPBuildToolingConfiguration is normally set to Release; use Debug if developing the BuildTooling assemblies and scripts -->
     <ATAPBuildToolingConfiguration>Debug</ATAPBuildToolingConfiguration>
+    <ATAPBuildToolingRelativeBasePath>ATAP.Utilities.BuildTooling.0.1.0.1\build\</ATAPBuildToolingRelativeBasePath>
     <!-- ATAPBuildToolingDebugVerbosity controls the level of details the Debug mode logging. If ATAPBuildToolingConfiguration is not Debug, this setting has no effect -->
     <!-- valid values for ATAPBuildToolingDebugVerbosity are trace -->
     <ATAPBuildToolingDebugVerbosity>Trace</ATAPBuildToolingDebugVerbosity>
-    <ATAPUtilitiesBuildToolingTargetsPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.0.1.0.1\build\</ATAPUtilitiesBuildToolingTargetsPath>
-    <ATAPUtilitiesBuildToolingTasksPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.0.1.0.1\build</ATAPUtilitiesBuildToolingTasksPath>
-    <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\$(ATAPBuildToolingConfiguration)\netstandard2.0\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
-    <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\$(ATAPBuildToolingConfiguration)\net471\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
+    <ATAPUtilitiesBuildToolingTargetsPath>$(SolutionBuildToolsBaseDir)$(ATAPBuildToolingRelativeBasePath)</ATAPUtilitiesBuildToolingTargetsPath>
+    <ATAPUtilitiesBuildToolingTasksPath>$(SolutionBuildToolsBaseDir)$(ATAPBuildToolingRelativeBasePath)</ATAPUtilitiesBuildToolingTasksPath>
+    <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\netstandard2.1\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
+    <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\net471\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
 
     <!-- The Roslyn Code Analyzers for FxCop Rules should be installed as a Nuget Package at the Solution level, per this article https://docs.microsoft.com/en-us/visualstudio/code-quality/install-fxcop-analyzers?view=vs-2019 -->
     <!-- Per this article https://docs.microsoft.com/en-us/visualstudio/code-quality/roslyn-analyzers-overview?view=vs-2019#nuget-package-versus-vsix-extension the legacy post-build code analysis tools should be turned off -->
@@ -61,11 +61,11 @@
 
     <!-- Enable or disable MSBuild's Binary Build Log for all projects in the solution -->
     <binaryLogger>
-    <LogFile>msbuild.binlog</LogFile>
+      <LogFile>msbuild.binlog</LogFile>
     </binaryLogger>
     <!-- Enable or disable MSBuild's file-based Build Log for all projects in the solution -->
     <fileLogger>
-    <LogFile>msbuild.log</LogFile>
+      <LogFile>msbuild.log</LogFile>
     </fileLogger>
   </PropertyGroup>
 
@@ -99,9 +99,8 @@
 
   <!-- Do not allow the compiler to generate Binding Redirects -->
   <PropertyGroup>
-    <AutoGenerateBindingRedirects Condition=" '$(AutoGenerateBindingRedirects)' == '' ">true</AutoGenerateBindingRedirects>
+    <AutoGenerateBindingRedirects Condition=" '$(AutoGenerateBindingRedirects)' == '' ">false</AutoGenerateBindingRedirects>
       <GenerateBindingRedirectsOutputType Condition=" '$(GenerateBindingRedirectsOutputType)' == '' ">true</GenerateBindingRedirectsOutputType>
-
   </PropertyGroup>
 
   <!-- Define the maximum number of CPUs to use when building in parallel. value of 1 indicates to not build anything in parallel, and makes reading the build log linear -->
@@ -128,13 +127,13 @@
   <!-- Release Configuration compilation symbols, flags and build options -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DefineConstants>RELEASE;</DefineConstants>
+    <DefineConstants>$(DefineConstants);RELEASE;</DefineConstants>
   </PropertyGroup>
 
   <!-- ReleaseWithTrace Configuration compilation symbols, flags and build options -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithTrace|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DefineConstants>RELEASE;TRACE;</DefineConstants>
+    <DefineConstants>$(DefineConstants);RELEASE;TRACE;</DefineConstants>
   </PropertyGroup>
 
   <!-- Debug Configuration compilation symbols, flags and build options -->
@@ -142,106 +141,90 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <!-- Using Fody for methodBoundryAspect messes up debugging symbols https://github.com/vescon/MethodBoundaryAspect.Fody/issues/71 -->
     <!-- <DefineConstants>DEBUG;TRACE;</DefineConstants> -->
-    <DefineConstants>DEBUG;</DefineConstants>
+    <DefineConstants>$(DefineConstants);DEBUG;</DefineConstants>
   </PropertyGroup>
 
     <!-- Any Core TargetFramework -->
-  <PropertyGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^net[56]'))">
-    <DefineConstants>NETCORE</DefineConstants>
+  <PropertyGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^(core|net[56])'))">
+    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
   </PropertyGroup>
 
   <!-- Any Desktop TargetFramework -->
   <PropertyGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^net4'))">
-    <DefineConstants>NETDESKTOP</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETDESKTOP</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Standard any version references, compilation flags and build options -->
   <PropertyGroup Condition="$(TargetFramework.Contains('standard'))">
-    <DefineConstants>NETSTANDARD</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETSTANDARD</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Standard 2.0 references, compilation flags and build options -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <DefineConstants>NETSTANDARD2_0</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETSTANDARD2_0</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Standard 2.1 references, compilation flags and build options -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-    <DefineConstants>NETSTANDARD2_1</DefineConstants>
-  </PropertyGroup>
-
-  <!-- .NET Core references, compilation flags and build options -->
-  <PropertyGroup Condition="$(TargetFramework.Contains('netcore'))">
-    <DefineConstants>NETCORE;</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETSTANDARD2_1</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Core 2.0 references, compilation flags and build options -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
-    <DefineConstants>NETCOREAPP2_0</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETCOREAPP2_0</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Core 2.1 references, compilation flags and build options -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1'">
-    <DefineConstants>NETCOREAPP2_1</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETCOREAPP2_1</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Core 3.0 references, compilation flags and build options -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
-    <DefineConstants>NETCOREAPP3_0</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETCOREAPP3_0</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Core 3.1 references, compilation flags and build options -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <DefineConstants>NETCOREAPP3_1</DefineConstants>
-  </PropertyGroup>
-
-  <!-- .NET Framework, compilation flags and build options -->
-  <PropertyGroup Condition="$(TargetFramework.Contains('net'))">
-    <DefineConstants>NETFULL</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETCOREAPP3_1</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET 45 references, compilation flags and build options -->
   <PropertyGroup Condition="$(TargetFramework.Contains('net45'))">
-    <DefineConstants>NET45</DefineConstants>
+    <DefineConstants>$(DefineConstants);NET45</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET 46 references, compilation flags and build options -->
   <PropertyGroup Condition="$(TargetFramework.Contains('net46'))">
-    <DefineConstants>NET46</DefineConstants>
+    <DefineConstants>$(DefineConstants);NET46</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET 47 references, compilation flags and build options -->
   <PropertyGroup Condition="$(TargetFramework.Contains('net47'))">
-    <DefineConstants>NET47</DefineConstants>
+    <DefineConstants>$(DefineConstants);NET47</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET 471 references, compilation flags and build options -->
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net471' ">
-    <DefineConstants>NET471</DefineConstants>
+    <DefineConstants>$(DefineConstants);NET471</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET 472 references, compilation flags and build options -->
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net472' ">
-    <DefineConstants>NET472</DefineConstants>
+    <DefineConstants>$(DefineConstants);NET472</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET 48 references, compilation flags and build options -->
   <PropertyGroup Condition="$(TargetFramework.Contains('net48'))">
-    <DefineConstants>NET48</DefineConstants>
+    <DefineConstants>$(DefineConstants);NET48</DefineConstants>
   </PropertyGroup>
-
-  <!-- .NET 471 solution-wide items to include in every project -->
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net471' ">
-  </ItemGroup>
-
-
 
   <!-- Demonstrate the difference between a msbuild run from inside Visual Studio, and a msbuild called from dotnet CLI
        Replace Never with Clean -->
   <Target Name="HighlightDifferencesBetweenMSBuild" BeforeTargets="Never">
-    <Message  Text="MSBuildRuntimeType = $(MSBuildRuntimeType)" />
-    <Message Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'" Text="SolutionDir undefined or null"/>
-    <Message Condition="$(SolutionDir) != '' And $(SolutionDir) != '*Undefined*'" Text="SolutionDir =$(SolutionDir)"/>
+    <Message Text="MSBuildRuntimeType = $(MSBuildRuntimeType)" />
+    <Message Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'" Text="SolutionDir undefined or null" />
+    <Message Condition="$(SolutionDir) != '' And $(SolutionDir) != '*Undefined*'" Text="SolutionDir =$(SolutionDir)" />
   </Target>
 
   <!--

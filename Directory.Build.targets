@@ -124,14 +124,6 @@
   </ItemGroup>
   -->
 
-  <!-- Include Documentation generation for every project, but only when built with Net47, as docfx 2.51.2  is only supported on net47 -->
-  <!--<ItemGroup Condition="$(TargetFramework.Contains('net47'))>
-    <PackageReference Include="docfx" />
-    <Folder Include="Documentation\" />
-  </ItemGroup>-->
-  <!-- documentation generation  -->
-  <!--<PackageReference Update="docfx" Version="2.51.2" />-->
-
   <!-- Centrally manage package versions for all NuGet package dependencies, courtesy of https://www.strathweb.com/2018/07/solution-wide-nuget-package-version-handling-with-msbuild-15/ -->
   <ItemGroup>
     <!--Stateless lightweight StateMachine library -->
@@ -185,9 +177,6 @@
     <!-- Standalone reference to Microsoft.Extensions.DependencyInjection is used by unitTest projects-->
     <PackageReference Update="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
 
-    <!-- Package to extend Microsoft.Extensions.DependencyInjection with Scan and Decorate methods -->
-    <PackageReference Update="Scrutor" Version="3.3.0" />
-
     <!-- alternate DI container used in UnitTest projects-->
     <PackageReference Update="Ninject" Version="3.3.4" />
     <PackageReference Update="Ninject.extensions.conventions" Version="3.3.0" />
@@ -239,6 +228,16 @@
     <PackageReference Update="Serilog.Extensions.Hosting" Version="4.1.2" />
     <PackageReference Update="Seq.Extensions.Logging" Version="6.0.0" />
 
+    <!-- Package to ease spawning of and communications with processes -->
+    <PackageReference Update="MedallionShell" Version="1.6.2" />
+
+    <!-- Package to use real-world Units of Measure -->
+    <PackageReference Update="UnitsNet" Version="4.77.0" />
+
+    <!-- Package to extend Microsoft.Extensions.DependencyInjection with Scan and Decorate methods -->
+    <PackageReference Update="Scrutor" Version="3.3.0" />
+
+
     <!-- Packages to add xUnit Testing providers and extensions -->
     <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.0.0" />
     <PackageReference Update="FluentAssertions" Version="6.2.0" />
@@ -254,8 +253,6 @@
 
 
     <!-- To Be Sorted -->
-    <PackageReference Update="MedallionShell" Version="1.6.2" />
-    <PackageReference Update="UnitsNet" Version="4.102.0" />
     <PackageReference Update="NLog" Version="4.7.0" />
     <PackageReference Update="NLog.Config" Version="4.7.0" />
 
@@ -305,5 +302,12 @@
     <PackageReference Update="McMaster.NETCore.Plugins" Version="1.3.1" />
   </ItemGroup>
 
-
+  <!-- Include Documentation generation for every project, but only when built with Net47, as docfx 2.51.2  is only supported on net47 -->
+  <!--
+  <ItemGroup Condition="$(TargetFramework.Contains('net47'))>
+    <PackageReference Include="docfx" />
+    <Folder Include="Documentation\" />
+    <PackageReference Update="docfx" Version="2.51.2" />
+  </ItemGroup>
+  -->
 </Project>

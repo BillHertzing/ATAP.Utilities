@@ -8,8 +8,8 @@ namespace ATAP.Utilities.Testing {
   /// A Test Fixture Interface that adds storage for a .Net Core IConfiguration root
   /// </summary>
   public interface IConfigurableFixture {
-    public ConfigurationRoot GenericTestConfigurationRoot { get; set; }
-    public ConfigurationRoot SpecificTestConfigurationRoot { get; set; }
+    public IConfigurationRoot? GenericTestConfigurationRoot { get; set; }
+    public IConfigurationRoot? SpecificTestConfigurationRoot { get; set; }
     // The list of environment prefixes this test will recognize
     public string[] GenericTestEnvPrefixes { get; set; }
     public string[] SpecificTestEnvPrefixes { get; set; }
@@ -19,20 +19,24 @@ namespace ATAP.Utilities.Testing {
   /// A Test Fixture that adds storage for a .Net Core IConfiguration root
   /// </summary>
   public class ConfigurableFixture : SimpleFixture, IConfigurableFixture {
-    public ConfigurationRoot GenericTestConfigurationRoot { get; set; }
-    public ConfigurationRoot SpecificTestConfigurationRoot { get; set; }
+    public IConfigurationRoot? GenericTestConfigurationRoot { get; set; }
+    public IConfigurationRoot? SpecificTestConfigurationRoot { get; set; }
 
     // The list of environment prefixes this test will recognize
-    public string[] GenericTestEnvPrefixes { get; set; } = new string[1] { TestingStringConstants.GenericTestEnvironmentVariablePrefixConfigRootKey };
-    public string[] SpecificTestEnvPrefixes { get; set; } = new string[1] { TestingStringConstants.SpecificTestEnvironmentVariablePrefixConfigRootKey };
+    public string[] GenericTestEnvPrefixes { get; set; } = new string[1] { StringConstants.GenericTestEnvironmentVariablePrefixConfigRootKey };
+    public string[] SpecificTestEnvPrefixes { get; set; } = new string[1] { StringConstants.SpecificTestEnvironmentVariablePrefixConfigRootKey };
 
     public ConfigurableFixture() : base() {
     }
+    public ConfigurableFixture(IConfigurationRoot genericTestConfigurationRoot) : this(genericTestConfigurationRoot, null, null, null) {
+      if (genericTestConfigurationRoot == null) { throw new ArgumentNullException(nameof(genericTestConfigurationRoot)); }
+      GenericTestConfigurationRoot = genericTestConfigurationRoot;
+    }
 
-    public void Configure(ConfigurationRoot genericTestConfigurationRoot
-    , ConfigurationRoot specificTestConfigurationRoot
-    , string[] genericTestEnvPrefixes
-    , string[] specificTestEnvPrefixes) {
+    public ConfigurableFixture(IConfigurationRoot genericTestConfigurationRoot = default
+    , IConfigurationRoot specificTestConfigurationRoot = default
+    , string[] genericTestEnvPrefixes = default
+    , string[] specificTestEnvPrefixes = default) {
       GenericTestConfigurationRoot = genericTestConfigurationRoot ?? throw new ArgumentNullException(nameof(genericTestConfigurationRoot));
       SpecificTestConfigurationRoot = specificTestConfigurationRoot ?? throw new ArgumentNullException(nameof(specificTestConfigurationRoot));
       GenericTestEnvPrefixes = genericTestEnvPrefixes ?? throw new ArgumentNullException(nameof(genericTestEnvPrefixes));

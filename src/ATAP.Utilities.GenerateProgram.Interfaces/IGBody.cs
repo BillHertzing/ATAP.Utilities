@@ -6,5 +6,6 @@ namespace ATAP.Utilities.GenerateProgram {
     IList<string> GStatements { get; init; }
     IGComment GComment { get; init; }
     IAbstractPhilote<IGBody<TValue>, TValue>   Philote { get; init; }
+
   }
 }

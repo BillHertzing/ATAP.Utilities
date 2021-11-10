@@ -4,12 +4,12 @@ using System.ComponentModel;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq.Expressions;
-// For the NotNullWhenAttribute used in code
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
+// For the NotNullWhenAttribute used in code
+using System.Diagnostics.CodeAnalysis;
 
 namespace ATAP.Utilities.StronglyTypedIds {
   // Attribution for IdAsStruct<T>(earlier): taken from answers provided to this question: https://stackoverflow.com/questions/53748675/strongly-typed-guid-as-generic-struct
@@ -161,10 +161,10 @@ namespace ATAP.Utilities.StronglyTypedIds {
       return base.ConvertFrom(context, culture, value);
     }
 
-      public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType) {
-        if (value is null) {
-          throw new ArgumentNullException(nameof(value));
-        }
+    public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType) {
+      if (value is null) {
+        throw new ArgumentNullException(nameof(value));
+      }
 
       var stronglyTypedId = (AbstractStronglyTypedId<TValue>)value;
       TValue idValue = stronglyTypedId.Value;
@@ -251,17 +251,17 @@ namespace ATAP.Utilities.StronglyTypedIds {
       // This starts the extensions to Mssr. Levesque's code to handle Deserialization of IAbstractStronglyTypedId
       // Attribution:[Get all types implementing specific open generic type](https://stackoverflow.com/questions/8645430/get-all-types-implementing-specific-open-generic-type)
       // Attribution:[Find all types implementing a certain generic interface with specific T type](https://stackoverflow.com/questions/33694960/find-all-types-implementing-a-certain-generic-interface-with-specific-t-type)
-      Type sTIDType;
+      Type sTIdType;
       ConstructorInfo? ctor;
       if (stronglyTypedIdType.IsInterface) {
         // Get the Interface name, strip the preceding 'I'.
-        var STIDTypeName = stronglyTypedIdType.Name.Remove(0, 1);
+        var STIdTypeName = stronglyTypedIdType.Name.Remove(0, 1);
         var idType = stronglyTypedIdType.GetGenericArguments()[0];
         var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
         var allTypes = loadedAssemblies.SelectMany(assembly => assembly.GetTypes());
         var typesImplementing =
           loadedAssemblies.SelectMany(assembly => assembly.GetAllTypesImplementingOpenGenericType(typeof(AbstractStronglyTypedId<TValue>)));
-        // var GuidSTIDTypex = allTypes
+        // var GuidSTIdTypex = allTypes
         //   .FirstOrDefault(t => t.IsAssignableFrom((typeof (AbstractStronglyTypedId<TValue>))) &&
         //                        t.GetInterfaces().Any(x =>
         //                          x.IsGenericType &&
@@ -271,22 +271,22 @@ namespace ATAP.Utilities.StronglyTypedIds {
         // ToDo: wrap in a try/catch block
         switch (typeof(TValue)) {
           case Type intType when intType == typeof(int):
-            sTIDType = allTypes.Where(t => t.Name == "IntStronglyTypedId").Single();
-            ctor = sTIDType.GetConstructor(new[] { typeof(int) });
+            sTIdType = allTypes.Where(t => t.Name == "IntStronglyTypedId").Single();
+            ctor = sTIdType.GetConstructor(new[] { typeof(int) });
             break;
           case Type GuidType when GuidType == typeof(Guid):
-            sTIDType = allTypes.Where(t => t.Name == "GuidStronglyTypedId").Single();
-            ctor = sTIDType.GetConstructor(new[] { typeof(Guid) });
+            sTIdType = allTypes.Where(t => t.Name == "GuidStronglyTypedId").Single();
+            ctor = sTIdType.GetConstructor(new[] { typeof(Guid) });
             break;
           default:
             // ToDo: replace with custom exception and message
             throw new ArgumentException($"Type '{typeof(TValue)}' is neither Guid nor int");
 
         };
-        //ctor = sTIDType.GetTypeInfo().DeclaredConstructors.ToList()[1];
+        //ctor = sTIdType.GetTypeInfo().DeclaredConstructors.ToList()[1];
         if (ctor is null) {
           // ToDo: replace with custom exception and message
-          throw new ArgumentException($"Type '{stronglyTypedIdType}' converted to `{sTIDType}` doesn't have a constructor with one parameter of type '{typeof(TValue)}'");
+          throw new ArgumentException($"Type '{stronglyTypedIdType}' converted to `{sTIdType}` doesn't have a constructor with one parameter of type '{typeof(TValue)}'");
         }
         // This ends the extensions to Mssr. Levesque's code to handle Deserialization of IAbstractStronglyTypedId
       }
@@ -305,7 +305,12 @@ namespace ATAP.Utilities.StronglyTypedIds {
     }
 
     public static bool IsStronglyTypedId(Type type) => IsStronglyTypedId(type, out _);
+    // NotNulWhen attribute for an out argument is only supported in NetCore3.0 and later
+#if NETCOREAPP2_0 || NETCOREAPP2_1 || NETSTANDARD2_0 || NETDESKTOP || NETFRAMEWORK
+    public static bool IsStronglyTypedId(Type type, out Type idType) {
+#else
     public static bool IsStronglyTypedId(Type type, [NotNullWhen(true)] out Type idType) {
+#endif
       if (type is null) {
         throw new ArgumentNullException(nameof(type));
       }
@@ -315,61 +320,61 @@ namespace ATAP.Utilities.StronglyTypedIds {
         idType = baseType.GetGenericArguments()[0];
         return true;
       }
-      // This starts the extensions to Mssr. Lavesque's code to handle serialization of IAbstractStronglyTypedId
+      // This starts the extensions to Mssr. Levesque's code to handle serialization of IAbstractStronglyTypedId
       if (type.IsInterface && type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IAbstractStronglyTypedId<>)) {
         idType = type.GetGenericArguments()[0];
         return true;
-      } // This ends the extensions to Mssr. Lavesque's code to handle serialization of IAbstractStronglyTypedId
+      } // This ends the extensions to Mssr. Levesque's code to handle serialization of IAbstractStronglyTypedId
 
       idType = null;
       return false;
       }
     }
 
+    // The IdAsStruct is deprectated
+    // public struct IdAsStruct<T> : IEquatable<IdAsStruct<T>>, IIdAsStruct<T> where T : notnull{
+      // private readonly Guid _value;
 
-    public struct IdAsStruct<T> : IEquatable<IdAsStruct<T>>, IIdAsStruct<T> where T : notnull{
-      private readonly Guid _value;
+      // public IdAsStruct(string value) {
+        // bool success;
+        // string iValue;
+        // if (string.IsNullOrEmpty(value)) {
+          // _value = Guid.NewGuid();
+        // }
+        // else {
+          // // Hack, used because only ServiceStack Json serializers add extra enclosing ".
+          // //  but, neither simpleJson nor NewtonSoft will serialize this at all
+          // iValue = value.Trim('"');
+          // success = Guid.TryParse(iValue, out Guid newValue);
+          // if (!success) { throw new NotSupportedException($"Guid.TryParse failed, value {value} cannot be parsed as a GUID"); }
+          // _value = newValue;
+        // }
+      // }
 
-      public IdAsStruct(string value) {
-        bool success;
-        string iValue;
-        if (string.IsNullOrEmpty(value)) {
-          _value = Guid.NewGuid();
-        }
-        else {
-          // Hack, used because only ServiceStack Json serializers add extra enclosing ".
-          //  but, neither simpleJson nor NewtonSoft will serialize this at all
-          iValue = value.Trim('"');
-          success = Guid.TryParse(iValue, out Guid newValue);
-          if (!success) { throw new NotSupportedException($"Guid.TryParse failed, value {value} cannot be parsed as a GUID"); }
-          _value = newValue;
-        }
-      }
+      // public IdAsStruct(Guid value) {
+        // _value = value;
+      // }
 
-      public IdAsStruct(Guid value) {
-        _value = value;
-      }
+      // public override bool Equals(object obj) {
+        // return obj is IdAsStruct<T> id && Equals(id);
+      // }
 
-      public override bool Equals(object obj) {
-        return obj is IdAsStruct<T> id && Equals(id);
-      }
+      // public bool Equals(IdAsStruct<T> other) {
+        // return _value.Equals(other._value);
+      // }
 
-      public bool Equals(IdAsStruct<T> other) {
-        return _value.Equals(other._value);
-      }
+      // public override int GetHashCode() => _value.GetHashCode();
 
-      public override int GetHashCode() => _value.GetHashCode();
+      // public override string ToString() {
+        // return _value.ToString();
+      // }
 
-      public override string ToString() {
-        return _value.ToString();
-      }
+      // public static bool operator ==(IdAsStruct<T> left, IdAsStruct<T> right) {
+        // return left.Equals(right);
+      // }
 
-      public static bool operator ==(IdAsStruct<T> left, IdAsStruct<T> right) {
-        return left.Equals(right);
-      }
-
-      public static bool operator !=(IdAsStruct<T> left, IdAsStruct<T> right) {
-        return !(left == right);
-      }
-    }
+      // public static bool operator !=(IdAsStruct<T> left, IdAsStruct<T> right) {
+        // return !(left == right);
+      // }
+    // }
   }

@@ -3,6 +3,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
     <DefaultNamespace>ATAP.Utilities.GenerateProgram</DefaultNamespace>
   </PropertyGroup>
 

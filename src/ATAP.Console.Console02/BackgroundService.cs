@@ -184,7 +184,7 @@ namespace ATAP.Console.Console02 {
     #endregion
     #region PrettyPrintIGGenerateProgramResult
     // Format an instance of GenerateProgramResults for UI presentation
-    // // Uses the CurrentCulture
+    // Uses the CurrentCulture
     void BuildGenerateProgramResults(IGGenerateProgramResult gGenerateProgramResult, Stopwatch? stopwatch) {
       Message.Clear();
       if (stopwatch != null) {

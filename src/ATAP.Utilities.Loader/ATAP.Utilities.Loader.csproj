@@ -18,6 +18,11 @@
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
+    <!-- The Loader only works with Net 5 and et 6 -->
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.0;netcoreapp3.0;net5.0;net6.0</TargetFrameworks>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Standalone reference to Microsoft.Extensions.DependencyInjection is used by unitTest projects-->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
@@ -25,7 +30,7 @@
 
   <!-- ToDo move the configuration into extensions on loader objects -->
   <ItemGroup>
-    <!-- The LoaderLoader has a method that accepts an IConfiguration object -->
+    <!-- The Loader has a method that accepts an IConfiguration object -->
     <PackageReference Include="Microsoft.Extensions.Configuration" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
   </ItemGroup>

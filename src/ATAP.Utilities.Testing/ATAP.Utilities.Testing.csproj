@@ -6,21 +6,15 @@
     <IsPackable>true</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
-    <MajorVersion>1</MajorVersion>
-    <MinorVersion>0</MinorVersion>
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
     <PatchVersion>0</PatchVersion>
     <!-- Current Lifecycle stage for this assembly-->
-    <PackageLifeCycleStage>Production</PackageLifeCycleStage>
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
     <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
-    <PackageLabel>NA</PackageLabel>
+    <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
-
-  <PropertyGroup>
-    <RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
 
   <!-- referencing xUnit in order to extend it also causes VS 2019 to think this is a test project. and then it crashes test discovery without this added -->
   <ItemGroup>
@@ -40,8 +34,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Ninject" />
-    <PackageReference Include="Ninject.extensions.conventions" />
   </ItemGroup>
 
   <!-- Microsoft Configuration package to support an IConfiguration object as a parameter to methods-->
@@ -49,17 +41,9 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="TimePeriodLibrary.NET" />
-  </ItemGroup>
-
   <!-- ATAP Utility Packages that handle IConfiguration, and dynamic loading plugin assemblies, and plugins for Serializers -->
   <ItemGroup>
     <ProjectReference Include="../ATAP.Utilities.Configuration.Extensions/ATAP.Utilities.Configuration.Extensions.csproj" />
-    <ProjectReference Include="../ATAP.Utilities.FIleIO/ATAP.Utilities.FileIO.csproj" />
-    <ProjectReference Include="../ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="../ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
-    <ProjectReference Include="../ATAP.Utilities.Serializer.StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
   </ItemGroup>
 
     <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
@@ -70,26 +54,6 @@
     <PackageReference Include="MethodBoundaryAspect.Fody" />
     <!-- Project Reference to the ETW attribute and log provider -->
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
-  </ItemGroup>
-
-  <!-- Packages for tests that use ServiceStack-->
-  <ItemGroup>
-    <!-- ServiceStack  -->
-    <PackageReference Include="ServiceStack" />
-    <!-- ServiceStack serializers and dump utility -->
-    <PackageReference Include="ServiceStack.Text.EnumMemberSerializer" />
-    <PackageReference Include="ServiceStack.Text" />
-    <!-- ServiceStack ORMLite and SQLServer -->
-    <PackageReference Include="ServiceStack.OrmLite.Core" />
-    <PackageReference Include="ServiceStack.OrmLite.SqlServer.Core" />
-    <PackageReference Include="ServiceStack.OrmLite.MySql.Core" />
-    <PackageReference Include="ServiceStack.OrmLite.Sqlite.Core" />
-  </ItemGroup>
-
-  <!-- Loader interfaces and actuals for any Assembly that may be loaded by the dynamic Loader, only works for TargetFramework NetCore -->
-  <ItemGroup Condition="$(TargetFramework.Contains('netcore'))">
-    <ProjectReference Include="..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />
   </ItemGroup>
 
 </Project>

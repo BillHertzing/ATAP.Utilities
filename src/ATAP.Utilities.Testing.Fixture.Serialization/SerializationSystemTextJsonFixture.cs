@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Concurrent;
-using System.Text.Json;
+// using System.Text.Json;
 
-namespace ATAP.Utilities.Testing {
+namespace ATAP.Utilities.Testing.Fixture.Serialization {
 
   public interface ISerializationSystemTextJsonFixture {
-    public JsonSerializerOptions JsonSerializerOptions { get; set; }
+    //public JsonSerializerOptions JsonSerializerOptions { get; set; }
 
   }
   /// <summary>
@@ -15,7 +15,7 @@ namespace ATAP.Utilities.Testing {
 
   /// </summary>
   public partial class SerializationSystemTextJsonFixture : ConfigurableFixture, ISerializationSystemTextJsonFixture {
-    public JsonSerializerOptions JsonSerializerOptions { get; set; }
+    //public JsonSerializerOptions JsonSerializerOptions { get; set; }
 
     public SerializationSystemTextJsonFixture() : base() {
       JsonSerializerOptions = new JsonSerializerOptions();

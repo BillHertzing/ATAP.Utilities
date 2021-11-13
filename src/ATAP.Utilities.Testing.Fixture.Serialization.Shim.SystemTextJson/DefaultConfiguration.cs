@@ -1,12 +1,11 @@
 using System.Collections.Generic;
 namespace ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson {
   static public class DefaultConfiguration {
-    // Create the minimal set of Configuration settings that a test runner needs to startup and run in production
+    // Create the minimal set of Configuration settings that an application or test runner needs to startup and run in production
     public static Dictionary<string, string> Production =
     new Dictionary<string, string> {
-      #region Serialization.Shim.SystemTextJson default settings
-      {StringConstants.ShimName, StringConstants.ShimSystemTextJson},
-      #endregion
+      {ATAP.Utilities.Testing.Fixture.SerializationStringConstants.SerializerShimNameConfigRootKey, StringConstants.ShimNameSystemTextJson},
+      {ATAP.Utilities.Testing.Fixture.SerializationStringConstants.SerializerShimNameSpaceConfigRootKey, StringConstants.ShimNameSpaceSystemTextJson}
     };
   }
 }

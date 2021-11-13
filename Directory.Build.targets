@@ -274,13 +274,13 @@
   <PropertyGroup>
     <tfr><![CDATA[^(net)]]></tfr>
   </PropertyGroup>
-  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '$(tfr)'))">
+  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '(net|net472|standard|core|net[56])'))">
     <!-- V 5.0.0 supports framework 4.7.2 and later -->
     <PackageReference Update="System.Text.Json" Version="5.0.0" />
   </ItemGroup>
 
   <!-- This item group is for package versions specific to .Net Standard or Core -->
-  <ItemGroup Condition="$(TargetFramework.Contains('netstandard')) OR $(TargetFramework.Contains('netcore'))">
+  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '(standard|core|net[56])'))">
     <!-- Immutable Collestionsfor .Net Core-->
     <PackageReference Update="System.Collections.Immutable" Version="5.0.0" />
     <!-- The Serializer Libraries available (See also ServiceStack.Text) -->
@@ -289,7 +289,7 @@
   </ItemGroup>
 
   <!-- This item group is for package versions specific to .Net Desktop -->
-  <ItemGroup Condition="!($(TargetFramework.Contains('netstandard')) OR $(TargetFramework.Contains('netcore')))">
+  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^net4'))">
     <!-- Immutable Collestions for .Net desktop-->
     <PackageReference Update="System.Collections.Immutable" Version="1.7.1" />
     <!-- The Serializer Libraries available (See also ServiceStack.Text) -->
@@ -297,7 +297,7 @@
   </ItemGroup>
 
   <!-- This item group is for package versions specific to .Net Core and Net 5.0 -->
-  <ItemGroup Condition="$(TargetFramework.Contains('netcore'))">
+  <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^(core|net[56])'))">
     <!-- Plugin Framework -->
     <PackageReference Update="McMaster.NETCore.Plugins" Version="1.3.1" />
   </ItemGroup>

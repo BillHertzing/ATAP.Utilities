@@ -31,6 +31,11 @@
     <PackageReference Include="System.Collections.Immutable" />
   </ItemGroup>
 
+  <!-- Plugin Framework for .Net Core, but not.Net desktop- nor standard -->
+  <ItemGroup Condition="$(TargetFramework.Contains('netcore'))" >
+    <PackageReference Include="McMaster.NETCore.Plugins" />
+  </ItemGroup>
+
   <!-- Loader interfaces and actuals for any Assembly that may be loaded by the dynamic Loader, only works for TargetFramework NetCore -->
   <ItemGroup Condition="$(TargetFramework.Contains('netcore'))">
     <ProjectReference Include="..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />

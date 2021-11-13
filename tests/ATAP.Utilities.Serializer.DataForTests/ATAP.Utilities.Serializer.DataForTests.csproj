@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <IsPackable>true</IsPackable>
+    <TargetFrameworks>net5.0;</TargetFrameworks>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>false</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
     <!-- Build and revision are created based on date-->
     <MajorVersion>0</MajorVersion>
@@ -16,20 +16,15 @@
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
-  <!-- The System JSON Library to use -->
+  <!-- Package to define a test data class having both an object and a serialized string representation used in serializer and serializer fixture testing-->
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization\ATAP.Utilities.Testing.Fixture.Serialization.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />
-  </ItemGroup>
 
+  <!-- various packages that supply objects that need to be tested for proper serialization -->
   <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" />
+    <PackageReference Include="UnitsNet" />
   </ItemGroup>
-
 
 </Project>

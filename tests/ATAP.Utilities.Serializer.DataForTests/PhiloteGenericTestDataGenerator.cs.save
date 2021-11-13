@@ -1,0 +1,33 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using ATAP.Utilities.Philote;
+
+namespace ATAP.Utilities.Serializer.UnitTests
+{
+
+
+  //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
+  public class PhiloteGenericTestData : ATAP.Utilities.Testing.Serialization.TestData<Philote<object>>
+  {
+    public PhiloteGenericTestData(Philote<object> objTestData, string serializedTestData) : base(objTestData, serializedTestData)
+    {
+    }
+  }
+
+  public class PhiloteGenericTestDataGenerator : IEnumerable<object[]>
+  {
+    public static IEnumerable<object[]> TestData()
+    {
+      yield return new PhiloteGenericTestData[] { new PhiloteGenericTestData(new Philote<object>() };
+      yield return new PhiloteGenericTestData[] { new PhiloteGenericTestData(new Philote<object>(100, UnitsNet.Units.InformationUnit.Megabyte), "\"100 MB\"") };
+      yield return new PhiloteGenericTestData[] { new PhiloteGenericTestData(new Philote<object>(2, UnitsNet.Units.InformationUnit.Gigabyte), "\"2 GB\"") };
+      yield return new PhiloteGenericTestData[] { new PhiloteGenericTestData(new Philote<object>(200, UnitsNet.Units.InformationUnit.Gigabyte), "\"200 GB\"") };
+      yield return new PhiloteGenericTestData[] { new PhiloteGenericTestData(new Philote<object>(1, UnitsNet.Units.InformationUnit.Terabyte), "\"1 TB\"") };
+      yield return new PhiloteGenericTestData[] { new PhiloteGenericTestData(new Philote<object>(4, UnitsNet.Units.InformationUnit.Terabyte), "\"4 TB\"") };
+    }
+    public IEnumerator<object[]> GetEnumerator() { return TestData().GetEnumerator(); }
+    IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+  }
+
+}

@@ -40,8 +40,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Ninject" />
-    <PackageReference Include="Ninject.extensions.conventions" />
   </ItemGroup>
 
   <!-- Microsoft Configuration package to support an IConfiguration object as a parameter to methods-->
@@ -49,17 +47,35 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="TimePeriodLibrary.NET" />
-  </ItemGroup>
-
-  <!-- ATAP Utility Packages that handle IConfiguration, and dynamic loading plugin assemblies, and plugins for Serializers -->
+  <!-- ATAP Utility Packages that handle IConfiguration -->
   <ItemGroup>
     <ProjectReference Include="../ATAP.Utilities.Configuration.Extensions/ATAP.Utilities.Configuration.Extensions.csproj" />
-    <ProjectReference Include="../ATAP.Utilities.FIleIO/ATAP.Utilities.FileIO.csproj" />
+  </ItemGroup>
+
+  <!-- Third-party libraries used in testing the Serialization Fixtures -->
+  <ItemGroup>
+    <PackageReference Include="TimePeriodLibrary.NET" />
+    <PackageReference Include="UnitsNet" />
+  </ItemGroup>
+
+  <!-- Reference a single DI Implementation. eventually move this to a Shim -->
+  <ItemGroup>
+    <PackageReference Include="Ninject" />
+    <PackageReference Include="Ninject.extensions.conventions" />
+  </ItemGroup>
+
+  <!-- ATAP Utility Packages For the Testing Fixture hierarchy -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture\ATAP.Utilities.Testing.Fixture.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization\ATAP.Utilities.Testing.Fixture.Serialization.csproj" />
+  </ItemGroup>
+
+  <!-- ATAP Utility Packages For the Serializer -->
+  <ItemGroup>
     <ProjectReference Include="../ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
-    <ProjectReference Include="../ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
     <ProjectReference Include="../ATAP.Utilities.Serializer.StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
+    <ProjectReference Include="../ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
   </ItemGroup>
 
     <!-- Packages and projects to implement IL Weaving using Fody during the build process -->

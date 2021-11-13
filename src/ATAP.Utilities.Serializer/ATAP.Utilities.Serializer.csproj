@@ -40,9 +40,5 @@
     <ProjectReference Include="..\ATAP.Utilities.ETW\ATAP.Utilities.ETW.csproj" />
   </ItemGroup>
 
-  <!-- Plugin Framework for .Net Core, but not.Net desktop- nor standard -->
-  <ItemGroup Condition="$(TargetFramework.Contains('netcore'))" >
-    <PackageReference Include="McMaster.NETCore.Plugins" />
-  </ItemGroup>
 
 </Project>

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace ATAP.Utilities.Testing
+namespace ATAP.Utilities.Testing.Serialization
 {
   //ToDo add validation tests to ensure illegal values are not allowed.  This applies to all XxTestDataGenerator classes
   public class TestData<T>

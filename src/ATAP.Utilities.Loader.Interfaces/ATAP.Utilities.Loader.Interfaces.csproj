@@ -16,12 +16,12 @@
     <PackageLabel>NA</PackageLabel>
   </PropertyGroup>
 
-    <!-- The Loader only works with Net 5 and et 6 -->
+    <!-- The Loader only works with NetCore 3.1, Net5.0 and Net 6.0 -->
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.0;netcoreapp3.0;net5.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
   </PropertyGroup>
 
-  <!-- Extensions methods on FIle and Directory types, along with a Globbing library -->
+  <!-- Extensions methods on File and Directory types, along with a Globbing library -->
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.FIleIO\ATAP.Utilities.FileIO.csproj" />
   </ItemGroup>

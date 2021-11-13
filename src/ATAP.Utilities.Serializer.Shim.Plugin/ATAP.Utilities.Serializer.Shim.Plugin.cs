@@ -5,16 +5,13 @@ using System.Text.Json.Serialization;
 
 using ATAP.Utilities.Serializer;
 // This module, if loaded dynamically, has submodules which must be loaded dynamically as well
-// ToDo: make a separate assembly for subloading, to be included only if the code will be loaded dynamically
-#if NETCORE
 using ATAP.Utilities.Loader;
 using ATAP.Utilities.FileIO;
 using System.Reflection;
-#endif
 
 using static ATAP.Utilities.Collection.Extensions;
 
-namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
+namespace ATAP.Utilities.Serializer.Shim.Plugin {
 
 #if NETCORE
   public class Serializer : ISerializer, ILoadDynamicSubModules {
@@ -79,9 +76,7 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
       }
     }
 
-#if NETCORE
     // This module, if loaded dynamically, has submodules which must be loaded dynamically as well
-    // ToDo: make a separate assembly, to be included only if the code will be loaded dynamically
     /// <summary>
     /// returns a dictionary, keyed by type, with a DynamicSubModulesInfo for each type
     /// </summary>
@@ -120,7 +115,6 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
       // cache them and also add them to the JsonSerializerOptions
       //JsonConverterFactorysCache.Add();
     }
-#endif
   }
   //  public class StronglyTypedIDConverter
   //         : JsonConverter<Id<T>>

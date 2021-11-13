@@ -4,23 +4,12 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using ATAP.Utilities.Serializer;
-// This module, if loaded dynamically, has submodules which must be loaded dynamically as well
-// ToDo: make a separate assembly for subloading, to be included only if the code will be loaded dynamically
-#if NETCORE
-using ATAP.Utilities.Loader;
-using ATAP.Utilities.FileIO;
-using System.Reflection;
-#endif
 
 using static ATAP.Utilities.Collection.Extensions;
 
 namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
 
-#if NETCORE
-  public class Serializer : ISerializer, ILoadDynamicSubModules {
-#else
   public class Serializer : ISerializer {
-#endif
     //private List<JsonConverter> JsonConvertersCache { get; set; }
     // attribution: [Avoid performance issues with JsonSerializer by reusing the same Options instance](https://www.meziantou.net/avoid-performance-issue-with-jsonserializer-by-reusing-the-same-instance-of-json.htm)
     public ISerializerOptions Options { get; set; }
@@ -37,7 +26,6 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
     public Serializer(List<JsonConverter> jsonConverters) {
       this.Configure(jsonConverters);
     }
-
     public string Serialize(object obj) {
       return JsonSerializer.Serialize(obj, (JsonSerializerOptions)Options.ShimSpecificOptions);
     }
@@ -78,49 +66,6 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
         ((JsonSerializerOptions)Options.ShimSpecificOptions).Converters.Add(converter);
       }
     }
-
-#if NETCORE
-    // This module, if loaded dynamically, has submodules which must be loaded dynamically as well
-    // ToDo: make a separate assembly, to be included only if the code will be loaded dynamically
-    /// <summary>
-    /// returns a dictionary, keyed by type, with a DynamicSubModulesInfo for each type
-    /// </summary>
-    /// <returns>IDictionary<Type, ISubModulesInfo></returns>
-    public IDictionary<Type, IDynamicSubModulesInfo> GetDynamicSubModulesInfo() {
-      Dictionary<Type, IDynamicSubModulesInfo> dynamicSubModulesInfoDictionary = new();
-      dynamicSubModulesInfoDictionary[typeof(JsonConverter)] = new DynamicSubModulesInfo() {
-        DynamicGlobAndPredicate = new DynamicGlobAndPredicate() {
-          Glob = new Glob() {
-            Pattern = ".\\Plugins\\*JsonConverter.Shim.SystemTextJson.dll"
-          },
-          Predicate = new Predicate<Type>(
-          _type => {
-            return
-              typeof(JsonConverter).IsAssignableFrom(_type)
-              && !_type.IsAbstract
-              && _type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson"
-            ;
-          }
-         )
-        },
-        Function = new Action<object>((instance) => { JsonConvertersCache.Add((JsonConverter)instance); return; })
-      };
-      return dynamicSubModulesInfoDictionary;
-    }
-
-    public void LoadJsonConverters(string jsonConverterShimName, string jsonConverterShimNamespace, string[] relativePathsToProbe) {
-      // Load all Plugin Assemblies with a name that matches the serializerShimName
-      // get all types that implement JsonConverter
-      // cache them and also add them to the JsonSerializerOptions
-      //JsonConverterFactorysCache.Add();
-    }
-    public void LoadJsonConverterFactorys(string jsonConverterFactoryShimName, string jsonConverterFactoryShimNamespace, string[] relativePathsToProbe) {
-      // Load all Plugin Assemblies with a name that matches the serializerShimName
-      // get all types that implement JsonConverterFactory (aka the open generic JsonConverter<T>)
-      // cache them and also add them to the JsonSerializerOptions
-      //JsonConverterFactorysCache.Add();
-    }
-#endif
   }
   //  public class StronglyTypedIDConverter
   //         : JsonConverter<Id<T>>

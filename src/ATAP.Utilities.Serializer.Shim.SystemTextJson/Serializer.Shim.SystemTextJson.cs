@@ -54,8 +54,8 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
       //JsonConvertersCache.AddRange(((JsonSerializerOptions)Options).ShimSpecificOptions.Converters)
       //((JsonSerializerOptions)Options).ShimSpecificOptions.PopulateConverters(JsonConvertersCache);
     }
-    public void Configure(JsonSerializerOptions jsonSerializerOptions) {
-      Options = new SerializerOptions(jsonSerializerOptions);
+    public void Configure(JsonSerializerOptions serializerOptions) {
+      Options = new SerializerOptions(serializerOptions);
     }
     public void Configure(List<JsonConverter> jsonConverters) {
       Options = new SerializerOptions(new JsonSerializerOptions());

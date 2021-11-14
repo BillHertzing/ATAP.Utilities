@@ -3,24 +3,13 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 
 using ATAP.Utilities.Serializer;
-// This module, if loaded dynamically, has submodules which must be loaded dynamically as well
-// ToDo: make a separate assembly for subloading, to be included only if the code will be loaded dynamically
-#if NETCORE
-using ATAP.Utilities.Loader;
-using ATAP.Utilities.FileIO;
-using System.Reflection;
-#endif
 
 using static ATAP.Utilities.Collection.Extensions;
 
 namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
-#if NETCORE
-  public class Serializer : ISerializer, ILoadDynamicSubModules {
-#else
   public class Serializer : ISerializer {
-#endif
     public ISerializerOptions Options { get;  set; }
-    private JsonSerializerSettings NewtonsoftSerializerSettings { get; set; }
+    // private JsonSerializerSettings NewtonsoftSerializerSettings { get; set; }
     public Serializer() {
       this.Configure();
     }
@@ -63,8 +52,8 @@ namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
       //JsonConvertersCache.AddRange(((JsonSerializerOptions)Options).ShimSpecificOptions.Converters)
       //((JsonSerializerOptions)Options).ShimSpecificOptions.PopulateConverters(JsonConvertersCache);
     }
-    public void Configure(JsonSerializerSettings newtonsoftSerializerOptions) {
-      Options = new SerializerOptions(newtonsoftSerializerOptions);
+    public void Configure(JsonSerializerSettings serializerOptions) {
+      Options = new SerializerOptions(serializerOptions);
     }
     // public void Configure(List<JsonConverter> jsonConverters) {
       // Options = new SerializerOptions(new JsonSerializerOptions());
@@ -76,15 +65,14 @@ namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
       // }
     // }
 
-#if NETCORE
     // This module, if loaded dynamically, has submodules which must be loaded dynamically as well
     // ToDo: make a separate assembly, to be included only if the code will be loaded dynamically
     /// <summary>
     /// returns a dictionary, keyed by type, with a DynamicSubModulesInfo for each type
     /// </summary>
-    /// <returns>IDictionary<Type, ISubModulesInfo></returns>
-    public IDictionary<Type, IDynamicSubModulesInfo> GetDynamicSubModulesInfo() {
-      Dictionary<Type, IDynamicSubModulesInfo> dynamicSubModulesInfoDictionary = new();
+    ///// <returns>IDictionary<Type, ISubModulesInfo></returns>
+      //public IDictionary<Type, IDynamicSubModulesInfo> GetDynamicSubModulesInfo() {
+      //      Dictionary<Type, IDynamicSubModulesInfo> dynamicSubModulesInfoDictionary = new();
       // dynamicSubModulesInfoDictionary[typeof(JsonConverter)] = new DynamicSubModulesInfo() {
         // DynamicGlobAndPredicate = new DynamicGlobAndPredicate() {
           // Glob = new Glob() {
@@ -103,8 +91,8 @@ namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
         // Function = new Action<object>((instance) => { JsonConvertersCache.Add((JsonConverter)instance); return; })
       // };
       //return dynamicSubModulesInfoDictionary;
-     return new Dictionary<Type, IDynamicSubModulesInfo>();
-    }
+    //     return new Dictionary<Type, IDynamicSubModulesInfo>();
+    //  }
 
     // public void LoadJsonConverters(string jsonConverterShimName, string jsonConverterShimNamespace, string[] relativePathsToProbe) {
       // // Load all Plugin Assemblies with a name that matches the serializerShimName
@@ -118,8 +106,5 @@ namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
       // // cache them and also add them to the JsonSerializerOptions
       // //JsonConverterFactorysCache.Add();
     // }
-#endif
-
-
   }
 }

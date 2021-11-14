@@ -93,7 +93,7 @@
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="SerializerShimsProjects = @(SerializerShimsProjects)" />
     <!-- Workaround: list every Serializer shim explicitly-->
     <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(PluginsDir)" />
-    <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.Shim.NewtonsoftJson.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(PluginsDir)" />
+    <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim.Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(PluginsDir)" />
   </Target>
 
   <!-- Copy all of the Serializer shims, for all Run-time identifiers for the ISerializer DI-injected service to a serializers subdirectory of the Outputdir before build -->
@@ -119,7 +119,7 @@
     <!-- ToDo: figure out how to MSBuild with target PublishAll for each element of the SerializerSubModuleShimProjects array-->
     <!-- Workaround: list -->
     <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(PluginsDir)" />
-    <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.Shim.NewtonsoftJson.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(PluginsDir)" />
+    <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim.Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(PluginsDir)" />
   </Target>
 
   <!-- copy all of the Serializer SubModule shims, for all Serializer Shims, for all Run-time identifiers for the ISerializer DI-injected service to a serializers subdirectory of the Outputdir before build -->

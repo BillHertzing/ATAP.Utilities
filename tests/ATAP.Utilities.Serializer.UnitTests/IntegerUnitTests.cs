@@ -7,10 +7,11 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace ATAP.Utilities.Serializer.UnitTests
+
 {
 
 
-  public partial class SerializerUnitTests001 : IClassFixture<Fixture>
+  public partial class SerializerUnitTests001 : IClassFixture<ATAP.Utilities.Testing.Fixture.Serialization.SerializationFixture >
   {
     [Theory]
     [MemberData(nameof(IntegerTestDataGenerator.TestData), MemberType = typeof(IntegerTestDataGenerator))]

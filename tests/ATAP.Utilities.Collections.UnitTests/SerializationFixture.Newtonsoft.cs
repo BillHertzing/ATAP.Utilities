@@ -11,7 +11,7 @@ namespace ATAP.Utilities.Collection.UnitTests {
     public SerializationFixtureNewtonsoft() {
       JsonSerializerSettings = new JsonSerializerSettings();
       // Add Converters
-      JsonSerializerSettings.Converters.Add(new ATAP.Utilities.Collections.JsonConverterNewtonsoft.StronglyTypedIdNewtonsoftJsonConverter());
+      JsonSerializerSettings.Converters.Add(new ATAP.Utilities.Collections.JsonConverterNewtonsoft.StronglyTypedIdNewtonsoftConverter());
     }
   }
 

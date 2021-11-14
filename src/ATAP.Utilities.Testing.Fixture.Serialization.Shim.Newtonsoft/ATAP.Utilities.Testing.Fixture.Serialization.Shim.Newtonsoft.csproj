@@ -63,13 +63,17 @@
     <ProjectReference Include="../ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="../ATAP.Utilities.Serializer.StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
     <ProjectReference Include="../ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
-    <ProjectReference Include="../ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
   </ItemGroup>
 
   <!-- ATAP Utility Packages For the Testing Fixture hierarchy -->
   <ItemGroup>
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture\ATAP.Utilities.Testing.Fixture.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization\ATAP.Utilities.Testing.Fixture.Serialization.csproj" />
+  </ItemGroup>
+
+  <!-- The specific Serializer Shim to include in this fixture -->
+  <ItemGroup>
+    <ProjectReference Include="../ATAP.Utilities.Serializer.Shim.Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" />
   </ItemGroup>
 
 

@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>false</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly-->
+    <!-- Build and revision are created based on date-->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <!-- Current Lifecycle stage for this assembly-->
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
+    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
+    <PackageLabel>Alpha</PackageLabel>
+  </PropertyGroup>
+
+  <!-- Packages to add xUnit Testing providers and extensions -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.console">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Packages to add xUnit Testing dotnet tool -->
+  <ItemGroup>
+    <DotNetCliToolReference Include="dotnet-xunit" />
+  </ItemGroup>
+
+  <!-- ATAP Utility Packages For the abstract Serializer -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
+  </ItemGroup>
+
+  <!-- ATAP Utility Packages For the Testing Fixture hierarchy -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization\ATAP.Utilities.Testing.Fixture.Serialization.csproj" />
+  </ItemGroup>
+
+  <!-- The Serializer.DataForTests and the specific Serializer Fixture Shim to test -->
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.DataForTests\ATAP.Utilities.Serializer.DataForTests.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft\ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.csproj" />
+  </ItemGroup>
+
+</Project>

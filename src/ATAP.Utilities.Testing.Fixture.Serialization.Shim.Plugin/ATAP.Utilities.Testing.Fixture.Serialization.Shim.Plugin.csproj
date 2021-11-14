@@ -67,7 +67,6 @@
   <!-- ATAP Utility Packages For the Testing Fixture hierarchy -->
   <ItemGroup>
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture\ATAP.Utilities.Testing.Fixture.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization\ATAP.Utilities.Testing.Fixture.Serialization.csproj" />
   </ItemGroup>
 

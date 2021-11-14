@@ -15,7 +15,7 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.UnitT
   {
     protected Fixture Fixture { get; }
     protected ITestOutputHelper TestOutput { get; }
-    public TestingUnitTests001(ITestOutputHelper testOutput, Fixture fixture)
+    public UnitTests001(ITestOutputHelper testOutput, Fixture fixture)
     {
       Fixture = fixture;
       TestOutput = testOutput;

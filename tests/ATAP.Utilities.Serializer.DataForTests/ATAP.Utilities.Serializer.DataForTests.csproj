@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net5.0;</TargetFrameworks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>false</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
@@ -20,7 +19,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization\ATAP.Utilities.Testing.Fixture.Serialization.csproj" />
   </ItemGroup>
-
 
   <!-- various packages that supply objects that need to be tested for proper serialization -->
   <ItemGroup>

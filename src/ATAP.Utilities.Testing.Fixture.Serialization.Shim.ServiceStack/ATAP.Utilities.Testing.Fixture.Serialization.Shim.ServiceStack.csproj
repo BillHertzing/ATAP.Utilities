@@ -69,7 +69,6 @@
   <!-- ATAP Utility Packages For the Testing Fixture hierarchy -->
   <ItemGroup>
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture\ATAP.Utilities.Testing.Fixture.csproj" />
   </ItemGroup>
 
   <!-- Packages for tests that use ServiceStack Serialization -->

@@ -52,16 +52,9 @@
     <ProjectReference Include="../ATAP.Utilities.Configuration.Extensions/ATAP.Utilities.Configuration.Extensions.csproj" />
   </ItemGroup>
 
-  <!-- third-party DI injection frameworks -->
-  <ItemGroup>
-    <PackageReference Include="Ninject" />
-    <PackageReference Include="Ninject.extensions.conventions" />
-  </ItemGroup>
-
   <!-- ATAP Utility Packages For the Testing Fixture hierarchy -->
   <ItemGroup>
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture\ATAP.Utilities.Testing.Fixture.csproj" />
   </ItemGroup>
 
   <!-- ATAP Utility Packages For the Serializer -->

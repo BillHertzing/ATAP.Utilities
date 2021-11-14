@@ -156,9 +156,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Serializer", "Serializer", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Interfaces", "src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj", "{CECCF4F9-C220-4F5E-88F0-FEF8CCB7D2BA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.NewtonsoftJson", "src\ATAP.Utilities.Serializer.Shim.NewtonsoftJson\ATAP.Utilities.Serializer.Shim.NewtonsoftJson.csproj", "{B4259A1F-B02C-42F5-B22F-40B61C5F6823}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.Newtonsoft", "src\ATAP.Utilities.Serializer.Shim.Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj", "{B4259A1F-B02C-42F5-B22F-40B61C5F6823}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.ServiceStackJson", "src\ATAP.Utilities.Serializer.Shim.ServiceStackJson\ATAP.Utilities.Serializer.Shim.ServiceStackJson.csproj", "{C2FFEDF1-281F-41A1-99CA-D235C105BF7C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer.Shim.ServiceStack", "src\ATAP.Utilities.Serializer.Shim.ServiceStack\ATAP.Utilities.Serializer.Shim.ServiceStack.csproj", "{C2FFEDF1-281F-41A1-99CA-D235C105BF7C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATAP.Utilities.Serializer", "src\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj", "{F3487177-AE97-4BC5-AA1C-3E86176505B5}"
 EndProject

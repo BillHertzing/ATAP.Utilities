@@ -58,4 +58,15 @@
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson\ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.csproj" />
   </ItemGroup>
 
+  <!-- Configuration Settings files -->
+  <ItemGroup>
+    <None Update="Settings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ATAP.Utilities.VoiceAttack.Settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+
 </Project>

@@ -33,6 +33,7 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.UnitT
     [Theory]
     [MemberData(nameof(IntegerTestDataGenerator.TestData), MemberType = typeof(IntegerTestDataGenerator))]
     public void IntegerSerializeToJSON(IntegerTestData inTestData) {
+      if (Fixture.Serializer == null) { TestOutput.WriteLine("Fixture.Serializer is null"); }
       Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.SerializedTestData);
     }
   }

@@ -1,6 +1,7 @@
 
 using System;
 using System.Text.Json;
+
 using Xunit.Abstractions;
 
 namespace ATAP.Utilities.Collection.UnitTests {
@@ -15,14 +16,17 @@ namespace ATAP.Utilities.Collection.UnitTests {
     }
   }
 
-   public partial class StronglyTypedIDSerializationSystemTextJsonUnitTests001  {
+  public partial class StronglyTypedIDSerializationSystemTextJsonUnitTests001 {
     protected SerializationFixtureSystemTextJson SerializationFixture { get; }
     protected ITestOutputHelper TestOutput { get; }
 
     public StronglyTypedIDSerializationSystemTextJsonUnitTests001(ITestOutputHelper testOutput, SerializationFixtureSystemTextJson serializationFixture) {
       SerializationFixture = serializationFixture;
       TestOutput = testOutput;
+      if (SerializationFixture == null) { TestOutput.WriteLine("SerializationFixture is null"); }
+      if (SerializationFixture.Serializer == null) { TestOutput.WriteLine("SerializationFixture.Serializer is null"); }
+
       // ToDo: Ensure the System.StringComparison.CurrentCulture is configured properly to match the test data, for String.StartsWith used in the tests
     }
-   }
+  }
 }

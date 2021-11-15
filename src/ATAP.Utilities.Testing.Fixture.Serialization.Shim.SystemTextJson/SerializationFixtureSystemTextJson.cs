@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Microsoft.Extensions.Configuration;
 
@@ -23,7 +24,7 @@ namespace ATAP.Utilities.Testing {
     public SerializationFixtureSystemTextJson() : base() {
       Serializer = (ISerializer)new ATAP.Utilities.Serializer.Shim.SystemTextJson.Serializer();
     }
-    
+
     // public SerializationFixtureSystemTextJson(IConfigurationRoot configuration) : base(configuration) {
     //         Serializer = (ISerializer) this;
     // }

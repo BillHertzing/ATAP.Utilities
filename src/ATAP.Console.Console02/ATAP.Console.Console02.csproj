@@ -82,7 +82,7 @@
   </Target>
 
   <!-- For Console or Service projects which use dynamically loaded modules (aka Shims) -->
-  <!-- Publish (which will build if necessary) all of the Serializer shims, for all Run-time identifiers for the ISerializer DI-injected service to a Plugins subdirectory of the Outputdir after build -->
+  <!-- Publish (which will build if necessary) all of the Serializer shims, for all Run-time identifiers for the ISerializerConfigurableAbstract DI-injected service to a Plugins subdirectory of the Outputdir after build -->
   <Target Name="PublishSerializerShims" AfterTargets="Build">
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="Running Target PublishSerializerShims" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="PluginsDir = $(PluginsDir)" />
@@ -96,7 +96,7 @@
     <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim.Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(PluginsDir)" />
   </Target>
 
-  <!-- Copy all of the Serializer shims, for all Run-time identifiers for the ISerializer DI-injected service to a serializers subdirectory of the Outputdir before build -->
+  <!-- Copy all of the Serializer shims, for all Run-time identifiers for the ISerializerConfigurableAbstract DI-injected service to a serializers subdirectory of the Outputdir before build -->
   <Target Name="CopySerializerShims" AfterTargets="PublishSerializerShims">
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="Running Target CopySerializerShims" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="PluginsDir = $(PluginsDir)" />
@@ -109,7 +109,7 @@
       SourceFiles = "@(SerializerShimsRuntimeFiles)" DestinationFolder="$(PluginsDir)\" SkipUnchangedFiles="true" />
   </Target>
 
-  <!-- Publish (which will build if necessary) all all of the Serializer SubModule shims, for all Run-time identifiers for the ISerializer DI-injected service to a serializers subdirectory of the Outputdir before build -->
+  <!-- Publish (which will build if necessary) all all of the Serializer SubModule shims, for all Run-time identifiers for the ISerializerConfigurableAbstract DI-injected service to a serializers subdirectory of the Outputdir before build -->
   <Target Name="PublishSerializerSubModulesShims" AfterTargets="Build">
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="Running Target PublishSerializerSubModulesShims" />
     <ItemGroup>
@@ -122,7 +122,7 @@
     <MSBuild Projects="..\ATAP.Utilities.Serializer.Shim.Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" Targets="PublishAll" Properties="Configuration=$(Configuration);PublishDir=$(PluginsDir)" />
   </Target>
 
-  <!-- copy all of the Serializer SubModule shims, for all Serializer Shims, for all Run-time identifiers for the ISerializer DI-injected service to a serializers subdirectory of the Outputdir before build -->
+  <!-- copy all of the Serializer SubModule shims, for all Serializer Shims, for all Run-time identifiers for the ISerializerConfigurableAbstract DI-injected service to a serializers subdirectory of the Outputdir before build -->
   <Target Name="CopySerializerSubModulesShims" AfterTargets="PublishSerializerSubModulesShims">
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="Running Target CopySerializerSubModulesShims" />
     <Message Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'" Importance="High" Text="PluginsDir = $(PluginsDir)" />

@@ -7,7 +7,9 @@
   <!-- Test may not target NetStandard, they must (like an application) target one or more runtimes -->
   <!-- Target the most recent frameworks for building a test .dll -->
   <PropertyGroup>
-    <TargetFrameworks>net47;net471;net472;net48;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+    <!-- netcoreapp3.1 causes a filename to exceed 260 chars, in the Microsoft.Managed.Core.targets tasks GenerateMSBuildEditorConfigFileCore -->
+    <!-- <TargetFrameworks>net47;net471;net472;net48;netcoreapp3.1;net5.0;net6.0</TargetFrameworks> -->
+    <TargetFrameworks>net47;net471;net472;net48;net5.0;net6.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

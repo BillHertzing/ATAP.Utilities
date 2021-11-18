@@ -73,7 +73,7 @@ namespace ATAP.Console.Console02 {
     IStringLocalizer UiLocalizer { get; }
     #endregion
     #region Serializer
-    ISerializer Serializer { get; }
+    ISerializerConfigurableAbstract Serializer { get; }
     #endregion
     #region Progress
     IProgress<object>? ProgressObject;
@@ -101,7 +101,7 @@ namespace ATAP.Console.Console02 {
     /// <param name="hostConfiguration"></param>
     /// <param name="hostLifetime"></param>
     /// <param name="hostApplicationLifetime"></param>
-    public Console02BackgroundService(IGenerateProgramHostedService generateProgramHostedService, IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration appConfiguration, IHostApplicationLifetime hostApplicationLifetime, ISerializer serializer) {
+    public Console02BackgroundService(IGenerateProgramHostedService generateProgramHostedService, IConsoleSinkHostedService consoleSinkHostedService, IConsoleSourceHostedService consoleSourceHostedService, ILoggerFactory loggerFactory, IStringLocalizerFactory stringLocalizerFactory, IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, IHostLifetime hostLifetime, IConfiguration appConfiguration, IHostApplicationLifetime hostApplicationLifetime, ISerializerConfigurableAbstract serializer) {
       StringLocalizerFactory = stringLocalizerFactory ?? throw new ArgumentNullException(nameof(stringLocalizerFactory));
       ExceptionLocalizer = stringLocalizerFactory.Create("ATAP.Console.Console2.ExceptionResources", "ATAP.Console.Console02");
       DebugLocalizer = stringLocalizerFactory.Create(nameof(ATAP.Console.Console2.DebugResources), "ATAP.Console.Console02");

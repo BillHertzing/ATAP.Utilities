@@ -268,7 +268,7 @@
 
   </ItemGroup>
 
-  <!-- The Serializer Libraries available versions are highly dependent on the traget framework being used (See also ServiceStack.Text) -->
+  <!-- The Serializer Libraries available versions are highly dependent on the target framework being used (See also ServiceStack.Text) -->
   <!-- https://docs.microsoft.com/en-us/answers/questions/65502/which-net-framework-needed-to-use-systemtextjson.html -->
   <!-- The regex should match net472, net48, netstandard, netcore, nad net5.0, but something is wrong.this workaround always matches-->
   <PropertyGroup>

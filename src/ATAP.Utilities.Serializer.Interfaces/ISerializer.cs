@@ -2,14 +2,24 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
+
+using Microsoft.Extensions.Configuration;
+
+
 namespace ATAP.Utilities.Serializer {
-  public interface ISerializer {
-    ISerializerOptions Options { get; set; }
+  public interface ISerializerAbstract {
+    ISerializerOptionsAbstract Options { get; set; }
     string Serialize(object obj);
-    string Serialize(object obj, ISerializerOptions options);
+    string Serialize(object obj, ISerializerOptionsAbstract options);
     T Deserialize<T>(string str);
-    T Deserialize<T>(string str, ISerializerOptions options);
-    void Configure();
-    void Configure(ISerializerOptions options);
+    T Deserialize<T>(string str, ISerializerOptionsAbstract options);
   }
+  public interface ISerializerConfigurableAbstract : ISerializerAbstract {
+    IConfigurationRoot? ConfigurationRoot { get; set; }
+    void Configure();
+    void Configure(ISerializerOptionsAbstract options);
+    void Configure(IConfigurationRoot? configurationRoot);
+    void Configure(ISerializerOptionsAbstract options, IConfigurationRoot? configurationRoot);
+  }
+
 }

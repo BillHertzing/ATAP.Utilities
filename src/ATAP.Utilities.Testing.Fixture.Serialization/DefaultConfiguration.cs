@@ -5,8 +5,7 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization {
     public static Dictionary<string, string> Production =
     new Dictionary<string, string> {
       #region Serialization default settings
-      {StringConstants.SerializerShimNameConfigRootKey, StringConstants.SerializerShimNameStringDefault},
-      {StringConstants.SerializerShimNameSpaceConfigRootKey, StringConstants.SerializerShimNameSpaceStringDefault},
+      // There is no 'default' serializer. The one used depends on what is included in the .csproj file or loaded at runtime
       #endregion
     };
   }

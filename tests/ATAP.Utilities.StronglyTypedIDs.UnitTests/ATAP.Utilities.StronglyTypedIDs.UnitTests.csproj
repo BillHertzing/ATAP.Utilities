@@ -59,7 +59,7 @@
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
   </ItemGroup>
-  <!-- ToDo: The concrete serializer libraries for the ISerializer DI-injected service and all their dependencies need to be copied to a PlugIns subdir below the outputdir -->
+  <!-- ToDo: The concrete serializer libraries for the ISerializerConfigurableAbstract DI-injected service and all their dependencies need to be copied to a PlugIns subdir below the outputdir -->
   <!-- The following is a hardcoded list of DLLs and PDFs of specific Shim assemblies fto be copied to a PlugIns subdir below the outputdir -->
   <ItemGroup>
     <!--

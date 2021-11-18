@@ -145,7 +145,7 @@
     <!-- When debugging the build tooling,the build tooling configuration is debug. Run the NuGet.exe command with detailed verbosity -->
     <Exec  Condition="'$(ATAPBuildToolingConfiguration)'=='Debug'"  WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" Command="NuGet.exe push &quot;$(MSBuildProjectDirectory)\$(OutputPath)$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot; -Verbosity detailed" />
     <!-- Under normal conditions, run the NuGet.exe command with normal verbosity -->
-    <Exec  Condition="'$(ATAPBuildToolingConfiguration)'!='Debug'"  WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" Command="NuGet.exe push &quot;$(MSBuildProjectDirectory)\$(OutputPath)$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot; -Verbosity normal" />
+    <Exec  Condition="'$(ATAPBuildToolingConfiguration)'!='Debug'"  WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" Command="NuGet.exe push &quot;$(MSBuildProjectDirectory)\$(OutputPath)..\$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetLocalFeedPath)&quot; -Verbosity normal" />
 
   </Target>
 

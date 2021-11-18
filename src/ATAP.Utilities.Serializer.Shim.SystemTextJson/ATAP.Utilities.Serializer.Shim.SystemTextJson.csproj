@@ -21,6 +21,11 @@
     <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 
+  <!-- Microsoft Configuration package to support an IConfiguration object as a parameter to methods-->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />

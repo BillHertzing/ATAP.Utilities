@@ -60,10 +60,10 @@
 
   <!-- Configuration Settings files -->
   <ItemGroup>
-    <None Update="Settings.Development.json">
+    <None Update="ATAP.Utilities.Testing.Fixture.Serialization.SystemTextJson.Settings.Development.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="ATAP.Utilities.VoiceAttack.Settings.json">
+    <None Update="ATAP.Utilities.Testing.Fixture.Serialization.SystemTextJson.Settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

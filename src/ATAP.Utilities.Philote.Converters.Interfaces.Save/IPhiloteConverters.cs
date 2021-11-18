@@ -12,6 +12,6 @@ namespace ATAP.Utilities.Philote
      bool CanConvert(Type typeToConvert);
       ISerializerConverter<T> CreateConverter(
             Type T,
-            ISerializerOptions options);
+            ISerializerOptionsAbstract options);
   }
 }

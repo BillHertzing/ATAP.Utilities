@@ -12,7 +12,7 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization {
   public partial class SerializationFixture : ConfigurableFixture, ISerializationFixture {
 
     #region Configuration sections: Traverse the inheritance chain and get the various configurationSections from each
-    public (List<Dictionary<string, string>>, List<(string, string)>, List<string>) GetConfigurationSections() {
+    public new (List<Dictionary<string, string>>, List<(string, string)>, List<string>) GetConfigurationSections() {
       // Traverse the inheritance chain, accumulate the config sections at each level
       // ToDo: Add logger
       (List<Dictionary<string, string>> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) = base.GetConfigurationSections();

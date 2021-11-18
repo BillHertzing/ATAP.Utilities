@@ -17,11 +17,7 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.UnitT
       var dummy = "abc";
       dummy.Should().Be("abc");
     }
-    [Fact]
-    void FailingTest() {
-      var dummy = "abc";
-      dummy.Should().NotBe("abc");
-    }
+    
     [Theory]
     [MemberData(nameof(IntegerTestDataGenerator.TestData), MemberType = typeof(IntegerTestDataGenerator))]
     public void IntegerDeserializeFromJSON(IntegerTestData inTestData) {
@@ -33,7 +29,20 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.UnitT
     [Theory]
     [MemberData(nameof(IntegerTestDataGenerator.TestData), MemberType = typeof(IntegerTestDataGenerator))]
     public void IntegerSerializeToJSON(IntegerTestData inTestData) {
-      if (Fixture.Serializer == null) { TestOutput.WriteLine("Fixture.Serializer is null"); }
+      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.SerializedTestData);
+    }
+
+    [Theory]
+    [MemberData(nameof(SimpleTupleTestDataGenerator.TestData), MemberType = typeof(SimpleTupleTestDataGenerator))]
+    public void SimpleTupleDeserializeFromJSON(SimpleTupleTestData inTestData) {
+      var obj = Fixture.Serializer.Deserialize<(string k1, string k2)>(inTestData.SerializedTestData);
+      obj.Should().BeOfType(typeof((string k1, string k2)));
+      Fixture.Serializer.Deserialize<(string k1, string k2)>(inTestData.SerializedTestData).Should().Equals(inTestData.ObjTestData);
+    }
+
+    [Theory]
+    [MemberData(nameof(SimpleTupleTestDataGenerator.TestData), MemberType = typeof(SimpleTupleTestDataGenerator))]
+    public void SimpleTupleSerializeToJSON(SimpleTupleTestData inTestData) {
       Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.SerializedTestData);
     }
   }

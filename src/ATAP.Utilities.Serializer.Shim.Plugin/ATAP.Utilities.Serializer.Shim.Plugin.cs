@@ -14,18 +14,18 @@ using static ATAP.Utilities.Collection.Extensions;
 namespace ATAP.Utilities.Serializer.Shim.Plugin {
 
 #if NETCORE
-  public class Serializer : ISerializer, ILoadDynamicSubModules {
+  public class Serializer : SerializerConfigurableAbstract, ILoadDynamicSubModules {
 #else
-  public class Serializer : ISerializer {
+  public class Serializer : ISerializerConfigurableAbstract {
 #endif
     //private List<JsonConverter> JsonConvertersCache { get; set; }
     // attribution: [Avoid performance issues with JsonSerializer by reusing the same Options instance](https://www.meziantou.net/avoid-performance-issue-with-jsonserializer-by-reusing-the-same-instance-of-json.htm)
-    public ISerializerOptions Options { get; set; }
+    public ISerializerOptionsAbstract Options { get; set; }
     public Serializer() {
       this.Configure();
     }
 
-    public Serializer(ISerializerOptions options) {
+    public Serializer(ISerializerOptionsAbstract options) {
       this.Configure(options);
     }
     public Serializer(JsonSerializerOptions options) {
@@ -57,7 +57,7 @@ namespace ATAP.Utilities.Serializer.Shim.Plugin {
       // DictionaryJsonConverterFactory.Default
       // };
     }
-    public void Configure(ISerializerOptions options) {
+    public void Configure(ISerializerOptionsAbstract options) {
       Options = new SerializerOptions(options);
       //JsonConvertersCache = new List<JsonConverter>();
       //JsonConvertersCache.AddRange(((JsonSerializerOptions)Options).ShimSpecificOptions.Converters)

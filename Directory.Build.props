@@ -16,7 +16,8 @@
   <PropertyGroup>
     <Configurations>Debug;Release;ReleaseWithTrace;</Configurations>
     <!-- When building against anything except net5.0 and higher, the c# V9 keyword 'init' throws errors. This is resolved in the AssemblyInfo.cs file for each project-->
-    <TargetFrameworks>net47;net471;net472;net48;netstandard2.1;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+    <!-- when targetframework is netstandard, -->
+    <TargetFrameworks>net47;net471;net472;net48;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
     <RuntimeIdentifiers>win10-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -53,7 +54,7 @@
     <ATAPUtilitiesBuildToolingTargetsPath>$(SolutionBuildToolsBaseDir)$(ATAPBuildToolingRelativeBasePath)</ATAPUtilitiesBuildToolingTargetsPath>
     <ATAPUtilitiesBuildToolingTasksPath>$(SolutionBuildToolsBaseDir)$(ATAPBuildToolingRelativeBasePath)</ATAPUtilitiesBuildToolingTasksPath>
     <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\Release\net5.0\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
-    <!-- <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\net471\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly> -->
+    <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\Release\net471\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
 
     <!-- The Roslyn Code Analyzers for FxCop Rules should be installed as a Nuget Package at the Solution level, per this article https://docs.microsoft.com/en-us/visualstudio/code-quality/install-fxcop-analyzers?view=vs-2019 -->
     <!-- Per this article https://docs.microsoft.com/en-us/visualstudio/code-quality/roslyn-analyzers-overview?view=vs-2019#nuget-package-versus-vsix-extension the legacy post-build code analysis tools should be turned off -->

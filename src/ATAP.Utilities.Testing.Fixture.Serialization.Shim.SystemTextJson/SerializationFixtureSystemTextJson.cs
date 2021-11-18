@@ -1,14 +1,11 @@
 using System;
-using System.Collections.Generic;
 
 using Microsoft.Extensions.Configuration;
+using static ATAP.Utilities.Configuration.Extensions;
 
 using ATAP.Utilities.Serializer;
-using ATAP.Utilities.Serializer.Shim.SystemTextJson;
 
-using ATAP.Utilities.Testing.Fixture.Serialization;
-
-namespace ATAP.Utilities.Testing {
+namespace ATAP.Utilities.Testing.Fixture.Serialization {
 
   public interface ISerializationFixtureSystemTextJson : ISerializationFixture {
   }
@@ -19,15 +16,22 @@ namespace ATAP.Utilities.Testing {
   ///  because JsonSerializerSettings cannot be modified after any Serialization/Deserialization operations have been performed
   /// </summary>
   public partial class SerializationFixtureSystemTextJson : SerializationFixture, ISerializationFixtureSystemTextJson {
-     public ISerializerOptions Options { get; set; }
+     public ISerializerOptionsAbstract Options { get; set; }
 
     public SerializationFixtureSystemTextJson() : base() {
-      Serializer = (ISerializer)new ATAP.Utilities.Serializer.Shim.SystemTextJson.Serializer();
+            // Get the configSections
+      var configSections = GetConfigurationSections();
+      // Create a configurationRoot and assign it to this fixture
+      // Build initial configurationRoot
+      // ToDo: Review for a better "environment:Production" string
+      var configurationBuilder = ATAPConfigurationBuilderFromConfigurationSections(isProduction: true, ATAP.Utilities.Testing.StringConstants.EnvironmentProductionTest, this.LoadedFromDirectory, this.InitialStartupDirectory, configSections);
+      var configurationRoot = configurationBuilder.Build();
+      Serializer = (ISerializerConfigurableAbstract)new ATAP.Utilities.Serializer.Shim.SystemTextJson.Serializer(configurationRoot);
     }
 
-    // public SerializationFixtureSystemTextJson(IConfigurationRoot configuration) : base(configuration) {
-    //         Serializer = (ISerializer) this;
-    // }
+    public SerializationFixtureSystemTextJson(IConfigurationRoot configuration) : base(configuration) {
+        Serializer = (ISerializerConfigurableAbstract) new ATAP.Utilities.Serializer.Shim.SystemTextJson.Serializer(configuration);
+    }
 
     // public SerializationFixtureSystemTextJson(IConfigurationRoot configuration) : base() {
     //   Kernel.Load(new SerializerInjectionModuleSystemTextJson(configuration: configuration));

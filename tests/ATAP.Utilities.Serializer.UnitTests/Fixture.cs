@@ -7,12 +7,12 @@ using Xunit.Abstractions;
 
 namespace ATAP.Utilities.Serializer.UnitTests
 {
-  public class Fixture :ATAP.Utilities.Testing.Fixture.Serialization.SerializationFixture { }
-  public partial class SerializerUnitTests001 : IClassFixture<Fixture >
+  public class Fixture : SerializationFixture { }
+  public partial class UnitTests001 : IClassFixture<Fixture >
   {
     protected Fixture Fixture { get; }
     protected ITestOutputHelper TestOutput { get; }
-    public SerializerUnitTests001(ITestOutputHelper testOutput, Fixture fixture)
+    public UnitTests001(ITestOutputHelper testOutput, Fixture fixture)
     {
       Fixture = fixture;
       TestOutput = testOutput;

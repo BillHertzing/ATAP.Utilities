@@ -7,7 +7,7 @@ using static ATAP.Utilities.Collection.Extensions;
 
 
 namespace ATAP.Utilities.Serializer.Shim.ServiceStack {
-  public class Serializer : ISerializer {
+  public class Serializer : ISerializerConfigurableAbstract {
     private Config JsonSerializerOptionsCurrent { get; set; }
     public Serializer() {
       this.Configure();

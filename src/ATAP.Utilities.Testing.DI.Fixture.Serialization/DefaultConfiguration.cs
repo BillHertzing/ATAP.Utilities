@@ -6,7 +6,7 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization {
     new Dictionary<string, string> {
       #region Serialization default settings
       {StringConstants.SerializerShimNameConfigRootKey, StringConstants.SerializerShimNameStringDefault},
-      {StringConstants.SerializerShimNameSpaceConfigRootKey, StringConstants.SerializerShimNameSpaceStringDefault},
+      {StringConstants.SerializerShimNamespaceConfigRootKey, StringConstants.SerializerShimNamespaceStringDefault},
       #endregion
     };
   }

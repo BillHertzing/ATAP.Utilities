@@ -334,12 +334,12 @@ Log.Debug("TRACE is defined");
         // The Serialization library service, dynamically loaded based on configuration settings
         // Attribution: http://codebuckets.com/2020/05/29/dynamically-loading-assemblies-for-dependency-injection-in-net-core/ , Comment by 'David'
         // ToDo: improve to cover more cases, e.g., if only one implementation per interface is found, or if multiple implementations of an interface are in the Plugin path(s), add just the one matching a namespace from configuration
-        var SerializerLoader = new Loader<ISerializer>();
-        //bool isISerializerWithMatchingNamespace(Type type) { return typeof(ISerializer).IsAssignableFrom(type) && !type.IsAbstract && type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson"; }
+        var SerializerLoader = new Loader<ISerializerConfigurableAbstract>();
+        //bool isISerializerWithMatchingNamespace(Type type) { return typeof(ISerializerConfigurableAbstract).IsAssignableFrom(type) && !type.IsAbstract && type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson"; }
         SerializerLoader.LoadExactlyOneInstanceOfITypeFromAssemblyGlobAsSingleton(new DynamicGlobAndPredicate() {
           Glob = new Glob(){Pattern = ".\\Plugins\\ATAP.Utilities.Serializer.Shim.SystemTextJson.dll"},
           Predicate =
-        new Predicate<Type>(type=>{return typeof(ISerializer).IsAssignableFrom(type) && !type.IsAbstract && type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson"; })
+        new Predicate<Type>(type=>{return typeof(ISerializerConfigurableAbstract).IsAssignableFrom(type) && !type.IsAbstract && type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson"; })
         }, services);
         // ToDo: Plugin services, added to the IServices collection simply because they exist somewhere in the plugins Directory tree
         // The primary service (loop) that this program does

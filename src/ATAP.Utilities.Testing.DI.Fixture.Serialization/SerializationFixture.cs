@@ -8,7 +8,7 @@ using Ninject;
 namespace ATAP.Utilities.Testing.Fixture.Serialization {
 
   public interface ISerializationFixture : IDiFixtureNinject {
-    ISerializer Serializer { get; set; }
+    ISerializerConfigurableAbstract Serializer { get; set; }
   }
 
   public class SerializerInjectionModule : Ninject.Modules.NinjectModule {
@@ -16,11 +16,11 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization {
     string SerializerShimNamespace { get; set; }
     public SerializerInjectionModule() : this(
       DefaultConfiguration.Production[StringConstants.SerializerShimNameStringDefault],
-      DefaultConfiguration.Production[StringConstants.SerializerShimNameSpaceStringDefault]) { }
+      DefaultConfiguration.Production[StringConstants.SerializerShimNamespaceStringDefault]) { }
     public SerializerInjectionModule(IConfiguration configuration) : this(
       configuration,
       configuration.GetValue<string>(StringConstants.SerializerShimNameConfigRootKey, StringConstants.SerializerShimNameStringDefault),
-      configuration.GetValue<string>(StringConstants.SerializerShimNameSpaceConfigRootKey, StringConstants.SerializerShimNameSpaceStringDefault)
+      configuration.GetValue<string>(StringConstants.SerializerShimNamespaceConfigRootKey, StringConstants.SerializerShimNamespaceStringDefault)
     ) { }
 
     public SerializerInjectionModule(string serializerShimName = default, string serializerShimNamespace = default) :base() {
@@ -40,23 +40,23 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization {
   //Kernel = new StandardKernel(new SerializerInjectionModule(configuration: configuration));
 
     // public override void Load() {
-    //   // ToDo make this lazy ISerializer t = ATAP.Utilities.Serializer.SerializerLoader.LoadSerializerFromAssembly();
-    //   var loader = new ATAP.Utilities.Loader.Loader<ISerializer>();
+    //   // ToDo make this lazy ISerializerConfigurableAbstract t = ATAP.Utilities.Serializer.SerializerLoader.LoadSerializerFromAssembly();
+    //   var loader = new ATAP.Utilities.Loader.Loader<ISerializerConfigurableAbstract>();
     //   var serializer = loader.LoadExactlyOneInstanceOfITypeFromAssemblyGlob(
     //     new DynamicGlobAndPredicate() {
     //       Glob = new Glob() { Pattern = ".\\Plugins\\ATAP.Utilities.Serializer.Shim.SystemTextJson.dll" },
     //       Predicate =
     //         new Predicate<Type>(type => {
-    //           return typeof(ISerializer).IsAssignableFrom(type) && !type.IsAbstract && type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson";
+    //           return typeof(ISerializerConfigurableAbstract).IsAssignableFrom(type) && !type.IsAbstract && type.Namespace == "ATAP.Utilities.Serializer.Shim.SystemTextJson";
     //         })
 
     //     }
     //     );
-    //   //  var serializer = ATAP.Utilities.Loader.Loader<ISerializer>.LoadFromAssembly(SerializerShimName, SerializerShimNamespace, new string[] { pluginsDirectory }, services);
+    //   //  var serializer = ATAP.Utilities.Loader.Loader<ISerializerConfigurableAbstract>.LoadFromAssembly(SerializerShimName, SerializerShimNamespace, new string[] { pluginsDirectory }, services);
     //   //  var serializer = Loader.LoadFromAssembly(SerializerShimName, SerializerShimNamespace);
     //   // attribution: https://stackoverflow.com/questions/16916140/ninject-registering-an-already-created-instance-with-ninject
-    //   Bind<ISerializer>().ToConstant(serializer);
-    //   //Bind<ISerializer>().To<Serializer.Serializer>();
+    //   Bind<ISerializerConfigurableAbstract>().ToConstant(serializer);
+    //   //Bind<ISerializerConfigurableAbstract>().To<Serializer.Serializer>();
 
     // }
   }
@@ -64,15 +64,15 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization {
   public class SerializationFixture : DiFixtureNinject, ISerializationFixture {
 
     public SerializationFixture() : base() {
-      Serializer = Kernel.Get<ISerializer>();
+      Serializer = Kernel.Get<ISerializerConfigurableAbstract>();
       // Set Serializer options for unit tests that use this base DiFixture class
-      ISerializerOptions options = new() { WriteIndented = false };
+      ISerializerOptionsAbstract options = new() { WriteIndented = false };
       Serializer.Configure(new SerializerOptions() { WriteIndented = false });
     }
     public SerializationFixture(IConfiguration configuration) : base(configuration) {
       Kernel = new StandardKernel(new SerializerInjectionModule(configuration: configuration));
       // Bind the Serializer implementation to the interface using Ninject conventions
-      Serializer = Kernel.Get<ISerializer>();
+      Serializer = Kernel.Get<ISerializerConfigurableAbstract>();
     }
     public SerializationFixture(string serializerShimName = default, string serializerShimNamespace = default) : base() {
       if (String.IsNullOrWhiteSpace(serializerShimName)) { throw new ArgumentNullException(nameof(serializerShimName)); }
@@ -84,9 +84,9 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization {
 
 ));
       // Bind the Serializer implementation to the interface using Ninject conventions
-      Serializer = Kernel.Get<ISerializer>();
+      Serializer = Kernel.Get<ISerializerConfigurableAbstract>();
     }
 
-    public ISerializer Serializer { get; set; }
+    public ISerializerConfigurableAbstract Serializer { get; set; }
   }
 }

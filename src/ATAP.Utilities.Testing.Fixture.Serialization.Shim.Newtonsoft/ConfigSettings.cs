@@ -9,12 +9,12 @@ using ATAP.Utilities.Serializer;
 
 
 namespace ATAP.Utilities.Testing.Fixture.Serialization {
-  public partial class SerializationFixture : ConfigurableFixture, ISerializationFixture {
+  public partial class SerializationFixtureNewtonsoft : SerializationFixture, ISerializationFixtureNewtonsoft {
 
     #region Configuration sections: Traverse the inheritance chain and get the various configurationSections from each
     public new (List<Dictionary<string, string>>, List<(string, string)>, List<string>) GetConfigurationSections() {
-      // Traverse the inheritance chain, accumulate the config sections at each level
       // ToDo: Add logger
+      // Traverse the inheritance chain, accumulate the config sections at each level
       (List<Dictionary<string, string>> lDCs, List<(string, string)> lSFTs, List<string> lEVPs) = base.GetConfigurationSections();
       // ToDo: add commandline arguments.
       List<Dictionary<string, string>> DefaultConfigurations = new();

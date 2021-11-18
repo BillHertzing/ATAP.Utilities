@@ -7,7 +7,7 @@ namespace ATAP.Utilities.Testing.Fixture {
     #region DIFixture settings
     // NinJect
       {StringConstants.DIShimNameConfigRootKey, StringConstants.DIShimNameStringDefault},
-      {StringConstants.DIShimNameSpaceConfigRootKey, StringConstants.DIShimNameSpaceStringDefault},
+      {StringConstants.DIShimNamespaceConfigRootKey, StringConstants.DIShimNamespaceStringDefault},
     #endregion
     };
   }

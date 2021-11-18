@@ -8,8 +8,8 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization {
     public const string SerializerShimNameConfigRootKey = "SerializerShimName";
     public const string SerializerShimNameStringDefault = "ATAP.Utilities.Serializer.Shim.SystemTextJson.dll";
 
-    public const string SerializerShimNameSpaceConfigRootKey = "SerializerShimNameSpace";
-    public const string SerializerShimNameSpaceStringDefault = "ATAP.Utilities.Serializer.Shim.SystemTextJson";
+    public const string SerializerShimNamespaceConfigRootKey = "SerializerShimNamespace";
+    public const string SerializerShimNamespaceStringDefault = "ATAP.Utilities.Serializer.Shim.SystemTextJson";
     #endregion
 
   }

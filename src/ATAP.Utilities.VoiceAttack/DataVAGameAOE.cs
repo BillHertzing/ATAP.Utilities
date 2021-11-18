@@ -30,7 +30,7 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
      TimeSpan CurrentVillagerBuildTimeSpan { get; set; }
      short CurrentNumVillagers { get; set; }
      IMessageQueueAbstract<SendMessageResults> MessageQueue { get; set; }
-     ISerializer Serializer { get; set; }
+     ISerializerConfigurableAbstract Serializer { get; set; }
 
       new void Dispose();
 
@@ -41,7 +41,7 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE {
     public TimeSpan CurrentVillagerBuildTimeSpan { get; set; }
     public short CurrentNumVillagers { get; set; }
     public IMessageQueueAbstract<SendMessageResults> MessageQueue { get; set; }
-    public ISerializer Serializer { get; set; }
+    public ISerializerConfigurableAbstract Serializer { get; set; }
 
     public Data(IConfigurationRoot configurationRoot, dynamic vaProxy) : base(configurationRoot, (object)vaProxy) {
     }

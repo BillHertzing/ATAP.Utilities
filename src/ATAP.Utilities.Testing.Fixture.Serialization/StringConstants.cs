@@ -6,9 +6,7 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization {
 
     #region ConfigKeys and default values for string-based Configkeys
     public const string SerializerShimNameConfigRootKey = "SerializerShimName";
-    public const string SerializerShimNameStringDefault = "ATAP.Utilities.Serializer.Shim.SystemTextJson.dll";
-    public const string SerializerShimNameSpaceConfigRootKey = "SerializerShimNameSpace";
-    public const string SerializerShimNameSpaceStringDefault = "ATAP.Utilities.Serializer.Shim.SystemTextJson";
+    public const string SerializerShimNamespaceConfigRootKey = "SerializerShimNamespace";
     #endregion
 
     #region Settings File name (production)

@@ -58,4 +58,15 @@
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft\ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.csproj" />
   </ItemGroup>
 
+  <!-- Configuration Settings files -->
+  <ItemGroup>
+    <None Update="ATAP.Utilities.Testing.Fixture.Serialization.Newtonsoft.Settings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ATAP.Utilities.Testing.Fixture.Serialization.Newtonsoft.Settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+
 </Project>

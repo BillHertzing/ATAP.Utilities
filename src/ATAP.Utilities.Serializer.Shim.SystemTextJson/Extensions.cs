@@ -17,13 +17,13 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
       }
       return jsonSerializerOptions;
     }
-    // public static Options Configure(this Options jsonSerializerOptions, ISerializerOptions options) {
+    // public static Options Configure(this Options jsonSerializerOptions, ISerializerOptionsAbstract options) {
     //   jsonSerializerOptions.ConvertOptions(options);
     //   return jsonSerializerOptions;
     // }
 
     //ToDo: revisit - this would alllow a mismatch between the ShimSpecificOptions field values and the individual ones
-    // public static Options ConvertOptions(this Options jsonSerializerOptions, ISerializerOptions options, List<JsonConverter> jsonConverters = default) {
+    // public static Options ConvertOptions(this Options jsonSerializerOptions, ISerializerOptionsAbstract options, List<JsonConverter> jsonConverters = default) {
     //   jsonSerializerOptions.AllowTrailingCommas = options.AllowTrailingCommas;
     //   jsonSerializerOptions.IgnoreNullValues = options.IgnoreNullValues;
     //   jsonSerializerOptions.WriteIndented = options.WriteIndented;

@@ -20,7 +20,7 @@ namespace ATAP.Utilities.Testing {
 
   /// </summary>
   public partial class SerializationFixturePlugin : ConfigurableFixture, ISerializationFixturePlugin {
-     public ISerializerOptions Options { get; set; }
+     public ISerializerOptionsAbstract Options { get; set; }
 
     public SerializationFixturePlugin() : base() {
     }

@@ -11,19 +11,17 @@ using static ATAP.Utilities.Collection.Extensions;
 namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
 
   public class Serializer : SerializerConfigurableAbstract {
-    public Serializer() {
-      this.Configure();
-    }
-    public Serializer(IConfigurationRoot? configurationRoot) {
-      this.Configure(configurationRoot);
-    }
+    public Serializer() : this((ISerializerOptionsAbstract)new SerializerOptions(new JsonSerializerSettings()), null) { }
 
-    public Serializer(ISerializerOptionsAbstract options) {
-      this.Configure(options);
-    }
-    public Serializer(ISerializerOptionsAbstract options, IConfigurationRoot? configurationRoot) {
-      this.Configure(options, configurationRoot);
-    }
+    public Serializer(IConfigurationRoot? configurationRoot) : this((ISerializerOptionsAbstract)new SerializerOptions(new JsonSerializerSettings()), configurationRoot) { }
+
+    public Serializer(ISerializerOptionsAbstract options) : this(options, null) { }
+
+    public Serializer(ISerializerOptionsAbstract options, IConfigurationRoot? configurationRoot = default) : base(options, configurationRoot) { }
+
+    // public Serializer(List<JsonConverter> jsonConverters) : this((ISerializerOptionsAbstract)new SerializerOptions(new JsonSerializerSettings()), null) {
+    //   ((JsonSerializerSettings)(Options.ShimSpecificOptions)).PopulateConverters(jsonConverters);
+    // }
     // public Serializer(JsonSerializerSettings options) {
     //   this.Configure(options);
     // }
@@ -44,32 +42,10 @@ namespace ATAP.Utilities.Serializer.Shim.Newtonsoft {
       return JsonConvert.DeserializeObject<T>(str, (JsonSerializerSettings)options.ShimSpecificOptions);
     }
 
-    public override void Configure() {
-      this.Configure(new SerializerOptions(new JsonSerializerSettings()), null);
+    //JsonConvertersCache = new List<JsonConverter>();
+    //JsonConvertersCache.AddRange(((JsonSerializerOptions)Options).ShimSpecificOptions.Converters)
+    //((JsonSerializerOptions)Options).ShimSpecificOptions.PopulateConverters(JsonConvertersCache);
 
-      // ToDo: Add a method that returns a specific list of JsonConverter which would be the default for ATAP utilities
-      //JsonConvertersCache = new List<JsonConverter>() {
-      // DictionaryJsonConverterFactory.Default
-      // };
-    }
-    public override void Configure(IConfigurationRoot? configurationRoot) {
-      // Store the configurationRoot in the serializer
-      // Configure the serializer according to any settings in the configurationRoot
-      base.Configure(configurationRoot);
-    }
-    public override void Configure(ISerializerOptionsAbstract options) {
-      base.Configure(options);
-      //JsonConvertersCache = new List<JsonConverter>();
-      //JsonConvertersCache.AddRange(((JsonSerializerOptions)Options).ShimSpecificOptions.Converters)
-      //((JsonSerializerOptions)Options).ShimSpecificOptions.PopulateConverters(JsonConvertersCache);
-    }
-    public override void Configure(ISerializerOptionsAbstract options, IConfigurationRoot? configurationRoot) {
-      base.Configure(options, configurationRoot);
-    }
-    // public void Configure(JsonSerializerSettings options) {
-    //   base.Configure(options);
-    // }
-    
     // public void Configure(List<JsonConverter> jsonConverters) {
     // Options = new SerializerOptions(new JsonSerializerOptions());
     // // ToDo: Null Check

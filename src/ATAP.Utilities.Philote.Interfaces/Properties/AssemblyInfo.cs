@@ -1,5 +1,5 @@
 using System.Reflection;
-#if NETDESKTOP
+#if NETDESKTOP || NETCOREAPP3_1 || NETSTANDARD
 using System.ComponentModel;
 #endif
 
@@ -9,7 +9,7 @@ using System.ComponentModel;
 [assembly:AssemblyInformationalVersion("1.0.0")]
 [assembly:AssemblyVersion("1.0.0")]
 #region Support public init only setters on Net Desktop runtime
-#if NETDESKTOP
+#if NETDESKTOP || NETCOREAPP3_1 || NETSTANDARD
 // Add IsExternalInit if the TargetFramework is a Net Desktop runtime
 namespace System.Runtime.CompilerServices {
   [EditorBrowsable(EditorBrowsableState.Never)]

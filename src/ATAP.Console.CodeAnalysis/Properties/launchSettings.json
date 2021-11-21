@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ATAP.Console.CodeAnalysis": {
+      "commandName": "Project",
+      "commandLineArgs": "C:/Dropbox/whertzing/GitHub/ATAP.Utilities/ATAP.Utilities.sln"
+    }
+  }
+}

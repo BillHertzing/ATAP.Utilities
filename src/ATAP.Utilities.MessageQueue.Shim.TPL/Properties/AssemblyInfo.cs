@@ -1,5 +1,5 @@
 using System.Reflection;
-#if NETDESKTOP
+#if NETDESKTOP || NETCOREAPP3_1 || NETSTANDARD
 using System.ComponentModel;
 #endif
 // ATAP.Utilities.BuildTooling.targets will update the build (date), and revision fields each time a new build occurs
@@ -12,7 +12,7 @@ using System.ComponentModel;
 [assembly: ATAP.Utilities.ETW.ETWLogAttribute()]
 #endif
 #region Support public init only setters on Net Desktop runtime
-#if NETDESKTOP
+#if NETDESKTOP || NETCOREAPP3_1 || NETSTANDARD
 // Add IsExternalInit if the TargetFramework is a Net Desktop runtime
 namespace System.Runtime.CompilerServices {
   [EditorBrowsable(EditorBrowsableState.Never)]

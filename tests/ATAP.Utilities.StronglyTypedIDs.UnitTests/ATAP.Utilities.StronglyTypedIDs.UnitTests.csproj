@@ -21,7 +21,6 @@
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Moq" />
     <PackageReference Include="xunit" />
-    <PackageReference Include="Xunit.DependencyInjection" />
     <PackageReference Include="xunit.runner.console">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -41,32 +40,41 @@
     <DotNetCliToolReference Include="dotnet-xunit" />
   </ItemGroup>
 
-  <!-- Standalone reference to Microsoft.Extensions.DependencyInjection is used by unitTest projects
-            that inject a Serializer via Dependency Injection-->
+     <!-- ATAP Utility Packages For the abstract Serializer -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-  </ItemGroup>
-
-  <!-- Plugin Framework for libraries that are dynamically loaded -->
-  <ItemGroup>
-    <PackageReference Include="McMaster.NETCore.Plugins" />
-  </ItemGroup>
-
-  <!-- ATAP Utility libraries for testing, including DI-Injected Fixture, and dynamiclly selected/loaded serialization service -->
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.StringConstants\ATAP.Utilities.Serializer.StringConstants.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.StringConstants/ATAP.Utilities.Serializer.StringConstants.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
   </ItemGroup>
-  <!-- ToDo: The concrete serializer libraries for the ISerializerConfigurableAbstract DI-injected service and all their dependencies need to be copied to a PlugIns subdir below the outputdir -->
-  <!-- The following is a hardcoded list of DLLs and PDFs of specific Shim assemblies fto be copied to a PlugIns subdir below the outputdir -->
+
+  <!-- ATAP Utility Packages For the Testing Fixture hierarchy -->
   <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing\ATAP.Utilities.Testing.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization\ATAP.Utilities.Testing.Fixture.Serialization.csproj" />
+  </ItemGroup>
+
+  <!-- The Serializer Fixture Shim to use -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
     <!--
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim.Newtonsoft\ATAP.Utilities.Serializer.Shim.Newtonsoft.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim.ServiceStack\ATAP.Utilities.Serializer.Shim.ServiceStack.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Serializer.Shim.SystemTextJson\ATAP.Utilities.Serializer.Shim.SystemTextJson.csproj" />
     -->
+  </ItemGroup>
+
+  <!-- The DataForTests -->
+  <ItemGroup>
+    <ProjectReference Include="..\ATAP.Utilities.Serializer.DataForTests\ATAP.Utilities.Serializer.DataForTests.csproj" />
+  </ItemGroup>
+
+  <!-- Configuration Settings files -->
+  <ItemGroup>
+    <None Update="ATAP.Utilities.Testing.Fixture.Serialization.SystemTextJson.Settings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ATAP.Utilities.Testing.Fixture.Serialization.SystemTextJson.Settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 <!-- Specific libraries under test-->
@@ -74,6 +82,22 @@
     <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedIDs\ATAP.Utilities.StronglyTypedIDs.csproj" />
     <ProjectReference Include="..\..\src\ATAP.Utilities.StronglyTypedIDs.Interfaces\ATAP.Utilities.StronglyTypedIDs.Interfaces.csproj" />
   </ItemGroup>
+    
+
+  <!-- ToDo: The concrete serializer libraries for the ISerializerConfigurableAbstract DI-injected service and all their dependencies need to be copied to a PlugIns subdir below the outputdir -->
+  <!-- Standalone reference to Microsoft.Extensions.DependencyInjection is used by unitTest projects
+            that inject a Serializer via Dependency Injection
+  <ItemGroup>
+    <PackageReference Include="Xunit.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup> -->
+
+  <!-- Plugin Framework for libraries that are dynamically loaded 
+  <ItemGroup>
+    <PackageReference Include="McMaster.NETCore.Plugins" />
+  </ItemGroup>
+   -->
+   
 
 </Project>
 

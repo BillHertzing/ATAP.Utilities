@@ -181,8 +181,10 @@
     <PackageReference Update="Ninject" Version="3.3.4" />
     <PackageReference Update="Ninject.extensions.conventions" Version="3.3.0" />
 
-    <!-- Packages to add resilience policies to async and synchronous operations whihc may have transient exceptions -->
+    <!-- Packages to add resilience policies to async and synchronous operations which may have transient exceptions -->
     <PackageReference Update="Polly" Version="7.2.1" />
+    <PackageReference Update="Polly.Extensions.Http" Version="3.0.0" />
+    <PackageReference Update="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
 
     <!-- FileIO Extension to provide file and directory Globbing requires System.IO.Abstractions -->
     <PackageReference Update="System.IO.Abstractions" Version="13.2.47" />

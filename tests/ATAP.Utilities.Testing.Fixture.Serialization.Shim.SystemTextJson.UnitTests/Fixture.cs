@@ -1,12 +1,9 @@
 
-
-
 using ATAP.Utilities.Testing;
 using ATAP.Utilities.Testing.Serialization;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
-
 
 namespace ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.UnitTests
 {

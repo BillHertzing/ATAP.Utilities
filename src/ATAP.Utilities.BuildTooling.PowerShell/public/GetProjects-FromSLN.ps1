@@ -70,6 +70,7 @@ Function GetProjects-FromSLN {
     ) | New-Tuple
 
     $sln = gci $path '*.sln';
+    # gc *.sln | ?{$_ -match 'project\('} | %{$_ -replace 'project\(.+?\) = (.+?), (.+?), .*', '$1 at $2'} | sort
     #ToDo validate only one
     $text = [IO.File]::ReadAllText($sln)
     foreach ($line in $text) {

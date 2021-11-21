@@ -7,7 +7,7 @@ using Polly;
 namespace ATAP.Utilities.HostedServices.TcpWithResilienceHostedService {
   public interface ITcpWithResilience
   {
-      public Task<byte[]> FetchAsync(string host, int port, string tcpRequestMessage, Encoding encoding = default, Policy policy = default, int maxResponseBufferSize = default, CancellationToken cancellationToken = default);
+      //public Task<byte[]> FetchAsync(string host, int port, string tcpRequestMessage, Encoding encoding = default, Policy policy = default, int maxResponseBufferSize = default, CancellationToken cancellationToken = default);
   }
   public interface ITcpWithResilienceHostedService
   {

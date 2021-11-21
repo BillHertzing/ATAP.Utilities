@@ -40,6 +40,7 @@ namespace ATAP.Utilities.Serializer.Shim.SystemTextJson {
       , List<JsonConverter> jsonConverters = default
       ) {
       jsonSerializerOptions.AllowTrailingCommas = allowTrailingCommas;
+      jsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
       jsonSerializerOptions.IgnoreNullValues = ignoreNullValues;
       jsonSerializerOptions.WriteIndented = writeIndented;
       jsonSerializerOptions.Converters.Clear();

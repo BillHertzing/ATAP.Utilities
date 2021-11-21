@@ -136,19 +136,19 @@ namespace ATAP.Utilities.StronglyTypedIds {
       _type = type;
     }
 
-    public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType) {
+    public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType) {
       return sourceType == typeof(string)
           || sourceType == typeof(TValue)
           || base.CanConvertFrom(context, sourceType);
     }
 
-    public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType) {
+    public override bool CanConvertTo(ITypeDescriptorContext? context, Type? destinationType) {
       return destinationType == typeof(string)
           || destinationType == typeof(TValue)
           || base.CanConvertTo(context, destinationType);
     }
 
-    public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value) {
+    public override object ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value) {
       if (value is string s) {
         value = IdValueConverter.ConvertFrom(s);
       }
@@ -161,7 +161,7 @@ namespace ATAP.Utilities.StronglyTypedIds {
       return base.ConvertFrom(context, culture, value);
     }
 
-    public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType) {
+    public override object ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value, Type destinationType) {
       if (value is null) {
         throw new ArgumentNullException(nameof(value));
       }
@@ -188,13 +188,13 @@ namespace ATAP.Utilities.StronglyTypedIds {
       _innerConverter = ActualConverters.GetOrAdd(stronglyTypedIdType, CreateActualConverter);
     }
 
-    public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType) =>
+    public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType) =>
         _innerConverter.CanConvertFrom(context, sourceType);
-    public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType) =>
+    public override bool CanConvertTo(ITypeDescriptorContext? context, Type? destinationType) =>
         _innerConverter.CanConvertTo(context, destinationType);
-    public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value) =>
+    public override object ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value) =>
         _innerConverter.ConvertFrom(context, culture, value);
-    public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType) =>
+    public override object ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value, Type? destinationType) =>
         _innerConverter.ConvertTo(context, culture, value, destinationType);
 
     private static TypeConverter CreateActualConverter(Type stronglyTypedIdType) {

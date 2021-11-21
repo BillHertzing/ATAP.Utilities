@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-#if NETDESKTOP
+#if NETDESKTOP || NETCOREAPP3_1 || NETSTANDARD
 using System.ComponentModel;
 #endif
 
@@ -90,7 +90,7 @@ namespace ATAP.Utilities.MessageQueue {
 
   }
   #region Support public init only setters on Net Desktop runtime
-#if NETDESKTOP
+#if NETDESKTOP || NETCOREAPP3_1 || NETSTANDARD
 // Add IsExternalInit if the TargetFramework is a Net Desktop runtime
 namespace System.Runtime.CompilerServices {
   [EditorBrowsable(EditorBrowsableState.Never)]

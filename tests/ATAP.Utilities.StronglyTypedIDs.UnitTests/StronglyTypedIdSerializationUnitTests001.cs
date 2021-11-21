@@ -2,17 +2,21 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using ATAP.Utilities.StronglyTypedID;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-using System.ComponentModel;
 
 // For the tests that use the new Serializer/Deserializer
 using System.Text.Json;
 // For the tests that use the old Newtonsoft Serializer/Deserializer
 //using Newtonsoft.Json;
+
+using ATAP.Utilities.Testing;
+using ATAP.Utilities.Serializer;
+using ATAP.Utilities.Serializer.DataForTests;
 
 namespace ATAP.Utilities.StronglyTypedID.UnitTests {
   // Attribution: https://github.com/xunit/xunit/issues/2007, however, we only need a class fixture not a collectionfixtire, so, commentedout below

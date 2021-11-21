@@ -1,7 +1,7 @@
 using System.Reflection;
 
 // ATAP.Utilities.BuildTooling.targets will update the build (date), and revision fields each time a new build occurs
-[assembly:AssemblyFileVersion("0.1.7992.11206")]
+[assembly:AssemblyFileVersion("0.1.7995.39660")]
 // ATAP.Utilities.BuildTooling.targets will update the AssemblyInformationalVersion field each time a new build occurs
-[assembly:AssemblyInformationalVersion("0.1.0-Alpha-006")]
+[assembly:AssemblyInformationalVersion("0.1.0-Alpha-008")]
 [assembly:AssemblyVersion("0.1.0")]

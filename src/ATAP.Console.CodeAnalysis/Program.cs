@@ -36,15 +36,14 @@ namespace ATAP.Utilities.ConsoleCodeAnalysis
         // Print message for WorkspaceFailed event to help diagnosing project load failures.
         workspace.WorkspaceFailed += (o, e) => Console.WriteLine(e.Diagnostic.Message);
 
-        var solutionPath = args[0];
-        Console.WriteLine($"Loading solution '{solutionPath}'");
+        Console.WriteLine($"Loading solution '{args[0]}'");
 
         // Attach progress reporter so we print projects as they are loaded.
-        Solution solution = await workspace.OpenSolutionAsync(solutionPath, new ConsoleProgressReporter());
-        Console.WriteLine($"Finished loading solution '{solutionPath}'");
+        Solution solution = await workspace.OpenSolutionAsync(args[0], new ConsoleProgressReporter());
+        Console.WriteLine($"Finished loading solution '{args[0]}'");
 
         // project name to analye
-        string projectNameToAnalyze = "ATAP.Console.CodeAnalysis";
+        string projectNameToAnalyze = "ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.UnitTests";
         Project projectToAnalyze;
         // get the GenerateProgram project
         if (solution.Projects.Any(q => q.Name == projectNameToAnalyze)) {
@@ -53,8 +52,11 @@ namespace ATAP.Utilities.ConsoleCodeAnalysis
         else {
           throw new ArgumentException($"{projectNameToAnalyze} does not exist in the solution");
         }
-        //Compile it
-        var compiledProject = await projectToAnalyze.GetCompilationAsync();
+        //Compile it. wait for the compilation to complete and return
+        Task<Compilation?> compileProjectTask = projectToAnalyze.GetCompilationAsync();
+        compileProjectTask.Wait();
+        // ToDo: Exception Handling
+        Compilation? compiledProject = compileProjectTask.Result;
 
         // Get the classes inside the project
         foreach (var st in compiledProject.SyntaxTrees) {

@@ -8,12 +8,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using ATAP.Utilities.ETW;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
+
+using ATAP.Utilities.ETW;
+
 
 namespace ATAP.Utilities.HostedServices {
 
@@ -53,6 +54,9 @@ namespace ATAP.Utilities.HostedServices {
     }
   }
 
+#if TRACE
+  [ETWLogAttribute]
+#endif
   public class ObservableResetableTimer : ObservableResetableTOI {
     // https://stackoverflow.com/questions/54309176/how-to-extend-the-Duration-time-of-observable-timer-in-rx-net
 
@@ -179,7 +183,6 @@ namespace ATAP.Utilities.HostedServices {
 
     public void Startup() {
       HostedServiceObservableResetableTimersData = new();
-      //HostedServiceObservableResetableTimersData.timer = new ObservableResetableTimer(new TimeSpan(0, 0, 1));
       HostedServiceObservableResetableTimersData.TimerDisposeHandles = new();
     }
 

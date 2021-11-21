@@ -16,10 +16,6 @@ namespace ATAP.Utilities.Serializer {
   }
   public interface ISerializerConfigurableAbstract : ISerializerAbstract {
     IConfigurationRoot? ConfigurationRoot { get; set; }
-    void Configure();
-    void Configure(ISerializerOptionsAbstract options);
-    void Configure(IConfigurationRoot? configurationRoot);
-    void Configure(ISerializerOptionsAbstract options, IConfigurationRoot? configurationRoot);
   }
 
 }

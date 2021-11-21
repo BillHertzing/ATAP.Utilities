@@ -80,10 +80,7 @@
         "/bl:_devlogs/msbuild.binlog"
       ],
       "problemMatcher": "$msCompile",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
+      "group": "build"
     },
     {
       "label": "BuildCodeAnalysis",
@@ -105,7 +102,10 @@
         "echo": true
       },
       "problemMatcher": "$msCompile",
-      "group": "build"
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     },
     {
       "label": "watch",

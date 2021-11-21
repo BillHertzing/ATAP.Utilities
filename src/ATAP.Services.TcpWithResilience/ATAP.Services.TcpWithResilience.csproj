@@ -17,12 +17,13 @@
   </PropertyGroup>
 
 
-<ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Polly" />
-</ItemGroup>
+    <PackageReference Include="Polly.Extensions.Http" />
+    <PackageReference Include="Polly.Contrib.WaitAndRetry" />
+  </ItemGroup>
 
-
-    <!-- Reactive Extensions -->
+  <!-- Reactive Extensions -->
   <ItemGroup>
     <PackageReference Include="System.Reactive" />
   </ItemGroup>

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
+using Microsoft.Extensions.Configuration;
+
 using ATAP.Utilities.MessageQueue;
 using Polly;
 
@@ -14,6 +16,7 @@ namespace ATAP.Utilities.MessageQueue.Shim.TPL {
 
   public class TPLMessageQueue<TSendMessageResults> : MessageQueueAbstract<TSendMessageResults> where TSendMessageResults : ISendMessageResultsAbstract, new() {
 
+public IConfigurationRoot ConfigurationRoot { get; set; }
     private ActionBlock<Byte[]> Messages { get; set; }
 
     public TPLMessageQueue(Action<Byte[]> receiveAction) : this(receiveAction, null) { }
@@ -22,7 +25,13 @@ namespace ATAP.Utilities.MessageQueue.Shim.TPL {
         // ToDO: Wrap in try catch and/or  Polly
         ReceiveAction.Invoke(message);
       });
-      this.Configure();
+    }
+    public TPLMessageQueue(IConfigurationRoot? configurationRoot, Action<Byte[]> receiveAction, CancellationToken? cancellationToken) : base(receiveAction, cancellationToken) {
+      ConfigurationRoot = configurationRoot;
+      Messages = new ActionBlock<Byte[]>((message) => {
+        // ToDO: Wrap in try catch and/or  Polly
+        ReceiveAction.Invoke(message);
+      });
     }
 
     public TSendMessageResults SendMessage(Byte[] message) {
@@ -40,7 +49,6 @@ namespace ATAP.Utilities.MessageQueue.Shim.TPL {
     // ToDo: add a Configure which has default values of the TPLMessageQueueOptionsCurrent should come from an IConfiguration object, and keys/default values should come from a StringConstants
     // ToDo: ConvertOptions should be expanded to include a set of extensions for TPLMessageQueueOptions class to promote reuse of the instance
 
-    public void Configure() { }
     #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls
     protected new virtual void Dispose(bool disposing) {

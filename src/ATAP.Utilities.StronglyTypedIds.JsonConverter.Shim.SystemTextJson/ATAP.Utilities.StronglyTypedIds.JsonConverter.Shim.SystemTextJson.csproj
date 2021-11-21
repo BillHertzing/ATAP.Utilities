@@ -19,11 +19,9 @@
 <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIds.Interfaces\ATAP.Utilities.StronglyTypedIds.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIds\ATAP.Utilities.StronglyTypedIds.csproj" />
-    <!--<ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.Interfaces.csproj" /> -->
-    <!--<ProjectReference Include="..\ATAP.Utilities.Serializer.Interfaces\ATAP.Utilities.Serializer.ConverterAbstract.Interfaces.csproj" /> -->
   </ItemGroup>
 
- <!-- The System JSON Library to use -->
+ <!-- The Serializer Library to use -->
   <ItemGroup>
     <PackageReference Include="System.Text.Json" />
   </ItemGroup>

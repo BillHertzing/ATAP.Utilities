@@ -18,11 +18,11 @@
     <Configurations>Debug;Release;ReleaseWithTrace</Configurations>
   </PropertyGroup>
 
-  <!-- Documentation generation -->
+  <!-- Documentation generation
   <ItemGroup>
     <PackageReference Include="docfx" Version="2.40.2" />
     <Folder Include="Documentation\" />
-  </ItemGroup>
+  </ItemGroup>  -->
   
   <ItemGroup>
     <EmbeddedResource Include="Hardware\WinRing0.sys" />

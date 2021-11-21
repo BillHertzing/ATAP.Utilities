@@ -11,6 +11,7 @@
     <!-- Current Lifecycle stage for this assembly-->
     <PackageLifeCycleStage>Development</PackageLifeCycleStage>
     <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
+    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
@@ -52,10 +53,14 @@
     <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization\ATAP.Utilities.Testing.Fixture.Serialization.csproj" />
   </ItemGroup>
 
-  <!-- The Serializer.DataForTests and the specific Serializer Fixture Shim to test -->
+  <!-- The Serializer Fixture Shim to use -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson\ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.csproj" />
+  </ItemGroup>
+
+  <!-- The DataForTests -->
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Serializer.DataForTests\ATAP.Utilities.Serializer.DataForTests.csproj" />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson\ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.csproj" />
   </ItemGroup>
 
   <!-- Configuration Settings files -->
@@ -67,6 +72,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
 
 </Project>

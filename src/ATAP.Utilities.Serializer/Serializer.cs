@@ -22,26 +22,24 @@ namespace ATAP.Utilities.Serializer {
 
   public abstract class SerializerConfigurableAbstract : SerializerAbstract, ISerializerConfigurableAbstract {
     public IConfigurationRoot? ConfigurationRoot { get; set; }
-    public virtual void Configure() { }
-    public virtual void Configure(IConfigurationRoot configurationRoot) {
-      ConfigurationRoot = configurationRoot;
-    }
-    public virtual void Configure(ISerializerOptionsAbstract options) {
-      if (options == null) { throw new ArgumentNullException(nameof(options)); }
-      Options = options;
-    }
-    public virtual void Configure(ISerializerOptionsAbstract options, IConfigurationRoot? configurationRoot) {
-      Configure(options);
-      Configure(configurationRoot);
-    }
+    // public virtual void Configure() { }
+    // public virtual void Configure(IConfigurationRoot configurationRoot) {
+    //   ConfigurationRoot = configurationRoot;
+    // }
+    // public virtual void Configure(ISerializerOptionsAbstract options) {
+    //   if (options == null) { throw new ArgumentNullException(nameof(options)); }
+    //   Options = options;
+    // }
+    // public virtual void Configure(ISerializerOptionsAbstract options, IConfigurationRoot? configurationRoot) {
+    //   Configure(options);
+    //   Configure(configurationRoot);
+    // }
 
-    public SerializerConfigurableAbstract() : base() { }
-    public SerializerConfigurableAbstract(ISerializerOptionsAbstract options) : base(options) { }
-    public SerializerConfigurableAbstract(IConfigurationRoot configurationRoot) : base() {
-      Configure(configurationRoot);
-    }
-    public SerializerConfigurableAbstract(ISerializerOptionsAbstract options, IConfigurationRoot configurationRoot) : base(options) {
-      Configure(configurationRoot);
+    //public SerializerConfigurableAbstract() : this(null, null) { }
+    public SerializerConfigurableAbstract(ISerializerOptionsAbstract options) : this(options, null) { }
+    //public SerializerConfigurableAbstract(IConfigurationRoot? configurationRoot) : this(null, configurationRoot) { }
+    public SerializerConfigurableAbstract(ISerializerOptionsAbstract options, IConfigurationRoot? configurationRoot) : base(options) {
+      ConfigurationRoot = configurationRoot;
     }
   }
 }

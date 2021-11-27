@@ -1,0 +1,12 @@
+USE [ATAP.Utilities]
+SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE dbo.Map_GBody_GStatement(
+	Id int IDENTITY(1,1) NOT NULL CONSTRAINT PK_Map_GBody_GStatement  PRIMARY KEY NONCLUSTERED
+	, FK_GBody int NOT NULL CONSTRAINT FK_Map_GComment_GStatement_GBody  FOREIGN KEY (FK_GBody) REFERENCES dbo.GBody (Id)
+	, FK_GStatement int NOT NULL CONSTRAINT FK_Map_GComment_GStatement_GStatement  FOREIGN KEY (FK_GStatement) REFERENCES dbo.GStatement (Id)
+	, SortOrder int NOT NULL CONSTRAINT DF_Map_GBody_GStatement_SortOrder  DEFAULT 1
+) ON [PRIMARY]
+GO

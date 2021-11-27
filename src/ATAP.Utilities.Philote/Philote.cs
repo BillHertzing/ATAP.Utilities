@@ -23,7 +23,7 @@ namespace ATAP.Utilities.Philote {
           // Type intType when typeof(TValue) == typeof(int) => (TId)(object)(AbstractStronglyTypedId<int>)new IntStronglyTypedId() { Value = new Random().Next() },
           // Type GuidType when typeof(TValue) == typeof(Guid) => (TId)(object)(AbstractStronglyTypedId<Guid>)new GuidStronglyTypedId(),
           // Attribution: [Activator.CreateInstance Alternative](https://trenki2.github.io/blog/2018/12/28/activator-createinstance-faster-alternative/) by Trenki
-          Type GuidType when typeof(TValue) == typeof(Guid) => (TId) InstanceFactory.CreateInstance(typeof(TId)),
+          Type GuidType when typeof(TValue) == typeof(Guid) => (TId)InstanceFactory.CreateInstance(typeof(TId)),
           // ToDo: replace with new custom exception and localization of exception message
           _ => throw new Exception(FormattableString.Invariant($"Invalid TValue type {typeof(TValue)}")),
 
@@ -43,7 +43,7 @@ namespace ATAP.Utilities.Philote {
       else {
         AdditionalIds = new ConcurrentDictionary<string, IAbstractStronglyTypedId<TValue>>();
       }
-      TimeBlocks = timeBlocks != default ? timeBlocks : new List<ITimeBlock>();
+      if (timeBlocks != null) { TimeBlocks = timeBlocks; }
     }
 
     public TId Id { get; init; }
@@ -51,9 +51,50 @@ namespace ATAP.Utilities.Philote {
     public IEnumerable<ITimeBlock>? TimeBlocks { get; init; }
   }
 
-    // public IIdAsStruct<T> ID { get; private set; }
-    // public IDictionary<string, IIdAsStruct<T>> AdditionalIDs { get; private set; }
-    // //public IConcurrentObservableDictionary<string,IIdAsStruct<T>) SecondaryIDs { get; private set; }
-    // public IEnumerable<ITimeBlock> TimeBlocks { get; private set; }
+
+    public record IntPhilote<TId> : AbstractPhilote<TId, int> , IIntPhilote<TId>  where TId : IntStronglyTypedId, new(){
+    /// <summary>
+    /// Parameterless Constructor, needed by Deserialization assemblies and ReadFrom Persistence assemblies
+    /// /// ToDo: List other c# /Net constructs that require a parameterless constructor
+    /// </summary>
+    public IntPhilote() : base() { }
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name="iD"></param>
+    public IntPhilote(TId iD) : base(iD) { }
+
+    public  IntPhilote(TId iD = default, ConcurrentDictionary<string, IAbstractStronglyTypedId<int>>? additionalIds = default, IEnumerable<ITimeBlock>? timeBlocks = default) :base(iD,additionalIds,timeBlocks){ }
+
+    /// <summary>
+    /// ToDo: Might need a better ToString Converter, and/or Serializer.Shim specific assembly
+    /// </summary>
+    /// <returns></returns>
+    public override string ToString() => base.ToString();
+  }
+
+  public record GuidPhilote<TId> : AbstractPhilote<TId, Guid> , IGuidPhilote<TId>  where TId : GuidStronglyTypedId, new(){
+    /// <summary>
+    ///
+    /// </summary>
+    public GuidPhilote() : base() { }
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name="iD"></param>
+    public GuidPhilote(TId iD) : base(iD) { }
+    public  GuidPhilote(TId iD = default, ConcurrentDictionary<string, IAbstractStronglyTypedId<Guid>>? additionalIds = default, IEnumerable<ITimeBlock>? timeBlocks = default) :base(iD,additionalIds,timeBlocks){ }
+
+    /// <summary>
+    /// ToDo: Might need a better ToString Converter, and/or Serializer.Shim specific assembly
+    /// </summary>
+    /// <returns></returns>
+    public override string ToString() => base.ToString();
+  }
+
+  // public IIdAsStruct<T> ID { get; private set; }
+  // public IDictionary<string, IIdAsStruct<T>> AdditionalIDs { get; private set; }
+  // //public IConcurrentObservableDictionary<string,IIdAsStruct<T>) SecondaryIDs { get; private set; }
+  // public IEnumerable<ITimeBlock> TimeBlocks { get; private set; }
   // }
 }

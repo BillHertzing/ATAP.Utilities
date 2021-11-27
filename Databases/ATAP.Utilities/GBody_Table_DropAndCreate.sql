@@ -1,0 +1,16 @@
+USE ATAPUtilities
+GO
+
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'dbo.GBody') AND type in (N'U'))
+BEGIN
+  ALTER TABLE dbo.GBody DROP CONSTRAINT PK_GBody
+  DROP TABLE dbo.GBody
+END
+GO
+
+CREATE TABLE dbo.GBody(
+	Id int IDENTITY(1,1) NOT NULL CONSTRAINT PK_GBody PRIMARY KEY NONCLUSTERED (Id)
+	, FK_GComment int NOT NULL CONSTRAINT FK_GBody_GComment  FOREIGN KEY (FK_GComment) REFERENCES dbo.GComment (Id)
+) ON [PRIMARY]
+GO
+

@@ -4,10 +4,10 @@ using System.ComponentModel;
 #endif
 
 // ATAP.Utilities.BuildTooling.targets will update the build (date), and revision fields each time a new build occurs
-[assembly:AssemblyFileVersion("1.0.7975.34086")]
+[assembly:AssemblyFileVersion("0.1.7998.34317")]
 // ATAP.Utilities.BuildTooling.targets will update the AssemblyInformationalVersion field each time a new build occurs
-[assembly:AssemblyInformationalVersion("1.0.0")]
-[assembly:AssemblyVersion("1.0.0")]
+[assembly:AssemblyInformationalVersion("0.1.0-Alpha-001")]
+[assembly:AssemblyVersion("0.1.0")]
 #region Support public init only setters on Net Desktop runtime
 #if NETDESKTOP || NETCOREAPP3_1 || NETSTANDARD
 // Add IsExternalInit if the TargetFramework is a Net Desktop runtime

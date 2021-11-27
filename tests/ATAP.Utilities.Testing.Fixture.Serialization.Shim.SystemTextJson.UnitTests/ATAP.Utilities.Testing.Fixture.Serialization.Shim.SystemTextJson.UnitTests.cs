@@ -168,6 +168,11 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.UnitT
       }
     }
 
+    [Theory]
+    [MemberData(nameof(GCommentIntegerTestDataGenerator.TestData), MemberType = typeof(GCommentIntegerTestDataGenerator))]
+    public void GCommentIntegerSerializeToJSON(GCommentIntegerTestData inTestData) {
+      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.SerializedTestData);
+    }
 
   }
 

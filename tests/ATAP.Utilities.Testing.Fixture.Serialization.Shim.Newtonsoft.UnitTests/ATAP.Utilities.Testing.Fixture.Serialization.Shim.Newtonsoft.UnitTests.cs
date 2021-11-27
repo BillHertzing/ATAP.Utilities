@@ -16,7 +16,7 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.UnitTests
       var dummy = "abc";
       dummy.Should().Be("abc");
     }
-    
+
     [Theory]
     [MemberData(nameof(IntegerTestDataGenerator.TestData), MemberType = typeof(IntegerTestDataGenerator))]
     public void IntegerDeserializeFromJSON(IntegerTestData inTestData) {
@@ -158,6 +158,20 @@ namespace ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft.UnitTests
         // No test available for random integer
       }
     }
+
+    [Theory]
+    [MemberData(nameof(GCommentIntegerTestDataGenerator.TestData), MemberType = typeof(GCommentIntegerTestDataGenerator))]
+    public void GCommentIntegerSerializeToJSON(GCommentIntegerTestData inTestData) {
+      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.SerializedTestData);
+      //guidStronglyTypedId.ToString().Should().MatchRegex("^[-]{0,1}\d{1,9}$");
+    }
+
+    [Theory]
+    [MemberData(nameof(GCommentGuidTestDataGenerator.TestData), MemberType = typeof(GCommentGuidTestDataGenerator))]
+    public void GCommentGuidSerializeToJSON(GCommentGuidTestData inTestData) {
+      Fixture.Serializer.Serialize(inTestData.ObjTestData).Should().Be(inTestData.SerializedTestData);
+    }
+
   }
 
   /*

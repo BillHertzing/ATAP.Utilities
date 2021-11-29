@@ -1,10 +1,12 @@
-USE [ATAP.Utilities]
+USE [ATAPUtilities]
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 GO
 
-Insert into dbo.GBody Values
+SET IDENTITY_INSERT dbo.GBody ON
+Insert into dbo.GBody (Id, FK_GComment) Values
   (1,1)
   , (2,2)
 ;
-
+SET IDENTITY_INSERT dbo.GBody OFF
+GO

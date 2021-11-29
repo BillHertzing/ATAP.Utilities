@@ -44,6 +44,9 @@ _site/
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+# Database backup files
+*.bak
+
 # CodeGraph VSIX extensions data files
 [Cc]ode[Gg]raph[Dd]ata/
 

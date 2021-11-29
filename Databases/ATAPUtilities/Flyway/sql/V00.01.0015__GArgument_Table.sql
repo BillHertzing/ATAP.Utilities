@@ -1,0 +1,13 @@
+USE [ATAPUtilities]
+SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE dbo.GArgument(
+	Id int IDENTITY(1,1) NOT NULL,
+, GName nvarchar(512) NOT NULL
+, GType nvarchar(512) NOT NULL
+, IsRef bit NOT NULL
+, IsOut bit NOT NULL
+) ON [PRIMARY]
+GO

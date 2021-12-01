@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
   //public class GStatementList {
@@ -8,12 +8,18 @@ namespace ATAP.Utilities.GenerateProgram {
   //  ) {
   //    GStatements = gStatements == default ? new List<string>() : gStatements;
   //    GComment = gComment == default? new GComment() : gComment;
-  //    Philote = new Philote<GStatementList>();
+  //    Id = new GStatementListId<TValue>();
   //  }
 
   //  public List<string> GStatements { get; }
   //  public GComment GComment { get; }
-  //  public Philote<GStatementList> Philote { get; }
+  //  public GStatementListId Id { get; }
 
   //}
 }
+
+
+
+
+
+

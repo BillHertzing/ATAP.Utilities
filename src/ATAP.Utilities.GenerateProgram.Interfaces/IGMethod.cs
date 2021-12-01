@@ -1,12 +1,17 @@
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public interface IGMethod {
+  
+
+  public interface IGMethodId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGMethod<TValue> where TValue : notnull {
     IGMethodDeclaration GDeclaration { get; init; }
     IGBody GBody { get; init; }
     IGComment GComment { get; init; }
     bool IsForInterface { get; init; }
     IGStateConfiguration GStateConfiguration { get; init; }
-    IPhilote<IGMethod> Philote { get; init; }
+    IGMethodId<TValue> Id { get; init; }
   }
 }
+
+

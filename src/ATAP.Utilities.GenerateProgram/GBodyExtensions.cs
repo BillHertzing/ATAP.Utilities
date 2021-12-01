@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 using ATAP.Utilities.GenerateProgram;
 using static ATAP.Utilities.Collection.Extensions;
 
@@ -23,15 +23,18 @@ namespace ATAP.Utilities.GenerateProgram {
       return gBody;
     }
     //public static IGBody AddBodyGroups(this IGBody gBody, IGBodyGroup gBodyGroup) {
-    //  gBody.GBodyGroups[gBodyGroup.Philote] = gBodyGroup;
+    //  gBody.GBodyGroups[gBodyGroup.Id] = gBodyGroup;
     //  return gBody;
     //}
     //public static IGBody AddBodyGroups(this IGBody gBody, IEnumerable<IGBodyGroup> gBodyGroups) {
     //  foreach (var o in gBodyGroups) {
-    //    gBody.GBodyGroups[o.Philote] = o;
+    //    gBody.GBodyGroups[o.Id] = o;
     //  }
     //  return gBody;
     //}
-    
+
   }
 }
+
+
+

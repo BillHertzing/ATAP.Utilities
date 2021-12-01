@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGAssemblyUnitSignil  {
@@ -16,3 +16,4 @@ namespace ATAP.Utilities.GenerateProgram {
     IPhilote<IGAssemblyUnitSignil> Philote { get; init; }
   }
 }
+

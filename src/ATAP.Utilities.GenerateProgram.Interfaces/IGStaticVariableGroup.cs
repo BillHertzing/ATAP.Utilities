@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGStaticVariableGroup {
@@ -8,3 +8,4 @@ namespace ATAP.Utilities.GenerateProgram {
     IPhilote<IGStaticVariableGroup> Philote { get; init; }
   }
 }
+

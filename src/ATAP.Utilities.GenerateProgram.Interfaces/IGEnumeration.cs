@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGEnumeration {
@@ -16,3 +16,4 @@ namespace ATAP.Utilities.GenerateProgram {
     IPhilote<IGEnumeration> Philote { get; init; }
   }
 }
+

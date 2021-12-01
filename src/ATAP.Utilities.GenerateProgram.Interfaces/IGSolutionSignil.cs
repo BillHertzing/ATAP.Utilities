@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGSolutionSignil {
     public bool HasPropsAndTargets { get; }
@@ -24,3 +24,4 @@ namespace ATAP.Utilities.GenerateProgram {
 
   }
 }
+

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGMethodDeclaration {
@@ -16,3 +16,4 @@ namespace ATAP.Utilities.GenerateProgram {
     IPhilote<IGMethodDeclaration> Philote { get; init; }
   }
 }
+

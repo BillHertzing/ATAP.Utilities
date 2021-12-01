@@ -1,36 +1,38 @@
 using System;
 using System.Collections.Generic;
 
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GInterface : IGInterface {
+
+  public record GInterfaceId<TValue> : AbstractStronglyTypedId<TValue>, IGInterfaceId<TValue> where TValue : notnull {}
+  public class GInterface<TValue> : IGInterface<TValue> where TValue : notnull {
     public GInterface(string gName, string gVisibility = default, string gAccessModifier = default, string gInheritance = default,
       IList<string> gImplements = default,
-      IDictionary<IPhilote<IGProperty>, IGProperty> gPropertys = default,
-      IDictionary<IPhilote<IGPropertyGroup>, IGPropertyGroup> gPropertyGroups = default,
-      IDictionary<IPhilote<IGMethod>, IGMethod> gMethods = default,
-      IDictionary<IPhilote<IGMethodGroup>, IGMethodGroup> gMethodGroups = default
-      //IDictionary<IPhilote<IGException>, IGException> gExceptions = default,
-      //IDictionary<IPhilote<IGExceptionGroup>, IGExceptionGroup> gExceptionGroups = default,
-      //IDictionary<IPhilote<IGEvent>, IGEvent> gEvents = default,
-      //IDictionary<IPhilote<IGEventGroup>, IGEventGroup> gEventGroups = default,
+      IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> gPropertys = default,
+      IDictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>> gPropertyGroups = default,
+      IDictionary<IGMethodId<TValue>, IGMethod<TValue>> gMethods = default,
+      IDictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>> gMethodGroups = default
+      //IDictionary<IGExceptionId<TValue>, IGException<TValue>> gExceptions = default,
+      //IDictionary<IGExceptionGroupId<TValue>, IGExceptionGroup<TValue>> gExceptionGroups = default,
+      //IDictionary<IGEventId<TValue>, IGEvent<TValue>> gEvents = default,
+      //IDictionary<IGEventGroupId<TValue>, IGEventGroup<TValue>> gEventGroups = default,
       ) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
       GVisibility = gVisibility == default ? "" : gVisibility; ;
       GAccessModifier = gAccessModifier == default ? "" : gAccessModifier;
       GInheritance = gInheritance == default ? "" : gInheritance; ;
       GImplements = gImplements == default ? new List<string>() : gImplements;
-      GPropertys = gPropertys == default ? new Dictionary<IPhilote<IGProperty>, IGProperty>() : gPropertys;
-      GPropertyGroups = gPropertyGroups == default ? new Dictionary<IPhilote<IGPropertyGroup>, IGPropertyGroup>() : gPropertyGroups;
-      GMethods = gMethods == default ? new Dictionary<IPhilote<IGMethod>, IGMethod>() : gMethods;
-      GMethodGroups = gMethodGroups == default ? new Dictionary<IPhilote<IGMethodGroup>, IGMethodGroup>() : gMethodGroups;
-      //GExceptions = gExceptions  == default? new Dictionary<IPhilote<IGException>, IGException>() : gExceptions;
-      //GExceptionGroups = gExceptionGroups == default ? new Dictionary<IPhilote<IGExceptionGroup>, IGExceptionGroup>() : gExceptionGroups;
-      //GEvents = gEvents  == default? new Dictionary<IPhilote<IGEvent>, IGEvent>() : gEvents;
-      //GEventGroups = gEventGroups == default ? new Dictionary<IPhilote<IGEventGroup>, IGEventGroup>() : gEventGroups;
+      GPropertys = gPropertys == default ? new Dictionary<IGPropertyId<TValue>, IGProperty<TValue>>() : gPropertys;
+      GPropertyGroups = gPropertyGroups == default ? new Dictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>>() : gPropertyGroups;
+      GMethods = gMethods == default ? new Dictionary<IGMethodId<TValue>, IGMethod<TValue>>() : gMethods;
+      GMethodGroups = gMethodGroups == default ? new Dictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>>() : gMethodGroups;
+      //GExceptions = gExceptions  == default? new Dictionary<IGExceptionId<TValue>, IGException<TValue>>() : gExceptions;
+      //GExceptionGroups = gExceptionGroups == default ? new Dictionary<IGExceptionGroupId<TValue>, IGExceptionGroup<TValue>>() : gExceptionGroups;
+      //GEvents = gEvents  == default? new Dictionary<IGEventId<TValue>, IGEvent<TValue>>() : gEvents;
+      //GEventGroups = gEventGroups == default ? new Dictionary<IGEventGroupId<TValue>, IGEventGroup<TValue>>() : gEventGroups;
 
-      Philote = new Philote<IGInterface>();
+      Id = new GInterfaceId<TValue>();
     }
     public string GName { get; }
     public string GVisibility { get; }
@@ -38,15 +40,21 @@ namespace ATAP.Utilities.GenerateProgram {
     public string GAccessModifier { get; }
     public string GInheritance { get; }
     public IList<string> GImplements { get; }
-    public IDictionary<IPhilote<IGProperty>, IGProperty> GPropertys { get; }
-    public IDictionary<IPhilote<IGPropertyGroup>, IGPropertyGroup> GPropertyGroups { get; }
-    public IDictionary<IPhilote<IGMethod>, IGMethod> GMethods { get; }
-    public IDictionary<IPhilote<IGMethodGroup>, IGMethodGroup> GMethodGroups { get; }
-    //public IDictionary<IPhilote<IGException>, IGException> GExceptions { get; }
-    //public IDictionary<IPhilote<IGExceptionGroup>, IGExceptionGroup> GExceptionGroups { get; }
-    //public IDictionary<IPhilote<IGEvent>, IGEvent> GEvents { get; }
-    //public IDictionary<IPhilote<IGEventGroup>, IGEventGroup> GEventGroups { get; }
-    public IPhilote<IGInterface> Philote { get; }
+    public IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> GPropertys { get; }
+    public IDictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>> GPropertyGroups { get; }
+    public IDictionary<IGMethodId<TValue>, IGMethod<TValue>> GMethods { get; }
+    public IDictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>> GMethodGroups { get; }
+    //public IDictionary<IGExceptionId<TValue>, IGException<TValue>> GExceptions { get; }
+    //public IDictionary<IGExceptionGroupId<TValue>, IGExceptionGroup<TValue>> GExceptionGroups { get; }
+    //public IDictionary<IGEventId<TValue>, IGEvent<TValue>> GEvents { get; }
+    //public IDictionary<IGEventGroupId<TValue>, IGEventGroup<TValue>> GEventGroups { get; }
+    public  IGInterfaceId Id { get; }
   }
 }
+
+
+
+
+
+
 

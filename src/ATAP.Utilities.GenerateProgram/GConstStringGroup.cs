@@ -1,17 +1,25 @@
 using System;
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GConstStringGroup : IGConstStringGroup {
-    public GConstStringGroup(string gName = "", IDictionary<IPhilote<IGConstString>, IGConstString> gConstStrings = default) {
+
+  public record GConstStringGroupId<TValue> : AbstractStronglyTypedId<TValue>, IGConstStringGroupId<TValue> where TValue : notnull {}
+  public class GConstStringGroup<TValue> : IGConstStringGroup<TValue> where TValue : notnull {
+    public GConstStringGroup(string gName = "", IDictionary<IGConstStringId<TValue>, IGConstString<TValue>> gConstStrings = default) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
-      GConstStrings = gConstStrings == default ? new Dictionary<IPhilote<IGConstString>, IGConstString>() : gConstStrings;
-      Philote = new Philote<IGConstStringGroup>();
+      GConstStrings = gConstStrings == default ? new Dictionary<IGConstStringId<TValue>, IGConstString<TValue>>() : gConstStrings;
+      Id = new GConstStringGroupId<TValue>();
     }
     public string GName { get; init; }
-    public IDictionary<IPhilote<IGConstString>, IGConstString> GConstStrings { get; init; }
-    public IPhilote<IGConstStringGroup> Philote { get; init; }
+    public IDictionary<IGConstStringId<TValue>, IGConstString<TValue>> GConstStrings { get; init; }
+    public  IGConstStringGroupId Id { get; init; }
 
   }
 }
+
+
+
+
+
+

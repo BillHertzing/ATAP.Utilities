@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 using ATAP.Utilities.GenerateProgram;
 
 namespace ATAP.Utilities.GenerateProgram {
@@ -19,23 +19,23 @@ namespace ATAP.Utilities.GenerateProgram {
         {"SettingsFileName", "AssemblyUnitNameReplacementPattern"}, {"SettingsFileNameSuffix", "json"},
       }) {
         GConstString gConstString = new GConstString(kvp.Key, kvp.Value);
-        gConstStringGroup.GConstStrings.Add(gConstString.Philote, gConstString);
+        gConstStringGroup.GConstStrings.Add(gConstString.Id, gConstString);
       }
-      gClass.GConstStringGroups[gConstStringGroup.Philote] = gConstStringGroup;
+      gClass.GConstStringGroups[gConstStringGroup.Id] = gConstStringGroup;
       gConstStringGroup = new GConstStringGroup(gName: "Temporary File Names");
       foreach (var kvp in new Dictionary<string, string>() {
         {"TemporaryDirectoryBaseConfigRootKey", "TemporaryDirectoryBase"},
         {"TemporaryDirectoryBaseDefault", "D:/Temp/AssemblyUnitNameReplacementPattern/"},
       }) {
         GConstString gConstString = new GConstString(kvp.Key, kvp.Value);
-        gConstStringGroup.GConstStrings[gConstString.Philote] = gConstString;
+        gConstStringGroup.GConstStrings[gConstString.Id] = gConstString;
       }
-      gClass.GConstStringGroups[gConstStringGroup.Philote] = gConstStringGroup;
+      gClass.GConstStringGroups[gConstStringGroup.Id] = gConstStringGroup;
       GNamespace gNamespace = new GNamespace(gNamespaceName);
-      gNamespace.GClasss.Add(gClass.Philote, gClass);
+      gNamespace.GClasss.Add(gClass.Id, gClass);
       var gCompilationUnit = new GCompilationUnit(gName: "StringConstants", gRelativePath,
         gPatternReplacement: gPatternReplacement);
-      gCompilationUnit.GNamespaces.Add(gNamespace.Philote, gNamespace);
+      gCompilationUnit.GNamespaces.Add(gNamespace.Id, gNamespace);
       return gCompilationUnit;
     }
     public static IGCompilationUnit CompilationUnitDefaultConfigurationConstructor(String gNamespaceName,
@@ -44,7 +44,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GCompilationUnit gCompilationUnit = new GCompilationUnit(gName: "DefaultConfiguration", gRelativePath,
         gPatternReplacement: gPatternReplacement);
       foreach (var o in new List<IGUsing>() {new GUsing("System.Collections.Generic")}) {
-        gCompilationUnit.GUsings.Add(o.Philote, o);
+        gCompilationUnit.GUsings.Add(o.Id, o);
       }
       GNamespace gNamespace = new GNamespace(gNamespaceName);
 
@@ -58,11 +58,14 @@ namespace ATAP.Utilities.GenerateProgram {
         }),
         gAdditionalStatements: gAdditionalStatements
       );
-      gClass.GStaticVariables.Add(gStaticVariable.Philote, gStaticVariable);
+      gClass.GStaticVariables.Add(gStaticVariable.Id, gStaticVariable);
 
-      gNamespace.GClasss[gClass.Philote] = gClass;
-      gCompilationUnit.GNamespaces.Add(gNamespace.Philote, gNamespace);
+      gNamespace.GClasss[gClass.Id] = gClass;
+      gCompilationUnit.GNamespaces.Add(gNamespace.Id, gNamespace);
       return gCompilationUnit;
     }
   }
 }
+
+
+

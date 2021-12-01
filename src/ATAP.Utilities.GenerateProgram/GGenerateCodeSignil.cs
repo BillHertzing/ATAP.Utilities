@@ -3,7 +3,7 @@ using System.Threading;
 
 using ATAP.Utilities.ETW;
 using ATAP.Utilities.Persistence;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
 #if TRACE
@@ -25,7 +25,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public IPickAndSave<IInsertResultsAbstract>? PickAndSave { get; set; }
     public IEntryPoints EntryPoints { get; set; }
     public CancellationToken CancellationTokenFromCaller { get; set; }
-    public IPhilote<IGGenerateCodeSignil> Philote { get; init; }
+    public  IGGenerateCodeSignilId Id { get; init; }
     public GGenerateCodeSignil(
       IGAssemblyGroupSignil? gAssemblyGroupSignil = default
       //, IGGlobalSettingsSignil? gGlobalSettingsSignil = default
@@ -59,8 +59,14 @@ namespace ATAP.Utilities.GenerateProgram {
       PickAndSave = pickAndSave;
       EntryPoints = entryPoints;
       CancellationTokenFromCaller = cancellationTokenFromCaller;
-      Philote = new Philote<IGGenerateCodeSignil>();
+      Id = new IGGenerateCodeSignilId<TValue>();
     }
   }
 
 }
+
+
+
+
+
+

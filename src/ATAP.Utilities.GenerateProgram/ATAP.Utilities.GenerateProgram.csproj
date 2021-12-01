@@ -11,9 +11,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.GenerateProgram.Interfaces\ATAP.Utilities.GenerateProgram.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Philote.DefaultConfiguration\ATAP.Utilities.Philote.DefaultConfiguration.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Philote.Interfaces\ATAP.Utilities.Philote.Interfaces.csproj" />
-    <ProjectReference Include="..\ATAP.Utilities.Philote\ATAP.Utilities.Philote.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIds.DefaultConfiguration\ATAP.Utilities.StronglyTypedIds.DefaultConfiguration.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIds.Interfaces\ATAP.Utilities.StronglyTypedIds.Interfaces.csproj" />
+    <ProjectReference Include="..\ATAP.Utilities.StronglyTypedIds\ATAP.Utilities.StronglyTypedIds.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence.Interfaces\ATAP.Utilities.Persistence.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Persistence\ATAP.Utilities.Persistence.csproj" />
   </ItemGroup>

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Schema;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 using static ATAP.Utilities.GenerateProgram.GCompilationUnitExtensions;
 using static ATAP.Utilities.GenerateProgram.GClassExtensions;
 using static ATAP.Utilities.GenerateProgram.GItemGroupInProjectUnitExtensions;
@@ -46,3 +46,9 @@ namespace ATAP.Utilities.GenerateProgram {
 
   }
 }
+
+
+
+
+
+

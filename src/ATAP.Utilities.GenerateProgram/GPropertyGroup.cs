@@ -1,23 +1,31 @@
 using System;
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-   public class GPropertyGroup : IGPropertyGroup {
-    public GPropertyGroup(string gName, IDictionary<IPhilote<IGProperty>, IGProperty> gPropertys = default) {
+
+  public record GPropertyGroupId<TValue> : AbstractStronglyTypedId<TValue>, IGPropertyGroupId<TValue> where TValue : notnull {}
+  public class GPropertyGroup<TValue> : IGPropertyGroup<TValue> where TValue : notnull {
+    public GPropertyGroup(string gName, IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> gPropertys = default) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
       if (gPropertys == default) {
-        GPropertys = new Dictionary<IPhilote<IGProperty>, IGProperty>();
+        GPropertys = new Dictionary<IGPropertyId<TValue>, IGProperty<TValue>>();
       }
       else {
         GPropertys = gPropertys;
       }
-      Philote = new Philote<IGPropertyGroup>();
+      Id = new GPropertyGroupId<TValue>();
     }
 
     public string GName { get; }
-    public IDictionary<IPhilote<IGProperty>, IGProperty> GPropertys { get; init; }
-    public IPhilote<IGPropertyGroup> Philote { get; init; }
+    public IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> GPropertys { get; init; }
+    public  IGPropertyGroupId Id { get; init; }
 
   }
 }
+
+
+
+
+
+

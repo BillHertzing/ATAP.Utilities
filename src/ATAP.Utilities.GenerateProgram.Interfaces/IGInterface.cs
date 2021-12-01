@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGInterface {
@@ -17,3 +17,4 @@ namespace ATAP.Utilities.GenerateProgram {
     IPhilote<IGInterface> Philote { get; }
   }
 }
+

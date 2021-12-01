@@ -1,8 +1,10 @@
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-   public class GStateConfiguration : IGStateConfiguration {
+
+  public record GStateConfigurationId<TValue> : AbstractStronglyTypedId<TValue>, IGStateConfigurationId<TValue> where TValue : notnull {}
+  public class GStateConfiguration<TValue> : IGStateConfiguration<TValue> where TValue : notnull {
     public GStateConfiguration(
       IList<string> gStateNames = default,
       IList<string> gTriggerNames = default,
@@ -13,13 +15,19 @@ namespace ATAP.Utilities.GenerateProgram {
       GTriggerNames = gTriggerNames == default ? new List<string>() : gTriggerNames;
       GDiGraphStates = gDiGraphStates == default ? new List<(string gtate, string trigger, string nextstate, string predicate)>() : gDiGraphStates;
       GDOTGraphStatements = gDOTGraphStatements == default ? new List<string>() : gDOTGraphStatements;
-      Philote = new Philote<IGStateConfiguration>();
+      Id = new GStateConfigurationId<TValue>();
     }
 
     public IList<string> GStateNames { get; init; }
     public IList<string> GTriggerNames { get; init; }
     public IList<(string state, string trigger, string nextstate, string predicate)> GDiGraphStates { get; init; }
     public IList<string> GDOTGraphStatements { get; init; }
-    public new IPhilote<IGStateConfiguration> Philote { get; init; }
+    public IGStateConfigurationId Id { get; init; }
   }
 }
+
+
+
+
+
+

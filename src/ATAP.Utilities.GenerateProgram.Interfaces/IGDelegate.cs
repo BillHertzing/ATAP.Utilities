@@ -1,9 +1,14 @@
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public interface IGDelegate {
+  
+
+  public interface IGDelegateId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGDelegate<TValue> where TValue : notnull {
     IGDelegateDeclaration GDelegateDeclaration { get; init; }
     IGComment GComment { get; init; }
-    IPhilote<IGDelegate> Philote { get; init; }
+    IGDelegateId<TValue> Id { get; init; }
   }
 }
+
+

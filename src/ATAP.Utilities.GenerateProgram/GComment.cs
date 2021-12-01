@@ -1,14 +1,22 @@
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GComment : IGComment {
+
+  public record GCommentId<TValue> : AbstractStronglyTypedId<TValue>, IGCommentId<TValue> where TValue : notnull {}
+  public class GComment<TValue> : IGComment<TValue> where TValue : notnull {
     public GComment(IEnumerable<string> gStatements = default)  {
       GStatements = gStatements == default ? new List<string>() : gStatements;
-      Philote = new Philote<IGComment>();
+      Id = new GCommentId<TValue>();
     }
 
     public IEnumerable<string> GStatements { get; init; }
-    public IPhilote<IGComment> Philote { get; init; }
+    public  IGCommentId Id { get; init; }
   }
 }
+
+
+
+
+
+

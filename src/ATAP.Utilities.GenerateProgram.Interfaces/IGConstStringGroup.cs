@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGConstStringGroup {
@@ -9,3 +9,4 @@ namespace ATAP.Utilities.GenerateProgram {
     IPhilote<IGConstStringGroup> Philote { get; init; }
   }
 }
+

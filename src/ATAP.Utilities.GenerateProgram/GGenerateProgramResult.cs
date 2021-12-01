@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 namespace ATAP.Utilities.GenerateProgram {
-  public class GGenerateProgramResult : IGGenerateProgramResult {
-    public GGenerateProgramResult(bool dBExtractionSuccess, bool buildSuccess, bool unitTestsSuccess, double unitTestsCoverage, string generatedSolutionFileDirectory, IDictionary<IPhilote<IGAssemblyGroup>,IGAssemblyGroup> collectionOfAssembliesBuilt, bool packagingSuccess, bool deploymentSuccess) {
+
+  public record GGenerateProgramResultId<TValue> : AbstractStronglyTypedId<TValue>, IGGenerateProgramResultId<TValue> where TValue : notnull {}
+  public class GGenerateProgramResult<TValue> : IGGenerateProgramResult<TValue> where TValue : notnull {
+    public GGenerateProgramResult(bool dBExtractionSuccess, bool buildSuccess, bool unitTestsSuccess, double unitTestsCoverage, string generatedSolutionFileDirectory, IDictionary<IGAssemblyGroupId<TValue>, IGAssemblyGroup<TValue>> collectionOfAssembliesBuilt, bool packagingSuccess, bool deploymentSuccess) {
       DBExtractionSuccess = dBExtractionSuccess;
       BuildSuccess = buildSuccess;
       UnitTestsSuccess = unitTestsSuccess;
@@ -12,7 +14,7 @@ namespace ATAP.Utilities.GenerateProgram {
       CollectionOfAssembliesBuilt = collectionOfAssembliesBuilt;
       PackagingSuccess = packagingSuccess;
       DeploymentSuccess = deploymentSuccess;
-      Philote = new Philote<IGGenerateProgramResult>();
+      Id = new GGenerateProgramResultId<TValue>();
     }
 
     public bool DBExtractionSuccess { get; init; }
@@ -20,9 +22,16 @@ namespace ATAP.Utilities.GenerateProgram {
     public bool UnitTestsSuccess { get; init; }
     public double UnitTestsCoverage { get; init; }
     public string GeneratedSolutionFileDirectory { get; init; }
-    public IDictionary<IPhilote<IGAssemblyGroup>,IGAssemblyGroup> CollectionOfAssembliesBuilt { get; init; }
+    public IDictionary<IGAssemblyGroupId<TValue>, IGAssemblyGroup<TValue>> CollectionOfAssembliesBuilt { get; init; }
     public bool PackagingSuccess { get; init; }
     public bool DeploymentSuccess { get; init; }
-    public IPhilote<IGGenerateProgramResult> Philote { get; init; }
+    public  IGGenerateProgramResultId Id { get; init; }
   }
 }
+
+
+
+
+
+
+

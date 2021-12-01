@@ -1,8 +1,11 @@
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public interface IGStaticVariable {
+  
+
+  public interface IGStaticVariableId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGStaticVariable<TValue> where TValue : notnull {
     string GName { get; init; }
     string GType { get; init; }
     string GAccessModifier { get; init; }
@@ -10,6 +13,8 @@ namespace ATAP.Utilities.GenerateProgram {
     IGBody GBody { get; init; }
     IList<string> GAdditionalStatements { get; init; }
     IGComment GComment { get; init; }
-    IPhilote<IGStaticVariable> Philote { get; init; }
+    IGStaticVariableId<TValue> Id { get; init; }
   }
 }
+
+

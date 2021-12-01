@@ -1,9 +1,10 @@
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
 
-  public class GStaticVariable : IGStaticVariable {
+  public record GStaticVariableId<TValue> : AbstractStronglyTypedId<TValue>, IGStaticVariableId<TValue> where TValue : notnull {}
+  public class GStaticVariable<TValue> : IGStaticVariable<TValue> where TValue : notnull {
     public GStaticVariable(string gName = default, string gType = default, string gVisibility = default, string gAccessModifier = default,
       IGBody gBody = default, IList<string> gAdditionalStatements = default, IGComment gComment = default) {
       GName = gName == default ? "" : gName;
@@ -13,7 +14,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GBody = gBody == default ? new GBody() : gBody;
       GAdditionalStatements = gAdditionalStatements == default ? new List<string>() : gAdditionalStatements;
       GComment = gComment == default ? new GComment() : gComment;
-      Philote = new Philote<IGStaticVariable>();
+      Id = new GStaticVariableId<TValue>();
     }
 
     public string GName { get; init; }
@@ -24,6 +25,12 @@ namespace ATAP.Utilities.GenerateProgram {
     public IGBody GBody { get; init; }
     public IList<string> GAdditionalStatements { get; init; }
     public IGComment GComment { get; init; }
-    public IPhilote<IGStaticVariable> Philote { get; init; }
+    public  IGStaticVariableId Id { get; init; }
   }
 }
+
+
+
+
+
+

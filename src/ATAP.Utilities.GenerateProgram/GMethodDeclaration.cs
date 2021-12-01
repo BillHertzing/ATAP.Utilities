@@ -1,12 +1,13 @@
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
 
-  public class GMethodDeclaration : IGMethodDeclaration {
+  public record GMethodDeclarationId<TValue> : AbstractStronglyTypedId<TValue>, IGMethodDeclarationId<TValue> where TValue : notnull {}
+  public class GMethodDeclaration<TValue> : IGMethodDeclaration<TValue> where TValue : notnull {
     public GMethodDeclaration(string gName = default, string gType = default, string gVisibility = default, string gAccessModifier = default,
       bool isStatic = default, bool isConstructor = default,
-      IDictionary<IPhilote<IGArgument>, IGArgument> gArguments = default,
+      IDictionary<IGArgumentId<TValue>, IGArgument<TValue>> gArguments = default,
       string gBase = default, string gThis = default, bool isForInterface = false) {
       GName = gName == default ? "" : gName;
       GVisibility = gVisibility == default ? "" : gVisibility;
@@ -14,11 +15,11 @@ namespace ATAP.Utilities.GenerateProgram {
       GAccessModifier = gAccessModifier == default ? "" : gAccessModifier;
       IsStatic = isStatic == default ? false : (bool)isStatic;
       IsConstructor = isConstructor == default ? false : (bool)isConstructor;
-      GArguments = gArguments == default ? new Dictionary<IPhilote<IGArgument>, IGArgument>() : gArguments;
+      GArguments = gArguments == default ? new Dictionary<IGArgumentId<TValue>, IGArgument<TValue>>() : gArguments;
       GBase = gBase == default ? "" : gBase;
       GThis = gThis == default ? "" : gThis;
       IsForInterface = isForInterface;
-      Philote = new Philote<IGMethodDeclaration>();
+      Id = new GMethodDeclarationId<TValue>();
     }
     public string GName { get; init; }
     public string GType { get; init; }
@@ -27,11 +28,17 @@ namespace ATAP.Utilities.GenerateProgram {
     public bool IsConstructor { get; init; }
     public string GVisibility { get; init; }
     public bool IsStatic { get; init; }
-    public IDictionary<IPhilote<IGArgument>, IGArgument> GArguments { get; init; }
+    public IDictionary<IGArgumentId<TValue>, IGArgument<TValue>> GArguments { get; init; }
     public string GBase { get; init; }
     public string GThis { get; set; }
     public bool IsForInterface { get; init; }
-    public IPhilote<IGMethodDeclaration> Philote { get; init; }
+    public  IGMethodDeclarationId Id { get; init; }
 
   }
 }
+
+
+
+
+
+

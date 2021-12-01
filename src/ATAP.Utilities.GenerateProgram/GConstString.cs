@@ -1,16 +1,24 @@
 using System;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GConstString : IGConstString {
+
+  public record GConstStringId<TValue> : AbstractStronglyTypedId<TValue>, IGConstStringId<TValue> where TValue : notnull {}
+  public class GConstString<TValue> : IGConstString<TValue> where TValue : notnull {
     public GConstString(string gName, string gValue) {
       GName = gName ?? throw new ArgumentNullException(nameof(gName));
       GValue = gValue ?? throw new ArgumentNullException(nameof(gValue));
-      Philote = new Philote<IGConstString>();
+      Id = new GConstStringId<TValue>();
     }
 
     public string GName { get; init; }
     public string GValue { get; init; }
-    public IPhilote<IGConstString> Philote { get; init; }
+    public  IGConstStringId Id { get; init; }
   }
 }
+
+
+
+
+
+

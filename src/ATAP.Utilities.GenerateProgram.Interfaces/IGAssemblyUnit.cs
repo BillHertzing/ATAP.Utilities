@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram
 {
@@ -17,3 +17,4 @@ namespace ATAP.Utilities.GenerateProgram
     IPhilote<IGAssemblyUnit> Philote { get; init; }
   }
 }
+

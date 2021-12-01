@@ -1,16 +1,24 @@
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public class GEnumerationGroup : IGEnumerationGroup {
-    public GEnumerationGroup(string gName = default, IDictionary<IPhilote<IGEnumeration>, IGEnumeration> gEnumerations = default) {
+
+  public record GEnumerationGroupId<TValue> : AbstractStronglyTypedId<TValue>, IGEnumerationGroupId<TValue> where TValue : notnull {}
+  public class GEnumerationGroup<TValue> : IGEnumerationGroup<TValue> where TValue : notnull {
+    public GEnumerationGroup(string gName = default, IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>> gEnumerations = default) {
       GName = gName == default ? "" : gName;
-      GEnumerations = gEnumerations == default ? new Dictionary<IPhilote<IGEnumeration>, IGEnumeration>() : gEnumerations;
-      Philote = new Philote<IGEnumerationGroup>();
+      GEnumerations = gEnumerations == default ? new Dictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>>() : gEnumerations;
+      Id = new GEnumerationGroupId<TValue>();
     }
 
     public string GName { get; init; }
-    public IDictionary<IPhilote<IGEnumeration>, IGEnumeration> GEnumerations { get; init; }
-    public IPhilote<IGEnumerationGroup> Philote { get; init; }
+    public IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>> GEnumerations { get; init; }
+    public  IGEnumerationGroupId Id { get; init; }
   }
 }
+
+
+
+
+
+

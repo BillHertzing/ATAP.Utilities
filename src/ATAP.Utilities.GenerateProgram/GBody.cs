@@ -1,17 +1,24 @@
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
- 
-  public class GBody : IGBody {
+
+  public record GBodyId<TValue> : AbstractStronglyTypedId<TValue>, IGBodyId<TValue> where TValue : notnull {}
+  public class GBody<TValue> : IGBody<TValue> where TValue : notnull {
     public GBody(IList<string> gStatements = default, IGComment gComment = default
     ) {
       GStatements = gStatements == default ? new List<string>() : gStatements;
       GComment = gComment == default ? new GComment() : gComment;
-      Philote = new Philote<IGBody>();
+      Id = new GBodyId<TValue>();
     }
     public IGComment GComment { get; init; }
     public IList<string> GStatements { get; init; }
-    public IPhilote<IGBody> Philote { get; init; }
+    public  IGBodyId Id { get; init; }
   }
 }
+
+
+
+
+
+

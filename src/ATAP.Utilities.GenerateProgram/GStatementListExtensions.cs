@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 using ATAP.Utilities.GenerateProgram;
 using static ATAP.Utilities.Collection.Extensions;
 
@@ -22,15 +22,18 @@ namespace ATAP.Utilities.GenerateProgram {
       return gStatementList;
     }
     //public static IGStatementList AddStatementListGroups(this GStatementList gStatementList, GStatementListGroup gStatementListGroup) {
-    //  gStatementList.GStatementListGroups[gStatementListGroup.Philote] = gStatementListGroup;
+    //  gStatementList.GStatementListGroups[gStatementListGroup.Id] = gStatementListGroup;
     //  return gStatementList;
     //}
     //public static IGStatementList AddStatementListGroups(this GStatementList gStatementList, IEnumerable<GStatementListGroup> gStatementListGroups) {
     //  foreach (var o in gStatementListGroups) {
-    //    gStatementList.GStatementListGroups[o.Philote] = o;
+    //    gStatementList.GStatementListGroups[o.Id] = o;
     //  }
     //  return gStatementList;
     //}
-    
+
   }
 }
+
+
+

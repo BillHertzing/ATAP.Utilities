@@ -1,8 +1,11 @@
 using System;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 namespace ATAP.Utilities.GenerateProgram {
-  public interface IGGenerateCodeProgress : IProgress<string> {
+  public interface IGGenerateCodeProgressId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGGenerateCodeProgress<TValue> : IProgress<string>, IGGenerateCodeProgressId<TValue> where TValue : notnull {
 
-    IPhilote<IGGenerateCodeProgress> Philote { get; init; }
+    IGGenerateCodeProgressId<TValue> Id { get; init; }
   }
 }
+
+

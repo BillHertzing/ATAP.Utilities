@@ -1,6 +1,6 @@
 using System;
 
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 namespace ATAP.Utilities.GenerateProgram
 {
     public class GSolution{
@@ -10,11 +10,17 @@ namespace ATAP.Utilities.GenerateProgram
     ) {
             GSolutionSignil = gSolutionSignil ?? throw new ArgumentNullException(nameof(gSolutionSignil));
 
-      Philote = new Philote<GSolution>();
+      Id = new GSolutionId<TValue>();
     }
 
     public GSolutionSignil GSolutionSignil { get; }
-    public Philote<GSolution> Philote { get; }
+    public GSolutionId Id { get; }
 
     }
 }
+
+
+
+
+
+

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGProjectUnit {
@@ -15,3 +15,4 @@ namespace ATAP.Utilities.GenerateProgram {
     IPhilote<IGProjectUnit> Philote { get; init; }
   }
 }
+

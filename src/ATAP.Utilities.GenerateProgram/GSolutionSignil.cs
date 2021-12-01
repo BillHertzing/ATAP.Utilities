@@ -3,9 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 namespace ATAP.Utilities.GenerateProgram {
-  public class GSolutionSignil  : IGSolutionSignil {
+
+  public record GSolutionSignilId<TValue> : AbstractStronglyTypedId<TValue>, IGSolutionSignilId<TValue> where TValue : notnull {}
+  public class GSolutionSignil<TValue> : IGSolutionSignil<TValue> where TValue : notnull {
     public GSolutionSignil(
       bool hasPropsAndTargets = default
     , bool hasEditorConfig = default
@@ -20,8 +22,8 @@ namespace ATAP.Utilities.GenerateProgram {
     , bool hasDataBases = default
     , ICollection<string> buildConfigurations = default
     , ICollection<string> cPUConfigurations = default
-    , IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> gDependencyPackages = default
-    , IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> gDependencyProjects = default
+    , IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> gDependencyPackages = default
+    , IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> gDependencyProjects = default
     , IGComment gComment = default
     , IGPatternReplacement gPatternReplacement = default
 ) {
@@ -42,7 +44,7 @@ namespace ATAP.Utilities.GenerateProgram {
       GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
       GDependencyPackages = gDependencyPackages ?? throw new ArgumentNullException(nameof(gDependencyPackages));
       GDependencyProjects = gDependencyProjects ?? throw new ArgumentNullException(nameof(gDependencyProjects));
-      Philote = new Philote<IGSolutionSignil>();
+      Id = new GSolutionSignilId<TValue>();
     }
     public bool HasPropsAndTargets { get; }
     public bool HasEditorConfig { get; }
@@ -57,10 +59,16 @@ namespace ATAP.Utilities.GenerateProgram {
     public bool HasDataBases { get; }
     public ICollection<string> BuildConfigurations { get; }
     public ICollection<string> CPUConfigurations { get; }
-    public IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> GDependencyPackages { get; }
-    public IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> GDependencyProjects { get; }
+    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> GDependencyPackages { get; }
+    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> GDependencyProjects { get; }
     public IGPatternReplacement GPatternReplacement { get; }
     public IGComment GComment { get; }
-    public IPhilote<IGSolutionSignil> Philote { get; }
+    public  IGSolutionSignilId Id { get; }
   }
 }
+
+
+
+
+
+

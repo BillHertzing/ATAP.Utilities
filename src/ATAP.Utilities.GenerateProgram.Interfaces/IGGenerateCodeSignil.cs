@@ -2,10 +2,13 @@ using System;
 using System.Threading;
 
 using ATAP.Utilities.Persistence;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public interface IGGenerateCodeSignil {
+  
+
+  public interface IGGenerateCodeSignilId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGGenerateCodeSignil<TValue> where TValue : notnull {
     IGAssemblyGroupSignil? GAssemblyGroupSignil { get; set; }
     //IGGlobalSettingsSignil? GGlobalSettingsSignil { get; set; }
     IGSolutionSignil? GSolutionSignil { get; set; }
@@ -21,7 +24,9 @@ namespace ATAP.Utilities.GenerateProgram {
     IPickAndSave<IInsertResultsAbstract>? PickAndSave { get; set; }
     IEntryPoints EntryPoints { get; set; }
      CancellationToken CancellationTokenFromCaller { get; set; }
-    IPhilote<IGGenerateCodeSignil> Philote { get; init; }
+    IGGenerateCodeSignilId<TValue> Id { get; init; }
   }
 
 }
+
+

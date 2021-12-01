@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 namespace ATAP.Utilities.GenerateProgram {
 
   public class GGlobalSettingsSignil : IGGlobalSettingsSignil {
@@ -12,9 +12,15 @@ namespace ATAP.Utilities.GenerateProgram {
     ) {
       DefaultTargetFrameworks = defaultTargetFrameworks ?? throw new ArgumentNullException(nameof(defaultTargetFrameworks));
 
-      
+
     }
     public ICollection<string> DefaultTargetFrameworks { get; }
-    public IPhilote<IGGlobalSettingsSignil> Philote { get; }
+    public  IGGlobalSettingsSignilId Id { get; }
   }
 }
+
+
+
+
+
+

@@ -1,12 +1,17 @@
 using System;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public interface IGItemGroupInProjectUnit {
+  
+
+  public interface IGItemGroupInProjectUnitId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGItemGroupInProjectUnit<TValue> where TValue : notnull {
     string GName { get; init; }
     string GDescription { get; init; }
     IGBody GBody { get; init; }
     IGComment GComment { get; init; }
-    IPhilote<IGItemGroupInProjectUnit> Philote { get; init; }
+    IGItemGroupInProjectUnitId<TValue> Id { get; init; }
   }
 }
+
+

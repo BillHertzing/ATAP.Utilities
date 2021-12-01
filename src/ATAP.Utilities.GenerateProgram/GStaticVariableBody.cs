@@ -1,11 +1,17 @@
 using System.Collections.Generic;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
   //public class GStaticVariableBody :GStatementList {
   //  public GStaticVariableBody(List<string>? statementList = default) :base(statementList) {
-  //    Philote = new Philote<GStaticVariableBody>();
+  //    Id = new GStaticVariableBodyId<TValue>();
   //  }
-  //  public new Philote<GStaticVariableBody> Philote { get; }
+  //  public GStaticVariableBodyId Id { get; }
   //}
 }
+
+
+
+
+
+

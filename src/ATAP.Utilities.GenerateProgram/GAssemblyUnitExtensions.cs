@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 using ATAP.Utilities.GenerateProgram;
 using static ATAP.Utilities.GenerateProgram.GItemGroupInProjectUnitExtensions;
 using static ATAP.Utilities.GenerateProgram.Lookup;
@@ -31,7 +31,7 @@ namespace ATAP.Utilities.GenerateProgram {
       foreach (var bc in baseConstructorsList) {
         var gConstructor = new GMethod(new GMethodDeclaration(gAssemblyGroupBasicConstructorResult.GClassDerived.GName, isConstructor: true,
           gVisibility: "public", gArguments: bc.GDeclaration.GArguments, gBase: bc.GDeclaration.GArguments.ToBaseString()));
-        gAssemblyGroupBasicConstructorResult.GClassDerived.GMethods.Add(gConstructor.Philote,gConstructor);
+        gAssemblyGroupBasicConstructorResult.GClassDerived.GMethods.Add(gConstructor.Id,gConstructor);
       }
       #endregion
       #region Constructor Groups
@@ -67,3 +67,6 @@ namespace ATAP.Utilities.GenerateProgram {
     }
   }
 }
+
+
+

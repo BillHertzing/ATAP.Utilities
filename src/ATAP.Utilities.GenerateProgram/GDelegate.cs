@@ -1,16 +1,24 @@
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-   public class GDelegate : IGDelegate {
+
+  public record GDelegateId<TValue> : AbstractStronglyTypedId<TValue>, IGDelegateId<TValue> where TValue : notnull {}
+  public class GDelegate<TValue> : IGDelegate<TValue> where TValue : notnull {
     public GDelegate(IGDelegateDeclaration gDelegateDeclaration = default, IGComment gComment = default) {
       GDelegateDeclaration = gDelegateDeclaration == default ? new GDelegateDeclaration() : gDelegateDeclaration;
       GComment = gComment == default ? new GComment() : gComment;
-      Philote = new Philote<IGDelegate>();
+      Id = new GDelegateId<TValue>();
     }
 
     public IGDelegateDeclaration GDelegateDeclaration { get; init; }
     public IGComment GComment { get; init; }
-    public IPhilote<IGDelegate> Philote { get; init; }
+    public  IGDelegateId Id { get; init; }
   }
 }
+
+
+
+
+
+
 

@@ -1,17 +1,18 @@
 using System;
 using System.Collections.Generic;
 //using System.Management.Instrumentation;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 
 namespace ATAP.Utilities.GenerateProgram {
-  
-  public class GEnumeration : IGEnumeration {
+
+  public record GEnumerationId<TValue> : AbstractStronglyTypedId<TValue>, IGEnumerationId<TValue> where TValue : notnull {}
+  public class GEnumeration<TValue> : IGEnumeration<TValue> where TValue : notnull {
     public GEnumeration(string gName = default, string gUnderlyingBaseType = default, string gVisibility = default, string gInheritance = default,
       bool isBitFlags = default,
-      Dictionary<IPhilote<IGEnumerationMember>, IGEnumerationMember> gEnumerationMembers = default,
-      Dictionary<IPhilote<IGAttribute>, IGAttribute> gAttributes = default,
-      Dictionary<IPhilote<IGAttributeGroup>, IGAttributeGroup> gAttributeGroups = default,
+      Dictionary<IGEnumerationMemberId<TValue>, IGEnumerationMember<TValue>> gEnumerationMembers = default,
+      Dictionary<IGAttributeId<TValue>, IGAttribute<TValue>> gAttributes = default,
+      Dictionary<IGAttributeGroupId<TValue>, IGAttributeGroup<TValue>> gAttributeGroups = default,
       GComment gComment = default
       ) {
       GName = gName == default ? "" : gName;
@@ -19,11 +20,11 @@ namespace ATAP.Utilities.GenerateProgram {
       GVisibility = gVisibility == default ? "" : gVisibility;
       GInheritance = gInheritance == default ? "" : gInheritance; ;
       IsBitFlags = isBitFlags == default ? false : (bool)isBitFlags;
-      GEnumerationMembers = gEnumerationMembers == default ? new Dictionary<IPhilote<IGEnumerationMember>, IGEnumerationMember>() : gEnumerationMembers;
-      GAttributes = gAttributes == default ? new Dictionary<IPhilote<IGAttribute>, IGAttribute>() : gAttributes;
-      GAttributeGroups = gAttributeGroups == default ? new Dictionary<IPhilote<IGAttributeGroup>, IGAttributeGroup>() : gAttributeGroups;
+      GEnumerationMembers = gEnumerationMembers == default ? new Dictionary<IGEnumerationMemberId<TValue>, IGEnumerationMember<TValue>>() : gEnumerationMembers;
+      GAttributes = gAttributes == default ? new Dictionary<IGAttributeId<TValue>, IGAttribute<TValue>>() : gAttributes;
+      GAttributeGroups = gAttributeGroups == default ? new Dictionary<IGAttributeGroupId<TValue>, IGAttributeGroup<TValue>>() : gAttributeGroups;
       GComment = gComment == default ? new GComment() : gComment;
-      Philote = new Philote<IGEnumeration>();
+      Id = new GEnumerationId<TValue>();
     }
     public string GName { get; init; }
     public string GUnderlyingBaseType { get; init; }
@@ -32,11 +33,18 @@ namespace ATAP.Utilities.GenerateProgram {
     public string GVisibility { get; init; }
     public string GInheritance { get; init; }
     public bool IsBitFlags { get; init; }
-    public Dictionary<IPhilote<IGEnumerationMember>, IGEnumerationMember> GEnumerationMembers { get; init; }
-    public Dictionary<IPhilote<IGAttribute>, IGAttribute> GAttributes { get; init; }
-    public Dictionary<IPhilote<IGAttributeGroup>, IGAttributeGroup> GAttributeGroups { get; init; }
+    public Dictionary<IGEnumerationMemberId<TValue>, IGEnumerationMember<TValue>> GEnumerationMembers { get; init; }
+    public Dictionary<IGAttributeId<TValue>, IGAttribute<TValue>> GAttributes { get; init; }
+    public Dictionary<IGAttributeGroupId<TValue>, IGAttributeGroup<TValue>> GAttributeGroups { get; init; }
     public IGComment GComment { get; init; }
-    public IPhilote<IGEnumeration> Philote { get; init; }
+    public  IGEnumerationId Id { get; init; }
 
   }
 }
+
+
+
+
+
+
+

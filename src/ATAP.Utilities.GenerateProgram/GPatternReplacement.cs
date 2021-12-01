@@ -2,20 +2,28 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
-using ATAP.Utilities.Philote;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public record GPatternReplacement : IGPatternReplacement {
+
+  public record GPatternReplacementId<TValue> : AbstractStronglyTypedId<TValue>, IGPatternReplacementId<TValue> where TValue : notnull {}
+  public record GPatternReplacement<TValue> : IGPatternReplacement<TValue> where TValue : notnull {
     public GPatternReplacement(string? gName = default, Dictionary<Regex,string>? gDictionary = default, IGComment? gComment = default) {
       GName = gName == default? "": gName;
       GDictionary = gDictionary == default? new Dictionary<Regex,string>() : gDictionary;
       GComment = gComment == default? new GComment() : gComment;
-      Philote = new Philote<IGPatternReplacement>();
+      Id = new GPatternReplacementId<TValue>();
     }
 
     public string? GName { get; init; }
     public Dictionary<Regex,string> GDictionary { get; init; }
     public IGComment? GComment { get; init; }
-    public IPhilote<IGPatternReplacement> Philote { get; init; }
+    public  IGPatternReplacementId Id { get; init; }
   }
 }
+
+
+
+
+
+

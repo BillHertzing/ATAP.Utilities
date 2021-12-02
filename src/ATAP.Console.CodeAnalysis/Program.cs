@@ -27,7 +27,7 @@ namespace ATAP.Utilities.ConsoleCodeAnalysis
 
       Console.WriteLine($"Using MSBuild at '{instance.MSBuildPath}' to load projects.");
 
-      // NOTE: Be sure to register an instance with the MSBuildLocator 
+      // NOTE: Be sure to register an instance with the MSBuildLocator
       //       before calling MSBuildWorkspace.Create()
       //       otherwise, MSBuildWorkspace won't MEF compose.
       MSBuildLocator.RegisterInstance(instance);
@@ -43,7 +43,8 @@ namespace ATAP.Utilities.ConsoleCodeAnalysis
         Console.WriteLine($"Finished loading solution '{args[0]}'");
 
         // project name to analye
-        string projectNameToAnalyze = "ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.UnitTests";
+        string projectNameToAnalyze = "ATAP.Console.HelloWorld";
+        //string projectNameToAnalyze = "ATAP.Utilities.GenerateProgram.Interfaces";
         Project projectToAnalyze;
         // get the GenerateProgram project
         if (solution.Projects.Any(q => q.Name == projectNameToAnalyze)) {

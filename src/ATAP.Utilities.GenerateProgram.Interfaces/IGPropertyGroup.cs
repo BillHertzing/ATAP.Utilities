@@ -3,10 +3,15 @@ using System.Collections.Generic;
 using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public interface IGPropertyGroup {
+  
+
+  public interface IGPropertyGroupId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGPropertyGroup<TValue> where TValue : notnull {
     string GName { get; }
-    IDictionary<IPhilote<IGProperty>, IGProperty> GPropertys { get; init; }
-    IPhilote<IGPropertyGroup> Philote { get; init; }
+    IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> GPropertys { get; init; }
+    IGPropertyGroupId<TValue> Id { get; init; }
   }
 }
+
+
 

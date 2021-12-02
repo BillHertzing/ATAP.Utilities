@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  
+
 
   public interface IGStaticVariableId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
   public interface IGStaticVariable<TValue> where TValue : notnull {
@@ -10,9 +10,9 @@ namespace ATAP.Utilities.GenerateProgram {
     string GType { get; init; }
     string GAccessModifier { get; init; }
     string GVisibility { get; init; }
-    IGBody GBody { get; init; }
+    IGBody<TValue> GBody { get; init; }
     IList<string> GAdditionalStatements { get; init; }
-    IGComment GComment { get; init; }
+    IGComment<TValue> GComment { get; init; }
     IGStaticVariableId<TValue> Id { get; init; }
   }
 }

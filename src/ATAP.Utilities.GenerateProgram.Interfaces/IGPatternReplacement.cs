@@ -5,12 +5,16 @@ using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram
 {
-  public interface IGPatternReplacement
-  {
+
+
+  public interface IGPatternReplacementId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGPatternReplacement<TValue> where TValue : notnull {
     string? GName { get; init; }
     Dictionary<Regex, string> GDictionary { get; init; }
-    IGComment? GComment { get; init; }
-    IPhilote<IGPatternReplacement> Philote { get; init; }
+    IGComment<TValue>? GComment { get; init; }
+    IGPatternReplacementId<TValue> Id { get; init; }
   }
 }
+
+
 

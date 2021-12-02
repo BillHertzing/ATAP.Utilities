@@ -2,10 +2,15 @@ using System.Collections.Generic;
 using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public interface IGStaticVariableGroup {
+
+
+  public interface IGStaticVariableGroupId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGStaticVariableGroup<TValue> where TValue : notnull {
     string GName { get; init; }
-    IDictionary<IPhilote<IGStaticVariable>, IGStaticVariable> GStaticVariables { get; init; }
-    IPhilote<IGStaticVariableGroup> Philote { get; init; }
+    IDictionary<IGStaticVariableId<TValue>, IGStaticVariable<TValue>> GStaticVariables { get; init; }
+    IGStaticVariableGroupId<TValue> Id { get; init; }
   }
 }
+
+
 

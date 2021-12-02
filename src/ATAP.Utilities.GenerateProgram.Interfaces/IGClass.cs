@@ -2,28 +2,33 @@ using System.Collections.Generic;
 using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public interface IGClass {
+
+
+  public interface IGClassId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGClass<TValue> where TValue : notnull {
     string GName { get; init; }
     string GVisibility { get; }
     string GAccessModifier { get; init; }
     string GInheritance { get; init; }
     IList<string> GImplements { get; init; }
-    IDictionary<IPhilote<IGProperty>, IGProperty> GPropertys { get; init; }
-    IDictionary<IPhilote<IGPropertyGroup>, IGPropertyGroup> GPropertyGroups { get; init; }
-    IDictionary<IPhilote<IGMethod>, IGMethod> GMethods { get; init; }
-    IDictionary<IPhilote<IGMethodGroup>, IGMethodGroup> GMethodGroups { get; init; }
-    IDictionary<IPhilote<IGStaticVariable>, IGStaticVariable> GStaticVariables { get; init; }
-    IDictionary<IPhilote<IGStaticVariableGroup>, IGStaticVariableGroup> GStaticVariableGroups { get; init; }
-    IDictionary<IPhilote<IGConstString>, IGConstString>? GConstStrings { get; init; }
-    IDictionary<IPhilote<IGConstStringGroup>, IGConstStringGroup>? GConstStringGroups { get; init; }
-    IDictionary<IPhilote<IGDelegate>, IGDelegate> GDelegates { get; init; }
-    IDictionary<IPhilote<IGDelegateGroup>, IGDelegateGroup> GDelegateGroups { get; init; }
-    IDictionary<IPhilote<IGEnumeration>, IGEnumeration> GEnumerations { get; init; }
-    IDictionary<IPhilote<IGEnumerationGroup>, IGEnumerationGroup> GEnumerationGroups { get; init; }
+    IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> GPropertys { get; init; }
+    IDictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>> GPropertyGroups { get; init; }
+    IDictionary<IGMethodId<TValue>, IGMethod<TValue>> GMethods { get; init; }
+    IDictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>> GMethodGroups { get; init; }
+    IDictionary<IGStaticVariableId<TValue>, IGStaticVariable<TValue>> GStaticVariables { get; init; }
+    IDictionary<IGStaticVariableGroupId<TValue>, IGStaticVariableGroup<TValue>> GStaticVariableGroups { get; init; }
+    IDictionary<IGConstStringId<TValue>, IGConstString<TValue>>? GConstStrings { get; init; }
+    IDictionary<IGConstStringGroupId<TValue>, IGConstStringGroup<TValue>>? GConstStringGroups { get; init; }
+    IDictionary<IGDelegateId<TValue>, IGDelegate<TValue>> GDelegates { get; init; }
+    IDictionary<IGDelegateGroupId<TValue>, IGDelegateGroup<TValue>> GDelegateGroups { get; init; }
+    IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>> GEnumerations { get; init; }
+    IDictionary<IGEnumerationGroupId<TValue>, IGEnumerationGroup<TValue>> GEnumerationGroups { get; init; }
     IList<string>? GDisposesOf { get; init; }
-    IGComment GComment { get; init; }
-    IList<IGStateConfiguration> GStateConfigurations { get; init; }
-    IPhilote<IGClass> Philote { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IList<IGStateConfiguration<TValue>> GStateConfigurations { get; init; }
+    IGClassId<TValue> Id { get; init; }
   }
 }
+
+
 

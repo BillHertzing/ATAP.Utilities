@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using FluentAssertions;
 using ATAP.Utilities.Serializer.DataForTests;
 
-using ATAP.Utilities.StronglyTypedIds;
+using ATAP.Utilities.StronglyTypedId;
 
 namespace ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson.UnitTests {
 

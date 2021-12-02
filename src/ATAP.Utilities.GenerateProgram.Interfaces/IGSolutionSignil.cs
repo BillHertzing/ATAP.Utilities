@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+
 using ATAP.Utilities.StronglyTypedId;
 namespace ATAP.Utilities.GenerateProgram {
-  public interface IGSolutionSignil {
+  public interface IGSolutionSignilId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull { }
+  public interface IGSolutionSignil<TValue> where TValue : notnull {
     public bool HasPropsAndTargets { get; }
     public bool HasEditorConfig { get; }
     public bool HasArtifacts { get; }
@@ -16,12 +18,13 @@ namespace ATAP.Utilities.GenerateProgram {
     public bool HasDataBases { get; }
     public ICollection<string> BuildConfigurations { get; }
     public ICollection<string> CPUConfigurations { get; }
-    public IGPatternReplacement GPatternReplacement { get; }
-        public IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> GDependencyPackages { get;  }
-    public IDictionary<IPhilote<IGProjectUnit>, IGProjectUnit> GDependencyProjects { get;  }
-
-    public IGComment GComment { get; }
-
+    public IGPatternReplacement<TValue> GPatternReplacement { get; }
+    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> GDependencyPackages { get; }
+    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> GDependencyProjects { get; }
+    public IGComment<TValue> GComment { get; }
+    IGArgumentId<TValue> Id { get; init; }
   }
 }
+
+
 

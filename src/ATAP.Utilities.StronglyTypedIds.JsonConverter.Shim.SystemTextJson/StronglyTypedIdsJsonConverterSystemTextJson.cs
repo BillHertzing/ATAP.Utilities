@@ -3,9 +3,9 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-using ATAP.Utilities.StronglyTypedIds;
+using ATAP.Utilities.StronglyTypedId;
 
-namespace ATAP.Utilities.StronglyTypedIds.JsonConverter.Shim.SystemTextJson {
+namespace ATAP.Utilities.StronglyTypedId.JsonConverter.Shim.SystemTextJson {
   // Attribution https://thomaslevesque.com/2020/12/07/csharp-9-records-as-strongly-typed-ids-part-3-json-serialization/
 
   // An individual converter for a specific instance of the AbstractStronglyTypedId record type

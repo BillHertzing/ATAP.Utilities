@@ -21,7 +21,7 @@ namespace ATAP.Utilities.GenerateProgram {
       }
       return gInterface;
     }
-    public static IGInterface AddProperty(this IGInterface gInterface, IDictionary<IGProperty>,IGProperty> gPropertys) {
+    public static IGInterface AddProperty(this IGInterface gInterface, IDictionary<IGPropertyId,IGProperty> gPropertys) {
       foreach (var kvp in gPropertys) {
         gInterface.GPropertys.Add(kvp.Key,kvp.Value);
       }
@@ -37,7 +37,7 @@ namespace ATAP.Utilities.GenerateProgram {
       }
       return gInterface;
     }
-    public static IGInterface AddPropertyGroup(this IGInterface gInterface, IDictionary<IGPropertyGroupId<TValue>, IGProperty>,IGProperty> gPropertys) {
+    public static IGInterface AddPropertyGroup(this IGInterface gInterface, IDictionary<IGPropertyGroupId<TValue>, IGProperty> gPropertys) {
       foreach (var kvp in gPropertys) {
         gInterface.GPropertys.Add(kvp.Key,kvp.Value);
       }
@@ -53,7 +53,7 @@ namespace ATAP.Utilities.GenerateProgram {
       }
       return gInterface;
     }
-    public static IGInterface AddPropertyGroup(this IGInterface gInterface, IDictionary<IPhilote<IGPropertyGroup<TValue>> gPropertyGroups) {
+    public static IGInterface AddPropertyGroup(this IGInterface gInterface, IDictionary<IGPropertyGroupId<TValue>,IGPropertyGroup> gPropertyGroups) {
       foreach (var kvp in gPropertyGroups) {
         gInterface.GPropertyGroups.Add(kvp.Key,kvp.Value);
       }

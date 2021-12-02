@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-using ATAP.Utilities.StronglyTypedIds;
+using;
 
 namespace ATAP.Utilities.Serializer.DataForTests
 {

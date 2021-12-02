@@ -1,6 +1,6 @@
 using System;
 
-namespace ATAP.Utilities.StronglyTypedIds {
+namespace ATAP.Utilities.StronglyTypedId {
   // public interface IIdAsStruct<T> { } // Deprecated
   public interface IAbstractStronglyTypedId<TValue> where TValue : notnull {
     TValue Value { get; init; }

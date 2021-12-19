@@ -39,7 +39,8 @@ namespace ATAP.Utilities.ConsoleCodeAnalysis
         Console.WriteLine($"Loading solution '{args[0]}'");
 
         // Attach progress reporter so we print projects as they are loaded.
-        Solution solution = await workspace.OpenSolutionAsync(args[0], new ConsoleProgressReporter());
+        // attribution: https://johnkoerner.com/csharp/creating-a-stand-alone-code-analyzer/
+        Solution solution = workspace.OpenSolutionAsync(args[0], new ConsoleProgressReporter()).Result;
         Console.WriteLine($"Finished loading solution '{args[0]}'");
 
         // project name to analye
@@ -54,10 +55,11 @@ namespace ATAP.Utilities.ConsoleCodeAnalysis
           throw new ArgumentException($"{projectNameToAnalyze} does not exist in the solution");
         }
         //Compile it. wait for the compilation to complete and return
-        Task<Compilation?> compileProjectTask = projectToAnalyze.GetCompilationAsync();
-        compileProjectTask.Wait();
-        // ToDo: Exception Handling
-        Compilation? compiledProject = compileProjectTask.Result;
+        Compilation compiledProject = projectToAnalyze.GetCompilationAsync().Result;
+        // Task<Compilation?> compileProjectTask = projectToAnalyze.GetCompilationAsync();
+        // compileProjectTask.Wait();
+        // // ToDo: Exception Handling
+        // Compilation? compiledProject = compileProjectTask.Result;
 
         // Get the classes inside the project
         foreach (var st in compiledProject.SyntaxTrees) {

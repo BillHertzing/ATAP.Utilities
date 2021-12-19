@@ -4,8 +4,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE TABLE dbo.GStatement(
-	Id int IDENTITY(1,1) NOT NULL,
-	[Statement] nvarchar(512) NULL
+	Id int IDENTITY(1,1) NOT NULL
+ ,	[Statement] nvarchar(512) NULL
   , CONSTRAINT PK_GStatement PRIMARY KEY NONCLUSTERED (Id)
 ) ON [PRIMARY]
 GO

@@ -1,0 +1,3779 @@
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram
+{
+  
+
+  public interface IGArgumentId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGArgument<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GType { get; init; }
+    bool IsRef { get; init; }
+    bool IsOut { get; init; }
+    IGArgumentId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram
+{
+
+
+  public interface IGAssemblyGroupId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGAssemblyGroup<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GDescription { get; init; }
+    string GRelativePath { get; init; }
+    IDictionary<IGAssemblyUnitId<TValue>, IGAssemblyUnit<TValue>> GAssemblyUnits { get; init; }
+    IGPatternReplacement<TValue> GPatternReplacement { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGAssemblyGroupId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+    public interface IGAssemblyGroupBasicConstructorResultId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGAssemblyGroupBasicConstructorResult<TValue> where TValue : notnull {
+
+    string SubDirectoryForGeneratedFiles { get; set; }
+    string BaseNamespaceName { get; set; }
+    string GAssemblyGroupName { get; set; }
+    string GTitularAssemblyUnitName { get; set; }
+    string GTitularBaseCompilationUnitName { get; set; }
+    IGAssemblyGroup<TValue> GAssemblyGroup { get; set; }
+    IGPatternReplacement<TValue> gAssemblyGroupPatternReplacement { get; set; }
+    IGAssemblyUnit<TValue> GTitularAssemblyUnit { get; set; }
+    IGPatternReplacement<TValue> GTitularAssemblyUnitPatternReplacement { get; set; }
+    IGCompilationUnit<TValue> GTitularDerivedCompilationUnit { get; set; }
+    IGPatternReplacement<TValue> GTitularDerivedCompilationUnitPatternReplacement { get; set; }
+    IGCompilationUnit<TValue> GTitularBaseCompilationUnit { get; set; }
+    IGPatternReplacement<TValue> GTitularBaseCompilationUnitPatternReplacement { get; set; }
+    IGNamespace<TValue> GNamespaceBase { get; set; }
+    IGNamespace<TValue> GNamespaceDerived { get; set; }
+    IGClass<TValue> GClassBase { get; set; }
+    IGClass<TValue> GClassDerived { get; set; }
+    IGMethod<TValue> GPrimaryConstructorBase { get; set; }
+    IGAssemblyUnit<TValue> gTitularInterfaceAssemblyUnit { get; set; }
+    IGCompilationUnit<TValue> GTitularInterfaceDerivedCompilationUnit { get; set; }
+    IGCompilationUnit<TValue> GTitularInterfaceBaseCompilationUnit { get; set; }
+    IGInterface<TValue> GTitularInterfaceDerivedInterface { get; set; }
+    IGInterface<TValue> GTitularInterfaceBaseInterface { get; set; }
+
+    IGAssemblyGroupBasicConstructorResultId<TValue> Id { get; init; }
+
+  }
+}
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGAssemblyGroupSignilId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGAssemblyGroupSignil<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GDescription { get; init; }
+    string GRelativePath { get; init; }
+    bool HasInterfacesAssembly { get; init; }
+    IDictionary<IGAssemblyUnitId<TValue>, IGAssemblyUnit<TValue>> GAssemblyUnits { get; init; }
+    IGPatternReplacement<TValue> GPatternReplacement { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGAssemblyGroupSignilId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram
+{
+
+
+  public interface IGAssemblyUnitId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGAssemblyUnit<TValue> where TValue : notnull {
+     string GName { get; init; }
+    string GRelativePath { get; init; }
+    IGProjectUnit<TValue> GProjectUnit { get; init; }
+    IDictionary<IGCompilationUnitId<TValue>, IGCompilationUnit<TValue>> GCompilationUnits { get; init; }
+    IDictionary<IGPropertiesUnitId<TValue>, IGPropertiesUnit<TValue>> GPropertiesUnits { get; init; }
+    IDictionary<IGResourceUnitId<TValue>, IGResourceUnit<TValue>> GResourceUnits { get; init; }
+    IGPatternReplacement<TValue> GPatternReplacement { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGAssemblyUnitId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGAssemblyUnitSignilId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGAssemblyUnitSignil<TValue> where TValue : notnull {
+    string GName { get; init; }
+    // ToDo:  Add GDescription to the AssemblyUnit
+    string GRelativePath { get; init; }
+    IGProjectUnit<TValue> GProjectUnit { get; init; }
+    IDictionary<IGCompilationUnitId<TValue>, IGCompilationUnit<TValue>> GCompilationUnits { get; init; }
+    IDictionary<IGPropertiesUnitId<TValue>, IGPropertiesUnit<TValue>> GPropertiesUnits { get; init; }
+    IDictionary<IGResourceUnitId<TValue>, IGResourceUnit<TValue>> GResourceUnits { get; init; }
+    IGPatternReplacement<TValue> GPatternReplacement { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGAssemblyUnitSignilId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGAttributeId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGAttribute<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GValue { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGAttributeId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGAttributeGroupId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGAttributeGroup<TValue> where TValue : notnull {
+    string GName { get; init; }
+    Dictionary<IGAttributeId<TValue>, IGAttribute<TValue>> GAttributes { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGAttributeGroupId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public interface IGBodyId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGBody<TValue> where TValue : notnull {
+    IList<string> GStatements { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGBodyId<TValue> Id { get; init; }
+
+  }
+}
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGClassId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGClass<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GVisibility { get; }
+    string GAccessModifier { get; init; }
+    string GInheritance { get; init; }
+    IList<string> GImplements { get; init; }
+    IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> GPropertys { get; init; }
+    IDictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>> GPropertyGroups { get; init; }
+    IDictionary<IGMethodId<TValue>, IGMethod<TValue>> GMethods { get; init; }
+    IDictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>> GMethodGroups { get; init; }
+    IDictionary<IGStaticVariableId<TValue>, IGStaticVariable<TValue>> GStaticVariables { get; init; }
+    IDictionary<IGStaticVariableGroupId<TValue>, IGStaticVariableGroup<TValue>> GStaticVariableGroups { get; init; }
+    IDictionary<IGConstStringId<TValue>, IGConstString<TValue>>? GConstStrings { get; init; }
+    IDictionary<IGConstStringGroupId<TValue>, IGConstStringGroup<TValue>>? GConstStringGroups { get; init; }
+    IDictionary<IGDelegateId<TValue>, IGDelegate<TValue>> GDelegates { get; init; }
+    IDictionary<IGDelegateGroupId<TValue>, IGDelegateGroup<TValue>> GDelegateGroups { get; init; }
+    IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>> GEnumerations { get; init; }
+    IDictionary<IGEnumerationGroupId<TValue>, IGEnumerationGroup<TValue>> GEnumerationGroups { get; init; }
+    IList<string>? GDisposesOf { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IList<IGStateConfiguration<TValue>> GStateConfigurations { get; init; }
+    IGClassId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGCommentId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGComment<TValue> where TValue : notnull {
+    IEnumerable<string> GStatements { get; init; }
+    IGCommentId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGCompilationUnitId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGCompilationUnit<TValue> where TValue : notnull {
+    string GName { get; init; }
+    Dictionary<IGUsingGroupId<TValue>, IGUsingGroup<TValue>> GUsingGroups { get; init; }
+    Dictionary<IGUsingId<TValue>, IGUsing<TValue>> GUsings { get; init; }
+    Dictionary<IGNamespaceId<TValue>, IGNamespace<TValue>> GNamespaces { get; init; }
+    string GRelativePath { get; init; }
+    string GFileSuffix { get; init; }
+    IGPatternReplacement<TValue> GPatternReplacement { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGCompilationUnitId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGConstStringId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGConstString<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GValue { get; init; }
+    IGConstStringId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGConstStringGroupId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGConstStringGroup<TValue> where TValue : notnull {
+    string GName { get; init; }
+    IDictionary<IGConstStringId<TValue>, IGConstString<TValue>> GConstStrings { get; init; }
+    IGConstStringGroupId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGDelegateId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGDelegate<TValue> where TValue : notnull {
+    IGDelegateDeclaration<TValue> GDelegateDeclaration { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGDelegateId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGDelegateDeclarationId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGDelegateDeclaration<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GType { get; init; }
+    string GVisibility { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    Dictionary<IGArgumentId<TValue>, IGArgument<TValue>> GArguments { get; init; }
+    IGDelegateDeclarationId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGDelegateGroupId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGDelegateGroup<TValue> where TValue : notnull {
+    string GName { get; init; }
+    Dictionary<IGDelegateId<TValue>, IGDelegate<TValue>>? GDelegates { get; init; }
+    IGDelegateGroupId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGEnumerationId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGEnumeration<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GUnderlyingBaseType { get; init; }
+    string GAccessModifier { get; init; }
+    string GVisibility { get; init; }
+    string GInheritance { get; init; }
+    bool IsBitFlags { get; init; }
+    Dictionary<IGEnumerationMemberId<TValue>, IGEnumerationMember<TValue>> GEnumerationMembers { get; init; }
+    Dictionary<IGAttributeId<TValue>, IGAttribute<TValue>> GAttributes { get; init; }
+    Dictionary<IGAttributeGroupId<TValue>, IGAttributeGroup<TValue>> GAttributeGroups { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGEnumerationId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGEnumerationGroupId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGEnumerationGroup<TValue> where TValue : notnull {
+    string GName { get; init; }
+    IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>> GEnumerations { get; init; }
+    IGEnumerationGroupId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGEnumerationMemberId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGEnumerationMember<TValue> where TValue : notnull {
+    string GName { get; init; }
+    int? GValue { get; init; }
+    IDictionary<IGAttributeId<TValue>, IGAttribute<TValue>> GAttributes { get; init; }
+    IDictionary<IGAttributeGroupId<TValue>, IGAttributeGroup<TValue>> GAttributeGroups { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGEnumerationMemberId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System;
+using System.Threading;
+
+using ATAP.Utilities.Persistence;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGGenerateCodeSignilId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGGenerateCodeSignil<TValue> where TValue : notnull {
+    IGAssemblyGroupSignil<TValue>? GAssemblyGroupSignil { get; set; }
+    //IGGlobalSettingsSignil? GGlobalSettingsSignil { get; set; }
+    IGSolutionSignil<TValue>? GSolutionSignil { get; set; }
+    string ArtifactsDirectoryBase { get; set; }
+    string ArtifactsFileRelativePath { get; set; }
+    string[] ArtifactsFilePaths { get; set; }
+    string TemporaryDirectoryBase { get; set; }
+    bool EnableProgress { get; set; }
+    bool EnablePersistence { get; set; }
+    bool EnablePickAndSave { get; set; }
+    IGGenerateCodeProgress<TValue>? Progress { get; set; }
+    IPersistence<IInsertResultsAbstract>? Persistence { get; set; }
+    IPickAndSave<IInsertResultsAbstract>? PickAndSave { get; set; }
+    IEntryPoints<TValue> EntryPoints { get; set; }
+     CancellationToken CancellationTokenFromCaller { get; set; }
+    IGGenerateCodeSignilId<TValue> Id { get; init; }
+  }
+
+}
+
+
+
+using System;
+using ATAP.Utilities.StronglyTypedId;
+namespace ATAP.Utilities.GenerateProgram {
+  public interface IGGenerateCodeProgressId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGGenerateCodeProgress<TValue> : IProgress<string>, IGGenerateCodeProgressId<TValue> where TValue : notnull {
+
+    IGGenerateCodeProgressId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGGenerateProgramResultId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGGenerateProgramResult<TValue> where TValue : notnull {
+    bool DBExtractionSuccess { get; init; }
+    bool BuildSuccess { get; init; }
+    bool UnitTestsSuccess { get; init; }
+    double UnitTestsCoverage { get; init; }
+    string GeneratedSolutionFileDirectory { get; init; }
+    IDictionary<IGGenerateProgramResultId<TValue>, IGGenerateProgramResult<TValue>> Id { get; init; }
+  }
+
+}
+
+
+
+
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public interface IGGlobalSettingsSignilId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGGlobalSettingsSignil<TValue> where TValue : notnull {
+    ICollection<string> DefaultTargetFrameworks { get; }
+  }
+}
+
+
+
+using System;
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGInterfaceId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGInterface<TValue> where TValue : notnull {
+    string GName { get; }
+    string GVisibility { get; }
+    string GAccessModifier { get; }
+    string GInheritance { get; }
+    IList<string> GImplements { get; }
+    IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> GPropertys { get; }
+    IDictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>> GPropertyGroups { get; }
+    IDictionary<IGMethodId<TValue>, IGMethod<TValue>> GMethods { get; }
+    IDictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>> GMethodGroups { get; }
+    IGInterfaceId<TValue> Id { get; }
+  }
+}
+
+
+
+
+using System;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGItemGroupInProjectUnitId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGItemGroupInProjectUnit<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GDescription { get; init; }
+    IGBody<TValue> GBody { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGItemGroupInProjectUnitId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGMethodId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGMethod<TValue> where TValue : notnull {
+    IGMethodDeclaration<TValue> GDeclaration { get; init; }
+    IGBody<TValue> GBody { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    bool IsForInterface { get; init; }
+    IGStateConfiguration<TValue> GStateConfiguration { get; init; }
+    IGMethodId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGMethodDeclarationId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGMethodDeclaration<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GType { get; init; }
+    string GAccessModifier { get; init; }
+    bool IsConstructor { get; init; }
+    string GVisibility { get; init; }
+    bool IsStatic { get; init; }
+    IDictionary<IGArgumentId<TValue>, IGArgument<TValue>> GArguments { get; init; }
+    string GBase { get; init; }
+    string GThis { get; set; }
+    bool IsForInterface { get; init; }
+    IGMethodDeclarationId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGMethodGroupId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGMethodGroup<TValue> where TValue : notnull {
+    string GName { get; init; }
+    IDictionary<IGMethodId<TValue>, IGMethod<TValue>>? GMethods { get; init; }
+    IGMethodGroupId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGNamespaceId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGNamespace<TValue> where TValue : notnull {
+    string GName { get; init; }
+    IDictionary<IGClassId<TValue>, IGClass<TValue>> GClasss { get; init; }
+    IDictionary<IGInterfaceId<TValue>, IGInterface<TValue>> GInterfaces { get; init; }
+    IDictionary<IGDelegateId<TValue>, IGDelegate<TValue>> GDelegates { get; init; }
+    IDictionary<IGDelegateGroupId<TValue>, IGDelegateGroup<TValue>> GDelegateGroups { get; init; }
+    IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>> GEnumerations { get; init; }
+    IDictionary<IGEnumerationGroupId<TValue>, IGEnumerationGroup<TValue>> GEnumerationGroups { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGNamespaceId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram
+{
+
+
+  public interface IGPatternReplacementId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGPatternReplacement<TValue> where TValue : notnull {
+    string? GName { get; init; }
+    Dictionary<Regex, string> GDictionary { get; init; }
+    IGComment<TValue>? GComment { get; init; }
+    IGPatternReplacementId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGProjectUnitId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGProjectUnit<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GRelativePath { get; init; }
+    string GFileSuffix { get; init; }
+    Dictionary<IGResourceUnitId<TValue>, IGResourceUnit<TValue>> GResourceUnits { get; init; }
+    Dictionary<IGPropertyGroupInProjectUnitId<TValue>, IGPropertyGroupInProjectUnit<TValue>> GPropertyGroupInProjectUnits { get; init; }
+    Dictionary<IGItemGroupInProjectUnitId<TValue>, IGItemGroupInProjectUnit<TValue>> GItemGroupInProjectUnits { get; init; }
+    IGPatternReplacement<TValue> GPatternReplacement { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGProjectUnitId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGPropertiesUnitId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGPropertiesUnit<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GRelativePath { get; init; }
+    string GFileSuffix { get; init; }
+    IGPropertiesUnitId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGPropertyId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGProperty<TValue> where TValue : notnull {
+    string GName { get; }
+    string GType { get; }
+    string GAccessors { get; }
+    string? GVisibility { get; }
+    IGPropertyId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGPropertyGroupId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGPropertyGroup<TValue> where TValue : notnull {
+    string GName { get; }
+    IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> GPropertys { get; init; }
+    IGPropertyGroupId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGPropertyGroupInProjectUnitId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGPropertyGroupInProjectUnit<TValue> where TValue : notnull {
+    string? GName { get; init; }
+    string? GDescription { get; init; }
+    IList<string>? GPropertyGroupStatements { get; init; }
+    IGPropertyGroupInProjectUnitId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGResourceItemId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGResourceItem<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GValue { get; init; }
+    string? GComment { get; init; }
+    IGResourceItemId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGResourceUnitId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGResourceUnit<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GRelativePath { get; init; }
+    string GFileSuffix { get; init; }
+    Dictionary<IGResourceItemId<TValue>, IGResourceItem<TValue>> GResourceItems { get; init; }
+    IGPatternReplacement<TValue> GPatternReplacement { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGResourceUnitId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System;
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+namespace ATAP.Utilities.GenerateProgram {
+  public interface IGSolutionSignilId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull { }
+  public interface IGSolutionSignil<TValue> where TValue : notnull {
+    public bool HasPropsAndTargets { get; }
+    public bool HasEditorConfig { get; }
+    public bool HasArtifacts { get; }
+    public bool HasDevLog { get; }
+    public bool HasDocumentation { get; }
+    string SourceRelativePath { get; }
+    string TestsRelativePath { get; }
+    public bool HasOmniSharpConfiguration { get; }
+    public bool HasVisualStudioCodeWorkspaceConfiguration { get; }
+    public bool HasVisualStudioIISApplicationHostConfiguration { get; }
+    public bool HasDataBases { get; }
+    public ICollection<string> BuildConfigurations { get; }
+    public ICollection<string> CPUConfigurations { get; }
+    public IGPatternReplacement<TValue> GPatternReplacement { get; }
+    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> GDependencyPackages { get; }
+    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> GDependencyProjects { get; }
+    public IGComment<TValue> GComment { get; }
+    IGArgumentId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGStateConfigurationId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGStateConfiguration<TValue> where TValue : notnull {
+    IList<string> GStateNames { get; init; }
+    IList<string> GTriggerNames { get; init; }
+    IList<(string state, string trigger, string nextstate, string predicate)> GDiGraphStates { get; init; }
+    IList<string> GDOTGraphStatements { get; init; }
+    IGStateConfigurationId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGStaticVariableId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGStaticVariable<TValue> where TValue : notnull {
+    string GName { get; init; }
+    string GType { get; init; }
+    string GAccessModifier { get; init; }
+    string GVisibility { get; init; }
+    IGBody<TValue> GBody { get; init; }
+    IList<string> GAdditionalStatements { get; init; }
+    IGComment<TValue> GComment { get; init; }
+    IGStaticVariableId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public interface IGStaticVariableGroupId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGStaticVariableGroup<TValue> where TValue : notnull {
+    string GName { get; init; }
+    IDictionary<IGStaticVariableId<TValue>, IGStaticVariable<TValue>> GStaticVariables { get; init; }
+    IGStaticVariableGroupId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram
+{
+  
+
+  public interface IGUsingId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGUsing<TValue> where TValue : notnull {
+    string GName { get; init; }
+    IGUsingId<TValue> Id { get; init; }
+  }
+}
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  
+
+  public interface IGUsingGroupId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull {}
+  public interface IGUsingGroup<TValue> where TValue : notnull {
+    string GName { get; init; }
+    Dictionary<IGUsingId<TValue>, IGUsing<TValue>> GUsings { get; init; }
+    IGUsingGroupId<TValue> Id { get; init; }
+  }
+}
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Dynamic;
+using System.Text;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public record GArgumentId<TValue> : AbstractStronglyTypedId<TValue>, IGArgumentId<TValue> where TValue : notnull {}
+  public record GArgument<TValue> : IGArgument<TValue> where TValue : notnull {
+    public GArgument(string gName, string gType, bool isRef = false, bool isOut = false) {
+      GName = gName ?? throw new ArgumentNullException(nameof(gName));
+      GType = gType ?? throw new ArgumentNullException(nameof(gType));
+      IsRef = isRef;
+      IsOut = isOut;
+      Id = new GArgumentId<TValue>();
+
+    }
+
+    public string GName { get; init;}
+    public string GType { get; init; }
+    public bool IsRef { get; init; }
+    public bool IsOut { get; init; }
+    public  IGArgumentId Id { get; init; }
+
+
+  }}
+
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Dynamic;
+using System.Text;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GArgumentExtensions {
+    public static string ToBaseString(this IDictionary<IGArgumentId<TValue>, IGArgument<TValue>> gArguments) {
+      var aList = new List<string>();
+      foreach (var o in gArguments) {
+        aList.Add(o.Value.GName);
+      }
+      return string.Join(",", aList);
+    }
+  }
+}
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GAssemblyGroupId<TValue> : AbstractStronglyTypedId<TValue>, IGAssemblyGroupId<TValue> where TValue : notnull {}
+  public class GAssemblyGroup<TValue> : IGAssemblyGroup<TValue> where TValue : notnull {
+    public GAssemblyGroup(string gName = "", string gDescription = "", string gRelativePath = "",
+
+      IDictionary<IGAssemblyUnitId<TValue>, IGAssemblyUnit<TValue>> gAssemblyUnits = default,
+      IGPatternReplacement gPatternReplacement = default,
+      IGComment gComment = default
+    ) {
+      GName = gName;
+      GDescription = gDescription;
+      GRelativePath = gRelativePath;
+      GAssemblyUnits = gAssemblyUnits == default ? new Dictionary<IGAssemblyUnitId<TValue>, IGAssemblyUnit<TValue>>() : gAssemblyUnits;
+      GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
+      GComment = gComment == default ? new GComment() : gComment;
+
+      Id = new GAssemblyGroupId<TValue>();
+    }
+    public string GName { get; init; }
+    public string GDescription { get; init; }
+    public string GRelativePath { get; init; }
+    public
+      IDictionary<IGAssemblyUnitId<TValue>, IGAssemblyUnit<TValue>>? GAssemblyUnits { get; init; }
+    public IGPatternReplacement GPatternReplacement { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGAssemblyGroupId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+namespace ATAP.Utilities.GenerateProgram {
+  public class GAssemblyGroupBasicConstructorResult : IGAssemblyGroupBasicConstructorResult {
+
+    public string SubDirectoryForGeneratedFiles { get; set; }
+    public string BaseNamespaceName { get; set; }
+    public string GAssemblyGroupName { get; set; }
+    public string GTitularAssemblyUnitName { get; set; }
+    public string GTitularBaseCompilationUnitName { get; set; }
+    public IGAssemblyGroup GAssemblyGroup { get; set; }
+    public IGPatternReplacement gAssemblyGroupPatternReplacement { get; set; }
+    public IGAssemblyUnit GTitularAssemblyUnit { get; set; }
+    public IGPatternReplacement GTitularAssemblyUnitPatternReplacement { get; set; }
+    public IGCompilationUnit GTitularDerivedCompilationUnit { get; set; }
+    public IGPatternReplacement GTitularDerivedCompilationUnitPatternReplacement { get; set; }
+    public IGCompilationUnit GTitularBaseCompilationUnit { get; set; }
+    public IGPatternReplacement GTitularBaseCompilationUnitPatternReplacement { get; set; }
+    public IGNamespace GNamespaceBase { get; set; }
+    public IGNamespace GNamespaceDerived { get; set; }
+    public IGClass GClassBase { get; set; }
+    public IGClass GClassDerived { get; set; }
+    public IGMethod GPrimaryConstructorBase { get; set; }
+    public IGAssemblyUnit gTitularInterfaceAssemblyUnit { get; set; }
+    public IGCompilationUnit GTitularInterfaceDerivedCompilationUnit { get; set; }
+    public IGCompilationUnit GTitularInterfaceBaseCompilationUnit { get; set; }
+    public IGInterface GTitularInterfaceDerivedInterface { get; set; }
+    public IGInterface GTitularInterfaceBaseInterface { get; set; }
+
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Xml.Schema;
+using ATAP.Utilities.StronglyTypedId;
+using static ATAP.Utilities.GenerateProgram.GCompilationUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.GClassExtensions;
+using static ATAP.Utilities.GenerateProgram.GItemGroupInProjectUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.GPropertyGroupInProjectUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.StringConstants;
+//using AutoMapper.Configuration;
+using static ATAP.Utilities.GenerateProgram.GMethodGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.GMethodExtensions;
+using static ATAP.Utilities.GenerateProgram.GUsingGroupExtensions;
+using static ATAP.Utilities.GenerateProgram.GMacroExtensions;
+using static ATAP.Utilities.GenerateProgram.GArgumentExtensions;
+using static ATAP.Utilities.GenerateProgram.Lookup;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GMacroExtensions {
+    //public static void MAssemblyGroupPopulateBaseInterfaces(GAssemblyGroup GAssemblyGroup = default,
+    //  ) {
+    //  if (GAssemblyGroup == default) {throw new ArgumentException(nameof(GAssemblyGroup));};
+
+    //  /**************************************************************************************************/
+    //  var titularBaseClassName = $"{GAssemblyGroup.GName}Base";
+    //  var titularBaseInterfaceName = $"I{GAssemblyGroup.GName}Base";
+    //  var titularAssemblyUnitLookupResults = LookupPrimaryConstructorMethod(new List<IGAssemblyGroup>(){GAssemblyGroup},gClassName:titularBaseClassName) ;
+    //  var titularInterfaceAssemblyUnitLookupResults = LookupInterfaces(new List<IGAssemblyGroup>(){GAssemblyGroup},gInterfaceName:titularBaseInterfaceName);
+    //  PopulateInterface(titularAssemblyUnitLookupResults.gClasss.First(),
+    //    titularInterfaceAssemblyUnitLookupResults.gInterfaces.First());
+
+    //  var titularClassName = $"{GAssemblyGroup.GName}";
+    //  var titularInterfaceName = $"I{GAssemblyGroup.GName}";
+    //  titularAssemblyUnitLookupResults = LookupPrimaryConstructorMethod(new List<IGAssemblyGroup>(){GAssemblyGroup},gClassName:titularClassName) ;
+    //  titularInterfaceAssemblyUnitLookupResults = LookupInterfaces(new List<IGAssemblyGroup>(){GAssemblyGroup},gInterfaceName:titularInterfaceName);
+    //  PopulateInterface(titularAssemblyUnitLookupResults.gClasss.First(),
+    //    titularInterfaceAssemblyUnitLookupResults.gInterfaces.First());
+    //}
+    //public static void MAssemblyGroupPopulateTitularInterfaces(GAssemblyGroup GAssemblyGroup = default
+    //) {
+    //  if (GAssemblyGroup == default) {throw new ArgumentException(nameof(GAssemblyGroup));};
+
+    //}
+
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GAssemblyGroupSignilId<TValue> : AbstractStronglyTypedId<TValue>, IGAssemblyGroupSignilId<TValue> where TValue : notnull {}
+  public record GAssemblyGroupSignil<TValue> : IGAssemblyGroupSignil<TValue> where TValue : notnull {
+    public GAssemblyGroupSignil(string gName = default, string gDescription = default, string gRelativePath = default,
+      IDictionary<IGAssemblyUnitId<TValue>, IGAssemblyUnit<TValue>> gAssemblyUnits = default,
+      GPatternReplacement gPatternReplacement = default, GComment gComment = default, bool hasInterfacesAssembly = default) {
+      GName = gName == default ? "" : gName;
+      GDescription = gDescription == default ? "" : gDescription;
+      GRelativePath = gRelativePath == default ? "" : gRelativePath;
+      HasInterfacesAssembly = hasInterfacesAssembly == default ? true : hasInterfacesAssembly;
+      GAssemblyUnits = gAssemblyUnits == default ? new Dictionary<IGAssemblyUnitId<TValue>, IGAssemblyUnit<TValue>>() : gAssemblyUnits;
+      GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GAssemblyGroupSignilId<TValue>();
+    }
+    public string GName { get; init; }
+    public string GDescription { get; init; }
+    public string GRelativePath { get; init; }
+    public bool HasInterfacesAssembly { get; init; }
+    public IDictionary<IGAssemblyUnitId<TValue>, IGAssemblyUnit<TValue>> GAssemblyUnits { get; init; }
+    public IGPatternReplacement GPatternReplacement { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGAssemblyGroupSignilId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Text;
+
+namespace ATAP.Utilities.GenerateProgram
+{
+    /* public class GAssemblySingle -- being deprecated
+    {
+        public GAssemblySingle(GAssemblySingleSignil gAssemblySingleSignil = default)
+        {
+            GAssemblySingleSignil = gAssemblySingleSignil == default ? new GAssemblySingleSignil() : gAssemblySingleSignil;
+        }
+
+        public GAssemblySingleSignil GAssemblySingleSignil { get; }
+       
+    } */
+}
+
+
+
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GAssemblyUnitId<TValue> : AbstractStronglyTypedId<TValue>, IGAssemblyUnitId<TValue> where TValue : notnull {}
+  public class GAssemblyUnit<TValue> : IGAssemblyUnit<TValue> where TValue : notnull {
+    public GAssemblyUnit(string gName = default, string gRelativePath = default,
+      IGProjectUnit gProjectUnit = default,
+      IDictionary<IGCompilationUnitId<TValue>, IGCompilationUnit<TValue>> gCompilationUnits = default,
+      IDictionary<IGPropertiesUnitId<TValue>, IGPropertiesUnit<TValue>> gPropertiesUnits = default,
+      IDictionary<IGResourceUnitId<TValue>, IGResourceUnit<TValue>> gResourceUnits = default,
+      IGPatternReplacement gPatternReplacement = default,
+      IGComment gComment = default
+    ) {
+      GName = gName == default ? "" : gName;
+      GRelativePath = gRelativePath == default ? "" : gRelativePath;
+      GProjectUnit = gProjectUnit == default? new GProjectUnit(GName) : gProjectUnit;
+      GCompilationUnits = gCompilationUnits == default ? new Dictionary<IGCompilationUnitId<TValue>, IGCompilationUnit<TValue>>() : gCompilationUnits;
+      GPropertiesUnits = gPropertiesUnits == default ? new Dictionary<IGPropertiesUnitId<TValue>, IGPropertiesUnit<TValue>>() : gPropertiesUnits;
+      GResourceUnits = gResourceUnits == default ? new Dictionary<IGResourceUnitId<TValue>, IGResourceUnit<TValue>>() : gResourceUnits;
+      GComment = gComment == default? new GComment() : gComment;
+      GPatternReplacement = gPatternReplacement == default? new GPatternReplacement() : gPatternReplacement;
+      Id = new GAssemblyUnitId<TValue>();
+    }
+
+    public GAssemblyUnit(IGAssemblyUnitSignil gAssemblyUnitSignil    ) {
+      GName = gAssemblyUnitSignil.GName;
+      GRelativePath = gAssemblyUnitSignil.GRelativePath;
+      GProjectUnit = gAssemblyUnitSignil.GProjectUnit;
+      GCompilationUnits = gAssemblyUnitSignil.GCompilationUnits;
+      GPropertiesUnits = gAssemblyUnitSignil.GPropertiesUnits;
+      GResourceUnits = gAssemblyUnitSignil.GResourceUnits;
+      GComment = gAssemblyUnitSignil.GComment;
+      GPatternReplacement = gAssemblyUnitSignil.GPatternReplacement;
+      Id = new IGAssemblyUnitId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public string GRelativePath { get; init; }
+    public IGProjectUnit GProjectUnit { get; init; }
+    public IDictionary<IGCompilationUnitId<TValue>, IGCompilationUnit<TValue>> GCompilationUnits { get; init; }
+    public IDictionary<IGPropertiesUnitId<TValue>, IGPropertiesUnit<TValue>> GPropertiesUnits { get; init; }
+    public IDictionary<IGResourceUnitId<TValue>, IGResourceUnit<TValue>> GResourceUnits { get; init; }
+    public IGPatternReplacement GPatternReplacement { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGAssemblyUnitId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using ATAP.Utilities.StronglyTypedId;
+using ATAP.Utilities.GenerateProgram;
+using static ATAP.Utilities.GenerateProgram.GItemGroupInProjectUnitExtensions;
+using static ATAP.Utilities.GenerateProgram.Lookup;
+using static ATAP.Utilities.GenerateProgram.GMacroExtensions;
+using static ATAP.Utilities.GenerateProgram.GClassExtensions;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GAssemblyUnitExtensions {
+
+    public static void GAssemblyGroupCommonFinalizer(IGAssemblyGroupBasicConstructorResult gAssemblyGroupBasicConstructorResult) {
+      //#region Lookup the Base GAssemblyUnit, GCompilationUnit, GNamespace, GClass, and primary GConstructor,  GCompilationUnit gCompilationUnitDerived
+      //var titularBaseClassName = $"{GAssemblyGroup.GName}Base";
+      //var titularAssemblyUnitLookupPrimaryConstructorResults = LookupPrimaryConstructorMethod(new List<IGAssemblyGroup>(){GAssemblyGroup},gClassName:titularBaseClassName) ;
+      //#endregion
+      //#region Lookup the Derived GAssemblyUnit, GCompilationUnit, GNamespace, and GClass
+      //var titularClassName = $"{GAssemblyGroup.GName}";
+      //var titularAssemblyUnitLookupDerivedClassResults = LookupDerivedClass(new List<IGAssemblyGroup>(){GAssemblyGroup},gClassName:titularClassName) ;
+      //#endregion
+      #region Create Derived Constructors for all public Base Constructors
+      // Create a constructor in the Titular class for every public constructor in the Titular Base class
+      var baseConstructorsList = new List<IGMethod>();
+      baseConstructorsList.AddRange(gAssemblyGroupBasicConstructorResult.GClassBase.CombinedConstructors());
+      foreach (var bc in baseConstructorsList) {
+        var gConstructor = new GMethod(new GMethodDeclaration(gAssemblyGroupBasicConstructorResult.GClassDerived.GName, isConstructor: true,
+          gVisibility: "public", gArguments: bc.GDeclaration.GArguments, gBase: bc.GDeclaration.GArguments.ToBaseString()));
+        gAssemblyGroupBasicConstructorResult.GClassDerived.GMethods.Add(gConstructor.Id,gConstructor);
+      }
+      #endregion
+      #region Constructor Groups
+      // ToDo handle method groups, will require a change to CombinedConstructors
+      #endregion
+      #region Condense GUsings in the Base and Derived GCompilationUnits of the Titular Assembly
+      #endregion
+      #region Condense GItemGroups in the GProjectUnit of the Titular Assembly
+      #endregion
+      #region Finalize the Statemachine
+      //(
+      //  IEnumerable<GAssemblyUnit> gAssemblyUnits,
+      //  IEnumerable<GCompilationUnit> gCompilationUnits,
+      //  IEnumerable<GNamespace> gNamespacess,
+      //  IEnumerable<GClass> gClasss,
+      //  IEnumerable<GMethod> gMethods) lookupResultsTuple = LookupPrimaryConstructorMethod();
+      //MStateMachineFinalizer( GClassBase);
+      //MStateMachineFinalizer(GTitularBaseCompilationUnit, gNamespace, GClassBase, gConstructorBase, gStateConfigurations);
+      //MStateMachineFinalizer(  GClassBase, gConstructorBase, gStateConfigurations);
+      MStateMachineFinalizer(gAssemblyGroupBasicConstructorResult);
+
+      #endregion
+      #region Populate Interfaces for Titular Derived and Base Class
+      PopulateInterface(gAssemblyGroupBasicConstructorResult.GClassDerived, gAssemblyGroupBasicConstructorResult.GTitularInterfaceDerivedInterface);
+      PopulateInterface(gAssemblyGroupBasicConstructorResult.GClassBase, gAssemblyGroupBasicConstructorResult.GTitularInterfaceBaseInterface);
+      #endregion
+      #region populate the Interfaces CompilationUnits for additional classes found in the Titular Derived and Base CompilationUnits
+      #endregion
+      #region Condense GUsings in the Base and Derived GCompilationUnits of the Titular Interfaces Assembly
+      #endregion
+      #region Condense GItemGroups in the GProjectUnit of the Titular Interfaces Assembly
+      #endregion
+    }
+  }
+}
+
+
+
+
+using System;
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+    // ToDo:  Add GDescription to the AssemblyUnit
+
+  public record GAssemblyUnitSignilId<TValue> : AbstractStronglyTypedId<TValue>, IGAssemblyUnitSignilId<TValue> where TValue : notnull {}
+  public record GAssemblyUnitSignil<TValue> : IGAssemblyUnitSignil<TValue> where TValue : notnull {
+    public GAssemblyUnitSignil(string gName = default, string gRelativePath = default,
+    IGProjectUnit gProjectUnit = default,
+      IDictionary<IGCompilationUnitId<TValue>, IGCompilationUnit<TValue>>  gCompilationUnits = default,
+      IDictionary<IGPropertiesUnitId<TValue>, IGPropertiesUnit<TValue>> gPropertiesUnits = default,
+      IDictionary<IGResourceUnitId<TValue>, IGResourceUnit<TValue>> gResourceUnits  = default,
+      GPatternReplacement gPatternReplacement = default, GComment gComment = default) {
+      GName = gName == default ? "" : gName;
+      // ToDo:  Add GDescription to the AssemblyUnit
+      GProjectUnit = gProjectUnit == default ? new GProjectUnit() : gProjectUnit;
+      GCompilationUnits = gCompilationUnits == default ? new Dictionary<IGCompilationUnitId<TValue>, IGCompilationUnit<TValue>>() : gCompilationUnits;
+      GPropertiesUnits = gPropertiesUnits == default ? new Dictionary<IGPropertiesUnitId<TValue>, IGPropertiesUnit<TValue>>() : gPropertiesUnits;
+      GResourceUnits = gResourceUnits == default ? new Dictionary<IGResourceUnitId<TValue>, IGResourceUnit<TValue>>() : gResourceUnits;
+
+      GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GAssemblyUnitSignilId<TValue>();
+    }
+    public string GName { get; init; }
+    // ToDo:  Add GDescription to the AssemblyUnit public string GDescription { get; init; }
+    public string GRelativePath { get; init; }
+     public IGProjectUnit GProjectUnit { get; init; }
+    public IDictionary<IGCompilationUnitId<TValue>, IGCompilationUnit<TValue>> GCompilationUnits { get; init; }
+    public IDictionary<IGPropertiesUnitId<TValue>, IGPropertiesUnit<TValue>> GPropertiesUnits { get; init; }
+    public IDictionary<IGResourceUnitId<TValue>, IGResourceUnit<TValue>> GResourceUnits { get; init; }
+    public IGPatternReplacement GPatternReplacement { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGAssemblyUnitSignilId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GAttributeId<TValue> : AbstractStronglyTypedId<TValue>, IGAttributeId<TValue> where TValue : notnull {}
+  public class GAttribute<TValue> : IGAttribute<TValue> where TValue : notnull {
+    public GAttribute(string gName = "", string gValue = "",
+      IGComment gComment = default
+      ) {
+      GName = gName;
+      GValue = gValue;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GAttributeId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public string GValue { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGAttributeId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GAttributeGroupId<TValue> : AbstractStronglyTypedId<TValue>, IGAttributeGroupId<TValue> where TValue : notnull {}
+  public class GAttributeGroup<TValue> : IGAttributeGroup<TValue> where TValue : notnull {
+    public GAttributeGroup(string gName = "", Dictionary<IGAttributeId<TValue>, IGAttribute<TValue>> gAttributes = default,
+      GComment gComment = default
+    ) {
+      GName = gName;
+      GAttributes = gAttributes == default ? new Dictionary<IGAttributeId<TValue>, IGAttribute<TValue>>() : gAttributes;
+      GComment = gComment == default ? new GComment() : gComment;
+
+      Id = new GAttributeGroupId<TValue>();
+    }
+    public string GName { get; init; }
+    public Dictionary<IGAttributeId<TValue>, IGAttribute<TValue>> GAttributes { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGAttributeGroupId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GAttributeGroupExtensions {
+    public static IGAttributeGroup CreateLocalizableEnumerationAttributeGroup(string description, string visualDisplay, int  visualSortOrder) {
+      GAttributeGroup gAttributeGroup =
+        new GAttributeGroup(gName: "LocalizableEnumerationAttributeGroup");
+      //GAttribute gAttribute = new GAttribute(  "Description",description);
+      //gAttributeGroup.GAttributes[gAttribute.Id] = gAttribute;
+      //gAttribute = new GAttribute(  "VisualDisplay", visualDisplay);
+      //gAttributeGroup.GAttributes[gAttribute.Id] = gAttribute;
+      //gAttribute = new GAttribute(  "VisualSortOrder",visualSortOrder.ToString());
+      //gAttributeGroup.GAttributes[gAttribute.Id] = gAttribute;
+      return gAttributeGroup;
+    }
+
+  }
+}
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GBodyId<TValue> : AbstractStronglyTypedId<TValue>, IGBodyId<TValue> where TValue : notnull {}
+  public class GBody<TValue> : IGBody<TValue> where TValue : notnull {
+    public GBody(IList<string> gStatements = default, IGComment gComment = default
+    ) {
+      GStatements = gStatements == default ? new List<string>() : gStatements;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GBodyId<TValue>();
+    }
+    public IGComment GComment { get; init; }
+    public IList<string> GStatements { get; init; }
+    public  IGBodyId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using ATAP.Utilities.StronglyTypedId;
+using ATAP.Utilities.GenerateProgram;
+using static ATAP.Utilities.Collection.Extensions;
+
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GBodyExtensions {
+    public static IGBody AddBody(this IGBody gBody, IGBody gAdditionalBody) {
+      gBody.GStatements.AddRange(gAdditionalBody.GStatements);
+      return gBody;
+    }
+    public static IGBody AddBody(this IGBody gBody, IEnumerable<IGBody> gBodys) {
+      foreach (var o in gBodys) {
+        gBody.GStatements.AddRange(o.GStatements);
+      }
+      return gBody;
+    }
+    //public static IGBody AddBodyGroups(this IGBody gBody, IGBodyGroup gBodyGroup) {
+    //  gBody.GBodyGroups[gBodyGroup.Id] = gBodyGroup;
+    //  return gBody;
+    //}
+    //public static IGBody AddBodyGroups(this IGBody gBody, IEnumerable<IGBodyGroup> gBodyGroups) {
+    //  foreach (var o in gBodyGroups) {
+    //    gBody.GBodyGroups[o.Id] = o;
+    //  }
+    //  return gBody;
+    //}
+
+  }
+}
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GClassId<TValue> : AbstractStronglyTypedId<TValue>, IGClassId<TValue> where TValue : notnull {}
+  public class GClass<TValue> : IGClass<TValue> where TValue : notnull {
+    //public GClass(string gName, string? gVisibility, string? gInheritance, string[]? gImplements, GPropertyGroup[]? gPropertyGroups, GConstructor[]? gConstructors, GMethod[]? gMethods) {
+    public GClass(string gName = default, string gVisibility = default, string gAccessModifier = default, string gInheritance = default,
+      IList<string> gImplements = default,
+      IList<string> gDisposesOf = default,
+      IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> gPropertys = default,
+      IDictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>> gPropertyGroups = default,
+      IDictionary<IGMethodId<TValue>, IGMethod<TValue>> gMethods = default,
+      IDictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>> gMethodGroups = default,
+      IDictionary<IGStaticVariableId<TValue>, IGStaticVariable<TValue>> gStaticVariables = default,
+      IDictionary<IGStaticVariableGroupId<TValue>, IGStaticVariableGroup<TValue>> gStaticVariableGroups = default,
+      IDictionary<IGConstStringId<TValue>, IGConstString<TValue>> gConstStrings = default,
+      IDictionary<IGConstStringGroupId<TValue>, IGConstStringGroup<TValue>> gConstStringGroups = default,
+      IDictionary<IGDelegateId<TValue>, IGDelegate<TValue>> gDelegates = default,
+      IDictionary<IGDelegateGroupId<TValue>, IGDelegateGroup<TValue>> gDelegateGroups = default,
+      IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>> gEnumerations = default,
+      IDictionary<IGEnumerationGroupId<TValue>, IGEnumerationGroup<TValue>> gEnumerationGroups = default,
+      //IDictionary<IGExceptionId<TValue>, IGException<TValue>> gExceptions = default,
+      //IDictionary<IGExceptionGroupId<TValue>, IGExceptionGroup<TValue>> gExceptionGroups = default,
+      //IDictionary<IGEventId<TValue>, IGEvent<TValue>> gEvents = default,
+      //IDictionary<IGEventGroupId<TValue>, IGEventGroup<TValue>> gEventGroups = default,
+      GComment gComment = default,
+      IEnumerable<GStateConfiguration> gStateConfigurations = default
+    ) {
+      GName = gName == default ? "" : gName;
+      GVisibility = gVisibility == default ? "" : gVisibility; ;
+      GAccessModifier = gAccessModifier == default ? "" : gAccessModifier;
+      GInheritance = gInheritance == default ? "" : gInheritance; ;
+      GImplements = gImplements == default ? new List<string>() : gImplements;
+      GDisposesOf = gDisposesOf == default ? new List<string>() : gDisposesOf;
+      GPropertyGroups = gPropertyGroups == default ? new Dictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>>() : gPropertyGroups;
+      GPropertys = gPropertys == default ? new Dictionary<IGPropertyId<TValue>, IGProperty<TValue>>() : gPropertys;
+      GMethods = gMethods == default ? new Dictionary<IGMethodId<TValue>, IGMethod<TValue>>() : gMethods;
+      GMethodGroups = gMethodGroups == default ? new Dictionary<IGMethodGroupId<TValue>,IGMethodGroup<TValue>>() : gMethodGroups;
+      GStaticVariables = gStaticVariables == default ? new Dictionary<IGStaticVariableId<TValue>, IGStaticVariable<TValue>>() : gMethodGroups;
+      GStaticVariableGroups = gStaticVariableGroups == default ? new Dictionary<IGStaticVariableGroupId<TValue>, IGStaticVariableGroup<TValue>>() : gStaticVariableGroups;
+      GConstStrings = gConstStrings == default ? new Dictionary<IGConstStringId<TValue>, IGConstString<TValue>>() : gConstStrings;
+      GConstStringGroups = gConstStringGroups == default ? new Dictionary<IGConstStringGroupId<TValue>, IGConstStringGroup<TValue>>() : gConstStringGroups;
+      GDelegates = gDelegates == default ? new Dictionary<IGDelegateId<TValue>, IGDelegate<TValue>>() : gDelegates;
+      GDelegateGroups = gDelegateGroups == default ? new Dictionary<IGDelegateGroupId<TValue>, IGDelegateGroup<TValue>>() : gDelegateGroups;
+      GEnumerations = gEnumerations == default ? new Dictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>>() : gEnumerations;
+      GEnumerationGroups = gEnumerationGroups == default ? new Dictionary<IGEnumerationGroupId<TValue>, IGEnumerationGroup<TValue>>() : gEnumerationGroups;
+      //GExceptions = gExceptions  == default? new Dictionary<IGExceptionId<TValue>, IGException<TValue>>() : gExceptions;
+      //GExceptionGroups = gExceptionGroups  == default? new Dictionary<IGExceptionGroupId<TValue>, IGExceptionGroup<TValue>>() : gExceptionGroups;
+      //GEvents = gEvents  == default? new Dictionary<IGEventId<TValue>, IGEvent<TValue>>() : gEvents;
+      //GEventGroups = gEventGroups  == default? new Dictionary<IGEventGroupId<TValue>, IGEventGroup<TValue>>() : gEventGroups;
+      GComment = gComment == default ? new GComment() : gComment;
+      GStateConfigurations = new List<IGStateConfiguration>();
+      if (gStateConfigurations != default) {
+        foreach (var sc in gStateConfigurations) {
+          GStateConfigurations.Add(sc);
+        }
+      }
+
+      Id = new GClassId<TValue>();
+
+    }
+
+    public string GName { get; init; }
+    public string GVisibility { get; }
+    // ToDo: make this an enumeration
+    public string GAccessModifier { get; init; }
+    public string GInheritance { get; init; }
+    public IList<string> GImplements { get; init; }
+    public IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> GPropertys { get; init; }
+    public IDictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>> GPropertyGroups { get; init; }
+    public IDictionary<IGMethodId<TValue>, IGMethod<TValue>> GMethods { get; init; }
+    public IDictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>> GMethodGroups { get; init; }
+    public IDictionary<IGStaticVariableId<TValue>, IGStaticVariable<TValue>> GStaticVariables { get; init; }
+    public IDictionary<IGStaticVariableGroupId<TValue>, IGStaticVariableGroup<TValue>> GStaticVariableGroups { get; init; }
+    public IDictionary<IGConstStringId<TValue>, IGConstString<TValue>>? GConstStrings { get; init; }
+    public IDictionary<IGConstStringGroupId<TValue>, IGConstStringGroup<TValue>>? GConstStringGroups { get; init; }
+    public IDictionary<IGDelegateId<TValue>, IGDelegate<TValue>> GDelegates { get; init; }
+    public IDictionary<IGDelegateGroupId<TValue>, IGDelegateGroup<TValue>> GDelegateGroups { get; init; }
+    public IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>> GEnumerations { get; init; }
+    public IDictionary<IGEnumerationGroupId<TValue>, IGEnumerationGroup<TValue>> GEnumerationGroups { get; init; }
+    //public IDictionary<IGExceptionId<TValue>, IGException<TValue>> GExceptions { get; init; }
+    //public IDictionary<IGExceptionGroupId<TValue>, IGExceptionGroup<TValue>> GExceptionGroups { get; init; }
+    //public IDictionary<IGEventId<TValue>, IGEvent<TValue>> IGEvents { get; init; }
+    //public IDictionary<IGEventGroupId<TValue>, IGEventGroup<TValue>> GEventGroups { get; init; }
+    public IList<string>? GDisposesOf { get; init; }
+    public IGComment GComment { get; init; }
+    public IList<IGStateConfiguration> GStateConfigurations { get; init; }
+    public  IGClassId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using ATAP.Utilities.StronglyTypedId;
+using ATAP.Utilities.GenerateProgram;
+using static ATAP.Utilities.GenerateProgram.GAttributeGroupExtensions;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GClassExtensions {
+    public static IGClass AddProperty(this IGClass gClass, IGProperty gProperty) {
+      gClass.GPropertys[gProperty.Id] = (gProperty);
+      return gClass;
+    }
+    public static IGClass AddProperty(this IGClass gClass, IEnumerable<IGProperty> gPropertys) {
+      foreach (var o in gPropertys) {
+        gClass.GPropertys[o.Id] = o;
+      }
+      return gClass;
+    }
+    public static IGClass AddProperty(this IGClass gClass, IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> gPropertys) {
+      foreach (var kvp in gPropertys) {
+        gClass.GPropertys.Add(kvp.Key, kvp.Value);
+      }
+      return gClass;
+    }
+    public static IGClass AddPropertyGroups(this IGClass gClass, IGPropertyGroup gPropertyGroup) {
+      gClass.GPropertyGroups[gPropertyGroup.Id] = gPropertyGroup;
+      return gClass;
+    }
+    public static IGClass AddPropertyGroups(this IGClass gClass, IEnumerable<IGPropertyGroup> gPropertyGroups) {
+      foreach (var o in gPropertyGroups) {
+        gClass.GPropertyGroups[o.Id] = o;
+      }
+      return gClass;
+    }
+    public static IGClass AddPropertyGroup(this IGClass gClass,
+      IDictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>> gPropertyGroups) {
+      foreach (var kvp in gPropertyGroups) {
+        gClass.GPropertyGroups.Add(kvp.Key, kvp.Value);
+      }
+      return gClass;
+    }
+    public static IGClass AddMethod(this IGClass gClass, IGMethod gMethod) {
+      gClass.GMethods[gMethod.Id] = gMethod;
+      return gClass;
+    }
+    public static IGClass AddMethod(this IGClass gClass, IEnumerable<IGMethod> gMethods) {
+      foreach (var o in gMethods) {
+        gClass.GMethods[o.Id] = o;
+      }
+      return gClass;
+    }
+    public static IGClass AddMethod(this IGClass gClass, IDictionary<IGMethodId<TValue>, IGMethod<TValue>> gMethods) {
+      foreach (var kvp in gMethods) {
+        gClass.GMethods.Add(kvp.Key, kvp.Value);
+      }
+      return gClass;
+    }
+    public static IGClass AddMethodGroup(this IGClass gClass, IGMethodGroup gMethodGroup) {
+      gClass.GMethodGroups[gMethodGroup.Id] = gMethodGroup;
+      return gClass;
+    }
+    public static IGClass AddMethodGroup(this IGClass gClass, IEnumerable<IGMethodGroup> gMethodGroups) {
+      foreach (var o in gMethodGroups) {
+        gClass.AddMethodGroup(o);
+      }
+      return gClass;
+    }
+    public static IGClass AddMethodGroup(this IGClass gClass,
+      IDictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>> gMethodGroups) {
+      foreach (var kvp in gMethodGroups) {
+        gClass.GMethodGroups.Add(kvp.Key, kvp.Value);
+      }
+      return gClass;
+    }
+    public static IGClass AddDelegate(this IGClass gClass, IGDelegate gDelegate) {
+      gClass.GDelegates[gDelegate.Id] = gDelegate;
+      return gClass;
+    }
+    public static IGClass AddDelegate(this IGClass gClass, IEnumerable<IGDelegate> gDelegates) {
+      foreach (var o in gDelegates) {
+        gClass.GDelegates[o.Id] = o;
+      }
+      return gClass;
+    }
+    public static IGClass AddDelegate(this IGClass gClass, IDictionary<IGDelegateId<TValue>, IGDelegate<TValue>> gDelegates) {
+      foreach (var kvp in gDelegates) {
+        gClass.GDelegates.Add(kvp.Key, kvp.Value);
+      }
+      return gClass;
+    }
+    public static IGClass AddDelegateGroup(this IGClass gClass, IGDelegateGroup gDelegateGroup) {
+      gClass.GDelegateGroups[gDelegateGroup.Id] = gDelegateGroup;
+      return gClass;
+    }
+    public static IGClass AddDelegateGroup(this IGClass gClass, IEnumerable<IGDelegateGroup> gDelegateGroups) {
+      foreach (var o in gDelegateGroups) {
+        gClass.AddDelegateGroup(o);
+      }
+      return gClass;
+    }
+    public static IGClass AddDelegateGroup(this IGClass gClass,
+      IDictionary<IGDelegateGroupId<TValue>, IGDelegateGroup<TValue>> gDelegateGroups) {
+      foreach (var kvp in gDelegateGroups) {
+        gClass.GDelegateGroups.Add(kvp.Key, kvp.Value);
+      }
+      return gClass;
+    }
+    public static IEnumerable<IGMethod> CombinedMethods(this IGClass gClass) {
+      foreach (var o in gClass.GMethods) {
+        yield return o.Value;
+      }
+      foreach (var mg in gClass.GMethodGroups) {
+        foreach (var o in mg.Value.GMethods) {
+          yield return o.Value;
+        }
+      }
+    }
+    public static IEnumerable<IGMethod> CombinedConstructors(this IGClass gClass) {
+      foreach (var o in gClass.GMethods) {
+        if (o.Value.GDeclaration.IsConstructor) {
+          yield return o.Value;
+        }
+      }
+      foreach (var mg in gClass.GMethodGroups) {
+        foreach (var o in mg.Value.GMethods) {
+          if (o.Value.GDeclaration.IsConstructor) {
+            yield return o.Value;
+          }
+        }
+      }
+    }
+    /*************************************************************************************/
+    public static IEnumerable<KeyValuePair<IGPropertyID, IGProperty>> ConvertToInterfacePropertys(
+      this IGClass gClass) {
+      //var IEKVP = gClass.GPropertys.Where(kvp => kvp.Value.GVisibility == "public");
+      //Dictionary<IGPropertyId<TValue>, IGProperty<TValue>> t1 = IEKVP.ToDictionary(kvp=>kvp.Key,kvp=>kvp.Value);
+      //return gClass.GPropertys.Where(kvp => kvp.Value.GVisibility == "public").ToDictionary(kvp=>kvp.Key,kvp=>kvp.Value);
+      return gClass.GPropertys.Where(kvp =>
+        kvp.Value.GVisibility == "public");
+    }
+    public static IDictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>> ConvertToInterfacePropertyGroups(
+      this IGClass gClass) {
+      foreach (var pG in gClass.GPropertyGroups) {
+        var newDictionary = new Dictionary<IGPropertyId<TValue>, IGProperty<TValue>>();
+        var IEKVP = pG.Value.GPropertys.Where(kvp => kvp.Value.GVisibility == "public");
+      }
+      //var newDictionary = gClass.GPropertyGroups.Where(x=>x.Value.GVisibility == "public").ToDictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>>(x=>x.Value.GVisibility == "public")
+      //var newDictionary = gClass.GPropertyGroups.SelectMany(kvp =>
+      //  kvp.Value
+      //    .Where(x => x.GVisibility == "public")
+      //    .ToDictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>>(_ => true);
+      return new Dictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>>();
+    }
+    public static IGMethod ConvertMethodToInterfaceMethod(IGMethod gMethod) {
+      GMethod gInterfaceMethod = default;
+      if (!gMethod.GDeclaration.IsConstructor && gMethod.GDeclaration.GVisibility == "public") {
+        var gAccessModifier = gMethod.GDeclaration.GAccessModifier;
+        var accessModifierRegex = new Regex("(?:override|async|virtual)");
+        gAccessModifier = accessModifierRegex.Replace(gAccessModifier, "");
+        gInterfaceMethod = new GMethod(
+          new GMethodDeclaration(gMethod.GDeclaration.GName, gMethod.GDeclaration.GType, "", gAccessModifier,
+            gMethod.GDeclaration.IsStatic, false, gMethod.GDeclaration.GArguments, isForInterface: true),
+          gComment: gMethod.GComment, isForInterface: true);
+      }
+      return gInterfaceMethod;
+    }
+    public static IDictionary<IGMethodId<TValue>, IGMethod<TValue>> ConvertToInterfaceMethods(this IGClass gClass) {
+      var gInterfaceMethods = new Dictionary<IGMethodId<TValue>, IGMethod<TValue>>();
+      foreach (var kvp in gClass.GMethods) {
+        var gInterfaceMethod = ConvertMethodToInterfaceMethod(kvp.Value);
+        if (gInterfaceMethod != default) {
+          gInterfaceMethods.Add(gInterfaceMethod.Id, gInterfaceMethod);
+        }
+      }
+      return gInterfaceMethods;
+    }
+    public static IDictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>> ConvertToInterfaceMethodGroups(this IGClass gClass) {
+      var gInterfaceMethodGroups = new Dictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>>();
+      IGMethodGroup gInterfaceMethodGroup;
+      IGMethod gInterfaceMethod = default;
+      foreach (var kvp in gClass.GMethodGroups) {
+        gInterfaceMethodGroup = new GMethodGroup(gName: kvp.Value.GName);
+        foreach (var mkvp in kvp.Value.GMethods) {
+          gInterfaceMethod = ConvertMethodToInterfaceMethod(mkvp.Value);
+          if (gInterfaceMethod != default) {
+            gInterfaceMethodGroup.GMethods.Add(gInterfaceMethod.Id, gInterfaceMethod);
+          }
+        }
+        gInterfaceMethodGroups.Add(gInterfaceMethodGroup.Id, gInterfaceMethodGroup);
+      }
+      return gInterfaceMethodGroups;
+    }
+
+    //public static IDictionary<IGExceptionId<TValue>, IGException<TValue>> ConvertToInterfaceExceptions(this IGClass gClass) {
+    //  return new Dictionary<IGExceptionId<TValue>, IGException<TValue>>();
+    //}
+
+    //public static IDictionary<IGExceptionGroupId<TValue>, IGExceptionGroup<TValue>> ConvertToInterfaceExceptionGroups(this IGClass gClass) {
+    //  return new Dictionary<IGExceptionGroupId<TValue>, IGExceptionGroup<TValue>>();
+    //}
+
+    //public static IDictionary<IGEventId<TValue>, IGEvent<TValue>> ConvertToInterfaceEvents(this IGClass gClass) {
+    //  return new Dictionary<IGEventId<TValue>, IGEvent<TValue>>();
+    //}
+
+    //public static IDictionary<IGEventGroupId<TValue>, IGEventGroup<TValue>> ConvertToInterfaceEventGroups(this IGClass gClass) {
+    //  return new Dictionary<IGEventGroupId<TValue>, IGEventGroup<TValue>>();
+    //}
+    static public void PopulateInterface(IGClass gClass, IGInterface gInterface) {
+      //gClass.ConvertToInterfacePropertys().ForEach(x => gInterface.GPropertys.Add(x.Key, x.Value));
+      //gClass.ConvertToInterfacePropertyGroups().ForEach(x => gInterface.GPropertyGroups.Add(x.Key, x.Value));
+      //gClass.ConvertToInterfaceMethods().ForEach(x => gInterface.GMethods.Add(x.Key, x.Value));
+      //gClass.ConvertToInterfaceMethodGroups().ForEach(x => gInterface.GMethodGroups.Add(x.Key, x.Value));
+      //gClass.ConvertToInterfaceExceptions().ForEach(x => gInterface.GExceptions.Add(x.Key, x.Value));
+      //gClass.ConvertToInterfaceExceptionGroups().ForEach(x => gInterface.GExceptionGroups.Add(x.Key, x.Value));
+      //gClass.ConvertToInterfaceEvents().ForEach(x => gInterface.GEvents.Add(x.Key, x.Value));
+      //gClass.ConvertToInterfaceEventGroups().ForEach(x => gInterface.GEventGroups.Add(x.Key, x.Value));
+      foreach (var kvp in gClass.ConvertToInterfacePropertys()) {
+        gInterface.GPropertys.Add(kvp.Key, kvp.Value);
+      }
+      foreach (var kvp in gClass.ConvertToInterfacePropertyGroups()) {
+        gInterface.GPropertyGroups.Add(kvp.Key, kvp.Value);
+      }
+      //baseClass.ConvertToInterfacePropertyGroups().ForEach(x => gInterface.GPropertyGroups.Add(x.Key, x.Value));
+      foreach (var kvp in gClass.ConvertToInterfaceMethods()) {
+        gInterface.GMethods.Add(kvp.Key, kvp.Value);
+      }
+      foreach (var kvp in gClass.ConvertToInterfaceMethodGroups()) {
+        gInterface.GMethodGroups.Add(kvp.Key, kvp.Value);
+      }
+    }
+    public static IGInterface ConvertToInterface(this IGClass gClass) {
+      var inheritanceRegex1 = new Regex(@":.*?{", RegexOptions.Multiline);
+      var gInterfaceInheritance = gClass.GInheritance;
+      var gInterfaceImplements = gClass.GImplements;
+      var gInterface = new GInterface(
+        gName: gClass.GName,
+        gVisibility: gClass.GVisibility,
+        gImplements: gInterfaceImplements,
+        gInheritance: gInterfaceInheritance
+      );
+      foreach (var kvp in gClass.ConvertToInterfacePropertys()) {
+        gInterface.GPropertys.Add(kvp.Key, kvp.Value);
+      }
+      foreach (var kvp in gClass.ConvertToInterfacePropertyGroups()) {
+        gInterface.GPropertyGroups.Add(kvp.Key, kvp.Value);
+      }
+      foreach (var kvp in gClass.ConvertToInterfaceMethods()) {
+        gInterface.GMethods.Add(kvp.Key, kvp.Value);
+      }
+      foreach (var kvp in gClass.ConvertToInterfaceMethodGroups()) {
+        gInterface.GMethodGroups.Add(kvp.Key, kvp.Value);
+      }
+      //foreach (var kvp in gClass.ConvertToInterfaceExceptionss()) {
+      //  gInterface.GExceptionss.Add(kvp.Key, kvp.Value);
+      //}
+      //foreach (var kvp in gClass.ConvertToInterfaceExceptionsGroups()) {
+      //  gInterface.GExceptionsGroups.Add(kvp.Key, kvp.Value);
+      //}
+      //foreach (var kvp in gClass.ConvertToInterfaceEventss()) {
+      //  gInterface.GEventss.Add(kvp.Key, kvp.Value);
+      //}
+      //foreach (var kvp in gClass.ConvertToInterfaceEventsGroups()) {
+      //  gInterface.GEventsGroups.Add(kvp.Key, kvp.Value);
+      //}
+      //foreach (var kvp in gClass.ConvertToInterfaceConstructors()) {
+      //  gInterface.GMethods.Add(kvp.Key, kvp.Value);
+      //}
+      //foreach (var kvp in gClass.ConvertToInterfaceConstructorGroups()) {
+      //  gInterface.GConstructorGroups.Add(kvp.Key, kvp.Value);
+      //}
+      return gInterface;
+    }
+  }
+}
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GCommentId<TValue> : AbstractStronglyTypedId<TValue>, IGCommentId<TValue> where TValue : notnull {}
+  public class GComment<TValue> : IGComment<TValue> where TValue : notnull {
+    public GComment(IEnumerable<string> gStatements = default)  {
+      GStatements = gStatements == default ? new List<string>() : gStatements;
+      Id = new GCommentId<TValue>();
+    }
+
+    public IEnumerable<string> GStatements { get; init; }
+    public  IGCommentId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GCompilationUnitId<TValue> : AbstractStronglyTypedId<TValue>, IGCompilationUnitId<TValue> where TValue : notnull {}
+  public record GCompilationUnit<TValue> : IGCompilationUnit<TValue> where TValue : notnull {
+    public GCompilationUnit(string gName = default, string gRelativePath = default, string gFileSuffix = default, Dictionary<IGUsingId<TValue>, IGUsing<TValue>> gUsings = default,
+      Dictionary<IGUsingGroupId<TValue>, IGUsingGroup<TValue>> gUsingGroups = default,
+      Dictionary<IGNamespaceId<TValue>, IGNamespace<TValue>> gNamespaces = default,
+      IGPatternReplacement gPatternReplacement = default,
+    IGComment gComment = default
+      ) {
+      GName = gName == default ? "" : gName;
+      GRelativePath = gRelativePath == default ? "" : gRelativePath;
+      GFileSuffix = gFileSuffix == default ? ".cs" : gFileSuffix;
+      GUsings = gUsings == default ? new Dictionary<IGUsingId<TValue>, IGUsing<TValue>>() : gUsings;
+      GUsingGroups = gUsingGroups == default ? new Dictionary<IGUsingGroupId<TValue>, IGUsingGroup<TValue>>() : gUsingGroups;
+      GNamespaces = gNamespaces == default ? new Dictionary<IGNamespaceId<TValue>, IGNamespace<TValue>>() : gNamespaces;
+      GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GCompilationUnitId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public Dictionary<IGUsingGroupId<TValue>, IGUsingGroup<TValue>> GUsingGroups { get; init; }
+    public Dictionary<IGUsingId<TValue>, IGUsing<TValue>> GUsings { get; init; }
+    public Dictionary<IGNamespaceId<TValue>, IGNamespace<TValue>> GNamespaces { get; init; }
+    public string GRelativePath { get; init; }
+    public string GFileSuffix { get; init; }
+    public IGPatternReplacement GPatternReplacement { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGCompilationUnitId Id { get; init; }
+    public static string Header { get; } = "// " + StringConstants.AutoGeneratedHeaderCommentTextStringDefault;
+  }
+}
+
+
+
+
+
+
+
+
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using ATAP.Utilities.StronglyTypedId;
+using ATAP.Utilities.GenerateProgram;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GCompilationUnitExtensions {
+    public static IGCompilationUnit CompilationUnitStringConstantsConstructor(String gNamespaceName,
+      string gRelativePath = default, IGPatternReplacement gPatternReplacement = default) {
+      GClass gClass = new GClass("StringConstants", gVisibility: "public", "static");
+      GConstStringGroup gConstStringGroup = new GConstStringGroup(gName: "Settings File Names");
+      foreach (var kvp in new Dictionary<string, string>() {
+        {"SettingsFileName", "AssemblyUnitNameReplacementPattern"}, {"SettingsFileNameSuffix", "json"},
+      }) {
+        GConstString gConstString = new GConstString(kvp.Key, kvp.Value);
+        gConstStringGroup.GConstStrings.Add(gConstString.Id, gConstString);
+      }
+      gClass.GConstStringGroups[gConstStringGroup.Id] = gConstStringGroup;
+      gConstStringGroup = new GConstStringGroup(gName: "Temporary File Names");
+      foreach (var kvp in new Dictionary<string, string>() {
+        {"TemporaryDirectoryBaseConfigRootKey", "TemporaryDirectoryBase"},
+        {"TemporaryDirectoryBaseDefault", "D:/Temp/AssemblyUnitNameReplacementPattern/"},
+      }) {
+        GConstString gConstString = new GConstString(kvp.Key, kvp.Value);
+        gConstStringGroup.GConstStrings[gConstString.Id] = gConstString;
+      }
+      gClass.GConstStringGroups[gConstStringGroup.Id] = gConstStringGroup;
+      GNamespace gNamespace = new GNamespace(gNamespaceName);
+      gNamespace.GClasss.Add(gClass.Id, gClass);
+      var gCompilationUnit = new GCompilationUnit(gName: "StringConstants", gRelativePath,
+        gPatternReplacement: gPatternReplacement);
+      gCompilationUnit.GNamespaces.Add(gNamespace.Id, gNamespace);
+      return gCompilationUnit;
+    }
+    public static IGCompilationUnit CompilationUnitDefaultConfigurationConstructor(String gNamespaceName,
+      string gRelativePath = default,
+      List<string> gAdditionalStatements = default, GPatternReplacement gPatternReplacement = default) {
+      GCompilationUnit gCompilationUnit = new GCompilationUnit(gName: "DefaultConfiguration", gRelativePath,
+        gPatternReplacement: gPatternReplacement);
+      foreach (var o in new List<IGUsing>() {new GUsing("System.Collections.Generic")}) {
+        gCompilationUnit.GUsings.Add(o.Id, o);
+      }
+      GNamespace gNamespace = new GNamespace(gNamespaceName);
+
+      GClass gClass = new GClass("DefaultConfiguration", gVisibility: "public", gAccessModifier: "static");
+      GStaticVariable gStaticVariable = new GStaticVariable(gName: "Production", gType: "Dictionary<string,string>",
+        gVisibility: "public", gAccessModifier: "",
+        gBody: new GBody(new List<string>() {
+          "new Dictionary<string, string> {",
+          //"  {StringConstants.PlaceholderConfigKey, StringConstants.PlaceholderStringDefault},",
+          "}",
+        }),
+        gAdditionalStatements: gAdditionalStatements
+      );
+      gClass.GStaticVariables.Add(gStaticVariable.Id, gStaticVariable);
+
+      gNamespace.GClasss[gClass.Id] = gClass;
+      gCompilationUnit.GNamespaces.Add(gNamespace.Id, gNamespace);
+      return gCompilationUnit;
+    }
+  }
+}
+
+
+
+
+using System;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GConstStringId<TValue> : AbstractStronglyTypedId<TValue>, IGConstStringId<TValue> where TValue : notnull {}
+  public class GConstString<TValue> : IGConstString<TValue> where TValue : notnull {
+    public GConstString(string gName, string gValue) {
+      GName = gName ?? throw new ArgumentNullException(nameof(gName));
+      GValue = gValue ?? throw new ArgumentNullException(nameof(gValue));
+      Id = new GConstStringId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public string GValue { get; init; }
+    public  IGConstStringId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GConstStringGroupId<TValue> : AbstractStronglyTypedId<TValue>, IGConstStringGroupId<TValue> where TValue : notnull {}
+  public class GConstStringGroup<TValue> : IGConstStringGroup<TValue> where TValue : notnull {
+    public GConstStringGroup(string gName = "", IDictionary<IGConstStringId<TValue>, IGConstString<TValue>> gConstStrings = default) {
+      GName = gName ?? throw new ArgumentNullException(nameof(gName));
+      GConstStrings = gConstStrings == default ? new Dictionary<IGConstStringId<TValue>, IGConstString<TValue>>() : gConstStrings;
+      Id = new GConstStringGroupId<TValue>();
+    }
+    public string GName { get; init; }
+    public IDictionary<IGConstStringId<TValue>, IGConstString<TValue>> GConstStrings { get; init; }
+    public  IGConstStringGroupId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GDelegateId<TValue> : AbstractStronglyTypedId<TValue>, IGDelegateId<TValue> where TValue : notnull {}
+  public class GDelegate<TValue> : IGDelegate<TValue> where TValue : notnull {
+    public GDelegate(IGDelegateDeclaration gDelegateDeclaration = default, IGComment gComment = default) {
+      GDelegateDeclaration = gDelegateDeclaration == default ? new GDelegateDeclaration() : gDelegateDeclaration;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GDelegateId<TValue>();
+    }
+
+    public IGDelegateDeclaration GDelegateDeclaration { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGDelegateId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GDelegateDeclarationId<TValue> : AbstractStronglyTypedId<TValue>, IGDelegateDeclarationId<TValue> where TValue : notnull {}
+  public class GDelegateDeclaration<TValue> : IGDelegateDeclaration<TValue> where TValue : notnull {
+    public GDelegateDeclaration(string gName = default, string gType = default, string gVisibility = default,
+      Dictionary<IGArgumentId<TValue>, IGArgument<TValue>> gArguments = default,
+      IGComment gComment = default) {
+      GName = gName == default ? "" : gName;
+      GVisibility = gVisibility == default ? "" : gVisibility;
+      GType = gType == default ? "" : gType;
+      GArguments = gArguments == default ? new Dictionary<IGArgumentId<TValue>, IGArgument<TValue>>() : gArguments;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GDelegateDeclarationId<TValue>();
+    }
+    public string GName { get; init; }
+    public string GType { get; init; }
+    // ToDo: make this an enumeration
+    public string GVisibility { get; init; }
+    public IGComment GComment { get; init; }
+    public Dictionary<IGArgumentId<TValue>, IGArgument<TValue>> GArguments { get; init; }
+
+    public  IGDelegateDeclarationId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GDelegateGroupId<TValue> : AbstractStronglyTypedId<TValue>, IGDelegateGroupId<TValue> where TValue : notnull {}
+  public class GDelegateGroup<TValue> : IGDelegateGroup<TValue> where TValue : notnull {
+    public GDelegateGroup(string gName, Dictionary<IGDelegateId<TValue>, IGDelegate<TValue>>? gDelegates = default) {
+      GName = gName ?? throw new ArgumentNullException(nameof(gName));
+      GDelegates = gDelegates == default ? new Dictionary<IGDelegateId<TValue>, IGDelegate<TValue>>() : gDelegates;
+      Id = new GDelegateGroupId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public Dictionary<IGDelegateId<TValue>, IGDelegate<TValue>>? GDelegates { get; init; }
+    public  IGDelegateGroupId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+//using System.Management.Instrumentation;
+using ATAP.Utilities.StronglyTypedId;
+
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GEnumerationId<TValue> : AbstractStronglyTypedId<TValue>, IGEnumerationId<TValue> where TValue : notnull {}
+  public class GEnumeration<TValue> : IGEnumeration<TValue> where TValue : notnull {
+    public GEnumeration(string gName = default, string gUnderlyingBaseType = default, string gVisibility = default, string gInheritance = default,
+      bool isBitFlags = default,
+      Dictionary<IGEnumerationMemberId<TValue>, IGEnumerationMember<TValue>> gEnumerationMembers = default,
+      Dictionary<IGAttributeId<TValue>, IGAttribute<TValue>> gAttributes = default,
+      Dictionary<IGAttributeGroupId<TValue>, IGAttributeGroup<TValue>> gAttributeGroups = default,
+      GComment gComment = default
+      ) {
+      GName = gName == default ? "" : gName;
+      GUnderlyingBaseType = gUnderlyingBaseType == default ? "" : gUnderlyingBaseType;
+      GVisibility = gVisibility == default ? "" : gVisibility;
+      GInheritance = gInheritance == default ? "" : gInheritance; ;
+      IsBitFlags = isBitFlags == default ? false : (bool)isBitFlags;
+      GEnumerationMembers = gEnumerationMembers == default ? new Dictionary<IGEnumerationMemberId<TValue>, IGEnumerationMember<TValue>>() : gEnumerationMembers;
+      GAttributes = gAttributes == default ? new Dictionary<IGAttributeId<TValue>, IGAttribute<TValue>>() : gAttributes;
+      GAttributeGroups = gAttributeGroups == default ? new Dictionary<IGAttributeGroupId<TValue>, IGAttributeGroup<TValue>>() : gAttributeGroups;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GEnumerationId<TValue>();
+    }
+    public string GName { get; init; }
+    public string GUnderlyingBaseType { get; init; }
+    // ToDo: make this an enumeration
+    public string GAccessModifier { get; init; }
+    public string GVisibility { get; init; }
+    public string GInheritance { get; init; }
+    public bool IsBitFlags { get; init; }
+    public Dictionary<IGEnumerationMemberId<TValue>, IGEnumerationMember<TValue>> GEnumerationMembers { get; init; }
+    public Dictionary<IGAttributeId<TValue>, IGAttribute<TValue>> GAttributes { get; init; }
+    public Dictionary<IGAttributeGroupId<TValue>, IGAttributeGroup<TValue>> GAttributeGroups { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGEnumerationId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GEnumerationMemberId<TValue> : AbstractStronglyTypedId<TValue>, IGEnumerationMemberId<TValue> where TValue : notnull {}
+  public class GEnumerationMember<TValue> : IGEnumerationMember<TValue> where TValue : notnull {
+    public GEnumerationMember(string gName = "", int? gValue = default,
+      IDictionary<IGAttributeId<TValue>, IGAttribute<TValue>> gAttributes = default,
+      IDictionary<IGAttributeGroupId<TValue>, IGAttributeGroup<TValue>> gAttributeGroups = default,
+      GComment gComment = default
+      ) {
+      GName = gName;
+      GValue = gValue;
+      GAttributes = gAttributes == default ? new Dictionary<IGAttributeId<TValue>, IGAttribute<TValue>>() : gAttributes;
+      GAttributeGroups = gAttributeGroups == default ? new Dictionary<IGAttributeGroupId<TValue>, IGAttributeGroup<TValue>>() : gAttributeGroups;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GEnumerationMemberId<TValue>();
+    }
+
+    public string GName { get; init; }
+    // ToDo: support for enumeration member types other than int
+    public int? GValue { get; init; }
+    public IDictionary<IGAttributeId<TValue>, IGAttribute<TValue>> GAttributes { get; init; }
+    public IDictionary<IGAttributeGroupId<TValue>, IGAttributeGroup<TValue>> GAttributeGroups { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGEnumerationMemberId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using ATAP.Utilities.StronglyTypedId;
+using ATAP.Utilities.GenerateProgram;
+using static ATAP.Utilities.GenerateProgram.GAttributeGroupExtensions;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GEnumerationMemberExtensions {
+
+    public static IGEnumerationMember LocalizableEnumerationMember(string gName = "", int gValue = default, string description = "", string visualDisplay = "", int  visualSortOrder = default) {
+      var gAttributeGroups = new Dictionary<IGAttributeGroupId<TValue>, IGAttributeGroup<TValue>>();
+      var gAttributeGroup = CreateLocalizableEnumerationAttributeGroup(description: String.IsNullOrWhiteSpace(description)? gName:description,
+        visualDisplay: String.IsNullOrWhiteSpace(visualDisplay)? gName: visualDisplay,
+        visualSortOrder:visualSortOrder);
+      gAttributeGroups[gAttributeGroup.Id] = gAttributeGroup;
+      return new GEnumerationMember(gName: gName, gValue:gValue, gAttributeGroups: gAttributeGroups);
+    }
+  }
+}
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GEnumerationGroupId<TValue> : AbstractStronglyTypedId<TValue>, IGEnumerationGroupId<TValue> where TValue : notnull {}
+  public class GEnumerationGroup<TValue> : IGEnumerationGroup<TValue> where TValue : notnull {
+    public GEnumerationGroup(string gName = default, IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>> gEnumerations = default) {
+      GName = gName == default ? "" : gName;
+      GEnumerations = gEnumerations == default ? new Dictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>>() : gEnumerations;
+      Id = new GEnumerationGroupId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>> GEnumerations { get; init; }
+    public  IGEnumerationGroupId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GGenerateCodeProgressId<TValue> : AbstractStronglyTypedId<TValue>, IGGenerateCodeProgressId<TValue> where TValue : notnull {}
+  public class GGenerateCodeProgress<TValue> : IGGenerateCodeProgress<TValue> where TValue : notnull {
+    public GGenerateCodeProgress() {
+      Id = new GGenerateCodeProgressId<TValue>();
+    }
+
+    public  IGGenerateCodeProgressId Id { get; init; }
+
+    void IProgress<string>.Report(string value) {
+      throw new NotImplementedException();
+    }
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Threading;
+
+using ATAP.Utilities.ETW;
+using ATAP.Utilities.Persistence;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+#if TRACE
+  [ETWLogAttribute]
+#endif
+  public partial class GGenerateCodeSignil : IGGenerateCodeSignil {
+    public IGAssemblyGroupSignil? GAssemblyGroupSignil { get; set; }
+    //public IGGlobalSettingsSignil? GGlobalSettingsSignil { get; set; }
+    public IGSolutionSignil? GSolutionSignil { get; set; }
+    public string ArtifactsDirectoryBase { get; set; }
+    public string ArtifactsFileRelativePath { get; set; }
+    public string[] ArtifactsFilePaths { get; set; }
+    public string TemporaryDirectoryBase { get; set; }
+    public bool EnableProgress { get; set; }
+    public bool EnablePersistence { get; set; }
+    public bool EnablePickAndSave { get; set; }
+    public IGGenerateCodeProgress? Progress { get; set; }
+    public IPersistence<IInsertResultsAbstract>? Persistence { get; set; }
+    public IPickAndSave<IInsertResultsAbstract>? PickAndSave { get; set; }
+    public IEntryPoints EntryPoints { get; set; }
+    public CancellationToken CancellationTokenFromCaller { get; set; }
+    public  IGGenerateCodeSignilId Id { get; init; }
+    public GGenerateCodeSignil(
+      IGAssemblyGroupSignil? gAssemblyGroupSignil = default
+      //, IGGlobalSettingsSignil? gGlobalSettingsSignil = default
+      , IGSolutionSignil? gSolutionSignil = default
+      , string artifactsDirectoryBase = default
+      , string artifactsFileRelativePath = default
+      , string[] artifactsFilePaths = default
+      , string temporaryDirectoryBase = default
+      , bool enableProgress = default
+      , bool enablePersistence = default
+      , bool enablePickAndSave = default
+      , IGGenerateCodeProgress? progress = default
+      , IPersistence<IInsertResultsAbstract>? persistence = default
+      , IPickAndSave<IInsertResultsAbstract>? pickAndSave = default
+      , IEntryPoints entryPoints = default
+            , CancellationToken cancellationTokenFromCaller = default
+) {
+      // ToDo: use the ATAP normal method of parameter->Property settings
+      GAssemblyGroupSignil = gAssemblyGroupSignil;
+     // GGlobalSettingsSignil = gGlobalSettingsSignil;
+      GSolutionSignil = gSolutionSignil;
+      ArtifactsDirectoryBase = artifactsDirectoryBase;
+      ArtifactsFileRelativePath = artifactsFileRelativePath;
+      ArtifactsFilePaths = artifactsFilePaths;
+      TemporaryDirectoryBase = temporaryDirectoryBase;
+      EnableProgress = enableProgress;
+      EnablePersistence = enablePersistence;
+      EnablePickAndSave = enablePickAndSave;
+      Progress = progress;
+      Persistence = persistence;
+      PickAndSave = pickAndSave;
+      EntryPoints = entryPoints;
+      CancellationTokenFromCaller = cancellationTokenFromCaller;
+      Id = new IGGenerateCodeSignilId<TValue>();
+    }
+  }
+
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GGenerateProgramResultId<TValue> : AbstractStronglyTypedId<TValue>, IGGenerateProgramResultId<TValue> where TValue : notnull {}
+  public class GGenerateProgramResult<TValue> : IGGenerateProgramResult<TValue> where TValue : notnull {
+    public GGenerateProgramResult(bool dBExtractionSuccess, bool buildSuccess, bool unitTestsSuccess, double unitTestsCoverage, string generatedSolutionFileDirectory, IDictionary<IGAssemblyGroupId<TValue>, IGAssemblyGroup<TValue>> collectionOfAssembliesBuilt, bool packagingSuccess, bool deploymentSuccess) {
+      DBExtractionSuccess = dBExtractionSuccess;
+      BuildSuccess = buildSuccess;
+      UnitTestsSuccess = unitTestsSuccess;
+      UnitTestsCoverage = unitTestsCoverage;
+      GeneratedSolutionFileDirectory = generatedSolutionFileDirectory;
+      CollectionOfAssembliesBuilt = collectionOfAssembliesBuilt;
+      PackagingSuccess = packagingSuccess;
+      DeploymentSuccess = deploymentSuccess;
+      Id = new GGenerateProgramResultId<TValue>();
+    }
+
+    public bool DBExtractionSuccess { get; init; }
+    public bool BuildSuccess { get; init; }
+    public bool UnitTestsSuccess { get; init; }
+    public double UnitTestsCoverage { get; init; }
+    public string GeneratedSolutionFileDirectory { get; init; }
+    public IDictionary<IGAssemblyGroupId<TValue>, IGAssemblyGroup<TValue>> CollectionOfAssembliesBuilt { get; init; }
+    public bool PackagingSuccess { get; init; }
+    public bool DeploymentSuccess { get; init; }
+    public  IGGenerateProgramResultId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+using ATAP.Utilities.StronglyTypedId;
+namespace ATAP.Utilities.GenerateProgram {
+
+
+  public class GGlobalSettingsSignil : IGGlobalSettingsSignil {
+    public GGlobalSettingsSignil(
+     ICollection<string> defaultTargetFrameworks = default
+    ) {
+      DefaultTargetFrameworks = defaultTargetFrameworks ?? throw new ArgumentNullException(nameof(defaultTargetFrameworks));
+
+
+    }
+    public ICollection<string> DefaultTargetFrameworks { get; }
+    public  IGGlobalSettingsSignilId Id { get; }
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GInterfaceId<TValue> : AbstractStronglyTypedId<TValue>, IGInterfaceId<TValue> where TValue : notnull {}
+  public class GInterface<TValue> : IGInterface<TValue> where TValue : notnull {
+    public GInterface(string gName, string gVisibility = default, string gAccessModifier = default, string gInheritance = default,
+      IList<string> gImplements = default,
+      IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> gPropertys = default,
+      IDictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>> gPropertyGroups = default,
+      IDictionary<IGMethodId<TValue>, IGMethod<TValue>> gMethods = default,
+      IDictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>> gMethodGroups = default
+      //IDictionary<IGExceptionId<TValue>, IGException<TValue>> gExceptions = default,
+      //IDictionary<IGExceptionGroupId<TValue>, IGExceptionGroup<TValue>> gExceptionGroups = default,
+      //IDictionary<IGEventId<TValue>, IGEvent<TValue>> gEvents = default,
+      //IDictionary<IGEventGroupId<TValue>, IGEventGroup<TValue>> gEventGroups = default,
+      ) {
+      GName = gName ?? throw new ArgumentNullException(nameof(gName));
+      GVisibility = gVisibility == default ? "" : gVisibility; ;
+      GAccessModifier = gAccessModifier == default ? "" : gAccessModifier;
+      GInheritance = gInheritance == default ? "" : gInheritance; ;
+      GImplements = gImplements == default ? new List<string>() : gImplements;
+      GPropertys = gPropertys == default ? new Dictionary<IGPropertyId<TValue>, IGProperty<TValue>>() : gPropertys;
+      GPropertyGroups = gPropertyGroups == default ? new Dictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>>() : gPropertyGroups;
+      GMethods = gMethods == default ? new Dictionary<IGMethodId<TValue>, IGMethod<TValue>>() : gMethods;
+      GMethodGroups = gMethodGroups == default ? new Dictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>>() : gMethodGroups;
+      //GExceptions = gExceptions  == default? new Dictionary<IGExceptionId<TValue>, IGException<TValue>>() : gExceptions;
+      //GExceptionGroups = gExceptionGroups == default ? new Dictionary<IGExceptionGroupId<TValue>, IGExceptionGroup<TValue>>() : gExceptionGroups;
+      //GEvents = gEvents  == default? new Dictionary<IGEventId<TValue>, IGEvent<TValue>>() : gEvents;
+      //GEventGroups = gEventGroups == default ? new Dictionary<IGEventGroupId<TValue>, IGEventGroup<TValue>>() : gEventGroups;
+
+      Id = new GInterfaceId<TValue>();
+    }
+    public string GName { get; }
+    public string GVisibility { get; }
+    // ToDo: make this an enumeration
+    public string GAccessModifier { get; }
+    public string GInheritance { get; }
+    public IList<string> GImplements { get; }
+    public IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> GPropertys { get; }
+    public IDictionary<IGPropertyGroupId<TValue>, IGPropertyGroup<TValue>> GPropertyGroups { get; }
+    public IDictionary<IGMethodId<TValue>, IGMethod<TValue>> GMethods { get; }
+    public IDictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>> GMethodGroups { get; }
+    //public IDictionary<IGExceptionId<TValue>, IGException<TValue>> GExceptions { get; }
+    //public IDictionary<IGExceptionGroupId<TValue>, IGExceptionGroup<TValue>> GExceptionGroups { get; }
+    //public IDictionary<IGEventId<TValue>, IGEvent<TValue>> GEvents { get; }
+    //public IDictionary<IGEventGroupId<TValue>, IGEventGroup<TValue>> GEventGroups { get; }
+    public  IGInterfaceId Id { get; }
+  }
+}
+
+
+
+
+
+
+
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using ATAP.Utilities.StronglyTypedId;
+using ATAP.Utilities.GenerateProgram;
+using static ATAP.Utilities.GenerateProgram.GAttributeGroupExtensions;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GInterfaceExtensions {
+    public static IGInterface AddProperty(this IGInterface gInterface, IGProperty gProperty) {
+      gInterface.GPropertys[gProperty.Id] = (gProperty);
+      return gInterface;
+    }
+    public static IGInterface AddProperty(this IGInterface gInterface, IEnumerable<IGProperty> gPropertys) {
+      foreach (var o in gPropertys) {
+        gInterface.GPropertys[o.Id] = o;
+      }
+      return gInterface;
+    }
+    public static IGInterface AddProperty(this IGInterface gInterface, IDictionary<IGPropertyId,IGProperty> gPropertys) {
+      foreach (var kvp in gPropertys) {
+        gInterface.GPropertys.Add(kvp.Key,kvp.Value);
+      }
+      return gInterface;
+    }
+    public static IGInterface AddPropertyGroups(this IGInterface gInterface, IGPropertyGroup gPropertyGroup) {
+      gInterface.GPropertyGroups[gPropertyGroup.Id] = gPropertyGroup;
+      return gInterface;
+    }
+    public static IGInterface AddPropertyGroups(this IGInterface gInterface, IEnumerable<IGPropertyGroup> gPropertyGroups) {
+      foreach (var o in gPropertyGroups) {
+        gInterface.GPropertyGroups[o.Id] = o;
+      }
+      return gInterface;
+    }
+    public static IGInterface AddPropertyGroup(this IGInterface gInterface, IDictionary<IGPropertyGroupId<TValue>, IGProperty> gPropertys) {
+      foreach (var kvp in gPropertys) {
+        gInterface.GPropertys.Add(kvp.Key,kvp.Value);
+      }
+      return gInterface;
+    }
+    public static IGInterface AddPropertyGroups(this IGInterface gInterface, IGPropertyGroup gPropertyGroup) {
+      gInterface.GPropertyGroups[gPropertyGroup.Id] = gPropertyGroup;
+      return gInterface;
+    }
+    public static IGInterface AddPropertyGroups(this IGInterface gInterface, IEnumerable<IGPropertyGroup> gPropertyGroups) {
+      foreach (var o in gPropertyGroups) {
+        gInterface.GPropertyGroups[o.Id] = o;
+      }
+      return gInterface;
+    }
+    public static IGInterface AddPropertyGroup(this IGInterface gInterface, IDictionary<IGPropertyGroupId<TValue>,IGPropertyGroup> gPropertyGroups) {
+      foreach (var kvp in gPropertyGroups) {
+        gInterface.GPropertyGroups.Add(kvp.Key,kvp.Value);
+      }
+      return gInterface;
+    }
+    public static IGInterface AddMethod(this IGInterface gInterface, IGMethod gMethod) {
+      gInterface.GMethods[gMethod.Id] = gMethod;
+      return gInterface;
+    }
+    public static IGInterface AddMethod(this IGInterface gInterface, IEnumerable<GMethod> gMethods) {
+      foreach (var o in gMethods) {
+        gInterface.GMethods[o.Id] = o;
+      }
+      return gInterface;
+    }
+    public static IGInterface AddMethod(this IGInterface gInterface, IDictionary<IGMethodId<TValue>, IGMethod<TValue>> gMethods) {
+      foreach (var kvp in gMethods) {
+        gInterface.GMethods.Add(kvp.Key,kvp.Value);
+      }
+      return gInterface;
+    }
+    public static IGInterface AddMethodGroup(this IGInterface gInterface, IGMethodGroup gMethodGroup) {
+      gInterface.GMethodGroups[gMethodGroup.Id] = gMethodGroup;
+      return gInterface;
+    }
+    public static IGInterface AddMethodGroup(this IGInterface gInterface, IEnumerable<IGMethodGroup> gMethodGroups) {
+      foreach (var o in gMethodGroups) {
+        gInterface.AddMethodGroup(o);
+      }
+      return gInterface;
+    }
+    public static IGInterface AddMethodGroup(this IGInterface gInterface, IDictionary<IGMethodGroupId<TValue>, IGMethodGroup<TValue>> gMethodGroups) {
+      foreach (var kvp in gMethodGroups) {
+        gInterface.GMethodGroups.Add(kvp.Key,kvp.Value);
+      }
+      return gInterface;
+    }
+  }
+}
+
+
+
+
+using System;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GItemGroupInProjectUnitId<TValue> : AbstractStronglyTypedId<TValue>, IGItemGroupInProjectUnitId<TValue> where TValue : notnull {}
+  public class GItemGroupInProjectUnit<TValue> : IGItemGroupInProjectUnit<TValue> where TValue : notnull {
+    public GItemGroupInProjectUnit(string gName = "", string gDescription = "", IGBody gBody = default, IGComment gComment = default) {
+      GName = gName ?? throw new ArgumentNullException(nameof(gName));
+      GDescription = gDescription == default ? "" : gDescription;
+      GBody = gBody == default ? new GBody() : gBody;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GItemGroupInProjectUnitId<TValue>();
+    }
+    public string GName { get; init; }
+    public string GDescription { get; init; }
+    public IGBody GBody { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGItemGroupInProjectUnitId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GItemGroupInProjectUnitExtensions {
+
+    //public static IGItemGroupInProjectUnit ItemGroupInProjectUnitForEntireService() {
+    //  return  new GItemGroupInProjectUnit("CompleteServiceProjectReferences",
+    //    "Projects in this solution for ", new GBody(new List<string>() {
+    //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/ATAP.Utilities.DataBaseManagement/ATAP.Utilities.DatabaseManagement.csproj\" />",
+    //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternsrc/services/ATAP.Utilities.GenerateProgram/ATAP.Utilities.GenerateProgram.csproj\" />",
+    //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.ComputerInventory.Hardware.Extensions/ATAP.Utilities.ComputerInventory.Hardware.Extensions.csproj\" />",
+    //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.ComputerInventory.ProcessInfo.Models/ATAP.Utilities.ComputerInventory.ProcessInfo.Models.csproj\" />",
+    //      "<ProjectReference Include=\"SolutionReferencedProjectsBasePathReplacementPatternATAP.Utilities.ComputerInventory.Software.Enumerations/ATAP.Utilities.ComputerInventory.Software.Enumerations.csproj\" />",
+    //    }));
+    //}
+
+    public static IGItemGroupInProjectUnit ATAPLoggingUtilitiesReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("PackageReferencesForLoggingUtilities",
+        "Packages in this solution for the Logging Utilities", new GBody(new List<string>() {
+          "<PackageReference Include=\"ATAP.Utilities.Logging\" />",
+        }));
+    }
+
+    public static IGItemGroupInProjectUnit ReactiveUtilitiesReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("ProjectReferencesForReactiveUtilities",
+        "Packages for the Reactive Utilities", new GBody(new List<string>() {
+          "<PackageReference Include=\"ATAP.Utilities.Extensions.Reactive\" />"
+        }));
+    }
+    public static IGItemGroupInProjectUnit ReactiveExtensionsReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("ReactiveExtensionsPackageReferences",
+        "Packages for Reactive Extensions", new GBody(new List<string>() {
+          "<PackageReference Include=\"System.Reactive\" />",
+          "<PackageReference Include=\"System.Reactive.Concurrency\" />"
+        }));
+    }
+    public static IGItemGroupInProjectUnit PersistenceUtilitiesReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("ProjectReferencesForPersistenceUtilities",
+        "Projects in this solution for the Persistence Utilities", new GBody(new List<string>() {
+          "<PackageReference Include=\"ATAP.Utilities.Persistence.Interfaces\" />",
+          "<PackageReference Include=\"ATAP.Utilities.Extensions.Persistence\" />",
+          "<PackageReference Include=\"ATAP.Utilities.Persistence\" />",
+        }));
+    }
+
+    public static IGItemGroupInProjectUnit TimersReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("ProjectReferencesForTimerService",
+        "Projects in this solution for the Timer Service", new GBody(new List<string>() {
+          "<PackageReference Include=\"Timers.Interfaces\" />",
+          "<PackageReference Include=\"Timers\" />",
+          //$"<ProjectReference Include=\"{basePathToSolution}src/services/Timers.Interfaces/Timers.Interfaces.csproj\" />",
+          //$"<ProjectReference Include=\"{basePathToSolution}src/services/Timers/Timers.csproj\" />"
+        }));
+    }
+
+    public static IGItemGroupInProjectUnit ATAPGenericHostUtilitiesReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("ProjectReferencesForTGenericHostUtilities",
+        "Projects in this solution for the GenericHost Utilities", new GBody(new List<string>() {
+          "<PackageReference Include=\"Extensions.GenericHost\" />",
+          //$"<ProjectReference Include=\"{basePathToSolution}src/GenericHost/Extensions.GenericHost/Extensions.GenericHost.csproj\" />",
+        }));
+    }
+
+    //public static IGItemGroupInProjectUnit ProjectReferenceItemGroupInProjectUnitForStdInStdOutStdErrServices(string basePathToSolution) {
+    //  var gItemGroupStatements = ;
+    //  return new GItemGroupInProjectUnit("ProjectReferencesForStdInStdOutStdErrServices",
+    //    "Projects in this solution for the StdIn, StdOut, and StdErr Services", new GBody(new List<string>() {
+    //      $"<ProjectReference Include=\"{basePathToSolution}src/services/StdInSource.Interfaces/StdInSource.Interfaces.csproj\" />",
+    //      $"<ProjectReference Include=\"{basePathToSolution}src/services/StdInSource/StdInSource.csproj\" />",
+    //      $"<ProjectReference Include=\"{basePathToSolution}src/services/StdInMonitor.Interfaces/StdInMonitor.Interfaces.csproj\" />",
+    //      $"<ProjectReference Include=\"{basePathToSolution}src/services/StdInMonitor/StdInMonitor.csproj\" />",
+    //      $"<ProjectReference Include=\"{basePathToSolution}src/services/StdOutSink.Interfaces/StdOutSink.Interfaces.csproj\" />",
+    //      $"<ProjectReference Include=\"{basePathToSolution}src/services/StdOutSink/StdOutSink.csproj\" />",
+    //      $"<ProjectReference Include=\"{basePathToSolution}src/services/StdErrSink.Interfaces/StdErrSink.Interfaces.csproj\" />",
+    //      $"<ProjectReference Include=\"{basePathToSolution}src/services/StdErrSink/StdErrSink.csproj\" />",
+    //    }));
+    //}
+
+    public static IGItemGroupInProjectUnit QuickGraphReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("QuickGraphPackageReferences",
+        "Packages to persist data to QuickGraph", new GBody(new List<string>() {
+          "<PackageReference Include=\"YC.QuickGraph\" />",
+          "<PackageReference Include=\"FSharp.Core\" />",
+        }));
+    }
+    public static IGItemGroupInProjectUnit QuickGraphDependentReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("QuickGraphDependentPackageReferences",
+        "Packages to ensure persisting data to QuickGraph uses the correct version of dependent packages", new GBody(new List<string>() {
+          "<PackageReference Include=\"DotNet.Contracts\" />",
+          "<PackageReference Include=\"FSharpx.Collections.Experimental\" />"
+        }));
+    }
+
+    public static IGItemGroupInProjectUnit ServiceStackSerializationReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("ServiceStackSerializationPackageReferences",
+        "ServiceStack Serialization and Dump utility", new GBody(new List<string>() {
+          "<PackageReference Include=\"ServiceStack.Text\" />"
+        }));
+    }
+
+    public static IGItemGroupInProjectUnit ServiceStackORMLiteReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("ServiceStackORMLitePackageReferences",
+        "ServiceStack ORMLite (database) utilities", new GBody(new List<string>() {
+          "<PackageReference Include=\"ServiceStack\" />",
+          "<PackageReference Include=\"ServiceStack.OrmLite\" />",
+          "<PackageReference Include=\"ServiceStack.OrmLite.SqlServer\" />"
+        }));
+    }
+
+    public static IGItemGroupInProjectUnit NetCoreGenericHostReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("NetCoreGenericHostAndWebServerHostPackageReferences",
+        "Packages necessary to run the ASP.Net Core Generic Host and web server hosts Server", new GBody(new List<string>() {
+          "<PackageReference Include=\"Microsoft.Extensions.Configuration\" />",
+          "<PackageReference Include=\"Microsoft.Extensions.Configuration.CommandLine\" />",
+          "<PackageReference Include=\"Microsoft.Extensions.Configuration.EnvironmentVariables\" />",
+          "<PackageReference Include=\"Microsoft.Extensions.Configuration.Json\" />",
+          "<PackageReference Include=\"Microsoft.Extensions.Hosting\" />",
+          "<PackageReference Include=\"Microsoft.Extensions.Localization\" />",
+          "<PackageReference Include=\"Microsoft.Extensions.Logging\" />",
+        }));
+    }
+    public static IGItemGroupInProjectUnit SerilogLoggingProviderReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("SerilogLoggingProviderPackageReferences",
+        "Packages to implement Serilog as logging provider", new GBody(new List<string>() {
+          "<PackageReference Include=\"Serilog\" />",
+          "<PackageReference Include=\"Serilog.Settings.Configuration\" />",
+          "<PackageReference Include=\"Serilog.Enrichers.Thread\" />",
+          "<PackageReference Include=\"Serilog.Exceptions\" />",
+          "<PackageReference Include=\"Serilog.Extensions.Hosting\" />",
+          "<PackageReference Include=\"Serilog.Sinks.Console\" />",
+          "<PackageReference Include=\"Serilog.Sinks.Debug\" />",
+          "<PackageReference Include=\"Serilog.Sinks.File\" />",
+          "<PackageReference Include=\"Serilog.Sinks.Seq\" />",
+          "<PackageReference Include=\"SerilogAnalyzer\" />"
+        }));
+    }
+    public static IGItemGroupInProjectUnit SerilogAndSeqMELLoggingProviderReferencesItemGroupInProjectUnit() {
+      return new GItemGroupInProjectUnit("SerilogAndSeqMELLoggingProviderPackageReferences",
+        "Packages to add Serilog and SEQ as Microsoft.Extensions.Logging providers", new GBody(new List<string>() {
+          "<PackageReference Include=\"Serilog.Extensions.Logging\" />",
+          "<PackageReference Include=\"Seq.Extensions.Logging\" />",
+        }));
+    }
+
+
+  }
+}
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GMethodId<TValue> : AbstractStronglyTypedId<TValue>, IGMethodId<TValue> where TValue : notnull {}
+  public class GMethod<TValue> : IGMethod<TValue> where TValue : notnull {
+    public GMethod(IGMethodDeclaration gDeclaration = default, IGBody gBody = default,
+      IGComment gComment = default, bool isForInterface = false,
+      IGStateConfiguration gStateConfiguration = default) {
+      GDeclaration = gDeclaration == default ? new GMethodDeclaration() : gDeclaration;
+      GBody = gBody == default ? new GBody() : gBody;
+      GComment = gComment == default ? new GComment() : gComment;
+      IsForInterface = isForInterface;
+      GStateConfiguration = gStateConfiguration == default ? new GStateConfiguration() : gStateConfiguration;
+      Id = new GMethodId<TValue>();
+    }
+    public IGMethodDeclaration GDeclaration { get; init; }
+    public IGBody GBody { get; init; }
+    public IGComment GComment { get; init; }
+    public bool IsForInterface { get; init; }
+    public IGStateConfiguration GStateConfiguration { get; init; }
+    public  IGMethodId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GMethodDeclarationId<TValue> : AbstractStronglyTypedId<TValue>, IGMethodDeclarationId<TValue> where TValue : notnull {}
+  public class GMethodDeclaration<TValue> : IGMethodDeclaration<TValue> where TValue : notnull {
+    public GMethodDeclaration(string gName = default, string gType = default, string gVisibility = default, string gAccessModifier = default,
+      bool isStatic = default, bool isConstructor = default,
+      IDictionary<IGArgumentId<TValue>, IGArgument<TValue>> gArguments = default,
+      string gBase = default, string gThis = default, bool isForInterface = false) {
+      GName = gName == default ? "" : gName;
+      GVisibility = gVisibility == default ? "" : gVisibility;
+      GType = gType == default ? "" : gType;
+      GAccessModifier = gAccessModifier == default ? "" : gAccessModifier;
+      IsStatic = isStatic == default ? false : (bool)isStatic;
+      IsConstructor = isConstructor == default ? false : (bool)isConstructor;
+      GArguments = gArguments == default ? new Dictionary<IGArgumentId<TValue>, IGArgument<TValue>>() : gArguments;
+      GBase = gBase == default ? "" : gBase;
+      GThis = gThis == default ? "" : gThis;
+      IsForInterface = isForInterface;
+      Id = new GMethodDeclarationId<TValue>();
+    }
+    public string GName { get; init; }
+    public string GType { get; init; }
+    // ToDo: make this an enumeration
+    public string GAccessModifier { get; init; }
+    public bool IsConstructor { get; init; }
+    public string GVisibility { get; init; }
+    public bool IsStatic { get; init; }
+    public IDictionary<IGArgumentId<TValue>, IGArgument<TValue>> GArguments { get; init; }
+    public string GBase { get; init; }
+    public string GThis { get; set; }
+    public bool IsForInterface { get; init; }
+    public  IGMethodDeclarationId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GMethodExtensions {
+
+  }
+}
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GMethodGroupId<TValue> : AbstractStronglyTypedId<TValue>, IGMethodGroupId<TValue> where TValue : notnull {}
+  public class GMethodGroup<TValue> : IGMethodGroup<TValue> where TValue : notnull {
+    public GMethodGroup(string gName, IDictionary<IGMethodId<TValue>, IGMethod<TValue>>? gMethods = default) {
+      GName = gName ?? throw new ArgumentNullException(nameof(gName));
+      GMethods = gMethods == default ? new Dictionary<IGMethodId<TValue>, IGMethod<TValue>>() : gMethods;
+      Id = new GMethodGroupId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public IDictionary<IGMethodId<TValue>, IGMethod<TValue>>? GMethods { get; init; }
+    public  IGMethodGroupId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GMethodGroupExtensions {
+
+  }
+}
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GNamespaceId<TValue> : AbstractStronglyTypedId<TValue>, IGNamespaceId<TValue> where TValue : notnull {}
+  public class GNamespace<TValue> : IGNamespace<TValue> where TValue : notnull {
+    public GNamespace(string gName = "", IDictionary<IGClassId<TValue>, IGClass<TValue>>? gClasss = default,
+      IDictionary<IGInterfaceId<TValue>, IGInterface<TValue>>? gInterfaces = default,
+      IDictionary<IGDelegateId<TValue>, IGDelegate<TValue>>? gDelegates = default,
+      IDictionary<IGDelegateGroupId<TValue>, IGDelegateGroup<TValue>>? gDelegateGroups = default,
+      IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>>? gEnumerations = default,
+      IDictionary<IGEnumerationGroupId<TValue>, IGEnumerationGroup<TValue>>? gEnumerationGroups = default,
+      //IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>>? gEnumerations = default,
+      //IDictionary<IGExceptionId<TValue>, IGException<TValue>>? gExceptions = default
+      IGComment gComment = default
+
+      ) {
+      GName = gName;
+      GClasss = gClasss == default ? new Dictionary<IGClassId<TValue>, IGClass<TValue>>() : gClasss;
+      GInterfaces = gInterfaces == default ? new Dictionary<IGInterfaceId<TValue>, IGInterface<TValue>>() : gInterfaces;
+      GDelegates = gDelegates == default ? new Dictionary<IGDelegateId<TValue>, IGDelegate<TValue>>() : gDelegates;
+      GDelegateGroups = gDelegateGroups == default ? new Dictionary<IGDelegateGroupId<TValue>, IGDelegateGroup<TValue>>() : gDelegateGroups;
+      GEnumerations = gEnumerations == default ? new Dictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>>() : gEnumerations;
+      GEnumerationGroups = gEnumerationGroups == default ? new Dictionary<IGEnumerationGroupId<TValue>, IGEnumerationGroup<TValue>>() : gEnumerationGroups;
+      //GEnumerations = gEnumerations;
+      //GExceptions = gExceptions;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GNamespaceId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public IDictionary<IGClassId<TValue>, IGClass<TValue>> GClasss { get; init; }
+    public IDictionary<IGInterfaceId<TValue>, IGInterface<TValue>> GInterfaces { get; init; }
+    public IDictionary<IGDelegateId<TValue>, IGDelegate<TValue>> GDelegates { get; init; }
+    public IDictionary<IGDelegateGroupId<TValue>, IGDelegateGroup<TValue>> GDelegateGroups { get; init; }
+    public IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>> GEnumerations { get; init; }
+    public IDictionary<IGEnumerationGroupId<TValue>, IGEnumerationGroup<TValue>> GEnumerationGroups { get; init; }
+    //public IDictionary<IGExceptionId<TValue>, IGException<TValue>>? GExceptions { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGNamespaceId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using ATAP.Utilities.StronglyTypedId;
+using ATAP.Utilities.GenerateProgram;
+using static ATAP.Utilities.GenerateProgram.GAttributeGroupExtensions;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GNamespaceExtensions {
+
+    public static IGNamespace AddDelegate(this IGNamespace gNamespace, IGDelegate gDelegate) {
+      gNamespace.GDelegates[gDelegate.Id] = (gDelegate);
+      return gNamespace;
+    }
+    public static IGNamespace AddDelegate(this IGNamespace gNamespace, IEnumerable<IGDelegate> gDelegates) {
+      foreach (var o in gDelegates) {
+        gNamespace.GDelegates[o.Id] = o;
+      }
+      return gNamespace;
+    }
+    public static IGNamespace AddDelegate(this IGNamespace gNamespace, IDictionary<IGDelegateId<TValue>, IGDelegate<TValue>> gDelegates) {
+      foreach (var kvp in gDelegates) {
+        gNamespace.AddDelegate(kvp.Value);
+      }
+      return gNamespace;
+    }
+    public static IGNamespace AddDelegateGroups(this IGNamespace gNamespace, IGDelegateGroup gDelegateGroup) {
+      gNamespace.GDelegateGroups[gDelegateGroup.Id] = gDelegateGroup;
+      return gNamespace;
+    }
+    public static IGNamespace AddDelegateGroups(this IGNamespace gNamespace, IEnumerable<IGDelegateGroup> gDelegateGroups) {
+      foreach (var o in gDelegateGroups) {
+        gNamespace.GDelegateGroups[o.Id] = o;
+      }
+      return gNamespace;
+    }
+    public static IGNamespace AddDelegateGroup(this IGNamespace gNamespace, IEnumerable<IGDelegateGroup> gDelegateGroups) {
+      foreach (var o in gDelegateGroups) {
+        gNamespace.GDelegateGroups[o.Id] = o;
+      }
+      return gNamespace;
+    }
+    public static IGNamespace AddEnumeration(this IGNamespace gNamespace, IGEnumeration gEnumeration) {
+      gNamespace.GEnumerations[gEnumeration.Id] = (gEnumeration);
+      return gNamespace;
+    }
+    public static IGNamespace AddEnumeration(this IGNamespace gNamespace, IEnumerable<IGEnumeration> gEnumerations) {
+      foreach (var o in gEnumerations) {
+        gNamespace.GEnumerations[o.Id] = o;
+      }
+      return gNamespace;
+    }
+    public static IGNamespace AddEnumeration(this IGNamespace gNamespace, IDictionary<IGEnumerationId<TValue>, IGEnumeration<TValue>> gEnumerations) {
+      foreach (var kvp in gEnumerations) {
+        gNamespace.AddEnumeration(kvp.Value);
+      }
+      return gNamespace;
+    }
+    public static IGNamespace AddEnumerationGroup(this IGNamespace gNamespace, IGEnumerationGroup gEnumerationGroup) {
+      gNamespace.GEnumerationGroups[gEnumerationGroup.Id] = gEnumerationGroup;
+      return gNamespace;
+    }
+    public static IGNamespace AddEnumerationGroup(this IGNamespace gNamespace, IEnumerable<IGEnumerationGroup> gEnumerationGroups) {
+      foreach (var o in gEnumerationGroups) {
+        gNamespace.GEnumerationGroups[o.Id] = o;
+      }
+      return gNamespace;
+    }
+
+    public static IGNamespace AddEnumeration(this IGNamespace gNamespace, IDictionary<IGEnumerationGroupId<TValue>, IGEnumerationGroup<TValue>> gEnumerationGroups) {
+      foreach (var kvp in gEnumerationGroups) {
+        gNamespace.AddEnumerationGroup(kvp.Value);
+      }
+      return gNamespace;
+    }
+  }
+}
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GPatternReplacementId<TValue> : AbstractStronglyTypedId<TValue>, IGPatternReplacementId<TValue> where TValue : notnull {}
+  public record GPatternReplacement<TValue> : IGPatternReplacement<TValue> where TValue : notnull {
+    public GPatternReplacement(string? gName = default, Dictionary<Regex,string>? gDictionary = default, IGComment? gComment = default) {
+      GName = gName == default? "": gName;
+      GDictionary = gDictionary == default? new Dictionary<Regex,string>() : gDictionary;
+      GComment = gComment == default? new GComment() : gComment;
+      Id = new GPatternReplacementId<TValue>();
+    }
+
+    public string? GName { get; init; }
+    public Dictionary<Regex,string> GDictionary { get; init; }
+    public IGComment? GComment { get; init; }
+    public  IGPatternReplacementId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GProjectUnitId<TValue> : AbstractStronglyTypedId<TValue>, IGProjectUnitId<TValue> where TValue : notnull {}
+  public class GProjectUnit<TValue> : IGProjectUnit<TValue> where TValue : notnull {
+    public GProjectUnit(string gName = default, string gRelativePath = default, string gFileSuffix = default,
+    Dictionary<IGPropertyGroupInProjectUnitId<TValue>, IGPropertyGroupInProjectUnit<TValue>> gPropertyGroupInProjectUnits = default,
+    Dictionary<IGItemGroupInProjectUnitId<TValue>, IGItemGroupInProjectUnit<TValue>> gItemGroupInProjectUnits = default,
+    Dictionary<IGResourceUnitId<TValue>, IGResourceUnit<TValue>> gResourceUnits = default,
+    IGPatternReplacement gPatternReplacement = default,
+    IGComment gComment = default
+
+    ) {
+      GName = gName == default ? "" : gName;
+      GRelativePath = gRelativePath == default ? "" : gRelativePath;
+      GFileSuffix = gFileSuffix == default ? ".csproj" : gFileSuffix;
+      GPropertyGroupInProjectUnits = gPropertyGroupInProjectUnits == default ? new Dictionary<IGPropertyGroupInProjectUnitId<TValue>, IGPropertyGroupInProjectUnit<TValue>>() : gPropertyGroupInProjectUnits;
+      GItemGroupInProjectUnits = gItemGroupInProjectUnits == default ? new Dictionary<IGItemGroupInProjectUnitId<TValue>, IGItemGroupInProjectUnit<TValue>>() : gItemGroupInProjectUnits;
+      GResourceUnits = gResourceUnits == default ? new Dictionary<IGResourceUnitId<TValue>, IGResourceUnit<TValue>>() : gResourceUnits;
+      GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GProjectUnitId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public string GRelativePath { get; init; }
+    public string GFileSuffix { get; init; }
+    public Dictionary<IGResourceUnitId<TValue>, IGResourceUnit<TValue>> GResourceUnits { get; init; }
+    public Dictionary<IGPropertyGroupInProjectUnitId<TValue>, IGPropertyGroupInProjectUnit<TValue>> GPropertyGroupInProjectUnits { get; init; }
+    public Dictionary<IGItemGroupInProjectUnitId<TValue>, IGItemGroupInProjectUnit<TValue>> GItemGroupInProjectUnits { get; init; }
+    public IGPatternReplacement GPatternReplacement { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGProjectUnitId Id { get; init; }
+    public static string Header { get; } = "<!--" + StringConstants.AutoGeneratedHeaderCommentTextStringDefault + " -->";
+  }
+}
+
+
+
+
+
+
+
+
+
+using System;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GPropertyId<TValue> : AbstractStronglyTypedId<TValue>, IGPropertyId<TValue> where TValue : notnull {}
+  public class GProperty<TValue> : IGProperty<TValue> where TValue : notnull {
+    public GProperty(string gName = default, string gType = default, string gAccessors = "{ get; set; }", string? gVisibility = default) {
+      GName = gName == default ? "" : gName;
+      GType = gType == default ? "" : gType;
+      GAccessors = gAccessors ?? throw new ArgumentNullException(nameof(gAccessors));
+      GVisibility = gVisibility == default ? "" : gVisibility;
+      Id = new GPropertyId<TValue>();
+    }
+
+    public string GName { get; }
+    public string GType { get; }
+    public string GAccessors { get; }
+    public string? GVisibility { get; }
+    public  IGPropertyId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GPropertyGroupId<TValue> : AbstractStronglyTypedId<TValue>, IGPropertyGroupId<TValue> where TValue : notnull {}
+  public class GPropertyGroup<TValue> : IGPropertyGroup<TValue> where TValue : notnull {
+    public GPropertyGroup(string gName, IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> gPropertys = default) {
+      GName = gName ?? throw new ArgumentNullException(nameof(gName));
+      if (gPropertys == default) {
+        GPropertys = new Dictionary<IGPropertyId<TValue>, IGProperty<TValue>>();
+      }
+      else {
+        GPropertys = gPropertys;
+      }
+      Id = new GPropertyGroupId<TValue>();
+    }
+
+    public string GName { get; }
+    public IDictionary<IGPropertyId<TValue>, IGProperty<TValue>> GPropertys { get; init; }
+    public  IGPropertyGroupId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+using System.Collections.Generic;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GPropertyGroupExtensions {
+   
+  }
+}
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GPropertyGroupInProjectUnitId<TValue> : AbstractStronglyTypedId<TValue>, IGPropertyGroupInProjectUnitId<TValue> where TValue : notnull {}
+  public record GPropertyGroupInProjectUnit<TValue> : IGPropertyGroupInProjectUnit<TValue> where TValue : notnull {
+    public GPropertyGroupInProjectUnit(string? gName = default, string? gDescription = default, IList<String>? gPropertyGroupStatements = default) {
+      GName = gName == default ? "" : gName;
+      GDescription = gDescription == default ? "" : gDescription;
+      GPropertyGroupStatements = gPropertyGroupStatements == default ? new List<String>() : gPropertyGroupStatements;
+      Id = new GPropertyGroupInProjectUnitId<TValue>();
+    }
+    public string? GName { get; init; }
+    public string? GDescription { get; init; }
+    public IList<String>? GPropertyGroupStatements { get; init; }
+    public  IGPropertyGroupInProjectUnitId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GPropertyGroupInProjectUnitExtensions {
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForPackableLibraryVersionedConfigurations() {
+      return new GPropertyGroupInProjectUnit("PackableProductionV1.0.0Library", "what kind of an assembly",
+        new List<string>() {
+          "<OutputType>Library</OutputType>",
+          "<GeneratePackageOnBuild>true</GeneratePackageOnBuild>",
+          "<IsPackable>true</IsPackable>",
+          "<!-- Assembly, File, and Package Information for this assembly-->",
+          "<!-- Build and revision are created based on date-->",
+          "<MajorVersion>0</MajorVersion>",
+          "<MinorVersion>1</MinorVersion>",
+          "<PatchVersion>0</PatchVersion>",
+          "<!-- Current Lifecycle stage for this assembly -->",
+          "<PackageLifeCycleStage>Development</PackageLifeCycleStage>",
+          "<!-- NuGet Package Label for the Nuget Package if the LifecycleStage is not Production-->",
+          "<!-- However, if the LifecycleStage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->",
+          "<PackageLabel>Alpha</PackageLabel>",
+        });
+    }
+
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsExecutable() {
+      return new GPropertyGroupInProjectUnit("Executable", "Creates a Executable Project", new List<string>() {
+        "<OutputType>Exe</OutputType>"
+      });
+    }
+
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsLibrary() {
+      return new GPropertyGroupInProjectUnit("Library", "Creates a Library Project", new List<string>() {
+        "<OutputType>Library</OutputType>"
+      });
+    }
+
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForProjectUnitIsExe() {
+      return new GPropertyGroupInProjectUnit("Executable", "Creates an Executable Project", new List<string>() {
+        "<OutputType>Exe</OutputType>"
+      });
+    }
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForPackableOnBuild() {
+      return new GPropertyGroupInProjectUnit("PackableOnBuild", "The Assembly will be packed into a NuGet Package on every build", new List<string>() {
+        "<GeneratePackageOnBuild>true</GeneratePackageOnBuild>",
+        "<IsPackable>true</IsPackable>",
+      });
+    }
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForLifecycleStage() {
+      return new GPropertyGroupInProjectUnit("LifecycleStage", "Describes the current stage in the development/Release lifecycle for this Assembly", new List<string>() {
+        "<!-- Current Lifecycle stage for this assembly -->",
+        "<PackageLifeCycleStage>Production</PackageLifeCycleStage>",
+        "<!-- NuGet Package Label for the Nuget Package if the LifecycleStage is not Production-->",
+        "<!-- However, if the LifecycleStage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->",
+        "<PackageLabel>NA</PackageLabel>",
+      });
+    }
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForBuildConfigurations() {
+      return new GPropertyGroupInProjectUnit("BuildConfigurations", "The BuildConfigurations available for this assembly", new List<string>() {
+        "<Configurations>Debug;Release;ReleaseWithTrace</Configurations>",
+      });
+    }
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForVersionInfo(Version version) {
+      return new GPropertyGroupInProjectUnit("Version", "The current version of this assembly", new List<string>() {
+        "<!-- Assembly, File, and Package Information for this assembly-->",
+        "<!-- Build and revision are created based on date-->",
+        $"<MajorVersion>{version.Major}</MajorVersion>",
+        $"<MinorVersion>{version.Minor}</MinorVersion>",
+        $"<PatchVersion>{version.Revision}</PatchVersion>",
+      });
+    }
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitForVersionInfo() {
+      return PropertyGroupInProjectUnitForVersionInfo(new Version());
+    }
+    public static IGPropertyGroupInProjectUnit PropertyGroupInProjectUnitFor() {
+      return new GPropertyGroupInProjectUnit("", "", new List<string>() {
+      });
+    }
+  }
+
+}
+
+using System;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GResourceItemId<TValue> : AbstractStronglyTypedId<TValue>, IGResourceItemId<TValue> where TValue : notnull {}
+  public class GResourceItem<TValue> : IGResourceItem<TValue> where TValue : notnull {
+    public GResourceItem(string gName, string gValue, string? gComment = default) {
+      GName = gName ?? throw new ArgumentNullException(nameof(gName));
+      GValue = gValue ?? throw new ArgumentNullException(nameof(gValue));
+      GComment = gComment == default ? "" : gComment;
+      Id = new GResourceItemId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public string GValue { get; init; }
+    public string? GComment { get; init; }
+    public  IGResourceItemId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GResourceUnitId<TValue> : AbstractStronglyTypedId<TValue>, IGResourceUnitId<TValue> where TValue : notnull {}
+  public record GResourceUnit<TValue> : IGResourceUnit<TValue> where TValue : notnull {
+    public GResourceUnit(string gName, string gRelativePath = default, string gFileSuffix = default,
+      Dictionary<IGResourceItemId<TValue>, IGResourceItem<TValue>> gResourceItems = default,
+      IGPatternReplacement gPatternReplacement = default,
+      IGComment gComment = default
+    ) {
+      GName = gName ?? throw new ArgumentNullException(nameof(gName));
+      GRelativePath = gRelativePath == default ? "Resources" : gRelativePath;
+      GFileSuffix = gFileSuffix == default ? ".resx" : gFileSuffix;
+      GResourceItems = gResourceItems == default ? new Dictionary<IGResourceItemId<TValue>, IGResourceItem<TValue>>() : gResourceItems;
+      GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GResourceUnitId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public string GRelativePath { get; init; }
+    public string GFileSuffix { get; init; }
+    public Dictionary<IGResourceItemId<TValue>, IGResourceItem<TValue>> GResourceItems { get; init; }
+    public IGPatternReplacement GPatternReplacement { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGResourceUnitId Id { get; init; }
+    public static string Header { get; } = "<!-- " + StringConstants.AutoGeneratedHeaderCommentTextStringDefault + " -->";
+  }
+}
+
+
+
+
+
+
+
+
+
+using System;
+
+using ATAP.Utilities.StronglyTypedId;
+namespace ATAP.Utilities.GenerateProgram
+{
+    public class GSolution{
+
+
+ public GSolution(GSolutionSignil gSolutionSignil = default
+    ) {
+            GSolutionSignil = gSolutionSignil ?? throw new ArgumentNullException(nameof(gSolutionSignil));
+
+      Id = new GSolutionId<TValue>();
+    }
+
+    public GSolutionSignil GSolutionSignil { get; }
+    public GSolutionId Id { get; }
+
+    }
+}
+
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+using ATAP.Utilities.StronglyTypedId;
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GSolutionSignilId<TValue> : AbstractStronglyTypedId<TValue>, IGSolutionSignilId<TValue> where TValue : notnull {}
+  public class GSolutionSignil<TValue> : IGSolutionSignil<TValue> where TValue : notnull {
+    public GSolutionSignil(
+      bool hasPropsAndTargets = default
+    , bool hasEditorConfig = default
+    , bool hasArtifacts = default
+    , bool hasDevLog = default
+    , bool hasDocumentation = default
+    , string sourceRelativePath = default
+    , string testsRelativePath = default
+    , bool hasOmniSharpConfiguration = default
+    , bool hasVisualStudioCodeWorkspaceConfiguration = default
+    , bool hasVisualStudioIISApplicationHostConfiguration = default
+    , bool hasDataBases = default
+    , ICollection<string> buildConfigurations = default
+    , ICollection<string> cPUConfigurations = default
+    , IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> gDependencyPackages = default
+    , IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> gDependencyProjects = default
+    , IGComment gComment = default
+    , IGPatternReplacement gPatternReplacement = default
+) {
+      HasPropsAndTargets = hasPropsAndTargets == default ? false : hasPropsAndTargets;
+      HasEditorConfig = hasEditorConfig == default ? false : hasEditorConfig;
+      HasArtifacts = hasArtifacts == default ? false : hasArtifacts;
+      HasDevLog = hasDevLog == default ? false : hasDevLog;
+      HasDocumentation = hasDocumentation == default ? false : hasDocumentation;
+      SourceRelativePath = sourceRelativePath == default ? "" : sourceRelativePath;
+      TestsRelativePath = testsRelativePath == default ? "" : testsRelativePath;
+      HasOmniSharpConfiguration = hasOmniSharpConfiguration == default ? false : hasOmniSharpConfiguration;
+      HasVisualStudioCodeWorkspaceConfiguration = hasVisualStudioCodeWorkspaceConfiguration == default ? false : hasVisualStudioCodeWorkspaceConfiguration;
+      HasVisualStudioIISApplicationHostConfiguration = hasVisualStudioIISApplicationHostConfiguration == default ? false : hasVisualStudioIISApplicationHostConfiguration;
+      HasDataBases = hasDataBases == default ? false : hasDataBases;
+      BuildConfigurations = buildConfigurations ?? throw new ArgumentNullException(nameof(buildConfigurations));
+      CPUConfigurations = cPUConfigurations ?? throw new ArgumentNullException(nameof(cPUConfigurations));
+      GComment = gComment == default ? new GComment() : gComment;
+      GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
+      GDependencyPackages = gDependencyPackages ?? throw new ArgumentNullException(nameof(gDependencyPackages));
+      GDependencyProjects = gDependencyProjects ?? throw new ArgumentNullException(nameof(gDependencyProjects));
+      Id = new GSolutionSignilId<TValue>();
+    }
+    public bool HasPropsAndTargets { get; }
+    public bool HasEditorConfig { get; }
+    public bool HasArtifacts { get; }
+    public bool HasDevLog { get; }
+    public bool HasDocumentation { get; }
+    public string SourceRelativePath { get; }
+    public string TestsRelativePath { get; }
+    public bool HasOmniSharpConfiguration { get; }
+    public bool HasVisualStudioCodeWorkspaceConfiguration { get; }
+    public bool HasVisualStudioIISApplicationHostConfiguration { get; }
+    public bool HasDataBases { get; }
+    public ICollection<string> BuildConfigurations { get; }
+    public ICollection<string> CPUConfigurations { get; }
+    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> GDependencyPackages { get; }
+    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> GDependencyProjects { get; }
+    public IGPatternReplacement GPatternReplacement { get; }
+    public IGComment GComment { get; }
+    public  IGSolutionSignilId Id { get; }
+  }
+}
+
+
+
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GStateConfigurationId<TValue> : AbstractStronglyTypedId<TValue>, IGStateConfigurationId<TValue> where TValue : notnull {}
+  public class GStateConfiguration<TValue> : IGStateConfiguration<TValue> where TValue : notnull {
+    public GStateConfiguration(
+      IList<string> gStateNames = default,
+      IList<string> gTriggerNames = default,
+      IList<(string gtate, string trigger, string nextstate, string predicate)> gDiGraphStates = default,
+      IList<string> gDOTGraphStatements = default
+      ) {
+      GStateNames = gStateNames == default ? new List<string>() : gStateNames;
+      GTriggerNames = gTriggerNames == default ? new List<string>() : gTriggerNames;
+      GDiGraphStates = gDiGraphStates == default ? new List<(string gtate, string trigger, string nextstate, string predicate)>() : gDiGraphStates;
+      GDOTGraphStatements = gDOTGraphStatements == default ? new List<string>() : gDOTGraphStatements;
+      Id = new GStateConfigurationId<TValue>();
+    }
+
+    public IList<string> GStateNames { get; init; }
+    public IList<string> GTriggerNames { get; init; }
+    public IList<(string state, string trigger, string nextstate, string predicate)> GDiGraphStates { get; init; }
+    public IList<string> GDOTGraphStatements { get; init; }
+    public IGStateConfigurationId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  //public class GStatementList {
+  //  public GStatementList(List<string> gStatements = default,
+  //    GComment gComment = default
+  //  ) {
+  //    GStatements = gStatements == default ? new List<string>() : gStatements;
+  //    GComment = gComment == default? new GComment() : gComment;
+  //    Id = new GStatementListId<TValue>();
+  //  }
+
+  //  public List<string> GStatements { get; }
+  //  public GComment GComment { get; }
+  //  public GStatementListId Id { get; }
+
+  //}
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using ATAP.Utilities.StronglyTypedId;
+using ATAP.Utilities.GenerateProgram;
+using static ATAP.Utilities.Collection.Extensions;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GStatementListExtensions {
+    public static IList<string> AddStatementList(this IList<string> gStatementList, IList<string> gAdditionalStatementList) {
+      gStatementList.AddRange(gAdditionalStatementList);
+      return gStatementList;
+    }
+    public static IList<string> AddStatementList(this IList<string> gStatementList, IEnumerable<IList<string>> gStatementLists) {
+      foreach (var o in gStatementLists) {
+        gStatementList.AddRange(o);
+      }
+      return gStatementList;
+    }
+    //public static IGStatementList AddStatementListGroups(this GStatementList gStatementList, GStatementListGroup gStatementListGroup) {
+    //  gStatementList.GStatementListGroups[gStatementListGroup.Id] = gStatementListGroup;
+    //  return gStatementList;
+    //}
+    //public static IGStatementList AddStatementListGroups(this GStatementList gStatementList, IEnumerable<GStatementListGroup> gStatementListGroups) {
+    //  foreach (var o in gStatementListGroups) {
+    //    gStatementList.GStatementListGroups[o.Id] = o;
+    //  }
+    //  return gStatementList;
+    //}
+
+  }
+}
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GStaticVariableId<TValue> : AbstractStronglyTypedId<TValue>, IGStaticVariableId<TValue> where TValue : notnull {}
+  public class GStaticVariable<TValue> : IGStaticVariable<TValue> where TValue : notnull {
+    public GStaticVariable(string gName = default, string gType = default, string gVisibility = default, string gAccessModifier = default,
+      IGBody gBody = default, IList<string> gAdditionalStatements = default, IGComment gComment = default) {
+      GName = gName == default ? "" : gName;
+      GVisibility = gVisibility == default ? "" : gVisibility;
+      GType = gType == default ? "" : gType;
+      GAccessModifier = gAccessModifier == default ? "" : gAccessModifier;
+      GBody = gBody == default ? new GBody() : gBody;
+      GAdditionalStatements = gAdditionalStatements == default ? new List<string>() : gAdditionalStatements;
+      GComment = gComment == default ? new GComment() : gComment;
+      Id = new GStaticVariableId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public string GType { get; init; }
+    // ToDo: make this an enumeration
+    public string GAccessModifier { get; init; }
+    public string GVisibility { get; init; }
+    public IGBody GBody { get; init; }
+    public IList<string> GAdditionalStatements { get; init; }
+    public IGComment GComment { get; init; }
+    public  IGStaticVariableId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+  //public class GStaticVariableBody :GStatementList {
+  //  public GStaticVariableBody(List<string>? statementList = default) :base(statementList) {
+  //    Id = new GStaticVariableBodyId<TValue>();
+  //  }
+  //  public GStaticVariableBodyId Id { get; }
+  //}
+}
+
+
+
+
+
+
+
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GStaticVariableGroupId<TValue> : AbstractStronglyTypedId<TValue>, IGStaticVariableGroupId<TValue> where TValue : notnull {}
+  public class GStaticVariableGroup<TValue> : IGStaticVariableGroup<TValue> where TValue : notnull {
+    public GStaticVariableGroup(string gName = default, IDictionary<IGStaticVariableId<TValue>, IGStaticVariable<TValue>> gStaticVariables = default) {
+      GName = gName == default ? "" : gName;
+      GStaticVariables = gStaticVariables == default ? new Dictionary<IGStaticVariableId<TValue>, IGStaticVariable<TValue>>() : gStaticVariables;
+      Id = new GStaticVariableGroupId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public IDictionary<IGStaticVariableId<TValue>, IGStaticVariable<TValue>> GStaticVariables { get; init; }
+    public  IGStaticVariableGroupId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GUsingId<TValue> : AbstractStronglyTypedId<TValue>, IGUsingId<TValue> where TValue : notnull {}
+  public record GUsing<TValue> : IGUsing<TValue> where TValue : notnull {
+    public GUsing(string gName) {
+      GName = gName ?? throw new ArgumentNullException(nameof(gName));
+      Id = new GUsingId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public  IGUsingId Id { get; init; }
+  }
+}
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using ATAP.Utilities.StronglyTypedId;
+
+namespace ATAP.Utilities.GenerateProgram {
+
+  public record GUsingGroupId<TValue> : AbstractStronglyTypedId<TValue>, IGUsingGroupId<TValue> where TValue : notnull {}
+  public class GUsingGroup<TValue> : IGUsingGroup<TValue> where TValue : notnull {
+    public GUsingGroup(string gName = "", Dictionary<IGUsingId<TValue>, IGUsing<TValue>> gUsings = default) {
+      GName = gName ?? throw new ArgumentNullException(nameof(gName));
+      GUsings = gUsings == default ? new Dictionary<IGUsingId<TValue>, IGUsing<TValue>>() : gUsings;
+      Id = new GUsingGroupId<TValue>();
+    }
+
+    public string GName { get; init; }
+    public Dictionary<IGUsingId<TValue>, IGUsing<TValue>> GUsings { get; init; }
+    public  IGUsingGroupId Id { get; init; }
+
+  }
+}
+
+
+
+
+
+
+
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using ATAP.Utilities.StronglyTypedId;
+using ATAP.Utilities.GenerateProgram;
+
+namespace ATAP.Utilities.GenerateProgram {
+  public static partial class GUsingGroupExtensions {
+    public static IGUsingGroup AddUsing(this IGUsingGroup gUsingGroup, IGUsing gUsing) {
+      gUsingGroup.GUsings[gUsing.Id] = (gUsing);
+      return gUsingGroup;
+    }
+    public static IGUsingGroup AddUsing(this IGUsingGroup gUsingGroup, IEnumerable<IGUsing> gUsing) {
+      foreach (var o in gUsing) {
+        gUsingGroup.GUsings[o.Id] = o;
+      }
+      return gUsingGroup;
+    }
+
+    public static IGUsingGroup AddUsing(this IGUsingGroup gUsingGroup, IDictionary<IGUsingId<TValue>, IGUsing<TValue>> gUsing) {
+      foreach (var kvp in gUsing) {
+        gUsingGroup.GUsings[kvp.Key] = kvp.Value;
+      }
+      return gUsingGroup;
+    }
+    public static IGUsingGroup AddUsingGroup(this IGUsingGroup gUsingGroup, IGUsingGroup gUsingGroups) {
+      foreach (var kvp in gUsingGroups.GUsings) {
+        gUsingGroup.AddUsing(kvp.Value);
+      }
+      return gUsingGroup;
+    }
+
+    public static IGUsingGroup AddUsingGroup(this IGUsingGroup gUsingGroup, IEnumerable<IGUsingGroup> gUsingGroups) {
+      foreach (var o in gUsingGroups) {
+        gUsingGroup.AddUsingGroup(o);
+      }
+      return gUsingGroup;
+    }
+  }
+}
+
+
+
+

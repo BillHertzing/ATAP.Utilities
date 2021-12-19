@@ -24,8 +24,8 @@ namespace ATAP.Utilities.GenerateProgram {
     , ICollection<string> cPUConfigurations = default
     , IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> gDependencyPackages = default
     , IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> gDependencyProjects = default
-    , IGComment gComment = default
-    , IGPatternReplacement gPatternReplacement = default
+    , IGComment<TValue>? gComment = default
+    , IGPatternReplacement<TValue>? gPatternReplacement = default
 ) {
       HasPropsAndTargets = hasPropsAndTargets == default ? false : hasPropsAndTargets;
       HasEditorConfig = hasEditorConfig == default ? false : hasEditorConfig;
@@ -40,30 +40,30 @@ namespace ATAP.Utilities.GenerateProgram {
       HasDataBases = hasDataBases == default ? false : hasDataBases;
       BuildConfigurations = buildConfigurations ?? throw new ArgumentNullException(nameof(buildConfigurations));
       CPUConfigurations = cPUConfigurations ?? throw new ArgumentNullException(nameof(cPUConfigurations));
-      GComment = gComment == default ? new GComment() : gComment;
-      GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement() : gPatternReplacement;
+      GComment = gComment == default ? new GComment<TValue>() : gComment;
+      GPatternReplacement = gPatternReplacement == default ? new GPatternReplacement<TValue>() : gPatternReplacement;
       GDependencyPackages = gDependencyPackages ?? throw new ArgumentNullException(nameof(gDependencyPackages));
       GDependencyProjects = gDependencyProjects ?? throw new ArgumentNullException(nameof(gDependencyProjects));
       Id = new GSolutionSignilId<TValue>();
     }
-    public bool HasPropsAndTargets { get; }
-    public bool HasEditorConfig { get; }
-    public bool HasArtifacts { get; }
-    public bool HasDevLog { get; }
-    public bool HasDocumentation { get; }
-    public string SourceRelativePath { get; }
-    public string TestsRelativePath { get; }
-    public bool HasOmniSharpConfiguration { get; }
-    public bool HasVisualStudioCodeWorkspaceConfiguration { get; }
-    public bool HasVisualStudioIISApplicationHostConfiguration { get; }
-    public bool HasDataBases { get; }
-    public ICollection<string> BuildConfigurations { get; }
-    public ICollection<string> CPUConfigurations { get; }
-    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> GDependencyPackages { get; }
-    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> GDependencyProjects { get; }
-    public IGPatternReplacement GPatternReplacement { get; }
-    public IGComment GComment { get; }
-    public  IGSolutionSignilId Id { get; }
+    public bool HasPropsAndTargets { get; init; }
+    public bool HasEditorConfig { get; init; }
+    public bool HasArtifacts { get; init; }
+    public bool HasDevLog { get;init;  }
+    public bool HasDocumentation { get; init; }
+    public string SourceRelativePath { get;init;  }
+    public string TestsRelativePath { get; init; }
+    public bool HasOmniSharpConfiguration { get; init; }
+    public bool HasVisualStudioCodeWorkspaceConfiguration { get; init; }
+    public bool HasVisualStudioIISApplicationHostConfiguration { get; init; }
+    public bool HasDataBases { get;init;  }
+    public ICollection<string> BuildConfigurations { get; init; }
+    public ICollection<string> CPUConfigurations { get; init; }
+    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>>? GDependencyPackages { get; init; }
+    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>>? GDependencyProjects { get; init; }
+    public IGPatternReplacement<TValue>? GPatternReplacement { get; init; }
+    public IGComment<TValue>? GComment { get;init;  }
+    public  IGSolutionSignilId<TValue> Id { get; init; }
   }
 }
 

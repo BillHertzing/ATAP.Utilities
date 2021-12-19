@@ -11,7 +11,7 @@ namespace ATAP.Utilities.GenerateProgram {
     }
 
     public IEnumerable<string> GStatements { get; init; }
-    public  IGCommentId Id { get; init; }
+    public  IGCommentId<TValue> Id { get; init; }
   }
 }
 

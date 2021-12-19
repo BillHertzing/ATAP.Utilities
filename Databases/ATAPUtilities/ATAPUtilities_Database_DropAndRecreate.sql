@@ -15,7 +15,7 @@ DECLARE
   @DatabaseIndexStatementsFileGroupFullPath nvarchar(4000)
 
 :setvar DatabaseName "ATAPUtilities"
-:setvar BackupFilePath "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\Databases\ATAPUtilities\Backups\"
+:setvar BackupFilePath "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\Databases\ATAPUtilities\Backups\\"
 :setvar DatabaseDataFileFullPath "C:\LocalDBs\ATAPUtilities\Data\ATAPUtilities.mdf"
 :setvar DatabaseDataStatementsFileGroupFullPath "C:\LocalDBs\ATAPUtilities\Data\ATAPUtilities_Statements.mdf"
 :setvar DatabaseLogFileFullPath "C:\LocalDBs\ATAPUtilities\Log\ATAPUtilities_log.ldf"
@@ -53,52 +53,7 @@ IF DB_NAME() != 'master'
 END
 GO
 
-USE [master]
-GO
-GO
-
-
-
-IF (DB_ID(N'$(DatabaseName)') IS NOT NULL
-  AND DATABASEPROPERTYEX(N'$(DatabaseName)','Status') <> N'ONLINE')
-BEGIN
-  RAISERROR(N'The state of the target database, %s, is not set to ONLINE. To deploy to this database, its state must be set to ONLINE.', 16, 127,N'$(DatabaseName)') WITH NOWAIT
-  RETURN
-END
-GO
-
-IF (DB_ID(N'$(DatabaseName)') IS NOT NULL)
-  BEGIN
-  DECLARE @rc      int,                       -- return code
-      @fn      nvarchar(4000),            -- file name to back up to
-      @dir     nvarchar(4000)
-  -- backup directory
-  SELECT @dir = N'$(BackupFilePath)'
-  -- ToDo: If BackupFilePath is not defined, use the default values as below
-  --EXEC @rc = [master].[dbo].[xp_instance_regread] N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'BackupDirectory', @dir output, 'no_output'
-
-  --IF (@dir IS NULL)
-  --BEGIN
-  --  EXEC @rc = [master].[dbo].[xp_instance_regread] N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'DefaultData', @dir output, 'no_output'
-  --END
-
-  --IF (@dir IS NULL)
-  --BEGIN
-  --  EXEC @rc = [master].[dbo].[xp_instance_regread] N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\Setup', N'SQLDataRoot', @dir output, 'no_output'
-  --  SELECT @dir = @dir + N'\Backup'
-  --END
-  -- ToDo:  add a '\' to the default values from the registry + N'\'
-
-  SELECT @fn = @dir + N'$(DatabaseName)' + N'-' +
-      CONVERT(nchar(6), GETDATE(), 112) + N'-' +
-      RIGHT(N'0' + RTRIM(CONVERT(nchar(2), DATEPART(hh, GETDATE()))), 2) +
-      RIGHT(N'0' + RTRIM(CONVERT(nchar(2), DATEPART(mi, getdate()))), 2) +
-      RIGHT(N'0' + RTRIM(CONVERT(nchar(2), DATEPART(ss, getdate()))), 2) +
-      N'.bak'
-  BACKUP DATABASE [$(DatabaseName)] TO DISK = @fn
-END
-GO
-
+-- Kick everyone else off the database
 IF (DB_ID(N'$(DatabaseName)') IS NOT NULL)
 BEGIN
   ALTER DATABASE [$(DatabaseName)]
@@ -146,12 +101,12 @@ END
 GO
 
 IF EXISTS (SELECT 1
-FROM [master].[dbo].[sysdatabases]
-WHERE  [name] = N'$(DatabaseName)')
+  FROM [master].[dbo].[sysdatabases]
+  WHERE  [name] = N'$(DatabaseName)')
     BEGIN
-  ALTER DATABASE [$(DatabaseName)]
-            SET ALLOW_SNAPSHOT_ISOLATION OFF;
-END
+      ALTER DATABASE [$(DatabaseName)]
+      SET ALLOW_SNAPSHOT_ISOLATION OFF;
+    END
 GO
 
 IF EXISTS (SELECT 1

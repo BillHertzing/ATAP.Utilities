@@ -15,7 +15,7 @@ namespace ATAP.Utilities.GenerateProgram {
     public string? GName { get; init; }
     public string? GDescription { get; init; }
     public IList<String>? GPropertyGroupStatements { get; init; }
-    public  IGPropertyGroupInProjectUnitId Id { get; init; }
+    public  IGPropertyGroupInProjectUnitId<TValue> Id { get; init; }
 
   }
 }

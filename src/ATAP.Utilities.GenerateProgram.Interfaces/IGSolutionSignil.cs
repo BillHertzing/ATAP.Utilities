@@ -5,24 +5,24 @@ using ATAP.Utilities.StronglyTypedId;
 namespace ATAP.Utilities.GenerateProgram {
   public interface IGSolutionSignilId<TValue> : IAbstractStronglyTypedId<TValue> where TValue : notnull { }
   public interface IGSolutionSignil<TValue> where TValue : notnull {
-    public bool HasPropsAndTargets { get; }
-    public bool HasEditorConfig { get; }
-    public bool HasArtifacts { get; }
-    public bool HasDevLog { get; }
-    public bool HasDocumentation { get; }
-    string SourceRelativePath { get; }
-    string TestsRelativePath { get; }
-    public bool HasOmniSharpConfiguration { get; }
-    public bool HasVisualStudioCodeWorkspaceConfiguration { get; }
-    public bool HasVisualStudioIISApplicationHostConfiguration { get; }
-    public bool HasDataBases { get; }
-    public ICollection<string> BuildConfigurations { get; }
-    public ICollection<string> CPUConfigurations { get; }
-    public IGPatternReplacement<TValue> GPatternReplacement { get; }
-    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> GDependencyPackages { get; }
-    public IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>> GDependencyProjects { get; }
-    public IGComment<TValue> GComment { get; }
-    IGArgumentId<TValue> Id { get; init; }
+    bool HasPropsAndTargets { get; init; }
+    bool HasEditorConfig { get; init; }
+    bool HasArtifacts { get; init; }
+    bool HasDevLog { get; init; }
+    bool HasDocumentation { get; init; }
+    string SourceRelativePath { get; init; }
+    string TestsRelativePath { get; init; }
+    bool HasOmniSharpConfiguration { get; init; }
+    bool HasVisualStudioCodeWorkspaceConfiguration { get; init; }
+    bool HasVisualStudioIISApplicationHostConfiguration { get; init; }
+    bool HasDataBases { get; init; }
+    ICollection<string> BuildConfigurations { get; init; }
+    ICollection<string> CPUConfigurations { get; init; }
+    IGPatternReplacement<TValue>? GPatternReplacement { get; init; }
+    IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>>? GDependencyPackages { get; init; }
+    IDictionary<IGProjectUnitId<TValue>, IGProjectUnit<TValue>>? GDependencyProjects { get; init; }
+    IGComment<TValue>? GComment { get; init; }
+    IGSolutionSignilId<TValue> Id { get; init; }
   }
 }
 

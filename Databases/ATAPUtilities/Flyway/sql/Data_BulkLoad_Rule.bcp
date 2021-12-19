@@ -1,0 +1,2 @@
+﻿Id,Name,Kind,Validity,DisplayOrder,DisplayAction, InputAction,Value,Dirty
+0,EditoConfigPresent,bool,10/21/2021 06:12:19,1,"ActionToDisplayThisRule", "ActionToInput", "True", 0

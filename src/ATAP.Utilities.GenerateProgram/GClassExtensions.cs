@@ -11,8 +11,8 @@ using ATAP.Utilities.GenerateProgram;
 using static ATAP.Utilities.GenerateProgram.GAttributeGroupExtensions;
 
 namespace ATAP.Utilities.GenerateProgram {
-  public static partial class GClassExtensions {
-    public static IGClass AddProperty(this IGClass gClass, IGProperty gProperty) {
+  public static partial class GClassExtensions<TValue> where TValue : notnull {
+    public static IGClass<TValue> AddProperty(this IGClass gClass, IGProperty gProperty) {
       gClass.GPropertys[gProperty.Id] = (gProperty);
       return gClass;
     }

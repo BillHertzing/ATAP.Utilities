@@ -1,0 +1,13 @@
+USE [ATAPUtilities]
+SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE dbo.GSolution(
+Id int IDENTITY(1,1) NOT NULL CONSTRAINT PK_GSolution PRIMARY KEY NONCLUSTERED (Id)
+, GName nvarchar(512) NOT NULL
+, AbsolutePath nvarchar(512) NOT NULL UNIQUE
+, CreationTimeUtc datetime NOT NULL
+, LastWriteTimeUtc datetime NOT NULL
+)	ON [PRIMARY]
+GO

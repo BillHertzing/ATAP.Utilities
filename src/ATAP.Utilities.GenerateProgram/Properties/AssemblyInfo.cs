@@ -12,10 +12,10 @@ using System.ComponentModel;
 [assembly:AssemblyVersion("0.1.0")]
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("FB2917AC-BDCB-4012-9130-E2EDA9CA7899")]
-// When building with the Trace symbol defined, turn on ETW logging for Method Entry, Method Exit, and Exceptions
-#if TRACE
-[assembly: ATAP.Utilities.ETW.ETWLogAttribute()]
-#endif
+// // When building with the Trace symbol defined, turn on ETW logging for Method Entry, Method Exit, and Exceptions
+// #if TRACE
+// [assembly: ATAP.Utilities.ETW.ETWLogAttribute()]
+// #endif
 #region Support public init only setters on Net Desktop runtime
 #if NETDESKTOP || NETCOREAPP3_1 || NETSTANDARD
 // Add IsExternalInit if the TargetFramework is a Net Desktop runtime

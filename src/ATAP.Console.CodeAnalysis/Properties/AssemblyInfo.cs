@@ -9,9 +9,9 @@ using System.ComponentModel;
 [assembly:AssemblyInformationalVersion("0.1.0-Alpha-007")]
 [assembly:AssemblyVersion("0.1.0")]
 // When building with the Trace symbol defined, turn on ETW logging for Method Entry, Method Exit, and Exceptions
-#if TRACE
-  [assembly: ATAP.Utilities.ETW.ETWLogAttribute()]
-#endif
+// #if TRACE
+  // [assembly: ATAP.Utilities.ETW.ETWLogAttribute()]
+// #endif
 #region Support public init only setters on Net Desktop runtime
 #if NETDESKTOP
 // Add IsExternalInit if the TargetFramework is a Net Desktop runtime

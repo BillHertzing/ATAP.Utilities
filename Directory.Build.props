@@ -16,9 +16,11 @@
   <PropertyGroup>
     <Configurations>Debug;Release;ReleaseWithTrace;</Configurations>
     <!-- When building against anything except net5.0 and higher, the c# V9 keyword 'init' throws errors. This is resolved in the AssemblyInfo.cs file for each project-->
-    <!-- when targetframework is netstandard, -->
+    <!-- when targetframework is netstandard,
     <TargetFrameworks>net47;net471;net472;net48;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
-    <RuntimeIdentifiers>win10-x64;linux-x64</RuntimeIdentifiers>
+	 -->
+	  <TargetFrameworks>net6.0;</TargetFrameworks>
+	  <RuntimeIdentifiers>win10-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 

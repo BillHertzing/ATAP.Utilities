@@ -104,6 +104,7 @@ END
 GO
 
 -- Writeout Bulkload .bcp files
+USE [ATAPUtilities]
 BEGIN
   DECLARE  @sqlCommand   VARCHAR(1000)
   DECLARE  @filePath     VARCHAR(100)
@@ -111,7 +112,7 @@ BEGIN
   DECLARE  @TableName    VARCHAR(100)
 
   SET @filePath = '$(BackupFilePath)'
-
+  PRINT @FilePAth
   DECLARE cursor_TableName CURSOR FOR
     SELECT Table_Name
   FROM information_schema.tables;

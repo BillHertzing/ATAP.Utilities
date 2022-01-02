@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-PowerShell profile template for individual developers
+PowerShell V7 profile template for individual users
 .DESCRIPTION
 Details in [powerShell ReadMe](src\ATAP.Utilities.Powershell\Documentation\ReadMe.md)
 
@@ -9,7 +9,7 @@ None
 .OUTPUTS
 None
 .EXAMPLE
-
+None
 .LINK
 http://www.somewhere.com/attribution.html
 .LINK
@@ -23,6 +23,8 @@ ToDo: Need attribution for Console Settings
 <Configuration Management Keywords>
 #>
 
+Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+
 # Add MSBuild path to path
 $env:path += ';C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin'
 # Add ATAP.Utilites Powershell path to path
@@ -32,14 +34,20 @@ $env:path += ';C:\Dropbox\whertzing\GitHub\ATAP.Utilities\ATAP.Utilities.BuildTo
 # ToDo: can this all be done with a local nuget server, instead? What about companies where the developers who want to use ATAPUtilities, cannot add a nuget server to their environment. Local Feed on a file: (and UNC) protocol?
 $drops = @{fssdev = '\\fs\pkgsDev'; fssqa = '\\fs\pkgsqa'; fssprd = '\\fs\pkgs'; wsudev = 'http://ws/ngf/dev'; wsuqa = 'http://ws/ngf/qa'; wsuprd = 'http://ws/ngf' }
 
+# Where does chocolatey instal;l librayrs (ps modulkes) to
+$chocolateyLibDir = 'C:\ProgramData\chocolatey\lib'
 # Set the PSModulePath
 # different for Powershell V7 and anything earlier (PowerShell for Windows)
 if ($PSVersionTable.PSVersion.major -ge 7) {
-  $Env:PSModulePath = (Join-Path $env:ProgramFiles 'PowerShell\Modules') + ';' + $Env:PSModulePath
+   # Add the Chocolatey lib
+  'C:\ProgramData\chocolatey\lib'
+  $Env:PSModulePath = $chocolateyLibDir + ';' + $Env:PSModulePath
+  # add the default locqtion?
+  # $Env:PSModulePath = (Join-Path $env:ProgramFiles 'PowerShell\Modules') + ';' + $Env:PSModulePath
 }
-else {
-  #$Env:PSModulePath = (join-path $env:ProgramFiles "WindowsPowerShell\Modules") + ';' + $Env:PSModulePath
-}
+# else {
+  # #$Env:PSModulePath = (join-path $env:ProgramFiles "WindowsPowerShell\Modules") + ';' + $Env:PSModulePath
+# }
 Write-Verbose ('Final PSModulePath profile is: ' + "`r`n`t" + (($Env:PSModulePath -split ';') -join "`r`n`t"))
 
 
@@ -191,14 +199,16 @@ Function CreateSymbolicLink {
     [ValidateNotNullOrEmpty()][String] $path
     , [ValidateNotNullOrEmpty()][String] $target
   )
-  # Todo: Add LiteralPath
-  New-Item -ItemType SymbolicLink -Path $path -Target $target > $null
+  if ($PSCmdlet.ShouldProcess(@($path, $target), 'New-Item -ItemType SymbolicLink -Path $path -Target $target > $null')) {
+    # Todo: Add LiteralPath
+    New-Item -ItemType SymbolicLink -Path $path -Target $target > $null
+  }
 }
 #endregion PrivateFunctions
 
-# ToDo: The following is a 'cheat' for a developer who wants to work on Powershell modules, whose SCM repository is reachabe via SymbolicLink
-#  ToDo: Usually, an ATAP powershell package is restored from the NuGet Feed sources, then ipmo'd
-#  This module below creates symbolic links from the user's document direcotry Powershell module directories directly to a local github repository
+# ToDo: The following is a 'cheat' for a developer who wants to work on Powershell modules, whose SCM repository is reachable via SymbolicLink
+#  ToDo: Usually, an ATAP Powershell package is restored from the NuGet Feed sources, then ipmo'd
+#  This Function creates symbolic links from the user's Powershell module directory (target) directly to a local github repository (path)
 Function Get-ModulesForUserProfileAsSymbolicLinks {
   #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
@@ -246,7 +256,7 @@ Function Get-ModulesForUserProfileAsSymbolicLinks {
     Set-Location -Path $modPath
     Get-ChildItem $targetModulePath | Where-Object { $_.name -match $Settings.LinksToCreatePattern } |
     ForEach-Object { if (-not (Test-Path $_.name)) {
-        # If it doesn't exist, it needs to be created, but only administror's can create symboliclinks
+        # If it doesn't exist, it needs to be created, but only administrator's can create symbolic links
         if ($settings.IsElevated) {
           if ($PSCmdlet.ShouldProcess(@($_.name, $_.fullname), 'CreateSymbolicLink -Path $_.name -Target $_.fullname > $null')) {
             # Add the suffix
@@ -315,10 +325,6 @@ $ModulesToLoad = $ModulesToLoadAsSymbolicLinks + @(
 # ToDo replace with just module name
 $ModulesToLoad | ForEach-Object{$name = $_.ProfileModuleName; $_.ProfileModuleName; Import-Module "$($_.ProfileModuleName)"  -Verbose}
 # $ModulesToLoad | ForEach-Object{$name = (join-path -Path $_.profileModulePath -ChildPath $_.profileModuleName) + '.psm1' ; $name; Import-Module "$name" -Force -Verbose}
-# see cheat below to make the profle module a link to thte github module
-#Import-Module c:\Dropbox\whertzing\PowerShell\Modules\ATAP.Utilities.PowerShell\0.1.0\ATAP.Utilities.PowerShell.psm1 -Force -Verbose
-#Import-Module c:\Dropbox\whertzing\PowerShell\Modules\ATAP.Utilities.BuildTooling.PowerShell\0.1.0\ATAP.Utilities.BuildTooling.PowerShell.psm1 -Force -Verbose
-#Import-Module c:\Dropbox\whertzing\PowerShell\Modules\ATAP.Utilities.FileIO.PowerShell\0.1.0\ATAP.Utilities.FileIO.PowerShell.psm1 -Force -Verbose
 
 # Show environment/context information when the profile runs
 # ToDo reformat using YAML
@@ -386,7 +392,14 @@ set-item -path alias:stopVA -value StopVoiceAttackProcess
 
 # Final (user) directory to leave the interpreter
 #cdMy
-Set-Location -Path (join-path -Path $global:DropBoxBaseDir -ChildPath 'whertzing' -AdditionalChildPath 'GitHub','ATAP.Utilities')
+#Set-Location -Path (join-path -Path $global:DropBoxBaseDir -ChildPath 'whertzing' -AdditionalChildPath 'GitHub','ATAP.Utilities')
+Set-Location -Path $storedInitialDir
+
+# Uncomment to see the $global:settings and Environment variables at the completion of this profile
+#Write-Verbose ('$global:settings are: ' +  [Environment]::NewLine + (foreach ($kvp in ($global:settings).GetEnumerator()){"{0}:{1}" -f $kvp.name, $kvp.name,[Environment]::NewLine} ))
+Write-Verbose ("Environment variables AllUsersAllHosts are:  " + [Environment]::NewLine + (Get-ChildItem env: |ForEach-Object{ $envVar=$_;  ('Machine','User','Process') | %{$scope = $_;
+if (([System.Environment]::GetEnvironmentVariable($envVar.key, $scope))) {"{0}:{1} ({2})" -f $envVar.key, $envVar.value, $scope}
+}}))
 
 
 <# To Be Moved Somewhere else #>

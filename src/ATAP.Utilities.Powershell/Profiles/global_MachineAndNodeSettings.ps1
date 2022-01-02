@@ -1,7 +1,5 @@
 
-$DropBoxBaseDirConfigRootKey = 'DropBoxBaseDir'
 $DropBoxBaseDirConfigRootDefault = ''
-$FastTempPathConfigRootKey = 'FastTempPath'
 $FastTempPathConfigRootDefault = ''
 $WindowsDocumentationBuildConfigRootKey = 'WindowsDocumentationBuild'
 $WindowsDocumentationBuildConfigRootDefault = ''
@@ -19,36 +17,66 @@ $global:SupportedJenkinsRolesList = @($WindowsDocumentationBuildConfigRootKey, $
 
 $global:MachineAndNodeSettings = @{
   # Machine Settings
-  utat01                               = @{
-    $DropBoxBaseDirConfigRootKey = 'C:/Dropbox/'
-    $GitExeConfigRootKey                   = 'C:\Program Files\Git\cmd\git.exe'
+  'utat01'                               = @{
+    $global:configRootKeys['DropBoxBaseDirConfigRootKey'] = 'C:/Dropbox/'
+    $global:configRootKeys['FastTempBasePathConfigRootKey'] = 'C:/Temp'
+    $global:configRootKeys['BigTempBasePathConfigRootKey'] = 'C:/Temp'
+    $global:configRootKeys['GitExePathConfigRootKey'] = 'C:\Program Files\Git\cmd\git.exe'
+    $global:configRootKeys['JavaExePathConfigRootKey'] = 'C:\Program Files\AdoptOpenJDK\jre-16.0.1.9-hotspot\bin\java.exe'
+    $global:configRootKeys['JenkinsNodeRolesConfigRootKey'] = @{}
   }
-  ncat016                              = @{
-    $DropBoxBaseDirConfigRootKey = 'C:/Dropbox/'
-    $GitExeConfigRootKey                    = 'C:\Program Files\Git\cmd\git.exe'
+  'ncat016'                              = @{
+    $global:configRootKeys['DropBoxBaseDirConfigRootKey'] = 'C:/Dropbox/'
+    $global:configRootKeys['FastTempBasePathConfigRootKey'] = 'D:/Temp'
+    $global:configRootKeys['BigTempBasePathConfigRootKey'] = 'D:/Temp'
+    $global:configRootKeys['GitExePathConfigRootKey'] = 'C:\Program Files\Git\cmd\git.exe'
+    $global:configRootKeys['JavaExePathConfigRootKey'] = 'C:\Program Files\AdoptOpenJDK\jre-16.0.1.9-hotspot\bin\java.exe'
+    $global:configRootKeys['JenkinsNodeRolesConfigRootKey'] = @{
+      $global:configRootKeys['WindowsCodeBuildConfigRootKey'] = @{
+        $global:configRootKeys['MSBuildExePathConfigRootKey'] = 'C:\Program Files\Microsoft Visual Studio\2022\Community\Msbuild\Current\Bin\MSBuild.exe'
+        $global:configRootKeys['DotnetExePathConfigRootKey'] = 'C:\Program Files\dotnet\dotnet.exe'
+      }
+      $global:configRootKeys['WindowsUnitTestConfigRootKey'] = @{}
+      $global:configRootKeys['WindowsDocumentationBuildConfigRootKey'] = @{
+        $global:configRootKeys['DocFXExePathConfigRootKey'] = 'C:\ProgramData\chocolatey\bin\docfx.exe'
+        $global:configRootKeys['PlantUMLJarPathConfigRootKey'] = 'C:/ProgramData/chocolatey/lib/plantuml/tools/plantuml.jar'
+        $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey'] = 'C:\Users\whertzing\.dotnet\tools\puml-gen.exe'
+        $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'
+      }
+    }
   }
-  'ncat-ltb1'                          = @{ $DropBoxBaseDirConfigRootKey = 'D:/Dropbox/' }
-  # Jenkins Node Settings
-  WindowsDocumentationBuildJenkinsNode = @{
-    PlantUmlClassDiagramGeneratorPath = 'C:\Users\whertzing\.dotnet\tools\puml-gen.exe'
-    javaPath                          = 'C:\Program Files\AdoptOpenJDK\jre-16.0.1.9-hotspot\bin\java.exe'
-    plantUMLJarPath                   = 'C:/ProgramData/chocolatey/lib/plantuml/tools/plantuml.jar'
-    docfxPath                         = 'C:\ProgramData\chocolatey\bin\docfx.exe'
+  'ncat041'                              = @{
+    $global:configRootKeys['DropBoxBaseDirConfigRootKey'] = 'C:/Dropbox/'
+    $global:configRootKeys['FastTempBasePathConfigRootKey'] = 'C:/Temp'
+    $global:configRootKeys['BigTempBasePathConfigRootKey'] = 'C:/Temp'
+    $global:configRootKeys['GitExePathConfigRootKey'] = 'C:\Program Files\Git\cmd\git.exe'
+    $global:configRootKeys['JavaExePathConfigRootKey'] = 'C:\Program Files\AdoptOpenJDK\jre-16.0.1.9-hotspot\bin\java.exe'
+    $global:configRootKeys['JenkinsNodeRolesConfigRootKey'] = @{}
   }
-  WindowsCodeBuildJenkinsNode          = @{
-    dotnetPath = 'C:\Program Files\dotnet\dotnet.exe'
+  'ncat-ltb1'                          = @{
+    $global:configRootKeys['DropBoxBaseDirConfigRootKey'] = 'D:/Dropbox/'
+    $global:configRootKeys['FastTempBasePathConfigRootKey'] = 'C:/Temp'
+    $global:configRootKeys['BigTempBasePathConfigRootKey'] = 'C:/Temp'
+    $global:configRootKeys['GitExePathConfigRootKey'] = 'C:\Program Files\Git\cmd\git.exe'
+    $global:configRootKeys['JavaExePathConfigRootKey'] = 'C:\Program Files\AdoptOpenJDK\jre-16.0.1.9-hotspot\bin\java.exe'
+    $global:configRootKeys['JenkinsNodeRolesConfigRootKey'] = @{}
+  }
+  'ncat-ltjo'                          = @{
+    $global:configRootKeys['DropBoxBaseDirConfigRootKey'] = 'D:/Dropbox/'
+    $global:configRootKeys['FastTempBasePathConfigRootKey'] = 'C:/Temp'
+    $global:configRootKeys['BigTempBasePathConfigRootKey'] = 'C:/Temp'
+    $global:configRootKeys['GitExePathConfigRootKey'] = 'C:\Program Files\Git\cmd\git.exe'
+    $global:configRootKeys['JavaExePathConfigRootKey'] = 'C:\Program Files\AdoptOpenJDK\jre-16.0.1.9-hotspot\bin\java.exe'
+    $global:configRootKeys['JenkinsNodeRolesConfigRootKey'] = @{}
   }
 }
 
 $global:JenkinsRoles = @{
   $WindowsDocumentationBuildConfigRootKey   = @{
-    DocFxExePath     = C:\ProgramData\chocolatey\bin\docfx.exe
-    JavaExePath      = C:\Program Files\AdoptOpenJDK\jre-16.0.1.9-hotspot\bin\java.exe
-    PlantUMLJarPath  = tbd
     PowershellCmdlet = 'Build-ImageFromPlantUML.ps1'
   }
   $WindowsCodeBuildConfigRootKey            = @{
-    DotnetToolExePath = C:\Program Files\dotnet\
+    DotnetToolExePath = 'C:\Program Files\dotnet\'
   }
   LinuxBuild                                = @{}
   MacOSBuild                                = @{}
@@ -81,7 +109,5 @@ $global:JenkinsRoles = @{
   SystemTextJsonSerializerIntegrationTest   = @{}
   NewstonsoftSerializerIntegrationTest      = @{}
   ServiceStackSerializerIntegrationTest     = @{}
-  SystemTextJsonSerializerIntegrationTest   = @{}
-  SystemTextJsonSerializerIntegrationTest   = @{}
   DynamicSerializerIntegrationTest          = @{}
 }

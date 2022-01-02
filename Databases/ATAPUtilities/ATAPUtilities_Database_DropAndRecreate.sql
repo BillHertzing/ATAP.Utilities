@@ -28,17 +28,16 @@ SET XACT_ABORT ON;
 
 IF N'$(DatabaseName)' = N'$' + N'(DatabaseName)' -- Is SQLCMD mode enabled within the execution context (eg. SSMS)
   BEGIN
-  IF IS_SRVROLEMEMBER(N'sysadmin') = 1
-      BEGIN
-    -- User is sysadmin; abort execution by disconnect the script from the database server
-    RAISERROR(N'This script must be run in SQLCMD Mode (under the Query menu in SSMS). Aborting connection to suppress subsequent errors.', 20, 127, N'UNKNOWN') WITH LOG;
-  END
+    IF IS_SRVROLEMEMBER(N'sysadmin') = 1 BEGIN
+      -- User is sysadmin; abort execution by disconnect the script from the database server
+      RAISERROR(N'This script must be run in SQLCMD Mode (under the Query menu in SSMS or via SQLCMD at a CLI prompt). Aborting connection to suppress subsequent errors.', 20, 127, N'UNKNOWN') WITH LOG;
+      END
     ELSE
       BEGIN
-    -- User is not sysadmin; abort execution by switching off statement execution (script will continue to the end without performing any actual deployment work)
-    RAISERROR(N'This script must be run in SQLCMD Mode (under the Query menu in SSMS). Script execution has been halted.', 16, 127, N'UNKNOWN') WITH NOWAIT;
+      -- User is not sysadmin; abort execution by switching off statement execution (script will continue to the end without performing any actual deployment work)
+      RAISERROR(N'This script must be run in SQLCMD Mode (under the Query menu in SSMor via SQLCMD at a CLI promptS). Script execution has been halted.', 16, 127, N'UNKNOWN') WITH NOWAIT;
+    END
   END
-END
 GO
 IF @@ERROR != 0
   BEGIN
@@ -53,7 +52,7 @@ IF DB_NAME() != 'master'
 END
 GO
 
--- Kick everyone else off the database
+-- Kick everyone else off the database and delete it
 IF (DB_ID(N'$(DatabaseName)') IS NOT NULL)
 BEGIN
   ALTER DATABASE [$(DatabaseName)]
@@ -78,93 +77,104 @@ FROM [master].[dbo].[sysdatabases]
 WHERE  [name] = N'$(DatabaseName)')
   BEGIN
   ALTER DATABASE [$(DatabaseName)]
-      SET ANSI_NULLS ON,
-      ANSI_PADDING ON,
-      ANSI_WARNINGS ON,
-      ARITHABORT ON,
-      CONCAT_NULL_YIELDS_NULL ON,
-      NUMERIC_ROUNDABORT OFF,
-      QUOTED_IDENTIFIER ON,
-      ANSI_NULL_DEFAULT ON,
-      CURSOR_DEFAULT LOCAL,
-      RECOVERY SIMPLE,
-      CURSOR_CLOSE_ON_COMMIT OFF,
-      AUTO_CREATE_STATISTICS ON,
-      AUTO_SHRINK ON,
-      AUTO_UPDATE_STATISTICS ON,
-      RECURSIVE_TRIGGERS OFF
+      SET
+      -- Null Handling follows ANSI standard in this script
+      ANSI_NULLS ON,
+      -- Null Handling follows ANSI standard by default in all scripts
+      --ANSI_NULL_DEFAULT ON,
+      --ANSI_PADDING ON,
+      --ANSI_WARNINGS ON,
+      --ARITHABORT ON,
+      -- Create statistics used to improve query execution plans
+      --AUTO_CREATE_STATISTICS ON,
+      -- allow the DB engine to shrink the sizes of some tables
+      --AUTO_SHRINK ON,
+      --AUTO_UPDATE_STATISTICS ON,
+      --AUTO_UPDATE_STATISTICS_ASYNC OFF,
+      -- The outcome when variable having a null value is string-concatenated
+      --CONCAT_NULL_YIELDS_NULL ON,
+      -- Leave cursors open after a commit so they can be reused
+      --CURSOR_CLOSE_ON_COMMIT OFF,
+      -- Declared cursors are local to the database
+      --CURSOR_DEFAULT LOCAL,
+      --??
+      --DATE_CORRELATION_OPTIMIZATION OFF,
+      --??
+      --DISABLE_BROKER,
+      --??
+      --HONOR_BROKER_PRIORITY OFF,
+      --NUMERIC_ROUNDABORT OFF,
+      --PAGE_VERIFY NONE,
+      --PARAMETERIZATION SIMPLE,
+      --READ_COMMITTED_SNAPSHOT OFF,
+      --
+      --QUOTED_IDENTIFIER ON,
+      --RECOVERY SIMPLE,
+      TRUSTWORTHY OFF
+      --RECURSIVE_TRIGGERS OFF
     WITH ROLLBACK IMMEDIATE;
-  ALTER DATABASE [$(DatabaseName)]
-      SET AUTO_CLOSE OFF
-      WITH ROLLBACK IMMEDIATE;
+  -- ALTER DATABASE [$(DatabaseName)]
+      -- SET AUTO_CLOSE OFF
+      -- WITH ROLLBACK IMMEDIATE;
 END
 GO
 
-IF EXISTS (SELECT 1
-  FROM [master].[dbo].[sysdatabases]
-  WHERE  [name] = N'$(DatabaseName)')
-    BEGIN
-      ALTER DATABASE [$(DatabaseName)]
-      SET ALLOW_SNAPSHOT_ISOLATION OFF;
-    END
-GO
+-- IF EXISTS (SELECT 1
+  -- FROM [master].[dbo].[sysdatabases]
+  -- WHERE  [name] = N'$(DatabaseName)')
+    -- BEGIN
+      -- ALTER DATABASE [$(DatabaseName)]
+      -- SET ALLOW_SNAPSHOT_ISOLATION OFF;
+    -- END
+-- GO
 
-IF EXISTS (SELECT 1
-FROM [master].[dbo].[sysdatabases]
-WHERE  [name] = N'$(DatabaseName)')
-    BEGIN
-  ALTER DATABASE [$(DatabaseName)]
-            SET READ_COMMITTED_SNAPSHOT OFF;
-END
-GO
+-- Required for adding custom Net Common Language Runtime assemblies containing UDFs
+-- IF EXISTS (SELECT 1
+--   FROM [master].[dbo].[sysdatabases]
+--   WHERE  [name] = N'$(DatabaseName)')
+--     BEGIN
+--       EXEC sp_configure 'clr enabled', 1;
+--       RECONFIGURE
+--     END
+-- GO
 
-IF EXISTS (SELECT 1
-FROM [master].[dbo].[sysdatabases]
-WHERE  [name] = N'$(DatabaseName)')
-    BEGIN
-  ALTER DATABASE [$(DatabaseName)]
-            SET AUTO_UPDATE_STATISTICS_ASYNC OFF,
-                PAGE_VERIFY NONE,
-                DATE_CORRELATION_OPTIMIZATION OFF,
-                DISABLE_BROKER,
-                PARAMETERIZATION SIMPLE
-            WITH ROLLBACK IMMEDIATE;
-END
-GO
+-- IF EXISTS (SELECT 1
+-- FROM [master].[dbo].[sysdatabases]
+-- WHERE  [name] = N'$(DatabaseName)')
+    -- BEGIN
+  -- ALTER DATABASE [$(DatabaseName)]
+            -- SET
+                -- DISABLE_BROKER,
+            -- WITH ROLLBACK IMMEDIATE;
+-- END
+-- GO
 
-IF IS_SRVROLEMEMBER(N'sysadmin') = 1
-    BEGIN
-  IF EXISTS (SELECT 1
-  FROM [master].[dbo].[sysdatabases]
-  WHERE  [name] = N'$(DatabaseName)')
-            BEGIN
-    EXECUTE sp_executesql N'ALTER DATABASE [$(DatabaseName)]
-    SET TRUSTWORTHY OFF,
-        DB_CHAINING OFF
-    WITH ROLLBACK IMMEDIATE';
-  END
-END
-ELSE
-    BEGIN
-  PRINT N'The database settings for DB_CHAINING or TRUSTWORTHY cannot be modified. You must be a SysAdmin to apply these settings.';
-END
-GO
 
-IF EXISTS (SELECT 1
-FROM [master].[dbo].[sysdatabases]
-WHERE  [name] = N'$(DatabaseName)')
-    BEGIN
-  ALTER DATABASE [$(DatabaseName)]
-            SET HONOR_BROKER_PRIORITY OFF
-            WITH ROLLBACK IMMEDIATE;
-END
-GO
+-- Change from attribution - Assemblies are loaded in the next migration, leave trustworthy ON
+-- ToDo: Security analysis - what is the expansion on the attack surface
+-- IF IS_SRVROLEMEMBER(N'sysadmin') = 1
+  -- BEGIN
+  -- IF EXISTS (SELECT 1
+    -- FROM [master].[dbo].[sysdatabases]
+    -- WHERE  [name] = N'$(DatabaseName)')
+    -- BEGIN
+      -- EXECUTE sp_executesql N'ALTER DATABASE [$(DatabaseName)]
+      -- SET DB_CHAINING OFF
+    -- WITH ROLLBACK IMMEDIATE';
+  -- END
+-- END
+-- ELSE
+    -- BEGIN
+  -- PRINT N'The database settings for DB_CHAINING or TRUSTWORTHY cannot be modified. You must be a SysAdmin to apply these settings.';
+-- END
+-- GO
 
-USE [$(DatabaseName)]
-GO
-IF fulltextserviceproperty(N'IsFulltextInstalled') = 1
-    EXECUTE sp_fulltext_database 'enable';
-GO
+
+-- USE [$(DatabaseName)]
+-- GO
+-- IF fulltextserviceproperty(N'IsFulltextInstalled') = 1
+    -- EXECUTE sp_fulltext_database 'enable';
+-- GO
 
 /*
  Pre-Deployment Script Template
@@ -199,51 +209,53 @@ Post-Deployment Script Template
 */
 GO
 
-IF EXISTS (SELECT 1
-FROM [master].[dbo].[sysdatabases]
-WHERE  [name] = N'$(DatabaseName)')
-    BEGIN
-  DECLARE @VarDecimalSupported AS BIT;
-  SELECT @VarDecimalSupported = 0;
-  IF ((ServerProperty(N'EngineEdition') = 3)
-    AND (((@@microsoftversion / power(2, 24) = 9)
-    AND (@@microsoftversion & 0xffff >= 3024))
-    OR ((@@microsoftversion / power(2, 24) = 10)
-    AND (@@microsoftversion & 0xffff >= 1600))))
-            SELECT @VarDecimalSupported = 1;
-  IF (@VarDecimalSupported > 0)
-            BEGIN
-    EXECUTE sp_db_vardecimal_storage_format N'$(DatabaseName)', 'ON';
-  END
-END
-GO
+-- IF EXISTS (SELECT 1
+-- FROM [master].[dbo].[sysdatabases]
+-- WHERE  [name] = N'$(DatabaseName)')
+    -- BEGIN
+  -- DECLARE @VarDecimalSupported AS BIT;
+  -- SELECT @VarDecimalSupported = 0;
+  -- IF ((ServerProperty(N'EngineEdition') = 3)
+    -- AND (((@@microsoftversion / power(2, 24) = 9)
+    -- AND (@@microsoftversion & 0xffff >= 3024))
+    -- OR ((@@microsoftversion / power(2, 24) = 10)
+    -- AND (@@microsoftversion & 0xffff >= 1600))))
+            -- SELECT @VarDecimalSupported = 1;
+  -- IF (@VarDecimalSupported > 0)
+            -- BEGIN
+    -- EXECUTE sp_db_vardecimal_storage_format N'$(DatabaseName)', 'ON';
+  -- END
+-- END
+-- GO
 
-ALTER DATABASE [$(DatabaseName)]
-    SET MULTI_USER
-    WITH ROLLBACK IMMEDIATE;
-GO
+-- ALTER DATABASE [$(DatabaseName)]
+    -- SET MULTI_USER
+    -- WITH ROLLBACK IMMEDIATE;
+-- GO
 
 -- Create a common User and an Admin User
 
-IF NOT EXISTS( SELECT 1
-FROM master.dbo.syslogins
-WHERE [name] = 'AUADMIN')
-  EXEC sp_addlogin 'AUADMIN', 'pass'
-GO
+DROP LOGIN IF EXISTS 'AUADMIN'
 
-IF NOT EXISTS(SELECT 1
-FROM master.dbo.syslogins
-WHERE [name] = 'AUUSER')
-EXEC sp_addlogin 'AUUSER', 'pass'
-GO
+-- IF NOT EXISTS( SELECT 1
+-- FROM master.dbo.syslogins
+-- WHERE [name] = 'AUADMIN')
+  -- EXEC sp_addlogin 'AUADMIN', 'NotSecret'
+-- GO
 
-EXEC sp_grantdbaccess 'AUADMIN'
-EXEC sp_addrolemember 'db_datareader', 'AUADMIN'
-EXEC sp_addrolemember 'db_datawriter', 'AUADMIN'
-EXEC sp_addrolemember 'db_ddladmin', 'AUADMIN'
-GO
+-- IF NOT EXISTS(SELECT 1
+-- FROM master.dbo.syslogins
+-- WHERE [name] = 'AUUSER')
+-- EXEC sp_addlogin 'AUUSER', 'NotSecret'
+-- GO
 
-EXEC sp_grantdbaccess 'AUUSER'
-EXEC sp_addrolemember 'db_datareader', 'AUUSER'
-EXEC sp_addrolemember 'db_datawriter', 'AUUSER'
-GO
+-- EXEC sp_grantdbaccess 'AUADMIN'
+-- EXEC sp_addrolemember 'db_datareader', 'AUADMIN'
+-- EXEC sp_addrolemember 'db_datawriter', 'AUADMIN'
+-- EXEC sp_addrolemember 'db_ddladmin', 'AUADMIN'
+-- GO
+
+-- EXEC sp_grantdbaccess 'AUUSER'
+-- EXEC sp_addrolemember 'db_datareader', 'AUUSER'
+-- EXEC sp_addrolemember 'db_datawriter', 'AUUSER'
+-- GO

@@ -32,7 +32,6 @@ AS
         SET @InternalVersion = @Version
       END
 
-      --PRINT @bCPFileOutputPath + ', ' + @SchemaName + ', ' + @Version 
     DECLARE cursor_TableName CURSOR FOR
       SELECT Table_Name
       FROM information_schema.tables;
@@ -46,7 +45,5 @@ AS
       END
     CLOSE cursor_TableName
     DEALLOCATE cursor_TableName
-
-
-  END
+END
 GO  

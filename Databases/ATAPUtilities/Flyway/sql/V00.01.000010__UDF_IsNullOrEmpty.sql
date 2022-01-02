@@ -3,10 +3,10 @@ SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 GO
 
-DROP FUNCTION IF EXISTS [dbo].[ufnIsNullOrEmpty]
+DROP FUNCTION IF EXISTS [dbo].[udfIsNullOrEmpty]
 GO
 
-CREATE FUNCTION [dbo].[ufnIsNullOrEmpty](@x varchar(max)) returns bit as
+CREATE FUNCTION [dbo].[udfIsNullOrEmpty](@x varchar(max)) returns bit as
 BEGIN
 DECLARE
   @retVal bit

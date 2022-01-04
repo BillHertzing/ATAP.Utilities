@@ -2,9 +2,9 @@
 #region Get-TableNamesFromGCode
 <#
 .SYNOPSIS
-ToDo: write Help SYNOPSIS For this function
+Reads .cs Files and builds an initial SQL Create Table code block
 .DESCRIPTION
-ToDo: write Help DESCRIPTION For this function
+Gets all the .cs files in the source directory, and outputs a 'create table' sql block (per template) for each class and interface
 .PARAMETER Name
 ToDo: write Help For the parameter X
 .PARAMETER Extension

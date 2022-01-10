@@ -59,7 +59,7 @@ Other detailed documentation you might be interested are
 
 * [using libvip for image reduction and resizing with the ATAP Utilities]()
 
-* [Strongly-Typed IDs, Rule Replacement and Contigous Effective Dates as core concepts of the knowledgebase]()
+* [Strongly-Typed IDs, Rule Replacement and Contiguous Effective Dates as core concepts of the knowledgebase]()
 
 * [Detailed API Information for the packages in this repository](./API/ReadMe.html)
 
@@ -100,6 +100,7 @@ Once you have forked the repository, attach it to Visual Studio running on your 
 ## Using the Library packages
 
 [Using the ATAP Utility Libraries](./SolutionDocumentation/GettingStarted.html#UsingLibraries)
+
 ## Using the ATAP BuildTooling
 
 [Using the ATAP Utility Buildtooling](./SolutionDocumentation/GettingStarted.html#UsingBuildTooling)

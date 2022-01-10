@@ -1,6 +1,6 @@
-#Images Still and Moving
+# Images Still and Moving
 
-ToDo  Move into a Features subdirectory of SolutionDocumentatation
+ToDo  Move into a Features subdirectory of SolutionDocumentation
 
 ## Operations on an image file
 
@@ -21,7 +21,7 @@ ToDo  Move into a Features subdirectory of SolutionDocumentatation
 
 ### In a blog post
 
-Use a realtive link in the current theme to the agreed upon relative source location (./images or ./resources/images) of the filename or db records keys. Whater rendering tool (editor, usually) is used, it should be showing the image. For moving images, the rendering may, or may not, include the image in motion. During document editing, it may be faster if only a placeholder is shown. The placeholder if used, should appear in the very same location as the production rendering. The feature should be as WYS in development is as close as possible to WYG in production.
+Use a relative link in the current theme to the agreed upon relative source location (./images or ./resources/images) of the filename or db records keys. Whater rendering tool (editor, usually) is used, it should be showing the image. For moving images, the rendering may, or may not, include the image in motion. During document editing, it may be faster if only a placeholder is shown. The placeholder if used, should appear in the very same location as the production rendering. The feature should be as WYS in development is as close as possible to WYG in production.
 
 The blog post includes the metadata (media calls, etc) that tell the browser (client) that image links may exist in multiple sizes for some or all of the images referenced in the blog post.
 
@@ -29,7 +29,7 @@ The blog post includes the metadata (media calls, etc) that tell the browser (cl
 
 
 
-# Adding the image features to a CI/CD pipeline
+## Adding the image features to a CI/CD pipeline
 
 Tell the deployment pipeline the name of the blog
 Copy the blog file or db to a workspace

@@ -10,11 +10,23 @@ The purpose of this release is to provide visibility into the current state of t
 
 If you are viewing this ReadMe.md in GitHub, [here is this same ReadMe on the documentation site]()
 
-These are a treasure of Projects/Assemblies (at least I hope they will be eventually) for tools, algorithms and concepts, and data structures to make programming life easier.
+ATAP - All Things Are Possible.
 
-* These libraries are the computational and building core of of ATAP's ACE project and the Blazor-related demos.
+ATAP Technology and ATAP Consulting are the company and domain I used at the end of my carrier in technology. ATAP is the name of one of my two main repositories, and this repository contains much of the code I developed to use in my consulting practice.
 
-* This repository includes enhancements to Visual Studio, in the form of MSBuild tooling, including MSBuild Tasks, Targets, and Properties, along with PowerShell Scripts and Modules.
+My goal is to organize this knowledge, and get it into a database. My other repository is a program that uses these utilities and code units to interactively use and update the knowledge.
+
+I hope that many many others will eventually contribute their knowledge to this digital pool.
+
+* These libraries are the computational and building core of ATAP's ACE project and the Blazor-related demos.
+
+* This repository includes enhancements to IDEs like Visual Studio, Visual Studio Code and Rider in the form of MSBuild tooling, including MSBuild Tasks, Targets, and Properties, along with PowerShell Scripts and Modules.
+
+* The code is [going to be] built using a CI/CD pipeline. Pipeline components include provisioning the hardware to run tests, packaging, deployments to test and pre-production, then support for production deployments to either Web Service or Server package.
+
+* The utilities cover computing from the hardware up, including detailed hardware concepts, the software concepts, and organizations of computing processes. Databases, Net Generic Hosts, OS services and microservices, Web servers, are all [going to be] included
+
+* The documentation [is going to] covers many concepts and best practices in system design and development. The documentation is integrated into the same database as the code, and hardware/process descriptions.
 
 * The ReadMe and User Manual for the projects, along with QuickStarts, Guides and Tutorials.
 
@@ -25,7 +37,7 @@ These are a treasure of Projects/Assemblies (at least I hope they will be eventu
 * The documentation site is made available to the public via GitHub pages.
 
 
-Further information on the overall contents of this repository can be found in the [detailed documentation for this repository](./SolutionDocumentation/ReadMe.html)
+Further information on the overall contents of this repository can be found in the [detailed documentation for this repository](./SolutionDocumentation/ReadMe.html). That includes more details on all of the following, and how it all relates together
 
 Other detailed documentation you might be interested are
 
@@ -41,13 +53,24 @@ Other detailed documentation you might be interested are
 
 * [Using DoxFx to build the ATAP.Utilities documentation website]()
 
+* [Using PlantUML to generate code diagrams and conceptual diagrams]()
+
+* [Using Jenkins as the CI/CD pipeline for the ATAP Utilities]()
+
+* [using libvip for image reduction and resizing with the ATAP Utilities]()
+
+* [Strongly-Typed IDs, Rule Replacement and Contigous Effective Dates as core concepts of the knowledgebase]()
+
 * [Detailed API Information for the packages in this repository](./API/ReadMe.html)
+
 
 # Getting started
 
+Fork away and play with it. It is intended to allow for significant customizations, and sharing of knowledge.
+
 ## Prerequisites
 
-1. Visual Studio or Visual Studio Code, MS SQL Server, Flyway, PlantUML, Java, Jenkins, DotNet Desktop, DotNet Core
+1. Visual Studio or Visual Studio Code, MS SQL Server, Flyway, PlantUML, Java, Jenkins, DotNet Desktop, DotNet Core, Libvip
 1. Visual Studio (VS) 2017 Version 15.8 or newer. All of the following instructions assume you are using a Visual Studio (VS) 2017 IDE for development. More information on suggested settings and on 3rd party tools and extensions that make development easier is in the [Getting Started guide](./SolutionDocumentation/gettingStarted.html}. If you want to use the ATAP BuildTooling from this repository, see the [ATAP.BuildTooling GettingStarted guide] for additional required Visual Studio extensions and settings. If you want to build the documentation for this repository, or learn more about how the AutoDoc project works, see the [ATAP.Utilities.AutoDoc Getting Started Guide] for instructions. If you are in Building/using these tools outside of Visual Studio, [Building](./SolutionDocumentation/ReadMe.html#Building) provides additional documentation on options for building the demos outside of Visual Studio
 1. Familiarity with using Git and GitHub in VS.
 

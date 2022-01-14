@@ -40,15 +40,15 @@ Function Write-DebugIndented {
     [int] $indent
     , [string] $message
   )
-  $a = ' '*$indent+$message
+  $a = ' ' * $indent + $message
   Write-Debug $a
 }
 
 # Set these for debugging the profile
 # Don't Print any debug messages to the console
-$DebugPreference = 'Continue'
+$DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
-$VerbosePreference = 'Continue' # SilentlyContinue Continue
+$VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
 
 #ToDo: document expected values when run under profile, Module cmdlet/function, script.
 Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
@@ -58,32 +58,38 @@ Write-Verbose -Message ("PSScriptRoot = $PSScriptRoot")
 $indent = 0
 
 # Dot source the list of configuration keys
-. ./global_ConfigRootKeys.ps1
+# Configuration root keys .ps1 files should be a peer of the profile, and is identified as the subdirectory dir where the profile resides
+. $PSScriptRoot/global_ConfigRootKeys.ps1
+
+# Print the ConfigRootKeys if Debug
 if ($DebugPreference -eq 'Continue') {
-  Write-DebugIndented $indent "GLOBAL ConfigRootKeys:"
+  Write-DebugIndented $indent 'GLOBAL ConfigRootKeys:'
   $indent += 2
-  $global:configRootKeys.Keys |  foreach {
+  $global:configRootKeys.Keys | ForEach-Object {
     Write-DebugIndented $indent "$_ = $($global:configRootKeys[$_])"
   }
   $indent -= 2
 }
 
 # Dot source the Machine and Node settings
-. ./global_MachineAndNodeSettings.ps1
+. $PSScriptRoot/global_MachineAndNodeSettings.ps1
+# Print the GLOBAL MachineAndNodeSettings if Debug
 if ($DebugPreference -eq 'Continue') {
- Write-DebugIndented $indent "GLOBAL MachineAndNodeSettings:"
+  Write-DebugIndented $indent 'GLOBAL MachineAndNodeSettings:'
   $indent += 2
-  $global:MachineAndNodeSettings.Keys |sort |  foreach { $l1Key = $_
+  $global:MachineAndNodeSettings.Keys | sort | ForEach-Object { $l1Key = $_
+    # Should be recursive, this only goes one level deep
     if ($global:MachineAndNodeSettings[$l1Key] -is [System.Collections.IDictionary]) {
       # write iDictionary header
       Write-DebugIndented $indent "$l1Key is IDictionary:"
       $indent += 2
-      ($global:MachineAndNodeSettings[$l1Key]).Keys | sort | foreach { $l2Key = $_
+      ($global:MachineAndNodeSettings[$l1Key]).Keys | sort | ForEach-Object { $l2Key = $_
         # write nested settings
         Write-DebugIndented $indent "$l1Key.$l2Key = $(($global:MachineAndNodeSettings)[$l1Key])[$l2Key]"
       }
       $indent -= 2
-    } else {
+    }
+    else {
       # write simple settings
       Write-DebugIndented $indent "$l1Key = $global:MachineAndNodeSettings[$_]"
     }
@@ -91,53 +97,55 @@ if ($DebugPreference -eq 'Continue') {
   $indent -= 2
 }
 
-# Define a global settings hash, populate with machine-specific information for this machine
+# Define a global settings hash, initially populate it with machine-specific information for this machine
 $global:settings = @{}
+
 $machineSpecificSettings = $global:MachineAndNodeSettings[$env:COMPUTERNAME]
-$machineSpecificSettings.Keys | foreach {
+$machineSpecificSettings.Keys | ForEach-Object {
   $global:settings[$_] = $machineSpecificSettings[$_]
 }
+# Is this script elevated (RegEx pattern for Magic Window's SIDs  )
+$global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
 
 if ($DebugPreference -eq 'Continue') {
-  Write-DebugIndented $indent "GLOBAL SETTINGS:"
+  Write-DebugIndented $indent 'GLOBAL SETTINGS:'
   $indent += 2
-  $global:settings.Keys |sort |  foreach { $l1Key = $_
+  $global:settings.Keys | sort | ForEach-Object { $l1Key = $_
     if ($global:settings[$l1Key] -is [System.Collections.IDictionary]) {
       # write iDictionary header
       Write-DebugIndented $indent "$l1Key is IDictionary:"
       $indent += 2
-      ($global:Settings[$l1Key]).Keys | sort | foreach { $l2Key = $_
-    # write nested settings
-        Write-DebugIndented $indent "$l1Key.$l2Key = $($($global:Settings[$l1Key].$l2Key)"
+      ($global:Settings[$l1Key]).Keys | sort | ForEach-Object { $l2Key = $_
+        if ($global:settings[$l1Key][$l2Key] -is [System.Collections.IDictionary]) {
+          $indent += 2
+          ($global:Settings[$l1Key][$l2Key]).Keys | sort | ForEach-Object { $l3Key = $_
+            # write nested settings
+            $str = $global:Settings[$l1Key][$l2Key][$l3Key]
+            Write-DebugIndented $indent "$l1Key.$l2Key.$l3Key = $str"
+          }
+          $indent -= 2
+        }
+        else {
+          # write nested settings
+          $str = $global:Settings[$l1Key][$l2Key]
+          Write-DebugIndented $indent "$l1Key.$l2Key = $str"
+        }
       }
       $indent -= 2
-    } else {
+    }
+    else {
       # write simple settings
-      Write-DebugIndented $indent "$l1Key = $global:settings[$l1Key]"
+      $str = $global:settings[$l1Key]
+      Write-DebugIndented $indent "$l1Key = $str"
     }
   }
   $indent -= 2
 }
 
 # This machine is part of the CI/CD DevOps pipeline ecosystem
+# The global_MachineAndNodeSettings.ps1 file includes the settings for the CI/CD pipeline portions that this machine can participate in
 #  Get settings associated with each role for this machine
 
-
-
-# Define the list of Jenkins Node roles this machine can support
-#  machineId = utat01
-$JenkinsNodeRoles = @('WindowsCodeBuildJenkinsNode', 'WindowsDocumentationBuildJenkinsNode')
-
-$global:settings += @{
-  dotnetPath = 'C:\Program Files\dotnet\dotnet.exe'
-}
-
-$global:settings += @{
-  PlantUmlClassDiagramGeneratorPath = 'C:\Users\whertzing\.dotnet\tools\puml-gen.exe'
-  javaPath = 'C:\Program Files\AdoptOpenJDK\jre-16.0.1.9-hotspot\bin\java.exe'
-  plantUMLJarPath = 'C:/ProgramData/chocolatey/lib/plantuml/tools/plantuml.jar'
-  docfxPath = 'C:\ProgramData\chocolatey\bin\docfx.exe'
-}
 
 ########################################################
 # Function Definitions *global* scope
@@ -151,18 +159,18 @@ Function ValidateTools {
   # validate java
   # vallidate PlantUML
   # validate PlantUmlClassDiagramGenerator
-    # dotnet tool install --global PlantUmlClassDiagramGenerator --version 1.2.4
+  # dotnet tool install --global PlantUmlClassDiagramGenerator --version 1.2.4
 
 }
 
 
 # Uncomment to see the $global:settings and Environment variables at the completion of this profile
-Write-Verbose ('$global:settings are: ' +  [Environment]::NewLine + ($global:settings.Keys | foreach {"$_ = $($global:settings[$_]) `n"} ))
+#Write-Verbose ('$global:settings are: ' + [Environment]::NewLine + ($global:settings.Keys | foreach { "$_ = $($global:settings[$_]) `n" } ))
 #Write-Verbose ('$global:settings are: ' +  [Environment]::NewLine + (foreach ($kvp in ($global:settings).GetEnumerator()){"{0}:{1}" -f $kvp.name, $kvp.name,[Environment]::NewLine} ))
 #Write-Verbose ("Environment variables AllUsersAllHosts are:  " + [Environment]::NewLine + (Get-ChildItem env: |ForEach-Object{"{0}:{1}{2}" -f $_.key, $_.value, [Environment]::NewLine}))
-Write-Verbose ("Environment variables AllUsersAllHosts are:  " + [Environment]::NewLine + (Get-ChildItem env: |ForEach-Object{ $envVar=$_;  ('Machine','User','Process') | %{$scope = $_;
-if (([System.Environment]::GetEnvironmentVariable($envVar.key, $scope))) {"{0}:{1} ({2})" -f $envVar.key, $envVar.value, $scope}
-}}))
+Write-Verbose ('Environment variables AllUsersAllHosts are:  ' + [Environment]::NewLine + (Get-ChildItem env: | ForEach-Object { $envVar = $_; ('Machine', 'User') | % { $scope = $_; # , 'Process'
+        if (([System.Environment]::GetEnvironmentVariable($envVar.key, $scope))) { '{0}:{1} ({2}){3}' -f $envVar.key, $envVar.value, $scope, [Environment]::NewLine }
+      } }))
 
 
 

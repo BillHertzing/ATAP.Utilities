@@ -23,10 +23,21 @@ ToDo: Need attribution for Console Settings
 <Configuration Management Keywords>
 #>
 
+# Set these for debugging the profile
+# Don't Print any debug messages to the console
+$DebugPreference = 'SilentlyContinue'
+# Don't Print any verbose messages to the console
+$VerbosePreference = 'Continue' # SilentlyContinue Continue
+
+#ToDo: document expected values when run under profile, Module cmdlet/function, script.
 Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+Write-Verbose -Message ("WorkingDirectory = $pwd")
+Write-Verbose -Message ("PSScriptRoot = $PSScriptRoot")
+
+$indent = 0
 
 # Add MSBuild path to path
-$env:path += ';C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin'
+#$env:path += ';C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin'
 # Add ATAP.Utilites Powershell path to path
 $env:path += ';C:\Dropbox\whertzing\GitHub\ATAP.Utilities\ATAP.Utilities.BuildTooling.PowerShell'
 
@@ -34,7 +45,7 @@ $env:path += ';C:\Dropbox\whertzing\GitHub\ATAP.Utilities\ATAP.Utilities.BuildTo
 # ToDo: can this all be done with a local nuget server, instead? What about companies where the developers who want to use ATAPUtilities, cannot add a nuget server to their environment. Local Feed on a file: (and UNC) protocol?
 $drops = @{fssdev = '\\fs\pkgsDev'; fssqa = '\\fs\pkgsqa'; fssprd = '\\fs\pkgs'; wsudev = 'http://ws/ngf/dev'; wsuqa = 'http://ws/ngf/qa'; wsuprd = 'http://ws/ngf' }
 
-# Where does chocolatey instal;l librayrs (ps modulkes) to
+# Where chocolatey installs librarys (ps modules) to
 $chocolateyLibDir = 'C:\ProgramData\chocolatey\lib'
 # Set the PSModulePath
 # different for Powershell V7 and anything earlier (PowerShell for Windows)
@@ -56,12 +67,6 @@ Write-Verbose ('Final PSModulePath profile is: ' + "`r`n`t" + (($Env:PSModulePat
 ########################################################
 
 # [powerShell ReadMe](src\ATAP.Utilities.Powershell\Documentation\ReadMe.md for details)
-
-# Set these for debugging the profile
-# Don't Print any debug messages to the console
-$DebugPreference = 'SilentlyContinue' # SilentlyContinue Continue
-# Don't Print any verbose messages to the console
-$VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
 
 # Store the current directory, where the profile was started from...
 $storedInitialDir = pwd

@@ -1,6 +1,7 @@
 # ToDo comment  based help
 $global:configRootKeys = @{
 
+  'IsElevatedConfigRootKey' = 'IsElevated'
   'DropBoxBaseDirConfigRootKey' = 'DropBoxBaseDir'
   'FastTempBasePathConfigRootKey' = 'FastTempBasePath'
   'BigTempBasePathConfigRootKey' = 'BigTempBasePath'

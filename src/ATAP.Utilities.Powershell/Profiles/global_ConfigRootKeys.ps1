@@ -2,14 +2,19 @@
 $global:configRootKeys = @{
 
   'IsElevatedConfigRootKey' = 'IsElevated'
-  'DropBoxBaseDirConfigRootKey' = 'DropBoxBaseDir'
+  'CloudBasePathConfigRootKey' = 'CloudBasePath'
+  'DropboxBasePathConfigRootKey' = 'DropboxBasePath'
+  'OneDriveBasePathConfigRootKey' = 'OneDriveBasePath'
   'FastTempBasePathConfigRootKey' = 'FastTempBasePath'
   'BigTempBasePathConfigRootKey' = 'BigTempBasePath'
   'GitExePathConfigRootKey' = 'GitExePath'
   'JavaExePathConfigRootKey' = 'JavaExePath'
-  'PlantUmlClassDiagramGeneratorPathConfigRootKey' = 'PlantUmlClassDiagramGeneratorPath'
   'JenkinsNodeRolesConfigRootKey' = 'JenkinsNodeRoles'
+  'ChocolateyBinDirConfigRootKey' = 'ChocolateyBinDir'
+  'ChocolateyLibDirConfigRootKey' = 'ChocolateyLibDir'
+  'PackageDropPathsConfigRootKey' = 'PackageDropPaths'
   'WindowsDocumentationBuildConfigRootKey' = 'WindowsDocumentationBuild'
+  'BuildImageFromPlantUMLConfigRootKey' = 'BuildImageFromPlantUMPowershellCmdlet'
   'WindowsCodeBuildConfigRootKey' = 'WindowsCodeBuild'
   'WindowsUnitTestConfigRootKey' = 'WindowsUnitTest'
   'MSBuildExePathConfigRootKey' = 'MSBuildExePath'
@@ -18,5 +23,6 @@ $global:configRootKeys = @{
   'PlantUMLJarPathConfigRootKey' = 'PlantUMLJarPath'
   'PlantUmlClassDiagramGeneratorExePathConfigRootKey' = 'PlantUmlClassDiagramGeneratorExePath'
   'BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey' = 'BuildImageFromPlantUMLPowershellCmdletName'
-
+  'SQLServerPSModulePathsConfigRootKey' = 'SQLServerPSModulePaths'
+  'SQLServerConnectionStringConfigRootKey' = 'SQLServerConnectionString'
 }

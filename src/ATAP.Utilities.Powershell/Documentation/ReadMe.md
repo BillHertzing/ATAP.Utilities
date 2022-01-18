@@ -2,13 +2,13 @@
 
 ## Overview
 
-ToDo: Write content
+Profiles define the environment in which a powershell process executes. The machine profile sets values that are applicable for a specific machine. The values define what a machine can do, and where the executables reside. The user profile sets values that can override or supplement the machineprofile
 
 ## Profiles
 
 Important: This package currently only supplies profiles for Powershell Core (currently V7)
 
-This package supplies two profiles  and multiple settings files. One profile is for AllUsersAllHosts, and should be installed at the location as specified in `$profile.AllUsersAllHosts`. The other profile is for CurrentUserAllHosts, and should be installed at the location as specified in `$profile.CurrentUserAllHosts`.
+This package supplies two profiles and multiple settings files. One profile is for AllUsersAllHosts, and should be installed at the location as specified in `$profile.AllUsersAllHosts`. The other profile is for CurrentUserAllHosts, and should be installed at the location as specified in `$profile.CurrentUserAllHosts`.
 
 Important: Location of CurrentUserAllHosts will not always be at ~!. Sometimes a user will have moved their Documents folder from the default location. To determine the location of the user's Documents folder, use `[Environment]::GetFolderPath("MyDocuments")`
 
@@ -33,7 +33,7 @@ After ensuring there are no critical errors, and the information messages from -
 
 ## MachineName and Roles
 
-These are stored in `MachineAndNodeSettings.ps1`. It should be deployed, and found, in the same directory as the machine-wide profile.
+These are stored in `global_MachineAndNodeSettings.ps1`. It should be deployed, and found, in the same directory as the machine-wide profile.
 
 Machine Profile:
 

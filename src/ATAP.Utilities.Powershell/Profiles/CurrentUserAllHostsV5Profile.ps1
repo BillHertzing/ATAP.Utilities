@@ -1,5 +1,5 @@
 <#
-.SYNOPSIS 
+.SYNOPSIS
 PowerShell V5 profile template for individual users
 .DESCRIPTION
 Details in [powerShell ReadMe](src\ATAP.Utilities.Powershell\Documentation\ReadMe.md)
@@ -59,58 +59,58 @@ Function ConsoleSettings {
 if ($host.ui.Rawui.WindowTitle -notmatch 'ISE') {ConsoleSettings}
 
 # Structure of package drop location; File Server Shares (fss) and Web Server URLs
-$drops = @{fssdev='\\fs\pkgsDev';fssqa='\\fs\pkgsqa';fssprd='\\fs\pkgs';wsudev='http://ws/ngf/dev';wsuqa='http://ws/ngf/qa';wsuprd='http://ws/ngf'} 
+$drops = @{fssdev='\\fs\pkgsDev';fssqa='\\fs\pkgsqa';fssprd='\\fs\pkgs';wsudev='http://ws/ngf/dev';wsuqa='http://ws/ngf/qa';wsuprd='http://ws/ngf'}
 
 # set the Cloud Location variables
 Function Set-CloudDirectoryLocations {
   switch -regex ($env:computername) {
     'ncat016' {
-      $global:DropBoxBaseDir = 'C:\Dropbox\'
+      $global:DropBoxBasePath = 'C:\Dropbox\'
       $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
+      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+      #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
       break
     }
     'ncat040' {
-      $global:DropBoxBaseDir = 'C:\Dropbox\'
+      $global:DropBoxBasePath = 'C:\Dropbox\'
       $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
+      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+      #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
       break
     }
     'ncat-ltjo' {
-      $global:DropBoxBaseDir = 'C:\Dropbox\'
+      $global:DropBoxBasePath = 'C:\Dropbox\'
       $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
+      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+      #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
       break
     }
     'ncat-ltb1' {
-      $global:DropBoxBaseDir = 'D:\Dropbox\'
+      $global:DropBoxBasePath = 'D:\Dropbox\'
       $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
+      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+      #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
       break
     }
     'ncat-lt0' {
       # The name of the dropbox admin
-      $global:DropBoxBaseDir = 'C:\Dropbox\'
+      $global:DropBoxBasePath = 'C:\Dropbox\'
       $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
+      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+      #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
       break
     }
     'dev\d*' {
       # The name of the dropbox admin
-      $global:DropBoxBaseDir = 'D:\Dropbox\'
+      $global:DropBoxBasePath = 'D:\Dropbox\'
       $global:OneDriveBaseDir = 'D:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
+      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+      #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
       break
     }
     default {
       # None of the other computers should have cloud loaded
-      $global:DropBoxBaseDir = 'C:\Dropbox\'
+      $global:DropBoxBasePath = 'C:\Dropbox\'
       $global:OneDriveBaseDir = 'C:\OneDrive\'
     }
   }
@@ -135,7 +135,7 @@ if ((whoami /all) -match $elevatedSIDPattern) {Write-Verbose "Elevated permision
 Function Show-context{
   # Print the version of the framework we are using
   Write-Verbose ("Framework being used: {0}" -f [Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory())
-  Write-Verbose ("DropBoxBaseDir: {0}" -f $global:DropBoxBaseDir)
+  Write-Verbose ("DropBoxBasePath: {0}" -f $global:DropBoxBasePath)
   Write-Verbose ("PSModulePath: {0}" -f $Env:PSModulePath)
   Write-Verbose ("Elevated permisions:" -f (whoami /all) -match $elevatedSIDPattern)
   Write-Verbose ("Drops:{0}" -f $drops)
@@ -143,7 +143,7 @@ Function Show-context{
   #VerbosePreference
   #LoggingFrameworkandLogFileLocation
   # ConssoleSettings
-  
+
 }
 if ($true) {Show-context}
 
@@ -210,7 +210,7 @@ for ($i=0;$i -lt $a.length;$i++) {
 }
 $colwidth = [math]::floor($pagewidth/$numcolumns)
 #$b|format-table -Wrap -HideTableHeaders
-$strary = @() 
+$strary = @()
 $b | %{$t=$_
   $str = ''
   for ($j=0;$j -lt $numcolumns;$j++){
@@ -225,13 +225,13 @@ $strary
 Function get-emptydirs {
 param ($dir = 'D:\dropbox\music\')
   $a = Get-ChildItem $dir -recurse | Where-Object {$_.PSIsContainer -eq $True}
-  $a | Where-Object {$_.GetFiles().Count -eq 0} | Select-Object Fullname 
+  $a | Where-Object {$_.GetFiles().Count -eq 0} | Select-Object Fullname
 }
 #>
 # Read in an external Settings file from the same dir where the running script resides
 #  This will look for Settings.Profile.ps1 by default
 # Get-Settings 'C:\Dropbox\ATAP\Customers\Travelocity\Cfg\Prd\PowershellProfile\Settings.Profile.ps1'
-# Import the RDPFromCommandLine module, which expects the current list of tealeaf servers 
+# Import the RDPFromCommandLine module, which expects the current list of tealeaf servers
 # ipmo RDPFromCommandLine
 # Define the RDP Settings file path for Travelocity servers
 # $Settings.RDPConnectionPathBase = 'C:\Dropbox\ATAP\Customers\Travelocity\Cfg\Prd\{0}RDPSettings.rdp'

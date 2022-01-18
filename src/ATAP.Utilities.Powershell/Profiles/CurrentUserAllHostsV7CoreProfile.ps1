@@ -2,8 +2,8 @@
 .SYNOPSIS
 PowerShell V7 profile template for individual users
 .DESCRIPTION
+Settings specific for a user, whose values represent the tasks and environments the user is doing
 Details in [powerShell ReadMe](src\ATAP.Utilities.Powershell\Documentation\ReadMe.md)
-
 .INPUTS
 None
 .OUTPUTS
@@ -27,39 +27,18 @@ ToDo: Need attribution for Console Settings
 # Don't Print any debug messages to the console
 $DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
-$VerbosePreference = 'Continue' # SilentlyContinue Continue
+$VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
 
 #ToDo: document expected values when run under profile, Module cmdlet/function, script.
-Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-Write-Verbose -Message ("WorkingDirectory = $pwd")
-Write-Verbose -Message ("PSScriptRoot = $PSScriptRoot")
-
-$indent = 0
+Write-Verbose "Starting $($MyInvocation.Mycommand)"
+Write-Verbose ("WorkingDirectory = $pwd")
+Write-Verbose ("PSScriptRoot = $PSScriptRoot")
 
 # Add MSBuild path to path
 #$env:path += ';C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin'
 # Add ATAP.Utilites Powershell path to path
-$env:path += ';C:\Dropbox\whertzing\GitHub\ATAP.Utilities\ATAP.Utilities.BuildTooling.PowerShell'
+#$env:path += ';C:\Dropbox\whertzing\GitHub\ATAP.Utilities\ATAP.Utilities.BuildTooling.PowerShell'
 
-# Structure of package drop location; File Server Shares (fss) and Web Server URLs
-# ToDo: can this all be done with a local nuget server, instead? What about companies where the developers who want to use ATAPUtilities, cannot add a nuget server to their environment. Local Feed on a file: (and UNC) protocol?
-$drops = @{fssdev = '\\fs\pkgsDev'; fssqa = '\\fs\pkgsqa'; fssprd = '\\fs\pkgs'; wsudev = 'http://ws/ngf/dev'; wsuqa = 'http://ws/ngf/qa'; wsuprd = 'http://ws/ngf' }
-
-# Where chocolatey installs librarys (ps modules) to
-$chocolateyLibDir = 'C:\ProgramData\chocolatey\lib'
-# Set the PSModulePath
-# different for Powershell V7 and anything earlier (PowerShell for Windows)
-if ($PSVersionTable.PSVersion.major -ge 7) {
-   # Add the Chocolatey lib
-  'C:\ProgramData\chocolatey\lib'
-  $Env:PSModulePath = $chocolateyLibDir + ';' + $Env:PSModulePath
-  # add the default locqtion?
-  # $Env:PSModulePath = (Join-Path $env:ProgramFiles 'PowerShell\Modules') + ';' + $Env:PSModulePath
-}
-# else {
-  # #$Env:PSModulePath = (join-path $env:ProgramFiles "WindowsPowerShell\Modules") + ';' + $Env:PSModulePath
-# }
-Write-Verbose ('Final PSModulePath profile is: ' + "`r`n`t" + (($Env:PSModulePath -split ';') -join "`r`n`t"))
 
 
 ########################################################
@@ -70,19 +49,6 @@ Write-Verbose ('Final PSModulePath profile is: ' + "`r`n`t" + (($Env:PSModulePat
 
 # Store the current directory, where the profile was started from...
 $storedInitialDir = pwd
-
-$settings = @{
-  # ToDo: Move this to the Machine profile settings
-  # Is this script elevated (RegEx pattern for Magic Window's SIDs  )
-  IsElevated = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
-}
-
-# Call the machine-profile function Get-Settings to setup the $settings object for this script
-#Get-Settings $SettingsFile
-
-# Debug the final settings
-
-if ($settings.IsElevated) { Write-Verbose 'Elevated permisions' }
 
 # Setup Logging for script execution and debugging, after settings are processed
 #$LogFn =$settings.LogFnPath + $settings.LogFnPattern;
@@ -116,11 +82,11 @@ Function prompt {
   #Configure current user, current folder and date outputs
   $CmdPromptCurrentFolder = Split-Path -Path $pwd -Leaf
   $CmdPromptUser = [Security.Principal.WindowsIdentity]::GetCurrent();
+  # Decorate the CMD Prompt
   # Test for Admin / Elevated
-  $IsElevated = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
-  #Decorate the CMD Prompt
-  Write-Host ''
-  Write-Host ($(if ($IsElevated) { 'Elevated ' } else { '' })) -BackgroundColor DarkRed -ForegroundColor White -NoNewline
+  #Write-Host ''
+  Write-Host ($(if ($global:settings[$global:configRootKeys['IsElevatedConfigRootKey']]) { 'Elevated ' } else { '' })) -BackgroundColor DarkRed -ForegroundColor White -NoNewline
+
   Write-Host " USER:$($CmdPromptUser.Name.split('\')[1]) " -BackgroundColor DarkBlue -ForegroundColor White -NoNewline
   If ($CmdPromptCurrentFolder -like '*:*')
   { Write-Host " $CmdPromptCurrentFolder " -ForegroundColor White -BackgroundColor DarkGray -NoNewline }
@@ -128,73 +94,75 @@ Function prompt {
   return '> '
 }
 
-# set the Cloud Location variables
-Function Set-CloudDirectoryLocations {
-  switch -regex ($env:computername) {
-    'ncat016' {
-      $global:DropBoxBaseDir = 'C:\Dropbox\'
-      $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      break
-    }
-    'ncat040' {
-      $global:DropBoxBaseDir = 'C:\Dropbox\'
-      $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      break
-    }
-    'ncat-ltjo' {
-      $global:DropBoxBaseDir = 'C:\Dropbox\'
-      $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      break
-    }
-    'ncat-ltb1' {
-      $global:DropBoxBaseDir = 'D:\Dropbox\'
-      $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      break
-    }
-    'ncat-lt0' {
-      # The name of the dropbox admin
-      $global:DropBoxBaseDir = 'C:\Dropbox\'
-      $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      break
-    }
-    'dev\d*' {
-      # The name of the dropbox admin
-      $global:DropBoxBaseDir = 'D:\Dropbox\'
-      $global:OneDriveBaseDir = 'D:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      break
-    }
-    'utat\d*' {
-      # The name of the dropbox admin
-      $global:DropBoxBaseDir = 'C:\Dropbox\'
-      $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBaseDir +'Dev\AT\WindowsPowerShell\Modules'
-      break
-    }
-    default {
-      # None of the other computers should have cloud loaded
-      $global:DropBoxBaseDir = 'C:\Dropbox\'
-      $global:OneDriveBaseDir = 'C:\OneDrive\'
-    }
-  }
-}
-if ($true) { Set-CloudDirectoryLocations }
+# set the Cloud Location variables for THIS user
+# Function Set-CloudDirectoryLocations {
+#   switch -regex ($env:computername) {
+#     'ncat016' {
+#       $global:settings[$global:Conf ]
+#       $global:DropBoxBasePath = 'C:\Dropbox\'
+#       $global:OneDriveBaseDir = 'C:\OneDrive\'
+#       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       break
+#     }
+#     'ncat040' {
+#       $global:DropBoxBasePath = 'C:\Dropbox\'
+#       $global:OneDriveBaseDir = 'C:\OneDrive\'
+#       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       break
+#     }
+#     'ncat-ltjo' {
+#       $global:DropBoxBasePath = 'C:\Dropbox\'
+#       $global:OneDriveBaseDir = 'C:\OneDrive\'
+#       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       break
+#     }
+#     'ncat-ltb1' {
+#       $global:DropBoxBasePath = 'D:\Dropbox\'
+#       $global:OneDriveBaseDir = 'C:\OneDrive\'
+#       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       break
+#     }
+#     'ncat-lt0' {
+#       # The name of the dropbox admin
+#       $global:DropBoxBasePath = 'C:\Dropbox\'
+#       $global:OneDriveBaseDir = 'C:\OneDrive\'
+#       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       break
+#     }
+#     'dev\d*' {
+#       # The name of the dropbox admin
+#       $global:DropBoxBasePath = 'D:\Dropbox\'
+#       $global:OneDriveBaseDir = 'D:\OneDrive\'
+#       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       break
+#     }
+#     'utat\d*' {
+#       # The name of the dropbox admin
+#       $global:DropBoxBasePath = 'C:\Dropbox\'
+#       $global:OneDriveBaseDir = 'C:\OneDrive\'
+#       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
+#       break
+#     }
+#     default {
+#       # None of the other computers should have cloud loaded
+#       $global:DropBoxBasePath = 'C:\Dropbox\'
+#       $global:OneDriveBaseDir = 'C:\OneDrive\'
+#     }
+#   }
+# }
+# if ($true) { Set-CloudDirectoryLocations }
 
 
 Write-Verbose ("PsScriptRoot: $psScriptRoot")
 
+(get-item  variable:\settings).Value.keys | sort | %{$key = $_; if ((get-item  variable:\settings).Value.$key  -is [System.Collections.IDictionary]) {"$key yep"}else {"$key = $($($(get-item  variable:\settings).Value).$key)"}}
 
 #todo: solve the puzzle why my own modules won't autoload
 #region PrivateFunctions
@@ -233,7 +201,6 @@ Function Get-ModulesForUserProfileAsSymbolicLinks {
   ########################################
   BEGIN {
     Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-    $DebugPreference = 'Continue'
 
     # default values for settings
     $settings = @{
@@ -241,10 +208,7 @@ Function Get-ModulesForUserProfileAsSymbolicLinks {
       TargetModulePath     = ''
       Force                = $false
       UserModulePath       = Join-Path ([Environment]::GetFolderPath('MyDocuments')) '\PowerShell\Modules\'
-      LinksToCreatePattern = '(public|private|\.*ps[md]1)'
-
-      # ToDo: should be populated from global:settings via Get-Settings
-      IsElevated           = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+      LinksToCreatePattern = '(public|private|\.*ps[md]*1)'
     }
 
     # Things to be initialized after settings are processed
@@ -262,7 +226,7 @@ Function Get-ModulesForUserProfileAsSymbolicLinks {
     Get-ChildItem $targetModulePath | Where-Object { $_.name -match $Settings.LinksToCreatePattern } |
     ForEach-Object { if (-not (Test-Path $_.name)) {
         # If it doesn't exist, it needs to be created, but only administrator's can create symbolic links
-        if ($settings.IsElevated) {
+        if ($global:settings[$global:configRootKeys['IsElevatedConfigRootKey']]) {
           if ($PSCmdlet.ShouldProcess(@($_.name, $_.fullname), 'CreateSymbolicLink -Path $_.name -Target $_.fullname > $null')) {
             # Add the suffix
             CreateSymbolicLink -Path $_.name -Target $_.fullname > $null
@@ -275,9 +239,9 @@ Function Get-ModulesForUserProfileAsSymbolicLinks {
       }
       else {
         # only recreate it if the -Force argument is set
-        if ($settings.Force -and $settings.IsElevated) {
+        if ($settings.Force -and $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']]) {
           if ($PSCmdlet.ShouldProcess(@($_.name, $_.fullname), 'Force: Remove and recreate CreateSymbolicLink -Path $_.name -Target $_.fullname > $null')) {
-            Remove-Item $_.name -ErrorAction SilentlyContinue -WhatIf -Verbose
+            Remove-Item $_.name -ErrorAction SilentlyContinue -WhatIf -Verbose # ToDo: remove whatif and verbose after debugging
             CreateSymbolicLink -Path $_.name -Target $_.fullname > $null
           }
         }
@@ -300,14 +264,14 @@ $ModulesToLoadAsSymbolicLinks = @(
     targetModulePath  = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell'
     usePreRelease = $true
   },
-  # Developer and CI/CD powershel modules for building and CI/CD
+  # Developer and CI/CD powershell modules that assist developers creating code and building it, and modules shared with the CI/CD
   [PSCustomObject]@{
     profileModuleName = 'ATAP.Utilities.BuildTooling.PowerShell'
     profileModulePath = 'ATAP.Utilities.BuildTooling.PowerShell\0.1.0\'
     targetModulePath  = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.Powershell'
     usePreRelease = $true
   },
-  # Functions specific to FileIO
+  # Useful Functions specific to FileIO
   [PSCustomObject]@{
     profileModuleName = 'ATAP.Utilities.FileIO.PowerShell'
     profileModulePath = 'ATAP.Utilities.FileIO.PowerShell\0.1.0\'
@@ -328,7 +292,7 @@ $ModulesToLoad = $ModulesToLoadAsSymbolicLinks + @(
 )
 
 # ToDo replace with just module name
-$ModulesToLoad | ForEach-Object{$name = $_.ProfileModuleName; $_.ProfileModuleName; Import-Module "$($_.ProfileModuleName)"  -Verbose}
+$ModulesToLoad | ForEach-Object{$name = $_.ProfileModuleName; $_.ProfileModuleName; Import-Module "$($_.ProfileModuleName)" }
 # $ModulesToLoad | ForEach-Object{$name = (join-path -Path $_.profileModulePath -ChildPath $_.profileModuleName) + '.psm1' ; $name; Import-Module "$name" -Force -Verbose}
 
 # Show environment/context information when the profile runs
@@ -336,7 +300,7 @@ $ModulesToLoad | ForEach-Object{$name = $_.ProfileModuleName; $_.ProfileModuleNa
 Function Show-context {
   # Print the version of the framework we are using
   Write-Verbose ('Framework being used: {0}' -f [Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory())
-  Write-Verbose ('DropBoxBaseDir: {0}' -f $global:DropBoxBaseDir)
+  Write-Verbose ('DropBoxBasePath: {0}' -f $global:Settings[$global:configRootKeys['DropBoxBasePathConfigRootKey']]) #  $global:DropBoxBasePath)
   Write-Verbose ('PSModulePath: {0}' -f $Env:PSModulePath)
   Write-Verbose ('Elevated permisions:' -f (whoami /all) -match $elevatedSIDPattern)
   Write-Verbose ('Drops:{0}' -f $($drops | Format-Table | Out-String))
@@ -397,7 +361,7 @@ set-item -path alias:stopVA -value StopVoiceAttackProcess
 
 # Final (user) directory to leave the interpreter
 #cdMy
-#Set-Location -Path (join-path -Path $global:DropBoxBaseDir -ChildPath 'whertzing' -AdditionalChildPath 'GitHub','ATAP.Utilities')
+#Set-Location -Path (join-path -Path $global:DropBoxBasePath -ChildPath 'whertzing' -AdditionalChildPath 'GitHub','ATAP.Utilities')
 Set-Location -Path $storedInitialDir
 
 # Uncomment to see the $global:settings and Environment variables at the completion of this profile

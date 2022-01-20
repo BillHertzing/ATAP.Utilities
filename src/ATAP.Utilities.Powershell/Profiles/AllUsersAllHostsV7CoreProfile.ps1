@@ -169,12 +169,15 @@ $DefaultPSModulePaths = @(
   , 'C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules\'
 )
 
+# The following ordered list of module paths come from the installation locations of modules installed as part of this nodes roles
+
 # Add all PSModules specified by the machine and node settings.
 ($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']].Keys | ForEach-Object{
   $nodeName = $_
   ($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']][$nodename] | ForEach-Object{
   }
 }
+"GotHere"
 
 # Requires IsElevated to be true
 [Environment]::SetEnvironmentVariable("PSModulePath", $DesiredPSModulePaths -join ';', 'Machine')

@@ -1,5 +1,6 @@
+
 #############################################################################
-#region Set-LclFileTimeAttributesToRem
+#region Copy-FileTimeAttributes
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -19,7 +20,7 @@ ToDo: write Help For example 1 of using this function
 ToDo: write Help For example 2 of using this function
 .EXAMPLE
   $remoteFiles = Get-ChildItem -r -path \\ncat016\Dropbox\Photo
-  $localFiles = Get-ChildItem -r -path C:\Dropbox\Photo
+  $sourceFiles = Get-ChildItem -r -path C:\Dropbox\Photo
 .ATTRIBUTION
 ToDo: write text describing the ideas and codes that are attributed to others
 .LINK
@@ -29,27 +30,81 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Set-LclFileTimeAttributesToRem {
+Function Copy-FileTimeAttributes {
   #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $InDir
-    , [alias('RemoteFiles')]
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $InFn1
-    , [alias('LocalFiles')]
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $InFn2
-    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $OutDir
-    , [alias('OutFNBusinessName1')]
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $OutFn1
-    , [alias('OutFNBusinessName2')]
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $OutFn2
+    [alias('source')]
+    [parameter(
+      Mandatory = $true
+      , ValueFromPipeline = $False
+      , ValueFromPipelineByPropertyName = $True
+    )]
+    [ValidateNotNullOrEmpty()]
+    $sourceFiles
+    , [alias('target')]
+    [parameter(
+      Mandatory = $true
+      , ValueFromPipeline = $False
+      , ValueFromPipelineByPropertyName = $True
+    )]
+    [ValidateNotNullOrEmpty()]
+    $targetFiles
+    , [alias('Attr')]
+    [parameter(
+      Mandatory = $false
+      , ValueFromPipelineByPropertyName = $True
+    )]
+    $Attributes = @('CreationTimeUtc', 'LastWriteTimeUtc')
   )
-
   #endregion FunctionParameters
+
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation)"
+    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    ########################################
+    #region local private function
+    function Private:Get-FileInfo {
+      [CmdletBinding(SupportsShouldProcess = $true)]
+      param (
+        $source
+      )
+      if ($source -is [string]) {
+        Get-Item -Path $source
+      }
+      elseif ($source -is [System.IO.DirectoryInfo]) {
+        Write-Warning "Copy-FileTimeAttributes  - Directories are not supported. Skipping $source."
+        continue
+      }
+      elseif ($source -is [System.IO.FileInfo]) {
+        $source
+      }
+      else {
+        Write-Warning "Copy-FileTimeAttributes - Only files are supported. Skipping $source."
+        continue
+      }
+    }
+
+    function Private:Copy-Attrs {
+      [CmdletBinding(SupportsShouldProcess = $true)]
+      param (
+        $sourceFileInfo
+        , $targetFileInfo
+        , $Attributes
+      )
+      if ($sourceFileInfo.CreationTimeUtc -ne $targetFileInfo.CreationTimeUtc) {
+        if ($PSCmdlet.ShouldProcess("Would copy CreationTimeUTC from $sourceFileInfo.fullname to $targetFileInfo.fullname")) {
+          $sourceFileInfo.CreationTimeUtc = $targetFileInfo.CreationTimeUtc
+        }
+      }
+      if ($sourceFileInfo.LastWriteTimeUtc -ne $targetFileInfo.LastWriteTimeUtc) {
+        if ($PSCmdlet.ShouldProcess("Would copy LastWriteTimeUtc from $sourceFileInfo.fullname to $targetFileInfo.fullname")) {
+          $sourceFileInfo.LastWriteTimeUtc = $targetFileInfo.LastWriteTimeUtc
+        }
+      }
+    }
+    #endregion local private function
 
   }
   #endregion FunctionBeginBlock
@@ -57,39 +112,35 @@ Function Set-LclFileTimeAttributesToRem {
   #region FunctionProcessBlock
   ########################################
   PROCESS {
-    #
+    # ToDo: convert to a pipeline cmdlet
   }
   #endregion FunctionProcessBlock
 
   #region FunctionEndBlock
   ########################################
   END {
-    $smaller = 0
-    if ($remoteFiles.length -gt $localFiles.length) { $smaller = $localFiles.length } else { $smaller = $remoteFiles.length }
-
-    for ($i = 0; $i -lt $smaller; $i++) {
-      if ($localFiles[$i].basename -eq $remoteFiles[$i].basename) {
-        if ($localFiles[$i].CreationTimeUtc -ne $remoteFiles[$i].CreationTimeUtc) {
-          if ($PSCmdlet.ShouldProcess("$remoteFiles[$i].name", 'Copy CreationTimeUTC ')) {
-            $localFiles[$i].CreationTimeUtc = $remoteFiles[$i].CreationTimeUtc
-          }
-        }
-        if ($localFiles[$i].LastWriteTimeUtc -ne $remoteFiles[$i].LastWriteTimeUtc) {
-          if ($PSCmdlet.ShouldProcess("$remoteFiles[$i].name", 'Copy LastWriteTimeUtc ')) {
-            $localFiles[$i].LastWriteTimeUtc = $remoteFiles[$i].LastWriteTimeUtc
-          }
-        }
+    if ((($sourceFiles -is [String]) -or ($sourceFiles -is [System.IO.FileInfo])) -and (($targetFiles -is [String]) -or ($targetFiles -is [System.IO.FileInfo]))) {
+      $sFileInfo = Get-FileInfo $sourceFiles
+      $tFileInfo = Get-FileInfo $targetFiles
+      copy-Attrs $sFileInfo $tFileInfo $Attributes
+    }
+    elseif (($sourceFiles -is [Object[]]) -and ($targetFiles -is [Object[]])) {
+      $smaller = 0
+      if ($targetFiles.Count -gt $sourceFiles.Count) { $smaller = $sourceFiles.Count } else { $smaller = $targetFiles.Count }
+      for ($i = 0; $i -lt $smaller; $i++) {
+        $sFileInfo = Get-FileInfo $sourceFiles[$i]
+        $tFileInfo = Get-FileInfo $targetFiles[$i];
+        copy-Attrs $sFileInfo $tFileInfo $Attributes
       }
-      else {
-        Write-Verbose "at index $i, localFileBasename = $localFiles[$i].basename, remoteFileBasename = $remoteFiles[$i].basename"
-      }
+    }
+    else {
+      # ToDo: improve warning, show what's what
+      Write-Warning 'Copy-FileTimeAttributes source and target must both be strings or must both be arrays'
     }
     Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
   }
   #endregion FunctionEndBlock
 }
-#endregion Set-LclFileTimeAttributesToRem
+#endregion Copy-FileTimeAttributes
 #############################################################################
-
-
 

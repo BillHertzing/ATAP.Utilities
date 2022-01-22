@@ -170,7 +170,7 @@ $UserPSModulePaths = @(
   # 'Modules that are in Unit Test Lifecycle Phase, for which I am involved ("I" may be a user or a CI/CD service)'
   # 'Modules that are in Integration Test Lifecycle Phase, for which I am involved'
   # 'Modules that are in RTM Lifecycle Phase, for which I am involved'
-  # 'All Production modules for Scripts I use day-to-day' - These should reference modules in 
+  # 'All Production modules for Scripts I use day-to-day' - These should reference modules in
     # Image manipulation scripts for blog posts
     # DropBox api scripts for blog posts
     # Future: scripts to manipulate FreeVideoEditor VSDC

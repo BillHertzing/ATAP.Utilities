@@ -32,7 +32,7 @@ Function FunctionName {
 #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
-  [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $InDir
+  [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $InDir = '..\Data'
   ,[alias('InBusinessName1FilePattern')]
   [parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True)] $InFn1
   ,[alias('InBusinessName2FilePattern')]

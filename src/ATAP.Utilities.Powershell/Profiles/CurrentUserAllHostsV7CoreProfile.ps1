@@ -208,23 +208,7 @@ $ModulesToLoadAsSymbolicLinks = @(
   # The function uses Join-Path ([Environment]::GetFolderPath('MyDocuments')) '\PowerShell\Modules\' as the default PSModulePath path
   $ModulesToLoadAsSymbolicLinks | Get-ModuleAsSymbolicLink
 
-  # $ModulesToLoad = $ModulesToLoadAsSymbolicLinks + @(
-  #   # Powershell Community Extensions
-  #   [PSCustomObject]@{
-  #     profileModuleName = 'pscx'
-  #     profileModulePath = ''
-  #     targetModulePath  = ''
-  #     usePreRelease = $true
-  #   }
-  # )
-
-# ToDo replace with just module name
-#$ModulesToLoad | ForEach-Object{$name = $_.ProfileModuleName; $_.ProfileModuleName; Import-Module "$($_.ProfileModuleName)" }
-# $ModulesToLoad | ForEach-Object{
-#   Write-Verbose("$_.profileModuleName")
-#   . $_.profileModuleName
-# }
-
+# Print the global settings, indented
 (get-item  variable:\settings).Value.keys | sort | %{$key = $_; if ((get-item  variable:\settings).Value.$key  -is [System.Collections.IDictionary]) {"$key yep"}else {"$key = $($($(get-item  variable:\settings).Value).$key)"}}
 
 # Show environment/context information when the profile runs

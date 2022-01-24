@@ -87,7 +87,7 @@ Function Get-ModuleAsSymbolicLink {
       } else {
         # if it does exists, use the -Force parameter
         if ($PSCmdlet.ShouldProcess(@($(Join-path $moduleTargetPath $_.name), $_.fullname), 'Would do Copy-Item $_.fullname -Destination $(Join-path $moduleTargetPath $_.name) -Force')) {
-            Copy-Item $_.fullname -Destination $(Join-path $moduleTargetPath $_.name) -Force> $null
+            Copy-Item $_.fullname -Destination $(Join-path $moduleTargetPath $_.name) -Force > $null
         }
       }
     }

@@ -200,7 +200,7 @@ $ModulesToLoadAsSymbolicLinks = @(
   [PSCustomObject]@{
     Name = 'ATAP.Utilities.FileIO.PowerShell'
     Version = '0.1.0'
-    SourcePath  = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO/ATAP.Utilities.FileIO.PowerShell'
+    SourcePath  = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell'
     usePreRelease = $true
   })
 

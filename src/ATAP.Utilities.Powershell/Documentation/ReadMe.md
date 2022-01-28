@@ -151,4 +151,13 @@ $machineNodes = @{
     }
 }
 
+## Public Functions and Cmdlets
+
+### Add-BlogPostImages
+
+This function created resized files appropriate for MediaQueries, and then creates DropBox links (sharing links) to the files
+
+The Dropbox accews token must be set in the environment for the dropbox link creation to work
+
+[System.Environment]::SetEnvironmentVariable('DropBoxAccessToken','<paste token here>',[System.EnvironmentVariableTarget]::User)
 ```

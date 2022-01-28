@@ -40,6 +40,7 @@ Function Get-ModuleAsSymbolicLink {
     # Things to be initialized after parameters are processed
     if ($Name) { $parameters.Name = $Name }
     if ($Version) { $parameters.Version = $Version }
+    if ($SourcePath) { $parameters.SourcePath = $SourcePath }
     if ($TargetPath) { $parameters.TargetPath = $TargetPath }
     if ($Force) { $parameters.Force = $Force }
   }
@@ -52,6 +53,7 @@ Function Get-ModuleAsSymbolicLink {
     if (-not (Test-Path $moduleTargetPath)) { New-Item -Path $moduleTargetPath -ItemType Directory }
     $moduleTargetPath = Join-Path $moduleTargetPath $parameters.Version
     if (-not (Test-Path $moduleTargetPath)) { New-Item -Path $moduleTargetPath -ItemType Directory }
+    $initialLocation = Get-Location
     Set-Location -Path $moduleTargetPath
     Get-ChildItem $SourcePath | Where-Object { $_.name -match $parameters.LinksToCreatePattern } |
     ForEach-Object { if (-not (Test-Path $_.name)) {
@@ -62,8 +64,7 @@ Function Get-ModuleAsSymbolicLink {
           }
         }
         else {
-          Write-Verbose "$_.name needs to be created as a SymbolicLink, but this user is not an administrator"
-          Write-Debug "$_.name needs to be created as a SymbolicLink, but this user is not an administrator"
+          Throw "$_.name needs to be created as a SymbolicLink, but this user is not an administrator"
         }
       }
       else {
@@ -96,6 +97,7 @@ Function Get-ModuleAsSymbolicLink {
   #region FunctionEndBlock
   ########################################
   END {
+    Set-Location $initialLocation
     Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
   }
 }

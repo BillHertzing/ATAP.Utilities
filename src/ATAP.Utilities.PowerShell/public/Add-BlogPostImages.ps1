@@ -54,6 +54,9 @@ Function Add-BlogPostImages {
     #, [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] [string] $MediaQueryHighestResolutionFilenameFragment = '-fullres'
     , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]  $MediaQueryFilenameFragments = @{'-small' = 320; '-medium' = 768; '-large' = 1224; }
     , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]  $MediaQueryFileSubdirectory = 'MQFiles'
+    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]  $videoSuffixHash = @{mov = @{type = 'video/mov' } ; mpg = @{type = 'vidoe/mpg' }; mp4 = @{type = 'video/mp4' } }
+    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $videoAtributesHash = @{mov = @{height = 'FrameHeight'; width = 'FrameWidth' } ; mpg = @{height = 'FrameHeight'; width = 'FrameWidth' }; mp4 = @{height = 'FrameHeight'; width = 'FrameWidth' } }
+
 
   )
   #endregion FunctionParameters
@@ -74,9 +77,10 @@ Function Add-BlogPostImages {
     if (-not (Test-Path -Path $destinationDirectory -PathType Container)) { throw "$destinationDirectory is not a directory" }
 
     # Valiate the inputs match the inputs expected of the parameter set specified
-    $HasCloudHostedImageLinksFilename = $false
-    if ($CloudHostedImageLinksFilename) {
-      if (Test-Path -Path $CloudHostedImageLinksFilename -PathType leaf OnError=silentlycontinue) { $HasCloudHostedImageLinksFilename = $true }
+    $HaslinkFile = $false
+    write-debug "linkfile = $linkfile"
+    if ($linkFile) {
+      if (Test-Path -Path $linkFile -PathType leaf -ErrorAction SilentlyContinue) { $HaslinkFile = $true }
     }
 
     # Get all matching FileInfo Properties from the DestinationDirectory and its children
@@ -84,11 +88,11 @@ Function Add-BlogPostImages {
     $destinationDirectoryFileInfos = Get-ChildItem -r $destinationDirectory | Where-Object { $_.extension -match $ImageTypesPattern }
 
     # ParameterSetName 'FromDestinationDirectory' must have image files in the destination directory
-    if ((-not $HasCloudHostedImageLinksFilename) -and (-not $destinationDirectoryFileInfos)) { { throw "$destinationDirectory has no Links file nor any image files" } }
+    if ((-not $HaslinkFile) -and (-not $destinationDirectoryFileInfos)) { { throw "$destinationDirectory has no Links file nor any image files" } }
     # ParameterSetName 'FromSourceFiles' must have image files in the source directory
-    #if ((-not $HasCloudHostedImageLinksFilename) -and (-not $CloudHostedImageFileInfos)) { { throw "$destinationDirectory has no Links file nor any image files" } }
+    #if ((-not $HaslinkFile) -and (-not $CloudHostedImageFileInfos)) { { throw "$destinationDirectory has no Links file nor any image files" } }
     # ParameterSetName 'FromLinksFile' must have a Links file in the DestinationDirectory
-    #if ((-not $HasCloudHostedImageLinksFilename) -and (-not $CloudHostedImageFileInfos)) { { throw "$destinationDirectory has no Links file nor any image files" } }
+    #if ((-not $HaslinkFile) -and (-not $CloudHostedImageFileInfos)) { { throw "$destinationDirectory has no Links file nor any image files" } }
 
     # Output tests
     # Validate that the $destinationDirectory is writable, the MediaQueryFilesDirectory is writeable, and the
@@ -112,12 +116,12 @@ Function Add-BlogPostImages {
     $pipelineAccumulater = @()
 
     # ToDo: make PS Types or objects, or reference a common types file
-    $results = @{
-      EveryLink                 = @{}
+    $results = New-Object PSObject -Property @{
+      EveryLink                 = @{} # Every Still Image Link
       EveryLinkStringArray      = @()
       GalleryAllImagesAsArray   = @()
       GalleryAllImagesAsString  = ''
-      Videos                    = @{}
+      Videos                    = @{} #  Every Moving Image Link
       EveryVideoLinkStringArray = @()
       VideosAllAsString         = ''
     }
@@ -140,12 +144,12 @@ Function Add-BlogPostImages {
     $CloudHostedImageLinks = @()
     $MediaResources = @()
     $CloudHostingImageUniqFileInfos = @();
-    if ($HasCloudHostedImageLinksFilename) {
-      $CloudHostedImageLinks = Get-Content $CloudHostedImageLinksFilename
+    if ($HaslinkFile) {
+      $CloudHostedImageLinks = Get-Content $linkFile
       # validate and update as required
     }
     else {
-      # There is no CloudHostedImageLinksFilename, so create the data
+      # There is no linkFile, so create the data
       # ToDo: parameter sets for "takeitfromthecloudhostingimagepath" and "takeitfromanoriginalsfolder"
       # ParameterSetName = 'FromDestinationDirectory'
       # This region uses the $destinationDirectory as the source of originals.
@@ -188,6 +192,7 @@ Function Add-BlogPostImages {
             'Description'                = 'Insert Description'
             'VisualSortOrder'            = '{0:d3}' -f $visualSortOrder
             'SharingLinkToOriginalFile'  = ''
+            'EmbeddedLinkString'         = ''
             'THFullname'                 = $ThumbnailFileInfo.fullname
             'THBasename'                 = $ThumbnailFileInfo.Basename
             'THExtension'                = $ThumbnailFileInfo.Extension
@@ -212,7 +217,7 @@ Function Add-BlogPostImages {
             Write-Verbose $outfilename
             # update the width and height based on the media query's breakpoints
             # parse the width and height, assumes pixels
-            # ToDo: error handline
+            # ToDo: error handling
             $width = $mediaQueryFilenameFragments[$MQName] -replace '[^\d]*(\d+)[^\d]*', '$1'
             # $height = $mediaQueryFilenameFragments[$MQName].Height -replace '[^\d]*(\d+)[^\d]*','$1'
             [double]$scale = $width / $originalImageWidth
@@ -225,8 +230,8 @@ Function Add-BlogPostImages {
               # FileAttributesToCopy
               Copy-FileAttributes -source $MediaResource.FullName -target $outfilename -attr $FileAttributesToCopy
               #Copy-ExtendedFileAttributes -source $MediaResource.FullName -destination $outfilename -attr $ExtendedFileAttributesToCopy
-              # Add this media file as an element in the collection held by the origianl record
-              $MediaResource.MediaQueryFiles[$_] = New-Object PSObject -Property @{
+              # Add this media file as an element in the collection held by the MediaResource
+              $MediaResource.MediaQueryFiles[$_] = @{ # New-Object PSObject -Property @{
                 'Fullname'                    = $outFileInfo.fullname
                 'Basename'                    = $outFileInfo.Basename
                 'Extension'                   = $outFileInfo.Extension
@@ -252,19 +257,29 @@ Function Add-BlogPostImages {
         $MediaResource = $_
         # get and store the sharing link for the original
         if ($PSCmdlet.ShouldProcess($MediaResource.Fullname, 'Get-DropBoxSharingLink <target>')) {
-          $MediaResource.SharingLinkToOriginalFile = Get-DropBoxSharingLink $MediaResource.Fullname
+          $MediaResource.SharingLinkToOriginalFile = Get-DropboxSharingLink $MediaResource.Fullname
         }
         # get and store the sharing link for every MediaQuery file
+        $mediaQueryFilenameFragments.Keys | ForEach-Object {
+          $MQName = $_
+        if ($PSCmdlet.ShouldProcess($MediaResource.MediaQueryFiles[$MQName].Fullname, 'Get-DropBoxSharingLink <target>')) {
+            $MediaResource.MediaQueryFiles[$MQName].SharingLinkToMediaQueryFile = Get-DropboxSharingLink $MediaResource.MediaQueryFiles[$MQName].Fullname -verbose
+          }
+        }
       }
 
-
-
+      # Create the individual embedded link string for blog posts
+      $MediaResources | ForEach-Object {
+        $_.EmbeddedLinkString = Get-MediaQueryEmbeddedLink $_
+      }
 
       # Write the imagelinksfile,
-      $MediaResources | ConvertTo-Json # | Set-Content $CloudHostedImageLinksFilename
+      $MediaResources | ConvertTo-Json  | Set-Content $linkFile
+
+      # Write out the $results object with the multiple properties that contain string data necessary to embed all the images (both still and moving) into the markdown of the blog post
+      $result
     }
 
-    # Create Thumbnails of requested
     Write-Verbose "Ending $($MyInvocation.Mycommand)"
   }
   #endregion FunctionEndBlock

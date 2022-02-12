@@ -23,11 +23,15 @@ To use the profiles in this package, install the ATAP.Utilities.Powershell packa
 
 - ToDo: refactor Target to use settings or environment variables that specify the location to which the package has been installed
 - ToDo: rework to support both windows and Linux
-- ToDo: move into a function that will accept a -force, and have the function error if the profile already exists and -force is not specified, also include whatif
+- ToDo: move into a function that will accept a -force, and have the function error if the profile already exists and -force is not specified, also include `-whatif`
 
 - `Remove-Item -path (join-path ([Environment]::GetFolderPath("MyDocuments")) '\PowerShell\Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path ([Environment]::GetFolderPath("MyDocuments")) '\PowerShell\Microsoft.PowerShell_profile.ps1')  -Target "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\profiles\CurrentUserAllHostsV7CoreProfile.ps1"`
 
 - `Remove-Item -path (join-path $env:ProgramFiles '\PowerShell\7\profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  '\PowerShell\7\profile.ps1') -Target "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\profiles\AllUsersAllHostsV7CoreProfile.ps1"`
+
+- `Remove-Item -path (join-path $env:ProgramFiles '\PowerShell\7\global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  '\PowerShell\7\global_ConfigRootKeys.ps1') -Target "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\profiles\global_ConfigRootKeys.ps1"`
+
+- `Remove-Item -path (join-path $env:ProgramFiles '\PowerShell\7\global_MachineAndNodeSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  '\PowerShell\7\global_MachineAndNodeSettings.ps1') -Target "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\profiles\global_MachineAndNodeSettings.ps1"`
 
 After ensuring there are no critical errors, and the information messages from -WhatIf match what you expect the profile to do, then run them in a terminal running with elevated permissions.
 
@@ -157,7 +161,7 @@ $machineNodes = @{
 
 This function created resized files appropriate for MediaQueries, and then creates DropBox links (sharing links) to the files
 
-The Dropbox accews token must be set in the environment for the dropbox link creation to work
+The Dropbox access token must be set in the environment for the dropbox link creation to work
 
 [System.Environment]::SetEnvironmentVariable('DropBoxAccessToken','<paste token here>',[System.EnvironmentVariableTarget]::User)
 ```

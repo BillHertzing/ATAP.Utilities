@@ -34,13 +34,6 @@ Write-Verbose "Starting $($MyInvocation.Mycommand)"
 Write-Verbose ("WorkingDirectory = $pwd")
 Write-Verbose ("PSScriptRoot = $PSScriptRoot")
 
-# Add MSBuild path to path
-#$env:path += ';C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin'
-# Add ATAP.Utilites Powershell path to path
-#$env:path += ';C:\Dropbox\whertzing\GitHub\ATAP.Utilities\ATAP.Utilities.BuildTooling.PowerShell'
-
-
-
 ########################################################
 # Individual PowerShell Profile
 ########################################################
@@ -48,7 +41,7 @@ Write-Verbose ("PSScriptRoot = $PSScriptRoot")
 # [powerShell ReadMe](src\ATAP.Utilities.Powershell\Documentation\ReadMe.md for details)
 
 # Store the current directory, where the profile was started from...
-$storedInitialDir = pwd
+$storedInitialDir = Get-Location
 
 # Setup Logging for script execution and debugging, after settings are processed
 #$LogFn =$settings.LogFnPath + $settings.LogFnPattern;
@@ -71,7 +64,7 @@ Function ConsoleSettings {
   ($console.windowSize).width = 200
   ($console.windowSize).height = 100
   ($console.WindowTitle) = "Current Folder: $pwd"
-  # ToDo; change window border to yellow if IsElevated is true, but see https://github.com/vercel/hyper/issues/4529 and https://github.com/microsoft/terminal/issues/1859 for discussion
+  # ToDo: change window border to yellow if IsElevated is true, but see https://github.com/vercel/hyper/issues/4529 and https://github.com/microsoft/terminal/issues/1859 for discussion
 }
 if ($host.ui.Rawui.WindowTitle -notmatch 'ISE') { ConsoleSettings }
 
@@ -159,7 +152,6 @@ Function prompt {
 # }
 # if ($true) { Set-CloudDirectoryLocations }
 
-
 Write-Verbose ("PsScriptRoot: $psScriptRoot")
 
 # The following ordered list of module paths come from ATAP and 3rd-party modules that have been selected by this user
@@ -220,8 +212,8 @@ Function Show-context {
   Write-Verbose ('PSModulePath: {0}' -f $Env:PSModulePath)
   Write-Verbose ('Elevated permisions:' -f (whoami /all) -match $elevatedSIDPattern)
   Write-Verbose ('Drops:{0}' -f $($drops | Format-Table | Out-String))
-  #DebugPreference
-  #VerbosePreference
+  # DebugPreference
+  # VerbosePreference
   #LoggingFrameworkandLogFileLocation
   # ConsoleSettings
 
@@ -256,7 +248,7 @@ filter unlike( $glob ) {
 Function cdMy {$x= [Environment]::GetFolderPath('MyDocuments');Set-Location -Path $x}
 
 # A function that will return files with names matching the string 'conflicted'
-Function getconflicted {gci  -Recurse. | where-object -property fullname -match 'conflicted'}
+Function getconflicted {Get-ChildItem  -Recurse. | where-object -property fullname -match 'conflicted'}
 
 # A function and alias to kill the VoiceAttack process
 function PublishPluginAndStartVAProcess
@@ -280,8 +272,8 @@ set-item -path alias:stopVA -value StopVoiceAttackProcess
 Set-Location -Path $storedInitialDir
 
 # Uncomment to see the $global:settings and Environment variables at the completion of this profile
-#Write-Verbose ('$global:settings are: ' +  [Environment]::NewLine + (foreach ($kvp in ($global:settings).GetEnumerator()){"{0}:{1}" -f $kvp.name, $kvp.name,[Environment]::NewLine} ))
-Write-Verbose ("Environment variables AllUsersAllHosts are:  " + [Environment]::NewLine + (Get-ChildItem env: |ForEach-Object{ $envVar=$_;  ('Machine','User','Process') | %{$scope = $_;
+#Write-Verbose ('$global:settings are: ' +  [Environment]::NewLine + (forEach-Object ($kvp in ($global:settings).GetEnumerator()){"{0}:{1}" -f $kvp.name, $kvp.name,[Environment]::NewLine} ))
+Write-Verbose ("Environment variables CurrentUsersAllHosts are:  " + [Environment]::NewLine + (Get-ChildItem env: |ForEach-Object{ $envVar=$_;  ('Machine','User','Process') | %{$scope = $_;
 if (([System.Environment]::GetEnvironmentVariable($envVar.key, $scope))) {"{0}:{1} ({2})" -f $envVar.key, $envVar.value, $scope}
 }}))
 

@@ -86,8 +86,8 @@ Function Get-DropBoxFolderList {
       }
       catch {
         $resultException = $_.Exception
-        $ResultExceptionMessage = $resultException.Message #$ResultError = $resultException.Response.GetResponseStream()
-        Throw $ResultExceptionMessage # Get-DropboxError -Result $ResultError
+        $ResultExceptionMessage = $resultException.Message
+        Throw $ResultExceptionMessage
       }
       $folderlist = @{}
       # $result is a JSON object if there were no errors
@@ -112,8 +112,8 @@ Function Get-DropBoxFolderList {
         }
         catch {
           $resultException = $_.Exception
-          $ResultExceptionMessage = $resultException.Message #$ResultError = $resultException.Response.GetResponseStream()
-          Throw $ResultExceptionMessage # Get-DropboxError -Result $ResultError
+          $ResultExceptionMessage = $resultException.Message
+          Throw $ResultExceptionMessage 
         }
         $folderlist += $result.entries
       }

@@ -188,8 +188,8 @@ function Get-DropboxSharedLinks {
         }
         catch {
           $resultException = $_.Exception
-          $ResultExceptionMessage = $resultException.Message #$ResultError = $resultException.Response.GetResponseStream()
-          Write-Error $ResultExceptionMessage # Get-DropboxError -Result $ResultError
+          $ResultExceptionMessage = $resultException.Message
+          Write-Error $ResultExceptionMessage
         }
         # $result is a JSON object if there were no errors
         if ($result.links.Length) {
@@ -211,7 +211,7 @@ function Get-DropboxSharedLinks {
           catch {
             $resultException = $_.Exception
             $ResultExceptionMessage = $resultException.Message
-            Write-Error $ResultExceptionMessage # Get-DropboxError -Result $ResultError
+            Write-Error $ResultExceptionMessage 
           }
         }
       }

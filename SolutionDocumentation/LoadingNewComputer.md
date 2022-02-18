@@ -1,3 +1,15 @@
+# Setup a new computer
+
+1) BIOS changes (for utat022)
+
+  - Ensure PCIE configuration from "M2 extension card" to "dual M2 SSD"
+  - Ensure SATA controllers are On
+  - X.M.P is enabled
+  - Intel Rapid Storage technology is OFF
+
+  - change hotswap notification to "enabled"
+
+
 
 unplug SATA drives, leave just PCIE drive in
 disconnect from internet
@@ -38,7 +50,7 @@ see also C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\MapUserShellFold
 
 uninstall Everything
 
-Reinstall all chocolatey packages (includes everything) 
+Reinstall all chocolatey packages (includes everything)
 Add to List:
   Freevideoeditor
   7zip
@@ -76,16 +88,35 @@ Voiceattack
 Steam
 jexus manager (iis manager)
 
-debug response time issues nad netowkr issues
-  Visual Studio Code terminal and file editing; characters don't appear quickly in response to jekeyboard input
+1) debug response time issues and network issues
+  Visual Studio Code terminal and file editing; characters don't appear quickly in response to keyboard input
 
-  1) Disable Windows Search Service Inndexing background task
-    Chnage list of drives indexed to only "start programs"
-      Delete and rebuild index
+  1) Disable Windows Search Service Indexing background task
+    Change list of drives indexed to only "start programs"
+    Delete and rebuild index
     Disable  windows indexing  service  "Windows Search" manually using services applet
 
-    
+  1) Windows media player
+    options - do not save history
 
+  1) Replace Windows Defender with AVAST
+      stop Windows Defender Firewall
+      stop windows defencder service
+      stop MsSense service
+      disable MsSense service
+
+1) Inspect Windows Event Logs and remediate
+
+  1) "BITS has encountered an error communicating with an Internet Gateway Device"
+    Set the Service by the name of "Background Intelligent Transfer Service" to manual
+
+  1) "The shadow copies of volume C: were aborted because the shadow copy storage could not grow due to a user imposed limit."  Event Id 36 VolSnap
+    Disable restore points on all drives ()
+      Search settings for "system protection"
+      click "create a restore point"
+      scan the list of drivee for any with "Protection settings = ON"
+      turn it off and delete any existing restore points
+    Disable the 'Volume Shadow Copy" service
 
 Setup Autoruns and startups
   avast
@@ -99,6 +130,9 @@ Link Pushbullet to phone
 Setup HP Printer
 
 File Extension helpers
+
+setup the registry to support "preview as perceived type text" for additional file types 
+Set-PerceivedTypeInRegistryForPreviewPane from module 
 
 setup gopro
 
@@ -146,8 +180,40 @@ prrograms to pin:
   MSSMS
   Voiceattack
   Everything
+  
+  Setup the PSGallery
+  `Register-PSRepository -Default -Verbose`
+  `get-psrepository`
+  `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted` 
+  
+  remove the default version of Pester that comes with windows
+  ```Powershell
+    $module = "C:\Program Files\WindowsPowerShell\Modules\Pester"
+	takeown /F $module /A /R
+	icacls $module /reset
+	icacls $module /grant "*S-1-5-32-544:F" /inheritance:d /T
+	Remove-Item -Path $module -Recurse -Force -Confirm:$false
+   ```
+   
+   Install Pester for PS V7
+   `Install-Module pester
+   
+   Fix Pester installation and or path variable for PS V5 and PS V7
 
 VS Code Extensions
+  c#
+  gitignore
   gitlens
   git graph
   ResExExpress
+  Powershell (from Microsoft)
+  PowerShell Pro Tools for Visual Studio Code (from Ironman Software)
+  Draw.io Integration
+  prettier
+  Remove TestExplorerUI if it is installed, instead set the settings testExplorer.useNativeTesting to true
+  
+
+VS Code Options:
+  Focus on open editors
+  Toggle File Autosave (Save File on click-away)
+  testExplorer.useNativeTesting to true

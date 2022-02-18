@@ -1,4 +1,5 @@
 # ToDo comment  based help
+# ToDo comment  based help
 $global:configRootKeys = @{
 
   'IsElevatedConfigRootKey' = 'IsElevated'
@@ -18,6 +19,8 @@ $global:configRootKeys = @{
   'WindowsCodeBuildConfigRootKey' = 'WindowsCodeBuild'
   'WindowsUnitTestConfigRootKey' = 'WindowsUnitTest'
   'MSBuildExePathConfigRootKey' = 'MSBuildExePath'
+  'xUnitConsoleTestRunnerPackageConfigRootKey' = 'xUnitConsoleTestRunnerPackage'
+  'xUnitJenkinsPluginPackageConfigRootKey' = 'xUnitJenkinsPluginPackage'
   'DocFXExePathConfigRootKey' = 'DocFXExePath'
   'DotnetExePathConfigRootKey' = 'DotnetExePath'
   'PlantUMLJarPathConfigRootKey' = 'PlantUMLJarPath'
@@ -25,4 +28,8 @@ $global:configRootKeys = @{
   'BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey' = 'BuildImageFromPlantUMLPowershellCmdletName'
   'SQLServerPSModulePathsConfigRootKey' = 'SQLServerPSModulePaths'
   'SQLServerConnectionStringConfigRootKey' = 'SQLServerConnectionString'
+  'WindowsUnitTestParameterListConfigRootKey' = 'WindowsUnitTestParameterList'
+  'WindowsUnitTestParameterPathConfigRootKey' = 'WindowsUnitTestParameterPath'
+  'PSModulePathConfigRootKey' = 'PSModulePath'
+
 }

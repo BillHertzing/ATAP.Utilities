@@ -217,3 +217,6 @@ VS Code Options:
   Focus on open editors
   Toggle File Autosave (Save File on click-away)
   testExplorer.useNativeTesting to true
+  
+  Chocolatey package List Backup
+	 ensure the dropbox location is added

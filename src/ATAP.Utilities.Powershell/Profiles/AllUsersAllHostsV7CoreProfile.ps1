@@ -48,7 +48,7 @@ Function Write-DebugIndented {
 # Don't Print any debug messages to the console
 $DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
-$VerbosePreference = 'Continue' # SilentlyContinue Continue
+$VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
 
 #ToDo: document expected values when run under profile, Module cmdlet/function, script.
 Write-Verbose "Starting $($MyInvocation.Mycommand)"
@@ -85,7 +85,7 @@ if ($DebugPreference -eq 'Continue') {
       $indent += 2
       ($global:MachineAndNodeSettings[$l1Key]).Keys | Sort-Object | ForEach-Object { $l2Key = $_
         # write nested settings
-        Write-DebugIndented $indent "$l1Key.$l2Key = $(($global:MachineAndNodeSettings)[$l1Key])[$l2Key]"
+        Write-DebugIndented $indent "$l1Key.$l2Key =  $($($global:MachineAndNodeSettings[$l1Key])[$l2Key])"
       }
       $indent -= 2
     }
@@ -99,26 +99,22 @@ if ($DebugPreference -eq 'Continue') {
 
 # Define a global settings hash, initially populate it with machine-specific information for this machine
 $global:settings = @{}
-# Is this script elevated?
+# set ISElevated for the global settings if this is script elevated
 $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+
 # Load the machine-specific settings into $global:settings
 ($global:MachineAndNodeSettings[$env:COMPUTERNAME]).Keys | ForEach-Object {
-  $global:settings[$_] = ($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$_]
+  $global:settings[$_] = $($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$_]
 }
 # Load the JenkinsRoleSettings for this machine
-($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']] | ForEach-Object{
+($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']] | ForEach-Object {
   $nodeName = $_
-  ($global:JenkinsRoles)[$nodename] | ForEach-Object{
-    Write-Verbose "global:settings[$_] =  $($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$_]"
-    $global:settings[$_] = ($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$_]
+  $global:settings[$nodeName] = @{}
+  ($global:JenkinsRoles)[$nodename] | ForEach-Object {
+    Write-Verbose "global:settings[$nodename][$_] =  $($($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$_])"
+    $global:settings[$nodename][$_] = $($global:MachineAndNodeSettings[$env:COMPUTERNAME][$_])
   }
 }
-# ($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']] | ForEach-Object{
-#   $nodeName = $_
-#   ($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']][$nodename].Keys | ForEach-Object{
-#     $global:settings[$_] = ($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']][$nodename][$_]
-#   }
-# }
 
 # Print the $global:settings if Debug
 if ($DebugPreference -eq 'Continue') {
@@ -134,15 +130,13 @@ if ($DebugPreference -eq 'Continue') {
           $indent += 2
           ($global:Settings[$l1Key][$l2Key]).Keys | Sort-Object | ForEach-Object { $l3Key = $_
             # write nested settings
-            $str = $global:Settings[$l1Key][$l2Key][$l3Key]
-            Write-DebugIndented $indent "$l1Key.$l2Key.$l3Key = $str"
+            Write-DebugIndented $indent "$l1Key.$l2Key.$l3Key = $($global:Settings[$l1Key][$l2Key][$l3Key])"
           }
           $indent -= 2
         }
         else {
           # write nested settings
-          $str = $global:Settings[$l1Key][$l2Key]
-          Write-DebugIndented $indent "$l1Key.$l2Key = $str"
+          Write-DebugIndented $indent "$l1Key.$l2Key = $($global:Settings[$l1Key][$l2Key])"
         }
       }
       $indent -= 2
@@ -156,38 +150,32 @@ if ($DebugPreference -eq 'Continue') {
   $indent -= 2
 }
 
+# If the computer is behind a proxy, configure the default proxy settings in the machine powershell profile.
+# [system.net.webrequest]::defaultwebproxy = new-object system.net.webproxy('http://YourProxyHostNameGoesHere:ProxyPortGoesHere')
+# [system.net.webrequest]::defaultwebproxy.credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+# [system.net.webrequest]::defaultwebproxy.BypassProxyOnLocal = $true
+
+# location of the local chocolatey server per machine
+
 # Structure of package drop location; File Server Shares (fss) and Web Server URLs
 # ToDo: can this all be done with a local nuget server, instead? What about companies where the developers who want to use ATAPUtilities, cannot add a nuget server to their environment. Local Feed on a file: (and UNC) protocol?
 $global:Settings[$global:configRootKeys['PackageDropPathsConfigRootKey']] = @{fssdev = '\\fs\pkgsDev'; fssqa = '\\fs\pkgsqa'; fssprd = '\\fs\pkgs'; wsudev = 'http://ws/ngf/dev'; wsuqa = 'http://ws/ngf/qa'; wsuprd = 'http://ws/ngf' }
 
+# Initialize the additionalPSModulePaths with the location where chocolatey installs modules
+$additionalPSModulePaths = @($global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]);
+# extract all the psmodulepath items from the global:Settings
+# The following ordered list of module paths come from the installation locations of modules specified for this machine in the the global:Settings
 
-# The following ordered list of module paths should exist in the PSModulePath (Powershell V7)
-$DefaultPSModulePaths = @(
-  $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]
-  , 'C:\Program Files\PowerShell\7\Modules'
-  , 'C:\Program Files\PowerShell\Modules'
-  , 'C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules\'
-)
-
-# The following ordered list of module paths come from the installation locations of modules installed as part of this nodes roles
-
-# Add all PSModules specified by the machine and node settings.
-($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']].Keys | ForEach-Object{
-  $nodeName = $_
-  ($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']][$nodename] | ForEach-Object{
-  }
-}
-"GotHere"
-
-# Requires IsElevated to be true
-[Environment]::SetEnvironmentVariable("PSModulePath", $DesiredPSModulePaths -join ';', 'Machine')
-
+# The $Env:PSModulePath is process-scoped, and it's initial value is supplied by the Powershell host process/engine
+# Add the $additionalPSModulePaths.
+$desiredPSModulePaths = $additionalPSModulePaths + $Env:PSModulePath
+# Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
+[Environment]::SetEnvironmentVariable("PSModulePath", $DesiredPSModulePaths -join ';', 'Process')
+# Clean up the $desiredPSModulePaths
 # The use of 'Get-PathVariable' function causes the pcsx module to be loaded here
-# Add the Chocolatey lib to the PSModulePath Environment variable
-Write-Verbose ('Initial PSModulePath profile is: ' + "`r`n`t" + ($(Get-PathVariable -Name 'PSModulePath' -RemoveEmptyPaths -StripQuotes) -join "`r`n`t"))
-$Env:PSModulePath = $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']] + ';' + $Env:PSModulePath
-Write-Verbose ('Final PSModulePath profile is: ' + "`r`n`t" + (($Env:PSModulePath -split ';') -join "`r`n`t"))
-
+$finalPSModulePaths = Get-PathVariable -Name 'PSModulePath' -RemoveEmptyPaths -StripQuotes
+# Set the $Env:PsModulePath to the final, clean value of $desiredPSModulePaths.
+[Environment]::SetEnvironmentVariable("PSModulePath", $finalPSModulePaths -join ';', 'Process')
 
 
 # This machine is part of the CI/CD DevOps pipeline ecosystem
@@ -217,12 +205,12 @@ Function ValidateTools {
 #Write-Verbose ("Environment variables AllUsersAllHosts are:  " + [Environment]::NewLine + (Get-ChildItem env: |ForEach-Object{"{0}:{1}{2}" -f $_.key, $_.value, [Environment]::NewLine}))
 Write-Verbose ('Environment variables AllUsersAllHosts are:  ' + [Environment]::NewLine +
   (Get-ChildItem env: |
-    ForEach-Object {$envVar = $_; ('Machine', 'User') |  # , 'Process'
-      ForEach-Object{ $scope = $_;
-        if (([System.Environment]::GetEnvironmentVariable($envVar.key, $scope))) {
-         # '{0}:{1} ({2}){3}' -f $envVar.key, $envVar.value, $scope, [Environment]::NewLine
-          '{0}:{1} ({2})' -f $envVar.key, $envVar.value, $scope  + "`r`n`t"
-}}}))
+  ForEach-Object { $envVar = $_; ('Machine', 'User') |  # , 'Process'
+    ForEach-Object { $scope = $_;
+      if (([System.Environment]::GetEnvironmentVariable($envVar.key, $scope))) {
+        # '{0}:{1} ({2}){3}' -f $envVar.key, $envVar.value, $scope, [Environment]::NewLine
+        '{0}:{1} ({2})' -f $envVar.key, $envVar.value, $scope + "`r`n`t"
+      } } }))
 
 
 

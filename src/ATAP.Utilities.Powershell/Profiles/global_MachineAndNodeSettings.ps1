@@ -10,29 +10,33 @@ $global:RequiredMachineSettingsList = @($global:configRootKeys['CloudBasePathCon
 
 $global:SupportedJenkinsRolesList = @($global:configRootKeys['WindowsDocumentationBuildConfigRootKey'], $global:configRootKeys['WindowsCodeBuildConfigRootKey'], $global:configRootKeys['WindowsUnitTestConfigRootKey'])
 
-$global:WindowsUnitTestList = @("Run-WindowsUnitTests")
+$global:WindowsUnitTestList = @('Run-WindowsUnitTests')
 
-$global:WindowsUnitTestArgumentsList = @("PathToProjectOrSolutionFilePattern", "PathToTestLog")
+$global:WindowsUnitTestArgumentsList = @('PathToProjectOrSolutionFilePattern', 'PathToTestLog')
 
 $global:MachineAndNodeSettings = @{
   # Machine Settings
   'utat01'    = @{
+    $global:configRootKeys['EnvironmentConfigRootKey']                                = 'Production'
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
-    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = 'C:/Dropbox/'
+    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path -Path $env:HOMEDRIVE -ChildPath 'Dropbox'
+    $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq "Google Drive" } | Select-Object -ExpandProperty 'Name') 'My Drive'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = 'C:/Temp'
     $global:configRootKeys['BigTempBasePathConfigRootKey']                            = 'C:/Temp'
-    $global:configRootKeys['GitExePathConfigRootKey']                                 = 'C:/Program Files/Git/cmd/git.exe'
-    $global:configRootKeys['JavaExePathConfigRootKey']                                = 'C:/Program Files/AdoptOpenJDK/jre-16.0.1.9-hotspot/bin/java.exe'
-    $global:configRootKeys['ChocolateyLibDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/lib'
-    $global:configRootKeys['ChocolateyBinDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/bin'
+    $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
+    $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
+    $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
+    $global:configRootKeys['ChocolateyLibDirConfigRootKey']                           = Join-Path $env:ProgramData 'chocolatey' 'lib'
+    $global:configRootKeys['ChocolateyBinDirConfigRootKey']                           = Join-Path $env:ProgramData 'chocolatey' 'bin'
     $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
       $global:configRootKeys['WindowsCodeBuildConfigRootKey']
       , $global:configRootKeys['WindowsUnitTestConfigRootKey']
       , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
     )
-    $global:configRootKeys['MSBuildExePathConfigRootKey']                             = 'C:/Program Files/Microsoft Visual Studio/2022/Community/Msbuild/Current/Bin/MSBuild.exe'
-    $global:configRootKeys['DotnetExePathConfigRootKey']                              = 'C:/Program Files/dotnet/dotnet.exe'
-    $global:configRootKeys['DocFXExePathConfigRootKey']                               = 'C:/ProgramData/chocolatey/bin/docfx.exe'
+    $global:configRootKeys['MSBuildExePathConfigRootKey']                             = Join-Path $env:ProgramFiles 'Microsoft Visual Studio' '2022' 'Community' 'Msbuild' 'Current' 'Bin' 'MSBuild.exe'
+    $global:configRootKeys['DotnetExePathConfigRootKey']                              = Join-Path $env:ProgramFiles 'dotnet' 'dotnet.exe'
+    $global:configRootKeys['DocFXExePathConfigRootKey']                               = Join-Path $env:ProgramData 'chocolatey' 'bin' 'docfx.exe'
+    $global:configRootKeys['GraphvizExePathConfigRootKey']                            = Join-Path $env:ProgramFiles 'graphviz' 'bin' 'dot.exe'
     $global:configRootKeys['PlantUMLJarPathConfigRootKey']                            = 'C:/ProgramData/chocolatey/lib/plantuml/tools/plantuml.jar'
     $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey']       = 'C:/Users/whertzing/.dotnet/tools/puml-gen.exe'
     $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'
@@ -41,70 +45,88 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
   'utat022'   = @{
+    $global:configRootKeys['EnvironmentConfigRootKey']                                = 'Production'
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
-    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = 'C:/Dropbox/'
+    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path -Path $env:HOMEDRIVE -ChildPath 'Dropbox'
+    $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq "Google Drive" } | Select-Object -ExpandProperty 'Name') 'My Drive'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = 'D:/Temp'
     $global:configRootKeys['BigTempBasePathConfigRootKey']                            = 'D:/Temp'
-    $global:configRootKeys['GitExePathConfigRootKey']                                 = 'C:/Program Files/Git/cmd/git.exe'
-    $global:configRootKeys['JavaExePathConfigRootKey']                                = 'C:/Program Files/AdoptOpenJDK/jre-16.0.1.9-hotspot/bin/java.exe'
-    $global:configRootKeys['ChocolateyLibDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/lib'
-    $global:configRootKeys['ChocolateyBinDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/bin'
+    $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
+    $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
+    $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
+    $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']                           = 'filesystem:' + (join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities' 'Databases' 'ATAPUtilities' 'Flyway' 'sql')
+    $global:configRootKeys['FLYWAY_URLConfigRootKey']                                 = 'jdbc:sqlserver://localhost:1433;databaseName=ATAPUtilities'
+    $global:configRootKeys['FLYWAY_USERConfigRootKey']                                = 'AUADMIN'
+    $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']                            = 'NotSecret'
+    $global:configRootKeys['FP__projectNameConfigRootKey']                            = 'ATAPUtilities'
+    $global:configRootKeys['FP__projectDescriptionConfigRootKey']                     = 'Test Flyway and Pubs samples'
+    $global:configRootKeys['ChocolateyLibDirConfigRootKey']                           = Join-Path $env:ProgramData 'chocolatey' 'lib'
+    $global:configRootKeys['ChocolateyBinDirConfigRootKey']                           = Join-Path $env:ProgramData 'chocolatey' 'bin'
     $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
       $global:configRootKeys['WindowsCodeBuildConfigRootKey']
       , $global:configRootKeys['WindowsUnitTestConfigRootKey']
       , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
     )
-    $global:configRootKeys['MSBuildExePathConfigRootKey']                             = 'C:/Program Files/Microsoft Visual Studio/2022/Community/Msbuild/Current/Bin/MSBuild.exe'
-    $global:configRootKeys['DotnetExePathConfigRootKey']                              = 'C:/Program Files/dotnet/dotnet.exe'
-    $global:configRootKeys['DocFXExePathConfigRootKey']                               = 'C:/ProgramData/chocolatey/bin/docfx.exe'
+    $global:configRootKeys['MSBuildExePathConfigRootKey']                             = Join-Path $env:ProgramFiles 'Microsoft Visual Studio' '2022' 'Community' 'Msbuild' 'Current' 'Bin' 'MSBuild.exe'
+    $global:configRootKeys['DotnetExePathConfigRootKey']                              = Join-Path $env:ProgramFiles 'dotnet' 'dotnet.exe'
+    $global:configRootKeys['DocFXExePathConfigRootKey']                               = Join-Path $env:ProgramData 'chocolatey' 'bin' 'docfx.exe'
+    $global:configRootKeys['GraphvizExePathConfigRootKey']                            = Join-Path $env:ProgramFiles 'graphviz' 'bin' 'dot.exe'
     $global:configRootKeys['PlantUMLJarPathConfigRootKey']                            = 'C:/ProgramData/chocolatey/lib/plantuml/tools/plantuml.jar'
     $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey']       = 'C:/Users/whertzing/.dotnet/tools/puml-gen.exe'
     $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'
-    $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = @('C:/Program Files (x86)/Microsoft SQL Server/150/Tools/PowerShell/Modules/')
+    $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = join-path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Microsoft SQL Server' '150' 'Tools' 'PowerShell' 'Modules'
     $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
   'ncat016'   = @{
+    $global:configRootKeys['EnvironmentConfigRootKey']                                = 'Production'
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
-    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = 'C:/Dropbox/'
+    $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq "Google Drive" } | Select-Object -ExpandProperty 'Name') 'My Drive'
+    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path -Path $env:HOMEDRIVE -ChildPath 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = 'D:/Temp'
     $global:configRootKeys['BigTempBasePathConfigRootKey']                            = 'D:/Temp'
-    $global:configRootKeys['GitExePathConfigRootKey']                                 = 'C:/Program Files/Git/cmd/git.exe'
-    $global:configRootKeys['JavaExePathConfigRootKey']                                = 'C:/Program Files/AdoptOpenJDK/jre-16.0.1.9-hotspot/bin/java.exe'
-    $global:configRootKeys['ChocolateyLibDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/lib'
-    $global:configRootKeys['ChocolateyBinDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/bin'
+    $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
+    $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
+    $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
+    $global:configRootKeys['ChocolateyLibDirConfigRootKey']                           = Join-Path $env:ProgramData 'chocolatey' 'lib'
+    $global:configRootKeys['ChocolateyBinDirConfigRootKey']                           = Join-Path $env:ProgramData 'chocolatey' 'bin'
     $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
       $global:configRootKeys['WindowsCodeBuildConfigRootKey']
       , $global:configRootKeys['WindowsUnitTestConfigRootKey']
       , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
     )
-    $global:configRootKeys['MSBuildExePathConfigRootKey']                             = 'C:/Program Files/Microsoft Visual Studio/2022/Community/Msbuild/Current/Bin/MSBuild.exe'
-    $global:configRootKeys['DotnetExePathConfigRootKey']                              = 'C:/Program Files/dotnet/dotnet.exe'
-    $global:configRootKeys['DocFXExePathConfigRootKey']                               = 'C:/ProgramData/chocolatey/bin/docfx.exe'
+    $global:configRootKeys['MSBuildExePathConfigRootKey']                             = Join-Path $env:ProgramFiles 'Microsoft Visual Studio' '2022' 'Community' 'Msbuild' 'Current' 'Bin' 'MSBuild.exe'
+    $global:configRootKeys['DotnetExePathConfigRootKey']                              = Join-Path $env:ProgramFiles 'dotnet' 'dotnet.exe'
+    $global:configRootKeys['DocFXExePathConfigRootKey']                               = Join-Path $env:ProgramData 'chocolatey' 'bin' 'docfx.exe'
+    $global:configRootKeys['GraphvizExePathConfigRootKey']                            = Join-Path $env:ProgramFiles 'graphviz' 'bin' 'dot.exe'
     $global:configRootKeys['PlantUMLJarPathConfigRootKey']                            = 'C:/ProgramData/chocolatey/lib/plantuml/tools/plantuml.jar'
     $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey']       = 'C:/Users/whertzing/.dotnet/tools/puml-gen.exe'
     $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'
-    $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = @('C:/Program Files (x86)/Microsoft SQL Server/150/Tools/PowerShell/Modules/')
+    $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = join-path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Microsoft SQL Server' '150' 'Tools' 'PowerShell' 'Modules'
     $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
   'ncat041'   = @{
+    $global:configRootKeys['EnvironmentConfigRootKey']                                = 'Production'
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
-    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = 'C:/Dropbox/'
+    $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq "Google Drive" } | Select-Object -ExpandProperty 'Name') 'My Drive'
+    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path -Path $env:HOMEDRIVE -ChildPath 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = 'C:/Temp'
     $global:configRootKeys['BigTempBasePathConfigRootKey']                            = 'C:/Temp'
-    $global:configRootKeys['GitExePathConfigRootKey']                                 = 'C:/Program Files/Git/cmd/git.exe'
-    $global:configRootKeys['JavaExePathConfigRootKey']                                = 'C:/Program Files/AdoptOpenJDK/jre-16.0.1.9-hotspot/bin/java.exe'
-    $global:configRootKeys['ChocolateyLibDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/lib'
-    $global:configRootKeys['ChocolateyBinDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/bin'
+    $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
+    $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
+    $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
+    $global:configRootKeys['ChocolateyLibDirConfigRootKey']                           = Join-Path $env:ProgramData 'chocolatey' 'lib'
+    $global:configRootKeys['ChocolateyBinDirConfigRootKey']                           = Join-Path $env:ProgramData 'chocolatey' 'bin'
     $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
       $global:configRootKeys['WindowsCodeBuildConfigRootKey']
       , $global:configRootKeys['WindowsUnitTestConfigRootKey']
       , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
     )
-    $global:configRootKeys['MSBuildExePathConfigRootKey']                             = 'C:/Program Files/Microsoft Visual Studio/2022/Community/Msbuild/Current/Bin/MSBuild.exe'
-    $global:configRootKeys['DotnetExePathConfigRootKey']                              = 'C:/Program Files/dotnet/dotnet.exe'
-    $global:configRootKeys['DocFXExePathConfigRootKey']                               = 'C:/ProgramData/chocolatey/bin/docfx.exe'
+    $global:configRootKeys['MSBuildExePathConfigRootKey']                             = Join-Path $env:ProgramFiles 'Microsoft Visual Studio' '2022' 'Community' 'Msbuild' 'Current' 'Bin' 'MSBuild.exe'
+    $global:configRootKeys['DotnetExePathConfigRootKey']                              = Join-Path $env:ProgramFiles 'dotnet' 'dotnet.exe'
+    $global:configRootKeys['DocFXExePathConfigRootKey']                               = Join-Path $env:ProgramData 'chocolatey' 'bin' 'docfx.exe'
+    $global:configRootKeys['GraphvizExePathConfigRootKey']                            = Join-Path $env:ProgramFiles 'graphviz' 'bin' 'dot.exe'
     $global:configRootKeys['PlantUMLJarPathConfigRootKey']                            = 'C:/ProgramData/chocolatey/lib/plantuml/tools/plantuml.jar'
     $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey']       = 'C:/Users/whertzing/.dotnet/tools/puml-gen.exe'
     $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'
@@ -113,50 +135,58 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
   'ncat-ltb1' = @{
+    $global:configRootKeys['EnvironmentConfigRootKey']                                = 'Production'
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
-    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = 'D:/Dropbox/'
+    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path -Path $env:HOMEDRIVE -ChildPath 'Dropbox'
+    $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq "Google Drive" } | Select-Object -ExpandProperty 'Name') 'My Drive'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = 'C:/Temp'
     $global:configRootKeys['BigTempBasePathConfigRootKey']                            = 'C:/Temp'
-    $global:configRootKeys['GitExePathConfigRootKey']                                 = 'C:/Program Files/Git/cmd/git.exe'
-    $global:configRootKeys['JavaExePathConfigRootKey']                                = 'C:/Program Files/AdoptOpenJDK/jre-16.0.1.9-hotspot/bin/java.exe'
-    $global:configRootKeys['ChocolateyLibDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/lib'
-    $global:configRootKeys['ChocolateyBinDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/bin'
+    $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
+    $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
+    $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
+    $global:configRootKeys['ChocolateyLibDirConfigRootKey']                           = Join-Path $env:ProgramData 'chocolatey' 'lib'
+    $global:configRootKeys['ChocolateyBinDirConfigRootKey']                           = Join-Path $env:ProgramData 'chocolatey' 'bin'
     $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
       $global:configRootKeys['WindowsCodeBuildConfigRootKey']
       , $global:configRootKeys['WindowsUnitTestConfigRootKey']
       , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
     )
-    $global:configRootKeys['MSBuildExePathConfigRootKey']                             = 'C:/Program Files/Microsoft Visual Studio/2022/Community/Msbuild/Current/Bin/MSBuild.exe'
-    $global:configRootKeys['DotnetExePathConfigRootKey']                              = 'C:/Program Files/dotnet/dotnet.exe'
-    $global:configRootKeys['DocFXExePathConfigRootKey']                               = 'C:/ProgramData/chocolatey/bin/docfx.exe'
+    $global:configRootKeys['MSBuildExePathConfigRootKey']                             = Join-Path $env:ProgramFiles 'Microsoft Visual Studio' '2022' 'Community' 'Msbuild' 'Current' 'Bin' 'MSBuild.exe'
+    $global:configRootKeys['DotnetExePathConfigRootKey']                              = Join-Path $env:ProgramFiles 'dotnet' 'dotnet.exe'
+    $global:configRootKeys['DocFXExePathConfigRootKey']                               = Join-Path $env:ProgramData 'chocolatey' 'bin' 'docfx.exe'
+    $global:configRootKeys['GraphvizExePathConfigRootKey']                            = Join-Path $env:ProgramFiles 'graphviz' 'bin' 'dot.exe'
     $global:configRootKeys['PlantUMLJarPathConfigRootKey']                            = 'C:/ProgramData/chocolatey/lib/plantuml/tools/plantuml.jar'
     $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey']       = 'C:/Users/whertzing/.dotnet/tools/puml-gen.exe'
     $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'
-    $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = @('C:/Program Files (x86)/Microsoft SQL Server/150/Tools/PowerShell/Modules/')
+    $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = join-path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Microsoft SQL Server' '150' 'Tools' 'PowerShell' 'Modules'
     $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
   'ncat-ltjo' = @{
+    $global:configRootKeys['EnvironmentConfigRootKey']                                = 'Production'
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
-    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = 'D:/Dropbox/'
+    $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq "Google Drive" } | Select-Object -ExpandProperty 'Name') 'My Drive'
+    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path -Path 'D:' -ChildPath 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = 'C:/Temp'
     $global:configRootKeys['BigTempBasePathConfigRootKey']                            = 'C:/Temp'
-    $global:configRootKeys['GitExePathConfigRootKey']                                 = 'C:/Program Files/Git/cmd/git.exe'
-    $global:configRootKeys['JavaExePathConfigRootKey']                                = 'C:/Program Files/AdoptOpenJDK/jre-16.0.1.9-hotspot/bin/java.exe'
-    $global:configRootKeys['ChocolateyLibDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/lib'
-    $global:configRootKeys['ChocolateyBinDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/bin'
+    $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
+    $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
+    $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
+    $global:configRootKeys['ChocolateyLibDirConfigRootKey']                           = Join-Path $env:ProgramData 'chocolatey' 'lib'
+    $global:configRootKeys['ChocolateyBinDirConfigRootKey']                           = Join-Path $env:ProgramData 'chocolatey' 'bin'
     $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
       $global:configRootKeys['WindowsCodeBuildConfigRootKey']
       , $global:configRootKeys['WindowsUnitTestConfigRootKey']
       , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
     )
-    $global:configRootKeys['MSBuildExePathConfigRootKey']                             = 'C:/Program Files/Microsoft Visual Studio/2022/Community/Msbuild/Current/Bin/MSBuild.exe'
-    $global:configRootKeys['DotnetExePathConfigRootKey']                              = 'C:/Program Files/dotnet/dotnet.exe'
-    $global:configRootKeys['DocFXExePathConfigRootKey']                               = 'C:/ProgramData/chocolatey/bin/docfx.exe'
+    $global:configRootKeys['MSBuildExePathConfigRootKey']                             = Join-Path $env:ProgramFiles 'Microsoft Visual Studio' '2022' 'Community' 'Msbuild' 'Current' 'Bin' 'MSBuild.exe'
+    $global:configRootKeys['DotnetExePathConfigRootKey']                              = Join-Path $env:ProgramFiles 'dotnet' 'dotnet.exe'
+    $global:configRootKeys['DocFXExePathConfigRootKey']                               = Join-Path $env:ProgramData 'chocolatey' 'bin' 'docfx.exe'
+    $global:configRootKeys['GraphvizExePathConfigRootKey']                            = Join-Path $env:ProgramFiles 'graphviz' 'bin' 'dot.exe'
     $global:configRootKeys['PlantUMLJarPathConfigRootKey']                            = 'C:/ProgramData/chocolatey/lib/plantuml/tools/plantuml.jar'
     $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey']       = 'C:/Users/whertzing/.dotnet/tools/puml-gen.exe'
     $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'
-    $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = @('C:/Program Files (x86)/Microsoft SQL Server/150/Tools/PowerShell/Modules/')
+    $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = join-path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Microsoft SQL Server' '150' 'Tools' 'PowerShell' 'Modules'
     $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
@@ -190,7 +220,7 @@ $global:JenkinsRoles = @{
   iOSUnitTest                                                      = @{}
   MSSQLDataBaseIntegrationTest                                     = @{
     # if the machine node has SQL server loaded, add to PSModulePath
-    $global:configRootKeys['PSModulePathConfigRootKey']    = @('C:/Program Files (x86)/Microsoft SQL Server/150/Tools/PowerShell/Modules/')
+    $global:configRootKeys['PSModulePathConfigRootKey']              =  join-path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Microsoft SQL Server' '150' 'Tools' 'PowerShell' 'Modules'
     $global:configRootKeys['SQLServerConnectionStringConfigRootKey'] = 'localhost:1433'
     Credentials                                                      = ''
   }

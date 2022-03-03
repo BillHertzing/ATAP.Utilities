@@ -7,7 +7,7 @@ Function Get-ModuleAsSymbolicLink {
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
     # ToDo: Parameter set to suport LiteralPath
-    [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
+    [parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $True)]
     [ValidateNotNullOrEmpty()][String] $Name
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [ValidateNotNullOrEmpty()][String] $Version
@@ -28,13 +28,13 @@ Function Get-ModuleAsSymbolicLink {
 
     # default values for parameters
     $parameters = @{
-      Name    = ''
-      Version    = ''
-      SourcePath     = ''
-      TargetPath     = Join-Path ([Environment]::GetFolderPath('MyDocuments')) '\PowerShell\Modules\'
+      Name                 = ''
+      Version              = ''
+      SourcePath           = ''
+      TargetPath           = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell' 'Modules'
       Force                = $false
-      LinksToCreatePattern = '(public|private|\.*ps[m]*1)'
-      FilesToCopyPattern = '\.psd1'
+      LinksToCreatePattern = '(public|private|\.*ps[m]{0,1}1)'
+      FilesToCopyPattern   = '\.psd1'
     }
 
     # Things to be initialized after parameters are processed
@@ -49,9 +49,11 @@ Function Get-ModuleAsSymbolicLink {
   ########################################
   PROCESS {
     # ToDo: validate sourcePath and targetpath
-    $moduleTargetPath = Join-Path $parameters.TargetPath $parameters.Name
+    $lclName = $_.Name
+    $lclVersion= $_.Version
+    $moduleTargetPath = Join-Path $parameters.TargetPath $lclName
     if (-not (Test-Path $moduleTargetPath)) { New-Item -Path $moduleTargetPath -ItemType Directory }
-    $moduleTargetPath = Join-Path $moduleTargetPath $parameters.Version
+    $moduleTargetPath = Join-Path $moduleTargetPath $lclVersion
     if (-not (Test-Path $moduleTargetPath)) { New-Item -Path $moduleTargetPath -ItemType Directory }
     $initialLocation = Get-Location
     Set-Location -Path $moduleTargetPath
@@ -60,7 +62,7 @@ Function Get-ModuleAsSymbolicLink {
         # If it doesn't exist, it needs to be created, but only administrator's can create symbolic links
         if ($global:settings[$global:configRootKeys['IsElevatedConfigRootKey']]) {
           if ($PSCmdlet.ShouldProcess(@($_.name, $_.fullname), 'New-Item -ItemType SymbolicLink -Path $_.name -Target $_.fullname > $null')) {
-            New-Item -ItemType SymbolicLink -Path $(Join-path $moduleTargetPath $_.name) -Target $_.fullname > $null
+            New-Item -ItemType SymbolicLink -Path $(Join-Path $moduleTargetPath $_.name) -Target $_.fullname > $null
           }
         }
         else {
@@ -71,8 +73,8 @@ Function Get-ModuleAsSymbolicLink {
         # only recreate it if the -Force argument is set
         if ($parameters.Force -and $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']]) {
           if ($PSCmdlet.ShouldProcess(@($_.name, $_.fullname), 'Force: Remove and recreate New-Item -ItemType SymbolicLink -Path $(Join-path $moduleTargetPath $_.name) -Target $_.fullname > $null')) {
-            Remove-Item $(Join-path $moduleTargetPath $_.name) -ErrorAction SilentlyContinue
-            New-Item -ItemType SymbolicLink -Path $(Join-path $moduleTargetPath $_.name) -Target $_.fullname > $null
+            Remove-Item $(Join-Path $moduleTargetPath $_.name) -ErrorAction SilentlyContinue
+            New-Item -ItemType SymbolicLink -Path $(Join-Path $moduleTargetPath $_.name) -Target $_.fullname > $null
           }
         }
       }
@@ -82,13 +84,14 @@ Function Get-ModuleAsSymbolicLink {
     ForEach-Object {
       if (-not (Test-Path $_.name)) {
         # If it doesn't exist, it needs to be copied
-        if ($PSCmdlet.ShouldProcess(@($(Join-path $moduleTargetPath $_.name), $_.fullname), 'Would do Copy-Item $_.fullname -Destination $_.name')) {
-          Copy-Item $_.fullname -Destination $(Join-path $moduleTargetPath $_.name) > $null
+        if ($PSCmdlet.ShouldProcess(@($(Join-Path $moduleTargetPath $_.name), $_.fullname), 'Would do Copy-Item $_.fullname -Destination $_.name')) {
+          Copy-Item $_.fullname -Destination $(Join-Path $moduleTargetPath $_.name) > $null
         }
-      } else {
+      }
+      else {
         # if it does exists, use the -Force parameter
-        if ($PSCmdlet.ShouldProcess(@($(Join-path $moduleTargetPath $_.name), $_.fullname), 'Would do Copy-Item $_.fullname -Destination $(Join-path $moduleTargetPath $_.name) -Force')) {
-            Copy-Item $_.fullname -Destination $(Join-path $moduleTargetPath $_.name) -Force > $null
+        if ($PSCmdlet.ShouldProcess(@($(Join-Path $moduleTargetPath $_.name), $_.fullname), 'Would do Copy-Item $_.fullname -Destination $(Join-path $moduleTargetPath $_.name) -Force')) {
+          Copy-Item $_.fullname -Destination $(Join-Path $moduleTargetPath $_.name) -Force > $null
         }
       }
     }

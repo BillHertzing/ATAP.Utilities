@@ -150,7 +150,7 @@ https://github.com/KirillOsenkov/MSBuildStructuredLog/releases/download/v2.0.46/
 Only goes into .csproj files for executables, not libraries.
 For Plugins (which are loaded at runtime), you may need an app.config for the Main.exe. put  specific .app
 
-[app.config file in the new .csproj format](https://stackoverflow.com/questions/59959513/app-config-file-in-the-new-csproj-format) - Martin Ullrich - good instructions and explanation. the PrepareForBuild msbuild target will automatically pick up the file and subsequent build steps can also edit this file as the logical file. 
+[app.config file in the new .csproj format](https://stackoverflow.com/questions/59959513/app-config-file-in-the-new-csproj-format) - Martin Ullrich - good instructions and explanation. the PrepareForBuild msbuild target will automatically pick up the file and subsequent build steps can also edit this file as the logical file.
 
 <AppConfig>App.config</AppConfig>
 
@@ -172,3 +172,37 @@ Nice article here [Authenticode Signing Service and Client](https://github.com/d
 # Image Optimization
 
 [imgbot](imgbot.net) - lossless compression, but only in GitHub. Automatically sends a pull request to the repository.
+
+
+## Powershell Packaging
+
+[Hitchhikers Guide to the PowerShell Module Pipeline](https://xainey.github.io/2017/powershell-module-pipeline/)
+
+[PowerShell Scaffolding – How I build modules](https://invoke-automation.blog/2019/09/24/powershell-scaffolding-how-i-build-modules/)
+
+[PlasterTemplates](https://github.com/KevinMarquette/PlasterTemplates)
+
+[Catesta](https://github.com/techthoughts2/Catesta)
+
+[PlasterPlethora | A plethora of Plaster templates.](https://kandi.openweaver.com/powershell/larssb/PlasterPlethora#Summary)
+
+[Jenkins - User Interface for your Powershell tasks by Kirill Kravtsov](https://www.youtube.com/watch?v=2lrrrknwy5M)
+
+`Register-PackageSource -Name chocolatey -Location http://chocolatey.org/api/v2 -Provider PSModule -Verbose`
+
+[NuGet package manager – Build a PowerShell package repository](https://4sysops.com/archives/nuget-package-manager-build-a-powershell-package-repository/)
+
+[Build and install local Chocolatey packages with PowerShell](https://4sysops.com/archives/build-and-install-local-chocolatey-packages-with-powershell/)
+
+[Understanding Chocolatey NuGet packages](https://4sysops.com/archives/understanding-chocolatey-nuget-packages/)
+
+(https://github.com/psake/PowerShellBuild)
+
+[Build Automation in PowerShell](https://github.com/nightroman/Invoke-Build)
+
+[Catesta is a PowerShell module project generator](https://github.com/techthoughts2/Catesta)
+
+
+
+
+

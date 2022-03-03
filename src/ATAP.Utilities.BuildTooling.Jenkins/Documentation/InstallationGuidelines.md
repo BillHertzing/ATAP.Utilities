@@ -1,10 +1,17 @@
 # Installation Instructions
 
-# PreRequisites
+## PreRequisites
 
 * Windows 10 or higher
 * Powershell Core 7 or higher
 * Java Development Kit or runtime. Must be either Java 1.8 or Javaa 11
+
+### Jenkins Service account and password
+
+The computer running Jenkins will need a local user (service account) under whihc the jenkins service will run.
+
+I chose `JenkinsServiceAcct` and password `Notsecret`. ToDo: implement Secrets file for recording the JenkinsServiceAccount password for each machine running Jenkins
+next the user must be granted the `logon as a service` right. use gpedit.msc, drill down on ` Computer Configuration\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Log on as a service` and add the `JenkinsServiceAcct` to the existing list of users
 
 ## Download Jenkins
 

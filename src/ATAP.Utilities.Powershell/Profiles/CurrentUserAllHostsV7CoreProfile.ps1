@@ -152,8 +152,6 @@ Function prompt {
 # }
 # if ($true) { Set-CloudDirectoryLocations }
 
-Write-Verbose ("PsScriptRoot: $psScriptRoot")
-
 # The following ordered list of module paths come from ATAP and 3rd-party modules that have been selected by this user
 $UserPSModulePaths = @(
 
@@ -163,10 +161,10 @@ $UserPSModulePaths = @(
   # 'Modules that are in Integration Test Lifecycle Phase, for which I am involved'
   # 'Modules that are in RTM Lifecycle Phase, for which I am involved'
   # 'All Production modules for Scripts I use day-to-day' - These should reference modules in
-    # Image manipulation scripts for blog posts
-    # DropBox api scripts for blog posts
-    # Future: scripts to manipulate FreeVideoEditor VSDC
-    )
+  # Image manipulation scripts for blog posts
+  # DropBox api scripts for blog posts
+  # Future: scripts to manipulate FreeVideoEditor VSDC
+)
 
 
 # This is a developer profile, so Import Developer BuildTooling For Powershell
@@ -176,32 +174,36 @@ $UserPSModulePaths = @(
 $ModulesToLoadAsSymbolicLinks = @(
   # User Functions
   [PSCustomObject]@{
-    Name = 'ATAP.Utilities.PowerShell'
-    Version = '0.1.0'
-    SourcePath  = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell'
+    Name          = 'ATAP.Utilities.PowerShell'
+    Version       = '0.1.0'
+    SourcePath    = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell'
     usePreRelease = $true
   },
   # Developer and CI/CD powershell modules that assist developers creating code and building it, and modules shared with the CI/CD
   [PSCustomObject]@{
-    Name = 'ATAP.Utilities.BuildTooling.PowerShell'
-    Version = '0.1.0'
-    SourcePath  = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.Powershell'
+    Name          = 'ATAP.Utilities.BuildTooling.PowerShell'
+    Version       = '0.1.0'
+    SourcePath    = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.Powershell'
     usePreRelease = $true
   },
   # Useful Functions specific to FileIO
   [PSCustomObject]@{
-    Name = 'ATAP.Utilities.FileIO.PowerShell'
-    Version = '0.1.0'
-    SourcePath  = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell'
+    Name          = 'ATAP.Utilities.FileIO.PowerShell'
+    Version       = '0.1.0'
+    SourcePath    = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell'
+    usePreRelease = $true
+  },
+  # Useful Functions specific to FileIO
+  [PSCustomObject]@{
+    Name          = 'ATAP.Utilities.Neo4j.Powershell'
+    Version       = '0.1.0'
+    SourcePath    = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Neo4j.Powershell'
     usePreRelease = $true
   })
 
-  # Create symbolic links to each of the modukles above in the user's default powershell module location
-  # The function uses Join-Path ([Environment]::GetFolderPath('MyDocuments')) '\PowerShell\Modules\' as the default PSModulePath path
-  $ModulesToLoadAsSymbolicLinks | Get-ModuleAsSymbolicLink
-
-# Print the global settings, indented
-(get-item  variable:\settings).Value.keys | sort | %{$key = $_; if ((get-item  variable:\settings).Value.$key  -is [System.Collections.IDictionary]) {"$key yep"}else {"$key = $($($(get-item  variable:\settings).Value).$key)"}}
+# Create symbolic links to each of the modukles above in the user's default powershell module location
+# The function uses Join-Path ([Environment]::GetFolderPath('MyDocuments')) '\PowerShell\Modules\' as the default PSModulePath path
+$ModulesToLoadAsSymbolicLinks | Get-ModuleAsSymbolicLink
 
 # Show environment/context information when the profile runs
 # ToDo reformat using YAML
@@ -214,7 +216,7 @@ Function Show-context {
   Write-Verbose ('Drops:{0}' -f $($drops | Format-Table | Out-String))
   # DebugPreference
   # VerbosePreference
-  #LoggingFrameworkandLogFileLocation
+  # LoggingFrameworkandLogFileLocation
   # ConsoleSettings
 
 }
@@ -245,38 +247,40 @@ filter unlike( $glob ) {
 }
 
 # A function that will set-Location to 'MyDocuments`
-Function cdMy {$x= [Environment]::GetFolderPath('MyDocuments');Set-Location -Path $x}
+Function cdMy { $x = [Environment]::GetFolderPath('MyDocuments'); Set-Location -Path $x }
 
 # A function that will return files with names matching the string 'conflicted'
-Function getconflicted {Get-ChildItem  -Recurse. | where-object -property fullname -match 'conflicted'}
+Function getconflicted { Get-ChildItem -Recurse. | Where-Object -Property fullname -Match 'conflicted' }
 
 # A function and alias to kill the VoiceAttack process
-function PublishPluginAndStartVAProcess
-{
+function PublishPluginAndStartVAProcess {
 
   dotnet publish src/ATAP.Utilities.VoiceAttack/ATAP.Utilities.VoiceAttack.csproj /p:Configuration=Debug /p:DeployOnBuild=true /p:PublishProfile="properties/publishProfiles/Development.pubxml" /p:TargetFramework=net48 /bl:_devlogs/msbuild.binlog
-  & 'C:\Users\whertzing\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\VoiceAttack.lnk'  -bypassimpropershutdowncheck
+  & 'C:\Users\whertzing\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\VoiceAttack.lnk' -bypassimpropershutdowncheck
 }
-set-item -path alias:pSVA -value PublishPluginAndStartVAProcess
+Set-Item -Path alias:pSVA -Value PublishPluginAndStartVAProcess
 
 # A function and alias to kill the VoiceAttack process
-function StopVoiceAttackProcess
-{
-  Get-Process | Where-Object {$_.Path -match 'VoiceAttack'} | Stop-Process -force
+function StopVoiceAttackProcess {
+  Get-Process | Where-Object { $_.Path -match 'VoiceAttack' } | Stop-Process -Force
 }
-set-item -path alias:stopVA -value StopVoiceAttackProcess
+Set-Item -Path alias:stopVA -Value StopVoiceAttackProcess
 
 # Final (user) directory to leave the interpreter
 #cdMy
 #Set-Location -Path (join-path -Path $global:DropBoxBasePath -ChildPath 'whertzing' -AdditionalChildPath 'GitHub','ATAP.Utilities')
 Set-Location -Path $storedInitialDir
 
+# Always Last step - set the environment variables for this user
+. (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
+Set-Envvars
 # Uncomment to see the $global:settings and Environment variables at the completion of this profile
-#Write-Verbose ('$global:settings are: ' +  [Environment]::NewLine + (forEach-Object ($kvp in ($global:settings).GetEnumerator()){"{0}:{1}" -f $kvp.name, $kvp.name,[Environment]::NewLine} ))
-Write-Verbose ("Environment variables CurrentUsersAllHosts are:  " + [Environment]::NewLine + (Get-ChildItem env: |ForEach-Object{ $envVar=$_;  ('Machine','User','Process') | %{$scope = $_;
-if (([System.Environment]::GetEnvironmentVariable($envVar.key, $scope))) {"{0}:{1} ({2})" -f $envVar.key, $envVar.value, $scope}
-}}))
-
+# Print the $global:settings if Debug
+$indent = 0
+$indentIncrement = 2
+Write-Debug ('After CurrentUsersAllHosts profile executes, global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
+$DebugPreference = 'Continue'
+Write-Debug ('After CurrentUsersAllHosts profile executes, Environment variables: ' + [Environment]::NewLine + (Write-EnvironmentVariables ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
 
 <# To Be Moved Somewhere else #>
 

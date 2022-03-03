@@ -1,6 +1,6 @@
 # Devops Guidelines
 
-How touse the ATQAP.Utiliites..BuildTooling.Jenkins pipelines and tools in a Windows environment
+How to use the ATAP.Utilities.BuildTooling.Jenkins pipelines and tools in a Windows environment
 
 ## Overview
 
@@ -53,6 +53,7 @@ This module holds most of the Powershell functions used by the developers and th
 we publish Powershell packages, src, documentation and optionally tests and localization, via nuget packages, and chocolatey package manager. Chocolatey and the installation script coooperate to set the package installation location and append the information to the system or user PATH environment variable.
 
 ToDo: Once installed, the path to the executable must be supplied to the database under the key for the machine name. See the ATAP Utilities packages for computer hardware, software, and processes for the data structures to record necessary information.
+
 ## Installing powershell modules on DevOps machines
 
 https://github.com/anpur/powershellget-module
@@ -100,6 +101,9 @@ ou can also capture the value by visiting the Instance Identity page, at somethi
 https://wiki.jenkins.io/display/JENKINS/Installing+Jenkins+as+a+Windows+service
 
 https://support.cloudbees.com/hc/en-us/articles/217423827-How-to-Install-Several-Windows-Slaves-as-a-Service-
+
+Name of Service used to run the Jenkins service is `JenkinsServiceAcct`, password is stored as a secret somewhere (toDo: Create secrets files (encrypted) somewhere on dropbox not in github). Temporary value is `NotSecret`
+
 
 ## Starting an Agent
 

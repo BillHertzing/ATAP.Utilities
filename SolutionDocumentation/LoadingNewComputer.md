@@ -131,8 +131,8 @@ Setup HP Printer
 
 File Extension helpers
 
-setup the registry to support "preview as perceived type text" for additional file types 
-Set-PerceivedTypeInRegistryForPreviewPane from module 
+setup the registry to support "preview as perceived type text" for additional file types
+Set-PerceivedTypeInRegistryForPreviewPane from module
 
 setup gopro
 
@@ -155,7 +155,7 @@ C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\DeveloperComputer.ps1
   #$suffixs = @(,'.ps1','.psm1','.psd1')
   #Install-ChocolateyFileAssociation  $suffixs "${env:programfiles(x86)}\powerGUI\ScriptEditor.exe"
 
-prrograms to pin:
+programs to pin:
   perfView
   taskManager
   scheduled tasks
@@ -180,28 +180,65 @@ prrograms to pin:
   MSSMS
   Voiceattack
   Everything
-  
+
   Setup the PSGallery
   `Register-PSRepository -Default -Verbose`
-  `get-psrepository`
-  `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted` 
-  
+  `get-psrepository` validate that PSGallery appears
+  `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`
+
   remove the default version of Pester that comes with windows
   ```Powershell
-    $module = "C:\Program Files\WindowsPowerShell\Modules\Pester"
+  $module = "C:\Program Files\WindowsPowerShell\Modules\Pester"
 	takeown /F $module /A /R
 	icacls $module /reset
 	icacls $module /grant "*S-1-5-32-544:F" /inheritance:d /T
 	Remove-Item -Path $module -Recurse -Force -Confirm:$false
    ```
-   
+
    Install Pester for PS V7
    `Install-Module pester
-   
+
    Fix Pester installation and or path variable for PS V5 and PS V7
+
+   Setup Git
+   in file ~/.gitconfig
+      [filter "lfs"]
+        smudge = git-lfs smudge -- %f
+        process = git-lfs filter-process
+        required = true
+        clean = git-lfs clean -- %f
+      [user]
+        name = Bill Hertzing
+        email = bill.hertzing@gmail.com
+      [diff]
+        tool = bc3
+      [difftool]
+        prompt = false
+      [merge]
+        tool = bc3
+      [mergetool]
+        prompt = false
+      [difftool "bc3"]
+        path = "C:/Program Files/Beyond Compare 4/bcomp.exe"
+      [mergetool "bc3"]
+        path = "C:/Program Files/Beyond Compare 4/bcomp.exe"
+      [mergetool "bc3"]
+        trustExitCode = true
+      [alias]
+        mydiff = difftool --dir-diff --tool=bc3 --no-prompt
+        bcreview = "!f() { local SHA=${1:-HEAD}; local BRANCH=${2:-master}; if [ $SHA == $BRANCH ]; then SHA=HEAD; fi; git difftool -y -t bc $BRANCH...$SHA; }; f"
+      [core]
+        autocrlf = true
+        editor = code --wait
+      [commit]
+        template = GitTemplates/git.commit.template.txt
+      [merge "keep-local-changes"]
+        name = A custom merge driver which always keeps the local changes
+        driver = true
 
 VS Code Extensions
   c#
+
   gitignore
   gitlens
   git graph
@@ -211,12 +248,47 @@ VS Code Extensions
   Draw.io Integration
   prettier
   Remove TestExplorerUI if it is installed, instead set the settings testExplorer.useNativeTesting to true
-  
+  git user and password for each repository
+  PlantUML extension requires the environment variable GRAPHVIZ_DOT= ' c:\program files\graphviz\bin\dot.exe' which is the location where chocolatey installs the local plantuml server
+  Markdownlint
+
+  use the command `code --list-extensions --show-versions > "\\UTAT022\FileShare\$($env:COMPUTERNAME)extensions.list.txt"`
 
 VS Code Options:
-  Focus on open editors
-  Toggle File Autosave (Save File on click-away)
   testExplorer.useNativeTesting to true
-  
+  Copy settings from current (ncat016) vscode. Investigate VSC settings sync to keep them aligned
+
+GoogleDrive
+ download and install the [Google Drive for Windows](Tbd)
+ Sign In with google account crednetials
+ Create a directory GoogleDrive on the drive of your choice (I chose c:/GoogleDrive)
+ record in global_MachineAndNodeSettings.ps1 file for all computers, use the following `Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq "Google Drive" } | Select-Object -ExpandProperty 'Name') 'My Drive' `
+Join-Path  ([Environment]::GetEnvironmentVariable($global:configRootKeys['GoogleDriveBasePathConfigRootKey'])) 'DatedDropboxCursors.json'
+
   Chocolatey package List Backup
 	 ensure the dropbox location is added
+	 ensure the GoogleDrive location is added
+
+Scheduled Job to run the `Get-DropBoxAllFolderCursors` Powershell function every day.
+
+Many CI steps need Java. Jenkins itself is Java based, as are the PlantUML steps that generate diagrams from embedded info in .md files, and the step that reads all the C# files nad creates PlantUML diagrams from the source code files. Setting up the new computer, need to ensure the correct Java is installed and running.
+
+Check Java Version. Old computer is running jre1.8.0_291, but jre1.8.0_321 exists as a peer to _291.
+ On the new computer, only _321 exists (so far...)
+
+
+PaackageManagement for powershell
+
+`Register-PackageSource -Name chocolatey -Location http://chocolatey.org/api/v2 -Provider PSModule -Verbose`
+
+[NuGet package manager – Build a PowerShell package repository](https://4sysops.com/archives/nuget-package-manager-build-a-powershell-package-repository/)
+
+[Build and install local Chocolatey packages with PowerShell](https://4sysops.com/archives/build-and-install-local-chocolatey-packages-with-powershell/)
+
+[Understanding Chocolatey NuGet packages](https://4sysops.com/archives/understanding-chocolatey-nuget-packages/)
+
+(https://github.com/psake/PowerShellBuild)
+
+[Build Automation in PowerShell](https://github.com/nightroman/Invoke-Build)
+
+[Catesta is a PowerShell module project generator](https://github.com/techthoughts2/Catesta)

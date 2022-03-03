@@ -36,6 +36,7 @@ Function Update-PackageVersion {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $Path 
+        ,[parameter(Mandatory = $false, ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $PreReleaseNumberFormat = 'D3' 
     )
     #endregion FunctionParameters
     #region FunctionBeginBlock
@@ -59,15 +60,17 @@ Function Update-PackageVersion {
         $preReleaseNumber = -1
         $newPreReleaseNumber = -1
         $newPreReleaseStr = $null
-        if ($manifest['PSData']['PrivateData']['Prerelease']) {
-            if ($manifest['PSData']['PrivateData']['Prerelease'] -imatch '(?:<PrereleasePrefix>.*?)(?:<PrereleaseNumber>\d{1,4})$') {
-                $preReleasePrefixStr = $matches['PrereleasePrefix']
-                $preReleaseNumberStr = $matches['PrereleaseNumber']
-                $preReleaseNumber = Try
+        if ($manifest['PSData']['PrivateData']['PreRelease']) {
+            if ($manifest['PSData']['PrivateData']['PreRelease'] -imatch '(?:<PreReleasePrefix>.*?)(?:<PreReleaseNumber>\d{1,4})$') {
+                $preReleasePrefixStr = $matches['PreReleasePrefix']
+                $preReleaseNumberStr = $matches['PreReleaseNumber']
+                if (-not [int32]::TryParse($preReleaseNumberStr, [ref]$preReleaseNumber)) {
+                    throw "manifest['PSData']['PrivateData']['PreRelease'] value is ($manifest['PSData']['PrivateData']['PreRelease']) and a preReleaseNumber could not be parsed from it"
+                }
                 # Add one to the preReleaseNumber
                 $newPreReleaseNumber += 1
-                # Reassmeble the Prerelease string
-                $newPreReleaseStr = $preReleasePrefixStr + $newPreReleaseNumber.ToString('D3')
+                # Reassmeble the PreRelease string
+                $newPreReleaseStr = $preReleasePrefixStr + $newPreReleaseNumber.ToString($PreReleaseNumberFormat)
 
                 if ($PSCmdlet.ShouldProcess(($path, $newPreReleaseStr), "Update-ModuleManifest -Path $path  -ModuleData $newPreReleaseStr (from $preReleasePrefixStr + $preReleaseNumberStr)")) {
                     # Update the module manifest
@@ -76,7 +79,7 @@ Function Update-PackageVersion {
                 }
             }
             else {
-                throw "Prerelease value was present but could not be parsed"
+                throw "PreRelease value was present but could not be parsed"
             }
         }
         else {

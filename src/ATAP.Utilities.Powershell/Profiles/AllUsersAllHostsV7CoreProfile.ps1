@@ -34,16 +34,6 @@ ToDo: Need attribution for Console Settings
 # [powerShell ReadMe](src\ATAP.Utilities.Powershell\Documentation\ReadMe.md)
 # On most windows machines, $PSHome is at C:/Program Files/Powershell/7
 
-Function Write-DebugIndented {
-  [CmdletBinding(SupportsShouldProcess = $true)]
-  param (
-    [int] $indent
-    , [string] $message
-  )
-  $a = ' ' * $indent + $message
-  Write-Debug $a
-}
-
 # Set these for debugging the profile
 # Don't Print any debug messages to the console
 $DebugPreference = 'SilentlyContinue'
@@ -55,50 +45,130 @@ Write-Verbose "Starting $($MyInvocation.Mycommand)"
 Write-Verbose ("WorkingDirectory = $pwd")
 Write-Verbose ("PSScriptRoot = $PSScriptRoot")
 
-$indent = 0
+#region Functions needed by the machine profile, must be defined in the profile
+Function Write-HashIndented {
+  param($hash
+    , [int] $initialIndent = 0
+    , [int] $indentIncrement = 2
+  )
+  function Write-KVP {
+    param ($kvp, $indent, $indentIncrement)
+    $outstr = ' ' * $indent + $kvp.Key + ' = '
+    switch ($kvp.Value) {
+      ({ $PSItem -is [system.boolean] }) { 
+        $outstr += $kvp.Value 
+        break 
+      }
+      ({ $PSItem -is [system.string] }) { 
+        $outstr += $kvp.Value
+        break 
+      }
+      ({ $PSItem -is [system.array] }) { 
+        $outstr += '(' + [Environment]::NewLine 
+        $outstr += write-Array $kvp.Value ($indent + $indentIncrement) $indentIncrement
+        $outstr += ' ' * $indent + ')'
+        break
+      }
+      ({ $PSItem -is [System.Collections.Hashtable] }) { 
+        $outstr += '{' + [Environment]::NewLine 
+        $outstr += Write-HashIndented $kvp.Value ($indent + $indentIncrement) $indentIncrement
+        $outstr += ' ' * $indent + '}'
+        break 
+      }
+    }
+    $outstr += [Environment]::NewLine 
+    $outstr
+  }
+  function Write-Array {
+    param ($a, $indent, $indentIncrement)
+    $outstr = ' ' * $indent
+    $a | ForEach-Object {
+      switch ($_) {
+        ({ $PSItem -is [system.boolean] }) { 
+          $outstr += $_
+          break 
+        }
+        ({ $PSItem -is [system.string] }) { 
+          $outstr += $_
+          break 
+        }
+        ({ $PSItem -is [system.array] }) { 
+          $outstr += '(' + [Environment]::NewLine 
+          $outstr += write-Array $_ ($indent + $indentIncrement) $indentIncrement
+          $outstr += ' ' * $indent + ')'
+          break
+        }
+        ({ $PSItem -is [System.Collections.Hashtable] }) { 
+          $outstr += '{' + [Environment]::NewLine 
+          $outstr += Write-HashIndented $_ ($indent + $indentIncrement) $indentIncrement
+          $outstr += ' ' * $indent + '}'
+          break 
+        }
+      }
+    } 
+    $outstr += $a -join [Environment]::NewLine 
+  }
+  
+  $outstr = ''
+  $hash.GetEnumerator() | Sort-Object -Property Key | ForEach-Object { $outstr += Write-KVP $_ $initialIndent $indentIncrement }
+  $outstr
+}
 
+Function Write-EnvironmentVariables {
+  param(
+    [int] $initialIndent = 0
+    , [int] $indentIncrement = 2
+  )
+  $outstr = ''
+  Get-ChildItem env: | sort-Object -Property Key | ForEach-Object { $envVar = $_;
+    ('Process') | # 'Machine', 'User', 'Process'
+    ForEach-Object { $scope = $_;
+      if (([System.Environment]::GetEnvironmentVariable($envVar.key, $scope))) {
+        # '{0}:{1} ({2}){3}' -f $envVar.key, $envVar.value, $scope, [Environment]::NewLine
+        #$outstr += '{0}:{1} ({2})' -f $envVar.key, $envVar.value, $scope + "`r`n`t"
+        if ($envVar.key -eq 'path') {
+         $outstr += ' ' * $initialIndent + $envVar.key + ' = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
+           $($($envVar.value -split ';') -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )`
+           + '  [' + $scope + ']' +  [Environment]::NewLine
+        } else {
+          $outstr += ' ' * $initialIndent + $envVar.key + ' = ' + $envVar.value +'  [' + $scope + ']' +  [Environment]::NewLine
+
+        }
+  }}}
+
+  $outstr
+}
+Function ValidateTools {
+  # validate dotnet
+  # validate dotnet build
+  # validate java
+  # vallidate PlantUML
+  # validate PlantUmlClassDiagramGenerator
+  # dotnet tool install --global PlantUmlClassDiagramGenerator --version 1.2.4
+}
+
+#region Functions needed by the machine profile, must be defined in the profile
+##################################################################################
+
+$indent = 0
+$indentIncrement = 2
 # Dot source the list of configuration keys
-# Configuration root keys .ps1 files should be a peer of the profile, and is identified as the subdirectory dir where the profile resides
+# Configuration root keys .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
 . $PSScriptRoot/global_ConfigRootKeys.ps1
 
-# Print the ConfigRootKeys if Debug
-if ($DebugPreference -eq 'Continue') {
-  Write-DebugIndented $indent 'GLOBAL ConfigRootKeys:'
-  $indent += 2
-  $global:configRootKeys.Keys | ForEach-Object {
-    Write-DebugIndented $indent "$_ = $($global:configRootKeys[$_])"
-  }
-  $indent -= 2
-}
+# Print the global:ConfigRootKeys if Debug
+Write-Debug ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
 
 # Dot source the Machine and Node settings
+# Machine and Node setting .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
 . $PSScriptRoot/global_MachineAndNodeSettings.ps1
-# Print the GLOBAL MachineAndNodeSettings if Debug
-if ($DebugPreference -eq 'Continue') {
-  Write-DebugIndented $indent 'GLOBAL MachineAndNodeSettings:'
-  $indent += 2
-  $global:MachineAndNodeSettings.Keys | Sort-Object | ForEach-Object { $l1Key = $_
-    # Should be recursive, this only goes one level deep
-    if ($global:MachineAndNodeSettings[$l1Key] -is [System.Collections.IDictionary]) {
-      # write iDictionary header
-      Write-DebugIndented $indent "$l1Key is IDictionary:"
-      $indent += 2
-      ($global:MachineAndNodeSettings[$l1Key]).Keys | Sort-Object | ForEach-Object { $l2Key = $_
-        # write nested settings
-        Write-DebugIndented $indent "$l1Key.$l2Key =  $($($global:MachineAndNodeSettings[$l1Key])[$l2Key])"
-      }
-      $indent -= 2
-    }
-    else {
-      # write simple settings
-      Write-DebugIndented $indent "$l1Key = $global:MachineAndNodeSettings[$_]"
-    }
-  }
-  $indent -= 2
-}
+
+# Print the global:MachineAndNodeSettings if Debug
+Write-Debug ('global:MachineAndNodeSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:MachineAndNodeSettings ($indent + $indentIncrement) $indentIncrement))
 
 # Define a global settings hash, initially populate it with machine-specific information for this machine
 $global:settings = @{}
+
 # set ISElevated for the global settings if this is script elevated
 $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
 
@@ -106,49 +176,18 @@ $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Objec
 ($global:MachineAndNodeSettings[$env:COMPUTERNAME]).Keys | ForEach-Object {
   $global:settings[$_] = $($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$_]
 }
-# Load the JenkinsRoleSettings for this machine
+
+# Load the JenkinsRoleSettings for this machine into the $global:settings
 ($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']] | ForEach-Object {
   $nodeName = $_
   $global:settings[$nodeName] = @{}
   ($global:JenkinsRoles)[$nodename] | ForEach-Object {
-    Write-Verbose "global:settings[$nodename][$_] =  $($($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$_])"
     $global:settings[$nodename][$_] = $($global:MachineAndNodeSettings[$env:COMPUTERNAME][$_])
   }
 }
 
-# Print the $global:settings if Debug
-if ($DebugPreference -eq 'Continue') {
-  Write-DebugIndented $indent '$global:settings :'
-  $indent += 2
-  $global:settings.Keys | Sort-Object | ForEach-Object { $l1Key = $_
-    if ($global:settings[$l1Key] -is [System.Collections.IDictionary]) {
-      # write iDictionary header
-      Write-DebugIndented $indent "$l1Key is IDictionary:"
-      $indent += 2
-      ($global:Settings[$l1Key]).Keys | Sort-Object | ForEach-Object { $l2Key = $_
-        if ($global:settings[$l1Key][$l2Key] -is [System.Collections.IDictionary]) {
-          $indent += 2
-          ($global:Settings[$l1Key][$l2Key]).Keys | Sort-Object | ForEach-Object { $l3Key = $_
-            # write nested settings
-            Write-DebugIndented $indent "$l1Key.$l2Key.$l3Key = $($global:Settings[$l1Key][$l2Key][$l3Key])"
-          }
-          $indent -= 2
-        }
-        else {
-          # write nested settings
-          Write-DebugIndented $indent "$l1Key.$l2Key = $($global:Settings[$l1Key][$l2Key])"
-        }
-      }
-      $indent -= 2
-    }
-    else {
-      # write simple settings
-      $str = $global:settings[$l1Key]
-      Write-DebugIndented $indent "$l1Key = $str"
-    }
-  }
-  $indent -= 2
-}
+# Opt Out of the dotnet telemetry
+[Environment]::SetEnvironmentVariable('DOTNET_CLI_TELEMETRY_OPTOUT', 1, 'Process')
 
 # If the computer is behind a proxy, configure the default proxy settings in the machine powershell profile.
 # [system.net.webrequest]::defaultwebproxy = new-object system.net.webproxy('http://YourProxyHostNameGoesHere:ProxyPortGoesHere')
@@ -170,12 +209,12 @@ $additionalPSModulePaths = @($global:Settings[$global:configRootKeys['Chocolatey
 # Add the $additionalPSModulePaths.
 $desiredPSModulePaths = $additionalPSModulePaths + $Env:PSModulePath
 # Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
-[Environment]::SetEnvironmentVariable("PSModulePath", $DesiredPSModulePaths -join ';', 'Process')
+[Environment]::SetEnvironmentVariable('PSModulePath', $DesiredPSModulePaths -join ';', 'Process')
 # Clean up the $desiredPSModulePaths
 # The use of 'Get-PathVariable' function causes the pcsx module to be loaded here
 $finalPSModulePaths = Get-PathVariable -Name 'PSModulePath' -RemoveEmptyPaths -StripQuotes
 # Set the $Env:PsModulePath to the final, clean value of $desiredPSModulePaths.
-[Environment]::SetEnvironmentVariable("PSModulePath", $finalPSModulePaths -join ';', 'Process')
+[Environment]::SetEnvironmentVariable('PSModulePath', $finalPSModulePaths -join ';', 'Process')
 
 
 # This machine is part of the CI/CD DevOps pipeline ecosystem
@@ -187,30 +226,11 @@ $finalPSModulePaths = Get-PathVariable -Name 'PSModulePath' -RemoveEmptyPaths -S
 # Function Definitions *global* scope
 ########################################################
 
-Function Get-Settings {}
 
-Function ValidateTools {
-  # validate dotnet
-  # validate dotnet build
-  # validate java
-  # vallidate PlantUML
-  # validate PlantUmlClassDiagramGenerator
-  # dotnet tool install --global PlantUmlClassDiagramGenerator --version 1.2.4
-
-}
-
-# Uncomment to see the $global:settings and Environment variables at the completion of this profile
-#Write-Verbose ('$global:settings are: ' + [Environment]::NewLine + ($global:settings.Keys | foreach { "$_ = $($global:settings[$_]) `n" } ))
-#Write-Verbose ('$global:settings are: ' +  [Environment]::NewLine + (foreach ($kvp in ($global:settings).GetEnumerator()){"{0}:{1}" -f $kvp.name, $kvp.name,[Environment]::NewLine} ))
-#Write-Verbose ("Environment variables AllUsersAllHosts are:  " + [Environment]::NewLine + (Get-ChildItem env: |ForEach-Object{"{0}:{1}{2}" -f $_.key, $_.value, [Environment]::NewLine}))
-Write-Verbose ('Environment variables AllUsersAllHosts are:  ' + [Environment]::NewLine +
-  (Get-ChildItem env: |
-  ForEach-Object { $envVar = $_; ('Machine', 'User') |  # , 'Process'
-    ForEach-Object { $scope = $_;
-      if (([System.Environment]::GetEnvironmentVariable($envVar.key, $scope))) {
-        # '{0}:{1} ({2}){3}' -f $envVar.key, $envVar.value, $scope, [Environment]::NewLine
-        '{0}:{1} ({2})' -f $envVar.key, $envVar.value, $scope + "`r`n`t"
-      } } }))
-
+# Set DebugPreference to Continue  to see the $global:settings and Environment variables at the completion of this profile
+# Print the $global:settings if Debug
+Write-Debug ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
+#$DebugPreference = 'Continue'
+Write-Debug ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariables ($indent + $indentIncrement) $indentIncrement)  + [Environment]::NewLine )
 
 

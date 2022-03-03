@@ -24,7 +24,7 @@ Cmdlets are found in their eponymous script files
 
 ### Get-ModulesForUserProfileAsSymbolicLinks
 
-This function takes a module `$Name`, module `$Version`, and the `$sourcePath` to the root of the module's code. It creates a subdirectory under the user's Powershell modules' path (), for the module `$Name`, and under that a subdirectory for the `$Version`. In the `$Version` subdirecotry, it creates three symbolic links, for `public` and `private`subdirectories, and the `$Name.psm1` file. It also copies any `$Name..psd1` files from the `$sourcePath` to the
+This function takes a module `$Name`, module `$Version`, and the `$sourcePath` to the root of the module's code. It creates a subdirectory under the user's Powershell modules' path (), for the module `$Name`, and under that a subdirectory for the `$Version`. In the `$Version` subdirectory, it creates three symbolic links, for `public` and `private`subdirectories, and the `$Name.psm1` file. It also copies any `$Name.psd1` files from the `$sourcePath` to the
 
 
 

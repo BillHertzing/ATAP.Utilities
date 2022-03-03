@@ -1,18 +1,22 @@
-# ToDo comment  based help
-# ToDo comment  based help
+# ToDo comment based help
 $global:configRootKeys = @{
-
+  'ATAPUtilitiesVersionConfigRootKey' = 'ATAPUtilitiesVersion'
+  'EnvironmentConfigRootKey' = 'Environment'
   'IsElevatedConfigRootKey' = 'IsElevated'
   'CloudBasePathConfigRootKey' = 'CloudBasePath'
   'DropboxBasePathConfigRootKey' = 'DropboxBasePath'
+  'GoogleDriveBasePathConfigRootKey' = 'GoogleDriveBasePath'
+  'DropboxAccessTokenConfigRootKey' = 'DropboxAccessToken'
   'OneDriveBasePathConfigRootKey' = 'OneDriveBasePath'
   'FastTempBasePathConfigRootKey' = 'FastTempBasePath'
   'BigTempBasePathConfigRootKey' = 'BigTempBasePath'
+  'ErlangHomeDirConfigRootKey' = 'ErlangHomeDir'
   'GitExePathConfigRootKey' = 'GitExePath'
   'JavaExePathConfigRootKey' = 'JavaExePath'
   'JenkinsNodeRolesConfigRootKey' = 'JenkinsNodeRoles'
   'ChocolateyBinDirConfigRootKey' = 'ChocolateyBinDir'
   'ChocolateyLibDirConfigRootKey' = 'ChocolateyLibDir'
+  'GraphvizExePathConfigRootKey' = 'GraphvizExePath'
   'PackageDropPathsConfigRootKey' = 'PackageDropPaths'
   'WindowsDocumentationBuildConfigRootKey' = 'WindowsDocumentationBuild'
   'BuildImageFromPlantUMLConfigRootKey' = 'BuildImageFromPlantUMPowershellCmdlet'
@@ -31,5 +35,10 @@ $global:configRootKeys = @{
   'WindowsUnitTestParameterListConfigRootKey' = 'WindowsUnitTestParameterList'
   'WindowsUnitTestParameterPathConfigRootKey' = 'WindowsUnitTestParameterPath'
   'PSModulePathConfigRootKey' = 'PSModulePath'
-
+  'FLYWAY_PASSWORDConfigRootKey' = 'FLYWAY_PASSWORD'
+  'FLYWAY_USERConfigRootKey' = 'FLYWAY_USER'
+  'FLYWAY_LOCATIONSConfigRootKey' ='FLYWAY_LOCATIONS'
+  'FLYWAY_URLConfigRootKey' = 'FLYWAY_URL'
+  'FP__projectNameConfigRootKey' = 'FP__projectName'
+  'FP__projectDescriptionConfigRootKey' = 'FP__projectDescription'
 }

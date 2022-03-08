@@ -1,5 +1,5 @@
 #############################################################################
-#region Set_PerceivedTypeInRegistryForPreviewPane
+#region Set-PerceivedTypeInRegistryForPreviewPane
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -35,7 +35,7 @@ function Set-PerceivedTypeInRegistryForPreviewPane {
   )
   $suffixesString =
   @'
-bak,cache,code-workspace,config,cs,csproj,css,cs-template,dot,editorconfig,eot,gitignore,go,graph,html,info,js,json,liquid,md,nuspec,partial,playlist,pp,proj,props,ps1,psd1,psm1,pssproj,pubxml,rb,reg,resources,saas,sccs,save,sln,sql,targets,tmpl,ts-template,txt,user,vb-template,xml,xsd,xslt,yml
+bak,cache,code-workspace,config,cs,csproj,css,cs-template,dot,editorconfig,eot,gitignore,go,graph,html,info,js,json,liquid,log,md,nuspec,partial,playlist,pp,proj,props,ps1,psd1,psm1,pssproj,pubxml,rb,reg,resources,saas,sccs,save,sln,sql,targets,tmpl,ts-template,txt,user,vb-template,xml,xsd,xslt,yml
 '@
   $perceivedType = 'PerceivedType'
   $expectedValueOfPerceivedType = 'text'
@@ -98,7 +98,7 @@ bak,cache,code-workspace,config,cs,csproj,css,cs-template,dot,editorconfig,eot,g
     }
   }
   # All that were MissingSuffix will also now be MissingPT, so add MissingSuffix to MissingPT
-  $finalMissingPT = $result['MissingSuffix'] + $result['MissingPT'] 
+  $finalMissingPT = $result['MissingSuffix'] + $result['MissingPT']
 
   $finalMissingPT | ForEach-Object {
     $suffix = $_
@@ -111,6 +111,6 @@ bak,cache,code-workspace,config,cs,csproj,css,cs-template,dot,editorconfig,eot,g
   # don't mess with wrong value of 'PerceivedType'
   $result
 }
-#endregion Set_PerceivedTypeInRegistryForPreviewPane
+#endregion Set-PerceivedTypeInRegistryForPreviewPane
 #############################################################################
 

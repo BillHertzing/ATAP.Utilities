@@ -13,6 +13,9 @@ $global:configRootKeys = @{
   'ErlangHomeDirConfigRootKey' = 'ErlangHomeDir'
   'GitExePathConfigRootKey' = 'GitExePath'
   'JavaExePathConfigRootKey' = 'JavaExePath'
+  'JENKINS_URLConfigRootKey' = 'JENKINS_URL'
+  'JENKINS_USER_IDConfigRootKey' = 'JENKINS_USER_ID'
+  'JENKINS_API_TOKENConfigRootKey' = 'JENKINS_API_TOKEN'
   'JenkinsNodeRolesConfigRootKey' = 'JenkinsNodeRoles'
   'ChocolateyBinDirConfigRootKey' = 'ChocolateyBinDir'
   'ChocolateyLibDirConfigRootKey' = 'ChocolateyLibDir'
@@ -41,4 +44,6 @@ $global:configRootKeys = @{
   'FLYWAY_URLConfigRootKey' = 'FLYWAY_URL'
   'FP__projectNameConfigRootKey' = 'FP__projectName'
   'FP__projectDescriptionConfigRootKey' = 'FP__projectDescription'
+  'CommonJarsBasePathConfigRootKey' = 'CommonJarsBasePath'
+
 }

@@ -6,12 +6,42 @@
 * Powershell Core 7 or higher
 * Java Development Kit or runtime. Must be either Java 1.8 or Javaa 11
 
-### Jenkins Service account and password
+### Jenkins Service accounts and password
 
-The computer running Jenkins will need a local user (service account) under whihc the jenkins service will run.
+#### Jenkins Controller service account
+
+The machine running the Jenkins Controller needs a local user (service account) under which the Jenkins Controller service will run.
+   run `lusrmgr. msc`
 
 I chose `JenkinsServiceAcct` and password `Notsecret`. ToDo: implement Secrets file for recording the JenkinsServiceAccount password for each machine running Jenkins
-next the user must be granted the `logon as a service` right. use gpedit.msc, drill down on ` Computer Configuration\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Log on as a service` and add the `JenkinsServiceAcct` to the existing list of users
+
+Create the new user via `Computer Management->Local Users And Groups->Users->New User`
+
+The `JenkinsServiceAcct` must be granted the `logon as a service` right. use `gpedit.msc`, drill down on ` Computer Configuration\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Log on as a service` and add the `JenkinsServiceAcct` to the existing list of users
+
+#### Jenkins Controller service account
+
+Every machine in the cluster that runs a Jenkins build agent needs a local user (service account) under which the Jenkins Agent service will run.
+
+I chose `JenkinsAgentSrvAcct` and password `NotSecret`. ToDo: implement Secrets file for recording the JenkinsServiceAccount password for each machine running Jenkins
+
+Create the new user via `Computer Management->Local Users And Groups->Users->New User`
+
+The `JenkinsAgentSrvAcct` must be granted the `logon as a service` right. Run `gpedit.msc`, drill down on `Computer Configuration\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Log on as a service` and add the `JenkinsServiceAcct` to the existing list of users
+
+### Subdirectories to be created
+
+#### Controller Subdirectories
+
+The Controller service will create a subdirectory called `Jenkins` under the path `$env:AppDataLocal`  for the Controller Service account, e.g. `C:\Users\JenkinsServiceAcct\AppData\Local\Jenkins`
+
+#### Agent Subdirectories
+
+The Agent service will create a subdirectory called `Jenkins` under the path `$env:AppDataLocal`  for the Agent Service account, e.g. `C:\Users\JenkinsAgentSrvAcct\AppData\Local\Jenkins`
+Create C:\JenkinsAgentNode
+
+### Nodes
+
 
 ## Download Jenkins
 
@@ -50,3 +80,31 @@ I have setup jenkins master running on port `4040` (becasue `8080` is too widely
 1) `JENKINS_USER_ID` set to a username that is configured in Jenkins Security
 
 1) `JENKINS_API_TOKEN` set to a Jenkins API token associated with a Jenkins user
+
+
+## Jenkins Agents
+
+Identify the machines in the cluster which will run Jenkins Agents, and which pipeline steps can be run on which machine
+
+### Setup Jenkins Agent nodes
+
+#### Clean install
+
+  Configure Jenkins, add new nodes
+  Allow nodes to connect with jnlp protocol
+
+#### Migration
+ copy content of `nodes` subdirectory
+ add/delete noed (directories) as required
+ Allow nodes to connect with jnlp protocol
+
+
+### JenkinsSharedLibraries
+
+Add ATAPCommonJenkinsLibrary.groovy as a shared library (ToDo: point to an installed package, until then, point to the src code in the repository)
+
+#### Clean install
+
+#### Migrate
+
+

@@ -17,11 +17,11 @@ Function Get-DropBoxAllFolderCursors {
 
     # default values for parameters
     $parameters = @{
-      # ToDo: Like ConfigurationRoot, these should be env variable then argument
+      # ToDo: Like ConfigurationRoot, these should be argument, then env variable then specialized config file(s) then a production config file then the builtin defaults
       RootPath                    = $global:Settings[$global:configRootKeys['DropBoxBasePathConfigRootKey']]
-      FileStorage                 =  Join-Path  ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq "Google Drive" } | Select-Object -ExpandProperty 'Name') 'My Drive' 'DatedDropboxCursors.json'
+      FileStorage                 =  'DatedDropboxCursors.json' #Join-Path  ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq "Google Drive" } | Select-Object -ExpandProperty 'Name') 'My Drive' 'DatedDropboxCursors.json'
       Depth                       = 2
-      ExcludePattern              = 'c:\\dropbox\\(download|music|photos|videos)\\'
+      ExcludePattern              = 'c:\\dropbox\\(download|music|photos|pictures|videos)\\'
       DropBoxPathPrefix           = $global:Settings[$global:configRootKeys['DropBoxBasePathConfigRootKey']]
       URIForGetLatestFolderCursor = 'https://api.dropboxapi.com/2/files/list_folder/get_latest_cursor'
       Include_deleted             = $true
@@ -46,6 +46,7 @@ Function Get-DropBoxAllFolderCursors {
     $datestr = Get-Date -AsUTC -Format 'yyyy/MM/dd:HH.mm'
     $datedcursorHash = @{$datestr = @{} }
     if ($PSCmdlet.ShouldProcess(($parameters.RootPath, $parameters.Recursive), "Feteching all dropbox folder cursors rooted at $parameters.RootPath, depth = $($parameters.Depth))")) {
+
       Get-ChildItem $parameters.RootPath -d $parameters.Depth | Where-Object {
         (($_.fullname -notmatch $parameters.excludePattern) -and $_.PsIsContainer)
       } | ForEach-Object { $fullname = $_.fullname

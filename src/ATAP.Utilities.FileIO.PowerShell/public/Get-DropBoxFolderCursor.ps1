@@ -73,7 +73,7 @@ Function Get-DropBoxFolderCursor {
     if ($PSCmdlet.ShouldProcess(($dropboxPath, $parameters.Recursive), "Getting list of folder cursors dropbox for $dropboxPath, recursive = $($parameters.Recursive))")) {
       try {
         # ToDo: add parameters for Proxy
-        $aPICallResult = Invoke-RestMethod -Uri $parameters.URIForGetLatestFolderCursor -Method Post -Headers $headers -Body (ConvertTo-Json -InputObject $Body)  -Proxy 'http://127.0.0.1:8888' # for Fiddler capture
+        $aPICallResult = Invoke-RestMethod -Uri $parameters.URIForGetLatestFolderCursor -Method Post -Headers $headers -Body (ConvertTo-Json -InputObject $Body) #  -Proxy 'http://127.0.0.1:8888' # for Fiddler capture
       }
       catch {
         $aPICallResultException = $_.Exception

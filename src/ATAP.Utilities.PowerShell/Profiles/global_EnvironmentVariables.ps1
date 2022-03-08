@@ -1,11 +1,12 @@
 # todo: comment based help
 
 $global:envVars = @{
-  'Environment'                                              = $global:Settings[$global:configRootKeys['EnvironmentConfigRootKey']]
-  $global:configRootKeys['DropboxAccessTokenConfigRootKey']  = 'PopulateViaSecretsOrManually'
-  'DOTNET_CLI_TELEMETRY_OPTOUT'                              = 1
-  'ERLANG_HOME'                                              = $global:Settings[$global:configRootKeys['ErlangHomeDirConfigRootKey']]
   'ATAPUtilitiesVersion'                                     = $global:Settings[$global:configRootKeys['ATAPUtilitiesVersionConfigRootKey']]
+  'DOTNET_CLI_TELEMETRY_OPTOUT'                              = 1
+  $global:configRootKeys['DropboxAccessTokenConfigRootKey']  = 'PopulateViaSecretsOrManually'
+  $global:configRootKeys['DropBoxBasePathConfigRootKey']     = $global:Settings[$global:configRootKeys['DropBoxBasePathConfigRootKey']]
+  'ERLANG_HOME'                                              = $global:Settings[$global:configRootKeys['ErlangHomeDirConfigRootKey']]
+  'Environment'                                              = $global:Settings[$global:configRootKeys['EnvironmentConfigRootKey']]
   $global:configRootKeys['FLYWAY_URLConfigRootKey']          = $global:Settings[$global:configRootKeys['FLYWAY_URLConfigRootKey']]
   'FLYWAY_USER'                                              = $global:Settings[$global:configRootKeys['FLYWAY_USERConfigRootKey']]
   'FLYWAY_LOCATIONS'                                         = $global:Settings[$global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']]
@@ -17,11 +18,11 @@ $global:envVars = @{
   $global:configRootKeys['JENKINS_URLConfigRootKey']         = $global:Settings[$global:configRootKeys['JENKINS_URLConfigRootKey']]
   $global:configRootKeys['JENKINS_USER_IDConfigRootKey']     = $global:Settings[$global:configRootKeys['JENKINS_USER_IDConfigRootKey']]
   $global:configRootKeys['JENKINS_API_TOKENConfigRootKey']   = $global:Settings[$global:configRootKeys['JENKINS_API_TOKENConfigRootKey']]
-  $global:configRootKeys['CommonJarsBasePathConfigRootKey']   = $global:Settings[$global:configRootKeys['CommonJarsBasePathConfigRootKey']]
-  'CLASSPATH' = (join-path ($global:Settings[$global:configRootKeys['CommonJarsBasePathConfigRootKey']]) '*') +';' + ([Environment]::GetEnvironmentVariable('CLASSPATH'))
+  $global:configRootKeys['CommonJarsBasePathConfigRootKey']  = $global:Settings[$global:configRootKeys['CommonJarsBasePathConfigRootKey']]
+  'CLASSPATH'                                                = (Join-Path ($global:Settings[$global:configRootKeys['CommonJarsBasePathConfigRootKey']]) '*') + ';' + ([Environment]::GetEnvironmentVariable('CLASSPATH'))
 }
 
-function Set-Envvars {
+function Set-EnvironmentVariablesProcess {
   $global:envVars.keys | ForEach-Object { $key = $_
     [System.Environment]::SetEnvironmentVariable($key, $global:envVars[$key], 'Process')
   }

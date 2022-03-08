@@ -16,7 +16,7 @@ Mostly written for V7 Cross-platform
 
 ## Using classes defined in Powershell Modiles
 
-Since the AATAP.Utilities rpository contains a robust CI pipeline, it is very feasable to write the classes and enumerations in c# and targeting .Net (cross-platofrm), compile them to a .dll, and include them in a package. That way, other modules that want to work with the smae classes and enumerations can simply include the .dlls exported by the module. (ToDo: Check this works as explained)
+Since the AAAP.Utilities rpository contains a robust CI pipeline, it is very feasable to write the classes and enumerations in c# and targeting .Net (cross-platofrm), compile them to a .dll, and include them in a package. That way, other modules that want to work with the smae classes and enumerations can simply include the .dlls exported by the module. (ToDo: Check this works as explained)
 
 
 The following two seemed a good idea, but the work has languished.

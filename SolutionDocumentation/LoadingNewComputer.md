@@ -59,6 +59,10 @@ copy hosts
 
 Powershell
   Run pwsh, pin to task bar
+  Load the following ATAP packages
+  ToDo:  - after package management
+  Before package management:
+
   Symlink the following to C:\Program Files\PowerShell\7:
     global_MachineAndNodeSettings.ps1
     `Remove-Item -path (join-path $env:ProgramFiles '\PowerShell\7\global_MachineAndNodeSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles '\PowerShell\7\global_MachineAndNodeSettings.ps1') -Target "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\profiles\global_MachineAndNodeSettings.ps1"`
@@ -70,6 +74,9 @@ Powershell
 - `Remove-Item -path (join-path TBD '\PowerShell\profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path TBD '\PowerShell\profile.ps1') -Target "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\profiles\CurrentUserAllHostsV7CoreProfile.ps1"`
 
   Note: For development computer: Manually Symlink the Building.powershell module. TBD -install it as a package
+
+  Confirm profiles
+  `('AllUsersAllHosts','AllUsersCurrentHost','CurrentUserAllHosts','CurrentUserCurrentHost')|%{'profile' + $_ + ' is '+ $profile.$_}`
 
 
 License keys for

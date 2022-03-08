@@ -46,71 +46,73 @@ Write-Verbose ("WorkingDirectory = $pwd")
 Write-Verbose ("PSScriptRoot = $PSScriptRoot")
 
 #region Functions needed by the machine profile, must be defined in the profile
-Function Write-HashIndented {
-  param($hash
-    , [int] $initialIndent = 0
-    , [int] $indentIncrement = 2
-  )
-  function Write-KVP {
-    param ($kvp, $indent, $indentIncrement)
-    $outstr = ' ' * $indent + $kvp.Key + ' = '
-    switch ($kvp.Value) {
+function Write-ArrayIndented {
+  param ($a, $indent, $indentIncrement)
+  $outstr = ' ' * $indent
+  $a | ForEach-Object {
+    switch ($_) {
       ({ $PSItem -is [system.boolean] }) {
-        $outstr += $kvp.Value
+        $outstr += $_
         break
       }
       ({ $PSItem -is [system.string] }) {
-        $outstr += $kvp.Value
+        $outstr += $_
         break
       }
       ({ $PSItem -is [system.array] }) {
         $outstr += '(' + [Environment]::NewLine
-        $outstr += write-Array $kvp.Value ($indent + $indentIncrement) $indentIncrement
+        $outstr += Write-ArrayIndented $_ ($indent + $indentIncrement) $indentIncrement
         $outstr += ' ' * $indent + ')'
         break
       }
       ({ $PSItem -is [System.Collections.Hashtable] }) {
         $outstr += '{' + [Environment]::NewLine
-        $outstr += Write-HashIndented $kvp.Value ($indent + $indentIncrement) $indentIncrement
+        $outstr += Write-HashIndented $_ ($indent + $indentIncrement) $indentIncrement
         $outstr += ' ' * $indent + '}'
         break
       }
     }
-    $outstr += [Environment]::NewLine
-    $outstr
   }
-  function Write-Array {
-    param ($a, $indent, $indentIncrement)
-    $outstr = ' ' * $indent
-    $a | ForEach-Object {
-      switch ($_) {
-        ({ $PSItem -is [system.boolean] }) {
-          $outstr += $_
-          break
-        }
-        ({ $PSItem -is [system.string] }) {
-          $outstr += $_
-          break
-        }
-        ({ $PSItem -is [system.array] }) {
-          $outstr += '(' + [Environment]::NewLine
-          $outstr += write-Array $_ ($indent + $indentIncrement) $indentIncrement
-          $outstr += ' ' * $indent + ')'
-          break
-        }
-        ({ $PSItem -is [System.Collections.Hashtable] }) {
-          $outstr += '{' + [Environment]::NewLine
-          $outstr += Write-HashIndented $_ ($indent + $indentIncrement) $indentIncrement
-          $outstr += ' ' * $indent + '}'
-          break
-        }
-      }
-    }
-    $outstr += $a -join [Environment]::NewLine
-  }
+  $outstr += $a -join [Environment]::NewLine
+}
+
+Function Write-HashIndented {
+  param($hash
+    , [int] $initialIndent = 0
+    , [int] $indentIncrement = 2
+  )
 
   $outstr = ''
-  $hash.GetEnumerator() | Sort-Object -Property Key | ForEach-Object { $outstr += Write-KVP $_ $initialIndent $indentIncrement }
+  $hash.GetEnumerator() | Sort-Object -Property Key | ForEach-Object { $outstr += Write-KVPIndented $_ $initialIndent $indentIncrement }
+  $outstr
+}
+
+function Write-KVPIndented {
+  param ($kvp, $indent, $indentIncrement)
+  $outstr = ' ' * $indent + $kvp.Key + ' = '
+  switch ($kvp.Value) {
+    ({ $PSItem -is [system.boolean] }) {
+      $outstr += $kvp.Value
+      break
+    }
+    ({ $PSItem -is [system.string] }) {
+      $outstr += $kvp.Value
+      break
+    }
+    ({ $PSItem -is [system.array] }) {
+      $outstr += '(' + [Environment]::NewLine
+      $outstr += Write-ArrayIndented $kvp.Value ($indent + $indentIncrement) $indentIncrement
+      $outstr += ' ' * $indent + ')'
+      break
+    }
+    ({ $PSItem -is [System.Collections.Hashtable] }) {
+      $outstr += '{' + [Environment]::NewLine
+      $outstr += Write-HashIndented $kvp.Value ($indent + $indentIncrement) $indentIncrement
+      $outstr += ' ' * $indent + '}'
+      break
+    }
+  }
+  $outstr += [Environment]::NewLine
   $outstr
 }
 
@@ -164,7 +166,8 @@ Write-Debug ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-H
 . $PSScriptRoot/global_MachineAndNodeSettings.ps1
 
 # Print the global:MachineAndNodeSettings if Debug
-Write-Debug ('global:MachineAndNodeSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:MachineAndNodeSettings ($indent + $indentIncrement) $indentIncrement))
+Write-Debug "WTF!!"
+Write-Debug ('global:MachineAndNodeSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:MachineAndNodeSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 
 # Define a global settings hash, initially populate it with machine-specific information for this machine
 $global:settings = @{}
@@ -217,9 +220,10 @@ $desiredPSModulePaths = $additionalPSModulePaths + $Env:PSModulePath
 [Environment]::SetEnvironmentVariable('PSModulePath', $DesiredPSModulePaths -join ';', 'Process')
 # Clean up the $desiredPSModulePaths
 # The use of 'Get-PathVariable' function causes the pcsx module to be loaded here
-$finalPSModulePaths = Get-PathVariable -Name 'PSModulePath' -RemoveEmptyPaths -StripQuotes
+# ToDo: work out pscx for jenkins clinet agents
+#$finalPSModulePaths = Get-PathVariable -Name 'PSModulePath' -RemoveEmptyPaths -StripQuotes
 # Set the $Env:PsModulePath to the final, clean value of $desiredPSModulePaths.
-[Environment]::SetEnvironmentVariable('PSModulePath', $finalPSModulePaths -join ';', 'Process')
+#[Environment]::SetEnvironmentVariable('PSModulePath', $finalPSModulePaths -join ';', 'Process')
 
 
 # This machine is part of the CI/CD DevOps pipeline ecosystem

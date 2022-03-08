@@ -24,7 +24,9 @@ All functions that acess DropBox via the web must be authenticated with a Dropbo
 
 ### Get-DropBoxFolderList
 
-This function lists (recusivly) the contents of a dropbox folder by querying dropbox
+This function lists (recusivly) the contents of a dropbox folder by querying dropbox.
+
+This function is called by te jenkins Job Get-DropboxFolders-Nightly which is scheduled to run at a random time between 3am and 4 am (local)
 
 ### Get-DropBoxSharingLink
 
@@ -32,7 +34,7 @@ This function asks DropBox to rturn the URL sharing link to an image. If one doe
 
 Defaults:
 
-### Get-ResponsiveImageEnbeddedLink
+### Get-ResponsiveImageEmbeddedLink
 
 This function returns an object containing objects and strings that represent the embedded links to place in a blog posts' .md file for embedding responsive images into that post.
 

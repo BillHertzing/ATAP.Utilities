@@ -91,54 +91,39 @@ Function prompt {
 # Function Set-CloudDirectoryLocations {
 #   switch -regex ($env:computername) {
 #     'ncat016' {
-#       $global:settings[$global:Conf ]
-#       $global:DropBoxBasePath = 'C:\Dropbox\'
-#       $global:OneDriveBaseDir = 'C:\OneDrive\'
 #       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       break
 #     }
 #     'ncat040' {
-#       $global:DropBoxBasePath = 'C:\Dropbox\'
-#       $global:OneDriveBaseDir = 'C:\OneDrive\'
 #       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       break
 #     }
 #     'ncat-ltjo' {
-#       $global:DropBoxBasePath = 'C:\Dropbox\'
-#       $global:OneDriveBaseDir = 'C:\OneDrive\'
 #       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       break
 #     }
 #     'ncat-ltb1' {
-#       $global:DropBoxBasePath = 'D:\Dropbox\'
-#       $global:OneDriveBaseDir = 'C:\OneDrive\'
 #       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       break
 #     }
 #     'ncat-lt0' {
 #       # The name of the dropbox admin
-#       $global:DropBoxBasePath = 'C:\Dropbox\'
-#       $global:OneDriveBaseDir = 'C:\OneDrive\'
 #       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       break
 #     }
 #     'dev\d*' {
 #       # The name of the dropbox admin
-#       $global:DropBoxBasePath = 'D:\Dropbox\'
-#       $global:OneDriveBaseDir = 'D:\OneDrive\'
 #       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       break
 #     }
 #     'utat\d*' {
 #       # The name of the dropbox admin
-#       $global:DropBoxBasePath = 'C:\Dropbox\'
-#       $global:OneDriveBaseDir = 'C:\OneDrive\'
 #       #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
 #       break
@@ -220,7 +205,7 @@ Function Show-context {
   # ConsoleSettings
 
 }
-if ($true) { Show-context }
+#if ($true) { Show-context }
 
 # https://stackoverflow.com/questions/138144/what-s-in-your-powershell-profile-ps1-file
 filter match( $reg ) {
@@ -273,13 +258,12 @@ Set-Location -Path $storedInitialDir
 
 # Always Last step - set the environment variables for this user
 . (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
-Set-Envvars
+Set-EnvironmentVariablesProcess
 # Uncomment to see the $global:settings and Environment variables at the completion of this profile
 # Print the $global:settings if Debug
 $indent = 0
 $indentIncrement = 2
 Write-Debug ('After CurrentUsersAllHosts profile executes, global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
-$DebugPreference = 'Continue'
 Write-Debug ('After CurrentUsersAllHosts profile executes, Environment variables: ' + [Environment]::NewLine + (Write-EnvironmentVariables ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
 
 <# To Be Moved Somewhere else #>

@@ -32,4 +32,21 @@ Selected components: Here you can select the option to open the firewall. I chos
 
 Troubleshooting: The installer will attempt to install the `jenkins` service and start it. If it fails to start, to into the Services applet,find the service, inspect its Logon properties, and re-enter the password;
 
-The final step, the installer will open the default browser to the jenkinbs login page , using `localhost:4040/login`
+The final step, the installer will open the default browser to the Jenkins login page , using `localhost:4040/login`
+
+## Jenkins Environment variables
+
+see also [Using environment variables](https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables)
+
+[https://phoenixnap.com/kb/jenkins-environment-variables](Jenkins Environment Variables: Ultimate Guide)
+
+### The Jenkins Environment variables for the master Jenkins controller
+
+The URL for the Jenkins master server is `JENKINS_URL`, and should be set for every computer that participates in the Jenkins pipeline. The value should be the same as configured in the jenkins master configuration, for example `http://<DNS-resolvable-hostname>:<PortNumber>`.
+I have setup jenkins master running on port `4040` (becasue `8080` is too widely used as the default by many other http-accessible application)
+
+### Environment variables for using the Jenkins-CLI
+
+1) `JENKINS_USER_ID` set to a username that is configured in Jenkins Security
+
+1) `JENKINS_API_TOKEN` set to a Jenkins API token associated with a Jenkins user

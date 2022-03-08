@@ -55,28 +55,28 @@ Function Write-HashIndented {
     param ($kvp, $indent, $indentIncrement)
     $outstr = ' ' * $indent + $kvp.Key + ' = '
     switch ($kvp.Value) {
-      ({ $PSItem -is [system.boolean] }) { 
-        $outstr += $kvp.Value 
-        break 
-      }
-      ({ $PSItem -is [system.string] }) { 
+      ({ $PSItem -is [system.boolean] }) {
         $outstr += $kvp.Value
-        break 
+        break
       }
-      ({ $PSItem -is [system.array] }) { 
-        $outstr += '(' + [Environment]::NewLine 
+      ({ $PSItem -is [system.string] }) {
+        $outstr += $kvp.Value
+        break
+      }
+      ({ $PSItem -is [system.array] }) {
+        $outstr += '(' + [Environment]::NewLine
         $outstr += write-Array $kvp.Value ($indent + $indentIncrement) $indentIncrement
         $outstr += ' ' * $indent + ')'
         break
       }
-      ({ $PSItem -is [System.Collections.Hashtable] }) { 
-        $outstr += '{' + [Environment]::NewLine 
+      ({ $PSItem -is [System.Collections.Hashtable] }) {
+        $outstr += '{' + [Environment]::NewLine
         $outstr += Write-HashIndented $kvp.Value ($indent + $indentIncrement) $indentIncrement
         $outstr += ' ' * $indent + '}'
-        break 
+        break
       }
     }
-    $outstr += [Environment]::NewLine 
+    $outstr += [Environment]::NewLine
     $outstr
   }
   function Write-Array {
@@ -84,31 +84,31 @@ Function Write-HashIndented {
     $outstr = ' ' * $indent
     $a | ForEach-Object {
       switch ($_) {
-        ({ $PSItem -is [system.boolean] }) { 
+        ({ $PSItem -is [system.boolean] }) {
           $outstr += $_
-          break 
+          break
         }
-        ({ $PSItem -is [system.string] }) { 
+        ({ $PSItem -is [system.string] }) {
           $outstr += $_
-          break 
+          break
         }
-        ({ $PSItem -is [system.array] }) { 
-          $outstr += '(' + [Environment]::NewLine 
+        ({ $PSItem -is [system.array] }) {
+          $outstr += '(' + [Environment]::NewLine
           $outstr += write-Array $_ ($indent + $indentIncrement) $indentIncrement
           $outstr += ' ' * $indent + ')'
           break
         }
-        ({ $PSItem -is [System.Collections.Hashtable] }) { 
-          $outstr += '{' + [Environment]::NewLine 
+        ({ $PSItem -is [System.Collections.Hashtable] }) {
+          $outstr += '{' + [Environment]::NewLine
           $outstr += Write-HashIndented $_ ($indent + $indentIncrement) $indentIncrement
           $outstr += ' ' * $indent + '}'
-          break 
+          break
         }
       }
-    } 
-    $outstr += $a -join [Environment]::NewLine 
+    }
+    $outstr += $a -join [Environment]::NewLine
   }
-  
+
   $outstr = ''
   $hash.GetEnumerator() | Sort-Object -Property Key | ForEach-Object { $outstr += Write-KVP $_ $initialIndent $indentIncrement }
   $outstr
@@ -171,6 +171,11 @@ $global:settings = @{}
 
 # set ISElevated for the global settings if this is script elevated
 $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+
+# Load settings common to all machines into $global:settings
+($global:MachineAndNodeSettings['AllCommon']).Keys | ForEach-Object {
+  $global:settings[$_] = $($global:MachineAndNodeSettings['AllCommon'])[$_]
+}
 
 # Load the machine-specific settings into $global:settings
 ($global:MachineAndNodeSettings[$env:COMPUTERNAME]).Keys | ForEach-Object {

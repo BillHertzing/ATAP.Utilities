@@ -1,12 +1,12 @@
 #
-# Set_PerceivedTypeInRegistryForPreviewPane.ps1
+# Set-PerceivedTypeInRegistryForPreviewPane.ps1
 #
 [CmdletBinding(SupportsShouldProcess=$true)]
 param (
-    
+
 )
 
-function Set_PerceivedTypeInRegistryForPreviewPane {
+function Set-PerceivedTypeInRegistryForPreviewPane {
 [CmdletBinding(SupportsShouldProcess=$true)]
 param (
 
@@ -25,4 +25,4 @@ param (
     }
 }
 
-Set_PerceivedTypeInRegistryForPreviewPane
+Set-PerceivedTypeInRegistryForPreviewPane

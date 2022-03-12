@@ -1,8 +1,8 @@
 #############################################################################
-#region Confirm-GitFSCK
+#region Confirm-Tools
 <#
 .SYNOPSIS
-ToDo: write Help SYNOPSIS For this function
+Confirm that all the 3rd party tools and scripts needed to build, analyze, test, package and deploy both c# and powershell code are present, configured, and accessable,
 .DESCRIPTION
 ToDo: write Help DESCRIPTION For this function
 .PARAMETER Name
@@ -28,13 +28,12 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Confirm-GitFSCK {
+Function Confirm-Tools {
   #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
     [parameter()]
-    [string]$Path = 'C:\Dropbox\whertzing\GitHub'
-    ,[string] $OutPath = '\\Utat022\fs\DailyReports\Confirm-GitFSCK-Results.txt'
+    [string] $OutPath = '\\Utat022\fs\DailyReports\Confirm-Tools-Results.txt'
   )
   #endregion FunctionParameters
   #region FunctionBeginBlock
@@ -45,18 +44,14 @@ Function Confirm-GitFSCK {
     #$DebugPreference = 'SilentlyContinue'
     # Don't Print any verbose messages to the console
     $VerbosePreference = 'Continue' # SilentlyContinue Continue
-
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-    Write-Verbose "path =$InPath"
+    Write-Debug -Message "Starting $($MyInvocation.Mycommand)"
     Write-Verbose "OutPath = $OutPath"
-    # validate path exists
-    if (!(Test-Path -Path (Split-Path $Path -parent))) { throw "$Path was not found" }
     # Output tests
-    $OutDir = Split-Path $OutPath -parent
-    if (-not (test-path -path $OutDir -pathtype Container)) {throw "$OutDir is not a directory"}
+    $OutDir = Split-Path $OutPath -Parent
+    if (-not (Test-Path -Path $OutDir -PathType Container)) { throw "$OutDir is not a directory" }
     # Validate that the $Settings.OutDir is writable
-    $testOutFn = join-path $OutDir 'test.txt'
-    try {new-item $testOutFn -force -type file >$null}
+    $testOutFn = Join-Path $OutDir 'test.txt'
+    try { New-Item $testOutFn -Force -type file >$null }
     catch {
       #Log('Error', "Can't write to file $testOutFn");
       throw "Can't write to file $testOutFn"
@@ -65,9 +60,12 @@ Function Confirm-GitFSCK {
     Remove-Item $testOutFn
 
     $datestr = Get-Date -AsUTC -Format 'yyyy/MM/dd:HH.mm'
-    $dateKeyedHash = if (test-path -path $OutPath) {gc $OutPath | ConvertFrom-JSON -asHash} else {@{}}
 
-    Write-Verbose 'Running GitFSCK across multiple repositories'
+    # Read in the contents of the last $OutPath file as a hash
+    $dateKeyedHash = if (Test-Path -Path $OutPath) { gc $OutPath | ConvertFrom-Json -asHash } else { @{}
+    }
+
+    Write-Verbose 'Validating tools and configurations are present'
   }
   #endregion FunctionBeginBlock
 
@@ -80,23 +78,12 @@ Function Confirm-GitFSCK {
   #region FunctionEndBlock
   ########################################
   END {
-    $dateKeyedHash[$datestr ] =
-      Get-ChildItem -Path $Path -r -d 1 | Where-Object { $_.psiscontainer } | ForEach-Object { $dir = $_;
-        Get-ChildItem $_ | Where-Object { $_.fullname -match '\.git$' } | Sort-Object -uniq | ForEach-Object {
-          Push-Location
-          $dir = $_
-          Set-Location $dir
-          if ($PSCmdlet.ShouldProcess("$dir", 'git fsck --full')) {
-            Write-Verbose "git fsk at $dir"
-            git fsck --full
-          }
-          Pop-Location
-        }
-      }
-
+    $str = nuget locals all -list
+    $dateKeyedHash[$datestr ] = $str
     $dateKeyedHash | ConvertTo-Json | set-content -path $OutPath
   }
   #endregion FunctionEndBlock
 }
-#endregion Confirm-GitFSCK
+#endregion Confirm-Tools
 #############################################################################
+

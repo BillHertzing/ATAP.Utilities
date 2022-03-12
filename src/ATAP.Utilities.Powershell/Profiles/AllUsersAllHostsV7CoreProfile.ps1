@@ -40,10 +40,9 @@ $DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
 $VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
 
-#ToDo: document expected values when run under profile, Module cmdlet/function, script.
-Write-Verbose "Starting $($MyInvocation.Mycommand)"
-Write-Verbose ("WorkingDirectory = $pwd")
-Write-Verbose ("PSScriptRoot = $PSScriptRoot")
+########################################################
+# Locally defined functions
+########################################################
 
 #region Functions needed by the machine profile, must be defined in the profile
 function Write-ArrayIndented {
@@ -123,7 +122,7 @@ Function Write-EnvironmentVariables {
   )
   $outstr = ''
   Get-ChildItem env: | sort-Object -Property Key | ForEach-Object { $envVar = $_;
-    ('Process') | # 'Machine', 'User', 'Process'
+    ('Machine', 'User', 'Process') | # 'Machine', 'User', 'Process'
     ForEach-Object { $scope = $_;
       if (([System.Environment]::GetEnvironmentVariable($envVar.key, $scope))) {
         # '{0}:{1} ({2}){3}' -f $envVar.key, $envVar.value, $scope, [Environment]::NewLine
@@ -149,8 +148,16 @@ Function ValidateTools {
   # dotnet tool install --global PlantUmlClassDiagramGenerator --version 1.2.4
 }
 
-#region Functions needed by the machine profile, must be defined in the profile
+#endregion Functions needed by the machine profile, must be defined in the profile
 ##################################################################################
+
+#ToDo: document expected values when run under profile, Module cmdlet/function, script.
+Write-Verbose "Starting $($MyInvocation.Mycommand)"
+Write-Verbose ("WorkingDirectory = $pwd")
+Write-Verbose ("PSScriptRoot = $PSScriptRoot")
+Write-Verbose ("EnvironmentVariablesAtStartOfMachineProfile = " + $(Write-EnvironmentVariables 0 2 ))
+Write-Verbose ("Registry Current Session Environment variable path = " + $(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment' -Name "Path"))
+
 
 $indent = 0
 $indentIncrement = 2
@@ -166,7 +173,6 @@ Write-Debug ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-H
 . $PSScriptRoot/global_MachineAndNodeSettings.ps1
 
 # Print the global:MachineAndNodeSettings if Debug
-Write-Debug "WTF!!"
 Write-Debug ('global:MachineAndNodeSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:MachineAndNodeSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 
 # Define a global settings hash, initially populate it with machine-specific information for this machine

@@ -58,73 +58,10 @@ Function ConsoleSettings {
 }
 if ($host.ui.Rawui.WindowTitle -notmatch 'ISE') {ConsoleSettings}
 
-# Structure of package drop location; File Server Shares (fss) and Web Server URLs
-$drops = @{fssdev='\\fs\pkgsDev';fssqa='\\fs\pkgsqa';fssprd='\\fs\pkgs';wsudev='http://ws/ngf/dev';wsuqa='http://ws/ngf/qa';wsuprd='http://ws/ngf'}
-
-# set the Cloud Location variables
-Function Set-CloudDirectoryLocations {
-  switch -regex ($env:computername) {
-    'ncat016' {
-      $global:DropBoxBasePath = 'C:\Dropbox\'
-      $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
-      break
-    }
-    'ncat040' {
-      $global:DropBoxBasePath = 'C:\Dropbox\'
-      $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
-      break
-    }
-    'ncat-ltjo' {
-      $global:DropBoxBasePath = 'C:\Dropbox\'
-      $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
-      break
-    }
-    'ncat-ltb1' {
-      $global:DropBoxBasePath = 'D:\Dropbox\'
-      $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
-      break
-    }
-    'ncat-lt0' {
-      # The name of the dropbox admin
-      $global:DropBoxBasePath = 'C:\Dropbox\'
-      $global:OneDriveBaseDir = 'C:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
-      break
-    }
-    'dev\d*' {
-      # The name of the dropbox admin
-      $global:DropBoxBasePath = 'D:\Dropbox\'
-      $global:OneDriveBaseDir = 'D:\OneDrive\'
-      #$nPSModulePath = $OneDriveBaseDir + 'Customers\UAL\DEV\CFG\Utilities\Modules\;'+ $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
-      #$nPSModulePath = $DropBoxBasePath +'Dev\AT\WindowsPowerShell\Modules'
-      break
-    }
-    default {
-      # None of the other computers should have cloud loaded
-      $global:DropBoxBasePath = 'C:\Dropbox\'
-      $global:OneDriveBaseDir = 'C:\OneDrive\'
-    }
-  }
-}
-if ($true) {Set-CloudDirectoryLocations}
 
 # Set the PSModulePAth
-$Env:PSModulePath = (join-path $env:ProgramFiles "WindowsPowerShell\Modules") + ';' + $Env:PSModulePath
+#$Env:PSModulePath = (join-path $env:ProgramFiles "WindowsPowerShell\Modules") + ';' + $Env:PSModulePath
 "Final PSModulePath in AlluserAllshell profile is: " + "`r`n`t" + (($Env:PSModulePath -split ';') -join "`r`n`t")
-
-# Add MSBuild path to path
-$env:path += ';C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin'
-# Add ATAP.Utilites Powershell path to path
-$env:path += ';C:\Dropbox\whertzing\GitHub\ATAP.Utilities\ATAP.Utilities.BuildTooling.PowerShell'
 
 # Is this script elevated
 $elevatedSIDPattern='S-1-5-32-544|S-1-16-12288'

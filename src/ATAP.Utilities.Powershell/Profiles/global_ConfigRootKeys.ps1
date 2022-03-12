@@ -45,4 +45,8 @@ $global:configRootKeys = @{
   'FP__projectNameConfigRootKey' = 'FP__projectName'
   'FP__projectDescriptionConfigRootKey' = 'FP__projectDescription'
   'CommonJarsBasePathConfigRootKey' = 'CommonJarsBasePath'
+
+  'FileSystemDropsBasePathConfigRootKey' = 'FileSystemDropsBasePath'
+  'WebServerDropsBaseURLConfigRootKey' = 'WebServerDropsBaseURL'
+
 }

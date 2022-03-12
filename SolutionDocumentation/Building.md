@@ -19,6 +19,18 @@ Microsoft Visual Studio Test Extensions
 Project System Tools (Structured MSBUILD log viewer) https://marketplace.visualstudio.com/items?itemName=VisualStudioProductTeam.ProjectSystemTools and http://msbuildlog.com/
 
 ## NuGet packages
+
+Both the c# code and the powershell modules need packaging. The two process are dissimilar, and need individual explanations
+
+### powershell packaging
+
+1) Create the .psm1 from the contents of the private and public subdirectories
+2) Update the .psd1
+3) Get the information from the .pssproj
+4) Write the .nuspec
+5) Pack the .nupkg
+
+
 ### Solution-wide
 Install the MSBuild tasks and tooing to support rapid development builds, where each build should propagate to (local) NuGet feed.
 Install-Package UtilPack.NuGet.Push.MSBuild
@@ -189,6 +201,12 @@ Nice article here [Authenticode Signing Service and Client](https://github.com/d
 [Jenkins - User Interface for your Powershell tasks by Kirill Kravtsov](https://www.youtube.com/watch?v=2lrrrknwy5M)
 
 `Register-PackageSource -Name chocolatey -Location http://chocolatey.org/api/v2 -Provider PSModule -Verbose`
+
+`Register-PSRepository -Name 'LocalRepo' -SourceLocation 'C:\Repo' -PublishLocation 'C:\Repo' -InstallationPolicy Trusted`
+ 
+ `Register-PSRepository -Name 'LocalDevelopmentPSRepository' -SourceLocation '\\utat022\FS\DevelopmentPackages\PSFileRepository' -PublishLocation '\\utat022\FS\DevelopmentPackages\PSFileRepository' -InstallationPolicy Trusted`
+
+ Publish-Module -Path .\MyModule -Repository Demo_Nuget_Feed -NuGetApiKey 'use real NuGetApiKey for real nuget server here'
 
 [NuGet package manager – Build a PowerShell package repository](https://4sysops.com/archives/nuget-package-manager-build-a-powershell-package-repository/)
 

@@ -33,6 +33,17 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['GoogleDriveBasePathConfigRootKey'] = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
     $global:configRootKeys['OneDriveBasePathConfigRootKey']    = 'Dummy' # Join-Path 'C:' 'OneDrive'
 
+    # Structure of package drop locations; File Server Shares (fss) and Web Server URLs for the Environment stages
+    $global:configRootKeys['FileSystemDropsBasePathConfigRootKey'] = @{
+      'Production' = '\\fs\ProductionPackages'
+      'Testing' = '\\fs\TestingPackages'
+      'Development' = '\\fs\DevelopmentPackages'
+    }
+    $global:configRootKeys['WebServerDropsBaseURLConfigRootKey'] = @{
+      'Production' = 'http://ws/ngf'
+      'Testing' = 'http://ws/ngf/qa'
+      'Development' = 'http://ws/ngf/dev'
+    }
   }
   # Machine Settings
   'utat01'    = @{

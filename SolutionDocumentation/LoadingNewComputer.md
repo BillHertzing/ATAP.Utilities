@@ -188,10 +188,12 @@ programs to pin:
   Voiceattack
   Everything
 
-  Setup the PSGallery
+  Setup the PSGallery as trusted
   `Register-PSRepository -Default -Verbose`
   `get-psrepository` validate that PSGallery appears
   `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`
+
+  
 
   remove the default version of Pester that comes with windows
   ```Powershell
@@ -276,7 +278,30 @@ Join-Path  ([Environment]::GetEnvironmentVariable($global:configRootKeys['Google
 	 ensure the dropbox location is added
 	 ensure the GoogleDrive location is added
 
-Scheduled Job to run the `Get-DropBoxAllFolderCursors` Powershell function every day.
+
+# Enable PS-Remoting on the new computer
+
+Enable-PSRemoting
+
+# Add the other computers in the group to trustedhosts for WinRM remote management
+
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value 'ncat041, ncat016, utat01 utat022, ncat-ltjo, ncat-ltb1' # ToDo - add wireless hostnames?
+
+# Add the new computer as a trusted host on other computers in the group
+
+## Setup Jenkins Master 
+ToDo: how to copy jobs and nodes
+ToDo: how to chnage the jenkins agents to communicate with teh new master
+### Chnge Powershell from V5 to V7 on Master and Slaves
+
+`http://utat022:4040/configureTools/`
+Jenkins->Configure->Tools->Powershell Installations: Defaultwindows =`C:\Program Files\PowerShell\7\pwsh.exe`
+
+Scheduled Job (within Jenkins) to run the `Get-DropBoxAllFolderCursors-Nightly` job every day. The job imports the eponymous script `Get-DropBoxAllFolderCursors-Nightly.ps1`, then executes the function `Get-DropBoxAllFolderCursors-Nightly`
+
+Scheduled Job (within Jenkins) to run the `Confirm-GitFSCK-Nightly` job every day. The job imports the eponymous script `Confirm-GitFSCK-Nightly.ps1`, then executes the function ``Confirm-GitFSCK-Nightly`
+
+Jenkins reporting of the Validate Tools scripts
 
 Many CI steps need Java. Jenkins itself is Java based, as are the PlantUML steps that generate diagrams from embedded info in .md files, and the step that reads all the C# files nad creates PlantUML diagrams from the source code files. Setting up the new computer, need to ensure the correct Java is installed and running.
 
@@ -299,3 +324,10 @@ PaackageManagement for powershell
 [Build Automation in PowerShell](https://github.com/nightroman/Invoke-Build)
 
 [Catesta is a PowerShell module project generator](https://github.com/techthoughts2/Catesta)
+
+
+# $Path and $psmodulepath in Powershell V5 (Desktop) and V7 (Core)
+
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_psmodulepath?view=powershell-7.2
+
+https://docs.microsoft.com/en-us/powershell/scripting/whats-new/differences-from-windows-powershell?view=powershell-7.2

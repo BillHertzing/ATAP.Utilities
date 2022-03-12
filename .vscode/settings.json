@@ -57,6 +57,7 @@
         "SSMS",
         "sysdatabases",
         "syslogins",
+        "unbag",
         "XACT"
     ],
     "markdownlint.config": {

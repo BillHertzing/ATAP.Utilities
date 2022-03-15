@@ -19,7 +19,7 @@ $global:envVars = @{
   $global:configRootKeys['JENKINS_USER_IDConfigRootKey']     = $global:Settings[$global:configRootKeys['JENKINS_USER_IDConfigRootKey']]
   $global:configRootKeys['JENKINS_API_TOKENConfigRootKey']   = $global:Settings[$global:configRootKeys['JENKINS_API_TOKENConfigRootKey']]
   $global:configRootKeys['CommonJarsBasePathConfigRootKey']  = $global:Settings[$global:configRootKeys['CommonJarsBasePathConfigRootKey']]
-  'CLASSPATH'                                                = (Join-Path ($global:Settings[$global:configRootKeys['CommonJarsBasePathConfigRootKey']]) '*') + ';' + ([Environment]::GetEnvironmentVariable('CLASSPATH'))
+  'CLASSPATH'                                                = (Join-Path ($global:Settings[$global:configRootKeys['CommonJarsBasePathConfigRootKey']]) '*') + [IO.Path]::PathSeparator + ([Environment]::GetEnvironmentVariable('CLASSPATH'))
 }
 
 function Set-EnvironmentVariablesProcess {

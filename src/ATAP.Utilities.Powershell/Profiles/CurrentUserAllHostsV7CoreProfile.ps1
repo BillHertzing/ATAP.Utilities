@@ -264,7 +264,7 @@ Set-EnvironmentVariablesProcess
 $indent = 0
 $indentIncrement = 2
 Write-Debug ('After CurrentUsersAllHosts profile executes, global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
-Write-Debug ('After CurrentUsersAllHosts profile executes, Environment variables: ' + [Environment]::NewLine + (Write-EnvironmentVariables ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
+Write-Debug ('After CurrentUsersAllHosts profile executes, Environment variables: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
 
 <# To Be Moved Somewhere else #>
 

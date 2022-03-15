@@ -4,13 +4,24 @@
 .SYNOPSIS
 Confirm that all the 3rd party tools and scripts needed to build, analyze, test, package and deploy both c# and powershell code are present, configured, and accessable,
 .DESCRIPTION
-ToDo: write Help DESCRIPTION For this function
+This function looks for the presence of tools that can compile and interpret c# and Powershell code (text files to executable production code), create documenation from code, generate class diagrams from code, integrate the generated dart with the markdown format, suports draw.io engineering drawings,
+tools that provide message queing, tools that provide Source Code Management (SCM), SQL Server database and Neo4j database, tools for database SCM (Flyway from Redhat)
+tools that create the deployment package, tools that deploy the packages, to three public location (PSGallery, Nuget, and Chocolotey)
 .PARAMETER Name
 ToDo: write Help For the parameter X
 .PARAMETER Extension
 ToDo: write Help For the parameter X
 .INPUTS
-ToDo: write Help For the function's inputs
+Environment variables drive the action that this Cmdlet takes.
+Machine and container nodes are grouped and assigned capabilities (roles).
+Roles imply a promise that certains tools will be avaialable in the environments that certain actions can occur.
+
+Environments Production, Test, and Development are the 1st roots of the Environment Variables.
+he public locations, private locations, and the exact composition of the machine code and documentation package,
+  make up the full exposition of every combination of environment variables.
+
+
+
 .OUTPUTS
 ToDo: write Help For the function's outputs
 .EXAMPLE

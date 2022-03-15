@@ -60,8 +60,8 @@ if ($host.ui.Rawui.WindowTitle -notmatch 'ISE') {ConsoleSettings}
 
 
 # Set the PSModulePAth
-#$Env:PSModulePath = (join-path $env:ProgramFiles "WindowsPowerShell\Modules") + ';' + $Env:PSModulePath
-"Final PSModulePath in AlluserAllshell profile is: " + "`r`n`t" + (($Env:PSModulePath -split ';') -join "`r`n`t")
+#$Env:PSModulePath = (join-path $env:ProgramFiles "WindowsPowerShell\Modules") + [IO.Path]::PathSeparator + $Env:PSModulePath
+"Final PSModulePath in AlluserAllshell profile is: " + "`r`n`t" + (($Env:PSModulePath -split [IO.Path]::PathSeparator) -join "`r`n`t")
 
 # Is this script elevated
 $elevatedSIDPattern='S-1-5-32-544|S-1-16-12288'

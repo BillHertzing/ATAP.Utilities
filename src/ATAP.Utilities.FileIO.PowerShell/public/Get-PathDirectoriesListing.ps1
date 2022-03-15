@@ -12,7 +12,7 @@ param (
 
 )
 
-    $paths=  $env:PATH -split ';'
+    $paths=  $env:PATH -split [IO.Path]::PathSeparator
     $PathDoesNotExist = @()
     $PathHasNoExes = @()
     $paths | %{$path = $_

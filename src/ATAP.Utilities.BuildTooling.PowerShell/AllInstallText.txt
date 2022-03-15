@@ -1,0 +1,737 @@
+
+
+Filename
+
+
+
+C:\$Recycle.Bin\S-1-5-21-3380633154-651194702-1378806282-1001\$RNPG6X9\ATAP.Utilities.Powershell\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Packages\ATAP.Utilities.Powershell\tools\chocolateyInstall.ps1
+
+
+
+
+C:\Dropbox\whertzing\Visual Studio 2013\Projects\Modules\CustomerAutomation\packages\StudioShell.Provider.1.6.4.0\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\Dropbox\whertzing\Visual Studio 2013\Projects\Modules\FileIO\FileIO.Packager\tools\ChocolateyInstall.ps1
+
+# $project is a reference to the project the package was installed to.
+
+
+C:\Dropbox\whertzing\Visual Studio 2013\Projects\Modules\FileIO\packages\StudioShell.Provider.1.6.4.0\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\Dropbox\whertzing\Visual Studio 2013\Projects\Modules\PsakeATAP\packages\psake.4.3.2\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\Dropbox\whertzing\Visual Studio 2013\Projects\Modules\PsakeATAP\PsakeATAP\ChocolateyInstall.ps1
+
+Install-ChocolateyZipPackage $packageName $url $unzipLocation
+
+
+C:\Dropbox\whertzing\Visual Studio 2013\Projects\psp1\packages\StudioShell.Provider.1.6.4.0\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\Dropbox\whertzing\Visual Studio 2013\Projects\psp1\psp1\ChocolateyInstall.ps1
+
+Install-ChocolateyZipPackage 'psp1' 'msu' '/S' '//fs/prd/psp1.zip'
+
+
+C:\Program Files (x86)\WindowsPowerShell\Modules\Pester\3.4.0\chocolateyInstall.ps1
+
+
+
+C:\ProgramData\chocolatey\lib-bad\avast-pro-trial\tools\chocolateyinstall.ps1
+
+
+
+
+C:\ProgramData\chocolatey\lib-bad\jekyll\tools\chocolateyinstall.ps1
+
+'@
+
+
+C:\ProgramData\chocolatey\lib-bad\ngrok.portable\tools\chocolateyInstall.ps1
+
+Remove-Item "$indexFile" -Recurse
+
+
+C:\ProgramData\chocolatey\lib-bad\visualstudio2022-workload-netweb\tools\ChocolateyInstall.ps1
+
+    -IncludeRecommendedComponentsByDefault
+
+
+C:\ProgramData\chocolatey\lib-bad\visualstudio2022-workload-webbuildtools\tools\ChocolateyInstall.ps1
+
+    -IncludeRecommendedComponentsByDefault
+
+
+C:\ProgramData\chocolatey\lib-bad\visualstudio2022buildtools\tools\ChocolateyInstall.ps1
+
+    -Preview $false
+
+
+C:\ProgramData\chocolatey\lib-bad\visualstudio2022community\tools\ChocolateyInstall.ps1
+
+    -Preview $false
+
+
+C:\ProgramData\chocolatey\lib-bkp\vscode-live-share-audio\tools\chocolateyinstall.ps1
+
+Install-VsCodeExtension -extensionId 'MS-vsliveshare.vsliveshare-audio@0.1.91'
+
+
+C:\ProgramData\chocolatey\lib\7zip.install\tools\chocolateyInstall.ps1
+
+Install-BinFile '7z' $installLocation\7z.exe
+
+
+C:\ProgramData\chocolatey\lib\autohotkey.install\tools\chocolateyInstall.ps1
+
+else { Write-Warning "Can't find $packageName install location" }
+
+
+C:\ProgramData\chocolatey\lib\AutoRuns\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\beyondcompare\tools\chocolateyInstall.ps1
+
+Install-ChocolateyPackage @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\brave\tools\chocolateyInstall.ps1
+
+Remove-Item $toolsPath\*.exe -ea 0
+
+
+C:\ProgramData\chocolatey\lib\choco-package-list-backup\tools\ChocolateyInstall.ps1
+
+   }
+
+
+C:\ProgramData\chocolatey\lib\chocolatey-vscode\tools\chocolateyinstall.ps1
+
+Install-VsCodeExtension @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\chocolatey.server\tools\chocolateyInstall.ps1
+
+#netsh advfirewall firewall add rule name="Open Port 80" dir=in action=allow protocol=TCP localport=80
+
+
+C:\ProgramData\chocolatey\lib\cinebench\tools\chocolateyInstall.ps1
+
+Install-ChocolateyDesktopLink -TargetFilePath "$installDir\Cinebench.exe"
+
+
+C:\ProgramData\chocolatey\lib\cpu-z.install\tools\chocolateyInstall.ps1
+
+else { Write-Warning "Can't find $packageName install location" }
+
+
+C:\ProgramData\chocolatey\lib\cpu-z\tools\chocolateyInstall.ps1
+
+#Install-VirtualPackage 'cpu-z.portable' 'cpu-z.install'
+
+
+C:\ProgramData\chocolatey\lib\dbachecks\tools\chocolateyInstall.ps1
+
+Get-ChocolateyUnzip -FileFullPath $sourcePath -Destination $destPath
+
+
+C:\ProgramData\chocolatey\lib\dbatools\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\ditto\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\docfx\tools\chocolateyinstall.ps1
+
+
+
+
+C:\ProgramData\chocolatey\lib\DotNet4.5.2\Tools\ChocolateyInstall.ps1
+
+ } 
+
+
+C:\ProgramData\chocolatey\lib\DotNet4.6-TargetPack\tools\ChocolateyInstall.ps1
+
+Install-ChocolateyPackage $packageName $installerType $silentArgs $32BitUrl -validExitCodes $validExitCodes
+
+
+C:\ProgramData\chocolatey\lib\DotNet4.6.1\tools\ChocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\DotNet4.6\tools\ChocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\dotnetcore-3.1-desktopruntime\tools\ChocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\dotnetcore-3.1-sdk-4xx\tools\ChocolateyInstall.ps1
+
+Install-ChocolateyPackage @arguments @arguments64
+
+
+C:\ProgramData\chocolatey\lib\dotnetfx\tools\ChocolateyInstall.ps1
+
+Install-DotNetFramework @arguments
+
+
+C:\ProgramData\chocolatey\lib\dotUltimate\tools\chocolateyinstall.ps1
+
+Install-ChocolateyInstallPackage @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\erlang\tools\chocolateyInstall.ps1
+
+Generate-BinFile "typer" -path "$baseErlangPath\typer.exe"
+
+
+C:\ProgramData\chocolatey\lib\Everything\tools\chocolateyInstall.ps1
+
+Start-Process "$installLocation\Everything.exe" -ArgumentList "-startup"
+
+
+C:\ProgramData\chocolatey\lib\fiddler\tools\chocolateyinstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\flyway.commandline\tools\chocolateyInstall.ps1
+
+Install-BinFile "flyway" "$toolsDir\flyway-$version\flyway.cmd"
+
+
+C:\ProgramData\chocolatey\lib\freevideoeditor\tools\chocolateyInstall.ps1
+
+Get-ChildItem $toolsPath\*.exe | ForEach-Object { Remove-Item $_ -ea 0; if (Test-Path $_) { Set-Content "$_.ignore" '' } }
+
+
+C:\ProgramData\chocolatey\lib\gh\tools\chocolateyInstall.ps1
+
+Install-ChocolateyInstallPackage @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\git.install\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\gitter\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\GoogleChrome\tools\chocolateyInstall.ps1
+
+Install-ChocolateyPackage @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\gpu-z\tools\chocolateyinstall.ps1
+
+Install-ChocolateyShortcut -shortcutFilePath "$ENV:ProgramData\Microsoft\Windows\Start Menu\Programs\GPU-Z.lnk" -targetPath $PortableEXE
+
+
+C:\ProgramData\chocolatey\lib\grammarly-chrome\tools\ChocolateyInstall.ps1
+
+      }
+
+
+C:\ProgramData\chocolatey\lib\Graphviz\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\hwinfo.install\tools\chocolateyinstall.ps1
+
+Install-BinFile -Name "hwinfo" -Path "C:\Program Files\HWiNFO$bitness\HWiNFO$bitness.EXE" -UseStart
+
+
+C:\ProgramData\chocolatey\lib\hwinfo\tools\chocolateyInstall.ps1
+
+#Install-VirtualPackage 'HWiNFO.portable' 'HWiNFO.install'
+
+
+C:\ProgramData\chocolatey\lib\ilspy\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\jetbrains-rider\tools\chocolateyInstall.ps1
+
+ Install-ChocolateyPackage @packageArgs	
+
+
+C:\ProgramData\chocolatey\lib\jre8\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\KB2919355\tools\ChocolateyInstall.ps1
+
+Install-ChocolateyPackage $packageName 'msu' $silentArgs $url $url64 -checksum $checksum -checksum64 $checksum64 -checksumType 'sha256' -validExitCodes @(0, 3010, 0x80240017)
+
+
+C:\ProgramData\chocolatey\lib\KB2919442\tools\ChocolateyInstall.ps1
+
+Install-ChocolateyPackage $packageName 'msu' $silentArgs $url $url64 -checksum $checksum -checksum64 $checksum64 -checksumType 'sha256' -validExitCodes @(0, 3010, 0x80240017)
+
+
+C:\ProgramData\chocolatey\lib\KB2999226\tools\chocolateyinstall.ps1
+
+chocolateyInstaller\Install-WindowsUpdate -Id 'KB2999226' -MsuData $msuData -ChecksumType 'sha256' -ServicePackRequirements $servicePackRequirements
+
+
+C:\ProgramData\chocolatey\lib\KB3033929\Tools\ChocolateyInstall.ps1
+
+chocolateyInstaller\Install-WindowsUpdate -Id 'KB3033929' -MsuData $msuData -ChecksumType 'sha256' -ServicePackRequirements $servicePackRequirements
+
+
+C:\ProgramData\chocolatey\lib\KB3035131\Tools\ChocolateyInstall.ps1
+
+chocolateyInstaller\Install-WindowsUpdate -Id 'KB3035131' -MsuData $msuData -ChecksumType 'sha256' -ServicePackRequirements $servicePackRequirements
+
+
+C:\ProgramData\chocolatey\lib\KB3063858\Tools\ChocolateyInstall.ps1
+
+chocolateyInstaller\Install-WindowsUpdate -Id 'KB3063858' -MsuData $msuData -ChecksumType 'SHA256'
+
+
+C:\ProgramData\chocolatey\lib\KB3118401\Tools\ChocolateyInstall.ps1
+
+chocolateyInstaller\Install-WindowsUpdate -Id 'KB3118401' -MsuData $msuData -ChecksumType 'SHA256' -ServicePackRequirements $servicePackRequirements
+
+
+C:\ProgramData\chocolatey\lib\keep-chrome\tools\ChocolateyInstall.ps1
+
+      }
+
+
+C:\ProgramData\chocolatey\lib\linqpad6.install\tools\chocolateyInstall.ps1
+
+Install-ChocolateyPath "${env:ProgramFiles(x86)}\LinqPad6"
+
+
+C:\ProgramData\chocolatey\lib\linqpad6\tools\chocolateyInstall.ps1
+
+#Install-VirtualPackage 'linqpad6.install' 'linqpad6.portable'
+
+
+C:\ProgramData\chocolatey\lib\linqpad\tools\chocolateyInstall.ps1
+
+#Install-VirtualPackage 'linqpad.install' 'linqpad.portable'
+
+
+C:\ProgramData\chocolatey\lib\logitechgaming\tools\chocolateyInstall.ps1
+
+Install-ChocolateyPackage @packageArgs;
+
+
+C:\ProgramData\chocolatey\lib\msbuild-structured-log-viewer\tools\chocolateyinstall.ps1
+
+Install-ChocolateyInstallPackage @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\msys2\tools\chocolateyinstall.ps1
+
+if (!$pp.NoPath) { Install-ChocolateyPath $pp.InstallDir }
+
+
+C:\ProgramData\chocolatey\lib\mysql.workbench\tools\chocolateyInstall.ps1
+
+Install-ChocolateyPackage @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\mysql\tools\chocolateyInstall.ps1
+
+Start-ChocolateyProcessAsAdmin "cmd /c NET START $serviceName"
+
+
+C:\ProgramData\chocolatey\lib\netfx-4.6.1-devpack\tools\ChocolateyInstall.ps1
+
+
+
+
+C:\ProgramData\chocolatey\lib\netfx-4.6.2-devpack\tools\ChocolateyInstall.ps1
+
+Install-DotNetDevPack @arguments
+
+
+C:\ProgramData\chocolatey\lib\netfx-4.6.2\tools\ChocolateyInstall.ps1
+
+Install-DotNetFramework @arguments
+
+
+C:\ProgramData\chocolatey\lib\netfx-4.7-devpack\tools\ChocolateyInstall.ps1
+
+Install-DotNetDevPack @arguments
+
+
+C:\ProgramData\chocolatey\lib\netfx-4.7.1-devpack\tools\ChocolateyInstall.ps1
+
+Install-DotNetDevPack @arguments
+
+
+C:\ProgramData\chocolatey\lib\netfx-4.7.1\tools\ChocolateyInstall.ps1
+
+Install-DotNetFramework @arguments
+
+
+C:\ProgramData\chocolatey\lib\netfx-4.7.2-devpack\tools\ChocolateyInstall.ps1
+
+Install-DotNetDevPack @arguments
+
+
+C:\ProgramData\chocolatey\lib\netfx-4.7.2\tools\ChocolateyInstall.ps1
+
+Install-DotNetFramework @arguments
+
+
+C:\ProgramData\chocolatey\lib\netfx-4.8-devpack\tools\ChocolateyInstall.ps1
+
+Install-DotNetDevPack @arguments
+
+
+C:\ProgramData\chocolatey\lib\netfx-4.8\tools\ChocolateyInstall.ps1
+
+Install-DotNetFramework @arguments
+
+
+C:\ProgramData\chocolatey\lib\ngrok\tools\chocolateyinstall.ps1
+
+Install-ChocolateyZipPackage @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\nmap\tools\chocolateyInstall.ps1
+
+Start-Process -Wait $toolsPath\install.ahk $file
+
+
+C:\ProgramData\chocolatey\lib\nordvpn\tools\chocolateyinstall.ps1
+
+Install-ChocolateyPackage @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\notepadplusplus.install\tools\chocolateyInstall.ps1
+
+Install-BinFile -Path "$installLocation\notepad++.exe" -Name 'notepad++'
+
+
+C:\ProgramData\chocolatey\lib\notepadplusplus\tools\chocolateyInstall.ps1
+
+#Install-VirtualPackage 'notepadplusplus.commandline' 'notepadplusplus.install'
+
+
+C:\ProgramData\chocolatey\lib\NugetPackageExplorer\ChocolateyInstall.ps1
+
+# SIG # End signature block
+
+
+C:\ProgramData\chocolatey\lib\Office365ProPlus\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\pdq-inventory\tools\ChocolateyInstall.ps1
+
+Install-ChocolateyPackage @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\perfview\tools\chocolateyinstall.ps1
+
+Get-ChocolateyWebFile -PackageName PerfView -FileFullPath "$toolsDir\PerfView.exe" -url $url -checksum $checksum -checksumType 'sha256'
+
+
+C:\ProgramData\chocolatey\lib\pester\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\plantuml\tools\chocolateyInstall.ps1
+
+if (!$pp.NoShortcuts) { Install-PumlDesktopShortcuts }
+
+
+C:\ProgramData\chocolatey\lib\plaster\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\postman\tools\chocolateyInstall.ps1
+
+Install-ChocolateyPackage @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\powershell-core\tools\chocolateyinstall.ps1
+
+Write-Output "**************************************************************************************"
+
+
+C:\ProgramData\chocolatey\lib\powertoys\tools\chocolateyinstall.ps1
+
+Get-ChildItem $toolsDir\*.exe | ForEach-Object { Remove-Item $_ -ea 0; if (Test-Path $_) { Set-Content "$_.ignore" } }
+
+
+C:\ProgramData\chocolatey\lib\previewconfig\tools\chocolateyInstall.ps1
+
+Write-Output "*************************************************************************************************************************************"
+
+
+C:\ProgramData\chocolatey\lib\psframework\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\pushbullet\tools\chocolateyInstall.ps1
+
+Install-ChocolateyPackage "$packageName" "$installerType" "$silentArgs" "$url" -validExitCodes $validExitCodes
+
+
+C:\ProgramData\chocolatey\lib\putty.portable\tools\chocolateyInstall.ps1
+
+Remove-Item -force "$toolsPath\*.zip" -ea 0
+
+
+C:\ProgramData\chocolatey\lib\rabbitmq\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\resharper-platform\tools\chocolateyinstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\ruby.install\tools\chocolateyInstall.ps1
+
+Get-ChildItem $toolsPath\*.exe | ForEach-Object { Remove-Item $_ -ea 0; if (Test-Path $_) { Set-Content "$_.ignore" '' } }
+
+
+C:\ProgramData\chocolatey\lib\sentinel\tools\chocolateyinstall.ps1
+
+Install-ChocolateyPackage @packageArgs 
+
+
+C:\ProgramData\chocolatey\lib\sharex\tools\chocolateyInstall.ps1
+
+Install-ChocolateyPackage @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\speedtest\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\sql-server-management-studio\tools\chocolateyinstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\SQLite\tools\chocolateyInstall.ps1
+
+Remove-Item $toolsDir\*.zip -ea 0
+
+
+C:\ProgramData\chocolatey\lib\sysinternals\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\Temurinjre\tools\chocolateyinstall.ps1
+
+Install-ChocolateyPackage @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\tineye-chrome\tools\ChocolateyInstall.ps1
+
+      }
+
+
+C:\ProgramData\chocolatey\lib\vcredist140\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\vcredist2005\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\vcredist2008\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\vcredist2010\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\vcredist2012\tools\chocolateyInstall.ps1
+
+
+
+
+C:\ProgramData\chocolatey\lib\vcredist2013\tools\chocolateyInstall.ps1
+
+}
+
+
+C:\ProgramData\chocolatey\lib\visualstudio-installer\tools\ChocolateyInstall.ps1
+
+Write-Debug 'Empty script to avoid Chocolatey Package Verifier false positive warning (https://github.com/chocolatey/package-validator/issues/178).'
+
+
+C:\ProgramData\chocolatey\lib\vlc\tools\chocolateyInstall.ps1
+
+else { Write-Warning "Can't find $PackageName install location" }
+
+
+C:\ProgramData\chocolatey\lib\vscode-codespellchecker\tools\chocolateyInstall.ps1
+
+code --install-extension streetsidesoftware.code-spell-checker
+
+
+C:\ProgramData\chocolatey\lib\vscode-csharp\tools\chocolateyInstall.ps1
+
+Install-VsCodeExtension -extensionId $extensionId
+
+
+C:\ProgramData\chocolatey\lib\vscode-csharpextensions\tools\chocolateyInstall.ps1
+
+code --install-extension jchannon.csharpextensions
+
+
+C:\ProgramData\chocolatey\lib\vscode-drawio\tools\chocolateyinstall.ps1
+
+Install-VsCodeExtension -extensionId "$toolsDir\hediet.vscode-drawio-1.6.4.vsix"
+
+
+C:\ProgramData\chocolatey\lib\vscode-editorconfig\tools\ChocolateyInstall.ps1
+
+code --install-extension EditorConfig.EditorConfig
+
+
+C:\ProgramData\chocolatey\lib\vscode-gitattributes\tools\chocolateyinstall.ps1
+
+Install-VsCodeExtension -extensionId 'hashhar.gitattributes@0.4.1'
+
+
+C:\ProgramData\chocolatey\lib\vscode-gitignore\tools\chocolateyinstall.ps1
+
+Install-VsCodeExtension -extensionId 'codezombiech.gitignore@0.7.0'
+
+
+C:\ProgramData\chocolatey\lib\vscode-gitlens\tools\ChocolateyInstall.ps1
+
+code --install-extension eamodio.gitlens
+
+
+C:\ProgramData\chocolatey\lib\vscode-icons\tools\chocolateyInstall.ps1
+
+Install-VsCodeExtension -extensionId 'vscode-icons-team.vscode-icons'
+
+
+C:\ProgramData\chocolatey\lib\vscode-live-share-audio\tools\chocolateyinstall.ps1
+
+Install-VsCodeExtension -extensionId 'MS-vsliveshare.vsliveshare-audio@0.1.91'
+
+
+C:\ProgramData\chocolatey\lib\vscode-markdownlint\tools\ChocolateyInstall.ps1
+
+code --install-extension DavidAnson.vscode-markdownlint
+
+
+C:\ProgramData\chocolatey\lib\vscode-mssql\tools\chocolateyInstall.ps1
+
+Install-VsCodeExtension -extensionId $extensionId
+
+
+C:\ProgramData\chocolatey\lib\vscode-powershell\tools\chocolateyInstall.ps1
+
+Install-VsCodeExtension -extensionId $extensionId
+
+
+C:\ProgramData\chocolatey\lib\vscode-prettier\tools\chocolateyinstall.ps1
+
+Install-VsCodeExtension -extensionId "$toolsDir\esbenp.prettier-vscode-9.3.0.vsix"
+
+
+C:\ProgramData\chocolatey\lib\vscode-ruby\tools\chocolateyInstall.ps1
+
+Install-VsCodeExtension -extensionId 'rebornix.Ruby@0.28.1'
+
+
+C:\ProgramData\chocolatey\lib\vscode-test-explorer-liveshare\tools\chocolateyInstall.ps1
+
+Install-VsCodeExtension -extensionId "$toolsDir\hbenl.vscode-test-explorer-liveshare-1.0.5.vsix"
+
+
+C:\ProgramData\chocolatey\lib\vscode-test-explorer\tools\chocolateyinstall.ps1
+
+Install-VsCodeExtension -extensionId "$toolsDir\hbenl.vscode-test-explorer-2.21.1.vsix"
+
+
+C:\ProgramData\chocolatey\lib\vscode-vsliveshare\tools\chocolateyInstall.ps1
+
+Install-VsCodeExtension -extensionId 'ms-vsliveshare.vsliveshare@1.0.5418'
+
+
+C:\ProgramData\chocolatey\lib\vscode-yaml\tools\chocolateyInstall.ps1
+
+Install-VsCodeExtension -extensionId 'redhat.vscode-yaml@1.4.0'
+
+
+C:\ProgramData\chocolatey\lib\vscode.install\tools\ChocolateyInstall.ps1
+
+Install-ChocolateyPackage @packageArgs
+
+
+C:\ProgramData\chocolatey\lib\wireshark\tools\chocolateyInstall.ps1
+
+Get-ChildItem $toolsDir\*.exe | ForEach-Object { Remove-Item $_ -ea 0; if (Test-Path $_) { Set-Content "$_.ignore" } }
+
+
+C:\Users\whertzing\AppData\Local\Temp\chocolatey\chocoInstall\tools\chocolateyInstall.ps1
+
+# SIG # End signature block
+
+
+C:\Users\whertzing\AppData\Roaming\Microsoft\Windows\Recent\chocolateyInstall.ps1.lnk
+
+                   ,zR P r o g r a m D a t a    ^ 1     GT�r CHOCOL~1  F 	  �GTDnmT�k.   z�                  `B� c h o c o l a t e y    J 1     lTL� lib 8 	  �GT\nmT�q.   ��                  z�l i b    ` 1     GT�q GIT~1.INS H 	  �GT�qmT�q.   �!                  M1g i t . i n s t a l l    P 1     GT�q tools < 	  �GT�qmT�q.   �!                  ��K t o o l s    x 2 "  GT�q  CHOCOL~2.PS1  \ 	  �GT�qGT�q.   �!                  �v� c h o c o l a t e y I n s t a l l . p s 1      t            -       s         �l��    C:\ProgramData\chocolatey\lib\git.install\tools\chocolateyInstall.ps1  W . . \ . . \ . . \ . . \ . . \ . . \ . . \ P r o g r a m D a t a \ c h o c o l a t e y \ l i b \ g i t . i n s t a l l \ t o o l s \ c h o c o l a t e y I n s t a l l . p s 1 / C : \ P r o g r a m D a t a \ c h o c o l a t e y \ l i b \ g i t . i n s t a l l \ t o o l s `     �X       utat022         ���}��-J�i(��'�L��+֢��� ��|E����}��-J�i(��'�L��+֢��� ��|E�E   	  �9   1SPS�mD��pH�H@.�=x�   h    H   ����K�T�x�#�Z            
+
+
+C:\Windows\WinSxS\amd64_microsoft.powershell.pester_31bf3856ad364e35_10.0.22000.1_none_2a76084a7899eecf\chocolateyInstall.ps1
+
+}
+
+
+C:\Windows\WinSxS\wow64_microsoft.powershell.pester_31bf3856ad364e35_10.0.22000.1_none_34cab29cacfab0ca\chocolateyInstall.ps1
+

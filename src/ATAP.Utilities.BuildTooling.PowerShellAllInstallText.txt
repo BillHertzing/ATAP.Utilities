@@ -1,0 +1,3715 @@
+}
+
+}
+# $project is a reference to the project the package was installed to.
+}
+}
+Install-ChocolateyZipPackage $packageName $url $unzipLocation
+}
+Install-ChocolateyZipPackage 'psp1' 'msu' '/S' '//fs/prd/psp1.zip'
+
+$ErrorActionPreference = 'Stop';
+
+
+$packageName= 'avast-pro-trial'
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$url        = 'http://files.avast.com/iavs9x/avast_pro_antivirus_setup_online.exe'
+
+$packageArgs = @{
+  packageName   = $packageName
+  unzipLocation = $toolsDir
+  fileType      = 'EXE'
+  url           = $url
+  
+  silentArgs    = "/silent"
+  validExitCodes= @(0, 3010, 1641)
+
+  softwareName  = 'avast-pro-trial*'
+  checksum      = '4664e40cd0f534422c96d650e738c469'
+  checksumType  = 'md5'
+}
+
+Install-ChocolateyPackage @packageArgs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$ErrorActionPreference = 'Stop'
+refreshenv
+ridk install 3
+gem install bundler
+gem install jekyll -v 4.2.1
+
+Write-Warning @'
+###    Jekyll - QUICKSTART    ###
+
+> jekyll new c:\srv\www\mywebsite
+> cd c:\srv\www\mywebsite
+> bundle exec jekyll serve
+
+- Browse to http://localhost:4000
+#################################
+
+'@
+$packageName = 'ngrok.portable'
+$url = 'https://ngrok.com/download'
+$validExitCodes = @(0)
+
+$chocTempDir = Join-Path $env:TEMP "chocolatey"
+$tempDir = Join-Path $chocTempDir "$packageName"
+if (![System.IO.Directory]::Exists($tempDir)) {[System.IO.Directory]::CreateDirectory($tempDir)}
+
+$indexFile = Join-Path $tempDir "$($packageName).html"
+Get-ChocolateyWebFile "$packageName" "$indexFile" "$url"
+
+write-host "[$packageName] Trying to find a link to a ngrok."
+
+$contentIndexFile = Get-Content "$indexFile"
+if ((Get-ProcessorBits 64) -and !$env:chocolateyForceX86) {
+    $regxp = '<a id="dl-windows-amd64"[^>]+?href="(http[s]?:\/\/[^"]*?)"'
+} else {
+    $regxp = '<a id="dl-windows-386"[^>]+?href="(http[s]?:\/\/[^"]*?)"'
+}
+if("$contentIndexFile" -match "$regxp") {`
+    $downloadUrl = $matches[1]
+    $downloadUrl = $downloadUrl.Replace("&amp;","&") 
+    write-host "[$packageName] Link is found. $downloadUrl"
+    
+    Install-ChocolateyZipPackage "$packageName" "$downloadUrl" "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+} else {
+    write-host "[$packageName] Link is not found."
+    throw
+}
+
+Remove-Item "$indexFile" -Recurse
+Add-VisualStudioWorkload `
+    -PackageName 'visualstudio2022-workload-netweb' `
+    -Workload 'NetWeb' `
+    -VisualStudioYear '2022' `
+    -Preview $false `
+    -ApplicableProducts @('Community', 'Professional', 'Enterprise') `
+    -IncludeRecommendedComponentsByDefault
+Add-VisualStudioWorkload `
+    -PackageName 'visualstudio2022-workload-webbuildtools' `
+    -Workload 'WebBuildTools' `
+    -VisualStudioYear '2022' `
+    -Preview $false `
+    -ApplicableProducts @('BuildTools') `
+    -IncludeRecommendedComponentsByDefault
+Install-VisualStudio `
+    -PackageName 'visualstudio2022buildtools' `
+    -ApplicationName 'Microsoft Visual Studio Build Tools 2022' `
+    -Url 'https://download.visualstudio.microsoft.com/download/pr/ce8663b0-08ed-410a-9f5d-4f9469d1b2cb/73271b3d53a4e50e65e2e918a8c1100d2681c17bc418e03513c9f0554609ff8a/vs_BuildTools.exe' <# https://aka.ms/vs/17/release/vs_buildtools.exe #> `
+    -Checksum '73271B3D53A4E50E65E2E918A8C1100D2681C17BC418E03513C9F0554609FF8A' `
+    -ChecksumType 'SHA256' `
+    -InstallerTechnology 'WillowVS2017OrLater' `
+    -Product 'BuildTools' `
+    -VisualStudioYear '2022' `
+    -Preview $false
+Install-VisualStudio `
+    -PackageName 'visualstudio2022community' `
+    -ApplicationName 'Microsoft Visual Studio Community 2022' `
+    -Url 'https://download.visualstudio.microsoft.com/download/pr/ce8663b0-08ed-410a-9f5d-4f9469d1b2cb/15aaba5b89037604d9a922d454d4b7fa31c64ce536c802fe4968b15186c94874/vs_Community.exe' <# https://aka.ms/vs/17/release/vs_community.exe #> `
+    -Checksum '15AABA5B89037604D9A922D454D4B7FA31C64CE536C802FE4968B15186C94874' `
+    -ChecksumType 'SHA256' `
+    -InstallerTechnology 'WillowVS2017OrLater' `
+    -Product 'Community' `
+    -VisualStudioYear '2022' `
+    -Preview $false
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+
+Install-VsCodeExtension -extensionId 'MS-vsliveshare.vsliveshare-audio@0.1.91'
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$filePath = if ((Get-OSArchitectureWidth 64) -and $env:chocolateyForceX86 -ne $true) {
+       Write-Host "Installing 64 bit version" ; Get-Item $toolsDir\*_x64.exe }
+else { Write-Host "Installing 32 bit version" ; Get-Item $toolsDir\*_x32.exe }
+
+$packageArgs = @{
+  packageName    = '7zip.install'
+  fileType       = 'exe'
+  softwareName   = '7-zip*'
+  file           = $filePath
+  silentArgs     = '/S'
+  validExitCodes = @(0)
+}
+Install-ChocolateyInstallPackage @packageArgs
+Remove-Item $toolsDir\*.exe -ea 0 -force
+
+$installLocation = Get-AppInstallLocation $packageArgs.softwareName
+if (!$installLocation)  { Write-Warning "Can't find 7zip install location"; return }
+Write-Host "7zip installed to '$installLocation'"
+
+Install-BinFile '7z' $installLocation\7z.exe
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = Split-Path $MyInvocation.MyCommand.Definition
+
+$pp = Get-PackageParameters
+if (!$pp.DefaultVer){
+  $pp.DefaultVer = if ((Get-OSArchitectureWidth 64) -and ($Env:chocolateyForceX86 -ne 'true')) { 'U64' } else { 'U32' }
+}
+
+$packageArgs = @{
+  packageName    = 'autohotkey.install'
+  fileType       = 'exe'
+  file           = Get-Item "$toolsDir\*.exe"
+  silentArgs     = "/S /$($pp.DefaultVer)"
+  softwareName   = 'AutoHotkey*'
+  validExitCodes = @(0, 1223)
+}
+Install-ChocolateyInstallPackage @packageArgs
+Remove-Item $toolsDir\*.exe
+
+$installLocation = Get-AppInstallLocation $packageArgs.softwareName
+$packageName = $packageArgs.softwareName
+if ($installLocation)  {
+    $installName = 'AutoHotkey'
+    Write-Host "$packageName installed to '$installLocation'"
+    Register-Application "$installLocation\$installName.exe"
+    Write-Host "$packageName registered as $installName"
+}
+else { Write-Warning "Can't find $packageName install location" }
+$ErrorActionPreference = 'Stop'
+$packageName = $env:ChocolateyPackageName
+$url = 'https://download.sysinternals.com/files/Autoruns.zip'
+$checksum = 'b7d042ba7302a74722ddce16f9f373f2644f5196d000aeaf29f6583698769ba0'
+$checksumType = 'sha256'
+$url64 = "$url"
+$checksum64 = "$checksum"
+$checksumType64 = "checksumType"
+$fileName = "Autoruns.exe"
+$linkName = "Autoruns.lnk"
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+Install-ChocolateyZipPackage -PackageName "$packageName" `
+                             -Url "$url" `
+                             -UnzipLocation "$toolsDir" `
+                             -Url64bit "$url64" `
+                             -Checksum "$checksum" `
+                             -ChecksumType "$checksumType" `
+                             -Checksum64 "$checksum64" `
+                             -ChecksumType64 "$checksumType64"
+$programs = "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\"
+$shortcutFilePath = Join-Path $programs $linkName
+$targetPath = Join-Path $toolsDir $fileName
+Install-ChocolateyShortcut -shortcutFilePath $shortcutFilePath -targetPath $targetPath
+Write-Verbose "Accepting license..."
+$regRoot = 'HKCU:\Software\Sysinternals'
+$regPkg = 'AutoRuns'
+$regPath = Join-Path $regRoot $regPkg
+if (!(Test-Path $regRoot)) {New-Item -Path "$regRoot"}
+if (!(Test-Path $regPath)) {New-Item -Path "$regRoot" -Name "$regPkg"}
+Set-ItemProperty -Path "$regPath" -Name EulaAccepted -Value 1
+if ((Get-ItemProperty -Path "$regPath").EulaAccepted -ne 1) {
+  throw "Failed setting registry value."
+}
+$ErrorActionPreference = 'Stop'
+
+$urlBase = "https://www.scootersoftware.com"
+
+$pp = Get-PackageParameters
+
+if ($pp["LCID"]) {
+    $LCID = $pp["LCID"]
+} else {
+    $LCID = (Get-UICulture).LCID
+}
+
+$german = @(3079,1031,5127,4103,2055)
+$french = @(2060,11276,3084,9228,12300,1036,5132,13324,6156,14348,10252,4108,7180)
+$japanese = @(17, 1041)
+$chinese = @(2052)
+$version = '4.4.1.26165'
+
+$packageArgs = @{
+  packageName   = 'beyondcompare'
+  fileType      = 'exe'
+  url           = $url
+  silentArgs = '/SP- /VERYSILENT /NORESTART'
+
+  checksum      = ''
+  checksumType  = 'sha256'
+}
+
+$checksumde = '9d0744b36614651d83057d1574d7b1cc2af9763307e9116031421ff930840761'
+$checksumfr = '1913295258bb70ec039989be52db6c6130cefb0ac2418a029e55aab540bf86ba'
+$checksumjp = 'c6208546dbe3ee0d57baeeed8189810c1068410aba52af9ea4fa068fbf68b347'
+$checksumzh = 'f1481b39eac3233c31517654395633f9b59db57cbe02bf105e13f76ebf262650'
+$checksum = '75657b0898adf823b8401563c0fa804ce0c9bfbfa44e7610d52c31d0756cc788'
+
+if ($german -contains $LCID)
+{
+    $packageArgs.url = "$urlBase/BCompare-de-$version.exe"
+    $packageArgs.checksum = $checksumde
+}
+elseif ($french -contains $LCID)
+{
+    $packageArgs.url = "$urlBase/BCompare-fr-$version.exe"
+    $packageArgs.checksum = $checksumfr
+}
+elseif ($japanese -contains $LCID)
+{
+    $packageArgs.url = "$urlBase/BCompare-jp-$version.exe"
+    $packageArgs.checksum = $checksumjp
+}
+elseif ($chinese -contains $LCID) {
+    $packageArgs.url = "$urlBase/BCompare-zh-$version.exe"
+    $packageArgs.checksum = $checksumzh
+}
+else
+{
+    $packageArgs.url = "$urlBase/BCompare-$version.exe"
+    $packageArgs.checksum = $checksum
+}
+
+Install-ChocolateyPackage @packageArgs
+$toolsPath = Split-Path $MyInvocation.MyCommand.Definition
+. $toolsPath\helpers.ps1
+
+$packageArgs = @{
+  packageName = $env:ChocolateyPackageName
+  file        = "$toolsPath\BraveBrowserStandaloneSilentSetup32.exe"
+  file64      = "$toolsPath\BraveBrowserStandaloneSilentSetup.exe"
+}
+
+[version]$softwareVersion = '1.34.81'
+
+Write-Host "Checking already installed version..."
+$installedVersion = Get-InstalledVersion
+
+if ($installedVersion -and ($softwareVersion -lt $installedVersion)) {
+  Write-Warning "Skipping installation because a later version than $softwareVersion is installed."
+}
+elseif ($installedVersion -and ($softwareVersion -eq $installedVersion)) {
+  Write-Warning "Skipping installation because version $softwareVersion is already installed."
+}
+else {
+  Install-ChocolateyInstallPackage @packageArgs
+}
+
+Remove-Item $toolsPath\*.exe -ea 0
+$ErrorActionPreference = 'Stop'
+$packageName      = 'choco-package-list-backup'
+$toolsDir         = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$pp               = Get-PackageParameters
+$scriptDir        = "$(Get-ToolsLocation)\BCURRAN3"
+$script           = 'choco-package-list-backup.ps1'
+$ScriptConfig     = 'choco-package-list-backup.config'
+$shortcutName     = 'Chocolatey Package List Backup.lnk'
+$oldshortcutName  = 'Choco Package List Backup.lnk'
+$altshortcutName  = 'Package List Backup.lnk'
+$Date             = Get-Date -UFormat %Y-%m-%d
+
+# Setup
+# New storage location moving forward for all my Chocolatey scripts
+if (!(Test-Path "$env:ChocolateyToolsLocation\BCURRAN3")) { New-Item -Path "$env:ChocolateyToolsLocation" -Name "BCURRAN3" -ItemType "Directory" | Out-Null }
+
+# Migration
+# Move files before v2019.08.27 from old to new storage location
+if (Test-Path "$env:ChocolateyInstall\bin\$script") { Remove-Item "$env:ChocolateyInstall\bin\$script" -Force }
+if (Test-Path "$env:ChocolateyInstall\bin\choco-package-list-backup.xml") { Rename-Item "$env:ChocolateyInstall\bin\choco-package-list-backup.xml" $ScriptConfig -Force }
+if (Test-Path "$env:ChocolateyInstall\bin\$ScriptConfig") { Move-Item "$env:ChocolateyInstall\bin\$ScriptConfig" "$scriptDir" -Force ; $Migration=$True }
+if ($Migration) { &SchTasks /Delete /TN choco-package-list-backup /F }
+if (Test-Path "$scriptDir\choco-package-list-backup.cmd") { Remove-Item "$scriptDir\choco-package-list-backup.cmd" -Force }
+if (Test-Path "$scriptDir\choco-package-list-backup-manual.bat") { Remove-Item "$scriptDir\choco-package-list-backup-manual.bat" -Force }
+if (Test-Path "$scriptDir\CPLB.cmd") { Remove-Item "$scriptDir\CPLB.cmd" -Force }
+
+# Install Script
+# Move new files and support files (if applicable)
+Move-Item "$toolsDir\$script" "$scriptDir" -Force
+Move-Item "$toolsDir\CPLB.bat" "$scriptDir" -Force
+if (!(Test-Path "$scriptDir\$ScriptConfig")) { Move-Item "$toolsDir\$ScriptConfig" "$scriptDir" -Force }
+
+# Create "shim"
+Install-ChocolateyPowershellCommand -PackageName 'choco-package-list-backup' -PSFileFullPath "$scriptDir\$script"
+
+# Cleanup
+Remove-Item "$toolsDir\choco-package-list-backup.*" -Force -ErrorAction SilentlyContinue | Out-Null
+if ($env:Path -NotMatch "BCURRAN3"){ Install-ChocolateyPath "$scriptDir" "Machine" ; refreshenv }
+
+Function Update-Config{
+[xml]$UpdatedConfig = Get-Content "$scriptDir\$ScriptConfig"
+
+$UseiCloudDrive = $UpdatedConfig.Settings.Preferences.UseiCloudDrive
+if ($UseiCloudDrive -eq $null)
+   {
+    Write-Host "  ** Adding iCloudDrive support to $ScriptConfig." -Foreground Magenta
+	$NewStuff=$UpdatedConfig.CreateNode("element", "UseiCloudDrive", $null)
+    $NewStuff.InnerText=("true") 
+	$UpdatedConfig.Settings.Preferences.AppendChild($NewStuff) | Out-Null
+	$UpdatedFile = $True
+   }
+$UseownCloud = $UpdatedConfig.Settings.Preferences.UseownCloud
+if ($UseownCloud -eq $null)
+   {
+    Write-Host "  ** Adding ownCloud support to $ScriptConfig." -Foreground Magenta
+	$NewStuff=$UpdatedConfig.CreateNode("element", "UseownCloud", $null)
+    $NewStuff.InnerText=("true") 
+	$UpdatedConfig.Settings.Preferences.AppendChild($NewStuff) | Out-Null
+	$UpdatedFile = $True
+   }
+$SaveAllProgramsList = $UpdatedConfig.Settings.Preferences.SaveAllProgramsList
+if ($SaveAllProgramsList -eq $null)
+   {
+    Write-Host "  ** Adding SaveAllProgramsList support to $ScriptConfig." -Foreground Magenta
+	$NewStuff=$UpdatedConfig.CreateNode("element", "SaveAllProgramsList", $null)
+    $NewStuff.InnerText=("true") 
+	$UpdatedConfig.Settings.Preferences.AppendChild($NewStuff) | Out-Null
+	$UpdatedFile = $True
+   }
+$AllProgramsListFile = $UpdatedConfig.Settings.Preferences.AllProgramsListFile
+if ($AllProgramsListFile -eq $null)
+   {
+    Write-Host " ** Adding AllProgramsListFile support to $ScriptConfig." -Foreground Magenta
+	$NewStuff=$UpdatedConfig.CreateNode("element", "AllProgramsListFile", $null)
+    $NewStuff.InnerText=("AllProgramsList.txt") 
+	$UpdatedConfig.Settings.Preferences.AppendChild($NewStuff) | Out-Null
+	$UpdatedFile = $True
+   }   
+$SaveTitleSummary = $UpdatedConfig.Settings.Preferences.SaveTitleSummary
+if ($SaveTitleSummary -eq $null)
+   {
+    Write-Host "  ** Adding SaveTitleSummary support to $ScriptConfig." -Foreground Magenta
+	$NewStuff=$UpdatedConfig.CreateNode("element", "SaveTitleSummary", $null)
+    $NewStuff.InnerText=("false") 
+	$UpdatedConfig.Settings.Preferences.AppendChild($NewStuff) | Out-Null
+	$UpdatedFile = $True
+   }
+$DefaultUserProfile = $UpdatedConfig.Settings.Preferences.DefaultUserProfile
+if ($DefaultUserProfile -eq $null)
+   {
+	$NewStuff=$UpdatedConfig.CreateNode("element", "DefaultUserProfile", $null)
+    if ($env:COMPUTERNAME -eq $env:USERNAME.trim('$')) { $NewStuff.InnerText=('Public') } else { $NewStuff.InnerText=("$env:USERNAME") }
+    Write-Host "  ** Adding DefaultUserProfile support to $ScriptConfig." -Foreground Magenta
+	$UpdatedConfig.Settings.Preferences.AppendChild($NewStuff) | Out-Null
+	$UpdatedFile = $True
+   }
+$UseDefaultUserProfile = $UpdatedConfig.Settings.Preferences.UseDefaultUserProfile
+if ($UseDefaultUserProfile -eq $null)
+   {
+	$NewStuff=$UpdatedConfig.CreateNode("element", "UseDefaultUserProfile", $null)
+    $NewStuff.InnerText=("false") 
+    Write-Host "  ** Adding UseDefaultUserProfile support to $ScriptConfig." -Foreground Magenta
+	$UpdatedConfig.Settings.Preferences.AppendChild($NewStuff) | Out-Null
+	$UpdatedFile = $True
+   }
+$CustomPath2 = $UpdatedConfig.Settings.Preferences.CustomPath2
+if ($CustomPath2 -eq $null)
+   {
+	$NewStuff=$UpdatedConfig.CreateNode("element", "CustomPath2", $null)
+    $NewStuff.InnerText=("c:\backup") 
+    Write-Host "  ** Adding CustomPath2 support to $ScriptConfig." -Foreground Magenta
+	$UpdatedConfig.Settings.Preferences.AppendChild($NewStuff) | Out-Null
+	$UpdatedFile = $True
+   }
+$UseCustomPath2 = $UpdatedConfig.Settings.Preferences.UseCustomPath2
+if ($UseCustomPath2 -eq $null)
+   {
+	$NewStuff=$UpdatedConfig.CreateNode("element", "UseCustomPath2", $null)
+    $NewStuff.InnerText=("false") 
+    Write-Host "  ** Adding UseCustomPath2 support to $ScriptConfig." -Foreground Magenta
+	$UpdatedConfig.Settings.Preferences.AppendChild($NewStuff) | Out-Null
+	$UpdatedFile = $True
+   }
+$SaveArguments = $UpdatedConfig.Settings.Preferences.SaveArguments
+if ($SaveArguments -eq $null)
+   {
+	$NewStuff=$UpdatedConfig.CreateNode("element", "SaveArguments", $null)
+    $NewStuff.InnerText=("false") 
+    Write-Host "  ** Adding SaveArguments support to $ScriptConfig." -Foreground Magenta
+	$UpdatedConfig.Settings.Preferences.AppendChild($NewStuff) | Out-Null
+	$UpdatedFile = $True
+   }
+$PreProcessScript = $UpdatedConfig.Settings.Preferences.PreProcessScript
+if ($PreProcessScript -eq $null)
+   {
+	$NewStuff=$UpdatedConfig.CreateNode("element", "PreProcessScript", $null)
+    $NewStuff.InnerText=("false") 
+    Write-Host "  ** Adding PreProcessScript support to $ScriptConfig." -Foreground Magenta
+	$UpdatedConfig.Settings.Preferences.AppendChild($NewStuff) | Out-Null
+	$UpdatedFile = $True
+   }
+$PostProcessScript = $UpdatedConfig.Settings.Preferences.PostProcessScript
+if ($PostProcessScript -eq $null)
+   {
+	$NewStuff=$UpdatedConfig.CreateNode("element", "PostProcessScript", $null)
+    $NewStuff.InnerText=("false") 
+    Write-Host "  ** Adding PostProcessScript support to $ScriptConfig." -Foreground Magenta
+	$UpdatedConfig.Settings.Preferences.AppendChild($NewStuff) | Out-Null
+	$UpdatedFile = $True
+   }   
+if ($UpdatedFile)
+   {   
+    $UpdatedConfig.Save("$scriptDir\$ScriptConfig")
+	Write-Host "  ** Updated $ScriptConfig" -Foreground Magenta
+   }
+}
+
+Update-Config
+
+# exit if a scheduled task is not wanted
+if ($pp["NOTASK"] -eq 'true' -or $pp["NOSCHEDULE"] -eq 'true'){
+       Write-Host "  ** NOTASK or NOSCHEDULE specified, not installing scheduled task." -Foreground Magenta
+	   exit
+   }
+   
+# install option to not run the script after install
+$RunAfterInstall = $True
+if ($pp["NORUN"] -eq 'true' -or $pp["DONTRUN"] -eq 'true'){
+       Write-Host "  ** NORUN or DONTRUN specified, not running task." -Foreground Magenta
+	   $RunAfterInstall = $False
+   }
+
+$ErrorActionPreference = 'SilentlyContinue'
+$GotTask = (&schtasks /query /tn choco-package-list-backup) 2> $null
+$ErrorActionPreference = 'Stop'
+
+# Change task to run new batch file and keep other existing settings (2020.04.06 upgrade)
+if ($GotTask -ne $null){
+     &SchTasks /CHANGE /TN "choco-package-list-backup" /TR "%ChocolateyInstall%\bin\choco-package-list-backup.bat"
+   }
+
+if ($GotTask -ne $null){
+     Write-Host
+     Write-Host "  ** Existing choco-package-list-backup scheduled task found:" -Foreground Magenta 
+     SchTasks /query /tn "choco-package-list-backup"
+     Write-Host "`nKeeping existing scheduled task and upgrading script files." -Foreground Magenta
+  } else {
+    # install option to run at boot
+    if ($pp["ONSTART"] -eq 'true' -or $pp["ATSTARTUP"] -eq 'true'){
+	      SchTasks /Create /SC ONSTART /DELAY 0002:00 /RU SYSTEM /RL HIGHEST /TN "choco-package-list-backup" /TR "%ChocolateyInstall%\bin\choco-package-list-backup.bat" /F
+          Write-Host "  ** ONSTART or ATSTARTUP specified, task will run on boot." -Foreground Magenta		  
+       } else {
+		 # Default install scheduled task 
+	     SchTasks /Create /SC WEEKLY /D MON /RU SYSTEM /RL HIGHEST /TN "choco-package-list-backup" /TR "%ChocolateyInstall%\bin\choco-package-list-backup.bat" /ST 06:00 /F
+         SchTasks /query /tn "choco-package-list-backup"
+	     Write-Host "  ** Now configured to run choco-package-list-backup at 6 AM every MONDAY." -Foreground Green
+	    }
+    }
+
+If (Test-Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Chocolatey"){
+      Remove-Item "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\$oldshortcutName" -Force -ErrorAction SilentlyContinue
+      Install-ChocolateyShortcut -shortcutFilePath "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Chocolatey\$altshortcutName" -targetPath "$env:ChocolateyInstall\bin\choco-package-list-backup.bat" -IconLocation "$env:ChocolateyInstall\choco.exe" -WorkingDirectory "$env:ChocolateyInstall\bin\"
+    } else {
+      Install-ChocolateyShortcut -shortcutFilePath "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\$shortcutName" -targetPath "$env:ChocolateyInstall\bin\choco-package-list-backup.bat" -IconLocation "$env:ChocolateyInstall\choco.exe" -WorkingDirectory "$env:ChocolateyInstall\bin\"
+	}
+
+If ($RunAfterInstall){
+	Write-Host "Running Choco-Package-List-Backup.ps1 to create backup(s)..." -Foreground Magenta
+    &$env:ChocolateyInstall\bin\choco-package-list-backup.bat
+   }
+Write-Host "ADDITIONAL INFORMATION:" -Foreground Magenta
+Write-Host "  ** Customize your backups: run CHOCO-PACKAGE-LIST-BACKUP -EDITCONFIG." -Foreground Magenta
+Write-Host "  ** Run from Command Prompt or PowerShell: CHOCO-PACKAGE-LIST-BACKUP or CPLB." -Foreground Magenta
+If (Test-Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Chocolatey"){
+     Write-Host "  ** Run from Windows: Click Package List Backup in the Start Menu under Chocolatey to run." -Foreground Magenta
+   } else {
+     Write-Host "  ** Run from Windows: Click Chocolatey Package List Backup in the Start Menu to run." -Foreground Magenta
+   }
+$ErrorActionPreference = 'Stop'
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+. "$toolsDir\Install-VsCodeExtension.ps1"
+
+$packageArgs = @{
+  packageName   = $env:ChocolateyPackageName
+  extensionPath = "$toolsDir\chocolatey-vscode.vsix"
+}
+
+Install-VsCodeExtension @packageArgs
+$packageName   = $env:ChocolateyPackageName
+$toolsDir      = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$webToolsDir   = Join-Path $toolsDir $packageName
+$packageWebConfig  = Join-Path $webToolsDir 'Web.config'
+$webInstallDir     = Join-Path (Get-ToolsLocation) $packageName
+$existingWebConfig = Join-Path $webInstallDir 'Web.config'
+
+#Enable Web Services
+#cinst IIS-WebServerRole -source WindowsFeatures
+#cinst IIS-ISAPIFilter -source WindowsFeatures
+#cinst IIS-ISAPIExtensions -source WindowsFeatures
+
+# https://github.com/chocolatey/chocolatey/wiki/DevelopmentEnvironmentSetup
+# cinst ASPNET -source webpi
+# cinst ASPNET_REGIIS -source webpi
+# cinst DefaultDocument -source webpi
+# cinst DynamicContentCompression -source webpi
+# cinst HTTPRedirection -source webpi
+# cinst IIS7_ExtensionLessURLs -source webpi
+# cinst IISManagementConsole -source webpi
+# cinst ISAPIExtensions -source webpi
+# cinst ISAPIFilters -source webpi
+# cinst NETExtensibility -source webpi
+# cinst RequestFiltering -source webpi
+# cinst StaticContent -source webpi
+# cinst StaticContentCompression -source webpi
+# cinst UrlRewrite2 -source webpi
+
+# W3SVC should be running
+
+# http://msdn.microsoft.com/en-us/library/windows/desktop/ms724832.aspx
+$osVersion = [Environment]::OSVersion.Version
+if ($osVersion -ge [Version]'6.2') #8/2012+
+{
+#cinst IIS-NetFxExtensibility45 -source WindowsFeatures
+#cinst NetFx4Extended-ASPNET45 -source WindowsFeatures
+#cinst IIS-ASPNet45 -source WindowsFeatures
+
+} else { #Windows 7/2008 and below
+."$env:windir\microsoft.net\framework\v4.0.30319\aspnet_regiis.exe" -i
+}
+
+If (Test-Path -Path $existingWebConfig) {
+  Write-Output "Copying existing web.config to package directory to allow proper updates"
+  Copy-Item $existingWebConfig $packageWebConfig -Force -ErrorAction SilentlyContinue
+  Write-Warning "Due to transforms happening AFTER this script completes, you will likely need to manually migrate '$packageWebConfig' back to '$existingWebConfig' once upgrade is complete. Also check the config file to make sure that it was not malformed by the XDT transform."
+}
+
+if (! (Test-Path -Path $webInstallDir)) {
+  New-Item $webInstallDir -ItemType Directory -Force | Out-Null
+  Copy-Item $webToolsDir\* $webInstallDir -Recurse -Force
+} else {
+  try {
+    Write-Debug "Removing all but the App_Data folder in the existing '$webInstallDir'"
+    Get-ChildItem -Path "$webInstallDir" -Recurse | % {
+      if ($_.FullName -match 'App_Data' -or $_.FullName -match 'Web.config') {
+        Write-Debug " - Skipping $($_.FullName)"
+      } else {
+        Write-Debug " - Removing $($_.FullName)"
+        Remove-Item $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
+      }
+    }
+  } catch {
+    Write-Warning "Had an error deleting files from '$webInstallDir'. You will need to manually remove files. `n Error: $($_.Message)"
+  }
+
+  # Now copy all new except the App_Data folder
+  Write-Debug "Copying files from '$webToolsDir' to '$webInstallDir'"
+  Get-ChildItem -Path $webToolsDir -Recurse | % {
+    if ($_.FullName -match 'App_Data') {
+      # leave these items
+      Write-Debug "- Skipping $($_.FullName)"
+    } else {
+      if (! ($_.PSIsContainer)) {
+        $srcFile = $_.FullName
+        $destinationFile = Join-Path $webInstallDir ($srcFile.Substring($webToolsDir.length))
+        $destinationDir = $destinationFile.Replace($destinationFile.Split("\")[-1],"")
+        #$destinationDir = Join-Path $webInstallDir ($_.Parent.FullName.Substring($webToolsDir.length))
+        if (! (Test-Path -Path $destinationDir)) {
+          Write-Debug " - Creating $destinationDir"
+          New-Item $destinationDir -ItemType Directory -Force | Out-Null
+        }
+        try {
+          Write-Debug " - Copying '$srcFile' to '$destinationFile'"
+          Copy-Item $srcFile -Destination $destinationFile -Force -ErrorAction Stop
+        } catch {
+          Write-Warning "Unable to copy '$srcFile' to '$destinationFile'. `n Error: $_"
+        }
+      }
+    }
+  }
+}
+
+#Import-Module WebAdministration
+#Remove-WebSite -Name "Default Web Site" -ErrorAction SilentlyContinue
+#Remove-WebSite -Name "ChocolateyServer" -ErrorAction SilentlyContinue
+#New-WebSite -ID 1 -Name "ChocolateyServer" -Port 80 -PhysicalPath "$webInstallDir" -Force
+
+# $networkSvc = 'NT AUTHORITY\NETWORK SERVICE'
+# Write-Host "Setting folder permissions on `'$webInstallDir`' to 'Read' for user $networkSvc"
+# $acl = Get-Acl $webInstallDir
+# $acl.SetAccessRuleProtection($False, $True)
+# $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("$networkSvc","Read", "ContainerInherit, ObjectInherit", "None", "Allow");
+# $acl.AddAccessRule($rule);
+# Set-Acl $webInstallDir $acl
+
+# $webInstallAppDataDir = Join-Path $webInstallDir 'App_Data'
+# Write-Host "Setting folder permissions on `'$webInstallAppDataDir`' to 'Modify' for user $networkSvc"
+# $acl = Get-Acl $webInstallAppDataDir
+# $acl.SetAccessRuleProtection($False, $True)
+# $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("$networkSvc","Modify", "ContainerInherit, ObjectInherit", "None", "Allow");
+# $acl.AddAccessRule($rule);
+# Set-Acl $webInstallAppDataDir $acl
+#
+# Import-Module WebAdministration
+# $appPoolPath = "IIS:\AppPools\$projectName"
+# #$pool = new-object
+# Write-Warning "You can safely ignore the next error if it occurs related to getting an app pool that doesn't exist"
+# $pool = Get-Item $appPoolPath
+# if ($pool -eq $null) {
+#   Write-Host "Creating the app pool `'$appPoolPath`'"
+#   $pool = New-Item $appPoolPath
+# }
+#
+# $pool.processModel.identityType = "NetworkService"
+# $pool | Set-Item
+# Set-itemproperty $appPoolPath -Name "managedRuntimeVersion" -Value "v4.0"
+# #Set-itemproperty $appPoolPath -Name "managedPipelineMode" -Value "Integrated"
+# Start-WebAppPool "$projectName"
+# Write-Host "Creating the site `'$projectName`' with appPool `'$projectName`'"
+# New-WebApplication "$projectName" -Site "Default Web Site" -PhysicalPath $srcDir -ApplicationPool "$projectName" -Force
+
+#Client SKUs need to enable firewall
+#netsh advfirewall firewall add rule name="Open Port 80" dir=in action=allow protocol=TCP localport=80
+$packageName = 'cinebench'
+$url = 'http://http.maxon.net/pub/cinebench/CinebenchR23.zip'
+$md5Hash = 'ab936936b97c7b54a05fda185f846bf8'
+
+$installDir = $env:chocolateyPackageFolder
+
+Install-ChocolateyZipPackage -PackageName "$packageName" -Url "$url" -UnzipLocation "$installDir" -checksum $md5Hash
+Install-ChocolateyDesktopLink -TargetFilePath "$installDir\Cinebench.exe"
+$ErrorActionPreference = 'Stop'
+
+$packageArgs = @{
+  packageName    = 'cpu-z.install'
+  fileType       = 'exe'
+  url            = 'https://download.cpuid.com/cpu-z/cpu-z_2.00-en.exe'
+  checksum       = 'b70eb1953f4af79d365e0baebcde6b6cc566ca8057448cf82448b9b99c8ab5a7'
+  checksumType   = 'sha256'
+  silentArgs     = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART'
+  validExitCodes = @(0)
+  softwareName   = 'cpu-z'
+}
+Install-ChocolateyPackage @packageArgs
+
+$packageName = $packageArgs.packageName
+$installLocation = Get-AppInstallLocation $packageArgs.softwareName
+if ($installLocation)  {
+    Write-Host "$packageName installed to '$installLocation'"
+    Register-Application "$installLocation\cpuz.exe"
+    Write-Host "$packageName registered as cpuz"
+}
+else { Write-Warning "Can't find $packageName install location" }
+#Install-VirtualPackage 'cpu-z.portable' 'cpu-z.install'
+$ErrorActionPreference = 'Stop'
+
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$moduleName = 'dbachecks'  # this may be different from the package name and different case
+
+if ($PSVersionTable.PSVersion.Major -lt 5) {
+    throw "$moduleName module requires a minimum of PowerShell v5."
+}
+
+# module may already be installed outside of Chocolatey
+Remove-Module -Name $moduleName -Force -ErrorAction SilentlyContinue
+
+$sourcePath = Join-Path -Path $toolsDir -ChildPath "$modulename.zip"
+$destPath   = Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Modules\$moduleName\$env:ChocolateyPackageVersion"
+
+Write-Verbose "Creating destination directory '$destPath' for module."
+New-Item -Path $destPath -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+
+Write-Verbose "Extracting '$moduleName' files from '$sourcePath' to '$destPath'."
+Get-ChocolateyUnzip -FileFullPath $sourcePath -Destination $destPath
+$ErrorActionPreference = 'Stop'
+
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$moduleName = 'dbatools'  # this may be different from the package name and different case
+
+if ($PSVersionTable.PSVersion.Major -lt 3) {
+    throw "$moduleName) module requires a minimum of PowerShell v3."
+}
+
+# module may already be installed outside of Chocolatey
+Remove-Module -Name $moduleName -Force -ErrorAction SilentlyContinue
+
+$sourcePath = Join-Path -Path $toolsDir -ChildPath "$modulename.zip"
+$destPath   = Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Modules\$moduleName"
+
+if ($PSVersionTable.PSVersion.Major -ge 5)
+{
+    $destPath     = Join-Path -Path $destPath -ChildPath $env:ChocolateyPackageVersion
+}
+
+Write-Verbose "Creating destination directory '$destPath' for module."
+New-Item -Path $destPath -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+
+Write-Verbose "Extracting '$moduleName' files from '$sourcePath' to '$destPath'."
+Get-ChocolateyUnzip -FileFullPath $sourcePath -Destination $destPath
+
+if ($PSVersionTable.PSVersion.Major -lt 4)
+{
+    $modulePaths = [Environment]::GetEnvironmentVariable('PSModulePath', 'Machine') -split ';'
+    if ($modulePaths -notcontains $destPath)
+    {
+        Write-Verbose "Adding '$destPath' to PSModulePath."
+        $newModulePath = @($destPath, $modulePaths) -join ';'
+
+        [Environment]::SetEnvironmentVariable('PSModulePath', $newModulePath, 'Machine')
+        $env:PSModulePath = $newModulePath
+    }
+}
+$toolsDir   = Split-Path -parent $MyInvocation.MyCommand.Definition
+$FileLocations = Get-ChildItem -Path $toolsDir -Filter '*.exe' | select -ExpandProperty FullName
+ 
+$packageArgs = @{
+  packageName  = $env:ChocolateyPackageName
+  fileType     = 'EXE'
+  File         = $FileLocations | Where-Object {$_ -notmatch '64bit'}
+  File64       = $FileLocations | Where-Object {$_ -match '64bit'}
+  softwareName = $env:ChocolateyPackageName.split('.')[0]
+  silentArgs   = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /SP-'
+  validExitCodes= @(0)
+}
+
+Install-ChocolateyInstallPackage @packageArgs
+ 
+foreach ($exe in $FileLocations) {
+   New-Item "$exe.ignore" -Type file -Force | Out-Null
+}
+$ErrorActionPreference = 'Stop';
+
+$packageName= 'DocFX'
+$version    = 'v2.59.0'
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$url        = "https://github.com/dotnet/docfx/releases/download/$version/docfx.zip"
+$hash       = 'e6bd6d788ddb07d9bcb6d90f2822d7e2e6c4feb0e2caeabc60ff39232d07bc52'
+
+$packageArgs = @{
+  packageName   = $packageName
+  unzipLocation = $toolsDir
+  url           = $url
+  checksum      = $hash
+  checksumType  = 'SHA256'
+}
+
+Install-ChocolateyZipPackage @packageArgs
+
+if(-not (test-path "hklm:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319\SKUs\.NETFramework,Version=v4.5.2")) {
+Install-ChocolateyPackage 'dotnet452' 'exe' "/Passive /NoRestart /Log $env:temp\net451.log" 'http://download.microsoft.com/download/E/2/1/E21644B5-2DF2-47C2-91BD-63C560427900/NDP452-KB2901907-x86-x64-AllOS-ENU.exe' -validExitCodes @(0,3010)
+}
+else {
+     Write-Host "Microsoft .Net 4.5.2 Framework is already installed on your machine."
+ } 
+$packageName = 'DotNet46-TargetPack'
+$installerType = 'exe'
+$32BitUrl  = 'http://download.microsoft.com/download/8/2/F/82FF2034-83E6-4F93-900D-F88C7AD9F3EE/NDP46-TargetingPack-KB3045566.exe'
+$silentArgs = "/Passive /NoRestart /Log ""$env:temp\net46-targetpack.log"""
+$validExitCodes = @(
+    0, # success
+    3010 # success, restart required
+)
+
+Install-ChocolateyPackage $packageName $installerType $silentArgs $32BitUrl -validExitCodes $validExitCodes
+
+# ENU language pack
+$packageName = 'DotNet46-TargetPack-enu'
+$32BitUrl  = 'http://download.microsoft.com/download/8/2/F/82FF2034-83E6-4F93-900D-F88C7AD9F3EE/NDP46-TargetingPack-KB3045566-ENU.exe'
+$silentArgs = "/Passive /NoRestart /Log ""$env:temp\net46-targetpackenu.log"""
+
+Install-ChocolateyPackage $packageName $installerType $silentArgs $32BitUrl -validExitCodes $validExitCodes
+Function IsInstalled {
+    $ver = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full').Release
+    return (!($ver -eq $null) -and ($ver -ge 394254))
+}
+
+if (IsInstalled) {
+    Write-Host "Microsoft .NET Framework 4.6.1 or later is already installed"
+}
+else {
+    $packageName = 'DotNet461'
+    $toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+    $url = 'https://download.microsoft.com/download/E/4/1/E4173890-A24A-4936-9FC9-AF930FE3FA40/NDP461-KB3102436-x86-x64-AllOS-ENU.exe' 
+
+    $packageArgs = @{
+    packageName   = $packageName
+    unzipLocation = $toolsDir
+    fileType      = 'exe' 
+    url           = $url
+    softwareName  = 'DotNet461'
+    checksum      = 'BEAA901E07347D056EFE04E8961D5546C7518FAB9246892178505A7BA631C301'
+    checksumType  = 'sha256' 
+    silentArgs = "/q /norestart /log ""$env:temp\net461.log"""
+    validExitCodes = @(
+            0, # success
+            3010 # success, restart required
+        )
+    } 
+    
+    Install-ChocolateyPackage @packageArgs
+
+    if (-Not (IsInstalled)) {
+        Write-Host "A restart is required to finalise the Microsoft .NET Framework 4.6.1 installation"
+    }
+}
+Function IsInstalled {
+    $ver = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full').Release
+    return (!($ver -eq $null) -and ($ver -ge 393295))
+}
+
+if (IsInstalled) {
+    Write-Host "Microsoft .NET Framework 4.6 or later is already installed"
+}
+else {
+    $packageName = 'DotNet46'
+    $installerType = 'exe'
+    $Url = 'http://download.microsoft.com/download/C/3/A/C3A5200B-D33C-47E9-9D70-2F7C65DAAD94/NDP46-KB3045557-x86-x64-AllOS-ENU.exe'
+    $silentArgs = "/Passive /NoRestart /Log ""$env:temp\net46.log"""
+    $validExitCodes = @(
+        0, # success
+        3010 # success, restart required
+    )
+
+    Install-ChocolateyPackage $packageName $installerType $silentArgs $Url -validExitCodes $validExitCodes
+
+    if (-Not (IsInstalled)) {
+        Write-Host "A restart is required to finalise the Microsoft .NET Framework 4.6 installation"
+    }
+}
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version 2
+
+$data = & (Join-Path -Path (Split-Path -Path $MyInvocation.MyCommand.Path) -ChildPath data.ps1)
+
+function Test-Skip32BitRequested
+{
+    return $Env:chocolateyPackageParameters -like '*Skip32Bit*'
+}
+
+function Test-PassiveRequested
+{
+    return $Env:chocolateyPackageParameters -like '*Passive*'
+}
+
+function Test-OsSupports32Bit
+{
+    $cmdGetWindowsOptionalFeature = Get-Command -Name 'Get-WindowsOptionalFeature' -ErrorAction 'SilentlyContinue'
+    if ($null -eq $cmdGetWindowsOptionalFeature) {
+        Write-Debug 'Get-WindowsOptionalFeature command not found, assuming legacy OS and 32-bit support always present'
+        return $true
+    }
+    $wow64 = Get-WindowsOptionalFeature -Online -FeatureName 'ServerCore-WOW64' -ErrorAction 'SilentlyContinue'
+    if ($null -eq $wow64) {
+        Write-Debug 'ServerCore-WOW64 feature not found, assuming client or legacy server OS and 32-bit support always present'
+        return $true
+    }
+    Write-Debug "ServerCore-WOW64 feature state is: $($wow64.State)"
+    return ($wow64.State -eq 'Enabled')
+}
+
+function Get-PassiveOrQuietArgument
+{
+    [CmdletBinding()]
+    Param (
+        [string] $Scenario = 'installation'
+    )
+    if (Test-PassiveRequested) {
+        Write-Verbose "Performing an $Scenario with visible progress window, as requested."
+        $passiveOrQuiet = 'passive'
+    } else {
+        Write-Verbose "Performing a quiet $Scenario (default)."
+        $passiveOrQuiet = 'quiet'
+    }
+    return $passiveOrQuiet
+}
+
+$shouldInstall32Bit = $false
+if (Get-ProcessorBits -eq 64) {
+    if (-not (Test-Skip32BitRequested)) {
+        if (Test-OsSupports32Bit) {
+            $shouldInstall32Bit = $true
+        } else {
+            Write-Host 'Installation of 32-bit version will be skipped because the WOW64 subsystem is not installed.'
+            Write-Warning 'Because of a limitation of the .NET Core installer, even the 64-bit version will probably fail to install (https://github.com/dotnet/runtime/issues/3087).'
+        }
+    } else {
+        Write-Host 'Installation of 32-bit version will be skipped, as requested by package parameters.'
+    }
+}
+
+$passiveOrQuiet = Get-PassiveOrQuietArgument -Scenario 'installation'
+$arguments = @{
+    packageName = $data.PackageName
+    silentArgs = "$($data.AdditionalArgumentsToInstaller) /install /$passiveOrQuiet /norestart /log ""${Env:TEMP}\$($data.PackageName)-$(Get-Date -Format 'yyyyMMddHHmmss').log"""
+    validExitCodes = @(
+        0, # success
+        3010 # success, restart required
+    )
+    url = $data.Url
+    checksum = $data.Checksum
+    checksumType = $data.ChecksumType
+}
+$arguments64 = @{
+    url64 = $data.Url64
+    checksum64 = $data.Checksum64
+    checksumType64 = $data.ChecksumType64
+}
+
+Set-StrictMode -Off
+Install-ChocolateyPackage @arguments @arguments64
+if ($shouldInstall32Bit) {
+    Install-ChocolateyPackage @arguments
+}
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version 2
+
+$data = & (Join-Path -Path (Split-Path -Path $MyInvocation.MyCommand.Path) -ChildPath data.ps1)
+
+$arguments = @{
+    packageName = $data.PackageName
+    silentArgs = "$($data.AdditionalArgumentsToInstaller) /install /quiet /norestart /log ""${Env:TEMP}\$($data.PackageName)-$(Get-Date -Format 'yyyyMMddHHmmss').log"""
+    validExitCodes = @(
+        0, # success
+        3010 # success, restart required
+    )
+    url = $data.Url
+    checksum = $data.Checksum
+    checksumType = $data.ChecksumType
+}
+$arguments64 = @{
+    url64 = $data.Url64
+    checksum64 = $data.Checksum64
+    checksumType64 = $data.ChecksumType64
+}
+
+Set-StrictMode -Off
+Install-ChocolateyPackage @arguments @arguments64
+$version = '4.8'
+$arguments = @{
+    PackageName = 'dotnetfx'
+    Release = 528040
+    Version = $version
+    ProductNameWithVersion = "Microsoft .NET Framework $version"
+    Url = 'https://download.visualstudio.microsoft.com/download/pr/014120d7-d689-4305-befd-3cb711108212/0fd66638cde16859462a6243a4629a50/ndp48-x86-x64-allos-enu.exe'
+    Checksum = '9B1F71CD1B86BB6EE6303F7BE6FBBE71807A51BB913844C85FC235D5978F3A0F'
+    ChecksumType = 'sha256'
+}
+
+Install-DotNetFramework @arguments
+$ErrorActionPreference = 'Stop'; # stop on all errors
+
+$platformPackageName = 'resharper-platform'
+$packageName = 'dotUltimate'
+$scriptPath = $(Split-Path -parent $MyInvocation.MyCommand.Definition)
+$commonPath = $(Split-Path -parent $(Split-Path -parent $scriptPath))
+$filename = 'JetBrains.dotUltimate.2021.3.3.exe'
+$installPath = Join-Path  (Join-Path $commonPath $platformPackageName) $filename
+$packageParameters = Get-PackageParameters
+
+$products = @()
+
+if ($null -eq $packageParameters["NoReSharper"]) {
+  $products += "ReSharper"
+}
+
+if ($null -eq $packageParameters["NoDotTrace"]) {
+  $products += "dotTrace"
+}
+
+if ($null -eq $packageParameters["NoDotMemory"]) {
+  $products += "dotMemory"
+}
+
+if ($null -eq $packageParameters["NoDotCover"]) {
+  $products += "dotCover"
+}
+
+if ($null -eq $packageParameters["NoDotPeek"]) {
+  $products += "dotPeek"
+}
+
+if ($null -eq $packageParameters["NoCpp"]) {
+  $products += "ReSharperCpp"
+}
+
+if ($null -eq $packageParameters["NoTeamCityAddin"]) {
+  $products += "teamCityAddin"
+}
+
+if ($null -eq $packageParameters["NoRider"]) {
+  $products += "Rider"
+}
+
+$silentArgs = "/Silent=True /SpecificProductNames=$($products -join ';') /VsVersion=*"
+
+Write-Verbose $silentArgs
+
+if ($packageParameters["PerMachine"]) {
+  $silentArgs += " /PerMachine=True"
+}
+
+
+$packageArgs = @{
+  packageName   = $packageName
+  fileType      = 'exe'
+  file          = $installPath
+  silentArgs    = $silentArgs
+  validExitCodes= @(0)
+  softwareName  = 'ReSharper'
+}
+
+Install-ChocolateyInstallPackage @packageArgs
+<#
+.SYNOPSIS
+An install script for installing Erlang silently on the machine via ChocolateyNuGet
+
+.NOTES
+Author: Onorio Catenacci - catenacci@ieee.org
+Version: 24.0
+#>
+
+$package = 'erlang'
+$version = '24.0'
+$erl_version = '12.0'
+
+$params = @{
+  PackageName = $package
+  FileType = 'exe'
+  SilentArgs = '/S'
+  Url = "https://erlang.org/download/otp_win32_$version.exe"
+  CheckSum = 'ccc1e5918aefb543d2b5e7547c44e1b1ff66d62cd4ea74dd4782f694a6de8a44'
+  CheckSumType = 'sha256'
+  Url64 = "https://erlang.org/download/otp_win64_$version.exe"
+  CheckSum64 = 'f13311ae26d5260566740f8a7f124d0ba3589a1f52aada84b236825641f53225'
+  CheckSumType64 = 'sha256'
+  validExitCodes = @(0)
+}
+
+Install-ChocolateyPackage @params
+
+$baseErlangPath = "$env:ProgramFiles\erl-$version\erts-$erl_version\bin"
+
+Generate-BinFile "ct_run" -path "$baseErlangPath\ct_run.exe"
+Generate-BinFile "erl" -path "$baseErlangPath\erl.exe"
+Generate-BinFile "werl" -path "$baseErlangPath\werl.exe"
+Generate-BinFile "erlc" -path "$baseErlangPath\erlc.exe"
+Generate-BinFile "escript" -path "$baseErlangPath\escript.exe"
+Generate-BinFile "dialyzer" -path "$baseErlangPath\dialyzer.exe"
+Generate-BinFile "typer" -path "$baseErlangPath\typer.exe"
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = Split-Path $MyInvocation.MyCommand.Definition
+
+$packageArgs = @{
+  packageName    = 'Everything'
+  fileType       = 'exe'
+  file           = Get-Item "$toolsDir\*x86*.exe"
+  file64         = Get-Item "$toolsDir\*x64*.exe"
+  silentArgs     = '/S'
+  validExitCodes = @(0, 1223)
+}
+Install-ChocolateyInstallPackage @packageArgs
+Remove-Item $toolsDir\*Setup*.exe
+
+$packageName = $packageArgs.packageName
+$installLocation = Get-AppInstallLocation 'everything$'
+if (!$installLocation) { Write-Warning "Can't find $PackageName install location"; exit }
+
+Write-Host "$packageName installed to '$installLocation'"
+Register-Application "$installLocation\$packageName.exe"
+Write-Host "$packageName registered as $packageName"
+
+$pp = Get-PackageParameters
+
+$cmd = @(
+  ". '$installLocation\Everything.exe'"
+  '--disable-run-as-admin'
+  '--install-service' 
+)
+$pp.Keys | Where-Object { $_ -ne 'service' } | ForEach-Object { $cmd += "--install-" + $_.ToLower() }
+Write-Host "Post install command line:" $cmd
+"$cmd" | Invoke-Expression
+
+Write-Host "Starting $packageName"
+Start-Process "$installLocation\Everything.exe" -ArgumentList "-startup"
+$ErrorActionPreference = 'Stop'
+
+$toolsPath      = Split-Path $MyInvocation.MyCommand.Definition
+ 
+$packageArgs = @{
+  packageName            = 'fiddler'
+  fileType               = 'EXE'
+  file                   = Get-Item $toolsPath\*.exe
+  silentArgs             = '/S'
+  validExitCodes         = @(0)
+  softwareName           = 'fiddler*'
+}
+Install-ChocolateyInstallPackage @packageArgs
+
+Get-ChildItem $toolsPath\*.exe | ForEach-Object {
+  Remove-Item $_ -ErrorAction SilentlyContinue;
+  if (Test-Path $_) {
+    Set-Content -Value "" -Path "$_.ignore"
+  }
+}
+$version = '8.3.0'
+$packageName = 'flyway.commandline'
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$url = "https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/$version/flyway-commandline-$version.zip"
+$checksumType = 'sha256'
+$checksum = '066ae43cb3e0e7576123dd76fb9f203957931c3486f546ba222f8ba7ba9537e0'
+Install-ChocolateyZipPackage $packageName $url $toolsDir -Checksum $checksum -ChecksumType $checksumType
+Install-BinFile "flyway" "$toolsDir\flyway-$version\flyway.cmd"
+$ErrorActionPreference = 'Stop'
+
+$toolsPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
+
+$packageArgs = @{
+  packageName    = $env:ChocolateyPackageName
+  fileType       = 'exe'
+  file           = "$toolsPath\video_editor_x32.exe"
+  file64         = "$toolsPath\video_editor_x64.exe"
+  softwareName   = 'VSDC Free Video Editor*'
+  silentArgs     = "/VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP- /LOG=`"$($env:TEMP)\$($env:chocolateyPackageName).$($env:chocolateyPackageVersion).InnoInstall.log`""
+  validExitCodes = @(0)
+}
+
+Install-ChocolateyInstallPackage @packageArgs
+
+Get-ChildItem $toolsPath\*.exe | ForEach-Object { Remove-Item $_ -ea 0; if (Test-Path $_) { Set-Content "$_.ignore" '' } }
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$logMsi = Join-Path -Path $env:TEMP -ChildPath ("{0}-{1}-MsiInstall.log" -f $env:ChocolateyPackageName, $env:chocolateyPackageVersion)
+
+$packageArgs = @{
+    packageName    = $env:ChocolateyPackageName
+    fileType       = 'MSI'
+    silentArgs     = "/qn /norestart /l*v `"$logMsi`""
+    file64         = Join-Path -Path $toolsDir -ChildPath "gh_$($env:ChocolateyPackageVersion)_windows_amd64.msi"
+}
+
+Install-ChocolateyInstallPackage @packageArgs
+$ErrorActionPreference = 'Stop'
+
+$toolsPath = Split-Path $MyInvocation.MyCommand.Definition
+. $toolsPath\helpers.ps1
+
+$pp = Get-PackageParameters
+
+Stop-GitSSHAgent
+
+$fileName32 = 'Git-2.35.1.2-32-bit.exe'
+$fileName64 = 'Git-2.35.1.2-64-bit.exe'
+$silentArgs = "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/NOCANCEL", "/SP-", "/LOG", (Get-InstallComponents $pp)
+$silentArgs += Get-InstallOptions $pp
+
+$packageArgs = @{
+    PackageName    = 'git.install'
+    FileType       = 'exe'
+    SoftwareName   = 'Git version *'
+    File           = Get-Item $toolsPath\$fileName32
+    File64         = Get-Item $toolsPath\$fileName64
+    SilentArgs     = $silentArgs
+}
+Install-ChocolateyInstallPackage @packageArgs
+Get-ChildItem $toolsPath\$fileName32, $toolsPath\$fileName64 | ForEach-Object { Remove-Item $_ -ea 0; if (Test-Path $_) { Set-Content "$_.ignore" '' } }
+
+$packageName = $packageArgs.packageName
+$installLocation = Get-AppInstallLocation $packageArgs.SoftwareName
+if (!$installLocation)  { Write-Warning "Can't find $packageName install location"; return }
+Write-Host "$packageName installed to '$installLocation'"
+
+if ($pp.NoCredentialManager) {
+    Write-Host "Git credential manager will be disabled."
+    Install-ChocolateyEnvironmentVariable GCM_VALIDATE 'false'
+}
+$ErrorActionPreference = 'Stop'
+
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$installDir = Join-Path -Path $toolsDir -ChildPath $env:ChocolateyPackageName
+
+$packageArgs = @{
+    packageName    = $env:ChocolateyPackageName
+    file           = Get-Item -Path (Join-Path -Path $toolsDir -ChildPath '*_x32.exe')
+    fileType       = 'EXE'
+    silentArgs     = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR=$installDir"
+    validExitCodes = @(0)
+}
+
+Install-ChocolateyInstallPackage @packageArgs
+
+# Create shim ignore file(s)
+Get-ChildItem -Path (Join-Path -Path $installDir -ChildPath '*.exe') | ForEach-Object {
+    New-Item -Name "$($_.Name).ignore" -Path $installDir -ItemType File -ErrorAction SilentlyContinue | Out-Null
+}
+$toolsPath = Split-Path $MyInvocation.MyCommand.Definition
+. $toolsPath\helpers.ps1
+
+$version = '99.0.4844.51'
+if ($version -eq (Get-ChromeVersion)) {
+  Write-Host "Google Chrome $version is already installed."
+  return
+}
+
+$packageArgs = @{
+  packageName            = 'googlechrome'
+  fileType               = 'MSI'
+  url                    = 'https://dl.google.com/tag/s/dl/chrome/install/googlechromestandaloneenterprise.msi'
+  url64bit               = 'https://dl.google.com/tag/s/dl/chrome/install/googlechromestandaloneenterprise64.msi'
+  checksum               = 'a0a2475f698941b749f72d12a540b1c98f32b6e7c1867b3a5897a6cd32c438a8'
+  checksum64             = 'a03e83bc1861ea00e03ea68887edc6a90a817b546e2ab2f111c4f790af9b2dc2'
+  checksumType           = 'sha256'
+  checksumType64         = 'sha256'
+  silentArgs             = "/quiet /norestart /l*v `"$($env:TEMP)\$($env:chocolateyPackageName).$($env:chocolateyPackageVersion).MsiInstall.log`""
+  validExitCodes         = @(0)
+}
+
+if (Get-Chrome32bitInstalled) { 'url64bit', 'checksum64', 'checksumType64' | ForEach-Object { $packageArgs.Remove($_) } }
+Install-ChocolateyPackage @packageArgs
+$ErrorActionPreference = 'Stop'
+#https://www.techpowerup.com/download/techpowerup-gpu-z/
+$packageName = 'gpu-z'
+$toolsDir    = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$PortableEXE = "$toolsDir\GPU-Z."+$ENV:ChocolateyPackageVersion+".exe"
+
+Remove-Item $ENV:ChocolateyInstall\bin\gpu-z*.exe # delete old shims
+Remove-Item $toolsDir\*.exe -Exclude "GPU-Z.$ENV:ChocolateyPackageVersion.exe" # deleted old versions kept by upgrade
+Remove-Item $toolsDir\*.ignore  # delete old .ignore files (2.18.0+)
+Write-Host "" | Out-File "$toolsDir\GPU-Z.$ENV:ChocolateyPackageVersion.ignore" # create .ignore file so shim isn't created
+
+Install-ChocolateyShortcut -shortcutFilePath "$ENV:Public\Desktop\GPU-Z.lnk" -targetPath $PortableEXE
+Install-ChocolateyShortcut -shortcutFilePath "$ENV:ProgramData\Microsoft\Windows\Start Menu\Programs\GPU-Z.lnk" -targetPath $PortableEXE
+$bits = Get-ProcessorBits
+$packageName = 'grammarly-chrome'
+$extensionID = 'kbfnbcaeplbcioakkpcpgfkobkghlhen'
+if ($bits -eq 64)
+   {
+    if (Test-Path -Path "HKLM:\SOFTWARE\Wow6432node\Google\Chrome\Extensions\$extensionID")
+       {
+       Write-Host "Extension already installed." -foreground "magenta" –backgroundcolor "blue"
+       } else {
+         New-Item -Force -Path "HKLM:\SOFTWARE\Wow6432node\Google\Chrome\Extensions\$extensionID" | out-null
+         New-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432node\Google\Chrome\Extensions\$extensionID\" -Name "update_url" -Value "https://clients2.google.com/service/update2/crx" | out-null
+         New-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432node\Google\Chrome\Extensions\$extensionID\" -Name "ChocolateyPackageName" -Value "$packageName" | out-null
+         }
+    } else {
+      New-Item -Force -Path "HKLM:\SOFTWARE\Google\Chrome\Extensions\$extensionID" | out-null
+      New-ItemProperty -Path "HKLM:\SOFTWARE\Google\Chrome\Extensions\$extensionID\" -Name "update_url" -Value "https://clients2.google.com/service/update2/crx" | out-null
+      }
+$ErrorActionPreference = 'Stop'
+
+$toolsPath = Split-Path $MyInvocation.MyCommand.Definition
+
+$packageArgs = @{
+  packageName    = 'graphviz'
+  fileType       = 'exe'
+  file64         = "$toolsPath\graphviz-2.49.3 (64-bit) EXE installer.exe"
+  silentArgs     = '/S'
+  validExitCodes = @(0)
+  softwareName   = 'Graphviz*'
+}
+
+Install-ChocolateyPackage @packageArgs
+Remove-Item $toolsPath\*.exe -ea 0
+
+$packageName = $packageArgs.packageName
+$installLocation = Get-AppInstallLocation $packageArgs.softwareName
+if (!$installLocation)  { Write-Warning "Can't find $packageName install location"; return }
+Write-Host "$packageName installed to '$installLocation'"
+
+Get-ChildItem "$installLocation\bin" -Filter "*.exe" | ForEach-Object {
+    Write-Debug "File to be shimmed: $($_.Name)"
+    Install-BinFile $_.BaseName $_.FullName
+}
+$ErrorActionPreference = 'Stop'
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+
+$packageArgs = @{
+  packageName      = 'hwinfo.install'
+  fileType         = 'EXE'
+  file             = "$toolsDir\hwi.exe"
+  file64           = "$file"
+  softwareName     = 'HWiNFO*'
+  silentArgs       = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART'
+}
+
+Install-ChocolateyInstallPackage @packageArgs
+Remove-Item -force "$toolsDir\*.exe" -ea 0
+# Kill the process after it starts- there is no way to prevent autostart after install
+Get-Process | Where { $_.name -eq 'HWiNFO64' } | Stop-Process
+Get-Process | Where { $_.name -eq 'HWiNFO32' } | Stop-Process
+# Make launchable from cmd
+if (Get-OSArchitectureWidth -compare 64) {$bitness=64} else {$bitness=32}
+Install-BinFile -Name "hwinfo" -Path "C:\Program Files\HWiNFO$bitness\HWiNFO$bitness.EXE" -UseStart
+#Install-VirtualPackage 'HWiNFO.portable' 'HWiNFO.install'
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+
+# *** Automatically filled ***
+$fileType    = 'zip'
+$packageArgs = @{
+    packageName = 'ilspy'
+    destination = $toolsDir
+}
+# *** Automatically filled ***
+
+$packageArgs.file = Get-Item ("$toolsDir\*.{0}" -f $fileType)
+
+Get-ChocolateyUnzip @packageArgs
+Remove-Item $packageArgs.file -ErrorAction SilentlyContinue
+
+New-Item "$toolsDir\ilspy.exe.gui" -Type File -Force | Out-Null
+
+$shortcutPath = Join-Path $([Environment]::GetFolderPath([System.Environment+SpecialFolder]::CommonPrograms)) 'ILSpy.lnk'
+if (-not (Test-Path $shortcutPath)) {
+    Install-ChocolateyShortcut -ShortcutFilePath $shortcutPath -TargetPath "$toolsDir\ilspy.exe"
+}
+$ErrorActionPreference = 'Stop';
+
+$toolsDir     = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$url          = 'https://download.jetbrains.com/rider/JetBrains.Rider-2021.3.3.exe'
+$checksum     = '1121642b2420c63e52d0578d6063973c6176ed692fd6c2a048db6c13583e6fb9'
+$checksumType = 'sha256'
+
+# Workaround for https://youtrack.jetbrains.com/issue/IDEA-202935
+$programfiles = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0]
+New-Item -ItemType Directory -Force -Path $programfiles\JetBrains
+ 
+$packageArgs = @{
+  packageName   = $env:ChocolateyPackageName
+  softwareName  = 'Jetbrains Rider*'
+  fileType      = 'exe'
+  silentArgs    = "/S /CONFIG=$toolsDir\silent.config "
+  validExitCodes = @(0)
+  url            = $url
+  checksum       = $checksum
+  checksumType   = $checksumType
+  destination   = $toolsDir
+}
+
+ Install-ChocolateyPackage @packageArgs	
+try {
+
+$arguments = @{}
+
+  # Now we can use the $env:chocolateyPackageParameters inside the Chocolatey package
+  $packageParameters = $env:chocolateyPackageParameters
+
+  # Default value
+  $exclude = $null
+
+  # Now parse the packageParameters using good old regular expression
+  if ($packageParameters) {
+      $match_pattern = "\/(?<option>([a-zA-Z0-9]+)):(?<value>([`"'])?([a-zA-Z0-9- \(\)\s_\\:\.]+)([`"'])?)|\/(?<option>([a-zA-Z]+))"
+      $option_name = 'option'
+      $value_name = 'value'
+
+      if ($packageParameters -match $match_pattern ){
+          $results = $packageParameters | Select-String $match_pattern -AllMatches
+          $results.matches | % {
+            $arguments.Add(
+                $_.Groups[$option_name].Value.Trim(),
+                $_.Groups[$value_name].Value.Trim())
+        }
+      }
+      else
+      {
+          Throw "Package Parameters were found but were invalid (REGEX Failure)"
+      }
+
+      if($arguments.ContainsKey("exclude")) {
+          Write-Host "exclude Argument Found"
+          $exclude = $arguments["exclude"]
+      }
+      if($arguments.ContainsKey("64dir")) {
+          Write-Host "64Dir Argument Found"
+          $64dir = $arguments["64dir"]
+      }
+      if($arguments.ContainsKey("32dir")) {
+          Write-Host "32Dir Argument Found"
+          $32dir = $arguments["32dir"]
+      }
+
+  } else {
+      Write-Debug "No Package Parameters Passed in"
+  }
+
+  $scriptDir = $(Split-Path -parent $MyInvocation.MyCommand.Definition)
+  
+  $packageName = 'jre8'
+  # Modify these values -----------------------------------------------------
+  # Find download URLs at http://www.java.com/en/download/manual.jsp
+  $url = 'https://javadl.oracle.com/webapps/download/AutoDL?BundleId=245805_df5ad55fdd604472a86a45a217032c7d'
+  $checksum32 = '9C74A06A676E1B372F1B081841ECF14735B2E890335A2D0673EEDA1C04B80AA3'
+  $url64 = 'https://javadl.oracle.com/webapps/download/AutoDL?BundleId=245807_df5ad55fdd604472a86a45a217032c7d'
+  $checksum64 = '273FE2B92F8C123F28340660BF9A7DEE6F3BF2C88F4299C31C302F9C674D921D'
+  $oldVersion = '8.0.3110.11'
+  $version = '8.0.3210.7'
+  #--------------------------------------------------------------------------
+
+  if ($64dir) { $64dir = "INSTALLDIR=`"$64dir`""; echo "64 dir detected at $64dir";}
+  if ($32dir) { $32dir = "INSTALLDIR=`"$32dir`""; echo "32 dir detected at $32dir";}
+  $homepath = $version -replace "(\d+\.\d+)\.(\d\d)(.*)",'jre1.$1_$2'
+  $installerType = 'exe'
+  $installArgs = "/s $32dir REBOOT=0 SPONSORS=0 AUTO_UPDATE=0"
+  $installArgs64 = "/s $64dir REBOOT=0 SPONSORS=0 AUTO_UPDATE=0"
+  $osBitness = Get-ProcessorBits
+  $cachepath = "$env:temp\$packagename\$version"
+  Write-Host "The software license has changed for Java and this software must be licensed for general business use. Please ensure your licensing is compliant before installing." -ForegroundColor white -BackgroundColor red
+  #This checks to see if current version is already installed
+  Write-Output "Checking to see if local install is already up to date..."
+  try{
+  $checkreg64 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Select-Object DisplayName, DisplayVersion | Where-Object { $_.DisplayName -like '*Java 8*' -and ([Version]$_.DisplayVersion) -eq $version} -ErrorAction SilentlyContinue
+  $checkreg32 = Get-ItemProperty HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | Select-Object DisplayName, DisplayVersion | Where-Object { $_.DisplayName -like '*Java 8*' -and ([Version]$_.DisplayVersion) -eq $version} -ErrorAction SilentlyContinue
+  }catch{
+  Write-Output "Registry check failed. This is commonly caused by corrupt keys (Do you have netbeans installed?)"
+  }
+
+    # Checks if JRE 32/64-bit in the same version is already installed and if the user excluded 32-bit Java.
+    # Otherwise it downloads and installs it.
+    # This is to avoid unnecessary downloads and 1603 errors.
+    if ($checkreg32 -ne $null) 
+    {
+      Write-Output "Java Runtime Environment $version (32-bit) is already installed. Skipping download and installation"
+    } 
+    elseif ($exclude -ne "32") 
+    {
+      Write-Output "Downloading 32-bit installer"
+      Get-ChocolateyWebFile -packageName $packageName -fileFullPath "$cachepath\JRE8x86.exe" -url $url -checksum $checksum32 -checksumType 'SHA256'
+      Write-Output "Installing JRE $version 32-bit"
+      Install-ChocolateyInstallPackage -packageName JRE8 -fileType $installerType -silentArgs $installArgs -file "$cachepath\JRE8x86.exe"
+    } 
+    else 
+    {
+      Write-Output "Java Runtime Environment $Version (32-bit) excluded for installation"
+    }
+
+    # Only check for the 64-bit version if the system is 64-bit
+
+    if ($osBitness -eq 64) 
+    {
+      if ($checkreg64 -ne $null) 
+      {
+        Write-Output "Java Runtime Environment $version (64-bit) is already installed. Skipping download and installation"
+      } 
+      elseif ($exclude -ne "64") 
+      {
+        Write-Output "Downloading 64-bit installer"
+        Get-ChocolateyWebFile -packageName $packageName -fileFullPath "$cachepath\JRE8x64.exe" -url64 $url64 -checksum64 $checksum64 -checksumType 'SHA256'
+        Write-Output "Installing JRE $version 64-bit"
+        Install-ChocolateyInstallPackage -packageName JRE8 -fileType $installerType -silentArgs $installArgs64 -file64 "$cachepath\JRE8x64.exe"
+
+       # Install-ChocolateyPackage $packageName $installerType $installArgs64 -url64bit "$env:temp\chocolatey\$packagename\$version\JRE8x64.exe" -checksum64 $checksum64 -checksumtype64 'sha256'
+      } 
+      else 
+      {
+        Write-Output "Java Runtime Environment $Version (64-bit) excluded for installation"
+      }
+    }
+  
+  #Uninstalls the previous version of Java if either version exists
+  Write-Output "Searching if the previous version exists..."
+  $checkoldreg64 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Select-Object DisplayName, DisplayVersion, PSChildName | Where-Object { $_.DisplayName -like '*Java 8*' -and ([Version]$_.DisplayVersion) -eq $oldversion} -ErrorAction SilentlyContinue
+  $checkoldreg32 = Get-ItemProperty HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | Select-Object DisplayName, DisplayVersion, PSChildName | Where-Object { $_.DisplayName -like '*Java 8*' -and ([Version]$_.DisplayVersion) -eq $oldversion} -ErrorAction SilentlyContinue
+ 
+  if($checkoldreg32 -ne $null) 
+  {
+     Write-Warning "Uninstalling JRE version $oldVersion 32bit"
+     $32 = $checkoldreg32.PSChildName
+     Start-ChocolateyProcessAsAdmin "/qn /norestart /X$32" -exeToRun "msiexec.exe" -validExitCodes @(0,1605,3010)
+  }
+  if($checkoldreg64 -ne $null)
+  {
+     Write-Warning "Uninstalling JRE version $oldVersion $osBitness bit" #Formatted weird because this is used if run on a x86 install
+     $64 = $checkoldreg64.PSChildName
+     Start-ChocolateyProcessAsAdmin "/qn /norestart /X$64" -exeToRun "msiexec.exe" -validExitCodes @(0,1605,3010)
+  }
+  $64dir = $null
+  $32dir = $null
+} catch {
+  #Write-ChocolateyFailure $packageName $($_.Exception.Message)
+  throw
+}
+$kb = "KB2919355"
+$packageName = "KB2919355"
+$silentArgs = "/quiet /norestart /log:`"$env:TEMP\$kb.Install.evt`""
+
+$os = Get-WmiObject -Class Win32_OperatingSystem
+$version = [Version]$os.Version
+
+if ($version -eq $null -or $version -lt [Version]'6.3' -or $version -ge [Version]'6.4') {
+	Write-Host "Skipping installation because this hotfix only applies to Windows 8.1 and Windows Server 2012 R2."
+	return
+}
+
+if (Get-HotFix -id $kb -ea SilentlyContinue)
+{
+	Write-Host "Skipping installation because hotfix $kb is already installed."
+	return
+}
+
+if ($os.ProductType -eq '1') {
+	# Windows 8.1
+	$url = "https://download.microsoft.com/download/4/E/C/4EC66C83-1E15-43FD-B591-63FB7A1A5C04/Windows8.1-KB2919355-x86.msu"
+	$url64 = "https://download.microsoft.com/download/D/B/1/DB1F29FC-316D-481E-B435-1654BA185DCF/Windows8.1-KB2919355-x64.msu"
+	$checksum = 'F8BECA5B463A36E1FEF45AD0DCA6A0DE7606930380514AC1852DF5CA6E3F6C1D'
+	$checksum64 = 'B0C9ADA530F5EE90BB962AFA9ED26218C582362315E13B1BA97E59767CB7825D'
+} else {
+	# Windows Server 2012 R2
+	$url64 = "https://download.microsoft.com/download/2/5/6/256CCCFB-5341-4A8D-A277-8A81B21A1E35/Windows8.1-KB2919355-x64.msu"
+	$checksum64 = 'B0C9ADA530F5EE90BB962AFA9ED26218C582362315E13B1BA97E59767CB7825D'
+}
+
+Install-ChocolateyPackage $packageName 'msu' $silentArgs $url $url64 -checksum $checksum -checksum64 $checksum64 -checksumType 'sha256' -validExitCodes @(0, 3010, 0x80240017)
+$kb = "KB2919442"
+$packageName = "KB2919442"
+$silentArgs = "/quiet /norestart /log:`"$env:TEMP\$kb.Install.evt`""
+
+$os = Get-WmiObject -Class Win32_OperatingSystem
+$version = [Version]$os.Version
+
+if ($version -eq $null -or $version -lt [Version]'6.3' -or $version -ge [Version]'6.4') {
+	Write-Host "Skipping installation because this hotfix only applies to Windows 8.1 and Windows Server 2012 R2."
+	return
+}
+
+if (Get-HotFix -id $kb -ea SilentlyContinue)
+{
+	Write-Host "Skipping installation because hotfix $kb is already installed."
+	return
+}
+
+if ($os.ProductType -eq '1') {
+	# Windows 8.1
+	$url = "https://download.microsoft.com/download/9/D/A/9DA6C939-9E65-4681-BBBE-A8F73A5C116F/Windows8.1-KB2919442-x86.msu"
+	$url64 = "https://download.microsoft.com/download/C/F/8/CF821C31-38C7-4C5C-89BB-B283059269AF/Windows8.1-KB2919442-x64.msu"
+	$checksum = '3368C3A329F402FD982B15B399368627B96973F008A5456B5286BDFC10C1169B'
+	$checksum64 = 'C10787E669B484674584A990E069295E8B81B5366F98508010A3AE181B729482'
+} else {
+	# Windows Server 2012 R2
+	$url64 = "https://download.microsoft.com/download/D/6/0/D60ED3E0-93A5-4505-8F6A-8D0A5DA16C8A/Windows8.1-KB2919442-x64.msu"
+	$checksum64 = 'C10787E669B484674584A990E069295E8B81B5366F98508010A3AE181B729482'
+}
+
+Install-ChocolateyPackage $packageName 'msu' $silentArgs $url $url64 -checksum $checksum -checksum64 $checksum64 -checksumType 'sha256' -validExitCodes @(0, 3010, 0x80240017)
+$msuData = @{
+  '6.0-client' = @{
+    Url = 'https://download.microsoft.com/download/D/8/3/D838D576-232C-4C17-A402-75913F27113B/Windows6.0-KB2999226-x86.msu'
+    Url64 = 'https://download.microsoft.com/download/5/4/E/54E27BE2-CFB2-4FC9-AB03-C39302CA68A0/Windows6.0-KB2999226-x64.msu'
+    Checksum = 'AE380F63BF4E8700ADA686406B04B01230A339B09EDF7819814A4C0BF4AB72E1'
+    Checksum64 = '10069DE7315CA3F405E2579846AF5DAB3089A8496AE4C1AB61763480F43A05A8'
+  }
+  '6.0-server' = @{
+    Url = 'https://download.microsoft.com/download/B/5/7/B5757251-DAB0-4E23-AA46-ABC233FDB90E/Windows6.0-KB2999226-x86.msu'
+    Url64 = 'https://download.microsoft.com/download/A/7/A/A7A70B17-ADF9-4FC3-A722-69FA89B79756/Windows6.0-KB2999226-x64.msu'
+    Checksum = 'AE380F63BF4E8700ADA686406B04B01230A339B09EDF7819814A4C0BF4AB72E1'
+    Checksum64 = '10069DE7315CA3F405E2579846AF5DAB3089A8496AE4C1AB61763480F43A05A8'
+  }
+  '6.1-client' = @{
+    Url = 'https://download.microsoft.com/download/4/F/E/4FE73868-5EDD-4B47-8B33-CE1BB7B2B16A/Windows6.1-KB2999226-x86.msu'
+    Url64 = 'https://download.microsoft.com/download/1/1/5/11565A9A-EA09-4F0A-A57E-520D5D138140/Windows6.1-KB2999226-x64.msu'
+    Checksum = '909E76C81EF0EB176144B253DDFFE7A8FDFACEBFAA15E97DEF003D2262FBF084'
+    Checksum64 = '43234D2986CA9B0DE75D5183977964D161A8395C3396279DDFC9B20698E5BC34'
+  }
+  '6.1-server' = @{
+    Url64 = 'https://download.microsoft.com/download/F/1/3/F13BEC9A-8FC6-4489-9D6A-F84BDC9496FE/Windows6.1-KB2999226-x64.msu'
+    Checksum64 = '43234D2986CA9B0DE75D5183977964D161A8395C3396279DDFC9B20698E5BC34'
+  }
+  '6.2-client' = @{
+    Url = 'https://download.microsoft.com/download/1/E/8/1E8AFE90-5217-464D-9292-7D0B95A56CE4/Windows8-RT-KB2999226-x86.msu'
+    Url64 = 'https://download.microsoft.com/download/A/C/1/AC15393F-A6E6-469B-B222-C44B3BB6ECCC/Windows8-RT-KB2999226-x64.msu'
+    Checksum = '0F36750FBB06FEE23131F68B4D0943841EED24730EC1D5D77DEDC41D359BE88D'
+    Checksum64 = '50CAE25DA33FA950222D1A803E42567291EB7FEB087FA119B1C97FE9D41CD9F8'
+  }
+  '6.2-server' = @{
+    Url64 = 'https://download.microsoft.com/download/9/3/E/93E0745A-EAE9-4B5A-B50C-012F2D3B6659/Windows8-RT-KB2999226-x64.msu'
+    Checksum64 = '50CAE25DA33FA950222D1A803E42567291EB7FEB087FA119B1C97FE9D41CD9F8'
+  }
+  '6.3-client' = @{
+    Url = 'https://download.microsoft.com/download/E/4/6/E4694323-8290-4A08-82DB-81F2EB9452C2/Windows8.1-KB2999226-x86.msu'
+    Url64 = 'https://download.microsoft.com/download/9/6/F/96FD0525-3DDF-423D-8845-5F92F4A6883E/Windows8.1-KB2999226-x64.msu'
+    Checksum = 'B83251219C5390536B02BEBAF5E43A6F13381CE1DB43E76483BCE07C4BCF877B'
+    Checksum64 = '9F707096C7D279ED4BC2A40BA695EFAC69C20406E0CA97E2B3E08443C6381D15'
+  }
+  '6.3-server' = @{
+    Url64 = 'https://download.microsoft.com/download/D/1/3/D13E3150-3BB2-4B22-9D8A-47EE2D609FFF/Windows8.1-KB2999226-x64.msu'
+    Checksum64 = '9F707096C7D279ED4BC2A40BA695EFAC69C20406E0CA97E2B3E08443C6381D15'
+  }
+}
+
+$servicePackRequirements = @{
+  '6.0' = @{ ServicePackNumber = 1; ChocolateyPackage = $null }
+  '6.1' = @{ ServicePackNumber = 1; ChocolateyPackage = 'KB976932' }
+}
+
+chocolateyInstaller\Install-WindowsUpdate -Id 'KB2999226' -MsuData $msuData -ChecksumType 'sha256' -ServicePackRequirements $servicePackRequirements
+$msuData = @{
+    '6.1-client' = @{
+        Url = 'https://download.microsoft.com/download/3/7/4/37473F39-5728-4153-9A25-64C09DE9ED52/Windows6.1-KB3033929-x86.msu'
+        Checksum = '246C300A6AE6DCA99453F6839745AC0015953528A7065BED1B015F91B80CF64D'
+        Url64 = 'https://download.microsoft.com/download/C/8/7/C87AE67E-A228-48FB-8F02-B2A9A1238099/Windows6.1-KB3033929-x64.msu'
+        Checksum64 = '5318587007EDB6C8B29310FF18DA479A162B486B9101A7DE735F94A70DBC3B31'
+    }
+    '6.1-server' = @{
+        Url64 = 'https://download.microsoft.com/download/A/4/E/A4E91F1E-83D8-4926-9CC5-3B3B4F371B80/Windows6.1-KB3033929-x64.msu'
+        Checksum64 = '5318587007EDB6C8B29310FF18DA479A162B486B9101A7DE735F94A70DBC3B31'
+    }
+}
+
+$servicePackRequirements = @{
+    '6.1' = @{ ServicePackNumber = 1; ChocolateyPackage = 'KB976932' }
+}
+
+chocolateyInstaller\Install-WindowsUpdate -Id 'KB3033929' -MsuData $msuData -ChecksumType 'sha256' -ServicePackRequirements $servicePackRequirements
+$msuData = @{
+    '6.3-client' = @{
+        Url = 'https://download.microsoft.com/download/D/2/B/D2B466AA-E011-42D6-92DA-4FA8FCDAB8CB/Windows8.1-KB3035131-x86.msu'
+        Checksum = '61C80C09EBE58558A7CF15F6892B392BC73A2EF669255A236562B6196FFE47C0'
+        Url64 = 'https://download.microsoft.com/download/A/B/7/AB7824E4-A7BC-49A0-BBAB-0556344F8747/Windows8.1-KB3035131-x64.msu'
+        Checksum64 = 'A9D6F7B519AD3A22ABDE3AF7CE3EBB90FF84A028EDE2154AC5D0548C88CCFEDD'
+    }
+    '6.3-server' = @{
+        Url64 = 'https://download.microsoft.com/download/B/2/4/B24FB08A-DEA8-4B4C-8EE4-B9F0FB180200/Windows8.1-KB3035131-x64.msu'
+        Checksum64 = 'A9D6F7B519AD3A22ABDE3AF7CE3EBB90FF84A028EDE2154AC5D0548C88CCFEDD'
+    }
+    '6.2-client' = @{
+        Url = 'https://download.microsoft.com/download/F/A/1/FA163776-A65D-49DA-BCAA-BD4173B0656E/Windows8-RT-KB3035131-x86.msu'
+        Checksum = '3CBA7162DE2ECFD14E2C5B8805C15C74E15898E1D1DEAAAEDCC18BB50ACB5BC3'
+        Url64 = 'https://download.microsoft.com/download/4/3/1/431125D8-FAA3-4420-B7C0-2794E71F50FB/Windows8-RT-KB3035131-x64.msu'
+        Checksum64 = '22CBF7E733C55C4F90DFA0864AE8B61F07E522825DE7DDD94439FF4D1F4D2766'
+    }
+    '6.2-server' = @{
+        Url64 = 'https://download.microsoft.com/download/4/7/6/47682024-8C3B-4D81-B019-24E34EAC3ABA/Windows8-RT-KB3035131-x64.msu'
+        Checksum64 = '22CBF7E733C55C4F90DFA0864AE8B61F07E522825DE7DDD94439FF4D1F4D2766'
+    }
+    '6.1-client' = @{
+        Url = 'https://download.microsoft.com/download/8/A/3/8A3E90CC-AEC3-4645-8CF3-2BD205E26B5E/Windows6.1-KB3035131-x86.msu'
+        Checksum = '65608782ED5A77293436ADE0B1CDA37668A30D8E27198A6CD331704ADDC3D782'
+        Url64 = 'https://download.microsoft.com/download/3/D/F/3DF6B0B1-D849-4272-AA98-3AA8BB456CCC/Windows6.1-KB3035131-x64.msu'
+        Checksum64 = '589F6BA1097937E99B3CECC113D3535FBF7DE4E40623D3145E89E4EBCBE028AC'
+    }
+    '6.1-server' = @{
+        Url64 = 'https://download.microsoft.com/download/1/1/4/1140E6A6-D865-48FD-BF91-5FF8975F8BE5/Windows6.1-KB3035131-x64.msu'
+        Checksum64 = '589F6BA1097937E99B3CECC113D3535FBF7DE4E40623D3145E89E4EBCBE028AC'
+    }
+    '6.0-client' = @{
+        Url = 'https://download.microsoft.com/download/7/1/4/714C40B3-7A8A-4DE5-B082-51E5054D1EEC/Windows6.0-KB3035131-x86.msu'
+        Checksum = 'E883D65A9DB0669DA158DC27C8FD63C4C91D1EEA46C3B415391030EA6B3C1083'
+        Url64 = 'https://download.microsoft.com/download/C/B/5/CB536E82-8BFC-4256-B729-543F91CF7344/Windows6.0-KB3035131-x64.msu'
+        Checksum64 = '391D27E4A62C52F2DD83DEC869728EC67A76694C6181E4E0287B565B86E8FE0E'
+    }
+    '6.0-server' = @{
+        Url = 'https://download.microsoft.com/download/8/0/E/80E3D2ED-D8C1-40C0-9CAA-9431D3F1A0A6/Windows6.0-KB3035131-x86.msu'
+        Checksum = 'E883D65A9DB0669DA158DC27C8FD63C4C91D1EEA46C3B415391030EA6B3C1083'
+        Url64 = 'https://download.microsoft.com/download/F/6/B/F6B87903-3523-4761-BE50-0982E5B3674A/Windows6.0-KB3035131-x64.msu'
+        Checksum64 = '391D27E4A62C52F2DD83DEC869728EC67A76694C6181E4E0287B565B86E8FE0E'
+    }
+}
+
+$servicePackRequirements = @{
+    '6.1' = @{ ServicePackNumber = 1; ChocolateyPackage = 'KB976932' }
+    '6.0' = @{ ServicePackNumber = 2; ChocolateyPackage = $null }
+}
+
+chocolateyInstaller\Install-WindowsUpdate -Id 'KB3035131' -MsuData $msuData -ChecksumType 'sha256' -ServicePackRequirements $servicePackRequirements
+$msuData = @{
+    '6.0-client' = @{
+        # Windows Vista
+        Url = 'https://download.microsoft.com/download/8/B/F/8BF76ABD-2A61-470A-BE45-84700728286D/Windows6.0-KB3063858-x86.msu'
+        Url64 = 'https://download.microsoft.com/download/C/E/6/CE6BBF49-4D23-4FAC-A80C-41FC06B7D3EE/Windows6.0-KB3063858-x64.msu'
+        Checksum = 'A00EF5C74E0410AD2A3945DF7026DFD00AEC0E6C86DCC2AF4667DAB98850495A'
+        Checksum64 = '1697468B2502D3F28E5DC1B3B829EDC391CF6FB9235FDDC8EE133A183BEF227F'
+    }
+    '6.0-server' = @{
+        # Windows Server 2008
+        Url = 'https://download.microsoft.com/download/8/B/F/8BF76ABD-2A61-470A-BE45-84700728286D/Windows6.0-KB3063858-x86.msu'
+        Url64 = 'https://download.microsoft.com/download/C/E/6/CE6BBF49-4D23-4FAC-A80C-41FC06B7D3EE/Windows6.0-KB3063858-x64.msu'
+        Checksum = 'A00EF5C74E0410AD2A3945DF7026DFD00AEC0E6C86DCC2AF4667DAB98850495A'
+        Checksum64 = '1697468B2502D3F28E5DC1B3B829EDC391CF6FB9235FDDC8EE133A183BEF227F'
+    }
+    '6.1-client' = @{
+        # Windows 7
+        Url = 'https://download.microsoft.com/download/C/9/6/C96CD606-3E05-4E1C-B201-51211AE80B1E/Windows6.1-KB3063858-x86.msu'
+        Url64 = 'https://download.microsoft.com/download/0/8/E/08E0386B-F6AF-4651-8D1B-C0A95D2731F0/Windows6.1-KB3063858-x64.msu'
+        Checksum = 'A95DDA6B57B8012B0ADA9543BA667F48A99DE8FE93030A8FE8C9D5C2E5C038C1'
+        Checksum64 = '6FEC4E38CDCBDAA334937A2EF38BAD6800E9C80CB513183451B4049E84479A85'
+    }
+    '6.1-server' = @{
+        # Windows Server 2008 R2
+        Url64 = 'https://download.microsoft.com/download/D/0/7/D0757054-F917-4728-935B-200AEAFE0308/Windows6.1-KB3063858-x64.msu'
+        Checksum64 = '6FEC4E38CDCBDAA334937A2EF38BAD6800E9C80CB513183451B4049E84479A85'
+    }
+    '6.2-client' = @{
+        # Windows 8
+        Url = 'https://download.microsoft.com/download/E/9/B/E9B2ACE6-4291-400E-86D0-B6E708B58843/Windows8-RT-KB3063858-x86.msu'
+        Url64 = 'https://download.microsoft.com/download/9/E/E/9EEB707E-2896-4890-8082-2D9FB930C615/Windows8-RT-KB3063858-x64.msu'
+        Checksum = '4643AEF02CCC6EB7BFA95DA515EC43520D7A4D7AB1CC745B006E2CA231B0438F'
+        Checksum64 = '64ACF31484023625E19DD45613AA8926AA3837218AA5B2A955745EED9FBFF7DF'
+    }
+    '6.2-server' = @{
+        # Windows Server 2012
+        Url64 = 'https://download.microsoft.com/download/9/E/E/9EEB707E-2896-4890-8082-2D9FB930C615/Windows8-RT-KB3063858-x64.msu'
+        Checksum64 = '64ACF31484023625E19DD45613AA8926AA3837218AA5B2A955745EED9FBFF7DF'
+    }
+}
+
+chocolateyInstaller\Install-WindowsUpdate -Id 'KB3063858' -MsuData $msuData -ChecksumType 'SHA256'
+$msuData = @{
+    '6.0-client' = @{
+        # Windows Vista
+        Url = 'https://download.microsoft.com/download/B/5/C/B5CDC4AA-8209-47B0-B8E4-8AD9DA347EA3/Windows6.0-KB3118401-x86.msu'
+        Url64 = 'https://download.microsoft.com/download/6/6/D/66D6F070-4CA6-40CA-804C-71BBC818E048/Windows6.0-KB3118401-x64.msu'
+        Checksum = '2C1291C574D7BC31F16BE94EA2296B1AC12C1C42A789A46C8153F3179EDB4B8E'
+        Checksum64 = 'E3C47F702ABD982EC9C513936463BE7660AC2EB01A267C63F3241F0198285EC3'
+    }
+    '6.0-server' = @{
+        # Windows Server 2008
+        Url = 'https://download.microsoft.com/download/7/4/0/740EA069-D3FB-4604-84FC-E5547C652281/Windows6.0-KB3118401-x86.msu'
+        Url64 = 'https://download.microsoft.com/download/B/7/A/B7A3ACB0-AE3C-43CF-8E4D-4E25B6303D33/Windows6.0-KB3118401-x64.msu'
+        Checksum = '2C1291C574D7BC31F16BE94EA2296B1AC12C1C42A789A46C8153F3179EDB4B8E'
+        Checksum64 = 'E3C47F702ABD982EC9C513936463BE7660AC2EB01A267C63F3241F0198285EC3'
+    }
+    '6.1-client' = @{
+        # Windows 7
+        Url = 'https://download.microsoft.com/download/6/1/D/61DE9D89-5A69-401A-B5BD-E74F1D6E1BD5/Windows6.1-KB3118401-x86.msu'
+        Url64 = 'https://download.microsoft.com/download/D/1/0/D107EB4D-2295-4127-A187-97FB290D7A3F/Windows6.1-KB3118401-x64.msu'
+        Checksum = '46AF0FB4EB4452B03790887950ADD4590F0754657760940F6DAEFDF7EEE1003F'
+        Checksum64 = '145623E0B85037B90E1EF5C45AEE1AAA4120C4D12A388D94C48CFBB083E914E4'
+    }
+    '6.1-server' = @{
+        # Windows Server 2008 R2
+        Url64 = 'https://download.microsoft.com/download/E/6/5/E658276A-0ADF-439B-A63F-7E60C60728B6/Windows6.1-KB3118401-x64.msu'
+        Checksum64 = '145623E0B85037B90E1EF5C45AEE1AAA4120C4D12A388D94C48CFBB083E914E4'
+    }
+    '6.2-server' = @{
+        # Windows Server 2012
+        Url64 = 'https://download.microsoft.com/download/8/E/3/8E3AED94-65F6-43A4-A502-1DE3881EA4DA/Windows8-RT-KB3118401-x64.msu'
+        Checksum64 = 'FC2FB2DD6F25739F7E0938B9D24FE590EE03E62DE3B4132193F424F0BBB8B0FD'
+    }
+    '6.3-client' = @{
+        # Windows 8.1
+        Url = 'https://download.microsoft.com/download/5/E/8/5E888014-D156-44C8-A25B-CA30F0CCDA9F/Windows8.1-KB3118401-x86.msu'
+        Url64 = 'https://download.microsoft.com/download/F/E/7/FE776F83-5C58-47F2-A8CF-9065FE6E2775/Windows8.1-KB3118401-x64.msu'
+        Checksum = '35A00B48795DCC17D4BFD9AAC4D8A31C52B08DCF0AA5BD63E1A92A40FFCEF5D1'
+        Checksum64 = '0E44AD74AA341909865DC6A72B2BCB80564FCD0DF7E1E388BE81A7E04868C98F'
+    }
+    '6.3-server' = @{
+        # Windows Server 2012 R2
+        Url64 = 'https://download.microsoft.com/download/C/D/6/CD6C8488-8491-43FA-AD1C-FB448B9836E1/Windows8.1-KB3118401-x64.msu'
+        Checksum64 = '0E44AD74AA341909865DC6A72B2BCB80564FCD0DF7E1E388BE81A7E04868C98F'
+    }
+}
+
+$servicePackRequirements = @{
+    '6.1' = @{ ServicePackNumber = 1; ChocolateyPackage = 'KB976932' }
+    '6.0' = @{ ServicePackNumber = 2; ChocolateyPackage = $null }
+}
+
+chocolateyInstaller\Install-WindowsUpdate -Id 'KB3118401' -MsuData $msuData -ChecksumType 'SHA256' -ServicePackRequirements $servicePackRequirements
+$bits = Get-ProcessorBits
+$packageName = 'keep-chrome'
+$extensionID = 'lpcaedmchfhocbbapmcbpinfpgnhiddi'
+if ($bits -eq 64)
+   {
+    if (Test-Path -Path "HKLM:\SOFTWARE\Wow6432node\Google\Chrome\Extensions\$extensionID")
+       {
+       Write-Host "Extension already installed." -foreground "magenta" –backgroundcolor "blue"
+       } else {
+         New-Item -Path "HKLM:\SOFTWARE\Wow6432node\Google\Chrome\Extensions\$extensionID" | out-null
+         New-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432node\Google\Chrome\Extensions\$extensionID\" -Name "update_url" -Value "https://clients2.google.com/service/update2/crx" | out-null
+         New-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432node\Google\Chrome\Extensions\$extensionID\" -Name "ChocolateyPackageName" -Value "$packageName" | out-null
+         }
+    } else {
+      New-Item -Path "HKLM:\SOFTWARE\Google\Chrome\Extensions\$extensionID" | out-null
+      New-ItemProperty -Path "HKLM:\SOFTWARE\Google\Chrome\Extensions\$extensionID\" -Name "update_url" -Value "https://clients2.google.com/service/update2/crx" | out-null
+      }
+
+$ErrorActionPreference = 'Stop';
+
+$packageName= 'linqpad6.install'
+$url        = 'https://www.linqpad.net/GetFile.aspx?LINQPad6Setup.exe'
+
+$packageArgs = @{
+  packageName   = $packageName
+  unzipLocation = $toolsDir
+  fileType      = 'exe'
+  url           = $url
+  softwareName  = 'linqpad*'
+  checksum      = '9c6494ede9560f920dd6f559fac8f360ce63a680c34ce1e5c80914c4db7f751c'
+  checksumType  = 'sha256'
+  silentArgs    = "/silent"
+  validExitCodes= @(0)
+}
+
+Install-ChocolateyPackage @packageArgs
+Install-ChocolateyPath "${env:ProgramFiles(x86)}\LinqPad6"
+#Install-VirtualPackage 'linqpad6.install' 'linqpad6.portable'
+#Install-VirtualPackage 'linqpad.install' 'linqpad.portable'
+$ErrorActionPreference = 'Stop';
+
+$packageName = 'logitechgaming'
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)";
+$installerType = 'EXE'
+$url = 'https://download01.logi.com/web/ftp/pub/techsupport/gaming/LGS_9.02.65_x86_Logitech.exe'
+$url64 = 'https://download01.logi.com/web/ftp/pub/techsupport/gaming/LGS_9.02.65_x64_Logitech.exe'
+
+$packageArgs = @{
+  packageName   = $packageName
+  unzipLocation = $toolsDir
+  fileType      = $installerType
+  url           = $url
+  url64bit      = $url64
+  silentArgs    = '/S'
+  validExitCodes= @(0)
+  softwareName  = 'logitechgaming*'
+  checksum      = 'FD70176DDEEEE0A24BBACEEF67A67004DEBF53ED437DB7D7C06786F8D4FD8EEB'
+  checksumType  = 'sha256'
+  checksum64      = 'E037727F2E571F41864D93FBCC094E124EDA3E1DCD2D56973F1F65C5A577BF55'
+  checksumType64  = 'sha256'
+};
+
+Install-ChocolateyPackage @packageArgs;
+$ErrorActionPreference = 'Stop'; # stop on all errors
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$fileLocation = Join-Path $toolsDir 'MSBuildStructuredLogSetup.exe'
+
+$packageArgs = @{
+  packageName   = $env:ChocolateyPackageName
+  unzipLocation = $toolsDir
+  fileType      = 'EXE'
+  file         = $fileLocation
+
+  softwareName  = 'MSBuild Structured Log Viewer'
+
+  validExitCodes= @(0)
+  silentArgs   = '-s'           # Squirrel
+}
+
+Install-ChocolateyInstallPackage @packageArgs
+$ErrorActionPreference = 'Stop'
+
+$toolsPath = Split-Path $MyInvocation.MyCommand.Definition
+. $toolsPath/helpers.ps1
+
+Install-Msys2
+Set-Msys2Proxy 
+Invoke-Msys2ShellFirstRun
+Update-Msys2
+
+if (!$pp.NoPath) { Install-ChocolateyPath $pp.InstallDir }
+$ErrorActionPreference = 'Stop';
+
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$url        = 'https://cdn.mysql.com/Downloads/MySQLGUITools/mysql-workbench-community-8.0.28-winx64.msi'
+$checksum     = '5a4a83e3dd20a07f89f85e85438a82230d0f3e8910735724dd325907dffd5d2a'
+$checksumType = 'sha256'
+
+$packageArgs = @{
+  packageName    = $env:ChocolateyPackageName
+  unzipLocation = $toolsDir
+  fileType       = 'msi'
+  url           = $url
+  checksum       = $checksum
+  checksumType   = $checksumType
+  softwareName  = 'MySQL Workbench*'
+  silentArgs    = "/passive /norestart /l*v `"$($env:TEMP)\$($packageName).$($env:chocolateyPackageVersion).MsiInstall.log`""
+  validExitCodes= @(0, 3010, 1641)
+}
+
+Install-ChocolateyPackage @packageArgs
+$ErrorActionPreference = 'Stop';
+
+$url = 'https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-8.0.28-winx64.zip'
+$checksum = 'cb207afb33e2bbfe9535ba78fa9a1a3cccd11156f73864a5db0be8dcc2dbb1bc'
+$checksumType = 'sha256'
+
+$pp = Get-PackageParameters
+
+$packageName = 'mysql'
+$binRoot = if ($pp.installLocation) { $pp.installLocation } else { Get-ToolsLocation }
+$installDir = Join-Path $binRoot "$packageName"
+$installDirBin = "$($installDir)\current\bin"
+Write-Host "Adding `'$installDirBin`' to the path and the current shell path"
+Install-ChocolateyPath "$installDirBin"
+$env:Path = "$($env:Path);$($installDirBin)"
+$port = if ($pp.Port) { $pp.Port } else { 3306 }
+$serviceName = if ($pp.serviceName) { $pp.serviceName } else { "MySQL" }
+$dataDir = if ($pp.dataLocation) { Join-Path $pp.dataLocation "$packageName" } else { "C:\ProgramData\MySQL" }
+
+if (![System.IO.Directory]::Exists($installDir)) { [System.IO.Directory]::CreateDirectory($installDir) | Out-Null }
+
+$packageArgs = @{
+  packageName    = $env:ChocolateyPackageName
+  unzipLocation  = $installDir
+  url64          = $url
+  checksum64     = $checksum
+  checksumType64 = $checksumType
+}
+
+Install-ChocolateyZipPackage  @packageArgs
+
+# find the unpack directory
+$installedContentsDir = get-childitem $installDir -include 'mysql*' | Sort-Object -Property LastWriteTime -Desc | Select-Object -First 1
+
+# shut down service if running
+try {
+  write-host "Shutting down MySQL if it is running"
+  Start-ChocolateyProcessAsAdmin "cmd /c NET STOP $serviceName"
+  Start-ChocolateyProcessAsAdmin "cmd /c sc delete $serviceName"
+}
+catch {
+  # no service installed
+}
+
+# delete current bin directory contents
+if ([System.IO.Directory]::Exists("$installDirBin")) {
+  Write-Host "Clearing out the contents of `'$installDirBin`'."
+  Start-Sleep 3
+  [System.IO.Directory]::Delete($installDirBin, $true)
+}
+
+# copy the installed directory into the current dir
+Write-host "Copying contents of `'$installedContentsDir`' to `'$($installDir)\current`'."
+[System.IO.Directory]::CreateDirectory("$installDirBin") | Out-Null
+Copy-Item "$($installedContentsDir)\*" "$($installDir)\current" -Force -Recurse
+
+$iniFileDest = "$($installDir)\current\my.ini"
+if (!(Test-Path($iniFileDest))) {
+  Write-Host "No existing my.ini. Creating default '$iniFileDest' with default locations for datadir."
+
+  @"
+[mysqld]
+basedir=$($installDir.Replace("\","\\"))\\current
+datadir=$($dataDir.Replace("\","\\"))\\data
+port=$port
+"@ | Out-File $iniFileDest -Force -Encoding ASCII
+}
+
+# initialize everything
+# https://dev.mysql.com/doc/refman/5.7/en/data-directory-initialization-mysqld.html
+Write-Host "Initializing MySQL if it hasn't already been initialized."
+try {
+
+  $defaultDataDir = Join-Path $dataDir "data"
+  if (![System.IO.Directory]::Exists($defaultDataDir)) { [System.IO.Directory]::CreateDirectory($defaultDataDir) | Out-Null }
+  Start-ChocolateyProcessAsAdmin "cmd /c '$($installDirBin)\mysqld' --defaults-file='$iniFileDest' --initialize-insecure"
+}
+catch {
+  write-host "MySQL has already been initialized"
+}
+
+# install the service itself
+write-host "Installing the mysql service"
+Start-ChocolateyProcessAsAdmin "cmd /c '$($installDirBin)\mysqld' --install $serviceName"
+# turn on the service
+Start-ChocolateyProcessAsAdmin "cmd /c NET START $serviceName"
+$packageName = 'netfx-461-devpack'
+$installerType = 'exe'
+$32BitUrl  = 'https://download.microsoft.com/download/F/1/D/F1DEB8DB-D277-4EF9-9F48-3A65D4D8F965/NDP461-DevPack-KB3105179-ENU.exe'
+$silentArgs = "/Passive /NoRestart /Log ""$env:temp\netfx-461-devpack.log"""
+$validExitCodes = @(
+    0, # success
+    3010 # success, restart required
+)
+
+Install-ChocolateyPackage $packageName $installerType $silentArgs $32BitUrl -validExitCodes $validExitCodes
+
+$version = '4.6.2'
+$arguments = @{
+    PackageName = "netfx-$version-devpack"
+    Version = $version
+    ProductNameWithVersion = "Microsoft .NET Framework $version Developer Pack"
+    Url = 'https://download.visualstudio.microsoft.com/download/pr/ea744c52-1db4-4173-943d-a5d18e7e0d97/105c0e17be525bb0cebc7795d7aa1c32/ndp462-devpack-kb3151934-enu.exe'
+    Checksum = '5D1399EABD7B11FAAA8498C9C9112ECDC30DE77B0F427C5FFBCC9A1A426A2F8F'
+    ChecksumType = 'sha256'
+}
+
+Install-DotNetDevPack @arguments
+$version = '4.6.2'
+$arguments = @{
+    PackageName = "netfx-$version"
+    Release = 394802
+    Version = $version
+    ProductNameWithVersion = "Microsoft .NET Framework $version"
+    Url = 'https://download.visualstudio.microsoft.com/download/pr/8e396c75-4d0d-41d3-aea8-848babc2736a/80b431456d8866ebe053eb8b81a168b3/ndp462-kb3151800-x86-x64-allos-enu.exe'
+    Checksum = 'B4CBB4BC9A3983EC3BE9F80447E0D619D15256A9CE66FF414AE6E3856705E237'
+    ChecksumType = 'sha256'
+}
+
+Install-DotNetFramework @arguments
+$version = '4.7'
+$arguments = @{
+    PackageName = "netfx-$version-devpack"
+    Version = $version
+    ProductNameWithVersion = "Microsoft .NET Framework $version Developer Pack"
+    Url = 'https://download.visualstudio.microsoft.com/download/pr/fe069d49-7999-4ac8-bf8d-625282915070/d52a6891b5014014e1f12df252fab620/ndp47-devpack-kb3186612-enu.exe'
+    Checksum = 'EFE311D8EA6A597860AF8549B184D837DA79B41F2C2C73D3EBE7386F2635544F'
+    ChecksumType = 'sha256'
+}
+
+Install-DotNetDevPack @arguments
+$version = '4.7.1'
+$arguments = @{
+    PackageName = "netfx-$version-devpack"
+    Version = $version
+    ProductNameWithVersion = "Microsoft .NET Framework $version Developer Pack"
+    Url = 'https://download.visualstudio.microsoft.com/download/pr/e5eb8d37-5bbd-4fb7-a71d-b749e010ef9f/601437d729667ecd29020a829fbc4881/ndp471-devpack-enu.exe'
+    Checksum = 'A70B790DCF7EE4A0CAE65FB82A16FB67FE970EB21B9424C9DA35E1ACAFBC4348'
+    ChecksumType = 'sha256'
+}
+
+Install-DotNetDevPack @arguments
+$version = '4.7.1'
+$arguments = @{
+    PackageName = "netfx-$version"
+    Release = 461308
+    Version = $version
+    ProductNameWithVersion = "Microsoft .NET Framework $version"
+    Url = 'https://download.visualstudio.microsoft.com/download/pr/4312fa21-59b0-4451-9482-a1376f7f3ba4/9947fce13c11105b48cba170494e787f/ndp471-kb4033342-x86-x64-allos-enu.exe'
+    Checksum = 'DF6E700D37FF416E2E1D8463DEDEDDF76522CEAF5BB4CC3F197A7F2B9ECCC4AD'
+    ChecksumType = 'sha256'
+}
+
+Install-DotNetFramework @arguments
+$version = '4.7.2'
+$arguments = @{
+    PackageName = "netfx-$version-devpack"
+    Version = $version
+    ProductNameWithVersion = "Microsoft .NET Framework $version Developer Pack"
+    Url = 'https://download.visualstudio.microsoft.com/download/pr/158dce74-251c-4af3-b8cc-4608621341c8/9c1e178a11f55478e2112714a3897c1a/ndp472-devpack-enu.exe'
+    Checksum = '878FDF9F137B1466855DE995C793B466CD50FCCC523D1F41250567973623180C'
+    ChecksumType = 'sha256'
+}
+
+Install-DotNetDevPack @arguments
+$version = '4.7.2'
+$arguments = @{
+    PackageName = "netfx-$version"
+    Release = 461808
+    Version = $version
+    ProductNameWithVersion = "Microsoft .NET Framework $version"
+    Url = 'https://download.visualstudio.microsoft.com/download/pr/1f5af042-d0e4-4002-9c59-9ba66bcf15f6/089f837de42708daacaae7c04b7494db/ndp472-kb4054530-x86-x64-allos-enu.exe'
+    Checksum = '5CB624B97F9FD6D3895644C52231C9471CD88AACB57D6E198D3024A1839139F6'
+    ChecksumType = 'sha256'
+}
+
+Install-DotNetFramework @arguments
+$version = '4.8'
+$arguments = @{
+    PackageName = "netfx-$version-devpack"
+    Version = $version
+    ProductNameWithVersion = "Microsoft .NET Framework $version Developer Pack"
+    Url = 'https://download.visualstudio.microsoft.com/download/pr/014120d7-d689-4305-befd-3cb711108212/0307177e14752e359fde5423ab583e43/ndp48-devpack-enu.exe'
+    Checksum = '0A7AC4A9B44CED6BB7A0EBF3AD9BA29F60BD4D3BEB2047E19F4D8749DE61F5AC'
+    ChecksumType = 'sha256'
+}
+
+Install-DotNetDevPack @arguments
+$version = '4.8'
+$arguments = @{
+    PackageName = "netfx-$version"
+    Release = 528040
+    Version = $version
+    ProductNameWithVersion = "Microsoft .NET Framework $version"
+    Url = 'https://download.visualstudio.microsoft.com/download/pr/014120d7-d689-4305-befd-3cb711108212/0fd66638cde16859462a6243a4629a50/ndp48-x86-x64-allos-enu.exe'
+    Checksum = '9B1F71CD1B86BB6EE6303F7BE6FBBE71807A51BB913844C85FC235D5978F3A0F'
+    ChecksumType = 'sha256'
+}
+
+Install-DotNetFramework @arguments
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$packageArgs = @{
+  packageName   = 'ngrok'
+  unzipLocation = $toolsDir
+  fileType      = 'exe'
+  url           = 'https://bin.equinox.io/a/cfjNxTRk1tM/ngrok-2.3.40-windows-386.zip'
+  url64bit      = 'https://bin.equinox.io/a/8exBtGpBr59/ngrok-2.3.40-windows-amd64.zip'
+
+  softwareName  = 'ngrok'
+
+  checksum      = 'c1f32114f71fb05cf4f66e5c9a49f2d451891990f9e75f56b3dd8bb2cff520f4'
+  checksumType  = 'sha256'
+  checksum64    = '778cbe4d5f1c868a5687a97206bf39b017a76fc44eaead95a11cf8a415c2e505'
+  checksumType64= 'sha256'
+
+  validExitCodes= @(0)
+  silentArgs   = ''
+}
+
+Install-ChocolateyZipPackage @packageArgs
+$ErrorActionPreference = 'Stop'
+
+$toolsPath = Split-Path $MyInvocation.MyCommand.Definition
+
+$file = "$toolsPath\nmap-7.92-setup.exe"
+Start-Process -Wait $toolsPath\install.ahk $file
+$ErrorActionPreference = 'Stop'
+
+$toolsPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
+. "$toolsPath\helpers.ps1"
+Write-Host "Importing necessary certificates..."
+$certificates = Get-ChildItem "$toolsPath\*.cer"
+$certificates | ForEach-Object {
+  Import-Certificate -FilePath $_ -CertStoreLocation "Cert:\LocalMachine\TrustedPublisher"
+}
+
+$packageArgs = @{
+  packageName    = $env:ChocolateyPackageName
+  fileType       = 'exe'
+  url            = 'https://downloads.nordcdn.com/apps/windows/10/NordVPN/latest/NordVPNSetup.exe'
+  softwareName   = 'NordVPN*'
+  checksum       = '808C9BEFEC363CE9D9DC7A67A85063A14E7686DAAF9E3CFDBC41C6CD5FE63A5DD6A2A0E3423BFB49250469E16A851D3711BEA14BC14DD58FB089D39D122596BC'
+  checksumType   = 'sha512'
+  silentArgs     = "/SILENT /SUPPRESSMSGBOXES /NORESTART /SP- /ALLUSERS /LOG=`"$($env:TEMP)\$($env:chocolateyPackageName)\$($env:chocolateyPackageVersion)\install.log`""
+  validExitCodes = @(0)
+}
+
+Install-ChocolateyPackage @packageArgs
+$ErrorActionPreference = 'Stop'
+
+$toolsPath = Split-Path -parent $MyInvocation.MyCommand.Definition
+
+$packageArgs = @{
+  packageName    = $env:ChocolateyPackageName
+  fileType       = 'exe'
+  file           = "$toolsPath\npp.8.3.2.Installer.exe"
+  file64         = "$toolsPath\npp.8.3.2.Installer.x64.exe"
+  softwareName   = 'Notepad\+\+*'
+  silentArgs     = '/S'
+  validExitCodes = @(0)
+}
+
+Install-ChocolateyInstallPackage @packageArgs
+
+Get-ChildItem $toolsPath\*.exe | ForEach-Object { Remove-Item $_ -ea 0; if (Test-Path $_) { Set-Content "$_.ignore" '' } }
+
+$installLocation = Get-AppInstallLocation $packageArgs.softwareName
+if (!$installLocation)  {  Write-Warning "Can't find $PackageName install location"; return }
+
+Write-Host "$packageName installed to '$installLocation'"
+Install-BinFile -Path "$installLocation\notepad++.exe" -Name 'notepad++'
+#Install-VirtualPackage 'notepadplusplus.commandline' 'notepadplusplus.install'
+
+    $drop = Join-Path (Split-Path -parent $MyInvocation.MyCommand.Definition) "tools"
+    $exeName = "NugetPackageExplorer.exe"
+    $exe = Join-Path $drop $exeName
+    
+    New-Item "$exe.gui" -Type File -Force | Out-Null
+
+    Install-ChocolateyDesktopLink $exe
+
+    # Generate ignore files for all exe files except "NugetPackageExplorer.exe".
+    # This prevents chocolatey from generating shims for them.
+    $exeFiles = Get-ChildItem $drop -Include *.exe -Recurse -Exclude $exeName
+
+    foreach ($exeFile in $exeFiles) {
+        # generate an ignore file
+        New-Item "$exeFile.ignore" -Type File -Force | Out-Null
+    }    
+
+    $allTypes = (cmd /c assoc)
+    $testType1 = $allTypes | ? { $_.StartsWith('.nupkg') }
+    if($testType1 -ne $null) {
+        $fileType1=$testType1.Split("=")[1]
+    } 
+    else {
+        $fileType1="Nuget.Package"
+        Start-ChocolateyProcessAsAdmin "cmd /c assoc .nupkg=$fileType1"
+    }
+    Start-ChocolateyProcessAsAdmin "cmd /c ftype $fileType1=```"$exe```" ```"%1```""
+
+    $testType2 = $allTypes | ? { $_.StartsWith('.snupkg') }
+    if($testType2 -ne $null) {
+        $fileType2=$testType2.Split("=")[1]
+    } 
+    else {
+        $fileType2="Nuget.SymbolPackage"
+        Start-ChocolateyProcessAsAdmin "cmd /c assoc .snupkg=$fileType2"
+    }
+    Start-ChocolateyProcessAsAdmin "cmd /c ftype $fileType2=```"$exe```" ```"%1```""
+
+# SIG # Begin signature block
+# MIIgywYJKoZIhvcNAQcCoIIgvDCCILgCAQExDzANBglghkgBZQMEAgEFADB5Bgor
+# BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCA8TDEKve68S3Xv
+# hYOPvo+mjxaUKc1E75SIErJRie/PeaCCDxYwggPFMIICraADAgECAhACrFwmagtA
+# m48LefKuRiV3MA0GCSqGSIb3DQEBBQUAMGwxCzAJBgNVBAYTAlVTMRUwEwYDVQQK
+# EwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xKzApBgNV
+# BAMTIkRpZ2lDZXJ0IEhpZ2ggQXNzdXJhbmNlIEVWIFJvb3QgQ0EwHhcNMDYxMTEw
+# MDAwMDAwWhcNMzExMTEwMDAwMDAwWjBsMQswCQYDVQQGEwJVUzEVMBMGA1UEChMM
+# RGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSswKQYDVQQD
+# EyJEaWdpQ2VydCBIaWdoIEFzc3VyYW5jZSBFViBSb290IENBMIIBIjANBgkqhkiG
+# 9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxszlc+b71LvlLS0ypt/lgT/JzSVJtnEqw9WU
+# NGeiChywX2mmQLHEt7KP0JikqUFZOtPclNY823Q4pErMTSWC90qlUxI47vNJbXGR
+# fmO2q6Zfw6SE+E9iUb74xezbOJLjBuUIkQzEKEFV+8taiRV+ceg1v01yCT2+OjhQ
+# W3cxG42zxyRFmqesbQAUWgS3uhPrUQqYQUEiTmVhh4FBUKZ5XIneGUpX1S7mXRxT
+# LH6YzRoGFqRoc9A0BBNcoXHTWnxV215k4TeHMFYE5RG0KYAS8Xk5iKICEXwnZreI
+# t3jyygqoOKsKZMK/Zl2VhMGhJR6HXRpQCyASzEG7bgtROLhLywIDAQABo2MwYTAO
+# BgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUsT7DaQP4
+# v0cB1JgmGggC72NkK8MwHwYDVR0jBBgwFoAUsT7DaQP4v0cB1JgmGggC72NkK8Mw
+# DQYJKoZIhvcNAQEFBQADggEBABwaBpfc15yfPIhmBghXIdshR/gqZ6q/GDJ2QBBX
+# wYrzetkRZY41+p78RbWe2UwxS7iR6EMsjrN4ztvjU3lx1uUhlAHaVYeaJGT2imbM
+# 3pw3zag0sWmbI8ieeCIrcEPjVUcxYRnvWMWFL04w9qAxFiPI5+JlFjPLvxoboD34
+# yl6LMYtgCIktDAZcUrfE+QqY0RVfnxK+fDZjOL1EpH/kJisKxJdpDemM4sAQV7jI
+# dhKRVfJIadi8KgJbD0TUIDHb9LpwJl2QYJ68SxcJL7TLHkNoyQcnwdJc9+ohuWgS
+# nDycv578gFybY83sR6olJ2egN/MAgn1U16n46S4To3foH0owggSRMIIDeaADAgEC
+# AhAHsEGNpR4UjDMbvN63E4MjMA0GCSqGSIb3DQEBCwUAMGwxCzAJBgNVBAYTAlVT
+# MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
+# b20xKzApBgNVBAMTIkRpZ2lDZXJ0IEhpZ2ggQXNzdXJhbmNlIEVWIFJvb3QgQ0Ew
+# HhcNMTgwNDI3MTI0MTU5WhcNMjgwNDI3MTI0MTU5WjBaMQswCQYDVQQGEwJVUzEY
+# MBYGA1UEChMPLk5FVCBGb3VuZGF0aW9uMTEwLwYDVQQDEyguTkVUIEZvdW5kYXRp
+# b24gUHJvamVjdHMgQ29kZSBTaWduaW5nIENBMIIBIjANBgkqhkiG9w0BAQEFAAOC
+# AQ8AMIIBCgKCAQEAwQqv4aI0CI20XeYqTTZmyoxsSQgcCBGQnXnufbuDLhAB6GoT
+# NB7HuEhNSS8ftV+6yq8GztBzYAJ0lALdBjWypMfL451/84AO5ZiZB3V7MB2uxgWo
+# cV1ekDduU9bm1Q48jmR4SVkLItC+oQO/FIA2SBudVZUvYKeCJS5Ri9ibV7La4oo7
+# BJChFiP8uR+v3OU33dgm5BBhWmth4oTyq22zCfP3NO6gBWEIPFR5S+KcefUTYmn2
+# o7IvhvxzJsMCrNH1bxhwOyMl+DQcdWiVPuJBKDOO/hAKIxBG4i6ryQYBaKdhDgaA
+# NSCik0UgZasz8Qgl8n0A73+dISPumD8L/4mdywIDAQABo4IBPzCCATswHQYDVR0O
+# BBYEFMtck66Im/5Db1ZQUgJtePys4bFaMB8GA1UdIwQYMBaAFLE+w2kD+L9HAdSY
+# JhoIAu9jZCvDMA4GA1UdDwEB/wQEAwIBhjATBgNVHSUEDDAKBggrBgEFBQcDAzAS
+# BgNVHRMBAf8ECDAGAQH/AgEAMDQGCCsGAQUFBwEBBCgwJjAkBggrBgEFBQcwAYYY
+# aHR0cDovL29jc3AuZGlnaWNlcnQuY29tMEsGA1UdHwREMEIwQKA+oDyGOmh0dHA6
+# Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEhpZ2hBc3N1cmFuY2VFVlJvb3RD
+# QS5jcmwwPQYDVR0gBDYwNDAyBgRVHSAAMCowKAYIKwYBBQUHAgEWHGh0dHBzOi8v
+# d3d3LmRpZ2ljZXJ0LmNvbS9DUFMwDQYJKoZIhvcNAQELBQADggEBALNGxKTz6gq6
+# clMF01GjC3RmJ/ZAoK1V7rwkqOkY3JDl++v1F4KrFWEzS8MbZsI/p4W31Eketazo
+# Nxy23RT0zDsvJrwEC3R+/MRdkB7aTecsYmMeMHgtUrl3xEO3FubnQ0kKEU/HBCTd
+# hR14GsQEccQQE6grFVlglrew+FzehWUu3SUQEp9t+iWpX/KfviDWx0H1azilMX15
+# lzJUxK7kCzmflrk5jCOCjKqhOdGJoQqstmwP+07qXO18bcCzEC908P+TYkh0z9gV
+# rlj7tyW9K9zPVPJZsLRaBp/QjMcH65o9Y1hD1uWtFQYmbEYkT1K9tuXHtQYx1Rpf
+# /dC8Nbl4iukwgga0MIIFnKADAgECAhADQfx7PlWrFk8wzSZ/5o/BMA0GCSqGSIb3
+# DQEBCwUAMFoxCzAJBgNVBAYTAlVTMRgwFgYDVQQKEw8uTkVUIEZvdW5kYXRpb24x
+# MTAvBgNVBAMTKC5ORVQgRm91bmRhdGlvbiBQcm9qZWN0cyBDb2RlIFNpZ25pbmcg
+# Q0EwHhcNMjEwNDI1MDAwMDAwWhcNMjQwNzIyMjM1OTU5WjCBsDEUMBIGA1UEBRML
+# NjAzIDM4OSAwNjgxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpXYXNoaW5ndG9uMRAw
+# DgYDVQQHEwdSZWRtb25kMTEwLwYDVQQKEyhOdUdldCBQYWNrYWdlIEV4cGxvcmVy
+# ICguTkVUIEZvdW5kYXRpb24pMTEwLwYDVQQDEyhOdUdldCBQYWNrYWdlIEV4cGxv
+# cmVyICguTkVUIEZvdW5kYXRpb24pMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIIC
+# CgKCAgEAmaVmCGEW6/saEP9RoTxBa6i4eb60GKcPAWDmQY5dMHFpOyca8z8mq6P/
+# N7+6KdP3J3oaAWxHIVUJuBda50wysISmcwKxvNdZ+DaWMPptjnnq9hkNe3HAQHYu
+# 6OigtZ+6iPWbodiHXE1W+KZbmJB+3/HaRMM1QwybzFOagEEvI3VZ22PTn+acU8Wg
+# 2fotKP4ZbXULjR4mw2kz6WnCaKA897Xuq2vB+YU13qNm17knrasmolFGICpjxSTx
+# IRmQozvH/Of7cgpW+c+JU/R/Mu1Ohk4I6a04JCfNHdq3L8JzmbFVg1konqPjQFYd
+# w1y8i3hBZWUptd4301ilfOW8+TUDG+AHMSYnWe9dClg0Q8haLX040nDEeDWOvPmI
+# Br+6S0E2SNcFps51JdyNov/MQbsSIYhfopWwgfycHjzetyNydWIzs5pTg7QEblRo
+# Z2NwH16BW35G5RUslwBsTOxK/f8xAKW7QB4njq8YaCyIR1W86suEiuZH7beamslK
+# 9HWKYvwQAgM5syA4BOcosUxnexMvIC01FqrmQE8yyuCmiHR/LrjxFnpTIOVpD5A6
+# mkGm8A+Qz0TfN1bWh3i1RpkwP3RZsUoCrBP4H0ntFB8yydGJeMQ1ZCcqhkeSN6bv
+# lJjzDZdQCfYibr8ZABcp4UYvoRJ/1ixbmJZuJHbRnHrZHph6Rj8CAwEAAaOCAh0w
+# ggIZMB8GA1UdIwQYMBaAFMtck66Im/5Db1ZQUgJtePys4bFaMB0GA1UdDgQWBBRo
+# g4yABXkP1FyYnOZQdWjsQGKXYjA0BgNVHREELTAroCkGCCsGAQUFBwgDoB0wGwwZ
+# VVMtV0FTSElOR1RPTi02MDMgMzg5IDA2ODAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0l
+# BAwwCgYIKwYBBQUHAwMwgZkGA1UdHwSBkTCBjjBFoEOgQYY/aHR0cDovL2NybDMu
+# ZGlnaWNlcnQuY29tL05FVEZvdW5kYXRpb25Qcm9qZWN0c0NvZGVTaWduaW5nQ0Eu
+# Y3JsMEWgQ6BBhj9odHRwOi8vY3JsNC5kaWdpY2VydC5jb20vTkVURm91bmRhdGlv
+# blByb2plY3RzQ29kZVNpZ25pbmdDQS5jcmwwSwYDVR0gBEQwQjA2BglghkgBhv1s
+# AwEwKTAnBggrBgEFBQcCARYbaHR0cDovL3d3dy5kaWdpY2VydC5jb20vQ1BTMAgG
+# BmeBDAEEATCBhAYIKwYBBQUHAQEEeDB2MCQGCCsGAQUFBzABhhhodHRwOi8vb2Nz
+# cC5kaWdpY2VydC5jb20wTgYIKwYBBQUHMAKGQmh0dHA6Ly9jYWNlcnRzLmRpZ2lj
+# ZXJ0LmNvbS9ORVRGb3VuZGF0aW9uUHJvamVjdHNDb2RlU2lnbmluZ0NBLmNydDAM
+# BgNVHRMBAf8EAjAAMA0GCSqGSIb3DQEBCwUAA4IBAQCk/mSzzC7UbC68NjlW41bj
+# DkHVQDsDqdnFWiMQlmnZQODGT414JhS8J45pjX9hanTTTAz2Rl7Tv5h+jS3dtH7q
+# RjOdMl0yTJL730lbk5jg/W7nWVp6jq5cki8SXSFSPrfJ6imuqvTFqYZtkEoBaU99
+# 0XrAHGYGj2PUhzdmQ2B2dm+7mb/X2nCpdayO8YI3ZOhDevReXIJQ86T9UnFzvdPu
+# uJdR7YamrV5SEwkT1obgTmAlo2cvFwyRU2GDjGP9JVbd0sDeihJ1xb4c3IHPYC07
+# 0OEpreRCEREFUXWc+gN6CHhOu0wjy4FVtj/exBo+V82zdglrHTILicEvXHwowTqB
+# MYIRCzCCEQcCAQEwbjBaMQswCQYDVQQGEwJVUzEYMBYGA1UEChMPLk5FVCBGb3Vu
+# ZGF0aW9uMTEwLwYDVQQDEyguTkVUIEZvdW5kYXRpb24gUHJvamVjdHMgQ29kZSBT
+# aWduaW5nIENBAhADQfx7PlWrFk8wzSZ/5o/BMA0GCWCGSAFlAwQCAQUAoIHtMBkG
+# CSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEE
+# AYI3AgEVMC8GCSqGSIb3DQEJBDEiBCCtBDCOs31qacdqYh9KZsPywKrxGv2v96OF
+# zKRNZljyMTCBgAYKKwYBBAGCNwIBDDFyMHCgLoAsAE4AdQBHAGUAdAAgAFAAYQBj
+# AGsAYQBnAGUAIABFAHgAcABsAG8AcgBlAHKhPoA8aHR0cHM6Ly9naXRodWIuY29t
+# L051R2V0UGFja2FnZUV4cGxvcmVyL051R2V0UGFja2FnZUV4cGxvcmVyMA0GCSqG
+# SIb3DQEBAQUABIICAH8z99V4N1e7GWqCMRquWPdTchtShOi8BbQ7rZosmhXqCqz+
+# tqamATZV5jtwipjblKlHLDuFy2QlUtQP7uRrrUiLPHIWqKwzoylD1VSfZ5GbdVVl
+# YZ5RKML46kGv0EYxWQhCTjMdZ8tO0O7RIeB9d7HcncJh0o6wrjDqg0QEpNnkhtL/
+# pRA+ZQ/U2bDMBcytNBdq7pLjjxq/uana0nE9qw5QK7iiJXP6LMwnuwK2KCR8Ubnj
+# bRQ/QCF6dd+LqESs1nDYHu4FR/5vB8orpoJr3aJmMbpUu8T5pAszF49miPPZpTzQ
+# JIHtgsSiN16nCf5VlMQPOQrm5u9jtV2Zi02N5T5pym9xAoy4J+dddAr/6mTCA3FE
+# zSGA6wKBeQG8Yb7AT1HsKKVEKFVeB/U/46uz3YPNHcURXSQWZQ9SQNU3QNOGNn/P
+# FI63+uG4ZCuimKqB++ViO2rNUzhD8TQ3crEquq5tOic5sdjep0I56necplmzmeHD
+# XRDJIWPDiWr/PPnY7f8JVpQPJT4IO86L4OIaHsaq3N8tV8VuYgSY6saV/J/x4NED
+# RJrgdgULdT1hhmuJ0MUoI6yaTowcEJju+ZeGzH2J8E+qYP4Dom7m8UX8RvpK44IA
+# N8TI5ZYlbxE0QjqNs+WKWPHyDDeF++w6R+j2duCJrgXMdXmMKokUikUgKv9VoYIN
+# fjCCDXoGCisGAQQBgjcDAwExgg1qMIINZgYJKoZIhvcNAQcCoIINVzCCDVMCAQMx
+# DzANBglghkgBZQMEAgEFADB4BgsqhkiG9w0BCRABBKBpBGcwZQIBAQYJYIZIAYb9
+# bAcBMDEwDQYJYIZIAWUDBAIBBQAEIEADeOziXQWD4ngMixcBOGGWWk6uKTgHKRC/
+# J0qNCKALAhEAkaVT8IKpM8hZ+FejUJv9NhgPMjAyMTEyMDcxNDQzMjZaoIIKNzCC
+# BP4wggPmoAMCAQICEA1CSuC+Ooj/YEAhzhQA8N0wDQYJKoZIhvcNAQELBQAwcjEL
+# MAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3
+# LmRpZ2ljZXJ0LmNvbTExMC8GA1UEAxMoRGlnaUNlcnQgU0hBMiBBc3N1cmVkIElE
+# IFRpbWVzdGFtcGluZyBDQTAeFw0yMTAxMDEwMDAwMDBaFw0zMTAxMDYwMDAwMDBa
+# MEgxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjEgMB4GA1UE
+# AxMXRGlnaUNlcnQgVGltZXN0YW1wIDIwMjEwggEiMA0GCSqGSIb3DQEBAQUAA4IB
+# DwAwggEKAoIBAQDC5mGEZ8WK9Q0IpEXKY2tR1zoRQr0KdXVNlLQMULUmEP4dyG+R
+# awyW5xpcSO9E5b+bYc0VkWJauP9nC5xj/TZqgfop+N0rcIXeAhjzeG28ffnHbQk9
+# vmp2h+mKvfiEXR52yeTGdnY6U9HR01o2j8aj4S8bOrdh1nPsTm0zinxdRS1LsVDm
+# QTo3VobckyON91Al6GTm3dOPL1e1hyDrDo4s1SPa9E14RuMDgzEpSlwMMYpKjIjF
+# 9zBa+RSvFV9sQ0kJ/SYjU/aNY+gaq1uxHTDCm2mCtNv8VlS8H6GHq756WwogL0sJ
+# yZWnjbL61mOLTqVyHO6fegFz+BnW/g1JhL0BAgMBAAGjggG4MIIBtDAOBgNVHQ8B
+# Af8EBAMCB4AwDAYDVR0TAQH/BAIwADAWBgNVHSUBAf8EDDAKBggrBgEFBQcDCDBB
+# BgNVHSAEOjA4MDYGCWCGSAGG/WwHATApMCcGCCsGAQUFBwIBFhtodHRwOi8vd3d3
+# LmRpZ2ljZXJ0LmNvbS9DUFMwHwYDVR0jBBgwFoAU9LbhIB3+Ka7S5GGlsqIlssgX
+# NW4wHQYDVR0OBBYEFDZEho6kurBmvrwoLR1ENt3janq8MHEGA1UdHwRqMGgwMqAw
+# oC6GLGh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9zaGEyLWFzc3VyZWQtdHMuY3Js
+# MDKgMKAuhixodHRwOi8vY3JsNC5kaWdpY2VydC5jb20vc2hhMi1hc3N1cmVkLXRz
+# LmNybDCBhQYIKwYBBQUHAQEEeTB3MCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5k
+# aWdpY2VydC5jb20wTwYIKwYBBQUHMAKGQ2h0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0
+# LmNvbS9EaWdpQ2VydFNIQTJBc3N1cmVkSURUaW1lc3RhbXBpbmdDQS5jcnQwDQYJ
+# KoZIhvcNAQELBQADggEBAEgc3LXpmiO85xrnIA6OZ0b9QnJRdAojR6OrktIlxHBZ
+# vhSg5SeBpU0UFRkHefDRBMOG2Tu9/kQCZk3taaQP9rhwz2Lo9VFKeHk2eie38+dS
+# n5On7UOee+e03UEiifuHokYDTvz0/rdkd2NfI1Jpg4L6GlPtkMyNoRdzDfTzZTlw
+# S/Oc1np72gy8PTLQG8v1Yfx1CAB2vIEO+MDhXM/EEXLnG2RJ2CKadRVC9S0yOIHa
+# 9GCiurRS+1zgYSQlT7LfySmoc0NR2r1j1h9bm/cuG08THfdKDXF+l7f0P4TrweOj
+# SaH6zqe/Vs+6WXZhiV9+p7SOZ3j5NpjhyyjaW4emii8wggUxMIIEGaADAgECAhAK
+# oSXW1jIbfkHkBdo2l8IVMA0GCSqGSIb3DQEBCwUAMGUxCzAJBgNVBAYTAlVTMRUw
+# EwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20x
+# JDAiBgNVBAMTG0RpZ2lDZXJ0IEFzc3VyZWQgSUQgUm9vdCBDQTAeFw0xNjAxMDcx
+# MjAwMDBaFw0zMTAxMDcxMjAwMDBaMHIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxE
+# aWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xMTAvBgNVBAMT
+# KERpZ2lDZXJ0IFNIQTIgQXNzdXJlZCBJRCBUaW1lc3RhbXBpbmcgQ0EwggEiMA0G
+# CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC90DLuS82Pf92puoKZxTlUKFe2I0rE
+# DgdFM1EQfdD5fU1ofue2oPSNs4jkl79jIZCYvxO8V9PD4X4I1moUADj3Lh477sym
+# 9jJZ/l9lP+Cb6+NGRwYaVX4LJ37AovWg4N4iPw7/fpX786O6Ij4YrBHk8JkDbTuF
+# fAnT7l3ImgtU46gJcWvgzyIQD3XPcXJOCq3fQDpct1HhoXkUxk0kIzBdvOw8YGqs
+# LwfM/fDqR9mIUF79Zm5WYScpiYRR5oLnRlD9lCosp+R1PrqYD4R/nzEU1q3V8mTL
+# ex4F0IQZchfxFwbvPc3WTe8GQv2iUypPhR3EHTyvz9qsEPXdrKzpVv+TAgMBAAGj
+# ggHOMIIByjAdBgNVHQ4EFgQU9LbhIB3+Ka7S5GGlsqIlssgXNW4wHwYDVR0jBBgw
+# FoAUReuir/SSy4IxLVGLp6chnfNtyA8wEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNV
+# HQ8BAf8EBAMCAYYwEwYDVR0lBAwwCgYIKwYBBQUHAwgweQYIKwYBBQUHAQEEbTBr
+# MCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5jb20wQwYIKwYBBQUH
+# MAKGN2h0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEFzc3VyZWRJ
+# RFJvb3RDQS5jcnQwgYEGA1UdHwR6MHgwOqA4oDaGNGh0dHA6Ly9jcmw0LmRpZ2lj
+# ZXJ0LmNvbS9EaWdpQ2VydEFzc3VyZWRJRFJvb3RDQS5jcmwwOqA4oDaGNGh0dHA6
+# Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEFzc3VyZWRJRFJvb3RDQS5jcmww
+# UAYDVR0gBEkwRzA4BgpghkgBhv1sAAIEMCowKAYIKwYBBQUHAgEWHGh0dHBzOi8v
+# d3d3LmRpZ2ljZXJ0LmNvbS9DUFMwCwYJYIZIAYb9bAcBMA0GCSqGSIb3DQEBCwUA
+# A4IBAQBxlRLpUYdWac3v3dp8qmN6s3jPBjdAhO9LhL/KzwMC/cWnww4gQiyvd/Mr
+# HwwhWiq3BTQdaq6Z+CeiZr8JqmDfdqQ6kw/4stHYfBli6F6CJR7Euhx7LCHi1lss
+# FDVDBGiy23UC4HLHmNY8ZOUfSBAYX4k4YU1iRiSHY4yRUiyvKYnleB/WCxSlgNcS
+# R3CzddWThZN+tpJn+1Nhiaj1a5bA9FhpDXzIAbG5KHW3mWOFIoxhynmUfln8jA/j
+# b7UBJrZspe6HUSHkWGCbugwtK22ixH67xCUrRwIIfEmuE7bhfEJCKMYYVs9BNLZm
+# XbZ0e/VWMyIvIjayS6JKldj1po5SMYIChjCCAoICAQEwgYYwcjELMAkGA1UEBhMC
+# VVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2ljZXJ0
+# LmNvbTExMC8GA1UEAxMoRGlnaUNlcnQgU0hBMiBBc3N1cmVkIElEIFRpbWVzdGFt
+# cGluZyBDQQIQDUJK4L46iP9gQCHOFADw3TANBglghkgBZQMEAgEFAKCB0TAaBgkq
+# hkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkFMQ8XDTIxMTIwNzE0
+# NDMyNlowKwYLKoZIhvcNAQkQAgwxHDAaMBgwFgQU4deCqOGRvu9ryhaRtaq0lKYk
+# m/MwLwYJKoZIhvcNAQkEMSIEIOmBu9hJor/l8/K1mX+eip1UrM+9fQo/ksWuYMzl
+# 3IUpMDcGCyqGSIb3DQEJEAIvMSgwJjAkMCIEILMQkAa8CtmDB5FXKeBEA0Fcg+Mp
+# K2FPJpZMjTVx7PWpMA0GCSqGSIb3DQEBAQUABIIBACdHZ52p5o5RoMq66k6pOgCr
+# QJdULI7TJaWOAosCEqKD1R3Sr1BE1I4w3+5SqGaC+JFA3cC2vmFbApPt6maP4q9L
+# jJUZ4qcAeKjP1yYOLxKVrGxTE8N/J6Gvox38Ijd+eDJu8ukdk4jos2OclyLP+z62
+# UJ3eIi23sEh/EMZo1JLcC0a7l1C2If74SdHbwmye7Dd4oQymJPEsGFvIoGQavDHT
+# GntdesGZfon4q1FG81ygt76ntqWU64U9PRuRyP7cjsO4IW/MT1UWvdr4Icq/9y0t
+# RsbxDCdzGVpGamYFqSoiJYWRUIE6z9ansU0Ivdja+QVoW/pigGoUNw+v0tzaCco=
+# SIG # End signature block
+$ErrorActionPreference = 'Stop'
+
+$script                     = $MyInvocation.MyCommand.Definition
+$packageName                = 'Office365ProPlus'
+$configFile                 = Join-Path $(Split-Path -parent $script) 'configuration.xml'
+$configFile64               = Join-Path $(Split-Path -parent $script) 'configuration64.xml'
+$bitCheck                   = Get-ProcessorBits
+$forceX86                   = $env:chocolateyForceX86
+$configurationFile          = if ($BitCheck -eq 32 -Or $forceX86) { $configFile } else { $configFile64 }
+$officetempfolder           = Join-Path $env:Temp 'chocolatey\Office365ProPlus'
+
+$pp = Get-PackageParameters
+$configPath = $pp["ConfigPath"]
+$language = $pp["Language"]
+
+if ($configPath)
+{
+    Write-Output "Custom config specified: $configPath"
+    $configurationFile = $configPath
+}
+elseif ($language)
+{
+    Write-Output "Language specified: $language"
+    
+    $file = $configFile
+    $x = [xml] (Get-Content $file)
+    $nodes = $x.SelectNodes("/Configuration/Add/Product/Language")
+    foreach($node in $nodes) {
+        $node.SetAttribute("ID", $language)
+    }
+    $x.Save($file)
+    
+    $file = $configFile64
+    $x = [xml] (Get-Content $file)
+    $nodes = $x.SelectNodes("/Configuration/Add/Product/Language")
+    foreach($node in $nodes) {
+        $node.SetAttribute("ID", $language)
+    }
+    $x.Save($file)
+}
+else
+{
+    Write-Output 'No custom configuration specified.'
+    Write-Output 'No language specified. Defaulting to OS language.'
+}
+
+$packageArgs                = @{
+    packageName             = 'Office365DeploymentTool'
+    fileType                = 'exe'
+    url                     = 'https://download.microsoft.com/download/2/7/A/27AF1BE6-DD20-4CB4-B154-EBAB8A7D4A7E/officedeploymenttool_13231-20368.exe'
+    checksum                = '0E82FC6EFA6DD418FE60430496781FEAA2FDF8525D907522D4E6B2A51972A80C'
+    checksumType            = 'sha256'
+    softwareName            = 'Microsoft Office 365 ProPlus*'
+    silentArgs              = "/extract:`"$officetempfolder`" /log:`"$officetempfolder\OfficeInstall.log`" /quiet /norestart"
+    validExitCodes          = @(
+        0, # success
+        3010, # success, restart required
+        2147781575, # pending restart required
+        2147205120  # pending restart required for setup update
+    )
+}
+
+# Download and install the deployment tool
+Install-ChocolateyPackage @packageArgs
+
+# Use the deployment tool to download the setup files
+$packageArgs['packageName'] = 'Office365ProPlusInstaller'
+$packageArgs['file'] = "$officetempfolder\Setup.exe"
+$packageArgs['silentArgs'] = "/download $configurationFile `"$officetempfolder\setup.exe`""
+Install-ChocolateyInstallPackage @packageArgs
+
+# Run the actual Office setup
+$packageArgs['file'] = "$officetempfolder\Setup.exe"
+$packageArgs['packageName'] = $packageName
+$packageArgs['silentArgs'] = "/configure $configurationFile"
+Install-ChocolateyInstallPackage @packageArgs
+
+if (Test-Path "$officetempfolder") {
+    Remove-Item -Recurse "$officetempfolder"
+}
+# URL: http://www2.adminarsenal.com/download-pdqinventory
+$ErrorActionPreference = 'Stop'
+$packageName    = 'pdq-inventory'
+$softwareName   = 'PDQ Inventory*'
+$toolsPath      = Split-Path $MyInvocation.MyCommand.Definition
+$checksum       = '1B8611DA8F26DD7ED9B00B1B52FA800E4B495633E8EC33AE6CD93FBF040201CC'		
+$silentArgs     = '/s'
+$validExitCodes = @(0)
+$fileLocation   = "$toolsPath\Inventory_19.3.83.0.exe"
+
+$packageArgs = @{
+  packageName   = $packageName
+  fileType      = 'exe'
+  file          = $fileLocation
+  checksum      = $checksum
+  checksumType  = 'sha256'
+  silentArgs    = $silentArgs
+  validExitCodes= $validExitCodes
+  softwareName  = $softwareName
+}
+ 
+Install-ChocolateyPackage @packageArgs
+$name = 'PerfView'
+$url = 'https://github.com/microsoft/perfview/releases/download/P2.0.76/PerfView.exe'
+$checksum ='52CFEE6399C8D99F95BBA90958214364A6F0D80F5C38BCC1FBC922A522CEB556'
+$toolsDir = "$(Split-Path -Parent $MyInvocation.MyCommand.Definition)"
+
+Get-ChocolateyWebFile -PackageName PerfView -FileFullPath "$toolsDir\PerfView.exe" -url $url -checksum $checksum -checksumType 'sha256'
+[CmdletBinding()]
+param ( )
+
+end {
+    $modulePath = Join-Path -Path $env:ProgramFiles -ChildPath WindowsPowerShell\Modules
+    $targetDirectory = Join-Path -Path $modulePath -ChildPath Pester
+    $scriptRoot = Split-Path -Path $MyInvocation.MyCommand.Path -Parent
+    $sourceDirectory = Join-Path -Path $scriptRoot -ChildPath Tools
+
+    if ($PSVersionTable.PSVersion.Major -ge 5) {
+        $manifestFile = Join-Path -Path $sourceDirectory -ChildPath Pester.psd1
+        $manifest = Test-ModuleManifest -Path $manifestFile -WarningAction Ignore -ErrorAction Stop
+        $targetDirectory = Join-Path -Path $targetDirectory -ChildPath $manifest.Version.ToString()
+    }
+
+    Update-Directory -Source $sourceDirectory -Destination $targetDirectory
+
+    $binPath = Join-Path -Path $targetDirectory -ChildPath bin
+    Install-ChocolateyPath $binPath
+
+    if ($PSVersionTable.PSVersion.Major -lt 4) {
+        $modulePaths = [Environment]::GetEnvironmentVariable('PSModulePath', 'Machine') -split ';'
+        if ($modulePaths -notcontains $modulePath) {
+            Write-Verbose -Message "Adding '$modulePath' to PSModulePath."
+
+            $modulePaths = @(
+                $modulePath
+                $modulePaths
+            )
+
+            $newModulePath = $modulePaths -join ';'
+
+            [Environment]::SetEnvironmentVariable('PSModulePath', $newModulePath, 'Machine')
+            $env:PSModulePath += ";$modulePath"
+        }
+    }
+}
+
+begin {
+    function Update-Directory {
+        [CmdletBinding()]
+        param (
+            [Parameter(Mandatory = $true)]
+            [string] $Source,
+
+            [Parameter(Mandatory = $true)]
+            [string] $Destination
+        )
+
+        $Source = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($Source)
+        $Destination = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($Destination)
+
+        if (-not (Test-Path -LiteralPath $Destination)) {
+            $null = New-Item -Path $Destination -ItemType Directory -ErrorAction Stop
+        }
+
+        try {
+            $sourceItem = Get-Item -LiteralPath $Source -ErrorAction Stop
+            $destItem = Get-Item -LiteralPath $Destination -ErrorAction Stop
+
+            if ($sourceItem -isnot [System.IO.DirectoryInfo] -or $destItem -isnot [System.IO.DirectoryInfo]) {
+                throw 'Not Directory Info'
+            }
+        }
+        catch {
+            throw 'Both Source and Destination must be directory paths.'
+        }
+
+        $sourceFiles = Get-ChildItem -Path $Source -Recurse |
+            Where-Object -FilterScript { -not $_.PSIsContainer }
+
+        foreach ($sourceFile in $sourceFiles) {
+            $relativePath = Get-RelativePath $sourceFile.FullName -RelativeTo $Source
+            $targetPath = Join-Path -Path $Destination -ChildPath $relativePath
+
+            $sourceHash = Get-FileHash -Path $sourceFile.FullName
+            $destHash = Get-FileHash -Path $targetPath
+
+            if ($sourceHash -ne $destHash) {
+                $targetParent = Split-Path -Path $targetPath -Parent
+
+                if (-not (Test-Path -Path $targetParent -PathType Container)) {
+                    $null = New-Item -Path $targetParent -ItemType Directory -ErrorAction Stop
+                }
+
+                Write-Verbose -Message "Updating file $relativePath to new version."
+                Copy-Item -Path $sourceFile.FullName -Destination $targetPath -Force -ErrorAction Stop
+            }
+        }
+
+        $targetFiles = Get-ChildItem -Path $Destination -Recurse |
+            Where-Object -FilterScript { -not $_.PSIsContainer }
+
+        foreach ($targetFile in $targetFiles) {
+            $relativePath = Get-RelativePath $targetFile.FullName -RelativeTo $Destination
+            $sourcePath = Join-Path -Path $Source -ChildPath $relativePath
+
+            if (-not (Test-Path $sourcePath -PathType Leaf)) {
+                Write-Verbose -Message "Removing unknown file $relativePath from module folder."
+                Remove-Item -LiteralPath $targetFile.FullName -Force -ErrorAction Stop
+            }
+        }
+
+    }
+
+    function Get-RelativePath {
+        param ( [string] $Path, [string] $RelativeTo )
+        return $Path -replace "^$([regex]::Escape($RelativeTo))\\?"
+    }
+
+    function Get-FileHash {
+        param ([string] $Path)
+
+        if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+            return $null
+        }
+
+        $item = Get-Item -LiteralPath $Path
+        if ($item -isnot [System.IO.FileSystemInfo]) {
+            return $null
+        }
+
+        $stream = $null
+
+        try {
+            $sha = [System.Security.Cryptography.SHA256CryptoServiceProvider]::Create()
+            $stream = $item.OpenRead()
+            $bytes = $sha.ComputeHash($stream)
+            return [convert]::ToBase64String($bytes)
+        }
+        finally {
+            if ($null -ne $stream) {
+                $stream.Close()
+            }
+            if ($null -ne $sha) {
+                $sha.Clear()
+            }
+        }
+    }
+}
+$ErrorActionPreference = 'Stop'
+
+$toolsPath = Split-Path $MyInvocation.MyCommand.Definition
+. $toolsPath\helper.ps1
+
+Update-SessionEnvironment   # Java might have been installed as dependency
+
+$java_path, $javaw_path = Get-JavaPaths
+$java_args = '-Dfile.encoding=UTF-8 -jar "{0}"' -f "$toolsPath\plantuml.jar"
+Write-Host "Java path: $(Split-Path $javaw_path)"
+Write-Host "Java args: $java_args"
+
+$pp = Get-PackageParameters
+
+Install-PumlToolsShortcut
+Install-PumlBinaryW
+Install-PumlBinary
+if (!$pp.NoShortcuts) { Install-PumlDesktopShortcuts }
+$ErrorActionPreference = 'Stop'
+
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$moduleName = 'Plaster'  # this may be different from the package name and different case
+
+if ($PSVersionTable.PSVersion.Major -lt 3) {
+    throw "PSCodeHealth module requires a minimum of PowerShell v3."
+}
+
+# module may already be installed outside of Chocolatey
+Remove-Module -Name $moduleName -Force -ErrorAction SilentlyContinue
+
+$sourcePath = Join-Path -Path $toolsDir -ChildPath "$modulename\*"
+$destPath   = Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Modules\$moduleName"
+
+if ($PSVersionTable.PSVersion.Major -ge 5)
+{
+    $manifestFile = Join-Path -Path $toolsDir -ChildPath "$moduleName\$moduleName.psd1"
+    $manifest     = Test-ModuleManifest -Path $manifestFile -WarningAction Ignore -ErrorAction Stop
+    $destPath     = Join-Path -Path $destPath -ChildPath $manifest.Version.ToString()
+}
+
+Write-Verbose "Creating destination directory '$destPath' for module."
+New-Item -Path $destPath -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+
+Write-Verbose "Moving '$moduleName' files from '$sourcePath' to '$destPath'."
+Move-Item -Path $sourcePath -Destination $destPath -Force
+
+if ($PSVersionTable.PSVersion.Major -lt 4)
+{
+    $modulePaths = [Environment]::GetEnvironmentVariable('PSModulePath', 'Machine') -split ';'
+    if ($modulePaths -notcontains $destPath)
+    {
+        Write-Verbose "Adding '$destPath' to PSModulePath."
+        $newModulePath = @($destPath, $modulePaths) -join ';'
+
+        [Environment]::SetEnvironmentVariable('PSModulePath', $newModulePath, 'Machine')
+        $env:PSModulePath = $newModulePath
+    }
+}
+$packageName= 'postman'
+$toolsDir   = "$(Split-Path -Parent $MyInvocation.MyCommand.Definition)"
+$url        = 'https://dl.pstmn.io/download/version/9.4.1/windows32'
+$url64      = 'https://dl.pstmn.io/download/version/9.4.1/windows64'
+
+$packageArgs = @{
+  packageName   = $packageName
+  fileType      = 'exe'
+  url           = $url
+  url64bit      = $url64
+  silentArgs    = "-s"
+  checksum      = '328d481ced8747a39214f0f687d1e07146469f1c22a3fef584bdf1ba0bd31db3'
+  checksumType  = 'sha256'
+  checksum64    = '2adcce5b4f15e3347b56c899732b94f10310af30a08d33fed96fd0a6df992156'
+  checksumType64= 'sha256'
+}
+
+Install-ChocolateyPackage @packageArgs
+$ErrorActionPreference = 'Stop';
+
+$packageName= 'powershell-core'
+$fileType = 'msi'
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$Version = '7.2.1'
+Try {
+  [Version]$Version
+  $InstallFolder = "$env:ProgramFiles\PowerShell\$($version.split('.')[0])"
+  If (Test-Path "$InstallFolder\pwsh.exe")
+  {
+    If ((get-command "$InstallFolder\pwsh.exe").version -ge [version]$Version)
+    {
+      Write-output "The version of PowerShell in this package ($Version) is already installed by another means, marking package as installed"
+      Exit 0
+    }
+  }  
+}
+Catch {
+  Write-output "Note: This is a prelease package"
+  $PreleasePackage = $true
+  $InstallFolder = "$env:ProgramFiles\PowerShell\$($version.split('.')[0])-preview"
+}
+
+
+$packageArgs = @{
+  packageName   = $packageName
+  unzipLocation = $toolsDir
+  fileType      = $fileType
+  url64      = 'https://github.com/PowerShell/PowerShell/releases/download/v7.2.1/PowerShell-7.2.1-win-x64.msi'
+  checksum64    = '4be52cdd6323e4bebdabd39a1bf65cdfb78953f77fede957a8421c0f5f9b2676'
+  checksumType64= 'sha256'
+  url           = 'https://github.com/PowerShell/PowerShell/releases/download/v7.2.1/PowerShell-7.2.1-win-x86.msi'
+  checksum      = '8e23111b45230e61eb489d9a6db20154e66e4c73489e7f201c52e0c5738f6694'
+  checksumType32  = 'sha256'
+  silentArgs    = '/qn', '/norestart', "/l*v `"$($env:TEMP)\$($packageName).$($env:chocolateyPackageVersion).MsiInstall.log`"" # ALLUSERS=1 DISABLEDESKTOPSHORTCUT=1 ADDDESKTOPICON=0 ADDSTARTMENU=0
+  validExitCodes= @(0, 3010, 1641)
+  softwareName  = "PowerShell-7.*"
+}
+
+$pp = Get-PackageParameters
+
+if ((!$pp.USE_MU) -and ($env:chocolateyInstallArguments -notlike '*USE_MU*')) { $packageArgs.silentArgs += ,"USE_MU=0" }
+if ((!$pp.ENABLE_MU) -and ($env:chocolateyInstallArguments -notlike '*ENABLE_MU*')) { $packageArgs.silentArgs += ,"ENABLE_MU=0" }
+
+if ($pp.CleanUpPath) {
+  Write-Host "/CleanUpSystemPath was used, removing all PowerShell Core path entries before installing"
+  & "$toolsDir\Reset-PWSHSystemPath.ps1" -PathScope Machine, User -RemoveAllOccurances
+}
+
+Write-Warning "If you started this package under PowerShell core, replacing an in-use version may be unpredictable, require multiple attempts or produce errors."
+
+Install-ChocolateyPackage @packageArgs
+
+Write-Output "************************************************************************************"
+Write-Output "*  INSTRUCTIONS: Your system default WINDOWS PowerShell version has not been changed."
+Write-Output "*   PowerShell CORE $version, was installed to: `"$installfolder`""
+If ($PreleasePackage) {
+Write-Output "*   To start PowerShell Core PRERELEASE $version, at a prompt execute:"
+Write-Output "*      `"$installfolder\pwsh.exe`""
+Write-Output "*   IMPORTANT: Prereleases are not put on your path, nor made the default version of CORE."
+}
+else {
+Write-Output "*   To start PowerShell Core $version, at a prompt or the start menu execute:"
+Write-Output "*      `"pwsh.exe`""
+Write-Output "*   Or start it from the desktop or start menu shortcut installed by this package."
+Write-Output "*   This is your new default version of PowerShell CORE (pwsh.exe)."
+}
+Write-Output "************************************************************************************"
+
+Write-Output "**************************************************************************************"
+Write-Output "*  As of OpenSSH 0.0.22.0 Universal Installer, a script is distributed that allows   *"
+Write-Output "*  setting the default shell for openssh. You could call it with code like this:     *"
+Write-Output "*    If (Test-Path `"$env:programfiles\openssh-win64\Set-SSHDefaultShell.ps1`")         *"
+Write-Output "*      {& `"$env:programfiles\openssh-win64\Set-SSHDefaultShell.ps1`" [PARAMETERS]}     *"
+Write-Output "*  Learn more with this:                                                             *"
+Write-Output "*    Get-Help `"$env:programfiles\openssh-win64\Set-SSHDefaultShell.ps1`"               *"
+Write-Output "*  Or here:                                                                          *"
+Write-Output "*    https://github.com/DarwinJS/ChocoPackages/blob/main/openssh/readme.md         *"
+Write-Output "**************************************************************************************"
+$ErrorActionPreference = 'Stop';
+
+$toolsDir       = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$fileName       = "$toolsDir\PowerToysSetup-0.56.1-x64.exe"
+$version        = "0.56.1"
+
+$WindowsVersion=[Environment]::OSVersion.Version
+if ($WindowsVersion.Major -ne "10") {
+  throw "This package requires Windows 10."
+}
+
+$IsCorrectBuild=[Environment]::OSVersion.Version.Build
+if ($IsCorrectBuild -lt "17134") {
+  throw "This package requires at least Windows 10 version 1803/OS build 17134.x."
+}
+
+$packageArgs = @{
+  packageName   = $env:ChocolateyPackageName
+  softwareName  = 'PowerToys*'
+  file          = $fileName
+  fileType      = 'exe'
+  silentArgs    = "-silent"
+  validExitCodes= @(0,1641,3010)
+}
+
+Install-ChocolateyInstallPackage @packageArgs
+
+Get-ChildItem $toolsDir\*.exe | ForEach-Object { Remove-Item $_ -ea 0; if (Test-Path $_) { Set-Content "$_.ignore" } }
+$packageName = 'previewconfig' # arbitrary name for the package, used in messages
+$url = 'http://www.winhelponline.com/utils/previewconfig.zip' # download url
+$validExitCodes = @(0)
+$checksum      = '5BB3D6BD48086D604685C2C1EC06F98B6BA4BB18'
+$checksumType  = 'sha1'
+
+Install-ChocolateyZipPackage "$packageName" "$url" "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"  -checksum $checksum -checksumType $checksumType
+
+Write-Output "*************************************************************************************************************************************"
+Write-Output "*  INSTRUCTIONS: Type `"previewconfig.exe`" to edit file type associations.                                                         *"
+Write-Output "*       More Info: http://www.winhelponline.com/blog/previewconfig-tool-registers-file-types-for-the-preview-pane-in-windows-vista/ *"
+Write-Output "*************************************************************************************************************************************"
+$ErrorActionPreference = 'Stop'
+
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$moduleName = 'psframework'  # this may be different from the package name and different case
+
+if ($PSVersionTable.PSVersion.Major -lt 3) {
+    throw "$moduleName) module requires a minimum of PowerShell v3."
+}
+
+# module may already be installed outside of Chocolatey
+Remove-Module -Name $moduleName -Force -ErrorAction SilentlyContinue
+
+$sourcePath = Join-Path -Path $toolsDir -ChildPath "$modulename.zip"
+$destPath   = Join-Path -Path $env:ProgramFiles -ChildPath "WindowsPowerShell\Modules\$moduleName"
+
+if ($PSVersionTable.PSVersion.Major -ge 5)
+{
+    $destPath     = Join-Path -Path $destPath -ChildPath $env:ChocolateyPackageVersion
+}
+
+Write-Verbose "Creating destination directory '$destPath' for module."
+New-Item -Path $destPath -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+
+Write-Verbose "Extracting '$moduleName' files from '$sourcePath' to '$destPath'."
+Get-ChocolateyUnzip -FileFullPath $sourcePath -Destination $destPath
+
+if ($PSVersionTable.PSVersion.Major -lt 4)
+{
+    $modulePaths = [Environment]::GetEnvironmentVariable('PSModulePath', 'Machine') -split ';'
+    if ($modulePaths -notcontains $destPath)
+    {
+        Write-Verbose "Adding '$destPath' to PSModulePath."
+        $newModulePath = @($destPath, $modulePaths) -join ';'
+
+        [Environment]::SetEnvironmentVariable('PSModulePath', $newModulePath, 'Machine')
+        $env:PSModulePath = $newModulePath
+    }
+}
+$packageName = 'Pushbullet for Windows' # arbitrary name for the package, used in messages
+$installerType = 'EXE' #only one of these: exe, msi, msu
+$url = 'https://s3.amazonaws.com/update.pushbullet.com/pb_install.exe'
+$silentArgs = '/VERYSILENT'
+$validExitCodes = @(0)
+
+Install-ChocolateyPackage "$packageName" "$installerType" "$silentArgs" "$url" -validExitCodes $validExitCodes
+$ErrorActionPreference = 'Stop'
+
+$toolsPath  = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+
+$packageArgs = @{
+    PackageName  = "putty.portable"
+    File         = "$toolsPath\putty_x32.zip"
+    File64       = "$toolsPath\putty_x64.zip"
+    Destination  = $toolsPath
+}
+Get-ChocolateyUnzip @packageArgs
+
+Remove-Item -force "$toolsPath\*.zip" -ea 0
+if(!$PSScriptRoot){ $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent }
+. "$PSScriptRoot\ChocolateyHelpers.ps1"
+
+$arguments = Get-ChocolateyPackageParameters ${Env:ChocolateyPackageParameters}
+
+if ($arguments['RABBITMQBASE']) {
+  [System.Environment]::SetEnvironmentVariable("RABBITMQ_BASE", $arguments['RABBITMQBASE'], "Machine" )
+  ${Env:RABBITMQ_BASE} = $arguments['RABBITMQBASE']
+}
+
+Install-ChocolateyPackage 'rabbitmq' 'EXE' '/S' 'https://github.com/rabbitmq/rabbitmq-server/releases/download/v3.9.13/rabbitmq-server-3.9.13.exe'
+
+$rabbitPath = Get-RabbitMQPath
+if (-not $arguments.ContainsKey('NOMANAGEMENT')) {
+  Start-Process "$rabbitPath\sbin\rabbitmq-plugins.bat" 'enable rabbitmq_management' -NoNewWindow -Wait
+}
+$ErrorActionPreference = 'Stop'; # stop on all errors
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+
+$filename = 'JetBrains.dotUltimate.2021.3.3.exe'
+$checksum = '599bd8027d9b845e1202a5ea3e4e31fae2bada8530290fa97748396342a8e8d4'
+
+$url = 'https://download.jetbrains.com/resharper/dotUltimate.2021.3.3/JetBrains.dotUltimate.2021.3.3.exe'
+$packagePath = $(Split-Path -parent $toolsDir)
+$installPath = Join-Path $packagePath $filename
+
+$packageArgs = @{
+  packageName   = $env:ChocolateyPackageName
+  fileFullPath  = $installPath
+  url           = $url
+  checksum      = $checksum
+  checksumType  = 'sha256'
+}
+
+Get-ChocolateyWebFile @packageArgs
+
+# Exclude from shimming
+$files = get-childitem $packagePath -include *.exe -recurse
+
+foreach ($file in $files) {
+  New-Item "$file.ignore" -type file -force | Out-Null
+}
+$ErrorActionPreference = 'Stop'
+
+$toolsPath = Split-Path $MyInvocation.MyCommand.Definition
+$rubyDir = 'ruby' + ($Env:ChocolateyPackageVersion -replace '\.').Substring(0, 2)
+
+$pp = Get-PackageParameters
+$installDir = if ($pp['InstallDir']) { $pp['InstallDir'] } else { Join-Path (Get-ToolsLocation) $rubyDir }
+
+$tasks = 'assocfiles', 'noridkinstall'
+if ( !$pp['NoPath'] ) { $tasks += 'modpath' }
+
+Write-Host "Ruby is going to be installed in '$installDir'"
+
+$packageArgs = @{
+  packageName    = $env:ChocolateyPackageName
+  fileType       = 'exe'
+  file           = "$toolsPath\rubyinstaller-3.1.1-1-x86.exe"
+  file64         = "$toolsPath\rubyinstaller-3.1.1-1-x64.exe"
+  silentArgs     = '/verysilent /dir="{0}" /tasks="{1}"' -f $installDir, ($tasks -join ',')
+  validExitCodes = @(0)
+  softwareName   = 'ruby *'
+}
+Install-ChocolateyInstallPackage @packageArgs
+Get-ChildItem $toolsPath\*.exe | ForEach-Object { Remove-Item $_ -ea 0; if (Test-Path $_) { Set-Content "$_.ignore" '' } }
+$ErrorActionPreference = 'Stop';
+
+$packageName= 'sentinel'
+$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$url        = 'https://github.com/yarseyah/sentinel/releases/download/0.14.1/Sentinel-Setup-0.14.1.exe'
+
+$packageArgs = @{
+  packageName   = $packageName
+  fileType      = 'exe'
+  softwareName  = 'sentinel*'
+  url           = $url
+  silentArgs    = '--silent'
+
+  checksum      = 'D58D8E3E52CF34B5882FBFD80FADCE375A1CA75CDBA878A63F71F33DE7D933B8'
+  checksumType  = 'sha256'
+}
+
+Install-ChocolateyPackage @packageArgs 
+$ErrorActionPreference = 'Stop'
+
+$packageArgs = @{
+    packageName    = $env:ChocolateyPackageName
+    fileType       = 'exe'       
+    url            = 'https://github.com//ShareX/ShareX/releases/download/v13.7.0/ShareX-13.7.0-setup.exe' 
+    checksum       = '0405534bbeb6397c69dd3456a0743eb8f3b0c2569f7a078a994577f065fab4dd'
+    checksumType   = 'SHA256'
+    silentArgs     = '/sp /silent /norestart'
+	validExitCodes = @(0)
+}
+
+Write-Host "If an older version of ShareX is running on this machine, it will be closed prior to the installation of the newer version."
+Get-Process -Name sharex -ErrorAction SilentlyContinue | Stop-Process
+
+Install-ChocolateyPackage @packageArgs
+$ErrorActionPreference = 'Stop';
+$toolsDir   =	 "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$PackageParameters = Get-PackageParameters
+
+### PARAMETERS
+If ($PackageParameters.InstallDir) {
+  $installDir = $PackageParameters.InstallDir
+} else {
+  $installDir = "$toolsDir"
+}
+
+$packageArgs = @{
+  packageName    = $env:ChocolateyPackageName
+  unzipLocation  = "$installDir"
+  url            = 'https://install.speedtest.net/app/cli/ookla-speedtest-1.1.1-win64.zip'
+  checksum       = '39a4f97512fda5033ccca28674b009e15056c780ea1c296265391aca4897a494'
+  checksumType   = 'sha256'
+}
+Install-ChocolateyZipPackage @packageArgs
+
+$targetPath = Join-Path "$installDir" "speedtest.exe"
+
+# Add StartMenu shortcut
+If ( $PackageParameters.StartMenuShortcut ) {
+  $programsPath = "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\"
+  $programsFilePath = Join-Path "$programsPath" "Speedtest CLI.lnk"
+  Install-ChocolateyShortcut -shortcutFilePath "$programsFilePath" -targetPath "$targetPath"
+}
+$ErrorActionPreference = 'Stop';
+
+$release = '18.10'
+$fullUrl = 'https://download.microsoft.com/download/a/2/e/a2ef0390-62b6-4189-af6d-1762e0aa90aa/SSMS-Setup-ENU.exe'
+$fullChecksum = '3D99CB9FC78F50655498063F94C5BBE063289AF5ECBF43DB352FDC634730C5D8'
+
+$packageArgs = @{
+  packageName   = $env:ChocolateyPackageName
+  fileType      = 'EXE'
+  silentArgs    = "/quiet /install /norestart /log `"$env:TEMP\chocolatey\$($env:ChocolateyPackageName)\$($env:ChocolateyPackageVersion)\SSMS.MsiInstall.log`""
+  validExitCodes= @(0, 3010, 1641)
+  softwareName  = "SQL Server Management Studio - $release"
+}
+
+$pp = Get-PackageParameters
+
+if ($pp['SSMSExePath'])
+{
+    $packageArgs.file = $pp['SSMSExePath']
+
+    Install-ChocolateyInstallPackage @packageArgs
+}
+else
+{
+    $packageArgs.url           = $fullUrl
+    $packageArgs.checksum      = $fullChecksum
+    $packageArgs.checksumType  = 'SHA256'
+
+    Install-ChocolateyPackage @packageArgs
+}
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = Split-Path $MyInvocation.MyCommand.Definition
+$embedded_path = if ((Get-OSArchitectureWidth 64) -and $env:chocolateyForceX86 -ne 'true') {
+         Write-Host "Installing 64 bit version"; Get-Item "$toolsDir\*dll*win64*.zip"
+} else { Write-Host "Installing 32 bit version"; Get-Item "$toolsDir\*dll*win32*.zip" }
+
+$packageArgs = @{
+    PackageName  = 'sqlite'
+    FileFullPath = $embedded_path
+    Destination  = $toolsDir
+}
+Get-ChildItem $toolsDir\* | Where-Object { $_.PSISContainer } | Remove-Item -Recurse -Force #remove older package dirs
+Get-ChocolateyUnzip @packageArgs
+
+$pp = Get-PackageParameters
+if (!$pp.NoTools) {
+    Write-Host "Installing tools"
+    $packageArgs.FileFullPath = Get-Item "$toolsDir\*tools*win32*.zip"
+    Get-ChocolateyUnzip @packageArgs
+}
+
+Remove-Item $toolsDir\*.zip -ea 0
+$toolsPath = Split-Path $MyInvocation.MyCommand.Definition
+. $toolsPath\helpers.ps1
+
+$pp = Get-PackageParameters
+$installDir = $toolsPath
+if ($pp.InstallDir -or $pp.InstallationPath ) { $InstallDir = $pp.InstallDir + $pp.InstallationPath }
+Write-Host "Sysinternals Suite is going to be installed in '$installDir'"
+
+$packageArgs = @{
+  packageName    = 'sysinternals'
+  url            = 'https://download.sysinternals.com/files/SysinternalsSuite.zip'
+  checksum       = 'febcf4114df12459ce445446d25215b03f7fae6a3c888cae6f189c53551d9448'
+  checksumType   = 'sha256'
+  unzipLocation  = $installDir
+}
+Install-ChocolateyZipPackage @packageArgs
+Accept-Eula
+if ($installDir -ne $toolsPath) { Install-ChocolateyPath $installDir }
+if (Is-NanoServer) {
+  $packageArgs.url = 'https://download.sysinternals.com/files/SysinternalsSuite-Nano.zip'
+  $packageArgs.checksum = '3ecdfcf09625159f72f7e6c4ac03a426791f4b0468370608212b8cc5a95ce8dd'
+ }
+
+$old_path = 'c:\sysinternals'
+if ((Test-Path $old_path) -and ($installDir -ne $old_path)) {
+    Write-Warning "Clean up older versions of this install at c:\sysinternals"
+}
+$ErrorActionPreference  = 'Stop'
+ if(!$PSScriptRoot){ $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent }
+. "$PSScriptRoot\helper.ps1"
+
+# Get Package Parameters
+$parameters = (Get-PackageParameters); $pp = ( Test-PackageParamaters $parameters ).ToString() -replace('""|="True"','') -replace(";", ' ') -replace("==", '=')
+
+$packageArgs = @{
+  PackageName    = 'Temurinjre'
+  Url64bit       = 'https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2%2B8/OpenJDK17U-jre_x64_windows_hotspot_17.0.2_8.msi'
+  Checksum64     = '57C39A19BA3FB5C17CEE620A9F5437F73E12034EFB70A9E3D9BD621A1B5E852B'
+  ChecksumType64 = 'sha256'
+  fileType       = 'msi'
+  SilentArgs     = $pp
+}
+
+Install-ChocolateyPackage @packageArgs
+$bits = Get-ProcessorBits
+$packageName = 'tineye-chrome'
+$extensionID = 'haebnnbpedcbhciplfhjjkbafijpncjl'
+if ($bits -eq 64)
+   {
+    if (Test-Path -Path "HKLM:\SOFTWARE\Wow6432node\Google\Chrome\Extensions\$extensionID")
+       {
+       Write-Host "Extension already installed." -foreground "magenta" –backgroundcolor "blue"
+       } else {
+         New-Item -Force -Path "HKLM:\SOFTWARE\Wow6432node\Google\Chrome\Extensions\$extensionID" | out-null
+         New-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432node\Google\Chrome\Extensions\$extensionID\" -Name "update_url" -Value "https://clients2.google.com/service/update2/crx" | out-null
+         New-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432node\Google\Chrome\Extensions\$extensionID\" -Name "ChocolateyPackageName" -Value "$packageName" | out-null
+         }
+    } else {
+      New-Item -Force -Path "HKLM:\SOFTWARE\Google\Chrome\Extensions\$extensionID" | out-null
+      New-ItemProperty -Path "HKLM:\SOFTWARE\Google\Chrome\Extensions\$extensionID\" -Name "update_url" -Value "https://clients2.google.com/service/update2/crx" | out-null
+      }
+Set-StrictMode -Version 2
+$ErrorActionPreference = 'Stop'
+
+. (Join-Path -Path (Split-Path -Path $MyInvocation.MyCommand.Definition -Parent) -ChildPath 'data.ps1')
+$packageName = $otherData.PackageName
+$installerType = 'exe'
+$silentArgs = '/quiet /norestart'
+$validExitCodes = @(0, 1638, 3010)
+$force = $Env:chocolateyPackageParameters -like '*Force*'
+
+Write-Verbose 'Checking Service Pack requirements'
+$os = Get-WmiObject -Class Win32_OperatingSystem
+$version = [Version]$os.Version
+if ($version -ge [Version]'6.1' -and $version -lt [Version]'6.2' -and $os.ServicePackMajorVersion -lt 1)
+{
+  # On Windows 7 / Server 2008 R2, Service Pack 1 is required.
+  throw 'This package requires Service Pack 1 to be installed first. The "KB976932" package may be used to install it.'
+}
+elseif ($version -ge [Version]'6.0' -and $version -lt [Version]'6.1' -and $os.ServicePackMajorVersion -lt 2)
+{
+  # On Windows Vista / Server 2008, Service Pack 2 is required.
+  throw 'This package requires Service Pack 2 to be installed first.'
+}
+elseif ($version -ge [Version]'5.2' -and $version -lt [Version]'6.0' -and $os.ServicePackMajorVersion -lt 2)
+{
+  # On Windows Server 2003 / XP x64, Service Pack 2 is required.
+  throw 'This package requires Service Pack 2 to be installed first.'
+}
+elseif ($version -ge [Version]'5.1' -and $version -lt [Version]'5.2' -and $os.ServicePackMajorVersion -lt 3)
+{
+  # On Windows XP, Service Pack 3 is required.
+  throw 'This package requires Service Pack 3 to be installed first.'
+}
+
+$runtimes = @{
+  'x64' = @{ RegistryPresent = $false; RegistryVersion = $null; DllVersion = $null; InstallData = $installData64; Applicable = (Get-OSArchitectureWidth) -eq 64 }
+  'x86' = @{ RegistryPresent = $false; RegistryVersion = $null; DllVersion = $null; InstallData = $installData32; Applicable = $true }
+}
+
+switch ([string](Get-OSArchitectureWidth))
+{
+  '32' { $registryRoots = @{ x86 = 'HKLM:\SOFTWARE'; x64 = $null } }
+  '64' { $registryRoots = @{ x86 = 'HKLM:\SOFTWARE\WOW6432Node'; x64 = 'HKLM:\SOFTWARE' } }
+  default { throw "Unsupported bitness: $_" }
+}
+
+Write-Verbose 'Analyzing servicing information in the registry'
+foreach ($archAndRegRoot in $registryRoots.GetEnumerator())
+{
+  $arch = $archAndRegRoot.Key
+  $regRoot = $archAndRegRoot.Value
+  # https://docs.microsoft.com/en-us/cpp/ide/redistributing-visual-cpp-files
+  $regData = Get-ItemProperty -Path "$regRoot\Microsoft\DevDiv\vc\Servicing\$($otherData.FamilyRegistryKey)\RuntimeMinimum" -Name 'Version' -ErrorAction SilentlyContinue
+  if ($regData -ne $null)
+  {
+    $versionString = $regData.Version
+    try
+    {
+      $parsedVersion = [version]$versionString
+      Write-Verbose "Version of installed runtime for architecture $arch in the registry: $versionString"
+      $normalizedVersion = [version]($parsedVersion.ToString(3)) # future-proofing in case Microsoft starts putting more than 3 parts here
+      $runtimes[$arch].RegistryVersion = $normalizedVersion
+    }
+    catch
+    {
+      Write-Warning "The servicing information in the registry is in an unknown format. Please report this to package maintainers. Data from the registry: Version = [$versionString]"
+    }
+  }
+}
+
+$packageRuntimeVersion = $otherData.ThreePartVersion
+Write-Verbose "Version number of runtime installed by this package: $packageRuntimeVersion"
+foreach ($archAndRuntime in $runtimes.GetEnumerator())
+{
+  $arch = $archAndRuntime.Key
+  $runtime = $archAndRuntime.Value
+
+  $shouldInstall = $runtime.RegistryVersion -eq $null -or $runtime.RegistryVersion -lt $packageRuntimeVersion
+  Write-Verbose "Runtime for architecture $arch applicable: $($runtime.Applicable); version in registry: [$($runtime.RegistryVersion)]; should install: $shouldInstall"
+  if ($runtime.Applicable)
+  {
+    if (-not $shouldInstall)
+    {
+      if ($force)
+      {
+        Write-Warning "Forcing installation of runtime for architecture $arch version $packageRuntimeVersion even though this or later version appears present, because 'Force' was specified in package parameters."
+      }
+      else
+      {
+        if ($runtime.RegistryVersion -gt $packageRuntimeVersion)
+        {
+          Write-Warning "Skipping installation of runtime for architecture $arch version $packageRuntimeVersion because a newer version ($($runtime.RegistryVersion)) is already installed."
+        }
+        else
+        {
+          Write-Host "Runtime for architecture $arch version $packageRuntimeVersion is already installed."
+        }
+
+        continue
+      }
+    }
+
+    Write-Verbose "Installing runtime for architecture $arch"
+    $installData = $runtime.InstallData
+    Set-StrictMode -Off
+    Install-ChocolateyPackage -PackageName "${packageName}-$arch" `
+                              -FileType $installerType `
+                              -SilentArgs $silentArgs `
+                              -ValidExitCodes $validExitCodes `
+                              @installData
+    Set-StrictMode -Version 2
+  }
+}
+$params = @{
+  PackageName    = 'vcredist2005'
+  FileType       = 'exe'
+  Url            = 'https://download.microsoft.com/download/8/B/4/8B42259F-5D70-43F4-AC2E-4B208FD8D66A/vcredist_x86.EXE'
+  Url64          = 'https://download.microsoft.com/download/8/B/4/8B42259F-5D70-43F4-AC2E-4B208FD8D66A/vcredist_x64.EXE'
+  Checksum       = '8648c5fc29c44b9112fe52f9a33f80e7fc42d10f3b5b42b2121542a13e44adfd'
+  Checksum64     = '4487570bd86e2e1aac29db2a1d0a91eb63361fcaac570808eb327cd4e0e2240d'
+  ChecksumType   = 'sha256'
+  ChecksumType64 = 'sha256'
+  SilentArgs     = '/Q'
+  ValidExitCodes = @(0,3010) # http://msdn.microsoft.com/en-us/library/aa368542(VS.85).aspx
+}
+Install-ChocolateyPackage @params
+
+# Install both 32bit and 64bit on a 64bit OS
+# If a program is compiled as x86 and the 32bit version of vcredist isn't installed, then the program would fail to start.
+if (Get-ProcessorBits 64 -and ($env:chocolateyForceX86 -ne $true)) {
+  $originalChocolateyForceX86 = $Env:chocolateyForceX86
+  $Env:chocolateyForceX86 = $true
+  Install-ChocolateyPackage @params
+  $Env:chocolateyForceX86 = $originalChocolateyForceX86
+}
+$params = @{
+  PackageName    = 'vcredist2008'
+  FileType       = 'exe'
+  Url            = 'https://download.microsoft.com/download/5/D/8/5D8C65CB-C849-4025-8E95-C3966CAFD8AE/vcredist_x86.exe'
+  Url64          = 'https://download.microsoft.com/download/5/D/8/5D8C65CB-C849-4025-8E95-C3966CAFD8AE/vcredist_x64.exe'
+  Checksum       = '8742bcbf24ef328a72d2a27b693cc7071e38d3bb4b9b44dec42aa3d2c8d61d92'
+  Checksum64     = 'c5e273a4a16ab4d5471e91c7477719a2f45ddadb76c7f98a38fa5074a6838654'
+  ChecksumType   = 'sha256'
+  ChecksumType64 = 'sha256'
+  SilentArgs     = '/Q /NORESTART'
+  ValidExitCodes = @(0,3010)  # http://msdn.microsoft.com/en-us/library/aa368542(VS.85).aspx
+}
+Install-ChocolateyPackage @params
+
+# Install both 32bit and 64bit on a 64bit OS
+# If a program is compiled as x86 and the 32bit version of vcredist isn't installed, then the program would fail to start.
+if (Get-ProcessorBits 64 -and ($env:chocolateyForceX86 -ne $true)) {
+  $originalChocolateyForceX86 = $Env:chocolateyForceX86
+  $Env:chocolateyForceX86 = $true
+  Install-ChocolateyPackage @params
+  $Env:chocolateyForceX86 = $originalChocolateyForceX86
+}
+$params = @{
+  PackageName    = 'vcredist2010'
+  FileType       = 'exe'
+  Url            = 'https://download.microsoft.com/download/1/6/5/165255E7-1014-4D0A-B094-B6A430A6BFFC/vcredist_x86.exe'
+  Url64          = 'https://download.microsoft.com/download/1/6/5/165255E7-1014-4D0A-B094-B6A430A6BFFC/vcredist_x64.exe'
+  Checksum       = '99dce3c841cc6028560830f7866c9ce2928c98cf3256892ef8e6cf755147b0d8'
+  Checksum64     = 'f3b7a76d84d23f91957aa18456a14b4e90609e4ce8194c5653384ed38dada6f3'
+  ChecksumType   = 'sha256'
+  ChecksumType64 = 'sha256'
+  SilentArgs     = '/Q /NORESTART'
+  ValidExitCodes = @(0,3010) # http://msdn.microsoft.com/en-us/library/aa368542(VS.85).aspx
+}
+Install-ChocolateyPackage @params
+
+# Install both 32bit and 64bit on a 64bit OS
+# If a program is compiled as x86 and the 32bit version of vcredist isn't installed, then the program would fail to start.
+if (Get-ProcessorBits 64 -and ($env:chocolateyForceX86 -ne $true)) {
+  $originalChocolateyForceX86 = $Env:chocolateyForceX86
+  $Env:chocolateyForceX86 = $true
+  Install-ChocolateyPackage @params
+  $Env:chocolateyForceX86 = $originalChocolateyForceX86
+}
+
+$packageName = 'vcredist2012'
+$installerType = 'EXE'
+$32BitUrl = 'http://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x86.exe'
+$64BitUrl = 'http://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe'
+$silentArgs = '/Q'
+$validExitCodes = @(0,3010)
+
+
+#first install vcredist targetting actual CPU architecture
+Install-ChocolateyPackage $packageName $installerType $silentArgs $32BitUrl $64BitUrl -validExitCodes $validExitCodes `
+            -checksum B924AD8062EAF4E70437C8BE50FA612162795FF0839479546CE907FFA8D6E386 `
+            -checksumType sha256 `
+            -checksum64 681BE3E5BA9FD3DA02C09D7E565ADFA078640ED66A0D58583EFAD2C1E3CC4064 `
+            -checksumType64 sha256            
+
+$is64bit = Get-ProcessorBits 64;
+if($is64bit) {
+    #in case of x64 also install x86 vcredist
+    Install-ChocolateyPackage $packageName $installerType $silentArgs $32BitUrl -validExitCodes $validExitCodes `
+                -checksum B924AD8062EAF4E70437C8BE50FA612162795FF0839479546CE907FFA8D6E386 `
+                -checksumType sha256
+}
+
+
+$packageName = 'vcredist2013'
+$installerType = 'exe'
+$url = 'https://download.microsoft.com/download/0/5/6/056dcda9-d667-4e27-8001-8a0c6971d6b1/vcredist_x86.exe'
+$checksum = '89f4e593ea5541d1c53f983923124f9fd061a1c0c967339109e375c661573c17'
+$checksumType = 'sha256'
+$url64 = 'https://download.microsoft.com/download/0/5/6/056dcda9-d667-4e27-8001-8a0c6971d6b1/vcredist_x64.exe'
+$checksum64 = '20e2645b7cd5873b1fa3462b99a665ac8d6e14aae83ded9d875fea35ffdd7d7e'
+$checksumType64 = 'sha256'
+$silentArgs = '/Q /norestart'
+$validExitCodes = @(0,3010)  # http://msdn.microsoft.com/en-us/library/aa368542(VS.85).aspx
+
+Install-ChocolateyPackage -PackageName "$packageName" `
+                          -FileType "$installerType" `
+                          -Url "$url" `
+                          -Url64bit "$url64" `
+                          -SilentArgs "$silentArgs" `
+                          -ValidExitCodes $validExitCodes `
+                          -Checksum "$checksum" `
+                          -ChecksumType "$checksumType" `
+                          -Checksum64 "$checksum64" `
+                          -ChecksumType64 "$checksumType64"
+
+if (Get-ProcessorBits 64) {
+  Install-ChocolateyPackage -PackageName "$packageName" `
+                            -FileType "$installerType" `
+                            -Url "$url" `
+                            -SilentArgs "$silentArgs" `
+                            -ValidExitCodes $validExitCodes `
+                            -Checksum "$checksum" `
+                            -ChecksumType "$checksumType"
+}
+Write-Debug 'Empty script to avoid Chocolatey Package Verifier false positive warning (https://github.com/chocolatey/package-validator/issues/178).'
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = Split-Path $MyInvocation.MyCommand.Definition
+
+$installerFile = if ((Get-OSArchitectureWidth 64) -and $env:chocolateyForceX86 -ne 'true') {
+         Write-Host "Installing x64 bit version"; Get-Item "$toolsDir\*_x64.exe"
+} else { Write-Host "Installing x32 bit version"; Get-Item "$toolsDir\*_x32.exe" }
+
+$packageArgs = @{
+  packageName    = 'vlc'
+  fileType       = 'exe'
+  file           = $installerFile
+  silentArgs     = '/S'
+  validExitCodes = @(0, 1223)
+}
+Install-ChocolateyInstallPackage @packageArgs
+Remove-Item ($toolsDir + '\*.' + $packageArgs.fileType)
+
+$pp = Get-PackageParameters
+if ($pp.Language) {
+    Write-Host 'Setting langauge to' $pp.Language
+    mkdir -force HKCU:\Software\VideoLAN\VLC
+    Set-ItemProperty HKCU:\Software\VideoLAN\VLC Lang $pp.Language
+}
+
+$packageName = $packageArgs.packageName
+$installLocation = Get-AppInstallLocation $packageName
+if ($installLocation)  {
+    Write-Host "$packageName installed to '$installLocation'"
+    Register-Application "$installLocation\$packageName.exe"
+    Write-Host "$packageName registered as $packageName"
+}
+else { Write-Warning "Can't find $PackageName install location" }
+Update-SessionEnvironment
+code --install-extension streetsidesoftware.code-spell-checker
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+
+$extensionName = "csharp-"
+$extensionVersion = "1.23.16"
+$extensionId = "$toolsDir\$extensionName$extensionVersion.vsix"
+
+Update-SessionEnvironment
+
+Install-VsCodeExtension -extensionId $extensionId
+Update-SessionEnvironment
+code --install-extension jchannon.csharpextensions
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+
+Install-VsCodeExtension -extensionId "$toolsDir\hediet.vscode-drawio-1.6.4.vsix"
+Update-SessionEnvironment
+code --install-extension EditorConfig.EditorConfig
+$ErrorActionPreference = 'Stop'
+
+Install-VsCodeExtension -extensionId 'hashhar.gitattributes@0.4.1'
+$ErrorActionPreference = 'Stop'
+
+Install-VsCodeExtension -extensionId 'codezombiech.gitignore@0.7.0'
+Update-SessionEnvironment
+code --install-extension eamodio.gitlens
+$ErrorActionPreference = 'Stop'
+
+Install-VsCodeExtension -extensionId 'vscode-icons-team.vscode-icons'
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+
+Install-VsCodeExtension -extensionId 'MS-vsliveshare.vsliveshare-audio@0.1.91'
+Update-SessionEnvironment
+code --install-extension DavidAnson.vscode-markdownlint
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+
+$extensionName = "mssql-"
+$extensionVersion = "1.6.0"
+$osBitness = Get-OSArchitectureWidth
+$extensionId = "$toolsDir\$extensionName$extensionVersion-win7-x$osBitness.vsix"
+
+Update-SessionEnvironment
+
+Install-VsCodeExtension -extensionId $extensionId
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+
+$extensionName = "PowerShell-"
+$extensionVersion = "2021.12.0"
+$extensionId = "$toolsDir\$extensionName$extensionVersion.vsix"
+
+Update-SessionEnvironment
+
+Install-VsCodeExtension -extensionId $extensionId
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+
+Install-VsCodeExtension -extensionId "$toolsDir\esbenp.prettier-vscode-9.3.0.vsix"
+$ErrorActionPreference = 'Stop'
+
+Install-VsCodeExtension -extensionId 'rebornix.Ruby@0.28.1'
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = $(Split-Path -parent $MyInvocation.MyCommand.Definition)
+
+Install-VsCodeExtension -extensionId "$toolsDir\hbenl.vscode-test-explorer-liveshare-1.0.5.vsix"
+$ErrorActionPreference = 'Stop'
+
+$toolsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+
+Install-VsCodeExtension -extensionId "$toolsDir\hbenl.vscode-test-explorer-2.21.1.vsix"
+$ErrorActionPreference = 'Stop'
+
+Install-VsCodeExtension -extensionId 'ms-vsliveshare.vsliveshare@1.0.5418'
+$ErrorActionPreference = 'Stop'
+
+Install-VsCodeExtension -extensionId 'redhat.vscode-yaml@1.4.0'
+$ErrorActionPreference = 'Stop'
+
+$toolsPath = Split-Path $MyInvocation.MyCommand.Definition
+. $toolsPath\helpers.ps1
+
+$softwareName = 'Microsoft Visual Studio Code'
+$version = '1.64.2'
+if ($version -eq (Get-UninstallRegistryKey "$softwareName").DisplayVersion) {
+  Write-Host "VS Code $version is already installed."
+  return
+}
+
+$pp = Get-PackageParameters
+Close-VSCode
+
+$packageArgs = @{
+  packageName    = 'vscode.install'
+  fileType       = 'exe'
+  url            = 'https://az764295.vo.msecnd.net/stable/f80445acd5a3dadef24aa209168452a3d97cc326/VSCodeSetup-ia32-1.64.2.exe'
+  url64bit       = 'https://az764295.vo.msecnd.net/stable/f80445acd5a3dadef24aa209168452a3d97cc326/VSCodeSetup-x64-1.64.2.exe'
+
+  softwareName   = "$softwareName"
+
+  checksum       = 'f6498a4791c19010c6173c7e6db57fa10cab22e523018c4c5e30f2c35e740784'
+  checksumType   = 'sha256'
+  checksum64     = 'e5a3f05161594e643c3848407d6ec82da66cadc1390bb4736661c23bc19f4abe'
+  checksumType64 = 'sha256'
+
+  silentArgs     = '/verysilent /suppressmsgboxes /mergetasks="{0}" /log="{1}\install.log"' -f (Get-MergeTasks), (Get-PackageCacheLocation)
+  validExitCodes = @(0, 3010, 1641)
+}
+
+Install-ChocolateyPackage @packageArgs
+$ErrorActionPreference = 'Stop';
+
+$toolsDir       = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+
+$packageArgs = @{
+  packageName    = $env:ChocolateyPackageName
+  fileType       = 'exe'
+  file          = "$toolsDir\Wireshark-win32-3.6.2.exe"
+  file64        = "$toolsDir\Wireshark-win64-3.6.2.exe"
+  softwareName  = 'Wireshark*'
+  silentArgs     = '/S /quicklaunchicon=no'
+  validExitCodes = @(0)
+}
+
+Install-ChocolateyInstallPackage @packageArgs
+
+Get-ChildItem $toolsDir\*.exe | ForEach-Object { Remove-Item $_ -ea 0; if (Test-Path $_) { Set-Content "$_.ignore" } }
+# SIG # End signature block
+                   ,zR P r o g r a m D a t a    ^ 1     GT�r CHOCOL~1  F 	  �GTDnmT�k.   z�                  `B� c h o c o l a t e y    J 1     lTL� lib 8 	  �GT\nmT�q.   ��                  z�l i b    ` 1     GT�q GIT~1.INS H 	  �GT�qmT�q.   �!                  M1g i t . i n s t a l l    P 1     GT�q tools < 	  �GT�qmT�q.   �!                  ��K t o o l s    x 2 "  GT�q  CHOCOL~2.PS1  \ 	  �GT�qGT�q.   �!                  �v� c h o c o l a t e y I n s t a l l . p s 1      t            -       s         �l��    C:\ProgramData\chocolatey\lib\git.install\tools\chocolateyInstall.ps1  W . . \ . . \ . . \ . . \ . . \ . . \ . . \ P r o g r a m D a t a \ c h o c o l a t e y \ l i b \ g i t . i n s t a l l \ t o o l s \ c h o c o l a t e y I n s t a l l . p s 1 / C : \ P r o g r a m D a t a \ c h o c o l a t e y \ l i b \ g i t . i n s t a l l \ t o o l s `     �X       utat022         ���}��-J�i(��'�L��+֢��� ��|E����}��-J�i(��'�L��+֢��� ��|E�E   	  �9   1SPS�mD��pH�H@.�=x�   h    H   ����K�T�x�#�Z            
+[CmdletBinding()]
+param ( )
+
+end
+{
+    $modulePath      = Join-Path $env:ProgramFiles WindowsPowerShell\Modules
+    $targetDirectory = Join-Path $modulePath Pester
+    $scriptRoot      = Split-Path $MyInvocation.MyCommand.Path -Parent
+    $sourceDirectory = Join-Path $scriptRoot Tools
+
+    if ($PSVersionTable.PSVersion.Major -ge 5)
+    {
+        $manifestFile    = Join-Path $sourceDirectory Pester.psd1
+        $manifest        = Test-ModuleManifest -Path $manifestFile -WarningAction Ignore -ErrorAction Stop
+        $targetDirectory = Join-Path $targetDirectory $manifest.Version.ToString()
+    }
+
+    Update-Directory -Source $sourceDirectory -Destination $targetDirectory
+    
+    $binPath = Join-Path $targetDirectory bin
+    Install-ChocolateyPath $binPath
+
+    if ($PSVersionTable.PSVersion.Major -lt 4)
+    {
+        $modulePaths = [Environment]::GetEnvironmentVariable('PSModulePath', 'Machine') -split ';'
+        if ($modulePaths -notcontains $modulePath)
+        {
+            Write-Verbose "Adding '$modulePath' to PSModulePath."
+
+            $modulePaths = @(
+                $modulePath
+                $modulePaths
+            )
+
+            $newModulePath = $modulePaths -join ';'
+
+            [Environment]::SetEnvironmentVariable('PSModulePath', $newModulePath, 'Machine')
+            $env:PSModulePath += ";$modulePath"
+        }
+    }
+}
+
+begin
+{
+    function Update-Directory
+    {
+        [CmdletBinding()]
+        param (
+            [Parameter(Mandatory = $true)]
+            [string] $Source,
+
+            [Parameter(Mandatory = $true)]
+            [string] $Destination
+        )
+
+        $Source = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($Source)
+        $Destination = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($Destination)
+
+        if (-not (Test-Path -LiteralPath $Destination))
+        {
+            $null = New-Item -Path $Destination -ItemType Directory -ErrorAction Stop
+        }
+
+        try
+        {
+            $sourceItem = Get-Item -LiteralPath $Source -ErrorAction Stop
+            $destItem = Get-Item -LiteralPath $Destination -ErrorAction Stop
+
+            if ($sourceItem -isnot [System.IO.DirectoryInfo] -or $destItem -isnot [System.IO.DirectoryInfo])
+            {
+                throw 'Not Directory Info'
+            }
+        }
+        catch
+        {
+            throw 'Both Source and Destination must be directory paths.'
+        }
+
+        $sourceFiles = Get-ChildItem -Path $Source -Recurse |
+                       Where-Object { -not $_.PSIsContainer }
+
+        foreach ($sourceFile in $sourceFiles)
+        {
+            $relativePath = Get-RelativePath $sourceFile.FullName -RelativeTo $Source
+            $targetPath = Join-Path $Destination $relativePath
+
+            $sourceHash = Get-FileHash -Path $sourceFile.FullName
+            $destHash = Get-FileHash -Path $targetPath
+
+            if ($sourceHash -ne $destHash)
+            {
+                $targetParent = Split-Path $targetPath -Parent
+
+                if (-not (Test-Path -Path $targetParent -PathType Container))
+                {
+                    $null = New-Item -Path $targetParent -ItemType Directory -ErrorAction Stop
+                }
+
+                Write-Verbose "Updating file $relativePath to new version."
+                Copy-Item $sourceFile.FullName -Destination $targetPath -Force -ErrorAction Stop
+            }
+        }
+
+        $targetFiles = Get-ChildItem -Path $Destination -Recurse |
+                       Where-Object { -not $_.PSIsContainer }
+
+        foreach ($targetFile in $targetFiles)
+        {
+            $relativePath = Get-RelativePath $targetFile.FullName -RelativeTo $Destination
+            $sourcePath = Join-Path $Source $relativePath
+
+            if (-not (Test-Path $sourcePath -PathType Leaf))
+            {
+                Write-Verbose "Removing unknown file $relativePath from module folder."
+                Remove-Item -LiteralPath $targetFile.FullName -Force -ErrorAction Stop
+            }
+        }
+
+    }
+
+    function Get-RelativePath
+    {
+        param ( [string] $Path, [string] $RelativeTo )
+        return $Path -replace "^$([regex]::Escape($RelativeTo))\\?"
+    }
+
+    function Get-FileHash
+    {
+        param ([string] $Path)
+
+        if (-not (Test-Path -LiteralPath $Path -PathType Leaf))
+        {
+            return $null
+        }
+
+        $item = Get-Item -LiteralPath $Path
+        if ($item -isnot [System.IO.FileSystemInfo])
+        {
+            return $null
+        }
+
+        $stream = $null
+
+        try
+        {
+            $sha = New-Object System.Security.Cryptography.SHA256CryptoServiceProvider
+            $stream = $item.OpenRead()
+            $bytes = $sha.ComputeHash($stream)
+            return [convert]::ToBase64String($bytes)
+        }
+        finally
+        {
+            if ($null -ne $stream) { $stream.Close() }
+            if ($null -ne $sha)    { $sha.Clear() }
+        }
+    }
+}

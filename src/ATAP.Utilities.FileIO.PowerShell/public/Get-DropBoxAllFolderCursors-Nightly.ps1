@@ -1,7 +1,7 @@
 
 whoami
 git --version
-Write-EnvironmentVariables
+Write-EnvironmentVariablesIndented
 
 $global:configRootKeys['DropboxAccessTokenConfigRootKey'] + ' = ' + [Environment]::GetEnvironmentVariable($global:configRootKeys['DropboxAccessTokenConfigRootKey'])
 Write-output "OUTPUT"

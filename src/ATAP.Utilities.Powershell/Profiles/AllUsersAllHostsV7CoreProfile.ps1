@@ -115,28 +115,25 @@ function Write-KVPIndented {
   $outstr
 }
 
-Function Write-EnvironmentVariables {
+Function Write-EnvironmentVariablesIndented {
   param(
     [int] $initialIndent = 0
     , [int] $indentIncrement = 2
   )
-  $outstr = ''
-  Get-ChildItem env: | sort-Object -Property Key | ForEach-Object { $envVar = $_;
-    ('Machine', 'User', 'Process') | # 'Machine', 'User', 'Process'
-    ForEach-Object { $scope = $_;
-      if (([System.Environment]::GetEnvironmentVariable($envVar.key, $scope))) {
-        # '{0}:{1} ({2}){3}' -f $envVar.key, $envVar.value, $scope, [Environment]::NewLine
-        #$outstr += '{0}:{1} ({2})' -f $envVar.key, $envVar.value, $scope + "`r`n`t"
-        if ($envVar.key -eq 'path') {
-         $outstr += ' ' * $initialIndent + $envVar.key + ' = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
-           $($($envVar.value -split ';') -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )`
-           + '  [' + $scope + ']' +  [Environment]::NewLine
-        } else {
-          $outstr += ' ' * $initialIndent + $envVar.key + ' = ' + $envVar.value +'  [' + $scope + ']' +  [Environment]::NewLine
-
-        }
-  }}}
-
+  ('Machine', 'User', 'Process') | ForEach-Object { $scope = $_; 
+       [System.Environment]::GetEnvironmentVariables($scope) | ForEach-Object {$envVarHashTable = $_;
+         $envVarHashTable.Keys | Sort-Object | ForEach-Object {$key = $_
+             $key + ' = ' + $envVarHashTable[$key]
+             if ($key -eq 'path') {
+              $outstr += ' ' * $initialIndent + $key + ' (' + $scope +') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
+                $($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )
+             } else {
+               $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] +'  [' + $scope + ']' +  [Environment]::NewLine
+             }
+     
+         }
+       }
+      }
   $outstr
 }
 Function ValidateTools {
@@ -155,7 +152,7 @@ Function ValidateTools {
 Write-Verbose "Starting $($MyInvocation.Mycommand)"
 Write-Verbose ("WorkingDirectory = $pwd")
 Write-Verbose ("PSScriptRoot = $PSScriptRoot")
-Write-Verbose ("EnvironmentVariablesAtStartOfMachineProfile = " + $(Write-EnvironmentVariables 0 2 ))
+Write-Verbose ("EnvironmentVariablesAtStartOfMachineProfile = " + $(Write-EnvironmentVariablesIndented 0 2 ))
 Write-Verbose ("Registry Current Session Environment variable path = " + $(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment' -Name "Path"))
 
 
@@ -223,13 +220,13 @@ $additionalPSModulePaths = @($global:Settings[$global:configRootKeys['Chocolatey
 # Add the $additionalPSModulePaths.
 $desiredPSModulePaths = $additionalPSModulePaths + $Env:PSModulePath
 # Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
-[Environment]::SetEnvironmentVariable('PSModulePath', $DesiredPSModulePaths -join ';', 'Process')
+[Environment]::SetEnvironmentVariable('PSModulePath', $DesiredPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
 # Clean up the $desiredPSModulePaths
 # The use of 'Get-PathVariable' function causes the pcsx module to be loaded here
 # ToDo: work out pscx for jenkins clinet agents
 #$finalPSModulePaths = Get-PathVariable -Name 'PSModulePath' -RemoveEmptyPaths -StripQuotes
 # Set the $Env:PsModulePath to the final, clean value of $desiredPSModulePaths.
-#[Environment]::SetEnvironmentVariable('PSModulePath', $finalPSModulePaths -join ';', 'Process')
+#[Environment]::SetEnvironmentVariable('PSModulePath', $finalPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
 
 
 # This machine is part of the CI/CD DevOps pipeline ecosystem
@@ -246,6 +243,6 @@ $desiredPSModulePaths = $additionalPSModulePaths + $Env:PSModulePath
 # Print the $global:settings if Debug
 Write-Debug ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
 #$DebugPreference = 'Continue'
-Write-Debug ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariables ($indent + $indentIncrement) $indentIncrement)  + [Environment]::NewLine )
+Write-Debug ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement)  + [Environment]::NewLine )
 
 

@@ -31,7 +31,7 @@ namespace ATAP.Utilities.Testing {
     #region string constants: Environments
     public const string EnvironmentProductionTest = "ProductionTest"; // ToDo: Implement these tests
     public const string EnvironmentUnitTest = "UnitTest"; // Run Unit tests
-    public const string EnvironmentConfigRootKey = "Environment";
+    public const string ENVIRONMENTConfigRootKey = "Environment";
     public const string EnvironmentDefault = EnvironmentUnitTest;
     #endregion
 

@@ -42,7 +42,7 @@ namespace AService01 {
 
     // ToDo: replace with newest "best practices" that use IHostEnvironment
     #region string constants: Environments prior to and part of the GenericHost creation . Very hard to localize/standardize in the short period before the environment is determined.
-    public const string EnvironmentConfigRootKey = "Environment";
+    public const string ENVIRONMENTConfigRootKey = "Environment";
     public const string EnvironmentProduction = "Production"; // Environments.Production
     public const string EnvironmentDevelopment = "Development";
     public const string EnvironmentStringDefault = EnvironmentProduction;

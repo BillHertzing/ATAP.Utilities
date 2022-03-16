@@ -58,7 +58,7 @@ namespace ATAP.Console.Console03 {
     public const string EnvironmentProduction = "Production"; // Environments.Production
     public const string EnvironmentDevelopment = "Development";
     public const string EnvironmentDefault = EnvironmentProduction;
-    public const string EnvironmentConfigRootKey = "Environment";
+    public const string ENVIRONMENTConfigRootKey = "Environment";
     #endregion
 
     #region string constants: For running as a Windows Service (could/should be removed from the Console programs' string constants)

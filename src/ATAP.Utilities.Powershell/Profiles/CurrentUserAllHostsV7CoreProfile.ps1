@@ -87,6 +87,10 @@ Function prompt {
   return '> '
 }
 
+# To use the Portable Git, I need a dropbox location as the location of the global configuration file
+$global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:\Dropbox\whertzing\Git\.gitconfig'
+
+
 # set the Cloud Location variables for THIS user
 # Function Set-CloudDirectoryLocations {
 #   switch -regex ($env:computername) {

@@ -1,7 +1,7 @@
 # ToDo comment based help
 $global:configRootKeys = @{
   'ATAPUtilitiesVersionConfigRootKey' = 'ATAPUtilitiesVersion'
-  'EnvironmentConfigRootKey' = 'Environment'
+  'ENVIRONMENTConfigRootKey' = 'Environment'
   'IsElevatedConfigRootKey' = 'IsElevated'
   'CloudBasePathConfigRootKey' = 'CloudBasePath'
   'DropboxBasePathConfigRootKey' = 'DropboxBasePath'
@@ -11,6 +11,7 @@ $global:configRootKeys = @{
   'FastTempBasePathConfigRootKey' = 'FastTempBasePath'
   'BigTempBasePathConfigRootKey' = 'BigTempBasePath'
   'ErlangHomeDirConfigRootKey' = 'ErlangHomeDir'
+  'GIT_CONFIG_GLOBALConfigRootKey' = 'GIT_CONFIG_GLOBAL'
   'GitExePathConfigRootKey' = 'GitExePath'
   'JavaExePathConfigRootKey' = 'JavaExePath'
   'JENKINS_URLConfigRootKey' = 'JENKINS_URL'

@@ -27,4 +27,21 @@ Cmdlets are found in their eponymous script files
 This function takes a module `$Name`, module `$Version`, and the `$sourcePath` to the root of the module's code. It creates a subdirectory under the user's Powershell modules' path (), for the module `$Name`, and under that a subdirectory for the `$Version`. In the `$Version` subdirectory, it creates three symbolic links, for `public` and `private`subdirectories, and the `$Name.psm1` file. It also copies any `$Name.psd1` files from the `$sourcePath` to the
 
 
+## SymolbicLink Developing functions for Build Tooling
+
+Create a symbolic link from the script under development, to the root of the jenkins  job's workspace
+After initial development, the script will be part of a new release of teh module, and the symbolic link won't be needed anymore
+
+`$env:Workspace` is the root of the Jenkins workspace, per node and per job
+`$localRepoRoot` is the absolute path to the root of the local repo
+`$moduleName` is the name of the Powershell Module where the script resides
+`$scriptName` is the name of the script file
+`$relativeScriptDirectory` is the relative path from the repo root to the directory where the script source resides
+
+When testing, this is needed in the administrtative (Elevated) PowerShell terminal:
+`$env:Workspace = 'C:\JenkinsAgentNode\utat022Node\workspace\Package-PowershellModule' `
+`$env:Workspace = 'D:\Jenkins\ncat016\workspace\Package-PowershellModule' `
+
+$scriptName = 'Publish-PSPackage.ps1'; $moduleName ='ATAP.Utilities.BuildTooling.PowerShell';  $relativeScriptDirectory= join-path 'src' $ModuleName 'public';$localRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities';   Remove-Item -path (join-path $env:Workspace $scriptname) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:Workspace $scriptname) -Target (join-path $localRepoRoot $relativeScriptDirectory $scriptName)
+
 

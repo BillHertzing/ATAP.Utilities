@@ -1,19 +1,20 @@
 # todo: comment based help
 
-$global:envVars = @{
+$global:EnvVars = @{
   'ATAPUtilitiesVersion'                                     = $global:Settings[$global:configRootKeys['ATAPUtilitiesVersionConfigRootKey']]
   'DOTNET_CLI_TELEMETRY_OPTOUT'                              = 1
   $global:configRootKeys['DropboxAccessTokenConfigRootKey']  = 'PopulateViaSecretsOrManually'
   $global:configRootKeys['DropBoxBasePathConfigRootKey']     = $global:Settings[$global:configRootKeys['DropBoxBasePathConfigRootKey']]
-  'ERLANG_HOME'                                              = $global:Settings[$global:configRootKeys['ErlangHomeDirConfigRootKey']]
-  'Environment'                                              = $global:Settings[$global:configRootKeys['EnvironmentConfigRootKey']]
+  $global:configRootKeys['ErlangHomeDirConfigRootKey']       = $global:Settings[$global:configRootKeys['ErlangHomeDirConfigRootKey']]
+  $global:configRootKeys['ENVIRONMENTConfigRootKey']         = $global:Settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']]
   $global:configRootKeys['FLYWAY_URLConfigRootKey']          = $global:Settings[$global:configRootKeys['FLYWAY_URLConfigRootKey']]
-  'FLYWAY_USER'                                              = $global:Settings[$global:configRootKeys['FLYWAY_USERConfigRootKey']]
-  'FLYWAY_LOCATIONS'                                         = $global:Settings[$global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']]
-  'FLYWAY_PASSWORD'                                          = $global:Settings[$global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']]
+  $global:configRootKeys['FLYWAY_USERConfigRootKey']         = $global:Settings[$global:configRootKeys['FLYWAY_USERConfigRootKey']]
+  $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']    = $global:Settings[$global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']]
+  $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']    = $global:Settings[$global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']]
   # Attribution: https://www.red-gate.com/hub/product-learning/flyway/bulk-loading-data-via-a-powershell-script-in-flyway?topic=database-builds&product=flyway
   'FP__projectName'                                          = $global:Settings[$global:configRootKeys['FP__projectNameConfigRootKey']]
   'FP__projectDescription'                                   = $global:Settings[$global:configRootKeys['FP__projectDescriptionConfigRootKey']]
+  $global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']   = $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']]
   $global:configRootKeys['GoogleDriveBasePathConfigRootKey'] = $global:Settings[$global:configRootKeys['GoogleDriveBasePathConfigRootKey']]
   $global:configRootKeys['JENKINS_URLConfigRootKey']         = $global:Settings[$global:configRootKeys['JENKINS_URLConfigRootKey']]
   $global:configRootKeys['JENKINS_USER_IDConfigRootKey']     = $global:Settings[$global:configRootKeys['JENKINS_USER_IDConfigRootKey']]

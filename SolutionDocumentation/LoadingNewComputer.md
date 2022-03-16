@@ -289,6 +289,10 @@ Set-Item WSMan:\localhost\Client\TrustedHosts -Value 'ncat041, ncat016, utat01 u
 
 # Add the new computer as a trusted host on other computers in the group
 
+## Setup Logitech G510s software and drivers
+
+## setup HP Scan software and
+
 ## Setup Jenkins Master 
 ToDo: how to copy jobs and nodes
 ToDo: how to chnage the jenkins agents to communicate with teh new master

@@ -14,6 +14,15 @@ $global:WindowsUnitTestList = @('Run-WindowsUnitTests')
 
 $global:WindowsUnitTestArgumentsList = @('PathToProjectOrSolutionFilePattern', 'PathToTestLog')
 
+# only set the value of the Environment Environment variable if it has not beenset by a calling process
+$inheritedEnvironmentVariable = [System.Environment]::GetEnvironmentVariable('Environment')
+$inProcessEnvironmentVariable = ''
+if ($inheritedEnvironmentVariable) {
+	$inProcessEnvironmentVariable = $inheritedEnvironmentVariable
+} else {
+	$inProcessEnvironmentVariable                                = 'Production' # default for all machines is Productiojn, can be overwritten on a per-machine basis if needed
+}
+
 $global:MachineAndNodeSettings = @{
   # Settings common to all machines
   'AllCommon' = @{
@@ -44,10 +53,11 @@ $global:MachineAndNodeSettings = @{
       'Testing' = 'http://ws/ngf/qa'
       'Development' = 'http://ws/ngf/dev'
     }
+	
+	$global:configRootKeys['ENVIRONMENTConfigRootKey']  = $inProcessEnvironmentVariable
   }
   # Machine Settings
   'utat01'    = @{
-    $global:configRootKeys['EnvironmentConfigRootKey']                                = 'Production'
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'C:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'
@@ -68,7 +78,6 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
   'utat022'   = @{
-    $global:configRootKeys['EnvironmentConfigRootKey']                                = 'Production'
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'C:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'D:' 'Temp'
@@ -96,7 +105,6 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
   'ncat016'   = @{
-    $global:configRootKeys['EnvironmentConfigRootKey']                                = 'Production'
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'C:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'D:' 'Temp'
@@ -117,7 +125,6 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
   'ncat041'   = @{
-    $global:configRootKeys['EnvironmentConfigRootKey']                                = 'Production'
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'c:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'
@@ -138,7 +145,6 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
   'ncat-ltb1' = @{
-    $global:configRootKeys['EnvironmentConfigRootKey']                                = 'Production'
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'c:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'
@@ -159,7 +165,6 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
   'ncat-ltjo' = @{
-    $global:configRootKeys['EnvironmentConfigRootKey']                                = 'Production'
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'D:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'

@@ -54,13 +54,14 @@ function Publish-PSPackage {
   }
   $VerbosePreference = $savedVerbosePreference 
 
-  git init                            			      #initialize the empty local repo
+  git init #initialize the empty local repo
+
   # Link the remote Git repro to the workspace repro as the origin
   # unless the jenkins workspace repository already links to the remote Git repro
   $remotes = git remote -v
   if ($remotes) {
     Write-Debug 'The local git has remotes'
-    $remotes | ? { $_ -match '^origin' } | % { $line = $_
+    $remotes | Where-Object { $_ -match '^origin' } | % { $line = $_
       Write-Debug "This remote matches '^origin' : $line"  
       if ($line -match [regex]::Escape($repoGitSubdirectoryPath)) {
         Write-Debug "This remote matches $repoGitSubdirectoryPath : $line"  
@@ -75,13 +76,20 @@ function Publish-PSPackage {
   }
 
   git config core.sparsecheckout true			#very crucial. this is where we tell git we are checking out specifics
-((gci -r $srcPathExpansion |
-    ? { -not $_.PSIsContainer } |
-    ? { $_.fullname -notMatch $directoryExclusionPattern } |
-    ? { $_.fullname -notmatch $fileExclusionPattern } | 
+  # This gets a list of files that are to be included in the PS Module
+  # Get all files except those excluded by the two exclusion parameters parameters
+  ((Get-ChildItem -r $srcPathExpansion |
+    Where-Object { -not $_.PSIsContainer } |
+    Where-Object { $_.fullname -notMatch $directoryExclusionPattern } |
+    Where-Object { $_.fullname -notmatch $fileExclusionPattern } | 
     Select-Object -expand fullname) -replace $([regex]::Escape($localSourceReproDirectory)), '') -replace '\\', '/' >> .git/info/sparse-checkout #recursively checkout examples folder
+
+  # Actually get the sparse list of files from the remote named origin for the specified branch
   git pull origin $branchName
+
+  # Publish the module
   Publish-Module -Path $relativeModulePath -Repository $PSRepositoryName -NuGetApiKey 'use real NuGetApiKey for real nuget server here'
+
   #$projFile = join-path 'src' 'ATAP.Utilities.BuildTooling.PowerShell' 'ATAP.Utilities.BuildTooling.PowerShell.pssproj'
   #write-host $projFile
   #nuget pack $projFile

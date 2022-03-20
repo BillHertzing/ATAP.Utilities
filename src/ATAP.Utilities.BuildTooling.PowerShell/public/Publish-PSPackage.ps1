@@ -17,12 +17,16 @@ function Publish-PSPackage {
   $relativeModulePath = [System.Environment]::GetEnvironmentVariable('RelativeModulePath')
   Write-Verbose ('Environment Variable RelativeModulePath = ' + $relativeModulePath)
 
+  $nuGetApiKey = [System.Environment]::GetEnvironmentVariable('NU_GET_API_KEY_SECRET')
+  Write-Verbose ('Environment Variable RelativeModulePath = ' + $nuGetApiKey)
+
   $repoGitSubdirectoryPath = Join-Path $localSourceReproDirectory '.git'
   Write-Debug "repoGitSubdirectoryPath =  $repoGitSubdirectoryPath "
   $srcpath = Join-Path $localSourceReproDirectory $relativeModulePath
   Write-Debug "srcpath =  $srcpath "
   $srcPathExpansion = Join-Path $srcpath '*'
   Write-Debug "srcPathExpansion =  $srcPathExpansion "
+
 
   $directoryExclusionPattern = [regex]::Escape([IO.Path]::DirectorySeparatorChar + '(bin|obj)' + [IO.Path]::DirectorySeparatorChar) # works for all OSs
   $fileExclusionPattern = '(toc\.yml)|tags.txt|pubxml|\.md'
@@ -88,7 +92,7 @@ function Publish-PSPackage {
   git pull origin $branchName
 
   # Publish the module
-  Publish-Module -Path $relativeModulePath -Repository $PSRepositoryName -NuGetApiKey 'use real NuGetApiKey for real nuget server here'
+  Publish-Module -Path $relativeModulePath -Repository $PSRepositoryName -NuGetApiKey $nuGetApiKey
 
   #$projFile = join-path 'src' 'ATAP.Utilities.BuildTooling.PowerShell' 'ATAP.Utilities.BuildTooling.PowerShell.pssproj'
   #write-host $projFile

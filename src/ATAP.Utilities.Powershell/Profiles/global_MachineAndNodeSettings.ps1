@@ -29,7 +29,7 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['ChocolateyLibDirConfigRootKey']    = Join-Path $env:ProgramData 'chocolatey' 'lib'
     $global:configRootKeys['ChocolateyBinDirConfigRootKey']    = Join-Path $env:ProgramData 'chocolatey' 'bin'
 
-    $global:configRootKeys['JENKINS_URLConfigRootKey']         = 'http://ncat016:4040/'
+    $global:configRootKeys['JENKINS_URLConfigRootKey']                                = 'http://utat022:4040/'
     $global:configRootKeys['JENKINS_USER_IDConfigRootKey']     = 'whertzing'
     $global:configRootKeys['JENKINS_API_TOKENConfigRootKey']   = '117e33cc37af54e0b4fc6cb05de92b3553' # the value from the configuration page ToDo: use Secrets GUID/file
 
@@ -53,7 +53,7 @@ $global:MachineAndNodeSettings = @{
       'Testing' = 'http://ws/ngf/qa'
       'Development' = 'http://ws/ngf/dev'
     }
-	
+
 	$global:configRootKeys['ENVIRONMENTConfigRootKey']  = $inProcessEnvironmentVariable
   }
   # Machine Settings
@@ -91,7 +91,6 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']                            = 'NotSecret'
     $global:configRootKeys['FP__projectNameConfigRootKey']                            = 'ATAPUtilities'
     $global:configRootKeys['FP__projectDescriptionConfigRootKey']                     = 'Test Flyway and Pubs samples'
-    $global:configRootKeys['JENKINS_URLConfigRootKey']                                = 'http://utat022:4040/'
     $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
       $global:configRootKeys['WindowsCodeBuildConfigRootKey']
       , $global:configRootKeys['WindowsUnitTestConfigRootKey']

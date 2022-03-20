@@ -27,7 +27,7 @@ Cmdlets are found in their eponymous script files
 This function takes a module `$Name`, module `$Version`, and the `$sourcePath` to the root of the module's code. It creates a subdirectory under the user's Powershell modules' path (), for the module `$Name`, and under that a subdirectory for the `$Version`. In the `$Version` subdirectory, it creates three symbolic links, for `public` and `private`subdirectories, and the `$Name.psm1` file. It also copies any `$Name.psd1` files from the `$sourcePath` to the
 
 
-## SymolbicLink Developing functions for Build Tooling
+## SymbolicLink Developing functions for Build Tooling
 
 Create a symbolic link from the script under development, to the root of the jenkins  job's workspace
 After initial development, the script will be part of a new release of teh module, and the symbolic link won't be needed anymore
@@ -44,8 +44,39 @@ When testing, this is needed in the administrtative (Elevated) PowerShell termin
 
 $scriptName = 'Publish-PSPackage.ps1'; $moduleName ='ATAP.Utilities.BuildTooling.PowerShell';  $relativeScriptDirectory= join-path 'src' $ModuleName 'public';$localRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities';   Remove-Item -path (join-path $env:Workspace $scriptname) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:Workspace $scriptname) -Target (join-path $localRepoRoot $relativeScriptDirectory $scriptName)
 
+$sourceScriptName = 'Update-PackageVersion.ps1';
+$sourceModuleName ='ATAP.Utilities.Buildtooling.Powershell';
+$sourceRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities';
+$targetScriptName = $sourceScriptName;
+$targetScriptDirectory ='.';
+$relativeScriptSourceDirectory = join-path 'src' $sourceModuleName 'public';
+Remove-Item -path (join-path $targetScriptDirectory  $targetScriptName) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $sourceScriptName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $sourceScriptName)
+
+
+$scriptName = 'Update-PackageVersion.ps1'; $moduleName ='ATAP.Utilities.BuildTooling.PowerShell';  $relativeScriptDirectory= join-path 'src' $ModuleName 'public';$localRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities';   Remove-Item -path (join-path $env:Workspace $scriptname) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:Workspace $scriptname) -Target (join-path $localRepoRoot $relativeScriptDirectory $scriptName)
+
 # SymbolicLinks for Git Hooks
 
 Script files called by Git Hooks must be in the `.git/hooks` subdirectory. (ToDo: explain why allowing arbitrary paths implies opinionated direcotry structures). But fles here are not under SCM in the repository. But a symbolic link from a file somewhere in the repository (`ATAP.Utilities.BuildTooling.Powershell/public/Git-PreCommitHook.ps1`)
 
-$scriptSourceName = 'Git-PreCommitHook.ps1'; $scriptTargetName = 'PreCommitHook.ps1' $moduleName ='ATAP.Utilities.BuildTooling.PowerShell'; $localRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities'; $relativeScriptSourceDirectory= join-path 'src' $ModuleName 'public';$targetScriptDirectory = join-path ($localRepoRoot '.git' 'hooks') ;  Remove-Item -path (join-path $targetScriptDirectory  $scriptTargetName) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptSourceName) -Target (join-path $localRepoRoot $relativeScriptSourceDirectory $scriptTargetName)
+$scriptSourceName = 'Git-PreCommitHook.ps1'; $scriptTargetName = 'PreCommitHook.ps1'; $moduleName ='ATAP.Utilities.BuildTooling.PowerShell'; $sourceRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities'; $targetRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'MSBuildPlayground';  $relativeScriptSourceDirectory = join-path 'src' $ModuleName 'public';$targetScriptDirectory = join-path $targetRepoRoot '.git' 'hooks';  Remove-Item -path (join-path $targetScriptDirectory  $scriptTargetName) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptSourceName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $scriptTargetName)
+
+
+### Run this command in the .git/hooks subdirectory of the  $targetRepoRoot (as administrator)
+
+Modify arguments for $targetModuleName,    $targetRepoRoot.
+
+$targetModuleName ='ExamplePSModule';
+$targetRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'PlaygroundGitHooks';
+$targetScriptDirectory = join-path $targetRepoRoot '.git' 'hooks'
+$sourceModuleName ='ATAP.Utilities.Buildtooling.Powershell';
+$sourceRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities';
+  $relativeScriptSourceDirectory = join-path 'src' $sourceModuleName 'public';
+(@{'scriptSourceName'='Invoke-GitPreCommitHook.ps1';'scriptTargetName' = 'Invoke-GitPreCommitHook.ps1';},
+@{'scriptSourceName'='Invoke-GitPostCommitHook.ps1';'scriptTargetName' = 'Invoke-GitPostCommitHook.ps1';},
+@{'scriptSourceName'='Invoke-GitPostCheckoutHook.ps1';'scriptTargetName' = 'Invoke-GitPostCheckoutHook.ps1';}) | %{$ht = $_;
+  $scriptSourceName = $ht['scriptSourceName'];
+  $scriptTargetName = $ht['scriptTargetName'];
+  Remove-Item -path (join-path $targetScriptDirectory  $scriptTargetName) -ErrorAction SilentlyContinue;
+  New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptTargetName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $scriptSourceName )
+}

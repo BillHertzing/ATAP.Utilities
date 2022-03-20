@@ -44,4 +44,8 @@ When testing, this is needed in the administrtative (Elevated) PowerShell termin
 
 $scriptName = 'Publish-PSPackage.ps1'; $moduleName ='ATAP.Utilities.BuildTooling.PowerShell';  $relativeScriptDirectory= join-path 'src' $ModuleName 'public';$localRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities';   Remove-Item -path (join-path $env:Workspace $scriptname) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:Workspace $scriptname) -Target (join-path $localRepoRoot $relativeScriptDirectory $scriptName)
 
+# SymbolicLinks for Git Hooks
 
+Script files called by Git Hooks must be in the `.git/hooks` subdirectory. (ToDo: explain why allowing arbitrary paths implies opinionated direcotry structures). But fles here are not under SCM in the repository. But a symbolic link from a file somewhere in the repository (`ATAP.Utilities.BuildTooling.Powershell/public/Git-PreCommitHook.ps1`)
+
+$scriptSourceName = 'Git-PreCommitHook.ps1'; $scriptTargetName = 'PreCommitHook.ps1' $moduleName ='ATAP.Utilities.BuildTooling.PowerShell'; $localRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities'; $relativeScriptSourceDirectory= join-path 'src' $ModuleName 'public';$targetScriptDirectory = join-path ($localRepoRoot '.git' 'hooks') ;  Remove-Item -path (join-path $targetScriptDirectory  $scriptTargetName) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptSourceName) -Target (join-path $localRepoRoot $relativeScriptSourceDirectory $scriptTargetName)

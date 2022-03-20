@@ -120,17 +120,16 @@ Function Write-EnvironmentVariablesIndented {
     [int] $initialIndent = 0
     , [int] $indentIncrement = 2
   )
-  ('Machine', 'User', 'Process') | ForEach-Object { $scope = $_; 
+  ('Machine', 'User', 'Process') | ForEach-Object { $scope = $_;
        [System.Environment]::GetEnvironmentVariables($scope) | ForEach-Object {$envVarHashTable = $_;
          $envVarHashTable.Keys | Sort-Object | ForEach-Object {$key = $_
-             $key + ' = ' + $envVarHashTable[$key]
              if ($key -eq 'path') {
               $outstr += ' ' * $initialIndent + $key + ' (' + $scope +') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
                 $($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )
              } else {
                $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] +'  [' + $scope + ']' +  [Environment]::NewLine
              }
-     
+
          }
        }
       }

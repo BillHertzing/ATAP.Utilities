@@ -56,7 +56,7 @@ function Publish-PSPackage {
     Register-PSRepository -Name $PSRepositoryName -SourceLocation $PSRepositorySourceLocation -PublishLocation $PSRepositoryPublishLocation -InstallationPolicy Trusted
     Write-Debug "$PSRepositoryName registration completed"
   }
-  $VerbosePreference = $savedVerbosePreference 
+  $VerbosePreference = $savedVerbosePreference
 
   git init #initialize the empty local repo
 
@@ -66,9 +66,9 @@ function Publish-PSPackage {
   if ($remotes) {
     Write-Debug 'The local git has remotes'
     $remotes | Where-Object { $_ -match '^origin' } | % { $line = $_
-      Write-Debug "This remote matches '^origin' : $line"  
+      Write-Debug "This remote matches '^origin' : $line"
       if ($line -match [regex]::Escape($repoGitSubdirectoryPath)) {
-        Write-Debug "This remote matches $repoGitSubdirectoryPath : $line"  
+        Write-Debug "This remote matches $repoGitSubdirectoryPath : $line"
       }
       else {
         Write-Error ("This remote has an origin that does not match the job parameter. $line does not match " + [regex]::Escape($repoGitSubdirectoryPath))
@@ -85,8 +85,8 @@ function Publish-PSPackage {
   ((Get-ChildItem -r $srcPathExpansion |
     Where-Object { -not $_.PSIsContainer } |
     Where-Object { $_.fullname -notMatch $directoryExclusionPattern } |
-    Where-Object { $_.fullname -notmatch $fileExclusionPattern } | 
-    Select-Object -expand fullname) -replace $([regex]::Escape($localSourceReproDirectory)), '') -replace '\\', '/' >> .git/info/sparse-checkout #recursively checkout examples folder
+    Where-Object { $_.fullname -notmatch $fileExclusionPattern } |
+    Select-Object -expand fullname) -replace $([Regex]::Escape($localSourceReproDirectory)), '') -replace '\\', '/' >> .git/info/sparse-checkout #recursively checkout examples folder
 
   # Actually get the sparse list of files from the remote named origin for the specified branch
   git pull origin $branchName

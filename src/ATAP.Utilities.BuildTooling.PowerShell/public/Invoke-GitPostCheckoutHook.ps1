@@ -27,7 +27,7 @@ function Invoke-GitPostCheckoutHook {
 
   # ToDo: add -force-allow parameter to allow precommit to pass even if checks fail or there are no files in the commit
 
-  # Call Jenkins to 
+  # Call Jenkins to
 
   # Regex Patterns used to extract data from Git, expects an opinionated layout to the project's direcotry structure
   $ProjectKindAndNameExtractorPattern = '(?<ProjectKind>' + $dirsep + 'src|test|database' + $dirsep + ')(?<ProjectSubdirectoryName>.*?' + $dirsep + ')'
@@ -104,4 +104,3 @@ function Invoke-GitPostCheckoutHook {
   $exitcode
 }
 
-Invoke-GitPostCheckoutHook

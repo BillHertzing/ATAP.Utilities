@@ -128,6 +128,7 @@ function Invoke-GitPreCommitHook {
   # Do each kind test on the appropriate project
   $allowCommit = $true
 
+   # ToDo: figure out how to transaction this, in case any of the operations in the 'allow commit' region fails
   if ($allowCommit) {
     # For each Powershell module project having a file in the commit
     $relativePathsToPowershellModulesToValidate | ForEach-Object { $ModulePath = $_
@@ -135,9 +136,14 @@ function Invoke-GitPreCommitHook {
       if (-not (Test-Path $ModulePath)) {
         Write-Error "Module $ModulePath not found in $(Get-Location) "
       }
-      . ./Update-PackageVersion.ps1
+      . ./Update-PackageVersion.ps1 #ToDo: remove this line
+      # bump up the version number in the.psd1 file
       Update-PackageVersion $ModulePath
+      # update the cmdlets, functions, aliases, etc listed in the .psd1, and regenerate the .psm1 (ToDo: update only the portion of the /psm1 for public or private file changes)
     }
+    # For each C# module project having a file in the commit
+    # bump up the version number in the AssemblyInfo.cs file
+
   }
   #   bump up the version number in the.psd1 file
   #   update the cmdlets, functions, aliases, etc listed in the .psd1, and regenerate the .psm1 (ToDo: update only the portion of the /psm1 for public or private file changes)
@@ -150,7 +156,8 @@ function Invoke-GitPreCommitHook {
   #   bump up the version number (including prerelease string) in the AssemblyInfo file
   #   return success, let the commit proceed
 
+  $exitcode = 0
   $exitcode
 }
 
-Invoke-GitPreCommitHook
+

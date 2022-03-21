@@ -62,7 +62,7 @@ function Invoke-GitPostCommitHook {
 
   $headers = New-Object 'System.Collections.Generic.Dictionary[[String],[String]]'
   $headers.Add('Authorization', $authorization)
-  $headers.Add('Jenkins-Crumb', $authorization)
+  #$headers.Add('Jenkins-Crumb', $authorization)
   $headers.Add('Content-Type', 'application/json')
   # if ($PSCmdlet.ShouldProcess($parameters.URIForjobToRun, 'HTTP call to the Jenkins URL to run job')) {
   try {
@@ -113,4 +113,4 @@ function Invoke-GitPostCommitHook {
   $exitcode
 }
 
-Invoke-GitPostCommitHook
+

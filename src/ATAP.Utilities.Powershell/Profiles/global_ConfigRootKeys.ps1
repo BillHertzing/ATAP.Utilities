@@ -8,8 +8,9 @@ $global:configRootKeys = @{
   'GoogleDriveBasePathConfigRootKey' = 'GoogleDriveBasePath'
   'DropboxAccessTokenConfigRootKey' = 'DropboxAccessToken'
   'OneDriveBasePathConfigRootKey' = 'OneDriveBasePath'
-  'FastTempBasePathConfigRootKey' = 'FastTempBasePath'
-  'BigTempBasePathConfigRootKey' = 'BigTempBasePath'
+  'FastTempBasePathConfigRootKey' = 'FAST_TEMP_BASE_PATH'
+  'BigTempBasePathConfigRootKey' = 'BIG_TEMP_BASE_PATH'
+  'SecureTempBasePathConfigRootKey' = 'SECURE_TEMP_BASE_PATH'
   'ErlangHomeDirConfigRootKey' = 'ErlangHomeDir'
   'GIT_CONFIG_GLOBALConfigRootKey' = 'GIT_CONFIG_GLOBAL'
   'GitExePathConfigRootKey' = 'GitExePath'
@@ -49,5 +50,13 @@ $global:configRootKeys = @{
 
   'FileSystemDropsBasePathConfigRootKey' = 'FileSystemDropsBasePath'
   'WebServerDropsBaseURLConfigRootKey' = 'WebServerDropsBaseURL'
+
+  # SecretsManagement
+  'SecureCloudVaultPathConfigRootKey' = 'SecureCloudVaultPath'
+  'EncryptedMasterPasswordsPathConfigRootKey' = 'EncryptedMasterPasswordsPath'
+  'ATAPUtilitiesMasterPasswordsPathConfigRootKey' = 'ATAPUtilitiesMasterPasswordsPath'
+  'SecretManagementVaultsPathConfigRootKey'  = 'SecretManagementVaultsPath'
+  'DataEncryptionCertificatesPathConfigRootKey' ='DataEncryptionCertificatesPath'
+
 
 }

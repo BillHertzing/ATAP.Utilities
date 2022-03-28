@@ -14,7 +14,7 @@ $global:WindowsUnitTestList = @('Run-WindowsUnitTests')
 
 $global:WindowsUnitTestArgumentsList = @('PathToProjectOrSolutionFilePattern', 'PathToTestLog')
 
-# only set the value of the Environment Environment variable if it has not beenset by a calling process
+# only set the value of the Environment Environment variable if it has not been set by a calling process
 $inheritedEnvironmentVariable = [System.Environment]::GetEnvironmentVariable('Environment')
 $inProcessEnvironmentVariable = ''
 if ($inheritedEnvironmentVariable) {
@@ -55,6 +55,7 @@ $global:MachineAndNodeSettings = @{
     }
 
 	$global:configRootKeys['ENVIRONMENTConfigRootKey']  = $inProcessEnvironmentVariable
+
   }
   # Machine Settings
   'utat01'    = @{
@@ -62,6 +63,7 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'C:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'
     $global:configRootKeys['BigTempBasePathConfigRootKey']                            = Join-Path 'C:' 'Temp'
+    $global:configRootKeys['SecureTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp' 'Insecure'
     $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
     $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
     $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
@@ -82,6 +84,7 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'C:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'D:' 'Temp'
     $global:configRootKeys['BigTempBasePathConfigRootKey']                            = Join-Path 'D:' 'Temp'
+    $global:configRootKeys['SecureTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp' 'Insecure'
     $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
     $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
     $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
@@ -108,6 +111,7 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'C:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'D:' 'Temp'
     $global:configRootKeys['BigTempBasePathConfigRootKey']                            = Join-Path 'D:' 'Temp'
+    $global:configRootKeys['SecureTempBasePathConfigRootKey']                           = Join-Path 'D:' 'Temp' 'Insecure'
     $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
     $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
     $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
@@ -128,6 +132,7 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'c:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'
     $global:configRootKeys['BigTempBasePathConfigRootKey']                            = Join-Path 'C:' 'Temp'
+    $global:configRootKeys['SecureTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp' 'Insecure'
     $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
     $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
     $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
@@ -148,6 +153,7 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'c:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'
     $global:configRootKeys['BigTempBasePathConfigRootKey']                            = Join-Path 'C:' 'Temp'
+    $global:configRootKeys['SecureTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp' 'Insecure'
     $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
     $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
     $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
@@ -168,6 +174,7 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'D:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'
     $global:configRootKeys['BigTempBasePathConfigRootKey']                            = Join-Path 'C:' 'Temp'
+    $global:configRootKeys['SecureTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp' 'Insecure'
     $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
     $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
     $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
@@ -184,6 +191,19 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
 }
+
+  # values that vary slightly from machine to machine, that are built upon per-machine settings in the same fashion
+  #  the values of these entries are EXECUTED in the profile
+  $global:ToBeExecutedGlobalSettings = [ordered]@{
+
+    # SecretManagement
+    $global:configRootKeys['SecureCloudVaultPathConfigRootKey']  = 'join-path $global:settings[$global:configRootKeys["DropBoxBasePathConfigRootKey"]] "SV"'  #
+    $global:configRootKeys['EncryptedMasterPasswordsPathConfigRootKey']  = 'join-path $global:settings[$global:configRootKeys["SecureCloudVaultPathConfigRootKey"]] "OMPs.json" '#
+    # $global:configRootKeys['ATAPUtilitiesMasterPasswordsPathConfigRootKey']  = 'join-path $global:settings[$global:configRootKeys["EncryptedMasterPasswordsPathConfigRootKey"]] "AUMPs.txt" '#
+    $global:configRootKeys['SecretManagementVaultsPathConfigRootKey']  = 'join-path $global:settings[$global:configRootKeys["SecureCloudVaultPathConfigRootKey"]] "SMVPs" '#
+    $global:configRootKeys['DataEncryptionCertificatesPathConfigRootKey']  = 'join-path $global:settings[$global:configRootKeys["SecureCloudVaultPathConfigRootKey"]] "DECs" '#
+  }
+
 
 # Powershell Module Paths to be added for all users, per machine
 # PSModulePathConfigRootKey

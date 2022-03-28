@@ -34,7 +34,7 @@ Function Confirm-GitFSCK {
   param (
     [parameter()]
     [string]$Path = 'C:\Dropbox\whertzing\GitHub'
-    ,[string] $OutPath = '\\Utat022\fs\DailyReports\Confirm-GitFSCK-Results.txt'
+    , [string] $OutPath = '\\Utat022\fs\DailyReports\Confirm-GitFSCK-Results.txt'
   )
   #endregion FunctionParameters
   #region FunctionBeginBlock
@@ -50,22 +50,29 @@ Function Confirm-GitFSCK {
     Write-Verbose "path =$InPath"
     Write-Verbose "OutPath = $OutPath"
     # validate path exists
-    if (!(Test-Path -Path (Split-Path $Path -parent))) { throw "$Path was not found" }
+    if (!(Test-Path -Path (Split-Path $Path -Parent))) { throw "$Path was not found" }
+
     # Output tests
-    $OutDir = Split-Path $OutPath -parent
-    if (-not (test-path -path $OutDir -pathtype Container)) {throw "$OutDir is not a directory"}
+    if (-not (Test-Path -Path $settings.OutDir -PathType Container)) {
+      throw "$settings.OutDir is not a directory"
+    }
     # Validate that the $Settings.OutDir is writable
-    $testOutFn = join-path $OutDir 'test.txt'
-    try {new-item $testOutFn -force -type file >$null}
-    catch {
-      #Log('Error', "Can't write to file $testOutFn");
-      throw "Can't write to file $testOutFn"
+    $testOutFn = $settings.OutDir + 'test.txt'
+    try { New-Item $testOutFn -Force -type file >$null
+    }
+    catch { # if an exception ocurrs
+      # handle the exception
+      $where = $PSItem.InvocationInfo.PositionMessage
+      $ErrorMessage = $_.Exception.Message
+      $FailedItem = $_.Exception.ItemName
+      #Log('Error', "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where.");
+      Throw "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where."
     }
     # Remove the test file
-    Remove-Item $testOutFn
+    Remove-Item $testOutFn -ErrorAction Stop
 
     $datestr = Get-Date -AsUTC -Format 'yyyy/MM/dd:HH.mm'
-    $dateKeyedHash = if (test-path -path $OutPath) {gc $OutPath | ConvertFrom-JSON -asHash} else {@{}}
+    $dateKeyedHash = if (Test-Path -Path $OutPath) { gc $OutPath | ConvertFrom-Json -asHash } else { @{} }
 
     Write-Verbose 'Running GitFSCK across multiple repositories'
   }
@@ -81,20 +88,20 @@ Function Confirm-GitFSCK {
   ########################################
   END {
     $dateKeyedHash[$datestr ] =
-      Get-ChildItem -Path $Path -r -d 1 | Where-Object { $_.psiscontainer } | ForEach-Object { $dir = $_;
-        Get-ChildItem $_ | Where-Object { $_.fullname -match '\.git$' } | Sort-Object -uniq | ForEach-Object {
-          Push-Location
-          $dir = $_
-          Set-Location $dir
-          if ($PSCmdlet.ShouldProcess("$dir", 'git fsck --full')) {
-            Write-Verbose "git fsk at $dir"
-            git fsck --full
-          }
-          Pop-Location
+    Get-ChildItem -Path $Path -r -d 1 | Where-Object { $_.psiscontainer } | ForEach-Object { $dir = $_;
+      Get-ChildItem $_ | Where-Object { $_.fullname -match '\.git$' } | Sort-Object -uniq | ForEach-Object {
+        Push-Location
+        $dir = $_
+        Set-Location $dir
+        if ($PSCmdlet.ShouldProcess("$dir", 'git fsck --full')) {
+          Write-Verbose "git fsk at $dir"
+          git fsck --full
         }
+        Pop-Location
       }
+    }
 
-    $dateKeyedHash | ConvertTo-Json | set-content -path $OutPath
+    $dateKeyedHash | ConvertTo-Json | Set-Content -Path $OutPath
   }
   #endregion FunctionEndBlock
 }

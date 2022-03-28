@@ -1,23 +1,38 @@
 
 # Security in the Libraries, Packages and CI/CD pipeline
 
-If you are viewing this `Security Shift-Left.md` in GitHub, [here is this same Disaster Preparedness on the documentation site]()
+If you are viewing this `Security Shift-Left.md` in GitHub, [here is this same Security Shift-Left on the documentation site]()
 
 ## <a id="Introduction" />Introduction
 
-Security is everyone's business in software development. The applications and libraries being developed as 'product' should have security as a first-class citizen. Automated scanning tools should, during the build, inspect and analyze the code being developed for known security flaws and best practices. The 3rd-party SW being used in the product (the items in the Software Bill of Materials (BOM)) should report their compliance with security best practices, and these 3rd party softwares and their security score made available in the build artifacts included in the packages.
+Security is everyone's business in software development. The applications and libraries being developed as 'product' should have security as a first-class citizen. Automated scanning tools should, during the build, inspect and analyze the code being developed for known security flaws and best practices. The 3rd-party SW being used in the product (the items in the Software Bill of Materials (SWBOM)) should report their compliance with security best practices, and these 3rd party softwares and their security score should made available in the build artifacts included in the 'product' packages.
 
-The CI/CD pipeline will need access to "secrets" that authorize access to certain sensitive information. For example, credentials to access Git, credentials to access cloud storage location, Code Signing certificates, SHA generation, database credentials, passwords for service accounts all need to be secured and protected from disclosure.
+While there are multiple security concerns in an organizations, this document is going to focus on securing the 'secrets' that are used in the Development and CI/CD process to produce an application. ToDo: Add a reference to another document that focuses on securing user information within a generated application.
 
-The locations to which products are deployed are usually protected by credentials to ensure only authorized production packages are deployed
+Every organization has "secrets" that are used in the Development and CI/CD processes. These secrets must be protected, because they are often linked to 3rd-party software that costs money to execute. Loss and then misuse of the secrets could cost an organization a lot of money.
+
+The CI/CD pipeline will need access to "secrets" that authorize access to certain sensitive information. For example, credentials to access Git, credentials to access cloud storage locations, Code Signing Certificates, SHA generation, database credentials, passwords for service accounts, oAuth credentials, API access tokens, all need to be secured and protected from disclosure.
+
+The deployment servers to which 'product' is deployed are usually protected by credentials to ensure only authorized production packages are deployed.
 
 The developer's machines all need individual security to handle user and Service passwords, authorization tokens from cloud services,
 
+Securing secrets used in the development process, the CI/CD tools, and the final production products is a difficult tricky task, and there are a lot of ways to go about it. The ATAP.Utilities use a three-stage mechanism.
+
+## <a id="Overview" />Overview
+
+This document is under construction. There are design false starts here, as limitations in current OSS modules and libraries have been discovered during implementation attempts.
+
+
+
+
 ## <a id="GettingStarted" />Getting Started
 
-
+There is a lot to do!
 
 ## <a id="Prerequisites" />Prerequisites
+
+
 
 #### Security Analysis Tools Prerequisites
 
@@ -27,11 +42,19 @@ The developer's machines all need individual security to handle user and Service
 
 * License analysis
 
+#### Data Encryption Certificates Prerequisites
+For Installation on Windows, the CertReq.exe program must be available
+ToDo: write details For Installation on Linux
 #### Code Signing Certificates Prerequisites
 
 #### Database Credentials Prerequisites
 
 #### Cloud Storage Credentials Prerequisites
+For Windows:
+    Dropbox:
+    Cropbox Valut:
+    OneDrive:
+    GoogleDrive:
 
 ##### Dropbox Access Credentials Prerequisites
 
@@ -40,6 +63,7 @@ The developer's machines all need individual security to handle user and Service
 ##### OneDrive Access Credentials Prerequisites
 
 #### On-Premise Hot Backup locations Prerequisites
+For Windows:
 
 #### Off-Premise Cold Backup locations Prerequisites
 

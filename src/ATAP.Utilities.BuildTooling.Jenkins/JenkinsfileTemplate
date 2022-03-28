@@ -1,9 +1,9 @@
 pipeline{
-  // setup a custom workspace on the fastest drive (outside of any cloud share)
     agent {
       node {
         label 'ncat016Node'
-        customWorkspace 'D:/Temp/Jenkins'
+        // setup a custom workspace on the fastest drive (outside of any cloud share)
+        customWorkspace 'D:/Temp/JenkinsAgent'
       }
     }
     stages{
@@ -13,6 +13,7 @@ pipeline{
                 echo "======== Cleaning Workspace ========"
                 echo "NODE_NAME = ${env.NODE_NAME}"
                 echo "workspace directory is ${workspace}"
+                echo "FAST_TEMP_BASE_PATH directory is ${FAST_TEMP_BASE_PATH}"
                 cleanWs()
             }
             post{

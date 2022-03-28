@@ -50,7 +50,7 @@ Function Copy-Assets {
 BEGIN {
   Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
    $DebugPreference = 'Continue'
-  
+
   # default values for settings
   $settings=@{
     InDir = '..\Data'
@@ -79,29 +79,37 @@ BEGIN {
   if (-not(ls $settings.InDir | ?{$_ -match $settings.InBusinessName1FilePattern})) {throw "there are no files matching {0} in directory {1}" -f $settings.InBusinessName1FilePattern,$settings.InDir}
   #if (-not(ls $settings.InDir | ?{$_ -match $settings.InBusinessName2FilePattern})) {throw "there are no files matching {0} in directory {1}" -f $settings.InBusinessName2FilePattern,$settings.InDir}
 
-  # Output tests
-  if (-not (test-path -path $settings.OutDir -pathtype Container)) {throw "$settings.OutDir is not a directory"}
-  # Validate that the $Settings.OutDir is writable
-  $testOutFn = $settings.OutDir + 'test.txt'
-  try {new-item $testOutFn -force -type file >$null}
-  catch {
-    #Log('Error', "Can't write to file $testOutFn"); 
-    throw "Can't write to file $testOutFn"
-  }
-  # Remove the test file
-  Remove-Item $testOutFn
+    # Output tests
+    if (-not (Test-Path -Path $settings.OutDir -PathType Container)) {
+      throw "$settings.OutDir is not a directory"
+    }
+    # Validate that the $Settings.OutDir is writable
+    $testOutFn = $settings.OutDir + 'test.txt'
+    try { New-Item $testOutFn -Force -type file >$null
+    }
+    catch { # if an exception ocurrs
+      # handle the exception
+      $where = $PSItem.InvocationInfo.PositionMessage
+      $ErrorMessage = $_.Exception.Message
+      $FailedItem = $_.Exception.ItemName
+      #Log('Error', "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where.");
+      Throw "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where."
+    }
+    # Remove the test file
+    Remove-Item $testOutFn -ErrorAction Stop
+
   $OutFnName1 = join-path $settings.OutDir $settings.OutFnBusinessName1
   $OutFnName2 = join-path $settings.OutDir $settings.OutFnBusinessName2
-  
+
   #Get the latest of each file that matches an alternate
   $InDataFile = (@(ls $settings.InDir | ?{$_ -match $settings.InBusinessName1FilePattern} | sort -Descending -Property 'LastWriteTime')[0]).Fullname
-  
+
   # Absolute path to copy files to and create folders in
 $absolutePath = @($copyTo + '/App_Config/Include')
 # Set paths we will be copy files from
 $featureDirectory = Join-Path $solutionDirectory '/Feature/*/App_Config/Include'
 $foundationDirectory = Join-Path $solutionDirectory '/Foundation/*/App_Config/Include'
-  
+
 $results = @{}
 }
 #endregion FunctionBeginBlock
@@ -164,7 +172,7 @@ END {
 #############################################################################
 
 
- 
+
 function Create-Files-Private {
   Param ([string]$currentPath, [string]$pathTo)
   Write-Verbose 'Attempting to create files...'

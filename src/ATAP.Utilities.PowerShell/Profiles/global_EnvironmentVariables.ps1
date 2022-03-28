@@ -3,6 +3,7 @@
 $global:EnvVars = @{
   'ATAPUtilitiesVersion'                                     = $global:Settings[$global:configRootKeys['ATAPUtilitiesVersionConfigRootKey']]
   'DOTNET_CLI_TELEMETRY_OPTOUT'                              = 1
+  $global:configRootKeys['FastTempBasePathConfigRootKey']     = $global:Settings[$global:configRootKeys['FastTempBasePathConfigRootKey']]
   $global:configRootKeys['DropboxAccessTokenConfigRootKey']  = 'PopulateViaSecretsOrManually'
   $global:configRootKeys['DropBoxBasePathConfigRootKey']     = $global:Settings[$global:configRootKeys['DropBoxBasePathConfigRootKey']]
   $global:configRootKeys['ErlangHomeDirConfigRootKey']       = $global:Settings[$global:configRootKeys['ErlangHomeDirConfigRootKey']]

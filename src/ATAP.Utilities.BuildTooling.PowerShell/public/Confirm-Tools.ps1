@@ -57,18 +57,25 @@ Function Confirm-Tools {
     $VerbosePreference = 'Continue' # SilentlyContinue Continue
     Write-Debug -Message "Starting $($MyInvocation.Mycommand)"
     Write-Verbose "OutPath = $OutPath"
+
     # Output tests
-    $OutDir = Split-Path $OutPath -Parent
-    if (-not (Test-Path -Path $OutDir -PathType Container)) { throw "$OutDir is not a directory" }
+    if (-not (Test-Path -Path $settings.OutDir -PathType Container)) {
+      throw "$settings.OutDir is not a directory"
+    }
     # Validate that the $Settings.OutDir is writable
-    $testOutFn = Join-Path $OutDir 'test.txt'
-    try { New-Item $testOutFn -Force -type file >$null }
-    catch {
-      #Log('Error', "Can't write to file $testOutFn");
-      throw "Can't write to file $testOutFn"
+    $testOutFn = $settings.OutDir + 'test.txt'
+    try { New-Item $testOutFn -Force -type file >$null
+    }
+    catch { # if an exception ocurrs
+      # handle the exception
+      $where = $PSItem.InvocationInfo.PositionMessage
+      $ErrorMessage = $_.Exception.Message
+      $FailedItem = $_.Exception.ItemName
+      #Log('Error', "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where.");
+      Throw "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where."
     }
     # Remove the test file
-    Remove-Item $testOutFn
+    Remove-Item $testOutFn -ErrorAction Stop
 
     $datestr = Get-Date -AsUTC -Format 'yyyy/MM/dd:HH.mm'
 
@@ -91,7 +98,7 @@ Function Confirm-Tools {
   END {
     $str = nuget locals all -list
     $dateKeyedHash[$datestr ] = $str
-    $dateKeyedHash | ConvertTo-Json | set-content -path $OutPath
+    $dateKeyedHash | ConvertTo-Json | Set-Content -Path $OutPath
   }
   #endregion FunctionEndBlock
 }

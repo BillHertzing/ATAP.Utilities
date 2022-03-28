@@ -78,7 +78,7 @@ Function Add-BlogPostImages {
 
     # Valiate the inputs match the inputs expected of the parameter set specified
     $HaslinkFile = $false
-    write-debug "linkfile = $linkfile"
+    Write-Debug "linkfile = $linkfile"
     if ($linkFile) {
       if (Test-Path -Path $linkFile -PathType leaf -ErrorAction SilentlyContinue) { $HaslinkFile = $true }
     }
@@ -95,19 +95,23 @@ Function Add-BlogPostImages {
     #if ((-not $HaslinkFile) -and (-not $CloudHostedImageFileInfos)) { { throw "$destinationDirectory has no Links file nor any image files" } }
 
     # Output tests
-    # Validate that the $destinationDirectory is writable, the MediaQueryFilesDirectory is writeable, and the
-    $testOutFn = Join-Path $destinationDirectory 'test.txt'
-    try {
-      New-Item $testOutFn -Force -type file >$null   # New-Item honors the WhatIf preference
+    if (-not (Test-Path -Path $settings.OutDir -PathType Container)) {
+      throw "$settings.OutDir is not a directory"
     }
-    catch {
-      #Log('Error', "Can't write to file $testOutFn");
-      throw "Permission error: Can't write to file $testOutFn"
+    # Validate that the $Settings.OutDir is writable
+    $testOutFn = $settings.OutDir + 'test.txt'
+    try { New-Item $testOutFn -Force -type file >$null
     }
-    # Remove the test file unless Whatif
-    if ($PSCmdlet.ShouldProcess(@($testOutFn), "Remove-Item $testOutFn")) {
-      Remove-Item $testOutFn -ErrorAction Stop
+    catch { # if an exception ocurrs
+      # handle the exception
+      $where = $PSItem.InvocationInfo.PositionMessage
+      $ErrorMessage = $_.Exception.Message
+      $FailedItem = $_.Exception.ItemName
+      #Log('Error', "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where.");
+      Throw "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where."
     }
+    # Remove the test file
+    Remove-Item $testOutFn -ErrorAction Stop
 
     # ParameterSetName 'FromSourceImages' accepts input from the pipeline
     $pipelineAccumulater = @()
@@ -262,8 +266,8 @@ Function Add-BlogPostImages {
         # get and store the sharing link for every MediaQuery file
         $mediaQueryFilenameFragments.Keys | ForEach-Object {
           $MQName = $_
-        if ($PSCmdlet.ShouldProcess($MediaResource.MediaQueryFiles[$MQName].Fullname, 'Get-DropBoxSharingLink <target>')) {
-            $MediaResource.MediaQueryFiles[$MQName].SharingLinkToMediaQueryFile = Get-DropboxSharingLink $MediaResource.MediaQueryFiles[$MQName].Fullname -verbose
+          if ($PSCmdlet.ShouldProcess($MediaResource.MediaQueryFiles[$MQName].Fullname, 'Get-DropBoxSharingLink <target>')) {
+            $MediaResource.MediaQueryFiles[$MQName].SharingLinkToMediaQueryFile = Get-DropboxSharingLink $MediaResource.MediaQueryFiles[$MQName].Fullname -Verbose
           }
         }
       }
@@ -274,7 +278,7 @@ Function Add-BlogPostImages {
       }
 
       # Write the imagelinksfile,
-      $MediaResources | ConvertTo-Json  | Set-Content $linkFile
+      $MediaResources | ConvertTo-Json | Set-Content $linkFile
 
       # Write out the $results object with the multiple properties that contain string data necessary to embed all the images (both still and moving) into the markdown of the blog post
       $result

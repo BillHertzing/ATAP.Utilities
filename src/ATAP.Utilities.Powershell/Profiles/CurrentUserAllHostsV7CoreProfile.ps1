@@ -77,7 +77,6 @@ Function prompt {
   $CmdPromptUser = [Security.Principal.WindowsIdentity]::GetCurrent();
   # Decorate the CMD Prompt
   # Test for Admin / Elevated
-  #Write-Host ''
   Write-Host ($(if ($global:settings[$global:configRootKeys['IsElevatedConfigRootKey']]) { 'Elevated ' } else { '' })) -BackgroundColor DarkRed -ForegroundColor White -NoNewline
 
   Write-Host " USER:$($CmdPromptUser.Name.split('\')[1]) " -BackgroundColor DarkBlue -ForegroundColor White -NoNewline
@@ -87,8 +86,36 @@ Function prompt {
   return '> '
 }
 
-# To use the Portable Git, I need a dropbox location as the location of the global configuration file
+# To use the Portable Git requires a dropbox location as the location of the global configuration file
 $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:\Dropbox\whertzing\Git\.gitconfig'
+
+
+# The following command must be run as an administrator on the machine, to install for 'AllUsers'
+# Install-ModulesPerComputer -modulesToInstall @('Microsoft.PowerShell.SecretManagement', 'Microsoft.PowerShell.SecretStore')
+
+
+# The SecretManagementExtensionVaults for this user
+# examples of subject # 'CN=$HostName,OU=$OrganizationalUnit,O=$Organisation,L=$Locality,S=$State,C=$CountryName,E=$Email'
+$SecretManagementExtensionVaults = (
+  @{Name = 'MyPersonalSecrets'; Subject = 'O=ATAPUtilities.org;OU=MyPersonalSecrets'; SubjectAlternativeName = 'Email=Bill.Hertzing@gmail.com'}
+  , @{Name = 'DevelopmentGroupSecrets'; Subject = 'OU=ATAPUtilitiesDevelopmentGroup' }) #, @{Name = 'ProductionSecrets';Subject = 'OU=ProductionGroup,O=ATAPUtilities.org'})
+$DataEncryptionCertificateTemplatePath = 'C:\DataEncryptionCertificate.template'  # Keep this out of the repository, but will be machine/user dependent
+$DataEncryptionCertificateRequestSecondPart = '_DataEncryptionCertificateRequest.inf'
+$DataEncryptionCertificateSecondPart = '_DataEncryptionCertificate.cer'
+$SecretManagementExtensionVaultEncryptedMasterPasswordsPath = $global:settings[$global:configRootKeys['EncryptedMasterPasswordsPathConfigRootKey']]
+
+# Create Data Encryption certificates for all the SecretManagement Extension Vaults (to be done once by admins,and updated on vault CRUD)
+# Install the Data Encryption certificates that belong to a user's roles on a local machine (to be done once by admins)
+# Create-EncryptedMasterPasswordsFile -path $SecretManagementExtensionVaultEncryptedMasterPasswordsPath -SecretManagementExtensionVaults $SecretManagementExtensionVaults -SecureTempBasePath ($global:Settings[$global:configRootKeys['SecureTempBasePathConfigRootKey']]) -DataEncryptionCertificateTemplatePath $DataEncryptionCertificateTemplatePath -DataEncryptionCertificateRequestSecondPart $DataEncryptionCertificateRequestSecondPart -DataEncryptionCertificateSecondPart $DataEncryptionCertificateSecondPart
+
+# Create all the SecretManagement Extension Vaults (to be done once by admins,and updated on vault CRUD)
+# Just the first vault (SecretVault only support a single vault see https://github.com/PowerShell/SecretStore/issues/58)
+
+#$SecretManagementExtensionVaults[0] New-SecretManagementExtensionVault
+
+# Get the Vaults and Master Passwords for the Secrets that belong to my roles
+
+
 
 
 # set the Cloud Location variables for THIS user
@@ -263,6 +290,7 @@ Set-Location -Path $storedInitialDir
 # Always Last step - set the environment variables for this user
 . (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
 Set-EnvironmentVariablesProcess
+
 # Uncomment to see the $global:settings and Environment variables at the completion of this profile
 # Print the $global:settings if Debug
 $indent = 0

@@ -4,8 +4,8 @@
 function Invoke-GitPreCommitHook {
   # ensure that by default the Commit will NOT happen
   $exitcode = 1
-  $VerbosePreference = 'Continue' # Continue  SilentlyContinue
-  $DebugPreference = 'Continue'
+  $VerbosePreference = 'SilentlyContinue' # Continue  SilentlyContinue
+  $DebugPreference = 'SilentlyContinue'
 
   Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
   Write-Debug ("Current Working Directory = $(Get-Location)" )
@@ -54,6 +54,7 @@ function Invoke-GitPreCommitHook {
   # Language: powershell: Project Subdirectory contains project manifest file (module's subdirectory name matches a file within having the same names and .psd1 suffix)
   # Language: powershell: Project Subdirectory contains project Module file (module's subdirectory name matches a file within having the same names and .psd1 suffix)
   # Language: powershell: Project Module File contains vlid Module file components and optional dot-sourcing commands for public and private subdirectories
+# Validate-SheBangLine
 
   # Language: C#: Project Subdirectory contains .csproj file
   # Language: C#: Project Subdirectory contains Properties subdirectory which contains AssemblyInfo.cs file
@@ -61,6 +62,28 @@ function Invoke-GitPreCommitHook {
   # Language: SQL: Project Subdirectory contains .sql file
 
   # Language: All: Project Subdirectory contains Documentation subdirectory, which contains a ReadMe.md file
+  # [pre-commit hook examples (Python)](https://github.com/pre-commit/pre-commit-hooks)
+  # Validate-GiantFiles
+# Validate-GiantFiles
+# Validate-AST
+# Validate-CaseConflictForPlatforms
+# Validate-JsonSyntax
+# Validate-XMLSyntax
+# Validate-XYAMLSyntax
+# Validate-MergeConflict
+# Validate-PrivateKeys
+# Validate-PrettyJson
+# Validate-PrettyXML
+# Validate-PrettyCSharp
+# Validate-PrettyPowershell
+# Validate-PrettyJenkins
+# Validate-TestNames
+# Validate-Encoding
+# Validate-ByteOrderMark
+# Validate-LineEndings
+
+  # Platform: *nix
+  # Validate-ShebangScriptsAreExecutable
 
   # Kinds of Projects. Used to validate input that comes from git commands. Opinionated.
   $projectKindStrs = @{'src' = 'src'; 'test' = 'test'; 'database' = 'database' }
@@ -137,8 +160,17 @@ function Invoke-GitPreCommitHook {
         Write-Error "Module $ModulePath not found in $(Get-Location) "
       }
       . ./Update-PackageVersion.ps1 #ToDo: remove this line
-      # bump up the version number in the.psd1 file
-      Update-PackageVersion $ModulePath
+      # bump up the version (or prerelease string) number in the.psd1 file
+      $returnedExitCode = 0
+      try {
+      $returnedExitCode = Update-PackageVersion $ModulePath
+      } catch {
+        $resultException = $_.Exception
+        $ResultExceptionMessage = $resultException.Message
+        Write-Error ('Update-PackageVersion thew an error :' + $ResultExceptionMessage)
+        $exitcode = 2
+        return $exitcode
+      }
       # update the cmdlets, functions, aliases, etc listed in the .psd1, and regenerate the .psm1 (ToDo: update only the portion of the /psm1 for public or private file changes)
     }
     # For each C# module project having a file in the commit

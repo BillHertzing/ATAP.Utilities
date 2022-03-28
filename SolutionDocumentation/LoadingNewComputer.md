@@ -193,7 +193,7 @@ programs to pin:
   `get-psrepository` validate that PSGallery appears
   `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`
 
-  
+
 
   remove the default version of Pester that comes with windows
   ```Powershell
@@ -283,17 +283,49 @@ Join-Path  ([Environment]::GetEnvironmentVariable($global:configRootKeys['Google
 
 Enable-PSRemoting
 
-# Add the other computers in the group to trustedhosts for WinRM remote management
+# Add the other computers in the group to exisitng trustedhosts for WinRM remote management
 
-Set-Item WSMan:\localhost\Client\TrustedHosts -Value 'ncat041, ncat016, utat01 utat022, ncat-ltjo, ncat-ltb1' # ToDo - add wireless hostnames?
+set-item WSMan:localhost\client\trustedhosts -value $('<NewComputerHostname>,' + (get-Item WSMan:localhost\client\trustedhosts).value)
+
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value 'utat022,utat01,ncat-ltjo,ncat-ltb1,ncat016,ncat041' # ToDo - add wireless hostnames?
 
 # Add the new computer as a trusted host on other computers in the group
+
+# Enable HTTPS on WSMan
+
+Until you get a SSL certificate for the new computer, you can TEMPRARLY use unencrypted, but you WILLL be puttingyour password out on the network for any sniffer to see
+`winrm set winrm/config/client @{AllowUnencrypted="true"}` # run as admin on the new computer, and on any computer that you want to connect FROM
+`winrm set winrm/config/service @{AllowUnencrypted="true"}` # run as admin on the new computer, and on any computer that you want to connect TO
+
+Better, though, is to configure WinRM for HTTPS
+[How to configure WINRM for HTTPS](https://docs.microsoft.com/en-us/troubleshoot/windows-client/system-management-components/configure-winrm-for-https)
+
+However, "WinRM HTTPS requires a local computer Server Authentication certificate with a CN matching the hostname to be installed. The certificate mustn't be expired, revoked, or self-signed."  Which means you will need
+
+[OpenSSL create client certificate & server certificate with example](https://www.golinuxcloud.com/openssl-create-client-server-certificate/)
+[Creating simple SSL certificates for server authentication using OpenSSL](https://blog.oholics.net/creating-simple-ssl-certificates-for-server-authentication-using-openssl/)
+[HOW TO CREATE DIGITAL CERTIFICATES USING OPENSSL](https://www.aemcorp.com/managedservices/blog/creating-digital-certificates-using-openssl)
+
+## Authentication for WinRM
+
+Basic Authentication on both teh Client and the service
 
 ## Setup Logitech G510s software and drivers
 
 ## setup HP Scan software and
 
-## Setup Jenkins Master 
+## Setup Fiddler Options
+
+Turn on 'capture https'
+
+Setup Notepad++ (portable) as the text editor
+
+Setup BeyondCompare (portable) as the comparison tool
+
+[Fiddler Compare Tools](https://fiddlerbook.com/fiddler/help/CompareTool.asp)
+
+
+## Setup Jenkins Master
 ToDo: how to copy jobs and nodes
 ToDo: how to chnage the jenkins agents to communicate with teh new master
 ### Chnge Powershell from V5 to V7 on Master and Slaves

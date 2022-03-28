@@ -121,18 +121,19 @@ Function Write-EnvironmentVariablesIndented {
     , [int] $indentIncrement = 2
   )
   ('Machine', 'User', 'Process') | ForEach-Object { $scope = $_;
-       [System.Environment]::GetEnvironmentVariables($scope) | ForEach-Object {$envVarHashTable = $_;
-         $envVarHashTable.Keys | Sort-Object | ForEach-Object {$key = $_
-             if ($key -eq 'path') {
-              $outstr += ' ' * $initialIndent + $key + ' (' + $scope +') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
-                $($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )
-             } else {
-               $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] +'  [' + $scope + ']' +  [Environment]::NewLine
-             }
+    [System.Environment]::GetEnvironmentVariables($scope) | ForEach-Object { $envVarHashTable = $_;
+      $envVarHashTable.Keys | Sort-Object | ForEach-Object { $key = $_
+        if ($key -eq 'path') {
+          $outstr += ' ' * $initialIndent + $key + ' (' + $scope + ') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
+          $($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )
+        }
+        else {
+          $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] + '  [' + $scope + ']' + [Environment]::NewLine
+        }
 
-         }
-       }
       }
+    }
+  }
   $outstr
 }
 Function ValidateTools {
@@ -144,6 +145,219 @@ Function ValidateTools {
   # dotnet tool install --global PlantUmlClassDiagramGenerator --version 1.2.4
 }
 
+#region Security Subsystem core functions (to be moved into a seperate ATAP.Utilities module)
+##################################################################################
+
+# ToDo: write a script to be run once for each user that will setup SecretManagement
+# ToDo: write a script to be run (usually once for each user) that will setup access to specific SecretManagementExtensionVault
+# ToDo: write a script to be run on-demand that will revoke access to a specific SecretManagementExtensionVault
+# ToDo: write a script to be run once for each SecretManagementExtensionVault to create the vault
+# ToDo: put all the SecretManagememnt code into a dedicated ATAP.Utilities module
+# Setup-SecretManagementPerUser
+# ToDo: put all the module management powershell functions into a dedicated ATAP.Utilities module
+function Install-ModulesPerComputer {
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  param (
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+    [string[]] $modulesToInstall
+    , [Parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
+    [string[]] $ComputerName
+    , [Parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
+    [PSCredential] $RunAs
+    , [Parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
+    [string[]] $repositoriesToTrust = @('PSGallery')
+
+  )
+  # ToDo: implement CIMSession if ComputerName is not the currnet computer, or if RunAs is not the current user
+  # import the SecretManagement and SecretStore modules if they are not yet present
+  $modulesToInstall | ForEach-Object { $moduleName = $_
+    Write-Verbose "Processing module named : $modulename"
+    # Has it already been loaded in machine scope?
+    if (-not (Get-Module -Name $moduleName -ListAvailable)) {
+      Write-Verbose "Module named : $modulename has NOT been installed"
+      # ToDo: wrap in try/catch
+      # In what repository does it exist?
+      $foundModule = Find-Module $moduleName
+      Write-Debug "Module named : $modulename was found in the $($foundModule.Repository) repository"
+      # Is that repository trusted?
+      $installationPolicy = (Get-PSRepository -Name $foundModule.Repository).InstallationPolicy
+      if ( $installationPolicy -eq 'Untrusted') {
+        Write-Debug "Repository $($foundModule.Repository) is NOT trusted"
+        # Todo: add feature and process flow to allow admin running this script to decide if the Repository should be trusted for this user on this machine
+        if ($repositoriesToTrust.Contains($foundModule.Repository)) {
+          Write-Debug "Repository $($foundModule.Repository) is IN the repositoriesToTrust array"
+          if ($PSCmdlet.ShouldProcess($foundModule.Repository , 'Set-PSRepository -Name <target> -InstallationPolicy Trusted')) {
+            Set-PSRepository -Name $foundModule.Repository -InstallationPolicy Trusted
+          }
+        }
+        else {
+          Write-Debug "Repository $($foundModule.Repository) is NOT in the repositoriesToTrust array"
+        }
+      }
+      # ToDo: Version checking?
+      # The missing module has been found and the repository is trusted
+      if ($PSCmdlet.ShouldProcess(@($moduleName), 'Install-Module -Name <target> -Scope AllUsers ')) {
+        Install-Module -Name $moduleName -Scope AllUsers
+      }
+      Write-Debug "Module named : $modulename has been installed"
+    }
+    else {
+      Write-Verbose "Module named : $modulename has already been installed"
+    }
+  }
+}
+
+
+function New-DataEncryptionCertificateRequest {
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  # ToDO: add -force switch to overwrite any exisiting DataEncryptionCertificateRequest
+  param (
+    [string] $TemplatePath
+    , [string] $newsubject
+    , [string] $newCertificateRequestPath
+    , [string] $SubjectAlternativeName
+    , [Guid] $newGuid
+    , [switch] $Force
+  )
+  # Validate parameters
+  if (-not (Test-Path $TemplatePath)) {
+    Throw "The specified TemplatePath does not exist: $TemplatePath"
+  }
+  # ToDo: validate newsubject and SubjectAlternativeName
+  # Does the parent path for the new certificate path exist
+  $parentPath = (Split-Path -Path $newCertificateRequestPath -Parent)
+  if (-not (Test-Path $parentPath )) {
+    if ($force) {
+      if ($PSCmdlet.ShouldProcess($parentPath, 'New-Item -ItemType Directory -Force -Path <target>')) {
+        # If the parent path for the new certificate path does not exist at all, create it if -Force is true, else fail
+        New-Item -ItemType Directory -Force -Path $parentPath >$null
+      }
+    }
+    else {
+      Throw "Part(s) of the parent of the newCertificateRequestPath do not exist, use -Force to create them: $parentPath"
+    }
+  }
+  if ($PSCmdlet.ShouldProcess($newCertificateRequestPath, "Create new CertificateRequest <target> from '$DataEncryptionCertificateTemplatePath' using subject '$newsubject'")) {
+    ((Get-Content $DataEncryptionCertificateTemplatePath) -replace 'Subject = .*', ('Subject = "' + $newsubject + '"')) -replace '%szOID_SUBJECT_ALTERNATIVE_NAME% = "{text}.*', '%szOID_SUBJECT_ALTERNATIVE_NAME% = "{text}' + $SubjectAlternativeName + '"' |
+    Set-Content -Path $newCertificateRequestPath # -Encoding [System.Text.Encoding]::UTF8  default value for my powershelll, but localization may affect this
+  }
+}
+
+function Install-DataEncryptionCertificate {
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  # ToDo: add -force switch to overwrite any existing dataEncryptionCertificatePath
+  param (
+    [string] $dataEncryptionCertificateRequestPath
+    , [string] $dataEncryptionCertificatePath
+    , [switch] $Force
+  )
+  # ToDo: Figure out how to ensure this command can be run on a list of remote computers and a list of users on each
+  # ToDo: parameter validation on each computer and as each user
+  # ToDo: validate Certreq.exe is present and executable
+  # Validate parameters
+  if (-not (Test-Path $dataEncryptionCertificateRequestPath)) {
+    Throw "The specified dataEncryptionCertificateRequestPath does not exist: $dataEncryptionCertificateRequestPath"
+  }
+  if ($PSCmdlet.ShouldProcess($dataEncryptionCertificateRequestPath, 'Create and install a new Data Encryption Certificate (certreq -new <target>) from the Data Encryption Certificate Request <target>')) {
+    try {
+      CertReq.exe -new $dataEncryptionCertificateRequestPath $dataEncryptionCertificatePath
+    }
+    catch {
+      # ToDo: handle errors
+    }
+  }
+}
+
+# [Display Subject Alternative Names of a Certificate with PowerShell](https://social.technet.microsoft.com/wiki/contents/articles/1447.display-subject-alternative-names-of-a-certificate-with-powershell.aspx)
+# ((ls cert:/Current*/my/* | ?{$_.EnhancedKeyUsageList.FriendlyName -eq 'Document Encryption'}).extensions | Where-Object {$_.Oid.FriendlyName -match "subject alternative name"}).Format(1)
+
+
+
+function Create-EncryptedMasterPasswordsFile {
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  param (
+    [string] $Path
+    , [object[]] $SecretManagementExtensionVaults
+    , [string] $SecureTempBasePath
+    , [string] $DataEncryptionCertificateTemplatePath
+    , [string] $DataEncryptionCertificateRequestSecondPart
+    , [string] $DataEncryptionCertificateSecondPart
+    , [Switch]$Force
+  )
+  $SMEVs = @{}
+  # Validate parameters
+  if (-not (Test-Path $SecureTempBasePath)) {
+    Throw "The specified SecureTempBasePath does not exist: $SecureTempBasePath"
+  }
+  $parentPath = (Split-Path -Path $Path -Parent)
+  # If the EMBs's parent subdirectory does not exist at all, create it completely
+  if ($force) {
+    if ($PSCmdlet.ShouldProcess($parentPath, 'New-Item -ItemType Directory -Force -Path <target>')) {
+      # If the $parentpath does not exist at all, create it if -Force is true, else fail
+      New-Item -ItemType Directory -Force -Path $parentPath >$null
+    }
+  }
+  else {
+    Throw "Part(s) of the parent of the path do not exist, use -Force to create them: $parentPath"
+  }
+
+  $SecretManagementExtensionVaults | ForEach-Object {
+    $vault = $_;
+    # ToDo: write/use a function that will try to create a secure temporary file local to the user on
+    $newDataEncryptionCertificateRequestPath = Join-Path $SecureTempBasePath $($vault.name + $DataEncryptionCertificateRequestSecondPart)
+    # Get a new DataEncryptionCertificateRequest.inf file on disk
+    New-DataEncryptionCertificateRequest -TemplatePath $DataEncryptionCertificateTemplatePath -newSubject $_.Subject -newCertificateRequestPath $newDataEncryptionCertificateRequestPath
+    # Gconstruct the $dataEncryptionCertificatePath
+    $dataEncryptionCertificatePath = Join-Path $SecureTempBasePath $($vault.name + $DataEncryptionCertificateSecondPart)
+    if (Test-Path $dataEncryptionCertificatePath) {
+      # If a certificate by that name already exists, fail, unless -force is true, then remove the exisitng certificate
+      if ($force) {
+        if ($PSCmdlet.ShouldProcess($null, "Remove-Item -Path $dataEncryptionCertificatePath")) {
+          Remove-Item -Path $dataEncryptionCertificatePath
+        }
+      }
+      else {
+        Throw "The Certificate file already exists, use -Force to overwrite it: $dataEncryptionCertificatePath"
+      }
+    }
+    else {
+      if ($PSCmdlet.ShouldProcess($null, "Install-DataEncryptionCertificate -dataEncryptionCertificateRequestPath $newDataEncryptionCertificateRequestPath -dataEncryptionCertificatePath $dataEncryptionCertificatePath")) {
+        try {
+          Install-DataEncryptionCertificate -dataEncryptionCertificateRequestPath $newDataEncryptionCertificateRequestPath -dataEncryptionCertificatePath $dataEncryptionCertificatePath
+        } catch { # if an exception ocurrs
+          # handle the exception
+          $where = $PSItem.InvocationInfo.PositionMessage
+          $ErrorMessage = $_.Exception.Message
+          $FailedItem = $_.Exception.ItemName
+          Throw "Install-DataEncryptionCertificate failed with $FailedItem : $ErrorMessage at `n $where."
+        }
+
+        # Todo: add error handling
+        Throw 'Install-DataEncryptionCertificate'
+      }
+    }
+  }
+  # Encrypt the Subject $($_.Subject)
+  $encryptedSubject = $($_.Subject) | Protect-CmsMessage -To $($_.Subject)
+  $SMEVInfo = @{Name = $($_.Name); Path = 'PATH?'; Subject = $($_.Subject); EMP = $encryptedSubject }
+  $SMEVs[$($_.Name)] = $SMEVInfo
+}
+$SMEVs | ConvertTo-Json | Set-Content -Path $SecretManagementExtensionVaultEncryptedMasterPasswordsPath
+
+function New-SecretManagementExtensionVault {
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  param(
+    [string] $Name
+
+  )
+  Register-SecretVault -Name $Name -ModuleName Microsoft.PowerShell.SecretStore -Description 'Secrets for just me'
+}
+
+
+}
+
+#endregion Security Subsystem core functions (to be moved into a seperate ATAP.Utilities module)
+
 #endregion Functions needed by the machine profile, must be defined in the profile
 ##################################################################################
 
@@ -151,8 +365,8 @@ Function ValidateTools {
 Write-Verbose "Starting $($MyInvocation.Mycommand)"
 Write-Verbose ("WorkingDirectory = $pwd")
 Write-Verbose ("PSScriptRoot = $PSScriptRoot")
-Write-Verbose ("EnvironmentVariablesAtStartOfMachineProfile = " + $(Write-EnvironmentVariablesIndented 0 2 ))
-Write-Verbose ("Registry Current Session Environment variable path = " + $(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment' -Name "Path"))
+Write-Verbose ('EnvironmentVariablesAtStartOfMachineProfile = ' + $(Write-EnvironmentVariablesIndented 0 2 ))
+Write-Verbose ('Registry Current Session Environment variable path = ' + $(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment' -Name 'Path'))
 
 
 $indent = 0
@@ -185,6 +399,12 @@ $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Objec
 # Load the machine-specific settings into $global:settings
 ($global:MachineAndNodeSettings[$env:COMPUTERNAME]).Keys | ForEach-Object {
   $global:settings[$_] = $($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$_]
+}
+
+# Load the $global:settings with the $global:ToBeExecutedGlobalSettings
+$global:ToBeExecutedGlobalSettings.Keys | ForEach-Object {
+  # ToDo error hanlding if one fails
+  $global:settings[$_] = Invoke-Expression $global:ToBeExecutedGlobalSettings[$_]
 }
 
 # Load the JenkinsRoleSettings for this machine into the $global:settings
@@ -242,6 +462,6 @@ $desiredPSModulePaths = $additionalPSModulePaths + $Env:PSModulePath
 # Print the $global:settings if Debug
 Write-Debug ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
 #$DebugPreference = 'Continue'
-Write-Debug ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement)  + [Environment]::NewLine )
+Write-Debug ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
 
 

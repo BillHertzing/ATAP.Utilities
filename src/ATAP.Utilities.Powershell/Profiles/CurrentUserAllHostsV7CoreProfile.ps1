@@ -91,7 +91,7 @@ $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:
 
 
 # The following command must be run as an administrator on the machine, to install for 'AllUsers'
-# Install-ModulesPerComputer -modulesToInstall @('Microsoft.PowerShell.SecretManagement', 'Microsoft.PowerShell.SecretStore')
+# Install-ModulesPerComputer -modulesToInstall @('Microsoft.PowerShell.SecretManagement', 'Microsoft.PowerShell.SecretStore', 'SecretManagement.KeePass')
 
 # set the Cloud Location variables for THIS user
 # Function Set-CloudDirectoryLocations {
@@ -157,30 +157,20 @@ $UserPSModulePaths = @(
   # Future: scripts to manipulate FreeVideoEditor VSDC
 )
 
-# Unlock the Powershell SecretVault for this user on this machine
-# The collection of SecretManagementExtensionVaults for this user
 
-$SecretManagementExtensionVaultEncryptedMasterPasswordsPath = $global:settings[$global:configRootKeys['EncryptedMasterPasswordsPathConfigRootKey']]
-# $null is an OK value, it means this user does not have a vault
-if ($SecretManagementExtensionVaultEncryptedMasterPasswordsPath) {
-  # a non=null value means it should exist
-  if (-not (Test-Path -Path $SecretManagementExtensionVaultEncryptedMasterPasswordsPath)) {
-    Write-Error "File does not exist: $SecretManagementExtensionVaultEncryptedMasterPasswordsPath"
+# Unlock the user's SecretStore for this session using an encrypted password and a data Encryption Certificate installed to the current machine
+# if the key exists in the global settings
+if ($global:settings.Contains($global:configRootKeys['EncryptedMasterPasswordsPathConfigRootKey'])) {
+  $path = $global:settings[$global:configRootKeys['EncryptedMasterPasswordsPathConfigRootKey']]
+  # if the value is not $null
+  if ($path ) {
+    $name = 'MyPersonalSecrets'
+    Unlock-UsersSecretStore -Name $name -EncryptedMasterPasswordsPath $path
   }
-  $SecretManagementExtensionVaultInfo = ((Get-Content -Path $SecretManagementExtensionVaultEncryptedMasterPasswordsPath) | ConvertFrom-Json -AsHashtable)['MyPersonalSecrets']
-
-  # ToDo: wrap in try/catch if UnProtect fails
-  [SecureString] $passwordSecureString = $SecretManagementExtensionVaultInfo['EncryptedPassword'] | Unprotect-CmsMessage -To $SecretManagementExtensionVaultInfo['Thumbprint']
-
 }
 
 # examples of subject # 'CN=$HostName,OU=$OrganizationalUnit,O=$Organisation,L=$Locality,S=$State,C=$CountryName,E=$Email'
-$SecretManagementExtensionVaults = (
-  @{Name = 'MyPersonalSecrets'; Subject = 'O=ATAPUtilities.org;OU=MyPersonalSecrets'; SubjectAlternativeName = 'Email=Bill.Hertzing@gmail.com' }
-  , @{Name = 'DevelopmentGroupSecrets'; Subject = 'OU=ATAPUtilitiesDevelopmentGroup' }) #, @{Name = 'ProductionSecrets';Subject = 'OU=ProductionGroup,O=ATAPUtilities.org'})
 $DataEncryptionCertificateTemplatePath = 'C:\DataEncryptionCertificate.template'  # Keep this out of the repository, but will be machine/user dependent
-$DataEncryptionCertificateRequestSecondPart = '_DataEncryptionCertificateRequest.inf'
-$DataEncryptionCertificateSecondPart = '_DataEncryptionCertificate.cer'
 
 # Create Data Encryption certificates for all the SecretManagement Extension Vaults (to be done once by admins,and updated on vault CRUD)
 # Install the Data Encryption certificates that belong to a user's roles on a local machine (to be done once by admins)

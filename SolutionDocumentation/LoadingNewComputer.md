@@ -71,7 +71,7 @@ Powershell
     AllUsersAllHostsV7CoreProfile.ps1
     `Remove-Item -path (join-path $env:ProgramFiles '\PowerShell\7\profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  '\PowerShell\7\profile.ps1') -Target "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\profiles\AllUsersAllHostsV7CoreProfile.ps1"`
   Symlink the following to user:Powershell:
-- `Remove-Item -path (join-path TBD '\PowerShell\profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path TBD '\PowerShell\profile.ps1') -Target "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\profiles\CurrentUserAllHostsV7CoreProfile.ps1"`
+- `Remove-Item -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'profile.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')`
 
   Note: For development computer: Manually Symlink the Building.powershell module. TBD -install it as a package
 
@@ -367,3 +367,11 @@ PaackageManagement for powershell
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_psmodulepath?view=powershell-7.2
 
 https://docs.microsoft.com/en-us/powershell/scripting/whats-new/differences-from-windows-powershell?view=powershell-7.2
+
+
+### Placeholder for code to compare extensions in two instances of Visualstudiocode
+$a = ls C:\Dropbox\whertzing\ncat016-dotvscode\.vscode\extensions
+$b = ls C:\Users\whertzing\.vscode\extensions
+$a1 = $a -replace [regex]::escape('C:\Dropbox\whertzing\ncat016-dotvscode\.vscode\extensions\'), ''
+$b1 = $b -replace [regex]::escape('C:\Users\whertzing\.vscode\extensions\'), ''
+$c= $a2 | %{if ($b2.contains($_)) {$_}}

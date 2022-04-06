@@ -1,4 +1,4 @@
-Function {
+Function Set-SCreenReaderOff {
 Add-Type -TypeDefinition '
 using System;
 using System.ComponentModel;

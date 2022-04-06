@@ -1,15 +1,32 @@
 # Setup a new computer
 
-1) BIOS changes (for utat022)
+##  Prerequisite
 
-  - Ensure PCIE configuration from "M2 extension card" to "dual M2 SSD"
-  - Ensure SATA controllers are On
-  - X.M.P is enabled
-  - Intel Rapid Storage technology is OFF
+decide what role's the new computer wil be a member of
 
-  - change hotswap notification to "enabled"
+### utat022
+
+- Development Computer
+- Certification Authority
+- Certification Issuer
+  - DEC certificate
+  - SSL Certificate
+  - CodeSigning Certificate
+- Database Server
+- IIS WebServer
 
 
+## BIOS modifications
+
+### utat022
+
+- Change PCIE configuration from "M2 extension card" to "dual M2 SSD"
+- Ensure SATA controllers are On
+- X.M.P is enabled
+- Intel Rapid Storage technology is OFF
+- change hotswap notification to "enabled"
+
+## install the Operating system
 
 unplug SATA drives, leave just PCIE drive in
 disconnect from internet
@@ -19,7 +36,7 @@ Install Windows 11 Pro to (unformatted) drive 0
 
 create new user (without internet) and assign password
 
-install Everything from USB stick, run Everything, get list to a file "01 Clean Windows 11 install, user and everything"
+run Everything from USB stick, get list to a file "01 Clean Windows 11 install, Step 01 Files.efu"
 
 rename computer (utat022)
 turn  off edge pre-load
@@ -28,11 +45,12 @@ wired 50-eb-f6-78-80-5a
 wireless 00-91-9e-7c-45-f2
 Update NetGear router DHCP leases
 wired: utat022 192.168.1.22 50:EB:F6:78:80:5A wired:atap_24
-Update Hosts file
+Update the organizations master Hosts file and the Roles' Hosts file
+Copy the Roles Hosts file to the new computer
 
 update to windows 11
 
-run Everything, get list
+run Everything from USB stick, get list to a file "01 Clean Windows 11 install, Step 02 Files.efu"
 
 Create c:\Dropbox, c:\dropbox\whertzing,
 
@@ -43,74 +61,156 @@ Start Powershell (old), run Instchoco.exe as admin
 
 Install Dropbox to c:\
 
-Set Locations for MyDoccuments, Pictures, Videos, Downloads to c:\Dropbox-
+Set Locations for MyDocuments, Pictures, Videos, Downloads to c:\Dropbox-
 
 
 see also C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\MapUserShellFoldersToDropBox.ps1
 
 uninstall Everything
 
-Reinstall all chocolatey packages (includes everything)
+## Installing the user's 'standard' applications
+
+### Standard applications on Windows
+
+There are two main tools used to install software. One tool supports 'portable applications' the other support's applications installed locally
+
+#### Standard Portable Applications
+
+Portable applications are installed to the `Dropbox\PortableApplications` directory. Almost all of the work is done simply by connecting the new computer to dropbox, and waiting for synchronization to complete. All of the executables and libraries are present, as are the configuration settings. However, some applications work better when information that should remain specific to a computer is stored outside of the PortableApps subdirectory.
+
+* CPU-Z
+* GPU-Z
+*
+
+##### Ditto portable
+1) Configure Ditto so the Ditto.db is  %apdatalocal%/Ditto/Ditto.db
+1) Remove the Ditto.db that is under portableapps, that was created when Ditto started for the first time on the computer
+1) Configure Ditto to start when the user logs in, and to start minimized
+
+##### 7-ZipPortable
+1) Associate all the possible extensions to 7Zip for the user
+1) The shared settings will specify paths for the editor and diff tool. These should point to the chocolatey bin location executables for notepad and beyond compare
+
+#### Everything Portable
+
+1) Configure Everything so the Everything database to  %apdatalocal%/Everything/Everything.db
+1) Remove the Everything.db that is under portableapps/EverythingPortable, that was created when Everything started for the first time on the computer
+2)
+
+## Install Chocolatey packages
+
+Reinstall all chocolatey packages
+
+- Notepad++ - use x86 version, many more plugins available
+-
 Add to List:
   Freevideoeditor
-  7zip
 
-copy hosts
 
-Powershell
-  Run pwsh, pin to task bar
+After chocolatey install, configure as follows:
+
+- Everything
+  - Use appdata for ini and db location
+  - DoubleClick path to navigate to that path (ToDo: screenshot)
+- Ditto - configure Friends and network password
+- Notepad++ - Configure cloud location (Dropbox/Notepad++), add plugins
+- BeyondCompare - enter license text
+- 7Zip - Associate file extensions, set view, edit, and diff tools  to Notepad++ and Beyondcompare
+- Git - ?
+- VisualStudioCode - Turn on settings sync, for Settings and extensions, state, etc
+- Avast Premium - enter license
+- ServiceStack - enter license
+- Rider Ultimate - enter license
+- FreeVideoEditor VSDC - enter license
+
+
+copy role-appropriate hosts file to new computer
+
+## Install Powershell Packages
+
+- as the first admin user, run the command to trust the PSGallery repository
+  `Register-PSRepository -Default`
+  `Get-PSRepository`  # ToDo: validate that PSGallery appears
+  `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`
+
+  ToDo: After package management
   Load the following ATAP packages
-  ToDo:  - after package management
-  Before package management:
+('ATAP.Utilities.Powershell', ) | Install-modules
+  Before Package Management
 
-  Symlink the following to C:\Program Files\PowerShell\7:
-    global_MachineAndNodeSettings.ps1
-    `Remove-Item -path (join-path $env:ProgramFiles '\PowerShell\7\global_MachineAndNodeSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles '\PowerShell\7\global_MachineAndNodeSettings.ps1') -Target "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\profiles\global_MachineAndNodeSettings.ps1"`
-    global_ConfigRootKeys.ps1
-    `Remove-Item -path (join-path $env:ProgramFiles '\PowerShell\7\global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  '\PowerShell\7\global_ConfigRootKeys.ps1') -Target "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\profiles\global_ConfigRootKeys.ps1"`
-    AllUsersAllHostsV7CoreProfile.ps1
-    `Remove-Item -path (join-path $env:ProgramFiles '\PowerShell\7\profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  '\PowerShell\7\profile.ps1') -Target "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.PowerShell\profiles\AllUsersAllHostsV7CoreProfile.ps1"`
-  Symlink the following to user:Powershell:
-- `Remove-Item -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'profile.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')`
+Symlink the profile files for the machine as follows:
 
-  Note: For development computer: Manually Symlink the Building.powershell module. TBD -install it as a package
+- `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  'PowerShell' '7' 'profile.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'AllUsersAllHostsV7CoreProfile.ps1')`
 
-  Confirm profiles
-  `('AllUsersAllHosts','AllUsersCurrentHost','CurrentUserAllHosts','CurrentUserCurrentHost')|%{'profile' + $_ + ' is '+ $profile.$_}`
+- `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1')`
+
+- `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_MachineAndNodeSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  'PowerShell' '7' 'global_MachineAndNodeSettings.ps1') -Target (join-path -path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath  @('ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_MachineAndNodeSettings.ps1'))`
+
+- `Remove-Item -path (join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')`
+
+Symlink the profile file for the first admin user on this machine
+
+- `Remove-Item -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1')  -Target (join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')`
 
 
-License keys for
-  Avast Premium
-  Beyond compare
-  ServiceStack
-  Rider Ultimate
-  FreeVideoEditor VSDC
+  Note: For development computer: Manually Symlink the Atap.Utilities.Building.Powershell module. TBD -install it as a package
 
-powershell profiles and links to modules under development
+## Per machine configuration
+
+setup the registry to support "preview as perceived type text" for additional file types
+Set-PerceivedTypeInRegistryForPreviewPane from module
 
 C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Set-PerceivedTypeInRegistryForPreviewPane.ps1
-
-resx Resource Manager
-Voiceattack
-Steam
-jexus manager (iis manager)
-
-1) debug response time issues and network issues
-  Visual Studio Code terminal and file editing; characters don't appear quickly in response to keyboard input
 
   1) Disable Windows Search Service Indexing background task
     Change list of drives indexed to only "start programs"
     Delete and rebuild index
     Disable  windows indexing  service  "Windows Search" manually using services applet
 
-  1) Windows media player
-    options - do not save history
-
   1) Replace Windows Defender with AVAST
       stop Windows Defender Firewall
       stop windows defencder service
       stop MsSense service
       disable MsSense service
+
+
+Setup machine-wide Autoruns and startups
+  avast
+  ditto
+  dropbox
+  nordvpn
+  sharex
+
+## Per user configuration
+### First admin user on the machine
+
+Setup Role-wide Autoruns and startups
+  avast
+  ditto
+  dropbox
+  nordvpn
+  sharex
+
+  # Set file associations for notepad++
+  #$suffixs = @('.txt','.log','.ps1','.psm1','.psd1')
+  #Install-ChocolateyFileAssociation  $suffixs "${env:programfiles(x86)}\notepad++.exe"
+
+### Service Accounts on the machine (as per Role)
+
+Setup Role-wide Autoruns and startups
+
+resx Resource Manager
+Voiceattack
+Steam
+jexus manager (iis manager)
+
+## Setup Printer
+
+1) debug response time issues and network issues
+  Visual Studio Code terminal and file editing; characters don't appear quickly in response to keyboard input
+
+  1) Windows media player
+    options - do not save history
 
 1) Inspect Windows Event Logs and remediate
 
@@ -125,21 +225,11 @@ jexus manager (iis manager)
       turn it off and delete any existing restore points
     Disable the 'Volume Shadow Copy" service
 
-Setup Autoruns and startups
-  avast
-  ditto
-  dropbox
-  nordvpn
-  sharex
-
 Link Pushbullet to phone
 
 Setup HP Printer
 
 File Extension helpers
-
-setup the registry to support "preview as perceived type text" for additional file types
-Set-PerceivedTypeInRegistryForPreviewPane from module
 
 setup gopro
 
@@ -158,9 +248,7 @@ from C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\TealeafCommonCompute
 
 
 C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\DeveloperComputer.ps1
-  # Set file associations for powergui
-  #$suffixs = @(,'.ps1','.psm1','.psd1')
-  #Install-ChocolateyFileAssociation  $suffixs "${env:programfiles(x86)}\powerGUI\ScriptEditor.exe"
+
 
 programs to pin:
   perfView
@@ -187,11 +275,6 @@ programs to pin:
   MSSMS
   Voiceattack
   Everything
-
-  Setup the PSGallery as trusted
-  `Register-PSRepository -Default -Verbose`
-  `get-psrepository` validate that PSGallery appears
-  `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`
 
 
 

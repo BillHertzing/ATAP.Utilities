@@ -186,7 +186,6 @@ $DataEncryptionCertificateTemplatePath = 'C:\DataEncryptionCertificate.template'
 
 
 
-
 # This is a developer profile, so Import Developer BuildTooling For Powershell
 #. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-ModulesForUserProfileAsSymbolicLinks.ps1'
 
@@ -206,6 +205,13 @@ $ModulesToLoadAsSymbolicLinks = @(
     SourcePath    = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.Powershell'
     usePreRelease = $true
   },
+  # Security Administration powershell modules that enable administrators, users and ServiceAccounts to access secrets and certificates
+  [PSCustomObject]@{
+    Name          = 'ATAP.Utilities.Security.Powershell'
+    Version       = '0.1.0'
+    SourcePath    = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell'
+    usePreRelease = $true
+  },
   # Useful Functions specific to FileIO
   [PSCustomObject]@{
     Name          = 'ATAP.Utilities.FileIO.PowerShell'
@@ -213,7 +219,7 @@ $ModulesToLoadAsSymbolicLinks = @(
     SourcePath    = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell'
     usePreRelease = $true
   },
-  # Useful Functions specific to FileIO
+  # Useful Functions specific to Neo4j
   [PSCustomObject]@{
     Name          = 'ATAP.Utilities.Neo4j.Powershell'
     Version       = '0.1.0'

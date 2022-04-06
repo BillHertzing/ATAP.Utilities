@@ -3,7 +3,7 @@
     <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)\Build\</SolutionBuildToolsBaseDir>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <ATAPUtilitiesBuildToolingPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.*\build</ATAPUtilitiesBuildToolingPath>
-    <ProjectGuid>{dbd8663f-c30c-4702-b97a-5365529b4d15c}</ProjectGuid>
+    <ProjectGuid>{7901644c-44b1-4b3e-965a-9827baf59bec}</ProjectGuid>
     <ProjectHome />
   </PropertyGroup>
   <ItemGroup>

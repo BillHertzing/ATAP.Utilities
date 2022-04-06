@@ -278,66 +278,6 @@ function Install-DataEncryptionCertificate {
   $DataEncryptionCertificateInstallationResults
 }
 
-# Unlock the user's SecretStore for this session using an encrypted password and a data Encryption Certificate installed to the current machine
-Function Unlock-UsersSecretStore {
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'FromFile')]
-  param (
-    # a Name for the vault
-    [string] $Name
-    , [Parameter(ParameterSetName = 'FromFile')]
-    [ValidateScript({ Test-Path $_ })]
-    [string] $EncryptedMasterPasswordsPath
-    , [Parameter(ParameterSetName = 'FromHashTable')]
-    [ValidateScript({ $_.ContainsKey('EncryptedPassword') })]
-    # add script to validate all needed keys are present in the hashtable
-    [System.Collections.IDictionary] $Dictionary
-  )
-  BEGIN {
-    Write-Debug "Starting $($MyInvocation.Mycommand)"
-    Write-Debug "PsCmdlet.ParameterSetName = $($PsCmdlet.ParameterSetName)"
-    $SecretStoreInfo = $null
-    if ( $PsCmdlet.ParameterSetName -eq 'FromFile') {
-      if (-not (Test-Path -Path $EncryptedMasterPasswordsPath)) {
-        #Log('Error',"Unlock-UsersSecretStore failed, file does not exist. EncryptedMasterPasswordsPath = $EncryptedMasterPasswordsPath")
-        throw "Unlock-UsersSecretStore failed, file does not exist. EncryptedMasterPasswordsPath = $EncryptedMasterPasswordsPath"
-      }
-      # Read the collection of SecretStoreInfo hashtable from the EncryptedMasterPasswordsPath
-      $SecretStoreInfoCollection = (Get-Content -Path $EncryptedMasterPasswordsPath) | ConvertFrom-Json -AsHashtable
-      # Take just the entry corresponding to the MyPersonalSecrets
-      $SecretStoreInfo = $SecretStoreInfoCollection[$Name]
-    }
-    if ( $PsCmdlet.ParameterSetName -eq 'FromHashTable') {
-      $SecretStoreInfo = $Dictionary
-    }
-    Write-Debug "SecretStoreInfo = $(Write-HashIndented $SecretStoreInfo 0 2)"
-  }
-  PROCESS {}
-  END {
-    # Convert the EncryptedPassword to a SecureString using the Data Encryption Certificate as identified by the Thumbprint in the SecretStoreInfo
-    if ($PSCmdlet.ShouldProcess($null, 'Unlock the SecretStore')) {
-      # ToDo: wrap in try/catch if UnProtect fails
-      Write-Debug "password is $(Unprotect-CmsMessage -Content $($SecretStoreInfo['EncryptedPassword']) -To $SecretStoreInfo['Thumbprint'])"
-      $passwordSecureString = ConvertTo-SecureString -String $(Unprotect-CmsMessage -Content $($SecretStoreInfo['EncryptedPassword']) -To $SecretStoreInfo['Thumbprint']) -AsPlainText -Force
-      #####
-      $PasswordSecureString = ConvertTo-SecureString -String '2345' -AsPlainText -Force
-      #####
-      # Unlock the SecretStore identified as 'Name' using the SecureStringPassword
-      if ($PSCmdlet.ShouldProcess($null, 'Unlock-SecretStore')) {
-        try {
-          Unlock-SecretStore -Password $PasswordSecureString # 2>$null # send the Error Output stream to the ol' bitbucket
-        }
-        catch { # if an exception ocurrs
-          # handle the exception
-          $where = $PSItem.InvocationInfo.PositionMessage
-          $ErrorMessage = $_.Exception.Message
-          $FailedItem = $_.Exception.ItemName
-          #Log('Error',"Unlock-SecretStore failed with $FailedItem : $ErrorMessage at `n $where.")
-          Throw "Unlock-SecretStore Threw an exception with $FailedItem : $ErrorMessage at `n $where."
-        }
-      }
-    }
-  }
-}
 
 function Add-SecretStoreVault {
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'BuiltIn')]
@@ -364,11 +304,18 @@ function Add-SecretStoreVault {
     , [string] $DataEncryptionCertificateRequestFilenameTemplate
     , [string] $DataEncryptionCertificateFilenameTemplate
     # Todo: CertificateValidityPeriodUnits, CertificateValidityPeriod
+    # A place to persist the encryption key
+    , [string] $KeyFilePath
+    # Number of bytes in the key
+    , [ValidateSet(16, 24, 32)]
+    [int16] $NumBytesInKey
+    # A place to persist the MasterKey for this specific vault
+    , [string] $EncryptedPasswordFilePath
     # a Secure-String password for the vault
     , [SecureString] $PasswordSecureString
     # a password timeout for the vault in seconds
     , [int32] $PasswordTimeout
-    # Force the creation of the DEC certificate if one exists
+    # Force the creation of the DEC certificate if one exists, overwrite the KeyFilePath if one exists
     , [switch] $Force
   )
   $originalPSBoundParameters = $PSBoundParameters
@@ -379,7 +326,6 @@ function Add-SecretStoreVault {
     #Log('Error',"A SecretVault by this name already exists, remove it and retry this operation: $Name")
     Throw "A SecretVault by this name already exists, remove it and retry this operation: $Name"
   }
-
 
   # This function strings together three operations. The function's parameters are used by different operations
   #   We create a subset of the PSBoundParameters, and pass just the needed subset to the functions that perform the three operations
@@ -419,26 +365,56 @@ function Add-SecretStoreVault {
   # ToDo: ponder the possibility that there may be more than one data encryption certificate with the same Subject and SubjectAlternativeName
   $thumbprint = (Get-ChildItem -Path 'cert:/Current*/my/*' -Recurse -DocumentEncryptionCert | Where-Object { $_.Subject -match "^$modSubject$" }).Thumbprint
   Write-Debug "thumbprint = $thumbprint"
+
+  # Encrypt the Password
+  if ($PSCmdlet.ShouldProcess($null, 'Encrypt the Password')) {
+    # ToDo: wrap in a try/catch block
+    $encryptedPassword = ConvertFrom-SecureString -SecureString $PasswordSecureString -AsPlainText | Protect-CmsMessage -To $Thumbprint
+    # Write-Debug "encryptedPassword = $encryptedPassword"
+  }
+
+  # write the encrypted password to the $EncryptedPasswordFilePath
+  $EncryptionKeyBytes = New-Object Byte[] $NumBytesInKey
+  [Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($EncryptionKeyBytes)
+  # ToDo: Add whatif
+  #ToDo: Convert to a securestring before writing to the file
+  $EncryptionKeyBytes | Out-File -FilePath $KeyFilePath
+
+  # ToDo import KeyFilePath contents as a secure key
+  $EncryptionKeyData = Get-Content $KeyFilePath
+    # ToDo: Add whatif
+  # ToDo change -key to -securekey
+  $PasswordSecureString | ConvertFrom-SecureString -Key $EncryptionKeyData | Out-File -FilePath $EncryptedPasswordFilePath
+
+
   #####
   # $PasswordSecureString = ConvertTo-SecureString -String '2345' -AsPlainText -Force
   #####
   # Create the SecretVault using a SecretStore extension vault, and configre it, in one call
   # Use different commands based on parameterset
   $command = $null
-  write-host "ParameterSetName = $($PSCmdlet.ParameterSetName)"
+  Write-Host "ParameterSetName = $($PSCmdlet.ParameterSetName)"
   switch ($PSCmdlet.ParameterSetName) {
     BuiltIn {
       $command = "Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = ""$Description""; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }"
-        }
+    }
     KeePass {
       $command = "Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = ""$Description""; UseMasterPassword = ""$false""; Path = ""$PathToKeePassDB"" }"
     }
   }
-write-host "command = $command"
+  Write-Host "command = $command"
   if ($PSCmdlet.ShouldProcess($null, "Register-SecretVault -ModuleName $ExtensionVaultModuleName -VaultParameters @{Authentication='Password';Interaction='None';Password='PasswordSecureStringNotshown';PasswordTimeout=$PasswordTimeout} @subsetPSBoundParameters")) {
     try {
-      Invoke-Expression $command
-      # Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = $Description; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }
+      # ToDo: figure out how to pass the UseMasterPassword switch paramter in a $VaultParamter's hash when run as $command via Invoke-Expression
+      #Invoke-Expression $command
+      switch ($PSCmdlet.ParameterSetName) {
+        BuiltIn {
+          Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = $Description; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }
+        }
+        KeePass {
+          Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = $Description; UseMasterPassword = $true; Path = $PathToKeePassDB }
+        }
+      }
     }
     catch { # if an exception ocurrs
       # handle the exception
@@ -450,50 +426,43 @@ write-host "command = $command"
     }
   }
 
-# Encrypt the Password
-if ($PSCmdlet.ShouldProcess($null, 'Encrypt the Password')) {
-  # ToDo: wrap in a try/catch block
-  $encryptedPassword = ConvertFrom-SecureString -SecureString $PasswordSecureString -AsPlainText | Protect-CmsMessage -To $Thumbprint
-  # Write-Debug "encryptedPassword = $encryptedPassword"
-}
+  $SecretManagementExtensionVaultInfo = @{Name = $Name; EncryptedPassword = $encryptedPassword; Timeout = $PasswordTimeout; Thumbprint = $Thumbprint; Certificate = $dataEncryptionCertificatePath; CertificateValidityPeriod = ''; CertificateValidityPeriodUnits = '' }
 
-$SecretManagementExtensionVaultInfo = @{Name = $Name; EncryptedPassword = $encryptedPassword; Timeout = $PasswordTimeout; Thumbprint = $Thumbprint; Certificate = $dataEncryptionCertificatePath; CertificateValidityPeriod = ''; CertificateValidityPeriodUnits = '' }
+  # Unlock the newly created SecretStore vault
+  if ($PSCmdlet.ShouldProcess($null, "Unlock-UsersSecretStore -Name $Name -Dictionary $(Write-HashIndented $SecretManagementExtensionVaultInfo 2 2)")) {
+    try {
+      Unlock-UsersSecretStore -Name $Name -Dictionary $SecretManagementExtensionVaultInfo
+    }
+    catch { # if an exception ocurrs
+      # handle the exception
+      $where = $PSItem.InvocationInfo.PositionMessage
+      $ErrorMessage = $_.Exception.Message
+      $FailedItem = $_.Exception.ItemName
+      #Log('Error',"Unlock-UsersSecretStore failed with $FailedItem : $ErrorMessage at `n $where.")
+      Throw "Unlock-UsersSecretStore Threw an exception with $FailedItem : $ErrorMessage at `n $where."
+    }
+  }
 
-# Unlock the newly created SecretStore vault
-if ($PSCmdlet.ShouldProcess($null, "Unlock-UsersSecretStore -Name $Name -Dictionary $(Write-HashIndented $SecretManagementExtensionVaultInfo 2 2)")) {
-  try {
-    Unlock-UsersSecretStore -Name $Name -Dictionary $SecretManagementExtensionVaultInfo
+  $SecretVaultTestPassed = $false
+  if ($PSCmdlet.ShouldProcess($null, "Test-SecretVault -Name $Name")) {
+    try {
+      $SecretVaultTestPassed = Test-SecretVault -Name $Name 2>$null # send the Error Output stream to the ol' bitbucket
+    }
+    catch { # if an exception ocurrs
+      # handle the exception
+      $where = $PSItem.InvocationInfo.PositionMessage
+      $ErrorMessage = $_.Exception.Message
+      $FailedItem = $_.Exception.ItemName
+      #Log('Error',"Test-SecretVault failed with $FailedItem : $ErrorMessage at `n $where.")
+      Throw "Test-SecretVault Threw an exception with $FailedItem : $ErrorMessage at `n $where."
+    }
+    if (-not $SecretVaultTestPassed) {
+      Throw "Test-SecretVault failed with $($error[0])"
+    }
   }
-  catch { # if an exception ocurrs
-    # handle the exception
-    $where = $PSItem.InvocationInfo.PositionMessage
-    $ErrorMessage = $_.Exception.Message
-    $FailedItem = $_.Exception.ItemName
-    #Log('Error',"Unlock-UsersSecretStore failed with $FailedItem : $ErrorMessage at `n $where.")
-    Throw "Unlock-UsersSecretStore Threw an exception with $FailedItem : $ErrorMessage at `n $where."
-  }
-}
 
-$SecretVaultTestPassed = $false
-if ($PSCmdlet.ShouldProcess($null, "Test-SecretVault -Name $Name")) {
-  try {
-    $SecretVaultTestPassed = Test-SecretVault -Name $Name 2>$null # send the Error Output stream to the ol' bitbucket
-  }
-  catch { # if an exception ocurrs
-    # handle the exception
-    $where = $PSItem.InvocationInfo.PositionMessage
-    $ErrorMessage = $_.Exception.Message
-    $FailedItem = $_.Exception.ItemName
-    #Log('Error',"Test-SecretVault failed with $FailedItem : $ErrorMessage at `n $where.")
-    Throw "Test-SecretVault Threw an exception with $FailedItem : $ErrorMessage at `n $where."
-  }
-  if (-not $SecretVaultTestPassed) {
-    Throw "Test-SecretVault failed with $($error[0])"
-  }
-}
-
-# Return the SecretManagementExtensionVaultInfo structure
-$SecretManagementExtensionVaultInfo
+  # Return the SecretManagementExtensionVaultInfo structure
+  $SecretManagementExtensionVaultInfo
 }
 
 # [Display Subject Alternative Names of a Certificate with PowerShell](https://social.technet.microsoft.com/wiki/contents/articles/1447.display-subject-alternative-names-of-a-certificate-with-powershell.aspx)
@@ -508,6 +477,8 @@ $SecretManagementExtensionVaultInfo
   -SubjectAlternativeName 'Email=Bill.hertzing@gmail.com' `
   -PasswordSecureString $( '1234'| ConvertTo-SecureString -AsPlainText -Force) `
   -PasswordTimeout 900 `
+  -KeyFilePath 'C:/dropbox/whertzing/encryption.key'`
+  -EncryptedPasswordFilePath 'C:/dropbox/whertzing/secret.encrypted'`
   -DataEncryptionCertificateRequestTemplatePath  'C:\DataEncryptionCertificate.template' `
   -SecureTempBasePath $($global:settings[$global:configRootKeys['SecureTempBasePathConfigRootKey']]) `
   -DataEncryptionCertificateRequestFilenameTemplate '{0}_DataEncryptionCertificateRequest.inf' `

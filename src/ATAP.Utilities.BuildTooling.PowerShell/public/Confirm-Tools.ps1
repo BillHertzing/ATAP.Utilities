@@ -4,9 +4,22 @@
 .SYNOPSIS
 Confirm that all the 3rd party tools and scripts needed to build, analyze, test, package and deploy both c# and powershell code are present, configured, and accessable,
 .DESCRIPTION
-This function looks for the presence of tools that can compile and interpret c# and Powershell code (text files to executable production code), create documenation from code, generate class diagrams from code, integrate the generated dart with the markdown format, suports draw.io engineering drawings,
-tools that provide message queing, tools that provide Source Code Management (SCM), SQL Server database and Neo4j database, tools for database SCM (Flyway from Redhat)
-tools that create the deployment package, tools that deploy the packages, to three public location (PSGallery, Nuget, and Chocolotey)
+This function looks for the presence of tools needed by the ATAP.Utilities to
+  - compile and interpret c# and Powershell code (text files to executable production code)
+  - automate testing of the powershell packages and c#-sourced libraries
+  - create documenation from code
+  - generate class diagrams from code
+  - integrate the generated diagrams with the generated documentaion,
+  - suports draw.io engineering drawings
+  - generte a static documentation site from code, conceptual documentation, and diagram files
+  - provide Source Code Management (SCM)
+  - create and maintain SQL Server databases and Neo4j databases
+  - provide for database SCM (Flyway from Redhat)
+  - run the CI/CD pipeline
+  - provide message queing and inter-computer messaging
+  - create deployment package for .Net libraries and applications
+  - deploy packages to internal and external location, to three public location (PSGallery, Nuget, and Chocolotey)
+
 .PARAMETER Name
 ToDo: write Help For the parameter X
 .PARAMETER Extension
@@ -19,8 +32,6 @@ Roles imply a promise that certains tools will be avaialable in the environments
 Environments Production, Test, and Development are the 1st roots of the Environment Variables.
 he public locations, private locations, and the exact composition of the machine code and documentation package,
   make up the full exposition of every combination of environment variables.
-
-
 
 .OUTPUTS
 ToDo: write Help For the function's outputs

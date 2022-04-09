@@ -408,7 +408,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Console.HelloWorld", "
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Security", "Security", "{23D12B00-B5C8-11EC-94C7-37A56E7E67EE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.Security.Powershell", "src\ATAP.Utilities.Security.Powershell\ATAP.Utilities.Security.Powershell.pssproj", "{7901644C-44B1-4B3E-965A-9827BAF59BEC}"
+Project("{F5034706-568F-408A-B7B3-4D38C6DB8A32}") = "ATAP.Utilities.Security.Powershell", "src\ATAP.Utilities.Security.Powershell\ATAP.Utilities.Security.Powershell.pssproj", "{7901644C-44B1-4B3E-965A-9827BAF59BEC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PowershellUtilities", "PowershellUtilities", "{9EA8E8CF-D5C9-441C-8670-AFB6B612FCFD}"
+EndProject
+Project("{F5034706-568F-408A-B7B3-4D38C6DB8A32}") = "ATAP.Utilities.Powershell", "src\ATAP.Utilities.Powershell\ATAP.Utilities.Powershell.pssproj", "{83BA6C26-A2D6-437D-B1B5-E4169AFA4187}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1182,12 +1186,6 @@ Global
 		{CC824EFD-F00E-4236-9FF5-904EF5175712}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CC824EFD-F00E-4236-9FF5-904EF5175712}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{CC824EFD-F00E-4236-9FF5-904EF5175712}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
-		{7901644C-44B1-4B3E-965A-9827BAF59BEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7901644C-44B1-4B3E-965A-9827BAF59BEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7901644C-44B1-4B3E-965A-9827BAF59BEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7901644C-44B1-4B3E-965A-9827BAF59BEC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7901644C-44B1-4B3E-965A-9827BAF59BEC}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
-		{7901644C-44B1-4B3E-965A-9827BAF59BEC}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1379,6 +1377,8 @@ Global
 		{A552F982-48C3-4987-A148-F8FFC2EFDF78} = {AF40A980-38A2-11EB-993C-05D7FC15B653}
 		{CC824EFD-F00E-4236-9FF5-904EF5175712} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
 		{7901644C-44B1-4B3E-965A-9827BAF59BEC} = {23D12B00-B5C8-11EC-94C7-37A56E7E67EE}
+		{9EA8E8CF-D5C9-441C-8670-AFB6B612FCFD} = {F78E1157-C4C3-4162-8B2D-72FC45CB698E}
+		{83BA6C26-A2D6-437D-B1B5-E4169AFA4187} = {9EA8E8CF-D5C9-441C-8670-AFB6B612FCFD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40986DA9-E8C6-49CE-B434-BE8625798C2C}

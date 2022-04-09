@@ -19,6 +19,7 @@ $global:configRootKeys = @{
   'JENKINS_USER_IDConfigRootKey' = 'JENKINS_USER_ID'
   'JENKINS_API_TOKENConfigRootKey' = 'JENKINS_API_TOKEN'
   'JenkinsNodeRolesConfigRootKey' = 'JenkinsNodeRoles'
+  'ChocolateyInstallDirConfigRootKey' = 'ChocolateyInstall'
   'ChocolateyBinDirConfigRootKey' = 'ChocolateyBinDir'
   'ChocolateyLibDirConfigRootKey' = 'ChocolateyLibDir'
   'GraphvizExePathConfigRootKey' = 'GraphvizExePath'

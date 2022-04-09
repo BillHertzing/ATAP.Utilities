@@ -308,7 +308,7 @@ function Add-SecretStoreVault {
     , [string] $KeyFilePath
     # Number of bytes in the key
     , [ValidateSet(16, 24, 32)]
-    [int16] $NumBytesInKey
+    [int16] $KeySizeInt
     # A place to persist the MasterKey for this specific vault
     , [string] $EncryptedPasswordFilePath
     # a Secure-String password for the vault
@@ -374,7 +374,7 @@ function Add-SecretStoreVault {
   }
 
   # write the encrypted password to the $EncryptedPasswordFilePath
-  $EncryptionKeyBytes = New-Object Byte[] $NumBytesInKey
+  $EncryptionKeyBytes = New-Object Byte[] $KeySizeInt
   [Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($EncryptionKeyBytes)
   # ToDo: Add whatif
   #ToDo: Convert to a securestring before writing to the file
@@ -478,6 +478,7 @@ function Add-SecretStoreVault {
   -PasswordSecureString $( '1234'| ConvertTo-SecureString -AsPlainText -Force) `
   -PasswordTimeout 900 `
   -KeyFilePath 'C:/dropbox/whertzing/encryption.key'`
+  -KeySizeInt 16
   -EncryptedPasswordFilePath 'C:/dropbox/whertzing/secret.encrypted'`
   -DataEncryptionCertificateRequestTemplatePath  'C:\DataEncryptionCertificate.template' `
   -SecureTempBasePath $($global:settings[$global:configRootKeys['SecureTempBasePathConfigRootKey']]) `

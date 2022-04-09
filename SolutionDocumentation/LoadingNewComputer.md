@@ -54,6 +54,7 @@ run Everything from USB stick, get list to a file "01 Clean Windows 11 install, 
 
 Create c:\Dropbox, c:\dropbox\whertzing,
 
+
 Create \\Fileshare, share it with everybody on the network
 Copy InstChoco and packagesconfig to Filesharecopy from fileshare to \\mydocuments\ChocolateyPackageListBackup
 copy hosts to \\utat022\fileshare and then to new computer
@@ -117,12 +118,55 @@ After chocolatey install, configure as follows:
 - BeyondCompare - enter license text
 - 7Zip - Associate file extensions, set view, edit, and diff tools  to Notepad++ and Beyondcompare
 - Git - ?
+- Fiddler -
 - VisualStudioCode - Turn on settings sync, for Settings and extensions, state, etc
 - Avast Premium - enter license
 - ServiceStack - enter license
 - Rider Ultimate - enter license
 - FreeVideoEditor VSDC - enter license
+- Fiddler
+  - Turn on 'capture https'
+  - [Fiddler Compare Tools](https://fiddlerbook.com/fiddler/help/CompareTool.asp)
+-Setup Git
+  in file ~/.gitconfig
 
+  ``` text
+    [filter "lfs"]
+      smudge = git-lfs smudge -- %f
+      process = git-lfs filter-process
+      required = true
+      clean = git-lfs clean -- %f
+    [user]
+      name = Bill Hertzing
+      email = bill.hertzing@gmail.com
+    [diff]
+      tool = bc3
+    [difftool]
+      prompt = false
+    [merge]
+      tool = bc3
+    [mergetool]
+      prompt = false
+    [difftool "bc3"]
+      path = "C:/Program Files/Beyond Compare 4/bcomp.exe"
+    [mergetool "bc3"]
+      path = "C:/Program Files/Beyond Compare 4/bcomp.exe"
+    [mergetool "bc3"]
+      trustExitCode = true
+    [alias]
+      mydiff = difftool --dir-diff --tool=bc3 --no-prompt
+      bcreview = "!f() { local SHA=${1:-HEAD}; local BRANCH=${2:-master}; if [ $SHA == $BRANCH ]; then SHA=HEAD; fi; git difftool -y -t bc $BRANCH...$SHA; }; f"
+    [core]
+      autocrlf = true
+      editor = code --wait
+    [commit]
+      template = GitTemplates/git.commit.template.txt
+    [merge "keep-local-changes"]
+      name = A custom merge driver which always keeps the local changes
+      driver = true
+  ```
+
+### Setup Hosts file (for computers in a Workgroup, i.e., not joined to a Domain)
 
 copy role-appropriate hosts file to new computer
 
@@ -157,22 +201,33 @@ Symlink the profile file for the first admin user on this machine
 
 ## Per machine configuration
 
-setup the registry to support "preview as perceived type text" for additional file types
-Set-PerceivedTypeInRegistryForPreviewPane from module
+- setup the registry to support "preview as perceived type text" for additional file types
+  - Set-PerceivedTypeInRegistryForPreviewPane from module
+  - C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Set-PerceivedTypeInRegistryForPreviewPane.ps1
 
-C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Set-PerceivedTypeInRegistryForPreviewPane.ps1
+- Disable Windows Search Service Indexing background task
+  Change list of drives indexed to only "start programs"
+  Delete and rebuild index
+  Disable  windows indexing  service  "Windows Search" manually using services applet
 
-  1) Disable Windows Search Service Indexing background task
-    Change list of drives indexed to only "start programs"
-    Delete and rebuild index
-    Disable  windows indexing  service  "Windows Search" manually using services applet
+- Replace Windows Defender with AVAST
+  stop Windows Defender Firewall
+  stop windows defencder service
+  stop MsSense service
+  disable MsSense service
 
-  1) Replace Windows Defender with AVAST
-      stop Windows Defender Firewall
-      stop windows defencder service
-      stop MsSense service
-      disable MsSense service
+- remove the default version of Pester that comes with windows
+  ```Powershell
+  $module = "C:\Program Files\WindowsPowerShell\Modules\Pester"
+	takeown /F $module /A /R
+	icacls $module /reset
+	icacls $module /grant "*S-1-5-32-544:F" /inheritance:d /T
+	Remove-Item -Path $module -Recurse -Force -Confirm:$false
+   ```
 
+- Install Pester for PS V7
+  - `Install-Module pester`
+  - Fix Pester installation and or path variable for PS V5 and PS V7
 
 Setup machine-wide Autoruns and startups
   avast
@@ -206,6 +261,8 @@ jexus manager (iis manager)
 
 ## Setup Printer
 
+##
+
 1) debug response time issues and network issues
   Visual Studio Code terminal and file editing; characters don't appear quickly in response to keyboard input
 
@@ -234,14 +291,20 @@ File Extension helpers
 setup gopro
 
 from C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\TealeafCommonComputer.ps1
-  # Pin the services applet to the taskbar
+
+## Pin the services applet to the taskbar
+
   Install-ChocolateyPinnedTaskBarItem "$env:windir\system32\services.msc"
-  # Pin the event viewer applet to the taskbar
+
+## Pin the event viewer applet to the taskbar
+
   Install-ChocolateyPinnedTaskBarItem "$env:windir\system32\eventvwr.msc"
 
-  # Use SQLExpress for Server 2012 if possible
-  # ALlow  mixedmode authentication
-  #-ia '/value1=''some value'' '
+## Use SQLExpress for Server 2012 if possible
+
+## ALlow  mixedmode authentication
+
+  -ia '/value1=''some value'' '
   # Enable SQLServerAgent
   choco install MsSqlServer2012Express -ia '/SECURITYMODE=SQL'
 	Install-ChocolateyPinnedTaskBarItem "C:\Program Files (x86)\Microsoft SQL Server\110\Tools\Binn\ManagementStudio\Ssms.exe"
@@ -278,55 +341,7 @@ programs to pin:
 
 
 
-  remove the default version of Pester that comes with windows
-  ```Powershell
-  $module = "C:\Program Files\WindowsPowerShell\Modules\Pester"
-	takeown /F $module /A /R
-	icacls $module /reset
-	icacls $module /grant "*S-1-5-32-544:F" /inheritance:d /T
-	Remove-Item -Path $module -Recurse -Force -Confirm:$false
-   ```
 
-   Install Pester for PS V7
-   `Install-Module pester
-
-   Fix Pester installation and or path variable for PS V5 and PS V7
-
-   Setup Git
-   in file ~/.gitconfig
-      [filter "lfs"]
-        smudge = git-lfs smudge -- %f
-        process = git-lfs filter-process
-        required = true
-        clean = git-lfs clean -- %f
-      [user]
-        name = Bill Hertzing
-        email = bill.hertzing@gmail.com
-      [diff]
-        tool = bc3
-      [difftool]
-        prompt = false
-      [merge]
-        tool = bc3
-      [mergetool]
-        prompt = false
-      [difftool "bc3"]
-        path = "C:/Program Files/Beyond Compare 4/bcomp.exe"
-      [mergetool "bc3"]
-        path = "C:/Program Files/Beyond Compare 4/bcomp.exe"
-      [mergetool "bc3"]
-        trustExitCode = true
-      [alias]
-        mydiff = difftool --dir-diff --tool=bc3 --no-prompt
-        bcreview = "!f() { local SHA=${1:-HEAD}; local BRANCH=${2:-master}; if [ $SHA == $BRANCH ]; then SHA=HEAD; fi; git difftool -y -t bc $BRANCH...$SHA; }; f"
-      [core]
-        autocrlf = true
-        editor = code --wait
-      [commit]
-        template = GitTemplates/git.commit.template.txt
-      [merge "keep-local-changes"]
-        name = A custom merge driver which always keeps the local changes
-        driver = true
 
 VS Code Extensions
   c#
@@ -362,11 +377,12 @@ Join-Path  ([Environment]::GetEnvironmentVariable($global:configRootKeys['Google
 	 ensure the GoogleDrive location is added
 
 
-# Enable PS-Remoting on the new computer
+## Enable PS-Remoting on the new computer
 
-Enable-PSRemoting
+Run the following commands as a local admin on the new computer
+- `Enable-PSRemoting -Force`
 
-# Add the other computers in the group to exisitng trustedhosts for WinRM remote management
+### Add the other computers in the group to existing trustedhosts for WinRM remote management
 
 set-item WSMan:localhost\client\trustedhosts -value $('<NewComputerHostname>,' + (get-Item WSMan:localhost\client\trustedhosts).value)
 
@@ -375,6 +391,9 @@ Set-Item WSMan:\localhost\Client\TrustedHosts -Value 'utat022,utat01,ncat-ltjo,n
 # Add the new computer as a trusted host on other computers in the group
 
 # Enable HTTPS on WSMan
+
+### Generate a trusted SSL Certificate for this computer
+
 
 Until you get a SSL certificate for the new computer, you can TEMPRARLY use unencrypted, but you WILLL be puttingyour password out on the network for any sniffer to see
 `winrm set winrm/config/client @{AllowUnencrypted="true"}` # run as admin on the new computer, and on any computer that you want to connect FROM
@@ -391,7 +410,7 @@ However, "WinRM HTTPS requires a local computer Server Authentication certificat
 
 ## Authentication for WinRM
 
-Basic Authentication on both teh Client and the service
+Basic Authentication on both the Client and the service
 
 ## Setup Logitech G510s software and drivers
 
@@ -399,19 +418,11 @@ Basic Authentication on both teh Client and the service
 
 ## Setup Fiddler Options
 
-Turn on 'capture https'
-
-Setup Notepad++ (portable) as the text editor
-
-Setup BeyondCompare (portable) as the comparison tool
-
-[Fiddler Compare Tools](https://fiddlerbook.com/fiddler/help/CompareTool.asp)
-
 
 ## Setup Jenkins Master
 ToDo: how to copy jobs and nodes
 ToDo: how to chnage the jenkins agents to communicate with teh new master
-### Chnge Powershell from V5 to V7 on Master and Slaves
+### Change Powershell from V5 to V7 on Master and Slaves
 
 `http://utat022:4040/configureTools/`
 Jenkins->Configure->Tools->Powershell Installations: Defaultwindows =`C:\Program Files\PowerShell\7\pwsh.exe`

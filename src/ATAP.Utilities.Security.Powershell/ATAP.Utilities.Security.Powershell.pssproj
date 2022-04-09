@@ -3,7 +3,7 @@
     <SolutionBuildToolsBaseDir Condition=" '$(SolutionBuildToolsBaseDir)' == '' ">$(SolutionDir)\Build\</SolutionBuildToolsBaseDir>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <ATAPUtilitiesBuildToolingPath>$(SolutionBuildToolsBaseDir)ATAP.Utilities.BuildTooling.*\build</ATAPUtilitiesBuildToolingPath>
-    <ProjectGuid>{7901644c-44b1-4b3e-965a-9827baf59bec}</ProjectGuid>
+    <ProjectGuid>{7901644C-44B1-4B3E-965A-9827BAF59BEC}</ProjectGuid>
     <ProjectHome />
   </PropertyGroup>
   <ItemGroup>
@@ -15,9 +15,9 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
     <OutputType>Exe</OutputType>
-    <RootNamespace>ATAP.Utilities.BuildTooling</RootNamespace>
-    <AssemblyName>ATAP.Utilities.BuildTooling</AssemblyName>
-    <Name>ATAP.Utilities.BuildToolingtmp</Name>
+    <RootNamespace>ATAP.Utilities.Security.Powershell</RootNamespace>
+    <AssemblyName>ATAP.Utilities.Security.Powershell</AssemblyName>
+    <Name>ATAP.Utilities.Security.Powershell</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

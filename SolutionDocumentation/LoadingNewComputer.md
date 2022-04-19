@@ -1,6 +1,6 @@
 # Setup a new computer
 
-##  Prerequisite
+## Prerequisite
 
 decide what role's the new computer wil be a member of
 
@@ -14,7 +14,6 @@ decide what role's the new computer wil be a member of
   - CodeSigning Certificate
 - Database Server
 - IIS WebServer
-
 
 ## BIOS modifications
 
@@ -39,7 +38,7 @@ create new user (without internet) and assign password
 run Everything from USB stick, get list to a file "01 Clean Windows 11 install, Step 01 Files.efu"
 
 rename computer (utat022)
-turn  off edge pre-load
+turn off edge pre-load
 get IP and MAC, for wired and wireless
 wired 50-eb-f6-78-80-5a
 wireless 00-91-9e-7c-45-f2
@@ -54,7 +53,6 @@ run Everything from USB stick, get list to a file "01 Clean Windows 11 install, 
 
 Create c:\Dropbox, c:\dropbox\whertzing,
 
-
 Create \\Fileshare, share it with everybody on the network
 Copy InstChoco and packagesconfig to Filesharecopy from fileshare to \\mydocuments\ChocolateyPackageListBackup
 copy hosts to \\utat022\fileshare and then to new computer
@@ -63,7 +61,6 @@ Start Powershell (old), run Instchoco.exe as admin
 Install Dropbox to c:\
 
 Set Locations for MyDocuments, Pictures, Videos, Downloads to c:\Dropbox-
-
 
 see also C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\MapUserShellFoldersToDropBox.ps1
 
@@ -79,34 +76,34 @@ There are two main tools used to install software. One tool supports 'portable a
 
 Portable applications are installed to the `Dropbox\PortableApplications` directory. Almost all of the work is done simply by connecting the new computer to dropbox, and waiting for synchronization to complete. All of the executables and libraries are present, as are the configuration settings. However, some applications work better when information that should remain specific to a computer is stored outside of the PortableApps subdirectory.
 
-* CPU-Z
-* GPU-Z
-*
+- CPU-Z
+- GPU-Z
+-
 
 ##### Ditto portable
-1) Configure Ditto so the Ditto.db is  %apdatalocal%/Ditto/Ditto.db
-1) Remove the Ditto.db that is under portableapps, that was created when Ditto started for the first time on the computer
-1) Configure Ditto to start when the user logs in, and to start minimized
+
+1. Configure Ditto so the Ditto.db is %apdatalocal%/Ditto/Ditto.db
+1. Remove the Ditto.db that is under portableapps, that was created when Ditto started for the first time on the computer
+1. Configure Ditto to start when the user logs in, and to start minimized
 
 ##### 7-ZipPortable
-1) Associate all the possible extensions to 7Zip for the user
-1) The shared settings will specify paths for the editor and diff tool. These should point to the chocolatey bin location executables for notepad and beyond compare
+
+1. Associate all the possible extensions to 7Zip for the user
+1. The shared settings will specify paths for the editor and diff tool. These should point to the chocolatey bin location executables for notepad and beyond compare
 
 #### Everything Portable
 
-1) Configure Everything so the Everything database to  %apdatalocal%/Everything/Everything.db
-1) Remove the Everything.db that is under portableapps/EverythingPortable, that was created when Everything started for the first time on the computer
-2)
+1. Configure Everything so the Everything database to %apdatalocal%/Everything/Everything.db
+1. Remove the Everything.db that is under portableapps/EverythingPortable, that was created when Everything started for the first time on the computer
+1.
 
 ## Install Chocolatey packages
 
 Reinstall all chocolatey packages
 
 - Notepad++ - use x86 version, many more plugins available
--
-Add to List:
+- Add to List:
   Freevideoeditor
-
 
 After chocolatey install, configure as follows:
 
@@ -116,7 +113,7 @@ After chocolatey install, configure as follows:
 - Ditto - configure Friends and network password
 - Notepad++ - Configure cloud location (Dropbox/Notepad++), add plugins
 - BeyondCompare - enter license text
-- 7Zip - Associate file extensions, set view, edit, and diff tools  to Notepad++ and Beyondcompare
+- 7Zip - Associate file extensions, set view, edit, and diff tools to Notepad++ and Beyondcompare
 - Git - ?
 - Fiddler -
 - VisualStudioCode - Turn on settings sync, for Settings and extensions, state, etc
@@ -125,12 +122,13 @@ After chocolatey install, configure as follows:
 - Rider Ultimate - enter license
 - FreeVideoEditor VSDC - enter license
 - Fiddler
+
   - Turn on 'capture https'
   - [Fiddler Compare Tools](https://fiddlerbook.com/fiddler/help/CompareTool.asp)
--Setup Git
-  in file ~/.gitconfig
+    -Setup Git
+    in file ~/.gitconfig
 
-  ``` text
+  ```text
     [filter "lfs"]
       smudge = git-lfs smudge -- %f
       process = git-lfs filter-process
@@ -174,41 +172,51 @@ copy role-appropriate hosts file to new computer
 
 - as the first admin user, run the command to trust the PSGallery repository
   `Register-PSRepository -Default`
-  `Get-PSRepository`  # ToDo: validate that PSGallery appears
+  `Get-PSRepository` # ToDo: validate that PSGallery appears
   `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`
 
-  ToDo: After package management
-  Load the following ATAP packages
-('ATAP.Utilities.Powershell', ) | Install-modules
+- Install the following 3rd-party packages machine-wide. Run the following as an administrator on the new computer
+  `@('Microsoft.PowerShell.SecretManagement', 'Microsoft.PowerShell.SecretStore', 'SecretManagement.Keepass', 'PSFramework') | ForEach-Object { if (-not (Get-Module $_)) {Install-Module $_ -scope 'AllUsers'} else { Write-Output "Module already installed: $_" } }`
+
+- The 'pki' module will not import automatically, need the following line for installing any certificates via powershell
+  `Import-Module -Name C:\Windows\System32\WindowsPowerShell\v1.0\Modules\PKI\pki.psd1`
+
+- Install the following ATAP.Utilities packages machine-wide
+  Before Package Management
+  After Package Management
+
+- Install the machine profile files
+  After Package Management
+
   Before Package Management
 
-Symlink the profile files for the machine as follows:
+  Symlink the profile files for the machine as follows:
 
-- `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  'PowerShell' '7' 'profile.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'AllUsersAllHostsV7CoreProfile.ps1')`
+  - `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities. PowerShell' 'profiles' 'AllUsersAllHostsV7CoreProfile.ps1')`
 
-- `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1')`
+  - `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1')`
 
-- `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_MachineAndNodeSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  'PowerShell' '7' 'global_MachineAndNodeSettings.ps1') -Target (join-path -path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath  @('ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_MachineAndNodeSettings.ps1'))`
+  - `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_MachineAndNodeSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_MachineAndNodeSettings.ps1') -Target (join-path -path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_MachineAndNodeSettings.ps1'))`
 
-- `Remove-Item -path (join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')`
+  - `Remove-Item -path (join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP. Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')`
 
-Symlink the profile file for the first admin user on this machine
+  Symlink the profile file for the first admin user on this machine
 
-- `Remove-Item -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1')  -Target (join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')`
-
+  - `Remove-Item -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target (join-path ( [Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')`
 
   Note: For development computer: Manually Symlink the Atap.Utilities.Building.Powershell module. TBD -install it as a package
 
 ## Per machine configuration
 
 - setup the registry to support "preview as perceived type text" for additional file types
+
   - Set-PerceivedTypeInRegistryForPreviewPane from module
   - C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Set-PerceivedTypeInRegistryForPreviewPane.ps1
 
 - Disable Windows Search Service Indexing background task
   Change list of drives indexed to only "start programs"
   Delete and rebuild index
-  Disable  windows indexing  service  "Windows Search" manually using services applet
+  Disable windows indexing service "Windows Search" manually using services applet
 
 - Replace Windows Defender with AVAST
   stop Windows Defender Firewall
@@ -217,37 +225,40 @@ Symlink the profile file for the first admin user on this machine
   disable MsSense service
 
 - remove the default version of Pester that comes with windows
+
   ```Powershell
   $module = "C:\Program Files\WindowsPowerShell\Modules\Pester"
-	takeown /F $module /A /R
-	icacls $module /reset
-	icacls $module /grant "*S-1-5-32-544:F" /inheritance:d /T
-	Remove-Item -Path $module -Recurse -Force -Confirm:$false
-   ```
+  takeown /F $module /A /R
+  icacls $module /reset
+  icacls $module /grant "*S-1-5-32-544:F" /inheritance:d /T
+  Remove-Item -Path $module -Recurse -Force -Confirm:$false
+  ```
 
 - Install Pester for PS V7
-  - `Install-Module pester`
+  - `Install-Module pester -scope 'AllUsers'`
   - Fix Pester installation and or path variable for PS V5 and PS V7
 
 Setup machine-wide Autoruns and startups
-  avast
-  ditto
-  dropbox
-  nordvpn
-  sharex
+avast
+ditto
+dropbox
+nordvpn
+sharex
 
 ## Per user configuration
+
 ### First admin user on the machine
 
 Setup Role-wide Autoruns and startups
-  avast
-  ditto
-  dropbox
-  nordvpn
-  sharex
+avast
+ditto
+dropbox
+nordvpn
+sharex
 
-  # Set file associations for notepad++
-  #$suffixs = @('.txt','.log','.ps1','.psm1','.psd1')
+# Set file associations for notepad++
+
+#$suffixs = @('.txt','.log','.ps1','.psm1','.psd1')
   #Install-ChocolateyFileAssociation  $suffixs "${env:programfiles(x86)}\notepad++.exe"
 
 ### Service Accounts on the machine (as per Role)
@@ -263,24 +274,24 @@ jexus manager (iis manager)
 
 ##
 
-1) debug response time issues and network issues
-  Visual Studio Code terminal and file editing; characters don't appear quickly in response to keyboard input
+1. debug response time issues and network issues
+   Visual Studio Code terminal and file editing; characters don't appear quickly in response to keyboard input
 
-  1) Windows media player
-    options - do not save history
+1. Windows media player
+   options - do not save history
 
-1) Inspect Windows Event Logs and remediate
+1. Inspect Windows Event Logs and remediate
 
-  1) "BITS has encountered an error communicating with an Internet Gateway Device"
-    Set the Service by the name of "Background Intelligent Transfer Service" to manual
+1. "BITS has encountered an error communicating with an Internet Gateway Device"
+   Set the Service by the name of "Background Intelligent Transfer Service" to manual
 
-  1) "The shadow copies of volume C: were aborted because the shadow copy storage could not grow due to a user imposed limit."  Event Id 36 VolSnap
-    Disable restore points on all drives ()
-      Search settings for "system protection"
-      click "create a restore point"
-      scan the list of drivee for any with "Protection settings = ON"
-      turn it off and delete any existing restore points
-    Disable the 'Volume Shadow Copy" service
+1. "The shadow copies of volume C: were aborted because the shadow copy storage could not grow due to a user imposed limit." Event Id 36 VolSnap
+   Disable restore points on all drives ()
+   Search settings for "system protection"
+   click "create a restore point"
+   scan the list of drivee for any with "Protection settings = ON"
+   turn it off and delete any existing restore points
+   Disable the 'Volume Shadow Copy" service
 
 Link Pushbullet to phone
 
@@ -294,92 +305,88 @@ from C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\TealeafCommonCompute
 
 ## Pin the services applet to the taskbar
 
-  Install-ChocolateyPinnedTaskBarItem "$env:windir\system32\services.msc"
+Install-ChocolateyPinnedTaskBarItem "$env:windir\system32\services.msc"
 
 ## Pin the event viewer applet to the taskbar
 
-  Install-ChocolateyPinnedTaskBarItem "$env:windir\system32\eventvwr.msc"
+Install-ChocolateyPinnedTaskBarItem "$env:windir\system32\eventvwr.msc"
 
 ## Use SQLExpress for Server 2012 if possible
 
-## ALlow  mixedmode authentication
+## ALlow mixedmode authentication
 
-  -ia '/value1=''some value'' '
-  # Enable SQLServerAgent
-  choco install MsSqlServer2012Express -ia '/SECURITYMODE=SQL'
-	Install-ChocolateyPinnedTaskBarItem "C:\Program Files (x86)\Microsoft SQL Server\110\Tools\Binn\ManagementStudio\Ssms.exe"
+-ia '/value1=''some value'' '
 
+# Enable SQLServerAgent
+
+choco install MsSqlServer2012Express -ia '/SECURITYMODE=SQL'
+Install-ChocolateyPinnedTaskBarItem "C:\Program Files (x86)\Microsoft SQL Server\110\Tools\Binn\ManagementStudio\Ssms.exe"
 
 C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\DeveloperComputer.ps1
 
-
 programs to pin:
-  perfView
-  taskManager
-  scheduled tasks
-  OneNote
-  Outlook
-  RDP
-  nmap-zenmap
-  Fiddler
-  postman
-  Firefox
-  Chrome
-  Edge
-  Brave
-  Explorer
-  Notepadplusplus
-  VisualStudioCode
-  structuredBuildlogViewer
-  ILSpy
-  Rider
-  resXResourceManager
-  pwsh
-  MSSMS
-  Voiceattack
-  Everything
-
-
-
-
+perfView
+taskManager
+scheduled tasks
+OneNote
+Outlook
+RDP
+nmap-zenmap
+Fiddler
+postman
+Firefox
+Chrome
+Edge
+Brave
+Explorer
+Notepadplusplus
+VisualStudioCode
+structuredBuildlogViewer
+ILSpy
+Rider
+resXResourceManager
+pwsh
+MSSMS
+Voiceattack
+Everything
 
 VS Code Extensions
-  c#
+c#
 
-  gitignore
-  gitlens
-  git graph
-  ResExExpress
-  Powershell (from Microsoft)
-  PowerShell Pro Tools for Visual Studio Code (from Ironman Software)
-  Draw.io Integration
-  prettier
-  Remove TestExplorerUI if it is installed, instead set the settings testExplorer.useNativeTesting to true
-  git user and password for each repository
-  PlantUML extension requires the environment variable GRAPHVIZ_DOT= ' c:\program files\graphviz\bin\dot.exe' which is the location where chocolatey installs the local plantuml server
-  Markdownlint
+gitignore
+gitlens
+git graph
+ResExExpress
+Powershell (from Microsoft)
+PowerShell Pro Tools for Visual Studio Code (from Ironman Software)
+Draw.io Integration
+prettier
+Remove TestExplorerUI if it is installed, instead set the settings testExplorer.useNativeTesting to true
+git user and password for each repository
+PlantUML extension requires the environment variable GRAPHVIZ_DOT= ' c:\program files\graphviz\bin\dot.exe' which is the location where chocolatey installs the local plantuml server
+Markdownlint
 
-  use the command `code --list-extensions --show-versions > "\\UTAT022\FileShare\$($env:COMPUTERNAME)extensions.list.txt"`
+use the command `code --list-extensions --show-versions > "\\UTAT022\FileShare\$($env:COMPUTERNAME)extensions.list.txt"`
 
 VS Code Options:
-  testExplorer.useNativeTesting to true
-  Copy settings from current (ncat016) vscode. Investigate VSC settings sync to keep them aligned
+testExplorer.useNativeTesting to true
+Copy settings from current (ncat016) vscode. Investigate VSC settings sync to keep them aligned
 
 GoogleDrive
- download and install the [Google Drive for Windows](Tbd)
- Sign In with google account crednetials
- Create a directory GoogleDrive on the drive of your choice (I chose c:/GoogleDrive)
- record in global_MachineAndNodeSettings.ps1 file for all computers, use the following `Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq "Google Drive" } | Select-Object -ExpandProperty 'Name') 'My Drive' `
-Join-Path  ([Environment]::GetEnvironmentVariable($global:configRootKeys['GoogleDriveBasePathConfigRootKey'])) 'DatedDropboxCursors.json'
+download and install the [Google Drive for Windows](Tbd)
+Sign In with google account credentials
+Create a directory GoogleDrive on the drive of your choice (I chose c:/GoogleDrive)
+record in global*MachineAndNodeSettings.ps1 file for all computers, use the following `Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $*.VolumeLabel -eq "Google Drive" } | Select-Object -ExpandProperty 'Name') 'My Drive' `
+Join-Path ([Environment]::GetEnvironmentVariable($global:configRootKeys['GoogleDriveBasePathConfigRootKey'])) 'DatedDropboxCursors.json'
 
-  Chocolatey package List Backup
-	 ensure the dropbox location is added
-	 ensure the GoogleDrive location is added
-
+Chocolatey package List Backup
+ensure the dropbox location is added
+ensure the GoogleDrive location is added
 
 ## Enable PS-Remoting on the new computer
 
 Run the following commands as a local admin on the new computer
+
 - `Enable-PSRemoting -Force`
 
 ### Add the other computers in the group to existing trustedhosts for WinRM remote management
@@ -394,15 +401,14 @@ Set-Item WSMan:\localhost\Client\TrustedHosts -Value 'utat022,utat01,ncat-ltjo,n
 
 ### Generate a trusted SSL Certificate for this computer
 
-
-Until you get a SSL certificate for the new computer, you can TEMPRARLY use unencrypted, but you WILLL be puttingyour password out on the network for any sniffer to see
+Until you get a SSL certificate for the new computer, you can TEMPORARILY use unencrypted, but you WILL be putting your password out on the network for any sniffer to see
 `winrm set winrm/config/client @{AllowUnencrypted="true"}` # run as admin on the new computer, and on any computer that you want to connect FROM
 `winrm set winrm/config/service @{AllowUnencrypted="true"}` # run as admin on the new computer, and on any computer that you want to connect TO
 
 Better, though, is to configure WinRM for HTTPS
 [How to configure WINRM for HTTPS](https://docs.microsoft.com/en-us/troubleshoot/windows-client/system-management-components/configure-winrm-for-https)
 
-However, "WinRM HTTPS requires a local computer Server Authentication certificate with a CN matching the hostname to be installed. The certificate mustn't be expired, revoked, or self-signed."  Which means you will need
+However, "WinRM HTTPS requires a local computer Server Authentication certificate with a CN matching the hostname to be installed. The certificate mustn't be expired, revoked, or self-signed." Which means you will need
 
 [OpenSSL create client certificate & server certificate with example](https://www.golinuxcloud.com/openssl-create-client-server-certificate/)
 [Creating simple SSL certificates for server authentication using OpenSSL](https://blog.oholics.net/creating-simple-ssl-certificates-for-server-authentication-using-openssl/)
@@ -418,10 +424,11 @@ Basic Authentication on both the Client and the service
 
 ## Setup Fiddler Options
 
-
 ## Setup Jenkins Master
+
 ToDo: how to copy jobs and nodes
-ToDo: how to chnage the jenkins agents to communicate with teh new master
+ToDo: how to change the jenkins agents to communicate with teh new master
+
 ### Change Powershell from V5 to V7 on Master and Slaves
 
 `http://utat022:4040/configureTools/`
@@ -435,11 +442,10 @@ Jenkins reporting of the Validate Tools scripts
 
 Many CI steps need Java. Jenkins itself is Java based, as are the PlantUML steps that generate diagrams from embedded info in .md files, and the step that reads all the C# files nad creates PlantUML diagrams from the source code files. Setting up the new computer, need to ensure the correct Java is installed and running.
 
-Check Java Version. Old computer is running jre1.8.0_291, but jre1.8.0_321 exists as a peer to _291.
- On the new computer, only _321 exists (so far...)
+Check Java Version. Old computer is running jre1.8.0_291, but jre1.8.0_321 exists as a peer to \_291.
+On the new computer, only \_321 exists (so far...)
 
-
-PaackageManagement for powershell
+PackageManagement for powershell
 
 `Register-PackageSource -Name chocolatey -Location http://chocolatey.org/api/v2 -Provider PSModule -Verbose`
 
@@ -455,17 +461,16 @@ PaackageManagement for powershell
 
 [Catesta is a PowerShell module project generator](https://github.com/techthoughts2/Catesta)
 
-
 # $Path and $psmodulepath in Powershell V5 (Desktop) and V7 (Core)
 
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_psmodulepath?view=powershell-7.2
 
 https://docs.microsoft.com/en-us/powershell/scripting/whats-new/differences-from-windows-powershell?view=powershell-7.2
 
-
 ### Placeholder for code to compare extensions in two instances of Visualstudiocode
+
 $a = ls C:\Dropbox\whertzing\ncat016-dotvscode\.vscode\extensions
 $b = ls C:\Users\whertzing\.vscode\extensions
 $a1 = $a -replace [regex]::escape('C:\Dropbox\whertzing\ncat016-dotvscode\.vscode\extensions\'), ''
 $b1 = $b -replace [regex]::escape('C:\Users\whertzing\.vscode\extensions\'), ''
-$c= $a2 | %{if ($b2.contains($_)) {$_}}
+$c= $a2 | %{if ($b2.contains($_)) {$\_}}

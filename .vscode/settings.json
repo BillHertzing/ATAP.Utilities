@@ -50,6 +50,7 @@
         "NOEXEC",
         "nvarchar",
         "Prefixs",
+        "pwsh",
         "RAISERROR",
         "RTRIM",
         "serializers",

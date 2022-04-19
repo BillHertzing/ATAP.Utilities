@@ -44,7 +44,7 @@ $VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
 # Locally defined functions
 ########################################################
 
-#region Functions needed by the machine profile, must be defined in the profile
+#region Functions needed by the machine profile, must be defined in the profile, or dot-sourced
 function Write-ArrayIndented {
   param ($a, $indent, $indentIncrement)
   $outstr = ' ' * $indent
@@ -171,72 +171,43 @@ function Install-ModulesPerComputer {
   # ToDo: implement CIMSession if ComputerName is not the current computer, or if RunAs is not the current user
   # import the SecretManagement and SecretStore modules if they are not yet present
   $modulesToInstall | ForEach-Object { $moduleName = $_
-    Write-Verbose "Processing module named : $modulename"
+    Write-PSFMessage -Level Debug -Message "Processing module named : $modulename"
     # Has it already been loaded in machine scope?
     if (-not (Get-Module -Name $moduleName -ListAvailable)) {
-      Write-Verbose "Module named : $modulename has NOT been installed"
+      Write-PSFMessage -Level Debug -Message "Module named : $modulename has NOT been installed"
       # ToDo: wrap in try/catch
       # In what repository does it exist?
       $foundModule = Find-Module $moduleName
-      Write-Debug "Module named : $modulename was found in the $($foundModule.Repository) repository"
+      Write-PSFMessage -Level Debug -Message "Module named : $modulename was found in the $($foundModule.Repository) repository"
+
       # Is that repository trusted?
       $installationPolicy = (Get-PSRepository -Name $foundModule.Repository).InstallationPolicy
       if ( $installationPolicy -eq 'Untrusted') {
-        Write-Debug "Repository $($foundModule.Repository) is NOT trusted"
+        Write-PSFMessage -Level Debug -Message ("Repository $($foundModule.Repository) is NOT trusted")
         # Todo: add feature and process flow to allow admin running this script to decide if the Repository should be trusted for this user on this machine
         if ($repositoriesToTrust.Contains($foundModule.Repository)) {
-          Write-Debug "Repository $($foundModule.Repository) is IN the repositoriesToTrust array"
+          Write-PSFMessage -Level Debug -Message ("Repository $($foundModule.Repository) is IN the repositoriesToTrust array")
           if ($PSCmdlet.ShouldProcess($foundModule.Repository , 'Set-PSRepository -Name <target> -InstallationPolicy Trusted')) {
             Set-PSRepository -Name $foundModule.Repository -InstallationPolicy Trusted
           }
         }
         else {
-          Write-Debug "Repository $($foundModule.Repository) is NOT in the repositoriesToTrust array"
+          Write-PSFMessage -Level Debug -Message ("Repository $($foundModule.Repository) is NOT in the repositoriesToTrust array")
         }
       }
       # ToDo: Version checking?
       # The missing module has been found and the repository is trusted
       if ($PSCmdlet.ShouldProcess(@($moduleName), 'Install-Module -Name <target> -Scope AllUsers ')) {
-        Install-Module -Name $moduleName -Scope AllUsers
+        Install-Module -Name $moduleName -Scope 'AllUsers'
       }
-      Write-Debug "Module named : $modulename has been installed"
+      Write-PSFMessage -Level Debug -Message "Module named : $modulename has been installed"
     }
     else {
-      Write-Verbose "Module named : $modulename has already been installed"
+      Write-PSFMessage -Level Debug -Message "Module named : $modulename has already been installed"
     }
   }
 }
 
-function New-DataEncryptionCertificateRequest {
-  [CmdletBinding(SupportsShouldProcess = $true)]
-  param (
-    [string] $Subject
-    , [string] $SubjectAlternativeName
-    , [ValidateScript({ Test-Path $_ })]
-    [string] $DataEncryptionCertificateRequestTemplatePath
-    ,
-    [string] $DataEncryptionCertificateRequestPath
-    , [switch] $Force
-  )
-  # ToDo: validate Subject and SubjectAlternativeName
-  # Does the parent path for the new certificate path exist
-  $parentPath = (Split-Path -Path $DataEncryptionCertificateRequestPath -Parent)
-  if (-not (Test-Path $parentPath )) {
-    if ($force) {
-      if ($PSCmdlet.ShouldProcess($null, 'New-Item -ItemType Directory -Force -Path $parentPath')) {
-        # If the parent path for the new certificate path does not exist at all, create it if -Force is true, else fail
-        New-Item -ItemType Directory -Force -Path $parentPath >$null
-      }
-    }
-    else {
-      Throw "Part(s) of the parent of the DataEncryptionCertificateRequestPath do not exist, use -Force to create them: $parentPath"
-    }
-  }
-  if ($PSCmdlet.ShouldProcess($null, "Create new CertificateRequest '$DataEncryptionCertificateRequestPath' from '$DataEncryptionCertificateRequestTemplatePath' using subject '$Subject'")) {
-    (((Get-Content $DataEncryptionCertificateRequestTemplatePath) -replace 'Subject = .*', ('Subject = "' + $Subject + '"')) -replace '%szOID_SUBJECT_ALTERNATIVE_NAME% = "{text}.*', ('%szOID_SUBJECT_ALTERNATIVE_NAME% = "{text}' + $SubjectAlternativeName + '"')) |
-    Set-Content -Path $DataEncryptionCertificateRequestPath # -Encoding [System.Text.Encoding]::UTF8  default value for my powershelll, but localization may affect this
-  }
-}
 
 function Install-DataEncryptionCertificate {
   [CmdletBinding(SupportsShouldProcess = $true)]
@@ -297,7 +268,7 @@ function Add-SecretStoreVault {
     # a SAN for the DataEncryptionCertificateRequest
     , [string] $SubjectAlternativeName
     # a template for the DataEncryptionCertificateRequest
-    , [string] $DataEncryptionCertificateRequestTemplatePath
+    , [string] $DataEncryptionCertificateRequestConfigPath
     # A secure place for creating the DataEncryptionCertificateRequest and the DataEncryptionCertificate
     , [ValidateScript({ Test-Path $_ })]
     [string] $SecureTempBasePath
@@ -318,6 +289,8 @@ function Add-SecretStoreVault {
     # Force the creation of the DEC certificate if one exists, overwrite the KeyFilePath if one exists
     , [switch] $Force
   )
+  Write-PSFMessage -Level Debug -Message "Starting Function %FunctionName% in module %ModuleName%" -Tag 'Trace'
+
   $originalPSBoundParameters = $PSBoundParameters
 
   # Does a SecretVault by this name already exist
@@ -332,10 +305,10 @@ function Add-SecretStoreVault {
 
   # Construct a new DataEncryptionCertificateRequest file on disk
   $dataEncryptionCertificateRequestPath = Join-Path $SecureTempBasePath ($DataEncryptionCertificateRequestFilenameTemplate -f $Name)
-  Write-Debug "dataEncryptionCertificateRequestPath = $dataEncryptionCertificateRequestPath"
+  Write-PSFMessage -Level Debug -Message ("dataEncryptionCertificateRequestPath = $dataEncryptionCertificateRequestPath")
 
   $subsetPSBoundParameters = @{}
-  ('Subject', 'SubjectAlternativeName', 'DataEncryptionCertificateRequestTemplatePath', 'Force') | ForEach-Object { $subsetPSBoundParameters[$_] = $originalPSBoundParameters[$_] }
+  ('Subject', 'SubjectAlternativeName', 'DataEncryptionCertificateRequestConfigPath', 'Force') | ForEach-Object { $subsetPSBoundParameters[$_] = $originalPSBoundParameters[$_] }
   New-DataEncryptionCertificateRequest -DataEncryptionCertificateRequestPath $dataEncryptionCertificateRequestPath @subsetPSBoundParameters # Pass this function's parameters to the called function
   # Construct the $dataEncryptionCertificatePath
   $dataEncryptionCertificatePath = Join-Path $SecureTempBasePath ($DataEncryptionCertificateFilenameTemplate -f $Name)
@@ -364,13 +337,13 @@ function Add-SecretStoreVault {
 
   # ToDo: ponder the possibility that there may be more than one data encryption certificate with the same Subject and SubjectAlternativeName
   $thumbprint = (Get-ChildItem -Path 'cert:/Current*/my/*' -Recurse -DocumentEncryptionCert | Where-Object { $_.Subject -match "^$modSubject$" }).Thumbprint
-  Write-Debug "thumbprint = $thumbprint"
+  Write-PSFMessage -Level Debug -Message ("thumbprint = $thumbprint")
 
   # Encrypt the Password
   if ($PSCmdlet.ShouldProcess($null, 'Encrypt the Password')) {
     # ToDo: wrap in a try/catch block
     $encryptedPassword = ConvertFrom-SecureString -SecureString $PasswordSecureString -AsPlainText | Protect-CmsMessage -To $Thumbprint
-    # Write-Debug "encryptedPassword = $encryptedPassword"
+    Write-PSFMessage -Level Debug -Message ("encryptedPassword = $encryptedPassword")
   }
 
   # write the encrypted password to the $EncryptedPasswordFilePath
@@ -382,7 +355,7 @@ function Add-SecretStoreVault {
 
   # ToDo import KeyFilePath contents as a secure key
   $EncryptionKeyData = Get-Content $KeyFilePath
-    # ToDo: Add whatif
+  # ToDo: Add whatif
   # ToDo change -key to -securekey
   $PasswordSecureString | ConvertFrom-SecureString -Key $EncryptionKeyData | Out-File -FilePath $EncryptedPasswordFilePath
 
@@ -393,7 +366,8 @@ function Add-SecretStoreVault {
   # Create the SecretVault using a SecretStore extension vault, and configre it, in one call
   # Use different commands based on parameterset
   $command = $null
-  Write-Host "ParameterSetName = $($PSCmdlet.ParameterSetName)"
+  Write-PSFMessage -Level Debug -Message "ParameterSetName = $($PSCmdlet.ParameterSetName)"
+
   switch ($PSCmdlet.ParameterSetName) {
     BuiltIn {
       $command = "Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = ""$Description""; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }"
@@ -402,7 +376,7 @@ function Add-SecretStoreVault {
       $command = "Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = ""$Description""; UseMasterPassword = ""$false""; Path = ""$PathToKeePassDB"" }"
     }
   }
-  Write-Host "command = $command"
+  Write-PSFMessage -Level Debug -Message "command = $command"
   if ($PSCmdlet.ShouldProcess($null, "Register-SecretVault -ModuleName $ExtensionVaultModuleName -VaultParameters @{Authentication='Password';Interaction='None';Password='PasswordSecureStringNotshown';PasswordTimeout=$PasswordTimeout} @subsetPSBoundParameters")) {
     try {
       # ToDo: figure out how to pass the UseMasterPassword switch paramter in a $VaultParamter's hash when run as $command via Invoke-Expression
@@ -460,6 +434,7 @@ function Add-SecretStoreVault {
       Throw "Test-SecretVault failed with $($error[0])"
     }
   }
+  Write-PSFMessage -Level Debug -Message "Leaving Function %FunctionName% in module %ModuleName%" -Tag 'Trace'
 
   # Return the SecretManagementExtensionVaultInfo structure
   $SecretManagementExtensionVaultInfo
@@ -480,7 +455,7 @@ function Add-SecretStoreVault {
   -KeyFilePath 'C:/dropbox/whertzing/encryption.key'`
   -KeySizeInt 16
   -EncryptedPasswordFilePath 'C:/dropbox/whertzing/secret.encrypted'`
-  -DataEncryptionCertificateRequestTemplatePath  'C:\DataEncryptionCertificate.template' `
+  -DataEncryptionCertificateRequestConfigPath  'C:\DataEncryptionCertificate.template' `
   -SecureTempBasePath $($global:settings[$global:configRootKeys['SecureTempBasePathConfigRootKey']]) `
   -DataEncryptionCertificateRequestFilenameTemplate '{0}_DataEncryptionCertificateRequest.inf' `
   -DataEncryptionCertificateFilenameTemplate '{0}_DataEncryptionCertificate.cer' `
@@ -501,6 +476,12 @@ Write-Verbose ("PSScriptRoot = $PSScriptRoot")
 Write-Verbose ('EnvironmentVariablesAtStartOfMachineProfile = ' + $(Write-EnvironmentVariablesIndented 0 2 ))
 Write-Verbose ('Registry Current Session Environment variable path = ' + $(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment' -Name 'Path'))
 
+# Define default values of common parameters
+$PSDefaultParameterValues = @{
+  '*:Encoding' = 'UTF8'
+}
+# encoding : New-Object System.Text.UTF8Encoding($false) # UTF8 encoded with or without a ByteOrdermark(BOM) which results in System.Text.UTF8Encoding
+# encoding : [System.Text.Encoding]::UTF8 which results in System.Text.UTF8Encoding+UTF8EncodingSealed
 
 $indent = 0
 $indentIncrement = 2
@@ -509,20 +490,34 @@ $indentIncrement = 2
 . $PSScriptRoot/global_ConfigRootKeys.ps1
 
 # Print the global:ConfigRootKeys if Debug
-Write-Debug ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
+Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
+
+# Dot source the Security and Secrets settings
+# Security and Secrets setting .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+. $PSScriptRoot/global_SecurityAndSecretsSettings.ps1
 
 # Dot source the Machine and Node settings
 # Machine and Node setting .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
 . $PSScriptRoot/global_MachineAndNodeSettings.ps1
 
 # Print the global:MachineAndNodeSettings if Debug
-Write-Debug ('global:MachineAndNodeSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:MachineAndNodeSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+Write-PSFMessage -Level Debug -Message ('global:MachineAndNodeSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:MachineAndNodeSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 
 # Define a global settings hash, initially populate it with machine-specific information for this machine
 $global:settings = @{}
 
 # set ISElevated for the global settings if this is script elevated
 $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+
+# ToDo: Topological sort of the settings
+
+
+# Load SecurityAndSecretsSettings into the ToBeExecutedGlobalSettings
+$global:SecurityAndSecretsSettings.Keys | ForEach-Object {
+  # ToDo error hanlding if one fails
+  $global:ToBeExecutedGlobalSettings[$_] = $global:SecurityAndSecretsSettings[$_]
+  Write-PSFMessage -Level Debug -Message "global:ToBeExecutedGlobalSettings[$_] = $($global:ToBeExecutedGlobalSettings[$_])"
+}
 
 # Load settings common to all machines into $global:settings
 ($global:MachineAndNodeSettings['AllCommon']).Keys | ForEach-Object {
@@ -538,6 +533,7 @@ $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Objec
 $global:ToBeExecutedGlobalSettings.Keys | ForEach-Object {
   # ToDo error hanlding if one fails
   $global:settings[$_] = Invoke-Expression $global:ToBeExecutedGlobalSettings[$_]
+  Write-PSFMessage -Level Debug -Message "global:settings[$_] = $global:settings[$_]"
 }
 
 # Load the JenkinsRoleSettings for this machine into the $global:settings
@@ -580,6 +576,9 @@ $desiredPSModulePaths = $additionalPSModulePaths + $Env:PSModulePath
 # Set the $Env:PsModulePath to the final, clean value of $desiredPSModulePaths.
 #[Environment]::SetEnvironmentVariable('PSModulePath', $finalPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
 
+# Any machine that has openssl installed, needs to add it's path to the machine-scope path
+# This should only be done once, by a machine admin, when it is installed onto a machine
+
 
 # This machine is part of the CI/CD DevOps pipeline ecosystem
 # The global_MachineAndNodeSettings.ps1 file includes the settings for the CI/CD pipeline portions that this machine can participate in
@@ -593,8 +592,9 @@ $desiredPSModulePaths = $additionalPSModulePaths + $Env:PSModulePath
 
 # Set DebugPreference to Continue  to see the $global:settings and Environment variables at the completion of this profile
 # Print the $global:settings if Debug
-Write-Debug ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
-#$DebugPreference = 'Continue'
-Write-Debug ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
+$DebugPreference = 'SilentlyContinue'
+Write-PSFMessage -Level Debug -Message ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
+Write-PSFMessage -Level Debug -Message ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
+$DebugPreference = 'SilentlyContinue'
 
 

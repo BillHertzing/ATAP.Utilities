@@ -1,5 +1,5 @@
 #############################################################################
-#region FunctionName
+#region FunctionNameReplacementPattern
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,28 +28,40 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function FunctionName {
-  #region FunctionParameters
-  [CmdletBinding(SupportsShouldProcess = $true)]
+Function FunctionNameReplacementPattern {
+  #region Parameters
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet')]
   param (
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $InDir = '..\Data'
-    , [alias('InBusinessName1FilePattern')]
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $InFn1
-    , [alias('InBusinessName2FilePattern')]
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $InFn2
-    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $OutDir
-    , [alias('OutFNBusinessName1')]
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $OutFn1
-    , [alias('OutFNBusinessName2')]
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $OutFn2
+    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]
+    [ValidateScript({ Test-Path $_ })]
+    [string] $Path
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
+    [string] $Encoding
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
+    [switch] $Force
   )
-  #endregion FunctionParameters
-  #region FunctionBeginBlock
-  ########################################
+  #endregion Parameters
+  #region BeginBlock
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-    $DebugPreference = 'Continue'
+    Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    #$DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue
 
+  }
+  #endregion BeginBlock
+  #region ProcessBlock
+  PROCESS {}
+  #endregion ProcessBlock
+  #region EndBlock
+  END {
+    Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+  }
+  #endregion EndBlock
+}
+#endregion FunctionNameReplacementPattern
+#############################################################################
+
+
+<#
     # default values for settings
     $settings = @{
       InDir                      = '..\Data'
@@ -96,32 +108,12 @@ Function FunctionName {
     }
     # Remove the test file
     Remove-Item $testOutFn -ErrorAction Stop
-    
+
     $OutFnName1 = Join-Path $settings.OutDir $settings.OutFnBusinessName1
     $OutFnName2 = Join-Path $settings.OutDir $settings.OutFnBusinessName2
 
     #Get the latest of each file that matches an alternate
     $InDataFile = (@(ls $settings.InDir | ? { $_ -match $settings.InBusinessName1FilePattern } | sort -Descending -Property 'LastWriteTime')[0]).Fullname
 
-    $results = @{}
-  }
-  #endregion FunctionBeginBlock
 
-  #region FunctionProcessBlock
-  ########################################
-  PROCESS {
-    #
-  }
-  #endregion FunctionProcessBlock
-
-  #region FunctionEndBlock
-  ########################################
-  END {
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
-  }
-  #endregion FunctionEndBlock
-}
-#endregion FunctionName
-#############################################################################
-
-
+#>

@@ -160,17 +160,17 @@ $UserPSModulePaths = @(
 
 # Unlock the user's SecretStore for this session using an encrypted password and a data Encryption Certificate installed to the current machine
 # if the key exists in the global settings
-if ($global:settings.Contains($global:configRootKeys['EncryptedMasterPasswordsPathConfigRootKey'])) {
-  $path = $global:settings[$global:configRootKeys['EncryptedMasterPasswordsPathConfigRootKey']]
-  # if the value is not $null
-  if ($path ) {
-    $name = 'MyPersonalSecrets'
-    Unlock-UsersSecretStore -Name $name -EncryptedMasterPasswordsPath $path
-  }
-}
+# if ($global:settings.Contains($global:configRootKeys['EncryptedMasterPasswordsPathConfigRootKey'])) {
+#   $path = $global:settings[$global:configRootKeys['EncryptedMasterPasswordsPathConfigRootKey']]
+#   # if the value is not $null
+#   if ($path ) {
+#     $name = 'MyPersonalSecrets'
+#     Unlock-UsersSecretStore -Name $name -EncryptedMasterPasswordsPath $path
+#   }
+# }
 
 # examples of subject # 'CN=$HostName,OU=$OrganizationalUnit,O=$Organisation,L=$Locality,S=$State,C=$CountryName,E=$Email'
-$DataEncryptionCertificateTemplatePath = 'C:\DataEncryptionCertificate.template'  # Keep this out of the repository, but will be machine/user dependent
+# $DataEncryptionCertificateTemplatePath = 'C:\DataEncryptionCertificate.template'  # Keep this out of the repository, but will be machine/user dependent
 
 # Create Data Encryption certificates for all the SecretManagement Extension Vaults (to be done once by admins,and updated on vault CRUD)
 # Install the Data Encryption certificates that belong to a user's roles on a local machine (to be done once by admins)
@@ -248,6 +248,12 @@ Function Show-context {
 }
 #if ($true) { Show-context }
 
+# Set an alias to tail the latest PSFrmework log file
+function TailLatestPSFrameworkLog {
+  (gc ((ls C:\Users\whertzing\AppData\Roaming\PowerShell\PSFramework\Logs) | sort -Property 'lastwritetime' -desc)[0] )[-100..-1]
+}
+set-alias  -Name 'tail'  -Value 'TailLatestPSFrameworkLog'
+
 # https://stackoverflow.com/questions/138144/what-s-in-your-powershell-profile-ps1-file
 filter match( $reg ) {
   if ($_.tostring() -match $reg)
@@ -305,8 +311,11 @@ Set-EnvironmentVariablesProcess
 # Print the $global:settings if Debug
 $indent = 0
 $indentIncrement = 2
-Write-Debug ('After CurrentUsersAllHosts profile executes, global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
-Write-Debug ('After CurrentUsersAllHosts profile executes, Environment variables: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
+Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
+Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, Environment variables: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
+
+Set-Location 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+
 
 <# To Be Moved Somewhere else #>
 

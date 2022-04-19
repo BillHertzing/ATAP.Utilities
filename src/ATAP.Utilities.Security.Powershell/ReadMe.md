@@ -27,7 +27,7 @@ New-MasterPasswordSecureStringFile -Path $PasswordSecureStringFilePath
 Update-MasterPasswordSecureStringFile -Path $PasswordSecureStringFilePath
 
 Add-UsersSecretStoreVault (in behalf of a specific User on a specific Computer, so must accept 1 user and list of machines, 1 machine and list of users, or hash of computerXusers -value = $Subject and - $KeySecureStringFilePath $PasswordSecureStringFilePath
- Uses Register-SecretVault, for any of the three vault types, paramter sets
+ Uses Register-SecretVault, for any of the three vault types, parameter sets
 
 ### Public User Functions
 
@@ -41,7 +41,7 @@ List-MasterPasswordSecureStringFiles
 
 ## Attributions
 
-# [Encrypt & Decrypt Data with PowerShell](https://medium.com/@sumindaniro/encrypt-decrypt-data-with-powershell-4a1316a0834b) by Suminda Niroshan
-# [Using SecureString in PowerShell (With SecureKey)](https://brainseed.wordpress.com/2016/03/29/using-securestring-in-powershell-with-securekey/)
-# [How to encrypt credentials & secure passwords with PowerShell pt 2](https://www.pdq.com/blog/secure-password-with-powershell-encrypting-credentials-part-2/) Kris Powell
+* [Encrypt & Decrypt Data with PowerShell](https://medium.com/@sumindaniro/encrypt-decrypt-data-with-powershell-4a1316a0834b) by Suminda Niroshan
+* [Using SecureString in PowerShell (With SecureKey)](https://brainseed.wordpress.com/2016/03/29/using-securestring-in-powershell-with-securekey/)
+* [How to encrypt credentials & secure passwords with PowerShell pt 2](https://www.pdq.com/blog/secure-password-with-powershell-encrypting-credentials-part-2/) Kris Powell
 

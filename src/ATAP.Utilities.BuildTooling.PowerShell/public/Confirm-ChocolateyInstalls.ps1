@@ -33,7 +33,7 @@ Function Confirm-ChocolateyInstalls {
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'NoParameters' )]
   param (
     # Chocolatey install location
-     [Parameter(ParameterSetName = 'WithParameters')]
+    [Parameter(ParameterSetName = 'WithParameters')]
     [ValidateScript({ Test-Path $_ })]
     [string] $ChocolateyInstalls
   )
@@ -45,32 +45,32 @@ Function Confirm-ChocolateyInstalls {
     # $DebugPreference = 'SilentlyContinue'
     Write-Debug "Starting $($MyInvocation.Mycommand)"
     Write-Debug "PsCmdlet.ParameterSetName = $($PsCmdlet.ParameterSetName)"
-	
+
     $binDirList = $null
     $libDirList = $null
     if ( $PsCmdlet.ParameterSetName -eq 'NoParameters') {
-      if (-not (Test-Path -Path [Environment]::GetEnvironmentVariable($global:configRootKeys['ChocolateyInstallDirConfigRootKey'])))) {
+      if (-not (Test-Path -Path [Environment]::GetEnvironmentVariable($global:configRootKeys['ChocolateyInstallDirConfigRootKey']))) {
         #Log('Error',"Confirm-ChocolateyInstalls failed, directory does not exist. ChocolateyInstallDir = $([Environment]::GetEnvironmentVariable($global:configRootKeys['ChocolateyInstallDirConfigRootKey']))")
-        throw "Confirm-ChocolateyInstalls failed, directory does not exist. ChocolateyInstallDir = $([Environment]::GetEnvironmentVariable($global:configRootKeys['ChocolateyInstallDirConfigRootKey'])"
+        throw "Confirm-ChocolateyInstalls failed, directory does not exist. ChocolateyInstallDir = $([Environment]::GetEnvironmentVariable($global:configRootKeys['ChocolateyInstallDirConfigRootKey']))"
       }
-	}
+    }
     Write-Verbose "Ending $($MyInvocation.Mycommand)"
     # return a results object
     $results
   }
   END {
-	  $p_ncat016 = gc \dropbox\ChocolateyPackageListBackup\ncat016\packages.config
-	  $p_utat022 = gc \dropbox\ChocolateyPackageListBackup\utat022\packages.config
-	  $p_utat01 = gc \dropbox\ChocolateyPackageListBackup\utat01\packages.config
-	  
-	  $c_ncat016_utat01 = compare-object $p_ncat016 $p_utat01 -IncludeEqual | ?{$_.sideIndicator -eq '=='}
-	  $c_ncat016_utat022 = compare-object $p_ncat016 $p_utat022 -IncludeEqual | ?{$_.sideIndicator -eq '=='}
-	  $c_utat01_utat22 = compare-object $p_utat01 $p_utat022 -IncludeEqual | ?{$_.sideIndicator -eq '=='}
-	  
-	  $allcommon = compare-object $c_ncat016_utat01 $c_ncat016_utat022 -IncludeEqual | ?{$_.sideIndicator -eq '=='}
-	  $CommonOnlyToncat016_utat01 = compare-object $c_ncat016_utat01 $p_utat022 -IncludeEqual| ?{$_.sideIndicator -eq '>='}
+    $p_ncat016 = Get-Content \dropbox\ChocolateyPackageListBackup\ncat016\packages.config
+    $p_utat022 = Get-Content \dropbox\ChocolateyPackageListBackup\utat022\packages.config
+    $p_utat01 = Get-Content \dropbox\ChocolateyPackageListBackup\utat01\packages.config
 
-# Are the packages recorded by CLPB present in the two Lists?
+    $c_ncat016_utat01 = Compare-Object $p_ncat016 $p_utat01 -IncludeEqual | ? { $_.sideIndicator -eq '==' }
+    $c_ncat016_utat022 = Compare-Object $p_ncat016 $p_utat022 -IncludeEqual | ? { $_.sideIndicator -eq '==' }
+    $c_utat01_utat22 = Compare-Object $p_utat01 $p_utat022 -IncludeEqual | ? { $_.sideIndicator -eq '==' }
+
+    $allcommon = Compare-Object $c_ncat016_utat01 $c_ncat016_utat022 -IncludeEqual | ? { $_.sideIndicator -eq '==' }
+    $CommonOnlyToncat016_utat01 = Compare-Object $c_ncat016_utat01 $p_utat022 -IncludeEqual | ? { $_.sideIndicator -eq '>=' }
+
+    # Are the packages recorded by CLPB present in the two Lists?
   }
   #endregion FunctionEndBlock
 }

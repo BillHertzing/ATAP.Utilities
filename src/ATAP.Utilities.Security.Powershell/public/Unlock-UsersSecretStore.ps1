@@ -1,4 +1,4 @@
-#############################################################################
+#####################################
 #region Unlock-UsersSecretStore
 <#
 .SYNOPSIS
@@ -29,122 +29,58 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
 Function Unlock-UsersSecretStore {
-  #region FunctionParameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'FromFile' )]
+  #region Parameters
+  [CmdletBinding(SupportsShouldProcess = $true )]
   param (
-    # a Name for the vault
-    [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
-    [string] $Name
-    , [Parameter(ParameterSetName = 'FromFile')]
-    [ValidateScript({ Test-Path $_ })]
-    [string] $EncryptedMasterPasswordsPath
-    , [Parameter(ParameterSetName = 'FromHashTable')]
-    [ValidateScript({ $_.ContainsKey('EncryptedPassword') })]
-    # add script to validate all needed keys are present in the hashtable
-    [System.Collections.IDictionary] $Dictionary
+    [parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    [ValidateScript({$d = $_; $s = $true;  ('VaultPath','VaultName') | %{$s = $s -and $d.ContainsKey($_) }; $s})]
+    # add script to validate all needed keys are present in the hashtable and that all resolve to valid paths and thumbprints
+    [System.Collections.IDictionary] $SecretStoreInfo
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
+    [string] $Encoding
+    # ToDo Add switch parameter to use Data Encryption Certificate
   )
-
-  #endregion FunctionParameters
-  #region FunctionBeginBlock
-  ########################################
+  #endregion Parameters
+  #region BeginBlock
   BEGIN {
     # $DebugPreference = 'SilentlyContinue'
-    Write-Debug "Starting $($MyInvocation.Mycommand)"
-    Write-Debug "PsCmdlet.ParameterSetName = $($PsCmdlet.ParameterSetName)"
-    $SecretStoreInfo = $null
-    if ( $PsCmdlet.ParameterSetName -eq 'FromFile') {
-      if (-not (Test-Path -Path $EncryptedMasterPasswordsPath)) {
-        #Log('Error',"Unlock-UsersSecretStore failed, file does not exist. EncryptedMasterPasswordsPath = $EncryptedMasterPasswordsPath")
-        throw "Unlock-UsersSecretStore failed, file does not exist. EncryptedMasterPasswordsPath = $EncryptedMasterPasswordsPath"
-      }
-      # Read the collection of SecretStoreInfo hashtable from the EncryptedMasterPasswordsPath
-      $SecretStoreInfoCollection = (Get-Content -Path $EncryptedMasterPasswordsPath) | ConvertFrom-Json -AsHashtable
-      # Take just the entry corresponding to the MyPersonalSecrets
-      $SecretStoreInfo = $SecretStoreInfoCollection[$Name]
-    }
-    if ( $PsCmdlet.ParameterSetName -eq 'FromHashTable') {
-      $SecretStoreInfo = $Dictionary
-    }
-    Write-Debug "SecretStoreInfo = $(Write-HashIndented $SecretStoreInfo 0 2)"
-    $results = @{}
+    Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    # Write-PSFMessage -Level Debug -Message "SecretStoreInfo = $(Write-HashIndented $SecretStoreInfo 0 2)"
   }
-  #endregion FunctionBeginBlock
-
-  #region FunctionProcessBlock
-  ########################################
-  PROCESS {
-    #
-  }
-  #endregion FunctionProcessBlock
-
-  #region FunctionEndBlock
-  ########################################
+  #endregion BeginBlock
+  #region ProcessBlock
+  PROCESS {  }
+  #endregion ProcessBlock
+  #region EndBlock
   END {
-    # Convert the EncryptedPassword to a SecureString using the Data Encryption Certificate as identified by the Thumbprint in the SecretStoreInfo
-    if ($PSCmdlet.ShouldProcess($null, 'Unlock the SecretStore')) {
-      # ToDo: wrap in try/catch if UnProtect fails
-      Write-Debug "password is $(Unprotect-CmsMessage -Content $($SecretStoreInfo['EncryptedPassword']) -To $SecretStoreInfo['Thumbprint'])"
-      $passwordSecureString = ConvertTo-SecureString -String $(Unprotect-CmsMessage -Content $($SecretStoreInfo['EncryptedPassword']) -To $SecretStoreInfo['Thumbprint']) -AsPlainText -Force
-      #####
-      $PasswordSecureString = ConvertTo-SecureString -String '2345' -AsPlainText -Force
-      #####
-      # Unlock the SecretStore identified as 'Name' using the SecureStringPassword
-      if ($PSCmdlet.ShouldProcess($null, 'Unlock-SecretStore')) {
-        try {
-          Unlock-SecretStore -Password $PasswordSecureString # 2>$null # send the Error Output stream to the ol' bitbucket
+    # Todo: Convert the EncryptedPassword to a SecureString using the Data Encryption Certificate as identified by the Thumbprint in the SecretStoreInfo
+    # $passwordSecureString = ConvertTo-SecureString -String $(Unprotect-CmsMessage -Content $($SecretStoreInfo['EncryptedPassword']) -To $SecretStoreInfo['Thumbprint']) -AsPlainText -Force
+    $EncryptionKeyData = $null
+    $passwordSecureStringFromPersistence = $null
+    $success = $null
+    #Invoke-PSFProtectedCommand -Action "'Unlock the SecretStore" -ScriptBlock {
+      $EncryptionKeyData = Get-Content -Encoding $Encoding -Path $SecretStoreInfo['KeyFilePath']
+      $passwordSecureStringFromPersistence = ConvertTo-SecureString -String $(Get-Content -Encoding $Encoding -Path $SecretStoreInfo['EncryptedPasswordFilePath']) -Key $EncryptionKeyData
+      switch ($SecretStoreInfo['VaultModuleName']) {
+        'Microsoft.PowerShell.SecretStore' {
+          # ToDo: Figure out how to catch the output if it fails
+          Unlock-SecretStore -Name $SecretStoreInfo['VaultName'] -Password $passwordSecureStringFromPersistence
         }
-        catch { # if an exception ocurrs
-          # handle the exception
-          $where = $PSItem.InvocationInfo.PositionMessage
-          $ErrorMessage = $_.Exception.Message
-          $FailedItem = $_.Exception.ItemName
-          #Log('Error',"Unlock-SecretStore failed with $FailedItem : $ErrorMessage at `n $where.")
-          Throw "Unlock-SecretStore Threw an exception with $FailedItem : $ErrorMessage at `n $where."
+        'SecretManagement.Keepass' {
+          Unlock-SecretVault -Name $SecretStoreInfo['VaultName'] -Password $passwordSecureStringFromPersistence
         }
       }
-    }
-    Write-Verbose "Ending $($MyInvocation.Mycommand)"
-    # return a results object
-    $results
+      # return the result of Test-SecretVault
+      $success = Test-SecretVault -Name $SecretStoreInfo['VaultName']
+
+    #} -EnableException $true
+
+    Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    $success
   }
-  #endregion FunctionEndBlock
+  #endregion EndBlock
 }
-#endregion FunctionName
-#############################################################################
+#endregion Name
+#####################################
 
 
-# Unlock the user's SecretStore for this session using an encrypted password and a data Encryption Certificate installed to the current machine
-Function Unlock-UsersSecretStore {
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'FromFile')]
-  param (
-    # a Name for the vault
-    [string] $Name
-    , [Parameter(ParameterSetName = 'FromFile')]
-    [ValidateScript({ Test-Path $_ })]
-    [string] $EncryptedMasterPasswordsPath
-    , [Parameter(ParameterSetName = 'FromHashTable')]
-    [ValidateScript({ $_.ContainsKey('EncryptedPassword') })]
-    # add script to validate all needed keys are present in the hashtable
-    [System.Collections.IDictionary] $Dictionary
-  )
-  BEGIN {
-    Write-Debug "Starting $($MyInvocation.Mycommand)"
-    Write-Debug "PsCmdlet.ParameterSetName = $($PsCmdlet.ParameterSetName)"
-    $SecretStoreInfo = $null
-    if ( $PsCmdlet.ParameterSetName -eq 'FromFile') {
-      if (-not (Test-Path -Path $EncryptedMasterPasswordsPath)) {
-        #Log('Error',"Unlock-UsersSecretStore failed, file does not exist. EncryptedMasterPasswordsPath = $EncryptedMasterPasswordsPath")
-        throw "Unlock-UsersSecretStore failed, file does not exist. EncryptedMasterPasswordsPath = $EncryptedMasterPasswordsPath"
-      }
-      # Read the collection of SecretStoreInfo hashtable from the EncryptedMasterPasswordsPath
-      $SecretStoreInfoCollection = (Get-Content -Path $EncryptedMasterPasswordsPath) | ConvertFrom-Json -AsHashtable
-      # Take just the entry corresponding to the MyPersonalSecrets
-      $SecretStoreInfo = $SecretStoreInfoCollection[$Name]
-    }
-    if ( $PsCmdlet.ParameterSetName -eq 'FromHashTable') {
-      $SecretStoreInfo = $Dictionary
-    }
-    Write-Debug "SecretStoreInfo = $(Write-HashIndented $SecretStoreInfo 0 2)"
-  }
-  PROCESS {}
-}

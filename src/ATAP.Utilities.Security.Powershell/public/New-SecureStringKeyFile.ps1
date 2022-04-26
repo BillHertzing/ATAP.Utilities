@@ -1,5 +1,5 @@
 #############################################################################
-#region Add-UsersSecretStoreVault
+#region New-SecureStringKeyFile
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,13 +28,17 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function FunctionNameReplacementPattern {
+Function New-SecureStringKeyFile {
   #region Parameters
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern')]
   param (
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]
-    [ValidateScript({ Test-Path $_ })]
-    [string] $Path
+    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    [ValidateScript({ Test-Path $(Split-Path $_) -PathType 'Container' })]
+    [alias ('Path','KeyFile')]
+    [string] $KeyFilePath
+    ,[parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    [ValidateSet(16,24,32)]
+    $KeySizeInt
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [string] $Encoding
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
@@ -52,11 +56,14 @@ Function FunctionNameReplacementPattern {
   #endregion ProcessBlock
   #region EndBlock
   END {
+    $EncryptionKeyBytes = New-Object Byte[] $KeySizeInt
+    [Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($EncryptionKeyBytes)
+    $EncryptionKeyBytes | Out-File -Encoding $Encoding -FilePath $KeyFilePath
     Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
   #endregion EndBlock
 }
-#endregion FunctionNameReplacementPattern
+#endregion New-SecureStringKeyFile
 #############################################################################
 
 

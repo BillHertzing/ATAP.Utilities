@@ -1,5 +1,5 @@
 #############################################################################
-#region Add-UsersSecretStoreVault
+#region New-SecureStringMasterPasswordFile
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,13 +28,18 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function FunctionNameReplacementPattern {
+Function New-SecureStringMasterPasswordFile {
   #region Parameters
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern')]
   param (
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]
-    [ValidateScript({ Test-Path $_ })]
-    [string] $Path
+    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    [SecureString] $PasswordSecureString
+    ,[parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    [ValidateScript({ Test-Path $(Split-Path $_) -PathType 'Container' })]
+    [string] $PasswordFilePath
+    ,[parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    [ValidateScript({Test-Path $_})]
+    [string] $KeyFilePath
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [string] $Encoding
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
@@ -52,11 +57,13 @@ Function FunctionNameReplacementPattern {
   #endregion ProcessBlock
   #region EndBlock
   END {
-    Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    $EncryptionKeyData = Get-Content -Encoding $Encoding -Path $KeyFilePath
+    $passwordSecureString | ConvertFrom-SecureString -Key $EncryptionKeyData | Out-File -Encoding $Encoding -FilePath $EncryptedPasswordFilePath
+        Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
   #endregion EndBlock
 }
-#endregion FunctionNameReplacementPattern
+#endregion New-SecureStringMasterPasswordFile
 #############################################################################
 
 

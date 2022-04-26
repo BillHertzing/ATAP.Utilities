@@ -282,8 +282,9 @@ filter unlike( $glob ) {
 Function cdMy { $x = [Environment]::GetFolderPath('MyDocuments'); Set-Location -Path $x }
 
 # A function that will return files with names matching the string 'conflicted'
-Function getconflicted { Get-ChildItem -Recurse. | Where-Object -Property fullname -Match 'conflicted' }
-
+Function getconflicted { Get-ChildItem -Recurse . -Include *conflicted*.* }
+Function browseopenssl { start-process "brave.exe" -argumentlist '--new-indow' $(Get-Content 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\Documentation\AttributionsForOpenSSL.md' | ForEach-Object{($_ -split '\]\(')[1] -replace '\)',''}) }
+Function combinebookmarks {Param($path='\dropbox\security\*', $include='book*.*')  $acc = @(); (ls $path -include $include) | %{$acc += ((gc $_) |convertfrom-json -AsHashtable)}; $acc | sort -Property @{Expression={$_.Name}}  -uniq}
 # A function and alias to kill the VoiceAttack process
 function PublishPluginAndStartVAProcess {
 

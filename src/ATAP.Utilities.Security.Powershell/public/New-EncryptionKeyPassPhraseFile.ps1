@@ -33,7 +33,7 @@ Function New-EncryptionKeyPassPhraseFile {
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet')]
   param (
     [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [ValidateScript({ Test-Path $(Split-Path $_) -PathType 'Container'})]
+    [ValidateScript({ Test-Path $(Split-Path $_) -PathType 'Container' })]
     [string] $PassPhrasePath
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [string] $Encoding
@@ -55,7 +55,6 @@ Function New-EncryptionKeyPassPhraseFile {
     )
     $randomwords = @();
   }
-
   #endregion BeginBlock
   #region ProcessBlock
   PROCESS {}

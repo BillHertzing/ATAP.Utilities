@@ -1,5 +1,5 @@
 #############################################################################
-#region Add-UsersSecretStoreVault
+#region New-CertificateRequest
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,17 +28,18 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function FunctionNameReplacementPattern {
+Function New-EncryptedPrivateKey {
   #region Parameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern')]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet')]
   param (
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]
-    [ValidateScript({ Test-Path $_ })]
-    [string] $Path
-    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
-    [string] $Encoding
-    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
-    [switch] $Force
+    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    [ValidateScript({ Test-Path $(Split-Path $_) -PathType 'Container' })]
+    [string] $EncryptedPrivateKeyPath
+    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    [ValidateScript({ Test-Path $(Split-Path $_) -PathType 'Container' })]
+    [string] $EncryptionKeyPassPhrasePath
+    , [ValidateNotNullOrEmpty()]
+    [string] $ECCurve
   )
   #endregion Parameters
   #region BeginBlock
@@ -52,11 +53,13 @@ Function FunctionNameReplacementPattern {
   #endregion ProcessBlock
   #region EndBlock
   END {
+    # openssl must be in the path
+    # ToDo: lots of error handling
+    # ToDo: Parameterize the EC curve
+    openssl genpkey -quiet -algorithm EC -pkeyopt ec_paramgen_curve:$ECCurve -pass file:$EncryptionKeyPassPhrasePath -out $EncryptedPrivateKeyPath >$null
     Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
   #endregion EndBlock
 }
-#endregion FunctionNameReplacementPattern
+#endregion New-CertificateRequest
 #############################################################################
-
-

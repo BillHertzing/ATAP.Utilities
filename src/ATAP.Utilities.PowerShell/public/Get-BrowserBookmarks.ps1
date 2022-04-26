@@ -1,4 +1,4 @@
-#region Get-FilesWithContent
+#region Get-BrowserBookmarks
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -31,33 +31,41 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Get-GoogleChromeBookmarks {
+Function Get-BrowserBookmarks {
   #region FunctionParameters
-  [CmdletBinding(SupportsShouldProcess = $true)]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet')]
   param (
-    # ToDo: Paramter set to suport LiteralPath
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $Path
-    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)][switch] $Validate
+    [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    [ValidateSet('*', 'Chrome', 'Brave')]
+    [string] $Browser
+    ,[parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    [ValidateSet('*', 'synced', 'other', 'bookmarkbar')]
+    [string] $Source
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
+    [switch] $Validate
   )
   #endregion FunctionParameters
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-    $DebugPreference = 'Continue'
-
-    # default values for settings
-    $settings = @{
-      Path     = "$env:localappdata\Google\Chrome\User Data\Default\Bookmarks"
-      Validate = ''
+    #$DebugPreference = 'Continue'
+    Write-PSFMessage -Level Debug -Message 'Starting Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+$Paths = @()
+    switch ($browser) {
+      'Chrome' {
+        $Paths += Join-path $env:localappdata 'Google' 'Chrome','User Data','Default','Bookmarks'
+      }
+      'Brave' {$Paths += Join-path $env:localappdata 'BraveSoftware' 'Brave-Browser','User Data','Default','Bookmarks'}
+      '*' {
+        $Paths += Join-path $env:localappdata 'Google' 'Chrome','User Data','Default','Bookmarks'
+        $Paths += Join-path $env:localappdata 'BraveSoftware' 'Brave-Browser','User Data','Default','Bookmarks'
+      }
     }
 
-    # Things to be initialized after settings are processed
-    if ($Path) { $Settings.Path = $Path }
-    if ($Validate) { $Settings.Validate = $Validate }
+    $Paths | %{if (-not (Test-Path -Path $_ -PathType leaf)) {
+       throw "$_ is not a file" }
+      }
 
-    # In and out directory and file validations
-    if (-not (Test-Path -Path $settings.Path -PathType leaf)) { throw "$settings.Path is not a file" }
 
     # ToDo: move to private
     #A nested function to enumerate bookmark folders
@@ -87,7 +95,7 @@ Function Get-GoogleChromeBookmarks {
             If ($Validate) {
               Write-Verbose "Validating $($child.url)"
               if ($child.url -match '^http') {
-                #only test if url starts with http or https
+                # only test if url starts with http or https
                 Try {
                   $r = Invoke-WebRequest -Uri $child.url -DisableKeepAlive -UseBasicParsing
                   if ($r.statuscode -eq 200) {
@@ -115,37 +123,47 @@ Function Get-GoogleChromeBookmarks {
       } #end PROCESS
     } #end function
   }
-  #endregion FunctionBeginBlock
-
-  #region FunctionProcessBlock
-  ########################################
-  PROCESS {
-    #
-  }
-  #endregion FunctionProcessBlock
-
-  #region FunctionEndBlock
-  ########################################
+  #endregion BeginBlock
+  #region ProcessBlock
+  PROCESS {  }
+  #endregion ProcessBlock
+  #region EndBlock
   END {
 
     $acc = @{}
 
     $time = Measure-Command {
       #convert Google Chrome Bookmark file from JSON
-      $data = Get-Content $file | Out-String | ConvertFrom-Json
+      $Paths | %{$path = $_
+      $data = Get-Content $path | Out-String | ConvertFrom-Json
 
-      #these should be the top level "folders"
-      $acc.bookmarkbar = Get-BookmarkFolder $data.roots.bookmark_bar
-      $acc.other = Get-BookmarkFolder $data.roots.other
-      $acc.synced = Get-BookmarkFolder $data.roots.synced
+      switch ($Source) {
+        'bookmarkbar' {
+          $acc = Get-BookmarkFolder $data.roots.bookmark_bar
+        }
+        'other' {
+          $acc = Get-BookmarkFolder $data.roots.other
+        }
+        'other' {
+          $acc = Get-BookmarkFolder $data.roots.synced
+        }
+        '*' {
+          $acc = Get-BookmarkFolder $data.roots.bookmark_bar
+          $acc += Get-BookmarkFolder $data.roots.other
+          $acc += Get-BookmarkFolder $data.roots.synced
+        }
+      }
+      }
     }
-    $OutObj = [PSCustomObject]@{
+    $OutObj = [PSCustomObject] @{
       Results    = $acc
       Time       = $time
-      gciCommand = $gciCommand
+      Source = $Source
+      Browser = $Browser
     }
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+    Write-PSFMessage -Level Debug -Message 'Ending Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
     return $OutObj
 
   }
 }
+

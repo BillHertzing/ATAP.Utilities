@@ -176,10 +176,14 @@ copy role-appropriate hosts file to new computer
   `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`
 
 - Install the following 3rd-party packages machine-wide. Run the following as an administrator on the new computer
-  `@('Microsoft.PowerShell.SecretManagement', 'Microsoft.PowerShell.SecretStore', 'SecretManagement.Keepass', 'PSFramework') | ForEach-Object { if (-not (Get-Module $_)) {Install-Module $_ -scope 'AllUsers'} else { Write-Output "Module already installed: $_" } }`
+  `@('Microsoft.PowerShell.SecretManagement', 'Microsoft.PowerShell.SecretStore', 'SecretManagement.Keepass', 'PSFramework') | ForEach-Object { if (-not (Get-Module -ListAvailable -Name  $_)) { Install-Module -Name $_ -Scope AllUsers})`
 
-- The 'pki' module will not import automatically, need the following line for installing any certificates via powershell
+- 32-Bit powershel Desktop Modules will not import automatically, run the foillowing lines
+  - for installing any certificates via powershell
   `Import-Module -Name C:\Windows\System32\WindowsPowerShell\v1.0\Modules\PKI\pki.psd1`
+
+  - For NetTCIP functionslike `test-port`
+  `Import-Module -Name "C:\Windows\System32\WindowsPowerShell\v1.0\Modules\NetTCPIP\NetTCPIP.psd1"`
 
 - Install the following ATAP.Utilities packages machine-wide
   Before Package Management

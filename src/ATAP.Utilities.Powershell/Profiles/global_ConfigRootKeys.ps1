@@ -64,16 +64,17 @@ $global:configRootKeys = @{
   'SECURE_CLOUD_BASE_PATHConfigRootKey'                              = 'SECURE_CLOUD_BASE_PATH'
   # Related to Certificate creation and storage
   'CertificateSecurityBasePathConfigRootKey'                         = 'CertificateSecurityBasePath'
+  'CertificateSecurityCrossReferenceDNFileConfigRootKey'             = 'CertificateSecurityCrossReferenceDNFile'
+  'CertificateSecurityDNFilePathReplacementPatternConfigRootKey'     = 'CertificateSecurityDNFilePathReplacementPattern'
   'CertificateSecurityEncryptionKeyPassPhraseFilesPathConfigRootKey' = 'CertificateSecurityEncryptionKeyPassPhraseFilesPath'
   'CertificateSecurityEncryptedKeysPathConfigRootKey'                = 'CertificateSecurityEncryptedKeysPath'
   'CertificateSecurityCertificateRequestConfigsPathConfigRootKey'    = 'CertificateSecurityCertificateRequestConfigsPath'
   'CertificateSecurityCertificateRequestsPathConfigRootKey'          = 'CertificateSecurityCertificateRequestsPath'
   'CertificateSecurityCertificatesPathConfigRootKey'                 = 'CertificateSecurityCertificatesPath'
 
+  'CertificateSecuritySigningCertificatesPathConfigRootKey' = 'CertificateSecuritySigningCertificatesPath'
   'CertificateSecurityCertificateSerialNumberPathConfigRootKey'      = 'CertificateSecurityCertificateSerialNumberPath'
   'CertificateSecurityCertificateIssuedDBPathConfigRootKey'          = 'CertificateSecurityCertificateIssuedDBPath'
-  'CertificateSecurityCrossReferenceDNFileConfigRootKey'             = 'CertificateSecurityCrossReferenceDNFile'
-  'CertificateSecurityDNFilePathReplacementPatternConfigRootKey'     = 'CertificateSecurityDNFilePathReplacementPattern'
 
 
   # SecretsManagement

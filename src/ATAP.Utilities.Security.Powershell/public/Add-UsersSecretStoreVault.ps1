@@ -28,39 +28,35 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Add-UsersSecretStoreVault {
-  #region FunctionParameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = DefaultParameterSetNameReplacementPattern )]
+Function FunctionNameReplacementPattern {
+  #region Parameters
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern')]
   param (
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $Path
+    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]
+    [ValidateScript({ Test-Path $_ })]
+    [string] $Path
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
+    [string] $Encoding
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
+    [switch] $Force
   )
-  #endregion FunctionParameters
-  #region FunctionBeginBlock
-  ########################################
+  #endregion Parameters
+  #region BeginBlock
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-    # $DebugPreference = 'SilentlyContinue'
-    $results = @{}
+    #$DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue
+    Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
-  #endregion FunctionBeginBlock
-
-  #region FunctionProcessBlock
-  ########################################
-  PROCESS {
-    #
-  }
-  #endregion FunctionProcessBlock
-
-  #region FunctionEndBlock
-  ########################################
+  #endregion BeginBlock
+  #region ProcessBlock
+  PROCESS {}
+  #endregion ProcessBlock
+  #region EndBlock
   END {
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
-    # return a results object
-     $results
+    Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
-  #endregion FunctionEndBlock
+  #endregion EndBlock
 }
-#endregion FunctionName
+#endregion FunctionNameReplacementPattern
 #############################################################################
 
 

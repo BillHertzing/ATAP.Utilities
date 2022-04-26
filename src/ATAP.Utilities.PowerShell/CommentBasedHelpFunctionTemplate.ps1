@@ -30,22 +30,21 @@ ToDo: insert SCM keywords markers that are automatically inserted <Configuration
 #>
 Function FunctionNameReplacementPattern {
   #region Parameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet')]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern')]
   param (
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]
+    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
     [ValidateScript({ Test-Path $_ })]
     [string] $Path
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
-    [string] $Encoding
+    [string] $Encoding # Often found in the $PSDefaultParameterValues preference variable
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [switch] $Force
   )
   #endregion Parameters
   #region BeginBlock
   BEGIN {
-    Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
     #$DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue
-
+    Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
   #endregion BeginBlock
   #region ProcessBlock

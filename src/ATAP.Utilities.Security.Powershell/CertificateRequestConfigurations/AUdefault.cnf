@@ -1,0 +1,76 @@
+#
+# OpenSSL configuration file for ATAP.Utilities
+#  This is stored in a location shared by all machines in a workgroup
+#  Usually in a secure cloud-synced location
+#  for example, C:\Dropbox\Security\OpenSSL\openssl.cnf
+#  ATAP Utilities will setup the environment variable OPENSSL_HOME on each machine
+#
+
+# ATAP Utilities defines a global location for all things security related
+#  The absolute path for this location can vary from machine to machine
+# This definition stops the following lines choking if HOME isn't
+# defined.
+HOME			= $ENV::OPENSSL_HOME
+RANDFILE		= $ENV::OPENSSL_HOME/RandomKeySeed
+SECURE_CLOUD_BASE_PATH = $ENV::SECURE_CLOUD_BASE_PATH
+
+
+####################################################################
+[ ca ]
+default_ca	= CA_default		# The default ca section
+
+####################################################################
+[ CA_default ]
+x509_extensions	= usr_cert		# The extentions to add to the cert
+default_days	= 365			# how long to certify for
+default_crl_days= 30			# how long before next CRL
+default_md	= md5			# which md to use.
+preserve	= no			# keep passed DN ordering
+
+# 
+
+####################################################################
+[ req ]
+x509_extensions	= v3_ca	# The extentions to add to the self signed cert used as a CA
+req_extensions = v3_req # The extensions to add to a certificate signing request
+[ usr_cert ]
+
+# These extensions are added when 'ca' signs a request.
+
+# This goes against PKIX guidelines but some CAs do it and some software
+# requires this to avoid interpreting an end user certificate as a CA.
+
+basicConstraints=CA:FALSE
+# PKIX recommendations harmless if included in all certificates.
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid,issuer:always
+[ v3_req ]
+
+# Extensions to add to a certificate signing request when the command is `openssl req ...` WITHOUT the -x509 flag
+
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+
+[ v3_ca ]
+# Extensions to add to a self signed certificate used as a CAt when the command is `openssl req -x509 ...`
+# PKIX recommendation.
+subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid:always,issuer:always
+keyUsage                = critical, cRLSign, keyCertSign
+# This is what PKIX recommends but some broken software chokes on critical
+# extensions.
+#basicConstraints = critical,CA:true
+# So we do this instead.
+basicConstraints = CA:true, pathlen:0
+# Key usage: this is typical for a CA certificate. However since it will
+# prevent it being used as an test self-signed certificate it is best
+# left out by default.
+# Enable this
+keyUsage                = critical, cRLSign, keyCertSign
+
+# ToDo: is this needed for Netscape browser
+# nsCertType = sslCA, emailCA
+# Include email address in subject alt name: another PKIX recommendation
+# subjectAltName=email:copy
+# Copy issuer details
+# issuerAltName=issuer:copy

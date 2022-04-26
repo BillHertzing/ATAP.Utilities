@@ -36,7 +36,9 @@ has extensive information on setting up SSL Configuration files
 
 OpenSSL for Windows:
 
-- `choco install OpenSSL.Light`
+`choco install OpenSSL.Light`
+
+If the choco installation adds the OpenSSL bin location to the path (there will be a message like `PATH environment variable does not have C:\Program Files\OpenSSL\bin in it. Adding...`), then the installation is complete. However, if there is no message then the OpenSSL bin location should be added to the path.
 
 Add `C:\Program Files\OpenSSL\bin` to the existing machine-scope path (so any automation service account can access the programs)
 

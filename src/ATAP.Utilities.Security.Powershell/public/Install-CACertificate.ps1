@@ -34,33 +34,29 @@ Function Install-CACertificate {
   param (
     [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $Path
   )
-  #endregion FunctionParameters
-  #region FunctionBeginBlock
-  ########################################
+    #endregion Parameters
+ #region BeginBlock
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-    # $DebugPreference = 'SilentlyContinue'
-    $results = @{}
+    #$DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue
+    Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    $CertStoreLocation = 'cert:\LocalMachine\Root'
+    CACertificatePath
   }
-  #endregion FunctionBeginBlock
-
-  #region FunctionProcessBlock
-  ########################################
-  PROCESS {
-    #
-  }
-  #endregion FunctionProcessBlock
-
-  #region FunctionEndBlock
-  ########################################
+  #endregion BeginBlock
+  #region ProcessBlock
+  PROCESS {}
+  #endregion ProcessBlock
+  #region EndBlock
   END {
+
+    Import-Certificate -FilePath $CACertificatePath -CertStoreLocation $CertStoreLocation >$null
     Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
     # return a results object
-     $results
+    Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
-  #endregion FunctionEndBlock
+  #endregion EndBlock
 }
-#endregion FunctionName
+#endregion Install-CACertificate
 #############################################################################
 
 

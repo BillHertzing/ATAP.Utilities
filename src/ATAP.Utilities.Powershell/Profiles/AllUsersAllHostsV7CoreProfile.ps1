@@ -130,7 +130,6 @@ Function Write-EnvironmentVariablesIndented {
         else {
           $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] + '  [' + $scope + ']' + [Environment]::NewLine
         }
-
       }
     }
   }
@@ -153,51 +152,9 @@ Function ValidateTools {
 # ToDo: write a script to be run on-demand that will revoke access to a specific SecretManagementExtensionVault
 # ToDo: write a script to be run once for each SecretManagementExtensionVault to create the vault
 # ToDo: put all the SecretManagememnt code into a dedicated ATAP.Utilities module
-# Setup-SecretManagementPerUser
 
 
-
-
-function Install-DataEncryptionCertificate {
-  [CmdletBinding(SupportsShouldProcess = $true)]
-  param (
-    [ValidateScript({ Test-Path $_ })]
-    [string] $DataEncryptionCertificateRequestPath
-    , [string] $DataEncryptionCertificatePath
-    , [switch] $Force
-  )
-  # ToDo: Figure out how to ensure this command can be run on a list of remote computers and a list of users on each
-  # ToDo: parameter validation on each computer and as each user
-  # ToDo: validate Certreq.exe is present and executable
-
-  if (Test-Path $DataEncryptionCertificatePath) {
-    # If a certificate by that name already exists, fail, unless -force is true, then remove the exisitng certificate
-    if ($force) {
-      if ($PSCmdlet.ShouldProcess($null, "Remove-Item -Path $DataEncryptionCertificatePath")) {
-        Remove-Item -Path $DataEncryptionCertificatePath -EA Stop
-      }
-    }
-    else {
-      Throw "The Certificate file already exists, $DataEncryptionCertificatePath, use -Force to overwrite it: $DataEncryptionCertificatePath"
-    }
-  }
-  $DataEncryptionCertificateInstallationResults = $null
-  if ($PSCmdlet.ShouldProcess($null, "Create and install a new Data Encryption Certificate $DataEncryptionCertificatePath from $DataEncryptionCertificateRequestPath (certreq -new $DataEncryptionCertificateRequestPath $DataEncryptionCertificatePath) ")) {
-    try {
-      $DataEncryptionCertificateInstallationResults = CertReq.exe -new $DataEncryptionCertificateRequestPath $DataEncryptionCertificatePath
-    }
-    catch { # if an exception ocurrs
-      # handle the exception
-      $where = $PSItem.InvocationInfo.PositionMessage
-      $ErrorMessage = $_.Exception.Message
-      $FailedItem = $_.Exception.ItemName
-      #Log('Error',"CertReq.exe -new  $DataEncryptionCertificateRequestPath $DataEncryptionCertificatePath failed with $FailedItem : $ErrorMessage at `n $where.")
-      Throw "CertReq.exe -new  $DataEncryptionCertificateRequestPath $DataEncryptionCertificatePath failed with $FailedItem : $ErrorMessage at `n $where."
-    }
-  }
-  $DataEncryptionCertificateInstallationResults
-}
-
+. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Install-DataEncryptionCertificate.ps1'
 
 function Add-SecretStoreVault {
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'BuiltIn')]
@@ -393,7 +350,7 @@ function Add-SecretStoreVault {
 # ((ls cert:/Current*/my/* | ?{$_.EnhancedKeyUsageList.FriendlyName -eq 'Document Encryption'}).extensions | Where-Object {$_.Oid.FriendlyName -match "subject alternative name"}).Format(1)
 
 <#
- Add-SecretStoreVault -Name 'MyPersonalSecrets' `
+ Get-UsersSecretSToreVault -Name 'MyPersonalSecrets' `
   -Description 'Secrets For a specific user on a specific computer' `
   -ExtensionVaultModuleName 'SecretManagement.Keepass' `
   -PathToKeePassDB 'C:\KeePass\Local.ATAP.Utilities.Secrets.kdbx' `

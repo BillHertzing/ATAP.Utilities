@@ -1,345 +1,102 @@
 #function rotateCA {
 #[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet' )]
 #Param(
-#$ValidityPeriod = 1
+# $ValidityPeriod = 1
 #, $ValidityPeriodUnits = 'year'
 #, [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
 #[string] $Encoding
 #
 #)
-. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-DNSubject.ps1'
-function Get-CertificateSecurityDNFilePath {
-  param(
-    [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    $DNSubject
-    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    # BaseFileName mustinclude an extension
-    [ValidateScript({ Split-Path $_ -Extension })]
-    $BaseFileName
-    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Container })]
-    [string] $OutDirectory
-    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType leaf })]
-    [string] $CrossReferenceFilePath
-    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
-    [string] $Encoding
-  )
-  # [Replace invalid filename chars](https://stackoverflow.com/questions/67884618/replace-invalid-filename-chars) accepted answer by
-  $pattern = '[' + ([System.IO.Path]::GetInvalidFileNameChars() -join '').Replace('\', '\\') + ']+'
-  $DNFileName = [regex]::Replace("$($DNSubject.AsFileName)-$BaseFileName", $pattern, '-')
-  # get the crossreferences from persistence
-  # ToDo: Add Force paramter, whatif, etc,
-  $crossreferences = Get-Content -Path $CrossReferenceFilePath -Encoding $encoding | ConvertFrom-Json -AsHashtable
-  # If the DNFilename already exist in the cross reference file, replace it, else add a new crossreference to a new guid
-  # Associate a GUID to the DNFilename, and use the suffix from the BaseFileName
-  $crossreferences[$DNFileName] = $(Join-Path $OutDirectory $(New-Guid)) + $(Split-Path $BaseFileName -Extension)
-  # update the crossreferences in presistence
-  $crossreferences | ConvertTo-Json | Out-File -FilePath $CrossReferenceFilePath -Encoding $Encoding
-  # return the obsfucated DNFilePath
-  $crossreferences[$DNFileName]
-}
+
+# Create a PKI infrastructure for a new organization
+
+# Confirm the installation and accessability of OpenSSL executables and the presence of openSSL environment variables
+
+# Confirm/Create the necessary directory structure at a secure cloud-synced location
+# All must be evaulated when the Powershell process is started
+# SecureCloudRootPath
+# SecureCertificatesPath
+# SecureCertificatesEncryptionPassPhraseFilesPath
+# SecureCertificatesEncryptedKeysPath
+# SecureCertificatesOpenSSLConfigsPath
+# SecureCertificatesCertificateRequestsPath
+# SecureCertificatesCertificatesPath
+# SecureCertificates CA PathPattern
+# SecureCertificates CA Root PathPattern
+# SecureCertificates CA Intermediate PathPattern
+# SecureCertificates CodeSigning PathPattern
+# SecureCertificates DataEncryption PathPattern
+# SecureCertificates SSLServerCertificates PathPattern
+# SecureCertificates SSLClientCertificates PathPattern
+
+
+# Define a DistinguishedNameHash for the Root CA of the organization
+
+# Create a Root CA
+
+# Create an EncryptionPassPhrase file
+
+# Create an EncryptedKey file
+
+# Create a CA Certificate
+
+# Confirm/Create the necessary directory structure for signing certificates with the CA at a secure cloud-synced location
+
+
+# Create SSL Server Certificate(s) for all computers in the organization's workgroup
+
+# Define a DistinguishedNameHash for the SSL Server Certificate Request for each computer
+
+# Create an EncryptionPassPhrase file
+
+# Create an EncryptedKey file
+
+# Create a SSL Server Certificate Request
+
+# Create a signed SSL Server Certificate
+
+# Copy the signed SSL Server Certificate from the signing certificate's directory structure to the organization's directory structure
+
+# Deploy the Root CA to each computer in the workgroup
+
+# Deploy the appropriate SSL Server certificate to each computer in the organization's workgroup
+
+
+. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-DistinguishedNameHash.ps1'
+. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-DistinguishedNameQualifiedFilePath.ps1'
 . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-EncryptionKeyPassPhraseFile.ps1'
 . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-EncryptedPrivateKey.ps1'
 . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-CACertificate.ps1'
 . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-CertificateRequest.ps1'
-Function New-SignedCertificate {
-  #region Parameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet')]
-  param (
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Leaf })]
-    [string] $CertificateRequestPath
-    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Leaf })]
-    [string] $CACertificatePath
-    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Leaf })]
-    [string] $CAEncryptedPrivateKeyPath
-    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ -PathType Leaf })]
-    [string] $CAEncryptionKeyPassPhrasePath
-    # ToDo: figure out better validation for ValidityPeriod and ValidityRange
-    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [ValidateRange(1, 1000)]
-    [int16] $ValidityPeriod
-    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [ValidateSet('days', 'weeks', 'years')]
-    [string] $ValidityPeriodUnits
-    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [ValidateScript({ Test-Path $(Split-Path $_) -PathType Container })]
-    [string] $CertificatePath
-  )
-  #endregion Parameters
-  #region BeginBlock
-  BEGIN {
-    # $DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue
-    Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
-    # Convert vaility period/units into days
-    $internalValidityDays =
-    switch ($ValidityPeriodUnits) {
-      'days' { $ValidityPeriod }
-      'weeks' { $ValidityPeriod * 7 }
-      'years' { $ValidityPeriod * 365 }
-    }
-    # SSL Certificates are capped at 365 days, enforce that here
-    if ($internalValidityDays -gt 365) {
-      Write-PSFMessage -Level Warning -Message "Certificate's validity periods are capped at 365 days, $internalValidityDays days is too long"
-      $internalValidityDays = 365
-    }
-  }
-  #endregion BeginBlock
-  #region ProcessBlock
-  PROCESS {}
-  #endregion ProcessBlock
-  #region EndBlock
-  END {
-    # openssl must be in the path
-    # ToDo: lots of error handling
-    openssl ca -batch -cert $CACertificatePath -keyfile $CAEncryptedPrivateKeyPath -passin file:$CAEncryptionKeyPassPhrasePath -days $internalValidityDays -in $CertificateRequestPath -out $CertificatePath > $null
-    Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
-  }
-  #endregion EndBlock
-}
+. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-SignedCertificate.ps1'
 
-$needNewCACertificate = $true
-if ($needNewCACertificate) {
-  $DNSubject = New-Object PSObject -Property @{
-    CN                                       = 'utat022'
-    EmailAddress                             = 'SecurityAdminsList@ATAPUtilities.org'
-    Country                                  = 'US'
-    StateOrTerritory                         = 'UT'
-    Locality                                 = 'HD'
-    Organization                             = 'ATAPUtilities.org'
-    OrganizationUnit                         = 'Development'
-    SubjectReplacementPattern                = 'CN="{0}",OU="{1}",O="{2}",L="{3}",ST="{4},C="{5}"'
-    SubjectAlternativeNameReplacementPattern = 'E="{0}"'
-    #KeyUseage                                = @('critical', 'cRLSign', 'digitalSignature', 'keyCertSign')
-    #ExtendedKeyUseage                        = 'CA:TRUE'
-    # ExtendedKeyUseage = @('critical','codeSigning')
-  } | Get-DNSubject
+# The fields needed to be supplied for the Distinguished Name and SubjectAlternativeName, for a new RootCA
+$DNHash = New-Object PSObject -Property @{
+  CN               = 'ATAPUtilities.org'
+  EmailAddress     = 'SecurityAdminsList@ATAPUtilities.org'
+  Country          = 'US'
+  StateOrTerritory = ''
+  Locality         = ''
+  Organization     = 'ATAPUtilities.org'
+  OrganizationUnit = ''
+  #DNAsFileNameReplacementPattern                = 'CN="{0}",O="{1}",C="{2}"'
+  #SANAsParameterReplacementPattern = 'E="{0}"'
+  #KeyUseage                                = @('critical', 'cRLSign', 'digitalSignature', 'keyCertSign')
+  #ExtendedKeyUseage                        = 'CA:TRUE'
+  # ExtendedKeyUseage = @('critical','codeSigning')
+} | New-DistinguishedNameHash
 
-  # ToDo: Investigte fast ways to validate the string provided for the ECCurve is supported by openSSL
-  $ECCurve = 'P-256'
-  $ValidityPeriod = 2
-  $ValidityPeriodUnits = 'years'
-  $Encoding = 'UTF8'
-
-  $EncryptionKeyPassPhraseCrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['CertificateSecurityEncryptionKeyPassPhraseFilesPathConfigRootKey']] $global:settings[$global:configRootKeys['CertificateSecurityCrossReferenceDNFileConfigRootKey']]
-  $EncryptionKeyPassPhrasePath = Get-CertificateSecurityDNFilePath -DNSubject $DNSubject -BaseFileName 'RootCertificateAuthorityCertificatePassPhraseFile.txt' -CrossReferenceFilePath $EncryptionKeyPassPhraseCrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityEncryptionKeyPassPhraseFilesPathConfigRootKey']]
-  New-EncryptionKeyPassPhraseFile -PassPhrasePath $EncryptionKeyPassPhrasePath
-  # validate the EncryptedPrivateKeyPath exists and is non-zero
-  if (Test-Path -Path $EncryptionKeyPassPhrasePath -PathType Leaf) {
-    if (-not (Get-ItemPropertyValue -Path $EncryptionKeyPassPhrasePath -Name 'Length')) {
-      throw "New-EncryptionKeyPassPhraseFile created 0-length EncryptionKeyPassPhrase at $EncryptionKeyPassPhrasePath"
-    }
-  }
-  else {
-    throw "New-EncryptionKeyPassPhraseFile failed to create the EncryptionKeyPassPhrase at $EncryptionKeyPassPhrasePath"
-  }
-
-  $EncryptedPrivateKeyCrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['CertificateSecurityEncryptedKeysPathConfigRootKey']] $global:settings[$global:configRootKeys['CertificateSecurityCrossReferenceDNFileConfigRootKey']]
-  $EncryptedPrivateKeyPath = Get-CertificateSecurityDNFilePath -DNSubject $DNSubject -BaseFileName 'CACertificateEncryptedPrivateKey.pem' -CrossReferenceFilePath $EncryptedPrivateKeyCrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityEncryptedKeysPathConfigRootKey']]
-  New-EncryptedPrivateKey -ECCurve $ECCurve -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath
-  # validate the EncryptedPrivateKeyPath exists and is non-zero
-  if (Test-Path -Path $EncryptedPrivateKeyPath -PathType Leaf) {
-    if (-not (Get-ItemPropertyValue -Path $EncryptedPrivateKeyPath -Name 'Length')) {
-      throw "New-EncryptedPrivateKey created 0-length EncryptedPrivateKey at $EncryptedPrivateKeyPath"
-    }
-  }
-  else {
-    throw "New-EncryptedPrivateKey failed to create the EncryptedPrivateKey at $EncryptedPrivateKeyPath"
-  }
-
-  # A CA certificate does not need a Certificate Request
-  # $CertificateRequestConfigPath = {
-  #   $EncryptionKeyPassPhraseCrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['CertificateSecurityEncryptionKeyPassPhraseFilesPathConfigRootKey']] $global:settings[$global:configRootKeys['CertificateSecurityCrossReferenceDNFileConfigRootKey']]
-  #   Join-Path $global:settings[$global:configRootKeys['CertificateSecurityCertificateRequestConfigsPathConfigRootKey']] 'CATemplate.cnf'
-  # }
-  $CrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['CertificateSecurityCertificatesPathConfigRootKey']] $global:settings[$global:configRootKeys['CertificateSecurityCrossReferenceDNFileConfigRootKey']]
-  $CertificatePath = Get-CertificateSecurityDNFilePath -DNSubject $DNSubject -BaseFileName 'CACertificate.crt' -CrossReferenceFilePath $CrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityCertificatesPathConfigRootKey']]
-  # Write-PSFMessage -Level Critical -Message $(Write-HashIndented -initialIndent 0 -indentIncrement 0 -hash $([ordered]@{
-  #       EncryptionKeyPassPhrasePath = $EncryptionKeyPassPhrasePath
-  #       EncryptedPrivateKeyPath     = $EncryptedPrivateKeyPath
-  #       CertificateRequestPath      = $CertificateRequestPath
-  #       CertificatePath             = $CertificatePath
-  #     }))
-  New-CACertificate -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath -ValidityPeriod $ValidityPeriod -ValidityPeriodUnits $ValidityPeriodUnits -CertificatePath $CertificatePath
-  #New-CACertificate -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath -CertificateRequestConfigPath $CertificateRequestConfigPath -ValidityPeriod $ValidityPeriod -ValidityPeriodUnits $ValidityPeriodUnits -CertificatePath $CertificatePath
-  if (Test-Path -Path $CertificatePath -PathType Leaf) {
-    if (-not (Get-ItemPropertyValue -Path $CertificatePath -Name 'Length')) {
-      throw "New-CACertificate created 0-length Certificate at $CertificatePath"
-    }
-  }
-  else {
-    throw "New-CACertificate failed to create the Certificate at $CertificatePath"
-  }
-
-  # Store in Secret Vault
-  $SecretVaultName = 'SecurityAdminSecrets'
-  $SecretVaultDescription = 'Secrets for Security Administrators'
-  $ExtensionVaultModuleName = 'SecretManagement.Keepass'
-  $PathToKeePassDB = 'C:\KeePass\Local.ATAP.Utilities.kdbx'  # This is the identifier for the KeePassParameterSet
-
-  $KeyFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Certificates', 'EncryptedKeys', 'SecretVaultTestingEncryption.key' # Join-Path $env:TEMP 'SecretVaultTestingEncryption.key'
-  $EncryptedPasswordFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'EncryptedPasswordFiles', 'SecretVaultTestingEncryptedPassword.txt' # $env:TEMP 'SecretVaultTestingEncryptedPassword.txt'
-
-  $PasswordTimeout = 300
-
-  $EncryptionKeyData = Get-Content -Encoding $Encoding -Path $KeyFilePath
-  $PasswordSecureString = ConvertTo-SecureString -String $(Get-Content -Encoding $Encoding -Path $EncryptedPasswordFilePath) -Key $EncryptionKeyData
-
-  Write-PSFMessage -Level Important -Message $(Write-HashIndented -initialIndent 0 -indentIncrement 0 -hash $([ordered]@{
-        KeyFilePath               = $KeyFilePath
-        EncryptedPasswordFilePath = $EncryptedPasswordFilePath
-        EncryptionKeyData         = $EncryptionKeyData
-        PasswordSecureString      = $PasswordSecureString
-      }))
-
-  $VP = @{Description = $SecretVaultDescription; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }
-  switch ($ExtensionVaultModuleName) {
-    'Microsoft.PowerShell.SecretStore' {
-      # $VP = @{Description = $SecretVaultDescription; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }
-      #Register-SecretVault -Name $SecretVaultName -ModuleName $ExtensionVaultModuleName -VaultParameters $VP
-    }
-    'SecretManagement.Keepass' {
-      # Note that the MasterVaultPassword is supplied when registering a 'Microsoft.PowerShell.SecretStore' vault
-      $VP += @{Path = $PathToKeePassDB; KeyPath = $KeyFilePath }
-      #Register-SecretVault -Name $SecretVaultName -ModuleName $ExtensionVaultModuleName -VaultParameters $VP
-    }
-  }
-  # Clear any previously registered secret vault
-  Get-SecretVault | Unregister-SecretVault
-  # register the requested SecretVault
-  Register-SecretVault -Name $SecretVaultName -ModuleName $ExtensionVaultModuleName -VaultParameters $VP
-
-  # ToDo: figure out how to capture the warnings issued when Unlock-SecretVault fails
-  switch ($ExtensionVaultModuleName) {
-    'Microsoft.PowerShell.SecretStore' {
-      Unlock-SecretStore -Name $SecretVaultName -Password $PasswordSecureString
-    }
-    'SecretManagement.Keepass' {
-      Unlock-SecretVault -Name $SecretVaultName -Password $PasswordSecureString
-    }
-  }
-  # ToDo: figure out how to capture the warnings issued when Test-SecretVault fails
-  $success = Test-SecretVault -Name $SecretVaultName
-  if (! $Success) {
-    Write-PSFMessage -Level Error -Message "Could not unlock SecretVault $SecretvaultName" -Tag 'Security'
-    throw "Could not unlock SecretVault $SecretvaultName"
-  }
-
-  # Some vaults allow a secret to be changed, but others require a secret be deleted and then added
-
-  # ToDo: handle errors if a secret cannot be found
-  $SecretName = 'CAEncryptionKeyPassPhrasePath'
-  Write-PSFMessage -Level Important -Message " EncryptionKeyPassPhrasePath = $EncryptionKeyPassPhrasePath"
-  Remove-Secret -Name $SecretName -Vault $SecretVaultName
-  Set-Secret -Name $SecretName -Vault $SecretVaultName -Secret $EncryptionKeyPassPhrasePath # -Metadata @{description = "Current Root CA Key PassPhrase Path"}
-  $SecretName = 'CAEncryptedPrivateKeyPath'
-  Remove-Secret -Name $SecretName -Vault $SecretVaultName
-  Set-Secret -Name $SecretName -Vault $SecretVaultName -Secret $EncryptedPrivateKeyPath # -Metadata @{description = "Current Root CA Encrypted Private Key Path"}
-  $SecretName = 'CACertificatePath'
-  Remove-Secret -Name $SecretName -Vault $SecretVaultName
-  Set-Secret -Name $SecretName -Vault $SecretVaultName -Secret $CertificatePath # -Metadata @{description = "Current Root CA Certificate Path"}
-}
-
-# Retrieve the signing Certificate Authority Certificate from a Secret Vault
-
-$SecretVaultName = 'SecurityAdminSecrets'
-$SecretVaultDescription = 'Secrets for Security Administrators'
-$ExtensionVaultModuleName = 'SecretManagement.Keepass'
-$PathToKeePassDB = 'C:\KeePass\Local.ATAP.Utilities.kdbx'  # This is the identifier for the KeePassParameterSet
-
-$KeyFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Certificates', 'EncryptedKeys', 'SecretVaultTestingEncryption.key' # Join-Path $env:TEMP 'SecretVaultTestingEncryption.key'
-$EncryptedPasswordFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'EncryptedPasswordFiles', 'SecretVaultTestingEncryptedPassword.txt' # $env:TEMP 'SecretVaultTestingEncryptedPassword.txt'
-
-$PasswordTimeout = 300
-
-$EncryptionKeyData = Get-Content -Encoding $Encoding -Path $KeyFilePath
-$PasswordSecureString = ConvertTo-SecureString -String $(Get-Content -Encoding $Encoding -Path $EncryptedPasswordFilePath) -Key $EncryptionKeyData
-
-$VP = @{Description = $SecretVaultDescription; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }
-switch ($ExtensionVaultModuleName) {
-  'Microsoft.PowerShell.SecretStore' {
-    # $VP = @{Description = $SecretVaultDescription; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }
-    #Register-SecretVault -Name $SecretVaultName -ModuleName $ExtensionVaultModuleName -VaultParameters $VP
-  }
-  'SecretManagement.Keepass' {
-    # Note that the MasterVaultPassword is supplied when registering a 'Microsoft.PowerShell.SecretStore' vault
-    $VP += @{Path = $PathToKeePassDB; KeyPath = $KeyFilePath }
-    #Register-SecretVault -Name $SecretVaultName -ModuleName $ExtensionVaultModuleName -VaultParameters $VP
-  }
-}
-# Clear any previously registered secret vault
-Get-SecretVault | Unregister-SecretVault
-# register the requested SecretVault
-Register-SecretVault -Name $SecretVaultName -ModuleName $ExtensionVaultModuleName -VaultParameters $VP
-
-# ToDo: figure out how to capture the warnings issued when Unlock-SecretVault fails
-switch ($ExtensionVaultModuleName) {
-  'Microsoft.PowerShell.SecretStore' {
-    Unlock-SecretStore -Name $SecretVaultName -Password $PasswordSecureString
-  }
-  'SecretManagement.Keepass' {
-    Unlock-SecretVault -Name $SecretVaultName -Password $PasswordSecureString
-  }
-}
-# ToDo: figure out how to capture the warnings issued when Test-SecretVault fails
-$success = Test-SecretVault -Name $SecretVaultName
-if (! $Success) {
-  Write-PSFMessage -Level Error -Message "Could not unlock SecretVault $SecretvaultName" -Tag 'Security'
-  throw "Could not unlock SecretVault $SecretvaultName"
-}
-
-# Get the current root CA certificate files
-$SecretName = 'CAEncryptionKeyPassPhrasePath'
-$CAEncryptionKeyPassPhrasePath = ConvertFrom-SecureString -SecureString (Get-Secret -Name $SecretName -Vault $name) -AsPlainText
-$SecretName = 'CAEncryptedPrivateKeyPath'
-$CAEncryptedPrivateKeyPath = ConvertFrom-SecureString -SecureString (Get-Secret -Name $SecretName -Vault $name) -AsPlainText
-$SecretName = 'CACertificatePath'
-$CACertificatePath = ConvertFrom-SecureString -SecureString (Get-Secret -Name $SecretName -Vault $name) -AsPlainText
-
-Write-PSFMessage -Level Critical -Message $(Write-HashIndented -initialIndent 0 -indentIncrement 0 -hash $([ordered]@{
-      CAEncryptionKeyPassPhrasePath = $CAEncryptionKeyPassPhrasePath
-      CACertificatePath             = $CACertificatePath
-      CAEncryptedPrivateKeyPath     = $CAEncryptedPrivateKeyPath
-    }))
-
-
-# The following will print out information about the CACertificate
-openssl x509 -text -in $CACertificatePath -noout
-
-# Install the new CA to the Certificate Store in the LocalMachine's Trusted Root subdirectory
-$RootCertificateAuthorityCertificateCertStoreLocation = 'cert:\LocalMachine\Root'
-# ToDo: error handling
-Import-Certificate -FilePath $CACertificatePath -CertStoreLocation $RootCertificateAuthorityCertificateCertStoreLocation >$null
-
-
-### The SSL Certificate for utat022
-$DNSubject = New-Object PSObject -Property @{
-  CN                                       = 'utat022'
-  EmailAddress                             = 'SecurityAdminsList@ATAPUtilities.org'
-  Country                                  = 'US'
-  StateOrTerritory                         = 'UT'
-  Locality                                 = 'HD'
-  Organization                             = 'ATAPUtilities.org'
-  OrganizationUnit                         = 'Development'
-  SubjectReplacementPattern                = 'CN="{0}",OU="{1}",O="{2}",L="{3}",ST="{4},C="{5}"'
-  SubjectAlternativeNameReplacementPattern = 'E="{0}"'
-  ExtendedKeyUseage                        = 'serverAuth, clientAuth'
-} | Get-DNSubject
-
-
+# The parameters needed to be supplied for the EncryptionKeyPassPhrasePath and EncryptedPrivateKeyPath
+# ToDo: Investigte fast ways to validate the string provided for the ECCurve is supported by openSSL
 $ECCurve = 'P-256'
-$ValidityPeriod = 2
-$ValidityPeriodUnits = 'years'
 $Encoding = 'UTF8'
 
-$EncryptionKeyPassPhraseCrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['CertificateSecurityEncryptionKeyPassPhraseFilesPathConfigRootKey']] $global:settings[$global:configRootKeys['CertificateSecurityCrossReferenceDNFileConfigRootKey']]
-$EncryptionKeyPassPhrasePath = Get-CertificateSecurityDNFilePath -DNSubject $DNSubject -BaseFileName 'RootCertificateAuthorityCertificatePassPhraseFile.txt' -CrossReferenceFilePath $EncryptionKeyPassPhraseCrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityEncryptionKeyPassPhraseFilesPathConfigRootKey']]
+# Construct the needed path (Obfuscate if desired)
+# $EncryptionKeyPassPhraseCrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']] $global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]
+# $EncryptionKeyPassPhrasePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCAPassPhraseFileBaseFileNameConfigRootKey']] -CrossReferenceFilePath $EncryptionKeyPassPhraseCrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]
+$EncryptionKeyPassPhrasePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCAPassPhraseFileBaseFileNameConfigRootKey']] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]
 New-EncryptionKeyPassPhraseFile -PassPhrasePath $EncryptionKeyPassPhrasePath
-# validate the EncryptedPrivateKeyPath exists and is non-zero
+# validate the EncryptionKeyPassPhrasePath exists and is non-zero
 if (Test-Path -Path $EncryptionKeyPassPhrasePath -PathType Leaf) {
   if (-not (Get-ItemPropertyValue -Path $EncryptionKeyPassPhrasePath -Name 'Length')) {
     throw "New-EncryptionKeyPassPhraseFile created 0-length EncryptionKeyPassPhrase at $EncryptionKeyPassPhrasePath"
@@ -349,8 +106,10 @@ else {
   throw "New-EncryptionKeyPassPhraseFile failed to create the EncryptionKeyPassPhrase at $EncryptionKeyPassPhrasePath"
 }
 
-$EncryptedPrivateKeyCrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['CertificateSecurityEncryptedKeysPathConfigRootKey']] $global:settings[$global:configRootKeys['CertificateSecurityCrossReferenceDNFileConfigRootKey']]
-$EncryptedPrivateKeyPath = Get-CertificateSecurityDNFilePath -DNSubject $DNSubject -BaseFileName 'CACertificateEncryptedPrivateKey.pem' -CrossReferenceFilePath $EncryptedPrivateKeyCrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityEncryptedKeysPathConfigRootKey']]
+# Construct the needed path (Obfuscate if desired)
+# $EncryptedPrivateKeyCrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesEncryptedKeysPathConfigRootKey']] $global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]
+# EncryptedPrivateKeyPath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCAEncryptedPrivateKeyBaseFileNameConfigRootKey']] -CrossReferenceFilePath $EncryptedPrivateKeyCrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptedKeysPathConfigRootKey']]
+$EncryptedPrivateKeyPath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCAEncryptedPrivateKeyBaseFileNameConfigRootKey']] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptedKeysPathConfigRootKey']]
 New-EncryptedPrivateKey -ECCurve $ECCurve -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath
 # validate the EncryptedPrivateKeyPath exists and is non-zero
 if (Test-Path -Path $EncryptedPrivateKeyPath -PathType Leaf) {
@@ -362,52 +121,334 @@ else {
   throw "New-EncryptedPrivateKey failed to create the EncryptedPrivateKey at $EncryptedPrivateKeyPath"
 }
 
-# The configuration file for a SSL Client and Server Certificate
-$CertificateRequestConfigPath = Join-Path $global:settings[$global:configRootKeys['CertificateSecurityCertificateRequestConfigsPathConfigRootKey']] 'SSLCertificateTemplate.cnf'
-$CrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['CertificateSecurityCertificateRequestsPathConfigRootKey']] $global:settings[$global:configRootKeys['CertificateSecurityCrossReferenceDNFileConfigRootKey']]
-$CertificateRequestPath = Get-CertificateSecurityDNFilePath -DNSubject $DNSubject -BaseFileName 'CACertificateRequest.csr' -CrossReferenceFilePath $CrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityCertificateRequestsPathConfigRootKey']]
-New-CertificateRequest -DNSubject $DNSubject -CertificateRequestConfigPath $CertificateRequestConfigPath -CertificateRequestPath $CertificateRequestPath
-if (Test-Path -Path $CertificateRequestPath -PathType Leaf) {
-  if (-not (Get-ItemPropertyValue -Path $CertificateRequestPath -Name 'Length')) {
-    throw "New-CertificateRequest created 0-length CertificateRequest at $CertificateRequestPath"
+# A CA certificate does not need a Certificate Request
+# $CertificateRequestConfigPath = {
+#   $CertificateRequestCrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesCertificateRequestFilesPathConfigRootKey']] $global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]
+#   Join-Path $global:settings[$global:configRootKeys['SecureCertificatesOpenSSLConfigsPathConfigRootKey']] 'CATemplate.cnf'
+# }
+
+# The parameters needed to be supplied for the EncryptionKeyPassPhrasePath and EncryptedPrivateKeyPath
+$ValidityPeriod = 2
+$ValidityPeriodUnits = 'years'
+
+# Construct the needed path (Obfuscate if desired)
+# $CrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']] $global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]
+# $CertificatePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCACertificateBaseFileNameConfigRootKey']] -CrossReferenceFilePath $CrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']]
+$CertificatePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCACertificateBaseFileNameConfigRootKey']] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']]
+# Write-PSFMessage -Level Debug -Message $(Write-HashIndented -initialIndent 0 -indentIncrement 0 -hash $([ordered]@{
+#       EncryptionKeyPassPhrasePath = $EncryptionKeyPassPhrasePath
+#       EncryptedPrivateKeyPath     = $EncryptedPrivateKeyPath
+#       CertificatePath             = $CertificatePath
+#     }))
+New-CACertificate -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath -ValidityPeriod $ValidityPeriod -ValidityPeriodUnits $ValidityPeriodUnits -CertificatePath $CertificatePath
+# ToDO: another ParameterSet for an optional configuration file
+#New-CACertificate -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath -CertificateRequestConfigPath $CertificateRequestConfigPath -ValidityPeriod $ValidityPeriod -ValidityPeriodUnits $ValidityPeriodUnits -CertificatePath $CertificatePath
+if (Test-Path -Path $CertificatePath -PathType Leaf) {
+  if (-not (Get-ItemPropertyValue -Path $CertificatePath -Name 'Length')) {
+    throw "New-CACertificate created 0-length Certificate at $CertificatePath"
   }
 }
 else {
-  throw "New-CertificateRequest failed to create the CertificateRequest at $CertificateRequestPath"
+  throw "New-CACertificate failed to create the Certificate at $CertificatePath"
 }
 
+# Create the directory structure needed for the CA to sign certificates
+# This will only fail once and create the named directory
+New-Item -Path $global:settings[$global:configRootKeys['SecureCertificatesSigningCertificatesPathConfigRootKey']] -ItemType Directory -Force > $null
+# use the CN property value as the subdirectory name
+$rootpath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesSigningCertificatesPathConfigRootKey']] $($DNHash.CN + '_RootCA')
+New-Item -Path $rootpath -ItemType Directory -Force > $null
+#New-Item -Path $(Join-Path $rootpath $global:settings[$global:configRootKeys['SecureCertificatesSigningCertificatesPrivateKeysRelativePathConfigRootKey']]) -ItemType Directory -Force > $null
+#New-Item -Path $(Join-Path $rootpath $global:settings[$global:configRootKeys['SecureCertificatesSigningCertificatesNewCertificatesRelativePathConfigRootKey']]) -ItemType Directory -Force > $null
+#'01' | Set-Content -Path $(Join-Path $rootpath $global:settings[$global:configRootKeys['SecureCertificatesSigningCertificatesSerialNumberRelativePathConfigRootKey']]) -Encoding $Encoding
 
-# print out the certificate request details
-#openssl req -text -in $CertificateRequestPath -noout
+New-Item -Path $(Join-Path $rootpath $global:settings[$global:configRootKeys['SecureCertificatesSigningCertificatesCertificatesIssuedDBRelativePathConfigRootKey']]) -ItemType File -EA SilentlyContinue > $null
+
+# save the root of the CA Certificate Signing path
+$CARootPath = $rootpath
+# Save the three files needed for CA signing in the next section
+$CADNHash = $DNHash
+$CAEncryptionKeyPassPhrasePath = $EncryptionKeyPassPhrasePath
+$CAEncryptedPrivateKeyPath = $EncryptedPrivateKeyPath
+$CACertificatePath = $CertificatePath
+
+# Create SSL Server Certificate(s) for all computers in the organization's workgroup
+# ToDo: use the machine and node settings
+$ComputerMames = @('ncat016', 'ncat040', 'nact-ltb1', 'ncat-ltjo', 'utat01', 'utat022')
+$ComputerMames | ForEach-Object { $CN = $_
+
+  # Define a DistinguishedNameHash for the SSL Server Certificate Request for each computer
+  $DNHash = New-Object PSObject -Property @{
+    CN               = $CN
+    EmailAddress     = 'SecurityAdminsList@ATAPUtilities.org'
+    Country          = 'US'
+    StateOrTerritory = ''
+    Locality         = ''
+    Organization     = 'ATAPUtilities.org'
+    OrganizationUnit = 'Development'
+    #DNAsFileNameReplacementPattern                = 'CN="{0}",OU="{1}",O="{2}",C="{3}"'
+    #SANAsParameterReplacementPattern = 'E="{0}"'
+    #ExtendedKeyUseage                        = 'serverAuth'
+  } | New-DistinguishedNameHash
+
+  # Create an EncryptionPassPhrase file
+  $Encoding = 'UTF8'
+
+  # $EncryptionKeyPassPhraseCrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesSSLServerPassPhraseFileBaseFileNameConfigRootKey']] $global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]
+  # $EncryptionKeyPassPhrasePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerPassPhraseFileBaseFileNameConfigRootKey']] -CrossReferenceFilePath $EncryptionKeyPassPhraseCrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]
+  $EncryptionKeyPassPhrasePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerPassPhraseFileBaseFileNameConfigRootKey']] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]
+  New-EncryptionKeyPassPhraseFile -PassPhrasePath $EncryptionKeyPassPhrasePath
+  # validate the EncryptedPrivateKeyPath exists and is non-zero
+  if (Test-Path -Path $EncryptionKeyPassPhrasePath -PathType Leaf) {
+    if (-not (Get-ItemPropertyValue -Path $EncryptionKeyPassPhrasePath -Name 'Length')) {
+      throw "New-EncryptionKeyPassPhraseFile created 0-length EncryptionKeyPassPhrase at $EncryptionKeyPassPhrasePath"
+    }
+  }
+  else {
+    throw "New-EncryptionKeyPassPhraseFile failed to create the EncryptionKeyPassPhrase at $EncryptionKeyPassPhrasePath"
+  }
+
+  # Create an EncryptedKey file
+  $ECCurve = 'P-256'
+
+  # $EncryptedPrivateKeyCrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesEncryptedKeysPathConfigRootKey']] $global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]
+  # $EncryptedPrivateKeyPath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerEncryptedPrivateKeyBaseFileNameConfigRootKey']] -CrossReferenceFilePath $EncryptedPrivateKeyCrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptedKeysPathConfigRootKey']]
+  $EncryptedPrivateKeyPath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerEncryptedPrivateKeyBaseFileNameConfigRootKey']] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptedKeysPathConfigRootKey']]
+  New-EncryptedPrivateKey -ECCurve $ECCurve -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath
+  # validate the EncryptedPrivateKeyPath exists and is non-zero
+  if (Test-Path -Path $EncryptedPrivateKeyPath -PathType Leaf) {
+    if (-not (Get-ItemPropertyValue -Path $EncryptedPrivateKeyPath -Name 'Length')) {
+      throw "New-EncryptedPrivateKey created 0-length EncryptedPrivateKey at $EncryptedPrivateKeyPath"
+    }
+  }
+  else {
+    throw "New-EncryptedPrivateKey failed to create the EncryptedPrivateKey at $EncryptedPrivateKeyPath"
+  }
 
 
-# Sign the SSL Certificate Request with the CA Certificate
-$CrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['CertificateSecurityCertificatesPathConfigRootKey']] $global:settings[$global:configRootKeys['CertificateSecurityCrossReferenceDNFileConfigRootKey']]
-$CertificatePath = Get-CertificateSecurityDNFilePath -DNSubject $DNSubject -BaseFileName 'WinRMHTTPSCertificate.crt' -CrossReferenceFilePath $CrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityCertificatesPathConfigRootKey']]
-Write-PSFMessage -Level Critical -Message $(Write-HashIndented -initialIndent 0 -indentIncrement 0 -hash $([ordered]@{
-      EncryptionKeyPassPhrasePath = $EncryptionKeyPassPhrasePath
-      EncryptedPrivateKeyPath     = $EncryptedPrivateKeyPath
-      CertificateRequestPath      = $CertificateRequestPath
-      CertificatePath             = $CertificatePath
-      CACertificatePath           = $CACertificatePath
-      CAEncryptedPrivateKeyPath   = $CAEncryptedPrivateKeyPath
-    }))
+  # Create a SSL Server Certificate Request
+  # Define the SubjectAlternateName (SAN) needed, put it into a temporary extensions file
+  ("DNS.1=$CN")
+  # ToDo : add ParameterSet for custom openSSL configuration file, with and without obsfucation
+  # $CertificateRequestConfigPath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesOpenSSLConfigsPathConfigRootKey']] 'SSLCertificateTemplate.cnf'
+  # New-CertificateRequest -DistinguishedNameHash $DNHash -CertificateRequestConfigPath $CertificateRequestConfigPath -CertificateRequestPath $CertificateRequestPath
+  # ToDo: obsfucation
+  # $CrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesCertificateRequestsPathConfigRootKey']] $global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]
+  # $CertificateRequestPath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerCertificateRequestBaseFileNameConfigRootKey']] -CrossReferenceFilePath $CrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesCertificateRequestsPathConfigRootKey']]
+  $CertificateRequestPath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerCertificateRequestBaseFileNameConfigRootKey']] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesCertificateRequestsPathConfigRootKey']]
+  # ToDo: Add SAN
+  New-CertificateRequest -DistinguishedNameHash $DNHash -CertificateRequestPath $CertificateRequestPath
+  # Validation
+  if (Test-Path -Path $CertificateRequestPath -PathType Leaf) {
+    if (-not (Get-ItemPropertyValue -Path $CertificateRequestPath -Name 'Length')) {
+      throw "New-CertificateRequest created 0-length CertificateRequest at $CertificateRequestPath"
+    }
+  }
+  else {
+    throw "New-CertificateRequest failed to create the CertificateRequest at $CertificateRequestPath"
+  }
+  # print out the certificate request details
+  # openssl req -text -in $CertificateRequestPath -noout
 
-New-SignedCertificate -CertificateRequestPath $CertificateRequestPath -CACertificatePath $CACertificatePath -CAEncryptedPrivateKeyPath $CAEncryptedPrivateKeyPath -CAEncryptionKeyPassPhrasePath $CAEncryptionKeyPassPhrasePath -ValidityPeriod 1 -ValidityPeriodUnits 'years' -CertificatePath $CertificatePath
+  # Create a signed SSL Server Certificate
+  $ValidityPeriod = 368
+  $ValidityPeriodUnits = 'days'
+  # $CrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']] $global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]
+  # $CertificatePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerCertificateBaseFileNameConfigRootKey']] -CrossReferenceFilePath $CrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']]
+  $CertificatePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerCertificateBaseFileNameConfigRootKey']] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']]
 
-# print out the certificate details
-openssl req -x509 -text -in $CertificatePath -noout
+  # Write-PSFMessage -Level Important -Message $(Write-HashIndented -initialIndent 0 -indentIncrement 0 -hash $([ordered]@{
+  #       EncryptionKeyPassPhrasePath = $EncryptionKeyPassPhrasePath
+  #       EncryptedPrivateKeyPath     = $EncryptedPrivateKeyPath
+  #       CertificateRequestPath      = $CertificateRequestPath
+  #       CertificatePath             = $CertificatePath
+  #       CAEncryptionKeyPassPhrasePath = $CAEncryptionKeyPassPhrasePath
+  #       CAEncryptedPrivateKeyPath   = $CAEncryptedPrivateKeyPath
+  #       CACertificatePath           = $CACertificatePath
+  #     }))
 
-# Get the signed certificate from the location where the openssl CA command places it
-# Install the new SSL Server certificate to the Certificate Store in the LocalMachine's Personal
-#$CertStoreLocation = 'cert:\LocalMachine\My'
+  #$env:OPENSSL_SIGNINGCERTIFICATES_DIR = $CARootPath
+  #$CASigningCertificatesSerialNumberPath = Join-Path $CARootPath $global:settings[$global:configRootKeys['SecureCertificatesSigningCertificatesSerialNumberRelativePathConfigRootKey']]
+  $CASigningCertificatesCertificatesIssuedDBPath = Join-Path $CARootPath $global:settings[$global:configRootKeys['SecureCertificatesSigningCertificatesCertificatesIssuedDBRelativePathConfigRootKey']]
+  #$CASigningCertificatesNewCertificatesPath = Join-Path $CARootPath $global:settings[$global:configRootKeys['SecureCertificatesSigningCertificatesNewCertificatesRelativePathConfigRootKey']]
+
+  New-SignedCertificate -CertificateRequestPath $CertificateRequestPath `
+    -CACertificatePath $CACertificatePath -CAEncryptedPrivateKeyPath $CAEncryptedPrivateKeyPath -CAEncryptionKeyPassPhrasePath $CAEncryptionKeyPassPhrasePath `
+    -CASigningCertificatesCertificatesIssuedDBPath $CASigningCertificatesCertificatesIssuedDBPath `
+    -ValidityPeriod $ValidityPeriod -ValidityPeriodUnits $ValidityPeriodUnits -CertificatePath $CertificatePath `
+    # -CASigningCertificatesNewCertificatesPath $CASigningCertificatesNewCertificatesPath `
+    #-CASigningCertificatesSerialNumberPath $CASigningCertificatesSerialNumberPath `
+
+  # ToDo: I cannot get -out to work, so must rename the serialnumber.pem file to the CertificatePath
+  # Read the IssuedDb and get all certificates that match the common name, then the 3rd field from each line, and make a Path to that file
+  $CertificateDir = Split-Path -Path $CertificatePath -Parent
+  $matchingCerts = ((gc $CASigningCertificatesCertificatesIssuedDBPath) -match "/CN=$($DNHash.CN)/") | % { ($_ -split '\s+')[2] } | % { Join-Path $CertificateDir $($_ + '.pem') }
+  # Only one of them should exist
+  $certToRename = $matchingCerts | % { if (Test-Path $_) { $_ } }
+  # rename that one to the expected CertifictePath
+  Move-Item $certToRename $CertificatePath -Force
+
+  # Validation
+  if (Test-Path -Path $CertificatePath -PathType Leaf) {
+    if (-not (Get-ItemPropertyValue -Path $CertificatePath -Name 'Length')) {
+      throw "New-SignedCertificate created 0-length Certificate at $CertificatePath"
+    }
+  }
+  else {
+    throw "New-SignedCertificate failed to create the Certificate at $CertificatePath"
+  }
+  # print out the certificate details
+  # openssl req -x509 -text -in $CertificatePath -noout
+
+  # [Enable HTTPS on IIS](https://techexpert.tips/iis/enable-https-iis/)
+  # To import a SSLServer certificate into IIS, the file to be imported must combine the certificate and the private key
+  $CertificatePFXPath = $CertificatePath -replace 'pem$','pfx'
+  openssl pkcs12 -export -inkey $EncryptedPrivateKeyPath -in $CertificatePath -out $CertificatePFXPath
+}
+
+# [How can I set up Jenkins CI to use https on Windows?](https://stackoverflow.com/questions/5313703/how-can-i-set-up-jenkins-ci-to-use-https-on-windows)
+
+####### This portion installs a CA as a Root CA on a list of computers
+# $CACertificate = $CACertificatePath | ?{$_.Filename -match "CN_$($CADNHash.CN)__" }
+
+##
+Function Register-RootCA {}
+# ToDo: Add -ComputerName and -RunAs arguments, and do this in a loop
+# Install the new CA to the Certificate Store in the LocalMachine's Trusted Root subdirectory
+$RootCACertStoreLocation = 'cert:\LocalMachine\Root'
 # ToDo: error handling
-#Import-Certificate -FilePath $CACertificatePath -CertStoreLocation $CertStoreLocation >$null
+# Import-Certificate requires the 32-bit PKI module to be imported into the session
+Import-Module -Name 'C:\Windows\System32\WindowsPowerShell\v1.0\Modules\PKI\pki.psd1'
+Import-Certificate -FilePath $CACertificatePath -CertStoreLocation $RootCACertStoreLocation >$null
+# endregion Register-RootCA
 
+# Install the SSLServer certificate appropriate to this machine
+# Install it to the machinese personal certificate store
+$SSLServerCertStoreLocation = 'cert:\LocalMachine\My'
+# Since most security certificates depend on the DNS-resolved HostName, and because the following method is cross-platform...
+# [How to Get a Computer Name with PowerShell](https://adamtheautomator.com/powershell-get-computer-name/)
+$hostName = ([System.Net.DNS]::GetHostByName($Null)).Hostname
 
-#}
+$SSLServerCertificatePath = Get-ChildItem $global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']] |
+Where-Object { $_.name -match "CN_$($hostName)__" }
 
-$ValidityPeriod = 1
-$ValidityPeriodUnits = 'years'
+Import-Certificate -FilePath $SSLServerCertificatePath -CertStoreLocation $SSLServerCertStoreLocation -Verbose # >$null
 
-#. rotateCa -ValidityPeriod $ValidityPeriod -ValidityPeriodUnits $ValidityPeriodUnits
+# Add the Certificate to the jenkins keystore if this computer has the JenkinsControllerNode role
+
+# Add the pfx Certificate to IIS if this computer has IIS installed
+
+# Store the Server SSL Certificate information in a Secret Vault# Store the Server SSL Certificate information in a Secret Vault
+# # The Secret Vault MUST BE CREATED by an administrator before this step can execute. This means the encryption key file and the encrypted password file must already exist
+#
+# $SecretVaultName = 'SecurityAdminSecretsSSLServerCertificates'
+# $SecretVaultDescription = 'Location of the SSL Server identification Certificate files for Security Administrators'
+# $ExtensionVaultModuleName = 'SecretManagement.Keepass'
+# $KeyFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Certificates', 'EncryptedKeys', 'SecurityAdminSecretsSSLServerCertificatesEncryption.key'
+# $EncryptedPasswordFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'EncryptedPasswordFiles', 'SecurityAdminSecretsSSLServerCertificatesEncryptedPassword.txt'
+# $PasswordTimeout = 300
+# $PathToKeePassDB = 'C:\KeePass\Local.ATAP.Utilities.kdbx'  # This is the identifier for the KeePassParameterSet
+#
+# Write-PSFMessage -Level Important -Message $(Write-HashIndented -initialIndent 0 -indentIncrement 0 -hash $([ordered]@{
+#       SecretVaultName           = $SecretVaultName
+#       SecretVaultDescription    = $SecretVaultDescription
+#       ExtensionVaultModuleName  = $ExtensionVaultModuleName
+#       KeyFilePath               = $KeyFilePath
+#       EncryptedPasswordFilePath = $EncryptedPasswordFilePath
+#       PasswordTimeout           = $PasswordTimeout
+#       PathToKeePassDB           = $PathToKeePassDB
+#     }))
+#
+# . C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-UsersSecretStoreVault.ps1
+# Get-UsersSecretStoreVault -SecretVaultName $SecretVaultName -SecretVaultDescription $SecretVaultDescription -ExtensionVaultModuleName $ExtensionVaultModuleName -KeyFilePath $KeyFilePath -EncryptedPasswordFilePath $EncryptedPasswordFilePath -PathToKeePassDB $PathToKeePassDB
+#
+#
+# # Store
+# # Get the signed certificate from the location where the openssl CA command places it
+# # Install the new SSL Server certificate to the Certificate Store in the LocalMachine's Personal
+# #$CertStoreLocation = 'cert:\LocalMachine\My'
+# # ToDo: error handling
+# #Import-Certificate -FilePath $CACertificatePath -CertStoreLocation $CertStoreLocation >$null
+#
+#
+# #}
+#
+# $ValidityPeriod = 1
+# $ValidityPeriodUnits = 'years'
+#
+# #. rotateCa -ValidityPeriod $ValidityPeriod -ValidityPeriodUnits $ValidityPeriodUnits
+#
+# # Store the Root CA information in Secret Vault
+# # The Secret Vault MUST BE CREATED by an administrator before this step can execute. This means the encryption key file and the encrypted password file must already exist
+#
+# $SecretVaultName = 'SecurityAdminSecretsCurrentRootCA'
+# $SecretVaultDescription = 'Location of the current root Ca files for Security Administrators'
+# $ExtensionVaultModuleName = 'SecretManagement.Keepass'
+# $KeyFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'KeyFiles', 'SecurityAdminSecrets.key'
+# $EncryptedPasswordFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'PasswordFiles', 'SecurityAdminSecrets.txt'
+# $PasswordTimeout = 300
+# $PathToKeePassDB = 'C:\KeePass\Local.ATAP.Utilities.kdbx'  # This is the identifier for the KeePassParameterSet
+#
+# Write-PSFMessage -Level Important -Message $(Write-HashIndented -initialIndent 0 -indentIncrement 0 -hash $([ordered]@{
+#       SecretVaultName           = $SecretVaultName
+#       SecretVaultDescription    = $SecretVaultDescription
+#       ExtensionVaultModuleName  = $ExtensionVaultModuleName
+#       KeyFilePath               = $KeyFilePath
+#       EncryptedPasswordFilePath = $EncryptedPasswordFilePath
+#       PasswordTimeout           = $PasswordTimeout
+#       PathToKeePassDB           = $PathToKeePassDB
+#     }))
+#
+# . C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-UsersSecretStoreVault.ps1
+# Get-UsersSecretStoreVault -SecretVaultName $SecretVaultName -SecretVaultDescription $SecretVaultDescription -ExtensionVaultModuleName $ExtensionVaultModuleName -KeyFilePath $KeyFilePath -EncryptedPasswordFilePath $EncryptedPasswordFilePath -PathToKeePassDB $PathToKeePassDB
+#
+# # Store the secret information about the current Root CA
+# # Some vaults allow a secret to be changed, but others require a secret be deleted and then added
+# # ToDo: handle errors if a secret cannot be found
+# $SecretName = 'CAEncryptionKeyPassPhrasePath'
+# Write-PSFMessage -Level Important -Message " EncryptionKeyPassPhrasePath = $EncryptionKeyPassPhrasePath"
+# Remove-Secret -Name $SecretName -Vault $SecretVaultName
+# Set-Secret -Name $SecretName -Vault $SecretVaultName -Secret $EncryptionKeyPassPhrasePath # -Metadata @{description = "Current Root CA Key PassPhrase Path"}
+# $SecretName = 'CAEncryptedPrivateKeyPath'
+# Remove-Secret -Name $SecretName -Vault $SecretVaultName
+# Set-Secret -Name $SecretName -Vault $SecretVaultName -Secret $EncryptedPrivateKeyPath # -Metadata @{description = "Current Root CA Encrypted Private Key Path"}
+# $SecretName = 'CACertificatePath'
+# Remove-Secret -Name $SecretName -Vault $SecretVaultName
+# Set-Secret -Name $SecretName -Vault $SecretVaultName -Secret $CertificatePath # -Metadata @{description = "Current Root CA Certificate Path"}
+# # ToDo: add name of Certificte Signing server
+# # ToDo: add path to the specific CA signing subdirectory on the Certificte Signing server
+#
+# # Retrieve the signing Certificate Authority Certificate from a Secret Vault
+#
+# $SecretVaultName = 'SecurityAdminSecretsCurrentRootCA'
+# $SecretVaultDescription = 'Secrets for Security Administrators'
+# $ExtensionVaultModuleName = 'SecretManagement.Keepass'
+# $PathToKeePassDB = 'C:\KeePass\Local.ATAP.Utilities.kdbx'  # This is the identifier for the KeePassParameterSet
+#
+# $KeyFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'KeyFiles', 'SecurityAdminSecrets.key' # Join-Path $env:TEMP 'SecretVaultTestingEncryption.key'
+# $EncryptedPasswordFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'PasswordFiles', 'SecurityAdminSecrets.txt' # $env:TEMP 'SecretVaultTestingEncryptedPassword.txt'
+#
+# $PasswordTimeout = 300
+# . C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-UsersSecretStoreVault.ps1
+# Get-UsersSecretStoreVault -SecretVaultName $SecretVaultName -SecretVaultDescription $SecretVaultDescription -ExtensionVaultModuleName $ExtensionVaultModuleName -KeyFilePath $KeyFilePath -EncryptedPasswordFilePath $EncryptedPasswordFilePath -PathToKeePassDB $PathToKeePassDB
+#
+# # Get the current root CA certificate files
+# $SecretName = 'CAEncryptionKeyPassPhrasePath'
+# $CAEncryptionKeyPassPhrasePath = ConvertFrom-SecureString -SecureString (Get-Secret -Name $SecretName -Vault $name) -AsPlainText
+# $SecretName = 'CAEncryptedPrivateKeyPath'
+# $CAEncryptedPrivateKeyPath = ConvertFrom-SecureString -SecureString (Get-Secret -Name $SecretName -Vault $name) -AsPlainText
+# $SecretName = 'CACertificatePath'
+# $CACertificatePath = ConvertFrom-SecureString -SecureString (Get-Secret -Name $SecretName -Vault $name) -AsPlainText
+#
+# # Validation
+# Write-PSFMessage -Level Critical -Message $(Write-HashIndented -initialIndent 0 -indentIncrement 0 -hash $([ordered]@{
+#       CAEncryptionKeyPassPhrasePath = $CAEncryptionKeyPassPhrasePath
+#       CACertificatePath             = $CACertificatePath
+#       CAEncryptedPrivateKeyPath     = $CAEncryptedPrivateKeyPath
+#     }))
+#
+#
+# # The following will print out information about the CACertificate
+# openssl x509 -text -in $CACertificatePath -noout
+#
+#

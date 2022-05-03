@@ -30,6 +30,9 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['ChocolateyLibDirConfigRootKey']                = Join-Path $env:ProgramData 'chocolatey' 'lib'
     $global:configRootKeys['ChocolateyBinDirConfigRootKey']                = Join-Path $env:ProgramData 'chocolatey' 'bin'
 
+  # Jenkins CI/CD confguration keys
+   # These used to access a Jenkins Controller and Authenticate
+
     $global:configRootKeys['JENKINS_URLConfigRootKey']                     = 'http://utat022:4040/'
     $global:configRootKeys['JENKINS_USER_IDConfigRootKey']                 = 'whertzing'
     $global:configRootKeys['JENKINS_API_TOKENConfigRootKey']               = '117e33cc37af54e0b4fc6cb05de92b3553' # the value from the configuration page ToDo: use Secrets GUID/file
@@ -101,6 +104,8 @@ $global:MachineAndNodeSettings = @{
       , $global:configRootKeys['WindowsUnitTestConfigRootKey']
       , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
     )
+    # Should only be set per machine if the machine is a Jenkins Controller Node
+    $global:configRootKeys['JENKINS_HOMEConfigRootKey']                     = Join-Path $env:ProgramFiles 'Jenkins'
     $global:configRootKeys['PlantUMLJarPathConfigRootKey']                            = 'C:/ProgramData/chocolatey/lib/plantuml/tools/plantuml.jar'
     $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey']       = 'C:/Users/whertzing/.dotnet/tools/puml-gen.exe'
     $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'

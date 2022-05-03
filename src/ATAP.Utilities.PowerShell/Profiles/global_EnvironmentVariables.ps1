@@ -17,6 +17,11 @@ $global:EnvVars = @{
   'FP__projectDescription'                                      = $global:Settings[$global:configRootKeys['FP__projectDescriptionConfigRootKey']]
   $global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']      = $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']]
   $global:configRootKeys['GoogleDriveBasePathConfigRootKey']    = $global:Settings[$global:configRootKeys['GoogleDriveBasePathConfigRootKey']]
+  # Jenkins Environment Variables
+  # JENKINS_HOME applies onbly to jenkins Controller nodes
+  $global:configRootKeys['JENKINS_HOMEConfigRootKey']            = $global:Settings[$global:configRootKeys['JENKINS_HOMEConfigRootKey']]
+# These Jenkins Environment Variables are used to access a Jenkins Controller and Authenticate
+
   $global:configRootKeys['JENKINS_URLConfigRootKey']            = $global:Settings[$global:configRootKeys['JENKINS_URLConfigRootKey']]
   $global:configRootKeys['JENKINS_USER_IDConfigRootKey']        = $global:Settings[$global:configRootKeys['JENKINS_USER_IDConfigRootKey']]
   $global:configRootKeys['JENKINS_API_TOKENConfigRootKey']      = $global:Settings[$global:configRootKeys['JENKINS_API_TOKENConfigRootKey']]

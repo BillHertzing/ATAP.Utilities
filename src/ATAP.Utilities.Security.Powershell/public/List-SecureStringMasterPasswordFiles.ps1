@@ -1,5 +1,5 @@
 #############################################################################
-#region Add-UsersSecretStoreVault
+#region List-SecureStringMasterPasswordFiles
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,35 +28,39 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function FunctionNameReplacementPattern {
-  #region Parameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern')]
+Function List-SecureStringMasterPasswordFiles {
+  #region FunctionParameters
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = DefaultParameterSetNameReplacementPattern )]
   param (
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]
-    [ValidateScript({ Test-Path $_ })]
-    [string] $Path
-    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
-    [string] $Encoding
-    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
-    [switch] $Force
+    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $Path
   )
-  #endregion Parameters
-  #region BeginBlock
+  #endregion FunctionParameters
+  #region FunctionBeginBlock
+  ########################################
   BEGIN {
-    #$DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue
-    Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    # $DebugPreference = 'SilentlyContinue'
+    $results = @{}
   }
-  #endregion BeginBlock
-  #region ProcessBlock
-  PROCESS {}
-  #endregion ProcessBlock
-  #region EndBlock
+  #endregion FunctionBeginBlock
+
+  #region FunctionProcessBlock
+  ########################################
+  PROCESS {
+    #
+  }
+  #endregion FunctionProcessBlock
+
+  #region FunctionEndBlock
+  ########################################
   END {
-    Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+    # return a results object
+     $results
   }
-  #endregion EndBlock
+  #endregion FunctionEndBlock
 }
-#endregion FunctionNameReplacementPattern
+#endregion List-SecureStringMasterPasswordFiles
 #############################################################################
 
 

@@ -33,13 +33,14 @@ Function New-CertificateRequest {
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet' )]
   param (
     [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [object] $DNSubject
-    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [ValidateScript({ Test-Path $_ })]
-    [string] $CertificateRequestConfigPath
+    [alias('DNHash')]
+    [object] $DistinguishedNameHash
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
     [ValidateScript({ Test-Path $(Split-Path $_) -PathType 'Container' })]
     [string] $CertificateRequestPath
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $false, ParameterSetName = 'CustomConfiguration')]
+    [ValidateScript({ Test-Path $_ })]
+    [string] $CertificateRequestConfigPath
     , [switch] $Force
   )
   #endregion Parameters
@@ -55,11 +56,11 @@ Function New-CertificateRequest {
   #region EndBlock
   END {
     # ToDo: validate Subject and SubjectAlternativeName
-    if ($PSCmdlet.ShouldProcess($null, "Create new CertificateRequest '$CertificateRequestPath' from '$CertificateRequestConfigPath' using subject = '$($DNSubject.AsParameter)' and ValidityPeriod = $ValidityPeriod and ValidityPeriodUnits = $ValidityPeriodUnits")) {
+    if ($PSCmdlet.ShouldProcess($null, "Create new CertificateRequest '$CertificateRequestPath' from '$CertificateRequestConfigPath' using subject = '$($DistinguishedNameHash.DNAsParameter)' and ValidityPeriod = $ValidityPeriod and ValidityPeriodUnits = $ValidityPeriodUnits")) {
       #ToDo: figure out how to ceate a callable command and arguments passed on what parameters are not passed
-      openssl req -new -batch -sha256 -subj $($DNSubject.AsParameter) -key $EncryptedPrivateKeyPath -passin file:$EncryptionKeyPassPhrasePath -out $CertificateRequestPath
-      #openssl req -new -batch -sha256  -subj $($DNSubject.AsParameter) -config $CertificateRequestConfigPath -key $EncryptedPrivateKeyPath -passin file:$EncryptionKeyPassPhrasePath -out $CertificateRequestPath
-      #openssl req -new -batch -sha256 -subj $($DNSubject.AsParameter) -config $CertificateRequestConfigPath  -addext $($DNSubject.ExtendedKeyUseage) -key $EncryptedPrivateKeyPath -passin file:$EncryptionKeyPassPhrasePath -out $CertificateRequestPath
+      openssl req -new -batch -sha256 -subj $($DistinguishedNameHash.DNAsParameter) -key $EncryptedPrivateKeyPath -passin file:$EncryptionKeyPassPhrasePath -addext "extendedKeyUsage = serverAuth, clientAuth"  -out $CertificateRequestPath
+      #openssl req -new -batch -sha256  -subj $($DistinguishedNameHash.DNAsParameter) -config $CertificateRequestConfigPath -key $EncryptedPrivateKeyPath -passin file:$EncryptionKeyPassPhrasePath -out $CertificateRequestPath
+      #openssl req -new -batch -sha256 -subj $($DistinguishedNameHash.DNAsParameter) -config $CertificateRequestConfigPath  -addext $($DistinguishedNameHash.ExtendedKeyUseage) -key $EncryptedPrivateKeyPath -passin file:$EncryptionKeyPassPhrasePath -out $CertificateRequestPath
       #ToDo:Fix this
       #(((Get-Content $CertificateRequestConfigPath) -replace 'Subject = .*', ('Subject = "' + $Subject + '"')) -replace '%szOID_SUBJECT_ALTERNATIVE_NAME% = "{text}.*', ('%szOID_SUBJECT_ALTERNATIVE_NAME% = "{text}' + $SubjectAlternativeName + '"')) |
       # Out-File -Path $CertificateRequestPath -Encoding $Encoding

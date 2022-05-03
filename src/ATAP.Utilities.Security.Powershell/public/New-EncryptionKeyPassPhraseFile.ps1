@@ -64,7 +64,6 @@ Function New-EncryptionKeyPassPhraseFile {
     # get 10 random words
     1..10 | % { $randomwords += Get-Random -InputObject $words }
     $randomwords | Out-File -Encoding $Encoding -FilePath $PassPhrasePath
-    Write-PSFMessage -Level Debug -Message "RandomWords = $( $randomwords -join ' ')"
     Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
   #endregion EndBlock

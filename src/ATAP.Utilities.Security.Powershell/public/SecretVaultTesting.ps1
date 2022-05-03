@@ -57,12 +57,12 @@ switch ($ExtensionVaultModuleName) {
     Reset-SecretStore -Authentication 'Password' -Interaction 'None' -Password $passwordSecureString -Force
 }
 'SecretManagement.Keepass' {
-  $input = Read-Host -Prompt "Enter the full path to the DemoVault [$PathToKeePassDB]"
-  if (-not [string]::IsNullOrWhiteSpace($Input))  {
+  $PasswordFromHostPrompt = Read-Host -Prompt "Enter the full path to the DemoVault [$PathToKeePassDB]"
+  if (-not [string]::IsNullOrWhiteSpace($PasswordFromHostPrompt))  {
     if (-not (test-path $_)) {
-      throw "file not found: $PathToKeePassDB"
+      throw "file not found: $PasswordFromHostPrompt"
     }
-    $PathToKeePassDB = $input
+    $PathToKeePassDB = $PasswordFromHostPrompt
   }
 }
 Default {

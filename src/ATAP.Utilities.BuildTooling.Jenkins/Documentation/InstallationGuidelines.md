@@ -53,7 +53,7 @@ Install it from the .msi download file
   B) More Advanced: Create a new account on your local machine to be the user under whom Jenkins will run
   C) Domain-users: Ask the domain administrators to create a domain-wide account under which Jenkins will run
 
-Port Number: The default is the ubiquitous 8080, soo use something else. I used 4040; The important things is that none of the other applications or services on the local machine use that port
+Port Number: The default is the ubiquitous 8080, so use something else. I used 4040; The important things is that none of the other applications or services on the local machine use that port
   Whichever port you chose, the local machine's firewall has to be modified to allow port (e.g. 4040) be opened for TCP traffic incoming.
 
 Java Home directory: Enter the path to the directory where Java is installed. Mine was `C:\Program Files\Java\jdk1.8.0_291\`
@@ -72,8 +72,10 @@ see also [Using environment variables](https://www.jenkins.io/doc/book/pipeline/
 
 ### The Jenkins Environment variables for the master Jenkins controller
 
+`JENKINS_HOME` is only set on a a computer where the Jenkins Controller is running.
+
 The URL for the Jenkins master server is `JENKINS_URL`, and should be set for every computer that participates in the Jenkins pipeline. The value should be the same as configured in the jenkins master configuration, for example `http://<DNS-resolvable-hostname>:<PortNumber>`.
-I have setup jenkins master running on port `4040` (becasue `8080` is too widely used as the default by many other http-accessible application)
+I have setup jenkins controller running on port `4040` (becasue `8080` is too widely used as the default by many other http-accessible application)
 
 ### Environment variables for using the Jenkins-CLI
 
@@ -107,4 +109,8 @@ Add ATAPCommonJenkinsLibrary.groovy as a shared library (ToDo: point to an insta
 
 #### Migrate
 
+## Modify Jenkins to use SSL
 
+
+
+Edit the file `jenkins.xml` in the `$env:JENKINS_HOME` directroy. Find the line `-httpPort:4040` (substitute the port your Jenkins Controller is listening to), and replace `-httpPort:4040` with `-httpPort:4040 -httpsPort:4041`. Restart the Jenkins controller service

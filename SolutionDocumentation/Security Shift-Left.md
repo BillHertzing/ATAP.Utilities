@@ -1,6 +1,6 @@
 # Security in the Libraries, Packages and CI/CD pipeline
 
-If you are viewing this `Security Shift-Left.md` in GitHub, [here is this same Security Shift-Left on the documentation site]()
+If you are viewing this `Security Shift-Left.md` in GitHub, [here is this same Security Shift-Left on the documentation site](http://nope.com/nope.html)
 
 ## <a id="Introduction" />Introduction
 
@@ -58,7 +58,7 @@ or (Windows only)
 ```
 
 Download an OpenSSL configuration file (do this in the C:\Dropbox\SecretManagement\CARoot directory of the machine(s) that are the organization's CA server(s) )
-  ToDo: use machine settings for the CloudSyncedSecureBasePath and/or the CARoot subdirectory
+ToDo: use machine settings for the CloudSyncedSecureBasePath and/or the CARoot subdirectory
 
 ```Powershell
 $OpenSSLConfigurationPath = 'C:\Dropbox\Security\CARoot\openssl.cnf'
@@ -69,8 +69,7 @@ Add a machine-wide environment variable (windows only)
 
 ```Powershell
   Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name OPENSSL_CONF -Value $OpenSSLConfigurationPath
-  ```
-
+```
 
 ### PKI modules for Certificate Management
 
@@ -95,7 +94,6 @@ $DisasterRecoveryBackupPath = $global:settings[$global:ConfigRootKeys[DisasterRe
 ```
 
 ### Secure Cloud-based Encrypted Secrets Location
-
 
 ### Security Analysis Tools Prerequisites
 
@@ -140,7 +138,6 @@ For Windows:
 
 All secrets are stored in plaintext in a subdirecotry rooted at DisasterRecoveryPath and also in another subdirecotry rooted at DisasterRecoveryBackup path. These actual locations are whatever locations the organizations feel is their most secure storage.
 
-
 ## Git Credentials
 
 ## SCM Provider Credentials
@@ -169,118 +166,197 @@ All secrets are stored in plaintext in a subdirecotry rooted at DisasterRecovery
 
 ### Certificates
 
+ATAP Utilities uses a PKI infrastructure supplied as part of a module called ATAP.Utilities.Security.
+
+```PlantUML
+@startuml
+(*) --> "Define Configuration Constants"
+"Define Configuration Constants" --> "Define Machine Roles"
+"Define Machine Roles" --> "Define Machine Settings for each Role"
+"Define Machine Settings for each Role" --> "Define values for Machine Settings for each Role"
+"Define values for Machine Settings for each Role" --> (*)
+(*) -> "Setup Master PKI Server machine"
+"Setup Master PKI Server machine" -> "Validate Master PKI Server machine"
+"Validate Master PKI Server machine" -> (*)
+@enduml
+```
+
+```PlantUML
+@startwbs
+*:Secure Cloud-Synced Directory Root
+ACL (or directory/group) role-based protections;
+** Vaults
+*** KeyFiles
+*** MasterPasswordFiles
+*** VaultDatabases
+** Certificates
+***_ DefaultConfigurationFile
+*** CertificateRequests
+**** SSL Server Certificate Requests
+*****_ utat01.csr
+*****_ utat022.csr
+*****_ ncat016.csr
+**** SSL Client Certificate Requests
+**** CodeSigning Certificate Requests
+*****_ ATAPUtilities.csr
+*** EncryptedKeys
+*** EncryptionPassPhraseFiles
+*** Certificates
+**** Root CA Certificates
+**** Intermediate Signing Certificates
+**** SSL Server Certificate
+*****_ utat01.crt
+*****_ utat022.crt
+*****_ ncat016.crt
+**** SSL Client Certificate
+**** CodeSigning Certificate
+*****_ ATAPUtilities.crt47
+** CertificateSigning
+*** RootCACertificate1
+**** PrivateKeys
+**** NewCertificates
+****_ CertificatesIssued.txt
+****_ serial
+*** IntermediateCACertificate1
+**** ...
+*** IntermediateCACertificate2
+**** ...
+@endwbs
+```
+
+#### OpenSSL Default Configuration File
+
+An organization should not directly use the default openSSL.cnf file distributed with the OpenSSL tools. An organization should create it's own default openssl Configuration file based on the default file provided by OpenSSL.org, This prevents an update to the default OpenSSL configuration file from directly impacting an organization.
+
+#### OpenSSL Subject, Distinguished Names, and Subject Alternative Names
+
+All Certificate Requests and Certificates require a Subject.
 Certificate creation starts with the Subject, SubjectAlternativeName, and the type of certificate (template)
 [Distinguished Names](https://ldapwiki.com/wiki/Distinguished%20Names)
 
 Example:
 
 ```Powershell
-$Subject = @{
-CN='utat022'
-Country='US'
-StateOrTerritory='UT'
-Organization='ATAPUtilities.org'
-OrganizationUnit='Development'
-SubjectReplacementPattern = 'CN="{0}",OU="{1}",O="{2}",ST="{4},C="{3}"'
-} | Get-Subject  # return $SubjectReplacementPattern -f $CN, $OrganizationUnit, $Organization, $StateOrTerritory, $Country
-
-$SubjectAlternativeName = @{
-Email= 'SecurityAdminsList@ATAPUtilities.org'
-SubjectAlternativeNameReplacementPattern = 'E="{0}"'
-} | Get-SubjectAlternativeName # return $SubjectAlternativeNameReplacementPattern -f $EMail
-
-
-$CertificateRequestConfigPath = Join-Path $global:settings[$global:configRootKeys['CertificateSecurityCertificateRequestConfigsPathConfigRootKey']]'RootCertificateAuthorityCertificateRequestTemplate.txt'
-
-#return $global:settings[$global:configRootKeys['CertificateSecurityDNFilePathReplacementPatternConfigRootKey']] -f $Subject.CN $BaseFileName
-
+  $DNHash = New-Object PSObject -Property @{
+    CN                                       = 'ATAPUtilities.org'
+    EmailAddress                             = 'SecurityAdminsList@ATAPUtilities.org'
+    Country                                  = 'US'
+    StateOrTerritory                         = 'UT'
+    Locality                                 = 'HD'
+    Organization                             = 'ATAPUtilities.org'
+    OrganizationUnit                         = 'Development'
+    DNAsFileNameReplacementPattern                = 'CN="{0}",OU="{1}",O="{2}",L="{3}",ST="{4},C="{5}"'
+    SANAsParameterReplacementPattern = 'E="{0}"'
+    #KeyUseage                                = @('critical', 'cRLSign', 'digitalSignature', 'keyCertSign')
+    #ExtendedKeyUseage                        = 'CA:TRUE'
+    # ExtendedKeyUseage = @('critical','codeSigning')
+  } | New-DistinguishedNameHash
 ```
 
-#### Root Certificate Authority Certificate
+#### File Name Obfuscation
 
-Three of these for an organization; Development, Testing, and Production
+All of the cmdlets which generate filepaths can take an additional argument `-CrossReferenceFile`. If supplied, the cmdlet will return a file path ending in a guid. The CrossReferenceFile value is a persistent storage for holding the relationship between the Distinguished Name as Filename, and the obfuscated GUID filename
 
-##### Create an Encryption Key PassPhrase File for the RootCertificateAuthorityCertificate Private and Public Key Pair
+#### PassPhrase Files vs. Passwords
+
+Putting the password on the command line with, for example -passin pass:abcd1234 is insecure, as command line arguments are visible to any other process running on the computer. A better solution is to create an Encryption Key PassPhrase file and an Encrypted Private Key file, and supply OpenSLL with `-key EncryptedPrivateKeyPath -passin file:EncryptionKeyPassPhrasePath`
+
+#### Creating a PKI infrastructure for an organization
+
+The script `PKIForNewOrg.ps1` will create most of infrastructure needed to support PKI for an organization. Some of the steps must be performed manually the very first time, in order to enable PSRemoting on computers where that is not yet enabled. At a high level, it follows these steps:
+
+- Confirm the installation and accessability of OpenSSL executables and the presence of openSSL environment variables
+- Confirm/Create the necessary directory structure at a secure cloud-synced location
+  - SecureCloudRootPath
+  - SecureCertificatesPath
+  - SecureCertificatesEncryptionPassPhraseFilesPath
+  - SecureCertificatesEncryptedKeysPath
+  - SecureCertificatesOpenSSLConfigsPath
+  - SecureCertificatesCertificateRequestsPath
+  - SecureCertificatesCertificatesPath
+  - SecureCertificates CA PathPattern
+  - SecureCertificates CA Root PathPattern
+  - SecureCertificates CA Intermediate PathPattern
+  - SecureCertificates CodeSigning PathPattern
+  - SecureCertificates DataEncryption PathPattern
+  - SecureCertificates SSLServerCertificates PathPattern
+  - SecureCertificates SSLClientCertificates PathPattern
+- Define a DistinguishedNameHash for the Root CA of the organization
+- Create a Root CA
+  - Create an EncryptionPassPhrase file
+  - Create an EncryptedKey file
+  - Create a CA Certificate
+- Confirm/Create the necessary directory structure for signing certificates with the CA at a secure cloud-synced location
+
+
+- Create SSL Server Certificate(s) for all computers in the organization's workgroup
+  - Define a DistinguishedNameHash for the SSL Server Certificate Request for each computer
+  - Create an EncryptionPassPhrase file
+  - Create an EncryptedKey file
+  - Create a SSL Server Certificate Request
+  - Create a signed SSL Server Certificate
+  - Copy the signed SSL Server Certificate from the signing certificate's directory structure to the organization's directory structure
+
+The following steps must be taken manually by a security administrator on any computer that does not have PSRemoting enabled
+- Deploy the Root CA to each computer in the workgroup
+- Deploy the appropriate SSL Server certificate to each computer in the organization's workgroup
+
+
+##### Validating needed Tools, Environment variables and Directory Structure
+
+The script `ValidatePKIPrerequisites.ps1` can be run on any machine to determine if all of the PKI prerequisites are met.
+
+##### Define a DistinguishedNameHash for the Root Certificate Authority (CA) of the organization
+
+The Root CA should have just a CN and an Organization, and they should be the same string
+
+##### Root Certificate Authority (CA) Certificate
+
+Every organization needs a Root CA Certificate, to sign internal Certificates. The Root CA Certificate should be used to sign Intermediate Signing Certificates, and nothing else. Creation of a Root CA Certificate requires a PassPhrase File, an EncryptedeKeyFile, and an openSSL Configuration file.
+
+###### Create an Encryption Key PassPhrase File
+
 
 ```Powershell
-$EncryptionKeyPassPhrasePath = Get-CertificateSecurityDNFilePath -Subject $Subject -SubjectAlternativeName $SubjectAlternativeName -BaseFileName 'RootCertificateAuthorityCertificatePassPhraseFile.txt' -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityEncryptedKeysPathConfigRootKey']]
-New-EncryptionKeyPassPhraseFile -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath
+  $EncryptionKeyPassPhrasePath =  Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCAPassPhraseFileBaseFileNameConfigRootKey'] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]
+  New-EncryptionKeyPassPhraseFile -PassPhrasePath $EncryptionKeyPassPhrasePath
 ```
 
-##### Create an RootCertificateAuthorityCertificate Private and Public Key Pair
+##### Create an Encrypted Private Key File
+
+Use a Ecliptic Curve encryption algorithm
 
 ```powershell
-# Out filename template using Subject and SubjectAlternativeName
-$EncryptedPrivateKeyPath = Get-CertificateSecurityDNFilePath -Subject $Subject -SubjectAlternativeName $SubjectAlternativeName -BaseFileName 'RootCertificateAuthorityCertificateEncryptedPrivateKey.pem' -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityEncryptedKeysPathConfigRootKey']]
-New-EncryptedPrivateKey -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath  -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath  -KeySize $KeySize
-# generate a private key using maximum key size of $KeySize
-# key sizes can be 512, 758, 1024, 1536 or 2048.
-openssl genrsa -des3 -passout file:$EncryptionKeyPassPhrasePath -pubout -outform PEM -out $EncryptedPrivateKeyPath $KeySize
-# using the -des3 option encrypts the private key, and requires a password.
-# putting the password on the command line with -passout pass:abcd1234 is insecure, as command line arguments are visible to any onther process
-#  A better solution to providing a password is to use the password to populate a temporary file in a secure location
-#  and use -passout file:passphrase.txt
-# openssl genrsa -des3 -out $RootCertificateAuthorityCertificatePrivateKeyPath $KeySize
-# openssl genrsa -des3 -passout file:$EncryptionKeyPassPhrasePath -pubout -outform PEM -out $EncryptedPrivateKeyPath $KeySize
+  $EncryptedPrivateKeyPath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCAEncryptedPrivateKeyBaseFileNameConfigRootKey'] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptedKeysPathConfigRootKey']]
+  New-EncryptedPrivateKey -ECCurve $ECCurve -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath
 
-# openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out $WinRMSSLPrivateKeyPath
-
-```
-
-No Longer needed?
-    Generate the public key from the private key
-
-    ```Powershell
-    # generate a public key using the private key
-    $RootCertificateAuthorityCertificatePublicKeyPath = 'C:\Dropbox\SecretManagement\CARoot\PublicKeys\RootCertificateAuthorityCertificateKey.public'
-    openssl rsa -in $RootCertificateAuthorityCertificatePrivateKeyPath -out $RootCertificateAuthorityCertificatePublicKeyPath -pubout -outform PEM
-    ```
-
-##### Generate the Root Certificate Authority Certificate Request
-
-```Powershell
-$CertificateRequestPath = Get-CertificateSecurityDNFilePath -Subject $Subject -SubjectAlternativeName $SubjectAlternativeName -BaseFileName 'RootCertificateAuthorityCertificateRequest.csr' -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityCertificateRequestsPathConfigRootKey']]
-Create-CertificateRequest -Template $CertificateRequestConfigPath -Subject $Subject -SubjectAlternativeName $SubjectAlternativeName -CertificateRequestPath $CertificateRequestPath
 ```
 
 ##### Generate the Root Certificate Authority Certificate
 
-Example
+The Root CA Certificate can be generated without first needing a CertificateSigningRequest
 
 ```Powershell
-$CertificatePath = Get-CertificateSecurityDNFilePath -Subject $Subject -SubjectAlternativeName $SubjectAlternativeName -BaseFileName 'RootCertificateAuthorityCertificate.crt' -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityCertificatesPathConfigRootKey']]
-$ValidityDays = 3650
-Create-Certificate -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath -CertificateRequestPath $CertificateRequestPath  -validityDays $validityDays -CertificatePath $CertificatePath
-# openssl req -x509 -in $CertificateRequestPath -des3 -key $EncryptedPrivateKeyPath -passout file:$EncryptionKeyPassPhrasePath -sha256 -days $validityDays -out ```
-# openssl req -x509 -new -nodes -key $RootCertificateAuthorityCertificatePrivateKeyPath -sha256 -days 1825 -out $RootCertificateAuthorityCertificatePath
-# openssl req -x509 -new -key $RootCertificateAuthorityCertificatePrivateKeyPath -des3 -passout file:passphrase.txt -sha256 -days $validityDays -out
+  $CertificatePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCACertificateBaseFileNameConfigRootKey'] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']]
+  New-CACertificate -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath -ValidityPeriod $ValidityPeriod -ValidityPeriodUnits $ValidityPeriodUnits -CertificatePath $CertificatePath
 ```
 
-##### Store the Root Certificate Authority in a Secret Management Secure Vault
+##### Create the Directory structure needed to sign Certificates
 
-To sign things with the CA Certificate requires three things: The path to the CA Certificate, the path to the Private and Public Key Pair, and the path to the Encryption Key PassPhrase file. There may be multiple CA Certificates in an organization. At the least there will be Development, testing, and Production versions. CA Certificates need to be rotated, as well. Each CA Certificate used in an organization will have it's onw Secret Vault. Access to the specific  Secret Vault will be controlled by a Role permission, in keeping with the Least Privilege principle. One role will allow for Read/Write access, the other Role will allow only for Read Access.
+##### Create a custom OpenSSL Configuration File for the Root CA
 
-Vault naming scheme (KeePass and SecretStore)
-`{host}_{CertificatePurpose}[_{Environment}]` the optional _{Environment} is omitted for production values
+There are a few settings needed to sign a Certificate with a CA, that cannot be modified / set on the command line. These few settings MUST be configured in the OpenSSL configuration file. Luckliy, they can be done with environment variables
 
-see [cxref] for instructions on creating and using the Powershell Secret Vaults
+OPENSSL_SIGNINGCERTIFICATES_DIR
+dir		= C:/Dropbox/Security/Certificates/SigningCertificates/Root		# Where everything is kept
+#private_key	= $dir/PrivateKeys/cakey.pem # The private key
+serial		= $dir/serial 		# The current serial number
+database	= $dir/CertificatesIssued.txt	# database index file.
+new_certs_dir	= $dir/NewCertificates	# default place for new certs.
+certs		= $dir/Certificates		# Where the issued certs are kept
+#crl		= $dir/crl.pem 		# The current CRL
+#crl_dir		= $dir/crl		# Where the issued crl are kept
 
-Example
-
-```Powershell
-Store-CertificateInVault {()
-  $VaultName = Get-VaultExtensionName -Purpose 'RootCertificateAuthorityCertificate' -Subject -SubjectAlternativeName -Environment $global:settings  [$global:configRootKeys['EnvironmentConfigRootKey']]
-  Get-UsersSecretStoreInfo
-  Unlock-UsersSecretStore
-  Test-SecretVault
-  if (Get-Secret CertificatePath) {Remove-Secret CertificatePath}
-  if (Get-Secret PublicPrivateKeyPath) {Remove-Secret PublicPrivateKeyPath}
-  if (Get-Secret EncryptionKeyPassPhrasePath) {Remove-Secret EncryptionKeyPassPhrasePath}
-  Set-Secret CertificatePath
-  Set-Secret PublicPrivateKeyPath
-  Set-Secret EncryptionKeyPassPhrasePath
-}
-```
 
 ##### Install the Root Certificate Authority Certificate
 
@@ -290,92 +366,92 @@ Note that powershell remoting depends on having a trusted SSL certificate for th
 Trusting an internally generated SSL certificate requires an internal Root Certificate Authority certificate
 Therefore Powershell remoting cannot be used to install an internal Root Certificate Authority certificate on a machine which does not yet have PS-remoting working
 
-Repeat the following commands on each machine on the workgroup, as an administrator
+Repeat the following commands on each machine in the workgroup, as an administrator
 
 - Windows
 
-   ```Powershell
-   $RootCertificateAuthorityCertificateCertStoreLocation = 'cert:\LocalMachine\CA'
-  Import-Certificate -FilePath $CertificatePath -CertStoreLocation $RootCertificateAuthorityCertificateCertStoreLocation
+  ```Powershell
+  $CertificatePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCACertificateBaseFileNameConfigRootKey'] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']]
+  $RootCACertStoreLocation = 'cert:\LocalMachine\CA'
+  # Import the 32-bit Desktop Powershel PKI module
+  Import-Module -Name "C:\Windows\System32\WindowsPowerShell\v1.0\Modules\PKI\pki.psd1"
+  Import-Certificate -FilePath $CertificatePath -CertStoreLocation $RootCACertStoreLocation
   ```
 
 - *nix
-  ToDo:  Validate that the Root Certificate Authority Certificate has been installed on *nix
+  ToDo: Install the Root Certificate Authority Certificate has been installed on *nix
 - MacOS
-  ToDo:  Validate that the Root Certificate Authority Certificate has been installed on MacOS
+  ToDo: Install that the Root Certificate Authority Certificate has been installed on MacOS
 - IOS
-  ToDo:  Validate that the Root Certificate Authority Certificate has been installed on IOS
+  ToDo: Install that the Root Certificate Authority Certificate has been installed on IOS
 - Android
-  ToDo:  Validate that the Root Certificate Authority Certificate has been installed on Android
-
+  ToDo: Install that the Root Certificate Authority Certificate has been installed on Android
 
 ##### Validate that the Root Certificate Authority Certificate has been installed
 
-Example
+Repeat the following commands on each machine in the workgroup, as an administrator
 
 - Windows
 
   ```powershell
-  (ls $RootCertificateAuthorityCertificateCertStoreLocation).subject | Where-Object{$_ -match "CN=""$Subject.CN""}
+  (ls $RootCACertStoreLocation).subject | Where-Object{$_ -match "CN=""$Subject.CN""}
   ```
 
 - *nix
-  ToDo:  Validate that the Root Certificate Authority Certificate has been installed on *nix
+  ToDo: Validate that the Root Certificate Authority Certificate has been installed on *nix
 - MacOS
-  ToDo:  Validate that the Root Certificate Authority Certificate has been installed on MacOS
+  ToDo: Validate that the Root Certificate Authority Certificate has been installed on MacOS
 - IOS
-  ToDo:  Validate that the Root Certificate Authority Certificate has been installed on IOS
+  ToDo: Validate that the Root Certificate Authority Certificate has been installed on IOS
 - Android
-  ToDo:  Validate that the Root Certificate Authority Certificate has been installed on Android
+  ToDo: Validate that the Root Certificate Authority Certificate has been installed on Android
 
 ##### Add the Root Certificate Authority Certificate to the Trusted Roots
 
 Example
 
 - Windows
-   See [Create Your Own SSL Certificate Authority for Local HTTPS Development](https://deliciousbrains.com/ssl-certificate-authority-for-local-https-development/) for instructions using the MMC snap-in
+  See [Create Your Own SSL Certificate Authority for Local HTTPS Development](https://deliciousbrains.com/ssl-certificate-authority-for-local-https-development/) for instructions using the MMC snap-in
   ToDO: Powershell way - (Need to figure out teh proper cert store)
 
-- *nix
+- \*nix
 - MacOS
 - IOS
-- Andriod
+- Android
 
+#### Intermediate Certificate Authority Certificates
 
-#### Create an SSL Certificate
+##### Create an SSL Server Certificate
 
-There are many scenarios that require a trusted SSL certificate. The examples below will create a SSL certificate for WinRM, which is needed to suport Powershell remoting in a workgroup environment.
+There are many scenarios that require a trusted SSL Certificate to authenticate a specific server. The examples below will create a SSL certificate for a server DN. Among other things, it can be used to support Powershell remoting in a workgroup environment.
 
-Certificate creation starts with the Subject, SubjectAlternativeName, and the type of certificate (template)
+Certificate creation starts with the DintiguishedNameHash  # Subject, SubjectAlternativeName, and the type of certificate (template)
 [Distinguished Names](https://ldapwiki.com/wiki/Distinguished%20Names).
 
-Also Needed are the Certificate's ValidityDurationDays and the KeySize
+Also needed are the certificate's ValidityPeriod and ValidityPeriodUnits
 
 Example:
 
 ```Powershell
-$Subject = @{
-CN='WinRM'
+$DNHash = @{
+CN='utat01'
 Country='US'
-StateOrTerritory='UT'
+StateOrTerritory=''
 Organization='ATAPUtilities.org'
 OrganizationUnit='Development'
-SubjectReplacementPattern = 'CN="{0}",OU="{1}",O="{2}",ST="{4},C="{3}"'
-} | Get-Subject  # return $SubjectReplacementPattern -f $CN, $OrganizationUnit, $Organization, $StateOrTerritory, $Country
-
-$SubjectAlternativeName = @{
 Email= 'SecurityAdminsList@ATAPUtilities.org'
-SubjectAlternativeNameReplacementPattern = 'E="{0}"'
-} | Get-SubjectAlternativeName # return $SubjectAlternativeNameReplacementPattern -f $EMail
+DNAsFileNameReplacementPattern = 'CN="{0}",OU="{1}",O="{2}",ST="{4},C="{3}"'
+SANAsParameterReplacementPattern = 'E="{0}"'
+} | New-DistinguishedNameHash
 
-$CertificateRequestConfigPath = Join-Path $global:settings[$global:configRootKeys['CertificateSecurityCertificateRequestConfigsPathConfigRootKey']]'SSLCertificateRequestTemplate.txt'
+$CertificateRequestConfigPath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesOpenSSLConfigsPathConfigRootKey']]'SSLCertificateRequestTemplate.txt'
 
 ```
 
 ##### Create an Encryption Key PassPhrase File for the SSL Certificate Private and Public Key Pair
 
 ```Powershell
-$EncryptionKeyPassPhrasePath = Get-CertificateSecurityDNFilePath -Subject $Subject -SubjectAlternativeName $SubjectAlternativeName -BaseFileName 'SSLCertificatePassPhraseFile.txt' -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityEncryptedKeysPathConfigRootKey']]
+$EncryptionKeyPassPhrasePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerPassPhraseFileBaseFileNameConfigRootKey'] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptedKeysPathConfigRootKey']]
 New-EncryptionKeyPassPhraseFile -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath
 ```
 
@@ -385,7 +461,7 @@ Example
 
 ```powershell
 # Out filename template using Subject and SubjectAlternativeName
-$EncryptedPrivateKeyPath = Get-CertificateSecurityDNFilePath -Subject $Subject -SubjectAlternativeName $SubjectAlternativeName -BaseFileName 'SSLCertificateEncryptedPrivateKey.pem' -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityEncryptedKeysPathConfigRootKey']]
+$EncryptedPrivateKeyPath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerEncryptedPrivateKeyBaseFileNameConfigRootKey'] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptedKeysPathConfigRootKey']]
 New-EncryptedPrivateKey -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath  -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath  -KeySize $KeySize
 # generate a private key using maximum key size of 2048
 # key sizes can be 512, 758, 1024, 1536 or 2048.
@@ -401,13 +477,13 @@ openssl genrsa -des3 -passout file:$EncryptionKeyPassPhrasePath -pubout -outform
 ##### Generate the SSL Certificate Request
 
 ```Powershell
-$CertificateRequestPath = Get-CertificateSecurityDNFilePath -Subject $Subject -SubjectAlternativeName $SubjectAlternativeName -BaseFileName 'SSLCertificateRequest.csr' -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityCertificateRequestsPathConfigRootKey']]
+$CertificateRequestPath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName 'SSLCertificateRequest.csr' -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesCertificateRequestsPathConfigRootKey']]
 Create-CertificateRequest -Template $CertificateRequestConfigPath -Subject $Subject -SubjectAlternativeName $SubjectAlternativeName -CertificateRequestPath $CertificateRequestPath
 ```
 
 ##### Generate the SSL Certificate and sign it with the Root Certificate Authority Certificate
 
-Note that to do this, the function needs to know the CertificatePath, EncryptionKeyPassPhrasePath, the EncryptedPrivateKeyPath, the serial number file path, and the Certificate index filepath for the RootCertificateAuthorityCertificate that we want to sign it with
+Note that to do this, the function needs to know the CertificatePath, EncryptionKeyPassPhrasePath, the EncryptedPrivateKeyPath, the serial number file path, and the Certificate index filepath for the RootCA that we want to sign it with
 
 ###### Get the necessary Root Certificate Authority Certificate information from the secret vault
 
@@ -423,26 +499,23 @@ Example
 
 ##### Create and sign the SSL Certificate
 
-```Powershell
-$CertificatePath = Get-CertificateSecurityDNFilePath -Subject $Subject -SubjectAlternativeName $SubjectAlternativeName -BaseFileName 'SSLCertificate.crt' -OutDirectory $global:settings[$global:configRootKeys['CertificateSecurityCertificatesPathConfigRootKey']]
+````Powershell
+$CertificatePath = Get-DistinguishedNameQualifiedFilePath  -BaseFileName 'SSLCertificate.crt' -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']]
 $ValidityDays = 3650
 Create-CertificateAndSign -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath -CertificateRequestPath $CertificateRequestPath -validityDays $validityDays -CertificatePath $CertificatePath -CACertificatePath $CACertificateInfo.CertificatePath -CAEncryptedPrivateKeyPath $CACertificateInfo.EncryptedPrivateKeyPath -CAEncryptionKeyPassPhrasePath $CACertificateInfo.EncryptionKeyPassPhrasePath
-# openssl x509 -req -in $CertificateRequestPath -CA $RootCertificateAuthorityCertificatePath -CAkey $RootCertificateAuthorityCertificatePath -CAcreateserial -out $WinRMSSLCertificatePath -days 3650
+$WinRMSSLCertificatePath -days 3650
 
-# openssl req -x509 -in $CertificateRequestPath -des3 -key $EncryptedPrivateKeyPath -passout file:$EncryptionKeyPassPhrasePath -sha256 -days $validityDays -out ```
-# openssl req -x509 -new -nodes -key $SSLCertificatePrivateKeyPath -sha256 -days 1825 -out $SSLCertificatePath
-# openssl req -x509 -new -key $SSLCertificatePrivateKeyPath -des3 -passout file:passphrase.txt -sha256 -days $validityDays -out
-```
+````
 
 #### Save the SSL Certificate into a Vault
 
 Use a specific vault for least privilege
 
+Keep the following until testing proves them unnecessary (are the RootCA Cert and teh SSL cert private/public key pairs the same? what's the "best" way to generate the PP Key pair)
 
-Keep the following until testing proves them unnecessary (are the RootCA Cert and teh SSL cert private/public key pairs the same? what's the "best" way to generate the  PP Key pair)
 ##### Create a private/public key pair for the SSL certificate
 
-``` Powershell
+```Powershell
 $WinRMSSLPrivateKeyPath = 'C:\Dropbox\SecretManagement\CARoot\PrivateKeys\WinRMSSLKey.private'
 $WinRMSSLPrivateKeyPassphraseFilePath = join-path $global:settings[$global:ConfigRootkeys['SecureTemporaryDirectoryConfigrootKey']] 'WinRMSSLPrivateKeyPassphrase.txt'
 # ToDo: make up a random passphrase and save it to a secret vault? Also plaintext backup for disaster recovery, only to USB. The write it to the temporary direcotry
@@ -452,7 +525,7 @@ openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out $WinRMSSLPriva
 
 Create a SSL certificate request (can be done on any machine)
 
-``` Powershell
+```Powershell
 # ToDo: The following lacks a Certificate Request, need to generate a template and a script to generate a populated CSR
 $CARootCN='utat022'
 $CARootCountry='US'
@@ -477,13 +550,17 @@ openssl req -text -noout -verify -in $WinRMSSLCertificateRequestPath
 
 Create a SSL Certificate and sign it with the organization's CA Root Certificate
 
-``` Powershell
+```Powershell
 $WinRMSSLCertificatePath = Join-path 'C:\Dropbox\SecretManagement\CARoot\Certificates' 'WinRMSSLCertificate.crt'
-openssl x509 -req -in $WinRMSSLCertificateRequestPath -CA $RootCertificateAuthorityCertificatePath -CAkey $RootCertificateAuthorityCertificatePrivateKeyPath -CAcreateserial -out $WinRMSSLCertificatePath -days 3650
+openssl x509 -req -in $WinRMSSLCertificateRequestPath -CA $RootCAPath -CAkey $RootCAPrivateKeyPath -CAcreateserial -out $WinRMSSLCertificatePath -days 3650
 
 ```
 
+Combine the certificate and the key into a .pfx fileConvert the certificate toa .pfx file
+
+
 Install the SSL Certificate onto every machine where PSRemoting is desired
+
 
 
 [How To Set up OpenSSL on Windows 10 (PowerShell)](https://adamtheautomator.com/openssl-windows-10/)
@@ -497,8 +574,40 @@ Install the SSL Certificate onto every machine where PSRemoting is desired
 [System Store Locations](https://docs.microsoft.com/en-us/windows/win32/seccrypto/system-store-locations)
 [How to add X.509 extensions to certificate OpenSSL](https://www.golinuxcloud.com/add-x509-extensions-to-certificate-openssl/)
 [config - OpenSSL CONF library configuration files](https://www.openssl.org/docs/man1.1.1/man5/config.html)
+[How Frequently Should You Rotate PKI Certificates and Keys?](https://www.venafi.com/blog/how-frequently-should-you-rotate-pki-certificates-and-keys)
+[self-signed-certificate-with-custom-ca.md] https://gist.github.com/fntlnz/cf14feb5a46b2eda428e000157447309) good stuff in the comments, but mostly for Linux
+[penSSL CONF library configuration files](https://www.mkssoftware.com/docs/man5/openssl_config.5.asp)
+[How to setup your own CA with OpenSSL](https://gist.github.com/Soarez/9688998)
+[OpenSSL Certificate Authority](https://jamielinux.com/docs/openssl-certificate-authority/index.html)
+[OpenSSL Cheat Sheet by albertx](https://cheatography.com/albertx/cheat-sheets/openssl/)
+[Creating a Self-Signed Certificate With OpenSSL](https://www.baeldung.com/openssl-self-signed-cert) extfile example
 
 ### Code Signing Certificates
+
+\
+
+## Store the Root Certificate Authority in a Secret Management Secure Vault
+
+To sign a CSR for an intermediate CA requires a Trusted Root CA. The CA must be installed to the machine where the signing steps will be run. The signing steps expect a specific directory structure for the Root Ca to work. The location of the three CA files, and the root of the directory structure, can vary as required by the organization. The location of these paths should be subject to 'least privilege'. The ATAP Utilities module uses ACL permissions to restrict access to these locations, and uses a SecretVault to store the current locations of the files and subdirectory
+
+To sign things with the CA Certificate requires three things: The path to the CA Certificate, the path to the Private and Public Key Pair, and the path to the Encryption Key PassPhrase file. There may be multiple CA Certificates in an organization. At the least there will be Development, Testing, and Production versions. CA Certificates need to be rotated, as well. Each CA Certificate used in an organization will have it's own Secret Vault. Access to the specific Secret Vault will be controlled by a Role permission, in keeping with the Least Privilege principle. One role will allow for Read/Write access, the other Role will allow only for Read Access.
+
+see [cxref] for instructions on creating and using the Powershell Secret Vaults
+
+```Powershell
+Store-CertificateInVault {()
+  $VaultName = Get-VaultExtensionName -Purpose 'RootCA' -Subject -SubjectAlternativeName -Environment $global:settings  [$global:configRootKeys['EnvironmentConfigRootKey']]
+  Get-UsersSecretStoreInfo
+  Unlock-UsersSecretStore
+  Test-SecretVault
+  if (Get-Secret CertificatePath) {Remove-Secret CertificatePath}
+  if (Get-Secret PublicPrivateKeyPath) {Remove-Secret PublicPrivateKeyPath}
+  if (Get-Secret EncryptionKeyPassPhrasePath) {Remove-Secret EncryptionKeyPassPhrasePath}
+  Set-Secret CertificatePath
+  Set-Secret PublicPrivateKeyPath
+  Set-Secret EncryptionKeyPassPhrasePath
+}
+```
 
 ## Deployment Credentials
 
@@ -544,7 +653,7 @@ ATAP.Utilities.Security.Powershell
 
 ## Secrets Used in the Deployment Process
 
-### Secrets needed to deploy to any of the   'WebServerDropsBaseURLConfigRootKey' = 'FileSystemDropsBasePath'
+### Secrets needed to deploy to any of the 'WebServerDropsBaseURLConfigRootKey' = 'FileSystemDropsBasePath'
 
 ## Secrets used by the CI/CD pipeline
 
@@ -554,13 +663,10 @@ ATAP.Utilities.Security.Powershell
 
 ### ServiceStack License
 
-
 #### settings.json
 
 ### Visual Studio Code Extensions
 
 #### Git
 
-Store the remote repository URL and credentials
-
-````
+Store the remote repository URL and credentialal

@@ -176,7 +176,10 @@ copy role-appropriate hosts file to new computer
   `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`
 
 - Install the following 3rd-party packages machine-wide. Run the following as an administrator on the new computer
-  `@('Microsoft.PowerShell.SecretManagement', 'Microsoft.PowerShell.SecretStore', 'SecretManagement.Keepass', 'PSFramework') | ForEach-Object { if (-not (Get-Module -ListAvailable -Name  $_)) { Install-Module -Name $_ -Scope AllUsers})`
+ - `Microsoft.PowerShell.SecretManagement`, `Microsoft.PowerShell.SecretStore` and `SecretManagement.Keepass` are for development credentials and secret,
+ - `PSFramework` is for logging
+ - ToDO: `DISM` is for enabling Windows Features, but it is not available for direct download. See
+  `@('Microsoft.PowerShell.SecretManagement', 'Microsoft.PowerShell.SecretStore', 'SecretManagement.Keepass', 'PSFramework', 'DISM') | ForEach-Object { if (-not (Get-Module -ListAvailable -Name  $_)) { Install-Module -Name $_ -Scope AllUsers}}`
 
 - 32-Bit powershel Desktop Modules will not import automatically, run the foillowing lines
   - for installing any certificates via powershell
@@ -260,14 +263,18 @@ dropbox
 nordvpn
 sharex
 
-# Set file associations for notepad++
+### Set file associations for notepad++
 
-#$suffixs = @('.txt','.log','.ps1','.psm1','.psd1')
-  #Install-ChocolateyFileAssociation  $suffixs "${env:programfiles(x86)}\notepad++.exe"
+
+```Powershell
+$suffixs = @('.txt','.log','.ps1','.psm1','.psd1')
+Install-ChocolateyFileAssociation  $suffixs "${env:programfiles(x86)}\notepad++.exe"
+```
 
 ### Service Accounts on the machine (as per Role)
 
-Setup Role-wide Autoruns and startups
+
+### Setup Role-wide Autoruns and startups
 
 resx Resource Manager
 Voiceattack
@@ -276,7 +283,9 @@ jexus manager (iis manager)
 
 ## Setup Printer
 
-##
+Setup HP Printer
+
+## Issues To Be investigated
 
 1. debug response time issues and network issues
    Visual Studio Code terminal and file editing; characters don't appear quickly in response to keyboard input
@@ -299,7 +308,6 @@ jexus manager (iis manager)
 
 Link Pushbullet to phone
 
-Setup HP Printer
 
 File Extension helpers
 
@@ -317,7 +325,7 @@ Install-ChocolateyPinnedTaskBarItem "$env:windir\system32\eventvwr.msc"
 
 ## Use SQLExpress for Server 2012 if possible
 
-## ALlow mixedmode authentication
+## Allow mixedmode authentication
 
 -ia '/value1=''some value'' '
 
@@ -387,7 +395,7 @@ Chocolatey package List Backup
 ensure the dropbox location is added
 ensure the GoogleDrive location is added
 
-## Enable PS-Remoting on the new computer
+## Enable PSRemoting on the new computer
 
 Run the following commands as a local admin on the new computer
 
@@ -399,11 +407,14 @@ set-item WSMan:localhost\client\trustedhosts -value $('<NewComputerHostname>,' +
 
 Set-Item WSMan:\localhost\Client\TrustedHosts -Value 'utat022,utat01,ncat-ltjo,ncat-ltb1,ncat016,ncat041' # ToDo - add wireless hostnames?
 
-# Add the new computer as a trusted host on other computers in the group
+### Add the new computer as a trusted host on other computers in the group
 
-# Enable HTTPS on WSMan
+
+### Enable HTTPS on WSMan
+
 
 ### Generate a trusted SSL Certificate for this computer
+
 
 Until you get a SSL certificate for the new computer, you can TEMPORARILY use unencrypted, but you WILL be putting your password out on the network for any sniffer to see
 `winrm set winrm/config/client @{AllowUnencrypted="true"}` # run as admin on the new computer, and on any computer that you want to connect FROM
@@ -433,7 +444,7 @@ Basic Authentication on both the Client and the service
 ToDo: how to copy jobs and nodes
 ToDo: how to change the jenkins agents to communicate with teh new master
 
-### Change Powershell from V5 to V7 on Master and Slaves
+### Change Powershell from V5 to V7 on Controller and Agents
 
 `http://utat022:4040/configureTools/`
 Jenkins->Configure->Tools->Powershell Installations: Defaultwindows =`C:\Program Files\PowerShell\7\pwsh.exe`
@@ -478,3 +489,28 @@ $b = ls C:\Users\whertzing\.vscode\extensions
 $a1 = $a -replace [regex]::escape('C:\Dropbox\whertzing\ncat016-dotvscode\.vscode\extensions\'), ''
 $b1 = $b -replace [regex]::escape('C:\Users\whertzing\.vscode\extensions\'), ''
 $c= $a2 | %{if ($b2.contains($_)) {$\_}}
+
+
+## Setup IIS WebServer
+
+### Enable IIS on Windows 10 or 11
+
+
+From and elevated Powershell prompt:
+
+The `DISM` module provides the `Enable-WindowsOptionalFeature`, so it must be installed. However, it is not availae as a standalone download, it has to be finnessed . See this for instructions: [Install DISM powershell module on Windows 7](https://superuser.com/questions/1270094/install-dism-powershell-module-on-windows-7)
+
+
+[Use Command line to Enable IIS Web server on Windows 11](https://www.how2shout.com/how-to/use-command-line-to-enable-iis-web-server-on-windows-11.html)
+
+`Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerRole, IIS-WebServer, IIS-CommonHttpFeatures, IIS-ManagementConsole, IIS-HttpErrors, IIS-HttpRedirect, IIS-WindowsAuthentication, IIS-StaticContent, IIS-DefaultDocument, IIS-HttpCompressionStatic, IIS-DirectoryBrowsing`
+
+To install IIS via the GUI, see
+[How to enable IIS (Internet Information Services) on Windows 11](https://www.how2shout.com/how-to/how-to-enable-iis-internet-information-services-on-windows-11.html)
+
+### Add SSLServer certificate to IIS
+
+[Enable HTTPS on IIS](https://techexpert.tips/iis/enable-https-iis/)
+### Add SSLServer certificate to Jenkins
+
+[How can I set up Jenkins CI to use https on Windows?](https://stackoverflow.com/questions/5313703/how-can-i-set-up-jenkins-ci-to-use-https-on-windows)

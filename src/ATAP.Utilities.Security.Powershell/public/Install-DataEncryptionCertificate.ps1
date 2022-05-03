@@ -30,37 +30,67 @@ ToDo: insert SCM keywords markers that are automatically inserted <Configuration
 #>
 Function Install-DataEncryptionCertificate {
   #region FunctionParameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = DefaultParameterSetNameReplacementPattern )]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern' )]
+    # ToDo: Figure out how to ensure this command can be run on a list of remote computers and a list of users on each
+  # ToDo: parameter validation on each computer and as each user
   param (
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $Path
+    [parameter(ValueFromPipeline = $False, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+   [ValidateScript({ Test-Path $_ -PathType Leaf })]
+    [Alias('RequestPath')]
+    [string] $DataEncryptionCertificateRequestPath
+    , [parameter(ValueFromPipeline = $False, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    [ValidateScript({ Test-Path $(Split-Path $_) -PathType Container })]
+    [Alias('CertificatePath')]
+    [string] $DataEncryptionCertificatePath
+    ,[parameter(ValueFromPipeline = $False, ValueFromPipelineByPropertyName = $True)]
+    [switch] $Force
+
   )
-  #endregion FunctionParameters
-  #region FunctionBeginBlock
-  ########################################
+  #endregion Parameters
+
+  #region BeginBlock
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-    # $DebugPreference = 'SilentlyContinue'
-    $results = @{}
-  }
-  #endregion FunctionBeginBlock
+    #$DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue
+    Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+      if (Test-Path $DataEncryptionCertificatePath) {
+      # If a certificate by that name already exists, fail, unless -force is true, then remove the exisitng certificate
+      if ($force) {
+        if ($PSCmdlet.ShouldProcess($null, "Remove-Item -Path $DataEncryptionCertificatePath")) {
+          Remove-Item -Path $DataEncryptionCertificatePath -EA Stop
+        }
+      }
+      else {
+        Throw "The Certificate file already exists use -Force to overwrite it: $DataEncryptionCertificatePath"
+      }
+    }
 
-  #region FunctionProcessBlock
-  ########################################
-  PROCESS {
-    #
-  }
-  #endregion FunctionProcessBlock
-
-  #region FunctionEndBlock
-  ########################################
-  END {
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
-    # return a results object
-     $results
-  }
-  #endregion FunctionEndBlock
+  # ToDo: validate Certreq.exe is present and executable
 }
-#endregion FunctionName
+  #endregion BeginBlock
+  #region ProcessBlock
+  PROCESS {}
+  #endregion ProcessBlock
+  #region EndBlock
+  END {
+    if ($PSCmdlet.ShouldProcess($null, "Create and install a new Data Encryption Certificate $DataEncryptionCertificatePath from $DataEncryptionCertificateRequestPath (certreq -new $DataEncryptionCertificateRequestPath $DataEncryptionCertificatePath) ")) {
+      try {
+        $DataEncryptionCertificateInstallationResults = CertReq.exe -new $DataEncryptionCertificateRequestPath $DataEncryptionCertificatePath
+      }
+      catch { # if an exception ocurrs
+        # handle the exception
+        $where = $PSItem.InvocationInfo.PositionMessage
+        $ErrorMessage = $_.Exception.Message
+        $FailedItem = $_.Exception.ItemName
+        #Log('Error',"CertReq.exe -new  $DataEncryptionCertificateRequestPath $DataEncryptionCertificatePath failed with $FailedItem : $ErrorMessage at `n $where.")
+        Throw "CertReq.exe -new  $DataEncryptionCertificateRequestPath $DataEncryptionCertificatePath failed with $FailedItem : $ErrorMessage at `n $where."
+      }
+    }
+
+    Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+  }
+  #endregion EndBlock
+}
+#endregion Install-DataEncryptionCertificate
 #############################################################################
 
 

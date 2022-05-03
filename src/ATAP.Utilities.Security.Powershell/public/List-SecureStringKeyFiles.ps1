@@ -1,5 +1,5 @@
 #############################################################################
-#region List-KeySecureStringFiles
+#region List-SecureStringKeyFiles
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,7 +28,7 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function List-KeySecureStringFiles {
+Function List-SecureStringKeyFiles {
   #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = DefaultParameterSetNameReplacementPattern )]
   param (
@@ -60,7 +60,7 @@ Function List-KeySecureStringFiles {
   }
   #endregion FunctionEndBlock
 }
-#endregion FunctionName
+#endregion List-SecureStringKeyFiles
 #############################################################################
 
 

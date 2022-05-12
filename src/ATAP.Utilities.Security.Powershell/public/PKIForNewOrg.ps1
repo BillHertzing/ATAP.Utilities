@@ -227,7 +227,7 @@ $ComputerMames | ForEach-Object { $CN = $_
 
 
   # Create a SSL Server Certificate Request
-  # Define the SubjectAlternateName (SAN) needed, put it into a temporary extensions file
+  # Define the SubjectAlternateName (SAN) needed
   ("DNS.1=$CN")
   # ToDo : add ParameterSet for custom openSSL configuration file, with and without obsfucation
   # $CertificateRequestConfigPath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesOpenSSLConfigsPathConfigRootKey']] 'SSLCertificateTemplate.cnf'
@@ -284,7 +284,7 @@ $ComputerMames | ForEach-Object { $CN = $_
   $CertificateDir = Split-Path -Path $CertificatePath -Parent
   $matchingCerts = ((gc $CASigningCertificatesCertificatesIssuedDBPath) -match "/CN=$($DNHash.CN)/") | % { ($_ -split '\s+')[2] } | % { Join-Path $CertificateDir $($_ + '.pem') }
   # Only one of them should exist
-  $certToRename = $matchingCerts | % { if (Test-Path $_) { $_ } }
+  $certToRename = $matchingCerts | ForEach-Object { if (Test-Path $_) { $_ } }
   # rename that one to the expected CertifictePath
   Move-Item $certToRename $CertificatePath -Force
 
@@ -305,6 +305,9 @@ $ComputerMames | ForEach-Object { $CN = $_
   $CertificatePFXPath = $CertificatePath -replace 'pem$','pfx'
   openssl pkcs12 -export -inkey $EncryptedPrivateKeyPath -in $CertificatePath -out $CertificatePFXPath
 }
+
+# Code-Signing certificates
+
 
 # [How can I set up Jenkins CI to use https on Windows?](https://stackoverflow.com/questions/5313703/how-can-i-set-up-jenkins-ci-to-use-https-on-windows)
 

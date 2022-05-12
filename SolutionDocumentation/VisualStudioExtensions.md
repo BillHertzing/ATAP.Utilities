@@ -31,7 +31,7 @@ To speed up development, do NOT build the AutoDoc project automatically.
     * In the Project contexts table, locate the project you want to exclude from the build.
     * In the Build column for the project, clear the check box.
 
-Build the AutoDoc project using the command line and the --serve option to preview your changes. 
+Build the AutoDoc project using the command line and the --serve option to preview your changes.
 # Visual Studio Configuration settings
     * tbd
 
@@ -60,10 +60,11 @@ Build the AutoDoc project using the command line and the --serve option to previ
 ### Installation Details
     * create a .build folder under the solution dir
 	* Add the Community Tools NuGet Package
-	
+
 # How to distribute cross-framework custom tasks via NuGet for cro
-https://natemcmaster.com/blog/2017/07/05/msbuild-task-in-nuget/
-	
+
+[Shipping a cross-platform MSBuild task in a NuGet package](https://natemcmaster.com/blog/2017/07/05/msbuild-task-in-nuget/)
+
 # Custom PowerShell scripts for Visual Studio
 
 
@@ -74,13 +75,15 @@ https://natemcmaster.com/blog/2017/07/05/msbuild-task-in-nuget/
 # Useful utility programs outside of Visual Studio
 
 ## MSbuild Structured log viewer *** Unstable for VS 2018 15.8.9
-MSbuild logging can be turned on for visual studio with the vsix package 
+MSbuild logging can be turned on for visual studio with the vsix package
+
 https://marketplace.visualstudio.com/items?itemName=VisualStudioProductTeam.ProjectSystemTools
 
-MSBuild logs are written to 
-C:\Users\<username>\AppData\Local\Temp AKA %APPDATA%\Local\Temp  (cmd.exe) or "$Env:AppData\Local\Temp" (PowerShell)
+MSBuild logs are written to
+`C:\Users\<username>\AppData\Local\Temp AKA %APPDATA%\Local\Temp`  (cmd.exe) or `"$Env:AppData\Local\Temp"` (PowerShell)
 
 ### Installation Details
 Use Chocolatey
-https://chocolatey.org/packages/msbuild-structured-log-viewer	
+[MSBuild Structured Log Viewer](https://chocolatey.org/packages/msbuild-structured-log-viewer)
+
 choco install msbuild-structured-log-viewer

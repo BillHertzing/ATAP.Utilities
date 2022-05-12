@@ -376,11 +376,20 @@ function Add-SecretStoreVault {
 ##################################################################################
 
 #ToDo: document expected values when run under profile, Module cmdlet/function, script.
-Write-Verbose "Starting $($MyInvocation.Mycommand)"
-Write-Verbose ("WorkingDirectory = $pwd")
-Write-Verbose ("PSScriptRoot = $PSScriptRoot")
-Write-Verbose ('EnvironmentVariablesAtStartOfMachineProfile = ' + $(Write-EnvironmentVariablesIndented 0 2 ))
-Write-Verbose ('Registry Current Session Environment variable path = ' + $(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment' -Name 'Path'))
+Write-PSFMessage -Level Verbose -Message ('Starting AllUsersAllHostsV7CoreProfile.ps1')
+Write-PSFMessage -Level Verbose -Message ("WorkingDirectory = $pwd")
+Write-PSFMessage -Level Verbose -Message ("PSScriptRoot = $PSScriptRoot")
+Write-PSFMessage -Level Verbose -Message ('EnvironmentVariablesAtStartOfMachineProfile = ' + $(Write-EnvironmentVariablesIndented 0 2 ))
+Write-Verbose ('PATH environment variable from Registry = ' + $(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment' -Name 'Path'))
+
+# For cross-platform compatability, get the hostname from the .Net DNS library
+$hostName = ([System.Net.DNS]::GetHostByName($Null)).Hostname
+Write-PSFMessage -Level Verbose -Message ("hostname = $hostname")
+
+# Set all of thhe "usual" environment variables to this value, to ensure that all of them exist
+[System.Environment]::SetEnvironmentVariable('COMPUTERNAME', $hostname, 'Process')
+[System.Environment]::SetEnvironmentVariable('HOST', $hostname, 'Process')
+[System.Environment]::SetEnvironmentVariable('HOSTNAME', $hostname, 'Process')
 
 # Define default values of common parameters
 $PSDefaultParameterValues = @{
@@ -419,35 +428,36 @@ $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Objec
 
 
 # Load SecurityAndSecretsSettings into the ToBeExecutedGlobalSettings
-$global:SecurityAndSecretsSettings.Keys | ForEach-Object {
+$keys = $global:SecurityAndSecretsSettings.Keys
+foreach ($key in $keys ){
   # ToDo error hanlding if one fails
-  $global:ToBeExecutedGlobalSettings[$_] = $global:SecurityAndSecretsSettings[$_]
-  Write-PSFMessage -Level Debug -Message "global:ToBeExecutedGlobalSettings[$_] = $($global:ToBeExecutedGlobalSettings[$_])"
+  $global:ToBeExecutedGlobalSettings[$key] = $global:SecurityAndSecretsSettings[$key]
+  Write-PSFMessage -Level Debug -Message "global:ToBeExecutedGlobalSettings[$key] = $($global:ToBeExecutedGlobalSettings[$key])"
 }
 
 # Load settings common to all machines into $global:settings
-($global:MachineAndNodeSettings['AllCommon']).Keys | ForEach-Object {
-  $global:settings[$_] = $($global:MachineAndNodeSettings['AllCommon'])[$_]
+foreach ($key in ($global:MachineAndNodeSettings['AllCommon']).Keys ){
+  $global:settings[$key] = $($global:MachineAndNodeSettings['AllCommon'])[$key]
 }
 
 # Load the machine-specific settings into $global:settings
-($global:MachineAndNodeSettings[$env:COMPUTERNAME]).Keys | ForEach-Object {
-  $global:settings[$_] = $($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$_]
+foreach ($key in ($global:MachineAndNodeSettings[$hostname]).Keys ){
+  $global:settings[$key] = $($global:MachineAndNodeSettings[$hostname])[$key]
 }
 
 # Load the $global:settings with the $global:ToBeExecutedGlobalSettings
-$global:ToBeExecutedGlobalSettings.Keys | ForEach-Object {
+foreach ($key in ($global:ToBeExecutedGlobalSettings).Keys ){
   # ToDo error hanlding if one fails
-  $global:settings[$_] = Invoke-Expression $global:ToBeExecutedGlobalSettings[$_]
-  Write-PSFMessage -Level Debug -Message "global:settings[$_] = $global:settings[$_]"
+  $global:settings[$key] = Invoke-Expression $global:ToBeExecutedGlobalSettings[$key]
+  Write-PSFMessage -Level Debug -Message "global:settings[$key] = $global:settings[$key]"
 }
 
 # Load the JenkinsRoleSettings for this machine into the $global:settings
-($global:MachineAndNodeSettings[$env:COMPUTERNAME])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']] | ForEach-Object {
+($global:MachineAndNodeSettings[$hostname])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']] | ForEach-Object {
   $nodeName = $_
   $global:settings[$nodeName] = @{}
   ($global:JenkinsRoles)[$nodename] | ForEach-Object {
-    $global:settings[$nodename][$_] = $($global:MachineAndNodeSettings[$env:COMPUTERNAME][$_])
+    $global:settings[$nodename][$_] = $($global:MachineAndNodeSettings[$hostname][$_])
   }
 }
 

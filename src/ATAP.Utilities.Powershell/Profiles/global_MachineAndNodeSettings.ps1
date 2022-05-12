@@ -24,6 +24,7 @@ else {
   $inProcessEnvironmentVariable = 'Production' # default for all machines is Production, can be overwritten on a per-process basis if needed
 }
 
+
 $global:MachineAndNodeSettings = @{
   # Settings common to all machines
   'AllCommon' = @{
@@ -61,8 +62,10 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['ENVIRONMENTConfigRootKey']                     = $inProcessEnvironmentVariable
 
   }
+}
+switch ($hostname) {
   # Machine Settings
-  'utat01'    = @{
+  'utat01'  { $global:MachineAndNodeSettings['utat01'] = @{
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'C:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'
@@ -82,9 +85,9 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = @('C:/Program Files (x86)/Microsoft SQL Server/150/Tools/PowerShell/Modules/')
     $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
-
   }
-  'utat022'   = @{
+  }
+  'utat022' { $global:MachineAndNodeSettings['utat022'] = @{
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'C:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'D:' 'Temp'
@@ -113,7 +116,8 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
-  'ncat016'   = @{
+}
+  'ncat016'  { $global:MachineAndNodeSettings['ncat016']= @{
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'C:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'D:' 'Temp'
@@ -134,7 +138,8 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
-  'ncat041'   = @{
+}
+  'ncat041'  { $global:MachineAndNodeSettings['ncat041']= @{
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'c:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'
@@ -155,7 +160,8 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
-  'ncat-ltb1' = @{
+}
+  'ncat-ltb1' { $global:MachineAndNodeSettings['ncat-ltb1'] = @{
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'c:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'
@@ -176,7 +182,8 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
   }
-  'ncat-ltjo' = @{
+}
+  'ncat-ltjo' { $global:MachineAndNodeSettings['ncat-ltjo'] = @{
     $global:configRootKeys['CloudBasePathConfigRootKey']                              = $global:configRootKeys['DropBoxBasePathConfigRootKey']
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'D:' 'Dropbox'
     $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'
@@ -196,6 +203,7 @@ $global:MachineAndNodeSettings = @{
     $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = Join-Path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Microsoft SQL Server' '150' 'Tools' 'PowerShell' 'Modules'
     $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
+  }
   }
 }
 

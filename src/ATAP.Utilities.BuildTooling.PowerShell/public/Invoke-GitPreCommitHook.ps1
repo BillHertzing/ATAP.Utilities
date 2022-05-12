@@ -1,37 +1,36 @@
 # This script is called when a developer makes a commit on a local git repository
 #  It executes in the context of the developer's terminal or IDE
 # It expects to be invoked in a repository's root directory
+# [pre-commit hook examples (Python)](https://github.com/pre-commit/pre-commit-hooks)
+
 function Invoke-GitPreCommitHook {
   # ensure that by default the Commit will NOT happen
   $exitcode = 1
   $VerbosePreference = 'SilentlyContinue' # Continue  SilentlyContinue
   $DebugPreference = 'SilentlyContinue'
-
-  Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-  Write-Debug ("Current Working Directory = $(Get-Location)" )
-  # Write-Debug ("Environment Variables at start of $($MyInvocation.Mycommand) = " + [Environment]::NewLine + $(Write-EnvironmentVariablesIndented 0 2 ))
+  Write-PSFMessage -Level Debug -Message "Workspace = $([System.Environment]::GetEnvironmentVariable('Workspace'))" -Tag 'Jenkins', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Current Working Directory = $(Get-Location)" -Tag 'Jenkins', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable Environment = $($global:configRootKeys['ENVIRONMENTConfigRootKey']) = $([System.Environment]::GetEnvironmentVariable($global:configRootKeys['ENVIRONMENTConfigRootKey']))" -Tag 'Jenkins', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable ModuleName = $([System.Environment]::GetEnvironmentVariable('ModuleName'))" -Tag 'Jenkins', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable LocalSourceReproDirectory = $([System.Environment]::GetEnvironmentVariable('LocalSourceReproDirectory'))" -Tag 'Jenkins', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable BranchName = $([System.Environment]::GetEnvironmentVariable('BranchName'))" -Tag 'Jenkins', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable RelativeModulePath = $([System.Environment]::GetEnvironmentVariable('RelativeModulePath'))" -Tag 'Jenkins', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable NU_GET_API_KEY_SECRET = $([System.Environment]::GetEnvironmentVariable('NU_GET_API_KEY_SECRET'))" -Tag 'Jenkins', 'Publish'
 
   $moduleName = [System.Environment]::GetEnvironmentVariable('ModuleName')
-  Write-Verbose ('Environment Variable ModuleName = ' + $moduleName)
-
   $localSourceReproDirectory = [System.Environment]::GetEnvironmentVariable('LocalSourceReproDirectory')
-  Write-Verbose ('Environment Variable LocalSourceReproDirectory = ' + $localSourceReproDirectory)
-
   $branchName = [System.Environment]::GetEnvironmentVariable('BranchName')
-  Write-Verbose ('Environment Variable BranchName = ' + $branchName)
-
   $relativeModulePath = [System.Environment]::GetEnvironmentVariable('RelativeModulePath')
-  Write-Verbose ('Environment Variable RelativeModulePath = ' + $relativeModulePath)
 
-  # ToDo: add -fail-fast parameter
+  # ToDo: add -fail-fast Environment Variable
 
-  # ToDo: add -force-allow parameter to allow precommit to pass even if checks fail or there are no files in the commit
-
-  # Regex Patterns used to extract data from Git, expects an opinionated layout to the project's direcotry structure
-  $ProjectKindAndNameExtractorPattern = '(?<ProjectKind>' + $dirsep + 'src|test|database' + $dirsep + ')(?<ProjectSubdirectoryName>.*?' + $dirsep + ')'
+  # ToDo: add -force-allow Environment Variable to allow precommit to pass even if checks fail or there are no files in the commit
 
   # shorthand
   $dirSep = [Regex]::Escape([System.IO.Path]::DirectorySeparatorChar)
+
+  # Regex Patterns used to extract data from Git, expects an opinionated layout to the project's direcotry structure
+  $ProjectKindAndNameExtractorPattern = '(?<ProjectKind>' + $dirsep + 'src|test|database' + $dirsep + ')(?<ProjectSubdirectoryName>.*?' + $dirsep + ')'
 
   # List of AddedChangedModifiedRenamed files in the commit
   $changedFiles = (git diff --name-only --cached --diff-filter=ACMR)
@@ -43,10 +42,11 @@ function Invoke-GitPreCommitHook {
   }
   Write-Debug "Number of changed files = $($changedFiles.count)"
 
-  #   Validate all pre-commit requirements, fail the commit if any requirement is not met
+  # Validate all pre-commit requirements, fail the commit if any requirement is not met
 
   # ToDo: Read dynamic pre-commit checks from vetted source (and validate the checks before using them)
   # ToDo: Read dynamic pre-commit actions from vetted source (and validate the actions before using them)
+
 
   # Built-in PreCommit checks
 
@@ -54,7 +54,7 @@ function Invoke-GitPreCommitHook {
   # Language: powershell: Project Subdirectory contains project manifest file (module's subdirectory name matches a file within having the same names and .psd1 suffix)
   # Language: powershell: Project Subdirectory contains project Module file (module's subdirectory name matches a file within having the same names and .psd1 suffix)
   # Language: powershell: Project Module File contains vlid Module file components and optional dot-sourcing commands for public and private subdirectories
-# Validate-SheBangLine
+  # Test-SheBangLine
 
   # Language: C#: Project Subdirectory contains .csproj file
   # Language: C#: Project Subdirectory contains Properties subdirectory which contains AssemblyInfo.cs file
@@ -62,35 +62,34 @@ function Invoke-GitPreCommitHook {
   # Language: SQL: Project Subdirectory contains .sql file
 
   # Language: All: Project Subdirectory contains Documentation subdirectory, which contains a ReadMe.md file
-  # [pre-commit hook examples (Python)](https://github.com/pre-commit/pre-commit-hooks)
-  # Validate-GiantFiles
-# Validate-GiantFiles
-# Validate-AST
-# Validate-CaseConflictForPlatforms
-# Validate-JsonSyntax
-# Validate-XMLSyntax
-# Validate-XYAMLSyntax
-# Validate-MergeConflict
-# Validate-PrivateKeys
-# Validate-PrettyJson
-# Validate-PrettyXML
-# Validate-PrettyCSharp
-# Validate-PrettyPowershell
-# Validate-PrettyJenkins
-# Validate-TestNames
-# Validate-Encoding
-# Validate-ByteOrderMark
-# Validate-LineEndings
+  # Test-GiantFiles
+# Test-GiantFiles
+# Test-AST
+# Test-CaseConflictForPlatforms
+# Test-JsonSyntax
+# Test-XMLSyntax
+# Test-XYAMLSyntax
+# Test-MergeConflict
+# Test-PrivateKeys
+# Test-PrettyJson
+# Test-PrettyXML
+# Test-PrettyCSharp
+# Test-PrettyPowershell
+# Test-PrettyJenkins
+# Test-TestNames
+# Test-Encoding
+# Test-ByteOrderMark
+# Test-LineEndings
 
   # Platform: *nix
-  # Validate-ShebangScriptsAreExecutable
+  # Test-ShebangScriptsAreExecutable
 
   # Kinds of Projects. Used to validate input that comes from git commands. Opinionated.
   $projectKindStrs = @{'src' = 'src'; 'test' = 'test'; 'database' = 'database' }
   # Project Languages. Used to classify projects based on the scriptblock
   $projectLanguageStrs = @{'C#' = { Write-Debug 'C#' }; 'SQL' = 'SQL'; 'Powershell' = 'Powershell' }
 
-  # List of Projects in the commit (Sourc, Tests, or database), and the language (C#, SQL (Database), and Powershell) of each project
+  # List of Projects in the commit (Source, Tests, or Database), and the language (C#, SQL (Database), and Powershell) of each project
   $changedFileCustomProperties = @{}
   $sourceProjects = $changedFiles | ForEach-Object { $fn = $_
     Write-Debug "Working on file named $fn"

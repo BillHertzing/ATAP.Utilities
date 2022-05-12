@@ -1,10 +1,9 @@
 ## variables and locations for security and secret management
 
-
-$local:SecurityAndSecretsSettings = [ordered]@{
+$local_SecurityAndSecretsSettings = [ordered]@{
 
   # Where all things Security and Secrets related are stored
-  $global:configRootKeys['SECURE_CLOUD_BASE_PATHConfigRootKey']                                     = 'join-path $global:settings[$global:configRootKeys["DropBoxBasePathConfigRootKey"]] "Security"'  #
+  $global:configRootKeys['SECURE_CLOUD_BASE_PATHConfigRootKey']                                     = 'join-path $global:settings[$global:configRootKeys["DropBoxBasePathConfigRootKey"]] "Security"'
 
   # OpenSSL Environment variables
   $global:configRootKeys['OPENSSL_HOMEConfigRootKey']                                               = 'join-path $global:settings[$global:configRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "OpenSSL" '
@@ -64,18 +63,20 @@ $local:SecurityAndSecretsSettings = [ordered]@{
   $global:ConfigRootKeys['DisasterRecoveryBackupPathConfigRootKey']                                 = "Join-path 'C:' 'DisasterRecovery'"
 }
 
-# If a global variable already exists, append the local information
+# If a global hash variable already exists, modify the global with the local information
 # This supports the ability to have multiple files define these values
 if ($global:SecurityAndSecretsSettings) {
+  Write-PSFMessage -Level Debug -Message 'global:SecurityAndSecretsSettings are already defined '
   # Load the $global:SecurityAndSecretsSettings with the $Local:SecurityAndSecretsSettings
-  $global:SecurityAndSecretsSettings.Keys | ForEach-Object {
-    # ToDo error hanlding if one fails
-    $global:SecurityAndSecretsSettings[$_] = $local:SecurityAndSecretsSettings[$_] # Invoke-Expression $global:SecurityAndSecretsSettings[$_]
+  $keys = $local_SecurityAndSecretsSettings.Keys
+  foreach ($key in $keys ){
+    # ToDo error handling if one fails
+    $global:SecurityAndSecretsSettings[$key] = $local_SecurityAndSecretsSettings[$key]
   }
 }
 else {
-  Write-PSFMessage -Level Debug -Message 'global:SecurityAndSecretsSettings not defined '
-  $global:SecurityAndSecretsSettings = $Local:SecurityAndSecretsSettings
+  Write-PSFMessage -Level Debug -Message 'global:SecurityAndSecretsSettings are NOT defined'
+  $global:SecurityAndSecretsSettings = $local_SecurityAndSecretsSettings
 }
 
 

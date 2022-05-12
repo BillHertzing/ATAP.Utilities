@@ -4,12 +4,12 @@ How to use the ATAP.Utilities.BuildTooling.Jenkins pipelines and tools in a Wind
 
 ## Overview
 
-https://developer.okta.com/blog/2019/07/26/jenkins-continuous-integration-csharp-aspnetcore
+[Build Continuous Integration with Jenkins in C#](https://developer.okta.com/blog/2019/07/26/jenkins-continuous-integration-csharp-aspnetcore)
 
 
 ## Conventions
 
-An ATAP Utilities Jenkins pipeline has a lot of options. All have a default value, and all c an be override at multiple levels.
+An ATAP Utilities Jenkins pipeline has a lot of options. All have a default value, and all can be override at multiple levels.
 
 ## Dotnet Core ConfigurationRoot
 
@@ -94,20 +94,21 @@ ToDo: install a formatter for Jenkinsfile
 ## Installing an agent
 
 ### Getting the Controllers Instance ID:
+
 ou can also capture the value by visiting the Instance Identity page, at something like "https://myjenkins.example.com/instance-identity".
 
 ### Configuring the Agent as a Windows Service
 
-https://wiki.jenkins.io/display/JENKINS/Installing+Jenkins+as+a+Windows+service
+[Jenkins : Installing Jenkins as a Windows service](https://wiki.jenkins.io/display/JENKINS/Installing+Jenkins+as+a+Windows+service)
 
-https://support.cloudbees.com/hc/en-us/articles/217423827-How-to-Install-Several-Windows-Slaves-as-a-Service-
+[How to install Windows agents as a service?](https://support.cloudbees.com/hc/en-us/articles/217423827-How-to-Install-Several-Windows-Slaves-as-a-Service-)
 
 Name of Service used to run the Jenkins service is `JenkinsServiceAcct`, password is stored as a secret somewhere (toDo: Create secrets files (encrypted) somewhere on dropbox not in github). Temporary value is `NotSecret`
 
 
 ## Starting an Agent
 
-https://github.com/jenkinsci/remoting/blob/master/docs/inbound-agent.md
+[Launching inbound agents](https://github.com/jenkinsci/remoting/blob/master/docs/inbound-agent.md)
 
 This command can be configured, then run via any shell, on the server where the agent service is expected to run
 
@@ -145,7 +146,7 @@ java -jar agent.jar \
 
 ## Cleanup failed runs
 
-https://stackoverflow.com/questions/37468455/jenkins-pipeline-wipe-out-workspace
+[Jenkins Pipeline Wipe Out Workspace](https://stackoverflow.com/questions/37468455/jenkins-pipeline-wipe-out-workspace)
 
 
 ```Groovy
@@ -161,6 +162,7 @@ pipeline {
     }
 }
 ```
+
 Follow these steps:
 
 1) Navigate to the latest build of the pipeline job you would like to clean the workspace of.
@@ -169,6 +171,7 @@ Follow these steps:
 
 
 Also try variations on the below script... Will work for default workspace as well
+
 ```Groovy
 
 pipeline {
@@ -207,7 +210,9 @@ Executable code being built has to be built inside a loop that calls the build w
 
 ### dotnet build stage
 
-#### [MSBuild Structured Log](https://github.com/KirillOsenkov/MSBuildStructuredLog) is a logger for creating detailed logs of the build process
+#### Detailed logs of the build process
+
+[MSBuild Structured Log](https://github.com/KirillOsenkov/MSBuildStructuredLog) is a logger for creating detailed logs of the build process
 
  [StructuredLogger Nuget package](https://www.nuget.org/packages/MSBuild.StructuredLogger/2.1.507)
 
@@ -218,10 +223,11 @@ ToDo: version control? hardcoded version number in switch?
 
 ## PlantUmlClassDiagramGenerator stage
 
+[PlantUmlClassDiagramGenerator](https://www.nuget.org/packages/PlantUmlClassDiagramGenerator)
 ### prerequisites
 
 ToDo: Move into prerequisites step of the pipeline, test for installed and minimum required version
-https://www.nuget.org/packages/PlantUmlClassDiagramGenerator
+
 dotnet tool install --global PlantUmlClassDiagramGenerator
 
 ### command line
@@ -232,17 +238,17 @@ puml-gen "./" "./" -dir -createAssociation -excludePaths "bin,obj,Properties"
 
 ## "'Test' stage"
 
-#dotnet test command
+### dotnet test command
 
-https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-test
+[dotnet test](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-test)
 
-### OPtimizations
+### Optimizations
 
 Since the Jenkinsfile has already built the code and the tests, add the following arguments `--nologo --no-restore --no-build`
 
 ### Where to find the binaries to run
 
---output <OUTPUT_DIRECTORY>  defaults to default path is ./bin/<configuration>/<framework>/  but ATAP Standard ?todo:? Expects a `Published` directory to be the location . From within test code methods , ` AppDomain.BaseDirectory` will return the location from whihc the tests are running
+--output <OUTPUT_DIRECTORY>  defaults to default path is ./bin/<configuration>/<framework>/  but ATAP Standard ?todo:? Expects a `Published` directory to be the location . From within test code methods , ` AppDomain.BaseDirectory` will return the location from which the tests are running
 
 ### Where to put the test results
 
@@ -260,15 +266,15 @@ The build stage should loop over each value of the configuration list <Debug>,<P
 
 ###  Code Coverage
 
-Install [Coverlet]()
+Install [Coverlet](https://github.com/coverlet-coverage/coverlet)
+
+[Use code coverage for unit testing](https://docs.microsoft.com/en-us/dotnet/core/testing/unit-testing-code-coverage?tabs=windows#code-coverage-tooling)
 
 `--collect:"XPlat Code Coverage"` option to `dotnet test`
 
 ### Loggers
 
 ### Runssettings arguments passed via command line
-
-
 
 ### Runsettings files
 

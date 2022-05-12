@@ -38,9 +38,13 @@ Function Get-BrowserBookmarks {
     [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
     [ValidateSet('*', 'Chrome', 'Brave')]
     [string] $Browser
-    ,[parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
     [ValidateSet('*', 'synced', 'other', 'bookmarkbar')]
     [string] $Source
+    ,[parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
+    [ValidateNotNullOrEmpty()]
+    [Alias('CN')]
+    [string[]] $ComputerName
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [switch] $Validate
   )
@@ -50,25 +54,9 @@ Function Get-BrowserBookmarks {
   BEGIN {
     #$DebugPreference = 'Continue'
     Write-PSFMessage -Level Debug -Message 'Starting Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
-$Paths = @()
-    switch ($browser) {
-      'Chrome' {
-        $Paths += Join-path $env:localappdata 'Google' 'Chrome','User Data','Default','Bookmarks'
-      }
-      'Brave' {$Paths += Join-path $env:localappdata 'BraveSoftware' 'Brave-Browser','User Data','Default','Bookmarks'}
-      '*' {
-        $Paths += Join-path $env:localappdata 'Google' 'Chrome','User Data','Default','Bookmarks'
-        $Paths += Join-path $env:localappdata 'BraveSoftware' 'Brave-Browser','User Data','Default','Bookmarks'
-      }
-    }
-
-    $Paths | %{if (-not (Test-Path -Path $_ -PathType leaf)) {
-       throw "$_ is not a file" }
-      }
-
 
     # ToDo: move to private
-    #A nested function to enumerate bookmark folders
+    # A nested function to enumerate bookmark folders
     Function Get-BookmarkFolder {
       [cmdletbinding()]
       Param(
@@ -86,7 +74,7 @@ $Paths = @()
           else {
             $hash = [ordered]@{
               Folder = $parent
-              Name   = $child.name
+              Title   = $child.name
               URL    = $child.url
               Added  = [datetime]::FromFileTime(([double]$child.Date_Added) * 10)
               Valid  = $Null
@@ -114,10 +102,9 @@ $Paths = @()
                 }
 
               } #if url
-
             } #if validate
             #write custom object
-            New-Object -TypeName PSobject -Property $hash
+            [PSCustomObject] $hash
           } #else url
         } #foreach
       } #end PROCESS
@@ -125,45 +112,51 @@ $Paths = @()
   }
   #endregion BeginBlock
   #region ProcessBlock
-  PROCESS {  }
+  PROCESS {
+    $Paths = @()
+    switch ($browser) {
+      'Chrome' {
+        $Paths += Join-Path $env:localappdata 'Google' 'Chrome', 'User Data', 'Default', 'Bookmarks'
+      }
+      'Brave' { $Paths += Join-Path $env:localappdata 'BraveSoftware' 'Brave-Browser', 'User Data', 'Default', 'Bookmarks' }
+      '*' {
+        $Paths += Join-Path $env:localappdata 'Google' 'Chrome', 'User Data', 'Default', 'Bookmarks'
+        $Paths += Join-Path $env:localappdata 'BraveSoftware' 'Brave-Browser', 'User Data', 'Default', 'Bookmarks'
+      }
+    }
+    $acc = @()
+
+    foreach ($path in $Paths) {
+      if (-not (Test-Path -Path $path -PathType leaf)) {
+        throw "$path is not a file"
+      }
+      # convert Google Chrome Bookmark file from JSON
+      #ToDo: $Encoding
+        $data = Get-Content $path | Out-String | ConvertFrom-Json
+        switch ($Source) {
+          'bookmarkbar' {
+            $acc = Get-BookmarkFolder $data.roots.bookmark_bar
+          }
+          'synced' {
+            $acc = Get-BookmarkFolder $data.roots.other
+          }
+          'other' {
+            $acc = Get-BookmarkFolder $data.roots.synced
+          }
+          '*' {
+            $acc = Get-BookmarkFolder $data.roots.bookmark_bar
+            $acc += Get-BookmarkFolder $data.roots.other
+            $acc += Get-BookmarkFolder $data.roots.synced
+          }
+        }
+      }
+      $acc
+  }
   #endregion ProcessBlock
   #region EndBlock
   END {
-
-    $acc = @{}
-
-    $time = Measure-Command {
-      #convert Google Chrome Bookmark file from JSON
-      $Paths | %{$path = $_
-      $data = Get-Content $path | Out-String | ConvertFrom-Json
-
-      switch ($Source) {
-        'bookmarkbar' {
-          $acc = Get-BookmarkFolder $data.roots.bookmark_bar
-        }
-        'other' {
-          $acc = Get-BookmarkFolder $data.roots.other
-        }
-        'other' {
-          $acc = Get-BookmarkFolder $data.roots.synced
-        }
-        '*' {
-          $acc = Get-BookmarkFolder $data.roots.bookmark_bar
-          $acc += Get-BookmarkFolder $data.roots.other
-          $acc += Get-BookmarkFolder $data.roots.synced
-        }
-      }
-      }
-    }
-    $OutObj = [PSCustomObject] @{
-      Results    = $acc
-      Time       = $time
-      Source = $Source
-      Browser = $Browser
-    }
-    Write-PSFMessage -Level Debug -Message 'Ending Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
-    return $OutObj
-
+        Write-PSFMessage -Level Debug -Message 'Ending Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
 }
+
 

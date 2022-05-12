@@ -25,7 +25,7 @@ The maintainers and contributors to this repository feel it is important to cred
 
 
 ## Visual Studio
-###  Doing Builds 
+###  Doing Builds
 #### Build Logging
   * Project System Tools (Structured MSBUILD log viewer) https://marketplace.visualstudio.com/items?itemName=VisualStudioProductTeam.ProjectSystemTools and http://msbuildlog.com/
 #### New Project System for MSBuild
@@ -59,7 +59,26 @@ These libraries use the following attributes for versioning
 ##### Chocolatey Installation configuration
 ##### Development Versioning and LocalFeed
 
-https://natemcmaster.com/blog/2017/11/11/build-tools-in-nuget/
+[Bundling .NET build tools in NuGet](https://natemcmaster.com/blog/2017/11/11/build-tools-in-nuget/)
+
+[Contents tagged with Category Theory](https://weblogs.asp.net/dixin/Tags/Category%20Theory)
+[Category Theory via C# (7) Monad and LINQ to Monads](https://weblogs.asp.net/dixin/category-theory-via-csharp-7-monad-and-linq-to-monads)
+
+#### C#
+
+[Cleaner Code With Swtich Expressions In C#](https://www.conradakunga.com/blog/cleaner-code-with-swtich-expressions-in-c/)
+[LINQExample](https://github.com/ssukhpinder/LINQExample)
+[How to combine LINQ queries with regular expressions (C#)](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/how-to-combine-linq-queries-with-regular-expressions)
+
+#### powershell
+
+[High Performance PowerShell with LINQ](https://www.red-gate.com/simple-talk/development/dotnet-development/high-performance-powershell-linq/]
+[Let’s play with Strings & LINQ](https://medium.com/c-sharp-progarmming/learn-linq-by-example-9c4221ffcdbf)
+[Executing LINQ Queries in PowerShell – Part 2](https://powershell.org/2018/05/executing-linq-queries-in-powershell-part-2/)
+
+#### Everything
+
+[Really Useful Set of Bookmark Searches 2.1 for Everything](https://www.voidtools.com/forum/viewtopic.php?t=4239)
 
 # Obsolete
 The following links are to projects or articles no longer included in the solution. However, they were considered relevant at one time, and certainly will contain information worth reviewing.

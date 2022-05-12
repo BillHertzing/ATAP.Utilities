@@ -397,9 +397,13 @@ ensure the GoogleDrive location is added
 
 ## Enable PSRemoting on the new computer
 
-Run the following commands as a local admin on the new computer
+Run the following commands as a local admin on the new computer. Do this in both Powershell Desktop (5.1) and also in Core (Currently Powershell 7.x)
 
 - `Enable-PSRemoting -Force`
+- in Powershell core, run `Get-PSSessionConfiguration`
+    validate a powershell 7 endpoint now exists
+- The machine profile for Powershell Core (``) should have the line `$PSSessionConfigurationName = 'PowerShell.7'`
+    That will make PSRemoting on a client use the Powershell Core configuration endpoint on the server computer
 
 ### Add the other computers in the group to existing trustedhosts for WinRM remote management
 
@@ -409,6 +413,21 @@ Set-Item WSMan:\localhost\Client\TrustedHosts -Value 'utat022,utat01,ncat-ltjo,n
 
 ### Add the new computer as a trusted host on other computers in the group
 
+### Setup PSRemoting Configuration `WithProfile`
+
+PSRemoting sessions do not run any `profile` files when starting. To do so requires a custom PSRemoting configuration.
+
+- Validate the custom Session Configuration File exists
+  `Test-Path "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\WithProfiles.pssc"`
+- Create the subdirectory `C:\Program Files\PowerShell\7\SessionConfig`
+  `New-Item -ItemType Directory -Force 'C:\Program Files\PowerShell\7\SessionConfig'`
+- Register the new PSSessionConfiguration
+  `Register-PSSessionConfiguration -Name 'WithProfile' -path "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\WithProfiles.pssc"`
+- Validate
+  `Get-PSSessionConfiguration | Where-Object {$_.Name -eq 'WithProfile'}`
+
+[about_Session_Configurations](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_session_configurations?view=powershell-7.2)
+[about_Session_Configuration_Files](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_session_configuration_files?view=powershell-7.2)
 
 ### Enable HTTPS on WSMan
 
@@ -429,9 +448,20 @@ However, "WinRM HTTPS requires a local computer Server Authentication certificat
 [Creating simple SSL certificates for server authentication using OpenSSL](https://blog.oholics.net/creating-simple-ssl-certificates-for-server-authentication-using-openssl/)
 [HOW TO CREATE DIGITAL CERTIFICATES USING OPENSSL](https://www.aemcorp.com/managedservices/blog/creating-digital-certificates-using-openssl)
 
-## Authentication for WinRM
+### Authentication for WinRM
 
 Basic Authentication on both the Client and the service
+
+### Powershell PSRemoting maintenance
+
+After any upgrade of Powershell to a new version, the WSMan PSSessionConfiguration needs updating. Run `enable-psremoting` and that will create a new endpoint for the latest configuration, and it will set the endpoint for `powershell.7` to point to the latest version
+
+### Using PSSession
+
+Note that the `WithProfile` configuration must be setup on each of the remote computers
+Also note that any errors in the profile file will cause the remote session initialization to fail
+`$Computers = ('utat01','utat022','ncat016')`
+`$Session = New-PSSession -ComputerName $Computers -ConfigurationName WithProfile`
 
 ## Setup Logitech G510s software and drivers
 
@@ -476,20 +506,19 @@ PackageManagement for powershell
 
 [Catesta is a PowerShell module project generator](https://github.com/techthoughts2/Catesta)
 
-# $Path and $psmodulepath in Powershell V5 (Desktop) and V7 (Core)
+## $Path and $psmodulepath in Powershell V5 (Desktop) and V7 (Core)
 
-https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_psmodulepath?view=powershell-7.2
+[about_PSModulePath](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_psmodulepath?view=powershell-7.2)
 
-https://docs.microsoft.com/en-us/powershell/scripting/whats-new/differences-from-windows-powershell?view=powershell-7.2
+[Differences between Windows PowerShell 5.1 and PowerShell 7.x](https://docs.microsoft.com/en-us/powershell/scripting/whats-new/differences-from-windows-powershell?view=powershell-7.2)
 
-### Placeholder for code to compare extensions in two instances of Visualstudiocode
+## Placeholder for code to compare extensions in two instances of Visualstudiocode
 
 $a = ls C:\Dropbox\whertzing\ncat016-dotvscode\.vscode\extensions
 $b = ls C:\Users\whertzing\.vscode\extensions
 $a1 = $a -replace [regex]::escape('C:\Dropbox\whertzing\ncat016-dotvscode\.vscode\extensions\'), ''
 $b1 = $b -replace [regex]::escape('C:\Users\whertzing\.vscode\extensions\'), ''
 $c= $a2 | %{if ($b2.contains($_)) {$\_}}
-
 
 ## Setup IIS WebServer
 

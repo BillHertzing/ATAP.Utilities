@@ -27,7 +27,7 @@ map transform {list of unique filenames sans `\(\d+). iterate this list
 
 ## Diff-BlogImageList
 
-## Get-ModulesForUserProfileAsSymbolicLinks
+## Get-ModuleAsSymbolicLink
 
 ## Rename-FilesDuplicatedAndMoved
 
@@ -64,8 +64,8 @@ Create a build task for Powershell modules in VSC that will do the following:
 
   The .psd1 file from the template should have a nested section `['PSData']['PrivateData']['Prerelease']`, and the value should be `alpha001`
 
-  Developer process: 
-  running "build (tbd??)" on the developer computer in the module directory should 
+  Developer process:
+  running "build (tbd??)" on the developer computer in the module directory should
 
    (if the prerelease version string -matches `'alpha'`)
     update the prerelease version string in the manifest (`.psd1`) file
@@ -76,11 +76,11 @@ Create a build task for Powershell modules in VSC that will do the following:
     run the unit tests (RepositoryRoot/tests/ModuleName.UnitTests/)
     Create test report
    (if the prerelease version string -matches `'beta'`)
-    do all the steps for the `alpha` lifecycle stage   
+    do all the steps for the `alpha` lifecycle stage
     run the integration tests (RepositoryRoot/tests/ModuleName.IntegrationTests/)
     Create test report
    (if the prerelease version string -matches `'RC'`)
-    do all the steps for the `Beta` lifecycle stage   
+    do all the steps for the `Beta` lifecycle stage
     run the PreRelease Deployment action
       upload the NuGet package to a prerelease NuGet server like MyGet
       upload the Chocolatey package to the Chocolatey.org server, but marked as a prerelease
@@ -89,14 +89,14 @@ Create a build task for Powershell modules in VSC that will do the following:
   The CI/CD process occurs when a checkin occurs in a Git-managed repository on a local computer.
   The ATAP repositories use Jenkins for the CI/CD processing
   Check-in any preproduction version of the module:
-    Jenkins updates the preproduction string in the .psd1 
+    Jenkins updates the preproduction string in the .psd1
     Jenkins runs all Unit and Integration tests per lifecycle stage
     Jenkins creates the Nuget and Chocolatey packages
     Jenkins deploys the prerelease packages to the local Nuget and chocolatey servers
   Pull Request (PR) to a local repository having a Production version of the module
     do all the steps for the `Beta` lifecycle stage
   Pull Request (PR) to merge local repository having a Production version of the module with the remote
-    run the Release Deployment action 
+    run the Release Deployment action
       upload the NuGet package to NuGet.org
       upload the Chocolatey package to Chocolatey.org
     update badges and info on the GitHub page

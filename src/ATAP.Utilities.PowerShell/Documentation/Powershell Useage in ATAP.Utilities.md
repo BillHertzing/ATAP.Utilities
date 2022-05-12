@@ -44,6 +44,13 @@ This will apply to all Cmdlets that support the -Encoding parameter. Place this 
 
 Very Complicated, See the prior citations and related body of work.. ToDo: investigate and resolve for PS V5.1
 
+## Cross-Platform Environment variables
+
+### Host vs Hostname vs computername
+
+In the machine profile, we can setup a global variable using the .Net DNS name resolution library, and then assign all three environment variables (at a process scope) to the the same string.
+`$hostName = ([System.Net.DNS]::GetHostByName($Null)).Hostname`
+
 ## Using classes defined in Powershell Modiles
 
 Since the ATAP.Utilities repository contains a robust CI pipeline, it is very feasible to write the classes and enumerations in C# and targeting .Net (cross-platform), compile them to a .dll, and include them in a package. That way, other modules that want to work with the same classes and enumerations can simply include the .dlls exported by the module. (ToDo: Check this works as explained.  Also ToDo: Versioning the enumerations )
@@ -60,5 +67,16 @@ The following two seemed a good idea, but the work has languished.
 Package structure hasa lot to do with the intention. A Production Package for a library, executable, or Script Module should have the stuff, and metadatat about the stuff. The ATAP.Utilities Packages also contain resources, installation tools, and authentication information. Testing packages include the production stuff, a version of stuff with tracing enabled, and a bunch of tests, and test results, test coverage, test benchmarks, and complexity metrics from the CI/CD run that built the package. There may be multiple Testing packages for a production package. A small library may have a single test package, while a large application or library may have e.g. Unittest, Integrationtest, BrowserTests, Databasetest etc. There may also be variations for each supported technology/platform/version.  Development packages include everything in the Production and all the Tests packages, along with things like debug symbols, Source Code pointers, development scripts etc.
 
 
+## Using Linq with PowershellFormat-GroupLikeLines
 
+For getting the distinct elements of a collection, based on a simple comparasion of the objects
+
+[Linq.Enumerable]::Distinct([string[]]@('a', 'a', 'b'))
+
+For getting a unique subset of a collection based on the values of a property of the objects in a collection, LINQ DistinctBy is the fastest way (..NET Core)
+
+### More stuff on LINQ in Powershell
+
+[PowershellLINQSupport.cs](https://gist.github.com/jeremybeavon/fdb603ba4dfb19a1b40c)
+[.NET Action, Func, Delegate, Lambda expression in PowerShell](https://www.reza-aghaei.com/net-action-func-delegate-lambda-expression-in-powershell/)
 

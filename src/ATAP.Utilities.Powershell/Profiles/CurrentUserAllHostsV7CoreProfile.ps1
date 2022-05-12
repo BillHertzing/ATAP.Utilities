@@ -187,7 +187,7 @@ $UserPSModulePaths = @(
 
 
 # This is a developer profile, so Import Developer BuildTooling For Powershell
-#. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-ModulesForUserProfileAsSymbolicLinks.ps1'
+#. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-ModuleAsSymbolicLink.ps1'
 
 # These are the powershell Modules I'm working on now
 $ModulesToLoadAsSymbolicLinks = @(
@@ -229,7 +229,7 @@ $ModulesToLoadAsSymbolicLinks = @(
 
 # Create symbolic links to each of the modukles above in the user's default powershell module location
 # The function uses Join-Path ([Environment]::GetFolderPath('MyDocuments')) '\PowerShell\Modules\' as the default PSModulePath path
-$ModulesToLoadAsSymbolicLinks | Get-ModuleAsSymbolicLink
+# $ModulesToLoadAsSymbolicLinks | Get-ModuleAsSymbolicLink
 
 # Show environment/context information when the profile runs
 # ToDo reformat using YAML
@@ -248,11 +248,11 @@ Function Show-context {
 }
 #if ($true) { Show-context }
 
-# Set an alias to tail the latest PSFrmework log file
+# Set an alias to tail the latest PSFramework log file
 function TailLatestPSFrameworkLog {
   (gc ((ls C:\Users\whertzing\AppData\Roaming\PowerShell\PSFramework\Logs) | sort -Property 'lastwritetime' -desc)[0] )[-100..-1]
 }
-set-alias  -Name 'tail'  -Value 'TailLatestPSFrameworkLog'
+Set-Alias -Name 'tail' -Value 'TailLatestPSFrameworkLog'
 
 # https://stackoverflow.com/questions/138144/what-s-in-your-powershell-profile-ps1-file
 filter match( $reg ) {
@@ -283,8 +283,106 @@ Function cdMy { $x = [Environment]::GetFolderPath('MyDocuments'); Set-Location -
 
 # A function that will return files with names matching the string 'conflicted'
 Function getconflicted { Get-ChildItem -Recurse . -Include *conflicted*.* }
-Function browseopenssl { start-process "brave.exe" -argumentlist '--new-indow' $(Get-Content 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\Documentation\AttributionsForOpenSSL.md' | ForEach-Object{($_ -split '\]\(')[1] -replace '\)',''}) }
-Function combinebookmarks {Param($path='\dropbox\security\*', $include='book*.*')  $acc = @(); (ls $path -include $include) | %{$acc += ((gc $_) |convertfrom-json -AsHashtable)}; $acc | sort -Property @{Expression={$_.Name}}  -uniq}
+
+Function Get-Attributions {
+  Param(
+    $path = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\*'
+    , $include = ('*.ps1', '*.md')
+    , [switch] $Recurse
+  )
+  $files = if ($Recurse) { Get-ChildItem -Path $path -Include $include -Recurse } else { Get-ChildItem -Path $path -Include $include }
+  foreach ($fh in $files) {
+    foreach ($line in $(Get-Content $fh)) {
+      if ($line -match '\[\s*(?<Title>.*?)\s*\]\s*\(\s*(?<URL>.*?)\s*\)\s*' ) {
+        [PSCustomObject]@{
+          Fullpath = $fh.fullname
+          Title    = $matches['Title']
+          URL      = $matches['URL']
+        }
+      }
+    }
+  }
+}
+
+Function Get-AllBookmarks {
+  foreach ($o in $($(Get-BrowserBookmarks '*' '*') | Sort-Object -Property URL -uniq)) {
+    [PSCustomObject]@{
+      Fullpath = 'BrowserBookmarksAllBrowsersAllBookmarks'
+      Title    = $o.Title
+      URL      = $o.URL
+    }
+  }
+}
+
+# Get-Attributions -path 'C:\Dropbox\whertzing\' -Recurse | convertto-json | out-file 'C:\Dropbox\AllAttributions.txt'
+Function Get-LinksFiltered {
+  Param(
+    $path = 'C:\Dropbox\whertzing\'
+    , $include = ('*.ps1', '*.md')
+    , $findRegex
+    , [switch] $Recurse
+
+  )
+
+  $alllinks = Get-AllBookmarks
+  $alllinks += foreach ($o in $(Get-Content -Path 'C:\Dropbox\AllAttributions.txt' | ConvertFrom-Json -AsHashtable)) { [PSCustomObject]@{URL = $o.URL; TITLE = $o.Title } } # Get-Attributions -path $path -Recurse
+  # $acc = @{
+  #   Time1    = ''
+  #   Time2    = ''
+  #   Count1   = ''
+  #   Count2   = ''
+  #   results1 = @()
+  #   results2 = @()
+  # }
+  # $acc['time1'] = Measure-Command {
+  #   foreach ($l in $alllinks) {
+  #     if (($l.Title -match $findRegex) -or ($l.URL -match $findRegex) ) {
+  #       $acc['results1'] += $l
+  #     }
+  #   }
+
+  # }
+  # $acc.Count1 = $($acc['results1']).count
+
+  # $acc['time2'] = Measure-Command {
+  $delegate = [Func[PSCustomObject, bool]] { param([PSCustomObject]$o); return (($o.Title -match $findRegex) -or ($o.URL -match $findRegex)) }
+  $query = [Linq.Enumerable]::Where([PSCustomObject[]]$alllinks, [Func[PSCustomObject, bool]] $delegate)
+  #$filteredLinks =
+  # [Linq.Enumerable]::DistinctBy([PSCustomObject[]]$alllinks, $delegate)
+  #$acc['results2'] = [Linq.Enumerable]::ToArray($query)
+  # }
+  # [PSCustomObject[]]$([Linq.Enumerable]::DistinctBy([PSCustomObject[]]$alllinks, $delegate)))
+  # $acc.Count2 = $($acc['results2']).count
+  return  [Linq.Enumerable]::ToArray($query)
+}
+
+
+# foreach ($o in $(Get-Attributions -Recurse)) {"[$($o.Title)]($($o.URL))" }
+Function Open-FilteredLinksInBrave {
+  Param(
+    $path = 'C:\Dropbox\whertzing\'
+    , $include = ('*.ps1', '*.md')
+    , $findRegex
+
+  )
+
+  $links = $(Get-LinksFiltered -Path $path -Include $include -findRegex $findRegex -Recurse).URL
+  Start-Process 'brave.exe' -ArgumentList '--new-window' $links
+}
+
+Function browseopenssl { Start-Process 'brave.exe' -ArgumentList '--new-window' $(Get-Content 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\Documentation\AttributionsForOpenSSL.md' | ForEach-Object { ($_ -split '\]\(')[1] -replace '\)', '' }) }
+Function combinebookmarks {
+  Param(
+    $path = '\dropbox\security\*'
+    , $include = 'book*.*'
+  )
+  $acc = @()
+  foreach ($fh in $(Get-ChildItem $path -Include $include)) {
+    $acc += ((Get-Content $fh) | ConvertFrom-Json -AsHashtable)
+  }
+  $acc | sort -Property @{Expression = { $_.Name } } -uniq
+}
+
 # A function and alias to kill the VoiceAttack process
 function PublishPluginAndStartVAProcess {
 

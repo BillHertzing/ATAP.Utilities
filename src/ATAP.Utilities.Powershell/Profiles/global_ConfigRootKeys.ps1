@@ -115,22 +115,22 @@ $global:configRootKeys = @{
   # Locations for things that are needed in case of disaster
   'DisasterRecoveryPathConfigRootKey' = 'DisasterRecoveryPath'
   'DisasterRecoveryBackupPathConfigRootKey' = 'DisasterRecoveryBackupPath'
+
+  # Container (Machine, VM, Docker) Roles
+  'DeveloperComputerRoleConfigRootKey'         = 'DeveloperComputer'
+  'DocumentationComputerRoleConfigRootKey'     = 'DocumentationComputer'
+  'TestingComputerRoleConfigRootKey'           = 'TestingComputer'
+  'CICDComputerRoleConfigRootKey'              = 'CICDComputer'
+  'DocFXComputerRoleConfigRootKey'             = 'DocFXComputer'
+  'WebServerComputerRoleConfigRootKey'         = 'WebServerComputer'
+  'JenkinsControllerComputerRoleConfigRootKey' = 'JenkinsControllerComputer'
+  'JenkinsAgentComputerRoleConfigRootKey'      = 'JenkinsAgentComputer'
+  'MSSQLServerComputerRoleConfigRootKey'       = 'MSSQLServerComputer'
+  'PlantUMLComputerRoleConfigRootKey'          = 'PlantUMLComputer'
+  'CertificateServerComputerRoleConfigRootKey' = 'CertificateServerComputer'
 }
 
-$global:CanaconicalMachineRoleStrings = @{
-  # strings that describe the Machine Roles
-  'DeveloperComputerRole'         = 'DeveloperComputer'
-  'DocumentationComputerRole'     = 'DocumentationComputer'
-  'TestingComputerRole'           = 'TestingComputer'
-  'CICDComputerRole'              = 'CICDComputer'
-  'DocFXComputerRole'             = 'DocFXComputer'
-  'WebServerComputerRole'         = 'WebServerComputer'
-  'JenkinsControllerComputerRole' = 'JenkinsControllerComputer'
-  'JenkinsAgentComputerRole'      = 'JenkinsAgentComputer'
-  'MSSQLServerComputerRole'       = 'MSSQLServerComputer'
-  'PlantUMLComputerRole'          = 'PlantUMLComputer'
-  'CertificateServerComputerRole' = 'CertificateServerComputer'
-}
+
 
 $global:CanaconicalUserRoleStrings = @{
   'SecurityAdministratorRole'              = 'SecurityAdministrator'
@@ -165,16 +165,16 @@ $global:CanaconicalUserRoles = @{
 }
 
 $global:CanaconicalMachineRoles = @{
-  $global:CanaconicalMachineRoleStrings['DeveloperComputerRole']         = @{DependsOn = $null }
-  $global:CanaconicalMachineRoleStrings['DocumentationComputerRole']     = @{DependsOn = @($global:CanaconicalMachineRoleStrings['DocFXComputerRole'], $global:CanaconicalMachineRoleStrings['PlantUMLComputerRole']) }
-  $global:CanaconicalMachineRoleStrings['TestingComputerRole']           = @{DependsOn = $null }
-  $global:CanaconicalMachineRoleStrings['WebServerComputerRole']         = @{DependsOn = $null }
-  $global:CanaconicalMachineRoleStrings['CertificateServerComputerRole'] = @{DependsOn = $null }
-  $global:CanaconicalMachineRoleStrings['CICDComputerRole']              = @{DependsOn = $null }
-  $global:CanaconicalMachineRoleStrings['JenkinsControllerComputerRole'] = @{DependsOn = $null }
-  $global:CanaconicalMachineRoleStrings['JenkinsAgentComputerRole']      = @{DependsOn = $null }
-  $global:CanaconicalMachineRoleStrings['MSSQLServerComputerRole']       = @{DependsOn = $null }
-  $global:CanaconicalMachineRoleStrings['DocFXComputerRole']             = @{DependsOn = $null }
-  $global:CanaconicalMachineRoleStrings['PlantUMLComputerRole']          = @{DependsOn = $null }
+  $global:configRootKeys['DeveloperComputerRoleConfigRootKey']         = @{DependsOn = $null }
+  $global:configRootKeys['DocumentationComputerRoleConfigRootKey']     = @{DependsOn = @($global:configRootKeys['DocFXComputerRoleConfigRootKey'], $global:configRootKeys['PlantUMLComputerRoleConfigRootKey']) }
+  $global:configRootKeys['TestingComputerRoleConfigRootKey']           = @{DependsOn = $null }
+  $global:configRootKeys['WebServerComputerRoleConfigRootKey']         = @{DependsOn = $null }
+  $global:configRootKeys['CertificateServerComputerRoleConfigRootKey'] = @{DependsOn = $null }
+  $global:configRootKeys['CICDComputerRoleConfigRootKey']              = @{DependsOn = $null }
+  $global:configRootKeys['JenkinsControllerComputerRoleConfigRootKey'] = @{DependsOn = $null }
+  $global:configRootKeys['JenkinsAgentComputerRoleConfigRootKey']      = @{DependsOn = $null }
+  $global:configRootKeys['MSSQLServerComputerRoleConfigRootKey']       = @{DependsOn = $null }
+  $global:configRootKeys['DocFXComputerRoleConfigRootKey']             = @{DependsOn = $null }
+  $global:configRootKeys['PlantUMLComputerRoleConfigRootKey']          = @{DependsOn = $null }
 }
 

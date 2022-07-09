@@ -47,17 +47,18 @@ Function Confirm-GitFSCK {
     $VerbosePreference = 'Continue' # SilentlyContinue Continue
 
     Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-    Write-Verbose "path =$InPath"
+    Write-Verbose "path =$Path"
     Write-Verbose "OutPath = $OutPath"
     # validate path exists
     if (!(Test-Path -Path (Split-Path $Path -Parent))) { throw "$Path was not found" }
 
     # Output tests
-    if (-not (Test-Path -Path $settings.OutDir -PathType Container)) {
-      throw "$settings.OutDir is not a directory"
+    $outDir = $(Split-Path $OutPath -Parent)
+    if (-not (Test-Path -Path $outDir -PathType Container)) {
+      throw "$outDir is not a directory"
     }
-    # Validate that the $Settings.OutDir is writable
-    $testOutFn = $settings.OutDir + 'test.txt'
+    # Validate that the $OutPath is writable
+    $testOutFn = $outDir + 'test.txt'
     try { New-Item $testOutFn -Force -type file >$null
     }
     catch { # if an exception ocurrs
@@ -71,8 +72,8 @@ Function Confirm-GitFSCK {
     # Remove the test file
     Remove-Item $testOutFn -ErrorAction Stop
 
-    $datestr = Get-Date -AsUTC -Format 'yyyy/MM/dd:HH.mm'
-    $dateKeyedHash = if (Test-Path -Path $OutPath) { gc $OutPath | ConvertFrom-Json -asHash } else { @{} }
+    $datestr = Get-Date -Format 'yyyy/MM/dd:HH.mm' -AsUTC
+    $dateKeyedHash = if (Test-Path -Path $OutPath) { Get-Content $OutPath | ConvertFrom-Json -asHash } else { @{} }
 
     Write-Verbose 'Running GitFSCK across multiple repositories'
   }

@@ -16,7 +16,6 @@ http://www.somewhere.com/attribution.html
 <Another link>
 .ATTRIBUTION
 [Customize Prompt](https://www.networkadm.in/customize-pscmdprompt/) adding info to the prompt and terminal window
-ToDo: Need attribution for IsElevated = ((whoami /all) -match $'S-1-5-32-544|S-1-16-12288') Magic SId's
 ToDo: Need attribution for Console Settings
 <Where the ideas came from>
 .SCM
@@ -51,3 +50,6 @@ $UserPSModulePaths = @(
 # Always Last step - set the environment variables for this user
 . (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
 Set-EnvironmentVariablesProcess # This function should be defined in the AllUsersAllHosts profile
+
+#testing
+ Write-EnvironmentVariablesIndented | set-content -Path 'D:\temp\EnvVarsFromLastServiceAcctLogin.txt'

@@ -4,20 +4,20 @@
 
 * Windows 10 or higher
 * Powershell Core 7 or higher
-* Java Development Kit or runtime. Must be either Java 1.8 or Javaa 11
+* Java Development Kit or runtime. As of JUly 2022, The options were for java 11 or Java 17. The ATAP.Utilities organization will use java 17 to
 
 ### Jenkins Service accounts and password
 
 #### Jenkins Controller service account
 
 The machine running the Jenkins Controller needs a local user (service account) under which the Jenkins Controller service will run.
-   run `lusrmgr. msc`
+   run `lusrmgr.msc`
 
-I chose `JenkinsServiceAcct` and password `Notsecret`. ToDo: implement Secrets file for recording the JenkinsServiceAccount password for each machine running Jenkins
+I chose `JenkinsControllerSrvAcc` and password `Notsecret`. ToDo: implement Secrets file for recording the JenkinsServiceAccount password for each machine running Jenkins
 
 Create the new user via `Computer Management->Local Users And Groups->Users->New User`
 
-The `JenkinsServiceAcct` must be granted the `logon as a service` right. use `gpedit.msc`, drill down on ` Computer Configuration\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Log on as a service` and add the `JenkinsServiceAcct` to the existing list of users
+The `JenkinsControllerSrvAcc` must be granted the `logon as a service` right. use `gpedit.msc`, drill down on ` Computer Configuration\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Log on as a service` and add the `JenkinsControllerSrvAcc` to the existing list of users
 
 #### Jenkins Controller service account
 
@@ -27,13 +27,13 @@ I chose `JenkinsAgentSrvAcct` and password `NotSecret`. ToDo: implement Secrets 
 
 Create the new user via `Computer Management->Local Users And Groups->Users->New User`
 
-The `JenkinsAgentSrvAcct` must be granted the `logon as a service` right. Run `gpedit.msc`, drill down on `Computer Configuration\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Log on as a service` and add the `JenkinsServiceAcct` to the existing list of users
+The `JenkinsAgentSrvAcct` must be granted the `logon as a service` right. Run `gpedit.msc`, drill down on `Computer Configuration\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Log on as a service` and add the `JenkinsControllerSrvAcc` to the existing list of users
 
 ### Subdirectories to be created
 
 #### Controller Subdirectories
 
-The Controller service will create a subdirectory called `Jenkins` under the path `$env:AppDataLocal`  for the Controller Service account, e.g. `C:\Users\JenkinsServiceAcct\AppData\Local\Jenkins`
+The Controller service will create a subdirectory called `Jenkins` under the path `$env:AppDataLocal`  for the Controller Service account, e.g. `C:\Users\JenkinsControllerSrvAcc\AppData\Local\Jenkins`
 
 #### Agent Subdirectories
 

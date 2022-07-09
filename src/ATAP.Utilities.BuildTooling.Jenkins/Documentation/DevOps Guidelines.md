@@ -50,13 +50,21 @@ Injecting ConfigurationRoot
 
 This module holds most of the Powershell functions used by the developers and the CI/CD pipeline steps. During the development of a new feature used by developers, the pipelines, or the end users, module development takes place in parallel with pipeline development to add new stuff to the Product
 
-we publish Powershell packages, src, documentation and optionally tests and localization, via nuget packages, and chocolatey package manager. Chocolatey and the installation script coooperate to set the package installation location and append the information to the system or user PATH environment variable.
+we publish Powershell packages, src, documentation and optionally tests and localization, via nuget packages, PSGallery, and the chocolatey package manager. Chocolatey and the installation script cooperate to set the package installation location and append the information to the system or user PATH environment variable.
 
 ToDo: Once installed, the path to the executable must be supplied to the database under the key for the machine name. See the ATAP Utilities packages for computer hardware, software, and processes for the data structures to record necessary information.
 
 ## Installing powershell modules on DevOps machines
 
-https://github.com/anpur/powershellget-module
+[Unofficial example of PowerShellGet-friendly package. How to create, publish and use](https://github.com/anpur/powershellget-module)
+
+The Development Repository is at:
+The Testing Repositories are at locations matching this pattern:
+The Staging Repositories are at locations matching this pattern:
+The Production (Public) repositories are at: Chocolatey, PSGallery, NuGet
+
+Repository meta information is kept in the global data structures keyed for each machine.
+
 Install-Module MyModule -Repository Demo_Nuget_Feed -Scope CurrentUser
 
 ToDo: Once installed, the path to the module must be supplied to the database under the key for the machine name. See the ATAP Utilities packages for computer hardware, software, and processes for the data structures to record necessary information.
@@ -103,7 +111,9 @@ ou can also capture the value by visiting the Instance Identity page, at somethi
 
 [How to install Windows agents as a service?](https://support.cloudbees.com/hc/en-us/articles/217423827-How-to-Install-Several-Windows-Slaves-as-a-Service-)
 
-Name of Service used to run the Jenkins service is `JenkinsServiceAcct`, password is stored as a secret somewhere (toDo: Create secrets files (encrypted) somewhere on dropbox not in github). Temporary value is `NotSecret`
+Name of Service used to run the Jenkins service is `JenkinsControllerSrvAcc`, password is stored as a secret somewhere (toDo: Create secrets files (encrypted) somewhere on dropbox not in github). Temporary value is `NotSecret`
+
+Name of Service used to run the Jenkins Client service is `JenkinsClientSrvAcc`, password Temporary value is `NotSecret`, used in the service as "LogOnAs"
 
 
 ## Starting an Agent

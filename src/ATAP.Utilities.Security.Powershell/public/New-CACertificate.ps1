@@ -74,7 +74,8 @@ Function New-CACertificate {
     # openssl must be in the path
     # ToDo: lots of error handling
     # Because process prameters are visiblle in Windows, locking down the directories with ACL control, and lockng the ACL lists, is critical to security
-    openssl req -new -batch -sha256 -x509 -subj $($DNHash.DNAsParameter) -days $internalValidityDays -key $EncryptedPrivateKeyPath -keyout $EncryptedPrivateKeyPath -passout file:$EncryptionKeyPassPhrasePath -out $CertificatePath
+    openssl req -x509 -new -batch -sha256 -subj $($DNHash.DNAsParameter) -days $internalValidityDays -key $EncryptedPrivateKeyPath -passin file:$EncryptionKeyPassPhrasePath -out $CertificatePath
+    #openssl req -new -batch -sha256 -x509 -subj $($DNHash.DNAsParameter)  -days $internalValidityDays -key $EncryptedPrivateKeyPath -keyout $EncryptedPrivateKeyPath -passout file:$EncryptionKeyPassPhrasePath -out $CertificatePath
     #openssl req -new -batch -sha256 -x509 -subj $($DNHash.DNAsParameter) -days $internalValidityDays -key $EncryptedPrivateKeyPath -passin file:$EncryptionKeyPassPhrasePath -out $CertificatePath
     # openssl req -batch -x509 -config $CertificateRequestConfigPath -extensions 'ca' -subj $($DNHash.DNAsParameter) -days $internalValidityDays -key $EncryptedPrivateKeyPath -passin file:$EncryptionKeyPassPhrasePath -out $CertificatePath
     Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'

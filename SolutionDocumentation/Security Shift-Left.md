@@ -1,12 +1,12 @@
 # Security in the Libraries, Packages and CI/CD pipeline
 
-If you are viewing this `Security Shift-Left.md` in GitHub, [here is this same Security Shift-Left on the documentation site](http://nope.com/nope.html)
+If you are viewing this `Security Shift-Left.md` file in GitHub, here is this same [Security Shift-Left](http://nope.com/nope.html) on the documentation site.
 
 ## <a id="Introduction" />Introduction
 
 Security is everyone's business in software development. The applications and libraries being developed as 'product' should have security as a first-class citizen. Automated scanning tools should, during the build, inspect and analyze the code being developed for known security flaws and best practices. The 3rd-party SW being used in the product (the items in the Software Bill of Materials (SWBOM)) should report their compliance with security best practices, and these 3rd party softwares and their security score should made available in the build artifacts included in the 'product' packages.
 
-While there are multiple security concerns in an organizations, this document is going to focus on securing the 'secrets' that are used in the Development and CI/CD process to produce an application. ToDo: Add a reference to another document that focuses on securing user information within a generated application.
+There are multiple security concerns in an organizations. This document is going to focus on securing the 'secrets' that are used in the Development and CI/CD process to produce an application. ToDo: Add a reference to another document that focuses on securing user information within a generated application.
 
 Every organization has "secrets" that are used in the Development and CI/CD processes. These secrets must be protected, because they are often linked to 3rd-party software that costs money to execute. Loss and then misuse of the secrets could cost an organization a lot of money.
 
@@ -19,6 +19,10 @@ The developer's machines all need individual security to handle user and Service
 Securing secrets used in the development process, the CI/CD tools, and the final production products is a difficult tricky task, and there are a lot of ways to go about it. The ATAP.Utilities use a three-stage mechanism.
 
 ## <a id="Overview" />Overview
+
+An organization needs a secrets vault strategy and a Public Key Infrastructure (PKI) strategy.
+
+### PKI
 
 This document is under construction. There are design false starts here, as limitations in current OSS modules and libraries have been discovered during implementation attempts.
 
@@ -247,9 +251,9 @@ Example:
     OrganizationUnit                         = 'Development'
     DNAsFileNameReplacementPattern                = 'CN="{0}",OU="{1}",O="{2}",L="{3}",ST="{4},C="{5}"'
     SANAsParameterReplacementPattern = 'E="{0}"'
-    #KeyUseage                                = @('critical', 'cRLSign', 'digitalSignature', 'keyCertSign')
-    #ExtendedKeyUseage                        = 'CA:TRUE'
-    # ExtendedKeyUseage = @('critical','codeSigning')
+    #keyUsage                               = @('critical', 'cRLSign', 'digitalSignature', 'keyCertSign')
+    #ExtendedkeyUsage                       = 'CA:TRUE'
+    # ExtendedkeyUsage= @('critical','codeSigning')
   } | New-DistinguishedNameHash
 ```
 
@@ -581,6 +585,9 @@ Install the SSL Certificate onto every machine where PSRemoting is desired
 [OpenSSL Certificate Authority](https://jamielinux.com/docs/openssl-certificate-authority/index.html)
 [OpenSSL Cheat Sheet by albertx](https://cheatography.com/albertx/cheat-sheets/openssl/)
 [Creating a Self-Signed Certificate With OpenSSL](https://www.baeldung.com/openssl-self-signed-cert) extfile example
+[Advanced PKI](https://pki-tutorial.readthedocs.io/en/latest/advanced/index.html)
+[ExtendedKeyUsage](https://ldapwiki.com/wiki/ExtendedKeyUsage)
+[https://www.golinuxcloud.com/add-x509-extensions-to-certificate-openssl/](How to add X.509 extensions to certificate OpenSSL)
 
 ### Code Signing Certificates
 

@@ -1,3 +1,7 @@
+
+# Called from a Jenkins job that starts a Powershell instance using the profile of the Jenkins Service Account
+#  SHould only be called on a computer that has the tools needed to perform the 'PowershellBuild' role
+#  Gathers the public and private functions into a .psm1 file and updates the exported information in the .psd1 file
 function Publish-PSPackage {
   # Packages called from Jenkins have no parameters, all parameters must be passed via environment variables
   #region BeginBlock
@@ -73,7 +77,7 @@ function Publish-PSPackage {
   }
   $VerbosePreference = $savedVerbosePreference
 
-  git init #initialize the empty local repo
+  git init # initialize the empty local repo
 
   # Link the remote Git repro to the workspace repro as the origin
   # unless the jenkins workspace repository already links to the remote Git repro

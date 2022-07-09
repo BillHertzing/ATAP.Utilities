@@ -3,73 +3,111 @@
 #  This is stored in a location shared by all machines in a workgroup
 #  Usually in a secure cloud-synced location
 #  for example, C:\Dropbox\Security\OpenSSL\openssl.cnf
-#  ATAP Utilities will setup the environment variable OPENSSL_HOME on each machine
+#  ATAP Utilities will setup the environment variable OPENSSL_HOME on each machine 
 #
 
 # ATAP Utilities defines a global location for all things security related
 #  The absolute path for this location can vary from machine to machine
-# This definition stops the following lines choking if HOME isn't
-# defined.
-HOME			= $ENV::OPENSSL_HOME
-RANDFILE		= $ENV::OPENSSL_HOME/RandomKeySeed
-SECURE_CLOUD_BASE_PATH = $ENV::SECURE_CLOUD_BASE_PATH
+# The following provides default values if the corresponding environment variable is not defined
+HOME = ./
+HOME = $ENV::OPENSSL_HOME
 
+# ATAP Utilities expects a new random serial number specified by command line options to OpenSSL
+#  Therefore there is no need to specify a RANDFILE nor a path to a "Next Serial Number File"
+# RANDFILE		= $ENV::OPENSSL_HOME/RandomKeySeed
+# OPENSSL_SIGNINGCERTIFICATES_SERIAL_PATH = ./dummy.txt
+
+# ATAP Utilities uses a commandline flag to specify the location of new signed certificates
+#  Therefore there is no need to a path to a "Newly Issued Certificates location"
+# OPENSSL_SIGNINGCERTIFICATES_NEW_CERTS_PATH = ./
+
+# ATAP Utilities DOES need the name of a file for storing the ID of the certificates signed by a CA certificate
+#   ATAP Utilites DOES expect the following environment variable present when signing a certificate, but this provides the default fallback location if the environment variable is not present
+OPENSSL_SIGNINGCERTIFICATES_CERTIFICATES_ISSUED_DB_PATH  = ./dummy.txt
 
 ####################################################################
-[ ca ]
-default_ca	= CA_default		# The default ca section
+[ ca ]                          # Used with the sub-command `openssl ca ...`
+default_ca	= CA_default	# The default ca section
 
 ####################################################################
 [ CA_default ]
-x509_extensions	= usr_cert		# The extentions to add to the cert
-default_days	= 365			# how long to certify for
-default_crl_days= 30			# how long before next CRL
-default_md	= md5			# which md to use.
-preserve	= no			# keep passed DN ordering
+x509_extensions	 = usr_cert	# The extentions to add to the cert
+default_days	 = 365		# default for certificate validity
+default_crl_days = 30		# how long before next CRL
+default_md	 = sha256	# which md to use. At least SHA256 or higher is recommended
+preserve	 = no		# preserve the passed DN ordering
+unique_subject   = no             # Allow the same subject line in the issued database txt file. Makes certificate rollover easier
+email_in_dn      = no            # Don't concat the email into the DN
+copy_extensions  = copy          # Required to copy all extensions including the SANs from CSR to cert
+policy		 = policy_match
+# ATAP Utilities DOES need the name of a file for storing the ID of the certificates signed by a CA certificate
+#   ATAP Utilites DOES expect the following environment variable present when signing a certificate, but this provides the default fallback location if the environment variable is not present
+database	 = $ENV::OPENSSL_SIGNINGCERTIFICATES_CERTIFICATES_ISSUED_DB_PATH
 
-# 
+rand_serial = yes
 
-####################################################################
-[ req ]
-x509_extensions	= v3_ca	# The extentions to add to the self signed cert used as a CA
-req_extensions = v3_req # The extensions to add to a certificate signing request
+# ATAP Utilities uses command line options when creating the certificate, the following are unnecessary
+#serial		= $ENV::OPENSSL_SIGNINGCERTIFICATES_SERIAL_PATH
+#new_certs_dir	= ./NewCertificates
+#certs		= $dir/Certificates		# Where the issued certs are kept
+#crl		= $dir/crl.pem 		# The current CRL
+#crl_dir		= $dir/crl		# Where the issued crl are kept
+
+# For the CA policy
+[ policy_match ]
+commonName		= supplied
+organizationName	= match
+countryName		= match
+organizationalUnitName	= optional
+stateOrProvinceName	= optional
+emailAddress		= optional
+
 [ usr_cert ]
-
-# These extensions are added when 'ca' signs a request.
-
-# This goes against PKIX guidelines but some CAs do it and some software
-# requires this to avoid interpreting an end user certificate as a CA.
-
+# These are the X509 extensions that are added to the newly created certificate when 'ca' signs a request.
+#   The following text and example are from the OpenSSL-Light for Windows default openssl.cnf file
+#   "This goes against PKIX guidelines but some CAs do it and some software
+#      requires this to avoid interpreting an end user certificate as a CA."
 basicConstraints=CA:FALSE
 # PKIX recommendations harmless if included in all certificates.
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid,issuer:always
+
+
+####################################################################
+[ req ]                 # Used with the sub-command `openssl req ...`
+x509_extensions	= v3_ca	# The extentions to add to the self signed cert used as a CA
+req_extensions = v3_req # The extensions to add to a certificate signing request
+
+
 [ v3_req ]
 
 # Extensions to add to a certificate signing request when the command is `openssl req ...` WITHOUT the -x509 flag
 
 basicConstraints = CA:FALSE
 keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+nsCertType			= server
+
 
 [ v3_ca ]
-# Extensions to add to a self signed certificate used as a CAt when the command is `openssl req -x509 ...`
+# Extensions to add to a self signed certificate used as a CA when the command is `openssl req -x509 ...`
 # PKIX recommendation.
 subjectKeyIdentifier    = hash
 authorityKeyIdentifier  = keyid:always,issuer:always
-keyUsage                = critical, cRLSign, keyCertSign
+
 # This is what PKIX recommends but some broken software chokes on critical
 # extensions.
-#basicConstraints = critical,CA:true
+#   basicConstraints = critical,CA:true
 # So we do this instead.
 basicConstraints = CA:true, pathlen:0
+
 # Key usage: this is typical for a CA certificate. However since it will
 # prevent it being used as an test self-signed certificate it is best
 # left out by default.
-# Enable this
-keyUsage                = critical, cRLSign, keyCertSign
+# Enable this 
+keyUsage                = critical, cRLSign, digitalSignature, keyCertSign
 
 # ToDo: is this needed for Netscape browser
-# nsCertType = sslCA, emailCA
+nsCertType = sslCA, emailCA
 # Include email address in subject alt name: another PKIX recommendation
 # subjectAltName=email:copy
 # Copy issuer details

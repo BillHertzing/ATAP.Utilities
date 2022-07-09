@@ -2,7 +2,7 @@
 
 ## OVerview of this document
 
-powershell is widelyused in the delivered ATAP.Utility packages, both as libraries of functions and cmdlets that cna be utilized in end-user software, and as build tooling used to creeate the developer and CI experience. This documejnt outlines many of the conventions used in developing the Powershell packages and tools
+powershell is widelyused in the delivered ATAP.Utility packages, both as libraries of functions and cmdlets that cna be utilized in end-user software, and as build tooling used to creeate the developer and CI experience. This document outlines many of the conventions used in developing the Powershell packages and tools
 
 ## Powershell Desktop (currently V5) vs Powershell Core (currently V7)
 
@@ -67,7 +67,7 @@ The following two seemed a good idea, but the work has languished.
 Package structure hasa lot to do with the intention. A Production Package for a library, executable, or Script Module should have the stuff, and metadatat about the stuff. The ATAP.Utilities Packages also contain resources, installation tools, and authentication information. Testing packages include the production stuff, a version of stuff with tracing enabled, and a bunch of tests, and test results, test coverage, test benchmarks, and complexity metrics from the CI/CD run that built the package. There may be multiple Testing packages for a production package. A small library may have a single test package, while a large application or library may have e.g. Unittest, Integrationtest, BrowserTests, Databasetest etc. There may also be variations for each supported technology/platform/version.  Development packages include everything in the Production and all the Tests packages, along with things like debug symbols, Source Code pointers, development scripts etc.
 
 
-## Using Linq with PowershellFormat-GroupLikeLines
+## Using LINQ with PowershellFormat-GroupLikeLines
 
 For getting the distinct elements of a collection, based on a simple comparasion of the objects
 

@@ -55,9 +55,17 @@ function New-DistinguishedNameHash {
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     $Environment
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
-    [string[]]$KeyUseage
+    [string[]]$BasicConstraints
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
-    $ExtendedKeyUseage
+    [string[]]$KeyUsage
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
+    [string[]]$ExtendedkeyUsage
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
+    [string[]]$SubjectAlternateName
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
+    [string[]]$FriendlyName
+    # , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
+    # [string[]]$keyUsage
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, ParameterSetName = 'CustomFileNamePattern')]
     $DNAsFileNameReplacementPattern
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, ParameterSetName = 'CustomParameterPattern')]
@@ -69,16 +77,16 @@ function New-DistinguishedNameHash {
   $DNAsFileName = "CN_$($PSBoundParameters['CN'])"
   $DNAsParameter = "/CN=$CN"
   # The list of the parameters that, if present, must be included in the DNAsfileName and the DNAsParameter
-  $x = ('OU', 'O', 'L', 'ST', 'C')
+  $ParamsToInclude = ('OU', 'O', 'L', 'ST', 'C')
   # ToDo: include DefaultBoundParameters preference variable
   # ToDo: Switch on ParamterSet and use a custom filename pattern and /or custom parameter pattern, but beware security implications
   switch ($PSCmdlet.ParameterSetName) {
     'DefaultParameterSetNameReplacementPattern' {
-      $x | % {
-        if (($PSBoundParameters.ContainsKey($_)) -and (-not [string]::IsNullOrEmpty($PSBoundParameters[$_]))) {
-          $outputHash[$_] = $PSBoundParameters[$_]
-          $DNAsFileName += "__$_" + "_$($PSBoundParameters[$_])"
-          $DNAsParameter += "/$($_)=$($PSBoundParameters[$_])"
+      foreach ($param in $ParamsToInclude) {
+        if (($PSBoundParameters.ContainsKey($param)) -and (-not [string]::IsNullOrEmpty($PSBoundParameters[$param]))) {
+          $outputHash[$param] = $PSBoundParameters[$param]
+          $DNAsFileName += "__$param" + "_$($PSBoundParameters[$param])"
+          $DNAsParameter += "/$($param)=$($PSBoundParameters[$param])"
         }
       }
       # if $environment is present as a bound parameter, incorporate it into filename
@@ -100,13 +108,23 @@ function New-DistinguishedNameHash {
     SANAsParameter = '"' + "subjectAltName=$EmailAddress" + '"'
     SANAsFilename  = "$SANAsParameterReplacementPattern -f $EmailAddress"
   }
+  # Add required properties
+  if ($BasicConstraints) {
+    $propertyHash['BasicConstraints'] = "basicConstraints=$BasicConstraints"
+  }
+  if ($KeyUsage) {
+    $propertyHash['keyUsage'] = "keyUsage=$KeyUsage"
+  }
   # Add optional properties
-  if ($KeyUseage) {
-    $propertyHash['KeyUseage'] = "keyUsage=$($KeyUseage -join ',')"
+  if ($ExtendedkeyUsage) {
+    $propertyHash['ExtendedkeyUsage'] = "extendedKeyUsage=$ExtendedkeyUsage"
   }
-  if ($ExtendedKeyUseage) {
-    $propertyHash['ExtendedKeyUseage'] = "extendedKeyUsage=$($ExtendedKeyUseage -join ',')"
+  if ($SubjectAlternateName) {
+    $propertyHash['SubjectAlternateName'] = "subjectAltName=$SubjectAlternateName"
   }
+  # if ($FriendlyName) {
+  #   $propertyHash['FriendlyName'] = "friendlyName=$FriendlyName"
+  # }
   # return the hash as a PSObject
   New-Object PSObject -Property $($propertyHash + $outputHash)
 }
@@ -126,7 +144,7 @@ function New-DistinguishedNameHash {
 #   Environment                      = $Env:Environment
 #   DNAsFileNameReplacementPattern   = 'CN="{$CN}",O="{$Organization}",C="{$Country}"'
 #   SANAsParameterReplacementPattern = 'E="{0}"'
-#   #KeyUseage                                = @('critical', 'cRLSign', 'digitalSignature', 'keyCertSign')
-#   #ExtendedKeyUseage                        = 'CA:TRUE'
-#   # ExtendedKeyUseage = @('critical','codeSigning')
+#   #keyUsage                               = @('critical', 'cRLSign', 'digitalSignature', 'keyCertSign')
+#   #ExtendedkeyUsage                       = 'CA:TRUE'
+#   # ExtendedkeyUsage= @('critical','codeSigning')
 # } | New-DistinguishedNameHash

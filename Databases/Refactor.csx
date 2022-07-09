@@ -1,4 +1,4 @@
-var pathToMyCSharpFile = @"C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.StronglyTypedIds.Interfaces\IStronglyTypedIds.cs"
+var pathToMyCSharpFile = @"C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.StronglyTypedIds.Interfaces\IStronglyTypedIds.cs";
 var content = File.ReadAllText(pathToMyCSharpFile);
 var editor = CreateEditor(content);
 

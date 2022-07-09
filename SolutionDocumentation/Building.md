@@ -32,10 +32,13 @@ Both the c# code and the powershell modules need packaging. The two process are 
 
 
 ### Solution-wide
+
 Install the MSBuild tasks and tooing to support rapid development builds, where each build should propagate to (local) NuGet feed.
 Install-Package UtilPack.NuGet.Push.MSBuild
 ### Library Specific
+
 #### Common to all Unit Test projects
+
 Xunit
 FluentAsserrtations
 MOQ
@@ -203,7 +206,7 @@ Nice article here [Authenticode Signing Service and Client](https://github.com/d
 `Register-PackageSource -Name chocolatey -Location http://chocolatey.org/api/v2 -Provider PSModule -Verbose`
 
 `Register-PSRepository -Name 'LocalRepo' -SourceLocation 'C:\Repo' -PublishLocation 'C:\Repo' -InstallationPolicy Trusted`
- 
+
  `Register-PSRepository -Name 'LocalDevelopmentPSRepository' -SourceLocation '\\utat022\FS\DevelopmentPackages\PSFileRepository' -PublishLocation '\\utat022\FS\DevelopmentPackages\PSFileRepository' -InstallationPolicy Trusted`
 
  Publish-Module -Path .\MyModule -Repository Demo_Nuget_Feed -NuGetApiKey 'use real NuGetApiKey for real nuget server here'

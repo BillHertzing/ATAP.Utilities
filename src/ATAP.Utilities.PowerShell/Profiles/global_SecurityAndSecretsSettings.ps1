@@ -2,7 +2,7 @@
 
 $local_SecurityAndSecretsSettings = [ordered]@{
 
-  # Where all things Security and Secrets related are stored
+  # Where all things Security and Secrets related are stored on the filesystem
   $global:configRootKeys['SECURE_CLOUD_BASE_PATHConfigRootKey']                                     = 'join-path $global:settings[$global:configRootKeys["DropBoxBasePathConfigRootKey"]] "Security"'
 
   # OpenSSL Environment variables
@@ -38,6 +38,10 @@ $local_SecurityAndSecretsSettings = [ordered]@{
   $global:configRootKeys['SecureCertificatesSSLServerEncryptedPrivateKeyBaseFileNameConfigRootKey'] = "'SSLServerEncryptedPrivateKey.pem'"
   $global:configRootKeys['SecureCertificatesSSLServerCertificateRequestBaseFileNameConfigRootKey']  = "'SSLServerCertificateRequest.csr'"
   $global:configRootKeys['SecureCertificatesSSLServerCertificateBaseFileNameConfigRootKey']         = "'SSLServerCertificate.crt'"
+  $global:configRootKeys['SecureCertificatesCodeSigningPassPhraseFileBaseFileNameConfigRootKey']      = "'CodeSigningPassPhraseFile.txt'"
+  $global:configRootKeys['SecureCertificatesCodeSigningEncryptedPrivateKeyBaseFileNameConfigRootKey'] = "'CodeSigningEncryptedPrivateKey.pem'"
+  $global:configRootKeys['SecureCertificatesCodeSigningCertificateRequestBaseFileNameConfigRootKey']  = "'CodeSigningCertificateRequest.csr'"
+  $global:configRootKeys['SecureCertificatesCodeSigningCertificateBaseFileNameConfigRootKey']         = "'CodeSigningCertificate.crt'"
 
 
   # Security

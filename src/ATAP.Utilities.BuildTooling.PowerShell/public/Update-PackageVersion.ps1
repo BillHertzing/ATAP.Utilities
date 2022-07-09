@@ -4,11 +4,11 @@
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
 .DESCRIPTION
-Increment the semantic version in a Powershell module descriptor (.psd1) file. 
+Increment the semantic version in a Powershell module descriptor (.psd1) file.
 if the Package Descriptor file's Version includes a PreRelease string, the trailing digits of the PreRelease are incremented by 1
 if the Package Descriptor file's Version does not include a PreRelease string, the trailing digits of the Patch Version component are incremented by 1
 .PARAMETER Path
-Path to a .psd1 file. 
+Path to a .psd1 file.
 .PARAMETER Preview
 when true, modifies the .psd1 file to indicate the package is prerelease. Also recognizes the additional text string in the semantic version and updates the version substring
 when false, increments th
@@ -23,7 +23,7 @@ ToDo: write Help For example 2 of using this function
 .EXAMPLE
 ToDo: write Help For example 2 of using this function
 .ATTRIBUTION
-The article at [Automatically updating the version number in a PowerShell Module – How I do regex](https://sqldbawithabeard.com/2017/09/09/automatically-updating-the-version-number-in-a-powershell-module-how-i-do-regex/) 
+The article at [Automatically updating the version number in a PowerShell Module – How I do regex](https://sqldbawithabeard.com/2017/09/09/automatically-updating-the-version-number-in-a-powershell-module-how-i-do-regex/)
 .LINK
 https://sqldbawithabeard.com/2017/09/09/automatically-updating-the-version-number-in-a-powershell-module-how-i-do-regex/
 .LINK
@@ -35,8 +35,8 @@ Function Update-PackageVersion {
     #region FunctionParameters
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $Path 
-        ,[parameter(Mandatory = $false, ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $PreReleaseNumberFormat = 'D3' 
+        [parameter(Mandatory = $true, ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $Path
+        ,[parameter(Mandatory = $false, ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $PreReleaseNumberFormat = 'D3'
     )
     #endregion FunctionParameters
     #region FunctionBeginBlock
@@ -48,11 +48,11 @@ Function Update-PackageVersion {
         $results = @{}
     }
     #endregion FunctionBeginBlock
-    
+
     #region FunctionProcessBlock
     ########################################
     PROCESS {
-        $manifest = Import-PowerShellDataFile $path 
+        $manifest = Import-PowerShellDataFile $path
         [version]$version = $Manifest.ModuleVersion
         #  Is there a PreRelease string?
         $preReleasePrefixStr = $null
@@ -88,7 +88,7 @@ Function Update-PackageVersion {
         else {
 
             # Add one to the build of the version number
-            [version]$newVersion = "{0}.{1}.{2}" -f $Version.Major, $Version.Minor, ($Version.Build + 1) 
+            [version]$newVersion = "{0}.{1}.{2}" -f $Version.Major, $Version.Minor, ($Version.Build + 1)
             # Update the manifest file
             if ($PSCmdlet.ShouldProcess(($path, $version, $newVersion), "Update-ModuleManifest -Path $path  -ModuleVersion $newVersion (from $version)")) {
                 # Update the module manifest
@@ -104,7 +104,7 @@ Function Update-PackageVersion {
         }
     }
     #endregion FunctionProcessBlock
-    
+
     #region FunctionEndBlock
     ########################################
     END {
@@ -114,6 +114,5 @@ Function Update-PackageVersion {
 }
 #endregion Update-PackageVersion
 #############################################################################
-    
-    
-    
+
+

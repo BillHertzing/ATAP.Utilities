@@ -19,7 +19,6 @@ http://www.somewhere.com/attribution.html
 <Another link>
 .ATTRIBUTION
 [Customize Prompt](https://www.networkadm.in/customize-pscmdprompt/) adding info to the prompt and terminal window
-ToDo: Need attribution for IsElevated = ((whoami /all) -match $'S-1-5-32-544|S-1-16-12288') Magic SId's
 ToDo: Need attribution for Console Settings
 <Where the ideas came from>
 .SCM
@@ -479,6 +478,7 @@ $global:Settings[$global:configRootKeys['PackageDropPathsConfigRootKey']] = @{fs
 $additionalPSModulePaths = @($global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]);
 # extract all the psmodulepath items from the global:Settings
 # The following ordered list of module paths come from the installation locations of modules specified for this machine in the the global:Settings
+$additionalPSModulePaths += 'C:\Program Files\WindowsPowerShell\Modules' # Invoke-Build
 
 # The $Env:PSModulePath is process-scoped, and it's initial value is supplied by the Powershell host process/engine
 # Add the $additionalPSModulePaths.

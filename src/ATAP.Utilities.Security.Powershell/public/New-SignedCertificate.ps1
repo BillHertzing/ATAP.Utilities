@@ -47,12 +47,6 @@ Function New-SignedCertificate {
     , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
     [ValidateScript({ Test-Path $_ -PathType Leaf })]
     [string] $CASigningCertificatesCertificatesIssuedDBPath
-    # , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    # [ValidateScript({ Test-Path $_ -PathType Leaf })]
-    # [string] $CASigningCertificatesSerialNumberPath
-    # , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    # [ValidateScript({ Test-Path $_ -PathType Container })]
-    # [string] $CASigningCertificatesNewCertificatesPath
 
     # ToDo: figure out better validation for ValidityPeriod and ValidityRange
     , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
@@ -70,6 +64,10 @@ Function New-SignedCertificate {
   BEGIN {
     # $DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue
     Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+  }
+  #endregion BeginBlock
+  #region ProcessBlock
+  PROCESS {
     # Convert vaility period/units into days
     $internalValidityDays =
     switch ($ValidityPeriodUnits) {
@@ -82,34 +80,34 @@ Function New-SignedCertificate {
       Write-PSFMessage -Level Warning -Message "Certificate's validity periods are capped at 398 days, $internalValidityDays days is too long"
       $internalValidityDays = 398
     }
-  }
-  #endregion BeginBlock
-  #region ProcessBlock
-  PROCESS {}
-  #endregion ProcessBlock
-  #region EndBlock
-  END {
     # openssl must be in the path
-    # get just hte filename portion of the CertificatePath
-    $CertificateName = Split-Path -Path $CertificatePath -Leaf
+    # get just the filename portion of the CertificatePath
+    # $CertificateName = Split-Path -Path $CertificatePath -Leaf
     $CertificateDir = Split-Path -Path $CertificatePath -Parent
+    Write-PSFMessage -Level Debug -Message "CertificatePath = $CertificatePath"
+    Write-PSFMessage -Level Debug -Message "CertificateDir = $CertificateDir"
+    # Write-PSFMessage -Level Debug -Message "CertificateName = $CertificateName"
     # ToDo: lots of error handling
-    #$env:OPENSSL_SIGNINGCERTIFICATES_SERIAL_PATH = $CASigningCertificatesSerialNumberPath
     $env:OPENSSL_SIGNINGCERTIFICATES_CERTIFICATES_ISSUED_DB_PATH = $CASigningCertificatesCertificatesIssuedDBPath
-    #$env:OPENSSL_SIGNINGCERTIFICATES_NEW_CERTS_PATH = $CASigningCertificatesNewCertificatesPath
-    Write-PSFMessage -Level Important -Message "CertificatePath = $CertificatePath"
-    Write-PSFMessage -Level Important -Message "CertificateDir = $CertificateDir"
-    Write-PSFMessage -Level Important -Message "CertificateName = $CertificateName"
-    # Note the the STDERR output is redirected to $null. openssl is writing a bunch of infromational messages to stderr!
-    openssl ca -batch -cert $CACertificatePath -keyfile $CAEncryptedPrivateKeyPath -passin file:$CAEncryptionKeyPassPhrasePath -days $internalValidityDays -in $CertificateRequestPath -outdir $CertificateDir -out $CertificateName 2>$null
-
+    # openssl writes the -out filename to the current working directory, but we want to write it to the $CertificateDir
+    #Push-Location
+    #Set-Location $CertificateDir
+    # Note the the STDERR output is redirected to $null. openssl is writing a bunch of informational messages to stderr!
+    openssl ca -batch -in $CertificateRequestPath -cert $CACertificatePath -keyfile $CAEncryptedPrivateKeyPath -passin file:$CAEncryptionKeyPassPhrasePath -days $internalValidityDays -outdir $CertificateDir -out $CertificatePath 2>$null
+    #openssl ca -batch -cert $CACertificatePath -keyfile $CAEncryptedPrivateKeyPath -passin file:$CAEncryptionKeyPassPhrasePath -days $internalValidityDays -in $CertificateRequestPath -outdir $CertificateDir -out $CertificateName 2>$null
+    #Pop-Location
     #[Environment]::SetEnvironmentVariable('OPENSSL_SIGNINGCERTIFICATES_SERIAL_PATH',$null,"Process")
-    [Environment]::SetEnvironmentVariable('OPENSSL_SIGNINGCERTIFICATES_CERTIFICATES_ISSUED_DB_PATH',$null,"Process")
+    [Environment]::SetEnvironmentVariable('OPENSSL_SIGNINGCERTIFICATES_CERTIFICATES_ISSUED_DB_PATH', $null, 'Process')
     #[Environment]::SetEnvironmentVariable('OPENSSL_SIGNINGCERTIFICATES_NEW_CERTS_PATH',$null,"Process")
     # Copy the new certificate to the full CertificatePath
     # copy-item $(Join-Path $CASigningCertificatesNewCertificatesPath $CertificateName) $CertificatePath
     # openssl seems to fail to updte the DB txt file if not paused for a bit
-    Start-Sleep -Milliseconds  100
+    Start-Sleep -Milliseconds 100
+
+  }
+  #endregion ProcessBlock
+  #region EndBlock
+  END {
     Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
   #endregion EndBlock

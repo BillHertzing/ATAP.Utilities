@@ -250,7 +250,7 @@ Function Show-context {
 
 # Set an alias to tail the latest PSFramework log file
 function TailLatestPSFrameworkLog {
-  (gc ((ls C:\Users\whertzing\AppData\Roaming\PowerShell\PSFramework\Logs) | sort -Property 'lastwritetime' -desc)[0] )[-100..-1]
+  (Get-Content ((Get-ChildItem C:\Users\whertzing\AppData\Roaming\PowerShell\PSFramework\Logs) | Sort-Object -Property 'lastwritetime' -desc)[0] )[-100..-1]
 }
 Set-Alias -Name 'tail' -Value 'TailLatestPSFrameworkLog'
 
@@ -282,7 +282,32 @@ filter unlike( $glob ) {
 Function cdMy { $x = [Environment]::GetFolderPath('MyDocuments'); Set-Location -Path $x }
 
 # A function that will return files with names matching the string 'conflicted'
-Function getconflicted { Get-ChildItem -Recurse . -Include *conflicted*.* }
+Function getconflictedGCI { Get-ChildItem -Recurse . -Include *conflicted*.* }
+Function getconflictedES { es conflicted }
+
+Function FindFilesByES {
+  [CmdletBinding(DefaultParameterSetName = 'StringParameter')]
+  param(
+    [parameter(ParameterSetName = 'StringParameter', Mandatory = $true, Position = 1, ValueFromPipeline = $False, ValueFromPipelineByPropertyName = $True)] [string] $searchStr
+    , [parameter(ParameterSetName = 'RegExParameter', Mandatory = $true, Position = 1, ValueFromPipeline = $False, ValueFromPipelineByPropertyName = $True)] [Regex] $searchRE
+    #, $path = 'C:\Dropbox\whertzing\'
+  )
+  [string] $internalSearchStr = ''
+  [regex] $internalSearchRegex = ''
+  switch ($PSCmdlet.ParameterSetName) {
+    StringParameter {
+      # ToDo: continously improve validate user input for safety
+      $internalSearchStr = $searchStr
+      es $internalSearchStr
+    }
+    RegExParameter {
+      # ToDo: continously improve validate user input for safety
+      $internalSearchRegex = $searchRE
+      es regex: $internalSearchRegex
+    }
+  }
+  es regex: $internalSearchRegex
+}
 
 Function Get-Attributions {
   Param(
@@ -290,20 +315,82 @@ Function Get-Attributions {
     , $include = ('*.ps1', '*.md')
     , [switch] $Recurse
   )
+  $findRegex = [Regex] '\[\s*(?<Title>.*?)\s*\]\s*\(\s*(?<URL>.*?)\s*\)\s*'
   $files = if ($Recurse) { Get-ChildItem -Path $path -Include $include -Recurse } else { Get-ChildItem -Path $path -Include $include }
   foreach ($fh in $files) {
-    foreach ($line in $(Get-Content $fh)) {
-      if ($line -match '\[\s*(?<Title>.*?)\s*\]\s*\(\s*(?<URL>.*?)\s*\)\s*' ) {
-        [PSCustomObject]@{
-          Fullpath = $fh.fullname
-          Title    = $matches['Title']
-          URL      = $matches['URL']
+    $FileStream = New-Object 'System.IO.FileStream' $fh, 'Open', 'Read', 'ReadWrite'
+    $reader = New-Object 'System.IO.StreamReader' $FileStream
+    try {
+      while (!$reader.EndOfStream) {
+        $line = $reader.ReadLine()
+       [RegEx]::Matches($line, $findRegex)
+        if ($Matches.Success) {
+          [PSCustomObject]@{
+            Fullpath = $fh.fullname
+            Title    = $matches['Title']
+            URL      = $matches['URL']
+          }
         }
       }
     }
+    finally {
+      $reader.Close()
+      $FileStream.Close()
+    }
+  }
+}
+Function Get-LinksFromDrafts {
+  Param(
+    $path = 'C:\Temp\gmaildrafts\Takeout\Mail\Drafts.mbox'
+  )
+  $DebugPreference = 'SilentlyContinue'
+  $Stream = New-Object 'System.IO.FileStream' $path, Open, Read, ReadWrite
+  $reader = New-Object 'System.IO.StreamReader' $Stream
+  $findRegex1 = [Regex] '^Subject:\s*(?<Subject>.*?)$'
+  $findRegex2 = [Regex] '(?i)^(?<URL>http.*)'
+  $Subject = ''
+  $URL = ''
+  $cnt = 0
+  try {
+    while (!$reader.EndOfStream) {
+      # ToDO: add Progress Reporting
+      if (-not ($cnt % 100000)) {Write-PSFMessage -Level Debug -Message "cnt = $cnt" }
+      $cnt += 1
+      #if ($cnt -gt 2000) {throw}
+      $line = $reader.ReadLine()
+      $matchResult = [RegEx]::Matches($line, $findRegex1)
+      if ($matchResult.Success) {
+        $Subject = $matchResult.captures.groups['Subject'].value
+        #Write-PSFMessage -Level Debug -Message "Subject = $Subject"
+      } else {
+        $matchResult = [RegEx]::Matches($line, $findRegex2)
+        if ($matchResult.Success) {
+          $URL = $matchResult.captures.groups['URL'].value
+          #Write-PSFMessage -Level Debug -Message "URL = $URL"
+        }
+      }
+      if ($subject -and $URL) {
+        $obj =  [PSCustomObject]@{
+          Fullpath = 'Drafts'
+          Title    = $Subject
+          URL      = $URL
+        }
+        write-output $obj
+        $Subject = ''
+        $URL = ''
+      }
+    }
+  }
+  finally {
+    $reader.Close()
+    $Stream.Close()
   }
 }
 
+if ($false) {
+$delegateDistinctURL = [Func[PSCustomObject, string]] { param([PSCustomObject]$o); return $o.URL }
+$a = [Linq.Enumerable]::ToArray([Linq.Enumerable]::DistinctBy([PSCustomObject[]]$(Get-LinksFromDrafts),$delegateDistinctURL ))
+}
 Function Get-AllBookmarks {
   foreach ($o in $($(Get-BrowserBookmarks '*' '*') | Sort-Object -Property URL -uniq)) {
     [PSCustomObject]@{
@@ -314,18 +401,21 @@ Function Get-AllBookmarks {
   }
 }
 
-# Get-Attributions -path 'C:\Dropbox\whertzing\' -Recurse | convertto-json | out-file 'C:\Dropbox\AllAttributions.txt'
+# Get-Attributions -path 'C:\Dropbox\' -Recurse | convertto-json | out-file 'C:\Dropbox\AllAttributions.txt'
 Function Get-LinksFiltered {
   Param(
     $path = 'C:\Dropbox\whertzing\'
     , $include = ('*.ps1', '*.md')
-    , $findRegex
+    , [regex] $findRegex
     , [switch] $Recurse
 
   )
 
-  $alllinks = Get-AllBookmarks
-  $alllinks += foreach ($o in $(Get-Content -Path 'C:\Dropbox\AllAttributions.txt' | ConvertFrom-Json -AsHashtable)) { [PSCustomObject]@{URL = $o.URL; TITLE = $o.Title } } # Get-Attributions -path $path -Recurse
+  # fetch alllinks from the link's persistence locations
+  #$alllinks = Get-AllBookmarks
+  #$alllinks += Get-Attributions -path $path -Recurse
+  $alllinks = foreach ($o in $(Get-Content -Path 'C:\Dropbox\whertzing\AllComputerBrowserbookmarks_20220510.txt' | ConvertFrom-Json -AsHashtable)) { [PSCustomObject]@{URL = $o.URL; TITLE = $o.Title } }
+  $alllinks += foreach ($o in $(Get-Content -Path 'C:\Dropbox\whertzing\AllAttributions.txt' | ConvertFrom-Json -AsHashtable)) { [PSCustomObject]@{URL = $o.URL; TITLE = $o.Title } } # Get-Attributions -path $path -Recurse
   # $acc = @{
   #   Time1    = ''
   #   Time2    = ''
@@ -340,48 +430,204 @@ Function Get-LinksFiltered {
   #       $acc['results1'] += $l
   #     }
   #   }
-
   # }
   # $acc.Count1 = $($acc['results1']).count
 
   # $acc['time2'] = Measure-Command {
-  $delegate = [Func[PSCustomObject, bool]] { param([PSCustomObject]$o); return (($o.Title -match $findRegex) -or ($o.URL -match $findRegex)) }
-  $query = [Linq.Enumerable]::Where([PSCustomObject[]]$alllinks, [Func[PSCustomObject, bool]] $delegate)
-  #$filteredLinks =
-  # [Linq.Enumerable]::DistinctBy([PSCustomObject[]]$alllinks, $delegate)
-  #$acc['results2'] = [Linq.Enumerable]::ToArray($query)
-  # }
-  # [PSCustomObject[]]$([Linq.Enumerable]::DistinctBy([PSCustomObject[]]$alllinks, $delegate)))
-  # $acc.Count2 = $($acc['results2']).count
-  return  [Linq.Enumerable]::ToArray($query)
+    # eliminate any search engine urls
+    $SERegEx = [regex] 'search\.brave\.com'
+  $delegateRegexMatch = [Func[PSCustomObject, bool]] { param([PSCustomObject]$o); return ((($findRegex.Match($o.title)).Success -or ($findRegex.Match($o.URL)).Success) -and -not ($SERegEx.Match($o.URL)).Success) }
+  $delegateDistinctURL = [Func[PSCustomObject, string]] { param([PSCustomObject]$o); return $o.URL }
+  $query=[PSCustomObject[]] [Linq.Enumerable]::Where([PSCustomObject[]]$alllinks, [Func[PSCustomObject, bool]] $delegateRegexMatch)
+  $distinctMatchedQuery = [Linq.Enumerable]::DistinctBy( [PSCustomObject[]] $query,  $delegateDistinctURL)
+  return  [Linq.Enumerable]::ToArray([PSCustomObject[]]$distinctMatchedQuery)
 }
-
 
 # foreach ($o in $(Get-Attributions -Recurse)) {"[$($o.Title)]($($o.URL))" }
 Function Open-FilteredLinksInBrave {
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'StringParameter')]
+
   Param(
-    $path = 'C:\Dropbox\whertzing\'
+    [parameter(ParameterSetName = 'StringParameter', Mandatory = $true, Position = 1, ValueFromPipeline = $False, ValueFromPipelineByPropertyName = $True)] [string] $reStr
+    , [parameter(ParameterSetName = 'RegExParameter', Mandatory = $true, Position = 1, ValueFromPipeline = $False, ValueFromPipelineByPropertyName = $True)] [Regex] $re
+    , $path = 'C:\Dropbox\whertzing\'
     , $include = ('*.ps1', '*.md')
-    , $findRegex
-
   )
-
-  $links = $(Get-LinksFiltered -Path $path -Include $include -findRegex $findRegex -Recurse).URL
-  Start-Process 'brave.exe' -ArgumentList '--new-window' $links
-}
-
-Function browseopenssl { Start-Process 'brave.exe' -ArgumentList '--new-window' $(Get-Content 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\Documentation\AttributionsForOpenSSL.md' | ForEach-Object { ($_ -split '\]\(')[1] -replace '\)', '' }) }
-Function combinebookmarks {
-  Param(
-    $path = '\dropbox\security\*'
-    , $include = 'book*.*'
-  )
-  $acc = @()
-  foreach ($fh in $(Get-ChildItem $path -Include $include)) {
-    $acc += ((Get-Content $fh) | ConvertFrom-Json -AsHashtable)
+  [regex] $findRegex = ''
+  switch ($PSCmdlet.ParameterSetName) {
+    StringParameter {
+      # ToDo: continously improve validation of user input for safety
+      $validatedStr = $reStr # [regex]::Escape($reStr)
+      $findRegex = [regex] $validatedStr
+    }
+    RegExParameter {
+      # ToDo: continously improve validation of user input for safety
+      $findRegex = $re
+    }
   }
-  $acc | sort -Property @{Expression = { $_.Name } } -uniq
+  $links = $(Get-LinksFiltered -Path $path -Include $include -findRegex $findRegex -Recurse).URL
+  Start-Process 'brave.exe' -ArgumentList '--new-window', $($links -join ' ')
 }
+
+# [regex] $re = = '(?ism)(openssl|509)'
+# Open-FilteredLinksInBrave -path 'C:\Dropbox\whertzing\GitHub\atap.utilities' -findRegex $re
+# Alias FindAndOpenLinks
+Set-Alias -Name FAOL -Value Open-FilteredLinksInBrave
+
+# faol $([regex] '(x509|signing|openssl|certificate)')
+# A Function to use a FileWatcher asynchronously to detect when a file is changed
+Function WatchFile {
+  params(
+    [ValidateScript({ Test-Path $_ })]
+    [string] $path
+  )
+  # [FileSystemWatcher Monitoring Folders for File Changes](https://powershell.one/tricks/filesystem/filesystemwatcher)
+
+  # specify the path to the folder you want to monitor:
+$ParentPath = Split-Path $path
+
+# specify which file(s) you want to monitor
+$FileFilter = Split-Path $path -PathType Leaf
+
+# specify whether you want to monitor subfolders as well:
+$IncludeSubfolders = $false
+
+# specify the file or folder properties you want to monitor:
+$AttributeFilter = [IO.NotifyFilters]::LastWrite
+
+try
+{
+  $watcher = New-Object -TypeName System.IO.FileSystemWatcher -Property @{
+    Path = $ParentPath
+    Filter = $FileFilter
+    IncludeSubdirectories = $IncludeSubfolders
+    NotifyFilter = $AttributeFilter
+  }
+
+  # define the code that should execute when a change occurs:
+  $action = {
+    # the code is receiving this to work with:
+
+    # change type information:
+    $details = $event.SourceEventArgs
+    $Name = $details.Name
+    $FullPath = $details.FullPath
+    $OldFullPath = $details.OldFullPath
+    $OldName = $details.OldName
+
+    # type of change:
+    $ChangeType = $details.ChangeType
+
+    # when the change occured:
+    $Timestamp = $event.TimeGenerated
+
+    # save information to a global variable for testing purposes
+    # so you can examine it later
+    # MAKE SURE YOU REMOVE THIS IN PRODUCTION!
+    $global:all = $details
+
+    # now you can define some action to take based on the
+    # details about the change event:
+
+    # you can also execute code based on change type here:
+    switch ($ChangeType)
+    {
+      'Changed'  { "CHANGE" }
+      'Created'  { "CREATED"}
+      'Deleted'  { "DELETED"
+        # to illustrate that ALL changes are picked up even if
+        # handling an event takes a lot of time, we artifically
+        # extend the time the handler needs whenever a file is deleted
+        Write-Host "Deletion Handler Start" -ForegroundColor Gray
+        Start-Sleep -Seconds 4
+        Write-Host "Deletion Handler End" -ForegroundColor Gray
+      }
+      'Renamed'  {
+        # this executes only when a file was renamed
+        $text = "File {0} was renamed to {1}" -f $OldName, $Name
+        Write-Host $text -ForegroundColor Yellow
+      }
+
+      # any unhandled change types surface here:
+      default   { Write-Host $_ -ForegroundColor Red -BackgroundColor White }
+    }
+  }
+
+  # subscribe your event handler to all event types that are
+  # important to you. Do this as a scriptblock so all returned
+  # event handlers can be easily stored in $handlers:
+  $handlers = . {
+    Register-ObjectEvent -InputObject $watcher -EventName Changed  -Action $action
+    Register-ObjectEvent -InputObject $watcher -EventName Created  -Action $action
+    Register-ObjectEvent -InputObject $watcher -EventName Deleted  -Action $action
+    Register-ObjectEvent -InputObject $watcher -EventName Renamed  -Action $action
+  }
+
+  # monitoring starts now:
+  $watcher.EnableRaisingEvents = $true
+
+  Write-Host "Watching for changes to $Path"
+
+  # since the FileSystemWatcher is no longer blocking PowerShell
+  # we need a way to pause PowerShell while being responsive to
+  # incoming events. Use an endless loop to keep PowerShell busy:
+  do
+  {
+    # Wait-Event waits for a second and stays responsive to events
+    # Start-Sleep in contrast would NOT work and ignore incoming events
+    Wait-Event -Timeout 1
+
+    # write a dot to indicate we are still monitoring:
+    Write-Host "." -NoNewline
+
+  } while ($true)
+}
+finally
+{
+  # this gets executed when user presses CTRL+C:
+
+  # stop monitoring
+  $watcher.EnableRaisingEvents = $false
+
+  # remove the event handlers
+  $handlers | ForEach-Object {
+    Unregister-Event -SourceIdentifier $_.Name
+  }
+
+  # event handlers are technically implemented as a special kind
+  # of background job, so remove the jobs now:
+  $handlers | Remove-Job
+
+  # properly dispose the FileSystemWatcher:
+  $watcher.Dispose()
+
+  # Caution - if tailing the debug log, this would cause an endless loop
+  Write-PSFMessage -Level Debug -Message ("Event Handler disabled, monitoring ends.")
+
+}
+}
+
+#  A Function to tail the last N lines of the PSFramework log
+Function TailLog {
+  param (
+    [string] $file
+    ,[int]$numlines = 20
+    ,[switch] $wait
+    )
+    # if file was not supplied, use the PSFramework logging filesystem logpath, and get the most recent file there
+    if (-not ($PSBoundParameters.ContainsKey('file'))) {
+    $file = (Get-ChildItem $(Get-PSFConfigValue -FullName PSFramework.Logging.FileSystem.LogPath) | Sort-Object -Property LastWriteTime -Descending)[0]
+    }
+    $command = "Get-Content -Path $file -tail $numlines"
+    iex $command
+    if ($wait) {
+      # Create a callback function that will tail the last N lines of the file
+      # attach a file watcher (on file modified) to the file with the callback as the action
+      # stay in this function until the user enters ctrl-c
+    }
+  }
+# A function to stop PushBullet processes
+function KillPushBullet {Get-Process | Where-Object{$_.processname -match 'pushbul'}  | stop-process}
 
 # A function and alias to kill the VoiceAttack process
 function PublishPluginAndStartVAProcess {
@@ -396,6 +642,41 @@ function StopVoiceAttackProcess {
   Get-Process | Where-Object { $_.Path -match 'VoiceAttack' } | Stop-Process -Force
 }
 Set-Item -Path alias:stopVA -Value StopVoiceAttackProcess
+
+
+# A function to get the Windows Security Identifier (SID) given a user name
+Function GetSIDfromAcctName
+{
+  [CmdletBinding(DefaultParameterSetName = 'Local')]
+
+    Param(
+        [Parameter(mandatory=$true)]$userName
+        , [Parameter(ParameterSetName = 'Remote')]
+        [Parameter(mandatory=$false)]$ComputerName
+    )
+    $usracct = ''
+    $command = 'Get-CimInstance -Query "Select * from Win32_UserAccount where name = ''$userName''"'
+    switch ($PSCmdlet.ParameterSetName) {
+      Local {
+          # No change to the basee command
+      }
+      Remote {
+        $command = $command + " -ComputerName $ComputerName"
+      }
+    }
+    Write-PSFMessage -Level Debug -Message "command = $command"
+    $usracct = Invoke-Expression $command
+    return $usracct.sid
+}
+
+# A function to set an environment variable for a named user (at the user scope in the machine's registry)
+# must be run in an elevated (administrator) process
+
+# Get the registry entry for HKey_users\$sid\Environment
+# if the desired environment variable does not exist as a key, create the key as a string
+# Set the value of the environment variable (Key)
+
+
 
 # Final (user) directory to leave the interpreter
 #cdMy

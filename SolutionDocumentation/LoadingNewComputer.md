@@ -104,6 +104,7 @@ Reinstall all chocolatey packages
 - Notepad++ - use x86 version, many more plugins available
 - Add to List:
   Freevideoeditor
+powershell INvoke-Build module
 
 After chocolatey install, configure as follows:
 
@@ -164,9 +165,21 @@ After chocolatey install, configure as follows:
       driver = true
   ```
 
+vault - Hashicorp free level Vault server
+
 ### Setup Hosts file (for computers in a Workgroup, i.e., not joined to a Domain)
 
 copy role-appropriate hosts file to new computer
+
+## Security and PKI
+
+If the role specifies that the computer will be a primary or backup Hasicorp Vault server, run the following steps
+
+- Create a user under which the Hashicorp Vault server will run (Name cannot exceed 25 characters)
+
+  - Install-Module Microsoft.PowerShell.LocalAccounts
+  - New-LocalUser -Name "HashicorpVaultServiceAcct" -Description "Runs Vault Server task" -NoPassword # ToDo - if password where will it get the credential from?
+  -
 
 ## Install Powershell Packages
 
@@ -272,6 +285,30 @@ Install-ChocolateyFileAssociation  $suffixs "${env:programfiles(x86)}\notepad++.
 ```
 
 ### Service Accounts on the machine (as per Role)
+
+#### Everything Client Service Account
+
+Everything.exe -install-client-service
+
+#### Jenkins Controller Service account
+
+
+create the subdirectory `Powershell` in the Jenkins Controller Service Account User's home directory
+In the newly created Powershell subdirectory, run the following command
+`Remove-Item -path (join-path 'C:' 'Users' 'JenkinsServiceAcct','PowerShell','Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path 'C:' 'Users' 'JenkinsServiceAcct','PowerShell','Microsoft.PowerShell_profile.ps1') -Target (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','ProfileForServiceAccountUsers.ps1')`
+
+ToDo: figure out how to do this with a published package instead of a symbolic link
+ToDo: Figure out how to handle drive/path differences for source
+
+#### Jenkins Client Service account
+create the subdirectory `Powershell` in the Jenkins Client Service Account User's home directory
+In the newly created Powershell subdirectory, run the following command
+`Remove-Item -path (join-path 'C:' 'Users' 'JenkinsAgentSrvAcct','PowerShell','Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path 'C:' 'Users' 'JenkinsAgentSrvAcct','PowerShell','Microsoft.PowerShell_profile.ps1') -Target (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','ProfileForServiceAccountUsers.ps1')`
+
+#### MSSQL Service Account
+
+#### IIS Controller Service Account
+
 
 
 ### Setup Role-wide Autoruns and startups
@@ -469,14 +506,28 @@ Also note that any errors in the profile file will cause the remote session init
 
 ## Setup Fiddler Options
 
-## Setup Jenkins Master
+## Setup Java
 
-ToDo: how to copy jobs and nodes
-ToDo: how to change the jenkins agents to communicate with teh new master
+Many of the development and CI tools need Java. Jenkins, PlantUML, diagram generator TBD and TBD all use Java. Managing multiple versions of the Java engine is reuired because not all of these tools will work with just one version.
+
+### Java 17
+
+The jenkins CI tool is the primary Java application. Currently (July 2022), the Jenkins project recommends Java 17.
+
+The code is installed to "C:\Program Files\Eclipse Adoptium\jre-17.0.2.8-hotspot\bin\java.exe", and the PATH variable (Machine scope)  is modified to include `"C:\Program Files\Eclipse Adoptium\jre-17.0.2.8-hotspot\bin\"`
+
+
+## Setup Jenkins Controller
+
+Everything necessary  to run jenkins is found in the `$ENV:JENKINS_HOME` subdirectory. For any machine having the role of the Jenkins Controller, the value of `$ENV:JENKINS_HOME`is set to the machine' settings' path `$global:configRootKeys['CloudBasePathConfigRootKey']` and`JenkinsHome`. This is assigned at the machine level, so when the Jenkins Controller Service starts, it uses the data in this direcotry. Note that only one machine in the organization should be designated the Jenkins Controller. (ToDo: add section on High-availability amd scaling for the Jenkins Controller)
+
+The machine name of the Jenkins Controller will be referred to in this document as `JenkinsControllerMachine`
+
+ToDo: how to change the jenkins agents to communicate with the new master
 
 ### Change Powershell from V5 to V7 on Controller and Agents
 
-`http://utat022:4040/configureTools/`
+`http://JenkinsControllerMachine:4040/configureTools/`
 Jenkins->Configure->Tools->Powershell Installations: Defaultwindows =`C:\Program Files\PowerShell\7\pwsh.exe`
 
 Scheduled Job (within Jenkins) to run the `Get-DropBoxAllFolderCursors-Nightly` job every day. The job imports the eponymous script `Get-DropBoxAllFolderCursors-Nightly.ps1`, then executes the function `Get-DropBoxAllFolderCursors-Nightly`
@@ -484,11 +535,6 @@ Scheduled Job (within Jenkins) to run the `Get-DropBoxAllFolderCursors-Nightly` 
 Scheduled Job (within Jenkins) to run the `Confirm-GitFSCK-Nightly` job every day. The job imports the eponymous script `Confirm-GitFSCK-Nightly.ps1`, then executes the function ``Confirm-GitFSCK-Nightly`
 
 Jenkins reporting of the Validate Tools scripts
-
-Many CI steps need Java. Jenkins itself is Java based, as are the PlantUML steps that generate diagrams from embedded info in .md files, and the step that reads all the C# files nad creates PlantUML diagrams from the source code files. Setting up the new computer, need to ensure the correct Java is installed and running.
-
-Check Java Version. Old computer is running jre1.8.0_291, but jre1.8.0_321 exists as a peer to \_291.
-On the new computer, only \_321 exists (so far...)
 
 PackageManagement for powershell
 
@@ -527,7 +573,7 @@ $c= $a2 | %{if ($b2.contains($_)) {$\_}}
 
 From and elevated Powershell prompt:
 
-The `DISM` module provides the `Enable-WindowsOptionalFeature`, so it must be installed. However, it is not availae as a standalone download, it has to be finnessed . See this for instructions: [Install DISM powershell module on Windows 7](https://superuser.com/questions/1270094/install-dism-powershell-module-on-windows-7)
+The `DISM` module provides the `Enable-WindowsOptionalFeature`, so it must be installed. However, it is not available as a standalone download, it has to be finessed . See this for instructions: [Install DISM powershell module on Windows 7](https://superuser.com/questions/1270094/install-dism-powershell-module-on-windows-7)
 
 
 [Use Command line to Enable IIS Web server on Windows 11](https://www.how2shout.com/how-to/use-command-line-to-enable-iis-web-server-on-windows-11.html)

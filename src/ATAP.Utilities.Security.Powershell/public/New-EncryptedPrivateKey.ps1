@@ -1,5 +1,5 @@
 #############################################################################
-#region New-CertificateRequest
+#region New-EncryptedPrivateKey
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -56,10 +56,10 @@ Function New-EncryptedPrivateKey {
     # openssl must be in the path
     # ToDo: lots of error handling
     # ToDo: Parameterize the EC curve
-    openssl genpkey -quiet -algorithm EC -pkeyopt ec_paramgen_curve:$ECCurve -pass file:$EncryptionKeyPassPhrasePath -out $EncryptedPrivateKeyPath >$null
+    openssl genpkey -quiet -algorithm EC -pkeyopt ec_paramgen_curve:$ECCurve -aes-256-cbc -pass file:$EncryptionKeyPassPhrasePath -out $EncryptedPrivateKeyPath >$null
     Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
   #endregion EndBlock
 }
-#endregion New-CertificateRequest
+#endregion New-EncryptedPrivateKey
 #############################################################################

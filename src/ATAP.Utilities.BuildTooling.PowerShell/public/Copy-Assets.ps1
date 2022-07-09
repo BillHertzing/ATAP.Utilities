@@ -25,7 +25,7 @@ ToDo: write Help For example 2 of using this function
 .EXAMPLE
 ToDo: write Help For example 2 of using this function
 .ATTRIBUTION
-https://stackoverflow.com/questions/45220194/publish-profile-copy-files-to-relative-destination
+[Publish Profile Copy Files To Relative Destination](https://stackoverflow.com/questions/45220194/publish-profile-copy-files-to-relative-destination)
 .LINK
 ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
 .LINK

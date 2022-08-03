@@ -110,11 +110,50 @@ ou can also capture the value by visiting the Instance Identity page, at somethi
 [Jenkins : Installing Jenkins as a Windows service](https://wiki.jenkins.io/display/JENKINS/Installing+Jenkins+as+a+Windows+service)
 
 [How to install Windows agents as a service?](https://support.cloudbees.com/hc/en-us/articles/217423827-How-to-Install-Several-Windows-Slaves-as-a-Service-)
+[Windows Service Wrapper in less restrictive license](https://github.com/winsw/winsw/blob/master/doc/installation.md#winsw-installation-guide)
 
-Name of Service used to run the Jenkins service is `JenkinsControllerSrvAcc`, password is stored as a secret somewhere (toDo: Create secrets files (encrypted) somewhere on dropbox not in github). Temporary value is `NotSecret`
+Name of Service used to run the Jenkins Controller service is `JenkinsControllerSrvAcc`, password is stored as a secret somewhere (toDo: Create secrets files (encrypted) somewhere on dropbox not in github). Temporary value is `NotSecret`
 
 Name of Service used to run the Jenkins Client service is `JenkinsClientSrvAcc`, password Temporary value is `NotSecret`, used in the service as "LogOnAs"
 
+* Download the WinSW executable, and rename it to `JenkinsCient-<Client Version>-<DotNetDesktopframeworkVersion>.exe`
+* Create the file `JenkinsCient-<Client Version>-<DotNetDesktopframeworkVersion>.xml`, populate it as follows:
+``` xml
+<service>
+  <id>JenkinsAgent</id>
+  <name>Jenkins Agent</name>
+  <description>This service runs an agent for Jenkins automation server.</description>
+  <executable>java.exe</executable>
+  <arguments>-Xrs -jar &quot;"C:\JenkinsAgentNode\utat022Node\agent.jar"&quot; -jnlpUrl http://utat022:4040/computer/utat022Node/jenkins-agent.jnlp -secret 925f7db2725b5a2c1d72d4289439ba848fdd934b59e4722694f72081c56618b7 -workDir "C:\JenkinsAgentNode"</arguments>
+  <logmode>rotate</logmode>
+  <onfailure action="restart">
+    <download from=" http://utat022:4040/jnlpJars/slave.jar" to="%BASE%\jenkins-client.jar">
+      <extensions>
+        <extension className="winsw.Plugins.RunawayProcessKiller.RunawayProcessKillerExtension" enabled="true" id="killOnStartup">
+          <pidfile>%BASE%\jenkins_agent.pid</pidfile>
+          <stopTimeout>5000</stopTimeout>
+          <stopParentFirst>false</stopParentFirst>
+        </extension>
+      </extensions>
+    </download>
+  </onfailure>
+<serviceaccount>
+  <domain>utat022</domain>
+  <user>JenkinsAgentSrvAcct</user>
+  <password>NotSecret</password>
+  <allowservicelogon>true</allowservicelogon>
+</serviceaccount>
+</service>
+```
+
+Note that the Java.exe does not specify a path. Instead it will use the first java.exe found in the process's `$env:Path`
+The configuration specifies that the agent jar file is found exactly at
+The jnlpURL argument is  using http (willswitch to https when Jenkins Controller is configured with a SSL certificate)
+The 'secret' comes from the node configuration page
+The WorkDir should depend on the current nodes global settings
+
+Start an administrator Powershell terminal session
+Change to the directory `C:\JenkinsAgentNode` and run the command `.\Jenkins-client-2.9.0-net461.exe Install` (use `.\Jenkins-client-2.9.0-net461.exe Uninstall` first, if a service already exists and you are chaning its configuration)
 
 ## Starting an Agent
 

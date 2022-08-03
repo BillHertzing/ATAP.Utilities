@@ -6,20 +6,26 @@
 function Invoke-GitPreCommitHook {
   # ensure that by default the Commit will NOT happen
   $exitcode = 1
-  $VerbosePreference = 'SilentlyContinue' # Continue  SilentlyContinue
-  $DebugPreference = 'SilentlyContinue'
-  Write-PSFMessage -Level Debug -Message "Workspace = $([System.Environment]::GetEnvironmentVariable('Workspace'))" -Tag 'Jenkins', 'Publish'
-  Write-PSFMessage -Level Debug -Message "Current Working Directory = $(Get-Location)" -Tag 'Jenkins', 'Publish'
-  Write-PSFMessage -Level Debug -Message "Environment Variable Environment = $($global:configRootKeys['ENVIRONMENTConfigRootKey']) = $([System.Environment]::GetEnvironmentVariable($global:configRootKeys['ENVIRONMENTConfigRootKey']))" -Tag 'Jenkins', 'Publish'
-  Write-PSFMessage -Level Debug -Message "Environment Variable ModuleName = $([System.Environment]::GetEnvironmentVariable('ModuleName'))" -Tag 'Jenkins', 'Publish'
-  Write-PSFMessage -Level Debug -Message "Environment Variable LocalSourceReproDirectory = $([System.Environment]::GetEnvironmentVariable('LocalSourceReproDirectory'))" -Tag 'Jenkins', 'Publish'
-  Write-PSFMessage -Level Debug -Message "Environment Variable BranchName = $([System.Environment]::GetEnvironmentVariable('BranchName'))" -Tag 'Jenkins', 'Publish'
-  Write-PSFMessage -Level Debug -Message "Environment Variable RelativeModulePath = $([System.Environment]::GetEnvironmentVariable('RelativeModulePath'))" -Tag 'Jenkins', 'Publish'
-  Write-PSFMessage -Level Debug -Message "Environment Variable NU_GET_API_KEY_SECRET = $([System.Environment]::GetEnvironmentVariable('NU_GET_API_KEY_SECRET'))" -Tag 'Jenkins', 'Publish'
+  $VerbosePreference = 'Continue' # Continue  SilentlyContinue
+  $DebugPreference = 'Continue'
+
+  $branchName = git branch --show-current
+  Write-PSFMessage -Level Debug -Message "branchName = $branchName" -Tag 'GitPreCommtiHook'
+  [System.Environment]::SetEnvironmentVariable('BRANCHNAME', $branchName)
+  $moduleName = Get-ChildItem -include '*.psd1'
+  Write-PSFMessage -Level Debug -Message "ModuleName = $moduleName" -Tag 'GitPreCommtiHook'
+  [System.Environment]::SetEnvironmentVariable('MODULENAME', $moduleName)
+
+
+  Write-PSFMessage -Level Debug -Message "Workspace = $([System.Environment]::GetEnvironmentVariable('Workspace'))" -Tag 'GitPreCommtiHook', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Current Working Directory = $(Get-Location)" -Tag 'GitPreCommtiHook', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable Environment = $($global:configRootKeys['ENVIRONMENTConfigRootKey']) = $([System.Environment]::GetEnvironmentVariable($global:configRootKeys['ENVIRONMENTConfigRootKey']))" -Tag 'GitPreCommtiHook', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable LocalSourceReproDirectory = $([System.Environment]::GetEnvironmentVariable('LocalSourceReproDirectory'))" -Tag 'GitPreCommtiHook', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable RelativeModulePath = $([System.Environment]::GetEnvironmentVariable('RelativeModulePath'))" -Tag 'GitPreCommtiHook', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable NU_GET_API_KEY_SECRET = $([System.Environment]::GetEnvironmentVariable('NU_GET_API_KEY_SECRET'))" -Tag 'GitPreCommtiHook', 'Publish'
 
   $moduleName = [System.Environment]::GetEnvironmentVariable('ModuleName')
   $localSourceReproDirectory = [System.Environment]::GetEnvironmentVariable('LocalSourceReproDirectory')
-  $branchName = [System.Environment]::GetEnvironmentVariable('BranchName')
   $relativeModulePath = [System.Environment]::GetEnvironmentVariable('RelativeModulePath')
 
   # ToDo: add -fail-fast Environment Variable
@@ -46,7 +52,6 @@ function Invoke-GitPreCommitHook {
 
   # ToDo: Read dynamic pre-commit checks from vetted source (and validate the checks before using them)
   # ToDo: Read dynamic pre-commit actions from vetted source (and validate the actions before using them)
-
 
   # Built-in PreCommit checks
 

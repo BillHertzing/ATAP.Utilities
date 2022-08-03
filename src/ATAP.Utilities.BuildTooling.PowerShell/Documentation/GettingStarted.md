@@ -86,7 +86,7 @@ Create a build task for Powershell modules in VSC that will do the following:
       upload the Chocolatey package to the Chocolatey.org server, but marked as a prerelease
 
   CI/CD Process:
-  The CI/CD process occurs when a checkin occurs in a Git-managed repository on a local computer.
+  The CI/CD process occurs when a commit occurs in a Git-managed repository on a local computer.
   The ATAP repositories use Jenkins for the CI/CD processing
   Check-in any preproduction version of the module:
     Jenkins updates the preproduction string in the .psd1
@@ -100,5 +100,45 @@ Create a build task for Powershell modules in VSC that will do the following:
       upload the NuGet package to NuGet.org
       upload the Chocolatey package to Chocolatey.org
     update badges and info on the GitHub page
+
+
+### Powershell module packaging and delivery
+
+The powershell package providers supported by the ATAP.Utilities Powershell build tooling include
+
+* PowerShell Gallery
+* Nuget
+* Chocolatey
+
+Delivery to each powershell package provider needs to be supported and tested. This means that both developer machines and the CI/CD pipeline need to understand development and testing delivery.
+
+## PowerShell Gallery
+
+Testing the PowerShell Gallery package provider should test delivery to a file system location, a local NuGet server, and a local PowerShell Gallery server, in increasing order of complexity.
+
+### PowerShell Gallery Filesystem development and test respoitory
+
+For each developer machine and CI/CD pipeline machine define an intermediate location to which the public distribution packages should be generated. This location is defined in the `$global:settings` hash under the key `$global:configRootKeys['GeneratedRelativePathConfigRootKey']`. By default, the value is `_generated`
+
+For each developer machine and CI/CD pipeline machine define an intermediate location to which the public distribution packages for each powershell package provider should be generated. This location is defined in the `$global:settings` hash under the key `$global:configRootKeys['GeneratedPowershellModuleConfigRootKey']`. By default, the value is `Powershell`
+
+During the build pipeline, copy the `ModuleName.psd1` and the `ModuleName.psm1` files to `_generated\Packages\PowerShell GalleryPackageSource\ModuleName`
+
+Define the Filesystem location, per machine and user, for the Development PowerShellGallery repository. Define this in the globals. for example `"\\utat022\fs\DevelopmentPackages"`
+
+Define a name for the filesystem development PowerShellGallery repository. define this in the globals. For example `DevelopmentFilesystemPowershellGalleryRepository `
+
+during the build,
+
+1. Ensure that PowerShellGet is a registered package provider (should be builtin and default), running `Get-PackageProvider` should return an entry whose names is `PowerShellGet`
+1. Ensure that the filesystem location exists. for example `//utat022/FS/PowerShell GalleryFileRepository
+1. Ensure that the filesystem location is a trusted PSRepository. Run the command `Set-PSRepository -Name "DevelopmentFilesystemPowershellGalleryRepository"   -InstallationPolicy Trusted -SourceLocation "\\utat022\fs\DevelopmentPackages"`
+1. Deliver the new module/version to the filesystem development PowerShellGallery repository. Run the command `Publish-Module -Path "_generated\Packages\PowerShell GalleryPackageSource\ModuleName" -Repository DevelopmentFilesystemPowershellGalleryRepository -NuGetApiKey 'any'`
+1. Ensure that the new module/version is available. run the command `Find-Module -Name ATAP.Utilities.BuildTooling.PowerShell`. Ensure that the name, version, and repository fields returned by the command match the expected values.
+1. Install the new module or new version into the current user's scope
+1. Run the tests using the newly installed module/version
+
+
+### Create a subdirectory under _generated for the source of the PowerShell Gallery module
 
 

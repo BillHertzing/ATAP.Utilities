@@ -59,7 +59,40 @@ Function ConsoleSettings {
 if ($host.ui.Rawui.WindowTitle -notmatch 'ISE') {ConsoleSettings}
 
 
-# Set the PSModulePAth
+# Expand upon the PSModulePath according to the roles this user has on this machine# ToDo: expand the use of PSModulepAth in the globals settings files
+# extract all the psmodulepath items from the global:Settings
+# The following ordered list of module paths come from ATAP and 3rd-party modules that correspond to roles of this user on this machine
+$UserPSModulePaths = @(
+
+  # ATAP Powershell is part of the machine profile
+  # 'Modules that are in DevelopmentLifecycle Phase, for which I am involved'
+  # 'Modules that are in Unit Test Lifecycle Phase, for which I am involved ("I" may be a user or a CI/CD service)'
+  # 'Modules that are in Integration Test Lifecycle Phase, for which I am involved'
+  # 'Modules that are in RTM Lifecycle Phase, for which I am involved'
+  # 'All Production modules for Scripts I use day-to-day' - These should reference modules in
+  # Image manipulation scripts for blog posts
+  # DropBox api scripts for blog posts
+  # Future: scripts to manipulate FreeVideoEditor VSDC
+  # the default location where chocolatey installs modules on this machine
+  $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]
+)
+# Add the $UserPSModulePaths to the exisiting $env:PSModulePaths
+$desiredPSModulePaths = $UserPSModulePaths  + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
+# Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
+[Environment]::SetEnvironmentVariable('PSModulePath', $desiredPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
+
+
+# Clean up the $desiredPSModulePaths
+# The use of 'Get-PathVariable' function causes the pcsx module to be loaded here
+# ToDo: work out pscx for jenkins clinet agents
+#$finalPSModulePaths = Get-PathVariable -Name 'PSModulePath' -RemoveEmptyPaths -StripQuotes
+# Set the $Env:PsModulePath to the final, clean value of $desiredPSModulePaths.
+#[Environment]::SetEnvironmentVariable('PSModulePath', $finalPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
+
+# Any machine that has openssl installed, needs to add it's path to the machine-scope path
+# This should only be done once, by a machine admin, when it is installed onto a machine
+
+
 #$Env:PSModulePath = (join-path $env:ProgramFiles "WindowsPowerShell\Modules") + [IO.Path]::PathSeparator + $Env:PSModulePath
 "Final PSModulePath in AlluserAllshell profile is: " + "`r`n`t" + (($Env:PSModulePath -split [IO.Path]::PathSeparator) -join "`r`n`t")
 

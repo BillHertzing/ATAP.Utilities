@@ -208,6 +208,7 @@ If the role specifies that the computer will be a primary or backup Hasicorp Vau
 - Install the machine profile files
   After Package Management
 
+
   Before Package Management
 
   Symlink the profile files for the machine as follows:
@@ -258,6 +259,10 @@ If the role specifies that the computer will be a primary or backup Hasicorp Vau
   - `Install-Module pester -scope 'AllUsers'`
   - Fix Pester installation and or path variable for PS V5 and PS V7
 
+- Install Powershell Script Analyzer (PSScriptAnalyzer)
+  - `Install-Module PSScriptAnalyzer -scope 'AllUsers'`
+  - Fix PSScriptAnalyzer installation and or path variable for settings specific to the machine
+
 Setup machine-wide Autoruns and startups
 avast
 ditto
@@ -265,7 +270,7 @@ dropbox
 nordvpn
 sharex
 
-## Per user configuration
+## Per user configuration (as per Role)
 
 ### First admin user on the machine
 
@@ -276,12 +281,11 @@ dropbox
 nordvpn
 sharex
 
-### Set file associations for notepad++
-
+### Set global file associations for notepad++
 
 ```Powershell
-$suffixs = @('.txt','.log','.ps1','.psm1','.psd1')
-Install-ChocolateyFileAssociation  $suffixs "${env:programfiles(x86)}\notepad++.exe"
+$suffixs = @('.txt','.log', '.ini', '.inf', '.props', '.java', '.cs', '.inc', 'html', '.asp', '.aspx', '.css', '.js', '.jsp', '.xml', '.sh', '.bash', '.bat', '.cmd', '.py', '.sql', '.ps1','.psm1','.psd1')
+Install-ChocolateyFileAssociation  $suffixs "$($env:ProgramFiles)\Notepad++\notepad++.exe"
 ```
 
 ### Service Accounts on the machine (as per Role)
@@ -312,6 +316,21 @@ In the newly created Powershell subdirectory, run the following command
 
 
 ### Setup Role-wide Autoruns and startups
+
+
+
+#### Role:Developer
+
+Install the Powershell build tools. Run the following command `install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser`
+`install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser`
+
+
+Install the Powershell script analysis tools. Run the following command `install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser`
+#### Role:QualityAssurance
+
+Install the Powershell script analysis tools. Run the following command `install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser`
+
+#### Install
 
 resx Resource Manager
 Voiceattack
@@ -589,3 +608,4 @@ To install IIS via the GUI, see
 ### Add SSLServer certificate to Jenkins
 
 [How can I set up Jenkins CI to use https on Windows?](https://stackoverflow.com/questions/5313703/how-can-i-set-up-jenkins-ci-to-use-https-on-windows)
+

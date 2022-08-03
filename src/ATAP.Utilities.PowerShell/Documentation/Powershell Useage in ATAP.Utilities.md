@@ -80,3 +80,15 @@ For getting a unique subset of a collection based on the values of a property of
 [PowershellLINQSupport.cs](https://gist.github.com/jeremybeavon/fdb603ba4dfb19a1b40c)
 [.NET Action, Func, Delegate, Lambda expression in PowerShell](https://www.reza-aghaei.com/net-action-func-delegate-lambda-expression-in-powershell/)
 
+## Update the Packagemanagement module
+
+[When PowerShellGet v1 fails to install the NuGet Provider](https://devblogs.microsoft.com/powershell/when-powershellget-v1-fails-to-install-the-nuget-provider/)
+[PackageManagement 1.1.0.0](https://www.powershellgallery.com/packages/PackageManagement/1.1.0.0)
+
+Upgrade package management.
+Prerequisite is `Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force`
+then
+`Install-Module -Name PackageManagement -RequiredVersion 1.1.0.0`  Because version 1.0.0.1 will not use TLS 1.2, and that is required to use PowerShellGet
+
+When using powershell Core, Note that if the path to the Powershell Desktop modules appear in the $ENV:PsModulePath before the path to the Powershell Core moduls, then package management powershell commands will not work, The Desktop path contains a much older version of the PackageManagement module, one which does not use TLS 1.2
+

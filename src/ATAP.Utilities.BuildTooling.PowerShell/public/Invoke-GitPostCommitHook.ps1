@@ -5,28 +5,30 @@
 # That job creates artifacts from the source, tests, and databases
 # That job pushes artifacts created in the CICDPipeline back to the local git repository
 function Invoke-GitPostCommitHook {
-  [CmdletBinding(SupportsShouldProcess=$true)]
+  [CmdletBinding(SupportsShouldProcess = $true)]
   Param()
   # The PostRelease hook has not completed successfully yet
   $exitcode = 1
   $VerbosePreference = 'Continue' # Continue  SilentlyContinue
-  $DebugPreference = 'SilentlyContinue'
+  $DebugPreference = 'Continue'
 
-  Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
-  Write-Verbose ("Current Working Directory = $(Get-Location)" )
+  Write-PSFMessage -Level Debug -Message "Starting $($MyInvocation.Mycommand)"
+  Write-PSFMessage -Level Debug -Message "Current Working Directory = $(Get-Location)"
   # Write-Debug ("Environment Variables at start of $($MyInvocation.Mycommand) = " + [Environment]::NewLine + $(Write-EnvironmentVariablesIndented 0 2 ))
 
   $userName = [System.Environment]::GetEnvironmentVariable('USERNAME')
-  Write-Verbose ('Environment Variable USERNAME = ' + $userName)
+  Write-PSFMessage -Level Debug -Message "Environment Variable USERNAME = $userName"
 
-  $moduleName = [System.Environment]::GetEnvironmentVariable('MODULE_NAME')
-  Write-Verbose ('Environment Variable MODULE_NAME = ' + $moduleName)
+  # last portion of current location
+  $moduleName = Split-Path -Path $(Get-Location) -Leaf
+  Write-PSFMessage -Level Debug -Message "Environment Variable MODULE_NAME = $moduleName"
+  $moduleName = [System.Environment]::SetEnvironmentVariable('MODULE_NAME',$moduleName)
 
   $jenkinsURL = [Environment]::GetEnvironmentVariable($global:configRootKeys['JENKINS_URLConfigRootKey'])
-  Write-Verbose ('Environment Variable JENKINS_URL = ' + $jenkinsURL)
+  Write-PSFMessage -Level Debug -Message "Environment Variable JENKINS_URL = $jenkinsURL"
 
   $jobName = [System.Environment]::GetEnvironmentVariable('JOB_NAME')
-  Write-Verbose ('Environment Variable JOB_NAME = ' + $jobName)
+  Write-PSFMessage -Level Debug -Message "Environment Variable JOB_NAME = $jobName"
   # temp
   $jobName = 'Push-ExamplePSModule'
 
@@ -48,7 +50,7 @@ function Invoke-GitPostCommitHook {
 
   # ToDo: User Powershell Secrets module instead of environment varibles (which may get logged)
   $jenkinsAuthTokenForScript = [System.Environment]::GetEnvironmentVariable('JenkinsAuthTokenForScript')
-  $jenkinsAuthTokenForScript ='BuildFromScriptAuthToken'
+  $jenkinsAuthTokenForScript = 'BuildFromScriptAuthToken'
   Write-Verbose ('Environment Variable jenkinsAuthTokenForScript = ' + $jenkinsAuthTokenForScript)
 
   # ToDo: User Powershell Secrets module instead of environment varibles (which may get logged)
@@ -59,10 +61,10 @@ function Invoke-GitPostCommitHook {
   ### ToDo: add -fail-fast parameter
   ### ToDo: add -force-allow parameter to allow PostCommit to pass even if the script fails
 
-      # ToDo: Implement Powershell Secrets module for Password or Token needed to Authorize this user
+  # ToDo: Implement Powershell Secrets module for Password or Token needed to Authorize this user
   $authorization = 'Basic ' + [Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($userName + ':' + $jenkinsUserAPIToken))
   # The URL address of the Jenkins instance to use. All->Machine->User->Process (which may take into account development for Jenkins service/server itself)
-  $uRLForJobToRun            = '{0}{1}/{2}/{3}' -f $jenkinsURL, 'job', $jobName, 'build'
+  $uRLForJobToRun = '{0}{1}/{2}/{3}' -f $jenkinsURL, 'job', $jobName, 'build'
 
   #   # default values for parameters
   # $parameters = @{
@@ -124,22 +126,25 @@ function Invoke-GitPostCommitHook {
   $url = "'{0}?{1}'" -f $uRLForJobToRun , ($qs_array -join '&')
   $command = "Invoke-RestMethod -Uri $url -Headers " + '$headers  -Method POST'
   if ($useProxy -and -not (($useProxy -eq 0) -or ($useProxy -eq $false))) { $command += " -Proxy $proxyAddress" }
- if ($PSCmdlet.ShouldProcess($command, "Would run $command ")) {
-  try {
-    $result = Invoke-Expression $command
-    Write-Debug "result = $result"
+  if ($PSCmdlet.ShouldProcess($command, "Would run $command ")) {
+    try {
+      $result = Invoke-Expression $command
+      Write-Debug "result = $result"
+    }
+    catch {
+      $resultException = $_.Exception
+      $ResultExceptionMessage = $resultException.Message
+      Write-Error $ResultExceptionMessage
+    }
   }
-  catch {
-    $resultException = $_.Exception
-    $ResultExceptionMessage = $resultException.Message
-    Write-Error $ResultExceptionMessage
-  }
-}
 
   # $result is a JSON object if there were no errors
 
 
   $exitcode
 }
+
+
+
 
 

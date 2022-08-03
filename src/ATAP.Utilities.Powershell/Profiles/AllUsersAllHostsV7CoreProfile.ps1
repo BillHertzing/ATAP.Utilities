@@ -134,6 +134,10 @@ Function Write-EnvironmentVariablesIndented {
   }
   $outstr
 }
+
+#endregion Functions needed by the machine profile, must be defined in the profile
+##################################################################################
+
 Function ValidateTools {
   # validate dotnet
   # validate dotnet build
@@ -194,7 +198,7 @@ function Add-SecretStoreVault {
     # Force the creation of the DEC certificate if one exists, overwrite the KeyFilePath if one exists
     , [switch] $Force
   )
-  Write-PSFMessage -Level Debug -Message "Starting Function %FunctionName% in module %ModuleName%" -Tag 'Trace'
+  Write-PSFMessage -Level Debug -Message 'Starting Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
 
   $originalPSBoundParameters = $PSBoundParameters
 
@@ -263,7 +267,6 @@ function Add-SecretStoreVault {
   # ToDo: Add whatif
   # ToDo change -key to -securekey
   $PasswordSecureString | ConvertFrom-SecureString -Key $EncryptionKeyData | Out-File -FilePath $EncryptedPasswordFilePath
-
 
   #####
   # $PasswordSecureString = ConvertTo-SecureString -String '2345' -AsPlainText -Force
@@ -339,7 +342,7 @@ function Add-SecretStoreVault {
       Throw "Test-SecretVault failed with $($error[0])"
     }
   }
-  Write-PSFMessage -Level Debug -Message "Leaving Function %FunctionName% in module %ModuleName%" -Tag 'Trace'
+  Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
 
   # Return the SecretManagementExtensionVaultInfo structure
   $SecretManagementExtensionVaultInfo
@@ -349,7 +352,7 @@ function Add-SecretStoreVault {
 # ((ls cert:/Current*/my/* | ?{$_.EnhancedKeyUsageList.FriendlyName -eq 'Document Encryption'}).extensions | Where-Object {$_.Oid.FriendlyName -match "subject alternative name"}).Format(1)
 
 <#
- Get-UsersSecretSToreVault -Name 'MyPersonalSecrets' `
+ Get-UsersSecretStoreVault -Name 'MyPersonalSecrets' `
   -Description 'Secrets For a specific user on a specific computer' `
   -ExtensionVaultModuleName 'SecretManagement.Keepass' `
   -PathToKeePassDB 'C:\KeePass\Local.ATAP.Utilities.Secrets.kdbx' `
@@ -365,100 +368,366 @@ function Add-SecretStoreVault {
   -DataEncryptionCertificateRequestFilenameTemplate '{0}_DataEncryptionCertificateRequest.inf' `
   -DataEncryptionCertificateFilenameTemplate '{0}_DataEncryptionCertificate.cer' `
   -Force -Whatif
-
-  ExtensionVaultModuleName 'SecretManagement.Keepass'  # Microsoft.PowerShell.SecretStore SecretManagement.Keepass
 #>
 
 #endregion Security Subsystem core functions (to be moved into a seperate ATAP.Utilities module)
 
-#endregion Functions needed by the machine profile, must be defined in the profile
-##################################################################################
+
+# indent and indentincrement used when printing debug and verbose messages
+$indent = 0
+$indentIncrement = 2
 
 #ToDo: document expected values when run under profile, Module cmdlet/function, script.
-Write-PSFMessage -Level Verbose -Message ('Starting AllUsersAllHostsV7CoreProfile.ps1')
-Write-PSFMessage -Level Verbose -Message ("WorkingDirectory = $pwd")
-Write-PSFMessage -Level Verbose -Message ("PSScriptRoot = $PSScriptRoot")
-Write-PSFMessage -Level Verbose -Message ('EnvironmentVariablesAtStartOfMachineProfile = ' + $(Write-EnvironmentVariablesIndented 0 2 ))
-Write-Verbose ('PATH environment variable from Registry = ' + $(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment' -Name 'Path'))
+Write-PSFMessage -Level Debug -Message ('Starting AllUsersAllHostsV7CoreProfile.ps1')
+Write-PSFMessage -Level Debug -Message ("WorkingDirectory = $pwd")
+Write-PSFMessage -Level Debug -Message ("PSScriptRoot = $PSScriptRoot")
+Write-PSFMessage -Level Debug -Message ('EnvironmentVariablesAtStartOfMachineProfile = ' + $(Write-EnvironmentVariablesIndented 0 2 ))
+Write-Verbose ('PATH environment variable from Registry for current session = ' + $(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment' -Name 'Path'))
 
 # For cross-platform compatability, get the hostname from the .Net DNS library
 $hostName = ([System.Net.DNS]::GetHostByName($Null)).Hostname
-Write-PSFMessage -Level Verbose -Message ("hostname = $hostname")
+Write-PSFMessage -Level Debug -Message ("hostname = $hostName")
 
-# Set all of thhe "usual" environment variables to this value, to ensure that all of them exist
-[System.Environment]::SetEnvironmentVariable('COMPUTERNAME', $hostname, 'Process')
-[System.Environment]::SetEnvironmentVariable('HOST', $hostname, 'Process')
+# Set all of the "usual" environment variables to this value, to ensure that all of them exist
 [System.Environment]::SetEnvironmentVariable('HOSTNAME', $hostname, 'Process')
+[System.Environment]::SetEnvironmentVariable('HOST', $hostname, 'Process')
+[System.Environment]::SetEnvironmentVariable('COMPUTERNAME', $hostname, 'Process')
 
-# Define default values of common parameters
+# Define default values of common parameters that may be present in a cmdlet's parameter list
 $PSDefaultParameterValues = @{
   '*:Encoding' = 'UTF8'
 }
 # encoding : New-Object System.Text.UTF8Encoding($false) # UTF8 encoded with or without a ByteOrdermark(BOM) which results in System.Text.UTF8Encoding
 # encoding : [System.Text.Encoding]::UTF8 which results in System.Text.UTF8Encoding+UTF8EncodingSealed
 
-$indent = 0
-$indentIncrement = 2
 # Dot source the list of configuration keys
-# Configuration root keys .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+# Configuration root keys .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+# ToDo: support multiple ConfigRootKeys files
 . $PSScriptRoot/global_ConfigRootKeys.ps1
-
 # Print the global:ConfigRootKeys if Debug
 Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
 
 # Dot source the Security and Secrets settings
 # Security and Secrets setting .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+# ToDo: support multiple SecurityAndSecretsSettings files
 . $PSScriptRoot/global_SecurityAndSecretsSettings.ps1
+# Print the global:SecurityAndSecretsSettings if Debug
+Write-PSFMessage -Level Debug -Message ('global:SecurityAndSecretsSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:SecurityAndSecretsSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 
 # Dot source the Machine and Node settings
-# Machine and Node setting .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+# MachineAndNodeSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+# ToDo: support multiple MachineAndNodeSettings files
 . $PSScriptRoot/global_MachineAndNodeSettings.ps1
-
 # Print the global:MachineAndNodeSettings if Debug
 Write-PSFMessage -Level Debug -Message ('global:MachineAndNodeSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:MachineAndNodeSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 
-# Define a global settings hash, initially populate it with machine-specific information for this machine
+# Define a global settings hash
 $global:settings = @{}
 
-# set ISElevated for the global settings if this is script elevated
+# set ISElevated in the global settings if this is script elevated
 $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
 
-# ToDo: Topological sort of the settings
+# Populate the global settings hash with machine-specific information for this machine
+# Many settings are defined in terms of other settings. Settings' values must be evaulated in such an order that earlier settings are evaulated before dependent settings.
+# settings that are defined in terms of other settings are discovered by analysis of the global settings.
+$matchPattern = [regex]::new('global:settings\[(?<Earlier>.*?\])\]')
 
-
-# Load SecurityAndSecretsSettings into the ToBeExecutedGlobalSettings
-$keys = $global:SecurityAndSecretsSettings.Keys
-foreach ($key in $keys ){
-  # ToDo error hanlding if one fails
-  $global:ToBeExecutedGlobalSettings[$key] = $global:SecurityAndSecretsSettings[$key]
-  Write-PSFMessage -Level Debug -Message "global:ToBeExecutedGlobalSettings[$key] = $($global:ToBeExecutedGlobalSettings[$key])"
+# Load the $global:SecurityAndSecretsSettings and the $global:MachineAndNodeSettings into the $evaluatedKeysDependencies and $nonEvaluatedKeysValues hashes
+$IntermediateSettings = [PSCustomObject]@{
+  Collections = @{}
+  Entries     = @{}
 }
 
-# Load settings common to all machines into $global:settings
-foreach ($key in ($global:MachineAndNodeSettings['AllCommon']).Keys ){
-  $global:settings[$key] = $($global:MachineAndNodeSettings['AllCommon'])[$key]
+function CreateCollectionEntry {
+  [CmdletBinding(DefaultParameterSetName = 'Hashtable')]
+  param (
+    [Parameter()]
+    [object]
+    $collectionID
+    , [Parameter()]
+    [object]
+    $keyID
+    , [Parameter()]
+    [object]
+    $parentCollectionID
+    , [Parameter()]
+    [object]
+    $parentKeyID
+    , [Parameter()]
+    [object]
+    $IntermediateSettings
+  )
+  Write-PSFMessage -Level Important -Message "CreateCollectionEntry collectionID = $collectionID : keyID = $keyID : ParentCollectionID = $parentCollectionID : parentKeyID = $parentKeyID"
+  $parentCollectionValue = $IntermediateSettings.Collections[$ParentCollectionID].Collection[$ParentKeyID]
+  Write-PSFMessage -Level Important -Message "CreateCollectionEntry parentCollectionValue = $parentCollectionValue : parentKeyID = $parentKeyID"
+  $collectionValue = $parentCollectionValue
+  $($IntermediateSettings.Entries[$parentCollectionID])[$parentKeyID] = [PSCustomObject]@{
+    KeyID           = $keyID
+    CollectionID    = $collectionID
+    CompoundKeyID   = [PSCustomObject]@{
+      CollectionID = $collectionID
+      KeyID        = $keyID
+    }
+    ValueToEvaluate = @{} # $IntermediateSettings.Collections[$collectionID].Collection[$keyID]
+    DependsUpon     = @($($IntermediateSettings.Entries[$parentCollectionID])[$parentKeyID])
+  }
+  CreateIntermediateSettings $collectionID $IntermediateSettings
+}
+function CreateIntermediateEntries {
+
+  [CmdletBinding(DefaultParameterSetName = 'Hashtable')]
+  param (
+    [Parameter()]
+    [object]
+    $collectionID
+    , [Parameter()]
+    [object]
+    $keyID
+    , [Parameter()]
+    [object]
+    $IntermediateSettings
+  )
+  Write-PSFMessage -Level Important -Message "CreateIntermediateEntries collectionID = $collectionID : keyID = $keyID : ValueToEvaluate = $($IntermediateSettings.Collections[$collectionID].Collection[$keyID])   found at $IntermediateSettings.Collections[$collectionID].Collection[$keyID]"
+  $($IntermediateSettings.Entries[$collectionID])[$keyID] = [PSCustomObject]@{
+    KeyID           = $keyID
+    CollectionID    = $collectionID
+    CompoundKeyID   = [PSCustomObject]@{
+      CollectionID = $collectionID
+      KeyID        = $keyID
+    }
+    ValueToEvaluate = $IntermediateSettings.Collections[$CompoundKeyID.CollectionID].Collection[$CompoundKeyID.KeyID]
+    # Don't add the Dependents property (but it may get added in other processing steps)
+  }
+  # If the collection has a parent collection, this entry is dependent upon its own subCollection being created. When a key in the parent collection creates a subcollection, it creates an entry that creates the subcollection.
+  #  that parent collection being createdmake this entry dependent on the entry that creates the parenparent add the name of thethat as
+  # does this value reference another global:setting (the match pattern provides one or more patteern-extracted substrings)
+  if ($valueToEvaluate -match $matchPattern) {
+    # Process a string contains one or more dependencies
+    #  the value of this setting depends on at least one other global setting
+    #  The automatic variable `matches` has been populated
+    # ToDo: test/verify when the RHS references multiple global:settings including individual, sequential, as operands, and recursive
+    Write-PSFMessage -Level Debug -Message "IntermediateSettings.Entries[$($CompoundKeyID.CollectionID)])[$($CompoundKeyID.KeyID)] DependsUpon $matches['Earlier']"
+    # ToDo: Recursivly expand the ValueToEvaluate looking for other optional dependencies
+    $($IntermediateSettings.Entries[$CompoundKeyID.CollectionID])[$CompoundKeyID.KeyID] | Add-Member -Name 'DependsUpon' -Type NoteProperty -Value $matches['Earlier']
+  }
+  else {
+    # Process a string contains 0 dependencies
+    # Don't add the Dependents property (but it may get added in other processing steps)
+    Write-PSFMessage -Level Debug -Message "(IntermediateSettings.Entries[$($CompoundKeyID.CollectionID)])[$($CompoundKeyID.KeyID)] DependsUpon nothing else"
+  }
 }
 
-# Load the machine-specific settings into $global:settings
-foreach ($key in ($global:MachineAndNodeSettings[$hostname]).Keys ){
-  $global:settings[$key] = $($global:MachineAndNodeSettings[$hostname])[$key]
+function CreateIntermediateSettings {
+  [CmdletBinding(DefaultParameterSetName = 'Hashtable')]
+  param (
+    [Parameter()]
+    [object]
+    $collectionID
+    , [Parameter()]
+    [object]
+    $IntermediateSettings
+  )
+  Write-PSFMessage -Level Important -Message "CreateIntermediateSettings collectionID = $collectionID ParentCollectionID = $($($IntermediateSettings.Collections[$collectionID]).ParentCollectionID) "
+  if ($($IntermediateSettings.Collections[$collectionID]).ParentCollectionID) {
+    $ParentCollectionID = $($IntermediateSettings.Collections[$collectionID]).ParentCollectionID
+    $ParentKeyID = $($IntermediateSettings.Collections[$collectionID]).ParentKeyID
+    switch ($($($IntermediateSettings.Collections[$ParentCollectionID]).Collection[$ParentKeyID]).GetType().fullname) {
+      'System.Collections.Hashtable' {
+        $ParentCollectionEntry = $($($IntermediateSettings.Collections[$ParentCollectionID]).Collection[$ParentKeyID])
+        CreateCollectionEntry $collectionID $keyID $ParentCollectionID $ParentKeyID $IntermediateSettings
+        foreach ($keyID in $IntermediateSettings.Collections[$collectionID].Collection.Keys) { ######
+          $valueToEvaluate = $IntermediateSettings.Collections[$collectionID].Collection[$keyID]
+          $valueType = $IntermediateSettings.Collections[$collectionID].Collection[$keyID].GetType().fullname
+          switch ($valueType) {
+            'System.Collections.Hashtable' { #-or 'Object[0]' {
+              $subordinateCollectionID = New-Guid
+              $IntermediateSettings.Collections[$subordinateCollectionID] = [PSCustomObject]@{
+                CollectionID       = $subordinateCollectionID
+                Collection         = $IntermediateSettings.Collections[$collectionID].Collection[$keyID] #$valueToEvaluate
+                ParentCollectionID = $collectionID
+                ParentKeyID        = $keyID
+              }
+              CreateIntermediateSettings $subordinateCollectionID $IntermediateSettings
+            }
+            'System.String' {
+              #$($IntermediateSettings.Entries[$collectionID])[$keyID] = $IntermediateSettings.Collections[$collectionID].Collection[$keyID]
+              CreateIntermediateEntries $collectionID $keyID $IntermediateSettings
+            }
+          }
+        }
+      }
+      'array' {
+        foreach ($keyID in 0..($($IntermediateSettings.Collections[$collectionID]).count - 1)) {
+          CreateIntermediateEntries $collectionID $keyID $IntermediateSettings
+        }
+      }
+      default {
+        throw
+      }
+      # 'System.String' {
+      #   # if ($parentCollection) {
+      #   #   $lclObjectID = $parentCollectionID + '|' + $parentKey + '||' + $myKey # Powershell will autoconvert an integer to a string here
+      #   # }
+      #   # ProcessSettingsValue $valueToEvaluate $keyID $ParentCollection $ParentCollectionID $collectionsToProcess $lclPointersWithNoDependencies $lclValuesForPointersWithNoDependencies $lclPointersWithDependencies $lcValuesForPointersWithDependencies
+      #   CreateIntermediateEntries $collectionID $keyID $IntermediateSettings
+      # }
+    }
+  }
+  else {
+    # Doesn't have a parent so its a Top Level collection, so far we only process hashes as top level collections
+    #switch ($($($IntermediateSettings.Collections[$collectionID]).GetType()).fullname) {
+    #  'System.Collections.Hashtable' {
+    $IntermediateSettings.Entries[$collectionID] = @{}
+    foreach ($keyID in $IntermediateSettings.Collections[$collectionID].Collection.Keys) {
+      $valueToEvaluate = $IntermediateSettings.Collections[$collectionID].Collection[$keyID]
+      $valueType = $IntermediateSettings.Collections[$collectionID].Collection[$keyID].GetType().fullname
+      switch ($valueType) {
+        'System.Collections.Hashtable' { #-or 'Object[0]' {
+          $subordinateCollectionID = New-Guid
+          $IntermediateSettings.Collections[$subordinateCollectionID] = [PSCustomObject]@{
+            CollectionID       = $subordinateCollectionID
+            Collection         = $IntermediateSettings.Collections[$collectionID].Collection[$keyID] #$valueToEvaluate
+            ParentCollectionID = $collectionID
+            ParentKeyID        = $keyID
+          }
+          CreateIntermediateSettings $subordinateCollectionID $IntermediateSettings
+        }
+        'System.String' {
+          #$($IntermediateSettings.Entries[$collectionID])[$keyID] = $IntermediateSettings.Collections[$collectionID].Collection[$keyID]
+          CreateIntermediateEntries $collectionID $keyID $IntermediateSettings
+        }
+      }
+    }
+    #  }
+    #}
+  }
 }
 
-# Load the $global:settings with the $global:ToBeExecutedGlobalSettings
-foreach ($key in ($global:ToBeExecutedGlobalSettings).Keys ){
-  # ToDo error hanlding if one fails
-  $global:settings[$key] = Invoke-Expression $global:ToBeExecutedGlobalSettings[$key]
+
+foreach ($collectionToEvaluate in ($global:SecurityAndSecretsSettings, $global:MachineAndNodeSettings)) {
+  $collectionID = New-Guid
+  $($IntermediateSettings.Collections)[$collectionID] = [PSCustomObject]@{
+    CollectionID       = $collectionID
+    Collection         = $collectionToEvaluate
+    ParentCollectionID = $null
+  }
+  # Passing $null for ParentCollectionID and ParentCollectionKey indicates a top-level settings file is being processed
+  #ProcessSettingsCollection $collectionToEvaluate $null $null $collectionID $collectionsToProcess $pointersWithNoDependencies $valuesForPointersWithNoDependencies $pointersWithDependencies $valuesForPointersWithDependencies
+  CreateIntermediateSettings $collectionID $IntermediateSettings
+}
+
+function CreateSortedIntermediateSettings {
+  [CmdletBinding(DefaultParameterSetName = 'Hashtable')]
+  param (
+    [Parameter()]
+    [object]
+    $IntermediateSettings
+  )
+  Write-PSFMessage -Level Important -Message 'CreateSortedIntermediateSettings'
+  $sortedIntermediateSettings = @{}
+  $sortedEvaluatedKeysDependencies = Get-TopologicalSort $modifiedEvaluatedKeysDependencies
+
+  # Topological sort adds the bottom level unevaluated keys to the results, but we want to ingore those
+  $nonEvaluatedKeys = $nonEvaluatedKeysValues.Keys
+  $finalSortedKeysToEvaluate = @()
+  foreach ($key in $sortedEvaluatedKeysDependencies) {
+    if ($nonEvaluatedKeys -notcontains $key) {
+      $finalSortedKeysToEvaluate += $key
+    }
+  }
+
+
+  foreach ($collectionID in $($IntermediateSettings.Collections).Keys) {
+    if (-not $($($IntermediateSettings.Collections)[$collectionID]).ParentCollectionID) {
+      foreach ($keyID in $IntermediateSettings.Collections[$collectionID].Collection.Keys) {
+        $compoundKey = [PSCustomObject]@{
+          CollectionID = $null
+          KeyID        = $keyID
+        }
+        if (-not $IntermediateSettings.Collections[$collectionID].Collection[$keyID].DependsUpon) {
+          $sortedIntermediateSettings[$compoundKey] = $IntermediateSettings.Collections[$collectionID].Collection[$keyID]
+        }
+      }
+    }
+    else {
+      $compoundKey = [PSCustomObject]@{
+        CollectionID = $collectionID
+        KeyID        = $keyID
+      }
+
+    }
+    $sortedIntermediateSettings
+  }
+}
+
+
+# Sort the Intermediate settings, creating a sortedIntermediateSettings structure
+$sortedIntermediateSettings = CreateSortedIntermediateSettings $IntermediateSettings
+
+# Process the sortedIntermediateSettings structure to create the final $global:settings structure
+
+# Process the settings for collections having no parent and entry that depends upon nothing
+foreach ($collectionID in $($sortedIntermediateSettings.Collections).Keys) {
+  if (-not $($($sortedIntermediateSettings.Collections)[$collectionID]).ParentCollectionID) {
+    foreach ($keyID in $sortedIntermediateSettings.Collections[$collectionID].Collection.Keys) {
+      Write-PSFMessage -Level Important -Message "ProcessSortedIntermediateCollection keyID  = $keyID collectionID = $collectionID ParentCollectionID = $($($IntermediateSettings.Collections[$collectionID]).ParentCollectionID) "
+
+      $global:setting[$($IntermediateSettings.Entries[$collectionID])[$keyID].KeyID] = $($IntermediateSettings.Entries[$collectionID])[$keyID].ValueToEvaluate
+    }
+  }
+}
+# Process the settings for collections having a parent
+#  ( first check for duplicate keys, then process all such entries and create key:value pairs in $global:ssettings)
+# Process the settings for collections having a parent. Query the hierarchy in Collections, create entries with values that create empty collections, all entries inside a collection adds DependsUpon to the entry that refrences the entry/key that creates the empty collection
+
+# Add an entry with a null  that creates a subordinate collection, and ensure that all (recursive) members of this collection DependUpon this entry the
+
+# Evaluate the value of each key in the $evaluatedKeysDependencies hash
+# To sort the evaluatedKeysDependencies in such an order that earlier settings are evaluated before dependent settings, perform a topological sort of the evaluatedKeysDependencies.
+# The Get-TopologicalSort function and the Get-ClonedObject function iareimplemented in the ATAP.Utilities.Powershell module, so ensure that the module is loaded
+# ToDO Import-Module ATAP.Utilities.Powershell
+. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ClonedObject.ps1'
+. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-TopologicalSort.ps1'
+$modifiedEvaluatedKeysDependencies = @{}
+foreach ($key in $evaluatedKeysDependencies.Keys) {
+  # The array of objects found as the value of the dependency hash should be the evaulated value of the dependency
+  $evalautedObjects = @()
+  foreach ($obj in $evaluatedKeysDependencies[$key]) {
+    $evalautedObjects += Invoke-Expression $obj
+  }
+  $modifiedEvaluatedKeysDependencies[$key] = $evalautedObjects
+}
+# Sort
+$sortedEvaluatedKeysDependencies = Get-TopologicalSort $modifiedEvaluatedKeysDependencies
+# Topological sort adds the bottom level unevaluated keys to the results, but we want to ingore those
+$nonEvaluatedKeys = $nonEvaluatedKeysValues.Keys
+$finalSortedKeysToEvaluate = @()
+foreach ($key in $sortedEvaluatedKeysDependencies) {
+  if ($nonEvaluatedKeys -notcontains $key) {
+    $finalSortedKeysToEvaluate += $key
+  }
+}
+
+Write-PSFMessage -Level Debug -Message "evaluatedKeysDependencies.Count = $($evaluatedKeysDependencies.count), finalSortedKeysToEvaluate.Count = $($finalSortedKeysToEvaluate.count), sortedevaluatedKeysDependencies = $sortedEvaluatedKeysDependencies"
+# evaluate each key in the $sortedEvaluatedKeys in order
+foreach ($key in $finalSortedKeysToEvaluate) {
+  Write-PSFMessage -Level Debug -Message "key = $key"
+  Write-PSFMessage -Level Debug -Message "evaluatedKeysValues[$key] = $($evaluatedKeysValues[$key])"
+  $evaluatedValue = $(Invoke-Expression $evaluatedKeysValues[$key])
+  Write-PSFMessage -Level Debug -Message "evaluatedValue = $evaluatedValue"
+  $global:settings[$key] = $evaluatedValue
   Write-PSFMessage -Level Debug -Message "global:settings[$key] = $global:settings[$key]"
 }
 
+
 # Load the JenkinsRoleSettings for this machine into the $global:settings
-($global:MachineAndNodeSettings[$hostname])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']] | ForEach-Object {
-  $nodeName = $_
-  $global:settings[$nodeName] = @{}
-  ($global:JenkinsRoles)[$nodename] | ForEach-Object {
-    $global:settings[$nodename][$_] = $($global:MachineAndNodeSettings[$hostname][$_])
-  }
-}
+# ($global:MachineAndNodeSettings[$hostname])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']] | ForEach-Object {
+#   $nodeName = $_
+#   $global:settings[$nodeName] = @{}
+#   ($global:JenkinsRoles)[$nodename] | ForEach-Object {
+#     $global:settings[$nodename][$_] = $($global:MachineAndNodeSettings[$hostname][$_])
+#   }
+# }
 
 # Opt Out of the dotnet telemetry
 [Environment]::SetEnvironmentVariable('DOTNET_CLI_TELEMETRY_OPTOUT', 1, 'Process')
@@ -470,31 +739,12 @@ foreach ($key in ($global:ToBeExecutedGlobalSettings).Keys ){
 
 # location of the local chocolatey server per machine
 
-# Structure of package drop location; File Server Shares (fss) and Web Server URLs
-# ToDo: can this all be done with a local nuget server, instead? What about companies where the developers who want to use ATAPUtilities, cannot add a nuget server to their environment. Local Feed on a file: (and UNC) protocol?
-$global:Settings[$global:configRootKeys['PackageDropPathsConfigRootKey']] = @{fssdev = '\\fs\pkgsDev'; fssqa = '\\fs\pkgsqa'; fssprd = '\\fs\pkgs'; wsudev = 'http://ws/ngf/dev'; wsuqa = 'http://ws/ngf/qa'; wsuprd = 'http://ws/ngf' }
+# The $Env:PSModulePath is process-scoped, and it's initial value is supplied by the Powershell host process/engine.
+# Powershell Core Version 7.2.5 supplies C:\Dropbox\whertzing\PowerShell\Modules;C:\Program Files\PowerShell\Modules;c:\program files\powershell\7\Modules; in the initial value (process scoped)
 
-# Initialize the additionalPSModulePaths with the location where chocolatey installs modules
-$additionalPSModulePaths = @($global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]);
-# extract all the psmodulepath items from the global:Settings
-# The following ordered list of module paths come from the installation locations of modules specified for this machine in the the global:Settings
-$additionalPSModulePaths += 'C:\Program Files\WindowsPowerShell\Modules' # Invoke-Build
+# Installing SQL Server 2019 adds the path ;C:\Program Files (x86)\Microsoft SQL Server\150\Tools\PowerShell\Modules\ to the machine scoped $Env:PSModulePath
 
-# The $Env:PSModulePath is process-scoped, and it's initial value is supplied by the Powershell host process/engine
-# Add the $additionalPSModulePaths.
-$desiredPSModulePaths = $additionalPSModulePaths + $Env:PSModulePath
-# Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
-[Environment]::SetEnvironmentVariable('PSModulePath', $DesiredPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
-# Clean up the $desiredPSModulePaths
-# The use of 'Get-PathVariable' function causes the pcsx module to be loaded here
-# ToDo: work out pscx for jenkins clinet agents
-#$finalPSModulePaths = Get-PathVariable -Name 'PSModulePath' -RemoveEmptyPaths -StripQuotes
-# Set the $Env:PsModulePath to the final, clean value of $desiredPSModulePaths.
-#[Environment]::SetEnvironmentVariable('PSModulePath', $finalPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
-
-# Any machine that has openssl installed, needs to add it's path to the machine-scope path
-# This should only be done once, by a machine admin, when it is installed onto a machine
-
+# additional $PSModulePath locations depend on the user and the role the user has on the machine, so there are no more machine-specific values. See the individual user profiles for furhter additions to the $ENV:PSModulepath
 
 # This machine is part of the CI/CD DevOps pipeline ecosystem
 # The global_MachineAndNodeSettings.ps1 file includes the settings for the CI/CD pipeline portions that this machine can participate in
@@ -514,3 +764,305 @@ Write-PSFMessage -Level Debug -Message ('Environment variables AllUsersAllHosts 
 $DebugPreference = 'SilentlyContinue'
 
 
+
+# # Process the stored settings definitions
+# # Process the stored settings definitions for pointers with no dependencies
+# Write-PSFMessage -Level Debug -Message 'set global:setings using the stored settings definitions for pointers with no dependencies'
+# foreach ($pointer in $pointersWithNoDependencies.Keys ) {
+#   $pointertype = $($($pointersWithNoDependencies[$pointer]).GetType()).fullname
+#   switch ($pointertype) {
+#     'string' {}
+#     'hashtable' {}
+#     'array' {}
+#     default {
+#       $message = "The type fullname of $pointersWithNoDependencies[$pointer] pointed to by $pointer is $pointertype"
+#       Write-PSFMessage -Level Error -Message $message
+#       throw $message
+#     }
+#   }
+# }
+
+
+# $pointersWithNoDependencies = @{}
+# $valuesForPointersWithNoDependencies = @{}
+# # Copy the key:value from the nonEvaluatedKeysValues to the $global:settings.
+# Write-PSFMessage -Level Debug -Message 'Copy the key:value from the $keysWithNoDependencies to the $global:settings'
+# # Process the stored settings definitions
+
+
+# foreach ($key in $keysWithNoDependencies.Keys ) {
+#   $kvpValue = $keysWithNoDependencies[$key]
+#   if ($kvpValue -is [string]) {
+#     Write-PSFMessage -Level Debug -Message "key is $key : kvpValue is a string"
+#     $global:settings[$key] = $keysWithNoDependencies[$key]
+#   }
+#   elseif ($kvpValue -is [System.Collections.Hashtable]) {
+#     $global:settings[$key] = @{}
+#     # process the collection
+#     Write-PSFMessage -Level Important -Message "key is $key : kvpValue is a Hashtable"
+#   }
+#   elseif ($kvpValue -is [Array]) {
+#     Write-PSFMessage -Level Important -Message "key is $key : kvpValue is a Array"
+#     $global:settings[$key] = @()
+#     # process the collection
+#   }
+#   else {
+#     Write-PSFMessage -Level Error -Message "key is $key : kvpValue is not a string, array, or hashtable, it is $($($kvpValue.GetType()).fullname))"
+#     throw
+#   }
+#   Write-PSFMessage -Level Important -Message "global:settings[$key] = $($global:settings[$key])"
+# }
+
+# Write-PSFMessage -Level Debug -Message 'evaluate the key and value of evaluatedKeysDependencies and copy them to the $global:settings'
+
+
+# $pointersWithNoDependencies = @{}
+# $valuesForPointersWithNoDependencies = @{}
+# $pointersWithDependencies = @{}
+# $valuesForPointersWithDependencies = @{}
+# $collectionsToProcess = @{}
+
+
+# $nonEvaluatedKeysValues = @{}
+# $evaluatedKeysValues = @{}
+# $evaluatedKeysDependencies = @{}
+
+
+# function ProcessSettingsValue {
+#   [CmdletBinding()]
+#   param (
+#     [Parameter()]
+#     [object]
+#     $valueToEvaluate
+#     , [Parameter()]
+#     [object]
+#     $parentKey
+#     , [Parameter()]
+#     [object]
+#     $parentCollection
+#     , [Parameter()]
+#     [string]
+#     $parentCollectionID
+#     , [Parameter()]
+#     [hashtable]
+#     $collectionsToProcess
+#     , [Parameter()]
+#     [hashtable]
+#     $pointersWithNoDependencies
+#     , [Parameter()]
+#     [hashtable]
+#     $valuesForPointersWithNoDependencies
+#     , [Parameter()]
+#     [hashtable]
+#     $pointersWithDependencies
+#     , [Parameter()]
+#     [hashtable]
+#     $valuesForPointersWithDependencies
+#   )
+#   $parentObjectID = $parentCollectionID + '|' + $parentKey # Powershell will autoconvert an integer to a string here
+#   $lclPointersWithNoDependencies = @{}
+#   $lclValuesForPointersWithNoDependencies = @{}
+#   $lclPointersWithDependencies = @{}
+#   $lclValuesForPointersWithDependencies = @{}
+#   $lclDependenciesForPointersWithDependencies = @()
+#   $valueType = $($valueToEvaluate.GetType()).fullname
+#   Write-PSFMessage -Level Important -Message "valueToEvaluate is $valueToEvaluate : valueType is $valueType : parentCollectionId is $ParentCollectionId : parentKey is $parentKey"
+#   switch ($valueType) {
+#     'System.String' {
+#       if ($valueToEvaluate -match $matchPattern) {
+#         #  the value of this setting depends on at least one other global setting
+#         #  The automatic variable `matches` has been populated
+#         $evaluatedKeysDependencies[$parentKey] = @()
+#         # ToDo: test/verify if the RHS has multiple settings referenced
+#         $evaluatedKeysDependencies[$parentKey] += $matches['Earlier'] # $matches.Captures.Groups['Earlier'].value use the second form if performing an additional full regexmatch to get all matches
+#         $evaluatedKeysValues[$parentKey] = $valueToEvaluate
+#         Write-PSFMessage -Level Debug -Message "evaluatedKeysDependencies[$parentKey] = $($evaluatedKeysDependencies[$parentKey]) from $valueToEvaluate"
+#         #  the parentObjectID is marked as having dependencies
+#         $lclPointersWithDependencies[$parentObjectID] = $parentObjectID
+#         $lclValuesForPointersWithDependencies[$parentObjectID] = $valueToEvaluate
+#         $lclDependenciesForPointersWithDependencies += $matches['Earlier'] # $matches.Captures.Groups['Earlier'].value use the second form if performing an additional full regexmatch to get all matches
+#         Write-PSFMessage -Level Debug -Message "lclPointersWithDependencies[$parentObjectID] = $lclPointersWithDependencies[$parentObjectID] : lclValuesForPointersWithDependencies[$parentObjectID] = $lclValuesForPointersWithDependencies[$parentObjectID] : lclDependenciesForPointersWithDependencies = $lclDependenciesForPointersWithDependencies"
+
+#       }
+#       else {
+#         $nonEvaluatedKeysValues[$parentKey] = $valueToEvaluate
+#         Write-PSFMessage -Level Debug -Message "nonEvaluatedKeysValues[$parentKey] = $($nonEvaluatedKeysValues[$parentKey]) from $valueToEvaluate"
+#         $lclPointersWithNoDependencies[$parentObjectID] = $parentObjectID
+#         $lclValuesForPointersWithNoDependencies[$parentObjectID] = $valueToEvaluate
+#         Write-PSFMessage -Level Debug -Message "pointersWithNoDependencies[$parentKey] = $($pointersWithNoDependencies[$parentKey])"
+#       }
+#     }
+#     'hashtable' {
+#       $lclCollectionID = New-Guid
+#       $lclCollectionsToProcess[$lclCollectionID] = [PSCustomObject]@{
+#         collectionID = $lclCollectionID
+#         collection   = $collectionToEvaluate[$myKey]
+#       }
+#       ProcessSettingsCollection $valueToEvaluate $parentKey $parentCollection $parentCollectionID $collectionsToProcess $lclpointersWithNoDependencies $lclvaluesForPointersWithNoDependencies $lclpointersWithDependencies $lclvaluesForPointersWithDependencies
+#     }
+#     'array' {
+#       $lclCollectionID = New-Guid
+#       $lclCollectionsToProcess[$lclCollectionID] = [PSCustomObject]@{
+#         collectionID = $lclCollectionID
+#         collection   = $collectionToEvaluate[$myKey]
+#       }
+#       ProcessSettingsArray $valueToEvaluate $parentKey $parentCollection $parentCollectionID $collectionsToProcess $lclpointersWithNoDependencies $lclvaluesForPointersWithNoDependencies $lclpointersWithDependencies $lclvaluesForPointersWithDependencies
+#     }
+#     default {
+#       $message = "The valueType is unknown : valueType = $valueType"
+#       Write-PSFMessage -Level Error -Message $message
+#       throw $message
+#     }
+#   }
+
+#   $pointersWithNoDependencies += $lclPointersWithNoDependencies
+#   $valuesForPointersWithNoDependencies += $lclValuesForPointersWithNoDependencies
+#   $pointersWithDependencies += $lclPointersWithDependencies
+#   $valuesForPointersWithDependencies += $lclValuesForPointersWithDependencies
+#   $dependenciesForPointersWithDependencies += $lclDependenciesForPointersWithDependencies
+# }
+
+# # function ProcessSettingsArray {
+# #   [CmdletBinding()]
+# #   param (
+# #     [Parameter()]
+# #     [array]
+# #     $arrayToEvaluate
+# #     , [Parameter()]
+# #     [object]
+# #     $ParentKey
+# #     , [Parameter()]
+# #     [object]
+# #     $ParentCollection
+# #     , [Parameter()]
+# #     [string]
+# #     $parentCollectionID
+# #     , [Parameter()]
+# #     [hashtable]
+# #     $pointersWithNoDependencies
+# #     , [Parameter()]
+# #     [hashtable]
+# #     $valuesForPointersWithNoDependencies
+# #     , [Parameter()]
+# #     [hashtable]
+# #     $pointersWithDependencies
+# #     , [Parameter()]
+# #     [hashtable]
+# #     $valuesForPointersWithDependencies
+# #   )
+# #   $lclIndexsWithDependencies = @{}
+# #   foreach ($index in 0..($arrayToEvaluate.count - 1)) {
+
+# #     if ($ParentCollection) {
+# #       $lclIndexsWithDependencies[$index] = '$ParentCollection[$ParentKey]'
+# #       # If the parent is not null, then every key in this hash depends on the parent
+# #     }
+# #     else {
+
+# #     }
+
+# #     # ToDo: won't work as is, needs to record the position in the array
+# #     if ($arrayToEvaluate[$index] -is [String]) {
+# #       Write-PSFMessage -Level Important -Message 'element is a string'
+# #       ProcessSettingsValue $arrayToEvaluate[$index] $index $arrayToEvaluate $pointersWithNoDependencies $valuesForPointersWithNoDependencies $pointersWithDependencies $valuesForPointersWithDependencies
+# #     }
+# #     elseif ($arrayToEvaluate[$index] -is [System.Collections.Hashtable]) {
+# #       Write-PSFMessage -Level Important -Message 'element is a hashtable'
+# #     }
+# #     elseif ($arrayToEvaluate[$index] -is [Array]) {
+# #       Write-PSFMessage -Level Important -Message 'element is a Array'
+# #     }
+# #     else {
+# #       Write-PSFMessage -Level Error -Message "element is not a string, array, or hashtable, it is $(($element.GetType()).fullname))"
+# #     }
+# #   }
+# #   if ($lclIndexsWithDependencies.count) {
+# #     #$pointersWithDependencies[]
+# #     $lclPointersWithDependencies[$parentKey] = '$ParentCollection[$ParentKey]'
+# #     # If the parent is not null, then every key in this hash depends on the parent
+# #   }
+
+# # }
+
+# function ProcessSettingsCollection {
+#   [CmdletBinding(DefaultParameterSetName = 'Hashtable')]
+#   param (
+#     [Parameter()]
+#     [object]
+#     $collectionToEvaluate
+#     , [Parameter()]
+#     [object]
+#     $ParentKey
+#     , [Parameter()]
+#     [object]
+#     $ParentCollection
+#     , [Parameter()]
+#     [string]
+#     $parentCollectionID
+#     , [Parameter()]
+#     [hashtable]
+#     $collectionsToProcess
+#     , [Parameter()]
+#     [hashtable]
+#     $pointersWithNoDependencies
+#     , [Parameter()]
+#     [hashtable]
+#     $valuesForPointersWithNoDependencies
+#     , [Parameter()]
+#     [hashtable]
+#     $pointersWithDependencies
+#     , [Parameter()]
+#     [hashtable]
+#     $valuesForPointersWithDependencies
+#   )
+#   $lclPointersWithNoDependencies = @{}
+#   $lclValuesForPointersWithNoDependencies = @{}
+#   $lclPointersWithDependencies = @{}
+#   $lcValuesForPointersWithDependencies = @{}
+#   $lclCollectionsToProcess = @{}
+#   $lclObjectID = ''
+#   $lclCollectionID = ''
+#   # if $parentCollection and $parentKey are null, the $collectionToEvaluate is a top-level settings collection
+#   # but if they are not null, then the key:value pair belong to a higher-level collection, the ParentID collection
+#   foreach ($myKey in $collectionToEvaluate.Keys) {
+#     $lclObjectID = $lclCollectionID + '|' + $myKey # Powershell will autoconvert an integer to a string here
+#     $valueToEvaluate = $collectionToEvaluate[$myKey]
+#     $valueType = $($($collectionToEvaluate[$myKey]).GetType()).fullname
+#     switch ($valueType) {
+#       'System.String' {
+#         if ($parentCollection) {
+#           $lclObjectID = $parentCollectionID + '|' + $parentKey + '||' + $myKey # Powershell will autoconvert an integer to a string here
+#         }
+#         ProcessSettingsValue $valueToEvaluate $myKey $ParentCollection $ParentCollectionID $collectionsToProcess $lclPointersWithNoDependencies $lclValuesForPointersWithNoDependencies $lclPointersWithDependencies $lcValuesForPointersWithDependencies
+#       }
+#       'System.Collections.Hashtable' {
+#         $lclCollectionID = New-Guid
+#         $lclCollectionsToProcess[$lclCollectionID] = [PSCustomObject]@{
+#           collectionID = $lclCollectionID
+#           collection   = $collectionToEvaluate[$myKey]
+#         }
+
+#         ProcessSettingsCollection $valueToEvaluate $parentKey $parentCollection $parentCollectionID $collectionsToProcess $lclpointersWithNoDependencies $lclvaluesForPointersWithNoDependencies $lclpointersWithDependencies $lclvaluesForPointersWithDependencies
+#       }
+#       'System.Object[]' {
+#         $lclCollectionID = New-Guid
+#         $lclCollectionsToProcess[$lclCollectionID] = [PSCustomObject]@{
+#           collectionID = $lclCollectionID
+#           collection   = $collectionToEvaluate[$myKey]
+#         }
+#         ProcessSettingsArray $valueToEvaluate $parentKey $parentCollection $parentCollectionID $collectionsToProcess $lclpointersWithNoDependencies $lclvaluesForPointersWithNoDependencies $lclpointersWithDependencies $lclvaluesForPointersWithDependencies
+#       }
+#       default {
+#         $message = "The valueType is unknown : valueType = $valueType"
+#         Write-PSFMessage -Level Error -Message $message
+#         throw $message
+#       }
+#     }
+#   }
+
+#   $valuesForPointersWithNoDependencies += $lclValuesForPointersWithNoDependencies
+#   $pointersWithDependencies += $lclPointersWithDependencies
+#   $valuesForPointersWithDependencies += $lclValuesForPointersWithDependencies
+#   $dependenciesForPointersWithDependencies += $lclDependenciesForPointersWithDependencies
+
+# }

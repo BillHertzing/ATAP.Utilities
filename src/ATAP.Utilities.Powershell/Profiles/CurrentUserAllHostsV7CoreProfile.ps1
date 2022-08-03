@@ -143,7 +143,9 @@ $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:
 # }
 # if ($true) { Set-CloudDirectoryLocations }
 
-# The following ordered list of module paths come from ATAP and 3rd-party modules that have been selected by this user
+# Expand upon the PSModulePath according to the roles this user has on this machine# ToDo: expand the use of PSModulepAth in the globals settings files
+# extract all the psmodulepath items from the global:Settings
+# The following ordered list of module paths come from ATAP and 3rd-party modules that correspond to roles of this user on this machine
 $UserPSModulePaths = @(
 
   # ATAP Powershell is part of the machine profile
@@ -155,7 +157,15 @@ $UserPSModulePaths = @(
   # Image manipulation scripts for blog posts
   # DropBox api scripts for blog posts
   # Future: scripts to manipulate FreeVideoEditor VSDC
+  # the default location where chocolatey installs modules on this machine
+  $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]
 )
+# Add the $UserPSModulePaths to the exisiting $env:PSModulePaths
+$desiredPSModulePaths = $UserPSModulePaths  + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
+# As the very last step, add the Powershell (Desktop) V5 module paths for this user and for the machine-wide V5 module location
+$desiredPSModulePaths += 'C:\Program Files\WindowsPowerShell\Modules'
+# Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
+[Environment]::SetEnvironmentVariable('PSModulePath', $desiredPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
 
 
 # Unlock the user's SecretStore for this session using an encrypted password and a data Encryption Certificate installed to the current machine
@@ -671,7 +681,7 @@ Function GetSIDfromAcctName
 
 
  Function ShutItAllDown {
-	 $ComputerNameList = @('ncat016')#,'utat022') 
+	 $ComputerNameList = @('ncat016')#,'utat022')
 	 foreach ($cn in $ComputerNameList) {
 		 $Session = New-PSSession -ComputerName $cn -ConfigurationName WithProfile
 		 Enter-Session $Session
@@ -679,7 +689,7 @@ Function GetSIDfromAcctName
 		 Close-Session $Session
 	 }
  }
- 
+
 # A function to set an environment variable for a named user (at the user scope in the machine's registry)
 # must be run in an elevated (administrator) process
 
@@ -694,7 +704,7 @@ Function GetSIDfromAcctName
 #Set-Location -Path (join-path -Path $global:DropBoxBasePath -ChildPath 'whertzing' -AdditionalChildPath 'GitHub','ATAP.Utilities')
 Set-Location -Path $storedInitialDir
 
-# Always Last step - set the environment variables for this user
+# Always Last stepset the environment variables for this user
 . (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
 Set-EnvironmentVariablesProcess
 

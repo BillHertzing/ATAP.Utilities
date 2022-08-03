@@ -669,6 +669,17 @@ Function GetSIDfromAcctName
     return $usracct.sid
 }
 
+
+ Function ShutItAllDown {
+	 $ComputerNameList = @('ncat016')#,'utat022') 
+	 foreach ($cn in $ComputerNameList) {
+		 $Session = New-PSSession -ComputerName $cn -ConfigurationName WithProfile
+		 Enter-Session $Session
+		 shutdown /s /t 20
+		 Close-Session $Session
+	 }
+ }
+ 
 # A function to set an environment variable for a named user (at the user scope in the machine's registry)
 # must be run in an elevated (administrator) process
 

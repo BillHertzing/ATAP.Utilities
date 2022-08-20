@@ -2,6 +2,22 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Test",
+      "type": "shell",
+      "command": "Invoke-Pester -PesterOption @{IncludeVSCodeMarker=$true}",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$pester"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+	},
+    {
       "label": "startVA",
       "command": "C:\\Program Files\\VoiceAttack\\VoiceAttack.exe",
       "type": "process",

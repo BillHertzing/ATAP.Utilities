@@ -387,7 +387,6 @@ Write-Verbose ('PATH environment variable from Registry for current session = ' 
 # For cross-platform compatability, get the hostname from the .Net DNS library
 $hostName = ([System.Net.DNS]::GetHostByName($Null)).Hostname
 Write-PSFMessage -Level Debug -Message ("hostname = $hostName")
-
 # Set all of the "usual" environment variables to this value, to ensure that all of them exist
 [System.Environment]::SetEnvironmentVariable('HOSTNAME', $hostname, 'Process')
 [System.Environment]::SetEnvironmentVariable('HOST', $hostname, 'Process')
@@ -401,22 +400,19 @@ $PSDefaultParameterValues = @{
 # encoding : [System.Text.Encoding]::UTF8 which results in System.Text.UTF8Encoding+UTF8EncodingSealed
 
 # Dot source the list of configuration keys
-# Configuration root keys .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-# ToDo: support multiple ConfigRootKeys files
+# Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
 . $PSScriptRoot/global_ConfigRootKeys.ps1
 # Print the global:ConfigRootKeys if Debug
 Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
 
 # Dot source the Security and Secrets settings
 # Security and Secrets setting .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-# ToDo: support multiple SecurityAndSecretsSettings files
 . $PSScriptRoot/global_SecurityAndSecretsSettings.ps1
 # Print the global:SecurityAndSecretsSettings if Debug
 Write-PSFMessage -Level Debug -Message ('global:SecurityAndSecretsSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:SecurityAndSecretsSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 
 # Dot source the Machine and Node settings
 # MachineAndNodeSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-# ToDo: support multiple MachineAndNodeSettings files
 . $PSScriptRoot/global_MachineAndNodeSettings.ps1
 # Print the global:MachineAndNodeSettings if Debug
 Write-PSFMessage -Level Debug -Message ('global:MachineAndNodeSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:MachineAndNodeSettings ($indent + $indentIncrement) $indentIncrement) + '}')
@@ -424,300 +420,20 @@ Write-PSFMessage -Level Debug -Message ('global:MachineAndNodeSettings:' + ' {' 
 # Define a global settings hash
 $global:settings = @{}
 
-# set ISElevated in the global settings if this is script elevated
+# Load the $SecurityAndSecretsSettings and the $MachineAndNodeSettings into the $global:settings hash, evaluating any dependencies
+$SourceCollections = @($global:SecurityAndSecretsSettings, $global:MachineAndNodeSettings)
+$matchPatternRegex = [System.Text.RegularExpressions.Regex]::new('global:settings\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
+# $hashElementStringSeperator = ':::'
+# Until ATAP.Utilities package imports are working.... dot source the file
+. C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-SomethingCatchy.ps1
+ Get-SomethingCatchy -SourceCollections $sourceCollections -destination $global:Settings -matchPatternRegex $matchPatternRegex
+
+# set ISElevated in the global settings if this script is running elevated
 $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
 
-# Populate the global settings hash with machine-specific information for this machine
-# Many settings are defined in terms of other settings. Settings' values must be evaulated in such an order that earlier settings are evaulated before dependent settings.
-# settings that are defined in terms of other settings are discovered by analysis of the global settings.
-$matchPattern = [regex]::new('global:settings\[(?<Earlier>.*?\])\]')
+# Opt Out of the dotnet telemetry
+[Environment]::SetEnvironmentVariable('DOTNET_CLI_TELEMETRY_OPTOUT', 1, 'Process')
 
-# Load the $global:SecurityAndSecretsSettings and the $global:MachineAndNodeSettings into the $evaluatedKeysDependencies and $nonEvaluatedKeysValues hashes
-$IntermediateSettings = [PSCustomObject]@{
-  Collections = @{}
-  Entries     = @{}
-}
-
-function CreateCollectionEntry {
-  [CmdletBinding(DefaultParameterSetName = 'Hashtable')]
-  param (
-    [Parameter()]
-    [object]
-    $collectionID
-    , [Parameter()]
-    [object]
-    $keyID
-    , [Parameter()]
-    [object]
-    $parentCollectionID
-    , [Parameter()]
-    [object]
-    $parentKeyID
-    , [Parameter()]
-    [object]
-    $IntermediateSettings
-  )
-  Write-PSFMessage -Level Important -Message "CreateCollectionEntry collectionID = $collectionID : keyID = $keyID : ParentCollectionID = $parentCollectionID : parentKeyID = $parentKeyID"
-  $parentCollectionValue = $IntermediateSettings.Collections[$ParentCollectionID].Collection[$ParentKeyID]
-  Write-PSFMessage -Level Important -Message "CreateCollectionEntry parentCollectionValue = $parentCollectionValue : parentKeyID = $parentKeyID"
-  $collectionValue = $parentCollectionValue
-  $($IntermediateSettings.Entries[$parentCollectionID])[$parentKeyID] = [PSCustomObject]@{
-    KeyID           = $keyID
-    CollectionID    = $collectionID
-    CompoundKeyID   = [PSCustomObject]@{
-      CollectionID = $collectionID
-      KeyID        = $keyID
-    }
-    ValueToEvaluate = @{} # $IntermediateSettings.Collections[$collectionID].Collection[$keyID]
-    DependsUpon     = @($($IntermediateSettings.Entries[$parentCollectionID])[$parentKeyID])
-  }
-  CreateIntermediateSettings $collectionID $IntermediateSettings
-}
-function CreateIntermediateEntries {
-
-  [CmdletBinding(DefaultParameterSetName = 'Hashtable')]
-  param (
-    [Parameter()]
-    [object]
-    $collectionID
-    , [Parameter()]
-    [object]
-    $keyID
-    , [Parameter()]
-    [object]
-    $IntermediateSettings
-  )
-  Write-PSFMessage -Level Important -Message "CreateIntermediateEntries collectionID = $collectionID : keyID = $keyID : ValueToEvaluate = $($IntermediateSettings.Collections[$collectionID].Collection[$keyID])   found at $IntermediateSettings.Collections[$collectionID].Collection[$keyID]"
-  $($IntermediateSettings.Entries[$collectionID])[$keyID] = [PSCustomObject]@{
-    KeyID           = $keyID
-    CollectionID    = $collectionID
-    CompoundKeyID   = [PSCustomObject]@{
-      CollectionID = $collectionID
-      KeyID        = $keyID
-    }
-    ValueToEvaluate = $IntermediateSettings.Collections[$CompoundKeyID.CollectionID].Collection[$CompoundKeyID.KeyID]
-    # Don't add the Dependents property (but it may get added in other processing steps)
-  }
-  # If the collection has a parent collection, this entry is dependent upon its own subCollection being created. When a key in the parent collection creates a subcollection, it creates an entry that creates the subcollection.
-  #  that parent collection being createdmake this entry dependent on the entry that creates the parenparent add the name of thethat as
-  # does this value reference another global:setting (the match pattern provides one or more patteern-extracted substrings)
-  if ($valueToEvaluate -match $matchPattern) {
-    # Process a string contains one or more dependencies
-    #  the value of this setting depends on at least one other global setting
-    #  The automatic variable `matches` has been populated
-    # ToDo: test/verify when the RHS references multiple global:settings including individual, sequential, as operands, and recursive
-    Write-PSFMessage -Level Debug -Message "IntermediateSettings.Entries[$($CompoundKeyID.CollectionID)])[$($CompoundKeyID.KeyID)] DependsUpon $matches['Earlier']"
-    # ToDo: Recursivly expand the ValueToEvaluate looking for other optional dependencies
-    $($IntermediateSettings.Entries[$CompoundKeyID.CollectionID])[$CompoundKeyID.KeyID] | Add-Member -Name 'DependsUpon' -Type NoteProperty -Value $matches['Earlier']
-  }
-  else {
-    # Process a string contains 0 dependencies
-    # Don't add the Dependents property (but it may get added in other processing steps)
-    Write-PSFMessage -Level Debug -Message "(IntermediateSettings.Entries[$($CompoundKeyID.CollectionID)])[$($CompoundKeyID.KeyID)] DependsUpon nothing else"
-  }
-}
-
-function CreateIntermediateSettings {
-  [CmdletBinding(DefaultParameterSetName = 'Hashtable')]
-  param (
-    [Parameter()]
-    [object]
-    $collectionID
-    , [Parameter()]
-    [object]
-    $IntermediateSettings
-  )
-  Write-PSFMessage -Level Important -Message "CreateIntermediateSettings collectionID = $collectionID ParentCollectionID = $($($IntermediateSettings.Collections[$collectionID]).ParentCollectionID) "
-  if ($($IntermediateSettings.Collections[$collectionID]).ParentCollectionID) {
-    $ParentCollectionID = $($IntermediateSettings.Collections[$collectionID]).ParentCollectionID
-    $ParentKeyID = $($IntermediateSettings.Collections[$collectionID]).ParentKeyID
-    switch ($($($IntermediateSettings.Collections[$ParentCollectionID]).Collection[$ParentKeyID]).GetType().fullname) {
-      'System.Collections.Hashtable' {
-        $ParentCollectionEntry = $($($IntermediateSettings.Collections[$ParentCollectionID]).Collection[$ParentKeyID])
-        CreateCollectionEntry $collectionID $keyID $ParentCollectionID $ParentKeyID $IntermediateSettings
-        foreach ($keyID in $IntermediateSettings.Collections[$collectionID].Collection.Keys) { ######
-          $valueToEvaluate = $IntermediateSettings.Collections[$collectionID].Collection[$keyID]
-          $valueType = $IntermediateSettings.Collections[$collectionID].Collection[$keyID].GetType().fullname
-          switch ($valueType) {
-            'System.Collections.Hashtable' { #-or 'Object[0]' {
-              $subordinateCollectionID = New-Guid
-              $IntermediateSettings.Collections[$subordinateCollectionID] = [PSCustomObject]@{
-                CollectionID       = $subordinateCollectionID
-                Collection         = $IntermediateSettings.Collections[$collectionID].Collection[$keyID] #$valueToEvaluate
-                ParentCollectionID = $collectionID
-                ParentKeyID        = $keyID
-              }
-              CreateIntermediateSettings $subordinateCollectionID $IntermediateSettings
-            }
-            'System.String' {
-              #$($IntermediateSettings.Entries[$collectionID])[$keyID] = $IntermediateSettings.Collections[$collectionID].Collection[$keyID]
-              CreateIntermediateEntries $collectionID $keyID $IntermediateSettings
-            }
-          }
-        }
-      }
-      'array' {
-        foreach ($keyID in 0..($($IntermediateSettings.Collections[$collectionID]).count - 1)) {
-          CreateIntermediateEntries $collectionID $keyID $IntermediateSettings
-        }
-      }
-      default {
-        throw
-      }
-      # 'System.String' {
-      #   # if ($parentCollection) {
-      #   #   $lclObjectID = $parentCollectionID + '|' + $parentKey + '||' + $myKey # Powershell will autoconvert an integer to a string here
-      #   # }
-      #   # ProcessSettingsValue $valueToEvaluate $keyID $ParentCollection $ParentCollectionID $collectionsToProcess $lclPointersWithNoDependencies $lclValuesForPointersWithNoDependencies $lclPointersWithDependencies $lcValuesForPointersWithDependencies
-      #   CreateIntermediateEntries $collectionID $keyID $IntermediateSettings
-      # }
-    }
-  }
-  else {
-    # Doesn't have a parent so its a Top Level collection, so far we only process hashes as top level collections
-    #switch ($($($IntermediateSettings.Collections[$collectionID]).GetType()).fullname) {
-    #  'System.Collections.Hashtable' {
-    $IntermediateSettings.Entries[$collectionID] = @{}
-    foreach ($keyID in $IntermediateSettings.Collections[$collectionID].Collection.Keys) {
-      $valueToEvaluate = $IntermediateSettings.Collections[$collectionID].Collection[$keyID]
-      $valueType = $IntermediateSettings.Collections[$collectionID].Collection[$keyID].GetType().fullname
-      switch ($valueType) {
-        'System.Collections.Hashtable' { #-or 'Object[0]' {
-          $subordinateCollectionID = New-Guid
-          $IntermediateSettings.Collections[$subordinateCollectionID] = [PSCustomObject]@{
-            CollectionID       = $subordinateCollectionID
-            Collection         = $IntermediateSettings.Collections[$collectionID].Collection[$keyID] #$valueToEvaluate
-            ParentCollectionID = $collectionID
-            ParentKeyID        = $keyID
-          }
-          CreateIntermediateSettings $subordinateCollectionID $IntermediateSettings
-        }
-        'System.String' {
-          #$($IntermediateSettings.Entries[$collectionID])[$keyID] = $IntermediateSettings.Collections[$collectionID].Collection[$keyID]
-          CreateIntermediateEntries $collectionID $keyID $IntermediateSettings
-        }
-      }
-    }
-    #  }
-    #}
-  }
-}
-
-
-foreach ($collectionToEvaluate in ($global:SecurityAndSecretsSettings, $global:MachineAndNodeSettings)) {
-  $collectionID = New-Guid
-  $($IntermediateSettings.Collections)[$collectionID] = [PSCustomObject]@{
-    CollectionID       = $collectionID
-    Collection         = $collectionToEvaluate
-    ParentCollectionID = $null
-  }
-  # Passing $null for ParentCollectionID and ParentCollectionKey indicates a top-level settings file is being processed
-  #ProcessSettingsCollection $collectionToEvaluate $null $null $collectionID $collectionsToProcess $pointersWithNoDependencies $valuesForPointersWithNoDependencies $pointersWithDependencies $valuesForPointersWithDependencies
-  CreateIntermediateSettings $collectionID $IntermediateSettings
-}
-
-function CreateSortedIntermediateSettings {
-  [CmdletBinding(DefaultParameterSetName = 'Hashtable')]
-  param (
-    [Parameter()]
-    [object]
-    $IntermediateSettings
-  )
-  Write-PSFMessage -Level Important -Message 'CreateSortedIntermediateSettings'
-  $sortedIntermediateSettings = @{}
-  $sortedEvaluatedKeysDependencies = Get-TopologicalSort $modifiedEvaluatedKeysDependencies
-
-  # Topological sort adds the bottom level unevaluated keys to the results, but we want to ingore those
-  $nonEvaluatedKeys = $nonEvaluatedKeysValues.Keys
-  $finalSortedKeysToEvaluate = @()
-  foreach ($key in $sortedEvaluatedKeysDependencies) {
-    if ($nonEvaluatedKeys -notcontains $key) {
-      $finalSortedKeysToEvaluate += $key
-    }
-  }
-
-
-  foreach ($collectionID in $($IntermediateSettings.Collections).Keys) {
-    if (-not $($($IntermediateSettings.Collections)[$collectionID]).ParentCollectionID) {
-      foreach ($keyID in $IntermediateSettings.Collections[$collectionID].Collection.Keys) {
-        $compoundKey = [PSCustomObject]@{
-          CollectionID = $null
-          KeyID        = $keyID
-        }
-        if (-not $IntermediateSettings.Collections[$collectionID].Collection[$keyID].DependsUpon) {
-          $sortedIntermediateSettings[$compoundKey] = $IntermediateSettings.Collections[$collectionID].Collection[$keyID]
-        }
-      }
-    }
-    else {
-      $compoundKey = [PSCustomObject]@{
-        CollectionID = $collectionID
-        KeyID        = $keyID
-      }
-
-    }
-    $sortedIntermediateSettings
-  }
-}
-
-
-# Sort the Intermediate settings, creating a sortedIntermediateSettings structure
-$sortedIntermediateSettings = CreateSortedIntermediateSettings $IntermediateSettings
-
-# Process the sortedIntermediateSettings structure to create the final $global:settings structure
-
-# Process the settings for collections having no parent and entry that depends upon nothing
-foreach ($collectionID in $($sortedIntermediateSettings.Collections).Keys) {
-  if (-not $($($sortedIntermediateSettings.Collections)[$collectionID]).ParentCollectionID) {
-    foreach ($keyID in $sortedIntermediateSettings.Collections[$collectionID].Collection.Keys) {
-      Write-PSFMessage -Level Important -Message "ProcessSortedIntermediateCollection keyID  = $keyID collectionID = $collectionID ParentCollectionID = $($($IntermediateSettings.Collections[$collectionID]).ParentCollectionID) "
-
-      $global:setting[$($IntermediateSettings.Entries[$collectionID])[$keyID].KeyID] = $($IntermediateSettings.Entries[$collectionID])[$keyID].ValueToEvaluate
-    }
-  }
-}
-# Process the settings for collections having a parent
-#  ( first check for duplicate keys, then process all such entries and create key:value pairs in $global:ssettings)
-# Process the settings for collections having a parent. Query the hierarchy in Collections, create entries with values that create empty collections, all entries inside a collection adds DependsUpon to the entry that refrences the entry/key that creates the empty collection
-
-# Add an entry with a null  that creates a subordinate collection, and ensure that all (recursive) members of this collection DependUpon this entry the
-
-# Evaluate the value of each key in the $evaluatedKeysDependencies hash
-# To sort the evaluatedKeysDependencies in such an order that earlier settings are evaluated before dependent settings, perform a topological sort of the evaluatedKeysDependencies.
-# The Get-TopologicalSort function and the Get-ClonedObject function iareimplemented in the ATAP.Utilities.Powershell module, so ensure that the module is loaded
-# ToDO Import-Module ATAP.Utilities.Powershell
-. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ClonedObject.ps1'
-. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-TopologicalSort.ps1'
-$modifiedEvaluatedKeysDependencies = @{}
-foreach ($key in $evaluatedKeysDependencies.Keys) {
-  # The array of objects found as the value of the dependency hash should be the evaulated value of the dependency
-  $evalautedObjects = @()
-  foreach ($obj in $evaluatedKeysDependencies[$key]) {
-    $evalautedObjects += Invoke-Expression $obj
-  }
-  $modifiedEvaluatedKeysDependencies[$key] = $evalautedObjects
-}
-# Sort
-$sortedEvaluatedKeysDependencies = Get-TopologicalSort $modifiedEvaluatedKeysDependencies
-# Topological sort adds the bottom level unevaluated keys to the results, but we want to ingore those
-$nonEvaluatedKeys = $nonEvaluatedKeysValues.Keys
-$finalSortedKeysToEvaluate = @()
-foreach ($key in $sortedEvaluatedKeysDependencies) {
-  if ($nonEvaluatedKeys -notcontains $key) {
-    $finalSortedKeysToEvaluate += $key
-  }
-}
-
-Write-PSFMessage -Level Debug -Message "evaluatedKeysDependencies.Count = $($evaluatedKeysDependencies.count), finalSortedKeysToEvaluate.Count = $($finalSortedKeysToEvaluate.count), sortedevaluatedKeysDependencies = $sortedEvaluatedKeysDependencies"
-# evaluate each key in the $sortedEvaluatedKeys in order
-foreach ($key in $finalSortedKeysToEvaluate) {
-  Write-PSFMessage -Level Debug -Message "key = $key"
-  Write-PSFMessage -Level Debug -Message "evaluatedKeysValues[$key] = $($evaluatedKeysValues[$key])"
-  $evaluatedValue = $(Invoke-Expression $evaluatedKeysValues[$key])
-  Write-PSFMessage -Level Debug -Message "evaluatedValue = $evaluatedValue"
-  $global:settings[$key] = $evaluatedValue
-  Write-PSFMessage -Level Debug -Message "global:settings[$key] = $global:settings[$key]"
-}
 
 
 # Load the JenkinsRoleSettings for this machine into the $global:settings
@@ -729,8 +445,6 @@ foreach ($key in $finalSortedKeysToEvaluate) {
 #   }
 # }
 
-# Opt Out of the dotnet telemetry
-[Environment]::SetEnvironmentVariable('DOTNET_CLI_TELEMETRY_OPTOUT', 1, 'Process')
 
 # If the computer is behind a proxy, configure the default proxy settings in the machine powershell profile.
 # [system.net.webrequest]::defaultwebproxy = new-object system.net.webproxy('http://YourProxyHostNameGoesHere:ProxyPortGoesHere')
@@ -1066,3 +780,77 @@ $DebugPreference = 'SilentlyContinue'
 #   $dependenciesForPointersWithDependencies += $lclDependenciesForPointersWithDependencies
 
 # }
+# # Process the settings for collections having a parent
+# #  ( first check for duplicate keys, then process all such entries and create key:value pairs in $global:ssettings)
+# # Process the settings for collections having a parent. Query the hierarchy in Collections, create entries with values that create empty collections, all entries inside a collection adds DependsUpon to the entry that refrences the entry/key that creates the empty collection
+
+# # Add an entry with a null  that creates a subordinate collection, and ensure that all (recursive) members of this collection DependUpon this entry the
+
+# # Evaluate the value of each key in the $evaluatedKeysDependencies hash
+# # To sort the evaluatedKeysDependencies in such an order that earlier settings are evaluated before dependent settings, perform a topological sort of the evaluatedKeysDependencies.
+# # The Get-TopologicalSort function and the Get-ClonedObject function iareimplemented in the ATAP.Utilities.Powershell module, so ensure that the module is loaded
+# # ToDO Import-Module ATAP.Utilities.Powershell
+# $modifiedEvaluatedKeysDependencies = @{}
+# foreach ($key in $evaluatedKeysDependencies.Keys) {
+#   # The array of objects found as the value of the dependency hash should be the evaulated value of the dependency
+#   $evalautedObjects = @()
+#   foreach ($obj in $evaluatedKeysDependencies[$key]) {
+#     $evalautedObjects += Invoke-Expression $obj
+#   }
+#   $modifiedEvaluatedKeysDependencies[$key] = $evalautedObjects
+# }
+# # Sort
+# $sortedEvaluatedKeysDependencies = Get-TopologicalSort $modifiedEvaluatedKeysDependencies
+# # Topological sort adds the bottom level unevaluated keys to the results, but we want to ingore those
+# $nonEvaluatedKeys = $nonEvaluatedKeysValues.Keys
+# $finalSortedKeysToEvaluate = @()
+# foreach ($key in $sortedEvaluatedKeysDependencies) {
+#   if ($nonEvaluatedKeys -notcontains $key) {
+#     $finalSortedKeysToEvaluate += $key
+#   }
+# }
+
+# Write-PSFMessage -Level Debug -Message "evaluatedKeysDependencies.Count = $($evaluatedKeysDependencies.count), finalSortedKeysToEvaluate.Count = $($finalSortedKeysToEvaluate.count), sortedevaluatedKeysDependencies = $sortedEvaluatedKeysDependencies"
+# # evaluate each key in the $sortedEvaluatedKeys in order
+# foreach ($key in $finalSortedKeysToEvaluate) {
+#   Write-PSFMessage -Level Debug -Message "key = $key"
+#   Write-PSFMessage -Level Debug -Message "evaluatedKeysValues[$key] = $($evaluatedKeysValues[$key])"
+#   $evaluatedValue = $(Invoke-Expression $evaluatedKeysValues[$key])
+#   Write-PSFMessage -Level Debug -Message "evaluatedValue = $evaluatedValue"
+#   $global:settings[$key] = $evaluatedValue
+#   Write-PSFMessage -Level Debug -Message "global:settings[$key] = $global:settings[$key]"
+# }
+
+# # Topological sort adds the bottom level unevaluated keys to the results, but we want to ingore those
+# $nonEvaluatedKeys = $nonEvaluatedKeysValues.Keys
+# $finalSortedKeysToEvaluate = @()
+# foreach ($key in $sortedEvaluatedKeysDependencies) {
+#   if ($nonEvaluatedKeys -notcontains $key) {
+#     $finalSortedKeysToEvaluate += $key
+#   }
+# }
+
+#   foreach ($compoundKeyID in $sortedEvaluatedKeysDependencies) {
+#     if (-not $($($collections)[$compoundKeyID]).ParentCollectionID) {
+#       foreach ($keyID in $collections[$compoundKeyID].Collection.Keys) {
+#         if (-not $collections[$compoundKeyID].Collection[$keyID].DependsUpon) {
+#           $IntermediateSettings.SortedEntries[$compoundKeyID] = $collections[$compoundKeyID].Collection[$keyID]
+#         }
+#       }
+#     }
+#     else {
+#       $compoundKey = [PSCustomObject]@{
+#         CollectionID = $collectionID
+#         KeyID        = $keyID
+#       }
+#     }
+#}
+#$sortedIntermediateSettings
+
+# Print the entries
+# $($IntermediateSettings.Entries).values | ForEach-Object {
+#   $CompoundKeyID = $_.CompoundKeyID
+#   $ValueToEvaluate = $_.ValueToEvaluate
+#   Write-PSFMessage -Level important -Message "CollectionID = $($CompoundKeyID.CollectionID) : KeyID = $($CompoundKeyID.KeyID) : ValueToEvaluate = $ValueToEvaluate"
+# }
+# $IntermediateSettings.Entries

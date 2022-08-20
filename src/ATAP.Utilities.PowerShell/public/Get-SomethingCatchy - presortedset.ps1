@@ -1,11 +1,32 @@
-# Using statements ust be the first non-comment line in a script
-
-
-
 
 # Many settings are defined in terms of other settings. Settings' values must be evaulated in such an order that earlier settings are evaulated before dependent settings.
 # settings that are defined in terms of other settings are discovered by analysis of the destination.
+class CompoundID {
+  [guid] $CollectionID
+  # only string and int are supported
+  [object] $Key
+  CompoundID(
+    [guid] $CollectionID
+    , [object] $Key
+  ) {
+    $this.CollectionID = $CollectionID
+    $this.Key = $Key
 
+  }
+  # using a static would result in concurrency errors, unless it is made threadsafe
+  # [System.Text.StringBuilder] hidden $keySB;
+  [string] ToString([string] $stringSeperator) {
+
+    #$null = $keySB.Clear()
+    # $null = $keySB.Append('{')
+    # $null = $keySB.Append($this.CollectionID)
+    # $null = $keySB.Append($stringSeperator)
+    # $null = $keySB.Append($this.Key)
+    # $null = $keySB.Append('}')
+    # $keySB.ToString()
+    return '{' + $this.CollectionID.ToString() + $stringSeperator + $this.key.ToString() + '}'
+  }
+}
 
 function Get-SomethingCatchy {
   [CmdletBinding(DefaultParameterSetName = 'Hashtables')]
@@ -24,83 +45,16 @@ function Get-SomethingCatchy {
     $hashElementStringSeperator = ':::'
   )
   $DebugPreference = 'Continue'
-  # ToDo: ensure these are part of the ATAP powershell package
   . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ClonedObject.ps1'
   . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-TopologicalSort.ps1'
-
-  class CompoundID {
-    [guid] $CollectionID
-    # ToDo: only string and int are supported. No Validation yet.
-    [object] $Key
-    [int]$sortOrder
-    # # Todo: make this thread-safe
-    [System.Text.StringBuilder]  static $keySB # todo make this hidden
-    [System.String] hidden static $stringSeperator = $hashElementStringSeperator
-    # # Todo: make this thread-safe
-    [System.Collections.Hashtable] hidden static $Lookup = @{}
-
-    CompoundID(
-      [guid] $CollectionID
-      , [object] $Key
-      , [int] $SortOrder
-    ) {
-      # Validate that $key is of a supported type
-      $this.CollectionID = $CollectionID
-      $this.Key = $Key
-      $this.SortOrder = $SortOrder
-      if ($this.keySB)  {
-        [void]$this.keySB.Clear()
-      } else{
-        $this.keySB  = New-Object System.Text.StringBuilder
-      }
-      $this.Lookup[$this.ToString()] = $this
-    }
-    [string] ToString() {
-      return $this.ToString([string]$this.stringSeperator)
-    }
-    # # Todo: make this thread-safe
-    [string] ToString([string] $stringSeperator) {
-
-      [void]$this.keySB.Clear()
-      [void]$this.keySB.Append('{')
-      [void]$this.keySB.Append($this.CollectionID)
-      [void]$this.keySB.Append($stringSeperator)
-      [void]$this.keySB.Append($this.Key)
-      [void]$this.keySB.Append('}')
-      return $this.keySB.ToString()
-      #return '{' + $this.CollectionID.ToString() + $this.stringSeperator + $this.key.ToString() + '}'
-    }
-  }
-
-  # [In Powershell, how do I sort a Collections.Generic.List of DirectoryInfo?](https://stackoverflow.com/questions/65960853/in-powershell-how-do-i-sort-a-collections-generic-list-of-directoryinfo)
-  # [](https://www.youtube.com/watch?v=zggWL-0gefo)
-  class CompoundIDComparer : System.Collections.Generic.IComparer[CompoundID] {
-
-    [int]Compare([CompoundID]$a, [CompoundID]$b) {
-      return $a.SortOrder.CompareTo($b.SortOrder)
-    }
-  }
 
   $collections = @{}
   $entries = @{}
   $dependencyHash = @{}
-  # $keySB = New-Object System.Text.StringBuilder
 
-  # beacuse this variable is defined at the script scope, it can be referenced in the EntryKey classes constructore
-  # $CompoundIDComparer = [CompoundIDComparer]::new('SortOrder')
-  $CompoundIDComparer = [CompoundIDComparer]::new()
+  $keySB = New-Object System.Text.StringBuilder
 
-  class EntryKey {
-    [System.Collections.Generic.SortedSet[CompoundID]] $set
-    [System.Collections.Generic.IComparer[CompoundID]] $CompoundIDComparer = [CompoundIDComparer]::new() #[static] [hidden] can't get the constructor to reference this property
-    EntryKey( ) {
-      $this.set = [System.Collections.Generic.SortedSet[CompoundID]]::new([System.Collections.Generic.IComparer[CompoundID]] $script:CompoundIDComparer)
-    }
-    EntryKey([CompoundID] $CompoundID ) {
-      $this.EntryKey()
-      $this.Set.Add([CompoundID]$CompoundID)
-    }
-  }
+  # $hashElementStringSeperatorLength = $hashElementStringSeperator.Length
 
   # The ToString method for a CompoundID object
   function CompoundIDToString {
@@ -109,12 +63,12 @@ function Get-SomethingCatchy {
       [object]
       $compoundID
     )
-    [void]$keySB.Clear()
-    [void]$keySB.Append('{')
-    [void]$keySB.Append($compoundID.CollectionID)
-    [void]$keySB.Append($hashElementStringSeperator)
-    [void]$keySB.Append($compoundID.KeyID)
-    [void]$keySB.Append('}')
+    $null = $keySB.Clear()
+    $null = $keySB.Append('{')
+    $null = $keySB.Append($compoundID.CollectionID)
+    $null = $keySB.Append($hashElementStringSeperator)
+    $null = $keySB.Append($compoundID.KeyID)
+    $null = $keySB.Append('}')
     $keySB.ToString()
   }
   $fromStringRegex = [regex] $('{(?<CollectionID>.*?)' + $hashElementStringSeperator + '(?<KeyID>.*?)}')
@@ -208,8 +162,6 @@ function Get-SomethingCatchy {
     }
   }
 
-  $depth = 0
-
   function CreateEntries {
     [CmdletBinding(DefaultParameterSetName = 'Hashtable')]
     param (
@@ -230,12 +182,10 @@ function Get-SomethingCatchy {
       'Hashtable' {
         Write-PSFMessage -Level Debug -Message "Hashtable collectionID = $collectionID : keyID = $keyID : ValueToEvaluate = $($collections[$collectionID].Collection[$keyID])"
         # Create the compoundKey used to identify this entry in the $entries hash
-        # $compoundID = @{
-        #   CollectionID = $collectionID
-        #   KeyID        = $keyID
-        # }
-        $entryKey = [EntryKey]::new([CompoundID]::new($collectionID, $keyID, $depth))
-
+        $compoundID = @{
+          CollectionID = $collectionID
+          KeyID        = $keyID
+        }
         # Create this entry in the $entries hash
         $entries[$compoundID] = @{
           ValueToEvaluate = $collections[$collectionID].Collection[$keyID]
@@ -430,11 +380,11 @@ function Get-SomethingCatchy {
         [Parameter()]
         [object] $compoundID
       )
-      [void]$keySB.Insert(0, '}')
-      [void]$keySB.Insert(0, $($collections[$compoundID.CollectionID].ParentCompoundID.KeyID))
-      [void]$keySB.Insert(0, $hashElementStringSeperator)
-      [void]$keySB.Insert(0, $($collections[$compoundID.CollectionID].ParentCompoundID.CollectionID).ToString())
-      [void]$keySB.Insert(0, '{')
+      $null = $keySB.Insert(0, '}')
+      $null = $keySB.Insert(0, $($collections[$compoundID.CollectionID].ParentCompoundID.KeyID))
+      $null = $keySB.Insert(0, $hashElementStringSeperator)
+      $null = $keySB.Insert(0, $($collections[$compoundID.CollectionID].ParentCompoundID.CollectionID).ToString())
+      $null = $keySB.Insert(0, '{')
       if ($collections[$collections[$compoundID.CollectionID].ParentCompoundID.CollectionID].ContainsKey('ParentCompoundID')) {
         RecursivlyPrependParent $collections[$collections[$compoundID.CollectionID].ParentCompoundID.CollectionID].ParentCompoundID
       }
@@ -447,7 +397,7 @@ function Get-SomethingCatchy {
         RecursivlyPrependParent $compoundID
       }
       # Convert the fields of the compoundID into a string representation
-      $keystr = $compoundID.ToString()
+      $keystr = CompoundIDToString $compoundID
 
       if ($entries[$compoundID].ContainsKey('DependsUpon')) {
         # if it DependsUpon a destination key, it has an dependentUpon element with no collectionID and a MatchArray. The entry's ValueToEvaluate must be evaluated
@@ -465,24 +415,24 @@ function Get-SomethingCatchy {
           $earlierMatchArray = $dependentUpon.MatchArray
           foreach ($element in $earlierMatchArray) {
             if ($earlierCollectionID -and $collections[$earlierCollectionID].ContainsKey('ParentCompoundID')) {
-              [void]$earlierKeySB.Append($($collections[$element.CollectionID].ParentCompoundID.CollectionID).ToString())
+              $null = $earlierKeySB.Append($($collections[$element.CollectionID].ParentCompoundID.CollectionID).ToString())
             }
-            [void]$earlierKeySB.Append($hashElementStringSeperator)
-            [void]$earlierKeySB.Append($element)
-            [void]$earlierCollection.Add($earlierKeySB.ToString())
-            [void]$earlierKeySB.Clear()
+            $null = $earlierKeySB.Append($hashElementStringSeperator)
+            $null = $earlierKeySB.Append($element)
+            $null = $earlierCollection.Add($earlierKeySB.ToString())
+            $null = $earlierKeySB.Clear()
           }
-          [void]$earlierCollections.Add( [System.Collections.ArrayList]::new($earlierCollection))
-          [void]$earlierCollection.Clear()
+          $null = $earlierCollections.Add( [System.Collections.ArrayList]::new($earlierCollection))
+          $null = $earlierCollection.Clear()
         }
 
         # flatten the collections
         foreach ($earlierCollection in $earlierCollections) {
-          [void]$flatDependsUpon.Add($earlierCollection)
+          $null = $flatDependsUpon.Add($earlierCollection)
         }
         $dependencyHash[$keystr] = [array] $flatDependsUpon
-        [void]$earlierCollections.Clear()
-        [void]$flatDependsUpon.Clear()
+        $null = $earlierCollections.Clear()
+        $null = $flatDependsUpon.Clear()
       }
       else {
         # The entry's VauleToEvaluate should be assigned to the destination entry with no further evaluation
@@ -559,11 +509,11 @@ function Get-SomethingCatchy {
     # create the destination key and value
     if ($collections[$compoundID.CollectionID].ContainsKey('ParentCompoundID')) {
       # the collection is not a toplevel collection
-      [void]$subordinateCompoundIDs.Add($compoundID)
+      $null = $subordinateCompoundIDs.Add($compoundID)
     }
     else {
       # the collection IS a toplevel collection
-      [void]$topLevelCompoundIDs.Add($compoundID)
+      $null = $topLevelCompoundIDs.Add($compoundID)
     }
   }
 

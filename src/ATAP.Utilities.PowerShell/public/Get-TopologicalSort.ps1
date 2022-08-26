@@ -90,36 +90,4 @@ function Get-TopologicalSort {
 # $src = @{$a = @(); $b= @($a); $c=@($a,$b); $d=@($a,$b); $e=@($a,$b,$c); $f=@(); $g=@($f,$e)};get-topologicalsort -hashEdgeList $src -hashElementStringSeperator ':::'
 
 
-###
-
-# switch ($PsCmdlet.ParameterSetName) {
-#     'KeyValuesAreStrings' {
-# }
-# 'KeyValuesAreHashs' {
-#     # turn the edge list into strings
-#     $keyStr = New-Object System.Text.StringBuilder
-#     #$nodeDependsUponAsString = New-Object System.Text.StringBuilder
-#     foreach ($currentNode in $hashEdgeList.Keys) {
-#         $keyStr += $($currentNode.CollectionID).ToString(); $keyStr += $hashElementStringSeperator; $keyStr += $currentNode.KeyID
-#         $DependsUponAsStrings = New-Object System.Collections.ArrayList
-#         if (  $hashEdgeList[$currentNode].ContainsKey('DependsUpon')) {
-#             #$nodeDependsUponAsString = $nodeDependsUpon # $nodeDependsUponAsString += $nodeDependsUpon.CollectionID.ToString(); $nodeDependsUponAsString += $hashElementStringSeperator; $nodeDependsUponAsString += $nodeDependsUpon.KeyID
-#             $DependsUponAsStrings.Add($nodeDependsUpon)
-#             #$DependsUponAsStrings.Add($nodeDependsUponAsString)
-#             # for ($index = 0; $index -lt $hashEdgeList[$currentNode]['DependsUpon'].count; $index++) {
-#             #     $nodeDependsUpon = $hashEdgeList[$currentNode]['DependsUpon'][$index]
-#             #     $nodeDependsUponAsString += $nodeDependsUpon.CollectionID.ToString(); $nodeDependsUponAsString += $hashElementStringSeperator; $nodeDependsUponAsString += $nodeDependsUpon.KeyID
-#             #     $DependsUponAsStrings.Add($nodeDependsUponAsString)
-#             # }
-#         }
-#         $currentEdgeList[$keyStr] = $DependsUponAsStrings
-#         $keyStr.Clear
-#         #$DependsUponAsStrings.Clear
-#     }
-# }
-# }
-
-#   for ($index=0;$index -lt $topologicallySortedElements.count; $index++) {
-#     Write-PSFMessage  -Level Important -Message "index = $index : topologicallySortedElements[$index] = $($topologicallySortedElements[$index].Keys)"
-#   }
 

@@ -11,11 +11,7 @@
       },
       "problemMatcher": [
         "$pester"
-      ],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
+      ]
 	},
     {
       "label": "startVA",

@@ -53,7 +53,7 @@
       "name": "PowerShell Pester Tests",
       "script": "Invoke-Pester",
       "args": [],
-      "cwd": "${workspaceRoot}"
+      "cwd": "${file}"
     },
     {
       "type": "PowerShell",

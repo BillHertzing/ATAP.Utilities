@@ -8,7 +8,7 @@ $PathToProjectOrSolutionFilePattern = '(.*)\.(sln|csproj)'
 
 #$global:RequiredMachineSettingsList = @($global:configRootKeys['CloudBasePathConfigRootKey'], $global:configRootKeys['FastTempPathConfigRootKey'])
 
-$global:SupportedJenkinsRolesList = @($global:configRootKeys['WindowsDocumentationBuildConfigRootKey'], $global:configRootKeys['WindowsCodeBuildConfigRootKey'], $global:configRootKeys['WindowsUnitTestConfigRootKey'], $global:configRootKeys['WindowsIntegrationTestConfigRootKey'])
+# $global:SupportedJenkinsRolesList = @($global:configRootKeys['WindowsDocumentationBuildConfigRootKey'], $global:configRootKeys['WindowsCodeBuildConfigRootKey'], $global:configRootKeys['WindowsUnitTestConfigRootKey'], $global:configRootKeys['WindowsIntegrationTestConfigRootKey'])
 
 $global:WindowsUnitTestList = @('Run-WindowsUnitTests')
 
@@ -137,7 +137,7 @@ switch ($hostname) {
       $global:configRootKeys['PlantUMLJarPathConfigRootKey']                            = 'Join-Path $global:settings[$global:configRootKeys["ChocolateyLibDirConfigRootKey"]] "plantuml" "tools" "plantuml.jar"'
       $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey']       = Join-Path ([Environment]::GetFolderPath('MyDocuments')) '.dotnet' 'tools' 'puml-gen.exe'
       $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'
-      $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = @('C:/Program Files (x86)/Microsoft SQL Server/150/Tools/Powershell/Modules/')
+      $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = Join-Path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Microsoft SQL Server' '150' 'Tools' 'Powershell' 'Modules'
       $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
       $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'
     }
@@ -186,12 +186,12 @@ switch ($hostname) {
       $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
       $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
       $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
-      $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
-        $global:configRootKeys['WindowsCodeBuildConfigRootKey']
-        , $global:configRootKeys['WindowsUnitTestConfigRootKey']
-        , $global:configRootKeys['WindowsIntegrationTestConfigRootKey']
-        , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
-      )
+      # $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
+      #   $global:configRootKeys['WindowsCodeBuildConfigRootKey']
+      #   , $global:configRootKeys['WindowsUnitTestConfigRootKey']
+      #   , $global:configRootKeys['WindowsIntegrationTestConfigRootKey']
+      #   , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
+      # )
       $global:configRootKeys['PlantUMLJarPathConfigRootKey']                            = 'Join-Path $global:settings[$global:configRootKeys["ChocolateyLibDirConfigRootKey"]] "plantuml" "tools" "plantuml.jar"'
       $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey']       = Join-Path ([Environment]::GetFolderPath('MyDocuments')) '.dotnet' 'tools' 'puml-gen.exe'
       $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'

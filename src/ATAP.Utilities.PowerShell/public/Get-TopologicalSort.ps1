@@ -1,74 +1,105 @@
 # Thanks to http://stackoverflow.com/questions/8982782/does-anyone-have-a-dependency-graph-and-topological-sorting-code-snippet-for-pow
 # Input is a hashtable of @{ID = @(Depended,On,IDs);...}
+# replaced Get-ClonedObject with Get-DeepClone
 function Get-TopologicalSort {
-    [CmdletBinding()]
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true, Position = 1)]
+    [hashtable] $EdgeList
+  )
+
+  # Make sure we can use HashSet
+  Add-Type -AssemblyName System.Core
+
+  # Clone the edge list so as to not alter original
+  function Get-DeepClone {
+    [cmdletbinding()]
     param(
-        [Parameter(Mandatory = $true, Position = 1)]
-        [hashtable] $EdgeList
+      $InputObject
     )
-
-    # Make sure we can use HashSet
-    Add-Type -AssemblyName System.Core
-
-    # Clone it so as to not alter original
-    $currentEdgeList = [hashtable] (Get-ClonedObject $EdgeList)
-    # algorithm from http://en.wikipedia.org/wiki/Topological_sorting#Algorithms
-    $topologicallySortedElements = New-Object System.Collections.ArrayList
-    $setOfAllNodesWithNoIncomingEdges = New-Object System.Collections.Queue
-
-    $fasterEdgeList = @{}
-
-    # Keep track of all nodes in case they put it in as an edge destination but not source
-    $allNodesCollection = New-Object -TypeName System.Collections.Generic.HashSet[object] -ArgumentList (, [object[]] $currentEdgeList.Keys)
-
-    foreach ($currentNode in $currentEdgeList.Keys) {
-        $currentDestinationNodes = [array] $currentEdgeList[$currentNode]
-        if ($currentDestinationNodes.Length -eq 0) {
-            $setOfAllNodesWithNoIncomingEdges.Enqueue($currentNode)
+    process {
+      if ($InputObject -is [hashtable]) {
+        $clone = @{}
+        foreach ($key in $InputObject.keys) {
+          $clone[$key] = Get-DeepClone $InputObject[$key]
         }
+        return $clone
+      }
+      else {
+        return $InputObject
+      }
+    }
+  }
 
-        foreach ($currentDestinationNode in $currentDestinationNodes) {
-            if (!$allNodesCollection.Contains($currentDestinationNode)) {
-                [void] $allNodesCollection.Add($currentDestinationNode)
-            }
+  $currentEdgeList = [hashtable] (Get-DeepClone $edgeList) # Get-ClonedObject $EdgeList)
+  # algorithm from http://en.wikipedia.org/wiki/Topological_sorting#Algorithms
+  $topologicallySortedElements = New-Object System.Collections.ArrayList
+  $setOfAllNodesWithNoIncomingEdges = New-Object System.Collections.Queue
+
+  $fasterEdgeList = @{}
+
+  # foreach ($key in $edgelist.keys) {
+  #   if ($($($edgelist[$key]).count) -gt 1) {
+  #     Write-PSFMessage -Level important -Message "Key is $key :: value count is $($($edgelist[$key]).count) :: value is $($edgelist[$key])"
+  #   }
+  # }
+
+  # Keep track of all nodes in case they put it in as an edge destination but not source
+  $allNodesCollection = New-Object -TypeName System.Collections.Generic.HashSet[object] -ArgumentList (, [object[]] $currentEdgeList.Keys)
+
+  foreach ($currentNode in $currentEdgeList.Keys) {
+    $currentDestinationNodes = [array] $currentEdgeList[$currentNode]
+    if ($currentDestinationNodes.Length -eq 0) {
+      $setOfAllNodesWithNoIncomingEdges.Enqueue($currentNode)
+    }
+    else {
+      foreach ($currentDestinationNode in $currentDestinationNodes) {
+        if (!$allNodesCollection.Contains($currentDestinationNode)) {
+          [void] $allNodesCollection.Add($currentDestinationNode)
         }
-
-        # Take this time to convert them to a HashSet for faster operation
-        $currentDestinationNodes = New-Object -TypeName System.Collections.Generic.HashSet[object] -ArgumentList (, [object[]] $currentDestinationNodes )
-        [void] $fasterEdgeList.Add($currentNode, $currentDestinationNodes)
+      }
     }
+    # Take this time to convert them to a HashSet for faster operation
+    $currentDestinationNodes = New-Object -TypeName System.Collections.Generic.HashSet[object] -ArgumentList (, [object[]] $currentDestinationNodes )
+    [void] $fasterEdgeList.Add($currentNode, $currentDestinationNodes)
+  }
 
-    # Now let's reconcile by adding empty dependencies for source nodes they didn't tell us about
-    foreach ($currentNode in $allNodesCollection) {
-        if (!$currentEdgeList.ContainsKey($currentNode)) {
-            [void] $currentEdgeList.Add($currentNode, (New-Object -TypeName System.Collections.Generic.HashSet[object]))
-            $setOfAllNodesWithNoIncomingEdges.Enqueue($currentNode)
+  if ($debugpreference -eq 'Continue') {
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\SomethingDebugUtilities.ps1'
+    Write-AllNodesCollection
+  }
+
+  # Now let's reconcile by adding empty dependencies for source nodes they didn't tell us about
+  foreach ($currentNode in $allNodesCollection) {
+    if (!$currentEdgeList.ContainsKey($currentNode)) {
+      [void] $currentEdgeList.Add($currentNode, (New-Object -TypeName System.Collections.Generic.HashSet[object]))
+      $setOfAllNodesWithNoIncomingEdges.Enqueue($currentNode)
+    }
+  }
+
+  $currentEdgeList = $fasterEdgeList
+
+  while ($setOfAllNodesWithNoIncomingEdges.Count -gt 0) {
+    $currentNode = $setOfAllNodesWithNoIncomingEdges.Dequeue()
+    [void] $currentEdgeList.Remove($currentNode)
+    [void] $topologicallySortedElements.Add($currentNode)
+
+    foreach ($currentEdgeSourceNode in $currentEdgeList.Keys) {
+      $currentNodeDestinations = $currentEdgeList[$currentEdgeSourceNode]
+      if ($currentNodeDestinations.Contains($currentNode)) {
+        [void] $currentNodeDestinations.Remove($currentNode)
+
+        if ($currentNodeDestinations.Count -eq 0) {
+          [void] $setOfAllNodesWithNoIncomingEdges.Enqueue($currentEdgeSourceNode)
         }
+      }
     }
+  }
 
-    $currentEdgeList = $fasterEdgeList
-
-    while ($setOfAllNodesWithNoIncomingEdges.Count -gt 0) {
-        $currentNode = $setOfAllNodesWithNoIncomingEdges.Dequeue()
-        [void] $currentEdgeList.Remove($currentNode)
-        [void] $topologicallySortedElements.Add($currentNode)
-
-        foreach ($currentEdgeSourceNode in $currentEdgeList.Keys) {
-            $currentNodeDestinations = $currentEdgeList[$currentEdgeSourceNode]
-            if ($currentNodeDestinations.Contains($currentNode)) {
-                [void] $currentNodeDestinations.Remove($currentNode)
-
-                if ($currentNodeDestinations.Count -eq 0) {
-                    [void] $setOfAllNodesWithNoIncomingEdges.Enqueue($currentEdgeSourceNode)
-                }
-            }
-        }
-    }
-
-    if ($currentEdgeList.Count -gt 0) {
-        throw 'Graph has at least one cycle!'
-    }
-    $topologicallySortedElements
+  if ($currentEdgeList.Count -gt 0) {
+    throw 'Graph has at least one cycle!'
+  }
+  $topologicallySortedElements
 }
 # write-host "Test1"
 # $a = 'a';$b = 'b';$c = 'c';$d = 'd';$e = 'e';$src = @{$a = @(); $b= @($a); $c=@($a,$b); $d=@($a,$b); $e=@($a,$b,$c)};$src.keys | %{$_;$src[$_] -eq $_}

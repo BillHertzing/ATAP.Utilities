@@ -1,11 +1,6 @@
-# Using statements ust be the first non-comment line in a script
-
-
-
 
 # Many settings are defined in terms of other settings. Settings' values must be evaulated in such an order that earlier settings are evaulated before dependent settings.
 # settings that are defined in terms of other settings are discovered by analysis of the destination.
-
 
 function Get-SomethingCatchy {
   [CmdletBinding(DefaultParameterSetName = 'Hashtables')]
@@ -24,49 +19,41 @@ function Get-SomethingCatchy {
     [string]
     $hashElementStringSeperator = ':::'
   )
+  # Allow the DebugPreference to be set for this function and it's children
   $DebugPreference = 'Continue' # 'Continue' # 'SilentlyContinue'
-  # ToDo: ensure these are part of the ATAP powershell package
-  . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ClonedObject.ps1'
-  . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-TopologicalSort.ps1'
 
-  # Declare function-scope variables visible to all functions
-  $collections = @{}
-  $entries = @{}
-  [System.Collections.Hashtable] $CompoundIDLookup = @{}
-
+  # Declare classes used in this function
   class CompoundID {
-    [guid] $CollectionID
-    # ToDo: only string and int are supported. No Validation yet.
-    [object] $Key
-    [int]$sortOrder
-    # # Todo: make this thread-safe
-    hidden static [System.Text.StringBuilder] $keySB
+    [Nullable[Guid]] $CollectionID
+    [object] $Key # ToDo: Validate that $key is either an int or a string
+    # These CompoundId instances are always used in a ordered Hashset, thus they include a SortOrder field
+    [int] $sortOrder
+    hidden static [System.Text.StringBuilder] $keySB # Todo: make these thread-safe
+    static [System.Collections.Hashtable] $Lookup
     hidden static [System.String] $stringSeperator = $hashElementStringSeperator
-    # # Todo: make this thread-safe
-    # [System.Collections.Hashtable] $CompoundIDLookup = @{} # todo make this hidden and static
-
+    # FYI static constructors are always called first
     static CompoundID() {
       [CompoundID]::keySB = New-Object System.Text.StringBuilder
-      # [CompoundID]::stringSeperator = $hashElementStringSeperator
-    }
+      [CompoundID]::Lookup = @{}
 
+    }
+    # No parameterless constructor. Some serialization libraries require a parameterless constructor.
+    # ToDo: possible enhancement: Some serialization libraries require a parameterless constructor. if we need to serialize, add a parameterless constructor
+    # ToDO: enhancement: make the CompoundID a generic based on the type of the ID (Guid, string, int)
     CompoundID(
-      [guid] $CollectionID
-      , [object] $Key
+      [Nullable[Guid]] $CollectionID
+      , [object] $Key # ToDo: Validate that $key is either an int or a string
       , [int] $SortOrder
     ) {
-      # ToDo: Validate that $key is of a supported type
       $this.CollectionID = $CollectionID
       $this.Key = $Key
       $this.SortOrder = $SortOrder
-      # $this.CompoundIDLookup[$this.ToString()] = $this # eventually make use of a hidden static hashtable built into the CompoundID clas
+      [CompoundID]::Lookup[$this.ToString()] = $this
     }
     [string] ToString() {
       return $this.ToString([string][CompoundID]::stringSeperator)
     }
-    # # Todo: make this thread-safe
-    [string] ToString([string] $stringSeperator) {
-
+    [string] ToString([string] $stringSeperator) { # Todo: make this thread-safe
       [void][CompoundID]::keySB.Clear()
       [void][CompoundID]::keySB.Append('{')
       [void][CompoundID]::keySB.Append($this.CollectionID)
@@ -76,7 +63,8 @@ function Get-SomethingCatchy {
       return [CompoundID]::keySB.ToString()
     }
   }
-
+  #####################################################################
+  # an IComparer function for CompoundID based on the SortOrder property
   # [In Powershell, how do I sort a Collections.Generic.List of DirectoryInfo?](https://stackoverflow.com/questions/65960853/in-powershell-how-do-i-sort-a-collections-generic-list-of-directoryinfo)
   # [](https://www.youtube.com/watch?v=zggWL-0gefo)
   class CompoundIDComparer : System.Collections.Generic.IComparer[CompoundID] {
@@ -85,107 +73,181 @@ function Get-SomethingCatchy {
     }
   }
 
+  #####################################################################
+  # ToDO: enhancement: make the Collection a generic based on the type of the ID (Guid, string, int)
+  class Collection {
+    [Guid] $ID
+    [object] $Collection # ToDo: specify that $Collection implements IEnumerable. [IEnumerable<object>] does not work
+    [EntryKey] $ParentEntryKey # ToDo [Nullable[EntryKey]] will not work
+    static [System.Collections.Hashtable] $Lookup
+    static Collection() {
+      [Collection]::Lookup = @{}
+    }
+    # No parameterless constructor. Some serialization libraries require a parameterless constructor.
+    # ToDo: possible enhancement: Some serialization libraries require a parameterless constructor. if we need to serialize, add a parameterless constructor
+    # ToDO: way future enhancement: make the ID and ParentID a generic based on the type of the ID (Guid, string, int)
+    Collection(
+      [Guid] $ID
+      , [object] $Collection # ToDo: validate that the index into the IEnuerable is either a string or an int
+    ) {
+      $this.ID = $ID
+      $this.Collection = $Collection
+    }
+    Collection(
+      [Guid] $ID
+      , [object] $Collection # ToDo: validate that the index into the IEnuerable is either a string or an int
+      , [EntryKey] $ParentEntryKey
+    ) {
+      $this.ID = $ID
+      $this.Collection = $Collection
+      $this.ParentEntryKey = $ParentEntryKey
+    }
+  }
+
+  #####################################################################
+  # These objects form the key to the $entries structure. The Set property is the critical structure that makes the EntryKey comparable and uniquely hashable
+  # EntryKey must  be serializable to be used with Get-ClonedObject
   class EntryKey {
     [System.Collections.Generic.SortedSet[CompoundID]] $Set
-    static hidden [System.Collections.Generic.IComparer[CompoundID]] $CompoundIDComparer = [CompoundIDComparer]::new()
-    # # Todo: make this thread-safe
+    static hidden [System.Collections.Generic.IComparer[CompoundID]] $CompoundIDComparer
+    # # Todo: make these thread-safe
     hidden static [System.Text.StringBuilder] $keySB
+    hidden static [System.Text.StringBuilder] $destinationKeyStringSB
     hidden static [System.Text.StringBuilder] $OffsetSB
     static [System.Collections.Hashtable] $Lookup
 
     static EntryKey( ) {
       [EntryKey]::CompoundIDComparer = [CompoundIDComparer]::new()
       [EntryKey]::keySB = New-Object System.Text.StringBuilder
+      [EntryKey]::destinationKeyStringSB = New-Object System.Text.StringBuilder
       [EntryKey]::OffsetSB = New-Object System.Text.StringBuilder
       [EntryKey]::Lookup = @{}
     }
-    EntryKey( ) {
+
+    # Parameterless constructor is required for serializing an object
+    EntryKey() {
       $this.Set = [System.Collections.Generic.SortedSet[CompoundID]]::new([System.Collections.Generic.IComparer[CompoundID]] [EntryKey]::CompoundIDComparer)
-      [EntryKey]::Lookup[$this.ToString()] = $this
     }
-    # ToDo: use constructor chaining when powershell supportsd it
+
+    # ToDo: use constructor chaining when powershell supports it
     EntryKey([CompoundID] $CompoundID ) {
-      # $this.EntryKey()
       $this.Set = [System.Collections.Generic.SortedSet[CompoundID]]::new([System.Collections.Generic.IComparer[CompoundID]] [EntryKey]::CompoundIDComparer)
       $this.Set.Add([CompoundID]$CompoundID)
-      [EntryKey]::Lookup[$this.ToString()] = $this
+      # This constructor is used if there is no ParentEntryKey
+      [EntryKey]::Lookup[$compoundID.Key] = $this
     }
-    # ToDo: use constructor chaining when powershell supportsd it
+
     EntryKey([System.Collections.Generic.SortedSet[CompoundID]] $ParentSet, [CompoundID] $CompoundID ) {
-      #$this.EntryKey()
       $this.Set = [System.Collections.Generic.SortedSet[CompoundID]]::new([System.Collections.Generic.IComparer[CompoundID]] [EntryKey]::CompoundIDComparer)
-      foreach ($ci in $ParentSet) {
-        $this.Set.Add($ci)
+      foreach ($childCompoundID in $ParentSet) {
+        try {
+          $this.Set.Add($childCompoundID)
+        }
+        catch {
+          $message = "Error adding the parent's Set's CompoundIDs to this Set, specifically: $($childCompoundID.ToString())"
+          Write-PSFMessage -Level Error -Message $message
+          throw $message
+        }
       }
-      # ToDo - wrap in a try/catch, and test for a hashset collision if the new compoundID already exists (?)
-      # if the new compound ID
-      $this.Set.Add([CompoundID]$CompoundID)
-      [EntryKey]::Lookup[$this.ToString()] = $this
+      # catch a hashset collision if the new compoundID already exists
+      try {
+        $this.Set.Add([CompoundID]$CompoundID)
+      }
+      catch {
+        $message = "Attempt to add a duplicate CompoundID to this Set: $($CompoundID.ToString())"
+        Write-PSFMessage -Level Error -Message $message
+        throw $message
+      }
+      # $this.DestinationBaseKey = $this.Set.Min.Key
+      # crossreference structure for the string representation to the actual instance pointer
+      [EntryKey]::Lookup[$($CompoundID.Key + $this.ToString())] = $this
     }
-    [CompoundID] Max() {
+
+    [CompoundID] Max() { # Todo: make this thread-safe
       return $this.Set.Max
     }
-    [CompoundID] Min() {
+
+    [CompoundID] Min() { # Todo: make this thread-safe
       return $this.Set.Min
     }
-    # # Todo: make this thread-safe
-    [string] ToString() {
+
+    [string] ToString() { # Todo: make this thread-safe
+      [void][EntryKey]::keySB.Clear()
+      #[void][EntryKey]::keySB.Append($this.DestinationBaseKey)
       foreach ($compoundID in $this.set) {
-        [void][EntryKey]::keySB.Clear()
         [void][EntryKey]::keySB.Append('{')
         [void][EntryKey]::keySB.Append($compoundID.ToString())
         [void][EntryKey]::keySB.Append('}')
       }
       return [EntryKey]::keySB.ToString()
     }
-    # ToDo: validate $base is addressable with a key or index
-    # [object] ToOffset($base) {
-    #   $offsetPtr = $base
-    #   foreach ($compoundID in $this.Set ) {
-    #     $offsetPtr = $offsetPtr[$compoundID.Key]
-    #   }
-    #   return $offsetPtr
-    #   #    [void][EntryKey]::OffsetSB.Clear()
-    #   #   # [void][EntryKey]::OffsetSB.Append('$destination[''')
-    #   #   [void][EntryKey]::OffsetSB.Append($this.Min().Key)
-    #   #   # [void][EntryKey]::OffsetSB.Append(''']')
-    #   #   if ($this.Set.Count -gt 1) {
-    #   #     # All members of the sorted set except for the first
-    #   #     $EntryKeySubSet = $($this.Set)[1..$($($this.Set.Count) - 1)]
-    #   #     foreach ($compoundID in $EntryKeySubSet ) {
-    #   #       # [void][EntryKey]::OffsetSB.Insert(0, '$(')
-    #   #       # [void][EntryKey]::OffsetSB.Append(')[''')
-    #   #       # [void][EntryKey]::OffsetSB.Append($compoundID.Key)
-    #   #       # [void][EntryKey]::OffsetSB.Append(''']')
-    #   #       [void][EntryKey]::OffsetSB.Append('[''')
-    #   #       [void][EntryKey]::OffsetSB.Append($compoundID.Key)
-    #   #       [void][EntryKey]::OffsetSB.Append(''']')
-    #   #     }
-    #   #   }
-    #   #   return [EntryKey]::OffsetSB.ToString()
-    # }
-    # ToDo: validate $base is addressable with a key or index
-    [void]SetAtOffset($base, [object] $value) {
+
+    [string] ToDestinationKeyString() {
+      [void][EntryKey]::DestinationKeyStringSB.Clear()
+      [void][EntryKey]::DestinationKeyStringSB.Append($this.Min().Key)
+      if ($this.Set.Count -gt 1) {
+        # All members of the sorted set except for the first
+        for ($i = 1; $i -lt $($this.Set.Count); $i++) {
+          [void][EntryKey]::DestinationKeyStringSB.Append('{')
+          [void][EntryKey]::DestinationKeyStringSB.Append($($($this.Set)[$i]).ToString())
+          [void][EntryKey]::DestinationKeyStringSB.Append('}')
+        }
+      }
+      return [EntryKey]::DestinationKeyStringSB.ToString()
+    }
+
+    [object] ToOffsetStr($base) { # ToDo: validate $base is addressable with a key or index
+      [void][EntryKey]::OffsetSB.Clear()
+      # [void][EntryKey]::OffsetSB.Append('$destination[''')
+      [void][EntryKey]::OffsetSB.Append($this.Min().Key)
+      # [void][EntryKey]::OffsetSB.Append(''']')
+      if ($this.Set.Count -gt 1) {
+        # All members of the sorted set except for the first
+        $EntryKeySubSet = $($this.Set)[1..$($($this.Set.Count) - 1)]
+        foreach ($compoundID in $EntryKeySubSet ) {
+          # [void][EntryKey]::OffsetSB.Insert(0, '$(')
+          # [void][EntryKey]::OffsetSB.Append(')[''')
+          # [void][EntryKey]::OffsetSB.Append($compoundID.Key)
+          # [void][EntryKey]::OffsetSB.Append('''])')
+          [void][EntryKey]::OffsetSB.Append('[''')
+          [void][EntryKey]::OffsetSB.Append($compoundID.Key)
+          [void][EntryKey]::OffsetSB.Append(''']')
+        }
+      }
+      return [EntryKey]::OffsetSB.ToString()
+    }
+
+    [void] SetAtOffset($base, [object] $value) { # ToDo: validate $base is addressable with a key or index
       $offsetPtr = $base
       if ($this.Set.Count -gt 1) {
-      # All members of the sorted set except for the last
-      for ($i = 0; $i -lt $($this.Set.Count - 1); $i++) {
-        
-        switch ($offsetPtr[$($this.Set)[$i].Key].gettype().fullname) {
-          'System.Collections.Hashtable' {
-            $offsetPtr = $offsetPtr[$($this.Set)[$i].Key]
-           }
-          'System.Object[]' { }# ToDo
-          default {
-            throw
+        # All members of the sorted set except for the last
+        # If there is more than one, then the offsetptr has to move through each CompoundID so it points to the instance of the subordinate collection
+        for ($i = 0; $i -lt $($this.Set.Count - 1); $i++) {
+          switch ($offsetPtr[$($this.Set)[$i].Key].gettype().fullname) {
+            'System.Collections.Hashtable' {
+              # Move the offset pointer to the next collection
+              $offsetPtr = $offsetPtr[$($this.Set)[$i].Key]
+            }
+            # ToDo Deal with Arrays
+            'System.Object[]' {
+              # Move the offset pointer to the next collection
+              # ToDO deal with arrays, test and debug
+              $offsetPtr = $offsetPtr[$($this.Set)[$i][$($this.Set)[$i].Key]]
+            }
+            default {
+              throw
+            }
           }
         }
       }
+      # Set the value at the last's collection's key
+      $offsetPtr[$this.Max().Key] = $value
     }
-    $offsetPtr[$this.Max().Key] = $value
   }
-  }
+  #####################################################################
+  #####################################################################
   class EntryValue {
+    [string] $DestinationBaseKey
     [object] $ValueToEvaluate
     [EntryKey] $DependsUponParent
     [string] $DependsUponDestination
@@ -194,29 +256,32 @@ function Get-SomethingCatchy {
     static EntryValue( ) {
       [EntryValue]::keySB = New-Object System.Text.StringBuilder
     }
-    EntryValue([object]$valueToEvaluate ) {
+    EntryValue([string] $destinationBaseKey, [object]$valueToEvaluate ) {
+      $this.DestinationBaseKey = $destinationBaseKey
       $this.ValueToEvaluate = $valueToEvaluate
       $this.DependsUponParent = $null
       $this.DependsUponDestination = $null
     }
-    EntryValue([object]$valueToEvaluate, [EntryKey]$dependsUponParent) {
+    EntryValue([string] $destinationBaseKey, [object]$valueToEvaluate, [EntryKey]$dependsUponParent) {
+      $this.DestinationBaseKey = $destinationBaseKey
       $this.ValueToEvaluate = $valueToEvaluate
       $this.DependsUponParent = $dependsUponParent
       $this.DependsUponDestination = $null
     }
-    EntryValue([object]$valueToEvaluate, [string]$dependsUponDestination) {
+    EntryValue([string] $destinationBaseKey, [object]$valueToEvaluate, [string]$dependsUponDestination) {
+      $this.DestinationBaseKey = $destinationBaseKey
       $this.ValueToEvaluate = $valueToEvaluate
       $this.DependsUponParent = $null
       $this.DependsUponDestination = $dependsUponDestination
     }
-    EntryValue([object]$valueToEvaluate, [EntryKey]$dependsUponParent, [string]$dependsUponDestination ) {
+    EntryValue([string] $destinationBaseKey, [object]$valueToEvaluate, [EntryKey]$dependsUponParent, [string]$dependsUponDestination ) {
+      $this.DestinationBaseKey = $destinationBaseKey
       $this.ValueToEvaluate = $valueToEvaluate
       $this.DependsUponParent = $dependsUponParent
       $this.DependsUponDestination = $dependsUponDestination
     }
-    # # Todo: make this thread-safe
-    [string] ToString() {
 
+    [string] ToString() { # Todo: make this thread-safe
       [void][EntryValue]::keySB.Clear()
       [void][EntryValue]::keySB.Append('{')
       [void][EntryValue]::keySB.Append("ValueToEvalute = $($($this.ValueToEvaluate).ToString())")
@@ -229,7 +294,22 @@ function Get-SomethingCatchy {
     }
   }
 
-  # Create an entry that creates a subordinatecollection:
+
+  # ToDo: ensure these are part of the ATAP powershell package
+  #. join-path -path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.PowerShell', 'public','Get-ClonedObject.ps1')
+  #. join-path -path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.PowerShell', 'public','Get-TopologicalSort.ps1')
+  . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ClonedObject.ps1'
+  . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-TopologicalSort.ps1'
+
+  if ($DebugPreference -eq 'Continue') {
+    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\SomethingDebugUtilities.ps1'
+  }
+
+  # Declare function-scope variables visible to all child functions
+  $collections = @{}
+  $entries = @{}
+
+  # Create an entry that creates a subordinatecollection
   function CreateSubordinateCollectionEntry {
     [CmdletBinding()]
     param (
@@ -248,19 +328,17 @@ function Get-SomethingCatchy {
         throw
       }
     }
-    [EntryValue] $entryValue = [EntryValue]::new( $valueToEvaluate )
-    if ($collections[$parentEntryKey.Max().collectionID].ContainsKey('ParentEntryKey')) {
+    [EntryValue] $entryValue = [EntryValue]::new($parentEntryKey.Max().Key, $valueToEvaluate )
+
+    # Value of this entry must dependUpon the parent, and grandparents, if present
+    # This is the first place that a parent comes into being for a new subordinate collection
+    # ToDo: simplify by introducing a class and properties for collections
+    if ($collections[$parentEntryKey.Max().collectionID].ParentEntryKey) {
       $entryValue.DependsUponParent = $collections[$parentEntryKey.max().collectionID].ParentEntryKey
     }
+    # Write an entry corresponding to the location of the parent (collection:Key) instead of calling createentries
+    # When this entry is later evaluated, it creates an empty collection of the appropriate kind
     $entries[$parentEntryKey] = $entryValue
-    # The entry that creates the child collection depends upon the parent entry might depend upon
-    # if ($($entries[$parentEntryKey])) {
-    #   if ($($entries[$parentEntryKey])['DependsUpon']) {
-    #     # The the parent collection has dependencies
-    #     $($entries[$subordinateEntryKey])['DependsUpon'] = $($entries[$parentEntryKey])['DependsUpon']
-    #   }
-    # }
-
   }
 
   # Create an entry in the $collections hash
@@ -269,7 +347,7 @@ function Get-SomethingCatchy {
     param (
       [Parameter()]
       [guid]
-      $collectionID
+      $ID
       , [Parameter()]
       [object]
       $collection
@@ -281,19 +359,20 @@ function Get-SomethingCatchy {
     switch ($PsCmdlet.ParameterSetName) {
       'NoParent' {
         # Called with no parentEntryKey indicates a top-level (root) source collection is being processed
-        Write-PSFMessage -Level Debug -Message "NoParent collectionID = $collectionID "
-        $collections[$collectionID] = @{
-          Collection = $collection
-        }
+        Write-PSFMessage -Level Debug -Message "NoParent collectionID = $ID "
+        # $collections[$ID] = @{
+        #   Collection = $collection
+        # }
+        $collections[$ID] = [Collection]::new($ID, $collection)
       }
       'HasParent' {
         # Called with a parentEntryKey indicates a subordinate source collection is being processed
-        Write-PSFMessage -Level Debug -Message "HasParent collectionID = $collectionID : ParentCollectionID = $($parentEntryKey.max().CollectionID) : parentKey = $($parentEntryKey.max().Key)"
-        $collections[$collectionID] = @{
-          # Passing $null for parentEntryKey indicates a top-level Source hash is being processed
-          ParentEntryKey = $parentEntryKey
-          Collection     = $collection
-        }
+        Write-PSFMessage -Level Debug -Message "HasParent collectionID = $ID : parentEntryKey = $($parentEntryKey.ToString())"
+        $collections[$ID] = [Collection]::new($ID, $collection, $parentEntryKey)
+        # This is the first place that a parent comes into being for a new subordinate collection
+        #   ParentID = $parentEntryKey
+        #   Collection     = $collection
+        # )
       }
     }
   }
@@ -318,21 +397,23 @@ function Get-SomethingCatchy {
     #
     $compoundID = [CompoundID]::new($collectionID, $keyID, $depth)
     $entryKey = $null
-    if ($collections[$collectionID].ContainsKey('ParentEntryKey')) {
+    if ($collections[$collectionID].ParentEntryKey) {
       # the entryKey for this entry is a completely new instance of an EntryKey type whose Set contains all elements of the parentEntryKey Set and adds the CompoundId instance of this collectionID and this keyID
       $entryKey = [EntryKey]::new([System.Collections.Generic.SortedSet[CompoundID]] $($collections[$collectionID].ParentEntryKey).Set, [CompoundID]$compoundID)
+    # create an instance of the EntryValue type and assign it to this entry's $entries record
+    [EntryValue] $entryValue = [EntryValue]::new( $compoundID.Key, $collections[$collectionID].Collection[$keyID] )
     }
     else {
       # the entryKey for this entry is a completely new instance of an EntryKey type whose Set contains just the CompoundId instance of this collectionID and this keyID
       $entryKey = [EntryKey]::new($compoundID)
-    }
     # create an instance of the EntryValue type and assign it to this entry's $entries record
-    [EntryValue] $entryValue = [EntryValue]::new( $collections[$collectionID].Collection[$keyID] )
+    [EntryValue] $entryValue = [EntryValue]::new( $compoundID.Key, $collections[$collectionID].Collection[$keyID] )
+    }
     # Create this entry in the $entries hash
     $entries[$entryKey] = $entryValue
 
     # if the collection to which this entry belongs hase a parent collection, then this entry dependsUpon the parent, specifically the KeyID of the parent entryKey's max compoundID
-    if ($collections[$collectionID].ContainsKey('ParentEntryKey')) {
+    if ($collections[$collectionID].ParentEntryKey) {
       $entries[$entryKey].DependsUponParent = $collections[$collectionID].ParentEntryKey
     }
 
@@ -361,34 +442,43 @@ function Get-SomethingCatchy {
     param (
       [Parameter()]
       [Guid]
-      $collectionID
+      $ID
       , [Parameter()]
       [int]
       $depth
       , [Parameter()]
       [EntryKey]
       $parentEntryKey
-
     )
-    Write-PSFMessage -Level Debug -Message "collectionID = $collectionID "
-    switch ($collections[$collectionID].Collection.gettype().fullname) {
+    Write-PSFMessage -Level Debug -Message "ID = $ID "
+    switch ($collections[$ID].Collection.gettype().fullname) {
       'System.Collections.Hashtable' {
-        foreach ($keyID in $collections[$collectionID].Collection.Keys) {
-          switch -regex ($collections[$collectionID].Collection[$KeyID].GetType().fullname) {
+        foreach ($keyID in $collections[$ID].Collection.Keys) {
+          switch -regex ($collections[$ID].Collection[$KeyID].GetType().fullname) {
             ('System.Collections.Hashtable|System.Object\[\]') {
-              $parentCompoundID = [CompoundID]::new($CollectionID, $KeyID, $depth)
-              $CompoundIDLookup[$parentCompoundID.ToString()] = $parentCompoundID
-              $parentEntryKey = [EntryKey]::new($parentCompoundID)
-              # entrykeylookup (?)
+              # The current collection and key become the parent of the new collection
+              $parentCompoundID = [CompoundID]::new($ID, $KeyID, $depth)
+              #$parentCompoundID = [CompoundID]::new($($collections[$ID].ParentEntryKey) ? $ID : $null , $KeyID, $depth )
+              #$CompoundIDLookup[$parentCompoundID.ToString()] = $parentCompoundID
+
+              # if the current collection has a parent, the new parent entry key must include all of them, else this is an Entry Key with no parents
+              if ($collections[$ID].ParentEntryKey) {
+                $parentEntryKey = [EntryKey]::new($($collections[$ID]).ParentEntryKey , $parentCompoundID)
+              }
+              else {
+                $parentEntryKey = [EntryKey]::new($parentCompoundID)
+              }
+              #  create the entrykey lookup for this new EntryKey
+              [EntryKey]::Lookup[$parentEntryKey.ToString()] = $parentEntryKey
               CreateSubordinateCollectionEntry -ParentEntryKey $parentEntryKey
               $subordinateCollectionID = New-Guid
-              CreateCollection -CollectionID $subordinateCollectionID -Collection $collections[$collectionID].Collection[$KeyID] -parentEntryKey $parentEntryKey
+              CreateCollection -ID $subordinateCollectionID -Collection $collections[$ID].Collection[$KeyID] -parentEntryKey $parentEntryKey
               $depth += 1
-              WalkCollection -CollectionID $subordinateCollectionID -Depth $depth -parentEntryKey $parentEntryKey
+              WalkCollection -ID $subordinateCollectionID -Depth $depth -parentEntryKey $parentEntryKey
               $depth -= 1
             }
             'System.String|System.Int' {
-              CreateEntries -CollectionID $collectionID -KeyID $keyID -Depth $depth
+              CreateEntries -CollectionID $ID -KeyID $keyID -Depth $depth
             }
             default {
               throw
@@ -397,21 +487,30 @@ function Get-SomethingCatchy {
         }
       }
       'System.Object[]' {
-        for ($index = 0; $index -lt $collections[$collectionID].Collection.Count; $index++) {
-          switch -regex ($collections[$collectionID].Collection[$index].GetType().fullname) {
+        for ($index = 0; $index -lt $collections[$ID].Collection.Count; $index++) {
+          switch -regex ($collections[$ID].Collection[$index].GetType().fullname) {
             ('System.Collections.Hashtable|System.Object\[\]') {
-              $parentCompoundID = [CompoundID]::new($CollectionID, $index, $depth )
-              $CompoundIDLookup[$parentCompoundID.ToString()] = $parentCompoundID
-              $parentEntryKey = [EntryKey]::new($parentCompoundID)
+              $parentCompoundID = [CompoundID]::new($ID, $index, $depth )
+              #$parentCompoundID = [CompoundID]::new($($collections[$ID].ParentEntryKey) ? $ID : $null , $index, $depth )
+              #$CompoundIDLookup[$parentCompoundID.ToString()] = $parentCompoundID
+              # if the current collection has a parent, the new parent entry key must include all of them, else this is an Entry Key with no parents
+              if ($collections[$ID].ParentEntryKey) {
+                $parentEntryKey = [EntryKey]::new($($collections[$ID]).ParentEntryKey , $parentCompoundID)
+              }
+              else {
+                $parentEntryKey = [EntryKey]::new($parentCompoundID)
+              }
+              #  create the entrykey lookup for this new EntryKey
+              [EntryKey]::Lookup[$parentEntryKey.ToString()] = $parentEntryKey
               CreateSubordinateCollectionEntry -ParentEntryKey $parentEntryKey
               $newCollectionID = New-Guid
-              CreateCollection -CollectionID $newCollectionID -Collection $collections[$collectionID].Collection[$index] -parentEntryKey $parentEntryKey
+              CreateCollection -ID $newCollectionID -Collection $collections[$ID].Collection[$index] -parentEntryKey $parentEntryKey
               $depth += 1
-              WalkCollection -CollectionID $newCollectionID -Depth $depth -parentEntryKey $parentEntryKey
+              WalkCollection -ID $newCollectionID -Depth $depth -parentEntryKey $parentEntryKey
               $depth -= 1
             }
             ('System.String|System.Int') {
-              CreateEntries -CollectionID $collectionID -KeyID $index -Depth $depth
+              CreateEntries -CollectionID $ID -KeyID $index -Depth $depth
             }
             default {
               throw
@@ -437,67 +536,61 @@ function Get-SomethingCatchy {
     Write-PSFMessage -Level Debug -Message 'SortEntries'
     # Outermost loop goes around every key in $entries
     foreach ($entryKey in $entries.Keys) {
-      # Convert the fields of the entryKey into a string representation
-      $keystr = $entryKey.ToString()
+      # replace
       if ($($entries[$entryKey]).DependsUponParent) {
         # if it DependsUpon a parent key, the entry cannot be evaluated until the parent is created.
-        # The corresponding $dependencyHash's value for this $keystr must include the full parentEntryKey (as a string)
-        [void]$flatDependsUpon.Add($($entries[$entryKey]).DependsUponParent.ToString())
+        # The corresponding $dependencyHash's value for this $entryKey must include the destination base keystring
+        [void]$flatDependsUpon.Add($($entries[$entryKey]).DependsUponParent)
+        # If the parent's set has a count of more than one, then the intermediate entries are each also part of the dependency hash
+        if ($entries[$entryKey].Set.Count -gt 1) {
+          # All members of the sorted set except for the first
+          $EntryKeySubSet = $($this.Set)[1..$($($this.Set.Count) - 1)]
+          foreach ($compoundID in $EntryKeySubSet ) {
+            [void]$flatDependsUpon.Add($compoundID.ToString())
+          }
+        }
       }
+
       if ($($entries[$entryKey]).DependsUponDestination) {
         # if it DependsUpon one or more destination keys, the entry cannot be evaluated until all of the referenced destination entries has been created.
-        foreach ($element in $($entries[$entryKey]).DependsUponDestination.MatchArray) {
+        foreach ($element in $($entries[$entryKey]).DependsUponDestination) {
           [void]$flatDependsUpon.Add($element)
         }
       }
+      # Convert the fields of the entryKey into a string representation suitable for the topological sort
+      $keystr = $entryKey.ToDestinationKeyString()
       $dependencyHash[$keystr] = [array] $flatDependsUpon
       [void]$flatDependsUpon.Clear()
-
     }
 
-    # Log the $dependencyHash
-    # if ($debugpreference -eq 'Continue') {
-
-    #   foreach ($key in $dependencyHash.keys) {
-    #     $part2 = $null
-    #     if ($dependencyHash[$key]) {
-    #       for ($index = 0; $index -lt $dependencyHash[$key].Count; $index++) {
-    #         $dependentUpon = $($dependencyHash[$key])[$index]
-    #         $part2 += $dependentUpon + '   '
-    #       }
-    #     }
-    #     $message = "DependencyHash $key = $part2"
-    #     Write-PSFMessage -Level Debug -Message $message
-    #   }
-    # }
+    # debugging
+    if ($debugpreference -eq 'Continue') {
+      Write-DependencyHash
+    }
 
     # sort the dependencyhash (all string based)
     $sortedEntryKeysStrings = Get-TopologicalSort -EdgeList $dependencyHash
 
-    # convert the sortedEntryKeyStrings to a topologically sorted arry of Entrykey objects
+    # debugging
+    if ($debugpreference -eq 'Continue') {
+      write-NULLSortedEntryKeysString $sortedEntryKeysStrings
+      Write-NullLookupKeys
+      Write-DuplicateLookupKeys
+    }
+
+    # convert the sortedEntryKeyStrings to a topologically sorted array of EntryKey objects
+    $EntryKeyStringWithNullValue = @()
     $sortedEntryKeys = [System.Collections.ArrayList]::new();
     foreach ($EntryKeysString in $sortedEntryKeysStrings) {
       [void]$sortedEntryKeys.Add([EntryKey]::Lookup[$EntryKeysString])
+      if (-not [EntryKey]::Lookup[$EntryKeysString]) {
+        $EntryKeyStringWithNullValue += $EntryKeysString
+      }
     }
+    Write-PSFMessage -Level Important -Message "Number of NULL sortedEntryKeyFromLookup = $($EntryKeyStringWithNullValue.count):: List = $($EntryKeyStringWithNullValue -join ',')"
 
-    # upon return, Powershell will flatten an array of 1 element unless special syntax is used
+    # upon a return, Powershell will flatten an array of 1 element unless special syntax is used
     return @(, $sortedEntryKeys)
-  }
-
-  # format the entries and their dependencies into a hyuman-readable structure
-  function Write-EntriesAndDependencies {
-    param(
-      [Parameter()]
-      [Hashtable]
-      $entries
-    )
-    foreach ($key in $entries.keys) {
-      $message = "Entry at $($key.ToString()): Type is $($($entries[$key].ValueToEvaluate).gettype())::: `
-      ValueToEvaluate is $($entries[$key].ValueToEvaluate) ::: dependsUponParent = $($entries[$key].DependsUponParent) `
-       ::: dependsUponDestination = $($entries[$key].DependsUponDestination)"
-      Write-PSFMessage -Level Debug -Message $message
-    }
-
   }
 
 
@@ -506,11 +599,12 @@ function Get-SomethingCatchy {
   foreach ($collectionToEvaluate in $sourceCollections ) {
     #  handle edge case if called with empty collection
     if ($collectionToEvaluate.count -eq 0) { continue }
-    $collectionID = New-Guid
-    CreateCollection -CollectionID $collectionID -Collection $collectionToEvaluate
-    WalkCollection -CollectionID $collectionID -Depth $depth
+    $CollectionID = New-Guid
+    CreateCollection -ID $CollectionID -Collection $collectionToEvaluate
+    WalkCollection -ID $CollectionID -Depth $depth
   }
-  # logging
+
+  # debugging
   if ($debugpreference -eq 'Continue') {
     Write-EntriesAndDependencies $entries
   }
@@ -520,32 +614,34 @@ function Get-SomethingCatchy {
   # Sort the entries collection, creating a sortedEntryKeys Arraylist structure
   $sortedEntryKeys = [System.Collections.ArrayList]::new($(SortEntries))
 
-  # remove any destination only keys
-  # foreach ($srcEntryKey in $sortedEntryKeys.Where({ -not $_.StartsWith('{') })) {
-  #   $sortedEntryKeys.Remove($srcEntryKey)
-  # }
-
   # Process the entries in the order of sortedEntryKeys and create the final $destination structure
   Write-PSFMessage -Level Debug -Message 'ProcessEntries'
 
+  # debugging
+  if ($debugpreference -eq 'Continue') {
+    Write-NULLSortedEntryKeys
+  }
+
   foreach ($EntryKey in $sortedEntryKeys) {
-    #$destinationExpression = $EntryKey.ToOffset()
-    #$ptr = $EntryKey.ToOffset($destination)
+    if ($debugpreference -eq 'Continue') {
+      if ($EntryKey) {
+        Write-PSFMessage -Level Debug -Message "Processing EntryKey : $($EntryKey.ToString()) "
+      }
+      else {
+        Write-PSFMessage -Level Debug -Message 'EntryKey IS NULL'
+      }
+    }
     $ValueToEvaluate = $entries[$EntryKey].ValueToEvaluate
     $valueType = $entries[$EntryKey].ValueToEvaluate.gettype().fullname
-    Write-PSFMessage -Level Debug -Message "EntryKey = $($EntryKey.ToString()) ::  destinationExpression = $destinationExpression :: valueType  = $valueType  :: ValueToEvaluate = $($entries[$EntryKey].ValueToEvaluate)"
+    if ($debugpreference -eq 'Continue') {
+      Write-PSFMessage -Level Debug -Message "EntryKey = $($EntryKey.ToString()) ::  destinationExpression = $destinationExpression :: valueType  = $valueType  :: ValueToEvaluate = $($entries[$EntryKey].ValueToEvaluate)"
+    }
     switch -regex ($valueType) {
       ('System.Collections.Hashtable') {
         $EntryKey.SetAtOffset($destination, [System.Collections.Hashtable]::new())
-        # $ptr = [System.Collections.Hashtable]::new()
-        # $destination.Set_Item($destinationExpression,[System.Collections.Hashtable]::new())
-        #$ValueToEvaluate = '[System.Collections.Hashtable]::new()'
       }
       ('System.Object\[\]') {
-        $EntryKey.SetAtOffset($destination, [System.Object[]]::new())
-        # $ptr = [System.Object[]]::new()
-        # $destination.Set_Item($destinationExpression,[System.Object[]]::new())
-        #$ValueToEvaluate = '[System.Object[]]::new()'
+        $EntryKey.SetAtOffset($destination, [System.Object[]]::new($null))
       }
       'System.String' {
         # if the entry's vaule depends on an entry in the destination, it must be evaluated before assignment
@@ -555,7 +651,7 @@ function Get-SomethingCatchy {
           try {
             # [Try not catching Invoke-Expression error](https://social.technet.microsoft.com/Forums/en-US/9bcce59f-b51d-4745-a946-6323a0a57a15/try-not-catching-invokeexpression-error?forum=winserverpowershell)
             # [invoke-expression doesnot throw an error in powershell](https://stackoverflow.com/questions/31086630/invoke-expression-doesnot-throw-an-error-in-powershell)
-            $er = ($evaluatedValue = & $ValueToEvaluate ) 2>&1
+            $er = ($evaluatedValue = Invoke-Expression $ValueToEvaluate ) 2>&1
             if ($lastexitcode) { throw $er }
           }
           catch {
@@ -569,8 +665,6 @@ function Get-SomethingCatchy {
         }
         else {
           $EntryKey.SetAtOffset($destination, $ValueToEvaluate)
-          # $ptr = $evaluatedValue
-          # $destination.Set_Item($destinationExpression, $ValueToEvaluate)
         }
         # else it needs no further processing
         # strings are evaluated twice, in order to execute any Powershell scriptblocks, functions,  or cmdlets
@@ -581,8 +675,6 @@ function Get-SomethingCatchy {
       'System.Int' {
         # numeric types need no special processing
         $EntryKey.SetAtOffset($destination, $ValueToEvaluate)
-        # $ptr = $ValueToEvaluate
-        # $destination.Set_Item($destinationExpression, $ValueToEvaluate)
       }
       default {
         throw
@@ -592,6 +684,8 @@ function Get-SomethingCatchy {
     # & "$destinationExpression = $ValueToEvaluate"
   }
 
+  # clear the static lookup tables after the function ends
+  [EntryKey]::Lookup = @{}
   #$destination
 }
 

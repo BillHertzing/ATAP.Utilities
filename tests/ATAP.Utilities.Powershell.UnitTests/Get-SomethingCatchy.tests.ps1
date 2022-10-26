@@ -25,31 +25,7 @@ $functionSUTPathSUT = Join-Path $srcModuleRelativePath $srcSUTRelativePathSuffix
 . $functionSUTPathSUT
 
 
-
-$TestCaseSimpleIntAndString = @{
-  'simpleKeyForInt'    = 1
-  'simpleKeyForString' = 'A'
-}
-
-$TestCaseEmptyChildHash = @{
-  'ChildHash' = @{}
-}
-
-$TestCaseChildHashWithInt = @{
-  'ChildHash' = @{
-    'simpleKeyForInt' = 1
-  }
-}
-
-$TestCaseChildHashWithString = @{
-  'ChildHash' = @{
-    'simpleKeyForString' = 'A'
-  }
-}
-
-$TestCaseSimplePSFunctionCall = @{
-  'PSFunctionCall' = Join-Path $env:ProgramData 'chocolatey' 'lib'
-}
+7
 
 $TestCaseDeferredPSFunctionCall = @{
   'PSDeferredFunctionCall' = 'Join-Path "path001" "path002"'
@@ -60,11 +36,6 @@ $TestCaseDeferredPSFunctionCallInSubordinateHash = @{
     'PSDeferredFunctionCall' = 'Join-Path "path003" "path004"'
   }
   'PSDeferredFunctionCall' = 'Join-Path "path001" "path002"'
-}
-
-$TestCaseSourceRefersToDestination = @{
-  'simpleKeyForString' = 'A'
-  'ReferenceTo'        = '$Destination[''simpleKeyForString'']'
 }
 
 $TestSettings3 = @{
@@ -88,55 +59,106 @@ $TestSettings2 = @{
   NNN = '$global:settings["aaa"]'
 }
 
-$matchPatternRegex = [System.Text.RegularExpressions.Regex]::new('global:settings\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
-# $SourceCollections = @($TestSettings1, $TestSettings2) # @($global:SecurityAndSecretsSettings, $global:MachineAndNodeSettings) #
-$numkeys = 0
-foreach ($testcollection in $SourceCollections) { $numkeys += $testcollection.keys.count }
+# todo: put into beforeach block
 $Destination = @{}
 
 Describe "Testing Function $functionSUTName" -ForEach @(
-  @{Name              = 'EmptyHash'
-    SourceCollections = @(,
-      @{}
-    )
-  }
-  , @{Name            = 'SimpleIntAndString'
-    SourceCollections = @(,
+  # @{Name              = 'EmptyHash'
+  #   SourceCollections = @(,
+  #     @{}
+  #   )
+  # DestinationCollection = $destination
+  # MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
+  # }
+  # , @{Name            = 'SimpleIntAndString'
+  #   SourceCollections = @(,
+  #     @{
+  #       'simpleKeyForInt'    = 1
+  #       'simpleKeyForString' = 'A'
+  #     }
+  #   )
+  # DestinationCollection = $destination
+  # MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
+  # }
+  # , @{Name            = 'OneEmptyChildHash'
+  #   SourceCollections = @(,
+  #     @{
+  #       'ChildHash' = @{}
+  #     }
+  #   )
+  # DestinationCollection = $destination
+  # MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
+  # }
+  # , @{Name            = 'ChildHashWithString'
+  #   SourceCollections = @(,
+  #     @{
+  #       'ChildHash' = @{
+  #         'simpleKeyForString' = 'A'
+  #       }
+  #     }
+  #   )
+  # DestinationCollection = $destination
+  # MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
+  # }
+  # , @{Name            = 'ChildHashWithInt'
+  #   SourceCollections = @(,
+  #     @{
+  #       'ChildHash' = @{
+  #         'simpleKeyForInt' = 'A'
+  #       }
+  #     }
+  #   )
+  # DestinationCollection = $destination
+  # MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
+  # }
+  # , @{Name            = 'SimplePSFunctionCall'
+  #   SourceCollections = @(,
+  #     @{
+  #       'PSFunctionCall' = Join-Path $env:ProgramData 'chocolatey' 'lib'
+  #     }
+  #   )
+  # DestinationCollection = $destination
+  # MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
+  # }
+  # , @{Name            = 'SourceRefersToDestination'
+  #   SourceCollections = @(,
+  #     @{
+  #       'simpleKeyForString' = 'A'
+  #       'ReferenceTo'        = '$Destination[''simpleKeyForString'']'
+  #     }
+  #   )
+  # DestinationCollection = $destination
+  #   MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('destination\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
+  # }
+  , @{Name                = 'SourcecontainsACollectionHavingAnElementThatRefersToDestination'
+    SourceCollections     = @(,
       @{
-        'simpleKeyForInt'    = 1
         'simpleKeyForString' = 'A'
-      }
-    )
-  }
-  , @{Name            = 'OneEmtpryChildHash'
-    SourceCollections = @(,
-      @{
-        'ChildHash' = @{}
-      }
-    )
-  }
-  , @{Name            = 'ChildHashWithString'
-    SourceCollections = @(,
-      @{
-        'ChildHash' = @{
-          'simpleKeyForString' = 'A'
+        'ChildHash'          = @{
+          'InnerReferenceTo' = '$Destination[''simpleKeyForString'']'
         }
+        'OuterReferenceTo'        = '$Destination[''simpleKeyForString'']'
       }
     )
+    DestinationCollection = $destination
+    MatchPatternRegex     = [System.Text.RegularExpressions.Regex]::new('destination\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
   }
-  , @{Name            = 'SourceRefersToDestination'
-    SourceCollections = @(,
-      @{
-        'simpleKeyForString' = 'A'
-        'ReferenceTo'        = '$Destination[''simpleKeyForString'']'
-      }
-    )
-  }
+  # , @{Name            = 'BuildsGlobalSettings'
+  # DestinationCollection = $global:Settings
+  # SourceCollections = @($global:SecurityAndSecretsSettings, $global:MachineAndNodeSettings)
+  # MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('global:settings\[\s*(["'']{0,1})(?<Earlier>[^\]]*?[\]])\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
+  # }
 ) {
   param(
     [string] $Name
     , [object[]] $SourceCollections
+    , [System.Collections.Hashtable] $DestinationCollection
+    , [System.Text.RegularExpressions.Regex] $MatchPatternRegex
   )
+  BeforeEach {
+    $Destination = @{}
+  }
+
   # It 'A test that should be true' {
   #   $true | Should -Be $true
   # }
@@ -148,17 +170,15 @@ Describe "Testing Function $functionSUTName" -ForEach @(
     foreach ($collection in  $SourceCollections) {
       $numKeys += $collection.count
     }
-    $Destination = @{}
-    Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
-    $Destination.count | Should -Be $numKeys
+    Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $DestinationCollection -MatchPatternRegex $MatchPatternRegex
+    $DestinationCollection.count | Should -Be $numKeys
   }
   It '<Name> has the correct root-level destination keys' {
     # Test settings for this specific test case
-    $Destination = @{}
-    Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
+    Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $DestinationCollection -MatchPatternRegex $MatchPatternRegex
     foreach ($collection in  $SourceCollections) {
       foreach ($key in $collection) {
-        $Destination[$key] | Should -Be $collection[$key]
+        $DestinationCollection[$key] | Should -Be $collection[$key]
       }
     }
   }

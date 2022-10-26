@@ -156,8 +156,7 @@ Function ValidateTools {
 # ToDo: write a script to be run once for each SecretManagementExtensionVault to create the vault
 # ToDo: put all the SecretManagememnt code into a dedicated ATAP.Utilities module
 
-
-. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Install-DataEncryptionCertificate.ps1'
+.  $(join-path -Path $([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.Security.Powershell', 'public', 'Install-DataEncryptionCertificate.ps1'))
 
 function Add-SecretStoreVault {
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'BuiltIn')]
@@ -423,9 +422,9 @@ $global:settings = @{}
 # Load the $SecurityAndSecretsSettings and the $MachineAndNodeSettings into the $global:settings hash, evaluating any dependencies
 $SourceCollections = @($global:SecurityAndSecretsSettings, $global:MachineAndNodeSettings)
 $matchPatternRegex = [System.Text.RegularExpressions.Regex]::new('global:settings\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
-# $hashElementStringSeperator = ':::'
 # Until ATAP.Utilities package imports are working.... dot source the file
-. C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-SomethingCatchy.ps1
+.  $(join-path -Path $([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.Powershell', 'public', 'Get-SomethingCatchy.ps1'))
+
  Get-SomethingCatchy -SourceCollections $sourceCollections -destination $global:Settings -matchPatternRegex $matchPatternRegex
 
 # set ISElevated in the global settings if this script is running elevated

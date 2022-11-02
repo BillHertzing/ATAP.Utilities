@@ -625,7 +625,7 @@ Function TailLog {
     ,[switch] $wait
     )
     # if file was not supplied, use the PSFramework logging filesystem logpath, and get the most recent file there
-    if (-not ($PSBoundParameters.ContainsKey('file'))) {
+      
     $file = (Get-ChildItem $(Get-PSFConfigValue -FullName PSFramework.Logging.FileSystem.LogPath) | Sort-Object -Property LastWriteTime -Descending)[0]
     }
     $command = "Get-Content -Path $file -tail $numlines"

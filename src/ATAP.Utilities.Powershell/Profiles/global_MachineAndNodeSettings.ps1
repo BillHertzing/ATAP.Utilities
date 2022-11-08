@@ -48,15 +48,15 @@ $local:MachineAndNodeSettings = @{
 
   # The repository names by which each of the various repositories for Powershell packages are known
 
-  $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemDevelopmentPackageConfigRootKey']               = 'ReposistoryPowershellGalleryFilesystemDevelopmentPackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemQualityAssurancePackageConfigRootKey']          = 'RepositoryPowershellGalleryFilesystemQualityAssurancePackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemProductionPackageConfigRootKey']                = 'RepositoryPowershellGalleryFilesystemProductionPackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestDevelopmentPackageConfigRootKey']            = 'ReposistoryPowershellGalleryWebServerTestDevelopmentPackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestQualityAssurancePackageConfigRootKey']       = 'RepositoryPowershellGalleryWebServerTestQualityAssurancePackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestProductionPackageConfigRootKey']             = 'RepositoryPowershellGalleryWebServerTestProductionPackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionDevelopmentPackageConfigRootKey']      = 'RepositoryPowershellGalleryWebServerProductionDevelopmentPackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionQualityAssurancePackageConfigRootKey'] = 'RepositoryPowershellGalleryWebServerProductionQualityAssurancePackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionProductionPackageConfigRootKey']       = 'RepositoryPowershellGalleryWebServerProductionProductionPackage'
+  # $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemDevelopmentPackageConfigRootKey']               = 'ReposistoryPowershellGalleryFilesystemDevelopmentPackage'
+  # $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemQualityAssurancePackageConfigRootKey']          = 'RepositoryPowershellGalleryFilesystemQualityAssurancePackage'
+  # $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemProductionPackageConfigRootKey']                = 'RepositoryPowershellGalleryFilesystemProductionPackage'
+  # $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestDevelopmentPackageConfigRootKey']            = 'ReposistoryPowershellGalleryWebServerTestDevelopmentPackage'
+  # $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestQualityAssurancePackageConfigRootKey']       = 'RepositoryPowershellGalleryWebServerTestQualityAssurancePackage'
+  # $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestProductionPackageConfigRootKey']             = 'RepositoryPowershellGalleryWebServerTestProductionPackage'
+  # $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionDevelopmentPackageConfigRootKey']      = 'RepositoryPowershellGalleryWebServerProductionDevelopmentPackage'
+  # $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionQualityAssurancePackageConfigRootKey'] = 'RepositoryPowershellGalleryWebServerProductionQualityAssurancePackage'
+  # $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionProductionPackageConfigRootKey']       = 'RepositoryPowershellGalleryWebServerProductionProductionPackage'
 
   # Package Repositories
   $global:configRootKeys['CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey']                       = '\\utat022\fs'
@@ -67,17 +67,17 @@ $local:MachineAndNodeSettings = @{
   $global:configRootKeys['PublicNugetWebServerPackageDropLocationBasePathConfigRootKey']                           = 'https://TBD/'
   $global:configRootKeys['PublicChocolateyServerPackageDropLocationBasePathConfigRootKey']                         = 'https://TBD/'
 
-  $global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']                                             = @{
-    $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemDevelopmentPackageConfigRootKey']               = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + $(Join-Path 'PowershellGallery' 'Development')
-    $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemQualityAssurancePackageConfigRootKey']          = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + $(Join-Path 'PowershellGallery' 'QualityAssurance')
-    $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemProductionPackageConfigRootKey']                = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + $(Join-Path 'PowershellGallery' 'Production')
-    $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestDevelopmentPackageConfigRootKey']            = '$global:settings[$global:configRootKeys["CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Development'
-    $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestQualityAssurancePackageConfigRootKey']       = '$global:settings[$global:configRootKeys["CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/QualityAssurance'
-    $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestProductionPackageConfigRootKey']             = '$global:settings[$global:configRootKeys["CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Production'
-    $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionDevelopmentPackageConfigRootKey']      = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Development'
-    $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionQualityAssurancePackageConfigRootKey'] = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/QualityAssurance'
-    $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionProductionPackageConfigRootKey']       = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Production'
-  }
+  # $global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']                                             = @{
+  #   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemDevelopmentPackageConfigRootKey']               = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + $(Join-Path 'PowershellGallery' 'Development')
+  #   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemQualityAssurancePackageConfigRootKey']          = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + $(Join-Path 'PowershellGallery' 'QualityAssurance')
+  #   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemProductionPackageConfigRootKey']                = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + $(Join-Path 'PowershellGallery' 'Production')
+  #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestDevelopmentPackageConfigRootKey']            = '$global:settings[$global:configRootKeys["CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Development'
+  #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestQualityAssurancePackageConfigRootKey']       = '$global:settings[$global:configRootKeys["CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/QualityAssurance'
+  #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestProductionPackageConfigRootKey']             = '$global:settings[$global:configRootKeys["CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Production'
+  #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionDevelopmentPackageConfigRootKey']      = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Development'
+  #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionQualityAssurancePackageConfigRootKey'] = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/QualityAssurance'
+  #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionProductionPackageConfigRootKey']       = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Production'
+  # }
 
 
   #     # Structure of package drop locations; File Server Shares (fss) and Web Server URLs for the Environment stages
@@ -128,12 +128,12 @@ switch ($hostname) {
       $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
       $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
       $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
-      $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
-        $global:configRootKeys['WindowsCodeBuildConfigRootKey']
-        , $global:configRootKeys['WindowsUnitTestConfigRootKey']
-        , $global:configRootKeys['WindowsIntegrationTestConfigRootKey']
-        , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
-      )
+      # $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
+      #   $global:configRootKeys['WindowsCodeBuildConfigRootKey']
+      #   , $global:configRootKeys['WindowsUnitTestConfigRootKey']
+      #   , $global:configRootKeys['WindowsIntegrationTestConfigRootKey']
+      #   , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
+      # )%gl
       $global:configRootKeys['PlantUMLJarPathConfigRootKey']                            = 'Join-Path $global:settings[$global:configRootKeys["ChocolateyLibDirConfigRootKey"]] "plantuml" "tools" "plantuml.jar"'
       $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey']       = Join-Path ([Environment]::GetFolderPath('MyDocuments')) '.dotnet' 'tools' 'puml-gen.exe'
       $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'
@@ -159,12 +159,12 @@ switch ($hostname) {
       $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']                            = 'NotSecret'
       $global:configRootKeys['FP__projectNameConfigRootKey']                            = 'ATAPUtilities'
       $global:configRootKeys['FP__projectDescriptionConfigRootKey']                     = 'Test Flyway and Pubs samples'
-      $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
-        $global:configRootKeys['WindowsCodeBuildConfigRootKey']
-        , $global:configRootKeys['WindowsUnitTestConfigRootKey']
-        , $global:configRootKeys['WindowsIntegrationTestConfigRootKey']
-        , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
-      )
+      # $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
+      #   $global:configRootKeys['WindowsCodeBuildConfigRootKey']
+      #   , $global:configRootKeys['WindowsUnitTestConfigRootKey']
+      #   , $global:configRootKeys['WindowsIntegrationTestConfigRootKey']
+      #   , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
+      # )
       # Should only be set per machine if the machine is a Jenkins Controller Node
       $global:configRootKeys['JENKINS_HOMEConfigRootKey']                               = Join-Path 'C:' 'Dropbox' 'JenkinsHome', '.jenkins'
       $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
@@ -211,12 +211,12 @@ switch ($hostname) {
       $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
       $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
       $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
-      $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
-        $global:configRootKeys['WindowsCodeBuildConfigRootKey']
-        , $global:configRootKeys['WindowsUnitTestConfigRootKey']
-        , $global:configRootKeys['WindowsIntegrationTestConfigRootKey']
-        , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
-      )
+      # $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
+      #   $global:configRootKeys['WindowsCodeBuildConfigRootKey']
+      #   , $global:configRootKeys['WindowsUnitTestConfigRootKey']
+      #   , $global:configRootKeys['WindowsIntegrationTestConfigRootKey']
+      #   , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
+      # )
       $global:configRootKeys['PlantUMLJarPathConfigRootKey']                            = 'Join-Path $global:settings[$global:configRootKeys["ChocolateyLibDirConfigRootKey"]] "plantuml" "tools" "plantuml.jar"'
       $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey']       = Join-Path ([Environment]::GetFolderPath('MyDocuments')) '.dotnet' 'tools' 'puml-gen.exe'
       $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'
@@ -236,12 +236,12 @@ switch ($hostname) {
       $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
       $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
       $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
-      $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
-        $global:configRootKeys['WindowsCodeBuildConfigRootKey']
-        , $global:configRootKeys['WindowsUnitTestConfigRootKey']
-        , $global:configRootKeys['WindowsIntegrationTestConfigRootKey']
-        , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
-      )
+      # $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
+      #   $global:configRootKeys['WindowsCodeBuildConfigRootKey']
+      #   , $global:configRootKeys['WindowsUnitTestConfigRootKey']
+      #   , $global:configRootKeys['WindowsIntegrationTestConfigRootKey']
+      #   , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
+      # )
       $global:configRootKeys['PlantUMLJarPathConfigRootKey']                            = 'Join-Path $global:settings[$global:configRootKeys["ChocolateyLibDirConfigRootKey"]] "plantuml" "tools" "plantuml.jar"'
       $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey']       = Join-Path ([Environment]::GetFolderPath('MyDocuments')) '.dotnet' 'tools' 'puml-gen.exe'
       $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'
@@ -261,12 +261,12 @@ switch ($hostname) {
       $global:configRootKeys['ErlangHomeDirConfigRootKey']                              = Join-Path $env:ProgramFiles 'erl-24.0'
       $global:configRootKeys['GitExePathConfigRootKey']                                 = Join-Path $env:ProgramFiles 'Git' 'cmd' 'git.exe'
       $global:configRootKeys['JavaExePathConfigRootKey']                                = Join-Path $env:ProgramFiles 'AdoptOpenJDK' 'jre-16.0.1.9-hotspot' 'bin' 'java.exe'
-      $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
-        $global:configRootKeys['WindowsCodeBuildConfigRootKey']
-        , $global:configRootKeys['WindowsUnitTestConfigRootKey']
-        , $global:configRootKeys['WindowsIntegrationTestConfigRootKey']
-        , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
-      )
+      # $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
+      #   $global:configRootKeys['WindowsCodeBuildConfigRootKey']
+      #   , $global:configRootKeys['WindowsUnitTestConfigRootKey']
+      #   , $global:configRootKeys['WindowsIntegrationTestConfigRootKey']
+      #   , $global:configRootKeys['WindowsDocumentationBuildConfigRootKey']
+      # )
       $global:configRootKeys['PlantUMLJarPathConfigRootKey']                            = 'Join-Path $global:settings[$global:configRootKeys["ChocolateyLibDirConfigRootKey"]] "plantuml" "tools" "plantuml.jar"'
       $global:configRootKeys['PlantUmlClassDiagramGeneratorExePathConfigRootKey']       = Join-Path ([Environment]::GetFolderPath('MyDocuments')) '.dotnet' 'tools' 'puml-gen.exe'
       $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'

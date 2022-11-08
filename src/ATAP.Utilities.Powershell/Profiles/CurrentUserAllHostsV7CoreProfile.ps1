@@ -625,11 +625,10 @@ Function TailLog {
     ,[switch] $wait
     )
     # if file was not supplied, use the PSFramework logging filesystem logpath, and get the most recent file there
-      
+
     $file = (Get-ChildItem $(Get-PSFConfigValue -FullName PSFramework.Logging.FileSystem.LogPath) | Sort-Object -Property LastWriteTime -Descending)[0]
-    }
     $command = "Get-Content -Path $file -tail $numlines"
-    iex $command
+    Invoke-Expression $command
     if ($wait) {
       # Create a callback function that will tail the last N lines of the file
       # attach a file watcher (on file modified) to the file with the callback as the action

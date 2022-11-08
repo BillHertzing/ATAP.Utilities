@@ -38,14 +38,8 @@ function Get-TopologicalSort {
 
   $fasterEdgeList = @{}
 
-  # foreach ($key in $edgelist.keys) {
-  #   if ($($($edgelist[$key]).count) -gt 1) {
-  #     Write-PSFMessage -Level important -Message "Key is $key :: value count is $($($edgelist[$key]).count) :: value is $($edgelist[$key])"
-  #   }
-  # }
-
   # Keep track of all nodes in case they put it in as an edge destination but not source
-  $allNodesCollection = New-Object -TypeName System.Collections.Generic.HashSet[object] -ArgumentList (, [object[]] $currentEdgeList.Keys)
+  $allNodesCollection = New-Object -TypeName System.Collections.Generic.HashSet[object] -ArgumentList @(, [object[]] $currentEdgeList.Keys) # (, [object[]] $currentEdgeList.Keys)
 
   foreach ($currentNode in $currentEdgeList.Keys) {
     $currentDestinationNodes = [array] $currentEdgeList[$currentNode]
@@ -59,9 +53,11 @@ function Get-TopologicalSort {
         }
       }
     }
-    # Take this time to convert them to a HashSet for faster operation
-    $currentDestinationNodes = New-Object -TypeName System.Collections.Generic.HashSet[object] -ArgumentList (, [object[]] $currentDestinationNodes )
-    [void] $fasterEdgeList.Add($currentNode, $currentDestinationNodes)
+    # If the array of currentDestinationNodes is not null, take this time to convert them to a HashSet, and add them to the $fasterEdgeList for faster operation
+    if ($currentDestinationNodes) {
+      $currentDestinationNodes = New-Object -TypeName System.Collections.Generic.HashSet[object] -ArgumentList @(, [object[]] $currentDestinationNodes )
+      [void] $fasterEdgeList.Add($currentNode, $currentDestinationNodes)
+    }
   }
 
   if ($debugpreference -eq 'Continue') {

@@ -20,7 +20,7 @@ function Get-SomethingCatchy {
     $hashElementStringSeperator = ':::'
   )
   # Allow the DebugPreference to be set for this function and it's children
-  $DebugPreference = 'Continue' # 'Continue' # 'SilentlyContinue'
+  $DebugPreference = 'SilentlyContinue' # 'Continue' # 'SilentlyContinue'
 
   # Declare classes used in this function
   class CompoundID {
@@ -252,33 +252,56 @@ function Get-SomethingCatchy {
     [EntryKey] $DependsUponParent
     [string] $DependsUponDestination
     hidden static [System.Text.StringBuilder] $keySB
+    # hidden static [string] $substitutionRegexPattern = '(?<CRK>\$global:configRootKeys\[.*?\])'
+    # hidden static [regex] $substitutionRegex = [System.Text.RegularExpressions.Regex]::new(([EntryValue]::$substitutionRegexPattern), [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
 
     static EntryValue( ) {
       [EntryValue]::keySB = New-Object System.Text.StringBuilder
+      #[EntryValue]::$substitutionRegexPattern = '\$global:configRootKeys\['
+      #[EntryValue]::$substitutionRegex = [System.Text.RegularExpressions.Regex]::new(([EntryValue]::$substitutionRegexPattern), [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
     }
+
+    [string] Substitute([string] $inputStr) {
+      $substitutionRegexPattern = '(?<CRK>\$global:configRootKeys\[.*?\])'
+      $substitutionRegex = [System.Text.RegularExpressions.Regex]::new(($substitutionRegexPattern), [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+      $regexMatches = $substitutionRegex.Matches($inputStr)
+      if ($regexMatches.Success) {
+        $newStr = $inputStr
+        $matchArray = @(, $($($regexMatches.Groups).Captures | Where-Object { $_.Name -match 'CRK' }) | ForEach-Object { $_.Value })
+        for ($mAIndex = 0; $mAIndex -lt $matchArray.count; $mAIndex++) {
+          # need a pair of ' characters around the string to use it as a key into the $destination hash
+          $newStr = $newStr -replace [regex]::Escape($matchArray[$mAIndex]), $("'{0}'" -f $(Invoke-Expression $matchArray[$mAIndex]))
+        }
+        return $newStr
+      }
+      else {
+        return $inputstr
+      }
+    }
+
     EntryValue([string] $destinationBaseKey, [object]$valueToEvaluate ) {
       $this.DestinationBaseKey = $destinationBaseKey
-      $this.ValueToEvaluate = $valueToEvaluate
       $this.DependsUponParent = $null
       $this.DependsUponDestination = $null
+      $this.ValueToEvaluate = $this.Substitute($valueToEvaluate)
     }
     EntryValue([string] $destinationBaseKey, [object]$valueToEvaluate, [EntryKey]$dependsUponParent) {
       $this.DestinationBaseKey = $destinationBaseKey
-      $this.ValueToEvaluate = $valueToEvaluate
       $this.DependsUponParent = $dependsUponParent
       $this.DependsUponDestination = $null
+      $this.ValueToEvaluate = $this.Substitute($valueToEvaluate)
     }
     EntryValue([string] $destinationBaseKey, [object]$valueToEvaluate, [string]$dependsUponDestination) {
       $this.DestinationBaseKey = $destinationBaseKey
-      $this.ValueToEvaluate = $valueToEvaluate
       $this.DependsUponParent = $null
       $this.DependsUponDestination = $dependsUponDestination
+      $this.ValueToEvaluate = $this.Substitute($valueToEvaluate)
     }
     EntryValue([string] $destinationBaseKey, [object]$valueToEvaluate, [EntryKey]$dependsUponParent, [string]$dependsUponDestination ) {
       $this.DestinationBaseKey = $destinationBaseKey
-      $this.ValueToEvaluate = $valueToEvaluate
       $this.DependsUponParent = $dependsUponParent
       $this.DependsUponDestination = $dependsUponDestination
+      $this.ValueToEvaluate = $this.Substitute($valueToEvaluate)
     }
 
     [string] ToString() { # Todo: make this thread-safe
@@ -292,6 +315,7 @@ function Get-SomethingCatchy {
       [void][EntryValue]::keySB.Append('}')
       return [EntryValue]::keySB.ToString()
     }
+
   }
 
 
@@ -400,19 +424,17 @@ function Get-SomethingCatchy {
     if ($collections[$collectionID].ParentEntryKey) {
       # the entryKey for this entry is a completely new instance of an EntryKey type whose Set contains all elements of the parentEntryKey Set and adds the CompoundId instance of this collectionID and this keyID
       $entryKey = [EntryKey]::new([System.Collections.Generic.SortedSet[CompoundID]] $($collections[$collectionID].ParentEntryKey).Set, [CompoundID]$compoundID)
-    # create an instance of the EntryValue type and assign it to this entry's $entries record
-    [EntryValue] $entryValue = [EntryValue]::new( $compoundID.Key, $collections[$collectionID].Collection[$keyID] )
     }
     else {
       # the entryKey for this entry is a completely new instance of an EntryKey type whose Set contains just the CompoundId instance of this collectionID and this keyID
       $entryKey = [EntryKey]::new($compoundID)
+    }
     # create an instance of the EntryValue type and assign it to this entry's $entries record
     [EntryValue] $entryValue = [EntryValue]::new( $compoundID.Key, $collections[$collectionID].Collection[$keyID] )
-    }
     # Create this entry in the $entries hash
     $entries[$entryKey] = $entryValue
 
-    # if the collection to which this entry belongs hase a parent collection, then this entry dependsUpon the parent, specifically the KeyID of the parent entryKey's max compoundID
+    # if the collection to which this entry belongs has a parent collection, then this entry dependsUpon the parent, specifically the KeyID of the parent entryKey's max compoundID
     if ($collections[$collectionID].ParentEntryKey) {
       $entries[$entryKey].DependsUponParent = $collections[$collectionID].ParentEntryKey
     }
@@ -420,8 +442,7 @@ function Get-SomethingCatchy {
     # calculating the destination u->v dependencies. This entry is a vertice (V) node
     # does this value of this entry v reference another node u in the destination? (the match pattern provides one or more pattern-extracted substrings)
     # This algorithm only allows for values in a source collection to reference nodes in the destination collection
-    # the destination collection ID is always $null
-    $regexMatches = $matchPatternRegex.Matches($collections[$collectionID].Collection[$KeyID])
+    $regexMatches = $matchPatternRegex.Matches($entryValue.ValueToEvaluate)
     if ($regexMatches.Success) {
       # the value of this entry depends on at least one other node u (a destination collection entry)
       #  the .Matches() method of a [regex] type does NOT populate the Powershell automatic variable $matches. This behaviour is DIFFERENT from the .Match() method
@@ -430,7 +451,7 @@ function Get-SomethingCatchy {
       # ToDo: Recursivly expand the ValueToEvaluate looking for other optional dependencies
       # ToDo: instead of the pipeline below, simplify the expression that creates an array of values from the $regexMatches
       # $matchArray = $($regexMatches.Groups).Captures | ? { $_.Name -match 'Earlier' } | % { $_.Value } # nope, this doesn't work
-      $matchArray = $($regexMatches.Groups).Captures | ? { $_.Name -match 'Earlier' } | % { $_.Value }
+      $matchArray = @(, $($($regexMatches.Groups).Captures | Where-Object { $_.Name -match 'Earlier' }) | ForEach-Object { $_.Value })
       $entries[$entryKey].DependsUponDestination = $matchArray
     }
     Write-PSFMessage -Level Debug -Message "entry = $($entries[$entryKey].ToString())"
@@ -629,6 +650,10 @@ function Get-SomethingCatchy {
       }
       else {
         Write-PSFMessage -Level Debug -Message 'EntryKey IS NULL'
+        # Should never be empty
+        # ToDo: exception handling
+        # temp: break out of the loop
+        break
       }
     }
     $ValueToEvaluate = $entries[$EntryKey].ValueToEvaluate
@@ -650,7 +675,8 @@ function Get-SomethingCatchy {
           # use the call operator and not invoke-expression, so as not to introduce an additional scope
           try {
             # [Try not catching Invoke-Expression error](https://social.technet.microsoft.com/Forums/en-US/9bcce59f-b51d-4745-a946-6323a0a57a15/try-not-catching-invokeexpression-error?forum=winserverpowershell)
-            # [invoke-expression doesnot throw an error in powershell](https://stackoverflow.com/questions/31086630/invoke-expression-doesnot-throw-an-error-in-powershell)
+            # [invoke-expression does not throw an error in powershell](https://stackoverflow.com/questions/31086630/invoke-expression-doesnot-throw-an-error-in-powershell)
+            # [PowerShell: Manage errors with Invoke-Expression](https://stackoverflow.com/questions/21583850/powershell-manage-errors-with-invoke-expression)
             $er = ($evaluatedValue = Invoke-Expression $ValueToEvaluate ) 2>&1
             if ($lastexitcode) { throw $er }
           }

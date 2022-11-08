@@ -25,8 +25,6 @@ $functionSUTPathSUT = Join-Path $srcModuleRelativePath $srcSUTRelativePathSuffix
 . $functionSUTPathSUT
 
 
-7
-
 $TestCaseDeferredPSFunctionCall = @{
   'PSDeferredFunctionCall' = 'Join-Path "path001" "path002"'
 }
@@ -154,7 +152,7 @@ Describe "Testing Function $functionSUTName" -ForEach @(
     , [object[]] $SourceCollections
     , [System.Collections.Hashtable] $DestinationCollection
     , [System.Text.RegularExpressions.Regex] $MatchPatternRegex
-  )
+  )7
   BeforeEach {
     $Destination = @{}
   }

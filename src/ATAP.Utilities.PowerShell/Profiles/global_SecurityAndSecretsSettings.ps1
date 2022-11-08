@@ -3,7 +3,7 @@
 $local_SecurityAndSecretsSettings = @{
 
   # Where all things Security and Secrets related are stored on the filesystem
-  $global:configRootKeys['SECURE_CLOUD_BASE_PATHConfigRootKey']                                                = '$global:settings[$global:configRootKeys["DropBoxBasePathConfigRootKey"]] ' #' 'join-path $global:settings[$global:settings[$global:configRootKeys["CloudBasePathConfigRootKey"]]] "Security"' #! indirect!
+  $global:configRootKeys['SECURE_CLOUD_BASE_PATHConfigRootKey']                                                = 'join-path $global:settings[$global:configRootKeys["DropBoxBasePathConfigRootKey"]] "Security"' #' 'join-path $global:settings[$global:settings[$global:configRootKeys["CloudBasePathConfigRootKey"]]] "Security"' #! indirect!
 
   # OpenSSL Environment variables
   $global:configRootKeys['OPENSSL_HOMEConfigRootKey']                                                          = 'join-path $global:settings[$global:configRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "OpenSSL"'

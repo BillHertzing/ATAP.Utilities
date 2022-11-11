@@ -1,145 +1,146 @@
-# Pester test for an individual Powershell public function in the ATAP.Utilities monorepor
+# Pester test for an individual Powershell public function in the ATAP.Utilities monorepo
+# expects Pester V5
 
-# What to dot source for running a test against a "public" function in a powershell module
-#  uses the opinionated ATAP.Utilities expected directrory structure for a monorepo with multiple Powershell modules
-$moduleNameSeperator = '.'
-$functionSUTNameSeperator = '.'
-$srcSUTRelativePrefix = Join-Path '..' '..' 'src'
-$srcSUTRelativePathSuffix = 'public'
+BeforeAll {
 
-# A priori, all extensions are .ps1. throw away the extension in the step below, it will get added back later
-$functionSUTPath = Split-Path -LeafBase $MyInvocation.MyCommand.Path
-$functionSUTPathArray = $functionSUTPath -split "\$functionSUTNameSeperator"
-$functionSUTName = $functionSUTPathArray[0..$($functionSUTPathArray.count - 2)]
-$functionSUTPath = $($functionSUTName -join $functionSUTNameSeperator) + $functionSUTNameSeperator + 'ps1'
-$scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
-$moduleName = Split-Path -Leaf $scriptDirectory
-$moduleNameArray = $moduleName -split "\$moduleNameSeperator"
-$srcModuleName = $($moduleNameArray[0..$($moduleNameArray.count - 2)]) -join $moduleNameSeperator
-$srcModuleRelativePath = Join-Path $srcSUTRelativePrefix $srcModuleName
-# The VSC powershell extension apparently wants a full path
-# ToDo: add try/catch, since the Resolve-Path will fail if the given path does not exist
-$srcModuleRelativePath = Resolve-Path $srcModuleRelativePath
-$functionSUTPathSUT = Join-Path $srcModuleRelativePath $srcSUTRelativePathSuffix $functionSUTPath
-# load the script to test into memory
-. $functionSUTPathSUT
+  # [The Assert framework functions for Powershell / Pester](https://github.com/nohwnd/Assert)
+  # They must be installed, using (for all users) the command Install-Module -Name Assert
+  Install-Module -Name Assert
+  # What to dot source for running a test against a "public" function in a powershell module
+  #  uses the opinionated ATAP.Utilities expected directrory structure for a monorepo with multiple Powershell modules
+  # Tests are found in the path <RepoRootPath>/Tests/<ModuleName>, and indivudaully named as <scriptName>[stage]Tests.ps1
+  # stage refers to one of Unit, Integration, UI, Performance, etc. See [TBD](TBD) for the complete list of test stages
+  # Powershell script code to be tested is found in <RepoRootPath>/src/<ModuleName>/public/<scriptname.ps1>
 
+  $moduleNameSeperator = '.'
+  $sUTNameSeperator = '.'
+  $sUTRelativePrefix = Join-Path '..' '..' 'src'
+  $sUTRelativeToModulePath = 'public'
 
-$TestCaseDeferredPSFunctionCall = @{
-  'PSDeferredFunctionCall' = 'Join-Path "path001" "path002"'
+  $testDirectoryAbsolutePath = $PSScriptRoot
+  $testScriptAbsolutePath = $PSCommandPath
+
+  # Derive the ScriptUnderTest (SUT) full path
+  # Get just the name of the SUT by removing anything matching the pattern .[stage]tests.ps1, which is the last two elements of the array
+  $sUTLeafNameComponentArray = $(Split-Path $testScriptAbsolutePath -Leaf) -split "\$sUTNameSeperator"
+  $sUTFileName = $($($sUTLeafNameComponentArray[0..$($sUTLeafNameComponentArray.count - 3)]) -join $sUTNameSeperator) + $sUTNameSeperator + 'ps1'
+  # Get the name of the module
+  $testModuleName = Split-Path -Leaf $testDirectoryAbsolutePath
+  $testModuleNameArray = $testModuleName -split "\$moduleNameSeperator"
+  $sUTModuleName = $($testModuleNameArray[0..$($testModuleNameArray.count - 2)]) -join $moduleNameSeperator
+  # Get the absolute path to the module
+  $moduleAbsolutePath = Join-Path $testDirectoryAbsolutePath $sUTRelativePrefix @(, $sUTModuleName)
+  # Get the absolute path to the SUT using the opinionated ATAP.Utilities
+  # # ToDo: add try/catch, since the Resolve-Path will fail if the given path does not exist
+  $sUTAbsolutePath = Resolve-Path $(Join-Path $moduleAbsolutePath $sUTRelativeToModulePath $sUTFileName)
+  # load the ScriptUnderTest to test into memory
+  . $sUTAbsolutePath
+
 }
 
-$TestCaseDeferredPSFunctionCallInSubordinateHash = @{
-  'ChildHash'              = @{
-    'PSDeferredFunctionCall' = 'Join-Path "path003" "path004"'
+Describe "Testing Function $sUTFileName" -ForEach @(
+  @{Name                          = 'EmptyHash'
+    SourceCollections             = @(,
+      @{}
+    )
+    ExpectedDestinationCollection = @{}
+    MatchPatternRegex             = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
   }
-  'PSDeferredFunctionCall' = 'Join-Path "path001" "path002"'
-}
-
-$TestSettings3 = @{
-
-  aaa  = '123'
-  bbb  = '234'
-  aba  = '$global:settings["aaa"]'
-  abb  = '$global:settings["aaa"] + $global:settings["bbb"]'
-  HCC  = @{C1 = 'constant' }
-  HD1  = @{kd1 = '$global:settings["aaa"]' }
-  Ary1 = @(123, 456)
-  Ary2 = @('123', '456')
-  Ary3 = @('$global:settings["aaa"]', '$global:settings["bbb"]')
-  # eee = '$global:settings["mmm"]["C1"]'
-  # fff = '$global:settings["HD1"]["kd1"]'
-
-}
-$TestSettings2 = @{
-  ZZZ = 'some1'
-  YYY = '2some'
-  NNN = '$global:settings["aaa"]'
-}
-
-# todo: put into beforeach block
-$Destination = @{}
-
-Describe "Testing Function $functionSUTName" -ForEach @(
-  # @{Name              = 'EmptyHash'
-  #   SourceCollections = @(,
-  #     @{}
-  #   )
-  # DestinationCollection = $destination
-  # MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
-  # }
-  # , @{Name            = 'SimpleIntAndString'
-  #   SourceCollections = @(,
-  #     @{
-  #       'simpleKeyForInt'    = 1
-  #       'simpleKeyForString' = 'A'
-  #     }
-  #   )
-  # DestinationCollection = $destination
-  # MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
-  # }
-  # , @{Name            = 'OneEmptyChildHash'
-  #   SourceCollections = @(,
-  #     @{
-  #       'ChildHash' = @{}
-  #     }
-  #   )
-  # DestinationCollection = $destination
-  # MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
-  # }
-  # , @{Name            = 'ChildHashWithString'
-  #   SourceCollections = @(,
-  #     @{
-  #       'ChildHash' = @{
-  #         'simpleKeyForString' = 'A'
-  #       }
-  #     }
-  #   )
-  # DestinationCollection = $destination
-  # MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
-  # }
-  # , @{Name            = 'ChildHashWithInt'
-  #   SourceCollections = @(,
-  #     @{
-  #       'ChildHash' = @{
-  #         'simpleKeyForInt' = 'A'
-  #       }
-  #     }
-  #   )
-  # DestinationCollection = $destination
-  # MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
-  # }
-  # , @{Name            = 'SimplePSFunctionCall'
-  #   SourceCollections = @(,
-  #     @{
-  #       'PSFunctionCall' = Join-Path $env:ProgramData 'chocolatey' 'lib'
-  #     }
-  #   )
-  # DestinationCollection = $destination
-  # MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
-  # }
-  # , @{Name            = 'SourceRefersToDestination'
-  #   SourceCollections = @(,
-  #     @{
-  #       'simpleKeyForString' = 'A'
-  #       'ReferenceTo'        = '$Destination[''simpleKeyForString'']'
-  #     }
-  #   )
-  # DestinationCollection = $destination
-  #   MatchPatternRegex = [System.Text.RegularExpressions.Regex]::new('destination\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
-  # }
-  , @{Name                = 'SourcecontainsACollectionHavingAnElementThatRefersToDestination'
-    SourceCollections     = @(,
+  , @{Name                        = 'SimpleIntAndString'
+    SourceCollections             = @(,
+      @{
+        'simpleKeyForInt'    = 1
+        'simpleKeyForString' = 'A'
+      }
+    )
+    ExpectedDestinationCollection = @{
+      'simpleKeyForInt'    = 1
+      'simpleKeyForString' = 'A'
+    }
+    MatchPatternRegex             = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
+  }
+  , @{Name                        = 'OneEmptyChildHash'
+    SourceCollections             = @(,
+      @{
+        'ChildHash' = @{}
+      }
+    )
+    ExpectedDestinationCollection = @{
+      # Pester uses the name of the type if the hashtable is empty
+      'ChildHash' = 'System.Collections.Hashtable'
+    }
+    MatchPatternRegex             = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
+  }
+  , @{Name                        = 'ChildHashWithString'
+    SourceCollections             = @(,
+      @{
+        'ChildHash' = @{
+          'simpleKeyForString' = 'A'
+        }
+      }
+    )
+    ExpectedDestinationCollection = @{
+      'ChildHash' = @{'simpleKeyForString' = 'A' }
+    }
+    MatchPatternRegex             = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
+  }
+  , @{Name                        = 'ChildHashWithInt'
+    SourceCollections             = @(,
+      @{
+        'ChildHash' = @{
+          'simpleKeyForInt' = 'A'
+        }
+      }
+    )
+    ExpectedDestinationCollection = @{
+      'ChildHash' = @{
+        'simpleKeyForInt' = 'A'
+      }
+    }
+    MatchPatternRegex             = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
+  }
+  , @{Name                        = 'SimplePSFunctionCall'
+    SourceCollections             = @(,
+      @{
+        'PSFunctionCall' = Join-Path $env:ProgramData 'chocolatey' 'lib'
+      }
+    )
+    ExpectedDestinationCollection = @{
+      'PSFunctionCall' = Join-Path $env:ProgramData 'chocolatey' 'lib'
+    }
+    MatchPatternRegex             = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
+  }
+  , @{Name                        = 'SourceRefersToDestination'
+    SourceCollections             = @(,
+      @{
+        'simpleKeyForString' = 'A'
+        'ReferenceTo'        = '$Destination[''simpleKeyForString'']'
+      }
+    )
+    ExpectedDestinationCollection = @{
+      'simpleKeyForString' = 'A'
+      'ReferenceTo'        = 'A'
+    }
+    MatchPatternRegex             = [System.Text.RegularExpressions.Regex]::new('destination\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
+  }
+  , @{Name                        = 'SourcecontainsACollectionHavingAnElementThatRefersToDestination'
+    SourceCollections             = @(,
       @{
         'simpleKeyForString' = 'A'
         'ChildHash'          = @{
           'InnerReferenceTo' = '$Destination[''simpleKeyForString'']'
         }
-        'OuterReferenceTo'        = '$Destination[''simpleKeyForString'']'
+        'OuterReferenceTo'   = '$Destination[''simpleKeyForString'']'
       }
     )
-    DestinationCollection = $destination
-    MatchPatternRegex     = [System.Text.RegularExpressions.Regex]::new('destination\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
+    ExpectedDestinationCollection = @{
+      'simpleKeyForString' = 'A'
+      'ChildHash'          = @{
+        'InnerReferenceTo' = 'A'
+      }
+      'OuterReferenceTo'   = 'A'
+    }
+    MatchPatternRegex             = [System.Text.RegularExpressions.Regex]::new('destination\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
   }
   # , @{Name            = 'BuildsGlobalSettings'
   # DestinationCollection = $global:Settings
@@ -150,11 +151,12 @@ Describe "Testing Function $functionSUTName" -ForEach @(
   param(
     [string] $Name
     , [object[]] $SourceCollections
-    , [System.Collections.Hashtable] $DestinationCollection
+    , [System.Collections.Hashtable] $ExpectedDestinationCollection
     , [System.Text.RegularExpressions.Regex] $MatchPatternRegex
-  )7
+  )
+
   BeforeEach {
-    $Destination = @{}
+    $DestinationCollection = @{}
   }
 
   # It 'A test that should be true' {
@@ -163,22 +165,14 @@ Describe "Testing Function $functionSUTName" -ForEach @(
   # It 'A test that should be false' {
   #   $false | Should -Be $true
   # }
-  It '<Name> has the correct number of destination keys' {
-    $numkeys = 0
-    foreach ($collection in  $SourceCollections) {
-      $numKeys += $collection.count
-    }
-    Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $DestinationCollection -MatchPatternRegex $MatchPatternRegex
-    $DestinationCollection.count | Should -Be $numKeys
-  }
-  It '<Name> has the correct root-level destination keys' {
+  It "$Name has the expected destination" {
     # Test settings for this specific test case
-    Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $DestinationCollection -MatchPatternRegex $MatchPatternRegex
-    foreach ($collection in  $SourceCollections) {
-      foreach ($key in $collection) {
-        $DestinationCollection[$key] | Should -Be $collection[$key]
-      }
+    if ($DebugPreference -eq 'Continue') {
+      write-host $name
     }
+
+    Get-SomethingCatchy -sourceCollections $SourceCollections -destination $DestinationCollection -matchPatternRegex $MatchPatternRegex
+    Assert-Equivalent -Actual $DestinationCollection -Expected $ExpectedDestinationCollection
   }
   # It 'handles simple ints and strings in one collection' {
   #   $SourceCollections = @($TestCaseSimpleIntAndString)

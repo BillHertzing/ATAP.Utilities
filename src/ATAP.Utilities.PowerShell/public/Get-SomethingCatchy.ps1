@@ -158,7 +158,6 @@ function Get-SomethingCatchy {
         Write-PSFMessage -Level Error -Message $message
         throw $message
       }
-      # $this.DestinationBaseKey = $this.Set.Min.Key
       # crossreference structure for the string representation to the actual instance pointer
       [EntryKey]::Lookup[$($CompoundID.Key + $this.ToString())] = $this
     }
@@ -173,7 +172,6 @@ function Get-SomethingCatchy {
 
     [string] ToString() { # Todo: make this thread-safe
       [void][EntryKey]::keySB.Clear()
-      #[void][EntryKey]::keySB.Append($this.DestinationBaseKey)
       foreach ($compoundID in $this.set) {
         [void][EntryKey]::keySB.Append('{')
         [void][EntryKey]::keySB.Append($compoundID.ToString())
@@ -198,17 +196,11 @@ function Get-SomethingCatchy {
 
     [object] ToOffsetStr($base) { # ToDo: validate $base is addressable with a key or index
       [void][EntryKey]::OffsetSB.Clear()
-      # [void][EntryKey]::OffsetSB.Append('$destination[''')
       [void][EntryKey]::OffsetSB.Append($this.Min().Key)
-      # [void][EntryKey]::OffsetSB.Append(''']')
       if ($this.Set.Count -gt 1) {
         # All members of the sorted set except for the first
         $EntryKeySubSet = $($this.Set)[1..$($($this.Set.Count) - 1)]
         foreach ($compoundID in $EntryKeySubSet ) {
-          # [void][EntryKey]::OffsetSB.Insert(0, '$(')
-          # [void][EntryKey]::OffsetSB.Append(')[''')
-          # [void][EntryKey]::OffsetSB.Append($compoundID.Key)
-          # [void][EntryKey]::OffsetSB.Append('''])')
           [void][EntryKey]::OffsetSB.Append('[''')
           [void][EntryKey]::OffsetSB.Append($compoundID.Key)
           [void][EntryKey]::OffsetSB.Append(''']')
@@ -318,7 +310,6 @@ function Get-SomethingCatchy {
 
   }
 
-
   # ToDo: ensure these are part of the ATAP powershell package
   #. join-path -path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.PowerShell', 'public','Get-ClonedObject.ps1')
   #. join-path -path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.PowerShell', 'public','Get-TopologicalSort.ps1')
@@ -393,10 +384,6 @@ function Get-SomethingCatchy {
         # Called with a parentEntryKey indicates a subordinate source collection is being processed
         Write-PSFMessage -Level Debug -Message "HasParent collectionID = $ID : parentEntryKey = $($parentEntryKey.ToString())"
         $collections[$ID] = [Collection]::new($ID, $collection, $parentEntryKey)
-        # This is the first place that a parent comes into being for a new subordinate collection
-        #   ParentID = $parentEntryKey
-        #   Collection     = $collection
-        # )
       }
     }
   }
@@ -479,8 +466,6 @@ function Get-SomethingCatchy {
             ('System.Collections.Hashtable|System.Object\[\]') {
               # The current collection and key become the parent of the new collection
               $parentCompoundID = [CompoundID]::new($ID, $KeyID, $depth)
-              #$parentCompoundID = [CompoundID]::new($($collections[$ID].ParentEntryKey) ? $ID : $null , $KeyID, $depth )
-              #$CompoundIDLookup[$parentCompoundID.ToString()] = $parentCompoundID
 
               # if the current collection has a parent, the new parent entry key must include all of them, else this is an Entry Key with no parents
               if ($collections[$ID].ParentEntryKey) {
@@ -512,8 +497,6 @@ function Get-SomethingCatchy {
           switch -regex ($collections[$ID].Collection[$index].GetType().fullname) {
             ('System.Collections.Hashtable|System.Object\[\]') {
               $parentCompoundID = [CompoundID]::new($ID, $index, $depth )
-              #$parentCompoundID = [CompoundID]::new($($collections[$ID].ParentEntryKey) ? $ID : $null , $index, $depth )
-              #$CompoundIDLookup[$parentCompoundID.ToString()] = $parentCompoundID
               # if the current collection has a parent, the new parent entry key must include all of them, else this is an Entry Key with no parents
               if ($collections[$ID].ParentEntryKey) {
                 $parentEntryKey = [EntryKey]::new($($collections[$ID]).ParentEntryKey , $parentCompoundID)
@@ -608,8 +591,7 @@ function Get-SomethingCatchy {
         $EntryKeyStringWithNullValue += $EntryKeysString
       }
     }
-    Write-PSFMessage -Level Important -Message "Number of NULL sortedEntryKeyFromLookup = $($EntryKeyStringWithNullValue.count):: List = $($EntryKeyStringWithNullValue -join ',')"
-
+    Write-PSFMessage -Level Debug -Message "Number of NULL sortedEntryKeyFromLookup = $($EntryKeyStringWithNullValue.count):: List = $($EntryKeyStringWithNullValue -join ',')"
     # upon a return, Powershell will flatten an array of 1 element unless special syntax is used
     return @(, $sortedEntryKeys)
   }
@@ -643,13 +625,11 @@ function Get-SomethingCatchy {
     Write-NULLSortedEntryKeys
   }
 
+  # create the destination key->value pair
   foreach ($EntryKey in $sortedEntryKeys) {
     if ($debugpreference -eq 'Continue') {
-      if ($EntryKey) {
-        Write-PSFMessage -Level Debug -Message "Processing EntryKey : $($EntryKey.ToString()) "
-      }
-      else {
-        Write-PSFMessage -Level Debug -Message 'EntryKey IS NULL'
+      if (!$EntryKey) {
+        Write-PSFMessage -Level Error -Message 'EntryKey IS NULL'
         # Should never be empty
         # ToDo: exception handling
         # temp: break out of the loop

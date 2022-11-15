@@ -9,12 +9,15 @@ function Invoke-GitPreCommitHook {
   $VerbosePreference = 'Continue' # Continue  SilentlyContinue
   $DebugPreference = 'Continue'
 
+  Write-PSFMessage -Level Debug -Message $(Write-HashIndented $global:settings)
+  
   $branchName = git branch --show-current
   Write-PSFMessage -Level Debug -Message "branchName = $branchName" -Tag 'GitPreCommtiHook'
   [System.Environment]::SetEnvironmentVariable('BRANCHNAME', $branchName)
   $moduleName = Get-ChildItem -include '*.psd1'
   Write-PSFMessage -Level Debug -Message "ModuleName = $moduleName" -Tag 'GitPreCommtiHook'
   [System.Environment]::SetEnvironmentVariable('MODULENAME', $moduleName)
+  Write-PSFMessage -Level Debug -Message $(Write-EnvironmentVariablesIndented)
 
 
   Write-PSFMessage -Level Debug -Message "Workspace = $([System.Environment]::GetEnvironmentVariable('Workspace'))" -Tag 'GitPreCommtiHook', 'Publish'

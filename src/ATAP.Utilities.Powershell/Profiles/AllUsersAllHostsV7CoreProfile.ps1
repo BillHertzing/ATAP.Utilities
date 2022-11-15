@@ -400,13 +400,13 @@ $PSDefaultParameterValues = @{
 
 # Dot source the list of configuration keys
 # Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. $PSScriptRoot/global_ConfigRootKeys.ps1
+. "$PSScriptRoot/global_ConfigRootKeys.ps1"
 # Print the global:ConfigRootKeys if Debug
 Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
 
 # Dot source the Security and Secrets settings
 # Security and Secrets setting .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. $PSScriptRoot/global_SecurityAndSecretsSettings.ps1
+. "$PSScriptRoot/global_SecurityAndSecretsSettings.ps1"
 # Print the global:SecurityAndSecretsSettings if Debug
 Write-PSFMessage -Level Debug -Message ('global:SecurityAndSecretsSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:SecurityAndSecretsSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 

@@ -11,6 +11,9 @@ param(
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $False)]
     [string] $Encoding # Often found in the $PSDefaultParameterValues preference variable
 )
+  # Allow the DebugPreference to be set for this function and it's children
+  $DebugPreference = 'Continue' # 'Continue' # 'SilentlyContinue'
+  Write-PSFMessage -Level Debug -Message ('Starting Module.build.ps1'  )
 
 Push-Location $PSScriptRoot
 
@@ -42,29 +45,30 @@ $IntegrationTestsPath = Join-Path $BuildRoot $ModuleName 'IntegrationTests'
 
 $ManifestCurrentPath = Join-Path $BuildRoot $($ModuleName + '.psd1')
 
-# The locations for the final source code for packages destined for public powershell Repositories
-$GeneratedPath = Join-Path '.' $settings[$global:configRootKeys['GeneratedRelativePathConfigRootKey']]
-$GeneratedModuleDestinationPath = Join-Path '.' $settings[$global:configRootKeys['GeneratedPowershellModulesConfigRootKey']]
-$GeneratedPowershellGalleryModulesPath = Join-Path '.' $settings[$global:configRootKeys['GeneratedPowershellGalleryModulesConfigRootKey']]
-$GeneratedNuGetPackageDestinationPath = Join-Path '.' $settings[$global:configRootKeys['GeneratedPowershellNuGetModulesConfigRootKey']]
-$GeneratedChocolateyPackageDestinationPath = Join-Path '.' $settings[$global:configRootKeys['GeneratedPowershellChocolateyModulesConfigRootKey']]
+# The destination locations for the generated packages
+
+$GeneratedPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedRelativePathConfigRootKey']]
+$GeneratedModuleDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellModulesConfigRootKey']]
+$GeneratedPowershellGalleryModulesPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellGalleryModulesConfigRootKey']]
+$GeneratedNuGetPackageDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellNuGetModulesConfigRootKey']]
+$GeneratedChocolateyPackageDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellChocolateyModulesConfigRootKey']]
 
 # The locations for QualityAssurance output file
-$GeneratedTestResultsPath = Join-Path '.' $settings[$global:configRootKeys['GeneratedTestResultsPathConfigRootKey']]
-$GeneratedUnitTestResultsPath = Join-Path '.' $settings[$global:configRootKeys['GeneratedUnitTestResultsPathConfigRootKey']]
-$GeneratedIntegrationTestResultsPath = Join-Path '.' $settings[$global:configRootKeys['GeneratedIntegrationTestResultsPathConfigRootKey']]
-$GeneratedTestCoverageResultsPath = Join-Path '.' $settings[$global:configRootKeys['GeneratedTestCoverageResultsPathConfigRootKey']]
+$GeneratedTestResultsPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedTestResultsPathConfigRootKey']]
+$GeneratedUnitTestResultsPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedUnitTestResultsPathConfigRootKey']]
+$GeneratedIntegrationTestResultsPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedIntegrationTestResultsPathConfigRootKey']]
+$GeneratedTestCoverageResultsPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedTestCoverageResultsPathConfigRootKey']]
 
 # The locations for documentation output file
-$GeneratedDocumentationDestinationPath = Join-Path '.' $settings[$global:configRootKeys['GeneratedDocumentationDestinationPathConfigRootKey']]
-$GeneratedStaticSiteDocumentationDestinationPath = Join-Path '.' $settings[$global:configRootKeys['GeneratedStaticSiteDocumentationDestinationPathConfigRootKey']]
+$GeneratedDocumentationDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedDocumentationDestinationPathConfigRootKey']]
+$GeneratedStaticSiteDocumentationDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedStaticSiteDocumentationDestinationPathConfigRootKey']]
 
 # The location for the final source code for the module and the module manifest
 $ModuleOutputPath = Join-Path $GeneratedModuleDestinationPath $($ModuleName + '.psm1')
 $ManifestOutputPath = Join-Path $GeneratedModuleDestinationPath $($ModuleName + '.psd1')
 
 # The PSRepositories required for packages destined for public powershell Repositories
-$RepositoryNamePowershellGalleryDevelopmentFilesystemName = $settings[$global:configRootKeys['RepositoryNamePowershellGalleryDevelopmentPackageFilesystemConfigRootKey']]
+$RepositoryNamePowershellGalleryDevelopmentFilesystemName = $global:settings[$global:configRootKeys['RepositoryNamePowershellGalleryDevelopmentPackageFilesystemConfigRootKey']]
 
 # The locations that contain files that need to be part of the module's package
 $Imports = ( 'private', 'public', 'classes' )

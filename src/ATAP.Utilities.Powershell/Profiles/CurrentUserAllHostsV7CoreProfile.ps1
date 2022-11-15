@@ -714,7 +714,7 @@ $indentIncrement = 2
 Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
 Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, Environment variables: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
 
-Set-Location 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+#Set-Location 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
 
 
 <# To Be Moved Somewhere else #>

@@ -48,15 +48,15 @@ $local:MachineAndNodeSettings = @{
 
   # The repository names by which each of the various repositories for Powershell packages are known
 
-  # $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemDevelopmentPackageConfigRootKey']               = 'ReposistoryPowershellGalleryFilesystemDevelopmentPackage'
-  # $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemQualityAssurancePackageConfigRootKey']          = 'RepositoryPowershellGalleryFilesystemQualityAssurancePackage'
-  # $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemProductionPackageConfigRootKey']                = 'RepositoryPowershellGalleryFilesystemProductionPackage'
-  # $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestDevelopmentPackageConfigRootKey']            = 'ReposistoryPowershellGalleryWebServerTestDevelopmentPackage'
-  # $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestQualityAssurancePackageConfigRootKey']       = 'RepositoryPowershellGalleryWebServerTestQualityAssurancePackage'
-  # $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestProductionPackageConfigRootKey']             = 'RepositoryPowershellGalleryWebServerTestProductionPackage'
-  # $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionDevelopmentPackageConfigRootKey']      = 'RepositoryPowershellGalleryWebServerProductionDevelopmentPackage'
-  # $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionQualityAssurancePackageConfigRootKey'] = 'RepositoryPowershellGalleryWebServerProductionQualityAssurancePackage'
-  # $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionProductionPackageConfigRootKey']       = 'RepositoryPowershellGalleryWebServerProductionProductionPackage'
+  $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemDevelopmentPackageConfigRootKey']               = 'ReposistoryPowershellGalleryFilesystemDevelopmentPackage'
+  $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemQualityAssurancePackageConfigRootKey']          = 'RepositoryPowershellGalleryFilesystemQualityAssurancePackage'
+  $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemProductionPackageConfigRootKey']                = 'RepositoryPowershellGalleryFilesystemProductionPackage'
+  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestDevelopmentPackageConfigRootKey']            = 'ReposistoryPowershellGalleryWebServerTestDevelopmentPackage'
+  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestQualityAssurancePackageConfigRootKey']       = 'RepositoryPowershellGalleryWebServerTestQualityAssurancePackage'
+  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestProductionPackageConfigRootKey']             = 'RepositoryPowershellGalleryWebServerTestProductionPackage'
+  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionDevelopmentPackageConfigRootKey']      = 'RepositoryPowershellGalleryWebServerProductionDevelopmentPackage'
+  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionQualityAssurancePackageConfigRootKey'] = 'RepositoryPowershellGalleryWebServerProductionQualityAssurancePackage'
+  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionProductionPackageConfigRootKey']       = 'RepositoryPowershellGalleryWebServerProductionProductionPackage'
 
   # Package Repositories
   $global:configRootKeys['CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey']                       = '\\utat022\fs'
@@ -67,8 +67,9 @@ $local:MachineAndNodeSettings = @{
   $global:configRootKeys['PublicNugetWebServerPackageDropLocationBasePathConfigRootKey']                           = 'https://TBD/'
   $global:configRootKeys['PublicChocolateyServerPackageDropLocationBasePathConfigRootKey']                         = 'https://TBD/'
 
-  # $global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']                                             = @{
-  #   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemDevelopmentPackageConfigRootKey']               = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + $(Join-Path 'PowershellGallery' 'Development')
+  $global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']                                             = @{
+    # 'ABC' = 'DEF'
+    # $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemDevelopmentPackageConfigRootKey']               = 'Join-Path $global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] "PowershellGallery" "Development"'
   #   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemQualityAssurancePackageConfigRootKey']          = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + $(Join-Path 'PowershellGallery' 'QualityAssurance')
   #   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemProductionPackageConfigRootKey']                = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + $(Join-Path 'PowershellGallery' 'Production')
   #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestDevelopmentPackageConfigRootKey']            = '$global:settings[$global:configRootKeys["CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Development'
@@ -77,7 +78,7 @@ $local:MachineAndNodeSettings = @{
   #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionDevelopmentPackageConfigRootKey']      = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Development'
   #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionQualityAssurancePackageConfigRootKey'] = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/QualityAssurance'
   #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionProductionPackageConfigRootKey']       = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Production'
-  # }
+  }
 
 
   #     # Structure of package drop locations; File Server Shares (fss) and Web Server URLs for the Environment stages
@@ -119,9 +120,9 @@ switch ($hostname) {
   'utat01' {
     $local:MachineAndNodeSettings += @{
       $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'C:' 'Dropbox'
-      $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
+      $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
       $global:configRootKeys['OneDriveBasePathConfigRootKey']                           = 'Dummy' # Join-Path 'C:' 'OneDrive'
-      $global:configRootKeys['CloudBasePathConfigRootKey']                              = '$global:settings[$global:configRootKeys["DropBoxBasePathConfigRootKey"]] '
+      $global:configRootKeys['CloudBasePathConfigRootKey']                              = '$global:settings[$global:configRootKeys["DropBoxBasePathConfigRootKey"]]'
       $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'
       $global:configRootKeys['BigTempBasePathConfigRootKey']                            = Join-Path 'C:' 'Temp'
       $global:configRootKeys['SecureTempBasePathConfigRootKey']                         = Join-Path 'C:' 'Temp' 'Insecure'
@@ -144,7 +145,7 @@ switch ($hostname) {
   }
   'utat022' { $local:MachineAndNodeSettings += @{
       $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'C:' 'Dropbox'
-      $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
+      $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
       $global:configRootKeys['OneDriveBasePathConfigRootKey']                           = 'Dummy' # Join-Path 'C:' 'OneDrive'
       $global:configRootKeys['CloudBasePathConfigRootKey']                              = '$global:settings[$global:configRootKeys["DropBoxBasePathConfigRootKey"]] '
       $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'D:' 'Temp'

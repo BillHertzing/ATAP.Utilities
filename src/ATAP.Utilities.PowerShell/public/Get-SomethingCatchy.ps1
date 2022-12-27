@@ -2,7 +2,7 @@
 # Many settings are defined in terms of other settings. Settings' values must be evaulated in such an order that earlier settings are evaulated before dependent settings.
 # settings that are defined in terms of other settings are discovered by analysis of the destination.
 
-function Get-SomethingCatchy {
+function Get-CollectionTraverseEvaluate {
   [CmdletBinding(DefaultParameterSetName = 'Hashtables')]
   param (
     [Parameter(Mandatory = $true)]

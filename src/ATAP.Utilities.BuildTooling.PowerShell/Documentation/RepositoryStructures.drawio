@@ -4,130 +4,130 @@
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="3" value="Generated Files" style="swimlane;" vertex="1" parent="1">
+                <mxCell id="3" value="Generated Files @ GeneratedRelativePathConfigRootKey" style="swimlane;" parent="1" vertex="1">
                     <mxGeometry x="40" y="40" width="390" height="950" as="geometry"/>
                 </mxCell>
-                <mxCell id="7" value="Modules" style="swimlane;startSize=23;" vertex="1" parent="3">
+                <mxCell id="7" value="Module @ GeneratedPowershellModuleConfigRootKey" style="swimlane;startSize=23;" parent="3" vertex="1">
                     <mxGeometry x="20" y="40" width="350" height="150" as="geometry"/>
                 </mxCell>
-                <mxCell id="14" value="Resources" style="swimlane;startSize=23;" vertex="1" parent="7">
+                <mxCell id="14" value="Resources" style="swimlane;startSize=23;" parent="7" vertex="1">
                     <mxGeometry x="110" y="40" width="80" height="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="44" value="Required" style="swimlane;startSize=23;" vertex="1" parent="7">
+                <mxCell id="44" value="Required" style="swimlane;startSize=23;" parent="7" vertex="1">
                     <mxGeometry x="20" y="40" width="70" height="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="47" value="" style="group" vertex="1" connectable="0" parent="44">
+                <mxCell id="47" value="" style="group" parent="44" vertex="1" connectable="0">
                     <mxGeometry x="10" y="40" width="50" height="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="45" value=".psm1" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;" vertex="1" parent="47">
+                <mxCell id="45" value=".psm1" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;" parent="47" vertex="1">
                     <mxGeometry width="50" height="25" as="geometry"/>
                 </mxCell>
-                <mxCell id="46" value=".psd1" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;" vertex="1" parent="47">
+                <mxCell id="46" value=".psd1" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;" parent="47" vertex="1">
                     <mxGeometry y="25" width="50" height="25" as="geometry"/>
                 </mxCell>
-                <mxCell id="49" value="Tests" style="swimlane;startSize=23;" vertex="1" parent="7">
+                <mxCell id="49" value="Tests" style="swimlane;startSize=23;" parent="7" vertex="1">
                     <mxGeometry x="210" y="40" width="60" height="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="50" value="Results&#10;Reports" style="swimlane;startSize=40;" vertex="1" parent="7">
+                <mxCell id="50" value="Results&#10;Reports" style="swimlane;startSize=40;" parent="7" vertex="1">
                     <mxGeometry x="290" y="40" width="60" height="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="39" value="Packages" style="swimlane;startSize=23;" vertex="1" parent="3">
+                <mxCell id="39" value="Packages @ GeneratedPowershellPackagesConfigRootKey" style="swimlane;startSize=23;" parent="3" vertex="1">
                     <mxGeometry x="70" y="210" width="240" height="680" as="geometry"/>
                 </mxCell>
-                <mxCell id="34" value="Powershell Gallery" style="swimlane;startSize=23;" vertex="1" parent="39">
+                <mxCell id="34" value="Powershell Gallery @ GeneratedPowershellGalleryPackageConfigRootKey" style="swimlane;startSize=23;" parent="39" vertex="1">
                     <mxGeometry x="20" y="260" width="200" height="200" as="geometry"/>
                 </mxCell>
-                <mxCell id="35" value="" style="group" vertex="1" connectable="0" parent="34">
+                <mxCell id="35" value="" style="group" parent="34" vertex="1" connectable="0">
                     <mxGeometry x="20" y="30" width="150" height="160" as="geometry"/>
                 </mxCell>
-                <mxCell id="36" value="Development" style="swimlane;" vertex="1" parent="35">
+                <mxCell id="36" value="Development" style="swimlane;" parent="35" vertex="1">
                     <mxGeometry width="150" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="37" value="QA Testing" style="swimlane;" vertex="1" parent="35">
+                <mxCell id="37" value="QA Testing" style="swimlane;" parent="35" vertex="1">
                     <mxGeometry y="60" width="150" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="38" value="Production" style="swimlane;" vertex="1" parent="35">
+                <mxCell id="38" value="Production" style="swimlane;" parent="35" vertex="1">
                     <mxGeometry y="120" width="150" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="29" value="Chocolatey" style="swimlane;startSize=23;" vertex="1" parent="39">
+                <mxCell id="29" value="Chocolatey" style="swimlane;startSize=23;" parent="39" vertex="1">
                     <mxGeometry x="20" y="40" width="200" height="210" as="geometry"/>
                 </mxCell>
-                <mxCell id="30" value="" style="group" vertex="1" connectable="0" parent="29">
+                <mxCell id="30" value="" style="group" parent="29" vertex="1" connectable="0">
                     <mxGeometry x="20" y="30" width="150" height="170" as="geometry"/>
                 </mxCell>
-                <mxCell id="31" value="Development" style="swimlane;" vertex="1" parent="30">
+                <mxCell id="31" value="Development" style="swimlane;" parent="30" vertex="1">
                     <mxGeometry width="150" height="42.5" as="geometry"/>
                 </mxCell>
-                <mxCell id="32" value="QA Testing" style="swimlane;" vertex="1" parent="30">
+                <mxCell id="32" value="QA Testing" style="swimlane;" parent="30" vertex="1">
                     <mxGeometry y="63.75" width="150" height="42.5" as="geometry"/>
                 </mxCell>
-                <mxCell id="33" value="Production" style="swimlane;" vertex="1" parent="30">
+                <mxCell id="33" value="Production" style="swimlane;" parent="30" vertex="1">
                     <mxGeometry y="127.5" width="150" height="42.5" as="geometry"/>
                 </mxCell>
-                <mxCell id="21" value="NuGet" style="swimlane;startSize=23;" vertex="1" parent="39">
+                <mxCell id="21" value="NuGet @ GeneratedPowershellNuGetPackageConfigRootKey" style="swimlane;startSize=23;" parent="39" vertex="1">
                     <mxGeometry x="20" y="470" width="200" height="200" as="geometry"/>
                 </mxCell>
-                <mxCell id="25" value="" style="group" vertex="1" connectable="0" parent="21">
+                <mxCell id="25" value="" style="group" parent="21" vertex="1" connectable="0">
                     <mxGeometry x="20" y="30" width="150" height="160" as="geometry"/>
                 </mxCell>
-                <mxCell id="26" value="Development" style="swimlane;" vertex="1" parent="25">
+                <mxCell id="26" value="Development" style="swimlane;" parent="25" vertex="1">
                     <mxGeometry width="150" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="27" value="QA Testing" style="swimlane;" vertex="1" parent="25">
+                <mxCell id="27" value="QA Testing" style="swimlane;" parent="25" vertex="1">
                     <mxGeometry y="60" width="150" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="28" value="Production" style="swimlane;" vertex="1" parent="25">
+                <mxCell id="28" value="Production" style="swimlane;" parent="25" vertex="1">
                     <mxGeometry y="120" width="150" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="51" value="Deployment locations" style="swimlane;" vertex="1" parent="1">
+                <mxCell id="51" value="Deployment locations" style="swimlane;" parent="1" vertex="1">
                     <mxGeometry x="480" y="40" width="300" height="790" as="geometry"/>
                 </mxCell>
-                <mxCell id="60" value="Packages" style="swimlane;startSize=23;" vertex="1" parent="51">
+                <mxCell id="60" value="Packages" style="swimlane;startSize=23;" parent="51" vertex="1">
                     <mxGeometry x="20" y="40" width="230" height="720" as="geometry"/>
                 </mxCell>
-                <mxCell id="79" value="Chocolatey" style="swimlane;startSize=23;" vertex="1" parent="60">
+                <mxCell id="79" value="Chocolatey" style="swimlane;startSize=23;" parent="60" vertex="1">
                     <mxGeometry x="20" y="40" width="190" height="210" as="geometry"/>
                 </mxCell>
-                <mxCell id="80" value="" style="group;fontStyle=4" vertex="1" connectable="0" parent="79">
+                <mxCell id="80" value="" style="group;fontStyle=4" parent="79" vertex="1" connectable="0">
                     <mxGeometry x="20" y="30" width="180" height="170" as="geometry"/>
                 </mxCell>
-                <mxCell id="81" value="FIlesystem" style="swimlane;" vertex="1" parent="80">
+                <mxCell id="81" value="FIlesystem" style="swimlane;" parent="80" vertex="1">
                     <mxGeometry y="10" width="150" height="42.5" as="geometry"/>
                 </mxCell>
-                <mxCell id="82" value="Local Server" style="swimlane;" vertex="1" parent="80">
+                <mxCell id="82" value="Local Server" style="swimlane;" parent="80" vertex="1">
                     <mxGeometry y="70" width="150" height="42.5" as="geometry"/>
                 </mxCell>
-                <mxCell id="83" value="Public Server" style="swimlane;" vertex="1" parent="80">
+                <mxCell id="83" value="Public Server" style="swimlane;" parent="80" vertex="1">
                     <mxGeometry y="130" width="150" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="84" value="Powershell Gallery" style="swimlane;startSize=23;" vertex="1" parent="60">
+                <mxCell id="84" value="Powershell Gallery" style="swimlane;startSize=23;" parent="60" vertex="1">
                     <mxGeometry x="20" y="280" width="190" height="210" as="geometry"/>
                 </mxCell>
-                <mxCell id="85" value="" style="group;fontStyle=4" vertex="1" connectable="0" parent="84">
+                <mxCell id="85" value="" style="group;fontStyle=4" parent="84" vertex="1" connectable="0">
                     <mxGeometry x="20" y="30" width="180" height="170" as="geometry"/>
                 </mxCell>
-                <mxCell id="86" value="FIlesystem" style="swimlane;" vertex="1" parent="85">
+                <mxCell id="86" value="FIlesystem" style="swimlane;" parent="85" vertex="1">
                     <mxGeometry y="10" width="150" height="42.5" as="geometry"/>
                 </mxCell>
-                <mxCell id="87" value="Local Server" style="swimlane;" vertex="1" parent="85">
+                <mxCell id="87" value="Local Server" style="swimlane;" parent="85" vertex="1">
                     <mxGeometry y="70" width="150" height="42.5" as="geometry"/>
                 </mxCell>
-                <mxCell id="88" value="Public Server" style="swimlane;" vertex="1" parent="85">
+                <mxCell id="88" value="Public Server" style="swimlane;" parent="85" vertex="1">
                     <mxGeometry y="130" width="150" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="66" value="NuGet" style="swimlane;startSize=23;" vertex="1" parent="60">
+                <mxCell id="66" value="NuGet" style="swimlane;startSize=23;" parent="60" vertex="1">
                     <mxGeometry x="20" y="510" width="190" height="210" as="geometry"/>
                 </mxCell>
-                <mxCell id="67" value="" style="group;fontStyle=4" vertex="1" connectable="0" parent="66">
+                <mxCell id="67" value="" style="group;fontStyle=4" parent="66" vertex="1" connectable="0">
                     <mxGeometry x="20" y="30" width="180" height="170" as="geometry"/>
                 </mxCell>
-                <mxCell id="68" value="FIlesystem" style="swimlane;" vertex="1" parent="67">
+                <mxCell id="68" value="FIlesystem" style="swimlane;" parent="67" vertex="1">
                     <mxGeometry y="10" width="150" height="42.5" as="geometry"/>
                 </mxCell>
-                <mxCell id="69" value="Local Server" style="swimlane;" vertex="1" parent="67">
+                <mxCell id="69" value="Local Server" style="swimlane;" parent="67" vertex="1">
                     <mxGeometry y="70" width="150" height="42.5" as="geometry"/>
                 </mxCell>
-                <mxCell id="70" value="Public Server" style="swimlane;" vertex="1" parent="67">
+                <mxCell id="70" value="Public Server" style="swimlane;" parent="67" vertex="1">
                     <mxGeometry y="130" width="150" height="40" as="geometry"/>
                 </mxCell>
             </root>

@@ -423,9 +423,9 @@ $global:settings = @{}
 $SourceCollections = @($global:SecurityAndSecretsSettings, $global:MachineAndNodeSettings)
 $matchPatternRegex = [System.Text.RegularExpressions.Regex]::new( 'global:settings\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
 # Until ATAP.Utilities package imports are working.... dot source the file
-.  $(join-path -Path $([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.Powershell', 'public', 'Get-SomethingCatchy.ps1'))
+.  $(join-path -Path $([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.Powershell', 'public', 'Get-CollectionTraverseEvaluate.ps1'))
 
- Get-SomethingCatchy -SourceCollections $sourceCollections -destination $global:Settings -matchPatternRegex $matchPatternRegex
+ Get-CollectionTraverseEvaluate -SourceCollections $sourceCollections -destination $global:Settings -matchPatternRegex $matchPatternRegex
 
 # set ISElevated in the global settings if this script is running elevated
 $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)

@@ -1,1 +1,0 @@
-C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.Utilities.Buildtooling.PowerShell/Resources/Module.Build.ps1

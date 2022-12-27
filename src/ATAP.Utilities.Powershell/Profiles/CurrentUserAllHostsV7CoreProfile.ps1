@@ -697,13 +697,53 @@ Function GetSIDfromAcctName
 # Set the value of the environment variable (Key)
 
 
+# ToDo: Fix the Get-CollTravEval
+# ToDo move the Get-URI function to the base powershell module
+Function Get-URI {
+  Param(
+    [Parameter(mandatory=$true)]$parts
+  )
+  ($parts | ForEach-Object { $_.trim("/").trim() } | Where-Object { $_ } ) -join "/"
+}
+# Set the globasl PackageRepositoriesCollection
+# See Michael Sorens answer to https://stackoverflow.com/questions/9593535/best-way-to-join-parts-with-a-separator-in-powershell
+
+$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]                                             = @{
+   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemDevelopmentPackageConfigRootKey']               = Invoke-Expression 'Join-Path $global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] "PowershellGallery" "Development"'
+   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemQualityAssurancePackageConfigRootKey']          = Invoke-Expression 'Join-Path $global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] "PowershellGallery" "QualityAssurance"'
+   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemProductionPackageConfigRootKey']                = Invoke-Expression 'Join-Path $global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] "PowershellGallery" "Production"'
+   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestDevelopmentPackageConfigRootKey']            = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNamePowershellGalleryWebServerTestDevelopmentPackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestQualityAssurancePackageConfigRootKey']       = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNamePowershellGalleryWebServerTestQualityAssurancePackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestProductionPackageConfigRootKey']             = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNamePowershellGalleryWebServerTestProductionPackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionDevelopmentPackageConfigRootKey']      = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNamePowershellGalleryWebServerProductionDevelopmentPackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionQualityAssurancePackageConfigRootKey'] = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNamePowershellGalleryWebServerProductionQualityAssurancePackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionProductionPackageConfigRootKey']       = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNamePowershellGalleryWebServerProductionProductionPackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNameNuGetFilesystemDevelopmentPackageConfigRootKey']               = Invoke-Expression 'Join-Path $global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] "NuGet" "Development"'
+   $global:configRootKeys['RepositoryNameNuGetFilesystemQualityAssurancePackageConfigRootKey']          = Invoke-Expression 'Join-Path $global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] "NuGet" "QualityAssurance"'
+   $global:configRootKeys['RepositoryNameNuGetFilesystemProductionPackageConfigRootKey']                = Invoke-Expression 'Join-Path $global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] "NuGet" "Production"'
+   $global:configRootKeys['RepositoryNameNuGetWebServerTestDevelopmentPackageConfigRootKey']            = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNameNuGetWebServerTestDevelopmentPackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNameNuGetWebServerTestQualityAssurancePackageConfigRootKey']       = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNameNuGetWebServerTestQualityAssurancePackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNameNuGetWebServerTestProductionPackageConfigRootKey']             = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNameNuGetWebServerTestProductionPackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNameNuGetWebServerProductionDevelopmentPackageConfigRootKey']      = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNameNuGetWebServerProductionDevelopmentPackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNameNuGetWebServerProductionQualityAssurancePackageConfigRootKey'] = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNameNuGetWebServerProductionQualityAssurancePackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNameNuGetWebServerProductionProductionPackageConfigRootKey']       = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNameNuGetWebServerProductionProductionPackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNameChocolateyFilesystemDevelopmentPackageConfigRootKey']               = Invoke-Expression 'Join-Path $global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] "Chocolatey" "Development"'
+   $global:configRootKeys['RepositoryNameChocolateyFilesystemQualityAssurancePackageConfigRootKey']          = Invoke-Expression 'Join-Path $global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] "Chocolatey" "QualityAssurance"'
+   $global:configRootKeys['RepositoryNameChocolateyFilesystemProductionPackageConfigRootKey']                = Invoke-Expression 'Join-Path $global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] "Chocolatey" "Production"'
+   $global:configRootKeys['RepositoryNameChocolateyWebServerTestDevelopmentPackageConfigRootKey']            = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNameChocolateyWebServerTestDevelopmentPackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNameChocolateyWebServerTestQualityAssurancePackageConfigRootKey']       = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNameChocolateyWebServerTestQualityAssurancePackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNameChocolateyWebServerTestProductionPackageConfigRootKey']             = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNameChocolateyWebServerTestProductionPackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNameChocolateyWebServerProductionDevelopmentPackageConfigRootKey']      = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNameChocolateyWebServerProductionDevelopmentPackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNameChocolateyWebServerProductionQualityAssurancePackageConfigRootKey'] = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNameChocolateyWebServerProductionQualityAssurancePackageConfigRootKey"]]'
+   $global:configRootKeys['RepositoryNameChocolateyWebServerProductionProductionPackageConfigRootKey']       = Invoke-Expression 'Get-URI $global:settings[$global:configRootKeys["RepositoryNameChocolateyWebServerProductionProductionPackageConfigRootKey"]]'
+ }
 
 # Final (user) directory to leave the interpreter
 #cdMy
 #Set-Location -Path (join-path -Path $global:DropBoxBasePath -ChildPath 'whertzing' -AdditionalChildPath 'GitHub','ATAP.Utilities')
 Set-Location -Path $storedInitialDir
 
-# Always Last stepset the environment variables for this user
+# Always Last step set the environment variables for this user
 . (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
 Set-EnvironmentVariablesProcess
 

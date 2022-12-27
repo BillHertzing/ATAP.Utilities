@@ -48,10 +48,12 @@ $ManifestCurrentPath = Join-Path $BuildRoot $($ModuleName + '.psd1')
 # The destination locations for the generated packages
 
 $GeneratedPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedRelativePathConfigRootKey']]
-$GeneratedModuleDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellModulesConfigRootKey']]
-$GeneratedPowershellGalleryModulesPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellGalleryModulesConfigRootKey']]
-$GeneratedNuGetPackageDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellNuGetModulesConfigRootKey']]
-$GeneratedChocolateyPackageDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellChocolateyModulesConfigRootKey']]
+$GeneratedModuleDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellModuleConfigRootKey']]
+#$GeneratedDevelopmentModuleDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellModuleConfigRootKey']]
+$GeneratedPowershellPackagesDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellPackagesConfigRootKey']]
+$GeneratedNuGetPackageDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedNuGetPackageConfigRootKey']]
+$GeneratedChocolateyPackageDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedChocolateyPackageConfigRootKey']]
+$GeneratedPowershellGalleryPackageDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellGalleryPackageConfigRootKey']]
 
 # The locations for QualityAssurance output file
 $GeneratedTestResultsPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedTestResultsPathConfigRootKey']]
@@ -63,17 +65,15 @@ $GeneratedTestCoverageResultsPath = Join-Path '.' $global:settings[$global:confi
 $GeneratedDocumentationDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedDocumentationDestinationPathConfigRootKey']]
 $GeneratedStaticSiteDocumentationDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedStaticSiteDocumentationDestinationPathConfigRootKey']]
 
+# The PSRepositories required for packages destined for public powershell Repositories
+# $RepositoryNamePowershellGalleryDevelopmentFilesystemName = $global:settings[$global:configRootKeys['RepositoryNamePowershellGalleryDevelopmentPackageFilesystemConfigRootKey']]
+
 # The location for the final source code for the module and the module manifest
 $ModuleOutputPath = Join-Path $GeneratedModuleDestinationPath $($ModuleName + '.psm1')
 $ManifestOutputPath = Join-Path $GeneratedModuleDestinationPath $($ModuleName + '.psd1')
 
-# The PSRepositories required for packages destined for public powershell Repositories
-$RepositoryNamePowershellGalleryDevelopmentFilesystemName = $global:settings[$global:configRootKeys['RepositoryNamePowershellGalleryDevelopmentPackageFilesystemConfigRootKey']]
-
 # The locations that contain files that need to be part of the module's package
 $Imports = ( 'private', 'public', 'classes' )
-
-
 
 $TestFile = "$PSScriptRoot\output\TestResults_PS$PSVersion`_$TimeStamp.xml"
 
@@ -82,12 +82,13 @@ $TestFile = "$PSScriptRoot\output\TestResults_PS$PSVersion`_$TimeStamp.xml"
 if (-not $(Test-Path -Path $BuildRoot)) { throw "BuildRoot not found :  $BuildRoot" }
 if (-not $(Test-Path -Path $SourcePath)) { throw "Source not found :  $SourcePath" }
 
-# Vaidate or create required output paths
+# Validate or create required output paths
 if (-not $(Test-Path -Path $GeneratedPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedPath }
 if (-not $(Test-Path -Path $GeneratedModuleDestinationPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedModuleDestinationPath }
-if (-not $(Test-Path -Path $GeneratedPowershellGalleryModulesPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedPowershellGalleryModulesPath }
+if (-not $(Test-Path -Path $GeneratedPowershellPackagesDestinationPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedPowershellPackagesDestinationPath }
 if (-not $(Test-Path -Path $GeneratedNuGetPackageDestinationPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedNuGetPackageDestinationPath }
 if (-not $(Test-Path -Path $GeneratedChocolateyPackageDestinationPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedChocolateyPackageDestinationPath }
+if (-not $(Test-Path -Path $GeneratedPowershellGalleryPackageDestinationPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedPowershellGalleryPackageDestinationPath }
 if (-not $(Test-Path -Path $GeneratedTestResultsPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedTestResultsPath }
 if (-not $(Test-Path -Path $GeneratedUnitTestResultsPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedUnitTestResultsPath }
 if (-not $(Test-Path -Path $GeneratedIntegrationTestResultsPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedIntegrationTestResultsPath }
@@ -95,8 +96,11 @@ if (-not $(Test-Path -Path $GeneratedTestCoverageResultsPath -PathType Container
 if (-not $(Test-Path -Path $GeneratedDocumentationDestinationPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedDocumentationDestinationPath }
 if (-not $(Test-Path -Path $GeneratedStaticSiteDocumentationDestinationPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedStaticSiteDocumentationDestinationPath }
 
-# Validate the package repositories are mapped to filesystem locations or web server URLs
-if (-not $(Get-PSRepository -Name  )){}
+# Validate the package repositories are mapped to a valid filesystem locations or web server URLs
+# if (-not $(Get-PSRepository -Name  )){
+
+# }
+
 # validate required tools are present
 # Pester
 if (-not $(Get-Module -ListAvailable -Name 'Pester') ) { Throw 'pester Powershell module not found' }
@@ -112,7 +116,7 @@ if (-not $(Get-Command -Name 'java.exe') ) { Throw 'java.exe not found' }
 # PlantUML
 
 # In Debug mode, write the environment variables
-Write-PSFMessage -Level Debug -Message ('Environment variables at start of PSModule.build.ps1' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented 2 2) + [Environment]::NewLine )
+#Write-PSFMessage -Level Debug -Message ('Environment variables at start of PSModule.build.ps1' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented 2 2) + [Environment]::NewLine )
 
 Task Clean {
     # clean the generated powershell module and the generated powershell metadata
@@ -138,7 +142,7 @@ Task Checkout {
 }
 
 Task BuildPSM1 -Inputs (Get-Item $(Join-Path $SourcePath '*' '*.ps1')) -Outputs $ModuleOutputPath {
-    Write-PSFMessage -Level Debug -Message 'task = BuildPSM1'
+    Write-PSFMessage -Level Important -Message 'task = BuildPSM1'
     [System.Text.StringBuilder]$PSM1text = [System.Text.StringBuilder]::new()
     foreach ($folder in $imports ) {
         [void]$PSM1text.AppendLine( "Write-Verbose 'Importing from [$(Join-Path $SourcePath $folder)]'" )
@@ -274,7 +278,7 @@ Task PublishPSModule {
 # Task Dependencies
 
 # Default task.
-Task . clean PublishPSModule
+Task . Clean,PublishPSModule
 
 Task BuildPSM1 Clean
 
@@ -288,7 +292,7 @@ Task GenerateHelpForPSModule BuildPSD1
 
 Task GenerateStaticSiteDocumentationForPSModule GenerateHelpForPSModule
 
-Task SignPSModule GenerateStaticSiteDocumentationForPSModule IntegrationTestPSModule
+Task SignPSModule GenerateStaticSiteDocumentationForPSModule, IntegrationTestPSModule
 
 Task PackagePSModule SignPSModule
 

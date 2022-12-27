@@ -47,18 +47,61 @@ $local:MachineAndNodeSettings = @{
   $global:configRootKeys['JENKINS_API_TOKENConfigRootKey']                                                         = '117e33cc37af54e0b4fc6cb05de92b3553' # the value from the configuration page ToDo: use Secrets GUID/file
 
   # The repository names by which each of the various repositories for Powershell packages are known
-
+  # Package Repository Source locations
+  # PowershellGallery Source package locations
   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemDevelopmentPackageConfigRootKey']               = 'ReposistoryPowershellGalleryFilesystemDevelopmentPackage'
   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemQualityAssurancePackageConfigRootKey']          = 'RepositoryPowershellGalleryFilesystemQualityAssurancePackage'
   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemProductionPackageConfigRootKey']                = 'RepositoryPowershellGalleryFilesystemProductionPackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestDevelopmentPackageConfigRootKey']            = 'ReposistoryPowershellGalleryWebServerTestDevelopmentPackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestQualityAssurancePackageConfigRootKey']       = 'RepositoryPowershellGalleryWebServerTestQualityAssurancePackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestProductionPackageConfigRootKey']             = 'RepositoryPowershellGalleryWebServerTestProductionPackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionDevelopmentPackageConfigRootKey']      = 'RepositoryPowershellGalleryWebServerProductionDevelopmentPackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionQualityAssurancePackageConfigRootKey'] = 'RepositoryPowershellGalleryWebServerProductionQualityAssurancePackage'
-  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionProductionPackageConfigRootKey']       = 'RepositoryPowershellGalleryWebServerProductionProductionPackage'
+  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestDevelopmentPackageConfigRootKey']            = 'http://utat022:1011/Development/'
+  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestQualityAssurancePackageConfigRootKey']       = 'http://utat022:1011/QualityAssurance/'
+  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestProductionPackageConfigRootKey']             = 'http://utat022:1011/Production/'
+  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionDevelopmentPackageConfigRootKey']      = 'http://utat022:1010/Development/'
+  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionQualityAssurancePackageConfigRootKey'] = 'http://utat022:1010/QualityAssurance/'
+  $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionProductionPackageConfigRootKey']       = 'http://utat022:1010/ Production/'
 
-  # Package Repositories
+  # NuGet Source package locations
+  $global:configRootKeys['RepositoryNameNuGetFilesystemDevelopmentPackageConfigRootKey']                           = 'ReposistoryNuGetFilesystemDevelopmentPackage'
+  $global:configRootKeys['RepositoryNameNuGetFilesystemQualityAssurancePackageConfigRootKey']                      = 'RepositoryNuGetFilesystemQualityAssurancePackage'
+  $global:configRootKeys['RepositoryNameNuGetFilesystemProductionPackageConfigRootKey']                            = 'RepositoryNuGetFilesystemProductionPackage'
+  $global:configRootKeys['RepositoryNameNuGetWebServerTestDevelopmentPackageConfigRootKey']                        = 'http://utat022:1021/Development/'
+  $global:configRootKeys['RepositoryNameNuGetWebServerTestQualityAssurancePackageConfigRootKey']                   = 'http://utat022:1021/QualityAssurance/'
+  $global:configRootKeys['RepositoryNameNuGetWebServerTestProductionPackageConfigRootKey']                         = 'http://utat022:1021/Production/'
+  $global:configRootKeys['RepositoryNameNuGetWebServerProductionDevelopmentPackageConfigRootKey']                  = 'http://utat022:1020/Development/'
+  $global:configRootKeys['RepositoryNameNuGetWebServerProductionQualityAssurancePackageConfigRootKey']             = 'http://utat022:1020/QualityAssurance/'
+  $global:configRootKeys['RepositoryNameNuGetWebServerProductionProductionPackageConfigRootKey']                   = 'http://utat022:1020/Production/'
+
+  # Chocolatey Source package locations
+  $global:configRootKeys['RepositoryNameChocolateyFilesystemDevelopmentPackageConfigRootKey']                      = 'ReposistoryChocolateyFilesystemDevelopmentPackage'
+  $global:configRootKeys['RepositoryNameChocolateyFilesystemQualityAssurancePackageConfigRootKey']                 = 'RepositoryChocolateyFilesystemQualityAssurancePackage'
+  $global:configRootKeys['RepositoryNameChocolateyFilesystemProductionPackageConfigRootKey']                       = 'RepositoryChocolateyFilesystemProductionPackage'
+
+  $global:configRootKeys['RepositoryProtoChocolateyWebServerTestDevelopmentPackageConfigRootKey']                   = 'http'
+  $global:configRootKeys['RepositoryProtoChocolateyWebServerTestQualityAssurancePackageConfigRootKey']              = 'http'
+  $global:configRootKeys['RepositoryProtoChocolateyWebServerTestProductionPackageConfigRootKey']                    = 'http'
+  $global:configRootKeys['RepositoryProtoChocolateyWebServerProductionDevelopmentPackageConfigRootKey']             = 'http'
+  $global:configRootKeys['RepositoryProtoChocolateyWebServerProductionQualityAssurancePackageConfigRootKey']        = 'http'
+  $global:configRootKeys['RepositoryProtoChocolateyWebServerProductionProductionPackageConfigRootKey']              = 'http'
+  $global:configRootKeys['RepositoryServerChocolateyWebServerTestDevelopmentPackageConfigRootKey']                   = 'utat022'
+  $global:configRootKeys['RepositoryServerChocolateyWebServerTestQualityAssurancePackageConfigRootKey']              = 'utat022'
+  $global:configRootKeys['RepositoryServerChocolateyWebServerTestProductionPackageConfigRootKey']                    = 'utat022'
+  $global:configRootKeys['RepositoryServerChocolateyWebServerProductionDevelopmentPackageConfigRootKey']             = 'utat022'
+  $global:configRootKeys['RepositoryServerChocolateyWebServerProductionQualityAssurancePackageConfigRootKey']        = 'utat022'
+  $global:configRootKeys['RepositoryServerChocolateyWebServerProductionProductionPackageConfigRootKey']              = 'utat022'
+  $global:configRootKeys['RepositoryPortChocolateyWebServerTestDevelopmentPackageConfigRootKey']                   = '1212'
+  $global:configRootKeys['RepositoryPortChocolateyWebServerTestQualityAssurancePackageConfigRootKey']              = '1211'
+  $global:configRootKeys['RepositoryPortChocolateyWebServerTestProductionPackageConfigRootKey']                    = '1210'
+  $global:configRootKeys['RepositoryPortChocolateyWebServerProductionDevelopmentPackageConfigRootKey']             = '1202'
+  $global:configRootKeys['RepositoryPortChocolateyWebServerProductionQualityAssurancePackageConfigRootKey']        = '1201'
+  $global:configRootKeys['RepositoryPortChocolateyWebServerProductionProductionPackageConfigRootKey']              = '1200'
+
+  #$global:configRootKeys['RepositoryNameChocolateyWebServerTestDevelopmentPackageConfigRootKey']                   = '[UriBuilder]::new($($global:settings[$global:configRootKeys["RepositoryProtoChocolateyWebServerTestDevelopmentPackageConfigRootKey"]]), $($global:settings[$global:configRootKeys["RepositoryServerChocolateyWebServerTestDevelopmentPackageConfigRootKey"]]),$($global:settings[$global:configRootKeys["RepositoryPortChocolateyWebServerTestDevelopmentPackageConfigRootKey"]]),"Development").ToString()'
+  $global:configRootKeys['RepositoryNameChocolateyWebServerTestQualityAssurancePackageConfigRootKey']              = 'http://utat022:1031/QualityAssurance/'
+  $global:configRootKeys['RepositoryNameChocolateyWebServerTestProductionPackageConfigRootKey']                    = 'http://utat022:1031/Production/'
+  $global:configRootKeys['RepositoryNameChocolateyWebServerProductionDevelopmentPackageConfigRootKey']             = 'http://utat022:1030/Development/'
+  $global:configRootKeys['RepositoryNameChocolateyWebServerProductionQualityAssurancePackageConfigRootKey']        = 'http://utat022:1030/QualityAssurance/'
+  $global:configRootKeys['RepositoryNameChocolateyWebServerProductionProductionPackageConfigRootKey']              = 'http://utat022:1030/Production/'
+
+  # Package Repository Drop locations
   $global:configRootKeys['CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey']                       = '\\utat022\fs'
   $global:configRootKeys['CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey']                 = 'http://utat022:1010/PSGallery/'
   $global:configRootKeys['CurrentLocalNugetWebServerPackageDropLocationBasePathConfigRootKey']                     = 'http://utat022:2020/nuget/'
@@ -70,14 +113,14 @@ $local:MachineAndNodeSettings = @{
   $global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']                                             = @{
     # 'ABC' = 'DEF'
     # $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemDevelopmentPackageConfigRootKey']               = 'Join-Path $global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] "PowershellGallery" "Development"'
-  #   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemQualityAssurancePackageConfigRootKey']          = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + $(Join-Path 'PowershellGallery' 'QualityAssurance')
-  #   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemProductionPackageConfigRootKey']                = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + $(Join-Path 'PowershellGallery' 'Production')
-  #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestDevelopmentPackageConfigRootKey']            = '$global:settings[$global:configRootKeys["CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Development'
-  #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestQualityAssurancePackageConfigRootKey']       = '$global:settings[$global:configRootKeys["CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/QualityAssurance'
-  #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestProductionPackageConfigRootKey']             = '$global:settings[$global:configRootKeys["CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Production'
-  #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionDevelopmentPackageConfigRootKey']      = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Development'
-  #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionQualityAssurancePackageConfigRootKey'] = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/QualityAssurance'
-  #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionProductionPackageConfigRootKey']       = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Production'
+    #   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemQualityAssurancePackageConfigRootKey']          = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + $(Join-Path 'PowershellGallery' 'QualityAssurance')
+    #   $global:configRootKeys['RepositoryNamePowershellGalleryFilesystemProductionPackageConfigRootKey']                = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + $(Join-Path 'PowershellGallery' 'Production')
+    #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestDevelopmentPackageConfigRootKey']            = '$global:settings[$global:configRootKeys["CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Development'
+    #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestQualityAssurancePackageConfigRootKey']       = '$global:settings[$global:configRootKeys["CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/QualityAssurance'
+    #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerTestProductionPackageConfigRootKey']             = '$global:settings[$global:configRootKeys["CurrentLocalPSGalleryWebServerPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Production'
+    #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionDevelopmentPackageConfigRootKey']      = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Development'
+    #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionQualityAssurancePackageConfigRootKey'] = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/QualityAssurance'
+    #   $global:configRootKeys['RepositoryNamePowershellGalleryWebServerProductionProductionPackageConfigRootKey']       = '$global:settings[$global:configRootKeys["CurrentFileSystemNetworkPackageDropLocationBasePathConfigRootKey"]] ' + 'PowershellGallery/Production'
   }
 
 
@@ -98,9 +141,10 @@ $local:MachineAndNodeSettings = @{
   # Structure of the subdirectories generated during the process of building a Powershell Module for public distribution
   $global:configRootKeys['GeneratedRelativePathConfigRootKey']                                                     = '_generated'
   $global:configRootKeys['GeneratedPowershellModuleConfigRootKey']                                                 = 'Join-Path $global:settings[$global:configRootKeys["GeneratedRelativePathConfigRootKey"]] "PowershellModule"'
-  $global:configRootKeys['GeneratedPowershellGalleryPackageConfigRootKey']                                         = 'Join-Path $global:settings[$global:configRootKeys["GeneratedPowershellModuleConfigRootKey"]] "PowershellGalleryPackages"'
-  $global:configRootKeys['GeneratedPowershellNuGetPackageConfigRootKey']                                           = 'Join-Path $global:settings[$global:configRootKeys["GeneratedPowershellModuleConfigRootKey"]] "PowershellNuGetPackages"'
-  $global:configRootKeys['GeneratedPowershellChocolateyPackageConfigRootKey']                                      = 'Join-Path $global:settings[$global:configRootKeys["GeneratedPowershellModuleConfigRootKey"]] "PowershellChocolateyPackages"'
+  $global:configRootKeys['GeneratedPowershellPackagesConfigRootKey']                                               = 'Join-Path $global:settings[$global:configRootKeys["GeneratedRelativePathConfigRootKey"]] "PowershellPackages"'
+  $global:configRootKeys['GeneratedNuGetPackageConfigRootKey']                                                     = 'Join-Path $global:settings[$global:configRootKeys["GeneratedPowershellPackagesConfigRootKey"]] "NuGet"'
+  $global:configRootKeys['GeneratedPowershellGalleryPackageConfigRootKey']                                         = 'Join-Path $global:settings[$global:configRootKeys["GeneratedPowershellPackagesConfigRootKey"]] "PowershellGallery"'
+  $global:configRootKeys['GeneratedChocolateyPackageConfigRootKey']                                                = 'Join-Path $global:settings[$global:configRootKeys["GeneratedPowershellPackagesConfigRootKey"]] "Chocolatey"'
 
   # Structure of the subdirectories generated during the process of testing a Powershell Module or .net .DLL for public distribution
   $global:configRootKeys['GeneratedTestResultsPathConfigRootKey']                                                  = 'Join-Path $global:settings[$global:configRootKeys["GeneratedRelativePathConfigRootKey"]] "TestResults"'

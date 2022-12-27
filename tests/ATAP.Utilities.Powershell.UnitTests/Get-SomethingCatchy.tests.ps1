@@ -7,7 +7,7 @@ BeforeAll {
   # They must be installed, using (for all users) the command Install-Module -Name Assert
   Install-Module -Name Assert
   # What to dot source for running a test against a "public" function in a powershell module
-  #  uses the opinionated ATAP.Utilities expected directrory structure for a monorepo with multiple Powershell modules
+  #  uses the opinionated ATAP.Utilities expected directory structure for a monorepo with multiple Powershell modules
   # Tests are found in the path <RepoRootPath>/Tests/<ModuleName>, and indivudaully named as <scriptName>[stage]Tests.ps1
   # stage refers to one of Unit, Integration, UI, Performance, etc. See [TBD](TBD) for the complete list of test stages
   # Powershell script code to be tested is found in <RepoRootPath>/src/<ModuleName>/public/<scriptname.ps1>
@@ -35,18 +35,19 @@ BeforeAll {
   $sUTAbsolutePath = Resolve-Path $(Join-Path $moduleAbsolutePath $sUTRelativeToModulePath $sUTFileName)
   # load the ScriptUnderTest to test into memory
   . $sUTAbsolutePath
-
 }
 
-Describe "Testing Function $sUTFileName" -ForEach @(
+
+Describe "ScriptOrModuleUnderTest" -ForEach @( # ToDo: figure out how to use the $sUTFileName
   @{Name                          = 'EmptyHash'
     SourceCollections             = @(,
       @{}
     )
     ExpectedDestinationCollection = @{}
     MatchPatternRegex             = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
+
   }
-  , @{Name                        = 'SimpleIntAndString'
+  , @{Name                        = 'Simple Int And String'
     SourceCollections             = @(,
       @{
         'simpleKeyForInt'    = 1
@@ -56,6 +57,21 @@ Describe "Testing Function $sUTFileName" -ForEach @(
     ExpectedDestinationCollection = @{
       'simpleKeyForInt'    = 1
       'simpleKeyForString' = 'A'
+    }
+    MatchPatternRegex             = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
+  }
+  , @{Name                        = 'Simple Double And Decimal'
+    SourceCollections             = @(,
+      @{
+        'simpleKeyForDouble'    = 1.1
+        #'simpleKeyForDouble' = 1.0
+        #'MinimumDecimal'     = [decimal]::MinValue
+      }
+    )
+    ExpectedDestinationCollection = @{
+      'simpleKeyForDouble'    = 1.1
+      #'simpleKeyForDouble' = 1.0
+      #'MinimumDecimal'     = -79228162514264337593543950335
     }
     MatchPatternRegex             = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
   }
@@ -88,13 +104,13 @@ Describe "Testing Function $sUTFileName" -ForEach @(
     SourceCollections             = @(,
       @{
         'ChildHash' = @{
-          'simpleKeyForInt' = 'A'
+          'simpleKeyForInt' = 1
         }
       }
     )
     ExpectedDestinationCollection = @{
       'ChildHash' = @{
-        'simpleKeyForInt' = 'A'
+        'simpleKeyForInt' = 1
       }
     }
     MatchPatternRegex             = [System.Text.RegularExpressions.Regex]::new('NotNeededForThisTest')
@@ -123,7 +139,7 @@ Describe "Testing Function $sUTFileName" -ForEach @(
     }
     MatchPatternRegex             = [System.Text.RegularExpressions.Regex]::new('destination\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
   }
-  , @{Name                        = 'SourcecontainsACollectionHavingAnElementThatRefersToDestination'
+  , @{Name                        = 'SourceContainsACollectionHavingAnElementThatRefersToDestination'
     SourceCollections             = @(,
       @{
         'simpleKeyForString' = 'A'
@@ -159,26 +175,19 @@ Describe "Testing Function $sUTFileName" -ForEach @(
     $DestinationCollection = @{}
   }
 
-  # It 'A test that should be true' {
-  #   $true | Should -Be $true
-  # }
-  # It 'A test that should be false' {
-  #   $false | Should -Be $true
-  # }
-  It "$Name has the expected destination" {
+  It '<name> has the expected destination' {
     # Test settings for this specific test case
     if ($DebugPreference -eq 'Continue') {
-      write-host $name
+      Write-Host $name
     }
-
-    Get-SomethingCatchy -sourceCollections $SourceCollections -destination $DestinationCollection -matchPatternRegex $MatchPatternRegex
+    Get-CollectionTraverseEvaluate -sourceCollections $SourceCollections -destination $DestinationCollection -matchPatternRegex $MatchPatternRegex
     Assert-Equivalent -Actual $DestinationCollection -Expected $ExpectedDestinationCollection
   }
   # It 'handles simple ints and strings in one collection' {
   #   $SourceCollections = @($TestCaseSimpleIntAndString)
   #   $Destination = @{}
   #   $numKeys = $SourceCollections[0].count
-  #   Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
+  #   Get-CollectionTraverseEvaluate -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
   #   foreach ($key in $SourceCollections[0] ) {
   #     $Destination[$key] | Should -Be $TestCaseSimpleIntAndString[$key]
   #   }
@@ -188,7 +197,7 @@ Describe "Testing Function $sUTFileName" -ForEach @(
   #   $SourceCollections = @($TestCaseEmptyChildHash)
   #   $Destination = @{}
   #   $numKeys = $SourceCollections[0].count
-  #   Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
+  #   Get-CollectionTraverseEvaluate -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
   #   foreach ($key in $SourceCollections[0] ) {
   #     $Destination[$key] | Should -Be $TestCaseEmptyChildHash[$key]
   #   }
@@ -198,7 +207,7 @@ Describe "Testing Function $sUTFileName" -ForEach @(
   #   $SourceCollections = @($TestCaseChildHashWithInt)
   #   $Destination = @{}
   #   $numKeys = $SourceCollections[0].count
-  #   Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
+  #   Get-CollectionTraverseEvaluate -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
   #   foreach ($key in $SourceCollections[0] ) {
   #     $Destination[$key] | Should -Be $TestCaseChildHashWithInt[$key]
   #   }
@@ -208,7 +217,7 @@ Describe "Testing Function $sUTFileName" -ForEach @(
   #   $SourceCollections = @($TestCaseChildHashWithString)
   #   $Destination = @{}
   #   $numKeys = $SourceCollections[0].count
-  #   Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
+  #   Get-CollectionTraverseEvaluate -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
   #   foreach ($key in $SourceCollections[0] ) {
   #     $Destination[$key] | Should -Be $TestCaseChildHashWithString[$key]
   #   }
@@ -218,7 +227,7 @@ Describe "Testing Function $sUTFileName" -ForEach @(
   #   $SourceCollections = @($TestCaseSimplePSFunctionCall)
   #   $Destination = @{}
   #   $numKeys = $SourceCollections[0].count
-  #   Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
+  #   Get-CollectionTraverseEvaluate -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
   #   foreach ($key in $SourceCollections[0] ) {
   #     $Destination[$key] | Should -Be $TestCaseSimpleIntAndString[$key]
   #   }
@@ -228,7 +237,7 @@ Describe "Testing Function $sUTFileName" -ForEach @(
   #   $SourceCollections = @($TestCaseDeferredPSFunctionCall)
   #   $Destination = @{}
   #   $numKeys = $SourceCollections[0].count
-  #   Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
+  #   Get-CollectionTraverseEvaluate -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
   #   foreach ($key in $SourceCollections[0] ) {
   #     $Destination[$key] | Should -Be $TestCaseSimpleIntAndString[$key]
   #   }
@@ -238,7 +247,7 @@ Describe "Testing Function $sUTFileName" -ForEach @(
   #   $SourceCollections = @($TestCaseDeferredPSFunctionCallInSubordinateHash)
   #   $Destination = @{}
   #   $numKeys = $SourceCollections[0].count
-  #   Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
+  #   Get-CollectionTraverseEvaluate -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
   #   foreach ($key in $SourceCollections[0] ) {
   #     $Destination[$key] | Should -Be $TestCaseDeferredPSFunctionCallInSubordinateHash[$key]
   #   }
@@ -248,7 +257,7 @@ Describe "Testing Function $sUTFileName" -ForEach @(
   #   $SourceCollections = @($TestCaseSourceRefersToDestination)
   #   $Destination = @{}
   #   $numKeys = $SourceCollections[0].count
-  #   Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
+  #   Get-CollectionTraverseEvaluate -SourceCollections $SourceCollections -Destination $Destination -MatchPatternRegex $MatchPatternRegex
   #   Write-HashIndented $Destination
 
   #   foreach ($key in $SourceCollections[0] ) {
@@ -260,7 +269,7 @@ Describe "Testing Function $sUTFileName" -ForEach @(
   #   $SourceCollections = @($global:SecurityAndSecretsSettings, $global:MachineAndNodeSettings)
   #   $Destination = @{}
   #   #$numKeys = $SourceCollections[0].count
-  #   Get-SomethingCatchy -SourceCollections $SourceCollections -Destination $global:settings -MatchPatternRegex $MatchPatternRegex
+  #   Get-CollectionTraverseEvaluate -SourceCollections $SourceCollections -Destination $global:settings -MatchPatternRegex $MatchPatternRegex
   #   # foreach ($key in $SourceCollections[0] ) {
   #   #   $Destination[$key] | Should -Be $TestCaseDeferredPSFunctionCallInSubordinateHash[$key]
   #   # }

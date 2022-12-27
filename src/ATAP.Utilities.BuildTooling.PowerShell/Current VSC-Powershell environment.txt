@@ -1,0 +1,70 @@
+Current VSC-Powershell environment
+The environment in which it runs is as follows:
+
+
+
+Visual Studio Code:
+Version: 1.73.1 (system setup)
+Commit: 6261075646f055b99068d3688932416f2346dd3b
+Date: 2022-11-09T04:27:29.066Z
+Electron: 19.0.17
+Chromium: 102.0.5005.167
+Node.js: 16.14.2
+V8: 10.2.154.15-electron.0
+OS: Windows_NT x64 10.0.22000
+Sandboxed: No
+
+
+Powershell:
+Name                           Value
+----                           -----
+PSVersion                      7.3.0
+PSEdition                      Core
+GitCommitId                    7.3.0
+OS                             Microsoft Windows 10.0.22000
+Platform                       Win32NT
+PSCompatibleVersions           {1.0, 2.0, 3.0, 4.0…}
+PSRemotingProtocolVersion      2.3
+SerializationVersion           1.1.0.1
+WSManStackVersion              3.0 
+
+Visual Studio Code Extension Powershell: 
+Published 11/17/2015, 17:50:38
+Last released 11/16/2022, 13:26:24
+Last updated 11/19/2022, 08:46:46
+Identifier ms-vscode.powershell
+
+Visual Studio Code Extension Powershell Pro Tools (Ironman Software) (paid)
+Published 9/26/2018, 13:53:28
+Last released 11/23/2022, 08:33:56
+Last updated 11/24/2022, 08:21:37
+Identifier ironmansoftware.powershellprotools
+
+Powershell Modules:
+Get-InstalledModule
+
+Version              Name                                Repository           Description
+-------              ----                                ----------           -----------
+1.1.2                Microsoft.PowerShell.SecretManagem… PSGallery            This module provides a convenient way for a user to store and retrieve secrets. The secrets are…
+1.0.6                Microsoft.PowerShell.SecretStore    PSGallery            This PowerShell module is an extension vault for the PowerShell SecretManagement module.…
+1.6.214              PSFramework                         PSGallery            General Scripting Framework, providing PowerShell-specific infrastructure for other modules.
+0.9.2                SecretManagement.KeePass            PSGallery            A cross-platform Keepass Secret Management vault extension. See the README.MD in the module for more details.
+0.9.5                Assert                              PSGallery            Alternative assertions for Pester.
+0.1.0-Alpha001       ATAP.Utilities.BuildTooling.PowerS… LocalDevelopmentPSR… Powershell scripts used for building the ATAPUtilities
+1.0.0.0              Microsoft.PowerShell.LocalAccounts  PSGallery            Provides cmdlets to work with local users and local groups
+0.3.8                PSDepend                            PSGallery            PowerShell Dependency Handler
+1.0.1                PSNeo4j                             PSGallery            Simple Neo4j wrapper for Powershell
+1.20.0               PSScriptAnalyzer                    PSGallery            PSScriptAnalyzer provides script analysis and checks for potential code defects in the scripts by applying a group of built-in or customized rules on the scripts being analyzed.
+
+Get-Module
+
+ModuleType Version    PreRelease Name                                ExportedCommands
+---------- -------    ---------- ----                                ----------------
+Script     5.10.1                InvokeBuild                         {Build-Checkpoint, Build-Parallel, Invoke-Build}
+Manifest   7.0.0.0               Microsoft.PowerShell.Management     {Add-Content, Clear-Content, Clear-Item, Clear-ItemProperty…}
+Manifest   7.0.0.0               Microsoft.PowerShell.Utility        {Add-Member, Add-Type, Clear-Variable, Compare-Object…}
+Script     1.4.8.1               PackageManagement                   {Find-Package, Find-PackageProvider, Get-Package, Get-PackageProvider…}
+Script     2.2.5                 PowerShellGet                       {Find-Command, Find-DscResource, Find-Module, Find-RoleCapability…}
+Script     1.6.214               PSFramework                         {ConvertTo-PSFHashtable, Invoke-PSFCallback, Invoke-PSFProtectedCommand, Remove-PSFNull…}
+Script     2.2.6                 PSReadLine                          {Get-PSReadLineKeyHandler, Get-PSReadLineOption, Remove-PSReadLineKeyHandler, Set-PSReadLineKeyHandler…}
+

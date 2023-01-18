@@ -32,7 +32,7 @@ function Write-EntriesAndDependencies {
     try {
       $message = "Entry at $($key): Type is $($($entries[$key].ValueToEvaluate).gettype())::: `
       ValueToEvaluate is $($entries[$key].ValueToEvaluate) ::: dependsUponParent = $($entries[$key].DependsUponParent) `
-       ::: dependsUponDestination = $($entries[$key].DependsUponDestination)"
+       ::: dependsUponDestination = $($entries[$key].DependsUponDestination -join ',' )"
     }
     catch {
       Write-PSFMessage -Level Error -Message "Key is $key "

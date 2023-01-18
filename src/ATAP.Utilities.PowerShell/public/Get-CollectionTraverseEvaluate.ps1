@@ -20,7 +20,7 @@ function Get-CollectionTraverseEvaluate {
     $hashElementStringSeperator = ':::'
   )
   # Allow the DebugPreference to be set for this function and it's children
-  $DebugPreference = 'SilentlyContinue' # 'Continue' # 'SilentlyContinue'
+  $DebugPreference = 'Continue' # 'Continue' # 'SilentlyContinue'
 
   # Declare classes used in this function
   class CompoundID {
@@ -636,6 +636,7 @@ function Get-CollectionTraverseEvaluate {
         break
       }
     }
+    Write-PSFMessage -Level Important -Message "EntryKey = $($EntryKey.ToString()) ::  destinationExpression = $destinationExpression :: valueType  = $valueType  :: ValueToEvaluate = $($entries[$EntryKey].ValueToEvaluate)"
     $ValueToEvaluate = $entries[$EntryKey].ValueToEvaluate
     $valueType = $entries[$EntryKey].ValueToEvaluate.gettype().fullname
     if ($debugpreference -eq 'Continue') {

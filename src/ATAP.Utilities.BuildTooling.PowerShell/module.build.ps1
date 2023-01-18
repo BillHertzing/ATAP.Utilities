@@ -68,7 +68,7 @@ Enter-Build {
   $GeneratedPowershellPackagesDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellPackagesConfigRootKey']]
   $GeneratedNuGetPackageDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedNuGetPackageConfigRootKey']]
   $GeneratedChocolateyPackageDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedChocolateyPackageConfigRootKey']]
-  $GeneratedPowershellGalleryPackageDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellGalleryPackageConfigRootKey']]
+  $GeneratedPowershellGetPackageDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedPowershellGetPackageConfigRootKey']]
 
   # The locations for QualityAssurance output file
   $GeneratedTestResultsPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedTestResultsPathConfigRootKey']]
@@ -81,7 +81,7 @@ Enter-Build {
   $GeneratedStaticSiteDocumentationDestinationPath = Join-Path '.' $global:settings[$global:configRootKeys['GeneratedStaticSiteDocumentationDestinationPathConfigRootKey']]
 
   # The PSRepositories required for packages destined for public powershell Repositories
-  # $RepositoryNamePowershellGalleryDevelopmentFilesystemName = $global:settings[$global:configRootKeys['RepositoryNamePowershellGalleryDevelopmentPackageFilesystemConfigRootKey']]
+  # $RepositoryNamePowershellGetDevelopmentFilesystemName = $global:settings[$global:configRootKeys['RepositoryNamePowershellGetDevelopmentPackageFilesystemConfigRootKey']]
 
   $TestFile = "$PSScriptRoot\output\TestResults_PS$PSVersion`_$TimeStamp.xml"
 
@@ -90,7 +90,7 @@ Enter-Build {
   if (-not $(Test-Path -Path $GeneratedPowerShellModuleSubdirectory -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedPowerShellModuleSubdirectory }
   if (-not $(Test-Path -Path $GeneratedNuGetPackageDestinationPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedNuGetPackageDestinationPath }
   if (-not $(Test-Path -Path $GeneratedChocolateyPackageDestinationPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedChocolateyPackageDestinationPath }
-  if (-not $(Test-Path -Path $GeneratedPowershellGalleryPackageDestinationPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedPowershellGalleryPackageDestinationPath }
+  if (-not $(Test-Path -Path $GeneratedPowershellGetPackageDestinationPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedPowershellGetPackageDestinationPath }
   if (-not $(Test-Path -Path $GeneratedTestResultsPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedTestResultsPath }
   if (-not $(Test-Path -Path $GeneratedUnitTestResultsPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedUnitTestResultsPath }
   if (-not $(Test-Path -Path $GeneratedIntegrationTestResultsPath -PathType Container)) { $null = New-Item -ItemType Directory -Force $GeneratedIntegrationTestResultsPath }
@@ -167,9 +167,9 @@ Task BuildPSM1 @{
   Inputs  = $sourceFiles
   Outputs = $GeneratedModuleFilePath
   Jobs    = 'Clean', {
-    Write-PSFMessage -Level Debug -Message "Starting Task BuildPSM1; GeneratedModuleFilePath = $GeneratedModuleFilePath; inputs = $inputs"
+    Write-PSFMessage -Level Debug -Message "Starting Task BuildPSM1; GeneratedModuleFilePath = $GeneratedModuleFilePath; sourceFiles = $sourceFiles"
     [System.Text.StringBuilder]$PSM1text = [System.Text.StringBuilder]::new()
-    foreach ($filePath in $inputs) {
+    foreach ($filePath in $sourceFiles) {
       Write-PSFMessage -Level Debug -Message "Importing [.$filePath]"
       [void]$PSM1text.AppendLine( "# .$filePath" )
       [void]$PSM1text.AppendLine( [System.IO.File]::ReadAllText($filePath) )
@@ -190,9 +190,106 @@ Task BuildPSD1 @{
     # ToDo: implement a cache with a reasonable timeout
     $repoitoriesCache = $null
 
+    # ToDo - move validation of package repositories to the start-up profile for machines that are in development/QA/Production roles
+    # Validate package repository source and destination locations are reachable
+    ('NuGet', 'PowershellGet', 'Chocolatey') | ForEach-Object { $ProviderName = $_
+      ('Filesystem', 'WebServerTest', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
+        ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $Lifecycle = $_
+          # validate each $PackageSource / Lifecycle cross exists. (installing should be done during container setup)
+          $PackageSourceID = $ProviderName+$PackageSource+$Lifecycle
+              if (-not $(Get-PackageSource -Name $PackageSourceID)) {
+                # ToDo better error logging
+                Write-PSFMessage -Level Error -Message "PackageSourceID Not Found; PackageSourceID = $PackageSourceID"
+                # Throw Error
+                throw "PackageSourceID Not Found; PackageSourceID = $PackageSourceID"
+        }
+      }
+    }
+  }
+
     # create the in-memory manifest from the sourceManifestPath
 
     # Check all known repositories for other versions of this $moduleName
+    $foundOldModules = @{}
+    $foundOldVersions = @{}
+
+    # $ProviderName =(xxx).Keys
+    ('NuGet', 'PowershellGet', 'Chocolatey') | ForEach-Object { $ProviderName = $_
+      # switch on the kind
+      switch ($ProviderName) {
+        'NuGet' {
+          ('Filesystem', 'WebServerTest', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
+            switch ($PackageSource) {
+              'Filesystem' {
+                ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $Lifecycle = $_
+                  if (Get-ChildItem $xxx) {
+                    $semanticVersion = '0.0.1' #ParseSemanticVersionFromModuleNameAndPath
+                    $foundOldModules[$ProviderName][$PackageSource][$Lifecycle] = $semanticVersion
+                    $foundOldVersions[$semanticVersion] = [PSCustomObject]@{
+                      ProviderName     = $ProviderName
+                      PackageSource = $PackageSource
+                      Lifecycle          = $Lifecycle
+                    }
+                  }
+                  break
+                }
+              }
+              'WebServerTest' {
+                break
+              }
+              'WebServerProduction' {
+                break
+              }
+              default {
+                # ToDo write error handling for missing location
+              }
+            }
+          }
+        }
+
+        'PowershellGet' {
+          ('Filesystem', 'WebServerTest', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
+            switch ($PackageSource) {
+              'Filesystem' {
+                break
+              }
+              'WebServerTest' {
+                break
+              }
+              'WebServerProduction' {
+                break
+              }
+              default {
+                # ToDo write error handling for missing location
+              }
+            }
+          }
+        }
+        'Chocolatey' {
+          ('Filesystem', 'WebServerTest', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
+            switch ($PackageSource) {
+              'Filesystem' {
+                break
+              }
+              'WebServerTest' {
+                break
+              }
+              'WebServerProduction' {
+                break
+              }
+              default {
+                # ToDo write error handling for missing location
+              }
+            }
+          }
+        }
+        default {
+          # ToDo write error handling for missing location
+        }
+      }
+    }
+    # Check
+
     # No Other version exists
 
     # At least one version exists in Production / QA / Development repositories
@@ -229,19 +326,19 @@ Task BuildPSD1 @{
     $resourceFiles = @()
     $toolFiles = @()
 
-    $publicPathPattern = [IO.Path]::PathSeparator +'public' + [IO.Path]::PathSeparator
+    $publicPathPattern = [IO.Path]::PathSeparator + 'public' + [IO.Path]::PathSeparator
     foreach ($filePath in $($inputs -match $publicPathPattern)) {
       $publicFunctions = Get-ChildItem $filePath | Select-Object -ExpandProperty basename
     }
-    $privatePathPattern = [IO.Path]::PathSeparator +'private' + [IO.Path]::PathSeparator
+    $privatePathPattern = [IO.Path]::PathSeparator + 'private' + [IO.Path]::PathSeparator
     foreach ($filePath in $($inputs -match $privatePathPattern)) {
       $privateFunctions = Get-ChildItem $filePath | Select-Object -ExpandProperty basename
     }
-    $resourcesPathPattern = [IO.Path]::PathSeparator +'resources' + [IO.Path]::PathSeparator
+    $resourcesPathPattern = [IO.Path]::PathSeparator + 'resources' + [IO.Path]::PathSeparator
     foreach ($filePath in $($inputs -match $resourcesPathPattern)) {
       $resourceFiles = Get-ChildItem $filePath | Select-Object -ExpandProperty basename
     }
-    $toolsPathPattern = [IO.Path]::PathSeparator +'tools' + [IO.Path]::PathSeparator
+    $toolsPathPattern = [IO.Path]::PathSeparator + 'tools' + [IO.Path]::PathSeparator
     foreach ($filePath in $($inputs -match $toolsPathPattern)) {
       $toolFiles = Get-ChildItem $filePath | Select-Object -ExpandProperty basename
     }
@@ -257,8 +354,8 @@ Task BuildPSD1 @{
     Update-PackageVersion -Path $ManifestOutputPath
 
     # are there any functions / cmdlets that are removed, or added, compared to the Current Manifest
-    if ($($publicFunctions | Where-Object { $_ -notin $oldPublicFunctions })){ $bumpVersionType = 'Minor' }
-    if ($($oldPublicFunctions | Where-Object { $_ -notin $publicFunctions })){ $bumpVersionType = 'Major' }
+    if ($($publicFunctions | Where-Object { $_ -notin $oldPublicFunctions })) { $bumpVersionType = 'Minor' }
+    if ($($oldPublicFunctions | Where-Object { $_ -notin $publicFunctions })) { $bumpVersionType = 'Major' }
 
     Set-ModuleFunctions -name $GeneratedManifestFilePath -FunctionsToExport $publicFunctions
 
@@ -287,7 +384,7 @@ Task UnitTestPSModule @{
     Write-PSFMessage -Level Debug -Message 'task = UnitTestPSModule'
     # [Pester Testing in Jenkins (Using NUNit)](https://sqlnotesfromtheunderground.wordpress.com/2017/01/20/pester-testing-in-jenkins-using-nunit/)
     # ToDo: update this so it collects test results and coverage results and publishes them to
-    $TestResults = Invoke-Pester -Path $UnitTestsPath -PassThru -OutputFor JUnitXml mat -Tag Unit -ExcludeTag Slow,Disabled
+    $TestResults = Invoke-Pester -Path $UnitTestsPath -PassThru -OutputFor JUnitXml mat -Tag Unit -ExcludeTag Slow, Disabled
     # If the test results are not within expectations/margin, fail the build
     # ToDo: Xunit and perhaps Pester ? might be better tools for this step...
     if ($TestResults.FailedCount -gt 0) {
@@ -304,7 +401,7 @@ Task IntegrationTestPSModule @{
   Jobs    = 'BuildPSD1', {
     Write-PSFMessage -Level Debug -Message 'task = IntegrationTestPSModule'
     # ToDo: update this so it collects test results and coverage results and publishes them to
-    $TestResults = Invoke-Pester -Path $IntegrationTestsPath -PassThru -Tag Integration -ExcludeTag Slow,Disabled
+    $TestResults = Invoke-Pester -Path $IntegrationTestsPath -PassThru -Tag Integration -ExcludeTag Slow, Disabled
     # If the test results are not within expectations/margin, fail the build
     # ToDo: Xunit and perhaps Pester ? might be better tools for this step...
     if ($TestResults.FailedCount -gt 0) {
@@ -332,21 +429,21 @@ Task GenerateStaticSiteDocumentationForPSModule @{
   }
 }
 
-Task PackagePSModule @{
+Task GeneratePackagesForPSModule @{
   Inputs  = $sourceFiles
   Outputs = $GeneratedModuleFilePath
   Jobs    = 'GenerateStaticSiteDocumentationForPSModule', {
-    Write-PSFMessage -Level Debug -Message 'task = PackagePSModule'
-    # create the source for the PowershellGallery package
-    Copy-Item $ModuleOutputPath $GeneratedPowershellGalleryModulesPath
-    Copy-Item $ManifestOutputPath $GeneratedPowershellGalleryModulesPath
+    Write-PSFMessage -Level Debug -Message 'task = GeneratePackagesForPSModule'
+    # create the source for the PowershellGet package
+    Copy-Item $ModuleOutputPath $GeneratedPowershellGetModulesPath
+    Copy-Item $ManifestOutputPath $GeneratedPowershellGetModulesPath
     # create the source for the Nuget package
     Copy-Item $ModuleOutputPath $GeneratedNuGetPackageDestinationPath
     Copy-Item $ManifestOutputPath $GeneratedNuGetPackageDestinationPath
     # create the .nuspec file from the Manifest
     Get-NuspecFromPSD1 -ManifestPath $ManifestOutputPath -DestinationFolder $GeneratedNuGetPackageDestinationPath
     # create the .nupkg file
-    #T oDo: wrap in a try/catch
+    # ToDo: wrap in a try/catch
     # Nuget.exe pack
     # create the source for the chocolatey package
     Copy-Item $ModuleOutputPath $GeneratedChocolateyPackageDestinationPath
@@ -355,11 +452,11 @@ Task PackagePSModule @{
   }
 }
 
-Task SignPSPackage @{
+Task SignPSPackages @{
   Inputs  = $sourceFiles
   Outputs = $GeneratedModuleFilePath
-  Jobs    = 'PackagePSModule', {
-    Write-PSFMessage -Level Debug -Message 'task = SignPSPackage'
+  Jobs    = 'GeneratePackagesForPSModule', {
+    Write-PSFMessage -Level Debug -Message 'task = SignPSPackages'
   }
 }
 
@@ -367,12 +464,12 @@ Task SignPSPackage @{
 Task PublishPSPackage @{
   Inputs  = $sourceFiles
   Outputs = $GeneratedModuleFilePath
-  Jobs    = 'SignPSPackage', {
+  Jobs    = 'SignPSPackages', {
     Write-PSFMessage -Level Debug -Message 'task = PublishPSPackage'
     # Switch on Environment
     # Publish to FileSystem
     Publish-Module -Path $relativeModulePath -Repository $PSRepositoryName -NuGetApiKey $nuGetApiKey
-    Publish-Module -Name $GeneratedPowershellGalleryModulesPath -Repository LocalDevelopmentPSRepository
+    Publish-Module -name $GeneratedPowershellGetModulesPath -Repository LocalDevelopmentPSRepository
     # Copy last build artifacts into a .7zip file, name it after the ModuleName-Version-buildnumber (like C# project assemblies)
     # Check the 7Zip file into the SCM repository
     # Get SHA-256 and other CRC checksums, add that info to the SCM repository

@@ -157,7 +157,7 @@ $global:configRootKeys = @{
   'RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey'                    = 'RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageURI'
   'RepositoryNuGetQualityAssuranceWebServerProductionPackageURIConfigRootKey'                    = 'RepositoryNuGetQualityAssuranceWebServerProductionPackageURI'
   'RepositoryNuGetProductionWebServerDevelopmentPackageURIConfigRootKey'                    = 'RepositoryNuGetProductionWebServerDevelopmentPackageURI'
-  'RepositoryNuGetProductionWebServerQualityAssuranceURIPackageConfigRootKey'                    = 'RepositoryNuGetProductionWebServerQualityAssuranceURIPackage'
+  'RepositoryNuGetProductionWebServerQualityAssurancePackageURIConfigRootKey'                    = 'RepositoryNuGetProductionWebServerQualityAssurancePackageURI'
   'RepositoryNuGetProductionWebServerProductionPackageURIConfigRootKey'                    = 'RepositoryNuGetProductionWebServerProductionPackageURI'
 
   # URI Details for PowershellGet Web Server
@@ -184,7 +184,7 @@ $global:configRootKeys = @{
   'RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey'                    = 'RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageURI'
   'RepositoryPowershellGetQualityAssuranceWebServerProductionPackageURIConfigRootKey'                    = 'RepositoryPowershellGetQualityAssuranceWebServerProductionPackageURI'
   'RepositoryPowershellGetProductionWebServerDevelopmentPackageURIConfigRootKey'                    = 'RepositoryPowershellGetProductionWebServerDevelopmentPackageURI'
-  'RepositoryPowershellGetProductionWebServerQualityAssuranceURIPackageConfigRootKey'                    = 'RepositoryPowershellGetProductionWebServerQualityAssuranceURIPackage'
+  'RepositoryPowershellGetProductionWebServerQualityAssurancePackageURIConfigRootKey'                    = 'RepositoryPowershellGetProductionWebServerQualityAssurancePackageURI'
   'RepositoryPowershellGetProductionWebServerProductionPackageURIConfigRootKey'                    = 'RepositoryPowershellGetProductionWebServerProductionPackageURI'
 
   # URI Details for Chocolatey Web Server

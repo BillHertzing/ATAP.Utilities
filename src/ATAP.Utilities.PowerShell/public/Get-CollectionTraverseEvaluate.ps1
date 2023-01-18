@@ -242,7 +242,7 @@ function Get-CollectionTraverseEvaluate {
     [string] $DestinationBaseKey
     [object] $ValueToEvaluate
     [EntryKey] $DependsUponParent
-    [string] $DependsUponDestination
+    [array] $DependsUponDestination
     hidden static [System.Text.StringBuilder] $keySB
     # hidden static [string] $substitutionRegexPattern = '(?<CRK>\$global:configRootKeys\[.*?\])'
     # hidden static [regex] $substitutionRegex = [System.Text.RegularExpressions.Regex]::new(([EntryValue]::$substitutionRegexPattern), [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
@@ -283,13 +283,13 @@ function Get-CollectionTraverseEvaluate {
       $this.DependsUponDestination = $null
       $this.ValueToEvaluate = $this.Substitute($valueToEvaluate)
     }
-    EntryValue([string] $destinationBaseKey, [object]$valueToEvaluate, [string]$dependsUponDestination) {
+    EntryValue([string] $destinationBaseKey, [object]$valueToEvaluate, [array]$dependsUponDestination) {
       $this.DestinationBaseKey = $destinationBaseKey
       $this.DependsUponParent = $null
       $this.DependsUponDestination = $dependsUponDestination
       $this.ValueToEvaluate = $this.Substitute($valueToEvaluate)
     }
-    EntryValue([string] $destinationBaseKey, [object]$valueToEvaluate, [EntryKey]$dependsUponParent, [string]$dependsUponDestination ) {
+    EntryValue([string] $destinationBaseKey, [object]$valueToEvaluate, [EntryKey]$dependsUponParent, [array]$dependsUponDestination ) {
       $this.DestinationBaseKey = $destinationBaseKey
       $this.DependsUponParent = $dependsUponParent
       $this.DependsUponDestination = $dependsUponDestination
@@ -303,7 +303,7 @@ function Get-CollectionTraverseEvaluate {
       [void][EntryValue]::keySB.Append('  ')
       [void][EntryValue]::keySB.Append("DependsUponParent = $($this.DependsUponParent ? $($($this.DependsUponParent).ToString()) : '')")
       [void][EntryValue]::keySB.Append('  ')
-      [void][EntryValue]::keySB.Append("DependsUponDestination = $($this.DependsUponDestination ? $($($this.DependsUponDestination).ToString()) : '')")
+      [void][EntryValue]::keySB.Append("DependsUponDestination = $($this.DependsUponDestination ? $($($this.DependsUponDestination) -join ',' ) : '')")
       [void][EntryValue]::keySB.Append('}')
       return [EntryValue]::keySB.ToString()
     }
@@ -441,7 +441,7 @@ function Get-CollectionTraverseEvaluate {
       $matchArray = @(, $($($regexMatches.Groups).Captures | Where-Object { $_.Name -match 'Earlier' }) | ForEach-Object { $_.Value })
       $entries[$entryKey].DependsUponDestination = $matchArray
     }
-    Write-PSFMessage -Level Debug -Message "entry Key is $entryKey, Value is $entries[$entryKey], DependsUponDestination is $($entries[$entryKey].DependsUponDestination)" -tag 'wip'
+    Write-PSFMessage -Level Debug -Message "entry Key is $entryKey, Value is $entries[$entryKey], DependsUponDestination is $($entries[$entryKey].DependsUponDestination)"
   }
 
   # iterate over all the elements of a collection

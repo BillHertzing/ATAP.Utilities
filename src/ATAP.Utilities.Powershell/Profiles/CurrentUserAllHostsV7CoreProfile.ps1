@@ -161,7 +161,7 @@ $UserPSModulePaths = @(
   $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]
 )
 # Add the $UserPSModulePaths to the exisiting $env:PSModulePaths
-$desiredPSModulePaths = $UserPSModulePaths  + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
+$desiredPSModulePaths = $UserPSModulePaths + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
 # As the very last step, add the Powershell (Desktop) V5 module paths for this user and for the machine-wide V5 module location
 $desiredPSModulePaths += 'C:\Program Files\WindowsPowerShell\Modules'
 # Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
@@ -333,7 +333,7 @@ Function Get-Attributions {
     try {
       while (!$reader.EndOfStream) {
         $line = $reader.ReadLine()
-       [RegEx]::Matches($line, $findRegex)
+        [RegEx]::Matches($line, $findRegex)
         if ($Matches.Success) {
           [PSCustomObject]@{
             Fullpath = $fh.fullname
@@ -364,7 +364,7 @@ Function Get-LinksFromDrafts {
   try {
     while (!$reader.EndOfStream) {
       # ToDO: add Progress Reporting
-      if (-not ($cnt % 100000)) {Write-PSFMessage -Level Debug -Message "cnt = $cnt" }
+      if (-not ($cnt % 100000)) { Write-PSFMessage -Level Debug -Message "cnt = $cnt" }
       $cnt += 1
       #if ($cnt -gt 2000) {throw}
       $line = $reader.ReadLine()
@@ -372,7 +372,8 @@ Function Get-LinksFromDrafts {
       if ($matchResult.Success) {
         $Subject = $matchResult.captures.groups['Subject'].value
         #Write-PSFMessage -Level Debug -Message "Subject = $Subject"
-      } else {
+      }
+      else {
         $matchResult = [RegEx]::Matches($line, $findRegex2)
         if ($matchResult.Success) {
           $URL = $matchResult.captures.groups['URL'].value
@@ -380,12 +381,12 @@ Function Get-LinksFromDrafts {
         }
       }
       if ($subject -and $URL) {
-        $obj =  [PSCustomObject]@{
+        $obj = [PSCustomObject]@{
           Fullpath = 'Drafts'
           Title    = $Subject
           URL      = $URL
         }
-        write-output $obj
+        Write-Output $obj
         $Subject = ''
         $URL = ''
       }
@@ -398,8 +399,8 @@ Function Get-LinksFromDrafts {
 }
 
 if ($false) {
-$delegateDistinctURL = [Func[PSCustomObject, string]] { param([PSCustomObject]$o); return $o.URL }
-$a = [Linq.Enumerable]::ToArray([Linq.Enumerable]::DistinctBy([PSCustomObject[]]$(Get-LinksFromDrafts),$delegateDistinctURL ))
+  $delegateDistinctURL = [Func[PSCustomObject, string]] { param([PSCustomObject]$o); return $o.URL }
+  $a = [Linq.Enumerable]::ToArray([Linq.Enumerable]::DistinctBy([PSCustomObject[]]$(Get-LinksFromDrafts), $delegateDistinctURL ))
 }
 Function Get-AllBookmarks {
   foreach ($o in $($(Get-BrowserBookmarks '*' '*') | Sort-Object -Property URL -uniq)) {
@@ -444,12 +445,12 @@ Function Get-LinksFiltered {
   # $acc.Count1 = $($acc['results1']).count
 
   # $acc['time2'] = Measure-Command {
-    # eliminate any search engine urls
-    $SERegEx = [regex] 'search\.brave\.com'
+  # eliminate any search engine urls
+  $SERegEx = [regex] 'search\.brave\.com'
   $delegateRegexMatch = [Func[PSCustomObject, bool]] { param([PSCustomObject]$o); return ((($findRegex.Match($o.title)).Success -or ($findRegex.Match($o.URL)).Success) -and -not ($SERegEx.Match($o.URL)).Success) }
   $delegateDistinctURL = [Func[PSCustomObject, string]] { param([PSCustomObject]$o); return $o.URL }
-  $query=[PSCustomObject[]] [Linq.Enumerable]::Where([PSCustomObject[]]$alllinks, [Func[PSCustomObject, bool]] $delegateRegexMatch)
-  $distinctMatchedQuery = [Linq.Enumerable]::DistinctBy( [PSCustomObject[]] $query,  $delegateDistinctURL)
+  $query = [PSCustomObject[]] [Linq.Enumerable]::Where([PSCustomObject[]]$alllinks, [Func[PSCustomObject, bool]] $delegateRegexMatch)
+  $distinctMatchedQuery = [Linq.Enumerable]::DistinctBy( [PSCustomObject[]] $query, $delegateDistinctURL)
   return  [Linq.Enumerable]::ToArray([PSCustomObject[]]$distinctMatchedQuery)
 }
 
@@ -494,149 +495,145 @@ Function WatchFile {
   # [FileSystemWatcher Monitoring Folders for File Changes](https://powershell.one/tricks/filesystem/filesystemwatcher)
 
   # specify the path to the folder you want to monitor:
-$ParentPath = Split-Path $path
+  $ParentPath = Split-Path $path
 
-# specify which file(s) you want to monitor
-$FileFilter = Split-Path $path -PathType Leaf
+  # specify which file(s) you want to monitor
+  $FileFilter = Split-Path $path -PathType Leaf
 
-# specify whether you want to monitor subfolders as well:
-$IncludeSubfolders = $false
+  # specify whether you want to monitor subfolders as well:
+  $IncludeSubfolders = $false
 
-# specify the file or folder properties you want to monitor:
-$AttributeFilter = [IO.NotifyFilters]::LastWrite
+  # specify the file or folder properties you want to monitor:
+  $AttributeFilter = [IO.NotifyFilters]::LastWrite
 
-try
-{
-  $watcher = New-Object -TypeName System.IO.FileSystemWatcher -Property @{
-    Path = $ParentPath
-    Filter = $FileFilter
-    IncludeSubdirectories = $IncludeSubfolders
-    NotifyFilter = $AttributeFilter
-  }
-
-  # define the code that should execute when a change occurs:
-  $action = {
-    # the code is receiving this to work with:
-
-    # change type information:
-    $details = $event.SourceEventArgs
-    $Name = $details.Name
-    $FullPath = $details.FullPath
-    $OldFullPath = $details.OldFullPath
-    $OldName = $details.OldName
-
-    # type of change:
-    $ChangeType = $details.ChangeType
-
-    # when the change occured:
-    $Timestamp = $event.TimeGenerated
-
-    # save information to a global variable for testing purposes
-    # so you can examine it later
-    # MAKE SURE YOU REMOVE THIS IN PRODUCTION!
-    $global:all = $details
-
-    # now you can define some action to take based on the
-    # details about the change event:
-
-    # you can also execute code based on change type here:
-    switch ($ChangeType)
-    {
-      'Changed'  { "CHANGE" }
-      'Created'  { "CREATED"}
-      'Deleted'  { "DELETED"
-        # to illustrate that ALL changes are picked up even if
-        # handling an event takes a lot of time, we artifically
-        # extend the time the handler needs whenever a file is deleted
-        Write-Host "Deletion Handler Start" -ForegroundColor Gray
-        Start-Sleep -Seconds 4
-        Write-Host "Deletion Handler End" -ForegroundColor Gray
-      }
-      'Renamed'  {
-        # this executes only when a file was renamed
-        $text = "File {0} was renamed to {1}" -f $OldName, $Name
-        Write-Host $text -ForegroundColor Yellow
-      }
-
-      # any unhandled change types surface here:
-      default   { Write-Host $_ -ForegroundColor Red -BackgroundColor White }
+  try {
+    $watcher = New-Object -TypeName System.IO.FileSystemWatcher -Property @{
+      Path                  = $ParentPath
+      Filter                = $FileFilter
+      IncludeSubdirectories = $IncludeSubfolders
+      NotifyFilter          = $AttributeFilter
     }
+
+    # define the code that should execute when a change occurs:
+    $action = {
+      # the code is receiving this to work with:
+
+      # change type information:
+      $details = $event.SourceEventArgs
+      $Name = $details.Name
+      $FullPath = $details.FullPath
+      $OldFullPath = $details.OldFullPath
+      $OldName = $details.OldName
+
+      # type of change:
+      $ChangeType = $details.ChangeType
+
+      # when the change occured:
+      $Timestamp = $event.TimeGenerated
+
+      # save information to a global variable for testing purposes
+      # so you can examine it later
+      # MAKE SURE YOU REMOVE THIS IN PRODUCTION!
+      $global:all = $details
+
+      # now you can define some action to take based on the
+      # details about the change event:
+
+      # you can also execute code based on change type here:
+      switch ($ChangeType) {
+        'Changed' { 'CHANGE' }
+        'Created' { 'CREATED' }
+        'Deleted' { 'DELETED'
+          # to illustrate that ALL changes are picked up even if
+          # handling an event takes a lot of time, we artifically
+          # extend the time the handler needs whenever a file is deleted
+          Write-Host 'Deletion Handler Start' -ForegroundColor Gray
+          Start-Sleep -Seconds 4
+          Write-Host 'Deletion Handler End' -ForegroundColor Gray
+        }
+        'Renamed' {
+          # this executes only when a file was renamed
+          $text = 'File {0} was renamed to {1}' -f $OldName, $Name
+          Write-Host $text -ForegroundColor Yellow
+        }
+
+        # any unhandled change types surface here:
+        default { Write-Host $_ -ForegroundColor Red -BackgroundColor White }
+      }
+    }
+
+    # subscribe your event handler to all event types that are
+    # important to you. Do this as a scriptblock so all returned
+    # event handlers can be easily stored in $handlers:
+    $handlers = . {
+      Register-ObjectEvent -InputObject $watcher -EventName Changed -Action $action
+      Register-ObjectEvent -InputObject $watcher -EventName Created -Action $action
+      Register-ObjectEvent -InputObject $watcher -EventName Deleted -Action $action
+      Register-ObjectEvent -InputObject $watcher -EventName Renamed -Action $action
+    }
+
+    # monitoring starts now:
+    $watcher.EnableRaisingEvents = $true
+
+    Write-Host "Watching for changes to $Path"
+
+    # since the FileSystemWatcher is no longer blocking PowerShell
+    # we need a way to pause PowerShell while being responsive to
+    # incoming events. Use an endless loop to keep PowerShell busy:
+    do {
+      # Wait-Event waits for a second and stays responsive to events
+      # Start-Sleep in contrast would NOT work and ignore incoming events
+      Wait-Event -Timeout 1
+
+      # write a dot to indicate we are still monitoring:
+      Write-Host '.' -NoNewline
+
+    } while ($true)
   }
+  finally {
+    # this gets executed when user presses CTRL+C:
 
-  # subscribe your event handler to all event types that are
-  # important to you. Do this as a scriptblock so all returned
-  # event handlers can be easily stored in $handlers:
-  $handlers = . {
-    Register-ObjectEvent -InputObject $watcher -EventName Changed  -Action $action
-    Register-ObjectEvent -InputObject $watcher -EventName Created  -Action $action
-    Register-ObjectEvent -InputObject $watcher -EventName Deleted  -Action $action
-    Register-ObjectEvent -InputObject $watcher -EventName Renamed  -Action $action
+    # stop monitoring
+    $watcher.EnableRaisingEvents = $false
+
+    # remove the event handlers
+    $handlers | ForEach-Object {
+      Unregister-Event -SourceIdentifier $_.Name
+    }
+
+    # event handlers are technically implemented as a special kind
+    # of background job, so remove the jobs now:
+    $handlers | Remove-Job
+
+    # properly dispose the FileSystemWatcher:
+    $watcher.Dispose()
+
+    # Caution - if tailing the debug log, this would cause an endless loop
+    Write-PSFMessage -Level Debug -Message ('Event Handler disabled, monitoring ends.')
+
   }
-
-  # monitoring starts now:
-  $watcher.EnableRaisingEvents = $true
-
-  Write-Host "Watching for changes to $Path"
-
-  # since the FileSystemWatcher is no longer blocking PowerShell
-  # we need a way to pause PowerShell while being responsive to
-  # incoming events. Use an endless loop to keep PowerShell busy:
-  do
-  {
-    # Wait-Event waits for a second and stays responsive to events
-    # Start-Sleep in contrast would NOT work and ignore incoming events
-    Wait-Event -Timeout 1
-
-    # write a dot to indicate we are still monitoring:
-    Write-Host "." -NoNewline
-
-  } while ($true)
-}
-finally
-{
-  # this gets executed when user presses CTRL+C:
-
-  # stop monitoring
-  $watcher.EnableRaisingEvents = $false
-
-  # remove the event handlers
-  $handlers | ForEach-Object {
-    Unregister-Event -SourceIdentifier $_.Name
-  }
-
-  # event handlers are technically implemented as a special kind
-  # of background job, so remove the jobs now:
-  $handlers | Remove-Job
-
-  # properly dispose the FileSystemWatcher:
-  $watcher.Dispose()
-
-  # Caution - if tailing the debug log, this would cause an endless loop
-  Write-PSFMessage -Level Debug -Message ("Event Handler disabled, monitoring ends.")
-
-}
 }
 
 #  A Function to tail the last N lines of the PSFramework log
 Function TailLog {
   param (
     [string] $file
-    ,[int]$numlines = 20
-    ,[switch] $wait
-    )
-    # if file was not supplied, use the PSFramework logging filesystem logpath, and get the most recent file there
+    , [int]$numlines = 20
+    , [switch] $wait
+  )
+  # if file was not supplied, use the PSFramework logging filesystem logpath, and get the most recent file there
 
-    $file = (Get-ChildItem $(Get-PSFConfigValue -FullName PSFramework.Logging.FileSystem.LogPath) | Sort-Object -Property LastWriteTime -Descending)[0]
-    $command = "Get-Content -Path $file -tail $numlines"
-    Invoke-Expression $command
-    if ($wait) {
-      # Create a callback function that will tail the last N lines of the file
-      # attach a file watcher (on file modified) to the file with the callback as the action
-      # stay in this function until the user enters ctrl-c
-    }
+  $file = (Get-ChildItem $(Get-PSFConfigValue -FullName PSFramework.Logging.FileSystem.LogPath) | Sort-Object -Property LastWriteTime -Descending)[0]
+  $command = "Get-Content -Path $file -tail $numlines"
+  Invoke-Expression $command
+  if ($wait) {
+    # Create a callback function that will tail the last N lines of the file
+    # attach a file watcher (on file modified) to the file with the callback as the action
+    # stay in this function until the user enters ctrl-c
   }
+}
 # A function to stop PushBullet processes
-function KillPushBullet {Get-Process | Where-Object{$_.processname -match 'pushbul'}  | stop-process}
+function KillPushBullet { Get-Process | Where-Object { $_.processname -match 'pushbul' } | Stop-Process }
 
 # A function and alias to kill the VoiceAttack process
 function PublishPluginAndStartVAProcess {
@@ -654,40 +651,39 @@ Set-Item -Path alias:stopVA -Value StopVoiceAttackProcess
 
 
 # A function to get the Windows Security Identifier (SID) given a user name
-Function GetSIDfromAcctName
-{
+Function GetSIDfromAcctName {
   [CmdletBinding(DefaultParameterSetName = 'Local')]
 
-    Param(
-        [Parameter(mandatory=$true)]$userName
-        , [Parameter(ParameterSetName = 'Remote')]
-        [Parameter(mandatory=$false)]$ComputerName
-    )
-    $usracct = ''
-    $command = 'Get-CimInstance -Query "Select * from Win32_UserAccount where name = ''$userName''"'
-    switch ($PSCmdlet.ParameterSetName) {
-      Local {
-          # No change to the basee command
-      }
-      Remote {
-        $command = $command + " -ComputerName $ComputerName"
-      }
+  Param(
+    [Parameter(mandatory = $true)]$userName
+    , [Parameter(ParameterSetName = 'Remote')]
+    [Parameter(mandatory = $false)]$ComputerName
+  )
+  $usracct = ''
+  $command = 'Get-CimInstance -Query "Select * from Win32_UserAccount where name = ''$userName''"'
+  switch ($PSCmdlet.ParameterSetName) {
+    Local {
+      # No change to the basee command
     }
-    Write-PSFMessage -Level Debug -Message "command = $command"
-    $usracct = Invoke-Expression $command
-    return $usracct.sid
+    Remote {
+      $command = $command + " -ComputerName $ComputerName"
+    }
+  }
+  Write-PSFMessage -Level Debug -Message "command = $command"
+  $usracct = Invoke-Expression $command
+  return $usracct.sid
 }
 
 
- Function ShutItAllDown {
+Function ShutItAllDown {
 	 $ComputerNameList = @('ncat016')#,'utat022')
 	 foreach ($cn in $ComputerNameList) {
-		 $Session = New-PSSession -ComputerName $cn -ConfigurationName WithProfile
-		 Enter-Session $Session
-		 shutdown /s /t 20
-		 Close-Session $Session
+    $Session = New-PSSession -ComputerName $cn -ConfigurationName WithProfile
+    Enter-Session $Session
+    shutdown /s /t 20
+    Close-Session $Session
 	 }
- }
+}
 
 # A function to set an environment variable for a named user (at the user scope in the machine's registry)
 # must be run in an elevated (administrator) process
@@ -697,16 +693,46 @@ Function GetSIDfromAcctName
 # Set the value of the environment variable (Key)
 
 
-# ToDo: Fix the Get-CollTravEval
-# ToDo move the Get-URI function to the base powershell module
-# See Michael Sorens answer to https://stackoverflow.com/questions/9593535/best-way-to-join-parts-with-a-separator-in-powershell
-Function Get-URI {
-  Param(
-    [Parameter(mandatory=$true)]$parts
-  )
-  ($parts | ForEach-Object { $_.trim("/").trim() } | Where-Object { $_ } ) -join "/"
+# ToDo: Fix the Get-CollTravEval so it handles hash tables
+# # Set the global PackageRepositoriesCollection
+$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']] = @{
+  # $global:configRootKeys['RepositoryNuGetFilesystemDevelopmentPackageNameConfigRootKey']                             = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemDevelopmentPackagePathConfigRootKey']]
+  # $global:configRootKeys['RepositoryNuGetFilesystemQualityAssurancePackageNameConfigRootKey']                        = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemQualityAssurancePackagePathConfigRootKey']]
+  # $global:configRootKeys['RepositoryNuGetFilesystemProductionPackageNameConfigRootKey']                              = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemProductionPackagePathConfigRootKey']]
+   $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']              = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey']         = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerProductionPackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryNuGetProductionWebServerDevelopmentPackageNameConfigRootKey']                    = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryNuGetProductionWebServerQualityAssurancePackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryNuGetProductionWebServerQualityAssurancePackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageNameConfigRootKey']                     = $global:settings[$global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryPowershellGetFilesystemDevelopmentPackageNameConfigRootKey']                     = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemDevelopmentPackagePathConfigRootKey']]
+  # $global:configRootKeys['RepositoryPowershellGetFilesystemQualityAssurancePackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemQualityAssurancePackagePathConfigRootKey']]
+  # $global:configRootKeys['RepositoryPowershellGetFilesystemProductionPackageNameConfigRootKey']                      = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemProductionPackagePathConfigRootKey']]
+  # $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']      = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey'] = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerProductionPackageNameConfigRootKey']       = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryPowershellGetProductionWebServerDevelopmentPackageNameConfigRootKey']            = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerDevelopmentPackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryPowershellGetProductionWebServerQualityAssurancePackageNameConfigRootKey']       = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerQualityAssurancePackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryPowershellGetProductionWebServerProductionPackageNameConfigRootKey']             = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerProductionPackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryChocolateyFilesystemDevelopmentPackageNameConfigRootKey']                        = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemDevelopmentPackagePathConfigRootKey']]
+  # $global:configRootKeys['RepositoryChocolateyFilesystemQualityAssurancePackageNameConfigRootKey']                   = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemQualityAssurancePackagePathConfigRootKey']]
+  # $global:configRootKeys['RepositoryChocolateyFilesystemProductionPackageNameConfigRootKey']                         = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemProductionPackagePathConfigRootKey']]
+  # $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']         = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey']    = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerProductionPackageNameConfigRootKey']          = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryChocolateyProductionWebServerDevelopmentPackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerDevelopmentPackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryChocolateyProductionWebServerQualityAssurancePackageNameConfigRootKey']          = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerQualityAssurancePackageURIConfigRootKey']]
+  # $global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageURIConfigRootKey']]
 }
 
+# ToDo find a place to store 'nearly good enoug' functions. Instead of this Get-URI function, use [URIBuilder]::new(...)
+# See Michael Sorens answer to https://stackoverflow.com/questions/9593535/best-way-to-join-parts-with-a-separator-in-powershell
+# Function Get-URI {
+#   Param(
+#     [Parameter(mandatory=$true)]$parts
+#   )
+#   ($parts | ForEach-Object { $_.trim("/").trim() } | Where-Object { $_ } ) -join "/"
+# }
 
 # Final (user) directory to leave the interpreter
 #cdMy

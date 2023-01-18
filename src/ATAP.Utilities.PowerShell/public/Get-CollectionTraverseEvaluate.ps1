@@ -441,7 +441,7 @@ function Get-CollectionTraverseEvaluate {
       $matchArray = @(, $($($regexMatches.Groups).Captures | Where-Object { $_.Name -match 'Earlier' }) | ForEach-Object { $_.Value })
       $entries[$entryKey].DependsUponDestination = $matchArray
     }
-    Write-PSFMessage -Level Debug -Message "entry = $($entries[$entryKey].ToString())"
+    Write-PSFMessage -Level Debug -Message "entry Key is $entryKey, Value is $entries[$entryKey], DependsUponDestination is $($entries[$entryKey].DependsUponDestination)" -tag 'wip'
   }
 
   # iterate over all the elements of a collection
@@ -591,7 +591,7 @@ function Get-CollectionTraverseEvaluate {
         $EntryKeyStringWithNullValue += $EntryKeysString
       }
     }
-    Write-PSFMessage -Level Debug -Message "Number of NULL sortedEntryKeyFromLookup = $($EntryKeyStringWithNullValue.count):: List = $($EntryKeyStringWithNullValue -join ',')"
+    Write-PSFMessage -Level Debug -Message "Number of NULL sortedEntryKeyFromLookup = $($EntryKeyStringWithNullValue.count):: List = $($EntryKeyStringWithNullValue -join [Environment]::NewLine)"
     # upon a return, Powershell will flatten an array of 1 element unless special syntax is used
     return @(, $sortedEntryKeys)
   }

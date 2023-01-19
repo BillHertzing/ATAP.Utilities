@@ -86,17 +86,17 @@ $global:configRootKeys = @{
 
   # Packaging, Deploying, Delivering, Updating
   # All Package repositories that use a filesystem can use the default source and drop locations, or specify a full custom paths
-  'RepositoryFileSystemPackageSourceLocationBasePathDefaultConfigRootKey' = 'RepositoryFileSystemPackageSourceLocationBasePathDefault'
-  'RepositoryFileSystemPackageDropLocationBasePathDefaultConfigRootKey' = 'RepositoryFileSystemPackageDropLocationBasePathDefault'
+  'RepositoryFileSystemPackageSourceLocationBasePathDefaultConfigRootKey'                        = 'RepositoryFileSystemPackageSourceLocationBasePathDefault'
+  'RepositoryFileSystemPackageDropLocationBasePathDefaultConfigRootKey'                          = 'RepositoryFileSystemPackageDropLocationBasePathDefault'
   # The repository names by which each of the various repositories for Powershell packages are known. and their details
   # The name of the repository for Packages that are in NuGet format
   'RepositoryNuGetFilesystemDevelopmentPackageNameConfigRootKey'                                 = 'NuGetFilesystemDevelopmentPackage'
   # ToDo: The Filesystem locations, and web server URIs need both a source and a drop settings base for every provider/location pair. Using just Source value currently
- 'RepositoryNuGetFilesystemDevelopmentPackagePathConfigRootKey' = 'NuGetFilesystemDevelopmentPackagePath'
+  'RepositoryNuGetFilesystemDevelopmentPackagePathConfigRootKey'                                 = 'NuGetFilesystemDevelopmentPackagePath'
   'RepositoryNuGetFilesystemQualityAssurancePackageNameConfigRootKey'                            = 'NuGetFilesystemQualityAssurancePackage'
-  'RepositoryNuGetFilesystemQualityAssurancePackagePathConfigRootKey' = 'NuGetFilesystemQualityAssurancePackagePath'
+  'RepositoryNuGetFilesystemQualityAssurancePackagePathConfigRootKey'                            = 'NuGetFilesystemQualityAssurancePackagePath'
   'RepositoryNuGetFilesystemProductionPackageNameConfigRootKey'                                  = 'NuGetFilesystemProductionPackage'
-  'RepositoryNuGetFilesystemProductionPackagePathConfigRootKey' = 'NuGetFilesystemProductionPackagePath'
+  'RepositoryNuGetFilesystemProductionPackagePathConfigRootKey'                                  = 'NuGetFilesystemProductionPackagePath'
   'RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey'                  = 'NuGetQualityAssuranceWebServerDevelopmentPackage'
   'RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey'             = 'NuGetQualityAssuranceWebServerQualityAssurancePackage'
   'RepositoryNuGetQualityAssuranceWebServerProductionPackageNameConfigRootKey'                   = 'NuGetQualityAssuranceWebServerProductionPackage'
@@ -106,11 +106,11 @@ $global:configRootKeys = @{
 
   # The name of the repository for Packages that are in PowershellGet format
   'RepositoryPowershellGetFilesystemDevelopmentPackageNameConfigRootKey'                         = 'PowershellGetFilesystemDevelopmentPackage'
-  'RepositoryPowershellGetFilesystemDevelopmentPackagePathConfigRootKey' = 'PowershellGetFilesystemDevelopmentPackagePath'
+  'RepositoryPowershellGetFilesystemDevelopmentPackagePathConfigRootKey'                         = 'PowershellGetFilesystemDevelopmentPackagePath'
   'RepositoryPowershellGetFilesystemQualityAssurancePackageNameConfigRootKey'                    = 'PowershellGetFilesystemQualityAssurancePackage'
-  'RepositoryPowershellGetFilesystemQualityAssurancePackagePathConfigRootKey' = 'PowershellGetFilesystemQualityAssurancePackagePath'
+  'RepositoryPowershellGetFilesystemQualityAssurancePackagePathConfigRootKey'                    = 'PowershellGetFilesystemQualityAssurancePackagePath'
   'RepositoryPowershellGetFilesystemProductionPackageNameConfigRootKey'                          = 'PowershellGetFilesystemProductionPackage'
-  'RepositoryPowershellGetFilesystemProductionPackagePathConfigRootKey' = 'PowershellGetFilesystemProductionPackagePath'
+  'RepositoryPowershellGetFilesystemProductionPackagePathConfigRootKey'                          = 'PowershellGetFilesystemProductionPackagePath'
   'RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey'          = 'PowershellGetQualityAssuranceWebServerDevelopmentPackage'
   'RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey'     = 'PowershellGetQualityAssuranceWebServerQualityAssurancePackage'
   'RepositoryPowershellGetQualityAssuranceWebServerProductionPackageNameConfigRootKey'           = 'PowershellGetQualityAssuranceWebServerProductionPackage'
@@ -120,11 +120,11 @@ $global:configRootKeys = @{
 
   # The name of the repository for Packages that are in Chocolatey format
   'RepositoryChocolateyFilesystemDevelopmentPackageNameConfigRootKey'                            = 'ChocolateyFilesystemDevelopmentPackage'
-  'RepositoryChocolateyFilesystemDevelopmentPackagePathConfigRootKey' = 'ChocolateyFilesystemDevelopmentPackagePath'
+  'RepositoryChocolateyFilesystemDevelopmentPackagePathConfigRootKey'                            = 'ChocolateyFilesystemDevelopmentPackagePath'
   'RepositoryChocolateyFilesystemQualityAssurancePackageNameConfigRootKey'                       = 'ChocolateyFilesystemQualityAssurancePackage'
-  'RepositoryChocolateyFilesystemQualityAssurancePackagePathConfigRootKey' = 'ChocolateyFilesystemQualityAssurancePackagePath'
+  'RepositoryChocolateyFilesystemQualityAssurancePackagePathConfigRootKey'                       = 'ChocolateyFilesystemQualityAssurancePackagePath'
   'RepositoryChocolateyFilesystemProductionPackageNameConfigRootKey'                             = 'ChocolateyFilesystemProductionPackage'
-  'RepositoryChocolateyFilesystemProductionPackagePathConfigRootKey' = 'ChocolateyFilesystemProductionPackagePath'
+  'RepositoryChocolateyFilesystemProductionPackagePathConfigRootKey'                             = 'ChocolateyFilesystemProductionPackagePath'
   'RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey'             = 'ChocolateyQualityAssuranceWebServerDevelopmentPackage'
   'RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey'        = 'ChocolateyQualityAssuranceWebServerQualityAssurancePackage'
   'RepositoryChocolateyQualityAssuranceWebServerProductionPackageNameConfigRootKey'              = 'ChocolateyQualityAssuranceWebServerProductionPackage'
@@ -153,12 +153,12 @@ $global:configRootKeys = @{
   'RepositoryNuGetProductionWebServerQualityAssurancePackagePortConfigRootKey'                   = 'NuGetProductionWebServerQualityAssurancePackagePort'
   'RepositoryNuGetProductionWebServerProductionPackagePortConfigRootKey'                         = 'NuGetProductionWebServerProductionPackagePort'
   # URIs For NuGetWebServer
-  'RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey'                    = 'RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURI'
-  'RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey'                    = 'RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageURI'
+  'RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey'                   = 'RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURI'
+  'RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey'              = 'RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageURI'
   'RepositoryNuGetQualityAssuranceWebServerProductionPackageURIConfigRootKey'                    = 'RepositoryNuGetQualityAssuranceWebServerProductionPackageURI'
-  'RepositoryNuGetProductionWebServerDevelopmentPackageURIConfigRootKey'                    = 'RepositoryNuGetProductionWebServerDevelopmentPackageURI'
+  'RepositoryNuGetProductionWebServerDevelopmentPackageURIConfigRootKey'                         = 'RepositoryNuGetProductionWebServerDevelopmentPackageURI'
   'RepositoryNuGetProductionWebServerQualityAssurancePackageURIConfigRootKey'                    = 'RepositoryNuGetProductionWebServerQualityAssurancePackageURI'
-  'RepositoryNuGetProductionWebServerProductionPackageURIConfigRootKey'                    = 'RepositoryNuGetProductionWebServerProductionPackageURI'
+  'RepositoryNuGetProductionWebServerProductionPackageURIConfigRootKey'                          = 'RepositoryNuGetProductionWebServerProductionPackageURI'
 
   # URI Details for PowershellGet Web Server
   'RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageProtocolConfigRootKey'      = 'PowershellGetQualityAssuranceWebServerDevelopmentPackageProtocol'
@@ -180,12 +180,12 @@ $global:configRootKeys = @{
   'RepositoryPowershellGetProductionWebServerQualityAssurancePackagePortConfigRootKey'           = 'PowershellGetProductionWebServerQualityAssurancePackagePort'
   'RepositoryPowershellGetProductionWebServerProductionPackagePortConfigRootKey'                 = 'PowershellGetProductionWebServerProductionPackagePort'
   # URIs For PowershellGetWebServer
-  'RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey'                    = 'RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageURI'
-  'RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey'                    = 'RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageURI'
-  'RepositoryPowershellGetQualityAssuranceWebServerProductionPackageURIConfigRootKey'                    = 'RepositoryPowershellGetQualityAssuranceWebServerProductionPackageURI'
-  'RepositoryPowershellGetProductionWebServerDevelopmentPackageURIConfigRootKey'                    = 'RepositoryPowershellGetProductionWebServerDevelopmentPackageURI'
-  'RepositoryPowershellGetProductionWebServerQualityAssurancePackageURIConfigRootKey'                    = 'RepositoryPowershellGetProductionWebServerQualityAssurancePackageURI'
-  'RepositoryPowershellGetProductionWebServerProductionPackageURIConfigRootKey'                    = 'RepositoryPowershellGetProductionWebServerProductionPackageURI'
+  'RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey'           = 'RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageURI'
+  'RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey'      = 'RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageURI'
+  'RepositoryPowershellGetQualityAssuranceWebServerProductionPackageURIConfigRootKey'            = 'RepositoryPowershellGetQualityAssuranceWebServerProductionPackageURI'
+  'RepositoryPowershellGetProductionWebServerDevelopmentPackageURIConfigRootKey'                 = 'RepositoryPowershellGetProductionWebServerDevelopmentPackageURI'
+  'RepositoryPowershellGetProductionWebServerQualityAssurancePackageURIConfigRootKey'            = 'RepositoryPowershellGetProductionWebServerQualityAssurancePackageURI'
+  'RepositoryPowershellGetProductionWebServerProductionPackageURIConfigRootKey'                  = 'RepositoryPowershellGetProductionWebServerProductionPackageURI'
 
   # URI Details for Chocolatey Web Server
   'RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageProtocolConfigRootKey'         = 'ChocolateyQualityAssuranceWebServerDevelopmentPackageProtocol'
@@ -207,12 +207,12 @@ $global:configRootKeys = @{
   'RepositoryChocolateyProductionWebServerQualityAssurancePackagePortConfigRootKey'              = 'ChocolateyProductionWebServerQualityAssurancePackagePort'
   'RepositoryChocolateyProductionWebServerProductionPackagePortConfigRootKey'                    = 'ChocolateyProductionWebServerProductionPackagePort'
   # URIs For ChocolateyWebServer
-  'RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey'                    = 'RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageURI'
-  'RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey'                    = 'RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageURI'
-  'RepositoryChocolateyQualityAssuranceWebServerProductionPackageURIConfigRootKey'                    = 'RepositoryChocolateyQualityAssuranceWebServerProductionPackageURI'
+  'RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey'              = 'RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageURI'
+  'RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey'         = 'RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageURI'
+  'RepositoryChocolateyQualityAssuranceWebServerProductionPackageURIConfigRootKey'               = 'RepositoryChocolateyQualityAssuranceWebServerProductionPackageURI'
   'RepositoryChocolateyProductionWebServerDevelopmentPackageURIConfigRootKey'                    = 'RepositoryChocolateyProductionWebServerDevelopmentPackageURI'
-  'RepositoryChocolateyProductionWebServerQualityAssurancePackageURIConfigRootKey'                    = 'RepositoryChocolateyProductionWebServerQualityAssurancePackageURI'
-  'RepositoryChocolateyProductionWebServerProductionPackageURIConfigRootKey'                    = 'RepositoryChocolateyProductionWebServerProductionPackageURI'
+  'RepositoryChocolateyProductionWebServerQualityAssurancePackageURIConfigRootKey'               = 'RepositoryChocolateyProductionWebServerQualityAssurancePackageURI'
+  'RepositoryChocolateyProductionWebServerProductionPackageURIConfigRootKey'                     = 'RepositoryChocolateyProductionWebServerProductionPackageURI'
 
   # The collection that lists all powershell package repositories
   'PackageRepositoriesCollectionConfigRootKey'                                                   = 'PackageRepositoriesCollection'

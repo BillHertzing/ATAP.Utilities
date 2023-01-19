@@ -57,14 +57,14 @@ Function Set-RepositoryPackageSources {
         }
         else { Install-PackageProvider -Name $ProviderName -ForceBootstrap }
       }
-      ('Filesystem', 'WebServerTest', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
+      ('Filesystem', 'WebServerQualityAssurance', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
         ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $Lifecycle = $_
           $PackageSourceID = $ProviderName + $PackageSource + $Lifecycle
           if (!$(Get-PackageSource -Name $PackageSourceID -ErrorAction SilentlyContinue)) {
             switch -regex ($PackageSourceID) {
               'NuGetFilesystemDevelopment|NuGetFilesystemQualityAssurance|NuGetFilesystemProduction|PowerShellGetFilesystemDevelopment|PowerShellGetFilesystemQualityAssurance|PowerShellGetFilesystemProduction' {
                 # ToDo add try/catch error handling
-                Set-PackageSource -Name $PackageSourceID -Trusted -Location $global:settings['PackageRepositoriesCollection'][$PackageSourceID]
+                Set-PackageSource -Name $PackageSourceID -ForceBootstrap -Trusted -Location $global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']][$PackageSourceID]
                 break
               }
               'NuGetQualityAssuranceWebServerDevelopment' {

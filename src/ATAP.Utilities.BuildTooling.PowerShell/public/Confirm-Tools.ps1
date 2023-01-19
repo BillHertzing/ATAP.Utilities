@@ -52,48 +52,49 @@ ToDo: insert SCM keywords markers that are automatically inserted <Configuration
 #>
 Function Confirm-Tools {
   #region FunctionParameters
-  [CmdletBinding(SupportsShouldProcess = $true)]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'NoParameters')]
   param (
-    [parameter()]
-    [string] $OutPath = '\\Utat022\fs\DailyReports\Confirm-Tools-Results.txt'
+    [parameter(ParameterSetName = 'PackageRepositoriesParameters')]
+    [array] $PackageSourceNames
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $False)]
+    [string] $Encoding # Often found in the $PSDefaultParameterValues preference variable
   )
+
   #endregion FunctionParameters
   #region FunctionBeginBlock
   ########################################
   BEGIN {
     # Set these as needed for debugging the script
     # Don't Print any debug messages to the console
-    #$DebugPreference = 'SilentlyContinue'
+    $DebugPreference = 'SilentlyContinue' # SilentlyContinue Continue
     # Don't Print any verbose messages to the console
     $VerbosePreference = 'Continue' # SilentlyContinue Continue
-    Write-Debug -Message "Starting $($MyInvocation.Mycommand)"
-    Write-Verbose "OutPath = $OutPath"
+    Write-PSFMessage -Level Debug -Message "Starting Confirm-Tools.ps1; Encoding = $Encoding"
 
-    # Output tests
-    if (-not (Test-Path -Path $settings.OutDir -PathType Container)) {
-      throw "$settings.OutDir is not a directory"
-    }
-    # Validate that the $Settings.OutDir is writable
-    $testOutFn = $settings.OutDir + 'test.txt'
-    try { New-Item $testOutFn -Force -type file >$null
-    }
-    catch { # if an exception ocurrs
-      # handle the exception
-      $where = $PSItem.InvocationInfo.PositionMessage
-      $ErrorMessage = $_.Exception.Message
-      $FailedItem = $_.Exception.ItemName
-      #Log('Error', "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where.");
-      Throw "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where."
-    }
-    # Remove the test file
-    Remove-Item $testOutFn -ErrorAction Stop
+    # # Output tests
+    # if (-not (Test-Path -Path $settings.OutDir -PathType Container)) {
+    #   throw "$settings.OutDir is not a directory"
+    # }
+    # # Validate that the $Settings.OutDir is writable
+    # $testOutFn = $settings.OutDir + 'test.txt'
+    # try { New-Item $testOutFn -Force -type file >$null
+    # }
+    # catch { # if an exception ocurrs
+    #   # handle the exception
+    #   $where = $PSItem.InvocationInfo.PositionMessage
+    #   $ErrorMessage = $_.Exception.Message
+    #   $FailedItem = $_.Exception.ItemName
+    #   #Log('Error', "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where.");
+    #   Throw "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where."
+    # }
+    # # Remove the test file
+    # Remove-Item $testOutFn -ErrorAction Stop
 
-    $datestr = Get-Date -AsUTC -Format 'yyyy/MM/dd:HH.mm'
+    # $datestr = Get-Date -AsUTC -Format 'yyyy/MM/dd:HH.mm'
 
-    # Read in the contents of the last $OutPath file as a hash
-    $dateKeyedHash = if (Test-Path -Path $OutPath) { gc $OutPath | ConvertFrom-Json -asHash } else { @{}
-    }
-
+    # # Read in the contents of the last $OutPath file as a hash
+    # $dateKeyedHash = if (Test-Path -Path $OutPath) { gc $OutPath | ConvertFrom-Json -asHash } else { @{}
+    # }
     Write-Verbose 'Validating tools and configurations are present'
   }
   #endregion FunctionBeginBlock
@@ -101,15 +102,27 @@ Function Confirm-Tools {
   #region FunctionProcessBlock
   ########################################
   PROCESS {
+    ('NuGet', 'PowershellGet', 'Chocolatey') | ForEach-Object { $ProviderName = $_
+      # Confirm-RepositoryPackageProvider will throw if it cannot be installed
+      Confirm-RepositoryPackageProvider -ProviderName $ProviderName
+      ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $ProviderLifecycle = $_
+        ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $PackageLifecycle = $_
+          # validate each $ProviderName / ProviderLifecycle / LifPackageLifecycleecycle cross exists. (installing should be done during container setup)
+          $RepositoryPackageSourceName = $ProviderName + $ProviderLifecycle + $PackageLifecycle + 'Package'
+          # Confirm-RepositoryPackageProvider will throw if the RepositoryPackageSourceName cannot be registered
+          Confirm-RepositoryPackageSource -RepositoryPackageSourceName $RepositoryPackageSourceName
+      }
+    }
   }
+}
   #endregion FunctionProcessBlock
 
   #region FunctionEndBlock
   ########################################
   END {
-    $str = nuget locals all -list
-    $dateKeyedHash[$datestr ] = $str
-    $dateKeyedHash | ConvertTo-Json | Set-Content -Path $OutPath
+    # $str = nuget locals all -list
+    # $dateKeyedHash[$datestr ] = $str
+    # $dateKeyedHash | ConvertTo-Json | Set-Content -Path $OutPath
   }
   #endregion FunctionEndBlock
 }

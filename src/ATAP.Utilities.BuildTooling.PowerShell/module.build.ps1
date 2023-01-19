@@ -190,23 +190,7 @@ Task BuildPSD1 @{
     # ToDo: implement a cache with a reasonable timeout
     $repoitoriesCache = $null
 
-    # ToDo - move validation of package repositories to the start-up profile for machines that are in development/QA/Production roles
-    # Validate package repository source and destination locations are reachable
-    ('NuGet', 'PowershellGet', 'Chocolatey') | ForEach-Object { $ProviderName = $_
-      ('Filesystem', 'WebServerTest', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
-        ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $Lifecycle = $_
-          # validate each $PackageSource / Lifecycle cross exists. (installing should be done during container setup)
-          $PackageSourceID = $ProviderName+$PackageSource+$Lifecycle
-              if (-not $(Get-PackageSource -Name $PackageSourceID)) {
-                # ToDo better error logging
-                Write-PSFMessage -Level Error -Message "PackageSourceID Not Found; PackageSourceID = $PackageSourceID"
-                # Throw Error
-                throw "PackageSourceID Not Found; PackageSourceID = $PackageSourceID"
-        }
-      }
-    }
-  }
-
+    # Validation of package repositories is handeled by confirm-tools when a container is started
     # create the in-memory manifest from the sourceManifestPath
 
     # Check all known repositories for other versions of this $moduleName
@@ -218,7 +202,7 @@ Task BuildPSD1 @{
       # switch on the kind
       switch ($ProviderName) {
         'NuGet' {
-          ('Filesystem', 'WebServerTest', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
+          ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $PackageSource = $_
             switch ($PackageSource) {
               'Filesystem' {
                 ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $Lifecycle = $_
@@ -234,10 +218,10 @@ Task BuildPSD1 @{
                   break
                 }
               }
-              'WebServerTest' {
+              'QualityAssuranceWebServer' {
                 break
               }
-              'WebServerProduction' {
+              'ProductionWebServer' {
                 break
               }
               default {
@@ -248,15 +232,15 @@ Task BuildPSD1 @{
         }
 
         'PowershellGet' {
-          ('Filesystem', 'WebServerTest', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
+          ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $PackageSource = $_
             switch ($PackageSource) {
               'Filesystem' {
                 break
               }
-              'WebServerTest' {
+              'QualityAssuranceWebServer' {
                 break
               }
-              'WebServerProduction' {
+              'ProductionWebServer' {
                 break
               }
               default {
@@ -266,15 +250,15 @@ Task BuildPSD1 @{
           }
         }
         'Chocolatey' {
-          ('Filesystem', 'WebServerTest', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
+          ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $PackageSource = $_
             switch ($PackageSource) {
               'Filesystem' {
                 break
               }
-              'WebServerTest' {
+              'QualityAssuranceWebServer' {
                 break
               }
-              'WebServerProduction' {
+              'ProductionWebServer' {
                 break
               }
               default {

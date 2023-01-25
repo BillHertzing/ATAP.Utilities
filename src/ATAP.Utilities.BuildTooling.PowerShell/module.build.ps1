@@ -37,6 +37,7 @@ Enter-Build {
   # ToDo: Move these strings to the global string constants file
   $moduleFilename = $moduleName + '.psm1'
   $manifestFilename = $moduleName + '.psd1'
+  $NuSpecFilename = $moduleName + '.nuspec'
 
   $sourceSubDirectorys = @('public', 'private', 'Resources')
   $sourceExtensions = @('.ps1', '.clixml')
@@ -56,6 +57,7 @@ Enter-Build {
   $GeneratedPowerShellModuleSubdirectory = $global:settings[$global:configRootKeys['GeneratedPowershellModuleConfigRootKey']]
   $GeneratedModuleFilePath = Join-Path '.' $GeneratedPowerShellModuleSubdirectory $moduleFilename
   $GeneratedManifestFilePath = Join-Path '.' $GeneratedPowerShellModuleSubdirectory $manifestFilename
+  $GeneratedNuSpecFilePath = Join-Path '.' $GeneratedPowerShellModuleSubdirectory $NuSpecFilename
 
   Write-PSFMessage -Level Debug -Message "ModuleRoot = $ModuleRoot; moduleName = $moduleName"
   Write-PSFMessage -Level Debug -Message "sourceFileInfos = $sourceFileInfos"
@@ -187,33 +189,52 @@ Task BuildPSD1 @{
   Jobs    = 'Clean', {
     Write-PSFMessage -Level Debug -Message "Starting Task BuildPSD1; GeneratedManifestFilePath = $GeneratedManifestFilePath; sourceManifestPath = $sourceManifestPath; inputs = $inputs"
 
+    # ToDO Move to constants
+    $lowestSemanticVersion = '0.0.1-alpha001'
+
     # ToDo: implement a cache with a reasonable timeout
-    $repoitoriesCache = $null
+    $repositoriesCache = $null
 
     # Validation of package repositories is handeled by confirm-tools when a container is started
     # create the in-memory manifest from the sourceManifestPath
+    $manifest = Import-PowerShellDataFile Path $sourceManifestPath
 
-    # Check all known repositories for other versions of this $moduleName
-    $foundOldModules = @{}
-    $foundOldVersions = @{}
+    # Check all known production repositories for highest version of this $moduleName
+    $highestSemanticVersion = $lowestSemanticVersion
+    # ToDo: Replace with a mechanism or cache that speeds this up
+    $RepositoryPackageSourceNames = @()
+    ('NuGet', 'PowershellGet', 'Chocolatey') | ForEach-Object { $ProviderName = $_
+      ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $ProviderLifecycle = $_
+      ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $PackageLifecycle = $_
+        $RepositoryPackageSourceNames += $ProviderName + $ProviderLifecycle + $PackageLifecycle + 'Package'
+      }}}
+    $highestSemanticVersion, $highestSemanticVersionPackage = Get-HighestVersionOfModule -moduleName $moduleName -Sources $RepositoryPackageSourceNames
+    $nextSemanticVersion = Get-NextSemanticVersionNumber $highestSemanticVersion $highestSemanticVersionPackage -manifest $GeneratedManifestFilePath
+
+    # $foundOldModules = @{}
+    # $foundOldVersions = @{}
 
     # $ProviderName =(xxx).Keys
     ('NuGet', 'PowershellGet', 'Chocolatey') | ForEach-Object { $ProviderName = $_
-      # switch on the kind
       switch ($ProviderName) {
         'NuGet' {
-          ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $PackageSource = $_
-            switch ($PackageSource) {
+          ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $ProviderLifecycle = $_
+            switch ($ProviderLifecycle) {
               'Filesystem' {
-                ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $Lifecycle = $_
-                  if (Get-ChildItem $xxx) {
-                    $semanticVersion = '0.0.1' #ParseSemanticVersionFromModuleNameAndPath
-                    $foundOldModules[$ProviderName][$PackageSource][$Lifecycle] = $semanticVersion
-                    $foundOldVersions[$semanticVersion] = [PSCustomObject]@{
-                      ProviderName     = $ProviderName
-                      PackageSource = $PackageSource
-                      Lifecycle          = $Lifecycle
-                    }
+                ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $PackageLifecycle = $_
+                  $RepositoryPackageSourceName = $ProviderName + $ProviderLifecycle + $PackageLifecycle + 'Package'
+                  # Only the highest version .psd1 file is needed
+                  $allNugetFilesystemPackageVersions = Get-ChildItem -Recurse -Include "$moduleName*" -File -Path $global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']][$RepositoryPackageSourceName] | Sort-Object -Property BaseName -Desc
+                  $highestNugetFilesystemPackageVersion = $allNugetFilesystemPackageVersions[0]
+                  if ($allNugetFilesystemPackageVersions) {
+                    #ToDo advanced Infrastructure as code : Turn the replacement pattern into a configuration thingy
+                    $highestsemanticVersion = $allNugetFilesystemPackageVersions[0].basename -replace "^$modulename-", ''
+                    # $foundOldModules[$ProviderName][$PackageSource][$Lifecycle] = $semanticVersion
+                    # $foundOldVersions[$semanticVersion] = [PSCustomObject]@{
+                    #   ProviderName     = $ProviderName
+                    #   PackageSource = $PackageSource
+                    #   Lifecycle          = $Lifecycle
+                    # }
                   }
                   break
                 }
@@ -272,13 +293,21 @@ Task BuildPSD1 @{
         }
       }
     }
-    # Check
 
-    # No Other version exists
-
-    # At least one version exists in Production / QA / Development repositories
-
-    # Get the highest version of this module found in Production / QA / Development repositories cache
+    # Get the highest version of this module found in Production / QA / Development repositories and also the highest production version
+    # Check across all sources
+    # See https://devblogs.microsoft.com/nuget/introducing-package-source-mapping/
+    $highestSemanticVersion = $highestNugetFilesystemPackageVersion #max($highestNugetFilesystemPackageVersion,$highestNugetFilesystemPackageVersion,$highestNugetFilesystemPackageVersion,...)
+    $highestVersionManifestPath = $null
+    if ($highestsemanticVersion) {
+      # At least one version exists in Production / QA / Development repositories
+    $nextSemanticVersion = '0.0.1-alpha001'
+      $highestVersionManifestPath = $allNugetFilesystemPackageVersions[0] # or a path to a file download from a webserver
+    }
+    else {
+      # No Other version exists, edge case when a module in $ProductLifecycle = Development is published for the very first time
+      $nextSemanticVersion = '0.0.1-alpha001'
+    }
 
     # Import the manifest from the highest version (including PreRelease) found across the Production / QA / Development repositories
     $highestVersionManifest = $null
@@ -286,18 +315,27 @@ Task BuildPSD1 @{
     # import the manifest from the highest Production Version, if one exists
     $highestProductionManifest = $null
 
-    # Compare the names of the Public / Private / Resource / Tools files in the $sourceFiles to the names of the Public / Private / Resource / Tools files in the highest production manifest
 
-    # Determine if the source files represents a Major/Minor/Patch/Dev version bump compared to the highest production version (ToDo: allow manual indication for a version bump)
+    # $highestVersion = [version] (Get-Metadata -Path $highestVersionManifestPath -PropertyName 'ModuleVersion')
+    # $highestProductionVersion = [version] (Get-Metadata -Path $highestProductionVersionPath -PropertyName 'ModuleVersion')
+    # $sourceManifestVersion = [version] (Get-Metadata -Path $sourceManifestPath -PropertyName 'ModuleVersion')
 
-    $bumpVersionType = 'PreRelease'
+    # Compare the names of the Public / Private / Resource / Tools files in the $sourceFiles to the names of the Public / Private / Resource / Tools files in the highest production manifest, and
+    # Determine if the source files represents a Major/Minor/Patch/PreRelease version bump compared to the highest production version (ToDo: allow manual indication for a version bump)
+    #ToDo: when run by a developer (not CI) if source is a prerelease, but major/minor values disagree with $sourcefiles comparasion, prompt/guide user interaction to pick a correct semantic version value
+
+
+
+    $bumpVersionType = '' #InitialDepoloyment, NewMajor, ,NewMajorPreRelease, NewMinor, NewMinorPreRelease, Patch, PatchPreRelease
+    #$nextSemanticVersion
 
     # create the version number from the bump, the highest verion manifest, and the current source material
+
     $version = [version] (Get-Metadata -Path $highestVersionManifest -PropertyName 'ModuleVersion')
 
     # update the version number for the manifest
 
-    # update the public, private,  resource, and tools  entries for the manifest
+    # update the public, private, resource, and tools entries for the manifest
 
     # write the manifest to the $GeneratedManifestFilePath
 
@@ -341,7 +379,7 @@ Task BuildPSD1 @{
     if ($($publicFunctions | Where-Object { $_ -notin $oldPublicFunctions })) { $bumpVersionType = 'Minor' }
     if ($($oldPublicFunctions | Where-Object { $_ -notin $publicFunctions })) { $bumpVersionType = 'Major' }
 
-    Set-ModuleFunctions -name $GeneratedManifestFilePath -FunctionsToExport $publicFunctions
+    Set-ModuleFunctions -Name $GeneratedManifestFilePath -FunctionsToExport $publicFunctions
 
     # ToDo: support for classes
 
@@ -413,6 +451,50 @@ Task GenerateStaticSiteDocumentationForPSModule @{
   }
 }
 
+Task BuildNuSpecFromManifest @{
+  Inputs  = $sourceFiles
+  Outputs = $GeneratedModuleFilePath
+  Jobs    = 'Clean', 'BuildPSM1', 'BuildPSD1', {
+    Write-PSFMessage -Level Debug -Message 'task = BuildNuSpecFromManifest'
+    try {
+      Get-NuSpecFromManifest -ManifestPath $GeneratedManifestFilePath -DestinationFolder $GeneratedModuleDestinationPath
+    }
+    catch {
+      # toDo catch the errors, add to 'Problems'
+    }
+  }
+}
+
+Task BuildNuGetPackage @{
+  Inputs  = $sourceFiles
+  Outputs = $GeneratedModuleFilePath
+  Jobs    = 'Clean', 'BuildPSM1', 'BuildPSD1', 'BuildNuSpecFromManifest', {
+    Write-PSFMessage -Level Debug -Message 'task = BuildNuGetPackage'
+    # ToDo: logic to select Dev, QA, Production package(s) to build
+    try {
+      # Start-Process -FilePath $global:settings[$global:configRootKeys['NuGetExePathConfigRootKey']] -ArgumentList "-jar $jenkinsCliJarFile -groovy Get-JenkinsPlugins.groovy' -PassThru
+      Start-Process NuGet -ArgumentList "pack $GeneratedNuSpecFilePath -OutputDirectory $GeneratedNuGetPackageDestinationPath -PassThru"
+    }
+    catch {
+      # toDo catch the errors, add to 'Problems'
+    }
+  }
+}
+
+Task BuildChocolateyPackage @{
+  Inputs  = $sourceFiles
+  Outputs = $GeneratedModuleFilePath
+  Jobs    = 'Clean', 'BuildPSM1', 'BuildPSD1', 'BuildNuGetPackage', {
+    Write-PSFMessage -Level Debug -Message 'task = BuildChocolateyPackage'
+    # ToDo: logic to select Dev, QA, Production package(s) to build
+    try { Get-NuSpecFromManifest -ManifestPath $GeneratedManifestFilePath -DestinationFolder $GeneratedNuGetPackageDestinationPath
+    }
+    catch {
+      # toDo catch the errors, add to 'Problems'
+    }
+  }
+}
+
 Task GeneratePackagesForPSModule @{
   Inputs  = $sourceFiles
   Outputs = $GeneratedModuleFilePath
@@ -453,7 +535,7 @@ Task PublishPSPackage @{
     # Switch on Environment
     # Publish to FileSystem
     Publish-Module -Path $relativeModulePath -Repository $PSRepositoryName -NuGetApiKey $nuGetApiKey
-    Publish-Module -name $GeneratedPowershellGetModulesPath -Repository LocalDevelopmentPSRepository
+    Publish-Module -Name $GeneratedPowershellGetModulesPath -Repository LocalDevelopmentPSRepository
     # Copy last build artifacts into a .7zip file, name it after the ModuleName-Version-buildnumber (like C# project assemblies)
     # Check the 7Zip file into the SCM repository
     # Get SHA-256 and other CRC checksums, add that info to the SCM repository

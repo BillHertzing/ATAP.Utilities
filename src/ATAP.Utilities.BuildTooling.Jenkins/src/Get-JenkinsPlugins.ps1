@@ -65,7 +65,7 @@ Function Get-JenkinsPlugins {
         # invoke the jenkins-cli jar command and pass it the groovy script that will list the plugins and their versions
         # ToDo: allow script to override JENKINS_URL, JENKINS_USER_ID, JENKINS_API_TOKEN
         java -jar $jenkinsCliJarFile groovy = "< Get-JenkinsPlugins.groovy>"
-        # Start-Process -FilePath java -ArgumentList "-jar $jenkinsCliJarFile groovy = Get-JenkinsPlugins.groovy' -PassThru 
+        # Start-Process -FilePath $global:settings[$global:configRootKeys['JavaExePathConfigRootKey']] -ArgumentList "-jar $jenkinsCliJarFile groovy = Get-JenkinsPlugins.groovy' -PassThru
       } catch {
         $errorMessage = $_.Exception.Message
         Write-Host "Something went wrong`r`nError: $errorMessage"

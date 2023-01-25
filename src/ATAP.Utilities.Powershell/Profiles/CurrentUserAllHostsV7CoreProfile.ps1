@@ -77,7 +77,7 @@ Function prompt {
   $CmdPromptUser = [Security.Principal.WindowsIdentity]::GetCurrent();
   # Decorate the CMD Prompt
   # Test for Admin / Elevated
-  Write-Host ($(if ($global:settings[$global:configRootKeys['IsElevatedConfigRootKey']]) { 'Elevated ' } else { '' })) -BackgroundColor DarkRed -ForegroundColor White -NoNewline
+  Write-Host ($(if (1) { 'Elevated ' } else { '' })) -BackgroundColor DarkRed -ForegroundColor White -NoNewline
 
   Write-Host " USER:$($CmdPromptUser.Name.split('\')[1]) " -BackgroundColor DarkBlue -ForegroundColor White -NoNewline
   If ($CmdPromptCurrentFolder -like '*:*')
@@ -750,7 +750,6 @@ $indentIncrement = 2
 Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
 Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, Environment variables: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
 
-#Set-Location 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
 
 
 <# To Be Moved Somewhere else #>
@@ -805,17 +804,19 @@ param ($dir = 'D:\dropbox\music\')
   $a | Where-Object {$_.GetFiles().Count -eq 0} | Select-Object Fullname
 }
 #>
+
 # Read in an external Settings file from the same dir where the running script resides
 #  This will look for Settings.Profile.ps1 by default
-# Get-Settings 'C:\Dropbox\ATAP\Customers\Travelocity\Cfg\Prd\PowershellProfile\Settings.Profile.ps1'
+# Get-Settings 'C:\Dropbox\ATAP\Customers\SpecificCustomer\Cfg\Prd\PowershellProfile\Settings.Profile.ps1'
 # Import the RDPFromCommandLine module, which expects the current list of tealeaf servers
 # ipmo RDPFromCommandLine
-# Define the RDP Settings file path for Travelocity servers
-# $Settings.RDPConnectionPathBase = 'C:\Dropbox\ATAP\Customers\Travelocity\Cfg\Prd\{0}RDPSettings.rdp'
+# Define the RDP Settings file path for SpecificCustomer servers
+# $Settings.RDPConnectionPathBase = 'C:\Dropbox\ATAP\Customers\SpecificCustomer\Cfg\Prd\{0}RDPSettings.rdp'
+
 <#
 Function New-PlantUML {
   param ($args)
-  start java -jar "C:\ProgramData\chocolatey\lib\plantuml\tools\plantuml.jar" ""$args""
+  start $global:settings[$global:configRootKeys['JavaExePathConfigRootKey']] -jar $global:settings[$global:configRootKeys['PlantUMLJarPathConfigRootKey']]  ""$args""
 }
 New-Alias graph New-PlantUML
 

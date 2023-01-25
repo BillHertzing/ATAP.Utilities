@@ -208,7 +208,7 @@ param ($dir = 'D:\dropbox\music\')
 <#
 Function New-PlantUML {
   param ($args)
-  start java -jar "C:\ProgramData\chocolatey\lib\plantuml\tools\plantuml.jar" ""$args""
+  Start-Process $global:settings[$global:configRootKeys['JavaExePathConfigRootKey']] -jar "C:\ProgramData\chocolatey\lib\plantuml\tools\plantuml.jar" ""$args""
 }
 New-Alias graph New-PlantUML
 

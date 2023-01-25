@@ -56,16 +56,33 @@ ToDo: Once installed, the path to the executable must be supplied to the databas
 
 ## Installing powershell modules on DevOps machines
 
-[Unofficial example of PowerShellGet-friendly package. How to create, publish and use](https://github.com/anpur/powershellget-module)
+Powershell modules can be installed using Chocolatey, PowershellGet, or NuGet package providers
 
-The Development Repository is at:
-The Testing Repositories are at locations matching this pattern:
+The PackageSource (location) for each provider and Lifecycle stage is found at ```$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]```
+
+DevOps machines are considered 'production' unless specifically assigned a development or test role. As such, all DevOps production machines should use only production modules. The PackageSource for production modules are found in found in ```$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]``` under the subkeys ```$global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageNameConfigRootKey']```, ```RepositoryPowershellGetProductionWebServerProductionPackageNameConfigRootKey```, and ```RepositoryChocolateyProductionWebServerProductionPackageNameConfigRootKey```. Using the publicly published modules ensures that internally, the DevOps machines use the same cade that the public uses.
+
+Modules that are published only internally, not for general public consumption, can also be found under the subkeys ```RepositoryNuGetFilesystemProductionPackageNameConfigRootKey```, ```RepositoryPowershellGetFilesystemProductionPackageNameConfigRootKey```, and ```RepositoryChocolateyFilesystemProductionPackageNameConfigRootKey```
+
+
+The Development repository is at:
+The QualityAssurance repositories are at locations matching this pattern:
 The Staging Repositories are at locations matching this pattern:
 The Production (Public) repositories are at: Chocolatey, PSGallery, NuGet
 
 Repository meta information is kept in the global data structures keyed for each machine.
 
-Install-Module MyModule -Repository Demo_Nuget_Feed -Scope CurrentUser
+### Using NuGet Provider
+
+NuGet configuration file listing the available NuGet package sources is nuget.config, located in the filesystem at the base of all development respoitories. Every DevOps machine that will use the NuGet package provider for pulling or pushing packages needs a copy of this file. The contents of this file should match the values found in ```$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]```
+see also [Common NuGet configurations:Config file locations and uses](https://learn.microsoft.com/en-us/nuget/consume-packages/configuring-nuget-behavior#config-file-locations-and-uses)
+
+
+### Using PowershellGet provider
+
+[Unofficial example of PowerShellGet-friendly package. How to create, publish and use](https://github.com/anpur/powershellget-module)
+
+```Install-Module '<ModuleName>' -Scope CurrentUser```
 
 ToDo: Once installed, the path to the module must be supplied to the database under the key for the machine name. See the ATAP Utilities packages for computer hardware, software, and processes for the data structures to record necessary information.
 
@@ -73,9 +90,13 @@ The module contains Functions, and also information about the expected environme
 
 ToDo: Find a tool that reads FunctionHelp blocks and turns them into HTML pages. Ask the DocFx folks?
 
+### Using the Chocolatey provider
+
+
+
 ## Certificates
 
-https://stackoverflow.com/questions/21076179/pkix-path-building-failed-and-unable-to-find-valid-certification-path-to-requ
+<https://stackoverflow.com/questions/21076179/pkix-path-building-failed-and-unable-to-find-valid-certification-path-to-requ>
 
 https://stackoverflow.com/questions/63482370/unable-to-find-a-valid-certification-path-to-requested-target
 

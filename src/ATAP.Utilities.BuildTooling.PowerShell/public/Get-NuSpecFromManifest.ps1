@@ -1,15 +1,41 @@
-Function Get-NuspecFromPSD1 {
+#Requires -Modules PowerShellGet
+#Requires -Version 5.0
+#region Get-NuSpecFromManifest
+<#
+.SYNOPSIS
+ToDo: write Help SYNOPSIS For this function
+.DESCRIPTION
+ToDo: write Help DESCRIPTION For this function
+.PARAMETER  ManifestPath
+  Specifies the path to the Powershell Manifest file (.psd1)
+.PARAMETER DestinationFolder
+  Specifies the path to the directroy where the .nuspec file will be written
 
-  #Requires -Modules PowerShellGet
-  #Requires -Version 5.0
-  <#
-    =======================================================================================================
+.PARAMETER Extension
+ToDo: write Help For the parameter X
+.INPUTS
+ToDo: write Help For the function's inputs
+.OUTPUTS
+ToDo: write Help For the function's outputs
+.EXAMPLE
+ToDo: write Help For example 1 of using this function
+.EXAMPLE
+ToDo: write Help For example 2 of using this function
+.EXAMPLE
+ToDo: write Help For example 2 of using this function
+.ATTRIBUTION
     AUTHOR:  Tao Yang
     DATE:    05/09/2018
     Version: 1.0
     Comment: generate nuget specification file (.nuspec) based on PowerShell module manifest (.psd1) file
-    =======================================================================================================
+.LINK
+https://gist.githubusercontent.com/tyconsulting/c567e5cc66fc522d46743d744579be27/raw/c1b2047f1a22b6f1690d47d996dec845ff3f67b1/psd1-to-nuspec.ps1
+.LINK
+ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
+.SCM
+ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
+Function Get-NuSpecFromManifest {
   [CmdletBinding(PositionalBinding = $false)]
   Param
   (

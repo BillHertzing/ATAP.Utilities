@@ -107,7 +107,7 @@ Function Confirm-Tools {
       Confirm-RepositoryPackageProvider -ProviderName $ProviderName
       ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $ProviderLifecycle = $_
         ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $PackageLifecycle = $_
-          # validate each $ProviderName / ProviderLifecycle / LifPackageLifecycleecycle cross exists. (installing should be done during container setup)
+          # validate each $ProviderName / ProviderLifecycle / LifPackageLifecycle cycle cross exists. (installing should be done during container setup)
           $RepositoryPackageSourceName = $ProviderName + $ProviderLifecycle + $PackageLifecycle + 'Package'
           # Confirm-RepositoryPackageProvider will throw if the RepositoryPackageSourceName cannot be registered
           Confirm-RepositoryPackageSource -RepositoryPackageSourceName $RepositoryPackageSourceName

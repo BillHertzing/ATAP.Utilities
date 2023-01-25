@@ -2,6 +2,8 @@
 # Called from a Jenkins job that starts a Powershell instance using the profile of the Jenkins Service Account
 #  SHould only be called on a computer that has the tools needed to perform the 'PowershellBuild' role
 #  Gathers the public and private functions into a .psm1 file and updates the exported information in the .psd1 file
+
+#region Get-ModuleHighestVersion
 function Publish-PSPackage {
   # Packages called from Jenkins have no parameters, all parameters must be passed via environment variables
   #region BeginBlock
@@ -123,7 +125,7 @@ Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in modul
 }
 #endregion EndBlock
 }
-#endregion Publish-PSPackage
+#endregion Get-ModuleHighestVersion
 #############################################################################
 
 

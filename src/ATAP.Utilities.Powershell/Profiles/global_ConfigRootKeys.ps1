@@ -86,7 +86,7 @@ $global:configRootKeys = @{
 
   # Packaging, Deploying, Delivering, Updating
   # All Package repositories that use a filesystem can use the default source and drop locations, or specify a full custom paths
-  'RepositoryFileSystemPackageSourceLocationBasePathDefaultConfigRootKey'                        = 'RepositoryFileSystemPackageSourceLocationBasePathDefault'
+  'RepositoryFileSystemPackageSourceLocationBasePathDefaultConfigRootKey'                        = 'RepositoryFileSystemPackageSourceLocationBasePathDefault' 
   'RepositoryFileSystemPackageDropLocationBasePathDefaultConfigRootKey'                          = 'RepositoryFileSystemPackageDropLocationBasePathDefault'
   # The repository names by which each of the various repositories for Powershell packages are known. and their details
   # The name of the repository for Packages that are in NuGet format

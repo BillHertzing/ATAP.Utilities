@@ -6,7 +6,7 @@ param (
 
 
 Function remove-objandBin {
-    [CmdletBinding(SupportsShouldProcess=$true)]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet')]
     Param(
         [Parameter(Mandatory=$True)]
         [string]$path

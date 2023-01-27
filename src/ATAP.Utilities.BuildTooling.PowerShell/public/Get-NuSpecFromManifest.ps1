@@ -46,6 +46,11 @@ Function Get-NuSpecFromManifest {
     [string]
     $ManifestPath,
 
+    [Parameter(Mandatory = $true)]
+    [ValidateSet('NuGet', 'PowershellGet', 'ChocolateyGet')]
+    [string]
+    $ProviderName,
+
     [Parameter(Mandatory = $false)]
     [ValidateScript({
         Test-Path $_ -PathType 'Container'
@@ -489,14 +494,16 @@ Function Get-NuSpecFromManifest {
     }
     finally {
       if ($NuspecPath -and (Test-Path -Path $NuspecPath -PathType Leaf) -and (Get-Content -LiteralPath $NuspecPath -Raw)) {
-        Write-Output -InputObject $NuspecPath
+        $message = "NuSpec created at $NuspecPath"
+        Write-PSFMessage -Level Important -Message $message
       }
     }
   }
   #endregion
 
   #region main
-  Write-Output -InputObject "Generating .nuspec file based on PowerShell Module Manifest '$ManifestPath'"
+  $message = -InputObject "Generating .nuspec file based on PowerShell Module Manifest '$ManifestPath'"
+  Write-PSFMessage -Level Important -Message $message
   $param = @{
     'ManifestPath' = $ManifestPath
   }
@@ -505,8 +512,10 @@ Function Get-NuSpecFromManifest {
   }
   $NuspecFile = New-NuSpecFile @param
   If ($NuspecFile) {
-    Write-Output "Nuspec file created - '$NuspecFile'."
-    Write-Output 'Done. '
+    $message = "Nuspec file created - '$NuspecFile'."
+    Write-PSFMessage -Level Important -Message $message
+    $message = 'Done. '
+    Write-PSFMessage -Level Important -Message $message
   }
   else {
     Write-Error 'Failed to create Nuspec file.'

@@ -248,9 +248,9 @@ $($global:settings[$global:configRootKeys["RepositoryChocolateyProductionWebServ
   $global:configRootKeys['GeneratedRelativePathConfigRootKey']                                                           = '_generated'
   $global:configRootKeys['GeneratedPowershellModuleConfigRootKey']                                                       = 'Join-Path $global:settings[$global:configRootKeys["GeneratedRelativePathConfigRootKey"]] "PowershellModule"'
   $global:configRootKeys['GeneratedPowershellPackagesConfigRootKey']                                                     = 'Join-Path $global:settings[$global:configRootKeys["GeneratedRelativePathConfigRootKey"]] "PowershellPackages"'
-  $global:configRootKeys['GeneratedNuGetPackageConfigRootKey']                                                           = 'Join-Path $global:settings[$global:configRootKeys["GeneratedPowershellPackagesConfigRootKey"]] "NuGet"'
-  $global:configRootKeys['GeneratedPowershellGetPackageConfigRootKey']                                                   = 'Join-Path $global:settings[$global:configRootKeys["GeneratedPowershellPackagesConfigRootKey"]] "PowershellGet"'
-  $global:configRootKeys['GeneratedChocolateyPackageConfigRootKey']                                                      = 'Join-Path $global:settings[$global:configRootKeys["GeneratedPowershellPackagesConfigRootKey"]] "Chocolatey"'
+  $global:configRootKeys['GeneratedPowershellPackagesNuGetConfigRootKey']                                                           = 'Join-Path $global:settings[$global:configRootKeys["GeneratedPowershellPackagesConfigRootKey"]] "NuGet"'
+  $global:configRootKeys['GeneratedPowershellPackagesPowershellGetConfigRootKey']                                                   = 'Join-Path $global:settings[$global:configRootKeys["GeneratedPowershellPackagesConfigRootKey"]] "PowershellGet"'
+  $global:configRootKeys['GeneratedPowershellPackagesChocolateyGetConfigRootKey']                                                      = 'Join-Path $global:settings[$global:configRootKeys["GeneratedPowershellPackagesConfigRootKey"]] "ChocolateyGet"'
 
   # Structure of the subdirectories generated during the process of testing a Powershell Module or .net .DLL for public distribution
   $global:configRootKeys['GeneratedTestResultsPathConfigRootKey']                                                        = 'Join-Path $global:settings[$global:configRootKeys["GeneratedRelativePathConfigRootKey"]] "TestResults"'

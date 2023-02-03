@@ -103,8 +103,8 @@ Function Get-NuSpecFromManifest {
     }
     else {
       $dscResourcesDir = Join-PathUtility -Path $PSModuleInfo.ModuleBase -ChildPath 'DscResources' -PathType Directory
-      if (Microsoft.PowerShell.Management\Test-Path $dscResourcesDir) {
-        $dscResources = Microsoft.PowerShell.Management\Get-ChildItem -Path $dscResourcesDir -Directory -Name
+      if (Test-Path $dscResourcesDir) {
+        $dscResources = Get-ChildItem -Path $dscResourcesDir -Directory -Name
       }
     }
 
@@ -123,8 +123,8 @@ Function Get-NuSpecFromManifest {
     $RoleCapabilityNames = @()
 
     $RoleCapabilitiesDir = Join-PathUtility -Path $PSModuleInfo.ModuleBase -ChildPath 'RoleCapabilities' -PathType Directory
-    if (Microsoft.PowerShell.Management\Test-Path -Path $RoleCapabilitiesDir -PathType Container) {
-      $RoleCapabilityNames = Microsoft.PowerShell.Management\Get-ChildItem -Path $RoleCapabilitiesDir `
+    if (Test-Path -Path $RoleCapabilitiesDir -PathType Container) {
+      $RoleCapabilityNames = Get-ChildItem -Path $RoleCapabilitiesDir `
         -Name -Filter *.psrc |
       ForEach-Object -Process {
         [System.IO.Path]::GetFileNameWithoutExtension($_)
@@ -156,8 +156,8 @@ Function Get-NuSpecFromManifest {
       $PathType = 'Any'
     )
 
-    $JoinedPath = Microsoft.PowerShell.Management\Join-Path -Path $Path -ChildPath $ChildPath
-    if (Microsoft.PowerShell.Management\Test-Path -Path $Path -PathType Container) {
+    $JoinedPath = Join-Path -Path $Path -ChildPath $ChildPath
+    if (Test-Path -Path $Path -PathType Container) {
       $GetChildItem_params = @{
         Path          = $Path
         ErrorAction   = 'SilentlyContinue'
@@ -170,7 +170,7 @@ Function Get-NuSpecFromManifest {
         $GetChildItem_params['Directory'] = $true
       }
 
-      $FoundPath = Microsoft.PowerShell.Management\Get-ChildItem @GetChildItem_params |
+      $FoundPath = Get-ChildItem @GetChildItem_params |
       Where-Object -FilterScript {
         $_.Name -eq $ChildPath
       } |
@@ -264,7 +264,7 @@ Function Get-NuSpecFromManifest {
     If (-not $PSBoundParameters.ContainsKey('DestinationFolder')) {
       $DestinationFolder = $PSModuleInfo.ModuleBase
     }
-    $NuspecPath = Microsoft.PowerShell.Management\Join-Path -Path $DestinationFolder -ChildPath "$($PSModuleInfo.Name).nuspec"
+    $NuspecPath = Join-Path -Path $DestinationFolder -ChildPath "$($PSModuleInfo.Name).nuspec"
 
     if ($PSModuleInfo.PrivateData -and
     ($PSModuleInfo.PrivateData.GetType().ToString() -eq 'System.Collections.Hashtable') -and
@@ -322,7 +322,7 @@ Function Get-NuSpecFromManifest {
         }
         elseif ($requireLicenseAcceptance -ne 'false') {
           $InvalidValueForRequireLicenseAcceptance = "The specified value '{0}' for the parameter '{1}' is invalid. It should be $true or $false." -f ($requireLicenseAcceptance, 'requireLicenseAcceptance')
-          Write-Warning -Message $InvalidValueForRequireLicenseAcceptance
+          Write-PSFMessage -Level Warning -Message  $InvalidValueForRequireLicenseAcceptance
         }
       }
     }
@@ -387,24 +387,24 @@ Function Get-NuSpecFromManifest {
       $requiredModules += $ModuleManifestHashTable.NestedModules
     }
 
-    Write-Verbose "Total dependent modules: $($requiredModules.count)"
+    Write-PSFMessage -Level Verbose -Message "Total dependent modules: $($requiredModules.count)"
     Foreach ($requiredModule in $requiredModules) {
       $DependentModuleDetail = @{}
       if ($requiredModule.GetType().ToString() -eq 'System.Collections.Hashtable') {
         $ModuleName = $requiredModule.ModuleName
-        Write-Verbose "Processing dependency module '$ModuleName'"
+        Write-PSFMessage -Level Verbose -Message "Processing dependency module '$ModuleName'"
         if ($requiredModule.Keys -Contains 'RequiredVersion') {
-          Write-Verbose "'$ModuleName': Required version: $($requiredModule.RequiredVersion)"
+          Write-PSFMessage -Level Verbose -Message "'$ModuleName': Required version: $($requiredModule.RequiredVersion)"
           $DependentModuleDetail.add('RequiredVersion', $requiredModule.RequiredVersion)
         }
         elseif ($requiredModule.Keys -Contains 'ModuleVersion') {
-          Write-Verbose "$ModuleName': Module version: $($requiredModule.ModuleVersion)"
+          Write-PSFMessage -Level Verbose -Message "$ModuleName': Module version: $($requiredModule.ModuleVersion)"
           $DependentModuleDetail.add('ModuleVersion', $requiredModule.ModuleVersion)
         }
       }
       else {
         # Just module name was specified
-        Write-Verbose "$ModuleName': Module version not specified."
+        Write-PSFMessage -Level Verbose -Message "'$ModuleName': Module version not specified."
         $ModuleName = $requiredModule.ToString()
       }
       $DependentModuleDetail.add('Name', $ModuleName)
@@ -446,26 +446,26 @@ Function Get-NuSpecFromManifest {
 <?xml version="1.0"?>
 <package >
     <metadata>
-        <id>$(Get-EscapedString -ElementValue "$Name")</id>
+        <id>$([System.Security.SecurityElement]::Escape($Name))</id>
         <version>$($Version)</version>
-        <authors>$(Get-EscapedString -ElementValue "$Author")</authors>
-        <owners>$(Get-EscapedString -ElementValue "$CompanyName")</owners>
-        <description>$(Get-EscapedString -ElementValue "$Description")</description>
-        <releaseNotes>$(Get-EscapedString -ElementValue "$ReleaseNotes")</releaseNotes>
+        <authors>$([System.Security.SecurityElement]::Escape($Author))</authors>
+        <owners>$([System.Security.SecurityElement]::Escape($CompanyName))</owners>
+        <description>$([System.Security.SecurityElement]::Escape($Description))</description>
+        <releaseNotes>$([System.Security.SecurityElement]::Escape($ReleaseNotes))</releaseNotes>
         <requireLicenseAcceptance>$($requireLicenseAcceptance.ToString())</requireLicenseAcceptance>
-        <copyright>$(Get-EscapedString -ElementValue "$Copyright")</copyright>
-        <tags>$(if($Tags){ Get-EscapedString -ElementValue ($Tags -join ' ')})</tags>
+        <copyright>$([System.Security.SecurityElement]::Escape($Copyright))</copyright>
+        <tags>$(if($Tags){[System.Security.SecurityElement]::Escape(($Tags -join ' '))})</tags>
         $(if($LicenseUri)
 {
-         "<licenseUrl>$(Get-EscapedString -ElementValue "$LicenseUri")</licenseUrl>"
+         "<licenseUrl>$([System.Security.SecurityElement]::Escape($LicenseUri))</licenseUrl>"
 })
         $(if($ProjectUri)
 {
-        "<projectUrl>$(Get-EscapedString -ElementValue "$ProjectUri")</projectUrl>"
+        "<projectUrl>$([System.Security.SecurityElement]::Escape($ProjectUri))</projectUrl>"
 })
         $(if($IconUri)
 {
-        "<iconUrl>$(Get-EscapedString -ElementValue "$IconUri")</iconUrl>"
+        "<iconUrl>$([System.Security.SecurityElement]::Escape($IconUri))</iconUrl>"
 })
         <dependencies>
             $dependencies
@@ -473,36 +473,36 @@ Function Get-NuSpecFromManifest {
     </metadata>
 </package>
 "@
+    # Remove existing nuspec file
 
-    try {
-      # Remove existing nuspec file
-
-      if ($NuspecPath -and (Test-Path -Path $NuspecPath -PathType Leaf)) {
-        Write-Warning "Nuspec file '$NuspecPath' already exists. It will be overwritten."
-        Microsoft.PowerShell.Management\Remove-Item $NuspecPath -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
-      }
-
-      Microsoft.PowerShell.Management\Set-Content -Value $nuspec -Path $NuspecPath -Force -Confirm:$false -WhatIf:$false
-
-      if ($LASTEXITCODE -or -not $NuspecPath -or -not (Test-Path -Path $NuspecPath -PathType Leaf)) {
-        $message = "failed to create nuspec file '$NuspecPath'"
-        $errorId = 'FailedToCreateNuspecFile'
-
-        Write-Error -Message $message -ErrorId $errorId -Category InvalidOperation
-        return
-      }
+    if ($NuspecPath -and (Test-Path -Path $NuspecPath -PathType Leaf)) {
+      Write-PSFMessage -Level Warning -Message "Nuspec file '$NuspecPath' already exists. It will be overwritten."
+      Remove-Item $NuspecPath -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
     }
-    finally {
-      if ($NuspecPath -and (Test-Path -Path $NuspecPath -PathType Leaf) -and (Get-Content -LiteralPath $NuspecPath -Raw)) {
-        $message = "NuSpec created at $NuspecPath"
-        Write-PSFMessage -Level Important -Message $message
-      }
+
+    Set-Content -Value $nuspec -Path $NuspecPath -Force -Confirm:$false -WhatIf:$false
+
+    if ($LASTEXITCODE -or -not $NuspecPath -or -not (Test-Path -Path $NuspecPath -PathType Leaf)) {
+      Write-PSFMessage -Level Error -Message "failed to create nuspec file '$NuspecPath'" # ToDO add tags
+      #ToDo: implement errorid ? $errorId = 'FailedToCreateNuspecFile'
+      # Write-Error -Message $message -ErrorId $errorId -Category InvalidOperation
+      # returning a null indicates an error occurre
+      return
     }
+    # ensure the file is not empty
+    if (-not $(Get-Content -LiteralPath $NuspecPath -Raw)) {
+      Write-PSFMessage -Level Error -Message "Empty nuspec file '$NuspecPath'" # ToDO add tags
+      #ToDo: implement errorid ? $errorId = 'EmptyNuspecFile'
+      # returning a null indicates an error occurre
+      return
+    }
+
+    return $NuspecPath
   }
   #endregion
 
   #region main
-  $message = -InputObject "Generating .nuspec file based on PowerShell Module Manifest '$ManifestPath'"
+  $message = "Generating .nuspec file based on PowerShell Module Manifest '$ManifestPath'"
   Write-PSFMessage -Level Important -Message $message
   $param = @{
     'ManifestPath' = $ManifestPath
@@ -512,13 +512,10 @@ Function Get-NuSpecFromManifest {
   }
   $NuspecFile = New-NuSpecFile @param
   If ($NuspecFile) {
-    $message = "Nuspec file created - '$NuspecFile'."
-    Write-PSFMessage -Level Important -Message $message
-    $message = 'Done. '
-    Write-PSFMessage -Level Important -Message $message
+    Write-PSFMessage -Level Important -Message "Nuspec file created: $NuspecFile"
   }
   else {
-    Write-Error 'Failed to create Nuspec file.'
+    Write-PSFMessage -Level Error -Message 'Failed to create Nuspec file.'
   }
   #endregion
 }

@@ -1,0 +1,182 @@
+<mxfile host="65bd71144e">
+    <diagram id="c3lxntSO4So_CIcGVEkf" name="Page-1">
+        <mxGraphModel dx="1429" dy="574" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="Ansible and InfrastructureAsCode for ATAP&lt;br&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="10" width="250" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="Persistent Storage&lt;br&gt;&lt;br&gt;Relational Databases&lt;br&gt;&lt;br&gt;Graph Databases" style="verticalAlign=top;align=left;spacingTop=8;spacingLeft=2;spacingRight=12;shape=cube;size=10;direction=south;fontStyle=4;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="80" width="180" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="Build Trigger" style="html=1;shape=mxgraph.infographic.ribbonSimple;notch1=20;notch2=0;align=center;verticalAlign=middle;fontSize=14;fontStyle=0;flipH=1;fillColor=#FFFFFF;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="240" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="DB Extract&lt;br&gt;Create Inventory and Playbooks" style="html=1;align=center;verticalAlign=top;rounded=1;absoluteArcSize=1;arcSize=10;dashed=0;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="240" width="180" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="Infrastructure&lt;br&gt;Designer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="65" y="290" width="30" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="Lifecycle" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="40" y="430" width="140" height="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="Development" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="15">
+                    <mxGeometry y="26" width="140" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="Quaity Assurance" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="15">
+                    <mxGeometry y="52" width="140" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="Production" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="15">
+                    <mxGeometry y="78" width="140" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="25" value="" style="group" vertex="1" connectable="0" parent="1">
+                    <mxGeometry x="660" y="290" width="130" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="Production Host N" style="verticalAlign=top;align=left;shape=cube;size=10;direction=south;fontStyle=0;html=1;boundedLbl=1;spacingLeft=5;" parent="25" vertex="1">
+                    <mxGeometry y="144" width="130" height="125.99999999999999" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="Features&lt;br&gt;Configurations" style="verticalAlign=top;align=center;shape=cube;size=10;direction=south;html=1;boundedLbl=1;spacingLeft=5;" parent="6" vertex="1">
+                    <mxGeometry width="100" height="80" relative="1" as="geometry">
+                        <mxPoint x="10" y="50" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="19" value="Production Host 1" style="verticalAlign=top;align=left;shape=cube;size=10;direction=south;fontStyle=0;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="25">
+                    <mxGeometry width="130" height="125.99999999999999" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="Features&lt;br&gt;Configurations" style="verticalAlign=top;align=center;shape=cube;size=10;direction=south;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="19">
+                    <mxGeometry width="100" height="80" relative="1" as="geometry">
+                        <mxPoint x="10" y="50" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="26" value="" style="group" vertex="1" connectable="0" parent="1">
+                    <mxGeometry x="660" y="10" width="130" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="27" value="QA Host N" style="verticalAlign=top;align=left;shape=cube;size=10;direction=south;fontStyle=0;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="26">
+                    <mxGeometry y="144" width="130" height="125.99999999999999" as="geometry"/>
+                </mxCell>
+                <mxCell id="28" value="Features&lt;br&gt;Configurations" style="verticalAlign=top;align=center;shape=cube;size=10;direction=south;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="27">
+                    <mxGeometry width="100" height="80" relative="1" as="geometry">
+                        <mxPoint x="10" y="50" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="29" value="QA Host 1" style="verticalAlign=top;align=left;shape=cube;size=10;direction=south;fontStyle=0;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="26">
+                    <mxGeometry width="130" height="125.99999999999999" as="geometry"/>
+                </mxCell>
+                <mxCell id="30" value="Features&lt;br&gt;Configurations" style="verticalAlign=top;align=center;shape=cube;size=10;direction=south;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="29">
+                    <mxGeometry width="100" height="80" relative="1" as="geometry">
+                        <mxPoint x="10" y="50" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="31" value="" style="group" vertex="1" connectable="0" parent="1">
+                    <mxGeometry x="480" y="50" width="130" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="32" value="Development Host N" style="verticalAlign=top;align=left;shape=cube;size=10;direction=south;fontStyle=0;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="31">
+                    <mxGeometry y="144" width="130" height="125.99999999999999" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" value="Features&lt;br&gt;Configurations" style="verticalAlign=top;align=center;shape=cube;size=10;direction=south;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="32">
+                    <mxGeometry width="100" height="80" relative="1" as="geometry">
+                        <mxPoint x="10" y="50" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="34" value="Development Host 1" style="verticalAlign=top;align=left;shape=cube;size=10;direction=south;fontStyle=0;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="31">
+                    <mxGeometry width="130" height="125.99999999999999" as="geometry"/>
+                </mxCell>
+                <mxCell id="35" value="Features&lt;br&gt;Configurations" style="verticalAlign=top;align=center;shape=cube;size=10;direction=south;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="34">
+                    <mxGeometry width="100" height="80" relative="1" as="geometry">
+                        <mxPoint x="10" y="50" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="38" value="Ansible Host (also has lifecycle)" style="swimlane;" vertex="1" parent="1">
+                    <mxGeometry x="203" y="340" width="445" height="610" as="geometry"/>
+                </mxCell>
+                <mxCell id="41" value="Ansible and helpers" style="shape=folder;fontStyle=1;tabWidth=110;tabHeight=30;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;container=1;collapsible=0;" vertex="1" parent="38">
+                    <mxGeometry x="255" y="80" width="150" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="42" value="Depends on SSH Client" style="html=1;strokeColor=none;resizeWidth=1;resizeHeight=1;fillColor=none;part=1;connectable=0;allowArrows=0;deletable=0;" vertex="1" parent="41">
+                    <mxGeometry width="150" height="98" relative="1" as="geometry">
+                        <mxPoint y="30" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="43" value="[User]&amp;lt;&amp;lt;security context:admin&amp;gt;&amp;gt;" style="swimlane;fontStyle=1;align=center;horizontal=1;startSize=30;collapsible=0;html=1;" vertex="1" parent="38">
+                    <mxGeometry x="255" y="260" width="180" height="280" as="geometry"/>
+                </mxCell>
+                <mxCell id="44" value="execution" style="shape=umlFrame;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;width=80;height=30;swimlaneFillColor=#ffffff;align=left;spacingLeft=5;" vertex="1" parent="43">
+                    <mxGeometry width="140" height="110" relative="1" as="geometry">
+                        <mxPoint x="15" y="40" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="45" value="ansible-playbook" style="text;align=left;fontColor=#F03291;" vertex="1" parent="44">
+                    <mxGeometry width="100" height="20" relative="1" as="geometry">
+                        <mxPoint x="10" y="40" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="47" value="ansible-playbook" style="text;align=left;fontColor=#F03291;" vertex="1" parent="44">
+                    <mxGeometry x="10" y="60" width="100" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="55" value="environment" style="shape=umlFrame;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;width=80;height=30;swimlaneFillColor=#ffffff;align=left;spacingLeft=5;" vertex="1" parent="43">
+                    <mxGeometry x="17" y="160" width="140" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="56" value="machine shell profile" style="text;align=left;fontColor=#F03291;" vertex="1" parent="55">
+                    <mxGeometry width="100" height="20" relative="1" as="geometry">
+                        <mxPoint x="10" y="40" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="57" value="user shell profile" style="text;align=left;fontColor=#F03291;" vertex="1" parent="55">
+                    <mxGeometry x="10" y="60" width="100" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" value="AnsibleInventoryDirectory" style="verticalAlign=top;align=left;shape=cube;size=10;direction=south;fontStyle=0;html=1;boundedLbl=1;spacingLeft=5;" parent="38" vertex="1">
+                    <mxGeometry x="10" y="40" width="170" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="Ansible InventoryFiles&lt;br&gt;Ansible InventoryScripts" style="verticalAlign=top;align=center;shape=cube;size=10;direction=south;html=1;boundedLbl=1;spacingLeft=5;" parent="9" vertex="1">
+                    <mxGeometry width="140" height="80" relative="1" as="geometry">
+                        <mxPoint x="10" y="50" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="48" style="edgeStyle=none;html=1;entryX=0.286;entryY=0.471;entryDx=0;entryDy=0;entryPerimeter=0;fontSize=11;fontColor=#F03291;" edge="1" parent="38" source="10" target="9">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="Ansible Playbook Directory" style="verticalAlign=top;align=left;shape=cube;size=10;direction=south;fontStyle=0;html=1;boundedLbl=1;spacingLeft=5;" parent="38" vertex="1">
+                    <mxGeometry x="10" y="198" width="170" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="Ansible Playbook Files&lt;br&gt;" style="verticalAlign=top;align=center;shape=cube;size=10;direction=south;html=1;boundedLbl=1;spacingLeft=5;" parent="11" vertex="1">
+                    <mxGeometry width="140" height="80" relative="1" as="geometry">
+                        <mxPoint x="10" y="50" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="53" value="Ansible Executable Directory" style="verticalAlign=top;align=left;shape=cube;size=10;direction=south;fontStyle=0;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="38">
+                    <mxGeometry x="10" y="360" width="170" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="54" value="Ansible" style="verticalAlign=top;align=center;shape=cube;size=10;direction=south;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="53">
+                    <mxGeometry width="140" height="80" relative="1" as="geometry">
+                        <mxPoint x="10" y="50" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="14" value="Infrastructure&lt;br&gt;Administrator" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="960" width="30" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="58" value="Development" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=none;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="30" y="600" width="140" height="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="59" value="$HOME/.local/bin/ansible" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="58">
+                    <mxGeometry y="26" width="140" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="60" value="Quaity Assurance" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="58">
+                    <mxGeometry y="52" width="140" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="61" value="Production" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="58">
+                    <mxGeometry y="78" width="140" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="62" value="Ansible Log Directory" style="verticalAlign=top;align=left;shape=cube;size=10;direction=south;fontStyle=0;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="1">
+                    <mxGeometry x="10" y="780" width="150" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="63" value="Ansible Logs" style="verticalAlign=top;align=center;shape=cube;size=10;direction=south;html=1;boundedLbl=1;spacingLeft=5;" vertex="1" parent="62">
+                    <mxGeometry width="120" height="70" relative="1" as="geometry">
+                        <mxPoint x="10" y="60" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

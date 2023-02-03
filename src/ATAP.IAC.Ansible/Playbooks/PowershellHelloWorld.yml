@@ -1,0 +1,8 @@
+---
+- name: A test
+  hosts: all
+  # become: yes
+  
+  vars:
+    greeting: Hello
+    

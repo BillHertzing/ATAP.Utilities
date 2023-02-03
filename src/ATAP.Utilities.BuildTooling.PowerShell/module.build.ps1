@@ -20,6 +20,8 @@ param(
 Enter-Build {
   # Allow the DebugPreference to be set for this script and it's children tasks
   $DebugPreference = 'SilentlyContinue' # 'Continue' # 'SilentlyContinue'
+  # For an unknown reason, the ConfirmPreference is set to High. Make it ignored, for this script
+  $Script:ConfirmPreference = 'None'
   # Write-PSFMessage will write to its log file regardless of the value of $DebugPreference
   Write-PSFMessage -Level Debug -Message "Starting Module.Build.ps1; ModuleRoot = $ModuleRoot; Configuration = $Configuration; BuildRoot = $BuildRoot; Encoding = $Encoding"
 
@@ -514,10 +516,12 @@ Task BuildNuSpecFromManifest @{
         }
         try {
           $GeneratedManifestFilePath = Join-Path $GeneratedManifestDirectory $manifestFilename
+          # ToDo: remove after powershell package is installed
+          . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-NuSpecFromManifest.ps1"
           Get-NuSpecFromManifest -ManifestPath $GeneratedManifestFilePath -DestinationFolder $GeneratedManifestDirectory -ProviderName $ProviderName
         }
         catch {
-          $message = "calling Get-NuSpecFromManifest with -ManifestPath $GeneratedManifestFilePath -DestinationFolder $GeneratedManifestFilePath -ProviderName $ProviderName threw an error "
+          $message = "calling Get-NuSpecFromManifest with -ManifestPath $GeneratedManifestFilePath -DestinationFolder $GeneratedManifestDirectory -ProviderName $ProviderName threw an error : $($error[0]|select-object * )"
           Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'BuildNuSpecFromManifest'
           # toDo catch the errors, add to 'Problems'
           Throw $message

@@ -7,13 +7,36 @@ decide what role's the new computer wil be a member of
 ### utat022
 
 - Development Computer
+- SSH Server
+- Secrets Manageement
+  - Hashicorp
+  - KeePass
+  - Powershell Secrets
 - Certification Authority
 - Certification Issuer
   - DEC certificate
   - SSL Certificate
   - CodeSigning Certificate
-- Database Server
-- IIS WebServer
+- Database
+  - SQLServer
+  - MySQL
+- WebServer
+  - Kestrel
+  - IIS
+
+```yml
+---
+- Windows
+  - PrivateKey
+  - WSL 2
+    - Ubuntu
+      - Private Key
+- Lifecycle
+  Production: yes
+  QualityAssurance: yes
+  Development: yes
+
+```
 
 ## BIOS modifications
 
@@ -47,13 +70,15 @@ wired: utat022 192.168.1.22 50:EB:F6:78:80:5A wired:atap_24
 Update the organizations master Hosts file and the Roles' Hosts file
 Copy the Roles Hosts file to the new computer
 
-update to windows 11
+apply updates to windows 11
 
 run Everything from USB stick, get list to a file "01 Clean Windows 11 install, Step 02 Files.efu"
 
-Create c:\Dropbox, c:\dropbox\whertzing,
+Create c:\Dropbox, c:\dropbox\<LocalUserName>,
 
-Create \\Fileshare, share it with everybody on the network
+Create Network share on a fast drive named \\FS, share it with everybody on the network
+
+ToDo: replace this with Ansible push
 Copy InstChoco and packagesconfig to Filesharecopy from fileshare to \\mydocuments\ChocolateyPackageListBackup
 copy hosts to \\utat022\fileshare and then to new computer
 Start Powershell (old), run Instchoco.exe as admin
@@ -183,15 +208,17 @@ If the role specifies that the computer will be a primary or backup Hasicorp Vau
 
 ## Install Powershell Packages
 
+- as the first admin user, run the command to install the NuGet PackageProvider
+  `Install-PackageProvider -Name NuGet -Force`
 - as the first admin user, run the command to trust the PSGallery repository
   `Register-PSRepository -Default`
   `Get-PSRepository` # ToDo: validate that PSGallery appears
   `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`
-
 - Install the following 3rd-party packages machine-wide. Run the following as an administrator on the new computer
- - `Microsoft.PowerShell.SecretManagement`, `Microsoft.PowerShell.SecretStore` and `SecretManagement.Keepass` are for development credentials and secret,
- - `PSFramework` is for logging
- - ToDO: `DISM` is for enabling Windows Features, but it is not available for direct download. See
+   `Microsoft.PowerShell.SecretManagement`, `Microsoft.PowerShell.SecretStore` and `SecretManagement.Keepass` are for development credentials and secret,
+   `PSFramework` is for logging
+   ToDo: `SecretManagement.Hashicorp` is for an alternate secrets vault
+   ToDO: `DISM` is for enabling Windows Features, but it is not available for direct download. See
   `@('Microsoft.PowerShell.SecretManagement', 'Microsoft.PowerShell.SecretStore', 'SecretManagement.Keepass', 'PSFramework', 'DISM') | ForEach-Object { if (-not (Get-Module -ListAvailable -Name  $_)) { Install-Module -Name $_ -Scope AllUsers}}`
 
 - 32-Bit powershel Desktop Modules will not import automatically, run the foillowing lines
@@ -224,6 +251,8 @@ If the role specifies that the computer will be a primary or backup Hasicorp Vau
   Symlink the profile file for the first admin user on this machine
 
   - `Remove-Item -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target (join-path ( [Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')`
+
+
 
   Note: For development computer: Manually Symlink the Atap.Utilities.Building.Powershell module. TBD -install it as a package
 

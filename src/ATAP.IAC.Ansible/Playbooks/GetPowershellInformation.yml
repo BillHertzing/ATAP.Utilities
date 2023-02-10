@@ -1,0 +1,16 @@
+---
+# code: language=ansible
+- name: Get Powershell Information From Remote
+  hosts: all
+  tasks:
+    - name: Get Powershell Information
+      ansible.windows.win_powershell:
+        executable: pwsh.exe
+        script: |
+          $Ansible.Result = @{
+            PSHome =$PSHome
+            PSVersionTable = $PSVersionTable
+            'global:settings' = $(Write-hashIndented $global:settings)
+          }
+    - name: WhoAmI
+      ansible.windows.win_whoami:

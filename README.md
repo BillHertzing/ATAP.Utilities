@@ -63,6 +63,7 @@ Help Needed, see issue #31 and issue #32
 
 ### Using Chocolatey to add the ATAP.BuildTooling machine-wide
 
+see the Ansible project.
 
 Help Needed, see issue #33 and issue #34
 

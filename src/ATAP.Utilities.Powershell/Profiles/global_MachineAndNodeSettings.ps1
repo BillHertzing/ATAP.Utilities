@@ -270,7 +270,7 @@ switch ($hostname) {
   'utat01' {
     $local:MachineAndNodeSettings += @{
       $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = Join-Path 'C:' 'Dropbox'
-      $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
+      $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
       $global:configRootKeys['OneDriveBasePathConfigRootKey']                           = 'Dummy' # Join-Path 'C:' 'OneDrive'
       $global:configRootKeys['CloudBasePathConfigRootKey']                              = '$global:settings[$global:configRootKeys["DropBoxBasePathConfigRootKey"]]'
       $global:configRootKeys['FastTempBasePathConfigRootKey']                           = Join-Path 'C:' 'Temp'

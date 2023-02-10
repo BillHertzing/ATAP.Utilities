@@ -1,4 +1,0 @@
-- name: Run a command under pwsh
-  win_shell: $PSPath
-  args:
-    executable: pwsh.exe

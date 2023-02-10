@@ -311,13 +311,14 @@ function Get-CollectionTraverseEvaluate {
   }
 
   # ToDo: ensure these are part of the ATAP powershell package
-  #. join-path -path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.PowerShell', 'public','Get-ClonedObject.ps1')
-  #. join-path -path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.PowerShell', 'public','Get-TopologicalSort.ps1')
-  . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ClonedObject.ps1'
-  . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-TopologicalSort.ps1'
+  . $(join-path $([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell', 'public','Get-ClonedObject.ps1')
+  . $(join-path $([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell', 'public','Get-TopologicalSort.ps1')
+  #. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ClonedObject.ps1'
+  #. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-TopologicalSort.ps1'
 
   if ($DebugPreference -eq 'Continue') {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\SomethingDebugUtilities.ps1'
+    . $(join-path $([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell', 'public','SomethingDebugUtilities.ps1')
+    #. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\SomethingDebugUtilities.ps1'
   }
 
   # Declare function-scope variables visible to all child functions

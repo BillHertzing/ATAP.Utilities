@@ -750,6 +750,15 @@ $indentIncrement = 2
 Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
 Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, Environment variables: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
 
+# start windows explorere with the current working set of directories and place them in a fancy zones layout
+function Start-ExplorerWindowSet {
+  explorer.exe C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.IAC.Ansible\Playbooks
+  explorer.exe \\wsl.localhost\Ubuntu\etc\ansible
+  explorer.exe C:\Dropbox\whertzing\GitHub\ATAP.IAC
+  explorer.exe \\wsl.localhost\Ubuntu\home\whertzing\Ansible
+  FancyZones.exe apply -id "45BA8D3D-74C5-460B-AA17-97DAEF91780B"
+}
+
 
 
 <# To Be Moved Somewhere else #>

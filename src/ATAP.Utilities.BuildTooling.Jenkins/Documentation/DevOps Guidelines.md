@@ -13,7 +13,7 @@ An ATAP Utilities Jenkins pipeline has a lot of options. All have a default valu
 
 ## Dotnet Core ConfigurationRoot
 
-Configuration is handeled by creating a Configuration root object.  ToDo: Insert link to MS documentation.
+Configuration is handled by creating a Configuration root object.  ToDo: Insert link to MS documentation.
 
 ```Plantuml
 @startStandardConfigurationRoot
@@ -116,6 +116,11 @@ https://pleasantsolutions.com/info/pleasant-password-server/b-server-configurati
 
 https://pleasantsolutions.com/info/pleasant-password-server/b-server-configuration/2-certificates/setting-up-a-self-signed-certificate
 
+## Python for Windows
+
+`choco install python311`
+
+
 ## WSL for Windows
 
 administrator mode
@@ -195,6 +200,10 @@ TBD
 #### Register private key with the ssh-agent
 
 `ssh-agent $HOME/.ssh/id_ed25519`
+
+### SMB1 Client for Ubuntu
+
+'sudo apt install smbclient'
 
 ## SSH Server for Windows
 
@@ -307,19 +316,33 @@ Create a configuration file with all options, commented out, and all extensions,
 Ensure the following line in the config file is not commented
 `enable_plugins=host_list, script, auto, yaml, ini, toml`
 
+To enable Ansible running on ubuntu in WSL 2 to connect to target machins running Windows, make the following changes to the `/etc/ansible/ansible.cfg`, under the `[defaults]` section
+`executable=pwsh`
+
 ### Edit Ansible inventory file
 
 Can be done with notepad++ from Windows hosts, at the Windows path "\\wsl.localhost\Ubuntu\etc\ansible\hosts.yml". Remember to ensure the file has Linux line-endings (LF), not Windows line-endings (CR-LF)
 
-Here is an example with three simple hosts. Note that these host names are related to their IP address by entries in the Windows hosts file at `C:\Windows\System32\drivers\etc\hosts`
+Here is an example with three simple Windows hosts. Note that these host names are related to their IP address by entries in the Windows hosts file at `C:\Windows\System32\drivers\etc\hosts`
 
 ```yaml
 ---
 all:
+
+windows:
   hosts:
     ncat016:
     utat022:
     utat01:
+    ncat-ltb1:
+    ncat040:
+  vars:
+    ansible_remote_tmp: D:\Temp\Ansible
+    ansible_shell_type: cmd
+    ansible_shell_executable: pwsh
+    ansible_pwsh_interpreter: pwsh
+    ansible_Powershell_interpreter: Powershell
+    become_method: runas
 ```
 
 ### Test Ansible connection to the Windows hosts

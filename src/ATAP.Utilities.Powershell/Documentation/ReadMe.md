@@ -60,6 +60,12 @@ If a developer is modifying these profile and settings files (and they are in a 
 
 - `Remove-Item -path (join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_SecurityAndSecretsSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_SecurityAndSecretsSettings.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_SecurityAndSecretsSettings.ps1')`
 
+Per User profile for Powershell Desktop aka Powershell V5
+
+- `Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'profile.ps1')  -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','CurrentUserAllHostsV5Profile.ps1')`
+- `Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.ps1')  -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_ConfigRootKeys.ps1')`
+
+
 ## MachineName and Roles
 
 These are stored in `global_MachineAndNodeSettings.ps1`. It should be deployed, and found, in the same directory as the machine-wide profile. The purpose is to identify all of the machines used in the CI/CD pipeline for any ATAP-based application, identify the role of each machine in the pipeline, and specify the locations of the software components used for each role on that specific machine.

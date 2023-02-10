@@ -21,31 +21,110 @@ http://www.somewhere.com/attribution.html
 #>
 
 # Set Verbosity and Debug preferences for this profile
-$oldVerbosePreference = $script:VerbosePreference (
-$script:VerbosePreference
+$oldVerbosePreference = $script:VerbosePreference
+# Don't Print any debug messages to the console
+$DebugPreference = "SilentlyContinue"
+# Don't Print any verbose messages to the console
+$VerbosePreference = "SilentlyContinue" #"SilentlyContinue"
+
+# Values for the machine PsPath environment variable
+  # the default location where chocolatey installs modules on this machine
+
+# To be shared with V7 machine profile or insPowershell package
+Function Write-HashIndented {
+  param($hash
+    , [int] $initialIndent = 0
+    , [int] $indentIncrement = 2
+  )
+
+  $outstr = ''
+  $hash.GetEnumerator() | Sort-Object -Property Key | ForEach-Object { $outstr += Write-KVPIndented $_ $initialIndent $indentIncrement }
+  $outstr
+}
+function Write-KVPIndented {
+  param ($kvp, $indent, $indentIncrement)
+  $outstr = ' ' * $indent + $kvp.Key + ' = '
+  switch ($kvp.Value) {
+    ({ $PSItem -is [system.boolean] }) {
+      $outstr += $kvp.Value
+      break
+    }
+    ({ $PSItem -is [system.string] }) {
+      $outstr += $kvp.Value
+      break
+    }
+    ({ $PSItem -is [system.array] }) {
+      $outstr += '(' + [Environment]::NewLine
+      $outstr += Write-ArrayIndented $kvp.Value ($indent + $indentIncrement) $indentIncrement
+      $outstr += ' ' * $indent + ')'
+      break
+    }
+    ({ $PSItem -is [System.Collections.Hashtable] }) {
+      $outstr += '{' + [Environment]::NewLine
+      $outstr += Write-HashIndented $kvp.Value ($indent + $indentIncrement) $indentIncrement
+      $outstr += ' ' * $indent + '}'
+      break
+    }
+  }
+  $outstr += [Environment]::NewLine
+  $outstr
+}
+
+function Write-ArrayIndented {
+  param ($a, $indent, $indentIncrement)
+  $outstr = ' ' * $indent
+  $a | ForEach-Object {
+    switch ($_) {
+      ({ $PSItem -is [system.boolean] }) {
+        $outstr += $_
+        break
+      }
+      ({ $PSItem -is [system.string] }) {
+        $outstr += $_
+        break
+      }
+      ({ $PSItem -is [system.array] }) {
+        $outstr += '(' + [Environment]::NewLine
+        $outstr += Write-ArrayIndented $_ ($indent + $indentIncrement) $indentIncrement
+        $outstr += ' ' * $indent + ')'
+        break
+      }
+      ({ $PSItem -is [System.Collections.Hashtable] }) {
+        $outstr += '{' + [Environment]::NewLine
+        $outstr += Write-HashIndented $_ ($indent + $indentIncrement) $indentIncrement
+        $outstr += ' ' * $indent + '}'
+        break
+      }
+    }
+  }
+  $outstr += $a -join [Environment]::NewLine
+}
+
+# Dot source the list of configuration keys
+# Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+. "$PSScriptRoot/global_ConfigRootKeys.ps1"
+# Print the global:ConfigRootKeys if Debug
+Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
+
+# Dot source the global:settings file from a cache
+$global:Settings=@{}
+$global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']] = 'C:\ProgramData\chocolatey\lib'
+# Any machine that has openssl installed, needs to add it's path to the machine-scope path
+# This should only be done once, by a machine admin, when it is installed onto a machine
+
+
+
 ########################################################
 # Individual PowerShell Profile
 ########################################################
 
-$settings={
-  dummy:'dummy'
-}
-#Get-Settings $SettingsFile
-
-if ($settings.IsElevated) { Write-Verbose 'Elevated permisions' }
-# Setup Logging after settings are processed
-#$LogFn =$settings.LogFnPath + $settings.LogFnPattern;
-#Init-Log4Net $LogFn
-
-# Things to be initialized after settings are processed
+# modify $global:settings, here, if necessary
+# modify logging, here, if necessary
+# modify Console settings, here, if necessary
 
 ########################################################
 # Console Settings
 ##############################
-# Don't Print any debug messages to the console
-$DebugPreference = "SilentlyContinue"
-# Don't Print any verbose messages to the console
-$VerbosePreference = "Continue" #"SilentlyContinue"
 # Number of commands to keep in the commandHistory
 $global:MaxHistoryCount = 1000
 # Size of the console's user interface
@@ -89,33 +168,31 @@ $desiredPSModulePaths = $UserPSModulePaths  + $($Env:PSModulePath -split [IO.Pat
 # Set the $Env:PsModulePath to the final, clean value of $desiredPSModulePaths.
 #[Environment]::SetEnvironmentVariable('PSModulePath', $finalPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
 
-# Any machine that has openssl installed, needs to add it's path to the machine-scope path
-# This should only be done once, by a machine admin, when it is installed onto a machine
-
 
 #$Env:PSModulePath = (join-path $env:ProgramFiles "WindowsPowerShell\Modules") + [IO.Path]::PathSeparator + $Env:PSModulePath
-"Final PSModulePath in AlluserAllshell profile is: " + "`r`n`t" + (($Env:PSModulePath -split [IO.Path]::PathSeparator) -join "`r`n`t")
+if ($VerbosePreference -eq 'Continue') {Show-context}
+Write-PSFMessage -Level Verbose -Message $("Final PSModulePath in AlluserAllshell profile is: " + "`r`n`t" + (($Env:PSModulePath -split [IO.Path]::PathSeparator) -join "`r`n`t"))  -Tag 'V5UserProfile'
 
 # Is this script elevated
 $elevatedSIDPattern='S-1-5-32-544|S-1-16-12288'
-if ((whoami /all) -match $elevatedSIDPattern) {Write-Verbose "Elevated permisions"}#ToDo; change window border to yellow}
+if ((whoami /all) -match $elevatedSIDPattern) {Write-PSFMessage -Level Verbose -Message $("Elevated permisions")} #ToDo; change window border to yellow}
 
 # Show environment/context information when the profile runs
 # ToDo reformat using YAML
 Function Show-context{
   # Print the version of the framework we are using
-  Write-Verbose ("Framework being used: {0}" -f [Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory())
-  Write-Verbose ("DropBoxBasePath: {0}" -f $global:DropBoxBasePath)
-  Write-Verbose ("PSModulePath: {0}" -f $Env:PSModulePath)
-  Write-Verbose ("Elevated permisions:" -f (whoami /all) -match $elevatedSIDPattern)
-  Write-Verbose ("Drops:{0}" -f $drops)
+  Write-PSFMessage -Level Verbose -Message $("Framework being used: {0}" -f $([Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory())) -Tag 'V5UserProfile'
+  Write-PSFMessage -Level Verbose -Message $("DropBoxBasePath: {0}" -f $global:DropBoxBasePath)  -Tag 'V5UserProfile'
+  Write-PSFMessage -Level Verbose -Message $("PSModulePath: {0}" -f $Env:PSModulePath)  -Tag 'V5UserProfile'
+  Write-PSFMessage -Level Verbose -Message $("Elevated permisions:" -f (whoami /all) -match $elevatedSIDPattern)  -Tag 'V5UserProfile'
+  Write-PSFMessage -Level Verbose -Message $("Drops:{0}" -f $drops)  -Tag 'V5UserProfile'
   #DebugPreference
   #VerbosePreference
   #LoggingFrameworkandLogFileLocation
-  # ConssoleSettings
+  # ConsoleSettings
 
 }
-if ($true) {Show-context}
+
 
 
 # https://stackoverflow.com/questions/138144/what-s-in-your-powershell-profile-ps1-file
@@ -145,6 +222,8 @@ filter unlike( $glob )
     if (-not ($_.tostring() -like $glob))
         { $_ }
 }
+
+
 
 <# To Be Moved Somewhere else #>
 

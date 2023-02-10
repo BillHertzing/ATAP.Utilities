@@ -61,7 +61,8 @@ function Get-TopologicalSort {
   }
 
   if ($debugpreference -eq 'Continue') {
-    . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\SomethingDebugUtilities.ps1'
+    . $(join-path $([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell', 'public','SomethingDebugUtilities.ps1')
+    #. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\SomethingDebugUtilities.ps1'
     Write-AllNodesCollection
   }
 

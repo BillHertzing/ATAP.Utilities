@@ -27,7 +27,7 @@ Defaults to 'Statistic <SLNName> <daterangeofdata>.csv'
 .EXAMPLE
 
 # Run this in a Solution directory
-# Add this file to a Direcotry ./Build, ensure there is a directory   ./Artifacts
+# Add this file to a Directory ./Build, ensure there is a directory   ./Artifacts
 ./Build/Get-SLNParts.ps1 -InDir '.' -OutDir './Artifacts' -InFnFilePattern '*.sln' -OutFn ReconstitutedSLN.sln
 #>
 

@@ -217,7 +217,7 @@ Nice article here [Authenticode Signing Service and Client](https://github.com/d
 
 [Understanding Chocolatey NuGet packages](https://4sysops.com/archives/understanding-chocolatey-nuget-packages/)
 
-(https://github.com/psake/PowerShellBuild)
+[Psake PowershellBuild](https://github.com/psake/PowerShellBuild)
 
 [Build Automation in PowerShell](https://github.com/nightroman/Invoke-Build)
 

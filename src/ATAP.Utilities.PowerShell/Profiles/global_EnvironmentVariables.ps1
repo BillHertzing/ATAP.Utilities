@@ -18,7 +18,7 @@ $global:EnvVars = @{
   $global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']      = $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']]
   $global:configRootKeys['GoogleDriveBasePathConfigRootKey']    = $global:Settings[$global:configRootKeys['GoogleDriveBasePathConfigRootKey']]
   # Jenkins Environment Variables
-  # JENKINS_HOME applies onbly to jenkins Controller nodes
+  # JENKINS_HOME applies only to jenkins Controller nodes
   $global:configRootKeys['JENKINS_HOMEConfigRootKey']            = $global:Settings[$global:configRootKeys['JENKINS_HOMEConfigRootKey']]
 # These Jenkins Environment Variables are used to access a Jenkins Controller and Authenticate
 
@@ -26,7 +26,7 @@ $global:EnvVars = @{
   $global:configRootKeys['JENKINS_USER_IDConfigRootKey']        = $global:Settings[$global:configRootKeys['JENKINS_USER_IDConfigRootKey']]
   $global:configRootKeys['JENKINS_API_TOKENConfigRootKey']      = $global:Settings[$global:configRootKeys['JENKINS_API_TOKENConfigRootKey']]
   $global:configRootKeys['CommonJarsBasePathConfigRootKey']     = $global:Settings[$global:configRootKeys['CommonJarsBasePathConfigRootKey']]
-  'CLASSPATH'                                                   = (Join-Path ($global:Settings[$global:configRootKeys['CommonJarsBasePathConfigRootKey']]) '*') + [IO.Path]::PathSeparator + ([Environment]::GetEnvironmentVariable('CLASSPATH'))
+  #'CLASSPATH'                                                   = (Join-Path ($global:Settings[$global:configRootKeys['CommonJarsBasePathConfigRootKey']]) '*') + [IO.Path]::PathSeparator + ([Environment]::GetEnvironmentVariable('CLASSPATH'))
 
   # Where all things Security and Secrets related are stored
   $global:configRootKeys['SECURE_CLOUD_BASE_PATHConfigRootKey'] = $global:Settings[$global:configRootKeys['SECURE_CLOUD_BASE_PATHConfigRootKey']]

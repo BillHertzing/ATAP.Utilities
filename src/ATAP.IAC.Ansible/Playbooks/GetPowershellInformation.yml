@@ -1,16 +1,81 @@
 ---
 # code: language=ansible
-- name: Get Powershell Information From Remote
+- name: Get Powershell V7 (Core) Information From Remote
   hosts: all
+  gather_facts: false
+  vars:
+    ansible_temp_cleanup: false
   tasks:
     - name: Get Powershell Information
+    # The location of the pwsh executable can be taken from $PSHome
+    # Much information on the Powershell and supporting tools versions can be taken from $PSVersionTable
+    # The values of the global:settings are defined in the machine profile and the user profile
       ansible.windows.win_powershell:
         executable: pwsh.exe
         script: |
-          $Ansible.Result = @{
+          $Ansible.result =@{
             PSHome =$PSHome
+            ProgramData = $env:ProgramData
+            UserName = $env:USERNAME
+            PSModulePath = $env:PSModulePath
+            Exists = $global:configRootKeys.count -gt 0
+            Count = $global:configRootKeys.count
             PSVersionTable = $PSVersionTable
-            'global:settings' = $(Write-hashIndented $global:settings)
-          }
-    - name: WhoAmI
-      ansible.windows.win_whoami:
+            #FastTempBasePathConfigRootKey = $global:configRootKeys['FastTempBasePathConfigRootKey']
+            #FAST_TEMP_BASE_PATH = $global:settings[$global:configRootKeys['FastTempBasePathConfigRootKey']]
+            #'global:settings' = $(Write-hashIndented $global:settings)
+          } | ConvertTo-Json -Depth 99
+      register: fullresults
+      failed_when: fullresults.error | length > 0
+
+    - name: show returned information
+      debug:
+        var: fullresults
+      ignore_errors: yes
+
+    - name: Parse the returned JSON string into a JSON object
+      set_fact:
+        resultobject: "{{ fullresults.result | from_json }}"
+
+    - name: Parse the returned JSON object into individual variables
+      set_fact:
+        PSHome :  "{{resultobject.PSHome}}"
+        UserName :  "{{resultobject.UserName}}"
+        ProgramData :  "{{resultobject.ProgramData}}"
+        PSModulePath :  "{{resultobject.PSModulePath}}"
+        PSVersionTable :  "{{resultobject.PSVersionTable}}"
+        Exists :  "{{resultobject.Exists}}"
+        Count :  "{{resultobject.Count}}"
+        # FastTempBasePath :  "{{resultobject.FastTempBasePathConfigRootKey}}"
+
+    - name: show the returned JSON object
+      debug:
+        var: Exists
+    - name: show the returned JSON object
+      debug:
+        var: Count
+    - name: show the returned JSON object
+      debug:
+        var: UserName
+    - name: show the returned JSON object
+      debug:
+        var: ProgramData
+    - name: show the returned JSON object
+      debug:
+        var: PSModulePath  # FastTempBasePath resultsobject.PSVersionTable.PSEdition resultsobject.PSVersionTable resultsobject, resultsobject.PSHome
+    - name: show the returned JSON object
+      debug:
+        var: PSVersionTable
+    - name: show the host_var value
+      debug:
+        var: {{ FAST_TEMP_BASE_PATH }}
+
+
+    # whoami returns a lot of detailed information about the user account under which the script is executing...
+    # - name: WhoAmI
+    #   ansible.windows.win_whoami:
+    #   register: whoami_result
+
+    # - name: show whaoami information
+    #   debug:
+    #     var: whoami_result

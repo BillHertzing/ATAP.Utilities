@@ -113,4 +113,4 @@ Add ATAPCommonJenkinsLibrary.groovy as a shared library (ToDo: point to an insta
 
 
 
-Edit the file `jenkins.xml` in the `$env:JENKINS_HOME` directroy. Find the line `-httpPort:4040` (substitute the port your Jenkins Controller is listening to), and replace `-httpPort:4040` with `-httpPort:4040 -httpsPort:4041`. Restart the Jenkins controller service
+Edit the file `jenkins.xml` in the `$env:JENKINS_HOME` directory. Find the line `-httpPort:4040` (substitute the port your Jenkins Controller is listening to), and replace `-httpPort:4040` with `-httpPort:4040 -httpsPort:4041`. Restart the Jenkins controller service

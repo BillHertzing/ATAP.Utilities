@@ -9,7 +9,7 @@ ToDo: write Help DESCRIPTION For this function
 .PARAMETER  ModuleName
   Specifies the path to the Powershell Manifest file (.psd1)
 .PARAMETER ProductionOnly
-  Specifies the path to the directroy where the .nuspec file will be written
+  Specifies the path to the directory where the .nuspec file will be written
 
 .PARAMETER Extension
 ToDo: write Help For the parameter X

@@ -8,7 +8,7 @@ decide what role's the new computer wil be a member of
 
 - Development Computer
 - SSH Server
-- Secrets Manageement
+- Secrets Management
   - Hashicorp
   - KeePass
   - Powershell Secrets
@@ -245,6 +245,12 @@ If the role specifies that the computer will be a primary or backup Hasicorp Vau
   - `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1')`
 
   - `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_MachineAndNodeSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_MachineAndNodeSettings.ps1') -Target (join-path -path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_MachineAndNodeSettings.ps1'))`
+
+  - `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_PerMachineSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_PerMachineSettings.ps1') -Target (join-path -path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_PerMachineSettings.ps1'))`
+
+  - `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_PerGroupSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_PerGroupSettings.ps1') -Target (join-path -path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_PerGroupSettings.ps1'))`
+
+  - `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_PerRoleSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_PerRoleSettings.ps1') -Target (join-path -path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_PerRoleSettings.ps1'))`
 
   - `Remove-Item -path (join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP. Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')`
 
@@ -567,7 +573,7 @@ The code is installed to "C:\Program Files\Eclipse Adoptium\jre-17.0.2.8-hotspot
 
 ## Setup Jenkins Controller
 
-Everything necessary  to run jenkins is found in the `$ENV:JENKINS_HOME` subdirectory. For any machine having the role of the Jenkins Controller, the value of `$ENV:JENKINS_HOME`is set to the machine' settings' path `$global:configRootKeys['CloudBasePathConfigRootKey']` and`JenkinsHome`. This is assigned at the machine level, so when the Jenkins Controller Service starts, it uses the data in this direcotry. Note that only one machine in the organization should be designated the Jenkins Controller. (ToDo: add section on High-availability amd scaling for the Jenkins Controller)
+Everything necessary  to run jenkins is found in the `$ENV:JENKINS_HOME` subdirectory. For any machine having the role of the Jenkins Controller, the value of `$ENV:JENKINS_HOME`is set to the machine' settings' path `$global:configRootKeys['CloudBasePathConfigRootKey']` and`JenkinsHome`. This is assigned at the machine level, so when the Jenkins Controller Service starts, it uses the data in this directory. Note that only one machine in the organization should be designated the Jenkins Controller. (ToDo: add section on High-availability amd scaling for the Jenkins Controller)
 
 The machine name of the Jenkins Controller will be referred to in this document as `JenkinsControllerMachine`
 
@@ -594,7 +600,7 @@ PackageManagement for powershell
 
 [Understanding Chocolatey NuGet packages](https://4sysops.com/archives/understanding-chocolatey-nuget-packages/)
 
-(https://github.com/psake/PowerShellBuild)
+[Psake PowershellBuild](https://github.com/psake/PowerShellBuild)
 
 [Build Automation in PowerShell](https://github.com/nightroman/Invoke-Build)
 

@@ -1,6 +1,6 @@
 # This is the resource (template) version of the default build.ps1 file used by Invoke-Build throughout all ATAP.Utilities modules and libraries
 # ToDo: figure out how to install the buildtooling powwershell module such that this file is found by default when invoke-build is run
-# ToDo: until then use the following to link it (run this command in the powershell project's base subdirectroy)
+# ToDo: until then use the following to link it (run this command in the powershell project's base subdirectory)
 
 # Remove-Item -path (join-path '.' 'Module.Build.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path '.' 'Module.Build.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.Buildtooling.PowerShell' 'Resources' 'Module.Build.ps1')
 #[CmdletBinding(SupportsShouldProcess=$true)]

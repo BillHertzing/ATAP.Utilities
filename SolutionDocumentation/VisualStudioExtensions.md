@@ -23,7 +23,7 @@
 ### The AutoDoc project in a Solution
     * This project builds the static documentation website.
     * The gh-pages branch of a repository should point to the latest release version of this project.
-    * The repository's ReadMe.md file should contain a prominent link to the Doc directroy of this project
+    * The repository's ReadMe.md file should contain a prominent link to the Doc directory of this project
     * see also https://dzone.com/articles/generating-documentation-with-docfx-as-part-of-a-v
 
 To speed up development, do NOT build the AutoDoc project automatically.

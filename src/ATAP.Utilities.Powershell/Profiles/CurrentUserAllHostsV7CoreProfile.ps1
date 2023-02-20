@@ -72,13 +72,14 @@ Function prompt {
   #Assign Windows Title Text
   $host.ui.RawUI.WindowTitle = "Current Folder: $pwd"
 
-  #Configure current user, current folder and date outputs
+  #Configure current host, current user, current folder and date outputs
   $CmdPromptCurrentFolder = Split-Path -Path $pwd -Leaf
-  $CmdPromptUser = [Security.Principal.WindowsIdentity]::GetCurrent();
+  $CmdPromptUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+  $CmdPromptHost = $env:HOSTNAME
   # Decorate the CMD Prompt
   # Test for Admin / Elevated
-  Write-Host ($(if (1) { 'Elevated ' } else { '' })) -BackgroundColor DarkRed -ForegroundColor White -NoNewline
-
+  Write-Host $(if ($global:settings[$global:configRootKeys['IsElevatedConfigRootKey']]) { 'Elevated ' } else { '' }) -BackgroundColor DarkRed -ForegroundColor White -NoNewline
+  Write-Host " HOST:$CmdPromptHost " -BackgroundColor DarkYellow -ForegroundColor White -NoNewline
   Write-Host " USER:$($CmdPromptUser.Name.split('\')[1]) " -BackgroundColor DarkBlue -ForegroundColor White -NoNewline
   If ($CmdPromptCurrentFolder -like '*:*')
   { Write-Host " $CmdPromptCurrentFolder " -ForegroundColor White -BackgroundColor DarkGray -NoNewline }
@@ -158,7 +159,7 @@ $UserPSModulePaths = @(
   # DropBox api scripts for blog posts
   # Future: scripts to manipulate FreeVideoEditor VSDC
   # the default location where chocolatey installs modules on this machine
-  $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]
+  # $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]
 )
 # Add the $UserPSModulePaths to the exisiting $env:PSModulePaths
 $desiredPSModulePaths = $UserPSModulePaths + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
@@ -594,7 +595,7 @@ Function WatchFile {
     # this gets executed when user presses CTRL+C:
 
     # stop monitoring
-    $watcher.EnableRaisingEvents = $false
+    $watcher.EnableRaisingEvents = $falseInstallOrUpdateChocolateyPackages
 
     # remove the event handlers
     $handlers | ForEach-Object {
@@ -725,6 +726,23 @@ $global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRoot
   $global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageURIConfigRootKey']]
 }
 
+# ToDo: Fix the Get-CollTravEval so it handles arrays
+# Set the global PackageRepositoriesCollection
+$global:settings[$global:configRootKeys['AnsibleHostNamesConfigRootKey']]  = ('ncat041', 'ncat-ltb1', 'ncat-ltjo', 'ncat044', 'utat01', 'utat022')
+$global:settings[$global:configRootKeys['AnsibleGroupNamesConfigRootKey']]  = ('all', 'Windows', 'WSL2Ubuntu')
+$global:settings[$global:configRootKeys['AnsibleRoleNamesConfigRootKey']]  =  ,'IncorporatesNuGetPackageProvider' #,'common', 'AnsibleServers', 'BuildServers', 'JenkinsControllerServers', 'JenkinsClientServers', 'QualityAssuranceServers', 'WebServers', 'DatabaseServers' )
+
+# # Load the  $global:PerMachineSettings hash, evaluating any dependencies
+# $SourceCollections = @()
+# for ($ansibleHostNameIndex = 0; $ansibleHostNameIndex -lt $global:settings[$global:configRootKeys['AnsibleHostNamesConfigRootKey']].count; $ansibleHostNameIndex++) {
+#   $SourceCollections += "global:$($global:settings[$global:configRootKeys['AnsibleHostNamesConfigRootKey']][$ansibleHostNameIndex])PerMachineSettings"
+# }
+
+# $matchPatternRegex = [System.Text.RegularExpressions.Regex]::new( 'global:settings\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
+# Get-CollectionTraverseEvaluate -SourceCollections $sourceCollections -destination $global:PerMachineSettings -matchPatternRegex $matchPatternRegex
+
+
+
 # ToDo find a place to store 'nearly good enough' functions. Instead of this Get-URI function, use [URIBuilder]::new(...)
 # See Michael Sorens answer to https://stackoverflow.com/questions/9593535/best-way-to-join-parts-with-a-separator-in-powershell
 # Function Get-URI {
@@ -758,7 +776,6 @@ function Start-ExplorerWindowSet {
   explorer.exe \\wsl.localhost\Ubuntu\home\whertzing\Ansible
   FancyZones.exe apply -id "45BA8D3D-74C5-460B-AA17-97DAEF91780B"
 }
-
 
 
 <# To Be Moved Somewhere else #>

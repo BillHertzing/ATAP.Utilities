@@ -10,7 +10,7 @@ function Invoke-GitPreCommitHook {
   $DebugPreference = 'Continue'
 
   Write-PSFMessage -Level Debug -Message $(Write-HashIndented $global:settings)
-  
+
   $branchName = git branch --show-current
   Write-PSFMessage -Level Debug -Message "branchName = $branchName" -Tag 'GitPreCommtiHook'
   [System.Environment]::SetEnvironmentVariable('BRANCHNAME', $branchName)
@@ -38,7 +38,7 @@ function Invoke-GitPreCommitHook {
   # shorthand
   $dirSep = [Regex]::Escape([System.IO.Path]::DirectorySeparatorChar)
 
-  # Regex Patterns used to extract data from Git, expects an opinionated layout to the project's direcotry structure
+  # Regex Patterns used to extract data from Git, expects an opinionated layout to the project's directory structure
   $ProjectKindAndNameExtractorPattern = '(?<ProjectKind>' + $dirsep + 'src|test|database' + $dirsep + ')(?<ProjectSubdirectoryName>.*?' + $dirsep + ')'
 
   # List of AddedChangedModifiedRenamed files in the commit

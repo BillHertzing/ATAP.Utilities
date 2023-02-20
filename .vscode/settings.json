@@ -52,6 +52,7 @@
         "NOEXEC",
         "nvarchar",
         "Prefixs",
+        "Psake",
         "pwsh",
         "RAISERROR",
         "RTRIM",

@@ -370,9 +370,9 @@ ToDo: install a formatter for Jenkinsfile
 
 ## Installing an agent
 
-### Getting the Controllers Instance ID:
+### Getting the Controllers Instance ID
 
-ou can also capture the value by visiting the Instance Identity page, at something like "https://myjenkins.example.com/instance-identity".
+You can also capture the value by visiting the Instance Identity page, at something like "https://myjenkins.example.com/instance-identity".
 
 ### Configuring the Agent as a Windows Service
 
@@ -381,12 +381,13 @@ ou can also capture the value by visiting the Instance Identity page, at somethi
 [How to install Windows agents as a service?](https://support.cloudbees.com/hc/en-us/articles/217423827-How-to-Install-Several-Windows-Slaves-as-a-Service-)
 [Windows Service Wrapper in less restrictive license](https://github.com/winsw/winsw/blob/master/doc/installation.md#winsw-installation-guide)
 
-Name of Service used to run the Jenkins Controller service is `JenkinsControllerSrvAcc`, password is stored as a secret somewhere (toDo: Create secrets files (encrypted) somewhere on dropbox not in github). Temporary value is `NotSecret`
+Name of Windows User account used to run the Jenkins Controller service is `JenkinsControllerSrvAcc`, password is stored as a secret somewhere (toDo: Create secrets files (encrypted) somewhere on dropbox not in github). Temporary value is `NotSecret`
 
-Name of Service used to run the Jenkins Client service is `JenkinsClientSrvAcc`, password Temporary value is `NotSecret`, used in the service as "LogOnAs"
+Name of Windows User account  used to run the Jenkins Client service is `JenkinsClientSrvAcc`, password Temporary value is `NotSecret`, used in the service as "LogOnAs"
 
-* Download the WinSW executable, and rename it to `JenkinsCient-<Client Version>-<DotNetDesktopframeworkVersion>.exe`
-* Create the file `JenkinsCient-<Client Version>-<DotNetDesktopframeworkVersion>.xml`, populate it as follows:
+-  Download the WinSW executable, and rename it to `JenkinsCient-<Client Version>-<DotNetDesktopframeworkVersion>.exe`
+-  Create the file `JenkinsCient-<Client Version>-<DotNetDesktopFrameworkVersion>.xml`, populate it as follows:
+
 ``` xml
 <service>
   <id>JenkinsAgent</id>
@@ -448,10 +449,12 @@ java -jar agent.jar -jnlpUrl <jnlp url> -secret @secret-file -workDir <work dire
 ```
 
 Or this
+
 ```Text
 java -jar agent.jar \
   @agent_options.cfg
 ```
+
  With an `agent_options.cfg` file containing
 
 ```Text
@@ -465,7 +468,6 @@ java -jar agent.jar \
 ## Cleanup failed runs
 
 [Jenkins Pipeline Wipe Out Workspace](https://stackoverflow.com/questions/37468455/jenkins-pipeline-wipe-out-workspace)
-
 
 ```Groovy
 pipeline {
@@ -487,11 +489,9 @@ Follow these steps:
 1) Click the Replay link in the LHS menu.
 1) Paste the above script in the text box and click Run
 
-
 Also try variations on the below script... Will work for default workspace as well
 
 ```Groovy
-
 pipeline {
     agent {
         node {
@@ -530,9 +530,8 @@ Executable code being built has to be built inside a loop that calls the build w
 
 #### Detailed logs of the build process
 
-[MSBuild Structured Log](https://github.com/KirillOsenkov/MSBuildStructuredLog) is a logger for creating detailed logs of the build process
-
- [StructuredLogger Nuget package](https://www.nuget.org/packages/MSBuild.StructuredLogger/2.1.507)
+- [MSBuild Structured Log](https://github.com/KirillOsenkov/MSBuildStructuredLog) is a logger for creating detailed logs of the build process
+- [StructuredLogger Nuget package](https://www.nuget.org/packages/MSBuild.StructuredLogger/2.1.507)
 
 1) Install the package as part of the .csproj file
 2) add the switch /logger:BinaryLogger,"packages\MSBuild.StructuredLogger.2.1.507\lib\netstandard2.0\StructuredLogger.dll";"C:\Users\SomeUser\Desktop\binarylog.binlog"
@@ -578,7 +577,7 @@ Since the Jenkinsfile has already built the code and the tests, add the followin
 
 ### Build configuration
 
-The build stage should loop over each value of the configuration list <Debug>,<Production>,<ProductionwithTrace> and build the .dll anmd .exe files once with each value
+The build stage should loop over each value of the configuration list \<Debug>,\<Production>,\<ProductionWithTrace> and build the .dll and .exe files once with each value
 
 --configuration <CONFIGURATION>  - defaults to `Debug`
 
@@ -598,10 +597,10 @@ Install [Coverlet](https://github.com/coverlet-coverage/coverlet)
 
 ## Documentation Generation
 
-The stage needs a step that moves the readme.html over to index.hmtl, renames any generated assets located in _site/Assets/*, and reworks the asset links from readme to index
+The stage needs a step that moves the readme.html over to index.html, renames any generated assets located in _site/Assets/*, and reworks the asset links from readme to index
 
-The post build cleanup stage should include a step that removes generated `.puml`  files from directories where a source file contaains the source of the diagram.
+The post build cleanup stage should include a step that removes generated `.puml`  files from directories where a source file contains the source of the diagram.
 
 ToDo: Better would be to put all generated files in a tree structure located somewhere below _generated, and then convert each to an asset and write that asset to the correct subdir under _site/assets, such that the subdir matches the subdir where the source code was found
 
-C2Plpantuml puts one .puml file for each class/interface/etc. found in a compilation unit into the directory alongside the compilation unit. ToDo: move these to a identical tree under _generated. Convert each to an asset and put them into the correct subdir under _site/assets. Have a build step create a `,compilationunit>.md file, and populate it with a link toeach assets that came from the original source file
+C2Plantuml puts one .puml file for each class/interface/etc. found in a compilation unit into the directory alongside the compilation unit. ToDo: move these to a identical tree under _generated. Convert each to an asset and put them into the correct subdir under _site/assets. Have a build step create a `,compilationunit>.md file, and populate it with a link to each assets that came from the original source file

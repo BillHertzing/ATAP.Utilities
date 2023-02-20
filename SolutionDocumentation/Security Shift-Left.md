@@ -140,7 +140,7 @@ For Windows:
 
 ### Disaster Recovery
 
-All secrets are stored in plaintext in a subdirecotry rooted at DisasterRecoveryPath and also in another subdirecotry rooted at DisasterRecoveryBackup path. These actual locations are whatever locations the organizations feel is their most secure storage.
+All secrets are stored in plaintext in a subdirectory rooted at DisasterRecoveryPath and also in another subdirectory rooted at DisasterRecoveryBackup path. These actual locations are whatever locations the organizations feel is their most secure storage.
 
 ## Git Credentials
 
@@ -522,7 +522,7 @@ Keep the following until testing proves them unnecessary (are the RootCA Cert an
 ```Powershell
 $WinRMSSLPrivateKeyPath = 'C:\Dropbox\SecretManagement\CARoot\PrivateKeys\WinRMSSLKey.private'
 $WinRMSSLPrivateKeyPassphraseFilePath = join-path $global:settings[$global:ConfigRootkeys['SecureTemporaryDirectoryConfigrootKey']] 'WinRMSSLPrivateKeyPassphrase.txt'
-# ToDo: make up a random passphrase and save it to a secret vault? Also plaintext backup for disaster recovery, only to USB. The write it to the temporary direcotry
+# ToDo: make up a random passphrase and save it to a secret vault? Also plaintext backup for disaster recovery, only to USB. The write it to the temporary directory
 openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out $WinRMSSLPrivateKeyPath
 # openssl genpkey -algorithm RSA -des3 -passout file:$WinRMSSLPrivateKeyPassphraseFilePath -pkeyopt rsa_keygen_bits:2048 -out $WinRMSSLPrivateKeyPath
 ```

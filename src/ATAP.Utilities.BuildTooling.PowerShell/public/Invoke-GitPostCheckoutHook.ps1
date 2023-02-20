@@ -29,7 +29,7 @@ function Invoke-GitPostCheckoutHook {
 
   # Call Jenkins to
 
-  # Regex Patterns used to extract data from Git, expects an opinionated layout to the project's direcotry structure
+  # Regex Patterns used to extract data from Git, expects an opinionated layout to the project's directory structure
   $ProjectKindAndNameExtractorPattern = '(?<ProjectKind>' + $dirsep + 'src|test|database' + $dirsep + ')(?<ProjectSubdirectoryName>.*?' + $dirsep + ')'
 
   # shorthand

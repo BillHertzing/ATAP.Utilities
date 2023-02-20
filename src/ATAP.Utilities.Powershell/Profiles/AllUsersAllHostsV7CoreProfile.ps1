@@ -404,27 +404,48 @@ $PSDefaultParameterValues = @{
 # Print the global:ConfigRootKeys if Debug
 Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
 
+# [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)
+
 # Dot source the Security and Secrets settings
 # Security and Secrets setting .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
 . "$PSScriptRoot/global_SecurityAndSecretsSettings.ps1"
 # Print the global:SecurityAndSecretsSettings if Debug
 Write-PSFMessage -Level Debug -Message ('global:SecurityAndSecretsSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:SecurityAndSecretsSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 
-# Dot source the Machine and Node settings
+# Dot source the common machine settings
 # MachineAndNodeSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
 . $PSScriptRoot/global_MachineAndNodeSettings.ps1
 # Print the global:MachineAndNodeSettings if Debug
 Write-PSFMessage -Level Debug -Message ('global:MachineAndNodeSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:MachineAndNodeSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 
+# Dot source the PerGroupSettings
+# PerGroupSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+. $PSScriptRoot/global_PerGroupSettings.ps1
+# Print the global:PerGroupSettings FOR THIS HOST if Debug
+Write-PSFMessage -Level Debug -Message ('global:global_PerGroupSettings (for '+$hostname+'):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerGroupSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+
+# Dot source the PerRoleSettings
+# PerRoleSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+. $PSScriptRoot/global_PerRoleSettings.ps1
+# Print the global:PerRoleSettings FOR THIS HOST if Debug
+Write-PSFMessage -Level Debug -Message ('global:global_PerRoleSettings (for '+$hostname+'):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerRoleSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+
+# Dot source the PerMachineSettings
+# PerMachineSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+. $PSScriptRoot/global_PerMachineSettings.ps1
+# Print the global:PerMachineSettings FOR THIS HOST if Debug
+Write-PSFMessage -Level Debug -Message ('global:PerMachineSettings (for '+$hostname+'):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerMachineSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+
 # Define a global settings hash
 $global:settings = @{}
 
-# Load the $SecurityAndSecretsSettings and the $MachineAndNodeSettings into the $global:settings hash, evaluating any dependencies
-$SourceCollections = @($global:SecurityAndSecretsSettings, $global:MachineAndNodeSettings)
+# 'Group Vars' 'Role Vars' 'Host Vars'
+#
+# Load the PerGroup, PerRole, and PerMachine settings for this computer into the $global:settings hash, evaluating any dependencies
+$SourceCollections = @( $global:PerGroupSettings, $global:PerRoleSettings, $global:PerMachineSettings, $global:SecurityAndSecretsSettings, $global:MachineAndNodeSettings)
 $matchPatternRegex = [System.Text.RegularExpressions.Regex]::new( 'global:settings\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
 # Until ATAP.Utilities package imports are working.... dot source the file
 .  $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-CollectionTraverseEvaluate.ps1'))
-
 Get-CollectionTraverseEvaluate -SourceCollections $sourceCollections -destination $global:Settings -matchPatternRegex $matchPatternRegex
 
 # set ISElevated in the global settings if this script is running elevated

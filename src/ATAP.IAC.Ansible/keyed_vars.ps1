@@ -2,7 +2,7 @@
 param (
   [string] $ymlGenericTemplate
   , [string] $directoryPath
-  , [hashtable] $settingHash
+  , [hashtable] $settingsHash
   , [array] $namesList
 )
 
@@ -10,19 +10,19 @@ function Contents {
   param(
     [string] $name
   )
-  # $global:settings that are defined per-host are stored in $settingHash
+  # The settingsHash should have an entry
   $lines = @()
-  foreach ($key in $($($settingHash[$name]).keys | Sort-Object)) {
-    $escapedvalue = $($($settingHash[$name])[$key]) -replace "'", "''"
+  foreach ($key in $($($settingsHash[$name]).keys | Sort-Object)) {
+    $escapedvalue = $($($settingsHash[$name])[$key]) -replace "'", "''"
     $lines += "$key : '$escapedvalue'"
   }
   return $lines
 }
 
-# $global:settings that are defined per-host or per-group are stored in the $settingHash
-for ($ansibleNamesIndex = 0; $ansibleNamesIndex -lt $namesList.count; $ansibleNamesIndex++) {
+# $global:settings that are defined per-host or per-group are stored in the $settingsHash
+for ($index = 0; $index -lt $namesList.count; $index++) {
   # create a host_vars file for each host
-  $name = $namesList[$ansibleNamesIndex]
+  $name = $namesList[$index]
   $ymlContents= $ymlGenericTemplate -replace '\{2}', $name
   # Use the Linux newline character
   $ymlContents += $(Contents -name $name) -join "`r"

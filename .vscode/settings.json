@@ -69,5 +69,6 @@
         "MD025": {
             "front_matter_title": ""
         }
-    }
+    },
+    "pester.autoRunOnSave": false
 }

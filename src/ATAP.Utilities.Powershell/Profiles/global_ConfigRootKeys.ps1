@@ -13,6 +13,7 @@ $global:configRootKeys = @{
   'FastTempBasePathConfigRootKey'                                                                = 'FAST_TEMP_BASE_PATH'
   'BigTempBasePathConfigRootKey'                                                                 = 'BIG_TEMP_BASE_PATH'
   'SecureTempBasePathConfigRootKey'                                                              = 'SECURE_TEMP_BASE_PATH'
+  'ChocolateyPackagesConfigRootKey'                                                              = 'ChocolateyPackages'
   'ErlangHomeDirConfigRootKey'                                                                   = 'ErlangHomeDir'
   'GIT_CONFIG_GLOBALConfigRootKey'                                                               = 'GIT_CONFIG_GLOBAL'
   'GitExePathConfigRootKey'                                                                      = 'GitExePath'
@@ -57,7 +58,7 @@ $global:configRootKeys = @{
   'ansible_remote_tmpConfigRootKey'                                                              = 'ansible_remote_tmp'
   'AnsibleGroupNamesConfigRootKey'                                                               = 'AnsibleGroupNames'
   'AnsibleHostNamesConfigRootKey'                                                                = 'AnsibleHostNames'
-  'AnsibleRoleNamesConfigRootKey'                                                               = 'AnsibleRoleNames'
+  'AnsibleRoleNamesConfigRootKey'                                                                = 'AnsibleRoleNames'
 
 
   # Computer roles (used in the JenkinsNodeRoles)

@@ -694,53 +694,6 @@ Function ShutItAllDown {
 # Set the value of the environment variable (Key)
 
 
-# ToDo: Fix the Get-CollTravEval so it handles hash tables
-# # Set the global PackageRepositoriesCollection
-$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']] = @{
-  $global:configRootKeys['RepositoryNuGetFilesystemDevelopmentPackageNameConfigRootKey']                             = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemDevelopmentPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetFilesystemQualityAssurancePackageNameConfigRootKey']                        = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemQualityAssurancePackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetFilesystemProductionPackageNameConfigRootKey']                              = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemProductionPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']              = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey']         = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerProductionPackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetProductionWebServerDevelopmentPackageNameConfigRootKey']                    = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetProductionWebServerQualityAssurancePackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryNuGetProductionWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageNameConfigRootKey']                     = $global:settings[$global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetFilesystemDevelopmentPackageNameConfigRootKey']                     = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemDevelopmentPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetFilesystemQualityAssurancePackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemQualityAssurancePackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetFilesystemProductionPackageNameConfigRootKey']                      = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemProductionPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']      = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey'] = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerProductionPackageNameConfigRootKey']       = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetProductionWebServerDevelopmentPackageNameConfigRootKey']            = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetProductionWebServerQualityAssurancePackageNameConfigRootKey']       = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetProductionWebServerProductionPackageNameConfigRootKey']             = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyFilesystemDevelopmentPackageNameConfigRootKey']                        = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemDevelopmentPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyFilesystemQualityAssurancePackageNameConfigRootKey']                   = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemQualityAssurancePackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyFilesystemProductionPackageNameConfigRootKey']                         = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemProductionPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']         = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey']    = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerProductionPackageNameConfigRootKey']          = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyProductionWebServerDevelopmentPackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyProductionWebServerQualityAssurancePackageNameConfigRootKey']          = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageURIConfigRootKey']]
-}
-
-# ToDo: Fix the Get-CollTravEval so it handles arrays
-# Set the global PackageRepositoriesCollection
-$global:settings[$global:configRootKeys['AnsibleHostNamesConfigRootKey']]  = ('ncat041', 'ncat-ltb1', 'ncat-ltjo', 'ncat044', 'utat01', 'utat022')
-$global:settings[$global:configRootKeys['AnsibleGroupNamesConfigRootKey']]  = ('all', 'Windows', 'WSL2Ubuntu')
-$global:settings[$global:configRootKeys['AnsibleRoleNamesConfigRootKey']]  =  ,'IncorporatesNuGetPackageProvider' #,'common', 'AnsibleServers', 'BuildServers', 'JenkinsControllerServers', 'JenkinsClientServers', 'QualityAssuranceServers', 'WebServers', 'DatabaseServers' )
-
-# # Load the  $global:PerMachineSettings hash, evaluating any dependencies
-# $SourceCollections = @()
-# for ($ansibleHostNameIndex = 0; $ansibleHostNameIndex -lt $global:settings[$global:configRootKeys['AnsibleHostNamesConfigRootKey']].count; $ansibleHostNameIndex++) {
-#   $SourceCollections += "global:$($global:settings[$global:configRootKeys['AnsibleHostNamesConfigRootKey']][$ansibleHostNameIndex])PerMachineSettings"
-# }
-
-# $matchPatternRegex = [System.Text.RegularExpressions.Regex]::new( 'global:settings\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
-# Get-CollectionTraverseEvaluate -SourceCollections $sourceCollections -destination $global:PerMachineSettings -matchPatternRegex $matchPatternRegex
-
 
 
 # ToDo find a place to store 'nearly good enough' functions. Instead of this Get-URI function, use [URIBuilder]::new(...)

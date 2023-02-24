@@ -2,11 +2,9 @@
 param(
     [string] $ymlGenericTemplate
   , [string] $directoryPath
-  , [string] $dSCConfigurationName
-  , [string] $dSCConfigurationFilename
-  , [string] $dSCConfigurationSourcePath
-  , [string] $dSCConfigurationAnsibleSourcePath
-  , [string] $dSCConfigurationTargetDestinationDirectory
+  , [string] $roleName
+  , [string] $packageVersion
+
 )
 
 function Contents {
@@ -14,21 +12,42 @@ function Contents {
 return @"
 - name: install package
   win_chocolatey:
-    name: 'cpu-z'
+    name: '$roleName'
+    version: '$packageVersion'
     state: present
   register: install
+  when:  "action_type == 'Install'"
 
 - name: show the results of the install
   debug:
     var: install
+  when:  "action_type == 'Install'"
+
+- name: Gather Chocolatey facts
+  win_chocolatey_facts:
+  when:  "action_type == 'Check'"
+
+- name: Select dictionary with name = '$roleName'
+  set_fact:
+    selected_dict: "{{ ansible_chocolatey.packages | selectattr('package', 'equalto', '$roleName') | first }}"
+
+- name: validate actual version returned for $roleName is the expected value
+  assert:
+    that:
+      - selected_dict.version == "$packageVersion"
+    fail_msg: "installed version is incorrect"
+    success_msg: "Correct"
+  when:  "action_type == 'Check'"
 
 "@
 }
 
-  $ymlContents= $ymlGenericTemplate -replace '\{2}', $dSCConfigurationName
+  $ymlContents= $ymlGenericTemplate -replace '\{2}', $("$roleName version $packageVersion")
   $ymlContents += Contents
   Set-Content -Path $(Join-Path $directoryPath "main.yml") -Value $ymlContents
 
+
+  # loop: "{{ ansible_chocolatey.packages | selectattr('name', 'match', '^$roleName$') | list }}" # pick an item from a list of dictionaries based on the value of a field of the dictionary
 
 #   - name: show the ansible_user
 #   debug:
@@ -52,7 +71,7 @@ return @"
 #       InstallDir = C:\Temp\chocotesting
 
   # InstallDir = 'C:\temp\chocotesting'
-#  InstallDir = 'C:/temp/chocotesting'
+#InstallDir = 'C:/temp/chocotesting'
 # Value  = 'Desired State Configuration'`
 # Target = 'Process'`
 #        Ensure = 'Present'`

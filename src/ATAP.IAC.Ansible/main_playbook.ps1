@@ -14,15 +14,12 @@ function Contents {
   hosts: Windows
   become: true
   gather_facts: false
-
+  vars:
+    action_type: 'Check'
   tasks:
-    - name: Import Role IncorporatesNuGetPackageProvider
-      import_role:
-        name: IncorporatesNuGetPackageProvider
-
-    - name: Print progress
-      debug:
-        msg: "P1 milestone"
+    - name: Include roles
+      include_role:
+        name: "7zip"
 "@
 
   return $lines

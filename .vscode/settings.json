@@ -1,5 +1,5 @@
 {
-
+  "editor.renderWhitespace": "all",
     "omnisharp.enableEditorConfigSupport": true,
     "omnisharp.useGlobalMono": "never",
     "git.enableSmartCommit": true,

@@ -116,12 +116,6 @@ Portable applications are installed to the `Dropbox\PortableApplications` direct
 1. Associate all the possible extensions to 7Zip for the user
 1. The shared settings will specify paths for the editor and diff tool. These should point to the chocolatey bin location executables for notepad and beyond compare
 
-#### Everything Portable
-
-1. Configure Everything so the Everything database to %apdatalocal%/Everything/Everything.db
-1. Remove the Everything.db that is under portableapps/EverythingPortable, that was created when Everything started for the first time on the computer
-1.
-
 ## Install Chocolatey packages
 
 Reinstall all chocolatey packages
@@ -198,7 +192,7 @@ copy role-appropriate hosts file to new computer
 
 ## Security and PKI
 
-If the role specifies that the computer will be a primary or backup Hasicorp Vault server, run the following steps
+If the role specifies that the computer will be a primary or backup Hashicorp Vault server, run the following steps
 
 - Create a user under which the Hashicorp Vault server will run (Name cannot exceed 25 characters)
 
@@ -274,11 +268,23 @@ If the role specifies that the computer will be a primary or backup Hasicorp Vau
   Delete and rebuild index
   Disable windows indexing service "Windows Search" manually using services applet
 
-- Replace Windows Defender with AVAST
+  It turns out that Avast has a problem with Powershell when Powershell starts with -EncodedCommand. Avast refuses to allow any mitigation or excpetion to stop Avast from halting Powershell. Windows Defender does not have this problem. So we will NOT replace Windows Defender with Avast.
+
+- Replace Windows Defender with AVAST # obsolete 2023-03-02
   stop Windows Defender Firewall
-  stop windows defencder service
+  stop windows defender service
   stop MsSense service
   disable MsSense service
+
+- Ensure that any service that starts  with 'wd' and include 'Windows Defender' in the description is set to Autostart WindowsDefender and WindowsDefenderFirewall is running
+- [Disable Windows Defender in Windows 10](https://superuser.com/questions/947873/disable-windows-defender-in-windows-10) has a deep dive into security settings and permissions for any service,
+    browse the registry to `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services`,
+a partial list of serices includes wdboot, wdfilter, wdnisdrv, wdnissvc, windefend. another that needs starting is `mpssvc` Windows Defender Firewall
+This script will show the Start property for all services with 'Defend' in their description
+`Get-ItemProperty -Name 'Start' -path $($((gci HKLM:\SYSTEM\CurrentControlSet\Services).name | ?{$(Get-ItemProperty -Path $($_-replace 'HKEY_LOCAL_MACHINE','HKLM:') -Name 'Description' -ErrorAction SilentlyContinue) -match 'defend'}) -replace 'HKEY_LOCAL_MACHINE','HKLM:')`
+Run this command while Avast is installed and it shows all Start key values = 3. Run the command after uninstalling AVASt, and the Start key values are 0 and 2
+
+After uninstalling the Avast
 
 - remove the default version of Pester that comes with windows
 

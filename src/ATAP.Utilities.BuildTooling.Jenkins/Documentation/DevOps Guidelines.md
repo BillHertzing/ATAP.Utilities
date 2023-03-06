@@ -207,6 +207,9 @@ TBD
 
 ## SSH Server for Windows
 
+ [Configuring OpenSSH-Server (sshd) on Windows 11](https://erwin.co/configuring-openssh-server-sshd-on-windows-11/)
+
+
 ```Powershell
 Get-WindowsCapability -Online | Where-Object Name -like ‘OpenSSH.Server*’ | Add-WindowsCapability –Online
 Set-Service -Name sshd -StartupType 'Automatic'

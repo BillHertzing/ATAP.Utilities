@@ -62,27 +62,3 @@ return @"
 #     src: $dSCConfigurationAnsibleSourcePath
 #     dest:  $dSCConfigurationTargetDestinationDirectory
 
-#     # - name: Apply DSC configuration
-#     #   ansible.windows.win_powershell:
-#     #     executable: pwsh.exe
-#     #     script:
-#     #       Invoke-DscResource -Path $dSCConfigurationTargetDestinationDirectory -Name $dSCConfigurationName -Method Set -Verbose
-
-#     #   $commonParams = @{
-#     #     Name = 'WindowsFeature'
-#     #     Property = @{ Name = 'cChocoInstaller'; InstallDir = 'C:/temp/chocotesting'}
-#     #     ModuleName = 'cChoco'
-#     #     Verbose = $true
-#     # }
-
-# - name: Apply DSC configuration
-#   ansible.windows.win_powershell:
-#     executable: pwsh.exe
-#     script:
-#       Invoke-DscResource -Name 'cChoco' -Method Test -Property @{`
-#         Name   = 'cChocoInstaller'`
-#       }
-#     # args:
-#     #   chdir: .
-
-

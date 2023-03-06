@@ -1,73 +1,73 @@
-# Define the main playbook
+# The script that creates the role that installs and configures chocolatey
 param (
   [string] $ymlGenericTemplate
-  , [string] $Path
-  ,[hashtable] $parsedInventory
+  , [string] $roleDirectoryPath
+  , [string] $roleName
+  , [string[]] $roleSubdirectoryNames
 )
 
-$playScriptblock = {
-param ([hashtable]$play)
-@"
-- name: Run roles for $($play.GroupName)
-  hosts: $($play.GroupName)
-  become: true
-  gather_facts: false
-  tasks:
-    - name: Run the following roles on all the $($play.GroupName)
-      include_role:
-        name: "{{ item }}"
-      loop:
-$( $lines = @(); $play.items|ForEach-Object{$lines += $("        - " + $_)}; $lines -join "`n" )
+function ContentsTask {
+  # The value comes from the TMPDIR on the remote hosts
+  @"
+  - name: ensure Chocolatey is installed
+    win_chocolatey:
+      name: chocolatey
+      state: present
 
+  - name: set chocolatey configuration
+    win_dsc:
+      resource_name: cChocoConfig
+      ConfigName: 'cacheLocation'
+      Value: "{{ ChocolateyCacheLocation }}"
+      Ensure: Present
 "@
 }
 
-$packagePlaysScriptBlock =  {
-  $lines = @()
-  $parsedInventory.RoleNamesForPackages.Keys | ForEach-Object {
-    $lines += $(& $playScriptblock @{GroupName=$_;items=$parsedInventory.RoleNamesForPackages[$_]})
-    $lines += "`n"
-  }
-  $lines
-}
-
-$modulePlaysScriptBlock =  {
-  $lines = @()
-  $parsedInventory.RoleNamesForModules.Keys | ForEach-Object {
-    $lines += $(& $playScriptblock @{GroupName=$_;items=$parsedInventory.RoleNamesForModules[$_]})
-    $lines += "`n"
-  }
-  $lines
-}
-
-function Contents {
-  param(
-    [string] $name
-  )
-  # $parsedInventory is a hashtable that specifies all the roles and modules for all the groups
+function ContentsVars {
 @"
-- name: Top Play
-  hosts: all
-  gather_facts: false
-  tasks:
-    - name: Print action_type variable
-      debug:
-        var: action_type
-
-$(. $modulePlaysScriptBlock)
-
-$(. $packagePlaysScriptBlock)
+# So that all users share the location, this is a common location. It can and often is overwritten in the host_vars
+ChocolateyCacheLocation: 'C:\Temp\chocolatey\cache'
 "@
 }
 
-  $ymlContents= $ymlGenericTemplate -replace '\{2}', 'Main Playbook'
+# exclude these role subdirectores
+$excludedSubDirectoriesPattern = '^handlers|defaults|meta|files|templates|library|module_utils|lookup_plugins|scripts$'
+$subDirectoriesToBuild = $roleSubdirectoryNames | Where-Object { $_ -notmatch $excludedSubDirectoriesPattern }  # minus the excluded ones
+for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
+  $roleSubdirectoryName = $subDirectoriesToBuild[$index]
+  $roleSubdirectoryPath = $(Join-Path $roleDirectoryPath $roleSubdirectoryName)
+  New-Item -ItemType Directory -Path $roleSubdirectoryPath -ErrorAction SilentlyContinue >$null
+  $ymlContents = $($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName
+  switch -regex ($roleSubdirectoryName) {
+    '^tasks$' {
+      $ymlContents += $(ContentsTask -split "`r`n") -join "`r"
+      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $ymlContents
+    }
+    '^vars$' {
+      $ymlContents += $(ContentsVars -split "`r`n") -join "`r"
+      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $ymlContents
+    }
+    default {
+      Write-PSFMessage -Level Error -Message " role $roleName has no template to create any files in the $roleSubdirectoryName subDirectory"
+      break
+    }
+  }
+}
 
-  # ToDo: get the formatting correct, so that we don't have to run this global search and replace
-  $ymlContents += $($($(Contents) -split "`n") | ForEach-Object{$_ -replace '^\s{0,1}-', '-'}) -join "`n"
-  Set-Content -Path $Path -Value $ymlContents
+
+    # '^scripts$' {
+    #   $scriptName = $roleName + 'Script.ps1'
+    #   $scriptSourcePath = "./$scriptName"
+    #   $scriptDestinationPath = join-path $roleSubdirectoryPath $scriptName
+    #   Copy-Item -Path $scriptSourcePath -Destination $scriptDestinationPath
+    # }
 
 
         # - 'JenkinsClient'
+
+#   - name: Print action_type variable
+#   debug:
+#     var: action_type
 
 # - name: Print group_names
 #   debug:
@@ -175,4 +175,3 @@ $(. $packagePlaysScriptBlock)
     #   vars:
     #     item_roles: "{{ vars[item]['roles']|default([]) }}"
     #   when: item_roles|length > 0
-

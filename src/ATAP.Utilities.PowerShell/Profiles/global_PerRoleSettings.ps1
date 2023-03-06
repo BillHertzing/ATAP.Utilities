@@ -2,15 +2,8 @@
 
 $defaultPerRoleSettings = @{
   # Role Settings
-  'common'                   = @{
-    # The location where Chocolatey installs some packages and some programs
-    $global:configRootKeys['ChocolateyLibDirConfigRootKey'] = 'C:/ProgramData/chocolatey/lib'
-    $global:configRootKeys['ChocolateyBinDirConfigRootKey'] = 'C:/ProgramData/chocolatey/bin'
-
-  }
-
   'AnsibleServers'           = @{
-    # Used by Ansible to create a temporary direcotry on the remote host
+    # Used by Ansible to create a temporary directory on the remote host
     $global:configRootKeys['ansible_remote_tmpConfigRootKey'] = 'C:/Temp/Ansible'
 
   }

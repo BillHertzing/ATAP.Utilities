@@ -2,18 +2,21 @@
 
 $defaultPerGroupSettings = @{
   # Group Settings
-  'all'    = @{
+  'all'        = @{
   }
 
-  'Windows'   = @{
+  'WindowsHosts'    = @{
     # The values of the environment variables for ProgramFiles and for ProgramData
     $global:configRootKeys['ProgramFilesConfigRootKey']                               = 'C:/Program Files'
     $global:configRootKeys['ProgramDataConfigRootKey']                                = 'C:/ProgramData'
     # The location where Chocolatey installs some packages and some programs
     $global:configRootKeys['ChocolateyLibDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/lib'
     $global:configRootKeys['ChocolateyBinDirConfigRootKey']                           = 'C:/ProgramData/chocolatey/bin'
-    # Used by Ansible to create a temporary direcotry on the remote host
+
+    # Used by Create-AnsibleDirectoryStructures.ps1
+    #  Used by Ansible to create a temporary directory on the remote host
     $global:configRootKeys['ansible_remote_tmpConfigRootKey']                         = 'C:/Temp/Ansible'
+    $global:configRootKeys['AnsibleAllowPrereleaseConfigRootKey']                      = 'false'
 
     #  These are various cloud providers' manifestations on a local filesystem
     $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = 'C:/Dropbox'
@@ -59,9 +62,9 @@ $defaultPerGroupSettings = @{
     $global:configRootKeys['FP__projectDescriptionConfigRootKey']                     = 'Test Flyway and Pubs samples'
 
   }
-  'WSL2Ubuntu'   = @{
+  'WSL2Ubuntu' = @{
     # Used by Ansible
-    $global:configRootKeys['ansible_remote_tmpConfigRootKey']                         = '/Temp/Ansible'
+    $global:configRootKeys['ansible_remote_tmpConfigRootKey'] = '/Temp/Ansible'
   }
 }
 
@@ -79,7 +82,7 @@ else {
 # Determine the roles that this computer belongs to
 # populate global:settings with role settings that apply to this computer's
 $forThisComputer = @('Windows')
-$defaultHash =  $defaultPerGroupSettings
+$defaultHash = $defaultPerGroupSettings
 $globalHash = $global:PerGroupSettings
 
 for ($index = 0; $index -lt $forThisComputer.count; $index++) {

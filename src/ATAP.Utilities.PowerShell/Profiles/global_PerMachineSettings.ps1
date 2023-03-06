@@ -3,12 +3,40 @@
 $defaultPerMachineSettings = @{
   # Machine Settings
   'utat01'    = @{
+    $global:configRootKeys['DropBoxBasePathConfigRootKey']     = 'C:/Dropbox/'
+    $global:configRootKeys['GoogleDriveBasePathConfigRootKey'] = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
+    $global:configRootKeys['OneDriveBasePathConfigRootKey']    = 'Dummy' # 'C:/OneDrive/'
+    # This is the default cloud provider's manifestation
+    $global:configRootKeys['CloudBasePathConfigRootKey']       = 'C:/Dropbox/'
+    # varous temporary directories
+    $global:configRootKeys['FastTempBasePathConfigRootKey']    = 'C:/Temp/'
+    $global:configRootKeys['BigTempBasePathConfigRootKey']     = 'C:/Temp/'
+    $global:configRootKeys['SecureTempBasePathConfigRootKey']  = 'C:/Temp/Insecure/'
+    # Chocolatey settings on this host
+    $global:configRootKeys['ChocolateyCacheLocationConfigRootKey'] = 'C:/Temp/ChocolateyCache'
+    # ansible settings on this host
+    $global:configRootKeys['ansible_remote_tmpConfigRootKey']  = 'C:/Temp/Ansible'
+    $global:configRootKeys['ansible_become_userConfigRootKey'] = 'whertzing'
   }
 
   'utat022'   = @{
+    $global:configRootKeys['DropBoxBasePathConfigRootKey']     = 'C:/Dropbox/'
+    $global:configRootKeys['GoogleDriveBasePathConfigRootKey'] = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
+    $global:configRootKeys['OneDriveBasePathConfigRootKey']    = 'Dummy' # 'C:/OneDrive/'
+    # This is the default cloud provider's manifestation
+    $global:configRootKeys['CloudBasePathConfigRootKey']       = 'C:/Dropbox/'
+    # varous temporary directories
+    $global:configRootKeys['FastTempBasePathConfigRootKey']    = 'C:/Temp/'
+    $global:configRootKeys['BigTempBasePathConfigRootKey']     = 'C:/Temp/'
+    $global:configRootKeys['SecureTempBasePathConfigRootKey']  = 'C:/Temp/Insecure/'
+    # Chocolatey settings on this host
+    $global:configRootKeys['ChocolateyCacheLocationConfigRootKey'] = 'C:/Temp/ChocolateyCache'
+    # ansible settings on this host
+    $global:configRootKeys['ansible_remote_tmpConfigRootKey']  = 'C:/Temp/Ansible'
+    $global:configRootKeys['ansible_become_userConfigRootKey'] = 'whertzing'
 
     # Should only be set per machine if the machine is a Jenkins Controller Node
-    $global:configRootKeys['JENKINS_HOMEConfigRootKey']                               = 'C:/Dropbox/'
+    $global:configRootKeys['JENKINS_HOMEConfigRootKey']           = 'C:/Dropbox/'
 
     # $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(
     #   $global:configRootKeys['WindowsCodeBuildConfigRootKey']
@@ -18,52 +46,83 @@ $defaultPerMachineSettings = @{
     # )
     # $global:configRootKeys['SQLServerPSModulePathsConfigRootKey']                     = 'C:/Program Files (x86)'' Microsoft SQL Server', '150', 'Tools', 'Powershell', 'Modules/'
 
-    $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']                           = 'filesystem:' + $([Environment]::GetFolderPath('MyDocuments')) + '/GitHub/ATAP.Utilities/Databases/ATAPUtilities/Flyway/sql'
-    $global:configRootKeys['FLYWAY_URLConfigRootKey']                                 = 'jdbc:sqlserver: / / localhost:1433; databaseName = ATAPUtilities'
-    $global:configRootKeys['FLYWAY_USERConfigRootKey']                                = 'AUADMIN'
-    $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']                            = 'NotSecret'
-    $global:configRootKeys['FP__projectNameConfigRootKey']                            = 'ATAPUtilities'
-    $global:configRootKeys['FP__projectDescriptionConfigRootKey']                     = 'Test Flyway and Pubs samples'
+    $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']       = 'filesystem:' + $([Environment]::GetFolderPath('MyDocuments')) + '/GitHub/ATAP.Utilities/Databases/ATAPUtilities/Flyway/sql'
+    $global:configRootKeys['FLYWAY_URLConfigRootKey']             = 'jdbc:sqlserver: / / localhost:1433; databaseName = ATAPUtilities'
+    $global:configRootKeys['FLYWAY_USERConfigRootKey']            = 'AUADMIN'
+    $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']        = 'NotSecret'
+    $global:configRootKeys['FP__projectNameConfigRootKey']        = 'ATAPUtilities'
+    $global:configRootKeys['FP__projectDescriptionConfigRootKey'] = 'Test Flyway and Pubs samples'
 
   }
   'ncat016'   = @{
     #  These are various cloud providers' manifestations on a local filesystem
-    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = 'D:/Dropbox/'
-    $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
-    $global:configRootKeys['OneDriveBasePathConfigRootKey']                           = 'Dummy' # 'C:/OneDrive/'
+    $global:configRootKeys['DropBoxBasePathConfigRootKey']     = 'D:/Dropbox/'
+    $global:configRootKeys['GoogleDriveBasePathConfigRootKey'] = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
+    $global:configRootKeys['OneDriveBasePathConfigRootKey']    = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
-    $global:configRootKeys['CloudBasePathConfigRootKey']                              = 'D:/Dropbox/'
+    $global:configRootKeys['CloudBasePathConfigRootKey']       = 'D:/Dropbox/'
     # varous temporary directories
-    $global:configRootKeys['FastTempBasePathConfigRootKey']                           = 'D:/Temp/'
-    $global:configRootKeys['BigTempBasePathConfigRootKey']                            = 'D:/Temp/'
-    $global:configRootKeys['SecureTempBasePathConfigRootKey']                         = 'D:/Temp/Insecure/'
+    $global:configRootKeys['FastTempBasePathConfigRootKey']    = 'D:/Temp/'
+    $global:configRootKeys['BigTempBasePathConfigRootKey']     = 'D:/Temp/'
+    $global:configRootKeys['SecureTempBasePathConfigRootKey']  = 'D:/Temp/Insecure/'
+    # Chocolatey settings on this host
+    $global:configRootKeys['ChocolateyCacheLocationConfigRootKey'] = 'C:/Temp/ChocolateyCache'
+    # ansible settings on this host
+    $global:configRootKeys['ansible_remote_tmpConfigRootKey']  = 'D:/Temp/Ansible'
+    $global:configRootKeys['ansible_become_userConfigRootKey'] = 'whertzing56'
   }
   'ncat041'   = @{
+    #  These are various cloud providers' manifestations on a local filesystem
+    $global:configRootKeys['DropBoxBasePathConfigRootKey']     = 'C:/Dropbox/'
+    $global:configRootKeys['GoogleDriveBasePathConfigRootKey'] = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
+    $global:configRootKeys['OneDriveBasePathConfigRootKey']    = 'Dummy' # 'C:/OneDrive/'
+    # This is the default cloud provider's manifestation
+    $global:configRootKeys['CloudBasePathConfigRootKey']       = 'C:/Dropbox/'
+    # varous temporary directories
+    $global:configRootKeys['FastTempBasePathConfigRootKey']    = 'C:/Temp/'
+    $global:configRootKeys['BigTempBasePathConfigRootKey']     = 'C:/Temp/'
+    $global:configRootKeys['SecureTempBasePathConfigRootKey']  = 'C:/Temp/Insecure/'
+    # Chocolatey settings on this host
+    $global:configRootKeys['ChocolateyCacheLocationConfigRootKey'] = 'C:/Temp/ChocolateyCache'
+    # ansible settings on this host
+    $global:configRootKeys['ansible_remote_tmpConfigRootKey']  = 'C:/Temp/Ansible'
+    $global:configRootKeys['ansible_become_userConfigRootKey'] = 'whertzing'
 
   }
   'ncat-ltb1' = @{
     #  These are various cloud providers' manifestations on a local filesystem
-    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = 'D:/Dropbox/'
-    $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
-    $global:configRootKeys['OneDriveBasePathConfigRootKey']                           = 'Dummy' # 'C:/OneDrive/'
+    $global:configRootKeys['DropBoxBasePathConfigRootKey']     = 'D:/Dropbox/'
+    $global:configRootKeys['GoogleDriveBasePathConfigRootKey'] = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
+    $global:configRootKeys['OneDriveBasePathConfigRootKey']    = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
-    $global:configRootKeys['CloudBasePathConfigRootKey']                              = 'D:/Dropbox/'
+    $global:configRootKeys['CloudBasePathConfigRootKey']       = 'D:/Dropbox/'
     # varous temporary directories
-    $global:configRootKeys['FastTempBasePathConfigRootKey']                           = 'D:/Temp/'
-    $global:configRootKeys['BigTempBasePathConfigRootKey']                            = 'D:/Temp/'
-    $global:configRootKeys['SecureTempBasePathConfigRootKey']                         = 'D:/Temp/Insecure/'
+    $global:configRootKeys['FastTempBasePathConfigRootKey']    = 'D:/Temp/'
+    $global:configRootKeys['BigTempBasePathConfigRootKey']     = 'D:/Temp/'
+    $global:configRootKeys['SecureTempBasePathConfigRootKey']  = 'D:/Temp/Insecure/'
+    # Chocolatey settings on this host
+    $global:configRootKeys['ChocolateyCacheLocationConfigRootKey'] = 'D:/Temp/ChocolateyCache'
+    # ansible settings on this host
+    $global:configRootKeys['ansible_remote_tmpConfigRootKey']  = 'D:/Temp/Ansible'
+    $global:configRootKeys['ansible_become_userConfigRootKey'] = 'whertzing56'
+
   }
   'ncat-ltjo' = @{
     #  These are various cloud providers' manifestations on a local filesystem
-    $global:configRootKeys['DropBoxBasePathConfigRootKey']                            = 'D:/Dropbox/'
-    $global:configRootKeys['GoogleDriveBasePathConfigRootKey']                        = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
-    $global:configRootKeys['OneDriveBasePathConfigRootKey']                           = 'Dummy' # 'C:/OneDrive/'
+    $global:configRootKeys['DropBoxBasePathConfigRootKey']     = 'D:/Dropbox/'
+    $global:configRootKeys['GoogleDriveBasePathConfigRootKey'] = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
+    $global:configRootKeys['OneDriveBasePathConfigRootKey']    = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
-    $global:configRootKeys['CloudBasePathConfigRootKey']                              = 'D:/Dropbox/'
+    $global:configRootKeys['CloudBasePathConfigRootKey']       = 'D:/Dropbox/'
     # varous temporary directories
-    $global:configRootKeys['FastTempBasePathConfigRootKey']                           = 'D:/Temp/'
-    $global:configRootKeys['BigTempBasePathConfigRootKey']                            = 'D:/Temp/'
-    $global:configRootKeys['SecureTempBasePathConfigRootKey']                         = 'D:/Temp/Insecure/'
+    $global:configRootKeys['FastTempBasePathConfigRootKey']    = 'D:/Temp/'
+    $global:configRootKeys['BigTempBasePathConfigRootKey']     = 'D:/Temp/'
+    $global:configRootKeys['SecureTempBasePathConfigRootKey']  = 'D:/Temp/Insecure/'
+    # Chocolatey settings on this host
+    $global:configRootKeys['ChocolateyCacheLocationConfigRootKey'] = 'D:/Temp/ChocolateyCache'
+    # ansible settings on this host
+    $global:configRootKeys['ansible_remote_tmpConfigRootKey']  = 'D:/Temp/Ansible'
+    $global:configRootKeys['ansible_become_userConfigRootKey'] = 'whertzing'
   }
 }
 
@@ -77,7 +136,7 @@ else {
   $global:PerMachineSettings = @{}
 }
 
-$defaultHash =  $defaultPerMachineSettings
+$defaultHash = $defaultPerMachineSettings
 $forThisComputer = @('common')
 $globalHash = $global:PerMachineSettings
 

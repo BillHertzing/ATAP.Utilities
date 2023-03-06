@@ -1,4 +1,4 @@
-# The script that creates all roles that correspond to a chocolatey package
+
 param(
   [string] $ymlGenericTemplate
   , [string] $roleDirectoryPath
@@ -20,34 +20,28 @@ $addedParametersScriptblock = { if ($addedParameters) {
 }
 
 function ContentsTask {
-  @"
-- name: install or uninstall package
-  win_dsc:
-    resource_name: cChocoPackageInstaller
-    Name: '$name'
-    Version: '$version'
-    Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
+
+  return @"
+- name: install or uninstall an exact version of PowerShell module
+  community.windows.win_psmodule:
+    name: '$name'
+    required_version: '{{ version }}'
+    allow_prelease: '{{ allowPrelease }}'
+    state: "{{ 'absent' if (action_type == 'Uninstall') else 'present'}}"
     $(. $addedParametersScriptblock)
 "@
 }
-
 function ContentsVars {
-  @"
+
+  return @"
 version: $version
-allow_prerelease: false
+
 "@
 }
 
-function ContentsMeta {
-  @'
-dependencies:
-  - role: RoleChocolateyInstallAndConfigure
-'@
-}
-
 # exclude these role subdirectores
-$excludedSubDirectoriesPattern = '^handlers|defaults|files|templates|library|module_utils|lookup_plugins|scripts$'
-$subDirectoriesToBuild = $roleSubdirectoryNames | Where-Object { $_ -notmatch $excludedSubDirectoriesPattern }  # minus the excluded ones
+$excludedSubDirectoriesPattern = '^(handlers|defaults|meta|files|templates|library|module_utils|lookup_plugins|scripts)$'
+$subDirectoriesToBuild = $roleSubdirectoryNames -notmatch $excludedSubDirectoriesPattern  # minus the excluded ones
 for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
   $roleSubdirectoryName = $subDirectoriesToBuild[$index]
   $roleSubdirectoryPath = $(Join-Path $roleDirectoryPath $roleSubdirectoryName)
@@ -62,45 +56,18 @@ for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
       $ymlContents += ContentsVars
       Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $ymlContents
     }
-    '^meta$' {
-      $ymlContents += ContentsMeta
-      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $ymlContents
-    }
     default {
       Write-PSFMessage -Level Error -Message " role $roleName has no template to create any files in the $roleSubdirectoryName subDirectory"
       break
     }
   }
+
 }
 
-#  $EProperty = @{ Name = 'TestEnvironmentVariable'; Value = 'TestValue'; Ensure = 'Present'; Path = $false; Target = @('Process', 'Machine')}
-#  $fProperty = @{ Name = 'Environment'; ModuleName = 'PSDscResources'; Property = $EProperty; Method = 'Test'}
-
-### THis works
-# - name: install package
-#   win_chocolatey:
-#     name: '$name'
-#     version: '{{ version }}'
-#     allow_prerelease: '{{ allow_prerelease }}'
-#     state: present
-#   register: install
-#   when:  "action_type == 'Install'"
-
-# - name: remove package
-#   win_chocolatey:
-#     name: '$name'
-#     version: '{{ version }}'
-#     allow_prerelease: '{{ allow_prerelease }}'
-#     state: absent
-#   register: install
-#   when:  "action_type == 'Uninstall'"
+if ($false) {
 
 
-### End THis Works
-
-# - name: Gather Chocolatey facts
-#   win_chocolatey_facts:
-#   when:  "action_type == 'Check'"
+}
 
 # - name: Select dictionary with name = '$name'
 #   set_fact:
@@ -109,11 +76,10 @@ for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
 # - name: validate actual version returned for $name is the expected value
 #   assert:
 #     that:
-#       - "'{{ selected_dict.version }}' == '{{ version }}'"
-#     fail_msg: "installed version is incorrect. expecting '{{ version }}' got '{{selected_dict.version}}' "
+#       - selected_dict.version == {{ version }}
+#     fail_msg: "installed version is incorrect"
 #     success_msg: "Correct"
 #   when:  "action_type == 'Check'"
-
 
 # loop: "{{ ansible_chocolatey.packages | selectattr('name', 'match', '^$roleName$') | list }}" # pick an item from a list of dictionaries based on the value of a field of the dictionary
 
@@ -141,28 +107,4 @@ for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
 #   win_copy:
 #     src: $dSCConfigurationAnsibleSourcePath
 #     dest:  $dSCConfigurationTargetDestinationDirectory
-
-#     # - name: Apply DSC configuration
-#     #   ansible.windows.win_powershell:
-#     #     executable: pwsh.exe
-#     #     script:
-#     #       Invoke-DscResource -Path $dSCConfigurationTargetDestinationDirectory -Name $dSCConfigurationName -Method Set -Verbose
-
-#     #   $commonParams = @{
-#     #     Name = 'WindowsFeature'
-#     #     Property = @{ Name = 'cChocoInstaller'; InstallDir = 'C:/temp/chocotesting'}
-#     #     ModuleName = 'cChoco'
-#     #     Verbose = $true
-#     # }
-
-# - name: Apply DSC configuration
-#   ansible.windows.win_powershell:
-#     executable: pwsh.exe
-#     script:
-#       Invoke-DscResource -Name 'cChoco' -Method Test -Property @{`
-#         Name   = 'cChocoInstaller'`
-#       }
-#     # args:
-#     #   chdir: .
-
 

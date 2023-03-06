@@ -30,6 +30,7 @@ $global:configRootKeys = @{
   'ChocolateyInstallDirConfigRootKey'                                                            = 'ChocolateyInstall'
   'ChocolateyBinDirConfigRootKey'                                                                = 'ChocolateyBinDir'
   'ChocolateyLibDirConfigRootKey'                                                                = 'ChocolateyLibDir'
+  'ChocolateyCacheLocationConfigRootKey'                                                         = 'ChocolateyCacheLocation'
   'GraphvizExePathConfigRootKey'                                                                 = 'GraphvizExePath'
   'PackageDropPathsConfigRootKey'                                                                = 'PackageDropPaths'
   'BuildImageFromPlantUMLConfigRootKey'                                                          = 'BuildImageFromPlantUMPowershellCmdlet'
@@ -56,6 +57,8 @@ $global:configRootKeys = @{
 
   # Used by ansible
   'ansible_remote_tmpConfigRootKey'                                                              = 'ansible_remote_tmp'
+  'ansible_become_userConfigRootKey'                                                             = 'ansible_become_user'
+  'AnsibleAllowPrereleaseConfigRootKey'                                                          = 'AnsibleAllowPrelease'
   'AnsibleGroupNamesConfigRootKey'                                                               = 'AnsibleGroupNames'
   'AnsibleHostNamesConfigRootKey'                                                                = 'AnsibleHostNames'
   'AnsibleRoleNamesConfigRootKey'                                                                = 'AnsibleRoleNames'

@@ -32,9 +32,9 @@ function Get-HighestVersionNumbers {
     }
   }
 
-  $result = @()
+  $result = @{}
   foreach ($name in $packages.Keys) {
-    $result += @{name = $name; version = $packages[$name] }
+    $result[$name] = @{Version = $([version]$packages[$name]).ToString(); AllowPrerelease = $false }
   }
 
   return $result
@@ -70,11 +70,15 @@ $excludeRegexPattern = '^\s+$'
 # The following line returns a version strucutre for the version, not just a simple string, so it needs to be converted to a [version] type, then to a string
 $powershellModules = Get-HighestVersionNumbers $(Get-Module -ListAvailable | Where-Object { $_.name -notmatch '^$' -and $_.name -notmatch $excludeRegexPattern })
 $powershellModuleInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\powershellModuleInfo.json'
-$powershellModuleInfos = @()
-for ($index = 0; $index -lt $powershellModules.count; $index++) {
-  $powershellModuleInfos += @{name = $($powershellModules[$index]).Name; version = $($powershellModules[$index]).Version; PreRelease = $($powershellModules[$index]).PreRelease }
-}
-Set-Content -Path $powershellModuleInfoSourcePath -Value $($powershellModuleInfos | ConvertTo-Json -Depth 99)
+$powershellModuleInfos = $powershellModules
+# $powershellModules.Keys | ForEach-Object{$moduleName = $_
+
+#   $powershellModuleInfos += @{name = $($powershellModules[$index]).Name; version = $($powershellModules[$index]).Version; PreRelease = $($powershellModules[$index]).PreRelease }
+# }
+# for ($index = 0; $index -lt $powershellModules.count; $index++) {
+#   $powershellModuleInfos += @{name = $($powershellModules[$index]).Name; version = $($powershellModules[$index]).Version; PreRelease = $($powershellModules[$index]).PreRelease }
+# }
+Set-Content -Path $powershellModuleInfoSourcePath -Value $($powershellModules | ConvertTo-Json -Depth 99)
 
 # end region
 
@@ -82,8 +86,8 @@ Set-Content -Path $powershellModuleInfoSourcePath -Value $($powershellModuleInfo
 # These are names that are common to both the Windows file generation runtime, the Linux Ansible runtime, and the Windows remote host runtimes
 $playbookSubdirectory = 'playbooks'
 $ansibleSubdirectoryNames = @('group_vars', 'host_vars', $playbookSubdirectory, 'roles', 'scripts')
-$groupNames = $global:settings[$global:configRootKeys['AnsibleGroupNamesConfigRootKey']]
-$roleNames = $global:settings[$global:configRootKeys['AnsibleRoleNamesConfigRootKey']]
+#$groupNames = $global:settings[$global:configRootKeys['AnsibleGroupNamesConfigRootKey']]
+#$roleNames = $global:settings[$global:configRootKeys['AnsibleRoleNamesConfigRootKey']]
 $roleSubdirectoryNames = @('tasks', 'handlers', 'templates', 'files', 'vars', 'defaults', 'meta', 'library', 'tests', 'module_utils', 'lookup_plugins', 'scripts')
 # the name of the main playbook
 $mainPlaybookName = 'main.yml'
@@ -140,43 +144,81 @@ $powershellModuleInfos = ConvertFrom-Json -Depth 99 -AsHashtable -InputObject $(
 
 # ToDo: parse the hostNames, groupNames, and roles out of the inventory file
 # $inventorySourcePath
+  #   # Need additional arguments to specify that CChoco should be imported into all Powershell scripts that need to control Windows Features `import-module CChoco -scope Global`
+  #   # Need additional arguments to specify that DISM should be imported into all Powershell scripts that need to control Windows Features `import-module C:\Windows\System32\WindowsPowerShell\v1.0\Modules\DISM -scope Global`
+
 $parsedInventory = @{
-  HostNames                   = ('ncat041', 'ncat-ltb1', 'ncat-ltjo', 'ncat044', 'utat01', 'utat022')
-  GroupNames                  = ('WindowsHosts', 'MonitoredWindowsHosts', 'UIHosts', 'CICDHosts', 'DeveloperHosts', 'BuildHosts', 'QualityAssuranceHosts', 'AVEditingHosts', 'SocialMediaHosts') # 'AppDatabaseComputers', 'Database_MSSQL', 'CertificationAuthorityComputers', 'Linux' )
-  RoleNamesForWindowsFeatures = @{
-    WindowsHosts = @('RoleFeatureDefender', 'RoleFeatureSSH.Server')
+  HostNames              = ('ncat041', 'ncat-ltb1', 'ncat-ltjo', 'ncat044', 'utat01', 'utat022')
+  GroupNames             = [ordered]@{ # ('AppDatabaseComputers', 'Database_MSSQL', 'CertificationAuthorityComputers', 'Linux' )
+    WindowsHosts           = @{
+      ChocolateyPackageNames = @('carbon', '7zip', 'Everything', 'powershell-core', 'vault')
+      PowershellModuleNames  = @('Assert', 'PackageManagement', 'NuGet', 'PowerShellGet', 'ChocolateyGet', 'powershell-yaml', 'PSDesiredStateConfiguration', 'PSDscResources', 'PSFramework', 'cChoco') # 'ComputerManagementDsc') # 'DISM',
+      RegistrySettingsNames  = $null
+      WindowsFeatureNames    = @('RoleFeatureDefender', 'RoleFeatureSSH.Server')
+    }
+    MonitoredWindowsHosts  = @{
+      ChocolateyPackageNames = @('cinebench', 'cpu-z', 'gpu-z', 'hwinfo', 'nmap', 'pdq-inventory', 'perfview', 'speedtest', 'sysinternals', 'fiddler', 'wireshark')
+      PowershellModuleNames  = $null
+      WindowsFeatureNames    = $null
+    }
+    UIHosts                = @{
+      ChocolateyPackageNames = @('autohotkey', 'brave', 'ditto', 'element-desktop', 'googleChrome', 'notepadplusplus', 'powertoys', 'pushbullet', 'putty')
+      PowershellModuleNames  = $null
+      WindowsFeatureNames    = $null
+    }
+    CICDHosts              = @{
+      ChocolateyPackageNames = @('gh', 'git')
+      PowershellModuleNames  = $null
+      CompositeRoleName      = @(, 'JenkinsClient')
+      WindowsFeatureNames    = $null
+    }
+    DeveloperHosts         = @{
+      ChocolateyPackageNames = @('beyondcompare', 'graphviz', 'ilspy', 'invoke-build', 'linqpad', 'msbuild-structured-log-viewer', 'nugetPackageExplorer', 'plaster', 'postman', 'vscode')
+      PowershellModuleNames  = @('platyPS', 'PSScriptAnalyzer')
+      WindowsFeatureNames    = $null
+    }
+    BuildHosts             = @{
+      ChocolateyPackageNames = $null
+      PowershellModuleNames  = @(, 'InvokeBuild')
+      WindowsFeatureNames    = $null
+    }
+    QualityAssuranceHosts  = @{
+      ChocolateyPackageNames = @('postman', 'xunit', 'pester', 'ngrok')
+      PowershellModuleNames  = $null
+      WindowsFeatureNames    = $null
+    }
+    AVEditingHosts         = @{
+      ChocolateyPackageNames = @('vlc', 'audacity', 'freevideoeditor')
+      PowershellModuleNames  = $null
+      WindowsFeatureNames    = $null
+    }
+    SocialMediaHosts       = @{
+      ChocolateyPackageNames = @('gitter', 'element-desktop' )
+      PowershellModuleNames  = $null
+      WindowsFeatureNames    = $null
+    }
+    JenkinsControllerHosts = @{
+      ChocolateyPackageNames = @(, 'jenkins')
+      PowershellModuleNames  = @('xWebAdministration', 'xNetworking' )
+      WindowsFeatureNames    = $null
+      CompositeRoleNames     = @(, 'JenkinsController')
+    }
   }
-  RoleNamesForPackages        = [ordered]@{
-    WindowsHosts          = @('carbon', '7zip', 'Everything', 'powershell-core')
-    MonitoredWindowsHosts = @('cinebench', 'cpu-z', 'gpu-z', 'hwinfo', 'nmap', 'pdq-inventory', 'perfview', 'speedtest', 'sysinternals', 'fiddler', 'wireshark')
-    UIHosts               = @('autohotkey', 'brave', 'ditto', 'element-desktop', 'googleChrome', 'notepadplusplus', 'powertoys', 'pushbullet', 'putty')
-    CICDHosts             = @('gh', 'git')
-    DeveloperHosts        = @('beyondcompare', 'graphviz', 'ilspy', 'invoke-build', 'linqpad', 'msbuild-structured-log-viewer', 'nugetPackageExplorer', 'postman', 'vscode')
-    QualityAssuranceHosts = @('postman', 'xunit', 'pester')
-    AVEditingHosts        = @('vlc', 'audacity', 'freevideoeditor')
-    SocialMediaHosts      = @('gitter', 'element-desktop' )
-  } # ('RootCertificateAuthority', 'choco-package-list-backup', 'chocolatey.server', 'dbachecks', 'dbatools', 'docfx',  'flyway.commandline', 'grammarly-chrome', 'keepass',   'mysql', 'mysql.workbench', 'ngrok', 'nuget.commandline', 'OpenSSL.Light', 'plantuml', 'plaster',  'python311', 'ruby', 'sentinel',  'Temurinjre', 'tineye-chrome', 'vault',  )}
 
-  RoleNamesForModules         = @{
-    WindowsHosts   = @('PSFramework', 'Assert', 'PackageManagement', 'NuGet', 'PowershellGet', 'ChocolateyGet', 'powershell-yaml', 'PSDesiredStateConfiguration', 'PSDscResources', 'cChoco', 'ComputerManagementDsc') # 'DISM',
-    # Need additional arguments to specify that CChoco should be imported into all Powershell scripts that need to control Windows Features `import-module CChoco -scope Global`
-    # Need additional arguments to specify that DISM should be imported into all Powershell scripts that need to control Windows Features `import-module C:\Windows\System32\WindowsPowerShell\v1.0\Modules\DISM -scope Global`
-    BuildHosts     = @(, 'InvokeBuild')
-    DeveloperHosts = @('platyPS', 'PSScriptAnalyzer')
-  }
+  # RoleNamesForWindowsFeatures = @{
+  #   WindowsHosts = @('RoleFeatureDefender', 'RoleFeatureSSH.Server')
+  # }
+   # } # ('RootCertificateAuthority', 'choco-package-list-backup', 'chocolatey.server', 'dbachecks', 'dbatools', 'docfx',  'flyway.commandline', 'grammarly-chrome',  'mysql', 'mysql.workbench',  'nuget.commandline', 'OpenSSL.Light', 'plantuml',  'python311', 'ruby', 'sentinel',  'Temurinjre', 'tineye-chrome', )}
 
-  RoleNamesForComposites      = @{
-    CICDHosts = @('JenkinsClient')
-  }
 }
 
 $hostNames = $parsedInventory.HostNames
-$groupNames = $parsedInventory.GroupNames
+$groupNames = $parsedInventory.GroupNames.Keys
 
-$roleNamesForWindowsFeatures = @(); $parsedInventory.RoleNamesForWindowsFeatures.values | ForEach-Object { $roleNamesForWindowsFeatures += $_ }
-$roleNamesForPackages = @(); $parsedInventory.RoleNamesForPackages.values | ForEach-Object { $roleNamesForPackages += $_ }
-$roleNamesForModules = @(); $parsedInventory.RoleNamesForModules.values | ForEach-Object { $roleNamesForModules += $_ }
-$roleNamesForComposites = @(); $parsedInventory.RoleNamesForComposites.values | ForEach-Object { $roleNamesForComposites += $_ }
+# $roleNamesForWindowsFeatures = @(); $parsedInventory.RoleNamesForWindowsFeatures.values | ForEach-Object { $roleNamesForWindowsFeatures += $_ }
+# $roleNamesForPackages = @(); $parsedInventory.RoleNamesForPackages.values | ForEach-Object { $roleNamesForPackages += $_ }
+# $roleNamesForModules = @(); $parsedInventory.RoleNamesForModules.values | ForEach-Object { $roleNamesForModules += $_ }
+# $roleNamesForComposites = @(); $parsedInventory.RoleNamesForComposites.values | ForEach-Object { $roleNamesForComposites += $_ }
 $roleNames = $roleNamesForModules + $roleNamesForWindowsFeatures + $roleNamesForPackages # + $roleNamesForComposites
 
 # Create generated directory if it does not exists
@@ -213,7 +255,7 @@ Set-Content -Path $inventoryDestinationPath -Value $(Get-Content $inventorySourc
 # Create a role that ensures the PowershellGet module is installed (for AllUsers)
 
 # Create a role that installs chocolatey, and configures chocolatey
-# This role will be listed as a dependency in all of the chocolaty package roles
+# This role will be listed as a dependency in all of the chocolatey package roles
 New-Item -ItemType Directory -Path $(Join-Path $baseDirectory 'roles' $installAndConfigureChocolateyRoleName) -ErrorAction SilentlyContinue >$null
 $fileToExecutePattern = Join-Path $projectBaseDirectory "$installAndConfigureChocolateyRoleName.ps1"
 & "./$fileToExecutePattern" `
@@ -222,75 +264,80 @@ $fileToExecutePattern = Join-Path $projectBaseDirectory "$installAndConfigureCho
   -roleName $installAndConfigureChocolateyRoleName `
   -roleSubdirectoryNames $roleSubdirectoryNames
 
-# Create roles directories, subdirectories, and files
-for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) {
-  $roleName = $roleNames[$roleNameIndex]
-  # create a subdirectory for each role
-  New-Item -ItemType Directory -Path $(Join-Path $baseDirectory 'roles' $roleName) -ErrorAction SilentlyContinue >$null
-  # create a documentation file for each role
-  New-Item -ItemType File -Path $(Join-Path $baseDirectory 'roles' $roleName, $ReadMeFileName) -ErrorAction SilentlyContinue >$null
-  $matchingFeature = $windowsFeatureInfos | Where-Object { $_.name -eq $roleName }
-  $matchingPackage = $chocolateyPackageInfos | Where-Object { $_.name -eq $roleName }
-  $matchingModule = $powershellModuleInfos | Where-Object { $_.name -eq $roleName }
-  $matchingComposite = $CompositesInfos | Where-Object { $_.name -eq $roleName }
-  if ( $matchingPackage) {
-    $fileToExecutePattern = 'ChocolateyPackagesAsRoles.ps1'
-  }
-  elseif ($matchingModule) {
-    $fileToExecutePattern = 'PowershellModulesAsRoles.ps1'
-  }
-  elseif ($matchingFeature) {
-    $fileToExecutePattern = "$($matchingFeature.Name).ps1"
-  }
-  else {
-    # default
-    # ToDO roles that require multiple tasks, or DSCresources
-    $message = "role $roleName does not have a FileToExecute"
-    Write-PSFMessage -Level Error -Message $message
-    throw  $message
-  }
-  Write-PSFMessage -Level Debug -Message "fileToExecutePattern is $fileToExecutePattern"
-  # If a script exists whose name matches the $fileToExecutePattern, then execute it, which will create the contents of the roleSubdirectory
-  if (Test-Path -Path $fileToExecutePattern -PathType Leaf) {
-    switch -regex ($fileToExecutePattern) {
-      'ChocolateyPackagesAsRoles.ps1' {
-        & "./$fileToExecutePattern" `
-          -ymlGenericTemplate $ymlTemplate `
-          -roleDirectoryPath $(Join-Path $baseDirectory 'roles' $roleName) `
-          -roleName $roleName `
-          -roleSubdirectoryNames $roleSubdirectoryNames `
-          -name $matchingPackage.name `
-          -version $matchingPackage.version `
-          -addedParameters $matchingPackage.addedParameters
-        break
-      }
-      'PowershellModulesAsRoles.ps1' {
-        $Parameters = @{
-          ymlGenericTemplate    = $($ymlTemplate -replace '\{1}', $roleName)
-          roleDirectoryPath     = $(Join-Path $baseDirectory 'roles' $roleName)
-          roleName              = $roleName
-          roleSubdirectoryNames = $roleSubdirectoryNames
-          name                  = $matchingModule.name
-          version               = $([version]::new($matchingModule.version.Major, $matchingModule.version.Minor, $matchingModule.version.Build, $(if ($matchingModule.version.Revision -gt 0) { $matchingModule.version.Revision } else { $null })).ToString())
+# Create roles (directories, subdirectories, and files)
+$roleNames = @()
+for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex++) {
+  $groupName = $groupNames[$groupNameIndex]
+  $roleNames = $($parsedInventory.GroupNames[$GroupName]).CompositeRoleNames #  # $parsedInventory.GroupNames[$GroupName]).CompositeRoleNames.keys
+  for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) {
+    $roleName = $roleNames[$roleNameIndex]
+    $fileToExecutePattern = "Role$($roleName).ps1" # $parsedInventory.GroupNames[$GroupName]).CompositeRoleNames.keys
+    Write-PSFMessage -Level Debug -Message "fileToExecutePattern is $fileToExecutePattern"
+    # $matchingFeature = $windowsFeatureInfos | Where-Object { $_.name -eq $roleName }
+    # $matchingPackage = $chocolateyPackageInfos | Where-Object { $_.name -eq $roleName }`
+    # $matchingModule = $powershellModuleInfos[$roleName] #  | Where-Object { $_.name -eq $roleName }
+    # $matchingComposite = $CompositesInfos | Where-Object { $_.name -eq $roleName }
+    # if ( $matchingPackage) {
+    #   $fileToExecutePattern = 'ChocolateyPackagesAsRoles.ps1'
+    # }
+    # elseif ($matchingModule) {
+    #   $fileToExecutePattern = 'PowershellModulesAsRoles.ps1'
+    # }
+    # elseif ($matchingFeature) {
+    #   $fileToExecutePattern = "$($matchingFeature.Name).ps1"
+    # }
+    # else {
+    #   # default
+    #   # ToDO roles that require multiple tasks, or DSCresources
+    #   $message = "role $roleName does not have a FileToExecute"
+    #   Write-PSFMessage -Level Error -Message $message
+    #   throw  $message
+    # }
+    # If a script exists whose name matches the $fileToExecutePattern, then execute it, which will create the contents of the roleSubdirectory
+    if (Test-Path -Path $fileToExecutePattern -PathType Leaf) {
+      # create a subdirectory for each role
+      New-Item -ItemType Directory -Path $(Join-Path $baseDirectory 'roles' $roleName) -ErrorAction SilentlyContinue >$null
+      # create a documentation file for each role
+      New-Item -ItemType File -Path $(Join-Path $baseDirectory 'roles' $roleName, $ReadMeFileName) -ErrorAction SilentlyContinue >$null
+      switch -regex ($fileToExecutePattern) {
+        # 'ChocolateyPackagesAsRoles.ps1' {
+        #   & "./$fileToExecutePattern" `
+        #     -ymlGenericTemplate $ymlTemplate `
+        #     -roleDirectoryPath $(Join-Path $baseDirectory 'roles' $roleName) `
+        #     -roleName $roleName `
+        #     -roleSubdirectoryNames $roleSubdirectoryNames `
+        #     -name $matchingPackage.name `
+        #     -version $matchingPackage.version `
+        #     -addedParameters $matchingPackage.addedParameters
+        #   break
+        # }
+        # 'PowershellModulesAsRoles.ps1' {
+        #   $Parameters = @{
+        #     ymlGenericTemplate    = $($ymlTemplate -replace '\{1}', $roleName)
+        #     roleDirectoryPath     = $(Join-Path $baseDirectory 'roles' $roleName)
+        #     roleName              = $roleName
+        #     roleSubdirectoryNames = $roleSubdirectoryNames
+        #     name                  = $matchingModule.name
+        #     version               = $([version]::new($matchingModule.version.Major, $matchingModule.version.Minor, $matchingModule.version.Build, $(if ($matchingModule.version.Revision -gt 0) { $matchingModule.version.Revision } else { $null })).ToString())
+        #   }
+        #   & "./$fileToExecutePattern" @Parameters
+        #   break
+        # }
+        default {
+          & "./$fileToExecutePattern" `
+            -ymlGenericTemplate $($ymlTemplate -replace '\{1}', $roleName) `
+            -roleDirectoryPath $(Join-Path $baseDirectory 'roles' $roleName) `
+            -roleName $roleName `
+            -roleSubdirectoryNames $roleSubdirectoryNames
+          break
         }
-        & "./$fileToExecutePattern" @Parameters
-        break
-      }
-      default {
-        & "./$fileToExecutePattern" `
-          -ymlGenericTemplate $($ymlTemplate -replace '\{1}', $roleName) `
-          -roleDirectoryPath $(Join-Path $baseDirectory 'roles' $roleName) `
-          -roleName $roleName `
-          -roleSubdirectoryNames $roleSubdirectoryNames
-        break
       }
     }
+    else {
+      #whoops
+      throw
+    }
   }
-  else {
-    #whoops
-    throw
-  }
-
 
   # create all the role subdirectories
   # for ($roleSubdirectoryIndex = 0; $roleSubdirectoryIndex -lt $roleSubdirectoryNames.count; $roleSubdirectoryIndex++) {

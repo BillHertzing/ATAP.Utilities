@@ -28,7 +28,7 @@
             [Parameter(Mandatory=$True,Position=1)]
             [string]$TestVariableName
           )
-          Write-output "the value of $TestVariableName is $( [Environment]::GetEnvironmentVariable($TestVariableName))"
+          Write-output "the value of $TestVariableName is $([Environment]::GetEnvironmentVariable($TestVariableName))"
         }
       args:
         TestVariableName: "{{TestVariableName}}"

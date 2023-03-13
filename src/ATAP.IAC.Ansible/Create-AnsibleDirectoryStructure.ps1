@@ -151,9 +151,9 @@ $parsedInventory = @{
   HostNames              = ('ncat041', 'ncat-ltb1', 'ncat-ltjo', 'ncat044', 'utat01', 'utat022')
   GroupNames             = [ordered]@{ # ('AppDatabaseComputers', 'Database_MSSQL', 'CertificationAuthorityComputers', 'Linux' )
     WindowsHosts           = @{
-      ChocolateyPackageNames = @('carbon', '7zip', 'Everything', 'powershell-core', 'vault')
+      ChocolateyPackageNames = @('7zip', 'carbon', 'Everything', 'powershell-core', 'vault') # gpg4win autoruns
       PowershellModuleNames  = @('Assert', 'PackageManagement', 'NuGet', 'PowerShellGet', 'ChocolateyGet', 'powershell-yaml', 'PSDesiredStateConfiguration', 'PSDscResources', 'PSFramework', 'cChoco') # 'ComputerManagementDsc') # 'DISM',
-      RegistrySettingsNames  = $null
+      RegistrySettingsNames  = @('DisableTelemetry','DisableGameDVR')
       WindowsFeatureNames    = @('RoleFeatureDefender', 'RoleFeatureSSH.Server')
     }
     MonitoredWindowsHosts  = @{
@@ -162,9 +162,11 @@ $parsedInventory = @{
       WindowsFeatureNames    = $null
     }
     UIHosts                = @{
-      ChocolateyPackageNames = @('autohotkey', 'brave', 'ditto', 'element-desktop', 'googleChrome', 'notepadplusplus', 'powertoys', 'pushbullet', 'putty')
+      ChocolateyPackageNames = @('autohotkey', 'brave', 'ditto', 'element-desktop', 'googleChrome', 'grammarly', 'grammarly-for-windows', 'notepadplusplus', 'powertoys', 'pushbullet', 'putty')
       PowershellModuleNames  = $null
       WindowsFeatureNames    = $null
+      RegistrySettingsNames  = @('EnableAutoTray','RemoveShortcutFromNewShortcutFileName','ExplorerNavPaneShowAllFolders', 'ExplorerShowFileExt', 'ExplorerShowHiddenFilesAndFolders', 'ExplorerShowHiddenOSFiles','DisableCortana',`
+      'HideSyncProviderNotifications')
     }
     CICDHosts              = @{
       ChocolateyPackageNames = @('gh', 'git')
@@ -173,12 +175,12 @@ $parsedInventory = @{
       WindowsFeatureNames    = $null
     }
     DeveloperHosts         = @{
-      ChocolateyPackageNames = @('beyondcompare', 'graphviz', 'ilspy', 'invoke-build', 'linqpad', 'msbuild-structured-log-viewer', 'nugetPackageExplorer', 'plaster', 'postman', 'vscode')
+      ChocolateyPackageNames = @('beyondcompare', 'fusionplusplus', 'graphviz', 'ilspy', 'invoke-build', 'linqpad', 'msbuild-structured-log-viewer', 'nugetPackageExplorer', 'plaster', 'plantuml', 'postman', 'vscode')
       PowershellModuleNames  = @('platyPS', 'PSScriptAnalyzer')
       WindowsFeatureNames    = $null
     }
     BuildHosts             = @{
-      ChocolateyPackageNames = $null
+      ChocolateyPackageNames =  @(, 'Invoke-Build', 'docfx', 'graphviz', 'plantuml')
       PowershellModuleNames  = @(, 'InvokeBuild')
       WindowsFeatureNames    = $null
     }
@@ -189,6 +191,11 @@ $parsedInventory = @{
     }
     AVEditingHosts         = @{
       ChocolateyPackageNames = @('vlc', 'audacity', 'freevideoeditor')
+      PowershellModuleNames  = $null
+      WindowsFeatureNames    = $null
+    }
+    Printing3DHosts         = @{
+      ChocolateyPackageNames = @('blender', 'cura-new')
       PowershellModuleNames  = $null
       WindowsFeatureNames    = $null
     }
@@ -245,7 +252,7 @@ Set-Content -Path $inventoryDestinationPath -Value $(Get-Content $inventorySourc
 & "$projectBaseDirectory\keyed_vars.ps1" $($ymlTemplate -replace '\{1}', 'host_vars') $(Join-Path $baseDirectory 'host_vars') $defaultPerMachineSettings $hostNames
 
 # Create the main playbook, which goes into the base directory. because the `roles` subdirectory should be relative to the playbook
-& "$projectBaseDirectory\main_playbook.ps1" $($ymlTemplate -replace '\{1}', 'main_playbook') $(Join-Path $baseDirectory $mainPlaybookName) $parsedInventory
+& "$projectBaseDirectory\main_playbook.ps1" $($ymlTemplate -replace '\{1}', 'plays') $(Join-Path $baseDirectory $mainPlaybookName) $parsedInventory
 
 # All Module installations require the module name, version, and PSEdition (or type)
 # Module installations must honor the PSEdition AllUser's path

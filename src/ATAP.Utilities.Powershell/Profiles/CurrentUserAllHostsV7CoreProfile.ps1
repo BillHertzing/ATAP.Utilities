@@ -168,7 +168,6 @@ $desiredPSModulePaths += 'C:\Program Files\WindowsPowerShell\Modules'
 # Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
 [Environment]::SetEnvironmentVariable('PSModulePath', $desiredPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
 
-
 # Unlock the user's SecretStore for this session using an encrypted password and a data Encryption Certificate installed to the current machine
 # if the key exists in the global settings
 # if ($global:settings.Contains($global:configRootKeys['EncryptedMasterPasswordsPathConfigRootKey'])) {
@@ -800,5 +799,6 @@ Function New-PlantUML {
 New-Alias graph New-PlantUML
 
 #>
+
 
 

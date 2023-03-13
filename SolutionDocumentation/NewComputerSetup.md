@@ -1,10 +1,140 @@
 # Setup a new computer
 
-## Prerequisite
+## Introduction
 
-decide what role's the new computer wil be a member of
+Setting up a new computer can be a daunting task when there are hundreds of customizations needed to make the computer a productive element of an organizations infrastructure.  Infrastructure As Code (IAC) is the discipline that is concerned with formalizing how to codify the customizations, and making the  of these them both idempotent and
 
-### utat022
+To start, computers will be grouped. The groupings are hierarchial and relational...
+
+## Prerequisites
+
+decide what groups the new computer wil be a member of. One simple method is to have every computer be a member of every group.
+An automation tool to transform the IAC defintion in code to a set of actions that occur on the new computer. This repository uses Ansible as the IAC automation tool
+The ATAP.IAC.Ansible module contains Powershell code that defines the Ansible inventory, host_vars, group_vars, playbooks, and Roles
+
+## BIOS modifications
+
+BIOS changes can be made before an operating system is installed. These will be unique to a given machine configuration. These must be done manually when a machine is first powered up
+
+### utat022 Bios modifications
+
+- Change PCIE configuration from "M2 extension card" to "dual M2 SSD"
+- Ensure SATA controllers are On
+- X.M.P is enabled
+- Intel Rapid Storage technology is OFF
+- change hotswap notification to "enabled"
+- Boot disk order should list teh removable drives first
+
+## Install the Operating system
+
+Operating systems can be installed from ISO images, or from other image sources. This will describe how to manually install the OS from an ISO image on a USB stick. These instructions are for the Windows OS.
+
+These instructions are for adding a machine to a non-domain workgroup, and creating local users and groups on the machine.
+
+### Create a Windows bootable USB stick
+
+Create latest Windows 11 bootable USB stick (Instructions TBD)
+Print latest Windows 11 Pro license Key
+
+### utat022 OS instructions
+
+unplug SATA drives, leave just PCIE drive in
+disconnect the machine from the internet
+plug USB stick into bootable usb port
+Power up the machine, boot through the USB strick
+Install Windows 11 Pro to (unformatted) drive 0
+When asked for the name of the first administrative user, enter `<YourInitialAdministratorUserID>` and `<YourInitialAdministratorPassword>`
+Login to the new machine using the first administrative user
+
+### Document the Operating System baseline
+
+run the program 'Everything' from a USB stick, get list to a file "01 Clean Windows 11 install, Step 01 Files.efu"
+
+## Boostrap a new host for the IAC controller
+
+Before any IAC controller can configure a new host, the IAC controller software must be able to connect to the host.
+
+### Bootstrap a new host for Ansible
+
+Ansible (for Windows) uses WinRM to communicate from the AnsibleController host to the remote hosts.  WinRM must be setup durring the bootstrap process.
+
+#### Enable WinRM
+
+Setup the initial WinRM configuration. Run the command ```winrm qc```
+
+#### Allow Powershell script execution
+
+During the bootstrapping process, use the Powershell executable that came with the Windows OS install.  Ansible (for Windows) uses WinRM  to communicate from the Ansible controller host to the remote hosts
+
+
+During the initial machine configuration steps, Powershell will allow for running scripts that are unsigned. After the initial configuration, the Powershell ExecutionPolicy will be changed so that only signed scripts will be allowed. Run the command
+
+```Powershell
+Set-ExecutionPolicy Bypass
+```
+
+#### Allow Powershell remote access from Ansible
+
+Ansible suplies a Powershell script that configures a host to accept a connection from an AnsibleController host. This file must be downloaded github and transferred to the new host The script is named ConfigureRemotingForAnsible.ps1, and can be retrieved from [ConfigureRemotingForAnsible.ps1] (https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1)
+
+This script will create a new self-signed SSL certificate. It should be removed in a later step after the new host has been configured. (TBD!)
+
+```Powershell
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
+$file = "$env:temp\ConfigureRemotingForAnsible.ps1"
+(New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
+powershell.exe -ExecutionPolicy ByPass -File $file -EnableCredSSP -DisableBasicAuth
+```
+
+#### Validate the WinRM initial listener configuration
+
+Run the command ```winrm enumerate winrm/config/Listener```. Expected response should be
+
+```Markdown
+Listener
+    Address = *
+    Transport = HTTP
+    Port = 5985
+    Hostname
+    Enabled = true
+    URLPrefix = wsman
+    CertificateThumbprint
+    ListeningOn = 127.0.0.1, 169.254.57.70, 169.254.70.187, 169.254.112.251, 169.254.190.156, 169.254.216.213, 169.254.226.151, 169.254.243.235, 192.168.1.30, ::1, fe80::1d36:2a1:1009:ba9f%8, fe80::3771:cebf:b9b8:bfab%22, fe80::38a8:8571:2350:4160%15, fe80::9479:9073:1303:6f08%12, fe80::d9b2:fccb:bdc:d011%11, fe80::dd23:2447:54ef:973b%14, fe80::e8ba:3244:9cf0:32ec%10, fe80::eca8:c27b:1692:6f95%7
+
+Listener
+    Address = *
+    Transport = HTTPS
+    Port = 5986
+    Hostname = <NewHost_HostName>
+    Enabled = true
+    URLPrefix = wsman
+    CertificateThumbprint = 02CCB8C348080EC5C75AE2C0EB844D3EA12A2B16
+    ListeningOn = 127.0.0.1, 169.254.57.70, 169.254.70.187, 169.254.112.251, 169.254.190.156, 169.254.216.213, 169.254.226.151, 169.254.243.235, 192.168.1.30, ::1, fe80::1d36:2a1:1009:ba9f%8, fe80::3771:cebf:b9b8:bfab%22, fe80::38a8:8571:2350:4160%15, fe80::9479:9073:1303:6f08%12, fe80::d9b2:fccb:bdc:d011%11, fe80::dd23:2447:54ef:973b%14, fe80::e8ba:3244:9cf0:32ec%10, fe80::eca8:c27b:1692:6f95%7```
+
+Notes:
+
+- The IP address that start with `169.254.x.x` are unexpected, and according to this article [WinRM Strange ListeningOn Addresses](https://social.technet.microsoft.com/Forums/windows/en-US/3082d5ab-b018-4d99-8697-81cefc4b3543/winrm-strange-listeningon-addresses), come from the "Microsoft Failover Cluster Virtual Adapter", which is hidden. Later steps will remove the Failover Clustering feature and will modify the `ListeningOn` values for both the HTTP and HTTPS listeners.
+- The hostname shown will be the initial host name generated when the OS is installed. Later steps will change the hostname, and modify the hostname entries in the WinRM Listenere (TBD!)
+
+```
+
+#### Enable Wake-on-LAN (WoL)
+
+Wake-on-LAN (WoL) is enabled to automatically turn on systems when doing maintenance. Most systems are configured this way automatically, however in some cases they need specific changes to make them work.
+
+Detailed instructions are TBD and are per-host
+
+## Add new host to the IAC configuration
+
+TBD: The IAC configuration is stored in the project database. The project database includes code that will output a complete Ansible directory structure and its contents, for managing the organizations hosts.
+
+Current: The IAC configuration is stored in the subrepository `ATAP.IAC.Ansible`. The script `Create-AnsibleDirectoryStructure.ps1` from that repository can be run in to output a complete Ansible directory structure and its contents.
+Documentation can be found [here; TBD]
+```markdown
+
+
+### Groups to which the new computer utat022 belongs
 
 - Development Computer
 - SSH Server
@@ -38,27 +168,8 @@ decide what role's the new computer wil be a member of
 
 ```
 
-## BIOS modifications
 
-### utat022
 
-- Change PCIE configuration from "M2 extension card" to "dual M2 SSD"
-- Ensure SATA controllers are On
-- X.M.P is enabled
-- Intel Rapid Storage technology is OFF
-- change hotswap notification to "enabled"
-
-## install the Operating system
-
-unplug SATA drives, leave just PCIE drive in
-disconnect from internet
-Create latest Windows 11 bootable USB stick
-Print latest Windows 11 Pro license Key
-Install Windows 11 Pro to (unformatted) drive 0
-
-create new user (without internet) and assign password
-
-run Everything from USB stick, get list to a file "01 Clean Windows 11 install, Step 01 Files.efu"
 
 rename computer (utat022)
 turn off edge pre-load
@@ -67,6 +178,7 @@ wired 50-eb-f6-78-80-5a
 wireless 00-91-9e-7c-45-f2
 Update NetGear router DHCP leases
 wired: utat022 192.168.1.22 50:EB:F6:78:80:5A wired:atap_24
+
 Update the organizations master Hosts file and the Roles' Hosts file
 Copy the Roles Hosts file to the new computer
 
@@ -201,6 +313,8 @@ If the role specifies that the computer will be a primary or backup Hashicorp Va
   -
 
 ## Install Powershell Packages
+
+Powershell packages are managed on a per-host nad per-group basis using Ansible
 
 - as the first admin user, run the command to install the NuGet PackageProvider
   `Install-PackageProvider -Name NuGet -Force`
@@ -363,8 +477,6 @@ In the newly created Powershell subdirectory, run the following command
 #### Role:Developer
 
 Install the Powershell build tools. Run the following command `install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser`
-`install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser`
-
 
 Install the Powershell script analysis tools. Run the following command `install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser`
 #### Role:QualityAssurance
@@ -399,7 +511,7 @@ Setup HP Printer
    Disable restore points on all drives ()
    Search settings for "system protection"
    click "create a restore point"
-   scan the list of drivee for any with "Protection settings = ON"
+   scan the list of drives for any with "Protection settings = ON"
    turn it off and delete any existing restore points
    Disable the 'Volume Shadow Copy" service
 
@@ -499,7 +611,7 @@ Run the following commands as a local admin on the new computer. Do this in both
 - `Enable-PSRemoting -Force`
 - in Powershell core, run `Get-PSSessionConfiguration`
     validate a powershell 7 endpoint now exists
-- The machine profile for Powershell Core (``) should have the line `$PSSessionConfigurationName = 'PowerShell.7'`
+- The machine profile for Powershell Core () should have the line `$PSSessionConfigurationName = 'PowerShell.7'`
     That will make PSRemoting on a client use the Powershell Core configuration endpoint on the server computer
 
 ### Add the other computers in the group to existing trustedhosts for WinRM remote management

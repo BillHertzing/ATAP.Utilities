@@ -20,58 +20,65 @@ $addedParametersScriptblock = { if ($addedParameters) {
 }
 
 $ChocolateyPackagesForGroupNameScriptBlock = {
+  [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
+  [void]$sb.Append(@"
+  - name: Install Chocolatey Packages
+    hosts: all
+    gather_facts: false
+    tasks:
+      - name: Load Chocolatey Package information JSON file
+        set_fact:
+          chocolateypackages_properties: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/chocolateyPackageInfo.json') | from_json }}"
+
+"@)
   for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex++) {
     $groupName = $groupNames[$groupNameIndex]
     # if($groupName -ne 'WindowsHosts' ) {continue} # skip things for development
     if ($($parsedInventory.GroupNames[$groupName]).ContainsKey('ChocolateyPackageNames')) { # process for $groupName only if the ChocolateyPackageNames key exists
-      [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
-      [void]$sb.Append(@"
-- name: Install Chocolatey Packages For $groupName
-  hosts: all
-  gather_facts: false
-  tasks:
-    - name: Load Chocolatey Package information JSON file
-      set_fact:
-        resource_properties: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/chocolateyPackageInfo.json') | from_json }}"
-    - name: Install the Chocolatey Packages defined for each group
+      if ($null -ne $($parsedInventory.GroupNames[$groupName]).ChocolateyPackageNames) {
+        [void]$sb.Append(@"
+    - name: Install the Chocolatey Packages defined for the group '$groupName'
       win_dsc:
         resource_name: cChocoPackageInstaller
         Name: "{{ item }}"
-        Version: "{{ resource_properties[item]['Version'] }}"
+        Version: "{{ chocolateypackages_properties[item]['Version'] }}"
         Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
         $(. $addedParametersScriptblock)
-
-    loop:
+      loop:
 
 "@
-      )
-      for ($index = 0; $index -lt $($($($parsedInventory.GroupNames)[$groupName]).ChocolateyPackageNames).count; $index++) {
-        [void]$sb.Append('        - ' + $($($($parsedInventory.GroupNames)[$groupName]).ChocolateyPackageNames)[$index])
-        [void]$sb.Append("`n")
-      }
-      [void]$sb.Append(@"
-    when: "'$groupName' in group_names "
+        )
+        for ($index = 0; $index -lt @($($($parsedInventory.GroupNames)[$groupName]).ChocolateyPackageNames).count; $index++) {
+          [void]$sb.Append('        - ' + @($($($parsedInventory.GroupNames)[$groupName]).ChocolateyPackageNames)[$index])
+          [void]$sb.Append("`n")
+        }
+        [void]$sb.Append(@"
+      when: "'$groupName' in group_names "
+
 "@)
+      }
     }
-    $sb.ToString()
   }
+  $sb.ToString()
 }
 
 $PowershellModulesForGroupNameScriptBlock = {
-  for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex++) {
+  [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
+  [void]$sb.Append(@"
+  - name: Install Powershell modules For $groupName
+    hosts: all
+    gather_facts: false
+    tasks:
+      - name: Load Powershell Module information JSON file
+        set_fact:
+          module_properties: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/powershellModuleInfo.json') | from_json }}"
+"@)
+    for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex++) {
     $groupName = $groupNames[$groupNameIndex]
     # if ($groupName -ne 'WindowsHosts' ) { continue } # skip things for development
     if ($($parsedInventory.GroupNames[$groupName]).ContainsKey('PowershellModuleNames')) { # process for $groupName only if the PowershellModuleNames key exists
-      [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
-      [void]$sb.Append(@"
-- name: Install Powershell modules For $groupName
-  hosts: all
-  gather_facts: false
-  tasks:
-    - name: Load Powershell Module information JSON file
-      set_fact:
-        module_properties: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/powershellModuleInfo.json') | from_json }}"
-
+      if ($null -ne $($parsedInventory.GroupNames[$groupName]).PowershellModuleNames) {
+        [void]$sb.Append(@"
     - name: Install the modules defined for each group
       community.windows.win_psmodule:
         name: "{{ item }}"
@@ -80,49 +87,96 @@ $PowershellModulesForGroupNameScriptBlock = {
         allow_prerelease: "{{ module_properties[item]['AllowPrerelease'] }}"
       loop:
 
-"@
-      )
-      for ($index = 0; $index -lt $($($($parsedInventory.GroupNames)[$groupName]).PowershellModuleNames).count; $index++) {
-        [void]$sb.Append('        - ' + ($($($parsedInventory.GroupNames)[$groupName]).PowershellModuleNames)[$index])
-        [void]$sb.Append("`n")
-      }
-      [void]$sb.Append(@"
-      when: "'$groupName' in group_names "
 "@)
+        for ($index = 0; $index -lt @($($($parsedInventory.GroupNames)[$groupName]).PowershellModuleNames).count; $index++) {
+          [void]$sb.Append('        - ' + @($($($parsedInventory.GroupNames)[$groupName]).PowershellModuleNames)[$index])
+          [void]$sb.Append("`n")
+        }
+        [void]$sb.Append(@"
+      when: "'$groupName' in group_names "
+
+"@)
+      }
     }
-    $sb.ToString()
   }
+  $sb.ToString()
 }
 
 $RolesForGroupNameScriptBlock = {
+  [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
   for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex++) {
     $groupName = $groupNames[$groupNameIndex]
     # if($groupName -ne 'WindowsHosts' ) {continue} # skip things for development
     if ($($parsedInventory.GroupNames[$groupName]).ContainsKey('CompositeRoleNames')) { # process for $groupName only if the CompositeRoleNames key exists
-      [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
-      [void]$sb.Append(@"
+      if ($null -ne $($parsedInventory.GroupNames[$groupName]).CompositeRoleNames) {
+        [void]$sb.Append(@"
 - name: Install roles For $groupName
   hosts: all
   gather_facts: false
   tasks:
-    - name: Run the following role's tasks on all the hosts in $groupName
+    - name: Include the following role on all the hosts in $groupName
       include_role:
         name: "{{ item }}"
       loop:
+
 "@)
-      $roleNames = $($parsedInventory.GroupNames[$groupName]).CompositeRoleNames #  # $parsedInventory.GroupNames[$groupName]).CompositeRoleNames.keys
-      for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) {
-        $roleName = $roleNames[$roleNameIndex]
-        [void]$sb.Append('        - ' + $roleName)
-        [void]$sb.Append("`n")
+        $roleNames = @($($parsedInventory.GroupNames[$groupName]).CompositeRoleNames) #  # $parsedInventory.GroupNames[$groupName]).CompositeRoleNames.keys
+        for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) {
+          $roleName = $roleNames[$roleNameIndex]
+          [void]$sb.Append('        - ' + $roleName)
+          [void]$sb.Append("`n")
+        }
+        [void]$sb.Append(@"
+      when: "'$groupName' in group_names "
+
+"@)
       }
-      [void]$sb.Append(@"
-  when: "'$groupName' in group_names "
-"@)
-      $sb.ToString()
     }
   }
+  $sb.ToString()
 }
+
+$RegistrySettingsForGroupNameScriptBlock = {
+  [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
+  for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex++) {
+    $groupName = $groupNames[$groupNameIndex]
+    # if($groupName -ne 'WindowsHosts' ) {continue} # skip things for development
+    if ($($parsedInventory.GroupNames[$groupName]).ContainsKey('RegistrySettingsNames')) { # process for $groupName only if the RegistrySettingsNames key exists
+      if ($null -ne $($parsedInventory.GroupNames[$groupName]).RegistrySettingsNames) {
+        [void]$sb.Append(@"
+- name: Install Registry Settings For $groupName
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Load Registry Settings information JSON file
+      set_fact:
+        registry_properties: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/RegistrySettingsInfo.yml') | from_yaml }}"
+
+    - name: Set Registry values for each group
+      win_regedit:
+        path: "{{ registry_properties[item]['path'] }}"
+        name: "{{ registry_properties[item]['name'] }}"
+        data: "{{ registry_properties[item]['data']|default(None) }}"
+        type: "{{ registry_properties[item]['type']|default('dword') }}"
+      loop:
+
+"@)
+for ($index = 0; $index -lt @($($($parsedInventory.GroupNames)[$groupName]).RegistrySettingsNames).count; $index++) {
+  [void]$sb.Append('        - ' + @($($($parsedInventory.GroupNames)[$groupName]).RegistrySettingsNames)[$index])
+  [void]$sb.Append("`n")
+}
+[void]$sb.Append(@"
+      when: "'$groupName' in group_names"
+
+
+"@)
+      }
+    }
+  }
+  $sb.ToString()
+}
+#state: "{{ registry_properties[item]['state']|default( {{ 'Absent' if (action_type == 'Uninstall') else 'Present'}} ) }}"
+
 
 function Contents {
   param(
@@ -137,12 +191,21 @@ function Contents {
       debug:
         var: action_type
 
-$(. $PowershellModulesForGroupNameScriptBlock)
-$(. $ChocolateyPackagesForGroupNameScriptBlock)
-$(. $RolesForGroupNameScriptBlock)
+# ChocolateyPackages Per Group
+$(if ($false) {$(. $ChocolateyPackagesForGroupNameScriptBlock)})
+
+# PowershellModules Per Group
+$(if ($false) {$(. $PowershellModulesForGroupNameScriptBlock)})
+
+# Registry Settings per Group
+$(if($true) {$(. $RegistrySettingsForGroupNameScriptBlock)})
+
+# Roles per Group
+$(if($true) {$(. $RolesForGroupNameScriptBlock)})
 
 "@
 }
+
 
 $ymlContents = $ymlGenericTemplate -replace '\{2}', 'Main Playbook'
 

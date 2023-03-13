@@ -124,7 +124,7 @@ Function Write-EnvironmentVariablesIndented {
       $envVarHashTable.Keys | Sort-Object | ForEach-Object { $key = $_
         if ($key -eq 'path') {
           $outstr += ' ' * $initialIndent + $key + ' (' + $scope + ') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
-          $($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )
+          $($($($envVarHashTable[$key] -split [IO.Path]::PathSeparator)|sort-object) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )
         }
         else {
           $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] + '  [' + $scope + ']' + [Environment]::NewLine

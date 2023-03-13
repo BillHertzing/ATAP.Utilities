@@ -4,9 +4,6 @@ param(
   , [string] $roleDirectoryPath
   , [string] $roleName
   , [string[]] $roleSubdirectoryNames
-  , [string] $name
-  , [string] $version
-  , [string[]] $addedParameters
 
 )
 
@@ -21,11 +18,28 @@ $addedParametersScriptblock = { if ($addedParameters) {
 
 function ContentsTask {
   @"
-- name: install or uninstall jenkins
+
+- name: Install or Uninstall Java Service Account User
   win_dsc:
     resource_name: cChocoPackageInstaller
-    Name: 'jenkins'
-    Version: "{{ version }}""
+    Name: "{{ JREName }}"
+    Version: "{{ JREVersion }}"
+    Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
+
+- name: Install or Uninstall Java JRE using chocolatey
+  win_dsc:
+    resource_name: cChocoPackageInstaller
+    Name: "{{ JREName }}"
+    Version: "{{ JREVersion }}"
+    Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
+    $(. $addedParametersScriptblock)
+
+
+- name: install or uninstall jenkins using chocolatey
+  win_dsc:
+    resource_name: cChocoPackageInstaller
+    Name: "{{ JenkinsName }}"
+    Version: "{{ JenkinsVersion }}"
     Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
     $(. $addedParametersScriptblock)
 "@
@@ -33,8 +47,12 @@ function ContentsTask {
 
 function ContentsVars {
   @"
-version: $version
-allow_prerelease: false
+JREName: temurin17jre
+JREVersion: 17.0.6.1000
+JREAllow_prerelease: false
+JenkinsName: jenkins
+JenkinsVersion: 2.387.1
+JenkinsAllow_prerelease: false
 "@
 }
 
@@ -73,3 +91,5 @@ for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
   }
 }
 
+ # name of JRE package should be a parameter
+ # version of JRE package should be a parameter

@@ -6,8 +6,6 @@ param (
   , [hashtable] $parsedInventory
 )
 
-# script variables used in all scriptblocks
-$hostNames = $parsedInventory.HostNames
 $groupNames = $($parsedInventory.GroupNames.Keys) # enclosing the keycollection returned by .Keys inside a subexpressions converts it to an array of strings
 
 $addedParametersScriptblock = { if ($addedParameters) {
@@ -183,35 +181,33 @@ function Contents {
     [string] $name
   )
   @"
-- name: Top Play
+- name: Setup a host to receive Ansible commands
   hosts: all
   gather_facts: false
+
   tasks:
-    - name: Print action_type variable
-      debug:
-        var: action_type
-
-# ChocolateyPackages Per Group
-$(if ($false) {$(. $ChocolateyPackagesForGroupNameScriptBlock)})
-
-# PowershellModules Per Group
-$(if ($false) {$(. $PowershellModulesForGroupNameScriptBlock)})
-
-# Registry Settings per Group
-$(if($true) {$(. $RegistrySettingsForGroupNameScriptBlock)})
-
-# Roles per Group
-$(if($true) {$(. $RolesForGroupNameScriptBlock)})
+    - name: Update the WinRM list of TrustedHosts to match the canaconical list specified for the remote host
 
 "@
 }
 
 
-$ymlContents = $ymlGenericTemplate -replace '\{2}', 'Main Playbook'
+$ymlContents = $ymlGenericTemplate -replace '\{2}', 'AnsibleSetup'
 
 # ToDo: get the formatting correct, so that we don't have to run this global search and replace
 $ymlContents += $($($(Contents) -split "`n") | ForEach-Object { $_ -replace '^\s{0,1}-', '-' }) -join "`n"
 Set-Content -Path $Path -Value $ymlContents
+
+# Secure WinRM
+  # `WinRM qc` is run on a brand new host, and that is insecure, but necessary during the bootstrap process.
+  # These steps will lock down WinRM to mitigate risks of it being used as an attack vector.
+  # Update the WinRM list of TrustedHosts to match the canaconical list specified for the remote host
+  # Check to see if the SSL Certificate being used by WinRM is issued by the organization's local PKI infrastructure
+  #  if not
+    # Get a SSL Certificate from the organization's local PKI infrastructure
+    # update the SSL certificate being used by WinRM on the remote host
+    # confirm that WinRM is using the new SSL certificate
+    # disable the WinRM HTTP listener
 
 
 # - 'JenkinsClient'

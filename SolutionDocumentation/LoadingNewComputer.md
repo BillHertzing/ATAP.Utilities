@@ -2,21 +2,22 @@
 
 ## Introduction
 
-Setting up a new computer can be a daunting task when there are hundreds of customizations needed to make the computer a productive element of an organizations infrastructure.  Infrastructure As Code (IAC) is the discipline that is concerned with formalizing how to codify the customizations, and making the  of these them both idempotent and
+Setting up a new computer can be a daunting task when there are hundreds of customizations needed to make the computer a productive element of an organizations infrastructure.  Infrastructure As Code (IAC) is the discipline that is concerned with formalizing how to codify the customizations, and executing on the configuration to make a computer conform to the customizations desired.
 
-To start, computers will be grouped. The groupings are hierarchial and relational...
+The ATAP utilities repository uses the automation software Ansible to control the setup and upgrade of the hosts in our organization. The sub-repository ATAP.IAC.Ansible contains IAC code that defines the organizatiopns hosts, their roles, and the specific software and configuration needed on the hosts for them to fulfill their roles. See the ATAP.IAC.Ansible [readme] for furhter information on this
 
-## Prerequisites
+However, a new computer / host requires some setup steps before it can communicate with an IAC Controller host. The purpose of this document is to detail the bootstrapping steps to setup a Window's host so it can communicate with Ansible for the remainder of the setup process. Bootstrapping is the process of initial machine configuration.
 
-decide what groups the new computer wil be a member of. One simple method is to have every computer be a member of every group.
-An automation tool to transform the IAC defintion in code to a set of actions that occur on the new computer. This repository uses Ansible as the IAC automation tool
-The ATAP.IAC.Ansible module contains Powershell code that defines the Ansible inventory, host_vars, group_vars, playbooks, and Roles
+Eventually, some of these steps will be incorporated into a Powershell module ad functions that can be loaded and executed
+
+This document starts with the assumption that a new computer is operational, has a monitor and keyboard connected, and can vbe booted into the BIOS.
 
 ## BIOS modifications
 
-BIOS changes can be made before an operating system is installed. These will be unique to a given machine configuration. These must be done manually when a machine is first powered up
+BIOS changes can be made before an operating system is installed. These will be unique to a given machine configuration. These must be done manually when a machine is first powered up.
 
-### utat022 Bios modifications
+
+### utat022 host BIOS modifications
 
 - Change PCIE configuration from "M2 extension card" to "dual M2 SSD"
 - Ensure SATA controllers are On
@@ -50,11 +51,11 @@ Login to the new machine using the first administrative user
 
 run the program 'Everything' from a USB stick, get list to a file "01 Clean Windows 11 install, Step 01 Files.efu"
 
-## Boostrap a new host for the IAC controller
+## Boostrap a new host for accepting communications from the IAC controller
 
 Before any IAC controller can configure a new host, the IAC controller software must be able to connect to the host.
 
-### Bootstrap a new host for Ansible
+### Bootstrap a new host accepting communications from Ansible
 
 Ansible (for Windows) uses WinRM to communicate from the AnsibleController host to the remote hosts.  WinRM must be setup durring the bootstrap process.
 
@@ -64,20 +65,17 @@ Setup the initial WinRM configuration. Run the command ```winrm qc```
 
 #### Allow Powershell script execution
 
-During the bootstrapping process, use the Powershell executable that came with the Windows OS install.  Ansible (for Windows) uses WinRM  to communicate from the Ansible controller host to the remote hosts
+During the bootstrapping process, we will use the version of the Powershell executable that came with the Windows OS install. During the bootstrapping process, Powershell will be configured to allow running scripts that are unsigned. After the initial configuration, the Powershell ExecutionPolicy will be changed so that only signed scripts will be allowed.
 
-
-During the initial machine configuration steps, Powershell will allow for running scripts that are unsigned. After the initial configuration, the Powershell ExecutionPolicy will be changed so that only signed scripts will be allowed. Run the command
-
-```Powershell
-Set-ExecutionPolicy Bypass
-```
+Run the command ```Set-ExecutionPolicy Bypass```
 
 #### Allow Powershell remote access from Ansible
 
-Ansible suplies a Powershell script that configures a host to accept a connection from an AnsibleController host. This file must be downloaded github and transferred to the new host The script is named ConfigureRemotingForAnsible.ps1, and can be retrieved from [ConfigureRemotingForAnsible.ps1] (https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1)
+Ansible suplies a Powershell script that configures a host to accept a connection from an AnsibleController host. This file must be downloaded from github and transferred to the new host The script is named ConfigureRemotingForAnsible.ps1, and can be retrieved from [ConfigureRemotingForAnsible.ps1] (https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1)
 
 This script will create a new self-signed SSL certificate. It should be removed in a later step after the new host has been configured. (TBD!)
+
+Note that this command will require an internet connection. A safer method would be to download the script, check it for malware, thn put it on a USB stick and copy the file from the USB stick
 
 ```Powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -114,8 +112,11 @@ Listener
 
 Notes:
 
-- The IP address that start with `169.254.x.x` are unexpected, and according to this article [WinRM Strange ListeningOn Addresses](https://social.technet.microsoft.com/Forums/windows/en-US/3082d5ab-b018-4d99-8697-81cefc4b3543/winrm-strange-listeningon-addresses), come from the "Microsoft Failover Cluster Virtual Adapter", which is hidden. Later steps will remove the Failover Clustering feature and will modify the `ListeningOn` values for both the HTTP and HTTPS listeners.
-- The hostname shown will be the initial host name generated when the OS is installed. Later steps will change the hostname, and modify the hostname entries in the WinRM Listenere (TBD!)
+- The IP address that start with `169.254.x.x` are unexpected, and according to this article [WinRM Strange ListeningOn Addresses](https://social.technet.microsoft.com/Forums/windows/en-US/3082d5ab-b018-4d99-8697-81cefc4b3543/winrm-strange-listeningon-addresses), come from the "Microsoft Failover Cluster Virtual Adapter", which is hidden.
+- Later steps will remove the Failover Clustering feature
+- Later steps will disable the HTTP listener, and install a WSMan certificate generated by the organizations internal PKI infrastructure.
+- Later steps will setup the TrustedHosts list for the WWSman service
+- The hostname shown will be the initial host name generated when the OS is installed. Later steps will change the hostname, and modify the hostname entries in the WinRM Listener
 
 ```
 
@@ -126,6 +127,8 @@ Wake-on-LAN (WoL) is enabled to automatically turn on systems when doing mainten
 Detailed instructions are TBD and are per-host
 
 ## Add new host to the IAC configuration
+
+At this point, the new host is ready to accept further configuration from the AnsibleController host. See [TBD] for the next steps
 
 TBD: The IAC configuration is stored in the project database. The project database includes code that will output a complete Ansible directory structure and its contents, for managing the organizations hosts.
 

@@ -47,7 +47,7 @@ Polly
 Servicestack
 
 ## Historical lessons learned
-Need is a way to version every Assembly/DDLL File/NugetPackage for lifecyclestages Development, QA, Staging, and Production
+Need is a way to version every Assembly/DLL File/NugetPackage for lifecyclestages Development, QA, Staging, and Production
 Versioning should be able to be applied at a solution level to all projects
 Versioning should be applied to individual projects during development, and QA lifecycle stages.
 Every visual studio build should increment the build number (or revision), and the NuGet packageversion
@@ -55,12 +55,12 @@ NuGet PackageVersion should mirror the major.minor.patch numbers found in the as
 Solution-wide version numbers are stored in the .sln file, and represent the last public released version (major,minor.patch)
 Project-specific version numbers are stored in a properties/AssemblyInfo.cs file.
 
-Hardest part of the problem is hooking up the tasks that reads and changes the data inside of AssemblyInfo.cs fiile
+Hardest part of the problem is hooking up the tasks that reads and changes the data inside of AssemblyInfo.cs file
 task should run only if an assembly is going to be built (i.e., the .proj outputs are out-of-date with respect to the .proj inputs.
 assemblyInfo.cs file should be changed only if the assembly is being built.
 AssemblyVersion, AssemblyFileVersion, and AssemblyInformationalVersion are read from the assemblyInfo.cs file, and possibly modified and written back out to the same file.
-If the solution or project is multitargeted, the assembly info is changed only once, and before the compilation portion of the build ocures.
-If the solution or project is not multitargeted, the assembly info is still changed only once, and still before the compilation portion of the build ocures.
+If the solution or project is multitargeted, the assembly info is changed only once, and before the compilation portion of the build occurs.
+If the solution or project is not multitargeted, the assembly info is still changed only once, and still before the compilation portion of the build occurs.
 If the Major, Minor, Patch, Build, Version, and/or PackageVersion info in the Solution is greater than the corresponding version in the .proj file, then assemblyInfo.cs should be changed, and this should be done before the evaluation of inputs and outputs takes place
 
 Set the parallel build options to build only 1 tasks to see the exact order that build tasks are called

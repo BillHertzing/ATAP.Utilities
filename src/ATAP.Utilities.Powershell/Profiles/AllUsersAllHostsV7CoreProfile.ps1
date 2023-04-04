@@ -481,6 +481,9 @@ $global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRoot
   $global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageURIConfigRootKey']]
 }
 
+# ToDo: Fix this temporary thingy
+$global:settings[$global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']] =   'JenkinsAgentSrvAcct'
+$global:settings[$global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']] =   'JenkinsContrlSrvAcct'
 
 
 # set ISElevated in the global settings if this script is running elevated

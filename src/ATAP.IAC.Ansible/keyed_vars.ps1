@@ -10,13 +10,12 @@ function Contents {
   param(
     [string] $name
   )
-  # The settingsHash should have an entry
-  $lines = @()
+  [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
   foreach ($key in $($($settingsHash[$name]).keys | Sort-Object)) {
     $escapedvalue = $($($settingsHash[$name])[$key]) -replace "'", "''"
-    $lines += "$key : '$escapedvalue'"
+    [void]$sb.AppendLine("$key : '$escapedvalue'")
   }
-  return $lines
+  $sb.ToString()
 }
 
 # $global:settings that are defined per-host or per-group are stored in the $settingsHash
@@ -25,6 +24,6 @@ for ($index = 0; $index -lt $namesList.count; $index++) {
   $name = $namesList[$index]
   $ymlContents= $ymlGenericTemplate -replace '\{2}', $name
   # Use the Linux newline character
-  $ymlContents += $(Contents -name $name) -join "`r"
+  $ymlContents += $($(Contents -name $name) -split "`r`n") -join "`n"
   Set-Content -Path $(Join-Path $directoryPath "$name.yml") -Value $ymlContents
 }

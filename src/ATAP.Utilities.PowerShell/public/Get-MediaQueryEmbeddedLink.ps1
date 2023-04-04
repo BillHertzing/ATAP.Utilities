@@ -7,7 +7,7 @@
 Gets the embedded links strings for an ATAP MediaResource object
 .DESCRIPTION
 .PARAMETER MediaResource
-This is the ATAP MediaResouce object from whihc to make the embedding links
+This is the ATAP MediaResouce object from which to make the embedding links
 .INPUTS
 A single MediaResouce object. (pipeline input supported)
 .OUTPUTS

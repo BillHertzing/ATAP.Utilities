@@ -40,11 +40,11 @@ for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
   $ymlContents = $($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName
   switch -regex ($roleSubdirectoryName) {
     '^tasks$' {
-      $ymlContents += $(ContentsTask -split "`r`n") -join "`r"
+      $ymlContents += $(ContentsTask -split "`r`n") -join "`n"
       Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $ymlContents
     }
     '^vars$' {
-      $ymlContents += $(ContentsVars -split "`r`n") -join "`r"
+      $ymlContents += $(ContentsVars -split "`r`n") -join "`n"
       Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $ymlContents
     }
     default {
@@ -62,8 +62,6 @@ for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
     #   Copy-Item -Path $scriptSourcePath -Destination $scriptDestinationPath
     # }
 
-
-        # - 'JenkinsClient'
 
 #   - name: Print action_type variable
 #   debug:

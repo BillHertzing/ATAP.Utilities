@@ -1,4 +1,4 @@
-# Define the main playbook
+# Define a playbook to setup Ansible Controller on a WSL2 container in a Windows Host
 param (
   [string] $ymlGenericTemplate
   , [string] $Path
@@ -7,6 +7,7 @@ param (
 )
 
 $groupNames = $($parsedInventory.GroupNames.Keys) # enclosing the keycollection returned by .Keys inside a subexpressions converts it to an array of strings
+$roleName = 'AnsibleSetup'
 
 $addedParametersScriptblock = { if ($addedParameters) {
     [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
@@ -17,10 +18,11 @@ $addedParametersScriptblock = { if ($addedParameters) {
   }
 }
 
-$ChocolateyPackagesForGroupNameScriptBlock = {
+
+$AnsibleControllerSetupScriptBlock = {
   [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
   [void]$sb.Append(@"
-  - name: Install Chocolatey Packages
+  - name: Install Ansible on Ubuntu inside the WSL2 contianer
     hosts: all
     gather_facts: false
     tasks:
@@ -105,8 +107,8 @@ $RolesForGroupNameScriptBlock = {
   for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex++) {
     $groupName = $groupNames[$groupNameIndex]
     # if($groupName -ne 'WindowsHosts' ) {continue} # skip things for development
-    if ($($parsedInventory.GroupNames[$groupName]).ContainsKey('CompositeRoleNames')) { # process for $groupName only if the CompositeRoleNames key exists
-      if ($null -ne $($parsedInventory.GroupNames[$groupName]).CompositeRoleNames) {
+    if ($($parsedInventory.GroupNames[$groupName]).ContainsKey('AnsibleRoleNames')) { # process for $groupName only if the AnsibleRoleNames key exists
+      if ($null -ne $($parsedInventory.GroupNames[$groupName]).AnsibleRoleNames) {
         [void]$sb.Append(@"
 - name: Install roles For $groupName
   hosts: all
@@ -118,7 +120,7 @@ $RolesForGroupNameScriptBlock = {
       loop:
 
 "@)
-        $roleNames = @($($parsedInventory.GroupNames[$groupName]).CompositeRoleNames) #  # $parsedInventory.GroupNames[$groupName]).CompositeRoleNames.keys
+        $roleNames = @($($parsedInventory.GroupNames[$groupName]).AnsibleRoleNames) #  # $parsedInventory.GroupNames[$groupName]).AnsibleRoleNames.keys
         for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) {
           $roleName = $roleNames[$roleNameIndex]
           [void]$sb.Append('        - ' + $roleName)
@@ -209,8 +211,6 @@ Set-Content -Path $Path -Value $ymlContents
     # confirm that WinRM is using the new SSL certificate
     # disable the WinRM HTTP listener
 
-
-# - 'JenkinsClient'
 
 # - name: Print group_names
 #   debug:

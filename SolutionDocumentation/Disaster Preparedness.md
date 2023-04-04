@@ -27,7 +27,7 @@ The single most important concept around disaster preperation is the idea of hav
 
 ## Overview
 
-To prepare for a disaster, every process and tool has information that needs to be preserved prior to a disaster and restored after a disaster. The degree to whihc automatiojn can be applied to "bag" the necessary information, and to "unbag" or "apply" the stored information, determines the effectiveness and efficieny of the disaster recovery efforts
+To prepare for a disaster, every process and tool has information that needs to be preserved prior to a disaster and restored after a disaster. The degree to which automation can be applied to "bag" the necessary information, and to "unbag" or "apply" the stored information, determines the effectiveness and efficieny of the disaster recovery efforts
 
 ToDo: Insert diagram of development process, tools, and information to be protected
 

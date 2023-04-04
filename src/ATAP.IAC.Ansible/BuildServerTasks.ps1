@@ -17,8 +17,8 @@ return @'
    # - tasks to setup / recognize a Certificate Authority
 # - common tasks for managing the users of the computer / container
    # - tasks to assign security roles to a user
-# - tasks for setting up a Jenkins Client
-  # - tasks for setting up a user account (service account) for running the jenkins client Jenkins Client
+# - tasks for setting up a Jenkins Agent
+  # - tasks for setting up a user account (service account) for running the Jenkins Agent
 # - tasks to setup MSBuild
 # - tasks to setup Git
   # - tasks to setup the commit hooks

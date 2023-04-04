@@ -2,9 +2,9 @@
 # DocumentationHomePage.md for Documentation subfolder of ATAP.Utilities.AutoDoc Overview
 
 Explain the organization of the documentation, especially  how the .md files in theprojects are combined here.
-Projects have ReadMe.md files whihc are displayed on the project's GitHub page. 
+Projects have ReadMe.md files which are displayed on the project's GitHub page.
 The solution directory has a ReadMe.md as well, displayed by GitHubBoth The solution and every project can have a index.md file. This file is the home page in the documentation site for each project and index.md at the Solution level is the documentation home page for the entire Solution. Finally the Solution contains a toc.yml file, which has three parts. Each part consists of a name, base UI, and optional homepage relative URI.Right now, the toc.yml for teh entire solution consists of a Home page, and API subfolder, and an Articles subfolder.
- 
+
 Project level:
 ReadMe.md - shown on gitHub for the project's ReadMe
 Docs/* files like quickstart (or getting started), building, and attribution, for each project

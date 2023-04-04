@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-PowerShell V7 profile template for all users on a machine
+Create a fully expanded profile for a specific hostname, based on the AllUsersAllHostsV7Core_Template file
 .DESCRIPTION
 This is the common machine profile. It provides global and environment variables that hold the machine specific settings
 This is for All Users, All Hosts, Powershell Core V7
@@ -8,9 +8,9 @@ This is for All Users, All Hosts, Powershell Core V7
 Details in [powerShell ReadMe](src\ATAP.Utilities.Powershell\Documentation\ReadMe.md)
 
 .INPUTS
-None
+$hostname
 .OUTPUTS
-None
+AllUSersAllHostsV7CoreProifile_$hostname.ps1
 .EXAMPLE
 None
 .LINK
@@ -18,16 +18,165 @@ http://www.somewhere.com/attribution.html
 .LINK
 <Another link>
 .ATTRIBUTION
-[Customize Prompt](https://www.networkadm.in/customize-pscmdprompt/) adding info to the prompt and terminal window
-ToDo: Need attribution for Console Settings
 <Where the ideas came from>
 .SCM
 <Configuration Management Keywords>
 #>
 
+function Create-AllUsersAllHostsV7CoreProfile {
+  param(
+    [string] $hostname
+  )
+  switch -regex ($hostname) {
+    '^(?:utat01|utat022|ncat016|ncat041)$' {
+      $generalTempBase = 'C:\Temp'
+      $generalProgramFilesBase = 'C:\Program Files'
+      $DropboxBase = 'C:\DropBox'
+      $generalCloudBase = $DropboxBase
+    }
+    '^(?:ncat-ltb1|ncat-ltjo)$' {
+      $generalTempBase = 'D:\Temp'
+      $generalProgramFilesBase = 'C:\Program Files'
+      $DropboxBase = 'D:\DropBox'
+      $generalCloudBase = $DropboxBase
+    }
+
+  }
+
+  # Until ATAP.Utilities.Powershell is a module in the $PSModulePath, import the function
+  . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Join-PathNoResolve.ps1'
+  
+  [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
+
+  [void]$sb.Append(@'
+
+$global:settings[$global:configRootKeys['DropBoxBasePathConfigRootKey']]         = $DropboxBase
+$global:settings[$global:configRootKeys['GoogleDriveBasePathConfigRootKey']]     = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
+$global:settings[$global:configRootKeys['OneDriveBasePathConfigRootKey']]        = 'Dummy' # 'C:/OneDrive/'
+# This is the default cloud provider's manifestation
+$global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']]           = $generalCloudBase
+# varous temporary directories
+$global:settings[$global:configRootKeys['FastTempBasePathConfigRootKey']]        = $generalTempBase
+$global:settings[$global:configRootKeys['BigTempBasePathConfigRootKey']]         = $generalTempBase
+$global:settings[$global:configRootKeys['SecureTempBasePathConfigRootKey']]      = Join-PathNoResolve $generalTempBase 'Insecure'
+# Chocolatey settings on this host
+$global:settings[$global:configRootKeys['ChocolateyCacheLocationConfigRootKey']] = Join-PathNoResolve $generalTempBase 'ChocolateyCache'
+# ansible settings on this host
+$global:settings[$global:configRootKeys['ansible_remote_tmpConfigRootKey']]      = Join-PathNoResolve $generalTempBase 'Ansible'
+
+$global:settings[$global:configRootKeys['ansible_become_userConfigRootKey']]     = 'whertzing'
+
+# Where all things Security and Secrets related are stored on the filesystem
+$global:settings[$global:configRootKeys['SECURE_CLOUD_BASE_PATHConfigRootKey']]  = Join-PathNoResolve $generalCloudBase  "Security"
+
+  # OpenSSL Environment variables
+$global:settings[$global:configRootKeys['OPENSSL_HOMEConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "OpenSSL"'
+$global:settings[$global:configRootKeys['OPENSSL_CONFConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["OPENSSL_HOMEConfigRootKey"]] "AUdefault.cnf"'
+$global:settings[$global:configRootKeys['RANDFILEConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "OpenSSL" "RandomKeySeed"'
+
+
+  # Related to Certificate Security
+  #  In general, places where the files that are used to create certifictes are found
+$global:settings[$global:configRootKeys['SecureCertificatesBasePathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "Certificates"'
+$global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureCertificatesBasePathConfigRootKey"]] "EncryptionPassPhraseFiles"'
+$global:settings[$global:configRootKeys['SecureCertificatesEncryptedKeysPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureCertificatesBasePathConfigRootKey"]] "EncryptedKeys"'
+$global:settings[$global:configRootKeys['SecureCertificatesCertificateRequestsPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureCertificatesBasePathConfigRootKey"]] "CertificateRequests"'
+$global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureCertificatesBasePathConfigRootKey"]] "Certificates"'
+$global:settings[$global:configRootKeys['SecureCertificatesDataEncryptionCertificatesPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureCertificatesCertificatesPathConfigRootKey"]] "DECs"'
+  # Use this if special purpose openSSL configuration files are needed
+$global:settings[$global:configRootKeys['SecureCertificatesOpenSSLConfigsPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureCertificatesBasePathConfigRootKey"]] "CertificateRequestConfigs"'
+  # Use this if obfuscation of file names is desired
+$global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]  = 'CrossReference.txt'
+
+  #  These define where a Certificate Authority (CA) keeps the records of the CSRs it is given, and a copy of each Certificate it creates and sign
+  #$global:configRootKeys['SecureCertificatesSigningCertificatesPrivateKeysRelativePathConfigRootKey']]  = "'PrivateKeys'"
+  #$global:configRootKeys['SecureCertificatesSigningCertificatesNewCertificatesRelativePathConfigRootKey']]  ="'NewCertificates'"
+$global:settings[$global:configRootKeys['SecureCertificatesSigningCertificatesCertificatesIssuedDBRelativePathConfigRootKey']]  = 'CertificateIssuedDB.txt'
+  #$global:configRootKeys['SecureCertificatesSigningCertificatesSerialNumberRelativePathConfigRootKey']]  = '"CertificateSerialNumber.txt"'
+
+  # These define the latter portion of certificate-related filename (used as the parameter -BaseFileName)
+$global:settings[$global:configRootKeys['SecureCertificatesCAPassPhraseFileBaseFileNameConfigRootKey']]  = 'CAPassPhraseFile.txt'
+$global:settings[$global:configRootKeys['SecureCertificatesCAEncryptedPrivateKeyBaseFileNameConfigRootKey']]  = 'CAEncryptedPrivateKey.pem'
+$global:settings[$global:configRootKeys['SecureCertificatesCACertificateBaseFileNameConfigRootKey']]  = 'CACertificate.crt'
+$global:settings[$global:configRootKeys['SecureCertificatesSSLServerPassPhraseFileBaseFileNameConfigRootKey']]  = 'SSLServerPassPhraseFile.txt'
+$global:settings[$global:configRootKeys['SecureCertificatesSSLServerEncryptedPrivateKeyBaseFileNameConfigRootKey']]  = 'SSLServerEncryptedPrivateKey.pem'
+$global:settings[$global:configRootKeys['SecureCertificatesSSLServerCertificateRequestBaseFileNameConfigRootKey']]  = 'SSLServerCertificateRequest.csr'
+$global:settings[$global:configRootKeys['SecureCertificatesSSLServerCertificateBaseFileNameConfigRootKey']]  = 'SSLServerCertificate.crt'
+$global:settings[$global:configRootKeys['SecureCertificatesCodeSigningPassPhraseFileBaseFileNameConfigRootKey']]  = 'CodeSigningPassPhraseFile.txt'
+$global:settings[$global:configRootKeys['SecureCertificatesCodeSigningEncryptedPrivateKeyBaseFileNameConfigRootKey']]  = 'CodeSigningEncryptedPrivateKey.pem'
+$global:settings[$global:configRootKeys['SecureCertificatesCodeSigningCertificateRequestBaseFileNameConfigRootKey']]  = 'CodeSigningCertificateRequest.csr'
+$global:settings[$global:configRootKeys['SecureCertificatesCodeSigningCertificateBaseFileNameConfigRootKey']]  = 'CodeSigningCertificate.crt'
+
+
+  # Related to SecretManagement
+  #  In general, places where the files that are used to store Secret Vaults are found
+$global:settings[$global:configRootKeys['SecureVaultBasePathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "Vaults"'
+  # Secret Vault key files and encrypted passwords fles (passwords to open the vaults)
+$global:settings[$global:configRootKeys['SecretVaultKeyFilePathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureVaultBasePathConfigRootKey"]] "SecretManagement" "KeyFiles","SecretVaultTestingEncryption.key"'
+$global:settings[$global:configRootKeys['SecretVaultEncryptedPasswordFilePathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureVaultBasePathConfigRootKey"]] "SecretManagement" "EncryptedPasswordFiles","SecretVaultTestingEncryptedPassword.txt"'
+  # $global:configRootKeys['EncryptedMasterPasswordsPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureVaultBasePathConfigRootKey"]] "OMPs.json"'
+  # $global:configRootKeys['ATAPUtilitiesMasterPasswordsPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["EncryptedMasterPasswordsPathConfigRootKey"]] "AUMPs.txt" '#
+  # The specific details of the  Secret Vault module in use
+$global:settings[$global:configRootKeys['SecretVaultExtensionModuleNameConfigRootKey' ]]  = 'SecretManagement.Keepass'
+$global:settings[$global:configRootKeys['SecretVaultNameConfigRootKey' ]]  = 'ThisUsersSecretVault'
+$global:settings[$global:configRootKeys['SecretVaultDescriptionConfigRootKey' ]]  = 'Secrets stored in a secure vault'
+$global:settings[$global:configRootKeys['SecretVaultKeySizeIntConfigRootKey' ]]  = '32'
+$global:settings[$global:configRootKeys['SecretVaultPasswordTimeoutConfigRootKey' ]]  = '300'
+$global:settings[$global:configRootKeys['SecretVaultPathToKeePassDBConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureVaultBasePathConfigRootKey"]] "KeePass" "Local.ATAP.Utilities.kdbx"'
+
+  # Place to keep things for Disaster recovery
+  # $global:ConfigRootKeys['DisasterRecoveryPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:ConfigRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "DisasterRecovery"'
+  # ToDo: figure out how to handle USB sticks and what if not plugged in
+$global:settings[$global:ConfigRootKeys['DisasterRecoveryBackupPathConfigRootKey']]  = 'Join-PathNoResolve "C:" "DisasterRecovery"'
+
+
+
+# until Get-CollTravEval handles arrays and hashs, add them manuallay, and don't use indirect
+# # Set the global PackageRepositoriesCollection
+$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']] = @{
+  $global:configRootKeys['RepositoryNuGetFilesystemDevelopmentPackageNameConfigRootKey']                             = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemDevelopmentPackagePathConfigRootKey']]
+  $global:configRootKeys['RepositoryNuGetFilesystemQualityAssurancePackageNameConfigRootKey']                        = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemQualityAssurancePackagePathConfigRootKey']]
+  $global:configRootKeys['RepositoryNuGetFilesystemProductionPackageNameConfigRootKey']                              = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemProductionPackagePathConfigRootKey']]
+  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']              = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey']         = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerProductionPackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryNuGetProductionWebServerDevelopmentPackageNameConfigRootKey']                    = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryNuGetProductionWebServerQualityAssurancePackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryNuGetProductionWebServerQualityAssurancePackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageNameConfigRootKey']                     = $global:settings[$global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryPowershellGetFilesystemDevelopmentPackageNameConfigRootKey']                     = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemDevelopmentPackagePathConfigRootKey']]
+  $global:configRootKeys['RepositoryPowershellGetFilesystemQualityAssurancePackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemQualityAssurancePackagePathConfigRootKey']]
+  $global:configRootKeys['RepositoryPowershellGetFilesystemProductionPackageNameConfigRootKey']                      = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemProductionPackagePathConfigRootKey']]
+  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']      = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey'] = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerProductionPackageNameConfigRootKey']       = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryPowershellGetProductionWebServerDevelopmentPackageNameConfigRootKey']            = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerDevelopmentPackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryPowershellGetProductionWebServerQualityAssurancePackageNameConfigRootKey']       = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerQualityAssurancePackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryPowershellGetProductionWebServerProductionPackageNameConfigRootKey']             = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerProductionPackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryChocolateyFilesystemDevelopmentPackageNameConfigRootKey']                        = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemDevelopmentPackagePathConfigRootKey']]
+  $global:configRootKeys['RepositoryChocolateyFilesystemQualityAssurancePackageNameConfigRootKey']                   = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemQualityAssurancePackagePathConfigRootKey']]
+  $global:configRootKeys['RepositoryChocolateyFilesystemProductionPackageNameConfigRootKey']                         = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemProductionPackagePathConfigRootKey']]
+  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']         = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey']    = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerProductionPackageNameConfigRootKey']          = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryChocolateyProductionWebServerDevelopmentPackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerDevelopmentPackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryChocolateyProductionWebServerQualityAssurancePackageNameConfigRootKey']          = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerQualityAssurancePackageURIConfigRootKey']]
+  $global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageURIConfigRootKey']]
+}
+
+# ToDo: Fix this temporary thingy
+$global:settings[$global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']] = 'JenkinsAgentSrvAcct'
+$global:settings[$global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']] = 'JenkinsContrlSrvAcct'
+
+
+# set ISElevated in the global settings if this script is running elevated
+#$global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+
+'@)
+  Set-Content -Path 'C:/Temp/T1.ps1' -Value $sb.ToString()
+}
 
 ########################################################
-# Machine-wide PowerShell Profile
+# Create the Machine-wide PowerShell Profile
 ########################################################
 
 # [powerShell ReadMe](src\ATAP.Utilities.Powershell\Documentation\ReadMe.md)
@@ -44,6 +193,41 @@ $VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
 ########################################################
 
 #region Functions needed by the machine profile, must be defined in the profile, or dot-sourced
+# ToDo: move to a fileio package, improve error and OperatingSystem handling
+function Join-PathNoResolve {
+  param(
+    [ValidateNotNullorEmpty()][string] $Path
+    , [ValidateNotNullorEmpty()][string] $ChildPath
+    , [string[]] $AdditionalPaths
+    , [char] $DirectorySeparatorChar = [IO.Path]::DirectorySeparatorChar
+  )
+  $result = ''
+  $numCharacters = $(Measure-Object -InputObject $Path -Character).Characters
+  if ($numCharacters -eq 1) {
+    # if Path has just 1 character, use Join-Path
+    $result = Join-Path $Path $ChildPath $AdditionalPaths
+  }
+  elseif ($Path.Substring(1, 1) -ne ':') {
+    # if Path doesn't start with a Drive letter, then use Join-Path
+    $result = Join-Path $Path $ChildPath $AdditionalPaths
+  }
+  else {
+    # Path starts with a drive letter (because it has ':' as second character) so we can't use join-path for the $Path portion, have to emulate it's behaviour
+    # The $DirectorySeparatorChar to use depends on the parameter
+    if ($Path.Substring($numCharacters - 1, 1) -eq $DirectorySeparatorChar) {
+      # However, we can use join-path for the second and remainder arguments
+      $result = "$($Path)$($DirectorySeparatorChar)$(Join-Path $ChildPath $AdditionalPaths)"
+      # ToDo: replace $DirectorySeparatorChar used by Join-Path if there is a parameter $DirectorySeparatorChar and it differes from the current OS's DirectorySeparatorChar
+    }
+    else {
+      # second character in $Path is not ':' so we can use join-path
+      $result = "$($Path)$(Join-Path $ChildPath $AdditionalPaths)"
+    }
+  }
+  $result
+}
+
+
 function Write-ArrayIndented {
   param ($a, $indent, $indentIncrement)
   $outstr = ' ' * $indent
@@ -124,7 +308,7 @@ Function Write-EnvironmentVariablesIndented {
       $envVarHashTable.Keys | Sort-Object | ForEach-Object { $key = $_
         if ($key -eq 'path') {
           $outstr += ' ' * $initialIndent + $key + ' (' + $scope + ') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
-          $($($($envVarHashTable[$key] -split [IO.Path]::PathSeparator)|sort-object) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )
+          $($($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) | Sort-Object) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )
         }
         else {
           $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] + '  [' + $scope + ']' + [Environment]::NewLine
@@ -449,46 +633,6 @@ $matchPatternRegex = [System.Text.RegularExpressions.Regex]::new( 'global:settin
 # From the various source collections create the final global:settings
 Get-CollectionTraverseEvaluate -SourceCollections $sourceCollections -destination $global:Settings -matchPatternRegex $matchPatternRegex
 
-# until Get-CollTravEval handles arrays and hashs, add them manuallay, and don't use indirect
-# # Set the global PackageRepositoriesCollection
-$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']] = @{
-  $global:configRootKeys['RepositoryNuGetFilesystemDevelopmentPackageNameConfigRootKey']                             = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemDevelopmentPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetFilesystemQualityAssurancePackageNameConfigRootKey']                        = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemQualityAssurancePackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetFilesystemProductionPackageNameConfigRootKey']                              = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemProductionPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']              = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey']         = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerProductionPackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetProductionWebServerDevelopmentPackageNameConfigRootKey']                    = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetProductionWebServerQualityAssurancePackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryNuGetProductionWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageNameConfigRootKey']                     = $global:settings[$global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetFilesystemDevelopmentPackageNameConfigRootKey']                     = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemDevelopmentPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetFilesystemQualityAssurancePackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemQualityAssurancePackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetFilesystemProductionPackageNameConfigRootKey']                      = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemProductionPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']      = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey'] = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerProductionPackageNameConfigRootKey']       = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetProductionWebServerDevelopmentPackageNameConfigRootKey']            = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetProductionWebServerQualityAssurancePackageNameConfigRootKey']       = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetProductionWebServerProductionPackageNameConfigRootKey']             = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyFilesystemDevelopmentPackageNameConfigRootKey']                        = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemDevelopmentPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyFilesystemQualityAssurancePackageNameConfigRootKey']                   = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemQualityAssurancePackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyFilesystemProductionPackageNameConfigRootKey']                         = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemProductionPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']         = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey']    = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerProductionPackageNameConfigRootKey']          = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyProductionWebServerDevelopmentPackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyProductionWebServerQualityAssurancePackageNameConfigRootKey']          = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageURIConfigRootKey']]
-}
-
-# ToDo: Fix this temporary thingy
-$global:settings[$global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']] =   'JenkinsAgentSrvAcct'
-$global:settings[$global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']] =   'JenkinsContrlSrvAcct'
-
-
-# set ISElevated in the global settings if this script is running elevated
-$global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
-
 # Opt Out of the dotnet telemetry
 [Environment]::SetEnvironmentVariable('DOTNET_CLI_TELEMETRY_OPTOUT', 1, 'Process')
 
@@ -534,5 +678,6 @@ $DebugPreference = 'SilentlyContinue'
 Write-PSFMessage -Level Debug -Message ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
 Write-PSFMessage -Level Debug -Message ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
 $DebugPreference = 'SilentlyContinue'
+
 
 

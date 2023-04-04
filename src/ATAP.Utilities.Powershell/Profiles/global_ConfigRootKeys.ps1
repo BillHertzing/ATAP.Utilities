@@ -63,6 +63,9 @@ $global:configRootKeys = @{
   'AnsibleHostNamesConfigRootKey'                                                                = 'AnsibleHostNames'
   'AnsibleRoleNamesConfigRootKey'                                                                = 'AnsibleRoleNames'
 
+  # Used by Jenkins
+  'JenkinsControllerServiceAccountConfigRootKey' = 'JenkinsControllerServiceAccount'
+  'JenkinsAgentServiceAccountConfigRootKey' = 'JenkinsAgentServiceAccount'
 
   # Computer roles (used in the JenkinsNodeRoles)
   'WindowsCodeBuildConfigRootKey'                                                                = 'WindowsCodeBuild'

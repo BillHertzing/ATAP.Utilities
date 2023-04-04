@@ -27,16 +27,16 @@ $defaultPerRoleSettings = @{
   }
   'JenkinsControllerServers' = @{
     # Should only be set per machine if the machine is a Jenkins Controller Node
-    $global:configRootKeys['JENKINS_HOMEConfigRootKey'] = 'C:/Dropbox'
-
+    $global:configRootKeys['JENKINS_HOMEConfigRootKey']                    = 'C:/Dropbox'
+    $global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']  = 'JenkinsContrlSrvAcct'
 
   }
-  'JenkinsClientServers'     = @{
+  'JenkinsAgentServers'     = @{
     # Jenkins CI/CD confguration keys
     # These used to access a Jenkins Controller and Authenticate
-    $global:configRootKeys['JENKINS_URLConfigRootKey']       = 'http://utat022:4040/'
-    $global:configRootKeys['JENKINS_USER_IDConfigRootKey']   = 'whertzing'
-    $global:configRootKeys['JENKINS_API_TOKENConfigRootKey'] = '117e33cc37af54e0b4fc6cb05de92b3553' # the value from the configuration page ToDo: use Secrets GUID/file
+    $global:configRootKeys['JENKINS_URLConfigRootKey']                 = 'http://utat022:4040/'
+    $global:configRootKeys['JENKINS_USER_IDConfigRootKey']             = 'whertzing'
+    $global:configRootKeys['JENKINS_API_TOKENConfigRootKey']           = '117e33cc37af54e0b4fc6cb05de92b3553' # the value from the configuration page ToDo: use Secrets GUID/file
 
 
   }
@@ -84,7 +84,7 @@ else {
 # Determine the roles that this computer belongs to
 # populate global:settings with role settings that apply to this computer's
 
-$defaultHash =  $defaultPerRoleSettings
+$defaultHash = $defaultPerRoleSettings
 $forThisComputer = @('common')
 $globalHash = $global:PerRoleSettings
 
@@ -93,7 +93,7 @@ for ($index = 0; $index -lt $forThisComputer.count; $index++) {
   $keys = $defaultHash[$forThisComputer[$index]].Keys
   foreach ($key in $keys ) {
     # ToDo error handling if one fails
-    $globalHash[$key] =  $($defaultHash[$forThisComputer[$index]])[$key]
+    $globalHash[$key] = $($defaultHash[$forThisComputer[$index]])[$key]
   }
 }
 

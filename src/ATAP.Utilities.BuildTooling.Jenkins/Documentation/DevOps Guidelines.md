@@ -132,7 +132,7 @@ ToDo: install a formatter for Jenkinsfile
 
 You can also capture the value by visiting the Instance Identity page, at something like "https://myjenkins.example.com/instance-identity".
 
-### Configuring the Agent as a Windows Service
+### Configuring the Agent as a Windows Service using WinSW
 
 [Jenkins : Installing Jenkins as a Windows service](https://wiki.jenkins.io/display/JENKINS/Installing+Jenkins+as+a+Windows+service)
 
@@ -141,10 +141,10 @@ You can also capture the value by visiting the Instance Identity page, at someth
 
 Name of Windows User account used to run the Jenkins Controller service is `JenkinsControllerSrvAcc`, password is stored as a secret somewhere (toDo: Create secrets files (encrypted) somewhere on dropbox not in github). Temporary value is `NotSecret`
 
-Name of Windows User account  used to run the Jenkins Client service is `JenkinsClientSrvAcc`, password Temporary value is `NotSecret`, used in the service as "LogOnAs"
+Name of Windows User account used to run the Jenkins Agent service is found in the setting `$($global:settings[$global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']])`, password Temporary value is `NotSecret`, used in the service as "LogOnAs"
 
--  Download the WinSW executable, and rename it to `JenkinsCient-<Client Version>-<DotNetDesktopframeworkVersion>.exe`
--  Create the file `JenkinsCient-<Client Version>-<DotNetDesktopFrameworkVersion>.xml`, populate it as follows:
+-  Download the WinSW executable, and rename it to `JenkinsAgent-<Client Version>-<DotNetDesktopframeworkVersion>.exe`
+-  Create the file `JenkinsAgent-<Client Version>-<DotNetDesktopFrameworkVersion>.xml`, populate it as follows:
 
 ``` xml
 <service>
@@ -174,16 +174,16 @@ Name of Windows User account  used to run the Jenkins Client service is `Jenkins
 </service>
 ```
 
-Note that the Java.exe does not specify a path. Instead it will use the first java.exe found in the process's `$env:Path`
+Note that the Java.exe does not specify a path. Instead it will use the first java.exe found in the process's `$env:Path`. This is based on the machine profile and the user rpofile for `JenkinsAgentSrvAcct`
 The configuration specifies that the agent jar file is found exactly at
-The jnlpURL argument is  using http (willswitch to https when Jenkins Controller is configured with a SSL certificate)
+The jnlpURL argument is  using http (TBD switch to https when Jenkins Controller is configured with a SSL certificate)
 The 'secret' comes from the node configuration page
-The WorkDir should depend on the current nodes global settings
+The WorkDir should depend on the current node's global settings
 
 Start an administrator Powershell terminal session
 Change to the directory `C:\JenkinsAgentNode` and run the command `.\Jenkins-client-2.9.0-net461.exe Install` (use `.\Jenkins-client-2.9.0-net461.exe Uninstall` first, if a service already exists and you are chaning its configuration)
 
-## Starting an Agent
+## Starting an Agent from the command line
 
 [Launching inbound agents](https://github.com/jenkinsci/remoting/blob/master/docs/inbound-agent.md)
 
@@ -248,6 +248,8 @@ Follow these steps:
 1) Paste the above script in the text box and click Run
 
 Also try variations on the below script... Will work for default workspace as well
+
+TBD use CustomWorkDirPath instead of hardcoded.
 
 ```Groovy
 pipeline {
@@ -327,7 +329,7 @@ Since the Jenkinsfile has already built the code and the tests, add the followin
 
 ### Where to put the test results
 
---results-directory <RESULTS_DIR>   default is `TestResults` subdirectory in the directory that contains the project file
+--results-directory <RESULTS_DIR>   default is `TestResults` subdirectory in the `_generated` subdirectory alongside the project file
 
 ### Runtime Identifier
 
@@ -361,4 +363,4 @@ The post build cleanup stage should include a step that removes generated `.puml
 
 ToDo: Better would be to put all generated files in a tree structure located somewhere below _generated, and then convert each to an asset and write that asset to the correct subdir under _site/assets, such that the subdir matches the subdir where the source code was found
 
-C2Plantuml puts one .puml file for each class/interface/etc. found in a compilation unit into the directory alongside the compilation unit. ToDo: move these to a identical tree under _generated. Convert each to an asset and put them into the correct subdir under _site/assets. Have a build step create a `,compilationunit>.md file, and populate it with a link to each assets that came from the original source file
+C2Plantuml puts one .puml file for each class/interface/etc. found in a compilation unit into the directory alongside the compilation unit. ToDo: move these to a identical tree under _generated. Convert each to an asset and put them into the correct subdir under _site/assets. Have a build step create a `<compilationunit>.md file, and populate it with a link between each svg asset and the original source code file from which it was generated

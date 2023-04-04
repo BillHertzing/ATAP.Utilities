@@ -8,9 +8,15 @@
 
 ### Jenkins Service accounts and password
 
+Both the Jenkins Controller and the Jenkins Agent run as Windows services. In keeping with best practices. Services should execute under a named service account. In the ATAP organization, named service accounts execute Powershell 7 as their default session, and these sessions run both the local machine profile and a per-user profile. Installation of Jenkins starts with the creation of the two service accounts and ensuring that their default shells are properly setup.
+
+The Ansible Roles `RoleJenkinsController` and `RoleJenkinsAgent` will automate the process to install a Jenkins Controller and a Jenkins Agent. The `RoleJenkinsAgent` is part of the `CI/CDHosts` group, meaning any hosts assigned to that group will run that role.
+
 #### Jenkins Controller service account
 
-The machine running the Jenkins Controller needs a local user (service account) under which the Jenkins Controller service will run.
+The settings key for the name of the Jenkins Controller service account is `$settings[$global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']]`
+The host running the Jenkins Controller needs a local user (service account) under which the Jenkins Controller service will run.
+
    run `lusrmgr.msc`
 
 I chose `JenkinsControllerSrvAcc` and password `Notsecret`. ToDo: implement Secrets file for recording the JenkinsServiceAccount password for each machine running Jenkins
@@ -20,6 +26,8 @@ Create the new user via `Computer Management->Local Users And Groups->Users->New
 The `JenkinsControllerSrvAcc` must be granted the `logon as a service` right. use `gpedit.msc`, drill down on ` Computer Configuration\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Log on as a service` and add the `JenkinsControllerSrvAcc` to the existing list of users
 
 #### Jenkins Controller service account
+
+The settings key for the name of the Jenkins Agent service account is `$settings[$global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']]`
 
 Every machine in the cluster that runs a Jenkins build agent needs a local user (service account) under which the Jenkins Agent service will run.
 

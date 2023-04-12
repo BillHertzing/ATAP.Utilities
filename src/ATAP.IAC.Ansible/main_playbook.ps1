@@ -116,7 +116,7 @@ Set-Content -Path $Path -Value $ymlContents
 
 # - name: debug variables
 #   debug:
-#     msg: "hostvars are {{ hostvars[inventory_hostname] }} groupNameis {{ item }}  }} "
+#     msg: "ars are {{ hostvars[inventory_hostname] }} groupNameis {{ item }}  }} "
 #   loop: "{{ hostvars[inventory_hostname].group_names }}"
 
 # - name remove all from groups

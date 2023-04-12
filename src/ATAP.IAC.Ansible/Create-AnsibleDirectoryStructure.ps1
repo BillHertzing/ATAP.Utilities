@@ -175,11 +175,19 @@ for ($index = 0; $index -lt $($inventoryFileNames.Keys).count; $index++) {
   Set-Content -Path $inventoryDestinationPath -Value $(Get-Content $($inventoryFileNames[$index]).source)
 }
 
-# Create group_vars files
-& "$projectBaseDirectory\keyed_vars.ps1" $($ymlTemplate -replace '\{1}', 'group_vars') $(Join-Path $baseDirectory 'group_vars') $defaultPerGroupSettings $groupNames
+# [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)
+# Combine the source collections, transform them, and create the destination collection
+# Dot source the list of configuration keys
+. "$PSHOME/global_ConfigRootKeys.ps1"
+# Dot source the HostSettings
+. "$PSHOME/HostSettings.ps1"
 
 # Create host_vars files
-& "$projectBaseDirectory\keyed_vars.ps1" $($ymlTemplate -replace '\{1}', 'host_vars') $(Join-Path $baseDirectory 'host_vars') $defaultPerMachineSettings $hostNames
+& "$projectBaseDirectory\host_vars.ps1" $($ymlTemplate -replace '\{1}', 'host_vars') $(Join-Path $baseDirectory 'host_vars') $defaultPerMachineSettings $hostNames
+
+# Group_Vars are currently unused, all vars are in host_vars
+# Create group_vars files
+# & "$projectBaseDirectory\keyed_vars.ps1" $($ymlTemplate -replace '\{1}', 'group_vars') $(Join-Path $baseDirectory 'group_vars') $defaultPerGroupSettings $groupNames
 
 # Create the main playbook, which goes into the base directory. because the `roles` subdirectory and playbooks subdirectory should be relative to the main playbook
 & "$projectBaseDirectory\main_playbook.ps1" $($ymlTemplate -replace '\{1}', 'plays') $(Join-Path $baseDirectory $mainPlaybookName) $ansibleInventory $playbooksSubdirectory
@@ -323,9 +331,6 @@ for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex
   # }
 }
 
-# Set the collections used by Create-AnsibleDirectoryStructure.ps1
-# $global:settings[$global:configRootKeys['AnsibleHostNamesConfigRootKey']] = ('ncat041', 'ncat-ltb1', 'ncat-ltjo', 'ncat044', 'utat01', 'utat022')
-# $global:settings[$global:configRootKeys['AnsibleGroupNamesConfigRootKey']] = ('all', 'Windows', 'WSL2Ubuntu')
 # The Windows group is affiliated with many roles. A large set of those roles have a one-to-one relationship with software package/versions installed by chocolatey
 
 # simalrly, the WSL2Ubuntu group is affiliated with a large set of roles that have a one-to-one rleationship with software package/versions installed by apt-get
@@ -333,20 +338,6 @@ for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex
 # The Windows group has roles that are related to Powershell Package Management
 # The instersection of the Windows group and other groups, e.g. webserver or dbserver. invoke roles with
 
-# Define the global:settings for
-# create an ansible role for each package installed by chocolatey
-# group the chocolatey packages by inventory goup
-# create the ansible roles for the Windows group
-# $global:settings[$global:configRootKeys['AnsibleRoleNamesConfigRootKey']] = @()
-# for ($groupIndex = 0; $groupIndex -lt $global:settings[$global:configRootKeys['AnsibleGroupNamesConfigRootKey']].count; $groupIndex++) {
-#   for ($packageIndex = 0; $packageIndex -lt $global:settings[$global:configRootKeys['ChocolateyPackagesConfigRootKey']].count; $packageIndex++) {
-#   $packageName = $($global:settings[$global:configRootKeys['ChocolateyPackagesConfigRootKey']])[$packageIndex]
-#   if ($($global:settings[$global:configRootKeys['AnsibleGroupNamesConfigRootKey']])[$groupIndex] -eq 'Windows') {
-#     $($global:settings[$global:configRootKeys['ChocolateyPackagesConfigRootKey']])[$($global:settings[$global:configRootKeys['AnsibleGroupNamesConfigRootKey']])[$groupIndex]] = @('cpu-z', 'gpu-z')
-#   }
-#   $global:settings[$global:configRootKeys['AnsibleRoleNamesConfigRootKey']] += "Incorporates$packageName"
-# }}
-# $global:settings[$global:configRootKeys['AnsibleRoleNamesConfigRootKey']] +=  'IncorporatesNuGetPackageProvider' #,'common', 'AnsibleServers', 'BuildServers', 'JenkinsControllerServers', 'JenkinsAgentServers', 'QualityAssuranceServers', 'WebServers', 'DatabaseServers' )
 
 
 # # define all the possible group_var values

@@ -6,7 +6,7 @@ param (
   , [hashtable] $parsedInventory
 )
 
-$groupNames = $($parsedInventory.GroupNames.Keys) # enclosing the keycollection returned by .Keys inside a subexpressions converts it to an array of strings
+$groupNames = $($parsedInventory.GroupNames.Keys) # enclosing the keycollection returned by .Keys inside a subexpression converts it to an array of strings
 $roleName = 'AnsibleSetup'
 
 $addedParametersScriptblock = { if ($addedParameters) {

@@ -42,7 +42,7 @@ function ContentsDefaults {
   ServiceAccountFullname: Jenkins Controller Service Account
   ServiceAccountDescription: User under which the Jenkins Agent Windows service runs
   # groups:
-  ServiceAccountPasswordFromAnsibleVault : insecure
+  ServiceAccountPasswordFromAnsibleVault : $($global:settings[$global:configRootKeys['JenkinsAgentServiceAccountPasswordConfigRootKey']])
 
   WinSWLocalPath: "C:\\WinSW"
 

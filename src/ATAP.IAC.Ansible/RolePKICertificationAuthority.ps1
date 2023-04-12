@@ -25,7 +25,7 @@ function ContentsTask {
   # ToDo Validate the ATAP.Utilities.Security.Powershell module is available
 - name: Create the directory structure for a PKI Certificate Authority
   ansible.windows.win_file:
-    path: {{ SecurePKICloudBasePath }}
+    path: {{  $global:configRootKeys['SecureCertificatesBasePathConfigRootKey'] }}
     state: directory
 
 - name: Copy the various Certificate Configuration Files

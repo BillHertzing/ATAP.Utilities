@@ -32,39 +32,44 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
 Function Join-PathNoResolve {
-  [CmdletBinding(SupportsShouldProcess = $true)]
+  [CmdletBinding()]
   param (
     # ToDo: Paramter set to suport LiteralPath
+    # ToDo: replace $DirectorySeparatorChar used by Join-Path if there is a parameter $DirectorySeparatorChar and it differs from the current OS's DirectorySeparatorChar
     # [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $Path
     [ValidateNotNullorEmpty()][string] $Path
     , [ValidateNotNullorEmpty()][string] $ChildPath
-    , [string[]] $AdditionalPaths
+    , [string[]] $AdditionalChildPath
     , [char] $DirectorySeparatorChar = [IO.Path]::DirectorySeparatorChar
   )
-  $result = ''
   $numCharacters = $(Measure-Object -InputObject $Path -Character).Characters
   if ($numCharacters -eq 1) {
     # if Path has just 1 character, use Join-Path
-    $result = Join-Path $Path $ChildPath $AdditionalPaths
+    return Join-Path $Path $ChildPath $AdditionalChildPath
   }
   elseif ($Path.Substring(1, 1) -ne ':') {
     # if Path doesn't start with a Drive letter, then use Join-Path
-    $result = Join-Path $Path $ChildPath $AdditionalPaths
+    return Join-Path $Path $ChildPath $AdditionalChildPath
   }
   else {
     # Path starts with a drive letter (because it has ':' as second character) so we can't use join-path for the $Path portion, have to emulate it's behaviour
     # The $DirectorySeparatorChar to use depends on the parameter
-    if ($Path.Substring($numCharacters - 1, 1) -eq $DirectorySeparatorChar) {
-      # However, we can use join-path for the second and remainder arguments
-      $result = "$($Path)$($DirectorySeparatorChar)$(Join-Path $ChildPath $AdditionalPaths)"
-      # ToDo: replace $DirectorySeparatorChar used by Join-Path if there is a parameter $DirectorySeparatorChar and it differes from the current OS's DirectorySeparatorChar
+    # Does $Path end with $DirectorySeparatorChar, if not, add a $DirectorySeparatorChar to the end of $Path
+    if ($Path.Substring($numCharacters - 1, 1) -ne $DirectorySeparatorChar) { $Path += '/' }
+    # However, we can use join-path to join the ChildPath and AdditionalChildPath if there is a AdditionalChildPath
+    if ($AdditionalChildPath) {
+      if ($AdditionalChildPath.count -eq 1) {
+        return "$($Path)$(Join-Path $ChildPath $AdditionalChildPath[0])"
+      }
+      else {
+        return "$($Path)$(Join-Path $ChildPath $AdditionalChildPath[0] $AdditionalChildPath[1..($AdditionalChildPath.Count-1)])"
+      }
     }
     else {
-      # second character in $Path is not ':' so we can use join-path
-      $result = "$($Path)$(Join-Path $ChildPath $AdditionalPaths)"
+      return "$($Path)$ChildPath"
     }
   }
-  $result
+  
 }
 #endregion Join-PathNoResolve
 #############################################################################

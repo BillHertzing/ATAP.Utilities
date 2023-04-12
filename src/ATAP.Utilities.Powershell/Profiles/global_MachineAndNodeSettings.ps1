@@ -235,8 +235,6 @@ $($global:settings[$global:configRootKeys["RepositoryChocolateyProductionWebServ
   $global:configRootKeys['GeneratedStaticSiteDocumentationDestinationPathConfigRootKey']                                 = Join-Path '_generated' 'Documentation' 'StaticSite'
 
   $global:configRootKeys['ENVIRONMENTConfigRootKey']                                                                     = $inProcessEnvironmentVariable
-  # ToDo: support arrays in the creation of the global:settings
-  # ToDo: $global:configRootKeys['AnsibleHostNamesConfigRootKey']                                                                = ('ncat041', 'ncat-ltb1', 'ncat-ltjo', 'ncat044', 'utat01', 'utat022')
 }
 
 

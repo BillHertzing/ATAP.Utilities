@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-Create a fully expanded profile for a specific hostname, based on the AllUsersAllHostsV7Core_Template file
+Create a fully expanded profile for a specific hostname, based on the AllUsersAllHostsV7Core_Template file.
+The Ansible WindosHosts group playbook uses this file to create/update the machine profile for each host
 .DESCRIPTION
 This is the common machine profile. It provides global and environment variables that hold the machine specific settings
 This is for All Users, All Hosts, Powershell Core V7
-
 Details in [powerShell ReadMe](src\ATAP.Utilities.Powershell\Documentation\ReadMe.md)
 
 .INPUTS
@@ -44,129 +44,66 @@ function Create-AllUsersAllHostsV7CoreProfile {
   }
 
   # Until ATAP.Utilities.Powershell is a module in the $PSModulePath, import the function
-  . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Join-PathNoResolve.ps1'
-  
+  . $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Join-PathNoResolve.ps1'))
+
+
+  # Dot source the list of configuration keys
+# Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+. "$PSScriptRoot/global_ConfigRootKeys.ps1"
+# Print the global:ConfigRootKeys if Debug
+Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
+
+# [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)
+
+# Dot source the Security and Secrets settings
+# Security and Secrets setting .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+. "$PSScriptRoot/global_SecurityAndSecretsSettings.ps1"
+# Print the global:SecurityAndSecretsSettings if Debug
+Write-PSFMessage -Level Debug -Message ('global:SecurityAndSecretsSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:SecurityAndSecretsSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+
+# Dot source the common machine settings
+# MachineAndNodeSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+. $PSScriptRoot/global_MachineAndNodeSettings.ps1
+# Print the global:MachineAndNodeSettings if Debug
+Write-PSFMessage -Level Debug -Message ('global:MachineAndNodeSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:MachineAndNodeSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+
+# Dot source the PerGroupSettings
+# PerGroupSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+. $PSScriptRoot/global_PerGroupSettings.ps1
+# Print the global:PerGroupSettings FOR THIS HOST if Debug
+Write-PSFMessage -Level Debug -Message ('global:global_PerGroupSettings (for ' + $hostname + '):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerGroupSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+
+# Dot source the PerRoleSettings
+# PerRoleSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+. $PSScriptRoot/global_PerRoleSettings.ps1
+# Print the global:PerRoleSettings FOR THIS HOST if Debug
+Write-PSFMessage -Level Debug -Message ('global:global_PerRoleSettings (for ' + $hostname + '):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerRoleSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+
+# Dot source the PerMachineSettings
+# PerMachineSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+. $PSScriptRoot/global_PerMachineSettings.ps1
+# Print the global:PerMachineSettings FOR THIS HOST if Debug
+Write-PSFMessage -Level Debug -Message ('global:PerMachineSettings (for ' + $hostname + '):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerMachineSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+
+
+
   [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
+  Get-CollectionTraverseEvaluate -sourceCollections $SourceCollections -destination $DestinationCollection -matchPatternRegex $MatchPatternRegex
 
   [void]$sb.Append(@'
 
-$global:settings[$global:configRootKeys['DropBoxBasePathConfigRootKey']]         = $DropboxBase
-$global:settings[$global:configRootKeys['GoogleDriveBasePathConfigRootKey']]     = 'Dummy' # Join-Path ([System.IO.DriveInfo]::GetDrives() | Where-Object { $_.VolumeLabel -eq 'Google Drive' } | Select-Object -ExpandProperty 'Name') 'My Drive'
-$global:settings[$global:configRootKeys['OneDriveBasePathConfigRootKey']]        = 'Dummy' # 'C:/OneDrive/'
-# This is the default cloud provider's manifestation
-$global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']]           = $generalCloudBase
-# varous temporary directories
-$global:settings[$global:configRootKeys['FastTempBasePathConfigRootKey']]        = $generalTempBase
-$global:settings[$global:configRootKeys['BigTempBasePathConfigRootKey']]         = $generalTempBase
-$global:settings[$global:configRootKeys['SecureTempBasePathConfigRootKey']]      = Join-PathNoResolve $generalTempBase 'Insecure'
-# Chocolatey settings on this host
-$global:settings[$global:configRootKeys['ChocolateyCacheLocationConfigRootKey']] = Join-PathNoResolve $generalTempBase 'ChocolateyCache'
-# ansible settings on this host
-$global:settings[$global:configRootKeys['ansible_remote_tmpConfigRootKey']]      = Join-PathNoResolve $generalTempBase 'Ansible'
+  ########################################################
+# Machine-wide PowerShell Profile
+########################################################
 
-$global:settings[$global:configRootKeys['ansible_become_userConfigRootKey']]     = 'whertzing'
+# [powerShell ReadMe](src\ATAP.Utilities.Powershell\Documentation\ReadMe.md)
+# On most windows machines, $PSHome is at C:/Program Files/Powershell/7
 
-# Where all things Security and Secrets related are stored on the filesystem
-$global:settings[$global:configRootKeys['SECURE_CLOUD_BASE_PATHConfigRootKey']]  = Join-PathNoResolve $generalCloudBase  "Security"
-
-  # OpenSSL Environment variables
-$global:settings[$global:configRootKeys['OPENSSL_HOMEConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "OpenSSL"'
-$global:settings[$global:configRootKeys['OPENSSL_CONFConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["OPENSSL_HOMEConfigRootKey"]] "AUdefault.cnf"'
-$global:settings[$global:configRootKeys['RANDFILEConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "OpenSSL" "RandomKeySeed"'
-
-
-  # Related to Certificate Security
-  #  In general, places where the files that are used to create certifictes are found
-$global:settings[$global:configRootKeys['SecureCertificatesBasePathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "Certificates"'
-$global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureCertificatesBasePathConfigRootKey"]] "EncryptionPassPhraseFiles"'
-$global:settings[$global:configRootKeys['SecureCertificatesEncryptedKeysPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureCertificatesBasePathConfigRootKey"]] "EncryptedKeys"'
-$global:settings[$global:configRootKeys['SecureCertificatesCertificateRequestsPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureCertificatesBasePathConfigRootKey"]] "CertificateRequests"'
-$global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureCertificatesBasePathConfigRootKey"]] "Certificates"'
-$global:settings[$global:configRootKeys['SecureCertificatesDataEncryptionCertificatesPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureCertificatesCertificatesPathConfigRootKey"]] "DECs"'
-  # Use this if special purpose openSSL configuration files are needed
-$global:settings[$global:configRootKeys['SecureCertificatesOpenSSLConfigsPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureCertificatesBasePathConfigRootKey"]] "CertificateRequestConfigs"'
-  # Use this if obfuscation of file names is desired
-$global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]  = 'CrossReference.txt'
-
-  #  These define where a Certificate Authority (CA) keeps the records of the CSRs it is given, and a copy of each Certificate it creates and sign
-  #$global:configRootKeys['SecureCertificatesSigningCertificatesPrivateKeysRelativePathConfigRootKey']]  = "'PrivateKeys'"
-  #$global:configRootKeys['SecureCertificatesSigningCertificatesNewCertificatesRelativePathConfigRootKey']]  ="'NewCertificates'"
-$global:settings[$global:configRootKeys['SecureCertificatesSigningCertificatesCertificatesIssuedDBRelativePathConfigRootKey']]  = 'CertificateIssuedDB.txt'
-  #$global:configRootKeys['SecureCertificatesSigningCertificatesSerialNumberRelativePathConfigRootKey']]  = '"CertificateSerialNumber.txt"'
-
-  # These define the latter portion of certificate-related filename (used as the parameter -BaseFileName)
-$global:settings[$global:configRootKeys['SecureCertificatesCAPassPhraseFileBaseFileNameConfigRootKey']]  = 'CAPassPhraseFile.txt'
-$global:settings[$global:configRootKeys['SecureCertificatesCAEncryptedPrivateKeyBaseFileNameConfigRootKey']]  = 'CAEncryptedPrivateKey.pem'
-$global:settings[$global:configRootKeys['SecureCertificatesCACertificateBaseFileNameConfigRootKey']]  = 'CACertificate.crt'
-$global:settings[$global:configRootKeys['SecureCertificatesSSLServerPassPhraseFileBaseFileNameConfigRootKey']]  = 'SSLServerPassPhraseFile.txt'
-$global:settings[$global:configRootKeys['SecureCertificatesSSLServerEncryptedPrivateKeyBaseFileNameConfigRootKey']]  = 'SSLServerEncryptedPrivateKey.pem'
-$global:settings[$global:configRootKeys['SecureCertificatesSSLServerCertificateRequestBaseFileNameConfigRootKey']]  = 'SSLServerCertificateRequest.csr'
-$global:settings[$global:configRootKeys['SecureCertificatesSSLServerCertificateBaseFileNameConfigRootKey']]  = 'SSLServerCertificate.crt'
-$global:settings[$global:configRootKeys['SecureCertificatesCodeSigningPassPhraseFileBaseFileNameConfigRootKey']]  = 'CodeSigningPassPhraseFile.txt'
-$global:settings[$global:configRootKeys['SecureCertificatesCodeSigningEncryptedPrivateKeyBaseFileNameConfigRootKey']]  = 'CodeSigningEncryptedPrivateKey.pem'
-$global:settings[$global:configRootKeys['SecureCertificatesCodeSigningCertificateRequestBaseFileNameConfigRootKey']]  = 'CodeSigningCertificateRequest.csr'
-$global:settings[$global:configRootKeys['SecureCertificatesCodeSigningCertificateBaseFileNameConfigRootKey']]  = 'CodeSigningCertificate.crt'
-
-
-  # Related to SecretManagement
-  #  In general, places where the files that are used to store Secret Vaults are found
-$global:settings[$global:configRootKeys['SecureVaultBasePathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "Vaults"'
-  # Secret Vault key files and encrypted passwords fles (passwords to open the vaults)
-$global:settings[$global:configRootKeys['SecretVaultKeyFilePathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureVaultBasePathConfigRootKey"]] "SecretManagement" "KeyFiles","SecretVaultTestingEncryption.key"'
-$global:settings[$global:configRootKeys['SecretVaultEncryptedPasswordFilePathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureVaultBasePathConfigRootKey"]] "SecretManagement" "EncryptedPasswordFiles","SecretVaultTestingEncryptedPassword.txt"'
-  # $global:configRootKeys['EncryptedMasterPasswordsPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureVaultBasePathConfigRootKey"]] "OMPs.json"'
-  # $global:configRootKeys['ATAPUtilitiesMasterPasswordsPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["EncryptedMasterPasswordsPathConfigRootKey"]] "AUMPs.txt" '#
-  # The specific details of the  Secret Vault module in use
-$global:settings[$global:configRootKeys['SecretVaultExtensionModuleNameConfigRootKey' ]]  = 'SecretManagement.Keepass'
-$global:settings[$global:configRootKeys['SecretVaultNameConfigRootKey' ]]  = 'ThisUsersSecretVault'
-$global:settings[$global:configRootKeys['SecretVaultDescriptionConfigRootKey' ]]  = 'Secrets stored in a secure vault'
-$global:settings[$global:configRootKeys['SecretVaultKeySizeIntConfigRootKey' ]]  = '32'
-$global:settings[$global:configRootKeys['SecretVaultPasswordTimeoutConfigRootKey' ]]  = '300'
-$global:settings[$global:configRootKeys['SecretVaultPathToKeePassDBConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:configRootKeys["SecureVaultBasePathConfigRootKey"]] "KeePass" "Local.ATAP.Utilities.kdbx"'
-
-  # Place to keep things for Disaster recovery
-  # $global:ConfigRootKeys['DisasterRecoveryPathConfigRootKey']]  = 'Join-PathNoResolve $global:settings[$global:ConfigRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "DisasterRecovery"'
-  # ToDo: figure out how to handle USB sticks and what if not plugged in
-$global:settings[$global:ConfigRootKeys['DisasterRecoveryBackupPathConfigRootKey']]  = 'Join-PathNoResolve "C:" "DisasterRecovery"'
-
-
-
-# until Get-CollTravEval handles arrays and hashs, add them manuallay, and don't use indirect
-# # Set the global PackageRepositoriesCollection
-$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']] = @{
-  $global:configRootKeys['RepositoryNuGetFilesystemDevelopmentPackageNameConfigRootKey']                             = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemDevelopmentPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetFilesystemQualityAssurancePackageNameConfigRootKey']                        = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemQualityAssurancePackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetFilesystemProductionPackageNameConfigRootKey']                              = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemProductionPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']              = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey']         = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerProductionPackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetProductionWebServerDevelopmentPackageNameConfigRootKey']                    = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetProductionWebServerQualityAssurancePackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryNuGetProductionWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageNameConfigRootKey']                     = $global:settings[$global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetFilesystemDevelopmentPackageNameConfigRootKey']                     = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemDevelopmentPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetFilesystemQualityAssurancePackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemQualityAssurancePackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetFilesystemProductionPackageNameConfigRootKey']                      = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemProductionPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']      = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey'] = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerProductionPackageNameConfigRootKey']       = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetProductionWebServerDevelopmentPackageNameConfigRootKey']            = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetProductionWebServerQualityAssurancePackageNameConfigRootKey']       = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetProductionWebServerProductionPackageNameConfigRootKey']             = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyFilesystemDevelopmentPackageNameConfigRootKey']                        = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemDevelopmentPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyFilesystemQualityAssurancePackageNameConfigRootKey']                   = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemQualityAssurancePackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyFilesystemProductionPackageNameConfigRootKey']                         = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemProductionPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']         = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey']    = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerProductionPackageNameConfigRootKey']          = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyProductionWebServerDevelopmentPackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyProductionWebServerQualityAssurancePackageNameConfigRootKey']          = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageURIConfigRootKey']]
-}
-
-# ToDo: Fix this temporary thingy
-$global:settings[$global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']] = 'JenkinsAgentSrvAcct'
-$global:settings[$global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']] = 'JenkinsContrlSrvAcct'
-
+# Set these for debugging the profile
+# Don't Print any debug messages to the console
+$DebugPreference = 'SilentlyContinue'
+# Don't Print any verbose messages to the console
+$VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
 
 # set ISElevated in the global settings if this script is running elevated
 #$global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
@@ -342,194 +279,6 @@ Function ValidateTools {
 
 .  $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Security.Powershell', 'public', 'Install-DataEncryptionCertificate.ps1'))
 
-function Add-SecretStoreVault {
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'BuiltIn')]
-  param (
-    # a Name for the vault
-    [string] $Name
-    # a Description for the vault
-    , [string] $Description
-    # The SecretManagement vault extension for the vault
-    , [ValidateScript({ Get-InstalledModule -Name $_ })]
-    [string] $ExtensionVaultModuleName
-    , [Parameter(ParameterSetName = 'KeePass')]
-    [ValidateScript({ Test-Path $_ })]
-    [string] $PathToKeePassDB
-    # a Subject for the DataEncryptionCertificateRequest
-    , [string] $Subject
-    # a SAN for the DataEncryptionCertificateRequest
-    , [string] $SubjectAlternativeName
-    # a template for the DataEncryptionCertificateRequest
-    , [string] $DataEncryptionCertificateRequestConfigPath
-    # A secure place for creating the DataEncryptionCertificateRequest and the DataEncryptionCertificate
-    , [ValidateScript({ Test-Path $_ })]
-    [string] $SecureTempBasePath
-    , [string] $DataEncryptionCertificateRequestFilenameTemplate
-    , [string] $DataEncryptionCertificateFilenameTemplate
-    # Todo: CertificateValidityPeriodUnits, CertificateValidityPeriod
-    # A place to persist the encryption key
-    , [string] $KeyFilePath
-    # Number of bytes in the key
-    , [ValidateSet(16, 24, 32)]
-    [int16] $KeySizeInt
-    # A place to persist the MasterKey for this specific vault
-    , [string] $EncryptedPasswordFilePath
-    # a Secure-String password for the vault
-    , [SecureString] $PasswordSecureString
-    # a password timeout for the vault in seconds
-    , [int32] $PasswordTimeout
-    # Force the creation of the DEC certificate if one exists, overwrite the KeyFilePath if one exists
-    , [switch] $Force
-  )
-  Write-PSFMessage -Level Debug -Message 'Starting Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
-
-  $originalPSBoundParameters = $PSBoundParameters
-
-  # Does a SecretVault by this name already exist
-  if ((Get-SecretVault).Name -eq $Name) {
-    #ToDo: if -Force, Add -confirm for this operation instead of always throwing
-    #Log('Error',"A SecretVault by this name already exists, remove it and retry this operation: $Name")
-    Throw "A SecretVault by this name already exists, remove it and retry this operation: $Name"
-  }
-
-  # This function strings together three operations. The function's parameters are used by different operations
-  #   We create a subset of the PSBoundParameters, and pass just the needed subset to the functions that perform the three operations
-
-  # Construct a new DataEncryptionCertificateRequest file on disk
-  $dataEncryptionCertificateRequestPath = Join-Path $SecureTempBasePath ($DataEncryptionCertificateRequestFilenameTemplate -f $Name)
-  Write-PSFMessage -Level Debug -Message ("dataEncryptionCertificateRequestPath = $dataEncryptionCertificateRequestPath")
-
-  $subsetPSBoundParameters = @{}
-  ('Subject', 'SubjectAlternativeName', 'DataEncryptionCertificateRequestConfigPath', 'Force') | ForEach-Object { $subsetPSBoundParameters[$_] = $originalPSBoundParameters[$_] }
-  New-DataEncryptionCertificateRequest -DataEncryptionCertificateRequestPath $dataEncryptionCertificateRequestPath @subsetPSBoundParameters # Pass this function's parameters to the called function
-  # Construct the $dataEncryptionCertificatePath
-  $dataEncryptionCertificatePath = Join-Path $SecureTempBasePath ($DataEncryptionCertificateFilenameTemplate -f $Name)
-  # Install the -dataEncryptionCertificate for this user on this machine, creating the $dataEncryptionCertificatePath file
-  $DataEncryptionCertificateInstallationResults = $null
-  $subsetPSBoundParameters.Clear()
-  ('Force') | ForEach-Object { $subsetPSBoundParameters[$_] = $originalPSBoundParameters[$_] }
-  if ($PSCmdlet.ShouldProcess($null, "Install-DataEncryptionCertificate -dataEncryptionCertificateRequestPath $dataEncryptionCertificateRequestPath -dataEncryptionCertificatePath $dataEncryptionCertificatePath @subsetPSBoundParameters")) {
-    try {
-      $DataEncryptionCertificateInstallationResults = Install-DataEncryptionCertificate -DataEncryptionCertificateRequestPath $DataEncryptionCertificateRequestPath -dataEncryptionCertificatePath $dataEncryptionCertificatePath @subsetPSBoundParameters # Pass this function's parameters to the called function
-    }
-    catch { # if an exception ocurrs
-      # handle the exception
-      $where = $PSItem.InvocationInfo.PositionMessage
-      $ErrorMessage = $_.Exception.Message
-      $FailedItem = $_.Exception.ItemName
-      #Log('Error',"Install-DataEncryptionCertificate failed with $FailedItem : $ErrorMessage at `n $where.")
-      Throw "Install-DataEncryptionCertificate failed with $FailedItem : $ErrorMessage at `n $where."
-    }
-  }
-  # Get the thumbprint of the certificate just installed : gci cert: -r  -DocumentEncryptionCert
-
-  # CertReq modifies the Subject, replaceing a ';' with a ', '
-  # ToDo: make this a function so it can be easily modified and updated if the behaviour of CertReq changes
-  $modSubject = $Subject -replace ';', ', '
-
-  # ToDo: ponder the possibility that there may be more than one data encryption certificate with the same Subject and SubjectAlternativeName
-  $thumbprint = (Get-ChildItem -Path 'cert:/Current*/my/*' -Recurse -DocumentEncryptionCert | Where-Object { $_.Subject -match "^$modSubject$" }).Thumbprint
-  Write-PSFMessage -Level Debug -Message ("thumbprint = $thumbprint")
-
-  # Encrypt the Password
-  if ($PSCmdlet.ShouldProcess($null, 'Encrypt the Password')) {
-    # ToDo: wrap in a try/catch block
-    $encryptedPassword = ConvertFrom-SecureString -SecureString $PasswordSecureString -AsPlainText | Protect-CmsMessage -To $Thumbprint
-    Write-PSFMessage -Level Debug -Message ("encryptedPassword = $encryptedPassword")
-  }
-
-  # write the encrypted password to the $EncryptedPasswordFilePath
-  $EncryptionKeyBytes = New-Object Byte[] $KeySizeInt
-  [Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($EncryptionKeyBytes)
-  # ToDo: Add whatif
-  #ToDo: Convert to a securestring before writing to the file
-  $EncryptionKeyBytes | Out-File -FilePath $KeyFilePath
-
-  # ToDo import KeyFilePath contents as a secure key
-  $EncryptionKeyData = Get-Content $KeyFilePath
-  # ToDo: Add whatif
-  # ToDo change -key to -securekey
-  $PasswordSecureString | ConvertFrom-SecureString -Key $EncryptionKeyData | Out-File -FilePath $EncryptedPasswordFilePath
-
-  #####
-  # $PasswordSecureString = ConvertTo-SecureString -String '2345' -AsPlainText -Force
-  #####
-  # Create the SecretVault using a SecretStore extension vault, and configre it, in one call
-  # Use different commands based on parameterset
-  $command = $null
-  Write-PSFMessage -Level Debug -Message "ParameterSetName = $($PSCmdlet.ParameterSetName)"
-
-  switch ($PSCmdlet.ParameterSetName) {
-    BuiltIn {
-      $command = "Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = ""$Description""; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }"
-    }
-    KeePass {
-      $command = "Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = ""$Description""; UseMasterPassword = ""$false""; Path = ""$PathToKeePassDB"" }"
-    }
-  }
-  Write-PSFMessage -Level Debug -Message "command = $command"
-  if ($PSCmdlet.ShouldProcess($null, "Register-SecretVault -ModuleName $ExtensionVaultModuleName -VaultParameters @{Authentication='Password';Interaction='None';Password='PasswordSecureStringNotshown';PasswordTimeout=$PasswordTimeout} @subsetPSBoundParameters")) {
-    try {
-      # ToDo: figure out how to pass the UseMasterPassword switch paramter in a $VaultParamter's hash when run as $command via Invoke-Expression
-      #Invoke-Expression $command
-      switch ($PSCmdlet.ParameterSetName) {
-        BuiltIn {
-          Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = $Description; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }
-        }
-        KeePass {
-          Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = $Description; UseMasterPassword = $true; Path = $PathToKeePassDB }
-        }
-      }
-    }
-    catch { # if an exception ocurrs
-      # handle the exception
-      $where = $PSItem.InvocationInfo.PositionMessage
-      $ErrorMessage = $_.Exception.Message
-      $FailedItem = $_.Exception.ItemName
-      #Log('Error',"Register-SecretVault failed with $FailedItem : $ErrorMessage at `n $where.")
-      Throw "Register-SecretVault failed with $FailedItem : $ErrorMessage at `n $where."
-    }
-  }
-
-  $SecretManagementExtensionVaultInfo = @{Name = $Name; EncryptedPassword = $encryptedPassword; Timeout = $PasswordTimeout; Thumbprint = $Thumbprint; Certificate = $dataEncryptionCertificatePath; CertificateValidityPeriod = ''; CertificateValidityPeriodUnits = '' }
-
-  # Unlock the newly created SecretStore vault
-  if ($PSCmdlet.ShouldProcess($null, "Unlock-UsersSecretStore -Name $Name -Dictionary $(Write-HashIndented $SecretManagementExtensionVaultInfo 2 2)")) {
-    try {
-      Unlock-UsersSecretStore -Name $Name -Dictionary $SecretManagementExtensionVaultInfo
-    }
-    catch { # if an exception ocurrs
-      # handle the exception
-      $where = $PSItem.InvocationInfo.PositionMessage
-      $ErrorMessage = $_.Exception.Message
-      $FailedItem = $_.Exception.ItemName
-      #Log('Error',"Unlock-UsersSecretStore failed with $FailedItem : $ErrorMessage at `n $where.")
-      Throw "Unlock-UsersSecretStore Threw an exception with $FailedItem : $ErrorMessage at `n $where."
-    }
-  }
-
-  $SecretVaultTestPassed = $false
-  if ($PSCmdlet.ShouldProcess($null, "Test-SecretVault -Name $Name")) {
-    try {
-      $SecretVaultTestPassed = Test-SecretVault -Name $Name 2>$null # send the Error Output stream to the ol' bitbucket
-    }
-    catch { # if an exception ocurrs
-      # handle the exception
-      $where = $PSItem.InvocationInfo.PositionMessage
-      $ErrorMessage = $_.Exception.Message
-      $FailedItem = $_.Exception.ItemName
-      #Log('Error',"Test-SecretVault failed with $FailedItem : $ErrorMessage at `n $where.")
-      Throw "Test-SecretVault Threw an exception with $FailedItem : $ErrorMessage at `n $where."
-    }
-    if (-not $SecretVaultTestPassed) {
-      Throw "Test-SecretVault failed with $($error[0])"
-    }
-  }
-  Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
-
-  # Return the SecretManagementExtensionVaultInfo structure
-  $SecretManagementExtensionVaultInfo
-}
 
 # [Display Subject Alternative Names of a Certificate with PowerShell](https://social.technet.microsoft.com/wiki/contents/articles/1447.display-subject-alternative-names-of-a-certificate-with-powershell.aspx)
 # ((ls cert:/Current*/my/* | ?{$_.EnhancedKeyUsageList.FriendlyName -eq 'Document Encryption'}).extensions | Where-Object {$_.Oid.FriendlyName -match "subject alternative name"}).Format(1)

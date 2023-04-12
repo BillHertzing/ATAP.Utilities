@@ -124,7 +124,7 @@ Function Write-EnvironmentVariablesIndented {
       $envVarHashTable.Keys | Sort-Object | ForEach-Object { $key = $_
         if ($key -eq 'path') {
           $outstr += ' ' * $initialIndent + $key + ' (' + $scope + ') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
-          $($($($envVarHashTable[$key] -split [IO.Path]::PathSeparator)|sort-object) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )
+          $($($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) | Sort-Object) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )
         }
         else {
           $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] + '  [' + $scope + ']' + [Environment]::NewLine
@@ -147,229 +147,6 @@ Function ValidateTools {
   # dotnet tool install --global PlantUmlClassDiagramGenerator --version 1.2.4
 }
 
-#region Security Subsystem core functions (to be moved into a seperate ATAP.Utilities module)
-##################################################################################
-
-# ToDo: write a script to be run once for each user that will setup SecretManagement
-# ToDo: write a script to be run (usually once for each user) that will setup access to specific SecretManagementExtensionVault
-# ToDo: write a script to be run on-demand that will revoke access to a specific SecretManagementExtensionVault
-# ToDo: write a script to be run once for each SecretManagementExtensionVault to create the vault
-# ToDo: put all the SecretManagememnt code into a dedicated ATAP.Utilities module
-
-.  $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Security.Powershell', 'public', 'Install-DataEncryptionCertificate.ps1'))
-
-function Add-SecretStoreVault {
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'BuiltIn')]
-  param (
-    # a Name for the vault
-    [string] $Name
-    # a Description for the vault
-    , [string] $Description
-    # The SecretManagement vault extension for the vault
-    , [ValidateScript({ Get-InstalledModule -Name $_ })]
-    [string] $ExtensionVaultModuleName
-    , [Parameter(ParameterSetName = 'KeePass')]
-    [ValidateScript({ Test-Path $_ })]
-    [string] $PathToKeePassDB
-    # a Subject for the DataEncryptionCertificateRequest
-    , [string] $Subject
-    # a SAN for the DataEncryptionCertificateRequest
-    , [string] $SubjectAlternativeName
-    # a template for the DataEncryptionCertificateRequest
-    , [string] $DataEncryptionCertificateRequestConfigPath
-    # A secure place for creating the DataEncryptionCertificateRequest and the DataEncryptionCertificate
-    , [ValidateScript({ Test-Path $_ })]
-    [string] $SecureTempBasePath
-    , [string] $DataEncryptionCertificateRequestFilenameTemplate
-    , [string] $DataEncryptionCertificateFilenameTemplate
-    # Todo: CertificateValidityPeriodUnits, CertificateValidityPeriod
-    # A place to persist the encryption key
-    , [string] $KeyFilePath
-    # Number of bytes in the key
-    , [ValidateSet(16, 24, 32)]
-    [int16] $KeySizeInt
-    # A place to persist the MasterKey for this specific vault
-    , [string] $EncryptedPasswordFilePath
-    # a Secure-String password for the vault
-    , [SecureString] $PasswordSecureString
-    # a password timeout for the vault in seconds
-    , [int32] $PasswordTimeout
-    # Force the creation of the DEC certificate if one exists, overwrite the KeyFilePath if one exists
-    , [switch] $Force
-  )
-  Write-PSFMessage -Level Debug -Message 'Starting Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
-
-  $originalPSBoundParameters = $PSBoundParameters
-
-  # Does a SecretVault by this name already exist
-  if ((Get-SecretVault).Name -eq $Name) {
-    #ToDo: if -Force, Add -confirm for this operation instead of always throwing
-    #Log('Error',"A SecretVault by this name already exists, remove it and retry this operation: $Name")
-    Throw "A SecretVault by this name already exists, remove it and retry this operation: $Name"
-  }
-
-  # This function strings together three operations. The function's parameters are used by different operations
-  #   We create a subset of the PSBoundParameters, and pass just the needed subset to the functions that perform the three operations
-
-  # Construct a new DataEncryptionCertificateRequest file on disk
-  $dataEncryptionCertificateRequestPath = Join-Path $SecureTempBasePath ($DataEncryptionCertificateRequestFilenameTemplate -f $Name)
-  Write-PSFMessage -Level Debug -Message ("dataEncryptionCertificateRequestPath = $dataEncryptionCertificateRequestPath")
-
-  $subsetPSBoundParameters = @{}
-  ('Subject', 'SubjectAlternativeName', 'DataEncryptionCertificateRequestConfigPath', 'Force') | ForEach-Object { $subsetPSBoundParameters[$_] = $originalPSBoundParameters[$_] }
-  New-DataEncryptionCertificateRequest -DataEncryptionCertificateRequestPath $dataEncryptionCertificateRequestPath @subsetPSBoundParameters # Pass this function's parameters to the called function
-  # Construct the $dataEncryptionCertificatePath
-  $dataEncryptionCertificatePath = Join-Path $SecureTempBasePath ($DataEncryptionCertificateFilenameTemplate -f $Name)
-  # Install the -dataEncryptionCertificate for this user on this machine, creating the $dataEncryptionCertificatePath file
-  $DataEncryptionCertificateInstallationResults = $null
-  $subsetPSBoundParameters.Clear()
-  ('Force') | ForEach-Object { $subsetPSBoundParameters[$_] = $originalPSBoundParameters[$_] }
-  if ($PSCmdlet.ShouldProcess($null, "Install-DataEncryptionCertificate -dataEncryptionCertificateRequestPath $dataEncryptionCertificateRequestPath -dataEncryptionCertificatePath $dataEncryptionCertificatePath @subsetPSBoundParameters")) {
-    try {
-      $DataEncryptionCertificateInstallationResults = Install-DataEncryptionCertificate -DataEncryptionCertificateRequestPath $DataEncryptionCertificateRequestPath -dataEncryptionCertificatePath $dataEncryptionCertificatePath @subsetPSBoundParameters # Pass this function's parameters to the called function
-    }
-    catch { # if an exception ocurrs
-      # handle the exception
-      $where = $PSItem.InvocationInfo.PositionMessage
-      $ErrorMessage = $_.Exception.Message
-      $FailedItem = $_.Exception.ItemName
-      #Log('Error',"Install-DataEncryptionCertificate failed with $FailedItem : $ErrorMessage at `n $where.")
-      Throw "Install-DataEncryptionCertificate failed with $FailedItem : $ErrorMessage at `n $where."
-    }
-  }
-  # Get the thumbprint of the certificate just installed : gci cert: -r  -DocumentEncryptionCert
-
-  # CertReq modifies the Subject, replaceing a ';' with a ', '
-  # ToDo: make this a function so it can be easily modified and updated if the behaviour of CertReq changes
-  $modSubject = $Subject -replace ';', ', '
-
-  # ToDo: ponder the possibility that there may be more than one data encryption certificate with the same Subject and SubjectAlternativeName
-  $thumbprint = (Get-ChildItem -Path 'cert:/Current*/my/*' -Recurse -DocumentEncryptionCert | Where-Object { $_.Subject -match "^$modSubject$" }).Thumbprint
-  Write-PSFMessage -Level Debug -Message ("thumbprint = $thumbprint")
-
-  # Encrypt the Password
-  if ($PSCmdlet.ShouldProcess($null, 'Encrypt the Password')) {
-    # ToDo: wrap in a try/catch block
-    $encryptedPassword = ConvertFrom-SecureString -SecureString $PasswordSecureString -AsPlainText | Protect-CmsMessage -To $Thumbprint
-    Write-PSFMessage -Level Debug -Message ("encryptedPassword = $encryptedPassword")
-  }
-
-  # write the encrypted password to the $EncryptedPasswordFilePath
-  $EncryptionKeyBytes = New-Object Byte[] $KeySizeInt
-  [Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($EncryptionKeyBytes)
-  # ToDo: Add whatif
-  #ToDo: Convert to a securestring before writing to the file
-  $EncryptionKeyBytes | Out-File -FilePath $KeyFilePath
-
-  # ToDo import KeyFilePath contents as a secure key
-  $EncryptionKeyData = Get-Content $KeyFilePath
-  # ToDo: Add whatif
-  # ToDo change -key to -securekey
-  $PasswordSecureString | ConvertFrom-SecureString -Key $EncryptionKeyData | Out-File -FilePath $EncryptedPasswordFilePath
-
-  #####
-  # $PasswordSecureString = ConvertTo-SecureString -String '2345' -AsPlainText -Force
-  #####
-  # Create the SecretVault using a SecretStore extension vault, and configre it, in one call
-  # Use different commands based on parameterset
-  $command = $null
-  Write-PSFMessage -Level Debug -Message "ParameterSetName = $($PSCmdlet.ParameterSetName)"
-
-  switch ($PSCmdlet.ParameterSetName) {
-    BuiltIn {
-      $command = "Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = ""$Description""; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }"
-    }
-    KeePass {
-      $command = "Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = ""$Description""; UseMasterPassword = ""$false""; Path = ""$PathToKeePassDB"" }"
-    }
-  }
-  Write-PSFMessage -Level Debug -Message "command = $command"
-  if ($PSCmdlet.ShouldProcess($null, "Register-SecretVault -ModuleName $ExtensionVaultModuleName -VaultParameters @{Authentication='Password';Interaction='None';Password='PasswordSecureStringNotshown';PasswordTimeout=$PasswordTimeout} @subsetPSBoundParameters")) {
-    try {
-      # ToDo: figure out how to pass the UseMasterPassword switch paramter in a $VaultParamter's hash when run as $command via Invoke-Expression
-      #Invoke-Expression $command
-      switch ($PSCmdlet.ParameterSetName) {
-        BuiltIn {
-          Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = $Description; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }
-        }
-        KeePass {
-          Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = $Description; UseMasterPassword = $true; Path = $PathToKeePassDB }
-        }
-      }
-    }
-    catch { # if an exception ocurrs
-      # handle the exception
-      $where = $PSItem.InvocationInfo.PositionMessage
-      $ErrorMessage = $_.Exception.Message
-      $FailedItem = $_.Exception.ItemName
-      #Log('Error',"Register-SecretVault failed with $FailedItem : $ErrorMessage at `n $where.")
-      Throw "Register-SecretVault failed with $FailedItem : $ErrorMessage at `n $where."
-    }
-  }
-
-  $SecretManagementExtensionVaultInfo = @{Name = $Name; EncryptedPassword = $encryptedPassword; Timeout = $PasswordTimeout; Thumbprint = $Thumbprint; Certificate = $dataEncryptionCertificatePath; CertificateValidityPeriod = ''; CertificateValidityPeriodUnits = '' }
-
-  # Unlock the newly created SecretStore vault
-  if ($PSCmdlet.ShouldProcess($null, "Unlock-UsersSecretStore -Name $Name -Dictionary $(Write-HashIndented $SecretManagementExtensionVaultInfo 2 2)")) {
-    try {
-      Unlock-UsersSecretStore -Name $Name -Dictionary $SecretManagementExtensionVaultInfo
-    }
-    catch { # if an exception ocurrs
-      # handle the exception
-      $where = $PSItem.InvocationInfo.PositionMessage
-      $ErrorMessage = $_.Exception.Message
-      $FailedItem = $_.Exception.ItemName
-      #Log('Error',"Unlock-UsersSecretStore failed with $FailedItem : $ErrorMessage at `n $where.")
-      Throw "Unlock-UsersSecretStore Threw an exception with $FailedItem : $ErrorMessage at `n $where."
-    }
-  }
-
-  $SecretVaultTestPassed = $false
-  if ($PSCmdlet.ShouldProcess($null, "Test-SecretVault -Name $Name")) {
-    try {
-      $SecretVaultTestPassed = Test-SecretVault -Name $Name 2>$null # send the Error Output stream to the ol' bitbucket
-    }
-    catch { # if an exception ocurrs
-      # handle the exception
-      $where = $PSItem.InvocationInfo.PositionMessage
-      $ErrorMessage = $_.Exception.Message
-      $FailedItem = $_.Exception.ItemName
-      #Log('Error',"Test-SecretVault failed with $FailedItem : $ErrorMessage at `n $where.")
-      Throw "Test-SecretVault Threw an exception with $FailedItem : $ErrorMessage at `n $where."
-    }
-    if (-not $SecretVaultTestPassed) {
-      Throw "Test-SecretVault failed with $($error[0])"
-    }
-  }
-  Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
-
-  # Return the SecretManagementExtensionVaultInfo structure
-  $SecretManagementExtensionVaultInfo
-}
-
-# [Display Subject Alternative Names of a Certificate with PowerShell](https://social.technet.microsoft.com/wiki/contents/articles/1447.display-subject-alternative-names-of-a-certificate-with-powershell.aspx)
-# ((ls cert:/Current*/my/* | ?{$_.EnhancedKeyUsageList.FriendlyName -eq 'Document Encryption'}).extensions | Where-Object {$_.Oid.FriendlyName -match "subject alternative name"}).Format(1)
-
-<#
- Get-UsersSecretStoreVault -Name 'MyPersonalSecrets' `
-  -Description 'Secrets For a specific user on a specific computer' `
-  -ExtensionVaultModuleName 'SecretManagement.Keepass' `
-  -PathToKeePassDB 'C:\KeePass\Local.ATAP.Utilities.Secrets.kdbx' `
-  -Subject 'CN=Bill.hertzing@ATAPUtilities.org;OU=Supreme;O=ATAPUtilities' `
-  -SubjectAlternativeName 'Email=Bill.hertzing@gmail.com' `
-  -PasswordSecureString $( '1234'| ConvertTo-SecureString -AsPlainText -Force) `
-  -PasswordTimeout 900 `
-  -KeyFilePath 'C:/dropbox/whertzing/encryption.key'`
-  -KeySizeInt 16
-  -EncryptedPasswordFilePath 'C:/dropbox/whertzing/secret.encrypted'`
-  -DataEncryptionCertificateRequestConfigPath  'C:\DataEncryptionCertificate.template' `
-  -SecureTempBasePath $($global:settings[$global:configRootKeys['SecureTempBasePathConfigRootKey']]) `
-  -DataEncryptionCertificateRequestFilenameTemplate '{0}_DataEncryptionCertificateRequest.inf' `
-  -DataEncryptionCertificateFilenameTemplate '{0}_DataEncryptionCertificate.cer' `
-  -Force -Whatif
-#>
-
-#endregion Security Subsystem core functions (to be moved into a seperate ATAP.Utilities module)
 
 
 # indent and indentincrement used when printing debug and verbose messages
@@ -400,90 +177,44 @@ $PSDefaultParameterValues = @{
 
 # Dot source the list of configuration keys
 # Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. "$PSScriptRoot/global_ConfigRootKeys.ps1"
+. $PSHOME/global_ConfigRootKeys.ps1
 # Print the global:ConfigRootKeys if Debug
 Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
 
 # [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)
 
-# Dot source the Security and Secrets settings
-# Security and Secrets setting .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. "$PSScriptRoot/global_SecurityAndSecretsSettings.ps1"
-# Print the global:SecurityAndSecretsSettings if Debug
-Write-PSFMessage -Level Debug -Message ('global:SecurityAndSecretsSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:SecurityAndSecretsSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+# Dot source the HostSettings
+. $PSHOME/HostSettings.ps1
 
-# Dot source the common machine settings
-# MachineAndNodeSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. $PSScriptRoot/global_MachineAndNodeSettings.ps1
-# Print the global:MachineAndNodeSettings if Debug
-Write-PSFMessage -Level Debug -Message ('global:MachineAndNodeSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:MachineAndNodeSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+# ToDo: get packaging working
+. $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedAndModifiedHashtable.ps1'))
+. $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedObject.ps1'))
 
-# Dot source the PerGroupSettings
-# PerGroupSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. $PSScriptRoot/global_PerGroupSettings.ps1
-# Print the global:PerGroupSettings FOR THIS HOST if Debug
-Write-PSFMessage -Level Debug -Message ('global:global_PerGroupSettings (for ' + $hostname + '):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerGroupSettings ($indent + $indentIncrement) $indentIncrement) + '}')
-
-# Dot source the PerRoleSettings
-# PerRoleSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. $PSScriptRoot/global_PerRoleSettings.ps1
-# Print the global:PerRoleSettings FOR THIS HOST if Debug
-Write-PSFMessage -Level Debug -Message ('global:global_PerRoleSettings (for ' + $hostname + '):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerRoleSettings ($indent + $indentIncrement) $indentIncrement) + '}')
-
-# Dot source the PerMachineSettings
-# PerMachineSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. $PSScriptRoot/global_PerMachineSettings.ps1
-# Print the global:PerMachineSettings FOR THIS HOST if Debug
-Write-PSFMessage -Level Debug -Message ('global:PerMachineSettings (for ' + $hostname + '):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerMachineSettings ($indent + $indentIncrement) $indentIncrement) + '}')
-
-# Define a global settings hash
+# Define a global settings hash based on the hostname
 $global:settings = @{}
+switch -regex ($hostname) {
+  '^(?:utat01|utat022|ncat016|ncat041)$' {
+    $global:settings = Get-ClonedObject $HostsType1
+  }
+  '^(?:ncat-ltb1|ncat-ltjo)$' {
+    $global:settings = Get-ClonedObject $HostsType2
+  }
+}
 
 # 'Group Vars' 'Role Vars' 'Host Vars'
 #
 # Load the PerGroup, PerRole, and PerMachine settings for this computer into the $global:settings hash, evaluating any dependencies
-$SourceCollections = @( $global:PerGroupSettings, $global:PerRoleSettings, $global:PerMachineSettings, $global:SecurityAndSecretsSettings, $global:MachineAndNodeSettings)
-$matchPatternRegex = [System.Text.RegularExpressions.Regex]::new( 'global:settings\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
-# Until ATAP.Utilities package imports are working.... dot source the file
-.  $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-CollectionTraverseEvaluate.ps1'))
-# From the various source collections create the final global:settings
-Get-CollectionTraverseEvaluate -SourceCollections $sourceCollections -destination $global:Settings -matchPatternRegex $matchPatternRegex
+# $SourceCollections = @( $global:PerGroupSettings, $global:PerRoleSettings, $global:PerMachineSettings, $global:SecurityAndSecretsSettings, $global:MachineAndNodeSettings)
+# $matchPatternRegex = [System.Text.RegularExpressions.Regex]::new( 'global:settings\[\s*(["'']{0,1})(?<Earlier>.*?)\1\s*\]', [System.Text.RegularExpressions.RegexOptions]::Singleline + [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) #   $regexOptions # [regex]::new((?smi)'global:settings\[(?<Earlier>.*?)\]')
+# # Until ATAP.Utilities package imports are working.... dot source the file
+# .  $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-CollectionTraverseEvaluate.ps1'))
+# # From the various source collections create the final global:settings
+# Get-CollectionTraverseEvaluate -SourceCollections $sourceCollections -destination $global:Settings -matchPatternRegex $matchPatternRegex
 
-# until Get-CollTravEval handles arrays and hashs, add them manuallay, and don't use indirect
-# # Set the global PackageRepositoriesCollection
-$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']] = @{
-  $global:configRootKeys['RepositoryNuGetFilesystemDevelopmentPackageNameConfigRootKey']                             = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemDevelopmentPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetFilesystemQualityAssurancePackageNameConfigRootKey']                        = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemQualityAssurancePackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetFilesystemProductionPackageNameConfigRootKey']                              = $global:settings[$global:configRootKeys['RepositoryNuGetFilesystemProductionPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']              = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey']         = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerProductionPackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetProductionWebServerDevelopmentPackageNameConfigRootKey']                    = $global:settings[$global:configRootKeys['RepositoryNuGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetProductionWebServerQualityAssurancePackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryNuGetProductionWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageNameConfigRootKey']                     = $global:settings[$global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetFilesystemDevelopmentPackageNameConfigRootKey']                     = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemDevelopmentPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetFilesystemQualityAssurancePackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemQualityAssurancePackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetFilesystemProductionPackageNameConfigRootKey']                      = $global:settings[$global:configRootKeys['RepositoryPowershellGetFilesystemProductionPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']      = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey'] = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerProductionPackageNameConfigRootKey']       = $global:settings[$global:configRootKeys['RepositoryPowershellGetQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetProductionWebServerDevelopmentPackageNameConfigRootKey']            = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetProductionWebServerQualityAssurancePackageNameConfigRootKey']       = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryPowershellGetProductionWebServerProductionPackageNameConfigRootKey']             = $global:settings[$global:configRootKeys['RepositoryPowershellGetProductionWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyFilesystemDevelopmentPackageNameConfigRootKey']                        = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemDevelopmentPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyFilesystemQualityAssurancePackageNameConfigRootKey']                   = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemQualityAssurancePackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyFilesystemProductionPackageNameConfigRootKey']                         = $global:settings[$global:configRootKeys['RepositoryChocolateyFilesystemProductionPackagePathConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageNameConfigRootKey']         = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageNameConfigRootKey']    = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerProductionPackageNameConfigRootKey']          = $global:settings[$global:configRootKeys['RepositoryChocolateyQualityAssuranceWebServerProductionPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyProductionWebServerDevelopmentPackageNameConfigRootKey']               = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerDevelopmentPackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyProductionWebServerQualityAssurancePackageNameConfigRootKey']          = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerQualityAssurancePackageURIConfigRootKey']]
-  $global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageNameConfigRootKey']                = $global:settings[$global:configRootKeys['RepositoryChocolateyProductionWebServerProductionPackageURIConfigRootKey']]
-}
 
-# ToDo: Fix this temporary thingy
-$global:settings[$global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']] =   'JenkinsAgentSrvAcct'
-$global:settings[$global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']] =   'JenkinsContrlSrvAcct'
+# # ToDo: Fix this temporary thingy
+# $global:settings[$global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']] =   'JenkinsAgentSrvAcct'
+# $global:settings[$global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']] =   'JenkinsContrlSrvAcct'
 
 
 # set ISElevated in the global settings if this script is running elevated
@@ -530,7 +261,7 @@ $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Objec
 
 # Set DebugPreference to Continue  to see the $global:settings and Environment variables at the completion of this profile
 # Print the $global:settings if Debug
-$DebugPreference = 'SilentlyContinue'
+$DebugPreference = 'Continue'
 Write-PSFMessage -Level Debug -Message ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
 Write-PSFMessage -Level Debug -Message ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
 $DebugPreference = 'SilentlyContinue'

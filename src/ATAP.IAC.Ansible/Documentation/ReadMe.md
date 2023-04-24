@@ -449,7 +449,7 @@ Reinstall all chocolatey packages
 - Notepad++ - use x86 version, many more plugins available
 - Add to List:
   Freevideoeditor
-powershell INvoke-Build module
+powershell Invoke-Build module
 
 After chocolatey install, configure as follows:
 

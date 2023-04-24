@@ -7,72 +7,84 @@ param(
 
 )
 
-# use a local $sb for each file type
-[System.Text.StringBuilder]$sbTask = [System.Text.StringBuilder]::new()
-[System.Text.StringBuilder]$sbVars = [System.Text.StringBuilder]::new()
-[System.Text.StringBuilder]$sbMeta = [System.Text.StringBuilder]::new()
+# use a local $sb to build up the files' contents
+[System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
+[System.Text.StringBuilder]$sbAddedParameters = [System.Text.StringBuilder]::new()
 
-# ToDo Fix AddedParameters for chocolatey installation
-$addedParametersScriptblock = { if ($addedParameters) {
-    # [void]$sb.Append('Params: "')
-    # foreach ($ap in $addedParameters) { [void]$sb.Append("/$ap ") }
-    # [void]$sb.Append('"')
+$addedParametersScriptblock = {
+  param(
+    [string[]]$addedParameters
+  )
+  if ($addedParameters) {
+    [void]$sbAddedParameters.Append('"')
+    foreach ($ap in $addedParameters) { [void]$sbAddedParameters.Append("/$ap ") }
+    [void]$sbAddedParameters.Append('"')
+    $sbAddedParameters.ToString()
+    [void]$sbAddedParameters.Clear()
   }
 }
 
 function ContentsTask {
-  [void]$sbTask.Append(@"
-
+  [void]$sb.Append(@'
 - name: Install or Uninstall Java JRE using chocolatey
   win_dsc:
     resource_name: cChocoPackageInstaller
-    Name: "{{ JREName }}"
-    Version: "{{ JREVersion }}"
+    Name: "{{ item.name }}"
+    Version: "{{ item.version }}"
     Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
-    $(. $addedParametersScriptblock)
-  tags: [$roleName]
-"@)
-# ToDo Fix AddedParameters for chocolatey installation
-}
+    Params: "{{ item.AddedParameters if item.AddedParameters else omit }}"
+  loop:
 
-function ContentsVars {
-  [void]$sbVars.Append(@"
-JREName: temurin17jre
-JREVersion: 17.0.6.1000
-JREAllow_prerelease: false
+'@)
+
+  $packageName = 'temurin17jre'
+  $packageVersion = '17.0.6.1000'
+  $allowPrerelease = $false
+  $addedParameters = . $addedParametersScriptblock @('ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome', 'INSTALLDIR=''C:\\Program Files\\JavaInterpreter\\temurin''') # {{ ProgramFiles }}{{ JavaInstallDirRelativeSubdirectory }}
+  [void]$sb.AppendLine("      - {name: $packageName, version: $packageVersion, AllowPrerelease: $allowPrerelease, AddedParameters: $addedParameters}")
+  [void]$sb.Append(@"
+  tags: [$roleName]
+  ignore_errors: yes
 "@)
-# ToDo Fix AddedParameters for chocolatey installation
 }
 
 function ContentsMeta {
-  [void]$sbMeta.Append(@"
-dependencies:
-  # - role: RoleChocolateyInstallAndConfigure
-"@)
+  [void]$sb.Append(@'
+galaxy_info:
+  author: William Hertzing for ATAP.org
+  description: Ansible role to install the Java Runtime Environment (JRE) software onto a Windows Host
+  attribution:
+  company: ATAP.org
+  role_name: JavaInterpreterWindows
+  license: license (MIT)
+  min_ansible_version: 2.4
+  dependencies: []
+'@)
 }
 
 # exclude these role subdirectores
-$excludedSubDirectoriesPattern = '^handlers|defaults|files|templates|library|module_utils|lookup_plugins|scripts$'
+$excludedSubDirectoriesPattern = '^handlers|defaults|files|templates|library|module_utils|lookup_plugins|scripts|vars$'
 $subDirectoriesToBuild = $roleSubdirectoryNames | Where-Object { $_ -notmatch $excludedSubDirectoriesPattern }  # minus the excluded ones
 for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
   $roleSubdirectoryName = $subDirectoriesToBuild[$index]
   $roleSubdirectoryPath = $(Join-Path $roleDirectoryPath $roleSubdirectoryName)
   New-Item -ItemType Directory -Path $roleSubdirectoryPath -ErrorAction SilentlyContinue >$null
-  switch -regex ($roleSubdirectoryName) {
+  $introductoryStanza = $($($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName)
+  [void]$sb.Clear()
+  [void]$sb.AppendLine($introductoryStanza)
+switch -regex ($roleSubdirectoryName) {
     '^tasks$' {
-      [void]$sbTask.AppendLine($($($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName))
       ContentsTask
-      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sbTask.ToString()
+      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sb.ToString()
     }
-    '^vars$' {
-      [void]$sbVars.AppendLine($($($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName))
-      ContentsVars
-      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sbVars.ToString()
-    }
+    # '^vars$' {
+    #   [void]$sbVars.AppendLine(introductoryStanza)
+    #   ContentsVars
+    #   Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sbVars.ToString()
+    # }
     '^meta$' {
-      [void]$sbMeta.AppendLine($($($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName))
       ContentsMeta
-      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sbMeta.ToString()
+      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sb.ToString()
     }
     default {
       Write-PSFMessage -Level Error -Message " role $roleName has no template to create any files in the $roleSubdirectoryName subDirectory"

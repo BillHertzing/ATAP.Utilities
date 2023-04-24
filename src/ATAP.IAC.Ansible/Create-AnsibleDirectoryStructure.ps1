@@ -143,7 +143,7 @@ $windowsFeaturesInfos = ConvertFrom-Json -Depth 99 -AsHashtable -InputObject $(G
 # Get the chocolateyPackageInformation
 $chocolateyPackageInfos = ConvertFrom-Yaml $(Get-Content -Path $chocolateyPackageInfoSourcePath -Raw )
 # Get the powershellModuleInformation
-$powershellModuleInfos = ConvertFrom-Json -Depth 99 -AsHashtable -InputObject $(Get-Content -Path $powershellModuleInfoSourcePath -Raw)
+$powershellModuleInfos = ConvertFrom-Yaml $(Get-Content -Path $powershellModuleInfoSourcePath -Raw ) 
 
 # Create generated directory if it does not exists
 New-Item -ItemType Directory -Path $generatedDirectoryPath -ErrorAction SilentlyContinue >$null
@@ -159,8 +159,8 @@ for ($ansibleSubdirectoryNameIndex = 0; $ansibleSubdirectoryNameIndex -lt $ansib
 }
 
 # Get the hostNames and groupNames from the $ansibleInventory object
-$hostNames = $ansibleInventory.HostNames.Keys
-$groupNames = $ansibleInventory.GroupNames.Keys
+$hostNames = $($ansibleInventory.HostNames.Keys)
+$groupNames = $($ansibleInventory.GroupNames.Keys)
 
 # the names of the inventory files
 # ToDo: Create from ansibleInventory object
@@ -183,7 +183,7 @@ for ($index = 0; $index -lt $($inventoryFileNames.Keys).count; $index++) {
 . "$PSHOME/HostSettings.ps1"
 
 # Create host_vars files
-& "$projectBaseDirectory\host_vars.ps1" $($ymlTemplate -replace '\{1}', 'host_vars') $(Join-Path $baseDirectory 'host_vars') $defaultPerMachineSettings $hostNames
+& "$projectBaseDirectory\host_vars.ps1" $($ymlTemplate -replace '\{1}', 'host_vars') $(Join-Path $baseDirectory 'host_vars') $hostNames
 
 # Group_Vars are currently unused, all vars are in host_vars
 # Create group_vars files
@@ -195,11 +195,22 @@ for ($index = 0; $index -lt $($inventoryFileNames.Keys).count; $index++) {
 $playbooksDestinationDirectory = $(Join-Path $baseDirectory $playbooksSubdirectory)
 
 # Create a playbook for each groupname, which goes into the playbooks subdirectory
+$PackageInfos = [PSCustomObject]@{
+  NuGetPackageInfos = $null
+  ChocolateyPackageInfos = $chocolateyPackageInfos
+  PowershellModuleInfos= $powershellModuleInfos
+  RegistrySettingsInfos = $null
+  WindowsFeatureInfos= $windowsFeaturesInfos
+  AnsibleRoleInfos = $null
+
+  }
 for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex++) {
   $groupName = $groupNames[$groupNameIndex]
   #if ($groupName -ne 'WindowsHosts' ) { continue } # skip things for development
   # The playbook  for each group consists of the common plays, plus importing any roles
-  & "$projectBaseDirectory\groupname_playbooks.ps1" $($ymlTemplate -replace '\{1}', 'plays') $(Join-Path $playbooksDestinationDirectory "$($groupName)Playbook.yml") $ansibleInventory $groupName
+  # The playbook may need information about nuget, PowershellGet, chocolatey packages, windows Features, etc.
+
+  & "$projectBaseDirectory\groupname_playbooks.ps1" $($ymlTemplate -replace '\{1}', 'plays') $(Join-Path $playbooksDestinationDirectory "$($groupName)Playbook.yml") $ansibleInventory $groupName $PackageInfos
 }
 
 # All Module installations require the module name, version, and PSEdition (or type)

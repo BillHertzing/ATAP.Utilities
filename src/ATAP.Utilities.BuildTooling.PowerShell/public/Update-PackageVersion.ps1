@@ -61,6 +61,7 @@ Function Update-PackageVersion {
         $newPreReleaseNumber = -1
         $newPreReleaseStr = $null
         if ($manifest['PrivateData']['PSData']['PreRelease']) {
+          # ToDo: does the following set the [Environment]::Matches special variable? is either a significant security or speed winner? See `ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Invoke-GitPreCommitHook.ps1`
             $matches = [RegEx]::Matches($manifest['PrivateData']['PSData']['PreRelease'] ,$preReleasePatternExtractor)
             if ($matches) {
                 $preReleasePrefixStr = $matches.Captures.Groups['PreReleasePrefix'].value

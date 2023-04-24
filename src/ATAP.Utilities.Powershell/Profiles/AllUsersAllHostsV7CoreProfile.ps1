@@ -188,18 +188,10 @@ Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Envir
 
 # ToDo: get packaging working
 . $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedAndModifiedHashtable.ps1'))
-. $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedObject.ps1'))
+# . $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedObject.ps1'))
 
 # Define a global settings hash based on the hostname
-$global:settings = @{}
-switch -regex ($hostname) {
-  '^(?:utat01|utat022|ncat016|ncat041)$' {
-    $global:settings = Get-ClonedObject $HostsType1
-  }
-  '^(?:ncat-ltb1|ncat-ltjo)$' {
-    $global:settings = Get-ClonedObject $HostsType2
-  }
-}
+$global:settings = Get-HostSettings $hostName
 
 # 'Group Vars' 'Role Vars' 'Host Vars'
 #
@@ -212,16 +204,22 @@ switch -regex ($hostname) {
 # Get-CollectionTraverseEvaluate -SourceCollections $sourceCollections -destination $global:Settings -matchPatternRegex $matchPatternRegex
 
 
-# # ToDo: Fix this temporary thingy
-# $global:settings[$global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']] =   'JenkinsAgentSrvAcct'
-# $global:settings[$global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']] =   'JenkinsContrlSrvAcct'
-
-
 # set ISElevated in the global settings if this script is running elevated
 $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
 
 # Opt Out of the dotnet telemetry
 [Environment]::SetEnvironmentVariable('DOTNET_CLI_TELEMETRY_OPTOUT', 1, 'Process')
+
+# only set the value of the Environment Environment variable if it has not been set by a calling process
+$inheritedEnvironmentVariable = [System.Environment]::GetEnvironmentVariable('Environment')
+$inProcessEnvironmentVariable = ''
+if ($inheritedEnvironmentVariable) {
+  $inProcessEnvironmentVariable = $inheritedEnvironmentVariable
+}
+else {
+  $inProcessEnvironmentVariable = 'Production' # default for all machines is Production, can be overwritten on a per-process basis if needed
+}
+$global:settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']] = $inProcessEnvironmentVariable
 
 
 
@@ -261,7 +259,7 @@ $global:settings[$global:configRootKeys['IsElevatedConfigRootKey']] = (New-Objec
 
 # Set DebugPreference to Continue  to see the $global:settings and Environment variables at the completion of this profile
 # Print the $global:settings if Debug
-$DebugPreference = 'Continue'
+$DebugPreference = 'SilentlyContinue'
 Write-PSFMessage -Level Debug -Message ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
 Write-PSFMessage -Level Debug -Message ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
 $DebugPreference = 'SilentlyContinue'

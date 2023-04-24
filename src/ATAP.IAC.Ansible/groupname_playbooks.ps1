@@ -5,20 +5,64 @@ param (
   # $parsedInventory is a hashtable that specifies all the chocolatey packages, powershell modules, and windows features all the groups
   , [hashtable] $parsedInventory
   , [string] $groupName
+  , [PSCustomObject] $packageInfos
 )
 
-# use a local $sb for all operations
+[System.Text.StringBuilder]$sbAddedParameters = [System.Text.StringBuilder]::new()
+$addedParametersScriptblock = {
+  param(
+    [string[]]$addedParameters
+  )
+  if ($addedParameters) {
+    foreach ($ap in $addedParameters) { [void]$sbAddedParameters.Append("/$ap ") }
+    [void]$sbAddedParameters.Append('"')
+    $sbAddedParameters.ToString()
+    [void]$sbAddedParameters.Clear()
+  }
+}
+
 [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
 
-$addedParametersScriptblock = { if ($addedParameters) {
-    [void]$sb.Append('Params: "')
-    foreach ($ap in $addedParameters) { [void]$sb.Append("/$ap ") }
-    [void]$sb.Append('"')
+$GroupNameSpecificPreambleGroupNameScriptBlock = {
+  switch ($groupName) {
+    'WindowsHosts' {
+      [void]$sb.Append(@"
+# Ensure that Chocolatey and the chocolatey package installer are installed
+- name: Install Chocolatey
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Install Chocolatey
+      win_chocolatey:
+        name: chocolatey
+        state: present
+    - name: Configure chocolatey cache location
+      win_chocolatey_config:
+        name: cacheLocation
+        state: present
+        value: "{{ ChocolateyCacheLocation }}"
+    # Configure Chocolatey to allow community packages ()'allowGlobalConfirmation,allowEmptyChecksums,allowEmptyChecksumsSecure,allowInsecureConfirmation,allowMultipleVersions')
+    - name: allow Global confirmation when installing packages and their dependencies
+      win_chocolatey_feature:
+        name: allowGlobalConfirmation
+        state: disabled
+    # Configure Chocolatey to install community extensions
+    - name: Install chocolatey-core.extension
+      win_chocolatey:
+        name: chocolatey-core.extension
+        state: present
+    # Install the cChoco Poweshell module
+    - name: Ensure the cCHoco module from the PSGallery is present
+      win_psmodule:
+        name: cChoco
+        repository: PSGallery
+  tags: [$groupname, Preamble, InstallChocolatey]
+"@)
+    }
   }
 }
 
 $ChocolateyPackagesForGroupNameScriptBlock = {
-  # if($groupName -ne 'WindowsHosts' ) {continue} # skip things for development
   if ($($parsedInventory.GroupNames[$groupName]).ContainsKey('ChocolateyPackageNames')) { # process for $groupName only if the ChocolateyPackageNames key exists
     if ($null -ne $($parsedInventory.GroupNames[$groupName]).ChocolateyPackageNames) {
       [void]$sb.Append(@"
@@ -28,24 +72,24 @@ $ChocolateyPackagesForGroupNameScriptBlock = {
   hosts: all
   gather_facts: false
   tasks:
-    - name: Load Chocolatey Package information JSON file
-      set_fact:
-        chocolateypackages_properties: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/chocolateyPackageInfo.yml') | from_yaml }}"
-
     - name: Install the Chocolatey Packages
       win_dsc:
         resource_name: cChocoPackageInstaller
-        Name: "{{ item }}"
-        Version: "{{ chocolateypackages_properties[item]['Version'] }}"
+        Name: "{{ item.name }}"
+        Version: "{{ item.version }}"
         Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
-        $(. $addedParametersScriptblock) # ToDo Fix AddedParameters for chocolatey installation
+        Params: "{{ item.AddedParameters if item.AddedParameters else omit }}"
       loop:
 
 "@
       )
       for ($index = 0; $index -lt @($($($parsedInventory.GroupNames)[$groupName]).ChocolateyPackageNames).count; $index++) {
-        [void]$sb.Append('        - ' + @($($($parsedInventory.GroupNames)[$groupName]).ChocolateyPackageNames)[$index])
-        [void]$sb.Append("`n")
+        $packageName = $($($($parsedInventory.GroupNames)[$groupName]).ChocolateyPackageNames)[$index]
+        $packageVersion = $($($PackageInfos.ChocolateyPackageInfos)[$packageName]).Version
+        $allowPrerelease = $($($PackageInfos.ChocolateyPackageInfos)[$packageName]).AllowPrerelease
+        $addedParameters = . $addedParametersScriptblock $($($PackageInfos.ChocolateyPackageInfos)[$packageName]).AddedParameters
+
+        [void]$sb.AppendLine("        - {name: $packageName, version: $packageVersion, AllowPrerelease: $allowPrerelease, AddedParameters: $addedParameters}")
       }
       [void]$sb.Append(@"
       when: "'$groupName' in group_names "
@@ -66,22 +110,21 @@ $PowershellModulesForGroupNameScriptBlock = {
   hosts: all
   gather_facts: false
   tasks:
-    - name: Load Powershell Module information JSON file
-      set_fact:
-        module_properties: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/powershellModuleInfo.json') | from_json }}"
 
     - name: Install the modules defined for each group
       community.windows.win_psmodule:
-        name: "{{ item }}"
+        name: "{{ item.name }}"
         state: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
-        version: "{{ module_properties[item]['Version'] }}"
-        allow_prerelease: "{{ module_properties[item]['AllowPrerelease'] }}"
+        version: "{{ item.version }}"
+        allow_prerelease: "{{ item.AllowPrerelease }}"
       loop:
 
 "@)
       for ($index = 0; $index -lt @($($($parsedInventory.GroupNames)[$groupName]).PowershellModuleNames).count; $index++) {
-        [void]$sb.Append('        - ' + @($($($parsedInventory.GroupNames)[$groupName]).PowershellModuleNames)[$index])
-        [void]$sb.Append("`n")
+        $moduleName = $($($($parsedInventory.GroupNames)[$groupName]).PowershellModuleNames)[$index]
+        $moduleVersion = $($($PackageInfos.PowershellModuleInfos)[$moduleName]).Version
+        $allowPrerelease = $($($PackageInfos.PowershellModuleInfos)[$moduleName]).AllowPrerelease
+        [void]$sb.AppendLine("        - {name: $moduleName, version: $moduleVersion, AllowPrerelease: $allowPrerelease  }")
       }
       [void]$sb.Append(@"
       when: "'$groupName' in group_names "
@@ -160,7 +203,7 @@ $RolesForGroupNameScriptBlock = {
       when: "'$groupName' in group_names "
 
 "@)
-     # $roleNamesStr = $roleNames -join ',' # $roleNamesStr,
+      # $roleNamesStr = $roleNames -join ',' # $roleNamesStr,
       [void]$sb.Append(@"
   tags: [$groupname,Roles]
 "@)
@@ -169,6 +212,8 @@ $RolesForGroupNameScriptBlock = {
 }
 
 function Contents {
+  $(if ($true) { $(. $GroupNameSpecificPreambleGroupNameScriptBlock ) })
+
   $(if ($true) { $(. $ChocolateyPackagesForGroupNameScriptBlock) })
 
   $(if ($true) { $(. $PowershellModulesForGroupNameScriptBlock) })

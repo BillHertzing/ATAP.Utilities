@@ -80,7 +80,7 @@
 . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-SignedCertificate.ps1'
 
 # Clean out all certificates with a subject of 'atap'
-# Will throw errros unless run from an elevated prompt
+# Will throw errors unless run from an elevated prompt
 ((Get-ChildItem cert: -r) | Where-Object { $_.subject -match 'atap' }).pspath
 ((Get-ChildItem cert: -r) | Where-Object { $_.subject -match 'atap' }) | ForEach-Object { Remove-Item -Path $_.pspath -Deletekey }
 
@@ -175,16 +175,16 @@ New-Item -Path $(Join-Path $rootpath $global:settings[$global:configRootKeys['Se
 # save the root of the CA Certificate Signing path
 $CARootPath = $rootpath
 # Save the three files needed for CA signing in the next section
-$CADNHash = $DNHash
+$CADNHash = $DNHash # ToDo: clone? use it somewhere?
 $CAEncryptionKeyPassPhrasePath = $EncryptionKeyPassPhrasePath
 $CAEncryptedPrivateKeyPath = $EncryptedPrivateKeyPath
 $CACertificatePath = $CertificatePath
 
 # Create SSL Server Certificate(s) for all computers in the organization's workgroup
-# ToDo: use the machine and node settings
-$ComputerMames = @('ncat016', 'ncat040', 'nact-ltb1', 'ncat-ltjo', 'utat01', 'utat022')
+# ToDo: use the host and node settings from the organization's IAC
+$ComputerNames = @('ncat016', 'ncat040', 'nact-ltb1', 'ncat-ltjo', 'utat01', 'utat022')
 $OrganizationName = 'ATAPUtilities.org'
-$ComputerMames | ForEach-Object { $CN = $_
+$ComputerNames | ForEach-Object { $CN = $_
 
   # Define a DistinguishedNameHash for the SSL Server Certificate Request for each computer
   $DistinguishedNameHash = New-Object PSObject -Property @{
@@ -265,7 +265,7 @@ $ComputerMames | ForEach-Object { $CN = $_
   # openssl req -text -in $CertificateRequestPath -noout
 
   # Create a signed SSL Server Certificate
-  $ValidityPeriod = 368
+  $ValidityPeriod = 368 # ToDo: find a place to define the durationas dependent on how many weeks of overlap is desired, and skew it according to the calendsar so it doesn't happen when operation staff is shorthanded
   $ValidityPeriodUnits = 'days'
   # $CrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']] $global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]
   # $CertificatePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DistinguishedNameHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerCertificateBaseFileNameConfigRootKey']] -CrossReferenceFilePath $CrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']]
@@ -291,7 +291,7 @@ $ComputerMames | ForEach-Object { $CN = $_
     -CASigningCertificatesCertificatesIssuedDBPath $CASigningCertificatesCertificatesIssuedDBPath `
     -ValidityPeriod $ValidityPeriod -ValidityPeriodUnits $ValidityPeriodUnits -CertificatePath $CertificatePath `
     # -CASigningCertificatesNewCertificatesPath $CASigningCertificatesNewCertificatesPath `
-    #-CASigningCertificatesSerialNumberPath $CASigningCertificatesSerialNumberPath `
+    # -CASigningCertificatesSerialNumberPath $CASigningCertificatesSerialNumberPath `
 
   # # ToDo: I cannot get -out to work, so must rename the serialnumber.pem file to the CertificatePath
   # # Read the IssuedDb and get all certificates that match the common name, then the 3rd field from each line, and make a Path to that file
@@ -314,6 +314,7 @@ $ComputerMames | ForEach-Object { $CN = $_
   # print out the certificate details
   # openssl req -x509 -text -in $CertificatePath -noout
 
+  # prepare a certificate file that cen be used on Windows certificate stores
   # importing a certificate to a Windows certificate store requires a single file in .pkcs12 format, including the cert, the private key, and if necessary the trust chain
   # [Enable HTTPS on IIS](https://techexpert.tips/iis/enable-https-iis/)
   # To import a SSLServer certificate into IIS, the file to be imported must combine the certificate and the private key. One solution is a pkcs12 format file
@@ -322,6 +323,9 @@ $ComputerMames | ForEach-Object { $CN = $_
   # ToDo: lookup password from secrets vault
   $DistinguishedNameHash = New-Object PSObject -Property @{FriendlyName = 'test Server Authentication' }
   openssl pkcs12 -export -inkey $EncryptedPrivateKeyPath -passin file:$EncryptionKeyPassPhrasePath -name $DistinguishedNameHash.FriendlyName -in $CertificatePath -out $CertificatePFXPath -passout file:$EncryptionKeyPassPhrasePath
+
+  # ToDo: # prepare a certificate file that cen be used on Linux and other KeyStores
+
   # Comand to decrypt a private key
   # openssl ec -in $EncryptedPrivateKeyPath -passin file:$EncryptionKeyPassPhrasePath 2>$null
 }
@@ -505,8 +509,7 @@ Where-Object { $_.name -match $global:settings[$global:configRootKeys['SecureCer
 Register-CodeSigningCert -CertStoreLocation $CodeSigningCertStoreLocation
 
 
-
-# Store the Server SSL Certificate information in a Secret Vault# Store the Server SSL Certificate information in a Secret Vault
+# Store the Server SSL Certificate information in a Secret Vault
 # # The Secret Vault MUST BE CREATED by an administrator before this step can execute. This means the encryption key file and the encrypted password file must already exist
 #
 # $SecretVaultName = 'SecurityAdminSecretsSSLServerCertificates'

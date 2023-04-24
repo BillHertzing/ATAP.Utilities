@@ -17,6 +17,7 @@ $global:configRootKeys = @{
   'ErlangHomeDirConfigRootKey'                                                                   = 'ErlangHomeDir'
   'GIT_CONFIG_GLOBALConfigRootKey'                                                               = 'GIT_CONFIG_GLOBAL'
   'GitExePathConfigRootKey'                                                                      = 'GitExePath'
+  'JavaInstallDirRelativeSubdirectoryConfigRootKey'                                              = 'JavaInstallDirRelativeSubdirectory'
   'JavaExePathConfigRootKey'                                                                     = 'JavaExePath'
   # Jenkins CI/CD confguration keys
   'JenkinsNodeRolesConfigRootKey'                                                                = 'JenkinsNodeRoles'
@@ -60,11 +61,25 @@ $global:configRootKeys = @{
   'ansible_become_userConfigRootKey'                                                             = 'ansible_become_user'
   'AnsibleAllowPrereleaseConfigRootKey'                                                          = 'AnsibleAllowPrelease'
 
+  # CICDHosts confguration keys
   # Used by Jenkins
-  'JenkinsControllerServiceAccountConfigRootKey' = 'JenkinsControllerServiceAccount'
-  'JenkinsAgentServiceAccountPasswordConfigRootKey' = 'JenkinsControllerServiceAccountPassword'
-  'JenkinsAgentServiceAccountConfigRootKey' = 'JenkinsAgentServiceAccount'
-  'JenkinsControllerServiceAccountPasswordConfigRootKey' = 'JenkinsAgentServiceAccountPassword'
+  'JenkinsControllerServiceAccountConfigRootKey'                                                 = 'JenkinsControllerServiceAccount'
+  'JenkinsControllerServiceAccountPasswordConfigRootKey'                                         = 'JenkinsControllerServiceAccountPassword'
+  'JenkinsAgentServiceAccountConfigRootKey'                                                      = 'JenkinsAgentServiceAccount'
+  'JenkinsAgentServiceAccountPasswordConfigRootKey'                                              = 'JenkinsAgentServiceAccountPassword'
+  'JenkinsAgentServiceAccountFullnameConfigRootKey'                                              = 'JenkinsAgentServiceAccountFullname'
+  'JenkinsAgentServiceAccountDescriptionConfigRootKey'                                           = 'JenkinsAgentServiceAccountDescription'
+  'JenkinsAgentServiceAccountUserHomeDirectoryConfigRootKey'                                     = 'JenkinsAgentServiceAccountUserHomeDirectory'
+  'JenkinsAgentServiceAccountPowershellDesktopProfileSourceConfigRootKey'                        = 'JenkinsAgentServiceAccountPowershellDesktopProfileSource'
+  'JenkinsAgentServiceAccountPowershellCoreProfileSourceConfigRootKey'                           = 'JenkinsAgentServiceAccountPowershellCoreProfileSource'
+
+  # WinSW for Jenkins agent
+  'WinSWPublicURLConfigRootKey'                                                                  = 'WinSWPublicURL'
+  'WinSWInternalDestinationFilenameConfigRootKey'                                                = 'WinSWInternalDestinationFilename'
+  'WinSWInternalDestinationBaseDirectoryConfigRootKey'                                           = 'WinSWInternalDestinationBaseDirectory'
+  'WinSWInternalDestinationVersionConfigRootKey'                                                 = 'WinSWInternalDestinationVersion'
+  'WinSWInternalDestinationDirectoryConfigRootKey'                                               = 'WinSWInternalDestinationDirectory'
+  'WinSWInternalDestinationPathConfigRootKey'                                                    = 'WinSWInternalDestinationPath'
 
   # Computer roles (used in the JenkinsNodeRoles)
   'WindowsCodeBuildConfigRootKey'                                                                = 'WindowsCodeBuild'
@@ -101,7 +116,7 @@ $global:configRootKeys = @{
 
   # Packaging, Deploying, Delivering, Updating
   # All Package repositories that use a filesystem can use the default source and drop locations, or specify a full custom paths
-  'RepositoryFileSystemPackageSourceLocationBaseDirectoryDefaultConfigRootKey'                        = 'RepositoryFileSystemPackageSourceLocationBasePathDefault'
+  'RepositoryFileSystemPackageSourceLocationBaseDirectoryDefaultConfigRootKey'                   = 'RepositoryFileSystemPackageSourceLocationBasePathDefault'
   'RepositoryFileSystemPackageDropLocationBasePathDefaultConfigRootKey'                          = 'RepositoryFileSystemPackageDropLocationBasePathDefault'
   # The repository names by which each of the various repositories for Powershell packages are known. and their details
   # The name of the repository for Packages that are in NuGet format

@@ -10,14 +10,21 @@ param(
 
 )
 
-$addedParametersScriptblock = { if ($addedParameters) {
-    [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
-    [void]$sb.Append('Params: "')
-    foreach ($ap in $addedParameters) { [void]$sb.Append("/$ap ") }
-    [void]$sb.Append('"')
-    $sb.ToString()
+[System.Text.StringBuilder]$sbAddedParameters = [System.Text.StringBuilder]::new()
+
+$addedParametersScriptblock = {
+  param(
+    [string[]]$addedParameters
+  )
+  if ($addedParameters) {
+    [void]$sbAddedParameters.Append('Params: "')
+    foreach ($ap in $addedParameters) { [void]$sbAddedParameters.Append("/$ap ") }
+    [void]$sbAddedParameters.Append('"')
+    $sbAddedParameters.ToString()
+    [void]$sbAddedParameters.Clear()
   }
 }
+
 
 function ContentsTask {
 
@@ -40,7 +47,7 @@ version: $version
 }
 
 # exclude these role subdirectores
-$excludedSubDirectoriesPattern = '^(handlers|defaults|meta|files|templates|library|module_utils|lookup_plugins|scripts)$'
+$excludedSubDirectoriesPattern = '^(handlers|defaults|files|templates|library|module_utils|lookup_plugins|scripts)$'
 $subDirectoriesToBuild = $roleSubdirectoryNames -notmatch $excludedSubDirectoriesPattern  # minus the excluded ones
 for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
   $roleSubdirectoryName = $subDirectoriesToBuild[$index]

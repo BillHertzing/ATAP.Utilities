@@ -9,85 +9,42 @@ param(
 
 # use a unique local StringBuilder for each file
 [System.Text.StringBuilder]$sbMeta = [System.Text.StringBuilder]::new()
-[System.Text.StringBuilder]$sbDefaults = [System.Text.StringBuilder]::new()
-[System.Text.StringBuilder]$sbVars = [System.Text.StringBuilder]::new()
+#[System.Text.StringBuilder]$sbDefaults = [System.Text.StringBuilder]::new()
+#[System.Text.StringBuilder]$sbVars = [System.Text.StringBuilder]::new()
 [System.Text.StringBuilder]$sbTemplates = [System.Text.StringBuilder]::new()
 [System.Text.StringBuilder]$sbTasks = [System.Text.StringBuilder]::new()
 
-$addedParametersScriptblock = { if ($addedParameters) {
-    # [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
-    # [void]$sb.Append('Params: "')
-    # foreach ($ap in $addedParameters) { [void]$sb.Append("/$ap ") }
-    # [void]$sb.Append('"')
-    # $sb.ToString()
+[System.Text.StringBuilder]$sbAddedParameters = [System.Text.StringBuilder]::new()
+
+$addedParametersScriptblock = {
+  param(
+    [string[]]$addedParameters
+  )
+  if ($addedParameters) {
+    [void]$sbAddedParameters.Append('Params: "')
+    foreach ($ap in $addedParameters) { [void]$sbAddedParameters.Append("/$ap ") }
+    [void]$sbAddedParameters.Append('"')
+    $sbAddedParameters.ToString()
+    [void]$sbAddedParameters.Clear()
   }
 }
 
+
 function ContentsMeta {
   [void]$sbMeta.Append(@'
-author: William Hertzing for ATAP.org
-description: Ansible role to setup a Jenkins Windows Agent installed as a service via NSSM
-attribution: [Ansible Role: Jenkins slave - Windows](https://github.com/mattandes/ansible-role-jenkins_slave_win/tree/master)
-company: ATAP.org
-role_name: JenkinsAgentWindows
-license: license (MIT)
-min_ansible_version: 2.4
-dependencies: [RoleWinSW]
+galaxy_info:
+  author: William Hertzing for ATAP.org
+  description: Ansible role to setup a Jenkins Windows Agent installed as a service via WinSW
+  attribution:
+  company: ATAP.org
+  role_name: JenkinsAgentWindows
+  license: license (MIT)
+  min_ansible_version: 2.4
+  dependencies: [WinSW]
 '@)
 }
 
-function ContentsDefaults {
-  [void]$sbDefaults.Append(@"
-  ServiceAccountName: $($global:settings[$global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']])
-  ServiceAccountFullname: Jenkins Controller Service Account
-  ServiceAccountDescription: User under which the Jenkins Agent Windows service runs
-  # groups:
-  ServiceAccountPasswordFromAnsibleVault : $($global:settings[$global:configRootKeys['JenkinsAgentServiceAccountPasswordConfigRootKey']])
 
-  WinSWLocalPath: "C:\\WinSW"
-
-  # Jenkins agent User
-  jenkins_agent_win_user: jenkins
-
-  # Jenkins agent User Password:
-  jenkins_agent_win_password: jenkins
-
-  # Control whether to create and manage the jenkins agent ServiceAccount user as a local user account
-  jenkins_agent_win_create_user: true
-
-  # Jenkins agent Working Directory
-  jenkins_agent_win_dir: "C:\\Jenkins"
-
-  # Jenkins Server URL
-  jenkins_agent_win_jenkins_url: http://localhost:8080
-
-  # Jenkins Server User to connect as for getting the agent's secret
-  jenkins_agent_win_jenkins_user: admin
-
-  # Jenkins Server User's password # ToDo Get from Ansible vault
-  jenkins_agent_win_jenkins_password: admin
-
-  # Jenkins agent Java Args
-  jenkins_agent_win_java_args: "-Xmx768m"
-
-"@)
-}
-
-function ContentsVars {
-  # Needed packages to setup agent
-  # jenkins_agent_win_base_packages:
-  # - jre8
-  # - nssm
-  [void]$sbVars.Append(@'
-
-ServiceAccountPowershellCoreProfileSource: '/mnt/c/dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.Utilities.Powershell/profiles/ProfileForServiceAccountUsers.ps1'
-ServiceAccountPowershellDesktopProfileSource: '/mnt/c/dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.Utilities.Powershell/profiles/ProfileForServiceAccountUsers.ps1'
-
-JenkinsName: jenkins
-JenkinsVersion: 2.387.1
-JenkinsAllow_prerelease: false
-'@)
-}
 function ContentsTemplates {
   # Needed packages to setup agent
   # jenkins_agent_win_base_packages:
@@ -147,10 +104,10 @@ function ContentsTask {
 
 - name: Install or Uninstall Jenkins Agent Service Account User
   ansible.windows.win_user:
-    name: "{{ ServiceAccountName }}"
-    fullname: "{{ ServiceAccountFullname }}"
-    description: "{{ ServiceAccountDescription }}"
-    password: "{{ ServiceAccountPasswordFromAnsibleVault }}"
+    name: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']) }}"
+    fullname: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountFullnameConfigRootKey']  )}}"
+    description: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountDescriptionConfigRootKey'] )}}"
+    password: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountPasswordConfigRootKey'] )}}"
     groups:
     - "JenkinsAgents"
     password_never_expires: true
@@ -158,49 +115,47 @@ function ContentsTask {
 
 - name: Create or Delete a home directory for the Jenkins Agent Service Account User
   ansible.windows.win_file:
-    path: "{{ ServiceAccountUserHomeDirectory }}"
+    path: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountUserHomeDirectoryConfigRootKey']) }}"
     state: directory
 
 - name: Manage Jenkins Agent Service Account User Home Directory Permissions
-  win_acl:
-    path: "{{ ServiceAccountUserHomeDirectory }}"
+  ansible.windows.win_acl:
+    path: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountUserHomeDirectoryConfigRootKey']) }}"
     propagation: "InheritOnly"
     rights: "FullControl"
     type: "allow"
-    user: "{{ ServiceAccountName }}"
+    user: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']) }}"
 
 - name: Create or Delete a Powershell (Core) subdirectory for the Jenkins Agent Service Account User
   ansible.windows.win_file:
-    path: "{{ ServiceAccountUserHomeDirectory }}\\Powershell"
+    path: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountUserHomeDirectoryConfigRootKey']) }}\\Powershell"
     state: directory
 
 - name: Create or Delete a Powershell (Desktop) subdirectory for the Jenkins Agent Service Account User
   ansible.windows.win_file:
-    path: "{{ ServiceAccountUserHomeDirectory }}\\WindowsPowershell"
+    path: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountUserHomeDirectoryConfigRootKey']) }}\\WindowsPowershell"
     state: directory
 
 - name: Install or Uninstall Jenkins Agent Service Account User's Powershell Core profile
   win_copy:
-    src: "{{ ServiceAccountPowershellCoreProfileSource }}"
-    dest: "{{ ServiceAccountUserHomeDirectory }}\\Powershell\\profile.ps1"
+    src: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountPowershellCoreProfileSourceConfigRootKey']) }}"
+    dest: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountUserHomeDirectoryConfigRootKey']) }}\\Powershell\\profile.ps1"
 
 - name: Install or Uninstall Jenkins Agent Service Account User's Powershell Desktop profile
   win_copy:
-    src: "{{ ServiceAccountPowershellDesktopProfileSource }}"
-    dest: "{{ ServiceAccountUserHomeDirectory }}\\WindowsPowershell\\profile.ps1"
-
-# ToDo: install WinSW
+    src: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountPowershellDesktopProfileSourceConfigRootKey']) }}"
+    dest: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountUserHomeDirectoryConfigRootKey']) }}\\WindowsPowershell\\profile.ps1"
 
 - name: Check if Agent Jar exists already
   win_stat:
-    path: "{{ ServiceAccountUserHomeDirectory }}\\agent.jar"
-  register: jenkins_AGENT_win_agent_jar
+    path: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountUserHomeDirectoryConfigRootKey']) }}\\agent.jar"
+  register: jenkins_agent_jar
 
 - name: Download Jenkins Agent Jar from Jenkins Server
   win_get_url:
     url: "{{ jenkins_slave_win_jenkins_url }}/jnlpJars/agent.jar"
-    dest: "{{ ServiceAccountUserHomeDirectory }}\\agent.jar"
-  when: not jenkins_slave_win_agent_jar.stat.exists
+    dest: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountUserHomeDirectoryConfigRootKey']) }}\\agent.jar"
+  when: not jenkins_agent_jar.stat.exists
 
 - name: Get Jenkins Slave's Secret
   uri:
@@ -229,7 +184,7 @@ function ContentsTask {
 }
 
 # exclude these role subdirectores
-$excludedSubDirectoriesPattern = '^handlers|files|templates|library|module_utils|lookup_plugins|scripts$'
+$excludedSubDirectoriesPattern = '^(defaults|files|handlers|library|lookup_plugins|module_utils|scripts|templates|vars)$'
 $subDirectoriesToBuild = $roleSubdirectoryNames | Where-Object { $_ -notmatch $excludedSubDirectoriesPattern }  # minus the excluded ones
 for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
   $roleSubdirectoryName = $subDirectoriesToBuild[$index]

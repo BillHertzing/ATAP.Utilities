@@ -43,12 +43,30 @@ Enter-Build {
 
   $sourceSubDirectorys = @('public', 'private', 'Resources')
   $sourceExtensions = @('.ps1', '.clixml')
-  $sourceFileInfos = $sourceSubDirectorys | ForEach-Object { $sourceSubDirectory = $_; $sourceExtensions | ForEach-Object { $sExtension = $_;
-    (Get-ChildItem $(Join-Path $sourceSubDirectory $('*' + $sExtension)))
-    } }
-  $sourceFiles = $sourceSubDirectorys | ForEach-Object { $sourceSubDirectory = $_; $sourceExtensions | ForEach-Object { $sExtension = $_;
-    (Get-Item $(Join-Path $sourceSubDirectory $('*' + $sExtension)))
-    } }
+  $sourceFileInfos = @()
+  $sourceSubDirectorys | ForEach-Object {
+    $sourceSubDirectory = $_;
+    $subDirectory = Join-Path $moduleroot $_
+    if (Test-Path -Path $subDirectory -PathType Container) {
+      $sourceExtensions | ForEach-Object {
+        $sExtension = $_;
+        $sourceFileInfos += Get-ChildItem -Path $subDirectory -Include $('*' + $sExtension)
+      }
+    }
+  }
+
+  $sourceFiles = @()
+  $sourceSubDirectorys | ForEach-Object {
+    $sourceSubDirectory = $_;
+    $subDirectory = Join-Path $moduleroot $_
+    if (Test-Path -Path $subDirectory -PathType Container) {
+      $sourceExtensions | ForEach-Object {
+        $sExtension = $_;
+        $sourceFiles += Get-Item -Path $subDirectory -Include $('*' + $sExtension)
+      }
+    }
+  }
+
 
   # The following subdirectories are "opinionated"
   # $SourcePath = Join-Path $BuildRoot 'src'
@@ -517,11 +535,11 @@ Task BuildNuSpecFromManifest @{
         try {
           $GeneratedManifestFilePath = Join-Path $GeneratedManifestDirectory $manifestFilename
           # ToDo: remove after powershell package is installed
-          . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-NuSpecFromManifest.ps1"
+          . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-NuSpecFromManifest.ps1'
           Get-NuSpecFromManifest -ManifestPath $GeneratedManifestFilePath -DestinationFolder $GeneratedManifestDirectory -ProviderName $ProviderName
         }
         catch {
-          $message = "calling Get-NuSpecFromManifest with -ManifestPath $GeneratedManifestFilePath -DestinationFolder $GeneratedManifestDirectory -ProviderName $ProviderName threw an error : $($error[0]|select-object * )"
+          $message = "calling Get-NuSpecFromManifest with -ManifestPath $GeneratedManifestFilePath -DestinationFolder $GeneratedManifestDirectory -ProviderName $ProviderName threw an error : $($error[0]|Select-Object * )"
           Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'BuildNuSpecFromManifest'
           # toDo catch the errors, add to 'Problems'
           Throw $message
@@ -589,7 +607,7 @@ Task PublishPSPackage @{
     # Switch on Environment
     # Publish to FileSystem
     Publish-Module -Path $relativeModulePath -Repository $PSRepositoryName -NuGetApiKey $nuGetApiKey
-    Publish-Module -name $GeneratedPowershellGetModulesPath -Repository LocalDevelopmentPSRepository
+    Publish-Module -Name $GeneratedPowershellGetModulesPath -Repository LocalDevelopmentPSRepository
     # Copy last build artifacts into a .7zip file, name it after the ModuleName-Version-buildnumber (like C# project assemblies)
     # Check the 7Zip file into the SCM repository
     # Get SHA-256 and other CRC checksums, add that info to the SCM repository

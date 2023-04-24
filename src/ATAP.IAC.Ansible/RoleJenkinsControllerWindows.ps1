@@ -14,47 +14,35 @@ param(
 [System.Text.StringBuilder]$sbTasks = [System.Text.StringBuilder]::new()
 
 
-$addedParametersScriptblock = {param([string[]]$addedParameters) if ($addedParameters) {
-    [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
-    [void]$sb.Append('Params: "')
-    foreach ($ap in $addedParameters) { [void]$sb.Append("/$ap ") }
-    [void]$sb.Append('"')
-    $sb.ToString()
+[System.Text.StringBuilder]$sbAddedParameters = [System.Text.StringBuilder]::new()
+
+$addedParametersScriptblock = {
+  param(
+    [string[]]$addedParameters
+  )
+  if ($addedParameters) {
+    [void]$sbAddedParameters.Append('Params: ')
+    foreach ($ap in $addedParameters) { [void]$sbAddedParameters.Append("/$ap ") }
+    $sbAddedParameters.ToString()
+    [void]$sbAddedParameters.Clear()
   }
 }
 
 function ContentsMeta {
   [void]$sbMeta.Append(@"
-author: William Hertzing for ATAP.org
-description: Ansible role to setup a Jenkins Windows Controller installed as a service via Chocolatey
-attribution:
-company: ATAP.org
-role_name: JenkinsControllerWindows
-license: license (MIT)
-min_ansible_version: 2.4
-dependencies: []
+galaxy_info:
+  author: William Hertzing for ATAP.org
+  description: Ansible role to setup a Jenkins Windows Controller installed as a service via Chocolatey
+  attribution:
+  company: ATAP.org
+  role_name: JenkinsControllerWindows
+  license: license (MIT)
+  min_ansible_version: 2.4
+  dependencies: []
 "@)
 }
 
-function ContentsDefaults {
-  [void]$sbDefaults.Append(@"
-  ServiceAccountName: $($global:settings[$global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']])
-  ServiceAccountFullname: Jenkins Controller Service Account
-  ServiceAccountDescription: User under which the Jenkins Controller Windows service runs
-  # groups:
-  ServiceAccountPasswordFromAnsibleVault : insecure
-  ServiceAccountUserHomeDirectory: C:\\Users\\$($global:settings[$global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']])
 
-  ServiceAccountPowershellCoreProfileSource: '/mnt/c/dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.Utilities.Powershell/profiles/ProfileForServiceAccountUsers.ps1'
-  ServiceAccountPowershellDesktopProfileSource: '/mnt/c/dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.Utilities.Powershell/profiles/ProfileForServiceAccountUsers.ps1'
-
-  ChocolateyPackageName: jenkins
-  InstallationDirectory:
-  JenkinsRootDirectory:
-  Port
-
-"@)
-}
 function ContentsVars {
   [void]$sbVars.Append(@"
 
@@ -79,6 +67,8 @@ function ContentsTask {
   #  /Service_Username
   #  /Service_Password
   [void]$sbTasks.Append(@"
+
+  
 
 - name: Install or Uninstall Jenkins Controller Service Account User
   ansible.windows.win_user:

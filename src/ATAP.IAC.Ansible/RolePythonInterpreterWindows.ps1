@@ -12,11 +12,18 @@ param(
 [System.Text.StringBuilder]$sbVars = [System.Text.StringBuilder]::new()
 [System.Text.StringBuilder]$sbMeta = [System.Text.StringBuilder]::new()
 
-# ToDo Fix AddedParameters for chocolatey installation
-$addedParametersScriptblock = { if ($addedParameters) {
-    # [void]$sb.Append('Params: "')
-    # foreach ($ap in $addedParameters) { [void]$sb.Append("/$ap ") }
-    # [void]$sb.Append('"')
+[System.Text.StringBuilder]$sbAddedParameters = [System.Text.StringBuilder]::new()
+
+$addedParametersScriptblock = {
+  param(
+    [string[]]$addedParameters
+  )
+  if ($addedParameters) {
+    [void]$sbAddedParameters.Append('Params: "')
+    foreach ($ap in $addedParameters) { [void]$sbAddedParameters.Append("/$ap ") }
+    [void]$sbAddedParameters.Append('"')
+    $sbAddedParameters.ToString()
+    [void]$sbAddedParameters.Clear()
   }
 }
 
@@ -29,6 +36,7 @@ function ContentsTask {
     Name: "{{ PythonName }}"
     Version: "{{ PythonVersion }}"
     Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
+
     $(. $addedParametersScriptblock)
   tags: [$roleName]
   ignore_errors: yes

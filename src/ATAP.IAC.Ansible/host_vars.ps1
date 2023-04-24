@@ -1,29 +1,41 @@
-# Define ansible vars for groups or hosts
-param (
+# Define ansible vars hosts
+param (		[parameter(mandatory = $true)]
+  [ValidateNotNullOrEmpty()]
   [string] $ymlGenericTemplate
-  , [string] $directoryPath
-  , [hashtable] $settingsHash
-  , [array] $namesList
+  , [parameter(mandatory = $true)]
+  [ValidateNotNullOrEmpty()]
+  [string] $directoryPath
+  , [parameter(mandatory = $true)]
+  [ValidateNotNullOrEmpty()]
+  [array] $namesList
 )
 
-function Contents {
+[System.Text.StringBuilder]$sbVars = [System.Text.StringBuilder]::new()
+
+function ContentsVars {
   param(
+    [parameter(mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $name
   )
-  [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
-  foreach ($key in $($($settingsHash[$name]).keys | Sort-Object)) {
-    $escapedvalue = $($($settingsHash[$name])[$key]) -replace "'", "''"
-    [void]$sb.AppendLine("$key : '$escapedvalue'")
+  $settingsHash = Get-HostSettings $name
+  foreach ($key in $($settingsHash.keys | Sort-Object)) {
+    $escapedvalue = $settingsHash[$key] -replace "'", "''"
+    [void]$sbVars.AppendLine("$key : '$escapedvalue'")
   }
-  $sb.ToString()
 }
 
-# $global:settings that are defined per-host or per-group are stored in the $settingsHash
+# Host settings are dot-sourced from the $PSHome/HostSettings.ps1 file, that happens in the calling function
 for ($index = 0; $index -lt $namesList.count; $index++) {
-  # create a host_vars file for each host
+  # create a vars file for each host
   $name = $namesList[$index]
-  $ymlContents= $ymlGenericTemplate -replace '\{2}', $name
-  # Use the Linux newline character
-  $ymlContents += $($(Contents -name $name) -split "`r`n") -join "`n"
-  Set-Content -Path $(Join-Path $directoryPath "$name.yml") -Value $ymlContents
+  [void]$sbVars.Clear()
+  [void]$sbVars.AppendLine($($($ymlGenericTemplate -replace '\{1}', 'Host_vars' ) -replace '\{2}', $name))
+  ContentsVars $name
+  Set-Content -Path $(Join-Path $directoryPath "$name.yml") -Value $sbVars.ToString()
 }
+
+#$ymlContents = $ymlGenericTemplate -replace '\{2}', $name
+# Use the Linux newline character
+#$ymlContents += $($(Contents -name $name) -split "`r`n") -join "`n"
+

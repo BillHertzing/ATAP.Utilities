@@ -62,16 +62,21 @@ $global:configRootKeys = @{
   'AnsibleAllowPrereleaseConfigRootKey'                                                          = 'AnsibleAllowPrelease'
 
   # CICDHosts confguration keys
-  # Used by Jenkins
+  # Used by Jenkins Controller and agents
   'JenkinsControllerServiceAccountConfigRootKey'                                                 = 'JenkinsControllerServiceAccount'
-  'JenkinsControllerServiceAccountPasswordConfigRootKey'                                         = 'JenkinsControllerServiceAccountPassword'
+  'JenkinsControllerServiceAccountPasswordKeyConfigRootKey'                                         = 'JenkinsControllerServiceAccountPasswordKey'
+  'JenkinsControllerServiceAccountFullnameConfigRootKey'                                              = 'JenkinsControllerServiceAccountFullname'
+  'JenkinsControllerServiceAccountDescriptionConfigRootKey'                                           = 'JenkinsControllerServiceAccountDescription'
+  'JenkinsControllerServiceAccountUserHomeDirectoryConfigRootKey'                                     = 'JenkinsControllerServiceAccountUserHomeDirectory'
+  'JenkinsControllerServiceAccountPowershellDesktopProfileSourcePathConfigRootKey'                        = 'JenkinsControllerServiceAccountPowershellDesktopProfileSourcePath'
+  'JenkinsControllerServiceAccountPowershellCoreProfileSourcePathConfigRootKey'                           = 'JenkinsControllerServiceAccountPowershellCoreProfileSourcePath'
   'JenkinsAgentServiceAccountConfigRootKey'                                                      = 'JenkinsAgentServiceAccount'
-  'JenkinsAgentServiceAccountPasswordConfigRootKey'                                              = 'JenkinsAgentServiceAccountPassword'
+  'JenkinsAgentServiceAccountPasswordKeyConfigRootKey'                                              = 'JenkinsAgentServiceAccountPasswordKey'
   'JenkinsAgentServiceAccountFullnameConfigRootKey'                                              = 'JenkinsAgentServiceAccountFullname'
   'JenkinsAgentServiceAccountDescriptionConfigRootKey'                                           = 'JenkinsAgentServiceAccountDescription'
   'JenkinsAgentServiceAccountUserHomeDirectoryConfigRootKey'                                     = 'JenkinsAgentServiceAccountUserHomeDirectory'
-  'JenkinsAgentServiceAccountPowershellDesktopProfileSourceConfigRootKey'                        = 'JenkinsAgentServiceAccountPowershellDesktopProfileSource'
-  'JenkinsAgentServiceAccountPowershellCoreProfileSourceConfigRootKey'                           = 'JenkinsAgentServiceAccountPowershellCoreProfileSource'
+  'JenkinsAgentServiceAccountPowershellDesktopProfileSourcePathConfigRootKey'                        = 'JenkinsAgentServiceAccountPowershellDesktopProfileSourcePath'
+  'JenkinsAgentServiceAccountPowershellCoreProfileSourcePathConfigRootKey'                           = 'JenkinsAgentServiceAccountPowershellCoreProfileSourcePath'
 
   # WinSW for Jenkins agent
   'WinSWPublicURLConfigRootKey'                                                                  = 'WinSWPublicURL'

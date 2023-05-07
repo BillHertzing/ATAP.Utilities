@@ -629,9 +629,10 @@ Function TailLog {
   if ($wait) {
     # Create a callback function that will tail the last N lines of the file
     # attach a file watcher (on file modified) to the file with the callback as the action
-    # stay in this function until the user enters ctrl-c
+    # stay in this function until the user enters ctrl-c, types'exit', 'quit', or ':q!'
   }
 }
+
 # A function to stop PushBullet processes
 function KillPushBullet { Get-Process | Where-Object { $_.processname -match 'pushbul' } | Stop-Process }
 
@@ -649,30 +650,6 @@ function StopVoiceAttackProcess {
 }
 Set-Item -Path alias:stopVA -Value StopVoiceAttackProcess
 
-
-# A function to get the Windows Security Identifier (SID) given a user name
-Function GetSIDfromAcctName {
-  [CmdletBinding(DefaultParameterSetName = 'Local')]
-
-  Param(
-    [Parameter(mandatory = $true)]$userName
-    , [Parameter(ParameterSetName = 'Remote')]
-    [Parameter(mandatory = $false)]$ComputerName
-  )
-  $usracct = ''
-  $command = 'Get-CimInstance -Query "Select * from Win32_UserAccount where name = ''$userName''"'
-  switch ($PSCmdlet.ParameterSetName) {
-    Local {
-      # No change to the basee command
-    }
-    Remote {
-      $command = $command + " -ComputerName $ComputerName"
-    }
-  }
-  Write-PSFMessage -Level Debug -Message "command = $command"
-  $usracct = Invoke-Expression $command
-  return $usracct.sid
-}
 
 
 Function ShutItAllDown {

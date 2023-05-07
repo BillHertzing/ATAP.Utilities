@@ -7,13 +7,8 @@ param(
 
 )
 
-# use a unique local StringBuilder for each file
-[System.Text.StringBuilder]$sbMeta = [System.Text.StringBuilder]::new()
-[System.Text.StringBuilder]$sbDefaults = [System.Text.StringBuilder]::new()
-[System.Text.StringBuilder]$sbVars = [System.Text.StringBuilder]::new()
-[System.Text.StringBuilder]$sbTasks = [System.Text.StringBuilder]::new()
-
-
+# use a local StringBuilder
+[System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
 [System.Text.StringBuilder]$sbAddedParameters = [System.Text.StringBuilder]::new()
 
 $addedParametersScriptblock = {
@@ -21,15 +16,16 @@ $addedParametersScriptblock = {
     [string[]]$addedParameters
   )
   if ($addedParameters) {
-    [void]$sbAddedParameters.Append('Params: ')
+    [void]$sbAddedParameters.Append("'")
     foreach ($ap in $addedParameters) { [void]$sbAddedParameters.Append("/$ap ") }
+    [void]$sbAddedParameters.Append("'")
     $sbAddedParameters.ToString()
     [void]$sbAddedParameters.Clear()
   }
 }
 
 function ContentsMeta {
-  [void]$sbMeta.Append(@"
+  [void]$sb.Append(@'
 galaxy_info:
   author: William Hertzing for ATAP.org
   description: Ansible role to setup a Jenkins Windows Controller installed as a service via Chocolatey
@@ -39,24 +35,22 @@ galaxy_info:
   license: license (MIT)
   min_ansible_version: 2.4
   dependencies: []
-"@)
+'@)
 }
 
 
 function ContentsVars {
-  [void]$sbVars.Append(@"
+  [void]$sb.Append(@'
 
-  ServiceAccountPowershellCoreProfileSource: '/mnt/c/dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.Utilities.Powershell/profiles/ProfileForServiceAccountUsers.ps1'
-  ServiceAccountPowershellDesktopProfileSource: '/mnt/c/dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.Utilities.Powershell/profiles/ProfileForServiceAccountUsers.ps1'
+  ServiceAccountPowershellCoreProfileSourcePath: '/mnt/c/dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.Utilities.Powershell/profiles/ProfileForServiceAccountUsers.ps1'
+  ServiceAccountPowershellDesktopProfileSourcePath: '/mnt/c/dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.Utilities.Powershell/profiles/ProfileForServiceAccountUsers.ps1'
 
-  ChocolateyPackageVersion: 2.387.1
-  ChocolateyPackageAllow_prerelease: false
-"@)
+'@)
 }
 
 function ContentsTask {
   # ToDo grant Login and LoginAsAService rights to the user
-  # ToDo: set a password expiry duration, anbd write a play/playbook to update the password for the Jenkins Agent Service Account User
+  # ToDo: set a password expiry duration, anbd write a play/playbook to update the password for the Jenkins
   # ToDO: support for pre-release version of ChocolateyPackage
   # ToDo: support for specific log file for the chocolatey package installation process
   # ToDo: installation arguments for the controller
@@ -66,101 +60,98 @@ function ContentsTask {
   #  /Java_Home
   #  /Service_Username
   #  /Service_Password
-  [void]$sbTasks.Append(@"
+  [void]$sb.Append(@"
 
-  
 
-- name: Install or Uninstall Jenkins Controller Service Account User
-  ansible.windows.win_user:
-    name: "{{ ServiceAccountName }}"
-    fullname: "{{ ServiceAccountFullname }}"
-    description: "{{ ServiceAccountDescription }}"
-    password: "{{ ServiceAccountPasswordFromAnsibleVault }}"
-    groups:
-    - "JenkinsControllers"
-    password_never_expires: true
-    account_disabled: false
+- name: Install the Jenkins Controller Service Account User, it's user directory, ACL permissions on the user directory, and Powershell Core and Desktop profiles
+  block:
+  - name: Call the Create-ServiceAccount.ps1 script found in the ATAP.Utilities.Buildtooling.Powershell module
+    ansible.windows.win_powershell:
+      executable: pwsh.exe
+      script: |
+        # Import-module  ATAP.Utilities.BuildTooling.Powershell
+        . "D:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Create-ServiceAccount.ps1"
+        Create-ServiceAccount -ServiceAccount "{{ $($global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']) }}" -ServiceAccountPasswordKey "{{ $($global:configRootKeys['JenkinsControllerServiceAccountPasswordKeyConfigRootKey']) }}" -ServiceAccountFullname "{{ $($global:configRootKeys['JenkinsControllerServiceAccountFullnameConfigRootKey']) }}" -ServiceAccountDescription "'{{ $($global:configRootKeys['JenkinsControllerServiceAccountDescriptionConfigRootKey']) }}'" -ServiceAccountUserHomeDirectory "{{ $($global:configRootKeys['JenkinsControllerServiceAccountUserHomeDirectoryConfigRootKey']) }}" -ServiceAccountPowershellDesktopProfileSourcePath "{{ $($global:configRootKeys['JenkinsControllerServiceAccountPowershellDesktopProfileSourcePathConfigRootKey']) }}" -ServiceAccountPowershellCoreProfileSourcePath "{{ $($global:configRootKeys['JenkinsControllerServiceAccountPowershellCoreProfileSourcePathConfigRootKey']) }}" -State "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
+    register: CreateServiceAccountResultOutput
 
-- name: Create or Delete a home directory for the Jenkins Controller Service Account User
-  ansible.windows.win_file:
-    path: "{{ ServiceAccountUserHomeDirectory }}"
-    state: directory
+  - name: Parse the returned JSON string into a JSON object
+    set_fact:
+      CreateServiceAccountResultObject: "{{ CreateServiceAccountResultOutput.result | from_yaml }}"
 
-- name: Manage Jenkins Controller Service Account User Home Directory Permissions
-  win_acl:
-    path: "{{ ServiceAccountUserHomeDirectory }}"
-    propagation: "InheritOnly"
-    rights: "FullControl"
-    type: "allow"
-    user: "{{ ServiceAccountName }}"
+  - name: Debug output
+    debug:
+      var: CreateServiceAccountResultObject
 
-- name: Create or Delete a Powershell (Core) subdirectory for the Jenkins Controller Service Account User
-  ansible.windows.win_file:
-    path: "{{ ServiceAccountUserHomeDirectory }}\\Powershell"
-    state: directory
+# - name: Manage Jenkins Controller Service Account User Home Directory Permissions
+#   win_acl:
+#     path: "{{ ServiceAccountUserHomeDirectory }}"
+#     propagation: "InheritOnly"
+#     rights: "FullControl"
+#     type: "allow"
+#     user: "{{ ServiceAccountName }}"
 
-- name: Create or Delete a Powershell (Desktop) subdirectory for the Jenkins Controller Service Account User
-  ansible.windows.win_file:
-    path: "{{ ServiceAccountUserHomeDirectory }}\\WindowsPowershell"
-    state: directory
 
-- name: Install or Uninstall Jenkins Controller Service Account User's Powershell Core profile
-  win_copy:
-    src: "{{ ServiceAccountPowershellCoreProfileSource }}"
-    dest: "{{ ServiceAccountUserHomeDirectory }}\\Powershell\\profile.ps1"
+  - name: Install or Uninstall Jenkins Controller using chocolatey
+    win_dsc:
+      resource_name: cChocoPackageInstaller
+      Name: "{{ item.name }}"
+      Version: "{{ item.version }}"
+      Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
+      Params: "{{ item.AddedParameters if item.AddedParameters else omit }}"
+    loop:
 
-- name: Install or Uninstall Jenkins Controller Service Account User's Powershell Desktop profile
-  win_copy:
-    src: "{{ ServiceAccountPowershellDesktopProfileSource }}"
-    dest: "{{ ServiceAccountUserHomeDirectory }}\\WindowsPowershell\\profile.ps1"
+"@)
 
-- name: Install or Uninstall Jenkins Controller using chocolatey
-  win_dsc:
-    resource_name: cChocoPackageInstaller
-    Name: "{{ ChocolateyPackageName }}"
-    Version: "{{ ChocolateyPackageVersion }}"
-    Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
-    $(. $addedParametersScriptblock(@('PORT=8081','INSTALLDIR=D:\TEMP\JenkinsControllerInstallDir','JENKINS_ROOT=D:\TEMP\JenkinsControllerRoot')))
+  $packageName = 'jenkins'
+  $packageVersion = '2.387.2'
+  $allowPrerelease = $false
+  # ToDo: lookup the password from a vault using the passwordKey
+  $ServiceUsernameParam = "Service_Username=""{{ $($global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']) }}"""
+  $ServicePasswordParam = "Service_Password=""{{ $($global:configRootKeys['JenkinsControllerServiceAccountPasswordKeyConfigRootKey']) }}"""
+  $addedParameters = . $addedParametersScriptblock @('PORT=8081','INSTALLDIR=''''C:/Program Files/JenkinsController2''''','JENKINS_ROOT=''''D:/Dropbox/JenkinsControllerRoot2''''',   $ServiceUsernameParam, $ServicePasswordParam)
 
-# Note that the Jenkins_Home environment variable is set via the Jenkins Controller Service Account's user profile
+  [void]$sb.AppendLine("      - {name: $packageName, version: $packageVersion, AllowPrerelease: $allowPrerelease, AddedParameters: $addedParameters}")
+  [void]$sb.Append(@"
+
+  # Note that the Jenkins_Home environment variable is set via the Jenkins Controller Service Account's user profile
+  # If the host is the Active JenkinsController, set the appropriate environment variables
+  tags: [$roleName]
 
 "@)
 }
 
 
+
+
 # exclude these role subdirectores
-$excludedSubDirectoriesPattern = '^handlers|defaults|files|templates|library|module_utils|lookup_plugins|scripts$'
+$excludedSubDirectoriesPattern = '^handlers|defaults|files|templates|library|module_utils|lookup_plugins|scripts|vars$'
 $subDirectoriesToBuild = $roleSubdirectoryNames | Where-Object { $_ -notmatch $excludedSubDirectoriesPattern }  # minus the excluded ones
 for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
   $roleSubdirectoryName = $subDirectoriesToBuild[$index]
   $roleSubdirectoryPath = $(Join-Path $roleDirectoryPath $roleSubdirectoryName)
   New-Item -ItemType Directory -Path $roleSubdirectoryPath -ErrorAction SilentlyContinue >$null
   $introductoryStanza = $($($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName)
+  [void]$sb.Clear()
+  [void]$sb.AppendLine($introductoryStanza)
   switch -regex ($roleSubdirectoryName) {
     '^meta$' {
-      [void]$sbMeta.AppendLine($introductoryStanza)
       ContentsMeta
-      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sbMeta.ToString()
     }
     '^defaults$' {
-      [void]$sbDefaults.AppendLine($introductoryStanza)
       ContentsDefaults
-      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value  $sbDefaults.ToString()
     }
     '^vars$' {
-      [void]$sbVars.AppendLine($introductoryStanza)
       ContentsVars
-      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sbVars.ToString()
     }
     '^tasks$' {
-      [void]$sbTasks.AppendLine($introductoryStanza)
       ContentsTask
-      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sbTasks.ToString()
     }
     default {
       Write-PSFMessage -Level Error -Message " role $roleName has no template to create any files in the $roleSubdirectoryName subDirectory"
       break
     }
   }
+  Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sb.ToString()
+
 }
 

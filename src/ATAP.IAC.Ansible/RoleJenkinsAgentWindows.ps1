@@ -107,7 +107,7 @@ function ContentsTask {
     name: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']) }}"
     fullname: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountFullnameConfigRootKey']  )}}"
     description: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountDescriptionConfigRootKey'] )}}"
-    password: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountPasswordConfigRootKey'] )}}"
+    password: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountPasswordKeyConfigRootKey'] )}}"
     groups:
     - "JenkinsAgents"
     password_never_expires: true
@@ -138,12 +138,12 @@ function ContentsTask {
 
 - name: Install or Uninstall Jenkins Agent Service Account User's Powershell Core profile
   win_copy:
-    src: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountPowershellCoreProfileSourceConfigRootKey']) }}"
+    src: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountPowershellCoreProfileSourcePathConfigRootKey']) }}"
     dest: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountUserHomeDirectoryConfigRootKey']) }}\\Powershell\\profile.ps1"
 
 - name: Install or Uninstall Jenkins Agent Service Account User's Powershell Desktop profile
   win_copy:
-    src: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountPowershellDesktopProfileSourceConfigRootKey']) }}"
+    src: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountPowershellDesktopProfileSourcePathConfigRootKey']) }}"
     dest: "{{ $($global:configRootKeys['JenkinsAgentServiceAccountUserHomeDirectoryConfigRootKey']) }}\\WindowsPowershell\\profile.ps1"
 
 - name: Check if Agent Jar exists already

@@ -36,7 +36,7 @@ function ContentsTask {
 
 - name: Copy the various Certificate Configuration Files
   win_copy:
-    src: "{{ ServiceAccountPowershellDesktopProfileSource }}"
+    src: "{{ ServiceAccountPowershellDesktopProfileSourcePath }}"
     dest: C:\Users\{{ServiceAccountName}}\WindowsPowershell\profile.ps1
 
 - name: Install or Uninstall the ATAP PKIInfrastructure script using chocolatey
@@ -58,7 +58,7 @@ function ContentsTask {
   $sb.ToString()
 }
 
-# These will be the global settings as setup for WSindowsHost that creates the Ansible Direcotry structure. It doesnt take into account any machine that has ProgramFiles anyplace other than C: It doesnt' account for varying locaiton sof the
+# These will be the global settings as setup for WSindowsHost that creates the Ansible Directory structure. It doesnt take into account any machine that has ProgramFiles anyplace other than C: It doesnt' account for varying locaiton sof the
 function ContentsVars {
   $variablesToSet = @(
     , 'SECURE_CLOUD_BASE_PATHConfigRootKey'

@@ -41,22 +41,24 @@ galaxy_info:
 
 function ContentsTask {
   [void]$sb.Append(@"
-- name: Create the directory structure for the WinSWInternalDestinationDirectory
-  win_file:
-    path: "{{ $($global:configRootKeys['WinSWInternalDestinationDirectoryConfigRootKey']) }}"
-    state: directory
-
 - name: Check if the WinSW already exists locally
   win_stat:
     path: "{{ $($global:configRootKeys['WinSWInternalDestinationPathConfigRootKey']) }}"
   register: WinSWExistsLocally
 
+- name: copy the WinSW locally unless it already exists locally
+  block:
+  - name: Create the directory structure for the WinSWInternalDestinationDirectory
+    win_file:
+      path: "{{ $($global:configRootKeys['WinSWInternalDestinationDirectoryConfigRootKey']) }}"
+      state: directory
+    when: not WinSWExistsLocally.stat.exists
 
-- name: Download the WinSW from the WinSWPublicURL if it does not exist locally
-  win_get_url:
-    url: "{{ $($global:configRootKeys['WinSWPublicURLConfigRootKey']) }}"
-    dest: "{{ $($global:configRootKeys['WinSWInternalDestinationPathConfigRootKey']) }}"
-  when: not WinSWExistsLocally.stat.exists
+  - name: Download the WinSW from the WinSWPublicURL if it does not exist locally
+    win_get_url:
+      url: "{{ $($global:configRootKeys['WinSWPublicURLConfigRootKey']) }}"
+      dest: "{{ $($global:configRootKeys['WinSWInternalDestinationPathConfigRootKey']) }}"
+    when: not WinSWExistsLocally.stat.exists
 
 "@)
 }

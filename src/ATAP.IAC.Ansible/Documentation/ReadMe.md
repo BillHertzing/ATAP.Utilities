@@ -573,7 +573,7 @@ Powershell packages are managed on a per-host nad per-group basis using Ansible
 
   Symlink the profile file for the first admin user on this machine
 
-  - `Remove-Item -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target (join-path ( [Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')`
+  - `Remove-Item -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')`
 
 
 
@@ -686,6 +686,7 @@ In the newly created Powershell subdirectory, run the following command
 Install the Powershell build tools. Run the following command `install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser`
 
 Install the Powershell script analysis tools. Run the following command `install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser`
+
 #### Role:QualityAssurance
 
 Install the Powershell script analysis tools. Run the following command `install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser`

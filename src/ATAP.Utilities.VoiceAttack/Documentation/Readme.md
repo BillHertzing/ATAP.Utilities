@@ -11,7 +11,7 @@ choco install rabbitmq
 This will also install the Erlang language server!
 Assistant design
 
-The APAT Voiceattack plugin is intended to be an assistant for playing games. It offers these featires:
+The APATAPAT Voiceattack plugin is intended to be an assistant for playing games. It offers these featires:
 
 1) Coach mode: The plugin will provide verbal reminders of actions to  take
 

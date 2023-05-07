@@ -7,7 +7,10 @@ param(
 
 )
 
-# use a local $sb for each file type
+# use a local StringBuilder
+[System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
+
+# use a local $sb for each file type ToDo: remove these, rework to latest examples (RoleJenkinsController)
 [System.Text.StringBuilder]$sbTask = [System.Text.StringBuilder]::new()
 [System.Text.StringBuilder]$sbVars = [System.Text.StringBuilder]::new()
 [System.Text.StringBuilder]$sbMeta = [System.Text.StringBuilder]::new()
@@ -52,6 +55,20 @@ PythonVersion: 3.11.2
 PythonAllow_prerelease: false
 "@)
 # ToDo Fix AddedParameters for chocolatey installation
+}
+
+function ContentsMetaNew {
+  [void]$sb.Append(@'
+galaxy_info:
+  author: William Hertzing for ATAP.org
+  description: Ansible role to setup a Python Interpreter via Chocolatey
+  attribution:
+  company: ATAP.org
+  role_name: JenkinsControllerWindows
+  license: license (MIT)
+  min_ansible_version: 2.4
+  dependencies: []
+'@)
 }
 
 function ContentsMeta {

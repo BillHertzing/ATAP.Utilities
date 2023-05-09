@@ -1,5 +1,7 @@
 {
     "recommendations": [
         "prateekmahendrakar.resxpress"
+        , "dbaeumer.vscode-eslint"
+        , "amodio.tsl-problem-matcher"
     ]
 }

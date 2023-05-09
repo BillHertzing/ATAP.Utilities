@@ -1,74 +1,84 @@
 {
   "editor.renderWhitespace": "all",
-    "omnisharp.enableEditorConfigSupport": true,
-    "omnisharp.useGlobalMono": "never",
-    "git.enableSmartCommit": true,
-    "git.confirmSync": false,
-    "yaml.schemas": {},
-    "cSpell.enableFiletypes": [
-        "sql"
-    ],
-    "cSpell.allowCompoundWords": true,
-    "cSpell.userWords": [
-        "Finalizer",
-        "GDOT",
-        "GHBS",
-        "GHHS",
-        "Guids",
-        "IORM",
-        "Itenso",
-        "KVPs",
-        "MSMQ",
-        "Newtonsoft",
-        "Philote",
-        "Propertys",
-        "Serilog",
-        "Usings",
-        "Xunit",
-        "atap",
-        "datas",
-        "localizers",
-        "number",
-        "of",
-        "graphid",
-        "whertzing"
-    ],
-    "cSpell.words": [
-        "AOEII",
-        "AUADMIN",
-        "AUUSER",
-        "DATABASEPROPERTYEX",
-        "dbcmptlevel",
-        "ddladmin",
-        "DISM",
-        "globbing",
-        "grantdbaccess",
-        "LINQ",
-        "MSSQL",
-        "myfile",
-        "N'HKEY",
-        "nchar",
-        "Ninject",
-        "NOEXEC",
-        "nvarchar",
-        "Prefixs",
-        "Psake",
-        "pwsh",
-        "RAISERROR",
-        "RTRIM",
-        "serializers",
-        "SRVROLEMEMBER",
-        "SSMS",
-        "sysdatabases",
-        "syslogins",
-        "unbag",
-        "XACT"
-    ],
-    "markdownlint.config": {
-        "MD028": false,
-        "MD025": {
-            "front_matter_title": ""
-        }
-    },
-    "pester.autoRunOnSave": false
+  "omnisharp.enableEditorConfigSupport": true,
+  "omnisharp.useGlobalMono": "never",
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "yaml.schemas": {},
+  "cSpell.enableFiletypes": [
+    "sql"
+  ],
+  "cSpell.allowCompoundWords": true,
+  "cSpell.userWords": [
+    "Finalizer",
+    "GDOT",
+    "GHBS",
+    "GHHS",
+    "Guids",
+    "IORM",
+    "Itenso",
+    "KVPs",
+    "MSMQ",
+    "Newtonsoft",
+    "Philote",
+    "Propertys",
+    "Serilog",
+    "Usings",
+    "Xunit",
+    "atap",
+    "datas",
+    "localizers",
+    "number",
+    "of",
+    "graphid",
+    "whertzing"
+  ],
+  "cSpell.words": [
+    "AOEII",
+    "AUADMIN",
+    "AUUSER",
+    "DATABASEPROPERTYEX",
+    "dbcmptlevel",
+    "ddladmin",
+    "DISM",
+    "globbing",
+    "grantdbaccess",
+    "LINQ",
+    "MSSQL",
+    "myfile",
+    "N'HKEY",
+    "nchar",
+    "Ninject",
+    "NOEXEC",
+    "nvarchar",
+    "Prefixs",
+    "Psake",
+    "pwsh",
+    "RAISERROR",
+    "RTRIM",
+    "serializers",
+    "SRVROLEMEMBER",
+    "SSMS",
+    "sysdatabases",
+    "syslogins",
+    "unbag",
+    "XACT"
+  ],
+  "markdownlint.config": {
+    "MD028": false,
+    "MD025": {
+      "front_matter_title": ""
+    }
+  },
+  "pester.autoRunOnSave": false,
+  "files.exclude": {
+    "out": false, // set this to true to hide the "out" folder with the compiled JS files
+    "dist": false // set this to true to hide the "dist" folder with the compiled JS files
+  },
+  "search.exclude": {
+    "out": true, // set this to false to include "out" folder in search results
+    "dist": true // set this to false to include "dist" folder in search results
+  },
+  // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
+  "typescript.tsc.autoDetect": "off"
 }

@@ -293,17 +293,26 @@ The script `PKIForNewOrg.ps1` will create most of infrastructure needed to suppo
 - Confirm/Create the necessary directory structure for signing certificates with the CA at a secure cloud-synced location
 
 
+- Create WSMan SSL Certificate(s) (ServerAuth) for all computers in the organization's workgroup
+  - Define a DistinguishedNameHash for the WSMan SSL  Certificate Request for each computer
+  - Create an EncryptionPassPhrase file
+  - Create an EncryptedKey file
+  - Create a WSMan SSL  Certificate Request
+  - Create a signed WSMan SSL Certificate
+  - Copy the signed WSMan SSL Certificate from the signing certificate's directory structure to the organization's directory structure (vault)
+
 - Create SSL Server Certificate(s) for all computers in the organization's workgroup
   - Define a DistinguishedNameHash for the SSL Server Certificate Request for each computer
   - Create an EncryptionPassPhrase file
   - Create an EncryptedKey file
   - Create a SSL Server Certificate Request
   - Create a signed SSL Server Certificate
-  - Copy the signed SSL Server Certificate from the signing certificate's directory structure to the organization's directory structure
+  - Copy the signed SSL Server Certificate from the signing certificate's directory structure to the organization's directory structure  (vault)
 
 The following steps must be taken manually by a security administrator on any computer that does not have PSRemoting enabled
-- Deploy the Root CA to each computer in the workgroup
-- Deploy the appropriate SSL Server certificate to each computer in the organization's workgroup
+
+- Deploy the Root CA to each computer in the workgroup (or each new host as it is added)
+- Deploy the appropriate WSMan SSL certificate to each computer in the organization's workgroup (or each new host as it is added))
 
 
 ##### Validating needed Tools, Environment variables and Directory Structure
@@ -349,26 +358,26 @@ The Root CA Certificate can be generated without first needing a CertificateSign
 
 ##### Create a custom OpenSSL Configuration File for the Root CA
 
-There are a few settings needed to sign a Certificate with a CA, that cannot be modified / set on the command line. These few settings MUST be configured in the OpenSSL configuration file. Luckliy, they can be done with environment variables
+There are a few settings needed to sign a Certificate with a CA, that cannot be modified / set on the command line. These few settings MUST be configured in the OpenSSL configuration file. Luckily, they can be done with environment variables
 
 OPENSSL_SIGNINGCERTIFICATES_DIR
 dir		= C:/Dropbox/Security/Certificates/SigningCertificates/Root		# Where everything is kept
-#private_key	= $dir/PrivateKeys/cakey.pem # The private key
+ #private_key	= $dir/PrivateKeys/cakey.pem # The private key
 serial		= $dir/serial 		# The current serial number
 database	= $dir/CertificatesIssued.txt	# database index file.
 new_certs_dir	= $dir/NewCertificates	# default place for new certs.
 certs		= $dir/Certificates		# Where the issued certs are kept
-#crl		= $dir/crl.pem 		# The current CRL
-#crl_dir		= $dir/crl		# Where the issued crl are kept
+ #crl		= $dir/crl.pem 		# The current CRL
+ #crl_dir		= $dir/crl		# Where the issued crl are kept
 
 
 ##### Install the Root Certificate Authority Certificate
 
 Add the new Root Certificate Authority certificate to all machines in the workgroup
 
-Note that powershell remoting depends on having a trusted SSL certificate for this purpose.
+Note that PSRemoting depends on having a trusted SSL certificate for this purpose.
 Trusting an internally generated SSL certificate requires an internal Root Certificate Authority certificate
-Therefore Powershell remoting cannot be used to install an internal Root Certificate Authority certificate on a machine which does not yet have PS-remoting working
+Therefore PSRemoting cannot be used to install an internal Root Certificate Authority certificate on a machine which does not yet have PSRemoting working
 
 Repeat the following commands on each machine in the workgroup, as an administrator
 
@@ -417,6 +426,10 @@ Example
 - Windows
   See [Create Your Own SSL Certificate Authority for Local HTTPS Development](https://deliciousbrains.com/ssl-certificate-authority-for-local-https-development/) for instructions using the MMC snap-in
   ToDO: Powershell way - (Need to figure out teh proper cert store)
+  ToDo: The following command did not install the cert, it just brought up the manual interactive certmgr widget
+
+`CertMgr /add $CertificatePath /s /r localMachine root `
+
 
 - \*nix
 - MacOS
@@ -427,7 +440,7 @@ Example
 
 ##### Create an SSL Server Certificate
 
-There are many scenarios that require a trusted SSL Certificate to authenticate a specific server. The examples below will create a SSL certificate for a server DN. Among other things, it can be used to support Powershell remoting in a workgroup environment.
+There are many scenarios that require a trusted SSL Certificate to authenticate a specific server. The examples below will create a SSL certificate for a server DN. Among other things, it can be used to support PSRemoting in a workgroup environment.
 
 Certificate creation starts with the DintiguishedNameHash  # Subject, SubjectAlternativeName, and the type of certificate (template)
 [Distinguished Names](https://ldapwiki.com/wiki/Distinguished%20Names).
@@ -557,10 +570,9 @@ Create a SSL Certificate and sign it with the organization's CA Root Certificate
 ```Powershell
 $WinRMSSLCertificatePath = Join-path 'C:\Dropbox\SecretManagement\CARoot\Certificates' 'WinRMSSLCertificate.crt'
 openssl x509 -req -in $WinRMSSLCertificateRequestPath -CA $RootCAPath -CAkey $RootCAPrivateKeyPath -CAcreateserial -out $WinRMSSLCertificatePath -days 3650
-
 ```
 
-Combine the certificate and the key into a .pfx fileConvert the certificate toa .pfx file
+Combine the certificate and the key into a .pfx file
 
 
 Install the SSL Certificate onto every machine where PSRemoting is desired
@@ -580,7 +592,7 @@ Install the SSL Certificate onto every machine where PSRemoting is desired
 [config - OpenSSL CONF library configuration files](https://www.openssl.org/docs/man1.1.1/man5/config.html)
 [How Frequently Should You Rotate PKI Certificates and Keys?](https://www.venafi.com/blog/how-frequently-should-you-rotate-pki-certificates-and-keys)
 [self-signed-certificate-with-custom-ca.md] https://gist.github.com/fntlnz/cf14feb5a46b2eda428e000157447309) good stuff in the comments, but mostly for Linux
-[penSSL CONF library configuration files](https://www.mkssoftware.com/docs/man5/openssl_config.5.asp)
+[openSSL CONF library configuration files](https://www.mkssoftware.com/docs/man5/openssl_config.5.asp)
 [How to setup your own CA with OpenSSL](https://gist.github.com/Soarez/9688998)
 [OpenSSL Certificate Authority](https://jamielinux.com/docs/openssl-certificate-authority/index.html)
 [OpenSSL Cheat Sheet by albertx](https://cheatography.com/albertx/cheat-sheets/openssl/)

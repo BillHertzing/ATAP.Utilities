@@ -1,8 +1,9 @@
-function Initialize-VoiceRecognition {
+function Initialize-GoogleVoiceRecognition {
   param (
    # OptionalParameters
   )
- 
+
+  # Todo Manually before running
   # Open blank GoogleDoc having the name 'TBD"
 
   # enable microphone in google Doc

@@ -95,6 +95,9 @@ artifacts/
 # StyleCop
 StyleCopReport.xml
 
+# VSC Extension node_modules directory
+node_modules/
+
 # Files built by Visual Studio
 *_i.c
 *_p.c

@@ -30,7 +30,7 @@ ToDo: insert SCM keywords markers that are automatically inserted <Configuration
 #>
 Function New-DataEncryptionCertificateRequest {
   #region FunctionParameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet' )]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName ='DefaultParameterSetNameReplacementPattern'  )]
   param (
     [string] $Subject
     , [string] $SubjectAlternativeName

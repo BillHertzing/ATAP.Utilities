@@ -1,5 +1,5 @@
 #############################################################################
-#region New-EncryptionKeyPassPhraseFile
+#region New-RandomPassPhraseToFile
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,9 +28,9 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function New-EncryptionKeyPassPhraseFile {
+Function New-RandomPassPhraseToFile {
   #region Parameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet')]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName ='DefaultParameterSetNameReplacementPattern' )]
   param (
     [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
     [ValidateScript({ Test-Path $(Split-Path $_) -PathType 'Container' })]
@@ -68,5 +68,5 @@ Function New-EncryptionKeyPassPhraseFile {
   }
   #endregion EndBlock
 }
-#endregion New-EncryptionKeyPassPhraseFile
+#endregion New-RandomPassPhraseToFile
 #############################################################################

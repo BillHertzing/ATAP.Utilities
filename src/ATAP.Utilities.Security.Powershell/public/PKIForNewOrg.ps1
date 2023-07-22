@@ -73,7 +73,7 @@
 
 . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-DistinguishedNameHash.ps1'
 . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-DistinguishedNameQualifiedFilePath.ps1'
-. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-EncryptionKeyPassPhraseFile.ps1'
+. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-RandomPassPhraseToFile.ps1'
 . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-EncryptedPrivateKey.ps1'
 . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-CACertificate.ps1'
 . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-CertificateRequest.ps1'
@@ -108,15 +108,15 @@ $Encoding = 'UTF8'
 # $EncryptionKeyPassPhraseCrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']] $global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]
 # $EncryptionKeyPassPhrasePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCAPassPhraseFileBaseFileNameConfigRootKey']] -CrossReferenceFilePath $EncryptionKeyPassPhraseCrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]
 $EncryptionKeyPassPhrasePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCAPassPhraseFileBaseFileNameConfigRootKey']] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]
-New-EncryptionKeyPassPhraseFile -PassPhrasePath $EncryptionKeyPassPhrasePath
+New-RandomPassPhraseToFile -PassPhrasePath $EncryptionKeyPassPhrasePath
 # validate the EncryptionKeyPassPhrasePath exists and is non-zero
 if (Test-Path -Path $EncryptionKeyPassPhrasePath -PathType Leaf) {
   if (-not (Get-ItemPropertyValue -Path $EncryptionKeyPassPhrasePath -Name 'Length')) {
-    throw "New-EncryptionKeyPassPhraseFile created 0-length EncryptionKeyPassPhrase at $EncryptionKeyPassPhrasePath"
+    throw "New-RandomPassPhraseToFile created 0-length EncryptionKeyPassPhrase at $EncryptionKeyPassPhrasePath"
   }
 }
 else {
-  throw "New-EncryptionKeyPassPhraseFile failed to create the EncryptionKeyPassPhrase at $EncryptionKeyPassPhrasePath"
+  throw "New-RandomPassPhraseToFile failed to create the EncryptionKeyPassPhrase at $EncryptionKeyPassPhrasePath"
 }
 
 # Construct the needed path (Obfuscate if desired)
@@ -212,15 +212,15 @@ $ComputerNames | ForEach-Object { $CN = $_
   # $EncryptionKeyPassPhraseCrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesSSLServerPassPhraseFileBaseFileNameConfigRootKey']] $global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]
   # $EncryptionKeyPassPhrasePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DistinguishedNameHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerPassPhraseFileBaseFileNameConfigRootKey']] -CrossReferenceFilePath $EncryptionKeyPassPhraseCrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]
   $EncryptionKeyPassPhrasePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DistinguishedNameHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerPassPhraseFileBaseFileNameConfigRootKey']] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]
-  New-EncryptionKeyPassPhraseFile -PassPhrasePath $EncryptionKeyPassPhrasePath
+  New-RandomPassPhraseToFile -PassPhrasePath $EncryptionKeyPassPhrasePath
   # validate the EncryptionKeyPassPhrasePath exists and is non-zero
   if (Test-Path -Path $EncryptionKeyPassPhrasePath -PathType Leaf) {
     if (-not (Get-ItemPropertyValue -Path $EncryptionKeyPassPhrasePath -Name 'Length')) {
-      throw "New-EncryptionKeyPassPhraseFile created 0-length EncryptionKeyPassPhrase file at $EncryptionKeyPassPhrasePath"
+      throw "New-RandomPassPhraseToFile created 0-length EncryptionKeyPassPhrase file at $EncryptionKeyPassPhrasePath"
     }
   }
   else {
-    throw "New-EncryptionKeyPassPhraseFile failed to create the EncryptionKeyPassPhrase file at $EncryptionKeyPassPhrasePath"
+    throw "New-RandomPassPhraseToFile failed to create the EncryptionKeyPassPhrase file at $EncryptionKeyPassPhrasePath"
   }
 
   # Create an EncryptedKey file
@@ -358,15 +358,15 @@ $Encoding = 'UTF8'
 # $EncryptionKeyPassPhraseCrossReferenceFilePath = Join-Path $global:settings[$global:configRootKeys['SecureCertificatesCodeSigningPassPhraseFileBaseFileNameConfigRootKey']] $global:settings[$global:configRootKeys['SecureCertificatesCrossReferenceFilenameConfigRootKey']]
 # $EncryptionKeyPassPhrasePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCodeSigningPassPhraseFileBaseFileNameConfigRootKey']] -CrossReferenceFilePath $EncryptionKeyPassPhraseCrossReferenceFilePath -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]
 $EncryptionKeyPassPhrasePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCodeSigningPassPhraseFileBaseFileNameConfigRootKey']] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]
-New-EncryptionKeyPassPhraseFile -PassPhrasePath $EncryptionKeyPassPhrasePath
+New-RandomPassPhraseToFile -PassPhrasePath $EncryptionKeyPassPhrasePath
 # validate the EncryptedPrivateKeyPath exists and is non-zero
 if (Test-Path -Path $EncryptionKeyPassPhrasePath -PathType Leaf) {
   if (-not (Get-ItemPropertyValue -Path $EncryptionKeyPassPhrasePath -Name 'Length')) {
-    throw "New-EncryptionKeyPassPhraseFile created 0-length EncryptionKeyPassPhrase file at $EncryptionKeyPassPhrasePath"
+    throw "New-RandomPassPhraseToFile created 0-length EncryptionKeyPassPhrase file at $EncryptionKeyPassPhrasePath"
   }
 }
 else {
-  throw "New-EncryptionKeyPassPhraseFile failed to create the EncryptionKeyPassPhrase file at $EncryptionKeyPassPhrasePath"
+  throw "New-RandomPassPhraseToFile failed to create the EncryptionKeyPassPhrase file at $EncryptionKeyPassPhrasePath"
 }
 
 # Create an EncryptedKey file
@@ -514,8 +514,8 @@ Register-CodeSigningCert -CertStoreLocation $CodeSigningCertStoreLocation
 #
 # $SecretVaultName = 'SecurityAdminSecretsSSLServerCertificates'
 # $SecretVaultDescription = 'Location of the SSL Server identification Certificate files for Security Administrators'
-# $ExtensionVaultModuleName = 'SecretManagement.Keepass'
-# $KeyFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Certificates', 'EncryptedKeys', 'SecurityAdminSecretsSSLServerCertificatesEncryption.key'
+# $SecretVaultModuleName = 'SecretManagement.Keepass'
+# $SecretVaultEncryptionKeyFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Certificates', 'EncryptedKeys', 'SecurityAdminSecretsSSLServerCertificatesEncryption.key'
 # $EncryptedPasswordFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'EncryptedPasswordFiles', 'SecurityAdminSecretsSSLServerCertificatesEncryptedPassword.txt'
 # $PasswordTimeout = 300
 # $PathToKeePassDB = 'C:\KeePass\Local.ATAP.Utilities.kdbx'  # This is the identifier for the KeePassParameterSet
@@ -523,15 +523,15 @@ Register-CodeSigningCert -CertStoreLocation $CodeSigningCertStoreLocation
 # Write-PSFMessage -Level Important -Message $(Write-HashIndented -initialIndent 0 -indentIncrement 0 -hash $([ordered]@{
 #       SecretVaultName           = $SecretVaultName
 #       SecretVaultDescription    = $SecretVaultDescription
-#       ExtensionVaultModuleName  = $ExtensionVaultModuleName
-#       KeyFilePath               = $KeyFilePath
+#       SecretVaultModuleName  = $SecretVaultModuleName
+#       SecretVaultEncryptionKeyFilePath               = $SecretVaultEncryptionKeyFilePath
 #       EncryptedPasswordFilePath = $EncryptedPasswordFilePath
 #       PasswordTimeout           = $PasswordTimeout
 #       PathToKeePassDB           = $PathToKeePassDB
 #     }))
 #
-# . C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-UsersSecretStoreVault.ps1
-# Get-UsersSecretStoreVault -SecretVaultName $SecretVaultName -SecretVaultDescription $SecretVaultDescription -ExtensionVaultModuleName $ExtensionVaultModuleName -KeyFilePath $KeyFilePath -EncryptedPasswordFilePath $EncryptedPasswordFilePath -PathToKeePassDB $PathToKeePassDB
+# . C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\ Open-UsersSecretVault.ps1
+#  Open-UsersSecretVault -SecretVaultName $SecretVaultName -SecretVaultDescription $SecretVaultDescription -SecretVaultModuleName $SecretVaultModuleName -SecretVaultEncryptionKeyFilePath $SecretVaultEncryptionKeyFilePath -EncryptedPasswordFilePath $EncryptedPasswordFilePath -PathToKeePassDB $PathToKeePassDB
 #
 #
 # # Store
@@ -554,8 +554,8 @@ Register-CodeSigningCert -CertStoreLocation $CodeSigningCertStoreLocation
 #
 # $SecretVaultName = 'SecurityAdminSecretsCurrentRootCA'
 # $SecretVaultDescription = 'Location of the current root Ca files for Security Administrators'
-# $ExtensionVaultModuleName = 'SecretManagement.Keepass'
-# $KeyFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'KeyFiles', 'SecurityAdminSecrets.key'
+# $SecretVaultModuleName = 'SecretManagement.Keepass'
+# $SecretVaultEncryptionKeyFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'KeyFiles', 'SecurityAdminSecrets.key'
 # $EncryptedPasswordFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'PasswordFiles', 'SecurityAdminSecrets.txt'
 # $PasswordTimeout = 300
 # $PathToKeePassDB = 'C:\KeePass\Local.ATAP.Utilities.kdbx'  # This is the identifier for the KeePassParameterSet
@@ -563,15 +563,15 @@ Register-CodeSigningCert -CertStoreLocation $CodeSigningCertStoreLocation
 # Write-PSFMessage -Level Important -Message $(Write-HashIndented -initialIndent 0 -indentIncrement 0 -hash $([ordered]@{
 #       SecretVaultName           = $SecretVaultName
 #       SecretVaultDescription    = $SecretVaultDescription
-#       ExtensionVaultModuleName  = $ExtensionVaultModuleName
-#       KeyFilePath               = $KeyFilePath
+#       SecretVaultModuleName  = $SecretVaultModuleName
+#       SecretVaultEncryptionKeyFilePath               = $SecretVaultEncryptionKeyFilePath
 #       EncryptedPasswordFilePath = $EncryptedPasswordFilePath
 #       PasswordTimeout           = $PasswordTimeout
 #       PathToKeePassDB           = $PathToKeePassDB
 #     }))
 #
-# . C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-UsersSecretStoreVault.ps1
-# Get-UsersSecretStoreVault -SecretVaultName $SecretVaultName -SecretVaultDescription $SecretVaultDescription -ExtensionVaultModuleName $ExtensionVaultModuleName -KeyFilePath $KeyFilePath -EncryptedPasswordFilePath $EncryptedPasswordFilePath -PathToKeePassDB $PathToKeePassDB
+# . C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\ Open-UsersSecretVault.ps1
+#  Open-UsersSecretVault -SecretVaultName $SecretVaultName -SecretVaultDescription $SecretVaultDescription -SecretVaultModuleName $SecretVaultModuleName -SecretVaultEncryptionKeyFilePath $SecretVaultEncryptionKeyFilePath -EncryptedPasswordFilePath $EncryptedPasswordFilePath -PathToKeePassDB $PathToKeePassDB
 #
 # # Store the secret information about the current Root CA
 # # Some vaults allow a secret to be changed, but others require a secret be deleted and then added
@@ -593,15 +593,15 @@ Register-CodeSigningCert -CertStoreLocation $CodeSigningCertStoreLocation
 #
 # $SecretVaultName = 'SecurityAdminSecretsCurrentRootCA'
 # $SecretVaultDescription = 'Secrets for Security Administrators'
-# $ExtensionVaultModuleName = 'SecretManagement.Keepass'
+# $SecretVaultModuleName = 'SecretManagement.Keepass'
 # $PathToKeePassDB = 'C:\KeePass\Local.ATAP.Utilities.kdbx'  # This is the identifier for the KeePassParameterSet
 #
-# $KeyFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'KeyFiles', 'SecurityAdminSecrets.key' # Join-Path $env:TEMP 'SecretVaultTestingEncryption.key'
+# $SecretVaultEncryptionKeyFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'KeyFiles', 'SecurityAdminSecrets.key' # Join-Path $env:TEMP 'SecretVaultTestingEncryption.key'
 # $EncryptedPasswordFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'PasswordFiles', 'SecurityAdminSecrets.txt' # $env:TEMP 'SecretVaultTestingEncryptedPassword.txt'
 #
 # $PasswordTimeout = 300
-# . C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\Get-UsersSecretStoreVault.ps1
-# Get-UsersSecretStoreVault -SecretVaultName $SecretVaultName -SecretVaultDescription $SecretVaultDescription -ExtensionVaultModuleName $ExtensionVaultModuleName -KeyFilePath $KeyFilePath -EncryptedPasswordFilePath $EncryptedPasswordFilePath -PathToKeePassDB $PathToKeePassDB
+# . C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\ Open-UsersSecretVault.ps1
+#  Open-UsersSecretVault -SecretVaultName $SecretVaultName -SecretVaultDescription $SecretVaultDescription -SecretVaultModuleName $SecretVaultModuleName -SecretVaultEncryptionKeyFilePath $SecretVaultEncryptionKeyFilePath -EncryptedPasswordFilePath $EncryptedPasswordFilePath -PathToKeePassDB $PathToKeePassDB
 #
 # # Get the current root CA certificate files
 # $SecretName = 'CAEncryptionKeyPassPhrasePath'

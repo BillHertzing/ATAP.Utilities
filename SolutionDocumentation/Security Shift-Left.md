@@ -191,7 +191,7 @@ ATAP Utilities uses a PKI infrastructure supplied as part of a module called ATA
 ACL (or directory/group) role-based protections;
 ** Vaults
 *** KeyFiles
-*** MasterPasswordFiles
+*** EncryptedPasswordFiles
 *** VaultDatabases
 ** Certificates
 ***_ DefaultConfigurationFile
@@ -332,7 +332,7 @@ Every organization needs a Root CA Certificate, to sign internal Certificates. T
 
 ```Powershell
   $EncryptionKeyPassPhrasePath =  Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCAPassPhraseFileBaseFileNameConfigRootKey'] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]
-  New-EncryptionKeyPassPhraseFile -PassPhrasePath $EncryptionKeyPassPhrasePath
+  New-RandomPassPhraseToFile -PassPhrasePath $EncryptionKeyPassPhrasePath
 ```
 
 ##### Create an Encrypted Private Key File
@@ -469,7 +469,7 @@ $CertificateRequestConfigPath = Join-Path $global:settings[$global:configRootKey
 
 ```Powershell
 $EncryptionKeyPassPhrasePath = Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesSSLServerPassPhraseFileBaseFileNameConfigRootKey'] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptedKeysPathConfigRootKey']]
-New-EncryptionKeyPassPhraseFile -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath
+New-RandomPassPhraseToFile -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath
 ```
 
 ##### Create an SSL Certificate Private and Public Key Pair
@@ -616,8 +616,7 @@ see [cxref] for instructions on creating and using the Powershell Secret Vaults
 ```Powershell
 Store-CertificateInVault {()
   $VaultName = Get-VaultExtensionName -Purpose 'RootCA' -Subject -SubjectAlternativeName -Environment $global:settings  [$global:configRootKeys['EnvironmentConfigRootKey']]
-  Get-UsersSecretStoreInfo
-  Unlock-UsersSecretStore
+  Get-UsersSecretVaultInfo |  Unlock-UsersSecretVault -passThru
   Test-SecretVault
   if (Get-Secret CertificatePath) {Remove-Secret CertificatePath}
   if (Get-Secret PublicPrivateKeyPath) {Remove-Secret PublicPrivateKeyPath}

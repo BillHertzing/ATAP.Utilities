@@ -12,19 +12,25 @@ Eventually, some of these steps will be incorporated into a Powershell module ad
 
 This document starts with the assumption that a new computer is operational, has a monitor and keyboard connected, and can vbe booted into the BIOS.
 
+## Presetup steps
+
+- Create bootable USB stick using rufus, and setup the first user (<firstlocalusername>terminal) on that rufus-built SUB stick image (details TBD)
+- Print out Windows activation key
+
 ## BIOS modifications
 
 BIOS changes can be made before an operating system is installed. These will be unique to a given machine configuration. These must be done manually when a machine is first powered up.
 
-
 ### utat022 host BIOS modifications
 
 - Change PCIE configuration from "M2 extension card" to "dual M2 SSD"
+- write down disk number for M2.2 main SSD stick
 - Ensure SATA controllers are On
 - X.M.P is enabled
 - Intel Rapid Storage technology is OFF
 - change hotswap notification to "enabled"
-- Boot disk order should list teh removable drives first
+- select a single boot option,the USB drive (uefi)
+- save and reboot
 
 ## Install the Operating system
 
@@ -32,24 +38,30 @@ Operating systems can be installed from ISO images, or from other image sources.
 
 These instructions are for adding a machine to a non-domain workgroup, and creating local users and groups on the machine.
 
-### Create a Windows bootable USB stick
+Bootable USB stick is created from an ISO download and Rufus program. Rufus allows you to create a local user and bypass the microsoft account login.
 
-Create latest Windows 11 bootable USB stick (Instructions TBD)
-Print latest Windows 11 Pro license Key
+### Windows OS instructions
 
-### utat022 OS instructions
-
-unplug SATA drives, leave just PCIE drive in
-disconnect the machine from the internet
 plug USB stick into bootable usb port
-Power up the machine, boot through the USB strick
-Install Windows 11 Pro to (unformatted) drive 0
-When asked for the name of the first administrative user, enter `<YourInitialAdministratorUserID>` and `<YourInitialAdministratorPassword>`
-Login to the new machine using the first administrative user
+Power up the machine, boot through the USB stick
+- follow prompts to install windows, to the M2.2 SSD drive (2TB or bigger)
+- when reboot/restart occurs, go into Bios, change boot order to be the M2.2 disk, remove the USB drive
+- save and exit
+- Follow prompts after rebooting, including setting password for first user
 
-### Document the Operating System baseline
+The following steps are run via the Windows UI,
+## set Timezone
 
-run the program 'Everything' from a USB stick, get list to a file "01 Clean Windows 11 install, Step 01 Files.efu"
+- via the Windows UI, change timezone as appropriate
+
+## change machine name
+
+- Settings -> system->System Product Name - enter <newcomputerName>
+
+## Network Sharing
+
+using Windows Explorer, navigate to the `network` folder.You will see a prompt indicating network access is turned off. it will offer to turn it on. Select `make this network private and enable discovery and file sharing`
+
 
 ## Boostrap a new host for accepting communications from the IAC controller
 
@@ -85,37 +97,50 @@ $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
 powershell.exe -ExecutionPolicy ByPass -File $file -EnableCredSSP -DisableBasicAuth
 ```
 
+#### Enable inssecure communications
+
+```Powershell
+set-item wsman:\localhost\Service\Auth\Certificate true
+set-item wsman:\localhost\Service\Auth\Basic true
+```
+
 #### Validate the WinRM initial listener configuration
 
-Run the command ```winrm enumerate winrm/config/Listener```. Expected response should be
+From an administrative terminal on Windows,
+Run the command `winrm get winrm/config/Service`. Expected response should be
 
 ```Markdown
-Listener
-    Address = *
-    Transport = HTTP
-    Port = 5985
-    Hostname
-    Enabled = true
-    URLPrefix = wsman
+Service
+    RootSDDL = O:NSG:BAD:P(A;;GA;;;BA)(A;;GR;;;IU)S:P(AU;FA;GA;;;WD)(AU;SA;GXGW;;;WD)
+    MaxConcurrentOperations = 4294967295
+    MaxConcurrentOperationsPerUser = 1500
+    EnumerationTimeoutms = 240000
+    MaxConnections = 300
+    MaxPacketRetrievalTimeSeconds = 120
+    AllowUnencrypted = false
+    Auth
+        Basic = true
+        Kerberos = true
+        Negotiate = true
+        Certificate = true
+        CredSSP = true
+        CbtHardeningLevel = Relaxed
+    DefaultPorts
+        HTTP = 5985
+        HTTPS = 5986
+    IPv4Filter = *
+    IPv6Filter = *
+    EnableCompatibilityHttpListener = false
+    EnableCompatibilityHttpsListener = false
     CertificateThumbprint
-    ListeningOn = 127.0.0.1, 169.254.57.70, 169.254.70.187, 169.254.112.251, 169.254.190.156, 169.254.216.213, 169.254.226.151, 169.254.243.235, 192.168.1.01, ::1, fe80::1d36:2a1:1009:ba9f%8, fe80::3771:cebf:b9b8:bfab%22, fe80::38a8:8571:2350:4160%15, fe80::9479:9073:1303:6f08%12, fe80::d9b2:fccb:bdc:d011%11, fe80::dd23:2447:54ef:973b%14, fe80::e8ba:3244:9cf0:32ec%10, fe80::eca8:c27b:1692:6f95%7
-
-Listener
-    Address = *
-    Transport = HTTPS
-    Port = 5986
-    Hostname = <NewHost_HostName>
-    Enabled = true
-    URLPrefix = wsman
-    CertificateThumbprint = 02CCB8C348080EC5C75AE2C0EB844D3EA12A2B16
-    ListeningOn = 127.0.0.1, 169.254.57.70, 169.254.70.187, 169.254.112.251, 169.254.190.156, 169.254.216.213, 169.254.226.151, 169.254.243.235, 192.168.1.01, ::1, fe80::1d36:2a1:1009:ba9f%8, fe80::3771:cebf:b9b8:bfab%22, fe80::38a8:8571:2350:4160%15, fe80::9479:9073:1303:6f08%12, fe80::d9b2:fccb:bdc:d011%11, fe80::dd23:2447:54ef:973b%14, fe80::e8ba:3244:9cf0:32ec%10, fe80::eca8:c27b:1692:6f95%7```
+    AllowRemoteAccess = true
 
 Notes:
 
 - The IP address that start with `169.254.x.x` are unexpected, and according to this article [WinRM Strange ListeningOn Addresses](https://social.technet.microsoft.com/Forums/windows/en-US/3082d5ab-b018-4d99-8697-81cefc4b3543/winrm-strange-listeningon-addresses), come from the "Microsoft Failover Cluster Virtual Adapter", which is hidden.
 - Later steps will remove the Failover Clustering feature
 - Later steps will disable the HTTP listener, and install a WSMan certificate generated by the organizations internal PKI infrastructure.
-- Later steps will setup the TrustedHosts list for the WWSman service
+- Later steps will setup the TrustedHosts list for the WSman service
 - The hostname shown will be the initial host name generated when the OS is installed. Later steps will change the hostname, and modify the hostname entries in the WinRM Listener
 
 ```
@@ -127,20 +152,89 @@ Wake-on-LAN (WoL) is enabled to automatically turn on systems when doing mainten
 Detailed instructions are TBD and are per-host
 
 
-## Install Chocolatey for bootstrapping
+### Driver updates
 
-Ansible requires python to be installed on a remote host. Chocolatey is the easiest way to install python.
+Use the Windows GUI to install driver updates, update all that are out of date
+Windows Update -> Advanced Options -> Optional Updates
 
-TBD - install chocolatey from an organization's internal repository
-Current - install chocolatey from a USB stick [TBD]
+
+### Install Dropbox, and sync
+
+### Map User Directories to dropbox
+
+### Test Ansible connectivity
+
+Ensure the organization's `hosts` file includes the new Windows host.
+Ensure the Ansible inventory files include the new host
+Ensure the organization's IAC data files include the new host
+Generate a new Ansible directory structure, and transfer that to an active Ansible controller
+
+Invoke the ansible WindowsHosts.yml playbook, specify the new Windows host's name, the appropriate inventory file (nonproduction, during new computer setup), execute only tasks tagged with 'Preamble', and provide the extra arguments for user and password.
+
+Run this in an `Ubuntu` terminal on the active Ansible Controller's host
+
+ ```Powershell
+$newhostname = 'utat022'
+$defaultUser = 'whertzing'
+ansible-playbook -l $newhostname playbooks/WindowsHostsPlaybook.yml -i ./nonproduction_inventory.yml  --tags "Preamble"  -e "user=$defaultUser password=  "
+```
+
+### Accept the configuration from Ansible
+
+#### WindowsHosts
+
+TBD - update the list of packages by referencing an organization's confidential IAC data
+
+Run This
+
+ansible-playbook -l $newhostname playbooks/WindowsHostsPlaybook.yml -i ./nonproduction_inventory.yml  --tags "Preamble"  -e 'user=whertzing password=objuscated'
+Chocolatey packages
+
+
+### Document the Operating System baseline (optional)
+
+run the program 'Everything' from a USB stick, get list to a file "01 Clean Windows 11 install, Step 01 Files.efu"
+
 
 ## Install Python for Windows for bootstrapping
 
-TBD - install python311 from an organization's internal repository
+TBD - install python310 from an organization's internal repository
 TBD - install python311 from a USB stick [TBD]
 Current - install Python from the internet
 
-`choco install python311`
+The easiest way to get python is from the microsoft store using winget
+
+### Ensure Winget is present
+
+[Use the winget tool to install and manage applications](https://learn.microsoft.com/en-us/windows/package-manager/winget/)
+[Install winget by the command line (powershell)](https://stackoverflow.com/questions/74166150/install-winget-by-the-command-line-powershell)
+
+After a clean new install of Windows, winget won't be present for awhile. To ensure Winget is present, enter the command `winget`. If this is the first time winget has been run for the logged in user, there will be a message asking the user to acknowledge the license terms. If winget is not installed, then try the following commands
+
+```powershell
+# get latest download url
+$URL = "https://api.github.com/repos/microsoft/winget-cli/releases/latest"
+$URL = (Invoke-WebRequest -Uri $URL).Content | ConvertFrom-Json |
+        Select-Object -ExpandProperty "assets" |
+        Where-Object "browser_download_url" -Match '.msixbundle' |
+        Select-Object -ExpandProperty "browser_download_url"
+
+# download
+Invoke-WebRequest -Uri $URL -OutFile "Setup.msix" -UseBasicParsing
+
+# install
+Add-AppxPackage -Path "Setup.msix"
+
+# delete file
+Remove-Item "Setup.msix"
+```
+
+### Install Python
+
+ Note: as of 7/2/20023 StableDiffusion  will only work with Python 3.10, nothing later (pytorch is required)
+
+`winget install Python.Python.3.10 --scope machine`
+
 
 ## Add new host to the IAC configuration
 

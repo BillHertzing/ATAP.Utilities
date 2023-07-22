@@ -1,5 +1,5 @@
 #############################################################################
-#region New-SecureStringMasterPasswordFile
+#region New-EncryptedPasswordFile
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,18 +28,18 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function New-SecureStringMasterPasswordFile {
+Function New-EncryptedPasswordFile {
   #region Parameters
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern')]
   param (
     [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
     [SecureString] $PasswordSecureString
-    ,[parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
     [ValidateScript({ Test-Path $(Split-Path $_) -PathType 'Container' })]
     [string] $PasswordFilePath
-    ,[parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
-    [ValidateScript({Test-Path $_})]
-    [string] $KeyFilePath
+    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    [ValidateScript({ Test-Path $_ })]
+    [string] $EncryptionKeyFilePath
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [string] $Encoding
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
@@ -57,13 +57,13 @@ Function New-SecureStringMasterPasswordFile {
   #endregion ProcessBlock
   #region EndBlock
   END {
-    $EncryptionKeyData = Get-Content -Encoding $Encoding -Path $KeyFilePath
+    $EncryptionKeyData = Get-Content -Encoding $Encoding -Path $EncryptionKeyFilePath
     $passwordSecureString | ConvertFrom-SecureString -Key $EncryptionKeyData | Out-File -Encoding $Encoding -FilePath $EncryptedPasswordFilePath
-        Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
   #endregion EndBlock
 }
-#endregion New-SecureStringMasterPasswordFile
+#endregion New-EncryptedPasswordFile
 #############################################################################
 
 

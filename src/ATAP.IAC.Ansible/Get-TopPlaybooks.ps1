@@ -1,26 +1,131 @@
+
+<#
+.SYNOPSIS
+Short description
+.DESCRIPTION
+Long description
+.EXAMPLE
+Example of how to use this cmdlet
+.EXAMPLE
+Another example of how to use this cmdlet
+.INPUTS
+Inputs to this cmdlet (if any)
+.OUTPUTS
+Output from this cmdlet (if any)
+.NOTES
+General notes
+.COMPONENT
+The component this cmdlet belongs to
+.ROLE
+The role this cmdlet belongs to
+.FUNCTIONALITY
+The functionality that best describes this cmdlet
+#>
+function Get-Playbooks {
+  [CmdletBinding(DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern',
+    SupportsShouldProcess = $true,
+    PositionalBinding = $false,
+    ConfirmImpact = 'Medium')]
+  [Alias()]
+  [OutputType([Object])]
+  Param (
+    # Template help description
+    [Parameter(Mandatory = $true,
+      Position = 0,
+      ValueFromPipeline = $false,
+      ValueFromPipelineByPropertyName = $false,
+      ValueFromRemainingArguments = $false)
+    ]
+    [ValidateNotNull()]
+    [ValidateNotNullOrEmpty()]
+    $Template
+    , # Name help description
+    [Parameter(Mandatory = $true,
+      Position = 1,
+      ValueFromPipeline = $false,
+      ValueFromPipelineByPropertyName = $false,
+      ValueFromRemainingArguments = $false)
+    ]
+    [ValidateNotNull()]
+    [ValidateNotNullOrEmpty()]
+    $Path
+    , # InventoryStructure help description
+    [Parameter(Mandatory = $true,
+      Position = 2,
+      ValueFromPipeline = $false,
+      ValueFromPipelineByPropertyName = $false,
+      ValueFromRemainingArguments = $false)
+    ]
+    [ValidateNotNull()]
+    [ValidateNotNullOrEmpty()]
+    $InventoryStructure
+    , # hostName help description
+    [Parameter(ParameterSetName = 'AnsibleGroupNames',
+      Mandatory = $false,
+      Position = 3,
+      ValueFromPipeline = $false,
+      ValueFromPipelineByPropertyName = $false,
+      ValueFromRemainingArguments = $false)
+    ]
+    [ValidateNotNull()]
+    [ValidateNotNullOrEmpty()]
+    $AnsibleGroupName
+    , [Parameter(ParameterSetName = 'Buildout',
+      Mandatory = $false,
+      Position = 3,
+      ValueFromPipeline = $false,
+      ValueFromPipelineByPropertyName = $false,
+      ValueFromRemainingArguments = $false)
+    ]
+    [ValidateNotNull()]
+    [ValidateNotNullOrEmpty()]
+    $hostName
+  )
+
+  BEGIN {
+    Write-PSFMessage -Level Debug -Message 'Starting Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+  }
+
+  PROCESS {
+    if ($pscmdlet.ShouldProcess('Target', 'Operation')) {
+
+    }
+  }
+
+  END {
+    Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+  }
+}
+
+
+
+
+
+
+
+
 # Define the main playbook
 param (
-  [string] $ymlGenericTemplate
+  [string] $template
   , [string] $Path
   # $parsedInventory is a hashtable that specifies all the chocolatey packages, powershell modules, and windows features all the groups
   , [hashtable] $parsedInventory
-  ,[string] $playbooksSubdirectory
+  , [string] $playbooksSubdirectory
 )
 
 # script variables used in all scriptblocks
 $hostNames = $($parsedInventory.HostNames.Keys)
-$groupNames = $($parsedInventory.GroupNames.Keys) # enclosing the keycollection returned by .Keys inside a subexpressions converts it to an array of strings
+$ansibleGroupNames = $($parsedInventory.ansibleGroupNames.Keys) # enclosing the keycollection returned by .Keys inside a subexpressions converts it to an array of strings
 
 
 #state: "{{ registry_properties[item]['state']|default( {{ 'Absent' if (action_type == 'Uninstall') else 'Present'}} ) }}"
-
 
 function Contents {
   param(
     [string] $name
   )
   [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
-  [void]$sb.Append(@"
+  [void]$sb.Append(@'
 - name: Top Play
   hosts: all
   gather_facts: false
@@ -31,39 +136,39 @@ function Contents {
 
 # Include the playbook for every group
 
+'@)
+
+  for ($ansibleGroupNameIndex = 0; $ansibleGroupNameIndex -lt $ansibleGroupNames.count; $ansibleGroupNameIndex++) {
+    $ansibleGroupName = $ansibleGroupNames[$ansibleGroupNameIndex]
+    # if ($ansibleGroupName -ne 'WindowsHosts' ) { continue } # skip things for development
+
+    [void]$sb.Append(@"
+- import_playbook: "$playbooksSubdirectory/$($ansibleGroupName)Playbook.yml"
+
 "@)
+  }
 
-for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex++) {
-  $groupName = $groupNames[$groupNameIndex]
-  # if ($groupName -ne 'WindowsHosts' ) { continue } # skip things for development
+  $sb.ToString()
 
-  [void]$sb.Append(@"
-- import_playbook: "$playbooksSubdirectory/$($groupName)Playbook.yml"
+  # $(. $ChocolateyPackagesForansibleGroupNameScriptBlock)
 
-"@)
+  # # ChocolateyPackages Per Group
+  # $(if ($false) {$(. $ChocolateyPackagesForansibleGroupNameScriptBlock)})
+
+  # # PowershellModules Per Group
+  # $(if ($false) {$(. $PowershellModulesForansibleGroupNameScriptBlock)})
+
+  # # Registry Settings per Group
+  # $(if($true) {$(. $RegistrySettingsForansibleGroupNameScriptBlock)})
+
+  # # Roles per Group
+  # $(if($true) {$(. $RolesForansibleGroupNameScriptBlock)})
+
+  # "@
 }
 
-$sb.ToString()
 
-# $(. $ChocolateyPackagesForGroupNameScriptBlock)
-
-# # ChocolateyPackages Per Group
-# $(if ($false) {$(. $ChocolateyPackagesForGroupNameScriptBlock)})
-
-# # PowershellModules Per Group
-# $(if ($false) {$(. $PowershellModulesForGroupNameScriptBlock)})
-
-# # Registry Settings per Group
-# $(if($true) {$(. $RegistrySettingsForGroupNameScriptBlock)})
-
-# # Roles per Group
-# $(if($true) {$(. $RolesForGroupNameScriptBlock)})
-
-# "@
-}
-
-
-$ymlContents = $ymlGenericTemplate -replace '\{2}', 'Main Playbook'
+$ymlContents = $template -replace '\{2}', 'Main Playbook'
 
 # ToDo: get the formatting correct, so that we don't have to run this global search and replace
 $ymlContents += $($($(Contents) -split "`n") | ForEach-Object { $_ -replace '^\s{0,1}-', '-' }) -join "`n"
@@ -116,7 +221,7 @@ Set-Content -Path $Path -Value $ymlContents
 
 # - name: debug variables
 #   debug:
-#     msg: "ars are {{ hostvars[inventory_hostname] }} groupNameis {{ item }}  }} "
+#     msg: "ars are {{ hostvars[inventory_hostname] }} ansibleGroupNameis {{ item }}  }} "
 #   loop: "{{ hostvars[inventory_hostname].group_names }}"
 
 # - name remove all from groups

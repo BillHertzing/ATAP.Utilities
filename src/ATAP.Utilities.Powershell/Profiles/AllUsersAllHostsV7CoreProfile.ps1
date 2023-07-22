@@ -124,7 +124,7 @@ Function Write-EnvironmentVariablesIndented {
       $envVarHashTable.Keys | Sort-Object | ForEach-Object { $key = $_
         if ($key -eq 'path') {
           $outstr += ' ' * $initialIndent + $key + ' (' + $scope + ') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
-          $($($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) | Sort-Object) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) )
+          $($($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) | Sort-Object) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) ) + [Environment]::NewLine
         }
         else {
           $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] + '  [' + $scope + ']' + [Environment]::NewLine
@@ -221,8 +221,26 @@ else {
 }
 $global:settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']] = $inProcessEnvironmentVariable
 
-
-
+# Note on $env:PSModulePAth
+# The $Env:PSModulePath is process-scoped, and it's initial value is supplied by the Powershell host process/engine.
+# Powershell Core supplies [Environment]::GetFolderPath('MyDocuments')\PowerShell\Modules;C:\Program Files\PowerShell\Modules;c:\program files\powershell\7\Modules; in the initial value (process scoped)
+# The engine then loads the contents of the property 'PSModulePath' from the registry Key "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+# To see the value of this registry key/proptery, run the command
+#  $(Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" -name 'PSModulePath')
+# Installing some software on a host may modify this registry key, for example...
+# Installing SQL Server 2019 adds the path ;C:\Program Files (x86)\Microsoft SQL Server\150\Tools\PowerShell\Modules\ to the Registry setting for the machine scoped $Env:PSModulePath
+# For all ATAP organizationb hosts, we have made the opinionated decision to include the powershell Desktop modules in the PSModulePath for Powershell Core.
+#  The reason? There are just too many cmdlets in the desktop modules that are needed for managing Windows hosts and netwokrs, for these modules to be left out
+# additional $PSModulePath locations depend on the user and the role the user has on the machine, so there are no more machine-specific values. See the individual user profiles for further additions to the $ENV:PSModulepath
+# Get the current $Env:PSModulePath (should be the values pre-populated by the engine, appended with the "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" PSModuleProperty )
+$modifiedPSModulePath = $env:PSModulePath
+# using New-PSSession -ConfigurationName WithProfile  failed with the following error message : Could not load file or assembly 'System.Security.Cryptography, Version=7.0.0.0
+# 'System.Security.Cryptography.dll' is in C:\Program Files\PowerShell\7, which is not in the PSModulepath by default, so, add it
+$modifiedPSModulePath += ';C:\Program Files\PowerShell\7'
+# Add the Desktop module path to the end of the string
+$modifiedPSModulePath += ';C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules'
+# Set the environment varialbe to teh new value
+$env:PSModulePath = $modifiedPSModulePath
 # Load the JenkinsRoleSettings for this machine into the $global:settings
 # ($global:MachineAndNodeSettings[$hostname])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']] | ForEach-Object {
 #   $nodeName = $_
@@ -240,13 +258,6 @@ $global:settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']] = $inProces
 
 # location of the local chocolatey server per machine
 
-# The $Env:PSModulePath is process-scoped, and it's initial value is supplied by the Powershell host process/engine.
-# Powershell Core Version 7.2.5 supplies C:\Dropbox\whertzing\PowerShell\Modules;C:\Program Files\PowerShell\Modules;c:\program files\powershell\7\Modules; in the initial value (process scoped)
-
-# Installing SQL Server 2019 adds the path ;C:\Program Files (x86)\Microsoft SQL Server\150\Tools\PowerShell\Modules\ to the machine scoped $Env:PSModulePath
-
-# additional $PSModulePath locations depend on the user and the role the user has on the machine, so there are no more machine-specific values. See the individual user profiles for furhter additions to the $ENV:PSModulepath
-
 # This machine is part of the CI/CD DevOps pipeline ecosystem
 # The global_MachineAndNodeSettings.ps1 file includes the settings for the CI/CD pipeline portions that this machine can participate in
 #  Get settings associated with each role for this machine
@@ -256,12 +267,50 @@ $global:settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']] = $inProces
 # Function Definitions *global* scope
 ########################################################
 
+# TBD - move to powershell utilities
+Function Set-CredentialFile {
+  # Todo cmdlet
+  param (
+    # ToDo add whatif
+    [string] $SharedSecureCredentialDirectory
+    , [string] $CredentialFilename = "PowershellCredentials-$env:username-$env:hostname.xml"
+    , [switch] $force
+  )
+  $credentialFilePath = $(Join-Path $SharedSecureCredentialDirectory $CredentialFilename)
+  if (-not $(Test-Path -Path $SharedSecureCredentialDirectory -PathType Container)) {
+    if ($force) {
+      # ToDo: check for ACL permissions to create
+      New-Item -Path $SharedSecureCredentialDirectory -ItemType Container > $null
+    }
+    else {
+      throw "$SharedSecureCredentialDirectory does not exist"
+    }
+    if ($(Test-Path -Path $credentialFilePath -PathType Leaf)) {
+      # if the file already exists, don't overwrite it unless force is tru
+      if (-not $force) {
+        # ToDo: see if we can create the file, throw permissions error if not
+        throw "$credentialFilePath already exists, use -force to modify it"
+      }
+    }
+    $credential = Get-Credential
+    # ToDO: wrap in a what-if and a try catch to catch permission problem
+    $credential | Export-Clixml -Path $(Join-Path $SharedSecureCredentialDirectory $CredentialFilename)
+  }
+}
 
-# Set DebugPreference to Continue  to see the $global:settings and Environment variables at the completion of this profile
-# Print the $global:settings if Debug
-$DebugPreference = 'SilentlyContinue'
-Write-PSFMessage -Level Debug -Message ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
-Write-PSFMessage -Level Debug -Message ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
-$DebugPreference = 'SilentlyContinue'
+  Function Get-CredentialFile {
+    param (
+      [string] $Path
+    )
+    $credential = Import-Clixml -Path $path
+    $credential
+  }
+
+  # Set DebugPreference to Continue  to see the $global:settings and Environment variables at the completion of this profile
+  # Print the $global:settings if Debug
+  $DebugPreference = 'SilentlyContinue'
+  Write-PSFMessage -Level Debug -Message ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
+  Write-PSFMessage -Level Debug -Message ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
+  $DebugPreference = 'SilentlyContinue'
 
 

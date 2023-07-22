@@ -1,10 +1,10 @@
-# Define the playbooks for each groupname
+# Define the playbooks for each ansiblegroupname
 param (
   [string] $ymlGenericTemplate
   , [string] $Path
   # $parsedInventory is a hashtable that specifies all the chocolatey packages, powershell modules, and windows features all the groups
   , [hashtable] $parsedInventory
-  , [string] $groupName
+  , [string] $ansibleGroupName
   , [PSCustomObject] $packageInfos
 )
 
@@ -15,7 +15,7 @@ $addedParametersScriptblock = {
   )
   if ($addedParameters) {
     foreach ($ap in $addedParameters) { [void]$sbAddedParameters.Append("/$ap ") }
-    [void]$sbAddedParameters.Append('"')
+    # [void]$sbAddedParameters.Append('"')
     $sbAddedParameters.ToString()
     [void]$sbAddedParameters.Clear()
   }
@@ -23,8 +23,8 @@ $addedParametersScriptblock = {
 
 [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
 
-$GroupNameSpecificPreambleGroupNameScriptBlock = {
-  switch ($groupName) {
+$AnsibleGroupNameSpecificPreambleAnsibleGroupNameScriptBlock = {
+  switch ($ansibleGroupName) {
     'WindowsHosts' {
       [void]$sb.Append(@"
 # Ensure that Chocolatey and the chocolatey package installer are installed
@@ -53,60 +53,73 @@ $GroupNameSpecificPreambleGroupNameScriptBlock = {
         state: present
     # Install the cChoco Poweshell module
     - name: Ensure the cCHoco module from the PSGallery is present
-      win_psmodule:
+      community.windows.win_psmodule:
         name: cChoco
+        accept_license: true
         repository: PSGallery
-  tags: [$groupname, Preamble, InstallChocolatey]
+
+  tags: [$ansiblegroupname, Preamble, InstallChocolatey]
 "@)
     }
   }
 }
 
-$ChocolateyPackagesForGroupNameScriptBlock = {
-  if ($($parsedInventory.GroupNames[$groupName]).ContainsKey('ChocolateyPackageNames')) { # process for $groupName only if the ChocolateyPackageNames key exists
-    if ($null -ne $($parsedInventory.GroupNames[$groupName]).ChocolateyPackageNames) {
+$ChocolateyPackagesForAnsibleGroupNameScriptBlock = {
+  if ($($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).ContainsKey('ChocolateyPackageNames')) { # process for $ansibleGroupName only if the ChocolateyPackageNames key exists
+    if ($null -ne $($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).ChocolateyPackageNames) {
       [void]$sb.Append(@"
 
 # ChocolateyPackages Per Group
-- name: Install the Chocolatey Packages defined for the group '$groupName'
+- name: Install the Chocolatey Packages defined for the group '$ansibleGroupName'
   hosts: all
   gather_facts: false
   tasks:
     - name: Install the Chocolatey Packages
-      win_dsc:
-        resource_name: cChocoPackageInstaller
-        Name: "{{ item.name }}"
-        Version: "{{ item.version }}"
-        Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
-        Params: "{{ item.AddedParameters if item.AddedParameters else omit }}"
+      # win_dsc:
+      #   resource_name: cChocoPackageInstaller
+      #   Name: "{{ item.name }}"
+      #   Version: "{{ item.version }}"
+      #   Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
+      #   Params: "{{ item.AddedParameters if item.AddedParameters else omit }}"
+      win_chocolatey:
+        name: '{{ item.name }}'
+        version: '{{ item.version }}'
+        allow_prerelease: "{{ 'True' if (item.AllowPrerelease == 'true') else 'false'}}"
+        state: "{{ 'absent' if (action_type == 'Uninstall') else 'present'}}"
+        {% if item.AddedParameters is defined and item.AddedParameters|length %}
+        'package_params: ' "{{ item.AddedParameters }}"
+        {% endif %}
+      failed_when: false # Setting this means if one package fails, the loop will continue. You can remove it if you don't want that behaviour.
       loop:
 
 "@
       )
-      for ($index = 0; $index -lt @($($($parsedInventory.GroupNames)[$groupName]).ChocolateyPackageNames).count; $index++) {
-        $packageName = $($($($parsedInventory.GroupNames)[$groupName]).ChocolateyPackageNames)[$index]
+      for ($index = 0; $index -lt @($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).ChocolateyPackageNames).count; $index++) {
+        $packageName = $($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).ChocolateyPackageNames)[$index]
         $packageVersion = $($($PackageInfos.ChocolateyPackageInfos)[$packageName]).Version
         $allowPrerelease = $($($PackageInfos.ChocolateyPackageInfos)[$packageName]).AllowPrerelease
         $addedParameters = . $addedParametersScriptblock $($($PackageInfos.ChocolateyPackageInfos)[$packageName]).AddedParameters
 
-        [void]$sb.AppendLine("        - {name: $packageName, version: $packageVersion, AllowPrerelease: $allowPrerelease, AddedParameters: $addedParameters}")
+        [void]$sb.Append("        - {name: $packageName, version: $packageVersion, AllowPrerelease: $allowPrerelease, AddedParameters: $addedParameters}")
+        [void]$sb.Append("`n")
+
       }
       [void]$sb.Append(@"
-      when: "'$groupName' in group_names "
-  tags: [$groupname, ChocolateyPackages]
+      when: "'$ansibleGroupName' in group_names "
+  tags: [$ansiblegroupname, ChocolateyPackages]
 "@)
     }
   }
 }
 
-$PowershellModulesForGroupNameScriptBlock = {
-  # if ($groupName -ne 'WindowsHosts' ) { continue } # skip things for development
-  if ($($parsedInventory.GroupNames[$groupName]).ContainsKey('PowershellModuleNames')) { # process for $groupName only if the PowershellModuleNames key exists
-    if ($null -ne $($parsedInventory.GroupNames[$groupName]).PowershellModuleNames) {
+$PowershellModulesForAnsibleGroupNameScriptBlock = {
+  # if ($ansibleGroupName -ne 'WindowsHosts' ) { continue } # skip things for development
+  if ($($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).ContainsKey('PowershellModuleNames')) { # process for $ansibleGroupName only if the PowershellModuleNames key exists
+    if ($null -ne $($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).PowershellModuleNames) {
       [void]$sb.Append(@"
 
 # Powershell Modules per Group
-- name: Install Powershell modules For $groupName
+- name: Install Powershell modules For $ansibleGroupName
   hosts: all
   gather_facts: false
   tasks:
@@ -120,28 +133,29 @@ $PowershellModulesForGroupNameScriptBlock = {
       loop:
 
 "@)
-      for ($index = 0; $index -lt @($($($parsedInventory.GroupNames)[$groupName]).PowershellModuleNames).count; $index++) {
-        $moduleName = $($($($parsedInventory.GroupNames)[$groupName]).PowershellModuleNames)[$index]
+      for ($index = 0; $index -lt @($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).PowershellModuleNames).count; $index++) {
+        $moduleName = $($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).PowershellModuleNames)[$index]
         $moduleVersion = $($($PackageInfos.PowershellModuleInfos)[$moduleName]).Version
         $allowPrerelease = $($($PackageInfos.PowershellModuleInfos)[$moduleName]).AllowPrerelease
-        [void]$sb.AppendLine("        - {name: $moduleName, version: $moduleVersion, AllowPrerelease: $allowPrerelease  }")
+        [void]$sb.Append("        - {name: $moduleName, version: $moduleVersion, AllowPrerelease: $allowPrerelease  }")
+        [void]$sb.Append("`n")
       }
       [void]$sb.Append(@"
-      when: "'$groupName' in group_names "
-  tags: [$groupname, PowershellModules]
+      when: "'$ansibleGroupName' in group_names "
+  tags: [$ansiblegroupname, PowershellModules]
 "@)
     }
   }
 }
 
-$RegistrySettingsForGroupNameScriptBlock = {
-  # if($groupName -ne 'WindowsHosts' ) {continue} # skip things for development
-  if ($($parsedInventory.GroupNames[$groupName]).ContainsKey('RegistrySettingsNames')) { # process for $groupName only if the RegistrySettingsNames key exists
-    if ($null -ne $($parsedInventory.GroupNames[$groupName]).RegistrySettingsNames) {
+$RegistrySettingsForAnsibleGroupNameScriptBlock = {
+  # if($ansibleGroupName -ne 'WindowsHosts' ) {continue} # skip things for development
+  if ($($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).ContainsKey('RegistrySettingsNames')) { # process for $ansibleGroupName only if the RegistrySettingsNames key exists
+    if ($null -ne $($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).RegistrySettingsNames) {
       [void]$sb.Append(@"
 
 # Registry Settings per Group
-- name: Install Registry Settings For $groupName
+- name: Install Registry Settings For $ansibleGroupName
   hosts: all
   gather_facts: false
   tasks:
@@ -158,38 +172,38 @@ $RegistrySettingsForGroupNameScriptBlock = {
       loop:
 
 "@)
-      for ($index = 0; $index -lt @($($($parsedInventory.GroupNames)[$groupName]).RegistrySettingsNames).count; $index++) {
-        [void]$sb.Append('          - ' + @($($($parsedInventory.GroupNames)[$groupName]).RegistrySettingsNames)[$index])
+      for ($index = 0; $index -lt @($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).RegistrySettingsNames).count; $index++) {
+        [void]$sb.Append('          - ' + @($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).RegistrySettingsNames)[$index])
         [void]$sb.Append("`n")
       }
       [void]$sb.Append(@"
-      when: "'$groupName' in group_names"
-  tags: [$groupname,RegistrySettings]
+      when: "'$ansibleGroupName' in group_names"
+  tags: [$ansiblegroupname,RegistrySettings]
 "@)
     }
   }
 }
 #state: "{{ registry_properties[item]['state']|default( {{ 'Absent' if (action_type == 'Uninstall') else 'Present'}} ) }}"
 
-$RolesForGroupNameScriptBlock = {
-  # if($groupName -ne 'WindowsHosts' ) {continue} # skip things for development
-  if ($($parsedInventory.GroupNames[$groupName]).ContainsKey('AnsibleRoleNames')) { # process for $groupName only if the AnsibleRoleNames key exists
-    if ($null -ne $($parsedInventory.GroupNames[$groupName]).AnsibleRoleNames) {
+$RolesForAnsibleGroupNameScriptBlock = {
+  # if($ansibleGroupName -ne 'WindowsHosts' ) {continue} # skip things for development
+  if ($($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).ContainsKey('AnsibleRoleNames')) { # process for $ansibleGroupName only if the AnsibleRoleNames key exists
+    if ($null -ne $($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).AnsibleRoleNames) {
       # playbooks are in the $basedirectory/playbooks, while roles are in basedirectory/roles. But roles are searched below the playbooks dir. So to find a role, requires a custom role path, ""../roles/""
       [void]$sb.Append(@"
 
 # Roles per Group
-- name: Install roles For $groupName
+- name: Install roles For $ansibleGroupName
   hosts: all
   gather_facts: false
   tasks:
-    - name: Include the following role on all the hosts in $groupName
+    - name: Include the following role on all the hosts in $ansibleGroupName
       include_role:
         name: "{{ roleItem }}"
       loop:
 
 "@)
-      $roleNames = @($($parsedInventory.GroupNames[$groupName]).AnsibleRoleNames)
+      $roleNames = @($($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).AnsibleRoleNames)
       for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) {
         $roleName = $roleNames[$roleNameIndex]
         # Ansible expects the roles subdirectory is relative to the playbook. If a child playbook is "included" in a parent playbook, and the child playbook includes a role, bu default it expects the roles subdirectory to be a child of the child playbook's subdirectory.
@@ -200,31 +214,33 @@ $RolesForGroupNameScriptBlock = {
       [void]$sb.Append(@"
       loop_control:
         loop_var: roleItem
-      when: "'$groupName' in group_names "
+      when: "'$ansibleGroupName' in group_names "
 
 "@)
       # $roleNamesStr = $roleNames -join ',' # $roleNamesStr,
       [void]$sb.Append(@"
-  tags: [$groupname,Roles]
+  tags: [$ansiblegroupname,Roles]
 "@)
     }
   }
 }
 
 function Contents {
-  $(if ($true) { $(. $GroupNameSpecificPreambleGroupNameScriptBlock ) })
+  $(if ($true) { $(. $AnsibleGroupNameSpecificPreambleAnsibleGroupNameScriptBlock ) })
 
-  $(if ($true) { $(. $ChocolateyPackagesForGroupNameScriptBlock) })
+  $(if ($true) { $(. $ChocolateyPackagesForAnsibleGroupNameScriptBlock) })
 
-  $(if ($true) { $(. $PowershellModulesForGroupNameScriptBlock) })
+  $(if ($true) { $(. $PowershellModulesForAnsibleGroupNameScriptBlock) })
 
-  $(if ($true) { $(. $RegistrySettingsForGroupNameScriptBlock) })
+  $(if ($true) { $(. $RegistrySettingsForAnsibleGroupNameScriptBlock) })
 
-  $(if ($true) { $(. $RolesForGroupNameScriptBlock) })
+  $(if ($true) { $(. $RolesForAnsibleGroupNameScriptBlock) })
 }
 
-[void]$sb.AppendLine($($ymlGenericTemplate -replace '\{2}', "groupname $groupName"))
-#$ymlContents = $ymlGenericTemplate -replace '\{2}', "groupname $groupName"
+[void]$sb.Append($($ymlGenericTemplate -replace '\{2}', "ansiblegroupname $ansibleGroupName"))
+[void]$sb.Append("`n")
+
+#$ymlContents = $ymlGenericTemplate -replace '\{2}', "ansiblegroupname $ansibleGroupName"
 # ToDo: get the formatting correct, so that we don't have to run this global search and replace
 Contents
 #$ymlContents += $($($(Contents -sb $sb) -split "`n") | ForEach-Object { $_ -replace '^\s{0,1}-', '-' }) -join "`n"
@@ -277,7 +293,7 @@ Set-Content -Path $Path -Value $sb.ToString() # $ymlContents
 
 # - name: debug variables
 #   debug:
-#     msg: "hostvars are {{ hostvars[inventory_hostname] }} groupNameis {{ item }}  }} "
+#     msg: "hostvars are {{ hostvars[inventory_hostname] }} ansibleGroupNameis {{ item }}  }} "
 #   loop: "{{ hostvars[inventory_hostname].group_names }}"
 
 # - name remove all from groups

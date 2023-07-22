@@ -38,7 +38,7 @@ Function Install-SecretStoreVault {
     , [string] $Description
     # The SecretManagement vault extension for the vault
     , [ValidateScript({ Get-InstalledModule -Name $_ })]
-    [string] $ExtensionVaultModuleName
+    [string] $SecretVaultModuleName
     , [Parameter(ParameterSetName = 'KeePass')]
     [ValidateScript({ Test-Path $_ })]
     [string] $PathToKeePassDB
@@ -55,7 +55,7 @@ Function Install-SecretStoreVault {
     , [string] $DataEncryptionCertificateFilenameTemplate
     # Todo: CertificateValidityPeriodUnits, CertificateValidityPeriod
     # A place to persist the encryption key
-    , [string] $KeyFilePath
+    , [string] $encryptionKeyFilePath
     # Number of bytes in the key
     , [ValidateSet(16, 24, 32)]
     [int16] $KeySizeInt
@@ -65,7 +65,7 @@ Function Install-SecretStoreVault {
     , [SecureString] $PasswordSecureString
     # a password timeout for the vault in seconds
     , [int32] $PasswordTimeout
-    # Force the creation of the DEC certificate if one exists, overwrite the KeyFilePath if one exists
+    # Force the creation of the DEC certificate if one exists, overwrite the EncryptionKeyFilePath if one exists
     , [switch] $Force
   )
   #endregion FunctionParameters
@@ -140,10 +140,10 @@ Function Install-SecretStoreVault {
   [Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($EncryptionKeyBytes)
   # ToDo: Add whatif
   #ToDo: Convert to a securestring before writing to the file
-  $EncryptionKeyBytes | Out-File -FilePath $KeyFilePath
+  $EncryptionKeyBytes | Out-File -FilePath $encryptionKeyFilePath
 
   # ToDo import KeyFilePath contents as a secure key
-  $EncryptionKeyData = Get-Content $KeyFilePath
+  $EncryptionKeyData = Get-Content $encryptionKeyFilePath
   # ToDo: Add whatif
   # ToDo change -key to -securekey
   $PasswordSecureString | ConvertFrom-SecureString -Key $EncryptionKeyData | Out-File -FilePath $EncryptedPasswordFilePath
@@ -158,23 +158,23 @@ Function Install-SecretStoreVault {
 
   switch ($PSCmdlet.ParameterSetName) {
     BuiltIn {
-      $command = "Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = ""$Description""; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }"
+      $command = "Register-SecretVault -Name $name -ModuleName $SecretVaultModuleName -VaultParameters @{Description = ""$Description""; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }"
     }
     KeePass {
-      $command = "Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = ""$Description""; UseMasterPassword = ""$false""; Path = ""$PathToKeePassDB"" }"
+      $command = "Register-SecretVault -Name $name -ModuleName $SecretVaultModuleName -VaultParameters @{Description = ""$Description""; UseMasterPassword = ""$false""; Path = ""$PathToKeePassDB"" }"
     }
   }
   Write-PSFMessage -Level Debug -Message "command = $command"
-  if ($PSCmdlet.ShouldProcess($null, "Register-SecretVault -ModuleName $ExtensionVaultModuleName -VaultParameters @{Authentication='Password';Interaction='None';Password='PasswordSecureStringNotshown';PasswordTimeout=$PasswordTimeout} @subsetPSBoundParameters")) {
+  if ($PSCmdlet.ShouldProcess($null, "Register-SecretVault -ModuleName $SecretVaultModuleName -VaultParameters @{Authentication='Password';Interaction='None';Password='PasswordSecureStringNotshown';PasswordTimeout=$PasswordTimeout} @subsetPSBoundParameters")) {
     try {
       # ToDo: figure out how to pass the UseMasterPassword switch paramter in a $VaultParamter's hash when run as $command via Invoke-Expression
       #Invoke-Expression $command
       switch ($PSCmdlet.ParameterSetName) {
         BuiltIn {
-          Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = $Description; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }
+          Register-SecretVault -Name $name -ModuleName $SecretVaultModuleName -VaultParameters @{Description = $Description; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }
         }
         KeePass {
-          Register-SecretVault -Name $name -ModuleName $ExtensionVaultModuleName -VaultParameters @{Description = $Description; UseMasterPassword = $true; Path = $PathToKeePassDB }
+          Register-SecretVault -Name $name -ModuleName $SecretVaultModuleName -VaultParameters @{Description = $Description; UseMasterPassword = $true; Path = $PathToKeePassDB }
         }
       }
     }
@@ -191,17 +191,17 @@ Function Install-SecretStoreVault {
   $SecretManagementExtensionVaultInfo = @{Name = $Name; EncryptedPassword = $encryptedPassword; Timeout = $PasswordTimeout; Thumbprint = $Thumbprint; Certificate = $dataEncryptionCertificatePath; CertificateValidityPeriod = ''; CertificateValidityPeriodUnits = '' }
 
   # Unlock the newly created SecretStore vault
-  if ($PSCmdlet.ShouldProcess($null, "Unlock-UsersSecretStore -Name $Name -Dictionary $(Write-HashIndented $SecretManagementExtensionVaultInfo 2 2)")) {
+  if ($PSCmdlet.ShouldProcess($null, "Unlock-UsersSecretVault -Name $Name -Dictionary $(Write-HashIndented $SecretManagementExtensionVaultInfo 2 2)")) {
     try {
-      Unlock-UsersSecretStore -Name $Name -Dictionary $SecretManagementExtensionVaultInfo
+      Unlock-UsersSecretVault -Name $Name -Dictionary $SecretManagementExtensionVaultInfo
     }
     catch { # if an exception ocurrs
       # handle the exception
       $where = $PSItem.InvocationInfo.PositionMessage
       $ErrorMessage = $_.Exception.Message
       $FailedItem = $_.Exception.ItemName
-      #Log('Error',"Unlock-UsersSecretStore failed with $FailedItem : $ErrorMessage at `n $where.")
-      Throw "Unlock-UsersSecretStore Threw an exception with $FailedItem : $ErrorMessage at `n $where."
+      #Log('Error',"Unlock-UsersSecretVault failed with $FailedItem : $ErrorMessage at `n $where.")
+      Throw "Unlock-UsersSecretVault Threw an exception with $FailedItem : $ErrorMessage at `n $where."
     }
   }
 
@@ -232,9 +232,9 @@ Function Install-SecretStoreVault {
 # ((ls cert:/Current*/my/* | ?{$_.EnhancedKeyUsageList.FriendlyName -eq 'Document Encryption'}).extensions | Where-Object {$_.Oid.FriendlyName -match "subject alternative name"}).Format(1)
 
 <#
- Get-UsersSecretStoreVault -Name 'MyPersonalSecrets' `
+ Get-UsersSecretVaultInfo -Name 'MyPersonalSecrets' `
   -Description 'Secrets For a specific user on a specific computer' `
-  -ExtensionVaultModuleName 'SecretManagement.Keepass' `
+  -SecretVaultModuleName 'SecretManagement.Keepass' `
   -PathToKeePassDB 'C:\KeePass\Local.ATAP.Utilities.Secrets.kdbx' `
   -Subject 'CN=Bill.hertzing@ATAPUtilities.org;OU=Supreme;O=ATAPUtilities' `
   -SubjectAlternativeName 'Email=Bill.hertzing@gmail.com' `

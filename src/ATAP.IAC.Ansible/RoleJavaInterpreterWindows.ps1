@@ -40,7 +40,7 @@ function ContentsTask {
   $packageName = 'temurin17jre'
   $packageVersion = '17.0.6.1000'
   $allowPrerelease = $false
-  $addedParameters = . $addedParametersScriptblock @('ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome', 'INSTALLDIR=''C:\\Program Files\\JavaInterpreter\\temurin''') # {{ ProgramFiles }}{{ JavaInstallDirRelativeSubdirectory }}
+  $addedParameters = . $addedParametersScriptblock @('ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome', 'ch') # {{ ProgramFiles }}{{ JavaInstallDirRelativeSubdirectory }}
   [void]$sb.AppendLine("      - {name: $packageName, version: $packageVersion, AllowPrerelease: $allowPrerelease, AddedParameters: $addedParameters}")
   [void]$sb.Append(@"
   tags: [$roleName]

@@ -1,5 +1,5 @@
 #############################################################################
-#region New-SecureStringKeyFile
+#region New-RandomEncryptionKeyToFile
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,7 +28,7 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function New-SecureStringKeyFile {
+Function New-RandomEncryptionKeyToFile {
   #region Parameters
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern')]
   param (
@@ -63,7 +63,7 @@ Function New-SecureStringKeyFile {
   }
   #endregion EndBlock
 }
-#endregion New-SecureStringKeyFile
+#endregion New-RandomEncryptionKeyToFile
 #############################################################################
 
 

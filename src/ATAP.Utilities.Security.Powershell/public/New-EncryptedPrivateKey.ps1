@@ -30,7 +30,7 @@ ToDo: insert SCM keywords markers that are automatically inserted <Configuration
 #>
 Function New-EncryptedPrivateKey {
   #region Parameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet')]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName ='DefaultParameterSetNameReplacementPattern' )]
   param (
     [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
     [ValidateScript({ Test-Path $(Split-Path $_) -PathType 'Container' })]

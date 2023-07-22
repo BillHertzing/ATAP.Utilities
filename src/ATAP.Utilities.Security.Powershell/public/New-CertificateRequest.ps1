@@ -30,7 +30,7 @@ ToDo: insert SCM keywords markers that are automatically inserted <Configuration
 #>
 Function New-CertificateRequest {
   #region Parameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet' )]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName ='DefaultParameterSetNameReplacementPattern'  )]
   param (
     [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
     [alias('DNHash')]

@@ -30,7 +30,7 @@ ToDo: insert SCM keywords markers that are automatically inserted <Configuration
 #>
 Function Install-CodeSigningCertificate {
   #region FunctionParameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = DefaultParameterSetNameReplacementPattern )]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern' )]
   param (
     [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)] $Path
   )

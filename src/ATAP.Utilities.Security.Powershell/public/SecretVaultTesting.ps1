@@ -1,9 +1,9 @@
 # Powershell SecretManagement how to unlock a SecretVault from
 
 # Select an extension vault module
-$ExtensionVaultModuleName = 'SecretManagement.Keepass'
-#$ExtensionVaultModuleName = 'Microsoft.PowerShell.SecretStore'
-Write-Host "ExtensionVaultModuleName is '$ExtensionVaultModuleName'"
+$SecretVaultModuleName = 'SecretManagement.Keepass'
+#$SecretVaultModuleName = 'Microsoft.PowerShell.SecretStore'
+Write-Host "SecretVaultModuleName is '$SecretVaultModuleName'"
 
 # Get a password from the user
 Write-Host 'enter a password, hit enter, this program is not secure, it will echo back the password you enter (more than once :-))'
@@ -24,50 +24,49 @@ $Encoding = 'utf8' # make sure the encoding is consistent for all persistence fi
 # There is a common KeyFile and encryptedPassword per Role that the user-machine pairs perform
 # This demo program just uses the environment's temp path.
 # For a useable KeePass vault, place it in an accessable synchronized location. Obsufucation can't hurt.
-$KeyFilePath = Join-Path 'C:' 'Dropbox' 'Security','Vaults','KeyFiles','DemoVaultKeyFile.key' # Join-Path $env:TEMP 'SecretVaultTestingEncryption.key'
-$EncryptedPasswordFilePath = Join-Path 'C:' 'Dropbox' 'Security','Vaults','PasswordFiles','DemoVaultEncryptedPassword.txt' # $env:TEMP 'SecretVaultTestingEncryptedPassword.txt'
+$SecretVaultEncryptionKeyFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'KeyFiles', 'DemoVaultKeyFile.key' # Join-Path $env:TEMP 'SecretVaultTestingEncryption.key'
+$EncryptedPasswordFilePath = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'PasswordFiles', 'DemoVaultEncryptedPassword.txt' # $env:TEMP 'SecretVaultTestingEncryptedPassword.txt'
 
-$PathToKeePassDB = 'C:\KeePass\Local.ATAP.Utilities.kdbx'  # This is the identifier for the KeePassParameterSet
-$PathToKeePassDB = 'C:\DropBox\KeePass\Main.Synchronized.ATAP.Utilities.kdbx'  # This is the identifier for the KeePassParameterSet
-$PathToKeePassDB = Join-Path 'C:' 'Dropbox' 'Security','Vaults','VaultDatabases','Demo','Demo.ATAP.Utilities.kdbx'
-
-
-# The KeyfilePath file will be used to encrypt and decrypt a SecureString (the Vault's MasterPassword)
-# The KeyfilePath file must be created before the creation of the KeePass Vault
+# The SecretVaultEncryptionKeyFilePath file will be used to encrypt and decrypt a SecureString (the Vault's MasterPassword)
+# The SecretVaultEncryptionKeyFilePath file must be created before the creation of the KeePass Vault
 # This is done by a security admin when setting up a new Vault. It should be placed in a secure location accessable by aall users of the vault.
 # this step, in the demo, includes a pause after creating the file so that the Demo KeePass Vault can be created. Make note of the Master Password used in the vault creation
 # For a KeePass vault, the KeyFile should be 32 bytes long
 #  All vaults should have the KeyFile and MasterPassword rotated regularly
 if ($true) {
-  . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-SecureStringKeyFile.ps1"
-  New-SecureStringKeyFile -KeyFilePath $KeyFilePath -KeySizeInt $KeySizeInt
+  . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-RandomEncryptionKeyToFile.ps1'
+  New-RandomEncryptionKeyToFile -SecretVaultEncryptionKeyFilePath $SecretVaultEncryptionKeyFilePath -KeySizeInt $KeySizeInt
 }
 
-Write-PSFMessage -Level Important -Message "KeyFilePath = $KeyFilePath"
+Write-PSFMessage -Level Important -Message "SecretVaultEncryptionKeyFilePath = $SecretVaultEncryptionKeyFilePath"
 
 # Read the KeyFile for an encryption key, and use that to encrypt the passwordSecureString, then persist the encrypted instance of the passwordSecureString to a file.
-. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-SecureStringMasterPasswordFile.ps1'
-New-SecureStringMasterPasswordFile -PasswordSecureString $PasswordSecureString -PasswordFilePath $EncryptedPasswordFilePath -KeyFilePath $KeyFilePath -Encoding $Encoding
+. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Security.Powershell\public\New-EncryptedPasswordFile.ps1'
+New-EncryptedPasswordFile -PasswordSecureString $PasswordSecureString -SecretVaultEncryptionKeyFilePath $SecretVaultEncryptionKeyFilePath -PasswordFilePath $EncryptedPasswordFilePath -Encoding $Encoding
 
-# Clean up or setup the extension vault
-switch ($ExtensionVaultModuleName) {
+# Clean up or setup the vault
+$PathToKeePassDB = 'C:\KeePass\Local.ATAP.Utilities.kdbx'  # This is the identifier for the KeePassParameterSet
+$PathToKeePassDB = 'C:\DropBox\KeePass\Main.Synchronized.ATAP.Utilities.kdbx'  # This is the identifier for the KeePassParameterSet
+$PathToKeePassDB = Join-Path 'C:' 'Dropbox' 'Security', 'Vaults', 'VaultDatabases', 'Demo', 'Demo.ATAP.Utilities.kdbx'
+
+switch ($SecretVaultModuleName) {
   'Microsoft.PowerShell.SecretStore' {
     # Cleanup or create a `'Microsoft.PowerShell.SecretStore'` vault extension
     # THIS WILL ERASE ALL SECRETS in the PowerShell.SecretStore extension vault WITHOUT ASKING FOR CONFIRMATION. FOR AUTOMATION AND DEMO
     Reset-SecretStore -Authentication 'Password' -Interaction 'None' -Password $passwordSecureString -Force
-}
-'SecretManagement.Keepass' {
-  $PasswordFromHostPrompt = Read-Host -Prompt "Enter the full path to the DemoVault [$PathToKeePassDB]"
-  if (-not [string]::IsNullOrWhiteSpace($PasswordFromHostPrompt))  {
-    if (-not (test-path $_)) {
-      throw "file not found: $PasswordFromHostPrompt"
-    }
-    $PathToKeePassDB = $PasswordFromHostPrompt
   }
-}
-Default {
-  Throw "Unrecognized ExtensionVaultModuleName : $ExtensionVaultModuleName"
-}
+  'SecretManagement.Keepass' {
+    $PathToKeePassDBFromHostPrompt = Read-Host -Prompt "Enter the full path to the DemoVault [$PathToKeePassDB]"
+    if (-not [string]::IsNullOrWhiteSpace($PathToKeePassDBFromHostPrompt)) {
+      if (-not (Test-Path $_)) {
+        throw "file not found: $PathToKeePassDBFromHostPrompt"
+      }
+      $PathToKeePassDB = $PathToKeePassDBFromHostPrompt
+    }
+  }
+  Default {
+    Throw "Unrecognized SecretVaultModuleName : $SecretVaultModuleName"
+  }
 }
 
 # unregister any exisitng vault
@@ -78,14 +77,11 @@ Get-SecretVault | Unregister-SecretVault
 # Demo Vault useage
 
 # Register the Demo Vault as the current Secret vault
-$PathToKeePassDB = $PathToKeePassDB
-$PasswordFilePath = $EncryptedPasswordFilePath
-$KeyFilePath = $KeyFilePath
-$Password = ConvertTo-SecureString -String $(Get-Content -Encoding $Encoding -Path $PasswordFilePath) -Key $(Get-Content -Encoding $Encoding -Path $KeyFilePath)
+$Password = ConvertTo-SecureString -String $(Get-Content -Encoding $Encoding -Path $EncryptedPasswordFilePath) -Key $(Get-Content -Encoding $Encoding -Path $SecretVaultEncryptionKeyFilePath)
 Write-Host "PlainText Password: $(ConvertFrom-SecureString -SecureString $Password -AsPlainText)"
 
 # Is getting the SecureString password from the file repeatable
-# $EncryptionKeyData2 = Get-Content -Encoding $Encoding -Path $KeyFilePath
+# $EncryptionKeyData2 = Get-Content -Encoding $Encoding -Path $SecretVaultEncryptionKeyFilePath
 # $PasswordSecureStringFromPersistence2 = Get-Content -Encoding $Encoding -Path $EncryptedPasswordFilePath | ConvertTo-SecureString -Key $EncryptionKeyData2
 # Write-Host "PasswordPlainText2 from PasswordSecureStringFromPersistence2: $(ConvertFrom-SecureString -SecureString $PasswordSecureStringFromPersistence2 -AsPlainText)"
 
@@ -94,19 +90,19 @@ Write-Host "PlainText Password: $(ConvertFrom-SecureString -SecureString $Passwo
 # And to show another way, a bit archaic, of getting the Plaintext from the SecureString
 # Write-Host "PasswordPlainText3 from PasswordSecureStringFromPersistence2 using InteropServices.marshall: $([System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($PasswordSecureStringFromPersistence)))"
 
-    # Note that the MasterVaultPassword is supplied when registering a 'Microsoft.PowerShell.SecretStore' vault
-    $VP = @{Description = $SecretVaultDescription; Authentication = 'Password'; Interaction = 'None'; Password = $Password; PasswordTimeout = $PasswordTimeout }
-switch ($ExtensionVaultModuleName) {
+# Note that the MasterVaultPassword is supplied when registering a 'Microsoft.PowerShell.SecretStore' vault
+$VP = @{Description = $SecretVaultDescription; Authentication = 'Password'; Interaction = 'None'; Password = $Password; PasswordTimeout = $PasswordTimeout }
+switch ($SecretVaultModuleName) {
   'Microsoft.PowerShell.SecretStore' {
     # $VP = @{Description = $SecretVaultDescription; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }
   }
   'SecretManagement.Keepass' {
-    $VP += @{Path = $PathToKeePassDB; KeyPath = $KeyFilePath }
+    $VP += @{Path = $PathToKeePassDB; KeyPath = $SecretVaultEncryptionKeyFilePath }
   }
 }
 
 # Register the extension vault as the SecretStore
-Register-SecretVault -Name $VaultName -ModuleName $ExtensionVaultModuleName -VaultParameters $VP
+Register-SecretVault -Name $VaultName -ModuleName $SecretVaultModuleName -VaultParameters $VP
 
 # Unlock the vault using it's password, as read in from persistent storage
 Unlock-SecretVault -Name $VaultName -Password $PasswordSecureString
@@ -120,7 +116,7 @@ if (! $Success) {
 
 # add a secret
 $SecretName = 'DemoVaultSecret1'
-$SecretValue1 = "This is a the DemoVaultSecret1 string"
+$SecretValue1 = 'This is a the DemoVaultSecret1 string'
 Set-Secret -Name $SecretName -Vault $VaultName -Secret $SecretValue1
 
 # retrieve a secret
@@ -129,9 +125,10 @@ $SecretValue1Retrieved = Get-Secret -Name $SecretName -Vault $VaultName -AsPlain
 # validate they are the same
 if ($passwordSecureStringFromPersistence -eq $PasswordSecureStringFromPersistence2) {
   Write-PSFMessage -Level Important -Message "SecretValue1 $SecretValue1 IS the same as SecretValue1Retrieved $SecretValue1Retrieved"
-} else {
+}
+else {
   Write-PSFMessage -Level Important -Message "SecretValue1 $SecretValue1 Is NOT the same as SecretValue1Retrieved $SecretValue1Retrieved"
-  }
+}
 
 # delete a secret
 

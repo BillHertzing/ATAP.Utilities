@@ -1,5 +1,5 @@
 #############################################################################
-#region Get-UsersSecretStoreInfo
+#region Get-UsersSecretVaultInfo
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,12 +28,12 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Get-UsersSecretStoreInfo {
+Function Get-UsersSecretVaultInfo {
   #region Parameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet')]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern' )]
   param (
     [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]
-    [ValidateScript({$($global:CanaconicalUserRoleStrings).Values.Contains($_)})]
+    [ValidateScript({ $($global:CanaconicalUserRoleStrings).Values.Contains($_) })]
     [string] $Role
     # ToDo: add Machine and User Parameters, but only for securityadmins
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
@@ -42,8 +42,8 @@ Function Get-UsersSecretStoreInfo {
   #endregion Parameters
   #region BeginBlock
   BEGIN {
+    # $DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue
     Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
-    #$DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue
     # ToDo: add Machine and User Parameters, but only for securityadmins
     # Since most security certificates depend on the DNS-resolved HostName, and because the following method is cross-platform...
     # [How to Get a Computer Name with PowerShell](https://adamtheautomator.com/powershell-get-computer-name/)
@@ -63,17 +63,17 @@ Function Get-UsersSecretStoreInfo {
   END {
     # ToDo: support multiple vaults, secrets specific for each machine-role and secrets per each user-role pair, minimum permissions, rotation, revocation, and disaster recovery
     $dictionary = @{
-      'VaultName'                           = $global:settings[$global:configRootKeys['SecretVaultNameConfigRootKey' ]]
-      'VaultModuleName'                     = $global:settings[$global:configRootKeys['SecretVaultExtensionModuleNameConfigRootKey' ]]
-      'VaultPath'                           = $global:settings[$global:configRootKeys['SecretVaultPathToKeePassDBConfigRootKey']]
-      'KeyFilePath'                         = $global:settings[$global:configRootKeys['SecretVaultKeyFilePathConfigRootKey']]
-      'EncryptedPasswordFilePath'           = $global:settings[$global:configRootKeys['SecretVaultEncryptedPasswordFilePathConfigRootKey']]
-      'DataEncryptionCertificateThumbprint' = ''
+      $global:configRootKeys['SecretVaultNameConfigRootKey' ]                     = $global:settings[$global:configRootKeys['SecretVaultNameConfigRootKey' ]]
+      $global:configRootKeys['SecretVaultModuleNameConfigRootKey' ]               = $global:settings[$global:configRootKeys['SecretVaultModuleNameConfigRootKey' ]]
+      $global:configRootKeys['SecretVaultPathToKeePassDBConfigRootKey']           = $global:settings[$global:configRootKeys['SecretVaultPathToKeePassDBConfigRootKey']]
+      $global:configRootKeys['SecretVaultEncryptionKeyFilePathConfigRootKey']     = $global:settings[$global:configRootKeys['SecretVaultEncryptionKeyFilePathConfigRootKey']]
+      $global:configRootKeys['SecretVaultEncryptedPasswordFilePathConfigRootKey'] = $global:settings[$global:configRootKeys['SecretVaultEncryptedPasswordFilePathConfigRootKey']]
+      'DataEncryptionCertificateThumbprint'                                       = ''
     }
     Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
     $dictionary
   }
   #endregion EndBlock
 }
-#endregion Get-UsersSecretStoreInfo
+#endregion Get-UsersSecretVaultInfo
 #############################################################################

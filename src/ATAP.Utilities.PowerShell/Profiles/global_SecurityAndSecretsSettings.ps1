@@ -46,19 +46,28 @@ $local_SecurityAndSecretsSettings = @{
 
   # Related to SecretManagement
   #  In general, places where the files that are used to store Secret Vaults are found
-  $global:configRootKeys['SecureVaultBasePathConfigRootKey']                                                  = 'join-path $global:settings[$global:configRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "Vaults"'
-  # Secret Vault key files and encrypted passwords fles (passwords to open the vaults)
-  $global:configRootKeys['SecretVaultKeyFilePathConfigRootKey']                                                = 'Join-Path $global:settings[$global:configRootKeys["SecureVaultBasePathConfigRootKey"]] "SecretManagement" "KeyFiles","SecretVaultTestingEncryption.key"'
-  $global:configRootKeys['SecretVaultEncryptedPasswordFilePathConfigRootKey']                                  = 'Join-Path $global:settings[$global:configRootKeys["SecureVaultBasePathConfigRootKey"]] "SecretManagement" "EncryptedPasswordFiles","SecretVaultTestingEncryptedPassword.txt"'
-  # $global:configRootKeys['EncryptedMasterPasswordsPathConfigRootKey']                                        = 'join-path $global:settings[$global:configRootKeys["SecureVaultBasePathConfigRootKey"]] "OMPs.json"'
-  # $global:configRootKeys['ATAPUtilitiesMasterPasswordsPathConfigRootKey']                                    = 'join-path $global:settings[$global:configRootKeys["EncryptedMasterPasswordsPathConfigRootKey"]] "AUMPs.txt" '#
-  # The specific details of the  Secret Vault module in use
-  $global:configRootKeys['SecretVaultExtensionModuleNameConfigRootKey' ]                                       = 'SecretManagement.Keepass'
-  $global:configRootKeys['SecretVaultNameConfigRootKey' ]                                                      = 'ThisUsersSecretVault'
-  $global:configRootKeys['SecretVaultDescriptionConfigRootKey' ]                                               = 'Secrets stored in a secure vault'
-  $global:configRootKeys['SecretVaultKeySizeIntConfigRootKey' ]                                                = '32'
-  $global:configRootKeys['SecretVaultPasswordTimeoutConfigRootKey' ]                                           = '300'
-  $global:configRootKeys['SecretVaultPathToKeePassDBConfigRootKey']                                            = 'Join-Path $global:settings[$global:configRootKeys["SecureVaultBasePathConfigRootKey"]] "KeePass" "Local.ATAP.Utilities.kdbx"'
+  $global:configRootKeys['SecretVaultBaseDirectoryConfigRootKey']                                              = 'join-path $global:settings[$global:configRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "Vaults"'
+  #  Realtive to the SecretVaultBasePath, the base directorys for the vault files, Encryption Key files, and Encrypted Password files
+  $global:configRootKeys['SecretVaultDatabasesDirectoryConfigRootKey']                                         = 'join-path $global:settings[$global:configRootKeys["SecretVaultBaseDirectoryConfigRootKey"]] "VaultDatabases"'
+  $global:configRootKeys['SecretVaultEncryptionKeysDirectoryConfigRootKey']                                    = 'join-path $global:settings[$global:configRootKeys["SecretVaultBaseDirectoryConfigRootKey"]] "EncryptionKeyFiles"'
+  $global:configRootKeys['SecretVaultEncryptedPasswordsDirectoryConfigRootKey']                                = 'join-path $global:settings[$global:configRootKeys["SecretVaultBaseDirectoryConfigRootKey"]] "EncryptedPasswordFiles"'
+
+  # Specific organization's Secret Vault information, for ATAP organization
+  # TBD strucutre for multiple vaults
+  # TBD move out of the  global_ settings and into an organization specific setting file
+
+  # Secret Vault encryption key files and encrypted passwords fles (passwords to open the vaults)
+  $global:configRootKeys['SecretVaultPathToKeePassDBConfigRootKey']                                            = 'Join-Path $global:settings[$global:configRootKeys["SecretVaultDatabasesDirectoryConfigRootKey"]] "Local.ATAP.Utilities.kdbx"'
+  $global:configRootKeys['SecretVaultEncryptionKeyFilePathConfigRootKey']                                      = 'Join-Path $global:settings[$global:configRootKeys["SecretVaultEncryptionKeysDirectoryConfigRootKey"]] "SecretVaultTestingEncryption.key"'
+  $global:configRootKeys['SecretVaultEncryptedPasswordFilePathConfigRootKey']                                  = 'Join-Path $global:settings[$global:configRootKeys["SecretVaultEncryptedPasswordsDirectoryConfigRootKey"]] "SecretVaultTestingEncryptedPassword.txt"'
+
+  # The specific details of the Secret Vault module in use
+  $global:configRootKeys['SecretVaultNameConfigRootKey']                                                      = 'ThisUsersSecretVault'
+  $global:configRootKeys['SecretVaultModuleNameConfigRootKey']                                                = 'SecretManagement.Keepass'
+  $global:configRootKeys['SecretVaultDescriptionConfigRootKey']                                               = 'Secrets stored in a secure vault'
+  $global:configRootKeys['SecretVaultKeySizeIntConfigRootKey']                                                = '32'
+  $global:configRootKeys['SecretVaultPasswordTimeoutConfigRootKey']                                           = '300'
+
 
   # Place to keep things for Disaster recovery
   # $global:ConfigRootKeys['DisasterRecoveryPathConfigRootKey']                                                  = 'Join-path $global:settings[$global:ConfigRootKeys["SECURE_CLOUD_BASE_PATHConfigRootKey"]] "DisasterRecovery"'

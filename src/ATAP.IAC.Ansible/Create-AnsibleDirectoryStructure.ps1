@@ -1,14 +1,53 @@
 
 # Creates a specific directory structure for an ansible IAC
 # [Ansible/Directory Layout/Details - charlesreid1](https://charlesreid1.com/wiki/Ansible/Directory_Layout/Details )
+# To copy this directory structure to your WSL2 home directory, use the following command in a WSL2 terminal
+# cd ~; rm -r ~/Ansible; sudo cp -r  '/mnt/c/dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.IAC.Ansible/_generated/ATAP_001/Ansible/' ~; sudo chgrp -R "$(id -gn)" ~/Ansible;sudo chown -R "$(id -un)" ~/Ansible; cd Ansible
+
 param (
   [string] $projectBaseDirectory = '.'
 )
-# To copy this directory structure to your WSL2 home directory, use the following command in a WSL2 terminal
-# cd ~; rm -r ~/Ansible; sudo cp -r  '/mnt/c/dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.IAC.Ansible/_generated/ATAP_001/Ansible/' ~; sudo chgrp -R "$(id -gn)" ~/Ansible;sudo chown -R "$(id -un)" ~/Ansible; cd Ansible
+
+# ToDo: These paths should come from an organization's vault
+# ToDo Validate the files exist and can be read
+
+$ansibleInventorySourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\Get-AnsibleInventory.ps1'
+$windowsFeaturesInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\WindowsFeaturesInfo.yml'
+$chocolateyPackageInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\ChocolateyPackageInfo.yml'
+$powershellModuleInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\PowershellModuleInfo.yml'
+$registrySettingsInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\RegistrySettingsInfo.yml'
+$nugetPackagesInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\NugetPackagesInfo.yml'
+# ToDo: Steps needed to get past filesystem authorizations (credentials and group/role membership)
+$ANVaultSecretsSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\security\.ANVaultATAPSecrets.yml'
+$ANVaultPasswordFileSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\security\.ANVault_password_file.txt'
+$PSVaultSecretsVaultSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\security\.PSVaultATAP_secrets.kdbx'
+$PSVaultPasswordFileSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\security\.PSvault_password_file.txt'
+
+# Connect to and register with the  security vaults
+$vaultUnLocked = $null # TBD
+
+# Read and parse the files
+# ToDo: error handling
+$windowsFeaturesInfos = ConvertFrom-Yaml $(Get-Content -Path $windowsFeaturesInfoSourcePath -Raw  )#  ConvertFrom-Json -Depth 99 -AsHashtable -InputObject $(Get-Content -Path $windowsFeaturesInfoSourcePath -Raw)
+$chocolateyPackageInfos = ConvertFrom-Yaml $(Get-Content -Path $chocolateyPackageInfoSourcePath -Raw )
+$powershellModuleInfos = ConvertFrom-Yaml $(Get-Content -Path $powershellModuleInfoSourcePath -Raw )
+$registrySettingsInfos = ConvertFrom-Yaml $(Get-Content -Path $registrySettingsInfoSourcePath -Raw )
+$nugetPackagesInfos = $null #ConvertFrom-Yaml $(Get-Content -Path $nugetPackagesInfoSourcePath -Raw )
+
+# Create the structure that holds the allowed names and versions of the components
+$PackageInfos = [PSCustomObject]@{
+  NuGetPackageInfos      = $nugetPackagesInfos
+  ChocolateyPackageInfos = $chocolateyPackageInfos
+  PowershellModuleInfos  = $powershellModuleInfos
+  RegistrySettingsInfos  = $registrySettingsInfos
+  WindowsFeatureInfos    = $windowsFeaturesInfos
+  AnsibleRoleInfos       = $null
+}
+
 # ToDo - Test roles on Windows
 # [Use Molecule to test Ansible roles on Windows](https://gregorystorme.medium.com/use-molecule-to-test-ansible-roles-on-windows-5bd40db3e331)
 
+# ToDo move this to buildtooling package
 # This function returns the higest version number found in an array of dictionaries having fields both name and version
 function Get-HighestVersionNumbers {
   param (
@@ -38,17 +77,21 @@ function Get-HighestVersionNumbers {
   return $result
 }
 
-# region things setup outside of this script
-# Windows Features Roles are defined a-priori. There (will be) a script to read the existing Windows features of a host, and create the existing installed features and assign them to groups (as roles)
-$windowsFeatures = @(@{name = 'RoleFeatureDefender'; version = '20230215.1'; allowprerelease = 'false}' }, @{name = 'RoleFeatureSSH.Server'; version = 'latest'; allowprerelease = 'false}' })
-# Need to add the following additional command to Defender feature
-# Set-Service -Name WinDefend -StartupType 'Automatic'
-$windowsFeaturesInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\WindowsFeaturesInfo.json'
-$windowsFeatureInfos = @()
-for ($index = 0; $index -lt $windowsFeatures.count; $index++) {
-  $windowsFeatureInfos += @{name = $($windowsFeatures[$index]).Name; version = $($windowsFeatures[$index]).Version; PreRelease = $($windowsFeatures[$index]).PreRelease }
-}
-Set-Content -Path $windowsFeaturesInfoSourcePath -Value $($windowsFeatureInfos | ConvertTo-Json -Depth 99)
+# ToDo: Packaging, this function will be in ATAP Buildtooling ?
+#. "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\Build\ATAP.Utilities.BuildTooling.0.1.0.1\build\Set-LineEndings.ps1"
+
+
+# ToDo: move the creation of the Info files outside of this script
+# # region things setup outside of this script
+# # Windows Features Roles are defined a-priori. There (will be) a script to read the existing Windows features of a host, and create the existing installed features and assign them to groups (as roles)
+# $windowsFeatures = @(@{name = 'RoleFeatureDefender'; version = '20230215.1'; allowprerelease = 'false}' }, @{name = 'RoleFeatureSSH.Server'; version = 'latest'; allowprerelease = 'false}' })
+# # Need to add the following additional command to Defender feature
+# # Set-Service -Name WinDefend -StartupType 'Automatic'
+# $windowsFeatureInfos = @()
+# for ($index = 0; $index -lt $windowsFeatures.count; $index++) {
+#   $windowsFeatureInfos += @{name = $($windowsFeatures[$index]).Name; version = $($windowsFeatures[$index]).Version; PreRelease = $($windowsFeatures[$index]).PreRelease }
+# }
+# Set-Content -Path $windowsFeaturesInfoSourcePath -Value $($windowsFeatureInfos | ConvertTo-Json -Depth 99)
 
 
 # Chocolatey package Roles are defined a-priori. There (will be) a script to read the choco list -lo, and create the existing installed packages and assign them to groups (as roles)
@@ -66,15 +109,13 @@ Set-Content -Path $windowsFeaturesInfoSourcePath -Value $($windowsFeatureInfos |
 #  $filteredKeys | ForEach-Object{$filteredChocolateyPackagesInstalled[$_] = $all[$_]}
 
 # TBD - Don't Overwrite - it has added params info for some packages
-$chocolateyPackageInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\chocolateyPackageInfo.yml'
 # Set-Content -Path $chocolateyPackageInfoSourcePath -Value $($filteredChocolateyPackagesInstalled | ConvertTo-Yaml)
 
-# Powershell module Roles are defined a-priori. There (will be) a script to read the get-module -ListAvailable, and create the existing installed modules  and assign them to groups (as roles)
-$excludeRegexPattern = '^\s+$'
-# The following line returns a version strucutre for the version, not just a simple string, so it needs to be converted to a [version] type, then to a string
-$powershellModules = Get-HighestVersionNumbers $(Get-Module -ListAvailable | Where-Object { $_.name -notmatch '^$' -and $_.name -notmatch $excludeRegexPattern })
-$powershellModuleInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\powershellModuleInfo.json'
-$powershellModuleInfos = $powershellModules
+# # Powershell module Roles are defined a-priori. There (will be) a script to read the get-module -ListAvailable, and create the existing installed modules  and assign them to groups (as roles)
+# $excludeRegexPattern = '^\s+$'
+# # The following line returns a version strucutre for the version, not just a simple string, so it needs to be converted to a [version] type, then to a string
+# $powershellModules = Get-HighestVersionNumbers $(Get-Module -ListAvailable | Where-Object { $_.name -notmatch '^$' -and $_.name -notmatch $excludeRegexPattern })
+# $powershellModuleInfos = $powershellModules
 # $powershellModules.Keys | ForEach-Object{$moduleName = $_
 
 #   $powershellModuleInfos += @{name = $($powershellModules[$index]).Name; version = $($powershellModules[$index]).Version; PreRelease = $($powershellModules[$index]).PreRelease }
@@ -82,23 +123,27 @@ $powershellModuleInfos = $powershellModules
 # for ($index = 0; $index -lt $powershellModules.count; $index++) {
 #   $powershellModuleInfos += @{name = $($powershellModules[$index]).Name; version = $($powershellModules[$index]).Version; PreRelease = $($powershellModules[$index]).PreRelease }
 # }
-Set-Content -Path $powershellModuleInfoSourcePath -Value $($powershellModules | ConvertTo-Json -Depth 99)
+# Set-Content -Path $powershellModuleInfoSourcePath -Value $($powershellModules | ConvertTo-Json -Depth 99)
 # end region
 
-# region  ansibleInventory Powershell hashtable
-$ansibleInventorySourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\Ansible-Inventory.ps1'
-$ansibleInventory = . $ansibleInventorySourcePath
+# Create the ansibleInventory Powershell hashtable from the source file
+. $ansibleInventorySourcePath # dot source the ansibleinventory script
+$absibleStructure = Get-AnsibleInventory
+$ansibleInventory = $absibleStructure.AnsibleInventory
 # end region
 
 # region constants defined in this script
 # These are names that are common to both the Windows file generation runtime, the Linux Ansible runtime, and the Windows remote host runtimes
+$securitySubdirectory = 'security'
 $playbooksSubdirectory = 'playbooks'
-$ansibleSubdirectoryNames = @('group_vars', 'host_vars', $playbooksSubdirectory, 'roles', 'scripts')
+$ansibleSubdirectoryNames = @($securitySubdirectory,'group_vars', 'host_vars', $playbooksSubdirectory, 'roles', 'scripts')
 $roleSubdirectoryNames = @('tasks', 'handlers', 'templates', 'files', 'vars', 'defaults', 'meta', 'library', 'tests', 'module_utils', 'lookup_plugins', 'scripts')
 # the name of the main playbook
 $mainPlaybookName = 'main.yml'
+# the name of the buildout playbook
+$buildoutPlaybookName = 'buildoutPlaybook.yml'
 
-# ReadMe doccumentation filename
+# ReadMe documentation filename
 $ReadMeFileName = 'ReadMe.md'
 # default name of the main YML file in each subdirectory
 $mainYMLFileName = 'main.yml'
@@ -138,13 +183,6 @@ $ymlTemplate = @'
 # Windows Defender
 
 
-# Get the windowsFeaturesInformation
-$windowsFeaturesInfos = ConvertFrom-Json -Depth 99 -AsHashtable -InputObject $(Get-Content -Path $windowsFeaturesInfoSourcePath -Raw)
-# Get the chocolateyPackageInformation
-$chocolateyPackageInfos = ConvertFrom-Yaml $(Get-Content -Path $chocolateyPackageInfoSourcePath -Raw )
-# Get the powershellModuleInformation
-$powershellModuleInfos = ConvertFrom-Yaml $(Get-Content -Path $powershellModuleInfoSourcePath -Raw ) 
-
 # Create generated directory if it does not exists
 New-Item -ItemType Directory -Path $generatedDirectoryPath -ErrorAction SilentlyContinue >$null
 # Create generated Project directory
@@ -158,18 +196,19 @@ for ($ansibleSubdirectoryNameIndex = 0; $ansibleSubdirectoryNameIndex -lt $ansib
   New-Item -ItemType Directory -Path $(Join-Path $baseDirectory $ansibleSubdirectoryNames[$ansibleSubdirectoryNameIndex]) -ErrorAction SilentlyContinue >$null
 }
 
-# Get the hostNames and groupNames from the $ansibleInventory object
-$hostNames = $($ansibleInventory.HostNames.Keys)
-$groupNames = $($ansibleInventory.GroupNames.Keys)
+#
+# Get the hostNames and ansibleGroupNames from the $ansibleInventory object
+$hostNames = $ansibleStructure.HostNames
+$ansibleGroupNames = $ansibleStructure.AnsibleGroupNames
 
 # the names of the inventory files
-# ToDo: Create from ansibleInventory object
+# ToDo: Create Ansible inventory files from the ansibleInventory object
 $inventoryFileNames = [ordered] @{
   NonProductionInventory = @{source = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\Wsl2Ubuntu\AnsibleNonProductionInventory.yml'; destination = 'nonproduction_inventory.yml' }
   ProductionInventory    = @{source = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\Wsl2Ubuntu\AnsibleProductionInventory.yml'; destination = 'production_inventory.yml' }
 }
 
-# ToDo: Create Ansible inventory files from the ansibleInventory object
+# Copy the ansible inventory files to their destinations
 for ($index = 0; $index -lt $($inventoryFileNames.Keys).count; $index++) {
   $inventoryDestinationPath = Join-Path $baseDirectory $($inventoryFileNames[$index]).destination
   Set-Content -Path $inventoryDestinationPath -Value $(Get-Content $($inventoryFileNames[$index]).source)
@@ -182,35 +221,51 @@ for ($index = 0; $index -lt $($inventoryFileNames.Keys).count; $index++) {
 # Dot source the HostSettings
 . "$PSHOME/HostSettings.ps1"
 
+# Copy the Ansible Vault files to their destination
+$vaultDestinationDirectory = Join-Path $baseDirectory 'security' # at the root of  the baseDirectory
+$vaultFileNames = [ordered] @{
+  vaultFile = @{source = $PSVaultSecretsVaultSourcePath; destination = join-path $vaultDestinationDirectory $($PSVaultSecretsVaultSourcePath -split '\\')[-1] }
+  vaultPasswordFile    = @{source = $PSVaultPasswordFileSourcePath; destination = join-path $vaultDestinationDirectory $($PSVaultPasswordFileSourcePath -split '\\')[-1] }
+}
+for ($index = 0; $index -lt $($vaultFileNames.Keys).count; $index++) {
+  $destinationPath = $($vaultFileNames[$index]).destination
+  Set-Content -Path $destinationPath -Value $(Get-Content $($vaultFileNames[$index]).source)
+
+}
+
 # Create host_vars files
-& "$projectBaseDirectory\host_vars.ps1" $($ymlTemplate -replace '\{1}', 'host_vars') $(Join-Path $baseDirectory 'host_vars') $hostNames
+& "$projectBaseDirectory\host_vars.ps1" $($ymlTemplate -replace '\{1}', 'host_vars')  $(Join-Path $baseDirectory 'host_vars') $hostNames
 
 # Group_Vars are currently unused, all vars are in host_vars
 # Create group_vars files
-# & "$projectBaseDirectory\keyed_vars.ps1" $($ymlTemplate -replace '\{1}', 'group_vars') $(Join-Path $baseDirectory 'group_vars') $defaultPerGroupSettings $groupNames
+# & "$projectBaseDirectory\keyed_vars.ps1" $($ymlTemplate -replace '\{1}', 'group_vars') $(Join-Path $baseDirectory 'group_vars') $defaultPerGroupSettings $ansibleGroupNames
 
 # Create the main playbook, which goes into the base directory. because the `roles` subdirectory and playbooks subdirectory should be relative to the main playbook
-& "$projectBaseDirectory\main_playbook.ps1" $($ymlTemplate -replace '\{1}', 'plays') $(Join-Path $baseDirectory $mainPlaybookName) $ansibleInventory $playbooksSubdirectory
+& "$projectBaseDirectory\main_playbook.ps1" $($($ymlTemplate -replace '\{1}', 'main playbook') -replace '\{2}', 'all Hosts') $(Join-Path $baseDirectory $mainPlaybookName) $ansibleInventory $playbooksSubdirectory
+
+# Create the buildout playbook, which goes into the base directory. because the `roles` subdirectory and playbooks subdirectory should be relative to the main playbook
+& "$projectBaseDirectory\buildout_playbook.ps1" $($($ymlTemplate -replace '\{1}', 'buildout playbook') -replace '\{2}', 'all Hosts') $(Join-Path $baseDirectory $buildoutPlaybookName) $ansibleInventory $playbooksSubdirectory
 
 $playbooksDestinationDirectory = $(Join-Path $baseDirectory $playbooksSubdirectory)
 
-# Create a playbook for each groupname, which goes into the playbooks subdirectory
-$PackageInfos = [PSCustomObject]@{
-  NuGetPackageInfos = $null
-  ChocolateyPackageInfos = $chocolateyPackageInfos
-  PowershellModuleInfos= $powershellModuleInfos
-  RegistrySettingsInfos = $null
-  WindowsFeatureInfos= $windowsFeaturesInfos
-  AnsibleRoleInfos = $null
+# Create the playbook that gathers current infrastructure settings from each hosxt
+& "$projectBaseDirectory\InfrastructureReportingPlaybook.ps1" $($($ymlTemplate -replace '\{1}', 'reporting playbook') -replace '\{2}', 'all Hosts') $(Join-Path $playbooksDestinationDirectory 'InfrastructureReportingPlaybook.yml') $ansibleInventory $PackageInfos
 
-  }
-for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex++) {
-  $groupName = $groupNames[$groupNameIndex]
-  #if ($groupName -ne 'WindowsHosts' ) { continue } # skip things for development
+# Create a playbook for each ansiblegroupname, which goes into the playbooks subdirectory
+for ($ansibleGroupNameIndex = 0; $ansibleGroupNameIndex -lt $ansibleGroupNames.count; $ansibleGroupNameIndex++) {
+  $ansibleGroupName = $ansibleGroupNames[$ansibleGroupNameIndex]
+  #if ($ansibleGroupName -ne 'WindowsHosts' ) { continue } # skip things for development
   # The playbook  for each group consists of the common plays, plus importing any roles
-  # The playbook may need information about nuget, PowershellGet, chocolatey packages, windows Features, etc.
-
-  & "$projectBaseDirectory\groupname_playbooks.ps1" $($ymlTemplate -replace '\{1}', 'plays') $(Join-Path $playbooksDestinationDirectory "$($groupName)Playbook.yml") $ansibleInventory $groupName $PackageInfos
+  # The playbook may need information about nuget, PowershellGet, chocolatey packages, Windows Features, etc.
+  & "$projectBaseDirectory\Get-AnsiblegroupNamePlaybooks.ps1" -Template $($ymlTemplate -replace '\{1}', 'plays') -Path $(Join-Path $playbooksDestinationDirectory "$($ansibleGroupName)Playbook.yml") -InventoryStructure $ansibleInventory  -SoftwareConfigurationGroupsInformation $PackageInfos$PackageInfo -AnsibleGroupName $ansibleGroupName
+}
+# Create a buildout playbook for each HostName, which goes into the playbooks subdirectory
+for ($hostNameIndex = 0; $hostNameIndex -lt $hostNames.count; $hostNameIndex++) {
+  $hostName = $HostNames[$hostNameIndex]
+  #if ($HostName -ne 'WindowsHosts' ) { continue } # skip things for development
+  # The playbook  for each group consists of the common plays, plus importing any roles
+  # The playbook may need information about nuget, PowershellGet, chocolatey packages, Windows Features, etc.
+  & "$projectBaseDirectory\Get-TopPlaybook.ps1" -Template $($ymlTemplate -replace '\{1}', 'plays') -Path $(Join-Path $playbooksDestinationDirectory "$($hostName)Playbook.yml") -InventoryStructure $ansibleInventory -SoftwareConfigurationGroupsInformation $PackageInfos -HostName $hostName
 }
 
 # All Module installations require the module name, version, and PSEdition (or type)
@@ -222,9 +277,9 @@ for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex
 # The chocolatey Ansible module will ensure that chocolatey is loaded on a remote host
 # Create roles (directories, subdirectories, and files)
 $roleNames = @()
-for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex++) {
-  $groupName = $groupNames[$groupNameIndex]
-  $roleNames = $($ansibleInventory.GroupNames[$GroupName]).AnsibleRoleNames
+for ($ansibleGroupNameIndex = 0; $ansibleGroupNameIndex -lt $ansibleGroupNames.count; $ansibleGroupNameIndex++) {
+  $ansibleGroupName = $ansibleGroupNames[$ansibleGroupNameIndex]
+  $roleNames = $($ansibleInventory.AnsibleGroupNames[$AnsibleGroupName]).AnsibleRoleNames
   for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) {
     $roleName = $roleNames[$roleNameIndex]
     $fileToExecutePattern = "Role$($roleName).ps1"
@@ -279,6 +334,17 @@ for ($groupNameIndex = 0; $groupNameIndex -lt $groupNames.count; $groupNameIndex
       throw "$fileToExecutePattern not found"
     }
   }
+
+  # Create the Buildout playbook for every host
+  $ansibleInventoryHostNames = $ansibleInventory.HostNames
+  $ansibleInventoryHostNamesKeys =  [System.Collections.ArrayList]($ansibleInventoryHostNames.Keys)
+  for ($ansibleInventoryHostNamesIndex = 0; $ansibleInventoryHostNamesIndex -lt $ansibleInventoryHostNamesKeys.Count; $ansibleInventoryHostNamesIndex++) {
+    $ansibleInventoryHostNamesKey = $ansibleInventoryHostNamesKeys[$ansibleInventoryHostNamesIndex]
+    # Create a buildout playbook for every host
+    ChocolateyPackagesScriptBlock Get-ChocolateyPackagesScriptBlock
+  }
+  }
+  $buildout = Get-
 
   # create all the role subdirectories
   # for ($roleSubdirectoryIndex = 0; $roleSubdirectoryIndex -lt $roleSubdirectoryNames.count; $roleSubdirectoryIndex++) {

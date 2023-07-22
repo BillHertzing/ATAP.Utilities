@@ -151,6 +151,7 @@ $UserPSModulePaths = @(
 
   # ATAP Powershell is part of the machine profile
   # 'Modules that are in DevelopmentLifecycle Phase, for which I am involved'
+
   # 'Modules that are in Unit Test Lifecycle Phase, for which I am involved ("I" may be a user or a CI/CD service)'
   # 'Modules that are in Integration Test Lifecycle Phase, for which I am involved'
   # 'Modules that are in RTM Lifecycle Phase, for which I am involved'
@@ -163,8 +164,6 @@ $UserPSModulePaths = @(
 )
 # Add the $UserPSModulePaths to the exisiting $env:PSModulePaths
 $desiredPSModulePaths = $UserPSModulePaths + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
-# As the very last step, add the Powershell (Desktop) V5 module paths for this user and for the machine-wide V5 module location
-$desiredPSModulePaths += 'C:\Program Files\WindowsPowerShell\Modules'
 # Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
 [Environment]::SetEnvironmentVariable('PSModulePath', $desiredPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
 
@@ -175,7 +174,7 @@ $desiredPSModulePaths += 'C:\Program Files\WindowsPowerShell\Modules'
 #   # if the value is not $null
 #   if ($path ) {
 #     $name = 'MyPersonalSecrets'
-#     Unlock-UsersSecretStore -Name $name -EncryptedMasterPasswordsPath $path
+#     Unlock-UsersSecretVault -Name $name -EncryptedMasterPasswordsPath $path
 #   }
 # }
 
@@ -651,7 +650,6 @@ function StopVoiceAttackProcess {
 Set-Item -Path alias:stopVA -Value StopVoiceAttackProcess
 
 
-
 Function ShutItAllDown {
 	 $ComputerNameList = @('ncat016')#,'utat022')
 	 foreach ($cn in $ComputerNameList) {
@@ -686,9 +684,25 @@ Function ShutItAllDown {
 #Set-Location -Path (join-path -Path $global:DropBoxBasePath -ChildPath 'whertzing' -AdditionalChildPath 'GitHub','ATAP.Utilities')
 Set-Location -Path $storedInitialDir
 
-# Always Last step set the environment variables for this user
+# Set the environment variables for this user
 . (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
 Set-EnvironmentVariablesProcess
+
+# Unlock the Hashicorp Vault
+
+# Open a PSSession to all of the other hosts in my Dev/CI/CD pipeline
+# $hosts = @('ncat-ltb1','ncat016','utat01','utat022')
+# $global:PSSessions = @()
+# $hosts | ForEach-Object{ $lclHostName = $_
+#   # what credential files are available for this host
+#   $hostSpecificCredentialFiles = (,$(Get-ChildItem -Path $global:settings[$global:configRootKeys['SECURE_CLOUD_CREDENTIALS_PATHConfigRootKey']] | Where-Object {$($_.extension -eq '.xml') -and $($_.Basename -match "-$lclHostName$")}))
+#   # skip the rest if there are no credential files for this host
+#   if (-not $hostSpecificCredentialFiles) {Return}
+#   # ToDo: handle multiple users on a host
+#   $userHostCredentialFile = $hostSpecificCredentialFiles[0]
+#   # ToDo: handle multiple users on a host
+#   $global:PSSessions += New-PSSession -ComputerName $lclHostName -Credential $( Get-CredentialFile -Path $userHostCredentialFile.FullName )
+# }
 
 # Uncomment to see the $global:settings and Environment variables at the completion of this profile
 # Print the $global:settings if Debug

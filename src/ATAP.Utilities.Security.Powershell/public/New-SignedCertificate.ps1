@@ -30,7 +30,7 @@ ToDo: insert SCM keywords markers that are automatically inserted <Configuration
 #>
 Function New-SignedCertificate {
   #region Parameters
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSet')]
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName ='DefaultParameterSetNameReplacementPattern' )]
   param (
     [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
     [ValidateScript({ Test-Path $_ -PathType Leaf })]

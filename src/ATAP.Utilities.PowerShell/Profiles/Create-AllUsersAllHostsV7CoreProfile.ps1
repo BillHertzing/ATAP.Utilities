@@ -284,15 +284,15 @@ Function ValidateTools {
 # ((ls cert:/Current*/my/* | ?{$_.EnhancedKeyUsageList.FriendlyName -eq 'Document Encryption'}).extensions | Where-Object {$_.Oid.FriendlyName -match "subject alternative name"}).Format(1)
 
 <#
- Get-UsersSecretStoreVault -Name 'MyPersonalSecrets' `
+  Open-UsersSecretVault -Name 'MyPersonalSecrets' `
   -Description 'Secrets For a specific user on a specific computer' `
-  -ExtensionVaultModuleName 'SecretManagement.Keepass' `
+  -SecretVaultModuleName 'SecretManagement.Keepass' `
   -PathToKeePassDB 'C:\KeePass\Local.ATAP.Utilities.Secrets.kdbx' `
   -Subject 'CN=Bill.hertzing@ATAPUtilities.org;OU=Supreme;O=ATAPUtilities' `
   -SubjectAlternativeName 'Email=Bill.hertzing@gmail.com' `
   -PasswordSecureString $( '1234'| ConvertTo-SecureString -AsPlainText -Force) `
   -PasswordTimeout 900 `
-  -KeyFilePath 'C:/dropbox/whertzing/encryption.key'`
+  -SecretVaultEncryptionKeyFilePath 'C:/dropbox/whertzing/encryption.key'`
   -KeySizeInt 16
   -EncryptedPasswordFilePath 'C:/dropbox/whertzing/secret.encrypted'`
   -DataEncryptionCertificateRequestConfigPath  'C:\DataEncryptionCertificate.template' `
@@ -381,6 +381,8 @@ $matchPatternRegex = [System.Text.RegularExpressions.Regex]::new( 'global:settin
 .  $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-CollectionTraverseEvaluate.ps1'))
 # From the various source collections create the final global:settings
 Get-CollectionTraverseEvaluate -SourceCollections $sourceCollections -destination $global:Settings -matchPatternRegex $matchPatternRegex
+
+
 
 # Opt Out of the dotnet telemetry
 [Environment]::SetEnvironmentVariable('DOTNET_CLI_TELEMETRY_OPTOUT', 1, 'Process')

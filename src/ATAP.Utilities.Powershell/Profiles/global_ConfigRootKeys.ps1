@@ -254,6 +254,17 @@ $global:configRootKeys = @{
   # Where all things Security and Secrets related are stored
   'SECURE_CLOUD_BASE_PATHConfigRootKey'                                                          = 'SECURE_CLOUD_BASE_PATH'
 
+  # Powershell credentials for user/host pairs
+  'SECURE_CLOUD_CREDENTIALS_PATHConfigRootKey'                                                          = 'SECURE_CLOUD_CREDENTIALS_PATH'
+
+  # related to the Hashicorp Vault installation and operations
+  'VAULT_ADDRConfigRootKey'                                                          = 'VAULT_ADDR'
+  'VAULT_TOKENConfigRootKey'                                                          = 'VAULT_TOKEN'
+  'VAULT_CACERTConfigRootKey'                                                          = 'VAULT_CACERT'
+  'VaultUnsealKeyConfigRootKey'                                                          = 'VaultUnsealKey'
+  'VaultRootTokenConfigRootKey'                                                          = 'VaultRootToken'
+
+
   # OpenSSL Environment variables
   'OPENSSL_HOMEConfigRootKey'                                                                    = 'OPENSSL_HOME'
   'OPENSSL_CONFConfigRootKey'                                                                    = 'OPENSSL_CONF'
@@ -293,12 +304,10 @@ $global:configRootKeys = @{
   'SecureCertificatesCodeSigningCertificateBaseFileNameConfigRootKey'                            = 'SecureCertificatesCodeSigningCertificateBaseFileName'
 
   # SecretsManagement
-  'SecureVaultBasePathConfigRootKey'                                                             = 'SecureVaultBasePath'
-  'SecretVaultKeyFilePathConfigRootKey'                                                          = 'SecretVaultKeyFilePath'
+  'SecretVaultBaseDirectoryConfigRootKey'                                                             = 'SecureVaultBasePath'
+  'SecretVaultEncryptionKeyFilePathConfigRootKey'                                                          = 'SecretVaultEncryptionKeyFilePath'
   'SecretVaultEncryptedPasswordFilePathConfigRootKey'                                            = 'SecretVaultEncryptedPasswordFilePath'
-  #'EncryptedMasterPasswordsPathConfigRootKey'                                          = 'EncryptedMasterPasswordsPath'
-  # 'ATAPUtilitiesMasterPasswordsPathConfigRootKey'                                      = 'ATAPUtilitiesMasterPasswordsPath'
-  'SecretVaultExtensionModuleNameConfigRootKey'                                                  = 'SecretExtensionVaultModuleName'
+  'SecretVaultModuleNameConfigRootKey'                                                  = 'SecretVaultModuleName'
   'SecretVaultNameConfigRootKey'                                                                 = 'SecretVaultName'
   'SecretVaultDescriptionConfigRootKey'                                                          = 'SecretVaultDescription'
   'SecretVaultKeySizeIntConfigRootKey'                                                           = 'SecretVaultKeySizeInt'

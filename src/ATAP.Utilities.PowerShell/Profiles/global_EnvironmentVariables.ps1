@@ -17,11 +17,6 @@ $global:EnvVars = @{
   'FP__projectDescription'                                      = $global:Settings[$global:configRootKeys['FP__projectDescriptionConfigRootKey']]
   $global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']      = $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']]
   $global:configRootKeys['GoogleDriveBasePathConfigRootKey']    = $global:Settings[$global:configRootKeys['GoogleDriveBasePathConfigRootKey']]
-  # Jenkins Environment Variables
-  # JENKINS_HOME applies only to jenkins Controller nodes
-  $global:configRootKeys['JENKINS_HOMEConfigRootKey']            = $global:Settings[$global:configRootKeys['JENKINS_HOMEConfigRootKey']]
-# These Jenkins Environment Variables are used to access a Jenkins Controller and Authenticate
-
   $global:configRootKeys['JENKINS_URLConfigRootKey']            = $global:Settings[$global:configRootKeys['JENKINS_URLConfigRootKey']]
   $global:configRootKeys['JENKINS_USER_IDConfigRootKey']        = $global:Settings[$global:configRootKeys['JENKINS_USER_IDConfigRootKey']]
   $global:configRootKeys['JENKINS_API_TOKENConfigRootKey']      = $global:Settings[$global:configRootKeys['JENKINS_API_TOKENConfigRootKey']]
@@ -30,10 +25,21 @@ $global:EnvVars = @{
 
   # Where all things Security and Secrets related are stored
   $global:configRootKeys['SECURE_CLOUD_BASE_PATHConfigRootKey'] = $global:Settings[$global:configRootKeys['SECURE_CLOUD_BASE_PATHConfigRootKey']]
+
+  # related to the Hashicorp Vault installation and operations
+  $global:configRootKeys['VAULT_TOKENConfigRootKey'] = $global:Settings[$global:configRootKeys['VAULT_TOKENConfigRootKey']]
+  $global:configRootKeys['VAULT_ADDRConfigRootKey'] = $global:Settings[$global:configRootKeys['VAULT_ADDRConfigRootKey']]
+  
   # OpenSSL Environment variables
   $global:configRootKeys['OPENSSL_HOMEConfigRootKey']           = $global:Settings[$global:configRootKeys['OPENSSL_HOMEConfigRootKey']]
   $global:configRootKeys['OPENSSL_CONFConfigRootKey']           = $global:Settings[$global:configRootKeys['OPENSSL_CONFConfigRootKey']]
   $global:configRootKeys['RANDFILEConfigRootKey']               = $global:Settings[$global:configRootKeys['RANDFILEConfigRootKey']]
+
+    # Jenkins Environment Variables
+  # JENKINS_HOME applies only to jenkins Controller nodes
+  $global:configRootKeys['JENKINS_HOMEConfigRootKey']            = $global:Settings[$global:configRootKeys['JENKINS_HOMEConfigRootKey']]
+# These Jenkins Environment Variables are used to access a Jenkins Controller and Authenticate
+
 
 }
 

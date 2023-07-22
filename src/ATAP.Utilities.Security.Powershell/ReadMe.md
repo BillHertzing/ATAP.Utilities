@@ -7,37 +7,37 @@ Powershell scripts for managing an orgaization's computer systems' security
 
 ### Public Administration Functions
 
-Install-ModulesPerComputer (list of modules and list of computers, PSSession to computer -runas 'adminUserid', install list of modules with AllUsers scope) (SecretManagement and three vault extensions)
-New-CACertificateRequest (Production Public-facing computers get a Response from a Commercial 3rd-party, Development, Testing, and Internal computer systems Response from a CA server (or backup) internal to the organization)
-Install-CACertificate
+- Install-VaultsInfrastructure - TBD: for bootstrap hosts. Setup the necessaary infrasructure. Can ansible do it? Yes, after preamble and before securing the communications channel
+- Install-ModulesPerComputer (list of modules and list of computers, PSSession to computer -runas 'adminUserid', install list of modules with AllUsers scope) (SecretManagement and three vault extensions)
+- New-CACertificateRequest (Production Public-facing computers get a Response from a Commercial 3rd-party. Development, Testing, and Internal computer systems get a Response from an organization's CA server (or shard of a server cluster) internal to the organization)
+- Install-CACertificate  - installs the organization's root CA and subordinate CA's trust paths (or shard of trust paths)
 
-New-SSLCertificateRequest
-Install-SSLCertificate
+- New-SSLCertificateRequest - Creates a request for an certificate to be used to identify the computer, often for HTTPS protocol.
+- Install-SSLCertificate - Installs an SSL certificate to the host's CertificateStore. must be provided with a SSL certificate signed by a trusted CA.
 
-New-CodeSigningCertificateRequest
-Install-CodeSigningCertificate
+- New-CodeSigningCertificateRequest - Creates a request for an certificate to be used sign code to detect tampering
+- Install-CodeSigningCertificate - Installs code signing certificate to the host's CertificateStore. must be provided with a code signiing certificate signed by a trusted CA.
 
-New-DataEncryptionCertificateRequest (in behalf of a specific User on a specific Computer, so must accept 1 user and list of machines, 1 machine and list of users, or hash of computerXusers -value = $Subject
-Install-DataEncryptionCertificate (in behalf of a specific User on a specific Computer, so must accept 1 user and list of machines, 1 machine and list of users, or hash of computerXusers
+- New-DataEncryptionCertificateRequest (in behalf of a specific User on a specific Computer, so must accept 1 user and list of machines, 1 machine and list of users, or hash of computerXusers -value = $Subject
+- Install-DataEncryptionCertificate (in behalf of a specific User on a specific Computer, so must accept 1 user and list of machines, 1 machine and list of users, or hash of computerXusers
 
-New-KeySecureStringFile -path $KeySecureStringFilepath -KeySize 16,24,32
-Update-KeySecurestringFile -path $KeySecureStringFilepath -KeySize 16,24,32
+- New-KeySecureStringFile -path $KeySecureStringFilepath -KeySize 16,24,32
+- Update-KeySecurestringFile -path $KeySecureStringFilepath -KeySize 16,24,32
 
-New-MasterPasswordSecureStringFile -Path $PasswordSecureStringFilePath
-Update-MasterPasswordSecureStringFile -Path $PasswordSecureStringFilePath
+- New-MasterPasswordSecureStringFile -Path $PasswordSecureStringFilePath
+- Update-MasterPasswordSecureStringFile -Path $PasswordSecureStringFilePath
 
-Add-UsersSecretStoreVault (in behalf of a specific User on a specific Computer, so must accept 1 user and list of machines, 1 machine and list of users, or hash of computerXusers -value = $Subject and - $KeySecureStringFilePath $PasswordSecureStringFilePath
- Uses Register-SecretVault, for any of the three vault types, parameter sets
+- Add-UsersSecretStoreVault (on behalf of a specific User on a specific Computer, so must accept 1 user and list of machines, 1 machine and list of users, or hash of computerXusers -value = $Subject and - $KeySecureStringFilePath $PasswordSecureStringFilePath).  Uses Register-SecretVault, for any of the three vault types, parameter sets
 
 ### Public User Functions
 
-Unlock-UsersSecretStore -Name $name -KeySecureStringFilepath $KeySecureStringFilePath -PasswordSecureStringFilePath OR -Dictionary Thumbprint,encryptedpassword
+- Unlock-UsersSecretVault -Name $name -KeySecureStringFilepath $KeySecureStringFilePath -PasswordSecureStringFilePath OR -Dictionary Thumbprint,encryptedpassword
 
-List-DataEncryptionCertificates
+- List-DataEncryptionCertificates
 
-List-CodeSigningCertificates
-List-KeySecureStringFiles
-List-MasterPasswordSecureStringFiles
+- List-CodeSigningCertificates
+- List-KeySecureStringFiles
+- List-MasterPasswordSecureStringFiles
 
 ## Attributions
 

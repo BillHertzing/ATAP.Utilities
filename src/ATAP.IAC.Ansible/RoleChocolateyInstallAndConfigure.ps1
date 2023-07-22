@@ -113,7 +113,7 @@ for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
 
       # - name: debug variables
     #   debug:
-    #     msg: "hostvars are {{ hostvars[inventory_hostname] }} groupname is {{ item }}  }} "
+    #     msg: "hostvars are {{ hostvars[inventory_hostname] }} ansibleGroupName is {{ item }}  }} "
     #   loop: "{{ hostvars[inventory_hostname].group_names }}"
 
     # - name remove all from groups

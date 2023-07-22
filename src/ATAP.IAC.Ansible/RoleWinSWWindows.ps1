@@ -72,7 +72,9 @@ for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
   New-Item -ItemType Directory -Path $roleSubdirectoryPath -ErrorAction SilentlyContinue >$null
   $introductoryStanza = $($($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName)
   [void]$sb.Clear()
-  [void]$sb.AppendLine($introductoryStanza)
+  [void]$sb.Append($introductoryStanza)
+  [void]$sb.Append("`n")
+
   switch -regex ($roleSubdirectoryName) {
     '^meta$' {
       ContentsMeta

@@ -21,30 +21,63 @@ Prerequisite:
 - Windows Terminal
 - Internet Access (OR)
 - Local package repository with vetted versions of the following [tbd]
-  -
+
+## enable Windows Features for WSL
+
+Windows settings -> Option Features-> Additional Optional Features, Turn on 'Virtual Machine Platform' and 'Windows Subsystem for Linux', then reboot
+
+(or the following untested command lines)
+
+```Powershell
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+```
+
+reboot if prompted
+
+Note that if you want to remove everything from WSL, run the following commands (this assumes there is only one installed distro)
+
+```Powershell
+wsl --shutdown
+@(,$(wsl -l -v))
+$distroToRemove = Read-Host -Prompt 'Distro to remove'
+wsl --unregister $distroToRemove
+```
+
 ## Setup WSL for Windows
 
-Enter the following command from a terminal running elevated ("run as Administrator")
-`wsl --install`
-`wsl --set-default-version 2`
-reboot
-Windows terminal now has a 'ubuntu' terminal
-Open `ubuntu` in windows terminal
+Enter the following command from a terminal running elevated ("run as Administrator") [Linux distribution and version may change in the future]
+
+```Powershell
+$distroToInstall = Read-Host -Prompt 'Distro to install'
+wsl --install $distroToInstall
+wsl --set-default-version 2
+```
+
+You are now taken into a 'Ubuntu' terminal. Windows Terminal will also have an entry (profile) for Ubuntu
+Enter a userid and password to be the first admministrative user
 enter Linux userid (I use the same as my windows userid)
 enter a Linux password
 
-Instructions from here to TBD are should be executed in a `Ubuntu` terminal
+Instructions from here to TBD are should be executed in a 'ubuntu-22.04' terminal
 
-Upgrade ubuntu
-`sudo apt update && sudo apt upgrade`
+```bash
+# add the default user to the sudoers file
+# TBD - seems tobe difficulat to do....
 
-Create a new group to control access to Ansible playbooks and other infrastructure files. My organization used the group name InfrastructureAdmins
-`sudo groupadd InfrastructureAdmins`
+# Upgrade ubuntu
+sudo apt update && sudo apt upgrade
+```
 
-Ensure that the new user just created is a member of the InfrastructureAdmins group
-`sudo usermod -G InfrastructureAdmins <YourUserID>`
+### Set Python to version 3.10
 
-### Powershell Core for WSL
+```bash
+sudo apt remove python3-apt -y
+sudo apt install software-properties-common -y
+sudo add-apt-repository ppa:deadsnakes/ppa
+```
+
+### Install Powershell Core for WSL
 
 [Installation of pwsh via Package Repository](https://learn.microsoft.com/en-us/powershell/scripting/install/install-ubuntu?view=powershell-7.3#installation-via-package-repository)
 
@@ -67,12 +100,24 @@ pwsh
 
 ### Invoke pwsh on login
 
-add `pwsh` as the last line of ~/.profile
-
-run this
+To add `pwsh` as the last line of ~/.profile run this command
 
 ```powershell
 $lines = gc ~/.profile; $lines += 'pwsh'; Set-Content -path ~/.profile -Value $lines
+```
+
+### Create a new group for Infrastructure admins to control aceess to ansible
+
+```powershell
+$InfrastructureAdminsGroupName = 'InfrastructureAdmins'
+sudo groupadd $InfrastructureAdminsGroupName
+```
+
+### Ensure that the new administrative user just created is a member of the InfrastructureAdmins group
+
+```powershell
+$userid = whoami
+sudo usermod -aG $InfrastructureAdminsGroupName $userid
 ```
 
 ### Powershell paths for WSL container and WSL User
@@ -207,97 +252,173 @@ Start-Service $SSHService
 
 ### Setup pip in WSL2
 
-Install pip for all users
-
-```Bash
-curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-# get-pip.py
-# or
-python3 get-pip.py
-# then
-python3 -m pip -V
-```
+`sudo apt install python3-pip`
 
 ## Setup Ansible Control Node in WSL 2
 
-Install Ansible for all users
+Run the following in the 'Ubuntu' terminal
 
-```Bash
-python3 -m pip install --upgrade ansible
-python3 -m pip show ansible
-sudo apt --only-upgrade install ansible
+```Powershell
+sudo apt-add-repository ppa:ansible/ansible -y
+sudo apt-get update
+sudo pip3 install pywinrm -y
+sudo pip3 install pyvmomi -y
+sudo apt-get install ansible -y
+
 ```
 
-### Edit Ansible configuration file
+### Create and Edit Ansible configuration file
 
-Can be done with notepad++ or VSC from Windows hosts, at the Windows path
-`"\\wsl.localhost\Ubuntu\etc\ansible\ansible.cfg"`
-Remember to ensure the file has Linux line-endings (LF), not Windows line-endings (CR-LF)
-[Ansible Configuration Settings](https://docs.ansible.com/ansible/latest/reference_appendices/config.html)\
+[Ansible Configuration Settings](https://docs.ansible.com/ansible/latest/reference_appendices/config.html)
+
+Create the default ansible.cfg file, edit it, then place it into a location where Ansible wil find it
+
+#### Create default Ansible configuration file
 
 Create a configuration file with all options, commented out, and all extensions, also commented out.
-Run on the WSL2 container
-`ansible-config init --disabled -t all > ansible.cfg`
+
+Run on the Ubuntu terminal
+
+```powershell
+$ansibleVersionString = $($(ansible --version) -split [Environment]::NewLine)[0] -replace 'ansible\s+\[core\s+(.*?)]','$1'
+$ansibleDisabledConfigFileName = "AnsibleConfigAllDisabled-$ansibleVersionString.cfg"
+ansible-config init --disabled -t all > $ansibleDisabledConfigFileName
+'$ansibleDisabledConfigFileName = ''' + $ansibleDisabledConfigFileName + '''' # for use in the next steps
+'$ansibleDisabledConfigFileLinuxFullName = ''' + $(gci $ansibleDisabledConfigFileName).fullname + '''' # for use in the next steps
+```
+
+#### Copy to Repository
+
+copy the last two lines displayed in the Ubuntu terminal
+Run the following commands on the Windows Powershell terminal
+
+```powershell
+# paste in the last two lines generated on the Ubuntu terminal setting the values of
+#  $ansibleDisabledConfigFileName $ansibleDisabledConfigFileLinuxFullName
+
+$sourcePath = "\\wsl.localhost\Ubuntu-22.04\$ansibleDisabledConfigFileLinuxFullName"
+$destinationPathOnWindowsForOriginal = "C:\Dropbox\whertzing\GitHub\ATAP.IAC\Wsl2Ubuntu\etc\ansible\$ansibleDisabledConfigFileName"
+cp $sourcePath $destinationPathOnWindowsForOriginal
+```
+
+#### Modify the configuration file in the repository
+
+Run the following commands on the Windows Powershell terminal, after changing into organizations' IAC repository's `Wsl2Ubuntu\etc\ansible` directory.
+
+```powershell
+$ansibleDraftAnsibleConfigFilename = 'DraftModifiedAnsibleConfig.cfg'
+
+cp $ansibleDisabledConfigFileName $ansibleDraftAnsibleConfigFilename
+```
+
+Edit the file `$ansibleDraftAnsibleConfigFilename`
+
+Remember to ensure the file has Linux line-endings (LF), not Windows line-endings (CR-LF)
+[Ansible Configuration Settings](https://docs.ansible.com/ansible/latest/reference_appendices/config.html)\
 
 Ensure the following line in the config file is not commented
 `enable_plugins=host_list, script, auto, yaml, ini, toml`
 
-To enable Ansible running on ubuntu in WSL 2 to connect to target machins running Windows and use Powershell Core on the hosts, under the `[defaults]` section
+To enable Ansible running on ubuntu in WSL 2 to connect to target machines running Windows and use Powershell Core on the hosts, under the `[defaults]` section
 `executable=pwsh`
 
-### Configure Ansible to use WinRM to connect to a remote Windows Host
+save the file then rename it.
 
-`pip install pywinrm[credssp]`
+```powershell
+$ansibleDraftAnsibleConfigFilename = 'DraftModifiedAnsibleConfig.cfg'
+$ansibleLatestAnsibleConfigFilename = 'LatestModifiedAnsibleConfig.cfg'
+mv $ansibleDraftAnsibleConfigFilename $ansibleLatestAnsibleConfigFilename
+```
 
+#### Copy the modified Ansible configuration file to Ubuntu
 
+Run this in the Ubuntu window
 
-At this point, the AnsibleController is ready to reach out to a remote host.
+```Powershell
+$ansibleLatestAnsibleConfigFilename = 'LatestModifiedAnsibleConfig.cfg'
+$ansibleFinalConfigFilename = 'ansible.cfg'
+$destinationDirOnLinuxForModified = "/etc/ansible/"
+sudo mkdir $destinationDirOnLinuxForModified
+$destinationPathOnLinuxForLatest = "$($destinationDirOnLinuxForModified)$($ansibleFinalConfigFilename)"
+$destinationPathOnWindowsForLatest = "/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/Wsl2Ubuntu/etc/ansible/$($ansibleLatestAnsibleConfigFilename)"
+sudo cp $destinationPathOnWindowsForLatest $destinationPathOnLinuxForLatest
+```
 
 ## Testing the AnsibleController hosts
 
-The core `ping` ansible module verifies the connection from the AnsibleController to a remote host. The AnsbileController needs a minimal inventory file.
+The core `win_ping` ansible module verifies the connection from the AnsibleController to a remote host. The AnsbileController needs a minimal inventory file.
 
 ### Create minimal Ansible inventory file
 
-An inventory file can be created with notepad++ or VSC from the WSL's Windows host, at the Windows path
-`\\wsl.localhost\Ubuntu\etc\ansible\testhosts.yml`. Remember to ensure the file has Linux line-endings (LF), not Windows line-endings (CR-LF) A minimal YAML file for testing the connection would be:
-
-Run the following Powershell commands
+Run the following Powershell commands. Replace the hostname shown with the host name of the machine hosting the WSL container
 
 ```Powershell
-$hostname = 'utat01'
+$defaultPassword = 'obfuscated'
+$defaultUser = 'whertzing'
+$defaultPythonInterpreter = 'python3'
+# ensure the direcotry exists, or the ansible connection to the host will fail
+$defaultAnsibleRemoteTmp =  'C:\Temp\Ansible'
+
+$hostnames = @{
+'ncat016' =  @{user=$defaultUser;'password' = $defaultPassword;  RemoteTmp = $defaultAnsibleRemoteTmp }
+'ncat-ltb1' = @{user='whertzing56';'password' = $defaultPassword; PythonInterpreter = 'C:\ProgramData\chocolatey\bin\python3.10.exe'; RemoteTmp = 'D:\Temp\Ansible' }
+'utat01' =  @{user=$defaultUser;'password' = $defaultPassword; PythonInterpreter = $defaultPythonInterpreter; RemoteTmp = $defaultAnsibleRemoteTmp }
+'utat022' =  @{user=$defaultUser;'password' = $defaultPassword; PythonInterpreter = $defaultPythonInterpreter; RemoteTmp = $defaultAnsibleRemoteTmp }
+}
 $minimalInventoryPath = '~/Ansible/minimalInventory.yml'
-Set-Content -Path $minimalInventoryPath -Value @"
+
+[System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
+[void]$sb.Append(@"
 ---
 all:
 windows:
   hosts:
-    $($hostname):
+"@)
+$keys =  @($($hostnames.keys))
+for ($index = 0; $index -lt $keys.count; $index++) {
+  $key = $keys[$index]
+  [void]$sb.Append(@"
+
+    $key :
+      ansible_user: $($($hostnames[$key]).user)
+      ansible_password: $($($hostnames[$key]).password)
+      # ansible_python_interpreter: $($($hostnames[$key]).PythonInterpreter)
+      # ansible_remote_tmp: $($($hostnames[$key]).RemoteTmp)
+"@)
+}
+[void]$sb.Append(@"
+
   vars:
-    ansible_remote_tmp: C:\Temp\Ansible
-    ansible_shell_type: cmd   # TBD - confirm what works best; powershell or pwsh
-    ansible_shell_executable: pwsh
-    ansible_pwsh_interpreter: pwsh
-    ansible_Powershell_interpreter: Powershell
+    ansible_connection: winrm
+    ansible_winrm_transport: ntlm
+    # allow the use of a self-signed cert on the remote windows host
+    ansible_winrm_server_cert_validation: ignore
     become_method: runas
-    #ansible_connection: winrm
-    #ansible_winrm_transport: credssp
-    #ansible_user: obfuscated # from host_vars
-    #ansible_password: obfuscated # from a vault
-"@
+    # ansible_shell_type: cmd   # TBD - confirm what works best; powershell or pwsh
+    # ansible_shell_executable: pwsh
+    # ansible_pwsh_interpreter: pwsh
+    # ansible_Powershell_interpreter: Powershell
+
+"@)
+Set-Content -Path $minimalInventoryPath -Value $sb.ToString()
+gc  $minimalInventoryPath
 
 ```
+
+Note that Ansible does not use the Python interpreter on the Windows host, it only uses powershel. So there is no need to specify a specific Python interpreter.
+
 
 ### Test Ansible connection to the Windows hosts
 
  in the WSL2 container
 
  ```Powershell
-ansible all  -i $minimalInventoryPath -m ping
+ansible all  -i $minimalInventoryPath -m win_ping
 ```
 
-The correct response from Ansible,  after some status responses, ends with the string response 'pong'
+Do not use te core module `ping`, as it will try to use a python interpreter on the Windows hosts, which is not supported.
 
+The correct response from Ansible,  after some status responses, ends with the string response 'pong'
 
 ### Ansible for Windows collection
 
@@ -310,16 +431,17 @@ Future TBD : download from a vetted protected internal repository
 Current: Fetch and load from internet
 On the Ubuntu WSL2 terminal run these two commands to install the collections to `~/.ansible/collections`
 
-- `ansible-galaxy collection install ansible.windows`
-- `ansible-galaxy collection install community.windows`
-
-run `ls ~/.ansible/collections` and note that the collections have been added.
-
+```Powershell
+ls ~/.ansible/collections/ansible_collections # if the following two collections are not present, run the remainder of the commands herehave been added
+ansible-galaxy collection install ansible.windows
+ansible-galaxy collection install community.windows
+ls ~/.ansible/collections/ansible_collections # note that the collections have been added
+```
 
 ### Hardening the remote host's WinRM connection
 
 Future: TBD: Connect to the remote host using basic auth without CredSSP, and let ansible run the following commands
-Current:On any remote host that will be controilled by Ansible, run the following command
+Current:On any remote host that will be controlled by Ansible, run the following command
 `Enable-WSManCredSSP -Role Server -Force`
 
 ## Creating the organization's infrastructure code
@@ -337,8 +459,6 @@ The
 ### Edit Ansible Playbook file
 
 The location and the ownership of the Ansible Playbook files are at directory TBD, and the group owning the file is TBD. Ensure that all
-
-
 
 TBD: The IAC configuration is stored in the project database. The project database includes code that will output a complete Ansible directory structure and its contents, for managing the organizations hosts.
 
@@ -563,17 +683,17 @@ Powershell packages are managed on a per-host nad per-group basis using Ansible
 
   Symlink the profile files for the machine as follows:
 
-  - `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities. PowerShell' 'profiles' 'AllUsersAllHostsV7CoreProfile.ps1')`
+  - `sym`
 
-  - `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1')`
+  - `Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target $(join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1')`
 
-  - `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -Target (join-path -path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.IAC','Windows','HostSettings.ps1'))`
+  - `Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -Target $(join-path -path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.IAC','Windows','HostSettings.ps1'))`
 
-  - `Remove-Item -path (join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP. Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')`
+  - `Remove-Item -path $(join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')`
 
   Symlink the profile file for the first admin user on this machine
 
-  - `Remove-Item -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')`
+  - `Remove-Item -path $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')`
 
 
 
@@ -826,7 +946,7 @@ Run the following commands as a local admin on the new computer. Do this in both
 
 set-item WSMan:localhost\client\trustedhosts -value $('<NewComputerHostname>,' + (get-Item WSMan:localhost\client\trustedhosts).value)
 
-Set-Item WSMan:\localhost\Client\TrustedHosts -Value 'utat022,utat01,ncat-ltjo,ncat-ltb1,ncat016,ncat041' # ToDo - add wireless hostnames?
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value 'utat022,utat01,ncat-ltjo,ncat-ltb1,ncat016,ncat016-vs,ncat041' # ToDo - add wireless hostname and add default virtual switch for each host
 
 ### Add the new computer as a trusted host on other computers in the group
 

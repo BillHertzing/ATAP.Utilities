@@ -37,7 +37,7 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
 Function Get-ChocolatyPackagesFromProgramsList {
-  [CmdletBinding()]
+  [CmdletBinding( DefaultParameterSetName ='DefaultParameterSetNameReplacementPattern' )]
   Param (
     [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
     # ToDo: add validation script to ensure proper keys and values exists

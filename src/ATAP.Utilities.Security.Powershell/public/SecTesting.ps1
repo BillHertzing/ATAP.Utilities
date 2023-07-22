@@ -31,7 +31,7 @@ Add-UsersSecretStoreVault (in behalf of a specific User on a specific Computer, 
 
 Public User Functions
 
-Unlock-UsersSecretStore -Name $name -KeySecureStringFilepath $KeySecureStringFilePath -PasswordSecureStringFilePath OR -Dictionary Thumbprint,encryptedpassword
+Unlock-UsersSecretVault -Name $name -KeySecureStringFilepath $KeySecureStringFilePath -PasswordSecureStringFilePath OR -Dictionary Thumbprint,encryptedpassword
 
 List-DataEncryptionCertificates
 

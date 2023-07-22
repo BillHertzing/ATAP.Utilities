@@ -1,5 +1,5 @@
 #############################################################################
-#region Get-UsersSecretStoreVault
+#region  Open-UsersSecretVault
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,31 +28,30 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Get-UsersSecretStoreVault {
+Function  Open-UsersSecretVault {
   #region Parameters
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern')]
   param (
     [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
     [string] $SecretVaultName
-    ,[parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
+    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
     [string] $SecretVaultDescription
-    ,[parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true )]
-    [ValidateSet('SecretManagement.Keepass','Microsoft.PowerShell.SecretStore')]
-    [string] $ExtensionVaultModuleName
-    ,[parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true )]
-    [ValidateScript({ Test-Path $_ -PathType Leaf })]
-    [string] $KeyFilePath
-    ,[parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true )]
-    [ValidateScript({ Test-Path $_ -PathType Leaf })]
-    [string] $EncryptedPasswordFilePath
-    ,[parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true )]
-    [ValidateRange(5, 300)]
-    [string] $PasswordTimeout
+    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true )]
+    [ValidateSet('SecretManagement.Keepass', 'Microsoft.PowerShell.SecretStore')]
+    [string] $SecretVaultModuleName
+    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true )]
+    [ValidateNotNullOrEmpty()]
+    [string] $SecretVaultEncryptionKeyFilePath
+    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true )]
+    [ValidateNotNullOrEmpty()]
+    [string] $SecretVaultEncryptedPasswordFilePath
     , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $false, ParameterSetName = 'KeePass'  )]
-    [ValidateScript({ Test-Path $_ -PathType Leaf })]
-    [string] $PathToKeePassDB
+    [ValidateNotNullOrEmpty()]
+    [string] $SecretVaultPathToKeePassDB
+    , [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True, Mandatory = $true )]
+    $PasswordTimeout
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [string] $Encoding
     , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
@@ -63,6 +62,51 @@ Function Get-UsersSecretStoreVault {
   BEGIN {
     #$DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue
     Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    # further Validation of input parameters
+    if (-not $(Test-Path $SecretVaultEncryptionKeyFilePath -PathType Leaf)) {
+      $message = "SecretVaultEncryptionKeyFilePath: $SecretVaultEncryptionKeyFilePath not found"
+      Write-PSFMessage -Level Error -Message $message
+      throw $message
+    }
+    if (-not $(Test-Path $SecretVaultPathToKeePassDB -PathType Leaf)) {
+      $message = "SecretVaultPathToKeePassDB: $SecretVaultPathToKeePassDB not found"
+      Write-PSFMessage -Level Error -Message $message
+      throw $message
+    }
+    if (-not $(Test-Path $SecretVaultEncryptionKeyFilePath -PathType Leaf)) {
+      $message = "SecretVaultEncryptedPasswordFilePath: $SecretVaultEncryptedPasswordFilePath not found"
+      Write-PSFMessage -Level Error -Message $message
+      throw $message
+    }
+    $passwordTimeoutSecs = 0
+    switch -regex ($PasswordTimeout.gettype().name) {
+      'int' { if (-not  $PasswordTimeout -In 5..300) {
+          $message = 'Parameter PasswordTimeout is an int but is not in the range 5..300'
+          Write-PSFMessage -Level Error -Message $message
+          throw $message
+        }
+        $passwordTimeoutSecs = $passwordTimeout
+      }
+      'string' { if (-not [int32]::TryParse($_, [ref]$passwordTimeoutSecs )) {
+          $message = 'Parameter PasswordTimeout did not parse as an int'
+          Write-PSFMessage -Level Error -Message $message
+          throw $message
+        }
+        else {
+          if (-not $passwordTimeoutSecs -In 5..300) {
+            $message = 'Parameter PasswordTimeout is a string that parses as an int but is not in the range 5..300'
+            Write-PSFMessage -Level Error -Message $message
+            throw $message
+          }
+        }
+        default {
+          $message = 'Parameter PasswordTimeout is neither string nor int'
+          Write-PSFMessage -Level Error -Message $message
+          throw $message
+        }
+      }
+    }
+
   }
   #endregion BeginBlock
   #region ProcessBlock
@@ -70,32 +114,41 @@ Function Get-UsersSecretStoreVault {
   #endregion ProcessBlock
   #region EndBlock
   END {
-    $EncryptionKeyData = Get-Content -Encoding $Encoding -Path $KeyFilePath
-    $PasswordSecureString = ConvertTo-SecureString -String $(Get-Content -Encoding $Encoding -Path $EncryptedPasswordFilePath) -Key $EncryptionKeyData
+    $EncryptionKeyData = Get-Content -Encoding $Encoding -Path $SecretVaultEncryptionKeyFilePath
+    $PasswordSecureString = ConvertTo-SecureString -String $(Get-Content -Encoding $Encoding -Path $SecretVaultEncryptedPasswordFilePath) -Key $EncryptionKeyData
     $VP = @{Description = $SecretVaultDescription; Authentication = 'Password'; Interaction = 'None'; Password = $PasswordSecureString; PasswordTimeout = $PasswordTimeout }
     switch ($PSCmdlet.ParameterSetName) {
-      'KeePass' {$VP += @{Path = $PathToKeePassDB; KeyPath = $KeyFilePath }}
+      'KeePass' { $VP += @{Path = $SecretVaultPathToKeePassDB; KeyPath = $SecretVaultEncryptionKeyFilePath } }
     }
-  # Clear any previously registered secret vault
-  Get-SecretVault | Unregister-SecretVault
-  # register the requested SecretVault
-  Register-SecretVault -Name $SecretVaultName -ModuleName $ExtensionVaultModuleName -VaultParameters $VP
-  # unlock the requested SecretVault
-  # ToDo: figure out how to capture the warnings issued when Unlock-SecretVault fails
+    # Clear any previously registered secret vault
+    Get-SecretVault | Unregister-SecretVault
+    # register the requested SecretVault
+    Register-SecretVault -Name $SecretVaultName -ModuleName $SecretVaultModuleName -VaultParameters $VP
+    # unlock the requested SecretVault
+    # ToDo: figure out how to capture the warnings issued when Unlock-SecretVault fails
+    switch ($SecretVaultInfo['VaultModuleName']) {
+      'Microsoft.PowerShell.SecretStore' {
+        # ToDo: Figure out how to catch the output if it fails
+        Unlock-SecretStore -Name $SecretVaultName -Password $passwordSecureStringFromPersistence
+      }
+      'SecretManagement.Keepass' {
+        Unlock-SecretVault -Name $SecretVaultName # -Password $passwordSecureStringFromPersistence
+      }
+    }
 
-  Unlock-SecretStore -Name $SecretVaultName -Password $PasswordSecureString
-  # ToDo: figure out how to capture the warnings issued when Test-SecretVault fails
-  $success = Test-SecretVault -Name $SecretVaultName
-  if (! $Success) {
-    Write-PSFMessage -Level Error -Message "Could not unlock SecretVault $SecretvaultName" -Tag 'Security'
-    throw "Could not unlock SecretVault $SecretvaultName"
-  }
+    Unlock-SecretStore -Name $SecretVaultName -Password $PasswordSecureString
+    # ToDo: figure out how to capture the warnings issued when Test-SecretVault fails
+    $success = Test-SecretVault -Name $SecretVaultName
+    if (! $Success) {
+      Write-PSFMessage -Level Error -Message "Could not unlock SecretVault $SecretvaultName" -Tag 'Security'
+      throw "Could not unlock SecretVault $SecretvaultName"
+    }
 
     Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
   #endregion EndBlock
 }
-#endregion Get-UsersSecretStoreVault
+#endregion  Open-UsersSecretVault
 #############################################################################
 
 

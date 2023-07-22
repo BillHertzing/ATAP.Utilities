@@ -241,23 +241,20 @@ for ($index = 0; $index -lt $($vaultFileNames.Keys).count; $index++) {
 # & "$projectBaseDirectory\keyed_vars.ps1" $($ymlTemplate -replace '\{1}', 'group_vars') $(Join-Path $baseDirectory 'group_vars') $defaultPerGroupSettings $ansibleGroupNames
 
 # Create the main playbook, which goes into the base directory. because the `roles` subdirectory and playbooks subdirectory should be relative to the main playbook
-& "$projectBaseDirectory\main_playbook.ps1" $($($ymlTemplate -replace '\{1}', 'main playbook') -replace '\{2}', 'all Hosts') $(Join-Path $baseDirectory $mainPlaybookName) $ansibleInventory $playbooksSubdirectory
+Get-TopPlaybook.ps1 -Template $($($ymlTemplate -replace '\{1}', 'main AnsibleGroupNames Playbook') -replace '\{2}', 'all Hosts') $(Join-Path $baseDirectory $mainPlaybookName) $ansibleInventory $playbooksSubdirectory
 
 # Create the buildout playbook, which goes into the base directory. because the `roles` subdirectory and playbooks subdirectory should be relative to the main playbook
-& "$projectBaseDirectory\buildout_playbook.ps1" $($($ymlTemplate -replace '\{1}', 'buildout playbook') -replace '\{2}', 'all Hosts') $(Join-Path $baseDirectory $buildoutPlaybookName) $ansibleInventory $playbooksSubdirectory
+Get-TopPlaybook.ps1 $($($ymlTemplate -replace '\{1}', 'main HostNamesNames Playbook') -replace '\{2}', 'all Hosts') $(Join-Path $baseDirectory $buildoutPlaybookName) $ansibleInventory $playbooksSubdirectory
 
 $playbooksDestinationDirectory = $(Join-Path $baseDirectory $playbooksSubdirectory)
 
-# Create the playbook that gathers current infrastructure settings from each hosxt
-& "$projectBaseDirectory\InfrastructureReportingPlaybook.ps1" $($($ymlTemplate -replace '\{1}', 'reporting playbook') -replace '\{2}', 'all Hosts') $(Join-Path $playbooksDestinationDirectory 'InfrastructureReportingPlaybook.yml') $ansibleInventory $PackageInfos
-
-# Create a playbook for each ansiblegroupname, which goes into the playbooks subdirectory
+# Create a playbook for each ansibleGroupName, which goes into the playbooks subdirectory
 for ($ansibleGroupNameIndex = 0; $ansibleGroupNameIndex -lt $ansibleGroupNames.count; $ansibleGroupNameIndex++) {
   $ansibleGroupName = $ansibleGroupNames[$ansibleGroupNameIndex]
   #if ($ansibleGroupName -ne 'WindowsHosts' ) { continue } # skip things for development
   # The playbook  for each group consists of the common plays, plus importing any roles
   # The playbook may need information about nuget, PowershellGet, chocolatey packages, Windows Features, etc.
-  & "$projectBaseDirectory\Get-AnsiblegroupNamePlaybooks.ps1" -Template $($ymlTemplate -replace '\{1}', 'plays') -Path $(Join-Path $playbooksDestinationDirectory "$($ansibleGroupName)Playbook.yml") -InventoryStructure $ansibleInventory  -SoftwareConfigurationGroupsInformation $PackageInfos$PackageInfo -AnsibleGroupName $ansibleGroupName
+  Get-Playbooks -Template $($ymlTemplate -replace '\{1}', 'plays') -Path $(Join-Path $playbooksDestinationDirectory "$($ansibleGroupName)Playbook.yml") -InventoryStructure $ansibleInventory  -SoftwareConfigurationGroupsInformation $PackageInfos -AnsibleGroupName $ansibleGroupName
 }
 # Create a buildout playbook for each HostName, which goes into the playbooks subdirectory
 for ($hostNameIndex = 0; $hostNameIndex -lt $hostNames.count; $hostNameIndex++) {
@@ -265,8 +262,12 @@ for ($hostNameIndex = 0; $hostNameIndex -lt $hostNames.count; $hostNameIndex++) 
   #if ($HostName -ne 'WindowsHosts' ) { continue } # skip things for development
   # The playbook  for each group consists of the common plays, plus importing any roles
   # The playbook may need information about nuget, PowershellGet, chocolatey packages, Windows Features, etc.
-  & "$projectBaseDirectory\Get-TopPlaybook.ps1" -Template $($ymlTemplate -replace '\{1}', 'plays') -Path $(Join-Path $playbooksDestinationDirectory "$($hostName)Playbook.yml") -InventoryStructure $ansibleInventory -SoftwareConfigurationGroupsInformation $PackageInfos -HostName $hostName
+  Get-Playbooks -Template $($ymlTemplate -replace '\{1}', 'plays') -Path $(Join-Path $playbooksDestinationDirectory "$($hostName)Playbook.yml") -InventoryStructure $ansibleInventory -SoftwareConfigurationGroupsInformation $PackageInfos -HostName $hostName
 }
+
+# Create the playbook that gathers current infrastructure settings from each hosxt
+& "$projectBaseDirectory\InfrastructureReportingPlaybook.ps1" $($($ymlTemplate -replace '\{1}', 'reporting playbook') -replace '\{2}', 'all Hosts') $(Join-Path $playbooksDestinationDirectory 'InfrastructureReportingPlaybook.yml') $ansibleInventory $PackageInfos
+
 
 # All Module installations require the module name, version, and PSEdition (or type)
 # Module installations must honor the PSEdition AllUser's path
@@ -334,17 +335,6 @@ for ($ansibleGroupNameIndex = 0; $ansibleGroupNameIndex -lt $ansibleGroupNames.c
       throw "$fileToExecutePattern not found"
     }
   }
-
-  # Create the Buildout playbook for every host
-  $ansibleInventoryHostNames = $ansibleInventory.HostNames
-  $ansibleInventoryHostNamesKeys =  [System.Collections.ArrayList]($ansibleInventoryHostNames.Keys)
-  for ($ansibleInventoryHostNamesIndex = 0; $ansibleInventoryHostNamesIndex -lt $ansibleInventoryHostNamesKeys.Count; $ansibleInventoryHostNamesIndex++) {
-    $ansibleInventoryHostNamesKey = $ansibleInventoryHostNamesKeys[$ansibleInventoryHostNamesIndex]
-    # Create a buildout playbook for every host
-    ChocolateyPackagesScriptBlock Get-ChocolateyPackagesScriptBlock
-  }
-  }
-  $buildout = Get-
 
   # create all the role subdirectories
   # for ($roleSubdirectoryIndex = 0; $roleSubdirectoryIndex -lt $roleSubdirectoryNames.count; $roleSubdirectoryIndex++) {

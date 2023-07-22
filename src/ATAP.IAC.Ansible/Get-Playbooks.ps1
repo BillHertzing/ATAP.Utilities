@@ -1,12 +1,101 @@
-# Define the playbooks for each ansiblegroupname
-param (
-  [string] $ymlGenericTemplate
-  , [string] $Path
-  # $parsedInventory is a hashtable that specifies all the chocolatey packages, powershell modules, and windows features all the groups
-  , [hashtable] $parsedInventory
-  , [string] $ansibleGroupName
-  , [PSCustomObject] $packageInfos
+
+<#
+.SYNOPSIS
+Short description
+.DESCRIPTION
+Long description
+.EXAMPLE
+Example of how to use this cmdlet
+.EXAMPLE
+Another example of how to use this cmdlet
+.INPUTS
+Inputs to this cmdlet (if any)
+.OUTPUTS
+Output from this cmdlet (if any)
+.NOTES
+General notes
+.COMPONENT
+The component this cmdlet belongs to
+.ROLE
+The role this cmdlet belongs to
+.FUNCTIONALITY
+The functionality that best describes this cmdlet
+#>
+function Get-PlaybooksNamed {
+[CmdletBinding(DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern',
+SupportsShouldProcess = $true,
+PositionalBinding = $false,
+ConfirmImpact = 'Medium')]
+# [Alias()]
+# [OutputType([Object])]
+Param (
+# Template help description
+[Parameter(Mandatory = $true,
+  Position = 0,
+  ValueFromPipeline = $false,
+  ValueFromPipelineByPropertyName = $false,
+  ValueFromRemainingArguments = $false)
+]
+[ValidateNotNull()]
+[ValidateNotNullOrEmpty()]
+$Template
+, # Name help description
+[Parameter(Mandatory = $true,
+  Position = 1,
+  ValueFromPipeline = $false,
+  ValueFromPipelineByPropertyName = $false,
+  ValueFromRemainingArguments = $false)
+]
+[ValidateNotNull()]
+[ValidateNotNullOrEmpty()]
+$Path
+, # InventoryStructure help description
+[Parameter(Mandatory = $true,
+  Position = 2,
+  ValueFromPipeline = $false,
+  ValueFromPipelineByPropertyName = $false,
+  ValueFromRemainingArguments = $false)
+]
+[ValidateNotNull()]
+[ValidateNotNullOrEmpty()]
+[PSCustomObject]$inventoryStructure
+ # SoftwareConfigurationGroupsInformation help description
+[Parameter(Mandatory = $true,
+  Position = 2,
+  ValueFromPipeline = $false,
+  ValueFromPipelineByPropertyName = $false,
+  ValueFromRemainingArguments = $false)
+]
+[ValidateNotNull()]
+[ValidateNotNullOrEmpty()]
+[hashtable]$softwareConfigurationGroupsInformation
+, # AnsibleGroupName help description
+[Parameter(ParameterSetName = 'AnsibleGroupNames',
+  Mandatory = $false,
+  Position = 3,
+  ValueFromPipeline = $false,
+  ValueFromPipelineByPropertyName = $false,
+  ValueFromRemainingArguments = $false)
+]
+[ValidateNotNull()]
+[ValidateNotNullOrEmpty()]
+[string] $AnsibleGroupName
+
+, # hostName help description
+[Parameter(ParameterSetName = 'HostNames',
+  Mandatory = $false,
+  Position = 3,
+  ValueFromPipeline = $false,
+  ValueFromPipelineByPropertyName = $false,
+  ValueFromRemainingArguments = $false)
+]
+[ValidateNotNull()]
+[ValidateNotNullOrEmpty()]
+[string] $hostName
+
+  ,  $SoftwareConfigurationGroupsInformation
 )
+$parsedInventory = $InventoryStructure.AnsibleInventory
 
 [System.Text.StringBuilder]$sbAddedParameters = [System.Text.StringBuilder]::new()
 $addedParametersScriptblock = {
@@ -96,9 +185,9 @@ $ChocolateyPackagesForAnsibleGroupNameScriptBlock = {
       )
       for ($index = 0; $index -lt @($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).ChocolateyPackageNames).count; $index++) {
         $packageName = $($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).ChocolateyPackageNames)[$index]
-        $packageVersion = $($($PackageInfos.ChocolateyPackageInfos)[$packageName]).Version
-        $allowPrerelease = $($($PackageInfos.ChocolateyPackageInfos)[$packageName]).AllowPrerelease
-        $addedParameters = . $addedParametersScriptblock $($($PackageInfos.ChocolateyPackageInfos)[$packageName]).AddedParameters
+        $packageVersion = $($($SoftwareConfigurationGroupsInformation.ChocolateySoftwareConfigurationGroupsInformation)[$packageName]).Version
+        $allowPrerelease = $($($SoftwareConfigurationGroupsInformation.ChocolateySoftwareConfigurationGroupsInformation)[$packageName]).AllowPrerelease
+        $addedParameters = . $addedParametersScriptblock $($($SoftwareConfigurationGroupsInformation.ChocolateySoftwareConfigurationGroupsInformation)[$packageName]).AddedParameters
 
         [void]$sb.Append("        - {name: $packageName, version: $packageVersion, AllowPrerelease: $allowPrerelease, AddedParameters: $addedParameters}")
         [void]$sb.Append("`n")
@@ -135,8 +224,8 @@ $PowershellModulesForAnsibleGroupNameScriptBlock = {
 "@)
       for ($index = 0; $index -lt @($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).PowershellModuleNames).count; $index++) {
         $moduleName = $($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).PowershellModuleNames)[$index]
-        $moduleVersion = $($($PackageInfos.PowershellModuleInfos)[$moduleName]).Version
-        $allowPrerelease = $($($PackageInfos.PowershellModuleInfos)[$moduleName]).AllowPrerelease
+        $moduleVersion = $($($SoftwareConfigurationGroupsInformation.PowershellModuleInfos)[$moduleName]).Version
+        $allowPrerelease = $($($SoftwareConfigurationGroupsInformation.PowershellModuleInfos)[$moduleName]).AllowPrerelease
         [void]$sb.Append("        - {name: $moduleName, version: $moduleVersion, AllowPrerelease: $allowPrerelease  }")
         [void]$sb.Append("`n")
       }
@@ -237,10 +326,10 @@ function Contents {
   $(if ($true) { $(. $RolesForAnsibleGroupNameScriptBlock) })
 }
 
-[void]$sb.Append($($ymlGenericTemplate -replace '\{2}', "ansiblegroupname $ansibleGroupName"))
+[void]$sb.Append($($template -replace '\{2}', "ansiblegroupname $ansibleGroupName"))
 [void]$sb.Append("`n")
 
-#$ymlContents = $ymlGenericTemplate -replace '\{2}', "ansiblegroupname $ansibleGroupName"
+#$ymlContents = $template -replace '\{2}', "ansiblegroupname $ansibleGroupName"
 # ToDo: get the formatting correct, so that we don't have to run this global search and replace
 Contents
 #$ymlContents += $($($(Contents -sb $sb) -split "`n") | ForEach-Object { $_ -replace '^\s{0,1}-', '-' }) -join "`n"

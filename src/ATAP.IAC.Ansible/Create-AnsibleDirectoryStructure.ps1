@@ -196,7 +196,6 @@ for ($ansibleSubdirectoryNameIndex = 0; $ansibleSubdirectoryNameIndex -lt $ansib
   New-Item -ItemType Directory -Path $(Join-Path $baseDirectory $ansibleSubdirectoryNames[$ansibleSubdirectoryNameIndex]) -ErrorAction SilentlyContinue >$null
 }
 
-#
 # Get the hostNames and ansibleGroupNames from the $ansibleInventory object
 $hostNames = $ansibleStructure.HostNames
 $ansibleGroupNames = $ansibleStructure.AnsibleGroupNames
@@ -230,7 +229,6 @@ $vaultFileNames = [ordered] @{
 for ($index = 0; $index -lt $($vaultFileNames.Keys).count; $index++) {
   $destinationPath = $($vaultFileNames[$index]).destination
   Set-Content -Path $destinationPath -Value $(Get-Content $($vaultFileNames[$index]).source)
-
 }
 
 # Create host_vars files
@@ -241,10 +239,10 @@ for ($index = 0; $index -lt $($vaultFileNames.Keys).count; $index++) {
 # & "$projectBaseDirectory\keyed_vars.ps1" $($ymlTemplate -replace '\{1}', 'group_vars') $(Join-Path $baseDirectory 'group_vars') $defaultPerGroupSettings $ansibleGroupNames
 
 # Create the main playbook, which goes into the base directory. because the `roles` subdirectory and playbooks subdirectory should be relative to the main playbook
-Get-TopPlaybook.ps1 -Template $($($ymlTemplate -replace '\{1}', 'main AnsibleGroupNames Playbook') -replace '\{2}', 'all Hosts') $(Join-Path $baseDirectory $mainPlaybookName) $ansibleInventory $playbooksSubdirectory
+Get-TopPlaybook.ps1 -Template $($($ymlTemplate -replace '\{1}', 'main AnsibleGroupNames Playbook') -replace '\{2}', 'all Hosts') -Path $(Join-Path $baseDirectory $mainPlaybookName) -InventoryStructure $ansibleInventory -ImportDirectory $playbooksSubdirectory
 
 # Create the buildout playbook, which goes into the base directory. because the `roles` subdirectory and playbooks subdirectory should be relative to the main playbook
-Get-TopPlaybook.ps1 $($($ymlTemplate -replace '\{1}', 'main HostNamesNames Playbook') -replace '\{2}', 'all Hosts') $(Join-Path $baseDirectory $buildoutPlaybookName) $ansibleInventory $playbooksSubdirectory
+Get-TopPlaybook.ps1 $($($ymlTemplate -replace '\{1}', 'main HostNamesNames Playbook') -replace '\{2}', 'all Hosts') -Path $(Join-Path $baseDirectory $buildoutPlaybookName) -InventoryStructure $ansibleInventory -ImportDirectory $playbooksSubdirectory
 
 $playbooksDestinationDirectory = $(Join-Path $baseDirectory $playbooksSubdirectory)
 
@@ -254,7 +252,7 @@ for ($ansibleGroupNameIndex = 0; $ansibleGroupNameIndex -lt $ansibleGroupNames.c
   #if ($ansibleGroupName -ne 'WindowsHosts' ) { continue } # skip things for development
   # The playbook  for each group consists of the common plays, plus importing any roles
   # The playbook may need information about nuget, PowershellGet, chocolatey packages, Windows Features, etc.
-  Get-Playbooks -Template $($ymlTemplate -replace '\{1}', 'plays') -Path $(Join-Path $playbooksDestinationDirectory "$($ansibleGroupName)Playbook.yml") -InventoryStructure $ansibleInventory  -SoftwareConfigurationGroupsInformation $PackageInfos -AnsibleGroupName $ansibleGroupName
+  Get-Playbooks -Template $($ymlTemplate -replace '\{1}', 'plays') -Path $(Join-Path $playbooksDestinationDirectory "$($ansibleGroupName)Playbook.yml") -InventoryStructure -InventoryStructure $ansibleInventory  -SoftwareConfigurationGroupsInformation $PackageInfos -AnsibleGroupName $ansibleGroupName
 }
 # Create a buildout playbook for each HostName, which goes into the playbooks subdirectory
 for ($hostNameIndex = 0; $hostNameIndex -lt $hostNames.count; $hostNameIndex++) {

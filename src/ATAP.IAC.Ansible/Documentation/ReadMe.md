@@ -683,7 +683,6 @@ Powershell packages are managed on a per-host nad per-group basis using Ansible
 
   Symlink the profile files for the machine as follows:
 
-  - `sym`
 
   - `Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target $(join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1')`
 
@@ -1016,14 +1015,14 @@ Many of the development and CI tools need Java. Jenkins, PlantUML, diagram gener
 
 The Jenkins CI tool uses the Java interpreter. Currently (July 2023), the Jenkins project recommends Java 17. The ATAP organization uses the Eclipse Adoptium Java interperter. The Ansible Role `JavaInterpreter` uses chocolatey to install a specific version of Java, as specified in the ChocolateyPackageProductionInformation file. The version number from this file is also used to setup the environment variables at the machine level in the remote Windows host.
 
-The installation mechanism for Eclipse Adoptium places the executable and configuration files in the path `$global:settings[$global:configRootKeys['JavaEclipseAdoptiumFolderPathPattern'] -replace 'jre-.*?-hotspot', jre-$global:settings[$global:configRootKtys['JavaEclipseAdoptiumVersion']-hotspot"`
+The installation mechanism for Eclipse Adoptium places the executable and configuration files in the path `$global:settings[$global:configRootKeys['JavaEclipseAdoptiumFolderPathPattern'] -replace 'jre-.*?-hotspot', jre-$global:settings[$global:configRootKeys['JavaEclipseAdoptiumVersion']-hotspot"`
 
 Environment Variables
 The code is installed to "C:\Program Files\Eclipse Adoptium\jre-17.0.2.8-hotspot\bin\java.exe", and the PATH variable (Machine scope)  is modified to include `"C:\Program Files\Eclipse Adoptium\jre-17.0.2.8-hotspot\bin\"`
 
 ## Setup Jenkins Controller
 
-Everything necessary  to run jenkins is found in the `$ENV:JENKINS_HOME` subdirectory. For any machine having the role of the Jenkins Controller, the value of `$ENV:JENKINS_HOME`is set to the machine' settings' path `$global:configRootKeys['CloudBasePathConfigRootKey']` and`JenkinsHome`. This is assigned at the machine level, so when the Jenkins Controller Service starts, it uses the data in this directory. Note that only one machine in the organization should be designated the active Jenkins Controller. (ToDo: add section on High-availability and scaling for the Jenkins Controller, also how to have a second or thir machine act as a disconnected Jenkins Controller)
+Everything necessary  to run jenkins is found in the `$ENV:JENKINS_HOME` subdirectory. For any machine having the role of the Jenkins Controller, the value of `$ENV:JENKINS_HOME`is set to the machine' settings' path `$global:configRootKeys['CloudBasePathConfigRootKey']` and`JenkinsHome`. This is assigned at the machine level, so when the Jenkins Controller Service starts, it uses the data in this directory. Note that only one machine in the organization should be designated the active Jenkins Controller. (ToDo: add section on High-availability and scaling for the Jenkins Controller, also how to have a second or third machine act as a disconnected Jenkins Controller)
 
 The resolvable machine name of the Jenkins Controller will be referred to in this document as `JenkinsControllerHostName`
 

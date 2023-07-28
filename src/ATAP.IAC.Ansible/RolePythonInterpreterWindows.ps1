@@ -10,11 +10,6 @@ param(
 # use a local StringBuilder
 [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
 
-# use a local $sb for each file type ToDo: remove these, rework to latest examples (RoleJenkinsController)
-[System.Text.StringBuilder]$sbTask = [System.Text.StringBuilder]::new()
-[System.Text.StringBuilder]$sbVars = [System.Text.StringBuilder]::new()
-[System.Text.StringBuilder]$sbMeta = [System.Text.StringBuilder]::new()
-
 [System.Text.StringBuilder]$sbAddedParameters = [System.Text.StringBuilder]::new()
 
 $addedParametersScriptblock = {
@@ -31,50 +26,55 @@ $addedParametersScriptblock = {
 }
 
 function ContentsTask {
-  [void]$sbTask.Append(@"
-
-- name: Install or Uninstall Python using chocolatey
-  win_dsc:
-    resource_name: cChocoPackageInstaller
-    Name: "{{ PythonName }}"
-    Version: "{{ PythonVersion }}"
-    Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
-
-    $(. $addedParametersScriptblock)
+  [void]$sb.Append(@"
+	- name: install the chocolatey packages
+	  win_chocolatey:
+		name: '{{ item.name }}'
+		# version: '{{ item.version }}'
+		allow_prerelease: "{{ 'true' if (item.allowprerelease == 'true') else 'false'}}"
+		state: "{{ 'absent' if (action_type == 'uninstall') else 'present'}}"
+		# {% if item.addedparameters is defined and item.addedparameters|length %}
+		# 'package_params: ' "{{ item.addedparameters }}"
+		# {% endif %}
+	  failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
+	  loop:
+	  # ditto
+		- {name: choco install python310, version: latest, allowprerelease: false, addedparameters: "InstallDir:'C:\Program Files\PythonInterpreters\Python3.10.11" } 
   tags: [$roleName]
   ignore_errors: yes
+  # - name: add symblinks for python3
+  #  TBD
+  # - name: reboot if needed
+  #  TBD
+  # - name install pip  
+  #  TBD
+  # - name: add symblinks for pip3
+  #  TBD
+  # - name: Registry Settings per machine
+  #  TBD
+  # - name: Registry Settings per user
+  #  TBD
 "@)
-# ToDo Fix AddedParameters for chocolatey installation
-# ignore_errors because of [DSC Compliance Failed: Cannot find path C:\\choco\\cache\\ChocoInstalled.xml\ because it does not exist](https://github.com/chocolatey/cChoco/issues/160)
 }
 
 function ContentsVars {
-  [void]$sbVars.Append(@"
-PythonName: python
-PythonVersion: 3.11.2
-PythonAllow_prerelease: false
+  [void]$sb.Append(@"
+TBD: tbd
 "@)
 # ToDo Fix AddedParameters for chocolatey installation
 }
 
-function ContentsMetaNew {
-  [void]$sb.Append(@'
+function ContentsMeta {
+  [void]$sb.Append(@"
 galaxy_info:
   author: William Hertzing for ATAP.org
   description: Ansible role to setup a Python Interpreter via Chocolatey
   attribution:
   company: ATAP.org
-  role_name: JenkinsControllerWindows
+  role_name: PythonInterpreterWindows
   license: license (MIT)
   min_ansible_version: 2.4
   dependencies: []
-'@)
-}
-
-function ContentsMeta {
-  [void]$sbMeta.Append(@"
-dependencies:
-  # - role: RoleChocolateyInstallAndConfigure
 "@)
 }
 
@@ -87,19 +87,22 @@ for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
   New-Item -ItemType Directory -Path $roleSubdirectoryPath -ErrorAction SilentlyContinue >$null
   switch -regex ($roleSubdirectoryName) {
     '^tasks$' {
-      [void]$sbTask.AppendLine($($($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName))
+      [void]$sb.AppendLine($($($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName))
       ContentsTask
-      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sbTask.ToString()
+      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sb.ToString()
+	  [void]$sb.Clear()
     }
     '^vars$' {
-      [void]$sbVars.AppendLine($($($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName))
+      [void]$sb.AppendLine($($($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName))
       ContentsVars
-      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sbVars.ToString()
+      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sb.ToString()
+	  [void]$sb.Clear()
     }
     '^meta$' {
-      [void]$sbMeta.AppendLine($($($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName))
+      [void]$sb.AppendLine($($($ymlGenericTemplate -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName))
       ContentsMeta
-      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sbMeta.ToString()
+      Set-Content -Path "$roleSubdirectoryPath\main.yml" -Value $sb.ToString()
+	  [void]$sb.Clear()
     }
     default {
       Write-PSFMessage -Level Error -Message " role $roleName has no template to create any files in the $roleSubdirectoryName subDirectory"

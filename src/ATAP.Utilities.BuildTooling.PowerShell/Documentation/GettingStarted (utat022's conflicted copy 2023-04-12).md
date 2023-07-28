@@ -36,7 +36,7 @@ map transform {list of unique filenames sans `\(\d+). iterate this list
 ## Build-ImageFromPlantUML.ps1
 
 
-## Packaing, Testing, and Deploying powershell modules
+## Packaging, Testing, and Deploying powershell modules
 
 ### Development
 

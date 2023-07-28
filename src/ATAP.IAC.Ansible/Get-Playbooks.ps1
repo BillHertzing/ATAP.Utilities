@@ -60,7 +60,7 @@ $Path
 [ValidateNotNullOrEmpty()]
 [PSCustomObject]$inventoryStructure
  # SoftwareConfigurationGroupsInformation help description
-[Parameter(Mandatory = $true,
+, [Parameter(Mandatory = $true,
   Position = 2,
   ValueFromPipeline = $false,
   ValueFromPipelineByPropertyName = $false,
@@ -93,7 +93,6 @@ $Path
 [ValidateNotNullOrEmpty()]
 [string] $hostName
 
-  ,  $SoftwareConfigurationGroupsInformation
 )
 $parsedInventory = $InventoryStructure.AnsibleInventory
 

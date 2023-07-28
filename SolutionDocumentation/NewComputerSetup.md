@@ -2,9 +2,9 @@
 
 ## Introduction
 
-Setting up a new computer can be a daunting task when there are hundreds of customizations needed to make the computer a productive element of an organizations infrastructure.  Infrastructure As Code (IAC) is the discipline that is concerned with formalizing how to codify the customizations, and executing on the configuration to make a computer conform to the customizations desired.
+Setting up a new computer can be a daunting task when there are hundreds of customizations needed to make the computer a productive element of an organization's infrastructure.  Infrastructure As Code (IAC) is the discipline that is concerned with formalizing how to codify the customizations, and executing on the configuration to make a computer conform to the customizations desired.
 
-The ATAP utilities repository uses the automation software Ansible to control the setup and upgrade of the hosts in our organization. The sub-repository ATAP.IAC.Ansible contains IAC code that defines the organizatiopns hosts, their roles, and the specific software and configuration needed on the hosts for them to fulfill their roles. See the ATAP.IAC.Ansible [readme] for furhter information on this
+The ATAP utilities repository uses the automation software Ansible to control the setup and upgrade of the hosts in our organization. The sub-repository ATAP.IAC.Ansible contains IAC code that defines the organization's hosts, their roles, and the specific software and configuration needed on the hosts for them to fulfill their roles. See the ATAP.IAC.Ansible [readme] for further information on this
 
 However, a new computer / host requires some setup steps before it can communicate with an IAC Controller host. The purpose of this document is to detail the bootstrapping steps to setup a Window's host so it can communicate with Ansible for the remainder of the setup process. Bootstrapping is the process of initial machine configuration.
 
@@ -23,7 +23,7 @@ BIOS changes can be made before an operating system is installed. These will be 
 
 ### utat022 host BIOS modifications
 
-- Change PCIE configuration from "M2 extension card" to "dual M2 SSD"
+- Change PCIE slot 4 configuration from "M2 extension card" to "dual M2 SSD"
 - write down disk number for M2.2 main SSD stick
 - Ensure SATA controllers are On
 - X.M.P is enabled
@@ -73,7 +73,7 @@ Ansible (for Windows) uses WinRM to communicate from the AnsibleController host 
 
 #### Enable WinRM
 
-Setup the initial WinRM configuration. Run the command ```winrm qc```
+Setup the initial WinRM configuration. Run the command `winrm qc`
 
 #### Allow Powershell script execution
 
@@ -234,6 +234,8 @@ Remove-Item "Setup.msix"
  Note: as of 7/2/20023 StableDiffusion  will only work with Python 3.10, nothing later (pytorch is required)
 
 `winget install Python.Python.3.10 --scope machine`
+
+`winget install --name 'python 3.10' --version '3.10.11' --accept-package-agreements --accept-source-agreements --silent --location 'C:\Program Files\PythonInterpreters' --source 'winget' --verbose --scope machine --force``
 
 
 ## Add new host to the IAC configuration

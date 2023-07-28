@@ -1,4 +1,5 @@
-# The script that creates the Python Interpreter Role
+# The script that creates the Ditto Clipboard Manager Role
+function New-RoleDittoClipboardManagerWindows {
 param(
   [string] $ymlGenericTemplate
   , [string] $roleDirectoryPath
@@ -39,21 +40,26 @@ function ContentsTask {
 	  failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
 	  loop:
 	  # ditto
-		- {name: choco install python310, version: latest, allowprerelease: false, addedparameters: "InstallDir:'C:\Program Files\PythonInterpreters\Python3.10.11" } 
+		- {name: choco install ditto, version: latest, allowprerelease: false, addedparameters: "InstallDir:'C:\Program Files\PythonInterpreters\Python3.10.11" } 
   tags: [$roleName]
   ignore_errors: yes
-  # - name: add symblinks for python3
-  #  TBD
-  # - name: reboot if needed
-  #  TBD
-  # - name install pip  
-  #  TBD
-  # - name: add symblinks for pip3
-  #  TBD
-  # - name: Registry Settings per machine
-  #  TBD
-  # - name: Registry Settings per user
-  #  TBD
+  - name: set registry values per user
+    win_regedit:
+      path: "{{ item.path }}"
+      name: "{{ item.name }}"
+      data: "{{ item.data|default(none) }}"
+      type: "{{ item.type|default('dword') }}"
+    loop:
+      - {path: HKCU:\Software\Ditto, name: NetworkStringPassword, data: "LetMeIn", type: SZ} 
+      - {path: HKCU:\Software\Ditto, name: CustomSendToList2, data: "<CustomFriends> </CustomFriends>", type: SZ} 
+      - {path: HKCU:\Software\Ditto, name: sendclient_ip_0, data: "utat01", type: SZ} 
+      - {path: HKCU:\Software\Ditto, name: sendclient_autosend_0, data: "1", type: dword} 
+        
+        # BasePath depends on the host and the gobal settings
+        # $basepath = $(HostSettings[$hostname])['DropboxBasePath']
+        # set-itemproperty HKCU:\Software\Ditto -Name DBPath3 -value "'$basepath\Ditto\$($hostname)_ditto.db'"
+  tags: [$roleName]
+  ignore_errors: yes
 "@)
 }
 
@@ -109,4 +115,5 @@ for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
       break
     }
   }
+}
 }

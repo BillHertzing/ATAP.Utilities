@@ -19,7 +19,7 @@ decide what role's the new computer wil be a member of
 
 ### utat022
 
-- Change PCIE configuration from "M2 extension card" to "dual M2 SSD"
+- Change PCIE slot 4 configuration from "M2 extension card" to "dual M2 SSD"
 - Ensure SATA controllers are On
 - X.M.P is enabled
 - Intel Rapid Storage technology is OFF

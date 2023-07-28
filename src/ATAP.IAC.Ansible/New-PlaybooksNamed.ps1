@@ -21,7 +21,7 @@ The role this cmdlet belongs to
 .FUNCTIONALITY
 The functionality that best describes this cmdlet
 #>
-function New-PlaybooksNamed {
+function Get-PlaybooksNamed {
 [CmdletBinding(DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern',
 SupportsShouldProcess = $true,
 PositionalBinding = $false,

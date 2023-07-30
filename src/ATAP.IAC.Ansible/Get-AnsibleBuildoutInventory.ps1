@@ -71,9 +71,9 @@ all:
       $HostNamesKeys = $ansibleInventory.HostNames
       for ($HostNamesIndex = 0; $HostNamesIndex -lt $HostNamesKeys.Count; $HostNamesIndex++) {
         $HostNamesKey = $HostNamesKeys[$HostNamesIndex]
-        # iterate all of the SoftwareConfigurationGroups members
-        for ($SoftwareConfigurationGroupsIndex = 0; $SoftwareConfigurationGroupsIndex -lt $ansibleInventory.SoftwareConfigurationGroups.Count; $SoftwareConfigurationGroupsIndex++) {
-          $SWConfigurationGroupsKey = $ansibleInventory.SoftwareConfigurationGroups.$SoftwareConfigurationGroupsIndex
+        # iterate all of the SwCfg members
+        for ($SwCfgIndex = 0; $SwCfgIndex -lt $ansibleInventory.SwCfg.Count; $SwCfgIndex++) {
+          $SWConfigurationGroupsKey = $ansibleInventory.SwCfg.$SwCfgIndex
           # if the hosts section has a named SWConfigurationGroup,
           # Gather the SWConfigurationGroups and their value from the Hosts section #TBD
         }
@@ -84,8 +84,8 @@ all:
           if ($ansibleInventory.HostNames.$HostNamesKey.AnsibleGroupNames -contains $AnsibleGroupsKey) {
             # Gather the SWConfigurationGroups and their value from the AnsibleGroup section
             # ToDo: Perhpas validate the name in the hosts list matches an entry in the ansblegroups?
-            for ($SoftwareConfigurationGroupsIndex = 0; $SoftwareConfigurationGroupsIndex -lt $ansibleInventory.AnsibleGroupNames.Count; $SoftwareConfigurationGroupsIndex++) {
-              $SWConfigurationGroupsKey = $ansibleInventory.AnsibleGroupNames.$SoftwareConfigurationGroupsIndex
+            for ($SwCfgIndex = 0; $SwCfgIndex -lt $ansibleInventory.AnsibleGroupNames.Count; $SwCfgIndex++) {
+              $SWConfigurationGroupsKey = $ansibleInventory.AnsibleGroupNames.$SwCfgIndex
             }
           }
         }
@@ -97,7 +97,7 @@ all:
             'Settings|AnsibleGroupNames' {}
             default {
               #$ansibleInventoryHostNamesSWConfigurationNamesKey = $ansibleInventory.HostNames.$HostNamesKey.$SWConfigurationsKey
-              if ($softwareConfigurationGroups -notcontains $SWConfigurationsKey) { $softwareConfigurationGroups += $SWConfigurationsKey }
+              if ($swCfg -notcontains $SWConfigurationsKey) { $swCfg += $SWConfigurationsKey }
 
             }
 

@@ -3,7 +3,7 @@ param (
   , [string] $Path
   # $parsedInventory is a hashtable that specifies all the chocolatey packages, powershell modules, and windows features all the groups
   , [hashtable] $parsedInventory
-  , [PSCustomObject] $packageInfos
+  , [hashtable] $SwCfgInfos
 )
 
 [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
@@ -20,10 +20,10 @@ $GatherRegistrySettingsScriptBlock = {
   gather_facts: false
   tasks:
 "@)
-$keys =  @($($($packageInfos.RegistrySettingsInfos).keys))
+$keys =  @($($($SwCfgInfos.RegistrySettingsInfos).keys))
 for ($index = 0; $index -lt $keys.count; $index++) {
-  $key = @($($($packageInfos.RegistrySettingsInfos).keys))[$index]
-  $registrySetting = $($packageInfos.RegistrySettingsInfos)[$key]
+  $key = @($($($SwCfgInfos.RegistrySettingsInfos).keys))[$index]
+  $registrySetting = $($SwCfgInfos.RegistrySettingsInfos)[$key]
   [void]$sb.Append(@"
       - name: Get the current value of $registrySetting.Name
       ansible.windows.win_reg_stat:

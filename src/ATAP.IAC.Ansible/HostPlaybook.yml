@@ -1,0 +1,386 @@
+
+# install all drivers, choco packages, PowerShell modules, and Registry Settings
+- name: Install it All
+  hosts: all
+  gather_facts: false
+  tasks:
+    # BIOS settings (per host)
+    # utat022 - setup NCMe on PCIE ( PCIEX15(G4) Configuration ->Dual M.2 SSD
+    # utat022 - Advanced -> SA -? graphics Primary Dispaly from Auto to PCIE # setup simultaneous GPU card in PCIE slot and the Intel IRIS integerated graphics
+    # utat022 - Advanced->APM Configuration->Power On By PCI-E ->Enabled ## enables WakeOnLan
+    # Windows Features
+    - name: Microsoft-Hyper-V-All
+      ansible.windows.win_optional_feature:
+        name: Microsoft-Hyper-V-All
+        state: present
+
+    - name: Install Microsoft Subsystem for Linux
+      ansible.windows.win_optional_feature:
+        name: Microsoft-Windows-Subsystem-Linux
+        state: present
+      register: wsl_status
+
+    - name: Reboot if installing Linux Subsytem as feature requires it
+      ansible.windows.win_reboot:
+      when: wsl_status.reboot_required
+
+        # ToDo: set WSL2 as default
+
+    # base chocolatey package and configuration
+    - name: install chocolatey
+      win_chocolatey:
+        name: chocolatey
+        state: present
+    - name: configure chocolatey cache location
+      win_chocolatey_config:
+        name: cachelocation
+        state: present
+        value: "{{ chocolateycachelocation }}"
+    # configure chocolatey to allow community packages ()'allowglobalconfirmation,allowemptychecksums,allowemptychecksumssecure,allowinsecureconfirmation,allowmultipleversions')
+    - name: allow global confirmation when installing packages and their dependencies
+      win_chocolatey_feature:
+        name: allowglobalconfirmation
+        state: disabled
+    # configure chocolatey to install community extensions
+    - name: install chocolatey-core.extension
+      win_chocolatey:
+        name: chocolatey-core.extension
+        state: present
+
+    # remainder of the  chocolatey packages
+    - name: install the chocolatey packages
+      win_chocolatey:
+        name: '{{ item.name }}'
+        # version: '{{ item.version }}'
+        allow_prerelease: "{{ 'true' if (item.allowprerelease == 'true') else 'false'}}"
+        state: "{{ 'absent' if (action_type == 'uninstall') else 'present'}}"
+        # {% if item.addedparameters is defined and item.addedparameters|length %}
+        # 'package_params: ' "{{ item.addedparameters }}"
+        # {% endif %}
+      failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
+      loop:
+      # drivers
+        - {name: choco install geforce-game-ready-driver, version: latest, allowprerelease: false, addedparameters:  } # for utat022
+        - {name: choco install razer-synapse-3graph, version: latest, allowprerelease: false, addedparameters:  } # for utat022
+        # - {name: logitechgaming, version: latest, allowprerelease: false, addedparameters:  } # for ncat016
+
+      #$pkgs = gc c:\dropbox\whertzing\github\atap.iac\chocolateypackageinfo.yml| convertfrom-yaml
+      #$pkgkeys = [system.collections.arraylist]($pkgs.keys)
+      # copy addedparamter scriptblock
+      #foreach ($pk in $pkgkeys) {"  - {name: $pk, version: latest, allowprerelease: false, addedparameters: $(. $addedparametersscriptblock $($p[$pk]).addedparamters)"}
+
+        - {name: 7zip, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: adoptopenjdkjre, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: audacity, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: audacity-ffmpeg, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: audacity-lame, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: autohotkey, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: autoruns, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: beyondcompare, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: blender, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: brave, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: carbon, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: choco-package-list-backup, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: cinebench, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: cpu-z, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: cura-new, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: dbachecks, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: dbatools, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: ditto, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: docfx, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: dotultimate, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: element-desktop, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: es, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: everything, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: fiddler, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: firefox, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: flyway.commandline, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: freevideoeditor, version: latest, allowprerelease: false, addedparameters:  }  # installs to 'FlashIntegro' see if there are package parameters to support installation to a differrent path : defualt to 'VSDC'
+        - {name: fusionplusplus, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: gh, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: git, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: gitter, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: googlechrome, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: gopro-quik, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: gpg4win, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: gpu-z, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: grammarly, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: grammarly-chrome, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: grammarly-for-windows, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: graphviz, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: hwinfo, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: ilspy, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: invoke-build, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: jetbrains-rider, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: keep-chrome, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: keepass, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: linqpad, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: linqpad6, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: linqpad7, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: msbuild-structured-log-viewer, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: msys2, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: mysql, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: mysql.workbench, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: ngrok, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: nmap, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: nordvpn, version: latest, allowprerelease: false, addedparameters:  }  # requires restart and then login after installation
+        - {name: notepadplusplus, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: nssm, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: nuget.commandline, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: nugetpackageexplorer, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: office365proplus, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: openssl.light, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: pdq-inventory, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: perfview, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: pester, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: plantuml, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: plaster, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: postman, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: powershell-core, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: powertoys, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: pushbullet, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: putty, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: putty.portable, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: resharper-platform, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: ruby, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: rufus, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: sentinel, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: sharex, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: speedtest, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: sql-server-management-studio, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: sqlite, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: steam, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: steam-client, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: sysinternals, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: temurinjre, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: tineye-chrome, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vault, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vcredist-all, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: visualstudio-installer, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vlc, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-codespellchecker, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-csharp, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-csharpextensions, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-drawio, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-editorconfig, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-gitattributes, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-gitignore, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-gitlens, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-icons, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-markdownlint, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-mssql, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-powershell, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-prettier, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-ruby, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-test-explorer, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-test-explorer-liveshare, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-vsliveshare, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: vscode-yaml, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: wireshark, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: xunit, version: latest, allowprerelease: false, addedparameters:  }
+        - {name: zoom, version: latest, allowprerelease: false, addedparameters:  }
+
+
+      #$mods = gc c:\dropbox\whertzing\github\atap.iac\powershellmoduleinfo.yml| convertfrom-yaml
+      #$modkeys = [system.collections.arraylist]($mods.keys) | sort
+      #foreach ($m in $modkeys) {"  - {name: $m, version: latest }"}
+
+    - name: install the modules defined for each group
+      community.windows.win_psmodule:
+        name: "{{ item.name }}"
+        state: "{{ 'absent' if (action_type == 'uninstall') else 'present'}}"
+        #version: "{{ item.version }}"
+        allow_prerelease: "{{ item.allowprerelease }}"
+      loop:
+        - {name: assert, version: latest }
+        - {name: chocolateyget, version: latest }
+        - {name: cimcmdlets, version: latest }
+        - {name: computermanagementdsc, version: latest }
+        - {name: dbachecks, version: latest }
+        - {name: dbatools, version: latest }
+        - {name: invokebuild, version: latest }
+        - {name: microsoft.powershell.archive, version: latest }
+        - {name: microsoft.powershell.diagnostics, version: latest }
+        - {name: microsoft.powershell.host, version: latest }
+        - {name: microsoft.powershell.management, version: latest }
+        - {name: microsoft.powershell.operation.validation, version: latest }
+        - {name: microsoft.powershell.secretmanagement, version: latest }
+        - {name: microsoft.powershell.secretstore, version: latest }
+        - {name: microsoft.powershell.security, version: latest }
+        - {name: microsoft.powershell.utility, version: latest }
+        - {name: microsoft.wsman.management, version: latest }
+        - {name: nuget, version: latest }
+        - {name: packagemanagement, version: latest }
+        - {name: pester, version: latest }
+        - {name: plaster, version: latest }
+        - {name: platyps, version: latest }
+        - {name: powershell-yaml, version: latest }
+        - {name: powershelleditorservices, version: latest }
+        - {name: powershelleditorservices.vscode, version: latest }
+        - {name: powershellget, version: latest }
+        - {name: psdepend, version: latest }
+        - {name: psdesiredstateconfiguration, version: latest }
+        - {name: psdiagnostics, version: latest }
+        - {name: psdscresources, version: latest }
+        - {name: psframework, version: latest }
+        - {name: psneo4j, version: latest }
+        - {name: psreadline, version: latest }
+        - {name: psscriptanalyzer, version: latest }
+        - {name: samsung-magician, version: latest }
+        - {name: secretmanagement.hashicorp.vault.kv, version: latest }
+        - {name: secretmanagement.keepass, version: latest }
+        - {name: sqlps, version: latest }
+        - {name: sqlserver, version: latest }
+        - {name: threadjob, version: latest }
+        - {name: zoom, version: latest }
+        # - Add all production ATAP utilities modules
+
+        # Create local users (real people)
+        # create whertzing
+
+      # $rs = gc c:\dropbox\whertzing\github\atap.iac\registrysettingsinfo.yml| convertfrom-yaml
+      # $rskeys = [system.collections.arraylist]($rs.keys) | sort
+      # $user =  [system.collections.arraylist]::new()
+      # $machine =  [system.collections.arraylist]::new()
+      # foreach ($r in $rskeys) { if ($($rs[$r]).path -match 'hkcu'){$user += "      - $r"} else {$machine += "      - $r"}}
+      # write-output       "user"
+      # write-output       $user
+      # write-output       "machine"
+      # write-output       $machine
+
+
+    - name: load registry settings information json file
+      set_fact:
+        registry_properties: "{{ lookup('file', '/mnt/c/dropbox/whertzing/github/atap.iac/registrysettingsinfo.yml') | from_yaml }}"
+    - name: set registry values machine wide
+      win_regedit:
+        path: "{{ registry_properties[item]['path'] }}"
+        name: "{{ registry_properties[item]['name'] }}"
+        data: "{{ registry_properties[item]['data']|default(none) }}"
+        type: "{{ registry_properties[item]['type']|default('dword') }}"
+      loop:
+        - disablecortana
+        - disablegamedvr
+        - disabletelemetry
+        - enableautotray
+        - launchedgeinincognitobydefault
+    - name: set registry values per user
+      win_regedit:
+        path: "{{ registry_properties[item]['path'] }}"
+        name: "{{ registry_properties[item]['name'] }}"
+        data: "{{ registry_properties[item]['data']|default(none) }}"
+        type: "{{ registry_properties[item]['type']|default('dword') }}"
+        ansible_become_user: whertzing
+      loop:
+        - explorernavpaneshowallfolders
+        - explorershowfileext
+        - explorershowhiddenfilesandfolders
+        - explorershowhiddenosfiles
+        - hidesyncprovidernotifications
+        - removeshortcutfromnewshortcutfilename
+        - stopautomaticinstallationofsuggestedwindows11apps
+
+        # - explorerdefaulttodetailsview
+        #- pin terminal to taskbar
+        #- pin VSC to taskbar
+        #- pin Explorer to taskbar
+        #- pin chrome to taskbar
+        #- pin Brave to taskbar
+        #- pin Everything to taskbar
+        #- pin Notepad++ to taskbar
+
+    # ansible roles
+    - name: include the following role on all the hosts in windowshosts
+      include_role:
+        name: "{{ roleitem }}"
+      loop:
+        - roles/JavaInterpreterWindows
+        - roles/PythonInterpreterWindows
+        #- roles/RubyInterpreterWindows
+        #- roles/IISServer
+        #- roles/SQLServerWindows
+        #- roles/JenkinsController
+        #- roles/JenkinsAgent
+        # -roles/PDQAgent
+        #- roles/StableDiffusionWindows
+        #- roles/SD.NextWindows  http://127/0/0/1:7860
+      loop_control:
+        loop_var: roleitem
+
+        # Powershell scripts to run
+        # per-machine
+        # - Setup profiles and global files
+        # Per user
+        # - mapusersshellfolders
+        # - SetupExplorerQuickView shortcuts
+        # - Setup user profiles
+
+### Things to add
+        # Dropbox - per host and per user select specific folders to 'make available offline' (whertzing, Pictures, Videso, Notepad++   )
+        # Stop Windows Search indexing
+        # Notepad++ - set location of configuration files to the dropbox location
+        # 7Zip - set all file associations
+        # do not start OneDrive on system startup - can be done with autoruns
+        # do not start BCCClipboard on system startup - can be done with autoruns
+        # do not start 'Edge autolaunch' on system startup - can be done with autoruns
+        # do not start the scheduled task '\onedrive Reporting Task'- can be done with autoruns
+        # do not start the scheduled task '\oneDriveg Standalone Update TaskTask'- can be done with autoruns
+        # do not start the service 'Edgeupdate' on system startup - can be done with autoruns
+        # do not start the service 'Edgeupdatem' on system startup - can be done with autoruns
+        # do not start the service 'MicrosoftEdgeElevationService' on system startup - can be done with autoruns
+        # maps users shell folders to dropbox locations
+        # Setup profiles
+        # Login to Steam accunt billhertzing S2V, then get 2FA code from gmail
+        # Install AOEIV from steam library
+        # Pushbullet - login with Google Chrome link
+        # Everything "double click  path to open folder in Explorer" and "put double quaotes around path when copying complete path"
+        # ShareX - kotkeys conflict if onedrive is started before sharex, solved by turning off OneDrive . Settings: Paths->Use Custom Screenshots folder : C:\Dropbox\whertzing\ShareX\Screenshots  Set Theme to light
+        # SpyderX - calibrate monitor/GPU after installation
+        # GeyondCompare - add license
+        # PowershellPro - add License. Found in file at "C:\Dropbox\Downloads\powershell Pro VSC Bundle 2021-05-06 license.txt"
+        # JetBrains Rider - add license
+        # Grammerrly - sign in to account:
+        # VSC - sign in via github to turn on settings sync
+        # VSC - add common workspaces to the taskbar icon
+        # VSC - add user settings to new system, especially spell words
+        # VSC - extension for Github Copilot
+        # VSC - extension for Github Copilot Voice
+        # ditto cannot connect from utat022 to ncat016. but started working after adding the other machines to friends list
+        # ServiceStack - enter license
+        # Rider Ultimate - enter license
+        # FreeVideoEditor VSDC - enter license
+        # Terminal -change the default profile GUID to be the GUID of the Powershell Core profile
+        # Run Samsung magician against all SSD drives, do a diagnostics scan, get benchmark for performance, do performance optimization, check Overprovisioning, check S.M.A.R.T results
+
+        # Install Ubuntu onto WSl2
+            # $distroToInstall = Read-Host -Prompt 'Distro to install' : accept default 'ubuntu'
+            # wsl --install $distroToInstall
+            # wsl --set-default-version 2
+        # Settings and Windows scheduled tassk needed to setup communications into WSL container
+
+        # Plex server and Fred's Videos
+
+        # need to add GFitLFS to downloads and install it https://git-lfs.com/
+            # git lfs install
+            # git lfs track "*.safetensors"
+            # git lfs track "*.checkpoint"
+            # git add .gitattributes
+            # To use: git add file.psd
+            # To use: git commit -m "Add design file"
+            # To use: f:
+            git push origin main
+
+        # StableDiffusionRole
+        # -- SDXL base model
+          - upgrade diffusers
+        # - pip install transformers, accelerate,watermark,safetensors
+
+
+
+
+
+  vars:
+    chocolateycachelocation: 'C:/Temp/ChocolateyCache'
+
+    #

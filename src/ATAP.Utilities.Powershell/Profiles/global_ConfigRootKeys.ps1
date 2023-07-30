@@ -14,6 +14,8 @@ $global:configRootKeys = @{
   'BigTempBasePathConfigRootKey'                                                                 = 'BIG_TEMP_BASE_PATH'
   'SecureTempBasePathConfigRootKey'                                                              = 'SECURE_TEMP_BASE_PATH'
   'ChocolateyPackagesConfigRootKey'                                                              = 'ChocolateyPackages'
+  # Ditto Clipboard Manager Settings
+  'DittoDBPathConfigRootKey'                                                              = 'DittoDBPath'
   'ErlangHomeDirConfigRootKey'                                                                   = 'ErlangHomeDir'
   'GIT_CONFIG_GLOBALConfigRootKey'                                                               = 'GIT_CONFIG_GLOBAL'
   'GitExePathConfigRootKey'                                                                      = 'GitExePath'

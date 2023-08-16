@@ -76,8 +76,11 @@ Function Get-ModuleHighestVersion {
     # Does the ModuleName exist in any repository
     $allPackageVersions = Find-Package -Name $ModuleName -AllowPrereleaseVersions
     $highestVersionIndex = $null
-    for ($i = 0; $i -lt $allModules.count; $i++) {
-      if ($($allPackageVersions[$i]).Version -gt $highestSemanticVersion) { $highestVersionIndex = $i }
+    for ($i = 0; $i -lt $allPackageVersions.count; $i++) {
+      if ($($allPackageVersions[$i]).Version -gt $highestSemanticVersion) {
+        $highestVersionIndex = $i
+        $highestSemanticVersion = $($allPackageVersions[$i]).Version
+      }
     }
     # get the manifest for the highest version found
   }

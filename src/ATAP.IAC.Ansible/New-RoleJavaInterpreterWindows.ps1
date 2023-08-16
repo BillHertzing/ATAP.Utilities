@@ -1,5 +1,4 @@
-# The script that creates the Jenkins Controller Role
-# The script that creates the Ditto Clipboard Manager Role
+# The script that creates the Java Interpreter Role
 function New-RoleJavaInterpreterWindows {
   param(
     # Template help description
@@ -60,10 +59,6 @@ function New-RoleJavaInterpreterWindows {
 
   [System.Text.StringBuilder]$sbAddedParameters = [System.Text.StringBuilder]::new()
 
-  # use a local $sb to build up the files' contents
-  [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
-  [System.Text.StringBuilder]$sbAddedParameters = [System.Text.StringBuilder]::new()
-
   $addedParametersScriptblock = {
     param(
       [string[]]$addedParameters
@@ -90,7 +85,6 @@ function New-RoleJavaInterpreterWindows {
 		# {% endif %}
 	  failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
 	  loop:
-	  # ditto
 		- {name: temurin17jre, version: 17.0.6.1000, allowprerelease: false, addedparameters: "InstallDir:'C:\Program Files\PythonInterpreters\Python3.10.11" }
   tags: [$roleName]
   ignore_errors: yes

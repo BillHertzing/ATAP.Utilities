@@ -2,11 +2,11 @@
 #region Get-ClonedAndModifiedHashtable
 <#
 .SYNOPSIS
-ToDo: write Help SYNOPSIS For this function
+Use the serializer to create an independent copy of an object, then modify that copy. with the hashtables of the modifications
 .DESCRIPTION
 ToDo: write Help DESCRIPTION For this function
-.PARAMETER Path
-  Specifies the path where searching should start. May be a string or an array in the form (p1[,p2][,p3]...)
+.PARAMETER source
+  The source hashtable
 .INPUTS
 ToDo: write Help For the function's inputs
 .OUTPUTS
@@ -18,7 +18,7 @@ ToDo: write Help For example 2 of using this function
 .EXAMPLE
 ToDo: write Help For example 2 of using this function
 .ATTRIBUTION
-ToDo: write text describing the ideas and codes that are attributed to others
+[Deep copying a PSObject](https://stackoverflow.com/questions/9204829/deep-copying-a-psobject), the answer supplied by Justin Grote
 .LINK
 ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
 .LINK
@@ -26,6 +26,7 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
+using namespace System.Management.Automation
 Function Get-ClonedAndModifiedHashtable {
   Param(
     [Parameter(Mandatory = $true)]
@@ -34,9 +35,20 @@ Function Get-ClonedAndModifiedHashtable {
     [hashtable]$modifications
   )
 
-  $Clone = $source.Clone()
-  foreach ($Key in $modifications.Keys) {
-    $Clone[$Key] = $modifications[$Key]
+# ToDo: turn this into a cmdlet capable of accepting multiple modifications via the pipeline
+  $clone = [psserializer]::Deserialize(
+        [psserializer]::Serialize(
+            $source
+        )
+    )
+    $clonedModifications = [psserializer]::Deserialize(
+      [psserializer]::Serialize(
+          $modifications
+      )
+  )
+
+  foreach ($Key in $clonedModifications.Keys) {
+    $Clone[$Key] = $clonedModifications[$Key]
   }
   return $Clone
 }

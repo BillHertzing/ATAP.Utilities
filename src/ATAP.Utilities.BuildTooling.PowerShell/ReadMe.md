@@ -13,7 +13,7 @@ The .psm1 file handles dot-sourcing all the .ps1 scripts in the `private` and `p
 
 `   (gci C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\*.ps1).basename -join,"','"  `
 
-## Building/Installation Note
+## Building/Installation Note 
 
 Production versions of the modules goes through testing and packaging, along with deployment to a local chocolatey Repository Server, from which the new production version of the package is deployed internally to the organization using Chocolatey.
 

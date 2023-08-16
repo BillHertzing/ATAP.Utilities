@@ -28,62 +28,60 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
- $path = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell\ATAP.Utilities.FileIO.PowerShell.psd1'
- # $modulePath discard from rightmost pathseperator
-        $ModulePath = (Split-Path -Parent $MyInvocation.MyCommand.Path) -Replace ""
-        $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
-    
-        $ManifestPath = "$ModulePath\$ModuleName.psd1"
+# $modulePath discard from rightmost pathseperator
+$ModulePath = (Split-Path -Parent $MyInvocation.MyCommand.Path) -Replace ''
+$ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace '.Tests.ps1'
 
-        $ManifestPath = $path
-        $ModulePath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell\'
-        $ModuleName = 'ATAP.Utilities.FileIO.PowerShell'
-    
-        # test the module manifest - exports the right functions, processes the right formats, and is generally correct
-        Describe "<Manifest>" {
-    
-            $ManifestHash = Invoke-Expression (Get-Content $ManifestPath -Raw)
-    
-            It "has a valid manifest" {
-                {
-                    $null = Test-ModuleManifest -Path $ManifestPath -ErrorAction Stop -WarningAction SilentlyContinue
-                } | Should -Not Throw
-            }
-    
-            It "has a valid root module" {
-                #$ManifestHash.RootModule | Should -Be "$ModuleName.psm1"
-                $ManifestHash.RootModule | Should -Be "ATAP.Utilities.FileIO.PowerShell.psm1"
-            }
-    
-            It "has a valid Description" {
-                $ManifestHash.Description | Should -Not -BeNullOrEmpty
-            }
-    
-            It "has a valid guid" {
-                $ManifestHash.Guid | Should -Be '06659291-925f-4733-b4f3-7f69b5cbabda'
-            }
-    
-            It "has a valid prefix" {
-                $ManifestHash.DefaultCommandPrefix | Should -Not -BeNullOrEmpty
-            }
-    
-            It "has a valid copyright" {
-                $ManifestHash.CopyRight | Should -Not -BeNullOrEmpty
-            }
-    
-            It "exports all public functions" {
-                $ExFunctions = $ManifestHash.FunctionsToExport
-                $FunctionFiles = Get-ChildItem "$ModulePath\Public" -Filter *.ps1 | Select-Object -ExpandProperty BaseName
-                $FunctionNames = $FunctionFiles
-                foreach ($FunctionName in $FunctionNames) {
-                    $ExFunctions -contains $FunctionName | Should -Be $true
-                }
-            }
-        }
+$ManifestPath = "$ModulePath\$ModuleName.psd1"
+
+$ModulePath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell\'
+$ModuleName = 'ATAP.Utilities.FileIO.PowerShell'
+
+# test the module manifest - exports the right functions, processes the right formats, and is generally correct
+Describe '<Manifest>' {
+
+  $ManifestHash = Invoke-Expression (Get-Content $ManifestPath -Raw)
+
+  It 'has a valid manifest' {
+    {
+      $null = Test-ModuleManifest -Path $ManifestPath -ErrorAction Stop -WarningAction SilentlyContinue
+    } | Should -Not Throw
+  }
+
+  It 'has a valid root module' {
+    #$ManifestHash.RootModule | Should -Be "$ModuleName.psm1"
+    $ManifestHash.RootModule | Should -Be 'ATAP.Utilities.FileIO.PowerShell.psm1'
+  }
+
+  It 'has a valid Description' {
+    $ManifestHash.Description | Should -Not -BeNullOrEmpty
+  }
+
+  It 'has a valid guid' {
+    $ManifestHash.Guid | Should -Be '06659291-925f-4733-b4f3-7f69b5cbabda'
+  }
+
+  It 'has a valid prefix' {
+    $ManifestHash.DefaultCommandPrefix | Should -Not -BeNullOrEmpty
+  }
+
+  It 'has a valid copyright' {
+    $ManifestHash.CopyRight | Should -Not -BeNullOrEmpty
+  }
+
+  It 'exports all public functions' {
+    $ExFunctions = $ManifestHash.FunctionsToExport
+    $FunctionFiles = Get-ChildItem "$ModulePath\Public" -Filter *.ps1 | Select-Object -ExpandProperty BaseName
+    $FunctionNames = $FunctionFiles
+    foreach ($FunctionName in $FunctionNames) {
+      $ExFunctions -contains $FunctionName | Should -Be $true
+    }
+  }
+}
 
 #     }
 #     #endregion FunctionProcessBlock
-    
+
 #     #region FunctionEndBlock
 #     ########################################
 #     END {
@@ -93,6 +91,5 @@ ToDo: insert SCM keywords markers that are automatically inserted <Configuration
 # }
 # #endregion Test-ModuleManifest
 # #############################################################################
-    
-    
-    
+
+

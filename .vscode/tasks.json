@@ -13,9 +13,10 @@
       "group": {
         "kind": "build",
         "isDefault": true
-      }
-    }
-    ,{
+      },
+      "label": "npm: watch"
+    },
+    {
       "type": "npm",
       "script": "watch-tests",
       "problemMatcher": "$tsc-watch",
@@ -33,8 +34,8 @@
         "npm: watch-tests"
       ],
       "problemMatcher": []
-    }
-    ,{
+    },
+    {
       "label": "Test",
       "type": "shell",
       "command": "Invoke-Pester -PesterOption @{IncludeVSCodeMarker=$true};ExcludeTag='Disabled'",

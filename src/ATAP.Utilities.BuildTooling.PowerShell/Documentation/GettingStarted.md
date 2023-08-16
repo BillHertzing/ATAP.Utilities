@@ -112,19 +112,33 @@ The powershell package providers supported by the ATAP.Utilities Powershell buil
 
 Delivery to each powershell package provider needs to be supported and tested. This means that both developer machines and the CI/CD pipeline need to understand development and testing delivery.
 
+The `invoke-build` script reads the module.build.ps1 file. In the module.build.ps1 file paths are created per-host that are based on the $global:Settings hash, specifically
+```Powershell
+ $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingDirectory']]
+ $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingSourceDirectory']]
+ $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingIntermediateDirectory']]
+ $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingDistributionPackagesDirectory']]
+```
+ From these base locations, subdirectories are created for each powershell package provider, and below those, further subdirectories are created for each LifeCycle phase
+
+ In each of these provider-lifecycle subdirectories, the module source files are created, the .nuspec file is created, and the .nupkg file is created
+
+
 ## PowerShell Gallery
 
 Testing the PowerShell Gallery package provider should test delivery to a file system location, a local NuGet server, and a local PowerShell Gallery server, in increasing order of complexity.
 
 ### PowerShell Gallery Filesystem development and test respoitory
 
-For each developer machine and CI/CD pipeline machine define an intermediate location to which the public distribution packages should be generated. This location is defined in the `$global:settings` hash under the key `$global:configRootKeys['GeneratedRelativePathConfigRootKey']`. By default, the value is `_generated`
+The PowerShell Gallery Filesystem development and test respoitory is a file system location on a developer machine and a CI/CD pipeline machine, that is a trusted location for the PowerShell Gallery package provider.
 
-For each developer machine and CI/CD pipeline machine define an intermediate location to which the public distribution packages for each powershell package provider should be generated. This location is defined in the `$global:settings` hash under the key `$global:configRootKeys['GeneratedPowershellModuleConfigRootKey']`. By default, the value is `Powershell`
+For each developer machine and CI/CD pipeline machine define an intermediate location to which the
 
+  NOTE that the text below this line to end of file is obsolete 
+TBD - replace with current information
 During the build pipeline, copy the `ModuleName.psd1` and the `ModuleName.psm1` files to `_generated\Packages\PowerShell GalleryPackageSource\ModuleName`
 
-Define the Filesystem location, per machine and user, for the Development PowerShellGallery repository. Define this in the globals. for example `"\\utat022\fs\DevelopmentPackages"`
+Define the Filesystem location, per machine and user, for the Development PowerShellGallery repository. Define this in the globals. for example `"C:/Dropbox/Repositories/[Nuget|PowershellGet|Chocolatey]/DevelopmentPackages"`
 
 Define a name for the filesystem development PowerShellGallery repository. define this in the globals. For example `DevelopmentFilesystemPowershellGalleryRepository `
 

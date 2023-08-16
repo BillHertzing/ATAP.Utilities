@@ -488,7 +488,9 @@ function Get-CollectionTraverseEvaluate {
               CreateEntries -CollectionID $ID -KeyID $keyID -Depth $depth
             }
             default {
-              throw
+              $message = "Unhandled type $($collections[$ID].Collection[$KeyID].GetType().fullname) in WalkCollection"
+              Write-PSFMessage -Level Error -Message $message
+              throw $message
             }
           }
         }

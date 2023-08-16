@@ -53,7 +53,7 @@ function New-RoleRubyInterpreterWindows {
     [hashtable] $swCfgInformation
   )
 
-  # use a local $sb for each file type
+  # use a local StringBuilder
   [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
 
   [System.Text.StringBuilder]$sbAddedParameters = [System.Text.StringBuilder]::new()
@@ -70,6 +70,7 @@ function New-RoleRubyInterpreterWindows {
       [void]$sbAddedParameters.Clear()
     }
   }
+
   function ContentsTask {
     [void]$sb.Append(@"
 

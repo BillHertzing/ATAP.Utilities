@@ -30,8 +30,6 @@ ToDo: write Help For example 2 of using this function
     Comment: generate nuget specification file (.nuspec) based on PowerShell module manifest (.psd1) file
 .LINK
 https://gist.githubusercontent.com/tyconsulting/c567e5cc66fc522d46743d744579be27/raw/c1b2047f1a22b6f1690d47d996dec845ff3f67b1/psd1-to-nuspec.ps1
-.LINK
-ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
@@ -476,7 +474,7 @@ Function Get-NuSpecFromManifest {
     # Remove existing nuspec file
 
     if ($NuspecPath -and (Test-Path -Path $NuspecPath -PathType Leaf)) {
-      Write-PSFMessage -Level Warning -Message "Nuspec file '$NuspecPath' already exists. It will be overwritten."
+      #Write-PSFMessage -Level Warning -Message "Nuspec file '$NuspecPath' already exists. It will be overwritten."
       Remove-Item $NuspecPath -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue -Confirm:$false -WhatIf:$false
     }
 
@@ -503,7 +501,7 @@ Function Get-NuSpecFromManifest {
 
   #region main
   $message = "Generating .nuspec file based on PowerShell Module Manifest '$ManifestPath'"
-  Write-PSFMessage -Level Important -Message $message
+  Write-PSFMessage -Level Verbose -Message $message
   $param = @{
     'ManifestPath' = $ManifestPath
   }
@@ -512,7 +510,7 @@ Function Get-NuSpecFromManifest {
   }
   $NuspecFile = New-NuSpecFile @param
   If ($NuspecFile) {
-    Write-PSFMessage -Level Important -Message "Nuspec file created: $NuspecFile"
+    Write-PSFMessage -Level Verbose -Message "Nuspec file created: $NuspecFile"
   }
   else {
     Write-PSFMessage -Level Error -Message 'Failed to create Nuspec file.'

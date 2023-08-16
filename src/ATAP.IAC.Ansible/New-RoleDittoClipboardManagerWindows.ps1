@@ -85,7 +85,6 @@ function New-RoleDittoClipboardManagerWindows {
   	# {% endif %}
     failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
     loop:
-    # ditto
   	- {name: ditto, version: latest, allowprerelease: false, addedparameters: "InstallDir:'C:\Program Files\PythonInterpreters\Python3.10.11" }
   tags: [$roleName]
   ignore_errors: yes

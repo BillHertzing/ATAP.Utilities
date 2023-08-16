@@ -47,23 +47,26 @@ Start new powershell sessions and validate the `Env:` values and the `global:set
 If a developer is modifying these profile and settings files (and they are in a Git repository) it is easier to create a symbolic link at the desired subdirectory pointing back to the target files in the git repository. These Powershell one-liners will create the necessary symbolic links. Note the use of Join-path for all the full path names, to support both Windows and \*nix
 
 - ToDo: continue rework to support both windows and Linux
-- ToDo: move into a function that will accept a -force, and have the function error if the profile already exists and -force is not specified, also include `-whatif`
+- ToDo: move into a function that will accept a -force, and have the function error if the profile already exists and -force is not specified, also include `-whatif` and `-confirm`
 
-- `Remove-Item -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')`
+```powershell
 
-- `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  'PowerShell' '7' 'profile.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'AllUsersAllHostsV7CoreProfile.ps1')`
+Remove-Item -path $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')
 
-- `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles  'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1')`
+Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles  'PowerShell' '7' 'profile.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'AllUsersAllHostsV7CoreProfile.ps1')
 
-  - `Remove-Item -path (join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -Target (join-path -path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.IAC','Windows','HostSettings.ps1'))`
+Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles  'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1')
 
-- `Remove-Item -path (join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')`
+Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.IAC' 'Windows' 'HostSettings.ps1')
 
+Remove-Item -path $(join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')
 
-Per User profile for Powershell Desktop aka Powershell V5
+# Per User profile for Powershell Desktop aka Powershell V5
 
-- `Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'profile.ps1')  -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','CurrentUserAllHostsV5Profile.ps1')`
-- `Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.ps1')  -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_ConfigRootKeys.ps1')`
+Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'profile.ps1')  -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','CurrentUserAllHostsV5Profile.ps1')
+Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.ps1')  -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_ConfigRootKeys.ps1')
+
+```
 
 ## MachineName and Roles
 

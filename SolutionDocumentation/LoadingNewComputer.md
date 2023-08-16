@@ -189,9 +189,10 @@ If the role specifies that the computer will be a primary or backup Hasicorp Vau
   `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`
 
 - Install the following 3rd-party packages machine-wide. Run the following as an administrator on the new computer
- - `Microsoft.PowerShell.SecretManagement`, `Microsoft.PowerShell.SecretStore` and `SecretManagement.Keepass` are for development credentials and secret,
- - `PSFramework` is for logging
- - ToDO: `DISM` is for enabling Windows Features, but it is not available for direct download. See
+
+  - `Microsoft.PowerShell.SecretManagement`, `Microsoft.PowerShell.SecretStore` and `SecretManagement.Keepass` are for development credentials and secrets
+  - `PSFramework` is for logging
+  - ToDO: `DISM` is for enabling Windows Features, but it is not available for direct download. See
   `@('Microsoft.PowerShell.SecretManagement', 'Microsoft.PowerShell.SecretStore', 'SecretManagement.Keepass', 'PSFramework', 'DISM') | ForEach-Object { if (-not (Get-Module -ListAvailable -Name  $_)) { Install-Module -Name $_ -Scope AllUsers}}`
 
 - 32-Bit powershel Desktop Modules will not import automatically, run the foillowing lines

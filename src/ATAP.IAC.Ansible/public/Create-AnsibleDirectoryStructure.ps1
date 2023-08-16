@@ -11,16 +11,18 @@ param (
 # until packaging, dotsource the needed files to import the needed functions
 . .\New-PlaybooksTop.ps1
 . .\New-PlaybooksNamed.ps1
+. .\New-Role.ps1
+. .\ScriptblockChocolateyPackages.ps1
 
 # ToDo: These paths should come from an organization's vault
 # ToDo Validate the files exist and can be read
 
 $ansibleInventorySourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\Get-AnsibleInventory.ps1'
-$windowsFeaturesInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\WindowsFeaturesInfo.yml'
-$chocolateyPackageInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\ChocolateyPackageInfo.yml'
-$powershellModuleInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\PowershellModuleInfo.yml'
-$registrySettingsInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\RegistrySettingsInfo.yml'
-$nugetPackagesInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\NugetPackagesInfo.yml'
+# $windowsFeaturesInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\WindowsFeaturesInfo.yml'
+# $chocolateyPackageInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\ChocolateyPackageInfo.yml'
+# $powershellModuleInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\PowershellModuleInfo.yml'
+# $registrySettingsInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\RegistrySettingsInfo.yml'
+# $nugetPackagesInfoSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\NugetPackagesInfo.yml'
 # ToDo: Steps needed to get past filesystem authorizations (credentials and group/role membership)
 $ANVaultSecretsSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\security\.ANVaultATAPSecrets.yml'
 $ANVaultPasswordFileSourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\security\.ANVault_password_file.txt'
@@ -32,11 +34,11 @@ $vaultUnLocked = $null # TBD
 
 # Read and parse the files
 # ToDo: error handling
-$windowsFeaturesInfos = ConvertFrom-Yaml $(Get-Content -Path $windowsFeaturesInfoSourcePath -Raw  )#  ConvertFrom-Json -Depth 99 -AsHashtable -InputObject $(Get-Content -Path $windowsFeaturesInfoSourcePath -Raw)
-$chocolateyPackageInfos = ConvertFrom-Yaml $(Get-Content -Path $chocolateyPackageInfoSourcePath -Raw )
-$powershellModuleInfos = ConvertFrom-Yaml $(Get-Content -Path $powershellModuleInfoSourcePath -Raw )
-$registrySettingsInfos = ConvertFrom-Yaml $(Get-Content -Path $registrySettingsInfoSourcePath -Raw )
-$nugetPackagesInfos = $null #ConvertFrom-Yaml $(Get-Content -Path $nugetPackagesInfoSourcePath -Raw )
+# $windowsFeaturesInfos = ConvertFrom-Yaml $(Get-Content -Path $windowsFeaturesInfoSourcePath -Raw  )#  ConvertFrom-Json -Depth 99 -AsHashtable -InputObject $(Get-Content -Path $windowsFeaturesInfoSourcePath -Raw)
+# $chocolateyPackageInfos = ConvertFrom-Yaml $(Get-Content -Path $chocolateyPackageInfoSourcePath -Raw )
+# $powershellModuleInfos = ConvertFrom-Yaml $(Get-Content -Path $powershellModuleInfoSourcePath -Raw )
+# $registrySettingsInfos = ConvertFrom-Yaml $(Get-Content -Path $registrySettingsInfoSourcePath -Raw )
+# $nugetPackagesInfos = $null #ConvertFrom-Yaml $(Get-Content -Path $nugetPackagesInfoSourcePath -Raw )
 
 # Create the structure that holds the allowed names and versions of the components
 $SwCfgInfos = @{
@@ -153,7 +155,7 @@ $ReadMeFileName = 'ReadMe.md'
 $mainYMLFileName = 'main.yml'
 
 # These are the path names for the generated ansible directories and files in the Windows file generation runtime
-$generatedDirectoryPath = '_generated'
+$generatedDirectoryPath = '../_generated'
 $generatedProjectDirectoryPath = Join-Path $projectBaseDirectory $generatedDirectoryPath 'ATAP_001'
 
 # define the OS_Names, actionNames
@@ -256,7 +258,7 @@ for ($ansibleGroupNameIndex = 0; $ansibleGroupNameIndex -lt $ansibleGroupNames.c
   #if ($ansibleGroupName -ne 'WindowsHosts' ) { continue } # skip things for development
   # The playbook  for each group consists of the common plays, plus importing any roles
   # The playbook may need information about nuget, PowershellGet, chocolatey packages, Windows Features, etc.
-  New-PlaybooksNamed -Template $($($ymlTemplate -replace '\{1}', 'playbook') -replace '\{2}', $ansibleGroupName) -Path $(Join-Path $playbooksDestinationDirectory "$($ansibleGroupName)Playbook.yml") -InventoryStructure $ansibleStructure -SwCfgInformation $SwCfgInfos -AnsibleGroupName $ansibleGroupName
+  New-PlaybooksNamed -Template $($($ymlTemplate -replace '\{1}', 'playbook') -replace '\{2}', $ansibleGroupName) -Path $(Join-Path $playbooksDestinationDirectory "$($ansibleGroupName)Playbook.yml") -InventoryStructure $ansibleStructure -AnsibleGroupName $ansibleGroupName
 }
 # Create a buildout playbook for each HostName, which goes into the playbooks subdirectory
 for ($hostNameIndex = 0; $hostNameIndex -lt $hostNames.count; $hostNameIndex++) {
@@ -264,54 +266,35 @@ for ($hostNameIndex = 0; $hostNameIndex -lt $hostNames.count; $hostNameIndex++) 
   #if ($HostName -ne 'WindowsHosts' ) { continue } # skip things for development
   # The playbook  for each group consists of the common plays, plus importing any roles
   # The playbook may need information about nuget, PowershellGet, chocolatey packages, Windows Features, etc.
-  New-PlaybooksNamed -Template $($($ymlTemplate -replace '\{1}', 'playbook') -replace '\{2}', $hostName) -Path $(Join-Path $playbooksDestinationDirectory "$($hostName)Playbook.yml") -InventoryStructure $ansibleStructure -SwCfgInformation $SwCfgInfos -HostName $hostName
+  New-PlaybooksNamed -Template $($($ymlTemplate -replace '\{1}', 'playbook') -replace '\{2}', $hostName) -Path $(Join-Path $playbooksDestinationDirectory "$($hostName)Playbook.yml") -InventoryStructure $ansibleStructure -HostName $hostName
 }
 
 # Create the playbook that gathers current infrastructure settings from each hosxt
-& "$projectBaseDirectory\InfrastructureReportingPlaybook.ps1" $($($ymlTemplate -replace '\{1}', 'reporting playbook') -replace '\{2}', 'all Hosts') $(Join-Path $playbooksDestinationDirectory 'InfrastructureReportingPlaybook.yml') $ansibleStructure $SwCfgInfos
+& "$projectBaseDirectory\New-PlaybookInfrastructureReporting.ps1" $($($ymlTemplate -replace '\{1}', 'reporting playbook') -replace '\{2}', 'all Hosts') $(Join-Path $playbooksDestinationDirectory 'InfrastructureReportingPlaybook.yml') $ansibleStructure $ansibleStructure.SwCfgInfos
 
 
-# All Module installations require the module name, version, and PSEdition (or type)
-# Module installations must honor the PSEdition AllUser's path
-# Create a role that ensures the PSDesiredStateConfiguration and the PSDscResources modules are installed (for AllUsers)
-
-# Create a role that ensures the PowershellGet module is installed (for AllUsers)
-
-# The chocolatey Ansible module will ensure that chocolatey is loaded on a remote host
 # Create roles (directories, subdirectories, and files)
 $roleNames = @()
-for ($ansibleGroupNameIndex = 0; $ansibleGroupNameIndex -lt $ansibleGroupNames.count; $ansibleGroupNameIndex++) {
-  $ansibleGroupName = $ansibleGroupNames[$ansibleGroupNameIndex]
-  $roleNames = $($ansibleInventory.AnsibleGroupNames[$AnsibleGroupName]).AnsibleRoleNames
-  for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) {
-    $roleName = $roleNames[$roleNameIndex]
-    # until packaging, . source the PS file that contains the function that creates the role
-    $fileToImport = "New-Role$($roleName).ps1"
-    . ./$fileToImport
-    $CmdToExecute = "New-Role$($roleName)"
-    Write-PSFMessage -Level Debug -Message "CmdToExecute is $CmdToExecute"
-    if (-not $(Get-Command "New-Role$($roleName)")) {
-      $message = "CmdToExecute = $CmdToExecute does not exist"
-      Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
-      # toDo catch the errors, add to 'Problems'
-      Throw $message
-    }
-    #   # ToDO roles that require multiple tasks, or DSCresources
-    # If a script exists whose name matches the $fileToExecutePattern, then execute it, which will create the contents of the roleSubdirectory
-    # create a subdirectory for the role
-    New-Item -ItemType Directory -Path $(Join-Path $baseDirectory 'roles' $roleName) -ErrorAction SilentlyContinue >$null
-    # create a documentation file for the role
-    New-Item -ItemType File -Path $(Join-Path $baseDirectory 'roles' $roleName, $ReadMeFileName) -ErrorAction SilentlyContinue >$null
-    # All New-Role functions expect the same parameters
-    & $CmdToExecute `
-      -template $($ymlTemplate -replace '\{1}', $roleName) `
-      -roleDirectoryPath $(Join-Path $baseDirectory 'roles' $roleName) `
-      -roleName $roleName `
-      -roleSubdirectoryNames $roleSubdirectoryNames `
-      -swCfgInformation $SwCfgInfos
-  }
+if (-not $(Get-Command 'New-Role')) {
+  $message = "the command 'New-Role' does not exist"
+  Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
+  # toDo catch the errors, add to 'Problems'
+  Throw $message
 }
-
+# Loop over all the roles defined in the AnsibleInventory structure
+$roleNames = $ansibleStructure.AnsibleRoleNames
+for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) {
+  $roleName = $roleNames[$roleNameIndex]
+  New-Item -ItemType Directory -Path $(Join-Path $baseDirectory 'roles' $roleName) -ErrorAction SilentlyContinue >$null
+  # create a documentation file for the role
+  New-Item -ItemType File -Path $(Join-Path $baseDirectory 'roles' $roleName, $ReadMeFileName) -ErrorAction SilentlyContinue >$null
+  # Execute  the new-Role function to create the tasks, vars, meta, and other RoleComponents
+  & New-Role `
+    -roleName $roleName `
+    -template $($ymlTemplate -replace '\{1}', $roleName) `
+    -baseRoleDirectoryPath $(Join-Path $baseDirectory 'roles') `
+    -AnsibleStructure $ansibleStructure
+}
 
 
 # The Windows group is affiliated with many roles. A large set of those roles have a one-to-one relationship with software package/versions installed by chocolatey
@@ -340,16 +323,16 @@ for ($ansibleGroupNameIndex = 0; $ansibleGroupNameIndex -lt $ansibleGroupNames.c
 # 		}
 # 	}
 # 	default {
-# 		New-Item -ItemType File -Path $(join-path $baseDirectory 'roles' $roleNames[$roleNameIndex],$roleSubdirectoryNames[$roleSubdirectoryIndex],'main.yml') -ErrorAction SilentlyContinue >$null
+# 		New-Item -ItemType File -Path $(Join-Path $baseDirectory 'roles' $roleNames[$roleNameIndex],$roleSubdirectoryNames[$roleSubdirectoryIndex],'main.yml') -ErrorAction SilentlyContinue >$null
 # 		break
 # 	}
 # }
 # if ($roleSubdirectoryNames[$roleSubdirectoryIndex] -match '^tasks|handlers|vars|defaults|meta$') {
-#   New-Item -ItemType File -Path $(join-path $baseDirectory 'roles' $roleNames[$roleNameIndex],$roleSubdirectoryNames[$roleSubdirectoryIndex],'main.yml') -ErrorAction SilentlyContinue >$null
+#   New-Item -ItemType File -Path $(Join-Path $baseDirectory 'roles' $roleNames[$roleNameIndex],$roleSubdirectoryNames[$roleSubdirectoryIndex],'main.yml') -ErrorAction SilentlyContinue >$null
 # }
 # if ($roleSubdirectoryNames[$roleSubdirectoryIndex] -eq 'tests') {
-#   New-Item -ItemType File -Path $(join-path $baseDirectory 'roles' $roleNames[$roleNameIndex],$roleSubdirectoryNames[$roleSubdirectoryIndex],'test.yml')  -ErrorAction SilentlyContinue >$null
-#   New-Item -ItemType File -Path $(join-path $baseDirectory 'roles' $roleNames[$roleNameIndex],$roleSubdirectoryNames[$roleSubdirectoryIndex],'inventory') -ErrorAction SilentlyContinue >$null
+#   New-Item -ItemType File -Path $(Join-Path $baseDirectory 'roles' $roleNames[$roleNameIndex],$roleSubdirectoryNames[$roleSubdirectoryIndex],'test.yml')  -ErrorAction SilentlyContinue >$null
+#   New-Item -ItemType File -Path $(Join-Path $baseDirectory 'roles' $roleNames[$roleNameIndex],$roleSubdirectoryNames[$roleSubdirectoryIndex],'inventory') -ErrorAction SilentlyContinue >$null
 # }
 
 # # Create playbooks
@@ -361,12 +344,12 @@ for ($ansibleGroupNameIndex = 0; $ansibleGroupNameIndex -lt $ansibleGroupNames.c
 # 	(($oSNames[$oSNameIndex] -match 'Windows') -and  ($roleNames[$roleNameIndex] -notmatch 'AnsibleServers')) `
 # 	-or `
 # 	(($oSNames[$oSNameIndex] -match 'OS_WSL2Ubuntu')-and  ($roleNames[$roleNameIndex] -match 'AnsibleServers'))) {
-# 	# $path = $(join-path $playbookDirectory $('{0}-{1}{2}.{3}' -f $oSNames[$oSNameIndex], $actionNames[$actionNameIndex], $roleNames[$roleNameIndex],'yml'))
+# 	# $path = $(Join-Path $playbookDirectory $('{0}-{1}{2}.{3}' -f $oSNames[$oSNameIndex], $actionNames[$actionNameIndex], $roleNames[$roleNameIndex],'yml'))
 # 	# switch ($roleNames[$roleNameIndex]) {
 # 		# 'BuildServer'
 # 		# }
 
-# 				New-Item -ItemType File -Path  $(join-path $playbookDirectory $('{0}-{1}{2}.{3}' -f $oSNames[$oSNameIndex], $actionNames[$actionNameIndex], $roleNames[$roleNameIndex],'yml')) -ErrorAction SilentlyContinue >$null
+# 				New-Item -ItemType File -Path  $(Join-Path $playbookDirectory $('{0}-{1}{2}.{3}' -f $oSNames[$oSNameIndex], $actionNames[$actionNameIndex], $roleNames[$roleNameIndex],'yml')) -ErrorAction SilentlyContinue >$null
 #   		}		}
 # 	}
 # }

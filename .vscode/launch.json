@@ -6,34 +6,7 @@
   //    use `integratedTerminal` instead of `internalConsole` if using this filke to launch a Console program that uses terminal input
   "version": "0.2.0",
   "configurations": [
-
     {
-			"name": "Run Extension",
-			"type": "extensionHost",
-			"request": "launch",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}"
-			],
-			"outFiles": [
-				"${workspaceFolder}/dist/**/*.js"
-			],
-			"preLaunchTask": "${defaultBuildTask}"
-		}
-		,{
-			"name": "Extension Tests",
-			"type": "extensionHost",
-			"request": "launch",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
-			],
-			"outFiles": [
-				"${workspaceFolder}/out/**/*.js",
-				"${workspaceFolder}/dist/**/*.js"
-			],
-			"preLaunchTask": "tasks: watch-tests"
-		}
-    ,{
       "type": "PowerShell",
       "request": "launch",
       "name": "PowerShell Launch Current File",
@@ -44,124 +17,158 @@
       ],
       "cwd": "${file}"
     },
-    {
-      "type": "PowerShell",
-      "request": "launch",
-      "name": "PowerShell Launch Current File in Temporary Console",
-      "script": "${file}",
-      "args": [
-        "-WhatIf",
-        "-verbose"
-      ],
-      "cwd": "${file}",
-      "createTemporaryIntegratedConsole": true
-    },
-    {
-      "type": "PowerShell",
-      "request": "launch",
-      "name": "PowerShell Launch Current File w/Args Prompt",
-      "script": "${file}",
-      "args": [
-        "-WhatIf",
-        "-verbose",
-        "${command:SpecifyScriptArgs}"
-      ],
-      "cwd": "${file}"
-    },
-    {
-      "type": "PowerShell",
-      "request": "launch",
-      "name": "PowerShell Interactive Session",
-      "cwd": "${workspaceRoot}"
-    },
-    {
-      "type": "PowerShell",
-      "request": "launch",
-      "name": "PowerShell Pester Tests",
-      "script": "Invoke-Pester",
-      "args": [],
-      "cwd": "${file}"
-    },
-    {
-      "type": "PowerShell",
-      "request": "attach",
-      "name": "PowerShell Attach to Host Process",
-      "processId": "${command:PickPSHostProcess}",
-      "runspaceId": 1
-    },
-    {
-      "type": "PowerShell",
-      "request": "launch",
-      "name": "Invoke-Build Default Task",
-      "script": "Invoke-Build",
-      "args": [".", "${file}"],
-      "cwd": "${workspaceRoot}"
-    },
-    {
-      "type": "PowerShell",
-      "request": "launch",
-      "name": "Invoke-Build Current Task",
-      "script": "Invoke-TaskFromVSCode",
-      "args": [],
-      "cwd": "${workspaceRoot}"
-    },
-    {
-      "name": "Launch CodeAnalysis",
-      "type": "clr",
-      "request": "launch",
-      "preLaunchTask": "BuildCodeAnalysis",
-      "program": "${workspaceFolder}/src/ATAP.Console.CodeAnalysis/bin/Debug/net48/ATAP.Console.CodeAnalysis.exe",
-      "args": ["C:/Dropbox/whertzing/GitHub/ATAP.Utilities/ATAP.Utilities.sln"],
-      "cwd": "${workspaceFolder}/src/ATAP.Console.CodeAnalysis/bin/Debug/net48/",
-      "console": "integratedTerminal",
-      "stopAtEntry": false
-    },
-    {
-      "name": "Launch Console02",
-      "type": "coreclr",
-      "request": "launch",
-      "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/ATAP.Console.Console02/bin/Debug/net5.0/ATAP.Console.Console02.dll",
-      "args": [],
-      "cwd": "${workspaceFolder}/src/ATAP.Console.Console02/bin/Debug/net5.0/",
-      "console": "integratedTerminal",
-      "stopAtEntry": false
-    },
-    {
-      "name": ".NET Core Attach",
-      "type": "coreclr",
-      "request": "attach",
-      "processId": "${command:pickProcess}"
-    },
-    {
-      "name": ".NET Script Debug",
-      "type": "coreclr",
-      "request": "launch",
-      "program": "dotnet",
-      "args": [
-        "exec",
-        "C:/Users/whertzing/.dotnet/tools/.store/dotnet-script/1.1.0/dotnet-script/1.1.0/tools/net5.0/any/dotnet-script.dll",
-        "${file}"
-      ],
-      "cwd": "${workspaceRoot}",
-      "stopAtEntry": true
-    },
-    {
-      "name": "BuildPublishPluginAndLaunchVA",
-      "type": "clr",
-      "request": "attach",
-      "preLaunchTask": "publishPluginAndStartVA",
-      "processName": "VoiceAttack.exe",
-      "stopAtEntry" : true,
-      "postLaunchTask": "stopVA",
-    }
+    // {
+    //   "type": "PowerShell",
+    //   "request": "launch",
+    //   "name": "Invoke-Build Default Task",
+    //   "script": "Invoke-Build",
+    //   "args": [
+    //     ".",
+    //     "${file}"
+    //   ],
+    //   "cwd": "${workspaceRoot}"
+    // },
+    // {
+    //   "type": "PowerShell",
+    //   "request": "launch",
+    //   "name": "PowerShell Interactive Session",
+    //   "cwd": "${workspaceRoot}"
+    // },
+    // {
+    //   "type": "PowerShell",
+    //   "request": "launch",
+    //   "name": "PowerShell Launch Current File in Temporary Console",
+    //   "script": "${file}",
+    //   "args": [
+    //     "-WhatIf",
+    //     "-verbose"
+    //   ],
+    //   "cwd": "${file}",
+    //   "createTemporaryIntegratedConsole": true
+    // },
+    // {
+    //   "type": "PowerShell",
+    //   "request": "launch",
+    //   "name": "PowerShell Launch Current File w/Args Prompt",
+    //   "script": "${file}",
+    //   "args": [
+    //     "-WhatIf",
+    //     "-verbose",
+    //     "${command:SpecifyScriptArgs}"
+    //   ],
+    //   "cwd": "${file}"
+    // },
+    // {
+    //   "type": "PowerShell",
+    //   "request": "launch",
+    //   "name": "PowerShell Pester Tests",
+    //   "script": "Invoke-Pester",
+    //   "args": [],
+    //   "cwd": "${file}"
+    // },
+    // {
+    //   "type": "PowerShell",
+    //   "request": "attach",
+    //   "name": "PowerShell Attach to Host Process",
+    //   "processId": "${command:PickPSHostProcess}",
+    //   "runspaceId": 1
+    // },
+    // {
+    //   "type": "PowerShell",
+    //   "request": "launch",
+    //   "name": "Invoke-Build Current Task",
+    //   "script": "Invoke-TaskFromVSCode",
+    //   "args": [],
+    //   "cwd": "${workspaceRoot}"
+    // },
+    // {
+    //   "name": "Run Extension",
+    //   "type": "extensionHost",
+    //   "request": "launch",
+    //   "args": [
+    //     "--extensionDevelopmentPath=${workspaceFolder}"
+    //   ],
+    //   "outFiles": [
+    //     "${workspaceFolder}/dist/**/*.js"
+    //   ],
+    //   "preLaunchTask": "${defaultBuildTask}"
+    // },
+    // {
+    //   "name": "Extension Tests",
+    //   "type": "extensionHost",
+    //   "request": "launch",
+    //   "args": [
+    //     "--extensionDevelopmentPath=${workspaceFolder}",
+    //     "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+    //   ],
+    //   "outFiles": [
+    //     "${workspaceFolder}/out/**/*.js",
+    //     "${workspaceFolder}/dist/**/*.js"
+    //   ],
+    //   "preLaunchTask": "tasks: watch-tests"
+    // },
+    // {
+    //   "name": "Launch CodeAnalysis",
+    //   "type": "clr",
+    //   "request": "launch",
+    //   "preLaunchTask": "BuildCodeAnalysis",
+    //   "program": "${workspaceFolder}/src/ATAP.Console.CodeAnalysis/bin/Debug/net48/ATAP.Console.CodeAnalysis.exe",
+    //   "args": [
+    //     "C:/Dropbox/whertzing/GitHub/ATAP.Utilities/ATAP.Utilities.sln"
+    //   ],
+    //   "cwd": "${workspaceFolder}/src/ATAP.Console.CodeAnalysis/bin/Debug/net48/",
+    //   "console": "integratedTerminal",
+    //   "stopAtEntry": false
+    // },
+    // {
+    //   "name": "Launch Console02",
+    //   "type": "coreclr",
+    //   "request": "launch",
+    //   "preLaunchTask": "build",
+    //   "program": "${workspaceFolder}/src/ATAP.Console.Console02/bin/Debug/net5.0/ATAP.Console.Console02.dll",
+    //   "args": [],
+    //   "cwd": "${workspaceFolder}/src/ATAP.Console.Console02/bin/Debug/net5.0/",
+    //   "console": "integratedTerminal",
+    //   "stopAtEntry": false
+    // },
+    // {
+    //   "name": ".NET Core Attach",
+    //   "type": "coreclr",
+    //   "request": "attach",
+    //   "processId": "${command:pickProcess}"
+    // },
+    // {
+    //   "name": ".NET Script Debug",
+    //   "type": "coreclr",
+    //   "request": "launch",
+    //   "program": "dotnet",
+    //   "args": [
+    //     "exec",
+    //     "C:/Users/whertzing/.dotnet/tools/.store/dotnet-script/1.1.0/dotnet-script/1.1.0/tools/net5.0/any/dotnet-script.dll",
+    //     "${file}"
+    //   ],
+    //   "cwd": "${workspaceRoot}",
+    //   "stopAtEntry": true
+    // },
+    // {
+    //   "name": "BuildPublishPluginAndLaunchVA",
+    //   "type": "clr",
+    //   "request": "attach",
+    //   "preLaunchTask": "publishPluginAndStartVA",
+    //   "processName": "VoiceAttack.exe",
+    //   "stopAtEntry": true,
+    //   "postLaunchTask": "stopVA",
+    // }
   ],
-  "compounds": [
-    {
-      "name": "BuildPublishLaunchAndDriver",
-      "configurations": ["BuildPublishPluginAndLaunchVA", "Driver"],
-      "preLaunchTask": "publishPluginAndStartVA",
-      "postLaunchTask": "stopVA",
-    }
-  ]
+  // "compounds": [
+  //   {
+  //     "name": "BuildPublishLaunchAndDriver",
+  //     "configurations": [
+  //       "BuildPublishPluginAndLaunchVA",
+  //       "Driver"
+  //     ],
+  //     "preLaunchTask": "publishPluginAndStartVA",
+  //     "postLaunchTask": "stopVA",
+  //   }
+  // ]
 }

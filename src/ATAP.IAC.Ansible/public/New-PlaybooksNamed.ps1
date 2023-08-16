@@ -59,16 +59,6 @@ function New-PlaybooksNamed {
     [ValidateNotNull()]
     [ValidateNotNullOrEmpty()]
     [PSCustomObject]$inventoryStructure
-    # SwCfgInformation help description
-    , [Parameter(Mandatory = $true,
-      Position = 2,
-      ValueFromPipeline = $false,
-      ValueFromPipelineByPropertyName = $false,
-      ValueFromRemainingArguments = $false)
-    ]
-    [ValidateNotNull()]
-    [ValidateNotNullOrEmpty()]
-    [hashtable]$swCfgInformation
     , # AnsibleGroupName help description
     [Parameter(ParameterSetName = 'AnsibleGroupNames',
       Mandatory = $false,
@@ -112,7 +102,7 @@ function New-PlaybooksNamed {
   [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
 
   # Move this to a parameter
-  $InstallAllForHostPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.IAC.Ansible\HostPlaybook.yml'
+  $InstallAllForHostPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.IAC.Ansible\public\HostPlaybook.yml'
 
   $PreambleForAnsibleGroupNameScriptBlock = {
     switch ($ansibleGroupName) {
@@ -158,6 +148,7 @@ function New-PlaybooksNamed {
   $ChocolateyPackagesForAnsibleGroupNameScriptBlock = {
     if ($($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).ContainsKey('ChocolateyPackageNames')) { # process for $ansibleGroupName only if the ChocolateyPackageNames key exists
       if ($null -ne $($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).ChocolateyPackageNames) {
+        $chocolateyPackageNames = $($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).ChocolateyPackageNames
         [void]$sb.Append(@"
 
 # ChocolateyPackages Per Group
@@ -185,15 +176,13 @@ function New-PlaybooksNamed {
 
 "@
         )
-        for ($index = 0; $index -lt @($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).ChocolateyPackageNames).count; $index++) {
-          $packageName = $($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).ChocolateyPackageNames)[$index]
-          $packageVersion = $($($SwCfgInformation.ChocolateyPackageInfos)[$packageName]).Version
-          $allowPrerelease = $($($SwCfgInformation.ChocolateyPackageInfos)[$packageName]).AllowPrerelease
-          $addedParameters = . $addedParametersScriptblock $($($SwCfgInformation.ChocolateyPackageInfos)[$packageName]).AddedParameters
-
+        for ($index = 0; $index -lt $chocolateyPackageNames.count; $index++) {
+          $packageName = $chocolateyPackageNames[$index]
+          $packageVersion = $chocolateyPackageNames[$index].Version
+          $allowPrerelease = $($chocolateyPackageNames[$index]).AllowPrerelease
+          $addedParameters = . $addedParametersScriptblock  $($chocolateyPackageNames[$index]).AddedParameters
           [void]$sb.Append("        - {name: $packageName, version: $packageVersion, AllowPrerelease: $allowPrerelease, AddedParameters: $addedParameters}")
           [void]$sb.Append("`n")
-
         }
         [void]$sb.Append(@"
       when: "'$ansibleGroupName' in group_names "
@@ -204,9 +193,9 @@ function New-PlaybooksNamed {
   }
 
   $PowershellModulesForAnsibleGroupNameScriptBlock = {
-    # if ($ansibleGroupName -ne 'WindowsHosts' ) { continue } # skip things for development
     if ($($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).ContainsKey('PowershellModuleNames')) { # process for $ansibleGroupName only if the PowershellModuleNames key exists
       if ($null -ne $($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).PowershellModuleNames) {
+        $powershellModuleNames = $($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).PowershellModuleNames
         [void]$sb.Append(@"
 
 # Powershell Modules per Group
@@ -224,10 +213,10 @@ function New-PlaybooksNamed {
       loop:
 
 "@)
-        for ($index = 0; $index -lt @($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).PowershellModuleNames).count; $index++) {
-          $moduleName = $($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).PowershellModuleNames)[$index]
-          $moduleVersion = $($($SwCfgInformation.PowershellModuleInfos)[$moduleName]).Version
-          $allowPrerelease = $($($SwCfgInformation.PowershellModuleInfos)[$moduleName]).AllowPrerelease
+        for ($index = 0; $index -lt $powershellModuleNames.count; $index++) {
+          $moduleName =$powershellModuleNames[$index]
+          $moduleVersion = $($powershellModuleNames[$moduleName]).Version
+          $allowPrerelease = $($powershellModuleNames[$moduleName]).AllowPrerelease
           [void]$sb.Append("        - {name: $moduleName, version: $moduleVersion, AllowPrerelease: $allowPrerelease  }")
           [void]$sb.Append("`n")
         }
@@ -240,9 +229,10 @@ function New-PlaybooksNamed {
   }
 
   $RegistrySettingsForAnsibleGroupNameScriptBlock = {
-    # if($ansibleGroupName -ne 'WindowsHosts' ) {continue} # skip things for development
     if ($($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).ContainsKey('RegistrySettingsNames')) { # process for $ansibleGroupName only if the RegistrySettingsNames key exists
       if ($null -ne $($parsedInventory.AnsibleGroupNames[$ansibleGroupName]).RegistrySettingsNames) {
+        $registrySettingNames = $($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).RegistrySettingsNames
+
         [void]$sb.Append(@"
 
 # Registry Settings per Group
@@ -263,8 +253,8 @@ function New-PlaybooksNamed {
       loop:
 
 "@)
-        for ($index = 0; $index -lt @($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).RegistrySettingsNames).count; $index++) {
-          [void]$sb.Append('          - ' + @($($($parsedInventory.AnsibleGroupNames)[$ansibleGroupName]).RegistrySettingsNames)[$index])
+        for ($index = 0; $index -lt $registrySettingNames.count; $index++) {
+          [void]$sb.Append('          - ' + $($registrySettingNames[$index]))
           [void]$sb.Append("`n")
         }
         [void]$sb.Append(@"

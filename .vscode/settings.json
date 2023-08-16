@@ -37,6 +37,7 @@
     "AOEII",
     "AUADMIN",
     "AUUSER",
+    "blazor",
     "DATABASEPROPERTYEX",
     "dbcmptlevel",
     "ddladmin",
@@ -44,6 +45,7 @@
     "globbing",
     "grantdbaccess",
     "LINQ",
+    "msbuild",
     "MSSQL",
     "myfile",
     "N'HKEY",
@@ -55,6 +57,7 @@
     "Psake",
     "pwsh",
     "RAISERROR",
+    "Remoting",
     "RTRIM",
     "serializers",
     "SRVROLEMEMBER",
@@ -81,5 +84,5 @@
   },
   // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
   "typescript.tsc.autoDetect": "off",
-  "ansible.python.interpreterPath": "c:\\Python311\\python.exe"
+    "ansible.python.interpreterPath": "c:\\Program Files\\PythonInterpreters\\Python3.10.11\\python.exe"
 }

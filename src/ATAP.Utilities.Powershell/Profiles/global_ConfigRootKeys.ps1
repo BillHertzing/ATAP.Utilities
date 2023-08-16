@@ -15,7 +15,7 @@ $global:configRootKeys = @{
   'SecureTempBasePathConfigRootKey'                                                              = 'SECURE_TEMP_BASE_PATH'
   'ChocolateyPackagesConfigRootKey'                                                              = 'ChocolateyPackages'
   # Ditto Clipboard Manager Settings
-  'DittoDBPathConfigRootKey'                                                              = 'DittoDBPath'
+  'DittoDBPathConfigRootKey'                                                                     = 'DittoDBPath'
   'ErlangHomeDirConfigRootKey'                                                                   = 'ErlangHomeDir'
   'GIT_CONFIG_GLOBALConfigRootKey'                                                               = 'GIT_CONFIG_GLOBAL'
   'GitExePathConfigRootKey'                                                                      = 'GitExePath'
@@ -66,19 +66,19 @@ $global:configRootKeys = @{
   # CICDHosts confguration keys
   # Used by Jenkins Controller and agents
   'JenkinsControllerServiceAccountConfigRootKey'                                                 = 'JenkinsControllerServiceAccount'
-  'JenkinsControllerServiceAccountPasswordKeyConfigRootKey'                                         = 'JenkinsControllerServiceAccountPasswordKey'
-  'JenkinsControllerServiceAccountFullnameConfigRootKey'                                              = 'JenkinsControllerServiceAccountFullname'
-  'JenkinsControllerServiceAccountDescriptionConfigRootKey'                                           = 'JenkinsControllerServiceAccountDescription'
-  'JenkinsControllerServiceAccountUserHomeDirectoryConfigRootKey'                                     = 'JenkinsControllerServiceAccountUserHomeDirectory'
-  'JenkinsControllerServiceAccountPowershellDesktopProfileSourcePathConfigRootKey'                        = 'JenkinsControllerServiceAccountPowershellDesktopProfileSourcePath'
-  'JenkinsControllerServiceAccountPowershellCoreProfileSourcePathConfigRootKey'                           = 'JenkinsControllerServiceAccountPowershellCoreProfileSourcePath'
+  'JenkinsControllerServiceAccountPasswordKeyConfigRootKey'                                      = 'JenkinsControllerServiceAccountPasswordKey'
+  'JenkinsControllerServiceAccountFullnameConfigRootKey'                                         = 'JenkinsControllerServiceAccountFullname'
+  'JenkinsControllerServiceAccountDescriptionConfigRootKey'                                      = 'JenkinsControllerServiceAccountDescription'
+  'JenkinsControllerServiceAccountUserHomeDirectoryConfigRootKey'                                = 'JenkinsControllerServiceAccountUserHomeDirectory'
+  'JenkinsControllerServiceAccountPowershellDesktopProfileSourcePathConfigRootKey'               = 'JenkinsControllerServiceAccountPowershellDesktopProfileSourcePath'
+  'JenkinsControllerServiceAccountPowershellCoreProfileSourcePathConfigRootKey'                  = 'JenkinsControllerServiceAccountPowershellCoreProfileSourcePath'
   'JenkinsAgentServiceAccountConfigRootKey'                                                      = 'JenkinsAgentServiceAccount'
-  'JenkinsAgentServiceAccountPasswordKeyConfigRootKey'                                              = 'JenkinsAgentServiceAccountPasswordKey'
+  'JenkinsAgentServiceAccountPasswordKeyConfigRootKey'                                           = 'JenkinsAgentServiceAccountPasswordKey'
   'JenkinsAgentServiceAccountFullnameConfigRootKey'                                              = 'JenkinsAgentServiceAccountFullname'
   'JenkinsAgentServiceAccountDescriptionConfigRootKey'                                           = 'JenkinsAgentServiceAccountDescription'
   'JenkinsAgentServiceAccountUserHomeDirectoryConfigRootKey'                                     = 'JenkinsAgentServiceAccountUserHomeDirectory'
-  'JenkinsAgentServiceAccountPowershellDesktopProfileSourcePathConfigRootKey'                        = 'JenkinsAgentServiceAccountPowershellDesktopProfileSourcePath'
-  'JenkinsAgentServiceAccountPowershellCoreProfileSourcePathConfigRootKey'                           = 'JenkinsAgentServiceAccountPowershellCoreProfileSourcePath'
+  'JenkinsAgentServiceAccountPowershellDesktopProfileSourcePathConfigRootKey'                    = 'JenkinsAgentServiceAccountPowershellDesktopProfileSourcePath'
+  'JenkinsAgentServiceAccountPowershellCoreProfileSourcePathConfigRootKey'                       = 'JenkinsAgentServiceAccountPowershellCoreProfileSourcePath'
 
   # WinSW for Jenkins agent
   'WinSWPublicURLConfigRootKey'                                                                  = 'WinSWPublicURL'
@@ -94,10 +94,16 @@ $global:configRootKeys = @{
   'WindowsIntegrationTestConfigRootKey'                                                          = 'WindowIntegrationTest'
   'WindowsDocumentationBuildConfigRootKey'                                                       = 'WindowsDocumentationBuild'
 
-  # The subdirectory name under a repository root dir where files generated by the developer build and CI/CD process build are placed
+  # Structure of the subdirectories generated during the process of building a Powershell Module for public distribution
+  # The directory name where files used by the module/package creation and generated by the developer build and CI/CD process build are placed
+  'GeneratedPowershellModulePackagingDirectoryConfigRootKey'                                     = 'GeneratedPowershellModulePackagingDirectory'
+  # The directory name where module source files are placed by the module/package creation process during a developer build and CI/CD process build
+  'GeneratedPowershellModulePackagingSourceDirectoryConfigRootKey'                               = 'GeneratedPowershellModulePackagingSourceDirectory'
+  # The directory name where the generated intermediate package files are placed by the module/package creation process during a developer build and CI/CD process build
+  'GeneratedPowershellModulePackagingIntermediateDirectoryConfigRootKey'                          = 'GeneratedPowershellModulePackagingIntermediateDirectory'
+  # The directory name where the generated finished package files are placed by the module/package creation process during a developer build and CI/CD process build
+  'GeneratedPowershellModulePackagingDistributionPackagesDirectoryConfigRootKey'                          = 'GeneratedPowershellModulePackagingDistributionPackagesDirectory'
   'GeneratedRelativePathConfigRootKey'                                                           = 'GeneratedSubdirectory'
-  # the subdirectory name under the GeneratedRelativePath where the Powershell Module files are placed
-  'GeneratedPowershellModuleConfigRootKey'                                                       = 'GeneratedPowerShellModuleSubdirectory'
   # the subdirectory name under the GeneratedRelativePath where the Powershell Packages are placed
   'GeneratedPowershellPackagesConfigRootKey'                                                     = 'GeneratedPowershellPackagesSubdirectory'
   # the subdirectory name under the GeneratedPowershellModules where the Powershell package files for the Powershell Gallery are placed
@@ -257,14 +263,14 @@ $global:configRootKeys = @{
   'SECURE_CLOUD_BASE_PATHConfigRootKey'                                                          = 'SECURE_CLOUD_BASE_PATH'
 
   # Powershell credentials for user/host pairs
-  'SECURE_CLOUD_CREDENTIALS_PATHConfigRootKey'                                                          = 'SECURE_CLOUD_CREDENTIALS_PATH'
+  'SECURE_CLOUD_CREDENTIALS_PATHConfigRootKey'                                                   = 'SECURE_CLOUD_CREDENTIALS_PATH'
 
   # related to the Hashicorp Vault installation and operations
-  'VAULT_ADDRConfigRootKey'                                                          = 'VAULT_ADDR'
-  'VAULT_TOKENConfigRootKey'                                                          = 'VAULT_TOKEN'
-  'VAULT_CACERTConfigRootKey'                                                          = 'VAULT_CACERT'
-  'VaultUnsealKeyConfigRootKey'                                                          = 'VaultUnsealKey'
-  'VaultRootTokenConfigRootKey'                                                          = 'VaultRootToken'
+  'VAULT_ADDRConfigRootKey'                                                                      = 'VAULT_ADDR'
+  'VAULT_TOKENConfigRootKey'                                                                     = 'VAULT_TOKEN'
+  'VAULT_CACERTConfigRootKey'                                                                    = 'VAULT_CACERT'
+  'VaultUnsealKeyConfigRootKey'                                                                  = 'VaultUnsealKey'
+  'VaultRootTokenConfigRootKey'                                                                  = 'VaultRootToken'
 
 
   # OpenSSL Environment variables
@@ -306,10 +312,10 @@ $global:configRootKeys = @{
   'SecureCertificatesCodeSigningCertificateBaseFileNameConfigRootKey'                            = 'SecureCertificatesCodeSigningCertificateBaseFileName'
 
   # SecretsManagement
-  'SecretVaultBaseDirectoryConfigRootKey'                                                             = 'SecureVaultBasePath'
-  'SecretVaultEncryptionKeyFilePathConfigRootKey'                                                          = 'SecretVaultEncryptionKeyFilePath'
+  'SecretVaultBaseDirectoryConfigRootKey'                                                        = 'SecureVaultBasePath'
+  'SecretVaultEncryptionKeyFilePathConfigRootKey'                                                = 'SecretVaultEncryptionKeyFilePath'
   'SecretVaultEncryptedPasswordFilePathConfigRootKey'                                            = 'SecretVaultEncryptedPasswordFilePath'
-  'SecretVaultModuleNameConfigRootKey'                                                  = 'SecretVaultModuleName'
+  'SecretVaultModuleNameConfigRootKey'                                                           = 'SecretVaultModuleName'
   'SecretVaultNameConfigRootKey'                                                                 = 'SecretVaultName'
   'SecretVaultDescriptionConfigRootKey'                                                          = 'SecretVaultDescription'
   'SecretVaultKeySizeIntConfigRootKey'                                                           = 'SecretVaultKeySizeInt'

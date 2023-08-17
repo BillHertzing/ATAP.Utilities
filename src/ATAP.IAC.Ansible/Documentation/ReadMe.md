@@ -356,7 +356,7 @@ Run the following Powershell commands. Replace the hostname shown with the host 
 $defaultPassword = 'obfuscated'
 $defaultUser = 'whertzing'
 $defaultPythonInterpreter = 'python3'
-# ensure the direcotry exists, or the ansible connection to the host will fail
+# ensure the directory exists, or the ansible connection to the host will fail
 $defaultAnsibleRemoteTmp =  'C:\Temp\Ansible'
 
 $hostnames = @{

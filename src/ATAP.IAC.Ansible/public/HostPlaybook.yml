@@ -7,6 +7,14 @@
     # utat022 - setup NCMe on PCIE ( PCIEX15(G4) Configuration ->Dual M.2 SSD
     # utat022 - Advanced -> SA -? graphics Primary Dispaly from Auto to PCIE # setup simultaneous GPU card in PCIE slot and the Intel IRIS integerated graphics
     # utat022 - Advanced->APM Configuration->Power On By PCI-E ->Enabled ## enables WakeOnLan
+    # check for and run Windows updates
+    - name: WindowsUpdateAndReboot
+      ansible.windows.win_updates:
+        name: WindowsUpdateAndReboot
+        state: installed
+        reboot: true
+    # Need to add a way to keep the remote computer from going to sleep
+    # - name:PreventSleeping
     # Windows Features
     - name: Microsoft-Hyper-V-All
       ansible.windows.win_optional_feature:
@@ -24,7 +32,7 @@
       when:
         wsl_status.reboot_required
 
-        # ToDo: set WSL2 as default
+    # ToDo: set WSL2 as default
 
     # base chocolatey package and configuration
     - name: install chocolatey
@@ -61,16 +69,28 @@
       loop:
         # drivers
         - {
-            name: choco install geforce-game-ready-driver,
+            name: choco install geforce-game-ready-driver, # currently 536.99
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
+          } # for utat022
+        # - {
+        #     name: choco install nvidea-display-driver, # currently 536.99 - seems to be a duplicate of previous
+        #     version: latest,
+        #     allowprerelease: false,
+        #     addedparameters: ,
+        #   } # for utat022
+        - {
+            name: choco install geforce-experience, # currently 3.27.0.112
+            version: latest,
+            allowprerelease: false,
+            addedparameters: ,
           } # for utat022
         - {
             name: choco install razer-synapse-3graph,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           } # for utat022
         # - {name: logitechgaming, version: latest, allowprerelease: false, addedparameters:  } # for ncat016
 
@@ -80,693 +100,702 @@
         #foreach ($pk in $pkgkeys) {"  - {name: $pk, version: latest, allowprerelease: false, addedparameters: $(. $addedparametersscriptblock $($p[$pk]).addedparamters)"}
 
         - {
-            name: 7zip,
+            name: 7zip,  # move to a role so that associations can be made per user
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
-        - {
-            name: adoptopenjdkjre,
-            version: latest,
-            allowprerelease: false,
-            addedparameters,
-          }
+        # - {
+        #     name: adoptopenjdkjre, # this package needs to be moved tothe JavascriptInterpreterWindows role
+        #     version: latest,
+        #     allowprerelease: false,
+        #     addedparameters: ,
+        #   }
         - {
             name: audacity,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: audacity-ffmpeg,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: audacity-lame,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: autohotkey,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: autoruns,
+            name: autoruns, # investigate - throwing a side-by-side error during installation - something about a broken manifest
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: beyondcompare,
+            name: beyondcompare, # move to a role so that license can be added
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: blender,
+            name: blender, # investigatte why this seemsto have hanged when being run the first time
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: brave,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: carbon,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: choco-package-list-backup,
+            name: choco-package-list-backup, # need to set configuration options
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: cinebench,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: cpu-z,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: cura-new,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: dbachecks,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: dbatools,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: ditto,
+            name: ditto, # move to a role so that friends and other configuration settings can be defined per user. Windows Defender blocks, and must be told to allow access
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: discord,
+            name: discord, # move to a role so that it can do first login per user. as installed it autostarts.
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: docfx,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: dotultimate,
+            name: dotultimate,  # move to a role so that license can be added, configuration changes, and first login
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: element-desktop,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
-        - { name: es, version: latest, allowprerelease: false, addedparameters }
+        - {
+          name: es, # move to a role so that it can be run under a named service account, and configuration setting made per user
+          version: latest,
+          allowprerelease: false,
+          addedparameters: , }
         - {
             name: everything,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: fiddler,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: firefox,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: flyway.commandline,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: freevideoeditor,
             version: latest,
             allowprerelease: false,
-            addedparameters,
-          } # installs to 'FlashIntegro' see if there are package parameters to support installation to a differrent path : defualt to 'VSDC'
+            addedparameters: ,
+          } # installs to 'FlashIntegro' see if there are package parameters to support installation to a different path : default to 'VSDC'
         - {
             name: fusionplusplus,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
-        - { name: gh, version: latest, allowprerelease: false, addedparameters }
+        - {
+            name: gh,
+            version: latest,
+            allowprerelease: false,
+            addedparameters: , }
         - {
             name: gimp,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: git,
+            name: git, # move to a role to allow for configuration setings
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: gitter,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: googlechrome,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: gopro-quik,
+            name: gopro-quik, # investigate - installation hung here
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: gpg4win,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: gpu-z,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: grammarly,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: grammarly-chrome,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: grammarly-for-windows,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: graphviz,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: hwinfo,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: ilspy,
+            name: ilspy, # move to a role so that associations can be made per user
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: invoke-build,
+            name: invoke-build, # move to a role so that symbolic links can be made per user
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: jetbrains-rider,
+            name: jetbrains-rider, # move to a role so that license can be added
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: keep-chrome,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: keepass,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: linqpad,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: linqpad6,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: linqpad7,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: msbuild-structured-log-viewer,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: msys2,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: mysql,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: mysql.workbench,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: ngrok,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: nmap,
+            name: nmap, # investiggate - installation hung here
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: nordvpn,
+            name: nordvpn, # requires restart and then login after installation
             version: latest,
             allowprerelease: false,
-            addedparameters,
-          } # requires restart and then login after installation
+            addedparameters: ,
+          }
         - {
-            name: notepadplusplus,
+            name: notepadplusplus, # move to a role so that settings and associations can be made per user
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: nssm,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: nuget.commandline,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: nugetpackageexplorer,
+            name: nugetpackageexplorer, # move to a role so that settings and associations can be made per user
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: office365proplus,
+            name: office365proplus, # move to a role so that license can be added
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: openssl.light,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: pdq-inventory,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: perfview,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: pester,
+            name: pester, # move to a role so that obsolete can be removed, settings and associations can be made per user
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: plantuml,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: plaster,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: postman,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: powershell-core,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: powertoys,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: pushbullet,
+            name: pushbullet, # move to a role so that settings and associations can be made per user
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: putty,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: putty.portable,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: resharper-platform,
+            name: resharper-platform, # move to a role so that license can be added
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: ruby,
+            name: ruby, # move to a role so that multiple interpreters can be supported
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: rufus,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: sentinel,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: sharex,
+            name: sharex, # move to a role so that settings and associations can be made per user
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: speedtest,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: sql-server-management-studio,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: sqlite,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: steam,
+            name: steam, # move to a role so that settings and associations can be made per user
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: steam-client,
+            name: steam-client, # move to a role so that settings and associations can be made per user
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: sysinternals,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: temurinjre,
+            name: temurinjre, # move to a role so that multiple interpreters can be supported
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: tineye-chrome,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: vault,
+            name: vault, # move to a role so that settings and associations can be made per user
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vcredist-all,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: visualstudio-installer,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: vlc,
+            name: vlc, # move to a role so that associations can be made per user
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
-            name: vscode,
+            name: vscode, # move to a role so that settings and associations can be made per user
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-codespellchecker,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-csharp,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-csharpextensions,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-drawio,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-editorconfig,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-gitattributes,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-gitignore,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-gitlens,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-icons,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-vsliveshare,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-markdownlint,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-mssql,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-powershell,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-prettier,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-ruby,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-test-explorer,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
-        - {
-            name: vscode-test-explorer-liveshare,
-            version: latest,
-            allowprerelease: false,
-            addedparameters,
-          }
+        # - {
+        #     name: vscode-test-explorer-liveshare,
+        #     version: latest,
+        #     allowprerelease: false,
+        #     addedparameters: ,
+        #   }
         - {
             name: vscode-vsliveshare,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: vscode-yaml,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: wireshark,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: xunit,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: xnviewmp,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
         - {
             name: zoom,
             version: latest,
             allowprerelease: false,
-            addedparameters,
+            addedparameters: ,
           }
 
-      #$mods = gc c:\dropbox\whertzing\github\atap.iac\powershellmoduleinfo.yml| convertfrom-yaml
-      #$modkeys = [system.collections.arraylist]($mods.keys) | sort
-      #foreach ($m in $modkeys) {"  - {name: $m, version: latest }"}
+      # $mods = gc c:\dropbox\whertzing\github\atap.iac\powershellmoduleinfo.yml| convertfrom-yaml
+      # $modkeys = [system.collections.arraylist]($mods.keys) | sort
+      # foreach ($m in $modkeys) {"  - {name: $m, version: latest }"}
 
     # - name: Trust the PSGallery
     # Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
     # ensure the win_psmodule uses the latest TLS protocol for downloading [Net.ServicePointManager]::SecurityProtocol = "tls12"
+
     - name: install the modules defined for each group
       community.windows.win_psmodule:
         name: "{{ item.name }}"
@@ -815,6 +844,7 @@
         - { name: sqlserver, version: latest }
         - { name: threadjob, version: latest }
         - { name: zoom, version: latest }
+
         # Define and Trust the ATAP.Utilities production repository
         #  Set-PSRepository -Name ATAPProduction -InstallationPolicy Trusted -SourceLocation $global:settings[$global:configrootkeys['RepositoryNuGetFilesystemProductionPackagePathConfigRootKey']]
         #  #  ISSUE: Set-PSRepository requires the  -SourceLocation and ScriptSourceLocation to tbe the same and requires '\'s ''
@@ -857,8 +887,14 @@
     # - disableEdgeUpdateService
     # - disableEdgeUpdatemService
     # - disableBeyondCompareClipboardCompare
+    # - disable User Access Control (UAC) for all members of the administrators group
+    #     Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA"
+    #     $admins = Get-LocalGroupMember -Group "Administrators"
+    #     foreach ($admin in $admins) {
+    #         Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value 0
+    #     }
 
-    - name: set registry values per user
+   - name: set registry values per user
       win_regedit:
         path: "{{ registry_properties[item]['path'] }}"
         name: "{{ registry_properties[item]['name'] }}"
@@ -883,6 +919,10 @@
         #- pin Everything to taskbar
         #- pin Notepad++ to taskbar
         #- pin Discord to taskbar
+        # - remove Microsoft Store from taskbar
+        # - remove Edge from Taskbar- remove teams/char from taskbar
+        # - remove Edge from Desktop
+        # - set  UAC notification level
 
     # ansible roles
     - name: include the following role on all the hosts in windowshosts
@@ -998,7 +1038,7 @@
 
         # - roles/pictureflowWindows
         #  raw input directory  "camera uploads'"
-        #  move N latest files to "raw iput directory"
+        #  move N latest files to "raw input directory"
         #  input to Hydrus, tag with hydrus client
         #  further tag with xnviewmp (optional)
         #  inport to hydrus DB and client files
@@ -1069,6 +1109,7 @@
   # Terminal -change the default profile GUID to be the GUID of the Powershell Core profile
   # Run Samsung magician against all SSD drives, do a diagnostics scan, get benchmark for performance, do performance optimization, check Overprovisioning, check S.M.A.R.T results
   # Firewall rules module, to allow roles to define the firewall rules they need
+  # Download/Install/Setup Microsoft Enhance Voice recognition
   # Discord:
 
   # Install Ubuntu onto WSl2
@@ -1095,6 +1136,10 @@
   #   New-NetFirewallRule -Name "$ServiceName-Inbound" -DisplayName "Allow $ServiceName Incoming" -Enabled True -Direction Inbound -Protocol TCP -LocalPort $PortNumber -Action Allow
   # browse to UI at http://127.0.0.1:8080/
   # create directory structure
+
+  # Pinning a program to the taskbar seems pretty complicated, requiring a PS script and knowledge of where the executable is placed
+  # and also  differs per user pr machine wide (where the .lnk isplaced)
+  # TBD - write the PS script, and deploy thhe contaning package to the target host before trying to pin anything - maybe make it a role, and have that role be a dependency for any rolethat wants t pin an app
 
     # if needed to change a local user password
     #   net user <username> <password>

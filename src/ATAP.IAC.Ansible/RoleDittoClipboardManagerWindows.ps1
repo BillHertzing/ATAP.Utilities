@@ -14,8 +14,8 @@ $TaskScriptblock = {
   	# {% endif %}
     failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
     loop:
-  	- {name: ditto, version: latest, allowprerelease: false, addedparameters: "InstallDir:'C:\Program Files\PythonInterpreters\Python3.10.11" }
-  tags: [$roleName]
+  	- {name: ditto, version: latest, allowprerelease: false, addedparameters:  }
+  tags: [DittoClipboardManagerWindows]
   ignore_errors: yes
   - name: set registry values per user
     win_regedit:
@@ -31,7 +31,7 @@ $TaskScriptblock = {
       - {path: HKCU:\Software\Ditto, name: sendclient_autosend_0, data: "1", type: dword}
 
         # set-itemproperty HKCU:\Software\Ditto -Name DBPath3 -value "{{ $($global:configRootKeys['DittoDBPathConfigRootKey'])}}'"
-  tags: [$roleName]
+  tags: [DittoClipboardManagerWindows]
   ignore_errors: yes
 "@)
 }
@@ -51,7 +51,7 @@ galaxy_info:
   description: Ansible role to install Ditto via Chocolatey and configure it
   attribution:
   company: ATAP.org
-  role_name: $rolename
+  role_name: DittoClipboardManagerWindows
   license: license (MIT)
   min_ansible_version: 2.4
   dependencies: []

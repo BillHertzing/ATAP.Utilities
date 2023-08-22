@@ -219,7 +219,7 @@ namespace ATAP.Utilities.Ansible
 }
 
 "@
-$outputFilePath = join-path ".." "ATAP.Utilities.Ansible.dll"
+$outputFilePath = join-path ".." "AnsibleTypes.dll"
 if (Test-Path $outputFilePath) { Remove-Item $outputFilePath -Force}
 
 # add references to external assemblies. Ensure the assemblies referenced are compatable with the current default DotNet framework

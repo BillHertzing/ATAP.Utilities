@@ -32,24 +32,27 @@ Function Get-ClonedAndModifiedHashtable {
     [Parameter(Mandatory = $true)]
     [hashtable]$source,
 
-    [hashtable]$modifications
+    [hashtable[]]$modifications
   )
 
-# ToDo: turn this into a cmdlet capable of accepting multiple modifications via the pipeline
+  # ToDo: turn this into a cmdlet capable of accepting multiple modifications via the pipeline
   $clone = [psserializer]::Deserialize(
-        [psserializer]::Serialize(
-            $source
-        )
+    [psserializer]::Serialize(
+      $source
     )
-    $clonedModifications = [psserializer]::Deserialize(
-      [psserializer]::Serialize(
-          $modifications
-      )
   )
-
-  foreach ($Key in $clonedModifications.Keys) {
-    $Clone[$Key] = $clonedModifications[$Key]
+  for ($modificationsIndex = 0; $modificationsIndex -lt $modifications.Count; $modificationsIndex++) {
+    $modification = $modifications[$modificationsIndex]
+    $clonedModification = [psserializer]::Deserialize(
+      [psserializer]::Serialize(
+        $modification
+      )
+    )
+    foreach ($Key in $clonedModification.Keys) {
+      $Clone[$Key] = $clonedModification[$Key]
+    }
   }
+
   return $Clone
 }
 

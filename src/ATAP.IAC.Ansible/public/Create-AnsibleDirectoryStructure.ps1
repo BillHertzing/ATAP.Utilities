@@ -9,6 +9,8 @@ param (
 )
 
 # until packaging, dotsource the needed files to import the needed functions
+# add the custom types defined in this module
+. .\Add-CustomTypes.ps1
 . .\New-PlaybooksTop.ps1
 . .\New-PlaybooksNamed.ps1
 . .\New-Role.ps1
@@ -34,21 +36,13 @@ $vaultUnLocked = $null # TBD
 
 # Read and parse the files
 # ToDo: error handling
+
 # $windowsFeaturesInfos = ConvertFrom-Yaml $(Get-Content -Path $windowsFeaturesInfoSourcePath -Raw  )#  ConvertFrom-Json -Depth 99 -AsHashtable -InputObject $(Get-Content -Path $windowsFeaturesInfoSourcePath -Raw)
 # $chocolateyPackageInfos = ConvertFrom-Yaml $(Get-Content -Path $chocolateyPackageInfoSourcePath -Raw )
 # $powershellModuleInfos = ConvertFrom-Yaml $(Get-Content -Path $powershellModuleInfoSourcePath -Raw )
 # $registrySettingsInfos = ConvertFrom-Yaml $(Get-Content -Path $registrySettingsInfoSourcePath -Raw )
 # $nugetPackagesInfos = $null #ConvertFrom-Yaml $(Get-Content -Path $nugetPackagesInfoSourcePath -Raw )
 
-# Create the structure that holds the allowed names and versions of the components
-$SwCfgInfos = @{
-  NuGetPackageInfos      = $nugetPackagesInfos
-  ChocolateyPackageInfos = $chocolateyPackageInfos
-  PowershellModuleInfos  = $powershellModuleInfos
-  RegistrySettingsInfos  = $registrySettingsInfos
-  WindowsFeatureInfos    = $windowsFeaturesInfos
-  AnsibleRoleInfos       = $null
-}
 
 # ToDo - Test roles on Windows
 # [Use Molecule to test Ansible roles on Windows](https://gregorystorme.medium.com/use-molecule-to-test-ansible-roles-on-windows-5bd40db3e331)
@@ -137,6 +131,47 @@ function Get-HighestVersionNumbers {
 $ansibleStructure = Get-AnsibleInventory
 $ansibleInventory = $ansibleStructure.AnsibleInventory
 # end region
+
+function convertFromYamlWithErrorHandling {
+  param (
+    # ToDo: error handling
+    [string]$path
+  )
+  # ToDo: error handling
+  ConvertFrom-Yaml -Yaml $(Get-Content -Path $ansibleRoleInfoDefaultPath -Raw )
+}
+
+function Get-ClonedAndModifiedHashtableFromYamlWithErrorHandling {
+  param (
+    # ToDo: error handling
+    [hashtable] $original
+    , [string[]]$paths
+  )
+  $hashtables = @()
+  for ($pathsIndex = 0; $pathsIndex -lt $paths.Count; $pathsIndex++) {
+    $path = $paths[$pathsIndex]
+    $hashtables += convertFromYamlWithErrorHandling $path
+  }
+  # ToDo: error handling
+  Get-ClonedAndModifiedHashtable $original $hashtables
+}
+
+
+# ToDo - put into global:settings
+$ansibleRoleInfoDefaultPath = '.\AnsibleRoleInfoDefault.yml'
+
+# Create the structure that holds the allowed names and versions of the components
+# Combine the default information from this module with the organization's overriding specific non-default information
+# ToDo contnue to create defaults for each SWConfig type
+$SwCfgInfos = @{
+  NuGetPackageInfos      = $nugetPackagesInfos
+  ChocolateyPackageInfos = $ansibleStructure.SwCfgInfos.ChocolateyPackageInfos
+  PowershellModuleInfos  = $powershellModuleInfos
+  RegistrySettingsInfos  = $registrySettingsInfos
+  WindowsFeatureInfos    = $windowsFeaturesInfos
+  AnsibleRoleInfos       =  Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $ansibleRoleInfoDefaultPath) $ansibleStructure.SwCfgInfos.AnsibleRoleInfos
+}
+
 
 # region constants defined in this script
 # These are names that are common to both the Windows file generation runtime, the Linux Ansible runtime, and the Windows remote host runtimes
@@ -281,8 +316,8 @@ if (-not $(Get-Command 'New-Role')) {
   # toDo catch the errors, add to 'Problems'
   Throw $message
 }
-# Loop over all the roles defined in the AnsibleInventory structure
-$roleNames = $ansibleStructure.AnsibleRoleNames
+# Loop over all the roles defined in the combined structure
+$roleNames = [System.Collections.ArrayList]$($SwCfgInfos.AnsibleRoleInfos.Keys)
 for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) {
   $roleName = $roleNames[$roleNameIndex]
   New-Item -ItemType Directory -Path $(Join-Path $baseDirectory 'roles' $roleName) -ErrorAction SilentlyContinue >$null
@@ -293,7 +328,7 @@ for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) 
     -roleName $roleName `
     -template $($ymlTemplate -replace '\{1}', $roleName) `
     -baseRoleDirectoryPath $(Join-Path $baseDirectory 'roles') `
-    -AnsibleStructure $ansibleStructure
+    -RoleInfo $($SwCfgInfos.AnsibleRoleInfos[$roleName])
 }
 
 

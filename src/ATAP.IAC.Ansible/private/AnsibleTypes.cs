@@ -1,7 +1,3 @@
-
-
-#$AnsibleTypeCode = Get-Content AnsibleTypes.cs -raw
-$AnsibleTypeCode = @"
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -18,7 +14,6 @@ namespace ATAP.Utilities.Ansible
  public interface IScriptBlockArguments
     {
         string ConvertToYaml();
-       # IScriptBlockArguments ConvertFromYaml(string yamlContent);
     }
 
     public interface IRegistrySettingsArgument : IScriptBlockArguments
@@ -27,6 +22,11 @@ namespace ATAP.Utilities.Ansible
         string Data { get; set; }
         string Type { get; set; }
         string Path { get; set; }
+    }
+
+    public interface IChocolateyPackageArguments : IScriptBlockArguments
+    {
+        string Name { get; set; }
     }
 
   public class RegistrySettingsArgument : IRegistrySettingsArgument
@@ -46,14 +46,13 @@ namespace ATAP.Utilities.Ansible
       Path = path;
     }
 
-    public static RegistrySettingsArgument  ConvertFromYaml(string yamlContent)
+    public IScriptBlockArguments ConvertFromYaml(string yamlContent)
     {
       var deserializer = new DeserializerBuilder().Build();
       return deserializer.Deserialize<RegistrySettingsArgument>(yamlContent);
     }
 
     public string ConvertToYaml()
-
     {
       var serializer = new SerializerBuilder().Build();
       return serializer.Serialize(this);
@@ -71,11 +70,6 @@ namespace ATAP.Utilities.Ansible
     }
   }
 
-  public interface IChocolateyPackageArguments : IScriptBlockArguments
-  {
-      string Name { get; set; }
-  }
-
   public class ChocolateyPackageArguments : IChocolateyPackageArguments
   {
     public string Name { get; set; }
@@ -87,7 +81,8 @@ namespace ATAP.Utilities.Ansible
       Name = name;
     }
 
-    public static ChocolateyPackageArguments  ConvertFromYaml(string yamlContent)
+
+    public IChocolateyPackageArguments ConvertFromYaml(string yamlContent)
     {
       var deserializer = new YamlDotNet.Serialization.DeserializerBuilder().Build();
       return deserializer.Deserialize<ChocolateyPackageArguments>(yamlContent);
@@ -99,14 +94,28 @@ namespace ATAP.Utilities.Ansible
       return serializer.Serialize(this);
     }
 
+        publicI ChocolateyPackageArguments ConvertFromYaml(string yamlContent)
+    {
+      var deserializer = new DeserializerBuilder().Build();
+      return deserializer.Deserialize<ChocolateyPackageArgument>(yamlContent);
+    }
+
+
+
+  }
+
+  public interface IScriptBlockArguments
+  {
+    ATAP.Utilities.Ansible.IScriptBlockArguments ConvertFromYaml(string yamlContent);
+    string ConvertToYaml();
   }
 
   public class AnsibleScriptBlock
   {
-    public AnsibleScriptBlockKinds Kind { get; } // Make Kind immutable
-    public IReadOnlyList<IScriptBlockArguments> ScriptBlockArguments { get; } // Make ScriptBlockArguments immutable
+    public ATAP.Utilities.Ansible.AnsibleScriptBlockKinds Kind { get; } // Make Kind immutable
+    public IReadOnlyList<ATAP.Utilities.Ansible.IScriptBlockArguments> ScriptBlockArguments { get; } // Make ScriptBlockArguments immutable
 
-    public AnsibleScriptBlock(AnsibleScriptBlockKinds kind, IReadOnlyList<IScriptBlockArguments> scriptBlockArguments)
+    public AnsibleScriptBlock(ATAP.Utilities.Ansible.AnsibleScriptBlockKinds kind, IReadOnlyList<ATAP.Utilities.Ansible.IScriptBlockArguments> scriptBlockArguments)
     {
       Kind = kind;
       ScriptBlockArguments = scriptBlockArguments;
@@ -122,17 +131,17 @@ namespace ATAP.Utilities.Ansible
   public class Play
   {
     public string Name { get; set; }
-    public List<AnsibleScriptBlock> AnsibleScriptBlocks { get; set; }
+    public List<ATAP.Utilities.Ansible.AnsibleScriptBlock> AnsibleScriptBlocks { get; set; }
 
     public Play()
     {
-      AnsibleScriptBlocks = new List<AnsibleScriptBlock>();
+      AnsibleScriptBlocks = new List<ATAP.Utilities.Ansible.AnsibleScriptBlock>();
     }
 
-    public static Play ConvertFromYaml(string yamlContent)
+    public static ATAP.Utilities.Ansible.Play ConvertFromYaml(string yamlContent)
     {
       var deserializer = new YamlDotNet.Serialization.DeserializerBuilder().Build();
-      return deserializer.Deserialize<Play>(yamlContent);
+      return deserializer.Deserialize<ATAP.Utilities.Ansible.Play>(yamlContent);
     }
 
     public string ConvertToYaml()
@@ -144,7 +153,7 @@ namespace ATAP.Utilities.Ansible
 
   public interface IAnsibleTask
   {
-    List<Play> Plays { get; }
+    List<ATAP.Utilities.Ansible.Play> Plays { get; }
   }
 
   public interface IAnsibleMeta
@@ -152,24 +161,24 @@ namespace ATAP.Utilities.Ansible
     string DependentRoleNames { get; set; }
   }
 
-  public class AnsibleTask : IAnsibleTask
+  public class AnsibleTask : ATAP.Utilities.Ansible.IAnsibleTask
   {
-    public List<Play> Plays { get; }
+    public List<ATAP.Utilities.Ansible.Play> Plays { get; }
 
-    public AnsibleTask(IEnumerable<Play> plays)
+    public AnsibleTask(IEnumerable<ATAP.Utilities.Ansible.Play> plays)
     {
-      Plays = new List<Play>(plays);
+      Plays = new List<ATAP.Utilities.Ansible.Play>(plays);
     }
 
     public AnsibleTask()
     {
-      Plays = new List<Play>();
+      Plays = new List<ATAP.Utilities.Ansible.Play>();
     }
 
-    public static AnsibleTask ConvertFromYaml(string yamlContent)
+    public static ATAP.Utilities.Ansible.AnsibleTask ConvertFromYaml(string yamlContent)
     {
       var deserializer = new YamlDotNet.Serialization.DeserializerBuilder().Build();
-      return deserializer.Deserialize<AnsibleTask>(yamlContent);
+      return deserializer.Deserialize<ATAP.Utilities.Ansible.AnsibleTask>(yamlContent);
     }
 
     public string ConvertToYaml()
@@ -179,7 +188,7 @@ namespace ATAP.Utilities.Ansible
     }
   }
 
-  public class AnsibleMeta : IAnsibleMeta
+  public class AnsibleMeta : ATAP.Utilities.Ansible.IAnsibleMeta
   {
     public string DependentRoleNames { get; set; }
 
@@ -189,16 +198,16 @@ namespace ATAP.Utilities.Ansible
   public class AnsibleRole
   {
     public string Name { get; set; }
-    public IAnsibleMeta AnsibleMeta { get; set; }
-    public IAnsibleTask AnsibleTask { get; set; }
+    public ATAP.Utilities.Ansible.IAnsibleMeta AnsibleMeta { get; set; }
+    public ATAP.Utilities.Ansible.IAnsibleTask AnsibleTask { get; set; }
 
     public AnsibleRole()
     {
-      AnsibleMeta = new AnsibleMeta();
-      AnsibleTask = new AnsibleTask();
+      AnsibleMeta = new ATAP.Utilities.Ansible.AnsibleMeta();
+      AnsibleTask = new ATAP.Utilities.Ansible.AnsibleTask();
     }
 
-    public AnsibleRole(string name, IAnsibleMeta ansibleMeta, IAnsibleTask ansibleTask)
+    public AnsibleRole(string name, ATAP.Utilities.Ansible.IAnsibleMeta ansibleMeta, ATAP.Utilities.Ansible.IAnsibleTask ansibleTask)
     {
       Name = name;
       AnsibleMeta = ansibleMeta;
@@ -217,21 +226,3 @@ namespace ATAP.Utilities.Ansible
     }
   }
 }
-
-"@
-$outputFilePath = join-path ".." "ATAP.Utilities.Ansible.dll"
-if (Test-Path $outputFilePath) { Remove-Item $outputFilePath -Force}
-
-# add references to external assemblies. Ensure the assemblies referenced are compatable with the current default DotNet framework
-# reference the YamlDotNet.dll assembly found in the current directory
-$yamlDotNetAssemblyPath = join-path ".." "YamlDotNet.dll"
-
-$referencedAssemblies = @(
-    $yamlDotNetAssemblyPath
-    'System.Collections.dll'
-)
-
-# Now you can use the YamlDotNet classes and functions in your PowerShell script
-# Compile and generate the DLL using Add-Type cmdlet
-Add-Type -TypeDefinition $AnsibleTypeCode -ReferencedAssemblies $referencedAssemblies -OutputAssembly $outputFilePath
-

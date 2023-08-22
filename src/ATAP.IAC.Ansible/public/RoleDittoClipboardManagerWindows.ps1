@@ -3,45 +3,21 @@
 $TaskScriptblock = {
 
   [void]$sb.Append(@"
-  - name: install the chocolatey packages
-    win_chocolatey:
-  	name: '{{ item.name }}'
-  	# version: '{{ item.version }}'
-  	allow_prerelease: "{{ 'true' if (item.allowprerelease == 'true') else 'false'}}"
-  	state: "{{ 'absent' if (action_type == 'uninstall') else 'present'}}"
-  	# {% if item.addedparameters is defined and item.addedparameters|length %}
-  	# 'package_params: ' "{{ item.addedparameters }}"
-  	# {% endif %}
-    failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
-    loop:
-  	- {name: ditto, version: latest, allowprerelease: false, addedparameters:  }
-  tags: [DittoClipboardManagerWindows]
-  ignore_errors: yes
-  - name: set registry values per user
-    win_regedit:
-      path: "{{ item.path }}"
-      name: "{{ item.name }}"
-      data: "{{ item.data|default(none) }}"
-      type: "{{ item.type|default('dword') }}"
-    loop:
-      - {path: HKCU:\Software\Ditto, name: NetworkStringPassword, data: "LetMeIn", type: SZ}
-      - {path: HKCU:\Software\Ditto, name: CustomSendToList2, data: "<CustomFriends> </CustomFriends>", type: SZ}
-      # ToDo - loop over all host names that are memners of the  UIHost AnsibleGroup
-      - {path: HKCU:\Software\Ditto, name: sendclient_ip_0, data: "utat01", type: SZ}
-      - {path: HKCU:\Software\Ditto, name: sendclient_autosend_0, data: "1", type: dword}
+  $(. ./ScriptblockChocolateyPackages -packages @(,
+  '{name: ditto, version: latest, allowprerelease: false, addedparameters:  }'
+  ) -tags @(,'DittoClipboardManagerWindows'))
+  $(. ./ScriptblockRegistryValues -RVs @(
+    '{path: HKCU:\Software\Ditto, name: NetworkStringPassword, data: "LetMeIn", type: SZ}'
+    '{path: HKCU:\Software\Ditto, name: CustomSendToList2, data: "<CustomFriends> </CustomFriends>", type: SZ}'
+    '{path: HKCU:\Software\Ditto, name: sendclient_ip_0, data: "utat01", type: SZ}'
+    '{path: HKCU:\Software\Ditto, name: sendclient_autosend_0, data: "1", type: dword}'
+  ) -tags @(,'DittoClipboardManagerWindows'))
 
-        # set-itemproperty HKCU:\Software\Ditto -Name DBPath3 -value "{{ $($global:configRootKeys['DittoDBPathConfigRootKey'])}}'"
-  tags: [DittoClipboardManagerWindows]
-  ignore_errors: yes
+  # Settings (path dblclick and copy paths wth quotes)
 "@)
 }
 
 $VarScriptblock = {
-
-[void]$sb.Append(@"
-$global:configRootKeys['DittoDBPathConfigRootKey']: $global:settings[$($global:configRootKeys['DittoDBPathConfigRootKey'])]
-
-"@)
 }
 
 $MetaScriptblock = {

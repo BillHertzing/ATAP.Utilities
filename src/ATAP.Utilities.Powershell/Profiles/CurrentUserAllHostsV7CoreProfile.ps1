@@ -479,6 +479,32 @@ Function Open-FilteredLinksInBrave {
   Start-Process 'brave.exe' -ArgumentList '--new-window', $($links -join ' ')
 }
 
+Function Open-BookmarksInBrave {
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'URLs')]
+
+  Param(
+    [parameter(ParameterSetName = 'URLs', Mandatory = $false, Position = 1, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $True)] [string[]] $urls
+  )
+  $urlList = @()
+  switch ($PSCmdlet.ParameterSetName) {
+    URLs {
+      if (-not $PSBoundParameters.ContainsKey('URLs')) {
+        foreach ($bookmark in $input) {
+          $urlList += $bookmark.url
+        }
+      }
+      else {
+        $urlList = $URLs
+      }
+    }
+    Default {
+      $urlList = $URLs
+    }
+  }
+  $links = $urlList -join ' '
+  Start-Process 'brave.exe' -ArgumentList '--new-window', $links
+}
+
 # [regex] $re = = '(?ism)(openssl|509)'
 # Open-FilteredLinksInBrave -path 'C:\Dropbox\whertzing\GitHub\atap.utilities' -findRegex $re
 # Alias FindAndOpenLinks
@@ -717,7 +743,7 @@ function Start-ExplorerWindowSet {
   explorer.exe \\wsl.localhost\Ubuntu\etc\ansible
   explorer.exe C:\Dropbox\whertzing\GitHub\ATAP.IAC
   explorer.exe \\wsl.localhost\Ubuntu\home\whertzing\Ansible
-  FancyZones.exe apply -id "45BA8D3D-74C5-460B-AA17-97DAEF91780B"
+  FancyZones.exe apply -id '45BA8D3D-74C5-460B-AA17-97DAEF91780B'
 }
 
 

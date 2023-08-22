@@ -6,9 +6,11 @@ $global:configRootKeys = @{
   'ENVIRONMENTConfigRootKey'                                                                     = 'Environment'
   'IsElevatedConfigRootKey'                                                                      = 'IsElevated'
   'CloudBasePathConfigRootKey'                                                                   = 'CloudBasePath'
-  'DropboxBasePathConfigRootKey'                                                                 = 'DropboxBasePath'
   'GoogleDriveBasePathConfigRootKey'                                                             = 'GoogleDriveBasePath'
+  # Dropbox settings
+  'DropboxBasePathConfigRootKey'                                                                 = 'DropboxBasePath'
   'DropboxAccessTokenConfigRootKey'                                                              = 'DropboxAccessToken'
+  # OneDrive Settings
   'OneDriveBasePathConfigRootKey'                                                                = 'OneDriveBasePath'
   'FastTempBasePathConfigRootKey'                                                                = 'FAST_TEMP_BASE_PATH'
   'BigTempBasePathConfigRootKey'                                                                 = 'BIG_TEMP_BASE_PATH'

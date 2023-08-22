@@ -1,0 +1,32 @@
+DittoClipboardManagerWindows:
+  tasks: # have to use lists to get proper ordering
+    - Name: "install ditto ChocolateyPackages"
+      Kind: "ChocolateyPackages"
+      args:
+      - 'ditto'
+    - Name: "install ditto Registry Settings"
+      Kind:  "RegistrySettingsUser"
+      args:
+      - {Purpose: Set Network Password, path: HKCU:\Software\Ditto, name: NetworkStringPassword, data: "LetMeIn", type: SZ}
+      - {Purpose: Clear Custom SendTo List, path: HKCU:\Software\Ditto, name: CustomSendToList2, data: "<CustomFriends> </CustomFriends>", type: SZ}
+      #- {Purpose: Set ditto DB path per host, path: HKCU:\Software\Ditto, name: DBPath3, data: "{{ $($global:configRootKeys['DittoDBPathConfigRootKey'])}}'", type: SZ}
+      # ToDo - loop over all host names that are members of the UIHost AnsibleGroup
+      #- {path: HKCU:\Software\Ditto, name: sendclient_autosend_0, data: "1", type: dword}
+  vars:
+    Placeholderkey: placeholderValue
+
+DropboxWindows: # still requires a manual step to enable LAN sync and to supply the dropbox account userid and password
+  tasks: # have to use lists to get proper ordering
+    - Name: "install dropbox ChocolateyPackages"
+      Kind: "ChocolateyPackages"
+      args:
+      - 'dropbox'
+    - Name: "Stop Dropbox service"
+      Kind: StopServices
+      args:
+      -  {Name: 'dropbox', DisplayName: 'Dropbox', {Name: 'dropbox', MatchType: 'Exact'}, {DisplayName: 'dropbox', MatchType: 'RegularExpression'}}
+    - Name: "install dropbox Registry Settings"
+      Kind:  "RegistrySettingsUser"
+      args:
+      - {Purpose: "Change the location where Dropbox is synchronizing files (the sync root)", path: HKCU:\Software\Dropbox\\ks, name: LocationPath, data: {{ '$global:ConfigRootKeys[''DropboxBasePathConfigRootKey'']'}}, type: "SZ" }
+      - {Purpose: Enable LAN sync, path: HKCU:\Software\Dropbox\ks, name: LocationPath, data: {{ '$global:ConfigRootKeys[''DropboxBasePathConfigRootKey'']'}}, type: SZ }

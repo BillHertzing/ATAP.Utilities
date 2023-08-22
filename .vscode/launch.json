@@ -7,9 +7,23 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Pester Tests",
       "type": "PowerShell",
       "request": "launch",
+      "program": "pester", // Use the pester executable from PATH
+      "args": [
+        "-Script",
+        "${workspaceFolder}\\path\\to\\pester_tests", // Update with your test folder path
+        "-Pattern",
+        "**.test.ps1"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
       "name": "PowerShell Launch Current File",
+      "type": "PowerShell",
+      "request": "launch",
       "script": "${file}",
       "args": [
         "-WhatIf",

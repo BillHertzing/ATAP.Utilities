@@ -24,13 +24,13 @@ $ScriptblockChocolateyPackages = {
   [void]$sb.Append(@'
 - name: install the chocolatey packages
   win_chocolatey:
-  name: '{{ item.name }}'
-  # version: '{{ item.version }}'
-  allow_prerelease: "{{ 'true' if (item.allowprerelease == 'true') else 'false'}}"
-  state: "{{ 'absent' if (action_type == 'uninstall') else 'present'}}"
-  # {% if item.addedparameters is defined and item.addedparameters|length %}
-  # 'package_params: ' "{{ item.addedparameters }}"
-  # {% endif %}
+    name: '{{ item.name }}'
+    # version: '{{ item.version }}'
+    allow_prerelease: "{{ 'true' if (item.allowprerelease == 'true') else 'false'}}"
+    state: "{{ 'absent' if (action_type == 'uninstall') else 'present'}}"
+    # {% if item.addedparameters is defined and item.addedparameters|length %}
+    # 'package_params: ' "{{ item.addedparameters }}"
+    # {% endif %}
   failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
   loop:
 

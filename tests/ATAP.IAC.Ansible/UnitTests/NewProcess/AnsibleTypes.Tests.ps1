@@ -1,5 +1,7 @@
 # expects Pester V5
 
+using namespace ATAP.Utilities.Ansible
+
 BeforeAll {
 
   # [The Assert framework functions for Powershell / Pester](https://github.com/nohwnd/Assert)
@@ -54,6 +56,7 @@ BeforeAll {
 
   # ToDo: move this to a buildtooling function
   function Search-FilesBySubdirectories {
+    [OutputType([string[]])]
     param(
       [string]$BasePath,
       [string[]]$Subdirectories,
@@ -71,7 +74,7 @@ BeforeAll {
         }
       }
     }
-    return $result
+    return ,$result
   }
 
   # What to dot source for running a test against a "public" function in a powershell module
@@ -109,7 +112,7 @@ BeforeAll {
     # ToDo: The number 3 is opinionated
     $sUTBaseName = $($testScriptNameArray[0..$($testScriptNameArray.count - 3)]) -join $moduleNameSeperator
     # ToDo: move strings to a ConfigRootKey
-    $sUTRelativeToModuleBasePaths = @('.\', '.\public', '.\private')
+    $sUTRelativeToModuleBasePaths = @('.', 'public', 'private')
     # ToDo: move strings to a ConfigRootKey
     $sUTPotentialSuffixs = @('.ps1', '.dll')
     # search the sUT potential paths to find a matching script or assembly
@@ -121,15 +124,15 @@ BeforeAll {
       }
       1 {
         # exactly one file found. Could be either a script or an assembly. Use the file extension to determine which
-        $sUTAbsolutePath = Get-ChildItem -Path $foundFiles[0]
+        $sUTAbsolutePath = Get-ChildItem -Path $foundFiles
         # ToDo: move string to global
-        if ($sUTAbsolutePath.Extension -eq 'ps1') {
+        if ($sUTAbsolutePath.Extension -eq '.ps1') {
           # load the ScriptUnderTest to test into memory
           # will not work if loading the script causes it to output stuff or otherwise take action
           . $sUTAbsolutePath.FullName
         }
         # ToDo: move string to global
-        elseif ($sUTAbsolutePath.Extension -eq 'dll') {
+        elseif ($sUTAbsolutePath.Extension -eq '.dll') {
           # load the AssemblyUnderTest to test into memory
           # Load the custom DLL
           Add-Type -Path $sUTAbsolutePath.FullName
@@ -193,41 +196,55 @@ Describe 'RegistrySettingsArgument Tests' {
   }
 }
 
-Describe 'RegistrySettingsArgument Tests' {
-  It 'Converts to YAML and back correctly' {
-    $originalArgument = [RegistrySettingsArgument]::Create('Purpose', 'Data', 'Type', 'Path')
-    $yamlContent = $originalArgument.ConvertToYaml()
-    $convertedArgument = $originalArgument.ConvertFromYaml($yamlContent)
-
-    # Assert properties match
-    $convertedArgument.Purpose | Should Be $originalArgument.Purpose
-    $convertedArgument.Data | Should Be $originalArgument.Data
-    $convertedArgument.Type | Should Be $originalArgument.Type
-    $convertedArgument.Path | Should Be $originalArgument.Path
-  }
-}
 
 # Describe block for ChocolateyPackageArguments
 Describe 'ChocolateyPackageArguments Tests' {
   It 'Converts to YAML and back correctly' {
     $originalArgument = [ChocolateyPackageArguments]::new('PackageName')
     $yamlContent = $originalArgument.ConvertToYaml()
-    $convertedArgument = $originalArgument.ConvertFromYaml($yamlContent)
+    $convertedArgument = [ATAP.Utilities.Ansible.ChocolateyPackageArguments]::ConvertFromYaml($yamlContent)
 
     # Assert properties match
-    $convertedArgument.Name | Should Be $originalArgument.Name
+    $convertedArgument.Name | Should -BeExactly $originalArgument.Name
   }
 }
 
 # Describe block for AnsibleScriptBlock
 Describe 'AnsibleScriptBlock Tests' {
-  It 'Converts to YAML correctly' {
-    $scriptBlock = [AnsibleScriptBlock]::new([AnsibleScriptBlockKinds]::ChocolateyPackages, @())
+  It 'Converts to YAML result is not null and not empty' {
+    $cpa = [ChocolateyPackageArguments]::new('PackageName')
+    $arl = [System.Collections.Generic.List[ChocolateyPackageArguments]]::new()
+    $arl.Add($cpa)
+
+    $kind = [AnsibleScriptBlockKinds]::ChocolateyPackages
+    $scriptBlock = [AnsibleScriptBlock]::new($kind, $arl)
+    #$scriptBlock = [AnsibleScriptBlock]::new([AnsibleScriptBlockKinds]::ChocolateyPackages, @())
     $yamlContent = $scriptBlock.ConvertToYaml()
 
     # Assert YAML content is not empty
-    $yamlContent | Should Not BeNullOrEmpty
+    $yamlContent | Should -Not -BeNullOrEmpty
   }
+  It 'Converts to YAML and back correctly' {
+    # Create a sample ChocolateyPackageArguments
+    $cpa = [ChocolateyPackageArguments]::new('PackageName')
+    $arl = [System.Collections.Generic.List[ChocolateyPackageArguments]]::new()
+    $arl.Add($cpa)
+
+    # Create a sample AnsibleScriptBlock
+    $kind = [AnsibleScriptBlockKinds]::ChocolateyPackages
+    $scriptBlock = [AnsibleScriptBlock]::new($kind, $arl)
+
+    # Convert to YAML
+    $yamlContent = $scriptBlock.ConvertToYaml()
+
+    # Deserialize YAML back to an object
+    $deserializedScriptBlock = [AnsibleScriptBlock]::ConvertFromYaml($yamlContent)
+
+    # Assert properties match
+    $deserializedScriptBlock.Kind | Should -BeExactly $kind
+    $deserializedScriptBlock.ScriptBlockArguments.Count | Should -BeExactly 1
+    $deserializedScriptBlock.ScriptBlockArguments[0].PackageName | Should -BeExactly 'PackageName'
+}
 }
 
 # Describe block for Play
@@ -239,7 +256,7 @@ Describe 'Play Tests' {
     $yamlContent = $play.ConvertToYaml()
 
     # Assert YAML content is not empty
-    $yamlContent | Should Not BeNullOrEmpty
+    $yamlContent | Should -Not -BeNullOrEmpty
   }
 }
 
@@ -250,7 +267,7 @@ Describe 'AnsibleRole Tests' {
     $yamlContent = $role.ConvertToYaml()
 
     # Assert YAML content is not empty
-    $yamlContent | Should Not BeNullOrEmpty
+    $yamlContent | Should -Not -BeNullOrEmpty
   }
 }
 

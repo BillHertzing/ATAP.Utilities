@@ -1,5 +1,6 @@
-  public interface IChocolateyPackageArguments : IScriptBlockArguments
+  // Interface for AnsiblePlayBlockChocolateyPackages, derived from IAnsiblePlayBlockCommon
+  public interface IAnsiblePlayBlockChocolateyPackages : IAnsiblePlayBlockCommon
   {
-      string Name { get; set; }
+    string Version { get; set; }
+    bool Prerelease { get; set; }
   }
-

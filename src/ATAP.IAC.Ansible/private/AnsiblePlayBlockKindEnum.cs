@@ -1,6 +1,5 @@
-  public enum AnsibleScriptBlockKinds
+  public enum AnsiblePlayBlockKind
   {
-    ChocolateyPackages,
-    RegistrySettings
+    AnsiblePlayBlockChocolateyPackages,
+    AnsiblePlayBlockRegistrySettings
   }
-

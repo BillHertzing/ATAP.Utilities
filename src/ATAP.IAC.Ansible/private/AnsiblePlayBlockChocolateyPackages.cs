@@ -1,24 +1,12 @@
-  public class ChocolateyPackageArguments : IChocolateyPackageArguments
+  public class AnsiblePlayBlockChocolateyPackages : IAnsiblePlayBlockChocolateyPackages
   {
     public string Name { get; set; }
-
-    public ChocolateyPackageArguments() { }
-
-    public ChocolateyPackageArguments(string name)
+    public string Version { get; set; }
+    public bool Prerelease { get; set; }
+    public AnsiblePlayBlockChocolateyPackages(string name, string version, bool prerelease)
     {
       Name = name;
+      Version = version;
+      Prerelease = prerelease;
     }
-
-    public static ChocolateyPackageArguments  ConvertFromYaml(string yamlContent)
-    {
-      var deserializer = new YamlDotNet.Serialization.DeserializerBuilder().Build();
-      return deserializer.Deserialize<ChocolateyPackageArguments>(yamlContent);
-    }
-
-    public string ConvertToYaml()
-    {
-      var serializer = new YamlDotNet.Serialization.SerializerBuilder().Build();
-      return serializer.Serialize(this);
-    }
-
   }

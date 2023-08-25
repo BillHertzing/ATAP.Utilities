@@ -1,42 +1,14 @@
-  public class RegistrySettingsArgument : IRegistrySettingsArgument
+  public class AnsiblePlayBlockRegistrySettings : IAnsiblePlayBlockRegistrySettings
   {
-    public string Purpose { get; set; }
-    public string Data { get; set; }
-    public string Type { get; set; }
+    public string Name { get; set; }
     public string Path { get; set; }
-
-    public RegistrySettingsArgument() { }
-
-    public RegistrySettingsArgument(string purpose, string data, string type, string path)
+    public string Type { get; set; }
+    public string Value { get; set; }
+    public AnsiblePlayBlockRegistrySettings(string name, string path, string type, string value)
     {
-      Purpose = purpose;
-      Data = data;
-      Type = type;
+      Name = name;
       Path = path;
-    }
-
-    public static RegistrySettingsArgument  ConvertFromYaml(string yamlContent)
-    {
-      var deserializer = new DeserializerBuilder().Build();
-      return deserializer.Deserialize<RegistrySettingsArgument>(yamlContent);
-    }
-
-    public string ConvertToYaml()
-
-    {
-      var serializer = new SerializerBuilder().Build();
-      return serializer.Serialize(this);
-    }
-
-    public static RegistrySettingsArgument Create(string purpose, string data, string type, string path)
-    {
-      return new RegistrySettingsArgument
-      {
-        Purpose = purpose,
-        Data = data,
-        Type = type,
-        Path = path
-      };
+      Type = type;
+      Value = value;
     }
   }
-

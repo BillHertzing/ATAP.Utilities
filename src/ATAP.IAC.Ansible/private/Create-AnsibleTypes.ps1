@@ -7,12 +7,6 @@ $outputFilePath = join-path ".." $assemblyFileName
 
 $AnsibleTypeCodePreamble = @"
 using System.Collections.Generic;
-//using System;
-//using System.IO;
-// using System.Reflection;
-// using YamlDotNet.Core;
-// using YamlDotNet.Core.Events;
-// using YamlDotNet.Serialization;
 namespace ATAP.IAC.Ansible {
 
 "@
@@ -38,5 +32,6 @@ $referencedAssemblies = @(
 )
 
 # Compile and generate the DLL using Add-Type cmdlet
-# Note that if this step generates an edrror, the .dll may have been locked by previos  runs, if so, kill the process having the lock andretry
+# Note that if this step generates an error, the .dll may have been locked by previous runs, if so, kill the process having the lock andretry
+if (Test-Path $outputFilePath) { Remove-Item $outputFilePath -Force }
 Add-Type -TypeDefinition $sb.ToString() -ReferencedAssemblies $referencedAssemblies -OutputAssembly $outputFilePath

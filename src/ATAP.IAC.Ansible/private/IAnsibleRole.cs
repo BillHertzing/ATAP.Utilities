@@ -4,5 +4,4 @@ public interface IAnsibleRole
     IAnsibleMeta AnsibleMeta { get; set; }
     IAnsibleTask AnsibleTask { get; set; }
 
-    string ConvertToYaml();
 }

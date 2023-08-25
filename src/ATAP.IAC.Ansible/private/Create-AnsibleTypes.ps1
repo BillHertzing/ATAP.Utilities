@@ -1,6 +1,6 @@
 
 # ToDo: Make this opinionated based on something in the parent tree
-$assemblyFileName = "ATAP.IAC.Ansible.Types.dll"
+$assemblyFileName = "ATAP.IAC.Ansible.dll"
 $outputFilePath = join-path ".." $assemblyFileName
 
 [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
@@ -30,6 +30,11 @@ foreach ($AnsibleTypeFile in $AnsibleTypeFiles) {
 $referencedAssemblies = @(
     'System.Collections.dll'
 )
+
+# ToDo make this controllable via an argument
+if ($true) {
+  set-content -path './SourceForDebugging.txt' -Value $sb.ToString()
+}
 
 # Compile and generate the DLL using Add-Type cmdlet
 # Note that if this step generates an error, the .dll may have been locked by previous runs, if so, kill the process having the lock andretry

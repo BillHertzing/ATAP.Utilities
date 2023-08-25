@@ -1,11 +1,12 @@
- public class Play
+  public class AnsiblePlay : IAnsiblePlay
   {
     public string Name { get; set; }
-    public List<AnsibleScriptBlock> AnsibleScriptBlocks { get; set; }
-
-    public Play()
+    public AnsiblePlayBlockKind Kind { get; private set; }
+    public List<IAnsiblePlayBlockCommon> Items { get; set; }
+    public AnsiblePlay(string name, AnsiblePlayBlockKind kind, List<IAnsiblePlayBlockCommon> items)
     {
-      AnsibleScriptBlocks = new List<AnsibleScriptBlock>();
+      Name = name;
+      Items = items;
+      Kind = kind;
     }
-
   }

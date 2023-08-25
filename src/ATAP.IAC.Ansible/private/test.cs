@@ -14,13 +14,10 @@ namespace ATAP.Utilities.Ansible
     AnsiblePlayBlockChocolateyPackages,
     AnsiblePlayBlockRegistrySettings
   }
-
   // AnsiblePlayBlockCommon interface capturing shared components
   public interface IAnsiblePlayBlockCommon
   {
     string Name { get; set; }
-    AnsiblePlayBlockKind Kind { get; }
-
   }
   // Interface for AnsiblePlayBlockChocolateyPackages, derived from IAnsiblePlayBlockCommon
   public interface IAnsiblePlayBlockChocolateyPackages : IAnsiblePlayBlockCommon
@@ -38,14 +35,11 @@ namespace ATAP.Utilities.Ansible
   public class AnsiblePlayBlockChocolateyPackages : IAnsiblePlayBlockChocolateyPackages
   {
     public string Name { get; set; }
-    public AnsiblePlayBlockKind Kind { get; private set; }
-
     public string Version { get; set; }
     public bool Prerelease { get; set; }
     public AnsiblePlayBlockChocolateyPackages(string name, string version, bool prerelease)
     {
       Name = name;
-      Kind = AnsiblePlayBlockKind.AnsiblePlayBlockChocolateyPackages;
       Version = version;
       Prerelease = prerelease;
     }
@@ -53,14 +47,12 @@ namespace ATAP.Utilities.Ansible
   public class AnsiblePlayBlockRegistrySettings : IAnsiblePlayBlockRegistrySettings
   {
     public string Name { get; set; }
-    public AnsiblePlayBlockKind Kind { get; private set; }
     public string Path { get; set; }
     public string Type { get; set; }
     public string Value { get; set; }
     public AnsiblePlayBlockRegistrySettings(string name, string path, string type, string value)
     {
       Name = name;
-      Kind = AnsiblePlayBlockKind.AnsiblePlayBlockRegistrySettings;
       Path = path;
       Type = type;
       Value = value;
@@ -69,20 +61,22 @@ namespace ATAP.Utilities.Ansible
   public interface IAnsiblePlay
   {
     string Name { get; set; }
+    AnsiblePlayBlockKind Kind { get; }
+
     List<IAnsiblePlayBlockCommon> Items { get; set; }
   }
   public class AnsiblePlay : IAnsiblePlay
   {
     public string Name { get; set; }
+    public AnsiblePlayBlockKind Kind { get; private set; }
     public List<IAnsiblePlayBlockCommon> Items { get; set; }
-
-    public AnsiblePlay(string name, List<IAnsiblePlayBlockCommon> items)
+    public AnsiblePlay(string name, AnsiblePlayBlockKind kind, List<IAnsiblePlayBlockCommon> items)
     {
       Name = name;
       Items = items;
+      Kind = kind;
     }
   }
-
   public class AnsibleTask
   {
     public string Name { get; set; }

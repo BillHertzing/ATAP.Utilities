@@ -1,6 +1,6 @@
 # expects Pester V5
 
-using namespace ATAP.Utilities.Ansible
+using namespace ATAP.IAC.Ansible
 
 BeforeAll {
 
@@ -24,7 +24,7 @@ BeforeAll {
     )
     $CommonDirectory = $InitialDirectory
     $leafNames = @()
-    while ($CommonDirectory -ne $null) {
+    while ($null -ne $CommonDirectory ) {
       # ToDo: protect edge case - if there is a directory 'src' below the tests directory..
       $srcDir = Join-Path -Path $CommonDirectory -ChildPath $SrcName
       if (Test-Path -Path $srcDir -PathType Container) {
@@ -36,9 +36,9 @@ BeforeAll {
 
           # does the same leaf appear in both source and tests,
           return @{
-            ModuleName = $moduleName
-            SourceDirectory     = Join-Path $CommonDirectory $SrcName $ModuleName
-            TestsDirectory   = Join-Path $CommonDirectory $TestsName $ModuleName
+            ModuleName      = $moduleName
+            SourceDirectory = Join-Path $CommonDirectory $SrcName $ModuleName
+            TestsDirectory  = Join-Path $CommonDirectory $TestsName $ModuleName
           }
         }
         else {
@@ -47,7 +47,7 @@ BeforeAll {
         }
       }
       $CommonDirectory = Split-Path -Path $CommonDirectory -Parent
-      $leafNames +=  Split-Path $CommonDirectory -Leaf
+      $leafNames += Split-Path $CommonDirectory -Leaf
       $moduleName = $leafNames[1]
     }
     # ToDo: Logging
@@ -74,7 +74,7 @@ BeforeAll {
         }
       }
     }
-    return ,$result
+    return , $result
   }
 
   # What to dot source for running a test against a "public" function in a powershell module
@@ -159,116 +159,297 @@ BeforeAll {
 
 }
 
-Describe 'RegistrySettingsArgument Tests' {
-  It 'Can create an instance of RegistrySettingsArgument' {
-    $argument = [ATAP.Utilities.Ansible.RegistrySettingsArgument]::new()
-    $argument | Should -Not -BeNull
+Describe 'Testing AnsiblePlayBlockRegistrySettings class' {
+
+  It 'Should create an instance of AnsiblePlayBlockRegistrySettings' {
+    $obj = [ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings]::new('testName', 'testPath', 'testType', 'testValue')
+    $obj | Should -Not -BeNullOrEmpty
+    $obj.Name | Should -BeExactly 'testName'
+    $obj.Path | Should -BeExactly 'testPath'
+    $obj.Type | Should -BeExactly 'testType'
+    $obj.Value | Should -BeExactly 'testValue'
   }
 
-  It 'Can set and get properties of RegistrySettingsArgument' {
-    $argument = [ATAP.Utilities.Ansible.RegistrySettingsArgument]::new()
-
-    $argument.Purpose = 'TestPurpose'
-    $argument.Data = 'TestData'
-    $argument.Type = 'TestType'
-    $argument.Path = 'TestPath'
-
-    $argument.Purpose | Should -BeExactly 'TestPurpose'
-    $argument.Data | Should -BeExactly 'TestData'
-    $argument.Type | Should -BeExactly 'TestType'
-    $argument.Path | Should -BeExactly 'TestPath'
+  It 'Should validate properties of AnsiblePlayBlockRegistrySettings' {
+    $obj = [ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings]::new('testName', 'testPath', 'testType', 'testValue')
+    $obj.Name = 'newName'
+    $obj.Name | Should -BeExactly 'newName'
+    $obj.Path = 'newPath'
+    $obj.Path | Should -BeExactly 'newPath'
+    $obj.Type = 'newType'
+    $obj.Type | Should -BeExactly 'newType'
+    $obj.Value = 'newValue'
+    $obj.Value | Should -BeExactly 'newValue'
   }
-
-  It 'Can convert RegistrySettingsArgument to YAML and back' {
-    $originalArgument = [ATAP.Utilities.Ansible.RegistrySettingsArgument]::new()
-    $originalArgument.Purpose = 'TestPurpose'
-    $originalArgument.Data = 'TestData'
-    $originalArgument.Type = 'TestType'
-    $originalArgument.Path = 'TestPath'
-
-    $yaml = $originalArgument.ConvertToYaml()
-    $convertedArgument = [ATAP.Utilities.Ansible.RegistrySettingsArgument]::ConvertFromYaml($yaml)
-
-    $convertedArgument.Purpose | Should -BeExactly $originalArgument.Purpose
-    $convertedArgument.Data | Should -BeExactly $originalArgument.Data
-    $convertedArgument.Type | Should -BeExactly $originalArgument.Type
-    $convertedArgument.Path | Should -BeExactly $originalArgument.Path
-  }
-}
-
-
-# Describe block for ChocolateyPackageArguments
-Describe 'ChocolateyPackageArguments Tests' {
-  It 'Converts to YAML and back correctly' {
-    $originalArgument = [ChocolateyPackageArguments]::new('PackageName')
-    $yamlContent = $originalArgument.ConvertToYaml()
-    $convertedArgument = [ATAP.Utilities.Ansible.ChocolateyPackageArguments]::ConvertFromYaml($yamlContent)
-
-    # Assert properties match
-    $convertedArgument.Name | Should -BeExactly $originalArgument.Name
-  }
-}
-
-# Describe block for AnsibleScriptBlock
-Describe 'AnsibleScriptBlock Tests' {
-  It 'Converts to YAML result is not null and not empty' {
-    $cpa = [ChocolateyPackageArguments]::new('PackageName')
-    $arl = [System.Collections.Generic.List[ChocolateyPackageArguments]]::new()
-    $arl.Add($cpa)
-
-    $kind = [AnsibleScriptBlockKinds]::ChocolateyPackages
-    $scriptBlock = [AnsibleScriptBlock]::new($kind, $arl)
-    #$scriptBlock = [AnsibleScriptBlock]::new([AnsibleScriptBlockKinds]::ChocolateyPackages, @())
-    $yamlContent = $scriptBlock.ConvertToYaml()
-
-    # Assert YAML content is not empty
-    $yamlContent | Should -Not -BeNullOrEmpty
-  }
-  It 'Converts to YAML and back correctly' {
-    # Create a sample ChocolateyPackageArguments
-    $cpa = [ChocolateyPackageArguments]::new('PackageName')
-    $arl = [System.Collections.Generic.List[ChocolateyPackageArguments]]::new()
-    $arl.Add($cpa)
-
-    # Create a sample AnsibleScriptBlock
-    $kind = [AnsibleScriptBlockKinds]::ChocolateyPackages
-    $scriptBlock = [AnsibleScriptBlock]::new($kind, $arl)
+  It 'Should convert AnsiblePlayBlockRegistrySettings to YAML and back' {
+    $obj = [ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings]::new('testName', 'testPath', 'testType', 'testValue')
 
     # Convert to YAML
-    $yamlContent = $scriptBlock.ConvertToYaml()
+    $yamlString = ConvertTo-Yaml $obj
+    $yamlString | Should -Not -BeNullOrEmpty
 
-    # Deserialize YAML back to an object
-    $deserializedScriptBlock = [AnsibleScriptBlock]::ConvertFromYaml($yamlContent)
-
-    # Assert properties match
-    $deserializedScriptBlock.Kind | Should -BeExactly $kind
-    $deserializedScriptBlock.ScriptBlockArguments.Count | Should -BeExactly 1
-    $deserializedScriptBlock.ScriptBlockArguments[0].PackageName | Should -BeExactly 'PackageName'
-}
-}
-
-# Describe block for Play
-Describe 'Play Tests' {
-  It 'Converts to YAML correctly' {
-    $play = [Play]::new()
-    $play.Name = 'Sample Play'
-    $play.AnsibleScriptBlocks = @()
-    $yamlContent = $play.ConvertToYaml()
-
-    # Assert YAML content is not empty
-    $yamlContent | Should -Not -BeNullOrEmpty
+    # Convert back to object
+    $newObj = ConvertFrom-Yaml $yamlString
+    $newObj | Should -Not -BeNullOrEmpty
+    $newObj.Name | Should -BeExactly 'testName'
+    $newObj.Path | Should -BeExactly 'testPath'
+    $newObj.Type | Should -BeExactly 'testType'
+    $newObj.Value | Should -BeExactly 'testValue'
   }
-}
+  Describe 'Testing AnsiblePlayBlockChocolateyPackages class with YAML conversions' {
+    It 'Should create AnsiblePlayBlockChocolateyPackages object via constructor' {
+      $name = 'testName'
+      $version = 'testVersion'
+      $prerelease = $false
+      $obj = [ATAP.IAC.Ansible.AnsiblePlayBlockChocolateyPackages]::new($name, $version, $prerelease)
 
-# Describe block for AnsibleRole
-Describe 'AnsibleRole Tests' {
-  It 'Converts to YAML correctly' {
-    $role = [AnsibleRole]::new('Sample Role', [AnsibleMeta]::new(), [AnsibleTask]::new())
-    $yamlContent = $role.ConvertToYaml()
+      $obj.Name | Should -BeExactly $name
+      $obj.Version | Should -BeExactly $version
+      $obj.Prerelease | Should -Be $prerelease
+    }
+    It 'Should validate properties of AnsiblePlayBlockChocolateyPackages' {
+      $obj = [ATAP.IAC.Ansible.AnsiblePlayBlockChocolateyPackages]::new('testName', 'testVersion', $false)
+      $obj.Name = 'newName'
+      $obj.Name | Should -BeExactly 'newName'
+      $obj.Version = 'newVersion'
+      $obj.Version | Should -BeExactly 'newVersion'
+      $obj.Prerelease = $true
+      $obj.Prerelease | Should -Be $true
+    }
 
-    # Assert YAML content is not empty
-    $yamlContent | Should -Not -BeNullOrEmpty
+    It 'Should convert AnsiblePlayBlockChocolateyPackages to YAML and back' {
+      $obj = [ATAP.IAC.Ansible.AnsiblePlayBlockChocolateyPackages]::new('testName', 'testVersion', $false)
+
+      # Convert to YAML
+      $yamlString = ConvertTo-Yaml $obj
+      $yamlString | Should -Not -BeNullOrEmpty
+
+      # Convert back to object
+      $newObj = ConvertFrom-Yaml $yamlString
+      $newObj | Should -Not -BeNullOrEmpty
+      $newObj.Name | Should -BeExactly 'testName'
+      $newObj.Version | Should -BeExactly 'testVersion'
+      $newObj.Prerelease | Should -Be $false
+    }
   }
+  Describe 'Testing AnsiblePlay class with AnsiblePlayBlockChocolateyPackages' {
+    It 'Should create AnsiblePlay object' {
+      $name = 'PlayName'
+      $kind = [ATAP.IAC.Ansible.AnsiblePlayBlockKind]::AnsiblePlayBlockChocolateyPackages
+      $items = @()
+
+      $obj = [ATAP.IAC.Ansible.AnsiblePlay]::new($name, $kind, $items)
+
+      $obj.Name | Should -BeExactly $name
+      $obj.Kind | Should -BeExactly $kind
+      $obj.Items.Count | Should -Be 0
+    }
+    It 'Should validate properties of AnsiblePlay object' {
+      $name = 'PlayName'
+      $kind = [ATAP.IAC.Ansible.AnsiblePlayBlockKind]::AnsiblePlayBlockChocolateyPackages
+      $items = @([ATAP.IAC.Ansible.AnsiblePlayBlockChocolateyPackages]::new('Package', '1.0.0', $false))
+
+      $obj = [ATAP.IAC.Ansible.AnsiblePlay]::new($name, $kind, $items)
+
+      $obj.Name | Should -BeExactly $name
+      $obj.Kind | Should -BeExactly $kind
+      $obj.Items[0].Name | Should -BeExactly 'Package'
+    }
+    It 'Should convert AnsiblePlay object to YAML and back' {
+      $name = 'PlayName'
+      $kind = [ATAP.IAC.Ansible.AnsiblePlayBlockKind]::AnsiblePlayBlockChocolateyPackages
+      $items = @([ATAP.IAC.Ansible.AnsiblePlayBlockChocolateyPackages]::new('Package', '1.0.0', $false))
+
+      $obj = [ATAP.IAC.Ansible.AnsiblePlay]::new($name, $kind, $items)
+      $yaml = $obj | ConvertTo-Yaml
+      $reconstructedObj = $yaml | ConvertFrom-Yaml
+
+      $reconstructedObj.Name | Should -BeExactly $name
+      $reconstructedObj.Kind | Should -BeExactly $kind.ToString() # Type might be a string in reconstructed YAML object
+      $reconstructedObj.Items[0].Name | Should -BeExactly 'Package'
+    }
+    It 'Should create AnsiblePlay object with two items' {
+      $name = 'PlayName'
+      $kind = [ATAP.IAC.Ansible.AnsiblePlayBlockKind]::AnsiblePlayBlockChocolateyPackages
+      $item1 = [ATAP.IAC.Ansible.AnsiblePlayBlockChocolateyPackages]::new('Package1', '1.0.0', $false)
+      $item2 = [ATAP.IAC.Ansible.AnsiblePlayBlockChocolateyPackages]::new('Package2', '2.0.0', $false)
+      $items = @($item1, $item2)
+
+      $obj = [ATAP.IAC.Ansible.AnsiblePlay]::new($name, $kind, $items)
+
+      $obj.Name | Should -BeExactly $name
+      $obj.Kind | Should -BeExactly $kind
+      $obj.Items.Count | Should -Be 2
+      $obj.Items[0].Name | Should -BeExactly 'Package1'
+      $obj.Items[1].Name | Should -BeExactly 'Package2'
+    }
+    It 'Should convert AnsiblePlay object with three items to and from YAML correctly' {
+      $name = 'PlayName'
+      $kind = [ATAP.IAC.Ansible.AnsiblePlayBlockKind]::AnsiblePlayBlockChocolateyPackages
+      $item1 = [ATAP.IAC.Ansible.AnsiblePlayBlockChocolateyPackages]::new('Package1', '1.0.0', $false)
+      $item2 = [ATAP.IAC.Ansible.AnsiblePlayBlockChocolateyPackages]::new('Package2', '2.0.0', $false)
+      $item3 = [ATAP.IAC.Ansible.AnsiblePlayBlockChocolateyPackages]::new('Package3', '3.0.0', $false)
+      $items = [System.Collections.Generic.List[ATAP.IAC.Ansible.IAnsiblePlayBlockCommon]]::new()
+      $items.Add($item1)
+      $items.Add($item2)
+      $items.Add($item3)
+
+      $obj = [ATAP.IAC.Ansible.AnsiblePlay]::new($name, $kind, $items)
+
+      $yaml = $obj | ConvertTo-Yaml
+      $objFromYaml = $yaml | ConvertFrom-Yaml
+
+      $objFromYaml.Name | Should -BeExactly $name
+      $objFromYaml.Kind | Should -BeExactly $kind
+      $objFromYaml.Items.Count | Should -Be 3
+      $objFromYaml.Items[0].Name | Should -BeExactly 'Package1'
+      $objFromYaml.Items[1].Name | Should -BeExactly 'Package2'
+      $objFromYaml.Items[2].Name | Should -BeExactly 'Package3'
+    }
+  }
+  Describe 'Testing AnsiblePlay class with AnsiblePlayBlockRegistrySettings' {
+    It 'Should construct an AnsiblePlay object with AnsiblePlayBlockRegistrySettings' {
+      $name = 'PlayName'
+      $kind = [ATAP.IAC.Ansible.AnsiblePlayBlockKind]::AnsiblePlayBlockRegistrySettings
+      $item1 = [ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings]::new('Setting1', 'Path1', 'Type1', 'Value1')
+      $item2 = [ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings]::new('Setting2', 'Path2', 'Type2', 'Value2')
+      $items = [System.Collections.Generic.List[ATAP.IAC.Ansible.IAnsiblePlayBlockCommon]]::new()
+      $items.Add($item1)
+      $items.Add($item2)
+
+      $obj = [ATAP.IAC.Ansible.AnsiblePlay]::new($name, $kind, $items)
+
+      $obj.Name | Should -BeExactly $name
+      $obj.Kind | Should -BeExactly $kind
+      $obj.Items.Count | Should -Be 2
+    }
+
+    It 'Should convert AnsiblePlay object with AnsiblePlayBlockRegistrySettings to and from YAML correctly' {
+      $name = 'PlayName'
+      $kind = [ATAP.IAC.Ansible.AnsiblePlayBlockKind]::AnsiblePlayBlockRegistrySettings
+      $item1 = [ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings]::new('Setting1', 'Path1', 'Type1', 'Value1')
+      $item2 = [ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings]::new('Setting2', 'Path2', 'Type2', 'Value2')
+      $items = [System.Collections.Generic.List[ATAP.IAC.Ansible.IAnsiblePlayBlockCommon]]::new()
+      $items.Add($item1)
+      $items.Add($item2)
+
+      $obj = [ATAP.IAC.Ansible.AnsiblePlay]::new($name, $kind, $items)
+      $yaml = $obj | ConvertTo-Yaml
+      $objFromYaml = $yaml | ConvertFrom-Yaml
+
+      $objFromYaml.Name | Should -BeExactly $name
+      $objFromYaml.Kind | Should -BeExactly $kind
+      $objFromYaml.Items.Count | Should -Be 2
+      $objFromYaml.Items[0].Name | Should -BeExactly 'Setting1'
+      $objFromYaml.Items[1].Name | Should -BeExactly 'Setting2'
+    }
+  }
+  Describe 'Testing AnsibleTask class with One Play having one AnsiblePlayBlockRegistrySettings' {
+    It 'Should construct an AnsibleTask object with a single AnsiblePlay containing a single AnsiblePlayBlockRegistrySettings' {
+      $taskName = 'TaskName'
+
+      # Constructing AnsiblePlayBlockRegistrySettings
+      $registrySettings = [ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings]::new('Name', 'Path', 'Type', 'Value')
+
+      # Constructing AnsiblePlay with a single AnsiblePlayBlockRegistrySettings
+      $playName = 'PlayName'
+      $playKind = [ATAP.IAC.Ansible.AnsiblePlayBlockKind]::AnsiblePlayBlockRegistrySettings
+      $playItems = [System.Collections.Generic.List[ATAP.IAC.Ansible.IAnsiblePlayBlockCommon]]::new()
+      $playItems.Add($registrySettings)
+      $ansiblePlay = [ATAP.IAC.Ansible.AnsiblePlay]::new($playName, $playKind, $playItems)
+
+      # Constructing AnsibleTask with a single AnsiblePlay
+      $ansiblePlays = [System.Collections.Generic.List[ATAP.IAC.Ansible.IAnsiblePlay]]::new()
+      $ansiblePlays.Add($ansiblePlay)
+      $ansibleTask = [ATAP.IAC.Ansible.AnsibleTask]::new($taskName, $ansiblePlays)
+
+      # Validate
+      $ansibleTask.Name | Should -BeExactly $taskName
+      $ansibleTask.Items.Count | Should -Be 1
+      $ansibleTask.Items[0].Name | Should -BeExactly $playName
+      $ansibleTask.Items[0].Items.Count | Should -Be 1
+      $ansibleTask.Items[0].Items[0].Name | Should -BeExactly 'Name'
+
+      # Convert AnsibleTask to YAML
+      $yamlString = $ansibleTask | ConvertTo-Yaml
+
+      # Convert YAML back to AnsibleTask object
+      $ansibleTaskFromYaml = $yamlString | ConvertFrom-Yaml
+
+      # Validate that the constructed object matches the one reconstructed from YAML
+      $ansibleTaskFromYaml.Name | Should -BeExactly $taskName
+      $ansibleTaskFromYaml.Items.Count | Should -Be 1
+      $ansibleTaskFromYaml.Items[0].Name | Should -BeExactly $playName
+      $ansibleTaskFromYaml.Items[0].Items.Count | Should -Be 1
+      $ansibleTaskFromYaml.Items[0].Items[0].Name | Should -BeExactly 'Name'
+    }
+  }
+
+  Describe 'AnsibleTask Tests with two AnsiblePlay objects' {
+    It 'Should construct an AnsibleTask with two AnsiblePlay objects correctly' {
+      $chocolateyPackage = New-Object ATAP.IAC.Ansible.AnsiblePlayBlockChocolateyPackages 'Package1', '1.0.0', $false
+      $registrySetting1 = New-Object ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings 'Setting1', 'Path1', 'Type1', 'Value1'
+      $registrySetting2 = New-Object ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings 'Setting2', 'Path2', 'Type2', 'Value2'
+
+      $play1Name = 'Play1'
+      $play1Kind = [ATAP.IAC.Ansible.AnsiblePlayBlockKind]::AnsiblePlayBlockChocolateyPackages
+      $play2Name = 'Play2'
+      $play2Kind = [ATAP.IAC.Ansible.AnsiblePlayBlockKind]::AnsiblePlayBlockRegistrySettings
+
+      $play1 = New-Object ATAP.IAC.Ansible.AnsiblePlay $play1Name, $play1Kind, @($chocolateyPackage)
+      $play2 = New-Object ATAP.IAC.Ansible.AnsiblePlay $play2Name, $play2Kind, @($registrySetting1, $registrySetting2)
+
+      $task = New-Object ATAP.IAC.Ansible.AnsibleTask 'Task1', @($play1, $play2)
+
+      # Convert to YAML
+      $yamlString = $task | ConvertTo-Yaml
+
+      # Convert back from YAML
+      $taskFromYaml = $yamlString | ConvertFrom-Yaml
+
+      # Validate properties
+      $taskFromYaml.Name | Should -BeExactly 'Task1'
+      $taskFromYaml.Items[0].Name | Should -BeExactly 'Play1'
+      $taskFromYaml.Items[1].Name | Should -BeExactly 'Play2'
+      $taskFromYaml.Items[0].Items[0].Name | Should -BeExactly 'Package1'
+      $taskFromYaml.Items[1].Items[0].Name | Should -BeExactly 'Setting1'
+      $taskFromYaml.Items[1].Items[1].Name | Should -BeExactly 'Setting2'
+    }
+  }
+  Describe 'AnsibleRole Tests' {
+    It 'Should construct an AnsibleRole and serialize / deserialize it to / from YAML' {
+      $chocolateyPackage = New-Object ATAP.IAC.Ansible.AnsiblePlayBlockChocolateyPackages 'Package1', '1.0.0', $false
+      $registrySetting1 = New-Object ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings 'Setting1', 'Path1', 'Type1', 'Value1'
+      $registrySetting2 = New-Object ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings 'Setting2', 'Path2', 'Type2', 'Value2'
+      $play1Name = 'Play1'
+      $play1Kind = [ATAP.IAC.Ansible.AnsiblePlayBlockKind]::AnsiblePlayBlockChocolateyPackages
+      $play2Name = 'Play2'
+      $play2Kind = [ATAP.IAC.Ansible.AnsiblePlayBlockKind]::AnsiblePlayBlockRegistrySettings
+      $play1 = New-Object ATAP.IAC.Ansible.AnsiblePlay $play1Name, $play1Kind, @($chocolateyPackage)
+      $play2 = New-Object ATAP.IAC.Ansible.AnsiblePlay $play2Name, $play2Kind, @($registrySetting1, $registrySetting2)
+      $task = New-Object ATAP.IAC.Ansible.AnsibleTask 'Task1', @($play1, $play2)
+      $meta = New-Object ATAP.IAC.Ansible.AnsibleMeta
+      $meta.DependentRoleNames = 'DependentRole1, DependentRole2'
+      $role = New-Object ATAP.IAC.Ansible.AnsibleRole 'Role1', $meta, $task
+      # Convert to YAML
+      $yamlString = $role | ConvertTo-Yaml
+
+      # Convert back from YAML
+      $roleFromYaml = $yamlString | ConvertFrom-Yaml
+
+      # Validate properties
+      $roleFromYaml.Name | Should -BeExactly 'Role1'
+      $roleFromYaml.AnsibleTask.Name | Should -BeExactly 'Task1'
+      $roleFromYaml.AnsibleMeta.DependentRoleNames | Should -BeExactly 'DependentRole1, DependentRole2'
+      $roleFromYaml.AnsibleTask.Items[0].Name | Should -BeExactly 'Play1'
+      $roleFromYaml.AnsibleTask.Items[1].Name | Should -BeExactly 'Play2'
+      $roleFromYaml.AnsibleTask.Items[0].Items[0].Name | Should -BeExactly 'Package1'
+      $roleFromYaml.AnsibleTask.Items[1].Items[0].Name | Should -BeExactly 'Setting1'
+      $roleFromYaml.AnsibleTask.Items[1].Items[1].Name | Should -BeExactly 'Setting2'
+    }
+  }
+
+
 }
 
 

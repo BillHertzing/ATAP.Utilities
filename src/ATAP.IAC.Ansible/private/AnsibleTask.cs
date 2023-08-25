@@ -1,4 +1,4 @@
-  public class AnsibleTask
+  public class AnsibleTask : IAnsibleTask
   {
     public string Name { get; set; }
     public List<IAnsiblePlay> Items { get; set; }

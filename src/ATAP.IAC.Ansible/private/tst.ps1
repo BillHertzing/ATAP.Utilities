@@ -1,24 +1,13 @@
 using namespace  ATAP.IAC.Ansible
-using namespace  System.Collections.Generic
+# using namespace  System.Collections.Generic
 
-# add references to external assemblies. Ensure the assemblies referenced are compatable with the current default DotNet framework
-# reference the YamlDotNet.dll assembly found in the current directory
-$yamlDotNetAssemblyPath = Join-Path '..' 'YamlDotNet.dll'
-
-$referencedAssemblies = @(
-  $yamlDotNetAssemblyPath
-  'System.Collections.dll'
-)
+# ToDo: Make this opinionated based on something in the parent tree
+$assemblyFileName = "ATAP.IAC.Ansible.dll"
+$outputFilePath = join-path ".." $assemblyFileName
+Add-Type -Path $outputFilePath
 
 [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
 
-[void]$sb.Append($(Get-Content 'test.cs' -Raw))
-$outputFilePath = Join-Path '..' 'testTypes.dll'
-if ($false) {
-  if (Test-Path $outputFilePath) { Remove-Item $outputFilePath -Force }
-  Add-Type -TypeDefinition $sb.ToString() -ReferencedAssemblies $referencedAssemblies -OutputAssembly $outputFilePath
-}
-Add-Type -Path $outputFilePath
 $AnsiblePlayBlockChocolateyPackagesInstance1 = [AnsiblePlayBlockChocolateyPackages]::new( 'AAnsiblePlayBlockChocolateyPackages', '1.2.3', $false)
 $AnsiblePlayBlockChocolateyPackagesInstance2 = [AnsiblePlayBlockChocolateyPackages]::new( 'BAnsiblePlayBlockChocolateyPackages', '2.3.4', $false)
 $AnsiblePlayBlockRegistrySettingsInstance1 = [AnsiblePlayBlockRegistrySettings]::new( 'CAnsiblePlayBlockRegistrySettings', 'HKLM-P1', 'SZ', 'str1')
@@ -105,11 +94,11 @@ $compactTask = $compactYamlString| ConvertFrom-Yaml
 $compactTask | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
 
 "WalkTask"
-$mixedYamlTask.Name
-foreach ($ansiblePlay in $MimixedYamlTaskxedTasks.Items) {
+$compactTask.Name
+foreach ($ansiblePlay in $compactTask.Items) {
   "AnsiblePlayName = $($ansiblePlay.Name)"
+  "AnsiblePlayKind = $($ansiblePlay.Kind)"
   foreach ($ansiblePlayBlockCommon in $ansiblePlay.Items) {
-    "AnsiblePlayKind = $($ansiblePlayBlockCommon.Kind)"
   }
 }
 

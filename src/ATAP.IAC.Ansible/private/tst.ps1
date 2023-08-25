@@ -14,7 +14,7 @@ $referencedAssemblies = @(
 
 [void]$sb.Append($(Get-Content 'test.cs' -Raw))
 $outputFilePath = Join-Path '..' 'testTypes.dll'
-if ($true) {
+if ($false) {
   if (Test-Path $outputFilePath) { Remove-Item $outputFilePath -Force }
   Add-Type -TypeDefinition $sb.ToString() -ReferencedAssemblies $referencedAssemblies -OutputAssembly $outputFilePath
 }
@@ -29,10 +29,10 @@ $AnsiblePlayBlockChocolateyPackagesInstance2|ConvertTo-Yaml
 $AnsiblePlayBlockRegistrySettingsInstance1|ConvertTo-Yaml
 $AnsiblePlayBlockRegistrySettingsInstance2|ConvertTo-Yaml
 
-$AnsiblePlayBlockChocolateyPackagesInstance1|ConvertTo-Yaml|ConvertFrom-Yaml | Convertto-yaml
-$AnsiblePlayBlockChocolateyPackagesInstance2|ConvertTo-Yaml|ConvertFrom-Yaml | Convertto-yaml
-$AnsiblePlayBlockRegistrySettingsInstance1|ConvertTo-Yaml|ConvertFrom-Yaml | Convertto-yaml
-$AnsiblePlayBlockRegistrySettingsInstance2|ConvertTo-Yaml|ConvertFrom-Yaml | Convertto-yaml
+$AnsiblePlayBlockChocolateyPackagesInstance1|ConvertTo-Yaml|ConvertFrom-Yaml | ConvertTo-Yaml
+$AnsiblePlayBlockChocolateyPackagesInstance2|ConvertTo-Yaml|ConvertFrom-Yaml | ConvertTo-Yaml
+$AnsiblePlayBlockRegistrySettingsInstance1|ConvertTo-Yaml|ConvertFrom-Yaml | ConvertTo-Yaml
+$AnsiblePlayBlockRegistrySettingsInstance2|ConvertTo-Yaml|ConvertFrom-Yaml | ConvertTo-Yaml
 
 # Create a List and add the AnsiblePlayBlockChocolateyPackages instance to it
 $C1list1 = @(,$AnsiblePlayBlockChocolateyPackagesInstance1)
@@ -41,57 +41,55 @@ $C1list2 = @($AnsiblePlayBlockChocolateyPackagesInstance1, $AnsiblePlayBlockChoc
 $C2list1 = @(,$AnsiblePlayBlockRegistrySettingsInstance1)
 $C2list2 = @($AnsiblePlayBlockRegistrySettingsInstance1, $AnsiblePlayBlockRegistrySettingsInstance2)
 
-$C1list1 | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
-$C1list2 | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
-$C2list1 | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
-$C2list2 | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
+$C1list1 | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
+$C1list2 | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
+$C2list1 | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
+$C2list2 | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
 
-$playc1l1 = [AnsiblePlay]::new('playc1l1',$C1list1)
-$playc1l2 = [AnsiblePlay]::new('playc1l2',$C1list2)
-$playc2l1 = [AnsiblePlay]::new('playc2l1',$C2list1)
-$playc2l2 = [AnsiblePlay]::new('playc2l2',$C2list2)
+$playc1l1 = [AnsiblePlay]::new('playc1l1',[AnsiblePlayBlockKind]::AnsiblePlayBlockChocolateyPackages,$C1list1)
+$playc1l2 = [AnsiblePlay]::new('playc1l2',[AnsiblePlayBlockKind]::AnsiblePlayBlockChocolateyPackages,$C1list2)
+$playc2l1 = [AnsiblePlay]::new('playc2l1',[AnsiblePlayBlockKind]::AnsiblePlayBlockRegistrySettings,$C2list1)
+$playc2l2 = [AnsiblePlay]::new('playc2l2',[AnsiblePlayBlockKind]::AnsiblePlayBlockRegistrySettings,$C2list2)
 
-$playc1l1 | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
-$playc1l2 | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
-$playc2l1 | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
-$playc2l2 | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
-
+$playc1l1 | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
+$playc1l2 | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
+$playc2l1 | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
+$playc2l2 | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
 
 $taskChocoOnly =  [AnsibleTask]::new('ChocoTasks',@($playc1l1,$playc1l2))
-$taskChocoOnly | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
+$taskChocoOnly | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
 
 $taskRegistryOnly =  [AnsibleTask]::new('RegistryTasks',@($playc2l1,$playc2l2))
-$taskRegistryOnly | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
+$taskRegistryOnly | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
 
-"MixedLists"
+"MixedTask"
 $MixedPlays = @($playc1l1,$playc1l2,$playc2l1,$playc2l2)
-$MixedTasks =  [AnsibleTask]::new('MixedTask',$MixedPlays)
+$MixedTask =  [AnsibleTask]::new('MixedTask',$MixedPlays)
 
-$MixedTasks | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
+$MixedTask | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
 
-$mixedYamlString = @"
-Name: MixedTask
+"CompactTask"
+$compactYamlString = @"
+Name: CompactTask
 Items:
 - Name: playc1l1
+  Kind: AnsiblePlayBlockChocolateyPackages
   Items:
-  - Version: 1.2.3
-    Name: AAnsiblePlayBlockChocolateyPackages
-    Prerelease: false
+  - {Version: 1.2.3,    Name: AAnsiblePlayBlockChocolateyPackages,    Prerelease: false}
 - Name: playc1l2
+  Kind: AnsiblePlayBlockChocolateyPackages
   Items:
-  - Version: 1.2.3
-    Name: AAnsiblePlayBlockChocolateyPackages
-    Prerelease: false
-  - Version: 2.3.4
-    Name: BAnsiblePlayBlockChocolateyPackages
-    Prerelease: false
+  - {Version: 1.2.3,    Name: AAnsiblePlayBlockChocolateyPackages,    Prerelease: false}
+  - {Version: 2.3.4,    Name: BAnsiblePlayBlockChocolateyPackages,    Prerelease: false}
 - Name: playc2l1
+  Kind: AnsiblePlayBlockRegistrySettings
   Items:
   - Value: str1
     Path: HKLM-P1
     Name: CAnsiblePlayBlockRegistrySettings
     Type: SZ
 - Name: playc2l2
+  Kind: AnsiblePlayBlockRegistrySettings
   Items:
   - Value: str1
     Path: HKLM-P1
@@ -103,8 +101,10 @@ Items:
     Type: SZ
 "@
 
-$mixedYamlTask = $mixedYamlString| ConvertFrom-Yaml
+$compactTask = $compactYamlString| ConvertFrom-Yaml
+$compactTask | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
 
+"WalkTask"
 $mixedYamlTask.Name
 foreach ($ansiblePlay in $MimixedYamlTaskxedTasks.Items) {
   "AnsiblePlayName = $($ansiblePlay.Name)"
@@ -133,8 +133,8 @@ foreach ($ansiblePlay in $MimixedYamlTaskxedTasks.Items) {
 # $c2l1 = [ListOfAnsiblePlayBlockAny]::new( [AnsiblePlayBlockKind]::AnsiblePlayBlockRegistrySettings, $C2list1)
 # $c2l2 = [ListOfAnsiblePlayBlockAny]::new( [AnsiblePlayBlockKind]::AnsiblePlayBlockRegistrySettings, $C2list2)
 
-# $c1l1 | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
-# $c1l2 | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
-# $c2l1 | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
-# $c2l2 | ConvertTo-Yaml | ConvertFrom-Yaml | Convertto-yaml
+# $c1l1 | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
+# $c1l2 | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
+# $c2l1 | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
+# $c2l2 | ConvertTo-Yaml | ConvertFrom-Yaml | ConvertTo-Yaml
 

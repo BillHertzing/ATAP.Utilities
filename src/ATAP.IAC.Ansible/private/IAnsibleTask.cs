@@ -1,4 +1,5 @@
-  public interface IAnsibleTask
-  {
-    List<Play> Plays { get; }
-  }
+public interface IAnsibleTask
+{
+  string Name { get; set; }
+  List<IAnsiblePlay> Items { get; set; }
+}

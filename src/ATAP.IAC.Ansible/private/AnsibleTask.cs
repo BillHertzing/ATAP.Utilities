@@ -1,26 +1,11 @@
-public class AnsibleTask : IAnsibleTask
-{
-  public List<Play> Plays { get; }
-
-  public AnsibleTask(IEnumerable<Play> plays)
+  public class AnsibleTask
   {
-    Plays = new List<Play>(plays);
-  }
+    public string Name { get; set; }
+    public List<IAnsiblePlay> Items { get; set; }
 
-  public AnsibleTask()
-  {
-    Plays = new List<Play>();
+    public AnsibleTask(string name, List<IAnsiblePlay> items)
+    {
+      Name = name;
+      Items = items;
+    }
   }
-
-  public static AnsibleTask ConvertFromYaml(string yamlContent)
-  {
-    var deserializer = new YamlDotNet.Serialization.DeserializerBuilder().Build();
-    return deserializer.Deserialize<AnsibleTask>(yamlContent);
-  }
-
-  public string ConvertToYaml()
-  {
-    var serializer = new YamlDotNet.Serialization.SerializerBuilder().Build();
-    return serializer.Serialize(this);
-  }
-}

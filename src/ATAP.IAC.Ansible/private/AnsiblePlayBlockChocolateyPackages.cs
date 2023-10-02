@@ -1,12 +1,15 @@
-  public class AnsiblePlayBlockChocolateyPackages : IAnsiblePlayBlockChocolateyPackages
+public class AnsiblePlayBlockChocolateyPackages : IAnsiblePlayBlockChocolateyPackages
+{
+  public string Name { get; set; }
+  public string Version { get; set; }
+  public bool Prerelease { get; set; }
+  public List<string> AddedParameters { get; set; }
+
+  public AnsiblePlayBlockChocolateyPackages(string name, string version, bool prerelease, List<string> addedParameters)
   {
-    public string Name { get; set; }
-    public string Version { get; set; }
-    public bool Prerelease { get; set; }
-    public AnsiblePlayBlockChocolateyPackages(string name, string version, bool prerelease)
-    {
-      Name = name;
-      Version = version;
-      Prerelease = prerelease;
-    }
+    Name = name;
+    Version = version;
+    Prerelease = prerelease;
+    AddedParameters = addedParameters;
   }
+}

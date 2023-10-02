@@ -183,10 +183,14 @@ If the role specifies that the computer will be a primary or backup Hasicorp Vau
 
 ## Install Powershell Packages
 
-- as the first admin user, run the command to trust the PSGallery repository
-  `Register-PSRepository -Default`
-  `Get-PSRepository` # ToDo: validate that PSGallery appears
-  `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`
+- as the first admin user, run these commands to setup and trust the PSGallery repository
+
+```powershell
+  Install-PackageProvider -Name NuGet -Scope AllUsers -Force
+  Register-PSRepository -Default
+  Get-PSRepository # ToDo: validate that PSGallery appears
+  Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+```
 
 - Install the following 3rd-party packages machine-wide. Run the following as an administrator on the new computer
 
@@ -214,23 +218,30 @@ If the role specifies that the computer will be a primary or backup Hasicorp Vau
 
   Symlink the profile files for the machine as follows:
 
-  - `Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -Target $(join-path -path $([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.PowerShell', 'profiles', 'AllUsersAllHostsV7CoreProfile.ps1'))`
+```Powershell
+Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -Target $(join-path -path $([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.PowerShell', 'profiles', 'AllUsersAllHostsV7CoreProfile.ps1'))
 
-  - `Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target $(join-path -Path $([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.PowerShell', 'profiles', 'global_ConfigRootKeys.ps1'))`
+Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target $(join-path -Path $([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.PowerShell', 'profiles', 'global_ConfigRootKeys.ps1'))
 
-  - `Remove-Item -path $(join-path -Path $env:ProgramFiles -ChildPath 'PowerShell' -AdditionalChildPath @('7', 'global_MachineAndNodeSettings.ps1')) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path -Path $env:ProgramFiles -ChildPath 'PowerShell' -AdditionalChildPath @('7', 'global_MachineAndNodeSettings.ps1'))  -Target $(join-path -Path $([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.PowerShell', 'profiles', 'global_MachineAndNodeSettings.ps1'))`
+Remove-Item -path $(join-path -Path $env:ProgramFiles -ChildPath 'PowerShell' -AdditionalChildPath @('7', 'global_MachineAndNodeSettings.ps1')) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path -Path $env:ProgramFiles -ChildPath 'PowerShell' -AdditionalChildPath @('7', 'global_MachineAndNodeSettings.ps1'))  -Target $(join-path -Path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities', 'src', 'ATAP.Utilities.PowerShell', 'profiles', 'global_MachineAndNodeSettings.ps1')
 
-  - `Remove-Item -path (join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP. Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')`
+Remove-Item -path (join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities', 'src', 'ATAP.Utilities.PowerShell', 'profiles', 'global_EnvironmentVariables.ps1')
+
+```
 
   Symlink the profile file for the first admin user on this machine
 
-  - `Remove-Item -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target (join-path ( [Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')`
+```Powershell
+
+Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities', 'src', 'ATAP.Utilities.PowerShell', 'profiles', 'CurrentUserAllHostsV7CoreProfile.ps1')
+
+```
 
   Note: For development computer: Manually Symlink the Atap.Utilities.Building.Powershell module. TBD -install it as a package
 
 ## Per machine configuration
 
-- setup the registry to support "preview as perceived type text" for additional file types
+- NOTE: Powertoys superseededs this as of 8/30/2023 setup the registry to support "preview as perceived type text" for additional file types
 
   - Set-PerceivedTypeInRegistryForPreviewPane from module
   - C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Set-PerceivedTypeInRegistryForPreviewPane.ps1
@@ -257,11 +268,11 @@ If the role specifies that the computer will be a primary or backup Hasicorp Vau
   ```
 
 - Install Pester for PS V7
-  - `Install-Module pester -scope 'AllUsers'`
+  - `Install-Module pester -scope AllUsers`
   - Fix Pester installation and or path variable for PS V5 and PS V7
 
 - Install Powershell Script Analyzer (PSScriptAnalyzer)
-  - `Install-Module PSScriptAnalyzer -scope 'AllUsers'`
+  - `Install-Module PSScriptAnalyzer -scope AllUsers`
   - Fix PSScriptAnalyzer installation and or path variable for settings specific to the machine
 
 Setup machine-wide Autoruns and startups

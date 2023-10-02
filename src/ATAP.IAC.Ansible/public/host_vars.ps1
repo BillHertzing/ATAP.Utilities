@@ -36,10 +36,11 @@ function ContentsEncryptedVars {
     [ValidateNotNullOrEmpty()]
     [string] $name
   )
+  # ToDo: get from the Poweshell Secrets vault (today that is  keepass)
   $encryptedSettingsHash = Get-HostSettings $name
-  [void]$sb.Append("user : TBD")
+  [void]$sb.Append("user : whertzing")
   [void]$sb.Append("`n")
-  [void]$sb.Append("password : TBD")
+  [void]$sb.Append('password : Su$$ess')
   [void]$sb.Append("`n")
 
 
@@ -72,8 +73,3 @@ for ($index = 0; $index -lt $namesList.count; $index++) {
   ContentsEncryptedVars $name
   Set-Content -Path $(Join-Path $hostSpecificVarsDirectory $encryptedVarsFilename) -Value $($($sb.ToString()) -replace '`r`n','`r')
 }
-
-#$ymlContents = $ymlGenericTemplate -replace '\{2}', $name
-# Use the Linux newline character
-#$ymlContents += $($(Contents -name $name) -split "`r`n") -join "`n"
-

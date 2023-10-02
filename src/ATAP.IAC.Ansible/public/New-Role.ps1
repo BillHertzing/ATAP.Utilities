@@ -1,5 +1,9 @@
 # The script that creates an Ansible Role
-
+# dotsourced by an enclosing script
+# using namespace ATAP.IAC.Ansible
+# $assemblyFileName = "ATAP.IAC.Ansible.dll"
+# $assemblyFilePath = join-path ".." $assemblyFileName
+# Add-Type -Path $assemblyFilePath.FullName
 
 function New-Role {
   param(
@@ -45,58 +49,60 @@ function New-Role {
     [hashtable] $RoleInfo
   )
 
-#   # add references to external assemblies. Ensure the assemblies referenced are compatable with the current default DotNet framework
-# # reference the YamlDotNet.dll assembly found in the current directory
-# $yamlDotNetAssemblyPath = join-path ".." "ATAP.Utilities.Ansible.dll"
-
-# # Load the custom DLL
-# Add-Type -Path $yamlDotNetAssemblyPath
-
   [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
   # The role defines roleComponent to be created
   $roleComponentNames = [System.Collections.ArrayList]($RoleInfo.Keys)
 
-  $ChocolateyPaackageArgumentsInstance = New-Object ATAP.Utilities.Ansible.ChocolateyPackageArguments -ArgumentList 'AName'
-
-# Now you have an instance of MyCustomClass created using the constructor
-Write-Host "Instance created: $($ChocolateyPaackageArgumentsInstance.GetType().FullName)"
   for ($roleComponentIndex = 0; $roleComponentIndex -lt $roleComponentNames.Count; $roleComponentIndex++) {
     $roleComponentName = $roleComponentNames[$roleComponentIndex]
     switch -regex ($roleComponentName) {
-      '^tasks$' {
-        [void]$sb.AppendLine($($($template -replace '\{1}', $roleComponentName ) -replace '\{2}', $roleName))
-        # the task roleComponent defines plays and the orders to execute them
-        $playInfos = [System.Collections.ArrayList]($RoleInfo[$roleComponentName])
-        for ($playInfoIndex = 0; $playInfoIndex -lt $playInfos.Count; $playInfoIndex++) {
-          $playInfo = $playInfos[$playInfoIndex]
-          # Each play consists of one or more scriptblocks, and the parameters for each scriptblock
-          for ($ansibleScriptblockNameIndex = 0; $ansibleScriptblockNameIndex -lt $ansibleScriptblockNames.Count; $ansibleScriptblockNameIndex++) {
-            # execute the scriptblock, pass the list of arguments
-            . Scriptblock$($playInfo.Kind) -Name $playInfo.Name -Args $playinfo.args -RoleName $rolename
-            $roleSubdirectoryMainYamlPath = $(Join-Path $baseRoleDirectoryPath $roleComponentNames 'main.yml')
-            Set-Content -Path $roleSubdirectoryMainYamlPath -Value $sb.ToString()
-            [void]$sb.Clear()
-          }
-        }
+      '^Name$' {
+        break;
       }
+      '^AnsibleTask$' {
+        [void]$sb.AppendLine($($($template -replace '\{1}', $roleComponentName ) -replace '\{2}', "the Role $roleName"))
+        # the task roleComponent defines plays and the orders to execute them
+        $taskInfo = $RoleInfo[$roleComponentName]
+        $taskName = $taskInfo['Name']
+        $playInfos = $taskInfo['Items']
+        $args = @{taskName = $taskName; taskInfo = $taskInfo; playInfos = $playInfos; tagnames =  @(,$roleName); sb = $sb }
+        &  RoleComponentTask @args
+
+        # foreach ($play in $playInfos) {
+        #   $ScriptBlockName = $play.Kind -replace 'AnsiblePlayBlock', 'Scriptblock'
+        #   # execute the scriptblock, pass the list of arguments
+        #   $args = @{name = $play.Name; items = $play.Items; tagnames =  @(,$roleName); sb = $sb }
+        #   & $ScriptBlockName @args
+        # }
+        $roleComponentDirectory = $(Join-Path $baseRoleDirectoryPath $roleName 'tasks')
+        $null = New-Item -ItemType Directory -Force $roleComponentDirectory
+        $roleComponentMainYamlPath = Join-Path $roleComponentDirectory 'main.yml'
+        Set-Content -Path $roleComponentMainYamlPath -Value $sb.ToString()
+        [void]$sb.Clear()
+    }
       '^vars$' {
         [void]$sb.AppendLine($($($template -replace '\{1}', $roleComponentName ) -replace '\{2}', $roleName))
         # The vars RoleComponent are an araylist of strings in the form name:value
         # [void]$sb.AppendLine($($($template -replace '\{1}', $roleComponentName ) -replace '\{2}', $roleName))
-        $roleSubdirectoryMainYamlPath = $(Join-Path $baseRoleDirectoryPath $roleComponentNames 'main.yml')
+        $roleSubdirectoryMainYamlPath = $(Join-Path $baseRoleDirectoryPath $roleName 'main.yml')
         Set-Content -Path $roleSubdirectoryMainYamlPath -Value $sb.ToString()
         [void]$sb.Clear()
       }
-      '^meta$' {
+      '^AnsibleMeta$' {
         # The meta RoleComponent has a few simple parameters to act as replacements for the meta scriptblock
-        [void]$sb.AppendLine($($($template -replace '\{1}', $roleSubdirectoryName ) -replace '\{2}', $roleName))
-        . Scriptblock$($playInfo.Kind) -Name $playInfo.Name -Args $playinfo.args -RoleName $rolename
-        $roleSubdirectoryMainYamlPath = $(Join-Path $baseRoleDirectoryPath $roleComponentNames 'main.yml')
-        Set-Content -Path "$roleName\main.yml" -Value $sb.ToString()
+        [void]$sb.AppendLine($($($template -replace '\{1}', $roleComponentName ) -replace '\{2}', $roleName))
+        $metaInfo = $RoleInfo[$roleComponentName]
+        $metaName = $metaInfo['Name']
+        $args = @{roleName = $roleName; description = $metaInfo['description']; dependencies = $metaInfo['dependencies']; tagnames =  @(,$roleName); sb = $sb }
+        &  RoleComponentMeta @args
+        $roleComponentDirectory = $(Join-Path $baseRoleDirectoryPath $roleName 'meta')
+        $null = New-Item -ItemType Directory -Force $roleComponentDirectory
+        $roleComponentMainYamlPath = Join-Path $roleComponentDirectory 'main.yml'
+        Set-Content -Path $roleComponentMainYamlPath -Value $sb.ToString()
         [void]$sb.Clear()
       }
       default {
-        Write-PSFMessage -Level Error -Message " role $roleName has no template to create any files in the $roleSubdirectoryName subDirectory"
+        Write-PSFMessage -Level Error -Message " role $roleName has no template to create any files in the $roleComponentName subDirectory"
         break
       }
     }

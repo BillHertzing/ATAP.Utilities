@@ -4,17 +4,32 @@
 # To copy this directory structure to your WSL2 home directory, use the following command in a WSL2 terminal
 # cd ~; rm -r ~/Ansible; sudo cp -r  '/mnt/c/dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.IAC.Ansible/_generated/ATAP_001/Ansible/' ~; sudo chgrp -R "$(id -gn)" ~/Ansible;sudo chown -R "$(id -un)" ~/Ansible; cd Ansible
 
+# add the namespace for the custom types defined and used in this module
+using namespace ATAP.IAC.Ansible
+
 param (
   [string] $projectBaseDirectory = '.'
 )
 
+$assemblyFileName = 'ATAP.IAC.Ansible.dll'
+$assemblyFilePath = Join-Path $projectBaseDirectory '..' $assemblyFileName
+$assemblyFileInfo = Get-ChildItem $assemblyFilePath
+Add-Type -Path $assemblyFileInfo.FullName
+
 # until packaging, dotsource the needed files to import the needed functions
-# add the custom types defined in this module
-. .\Add-CustomTypes.ps1
 . .\New-PlaybooksTop.ps1
 . .\New-PlaybooksNamed.ps1
 . .\New-Role.ps1
+. .\RoleComponentMeta.ps1
+. .\RoleComponentTask.ps1
+
 . .\ScriptblockChocolateyPackages.ps1
+. .\ScriptblockCopyFiles.ps1
+. .\ScriptblockRegistrySettings.ps1
+. .\ScriptblockSymbolicLinks.ps1
+. .\ScriptblockUserWindows.ps1
+
+. .\SubstitueConfigRootKey.ps1
 
 # ToDo: These paths should come from an organization's vault
 # ToDo Validate the files exist and can be read
@@ -138,7 +153,7 @@ function convertFromYamlWithErrorHandling {
     [string]$path
   )
   # ToDo: error handling
-  ConvertFrom-Yaml -Yaml $(Get-Content -Path $ansibleRoleInfoDefaultPath -Raw )
+  ConvertFrom-Yaml -Yaml $(Get-Content -Path $defaultAnsibleRoleInfoPath -Raw )
 }
 
 function Get-ClonedAndModifiedHashtableFromYamlWithErrorHandling {
@@ -158,18 +173,22 @@ function Get-ClonedAndModifiedHashtableFromYamlWithErrorHandling {
 
 
 # ToDo - put into global:settings
-$ansibleRoleInfoDefaultPath = '.\AnsibleRoleInfoDefault.yml'
+$defaultChocolateyPackageInfoPath = '.\DefaultChocolateyPackageInfo.yml'
+$defaultPowershellModuleInfoPath = '.\DefaultRegistrySettingsInfo.yml'
+$defaultRegistrySettingsInfoPath = '.\DefaultPowershellModuleInfo.yml'
+$defaultWindowsFeatureInfoPath = '.\DefaultWindowsFeatureInfo.yml'
+$defaultAnsibleRoleInfoPath = '.\DefaultAnsibleRoleInfo.yml'
 
 # Create the structure that holds the allowed names and versions of the components
 # Combine the default information from this module with the organization's overriding specific non-default information
 # ToDo contnue to create defaults for each SWConfig type
 $SwCfgInfos = @{
   NuGetPackageInfos      = $nugetPackagesInfos
-  ChocolateyPackageInfos = $ansibleStructure.SwCfgInfos.ChocolateyPackageInfos
-  PowershellModuleInfos  = $powershellModuleInfos
-  RegistrySettingsInfos  = $registrySettingsInfos
-  WindowsFeatureInfos    = $windowsFeaturesInfos
-  AnsibleRoleInfos       =  Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $ansibleRoleInfoDefaultPath) $ansibleStructure.SwCfgInfos.AnsibleRoleInfos
+  ChocolateyPackageInfos = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultChocolateyPackageInfoPath) $ansibleStructure.SwCfgInfos.ChocolateyPackageInfos
+  PowershellModuleInfos  = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultPowershellModuleInfoPath) $ansibleStructure.SwCfgInfos.PowershellModuleInfos
+  RegistrySettingsInfos  = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultRegistrySettingsInfoPath) $ansibleStructure.SwCfgInfos.RegistrySettingsInfos
+  WindowsFeatureInfos    = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultWindowsFeatureInfoPath) $ansibleStructure.SwCfgInfos.WindowsFeatureInfos
+  AnsibleRoleInfos       = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultAnsibleRoleInfoPath) $ansibleStructure.SwCfgInfos.AnsibleRoleInfos
 }
 
 
@@ -262,7 +281,7 @@ for ($index = 0; $index -lt $($inventoryFileNames.Keys).count; $index++) {
 . "$PSHOME/HostSettings.ps1"
 
 # Copy the Ansible Vault files to their destination
-$vaultDestinationDirectory = Join-Path $baseDirectory 'security' # at the root of  the baseDirectory
+$vaultDestinationDirectory = Join-Path $baseDirectory 'security' # at the root of the baseDirectory
 $vaultFileNames = [ordered] @{
   vaultFile         = @{source = $PSVaultSecretsVaultSourcePath; destination = Join-Path $vaultDestinationDirectory $($PSVaultSecretsVaultSourcePath -split '\\')[-1] }
   vaultPasswordFile = @{source = $PSVaultPasswordFileSourcePath; destination = Join-Path $vaultDestinationDirectory $($PSVaultPasswordFileSourcePath -split '\\')[-1] }
@@ -317,6 +336,7 @@ if (-not $(Get-Command 'New-Role')) {
   Throw $message
 }
 # Loop over all the roles defined in the combined structure
+# This creates Role Directorys, so they can be created in no particular order
 $roleNames = [System.Collections.ArrayList]$($SwCfgInfos.AnsibleRoleInfos.Keys)
 for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) {
   $roleName = $roleNames[$roleNameIndex]
@@ -326,7 +346,7 @@ for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) 
   # Execute  the new-Role function to create the tasks, vars, meta, and other RoleComponents
   & New-Role `
     -roleName $roleName `
-    -template $($ymlTemplate -replace '\{1}', $roleName) `
+    -template $ymlTemplate `
     -baseRoleDirectoryPath $(Join-Path $baseDirectory 'roles') `
     -RoleInfo $($SwCfgInfos.AnsibleRoleInfos[$roleName])
 }

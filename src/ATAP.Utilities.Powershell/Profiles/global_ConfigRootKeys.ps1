@@ -59,6 +59,11 @@ $global:configRootKeys = @{
   'FP__projectNameConfigRootKey'                                                                 = 'FP__projectName'
   'FP__projectDescriptionConfigRootKey'                                                          = 'FP__projectDescription'
   'CommonJarsBasePathConfigRootKey'                                                              = 'CommonJarsBasePath'
+  # Location of Python interpreter
+  'PythonInterpretersBaseDirectoryConfigRootKey'                                                                     = 'PythonInterpretersBaseDirectory'
+  'PythonInterpretersInstallDirectoryConfigRootKey'                                                                     = 'PythonInterpretersInstallDirectory'
+  'PythonExePathConfigRootKey'                                                                     = 'PythonExePath'
+
 
   # Used by ansible
   'ansible_remote_tmpConfigRootKey'                                                              = 'ansible_remote_tmp'

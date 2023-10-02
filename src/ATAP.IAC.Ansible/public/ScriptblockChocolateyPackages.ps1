@@ -1,12 +1,13 @@
-$ScriptblockChocolateyPackages = {
+function ScriptblockChocolateyPackages  {
 
   param (
-    [string[]] $chocolateyPackageNames
-    , [string[]] $tagnames
-    , [hashtable] $ansibleInventoryStructure
+    [string] $name
+    ,[object[]] $items
+    ,[string[]] $tagnames
+    ,[System.Text.StringBuilder] $sb
   )
 
-  $ChocolateyPackageInfos = $($ansibleInventoryStructure.SwCfgInfos).ChocolateyPackageInfos
+  #$ChocolateyPackageInfos = $($ansibleInventoryStructure.SwCfgInfos).ChocolateyPackageInfos
 
   [System.Text.StringBuilder]$sbAddedParameters = [System.Text.StringBuilder]::new()
   $addedParametersScriptblock = {
@@ -21,8 +22,8 @@ $ScriptblockChocolateyPackages = {
     }
   }
 
-  [void]$sb.Append(@'
-- name: install the chocolatey packages
+  [void]$sb.Append(@"
+- name: $name
   win_chocolatey:
     name: '{{ item.name }}'
     # version: '{{ item.version }}'
@@ -34,21 +35,17 @@ $ScriptblockChocolateyPackages = {
   failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
   loop:
 
-'@
-  )
-  for ($index = 0; $index -lt $chocolateyPackageNames.count; $index++) {
-    $packageName = $chocolateyPackageNames[$index]
-    $packageVersion = $($ChocolateyPackageInfos[$packageName]).Version
-    $allowPrerelease = $($ChocolateyPackageInfos[$packageName]).AllowPrerelease
-    $addedParameters = . $addedParametersScriptblock $($ChocolateyPackageInfos[$packageName]).AddedParameters
-
-    [void]$sb.Append("        - {name: $packageName, version: $packageVersion, AllowPrerelease: $allowPrerelease, AddedParameters: $addedParameters}")
+"@)
+  for ($index = 0; $index -lt $items.count; $index++) {
+    # ToDo: configrootkey substitution in the added Parameters
+    $addedParameters = . $addedParametersScriptblock $items[$index]['AddedParameters']
+    [void]$sb.Append("    - {name: $($items[$index]['Name']), version: $($items[$index]['Version']), AllowPrerelease: $($items[$index]['AllowPrerelease']), AddedParameters: $addedParameters}")
     [void]$sb.Append("`n")
   }
 
   [void]$sb.Append(@"
-tags: [$($tagnames -join ',')]
-ignore_errors: yes
-"@
-  )
+  tags: [$($tagnames -join ',')]
+  ignore_errors: yes
+
+"@)
 }

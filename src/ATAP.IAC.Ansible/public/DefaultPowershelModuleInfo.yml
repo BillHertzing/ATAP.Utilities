@@ -1,0 +1,157 @@
+Assert:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+ATAP.Utilities.BuildTooling.Powershell:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+cChoco:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+ChocolateyGet:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+CimCmdlets:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+ComputerManagementDsc:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+dbachecks:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+dbatools:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+gimp:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+InvokeBuild:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+Microsoft.PowerShell.Archive:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+Microsoft.PowerShell.Diagnostics:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+Microsoft.PowerShell.Host:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+Microsoft.PowerShell.Management:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+Microsoft.PowerShell.Operation.Validation:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+Microsoft.PowerShell.SecretManagement:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+Microsoft.PowerShell.SecretStore:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+Microsoft.PowerShell.Security:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+Microsoft.PowerShell.Utility:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+Microsoft.WSMan.Management:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+NuGet:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+PackageManagement:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+Pester:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+Plaster:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+platyPS:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+powershell-yaml:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+PowerShellGet:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+PSDepend:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+PSDesiredStateConfiguration:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+PSDiagnostics:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+PSDscResources:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+PSFramework:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+PSNeo4j:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+PSReadLine:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+PSScriptAnalyzer:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+SecretManagement.Hashicorp.Vault.KV:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+SecretManagement.KeePass:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+SqlServer:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+ThreadJob:
+  Notes: 
+  AllowPrerelease: false
+  Version: Latest
+

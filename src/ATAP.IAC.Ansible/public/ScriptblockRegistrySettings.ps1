@@ -1,34 +1,32 @@
-$ScriptblockRegistrySettings = {
+function ScriptblockRegistrySettings  {
 
   param (
-    [string] $playName
-    , [string[]] $registrySettingNames
-    , [string[]] $tagnames
-    , [hashtable] $ansibleInventoryStructure
+    [string] $name
+    ,[object[]] $items
+    ,[string[]] $tagnames
+    ,[System.Text.StringBuilder] $sb
   )
-
-  $RegistrySettingInfos = $($ansibleInventoryStructure.SwCfgInfos).RegistrySettingInfos
 
   [void]$sb.Append(@"
-  - name: $playName
-    win_regedit:
-      path: "{{ item.path }}"
-      name: "{{ item.name }}"
-      data: "{{ item.data|default(none) }}"
-      type: "{{ item.type|default('dword') }}"
-    loop:
+- name: $name
+  win_regedit:
+    path: "{{ item.path }}"
+    name: "{{ item.name }}"
+    data: "{{ item.data|default(none) }}"
+    type: "{{ item.type|default('dword') }}"
+  loop:
 
-"@
-  )
-  for ($index = 0; $index -lt $registrySettingsNames.count; $index++) {
+"@)
+  for ($index = 0; $index -lt $items.count; $index++) {
+    $data= $data -match $([regex]::Escape($items[$index]['Data'])) ? {SubstitueConfigRootKey $($items[$index]['Data'])} : $($items[$index]['Data'])
 
-    [void]$sb.Append('          - ' + $RegistrySettingInfos[$(RegistrySettingsNames[$index])])
+    [void]$sb.Append("  - {path: $($items[$index]['Path']), name: $($items[$index]['Name']), data: $data, type: $($items[$index]['Type']),}")
     [void]$sb.Append("`n")
   }
 
   [void]$sb.Append(@"
-tags: [$($tagnames -join ',')]
-ignore_errors: yes
-"@
-  )
+  tags: [$($tagnames -join ',')]
+  ignore_errors: yes
+
+"@)
 }

@@ -97,11 +97,19 @@ $file = "$env:temp\ConfigureRemotingForAnsible.ps1"
 powershell.exe -ExecutionPolicy ByPass -File $file -EnableCredSSP -DisableBasicAuth
 ```
 
-#### Enable inssecure communications
+#### Enable insecure communications
 
 ```Powershell
 set-item wsman:\localhost\Service\Auth\Certificate true
 set-item wsman:\localhost\Service\Auth\Basic true
+```
+
+#### Enable WinRM for remote management
+
+Run the following command
+
+```Powershell
+Enable-PSRemoting
 ```
 
 #### Validate the WinRM initial listener configuration
@@ -151,19 +159,13 @@ Wake-on-LAN (WoL) is enabled to automatically turn on systems when doing mainten
 
 Detailed instructions are TBD and are per-host
 
-
-### Driver updates
-
-Use the Windows GUI to install driver updates, update all that are out of date
-Windows Update -> Advanced Options -> Optional Updates
-
-
-### Install Dropbox, and sync
-
-### Map User Directories to dropbox
-
 ### Test Ansible connectivity
 
+The default ansible temporary directory is 'C:\temp\ansible`, Run the command
+```powershell
+# ToDo: get the actaul ansible temp directory from the settings for the new host
+$null = New-Item -ItemType Directory -Force C:\temp\ansible
+````
 Ensure the organization's `hosts` file includes the new Windows host.
 Ensure the Ansible inventory files include the new host
 Ensure the organization's IAC data files include the new host
@@ -187,7 +189,7 @@ TBD - update the list of packages by referencing an organization's confidential 
 
 Run This
 
-ansible-playbook -l $newhostname playbooks/WindowsHostsPlaybook.yml -i ./nonproduction_inventory.yml  --tags "Preamble"  -e 'user=whertzing password=objuscated'
+ansible-playbook -l $newhostname playbooks/WindowsHostsPlaybook.yml -i ./nonproduction_inventory.yml  --tags "Preamble"  -e 'user=whertzing password=obfuscated'
 Chocolatey packages
 
 
@@ -231,7 +233,7 @@ Remove-Item "Setup.msix"
 
 ### Install Python
 
- Note: as of 7/2/20023 StableDiffusion  will only work with Python 3.10, nothing later (pytorch is required)
+ Note: as of 7/2/2023 StableDiffusion  will only work with Python 3.10, nothing later (pytorch is required)
 
 `winget install Python.Python.3.10 --scope machine`
 
@@ -241,4 +243,15 @@ Remove-Item "Setup.msix"
 ## Add new host to the IAC configuration
 
 At this point, the new host is ready to accept further configuration from the AnsibleController host. See [TBD] for the
+
+
+### Driver updates
+
+Use the Windows GUI to install driver updates, update all that are out of date
+Windows Update -> Advanced Options -> Optional Updates
+
+
+### Install Dropbox, and sync
+
+### Map User Directories to dropbox
 

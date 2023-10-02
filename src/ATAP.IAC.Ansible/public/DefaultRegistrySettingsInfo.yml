@@ -1,0 +1,79 @@
+DisableCortana:
+  Type: DWORD
+  path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search
+  data: 0
+  name: AllowCortana
+  comment: '[Disable Cortana in Windows 10 Anniversary+]()'
+DisableGameDVR:
+  Type: DWORD
+  path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR
+  data: 0
+  name: AllowGameDVR
+  comment: '[Disable Game DVR and Game Bar in Windows 10 / 11]()'
+DisableTelemetry:
+  Type: DWORD
+  path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection
+  data: 0
+  name: AllowTelemetry
+  comment: '[Disable Microsoft Telemetry in Windows 10 / 11]()'
+EnableAutoTray:
+  Type: DWORD
+  path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer
+  data: 0
+  name: EnableAutoTray
+  comment: "[Disable 'System Tray - Show all icons' in Windows 10 / 11]()"
+ExplorerNavPaneShowAllFolders:
+  Type: DWORD
+  path: HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+  data: 0
+  name: NavPaneShowAllFolders
+  comment: '[Show all folders in Explorer including Recycle Bin, Desktop, Control Panel]()'
+ExplorerShowFileExt:
+  Type: DWORD
+  path: HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+  data: 0
+  name: HideFileExt
+  comment: '[Do not hide file extensions in Windows Explorer]()'
+ExplorerShowHiddenFilesAndFolders:
+  Type: DWORD
+  path: HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+  data: 1
+  name: Hidden
+  comment: '[Show hidden files and folders in Windows Explorer]()'
+ExplorerShowHiddenOSFiles:
+  Type: DWORD
+  path: HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+  data: 2
+  name: ShowSuperHidden
+  comment: '[Show hidden Operating System files in Windows Explorer]()'
+HideSyncProviderNotifications:
+  Type: DWORD
+  path: HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
+  data: 0
+  name: ShowSyncProviderNotifications
+  comment: '[Do not show notifications/adverts (OneDrive & new features) in Windows Explorer]()'
+LaunchBraveInIncognitoByDefault:
+  Type: String
+  path: Registry::HRegistry::HKEY_CLASSES_ROOT\MSEdgeHTM\shell\open\
+  data: C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" -inprivate -- "%1"
+  name: command
+  comment: '[Force Brave to open all URLs in Incognito mode]()'
+LaunchEdgeInIncognitoByDefault:
+  Type: String
+  path: Registry::HKEY_CLASSES_ROOT\MSEdgeHTM\shell\open\
+  data: C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" -inprivate -- "%1"
+  name: command
+  comment: '[Force Edge to open all URLs in Incognito mode]()'
+RemoveShortcutFromNewShortcutFileName:
+  type: binary
+  path: HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer
+  data: hex:00,00,00,00
+  name: link
+  comment: "[Do not add '-Shortcut' text to the name of newly created shortcuts](https://ss64.com/nt/syntax-reghacks.html)"
+StopAutomaticInstallationOfSuggestedWindows11Apps:
+  Type: DWORD
+  path: HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager
+  data: 0
+  name: SilentInstalledAppsEnabled
+  comment: May only apply to windows 11?
+

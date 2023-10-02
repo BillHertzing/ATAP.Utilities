@@ -53,6 +53,7 @@
     "Ninject",
     "NOEXEC",
     "nvarchar",
+    "Nvidea",
     "Prefixs",
     "Psake",
     "pwsh",
@@ -84,5 +85,6 @@
   },
   // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
   "typescript.tsc.autoDetect": "off",
-    "ansible.python.interpreterPath": "c:\\Program Files\\PythonInterpreters\\Python3.10.11\\python.exe"
+    "ansible.python.interpreterPath": "c:\\Program Files\\PythonInterpreters\\Python3.10.11\\python.exe",
+    "powershell.enableProfileLoading": true
 }

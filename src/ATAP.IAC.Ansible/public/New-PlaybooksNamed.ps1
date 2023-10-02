@@ -132,12 +132,12 @@ function New-PlaybooksNamed {
       win_chocolatey:
         name: chocolatey-core.extension
         state: present
-    # Install the cChoco Poweshell module
-    - name: Ensure the cCHoco module from the PSGallery is present
-      community.windows.win_psmodule:
-        name: cChoco
-        accept_license: true
-        repository: PSGallery
+    # # Install the cChoco Poweshell module
+    # - name: Ensure the cCHoco module from the PSGallery is present
+    #   community.windows.win_psmodule:
+    #     name: cChoco
+    #     accept_license: true
+    #     repository: PSGallery
 
   tags: [$ansiblegroupname, Preamble, InstallChocolatey]
 "@)

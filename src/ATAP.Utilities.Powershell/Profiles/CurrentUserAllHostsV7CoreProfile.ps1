@@ -87,8 +87,8 @@ Function prompt {
   return '> '
 }
 
-# To use the Portable Git requires a dropbox location as the location of the global configuration file
-# $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:\Dropbox\whertzing\Git\.gitconfig'
+# Tell all GIT operations where to find the global configuration file
+$global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:\Dropbox\whertzing\Git\.gitconfig'
 
 
 # The following command must be run as an administrator on the machine, to install for 'AllUsers'

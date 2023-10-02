@@ -1,42 +1,34 @@
-$ScriptblockCopyFiles = {
+Function ScriptblockCopyFiles  {
 
   param (
-    [ordered[]] $filesToCopy
+    [string] $playName
+    , [string[]] $items
     , [string[]] $tagnames
     , [hashtable] $ansibleInventoryStructure
   )
 
-  $CopyFileInfos = $($ansibleInventoryStructure.SwCfgInfos).CopyFileInfos
-
-
-  [void]$sb.Append(@'
+  [void]$sb.Append(@"
 - name: Copy Source to Target (Copy Files)
   win_copy file:
-  source: '{{ item.name }}'
-  # version: '{{ item.version }}'
-  target: "{{ 'true' if (item.allowprerelease == 'true') else 'false'}}"
-  state: "{{ 'absent' if (action_type == 'uninstall') else 'present'}}"
+  src: '{{ item.source }}'
+  dest: '{{ item.destination }}'
   failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
   loop:
 
-'@
-  )
-  for ($index = 0; $index -lt $filesToCopyNames.count; $index++) {
-    $pairName = $filesToCopyNames[$index]
-    $source = $($FilesToCopyInfos[$pairName]).Source
-    $target = $($FilesToCopyInfos[$pairName]).Target
-    $permissions = $($FilesToCopyInfos[$pairName]). Permissions
+"@)
+  for ($index = 0; $index -lt $items.count; $index++) {
+    $source = $($items[$index]['Items'])['Source']
+    if ($source -match 'ConfigRootKey') { $source = SubstitueConfigRootKey $source }
+ $target = $($items[$index]['Items'])['Target']
+if ($target -match 'ConfigRootKey') { $target = SubstitueConfigRootKey $target }
 
-    # ToDo: add template copy and merge
-
-    [void]$sb.Append("        - {source: $source, target: $target, permissions: $    $permissions = $($FilesToCopyInfos[$pairName]).Target
-}")
+    [void]$sb.Append("      - {source: $source, target: $target") #Owner, #ACL
     [void]$sb.Append("`n")
   }
 
   [void]$sb.Append(@"
-tags: [$($tagnames -join ',')]
-ignore_errors: yes
-"@
-  )
+  tags: [$($tagnames -join ',')]
+  ignore_errors: yes
+
+"@)
 }

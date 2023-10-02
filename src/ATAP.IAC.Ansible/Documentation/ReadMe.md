@@ -10,7 +10,7 @@ Current: This package supplies scripts and placeholder files to create an Ansibl
 
 This package does not document the steps to setup a new host to accept connections and commands from an AnsibleController host. For the instructions to setup a new computer / host so that it can accept connections and commands from Ansible, see [tbd]
 
-Overview diagram of this package and how it interacts with teh organizations hosts can be found [here; tbd]
+Overview diagram of this package and how it interacts with the organizations hosts can be found [here; tbd]
 
 The AnsibleController host must be configured before Ansible will run. The ATAP Utilities repository is primarily written around Windows hosts, so these instructions will start from a very low level to setup an AnsibleController on a Windows Subsystem for Linux (WSL) container running on a Windows 11 host.
 
@@ -441,7 +441,7 @@ ls ~/.ansible/collections/ansible_collections # note that the collections have b
 ### Hardening the remote host's WinRM connection
 
 Future: TBD: Connect to the remote host using basic auth without CredSSP, and let ansible run the following commands
-Current:On any remote host that will be controlled by Ansible, run the following command
+Current: On any remote host that will be controlled by Ansible, run the following command
 `Enable-WSManCredSSP -Role Server -Force`
 
 ## Creating the organization's infrastructure code
@@ -453,20 +453,13 @@ Now that the AnsibleController has been setup, the next step is to define and do
 TBD: generate the complete Ansible directory structure and files from the project database
 current: The main Powershell script is called `Create-AnsibleDirectoryStructure.ps1`. This script, and the scripts it calls will create a generated complete Ansible directory structure and files.
 
-The
-
 
 ### Edit Ansible Playbook file
 
 The location and the ownership of the Ansible Playbook files are at directory TBD, and the group owning the file is TBD. Ensure that all
 
-TBD: The IAC configuration is stored in the project database. The project database includes code that will output a complete Ansible directory structure and its contents, for managing the organizations hosts.
-
 Current: The IAC configuration is stored in the subrepository `ATAP.IAC.Ansible`. The script `Create-AnsibleDirectoryStructure.ps1` from that repository can be run to output a complete Ansible directory structure and its contents.
 Documentation can be found [here; TBD]
-
-```markdown
-
 
 ### Groups to which the new computer utat022 belongs
 
@@ -531,9 +524,24 @@ Start Powershell (old), run Instchoco.exe as admin
 
 Install Dropbox to c:\
 
-Set Locations for MyDocuments, Pictures, Videos, Downloads to c:\Dropbox-
+create the primary user on the computer
+use settings account adduser and on screen prompts, or try
+
+If the primary user on the computer is 'AUserName',
+make AUserName a member of  the local administrators group
+`Add-LocalGroupMember -Group "Administrators" -Member 'AUserName' `
+reboot
+
+ Give the primary user acccess to teh C:\Dropbox directory created by inititalAdmin
+Download the Powershell NTFS moduleterm
+S
+ local admins run `Add-NTFSAccess -Path "C:\dropbox" -Account "utat022\whertzing" -AccessRights FullControl
+and that user has been added to the admnistrators group
 
 see also C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\MapUserShellFoldersToDropBox.ps1
+
+Set Locations for MyDocuments, Pictures, Videos, Downloads to c:\Dropbox-
+
 
 uninstall Everything
 
@@ -591,6 +599,11 @@ After chocolatey install, configure as follows:
 
   - Turn on 'capture https'
   - [Fiddler Compare Tools](https://fiddlerbook.com/fiddler/help/CompareTool.asp)
+
+### Git Setup
+
+The Git configuration file `.gitconfig` is stored in the mapped cloud filesystem drive, under the user's 'Documents folder'/Git  An environment variable called $env:GIT_CONFIG_GLOBAL points to this file. That works for the pwsh terminal and for the Powershell Integrated Terminal in VSC, but it does NOT work for the VSC Git Extensions. So a symbolic link needs to be created in the
+
     -Setup Git
     in file ~/.gitconfig
 
@@ -683,18 +696,30 @@ Powershell packages are managed on a per-host nad per-group basis using Ansible
 
   Symlink the profile files for the machine as follows:
 
+```Powershell
+Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1')
 
-  - `Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target $(join-path ([Environment]::GetFolderPath("MyDocuments")} 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1')`
+Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -Target $(join-path -path $([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.IAC','Windows','HostSettings.ps1'))
 
-  - `Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -Target $(join-path -path ([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.IAC','Windows','HostSettings.ps1'))`
+Remove-Item -path $(join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')
+```
 
-  - `Remove-Item -path $(join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')`
+  Symlink the profile file for the first admin user on this machine It must be linked to both the standard terminal per user profile, and also to the VSCode special powershell terminal profile
 
-  Symlink the profile file for the first admin user on this machine
+```Powershell
 
-  - `Remove-Item -path $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')`
+Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')
 
+Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.VSCode_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.VSCode_profile.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')
+```
 
+Symlink the .gitconfig file for the first admin user on this machine.
+
+```Powershell
+
+Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) '.gitconfig') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) '.gitconfig' ) -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' '.gitconfig')
+
+```
 
   Note: For development computer: Manually Symlink the Atap.Utilities.Building.Powershell module. TBD -install it as a package
 
@@ -718,6 +743,8 @@ Powershell packages are managed on a per-host nad per-group basis using Ansible
   stop MsSense service
   disable MsSense service
 
+- setup Windows Defender
+
 - Ensure that any service that starts  with 'wd' and include 'Windows Defender' in the description is set to Autostart WindowsDefender and WindowsDefenderFirewall is running
 - [Disable Windows Defender in Windows 10](https://superuser.com/questions/947873/disable-windows-defender-in-windows-10) has a deep dive into security settings and permissions for any service,
     browse the registry to `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services`,
@@ -725,6 +752,8 @@ a partial list of serices includes wdboot, wdfilter, wdnisdrv, wdnissvc, windefe
 This script will show the Start property for all services with 'Defend' in their description
 `Get-ItemProperty -Name 'Start' -path $($((gci HKLM:\SYSTEM\CurrentControlSet\Services).name | ?{$(Get-ItemProperty -Path $($_-replace 'HKEY_LOCAL_MACHINE','HKLM:') -Name 'Description' -ErrorAction SilentlyContinue) -match 'defend'}) -replace 'HKEY_LOCAL_MACHINE','HKLM:')`
 Run this command while Avast is installed and it shows all Start key values = 3. Run the command after uninstalling AVASt, and the Start key values are 0 and 2
+
+- Windows Defender will complain that the hosts file has been modified. Manually allow that. TBD: figure out how to make it  happen with Ansible, so no manual step is required
 
 After uninstalling the Avast
 

@@ -39,6 +39,7 @@ $defaultPerGroupSettings = @{
     $global:configRootKeys['GitExePathConfigRootKey']                                 = 'C:/Program Files/Git/cmd/git.exe'
     $global:configRootKeys['JavaExePathConfigRootKey']                                = 'C:/Program Files/AdoptOpenJDK/jre-16.0.1.9-hotspot/bin/java.exe'
     $global:configRootKeys['CommonJarsBasePathConfigRootKey']                         = 'C:/ProgramData/CommonJars'
+    $global:configRootKeys['PythonExePathConfigRootKey']                                = 'C:/Program Files/JavaInterpreters/AdoptOpenJDK/jre-16.0.1.9-hotspot/bin/java.exe'
     $global:configRootKeys['BuildImageFromPlantUMLPowershellCmdletNameConfigRootKey'] = 'Build-ImageFromPlantUML.ps1'
     $global:configRootKeys['xUnitJenkinsPluginPackageConfigRootKey']                  = 'PathToxUnitJenkinsPlugin'
     $global:configRootKeys['xUnitConsoleTestRunnerPackageConfigRootKey']              = 'xUnitConsoleTestRunnerPackages'

@@ -76,8 +76,6 @@ function New-ShortcutWithParameter {
 
   PROCESS {
     if ($pscmdlet.ShouldProcess('Target', 'Operation')) {
-
-
       $Shortcut = $WshShell.CreateShortcut($ShortcutPath)
       $Shortcut.TargetPath = $TargetPath
       $Shortcut.Arguments = $Parameter

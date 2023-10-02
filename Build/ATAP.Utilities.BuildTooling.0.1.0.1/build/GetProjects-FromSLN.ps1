@@ -5,7 +5,7 @@ param (
 Function ParseStructure-FromSLN {
 [CmdletBinding(SupportsShouldProcess=$true)]
 param (
-    [string]$path = "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\*.sln",
+    [string]$path = "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\*.sln"
 )
 
 function New-Tuple { #https://stackoverflow.com/questions/54373785/tuples-arraylist-of-pairs

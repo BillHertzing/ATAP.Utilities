@@ -29,7 +29,7 @@ $global:EnvVars = @{
   # related to the Hashicorp Vault installation and operations
   $global:configRootKeys['VAULT_TOKENConfigRootKey'] = $global:Settings[$global:configRootKeys['VAULT_TOKENConfigRootKey']]
   $global:configRootKeys['VAULT_ADDRConfigRootKey'] = $global:Settings[$global:configRootKeys['VAULT_ADDRConfigRootKey']]
-  
+
   # OpenSSL Environment variables
   $global:configRootKeys['OPENSSL_HOMEConfigRootKey']           = $global:Settings[$global:configRootKeys['OPENSSL_HOMEConfigRootKey']]
   $global:configRootKeys['OPENSSL_CONFConfigRootKey']           = $global:Settings[$global:configRootKeys['OPENSSL_CONFConfigRootKey']]
@@ -39,6 +39,9 @@ $global:EnvVars = @{
   # JENKINS_HOME applies only to jenkins Controller nodes
   $global:configRootKeys['JENKINS_HOMEConfigRootKey']            = $global:Settings[$global:configRootKeys['JENKINS_HOMEConfigRootKey']]
 # These Jenkins Environment Variables are used to access a Jenkins Controller and Authenticate
+
+# related to the Hydrus-Network application
+$global:configRootKeys['HYDRUS_ACCESS_KEYConfigRootKey']            = $global:Settings[$global:configRootKeys['HYDRUS_ACCESS_KEYConfigRootKey']]
 
 
 }

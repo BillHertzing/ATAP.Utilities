@@ -496,7 +496,34 @@ Documentation can be found [here; TBD]
 ```
 
 
+## Hardware Level setup for a new computer
 
+### Windows Operating System Prerequisites setup
+
+Create latest Windows 11 bootable USB stick. Use Rufus, select local account use 'FirstAdmin' as name of administrator user
+Print latest Windows 11 Pro license Key, have it ready to type into the windows setup screens
+
+### BIOS modifications
+
+### specific per-computer, these are for utat022
+
+ToDo: review BIOS pages and ensure these are complete and correct
+
+- Change PCIE slot 4 configuration from "M2 extension card" to "dual M2 SSD"
+- Ensure SATA controllers are On
+- X.M.P is enabled
+- Intel Rapid Storage technology is OFF
+- change hotswap notification to "enabled"
+- multiple GPUs enabled (
+
+## install the Operating system
+
+unplug SATA drives, leave just PCIE drive in
+disconnect from internet
+Install Windows 11 Pro to (unformatted) drive 0
+
+run Everything from USB stick, get list to a file "01 Clean Windows 11 install, Step 01 Files.efu"
+reconnect SATA drives
 
 rename computer (utat022)
 turn off edge pre-load
@@ -518,7 +545,9 @@ Create c:\Dropbox, c:\dropbox\<LocalUserName>,
 Create Network share on a fast drive named \\FS, share it with everybody on the network
 
 ToDo: replace this with Ansible push
-Copy InstChoco and packagesconfig to Filesharecopy from fileshare to \\mydocuments\ChocolateyPackageListBackup
+Obsolete, use Ansible instead Copy InstChoco and packagesconfig to Filesharecopy from fileshare to \\mydocuments\ChocolateyPackageListBackup
+
+Install hosts to new computer
 copy hosts to \\utat022\fileshare and then to new computer
 Start Powershell (old), run Instchoco.exe as admin
 
@@ -532,7 +561,7 @@ make AUserName a member of  the local administrators group
 `Add-LocalGroupMember -Group "Administrators" -Member 'AUserName' `
 reboot
 
- Give the primary user acccess to teh C:\Dropbox directory created by inititalAdmin
+ Give the primary user acccess to the C:\Dropbox directory created by FirstAdmin
 Download the Powershell NTFS moduleterm
 S
  local admins run `Add-NTFSAccess -Path "C:\dropbox" -Account "utat022\whertzing" -AccessRights FullControl
@@ -540,7 +569,7 @@ and that user has been added to the admnistrators group
 
 see also C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\MapUserShellFoldersToDropBox.ps1
 
-Set Locations for MyDocuments, Pictures, Videos, Downloads to c:\Dropbox-
+Set Locations for MyDocuments, Pictures, Videos, Downloads to c:\Dropbox
 
 
 uninstall Everything
@@ -602,7 +631,7 @@ After chocolatey install, configure as follows:
 
 ### Git Setup
 
-The Git configuration file `.gitconfig` is stored in the mapped cloud filesystem drive, under the user's 'Documents folder'/Git  An environment variable called $env:GIT_CONFIG_GLOBAL points to this file. That works for the pwsh terminal and for the Powershell Integrated Terminal in VSC, but it does NOT work for the VSC Git Extensions. So a symbolic link needs to be created in the
+The Git configuration file `.gitconfig` is stored in the mapped cloud filesystem drive, under the user's 'Documents folder'/Git  An environment variable called $env:GIT_CONFIG_GLOBAL points to this file. That works for the pwsh terminal and for the Powershell Integrated Terminal in VSC, but it does NOT work for the VSC Git Extensions. Instead, the GIT VSC extension seems like it only reads whatever is in `"C:\Program Files\Git\etc\gitconfig"`. So you can either merge that file with what is below, or, you can modify that file to 
 
     -Setup Git
     in file ~/.gitconfig
@@ -674,6 +703,7 @@ Powershell packages are managed on a per-host nad per-group basis using Ansible
    `Microsoft.PowerShell.SecretManagement`, `Microsoft.PowerShell.SecretStore` and `SecretManagement.Keepass` are for development credentials and secret,
    `PSFramework` is for logging
    ToDo: `SecretManagement.Hashicorp` is for an alternate secrets vault
+   ToDO: Keepass secret vault  is for an alternate secrets vault
    ToDO: `DISM` is for enabling Windows Features, but it is not available for direct download. See
   `@('Microsoft.PowerShell.SecretManagement', 'Microsoft.PowerShell.SecretStore', 'SecretManagement.Keepass', 'PSFramework', 'DISM') | ForEach-Object { if (-not (Get-Module -ListAvailable -Name  $_)) { Install-Module -Name $_ -Scope AllUsers}}`
 
@@ -725,7 +755,7 @@ Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) '.g
 
 ## Per machine configuration
 
-- setup the registry to support "preview as perceived type text" for additional file types
+- NOTE: Powertoys superseededs this as of 8/30/2023 setup the registry to support "preview as perceived type text" for additional file types
 
   - Set-PerceivedTypeInRegistryForPreviewPane from module
   - C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Set-PerceivedTypeInRegistryForPreviewPane.ps1
@@ -795,9 +825,18 @@ sharex
 
 ### Set global file associations for notepad++
 
+# ToDo: Install-ChocolateyFileAssociation is no longer part of chocolatey setup - fix this or fix the following
+
 ```Powershell
-$suffixs = @('.txt','.log', '.ini', '.inf', '.props', '.java', '.cs', '.inc', 'html', '.asp', '.aspx', '.css', '.js', '.jsp', '.xml', '.sh', '.bash', '.bat', '.cmd', '.py', '.sql', '.ps1','.psm1','.psd1')
+$suffixs = @('.txt','.log',  '.inf', )
 Install-ChocolateyFileAssociation  $suffixs "$($env:ProgramFiles)\Notepad++\notepad++.exe"
+```
+
+### Set global file associations for VSC
+
+```Powershell
+$suffixs = @( '.ini','.props', '.java', '.cs', '.inc', 'html', '.asp', '.aspx', '.css', '.js', '.jsp', '.xml', '.sh', '.bash', '.bat', '.cmd', '.py', '.sql', '.ps1','.psm1','.psd1')
+Install-ChocolateyFileAssociation  $suffixs "$($env:ProgramFiles)\Microsoft VS Code\Code.exe"
 ```
 
 ### Service Accounts on the machine (as per Role)
@@ -831,13 +870,32 @@ In the newly created Powershell subdirectory, run the following command
 
 #### Role:Developer
 
-Install the Powershell build tools. Run the following command `install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser`
+To ensure that nuget has a recognized endpoint for the public nuget servers, update the user's NuGetConfig file (C:\Users\{username}\AppData\Roaming\NuGet\nuget.config)
+run this command (per user) 
 
-Install the Powershell script analysis tools. Run the following command `install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser`
+```Powershell 
+dotnet nuget add source --name nuget.org https://api.nuget.org/v3/index.json
+```
+
+Install the Powershell build tools. Run the following command:
+
+```Powershell 
+install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser
+```
+
+Install the Powershell script analysis tools. Run the following command:
+
+```Powershell 
+install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser
+```
 
 #### Role:QualityAssurance
 
-Install the Powershell script analysis tools. Run the following command `install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser`
+Install the Powershell script analysis tools. Run the following command:
+
+```Powershell 
+install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser
+```
 
 #### Install
 

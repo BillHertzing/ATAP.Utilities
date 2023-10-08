@@ -60,9 +60,15 @@ $global:configRootKeys = @{
   'FP__projectDescriptionConfigRootKey'                                                          = 'FP__projectDescription'
   'CommonJarsBasePathConfigRootKey'                                                              = 'CommonJarsBasePath'
   # Location of Python interpreter
-  'PythonInterpretersBaseDirectoryConfigRootKey'                                                                     = 'PythonInterpretersBaseDirectory'
-  'PythonInterpretersInstallDirectoryConfigRootKey'                                                                     = 'PythonInterpretersInstallDirectory'
-  'PythonExePathConfigRootKey'                                                                     = 'PythonExePath'
+  'PythonInterpretersBaseDirectoryConfigRootKey'                                                 = 'PythonInterpretersBaseDirectory'
+  'PythonInterpretersInstallDirectoryConfigRootKey'                                              = 'PythonInterpretersInstallDirectory'
+  'PythonExePathConfigRootKey'                                                                   = 'PythonExePath'
+
+  # related to the Hydrus-Network application
+  'HYDRUS_ACCESS_KEYConfigRootKey'                                                               = 'HydrusAccessKey'
+  'HydrusAPIServerConfigRootKey'                                                                 = 'HydrusAPIServer'
+  'HydrusAPIProtocolConfigRootKey'                                                               = 'HydrusAPIProtocol'
+  'HydrusAPIPortConfigRootKey'                                                                   = 'HydrusAPIPort'
 
 
   # Used by ansible
@@ -107,9 +113,9 @@ $global:configRootKeys = @{
   # The directory name where module source files are placed by the module/package creation process during a developer build and CI/CD process build
   'GeneratedPowershellModulePackagingSourceDirectoryConfigRootKey'                               = 'GeneratedPowershellModulePackagingSourceDirectory'
   # The directory name where the generated intermediate package files are placed by the module/package creation process during a developer build and CI/CD process build
-  'GeneratedPowershellModulePackagingIntermediateDirectoryConfigRootKey'                          = 'GeneratedPowershellModulePackagingIntermediateDirectory'
+  'GeneratedPowershellModulePackagingIntermediateDirectoryConfigRootKey'                         = 'GeneratedPowershellModulePackagingIntermediateDirectory'
   # The directory name where the generated finished package files are placed by the module/package creation process during a developer build and CI/CD process build
-  'GeneratedPowershellModulePackagingDistributionPackagesDirectoryConfigRootKey'                          = 'GeneratedPowershellModulePackagingDistributionPackagesDirectory'
+  'GeneratedPowershellModulePackagingDistributionPackagesDirectoryConfigRootKey'                 = 'GeneratedPowershellModulePackagingDistributionPackagesDirectory'
   'GeneratedRelativePathConfigRootKey'                                                           = 'GeneratedSubdirectory'
   # the subdirectory name under the GeneratedRelativePath where the Powershell Packages are placed
   'GeneratedPowershellPackagesConfigRootKey'                                                     = 'GeneratedPowershellPackagesSubdirectory'
@@ -278,7 +284,6 @@ $global:configRootKeys = @{
   'VAULT_CACERTConfigRootKey'                                                                    = 'VAULT_CACERT'
   'VaultUnsealKeyConfigRootKey'                                                                  = 'VaultUnsealKey'
   'VaultRootTokenConfigRootKey'                                                                  = 'VaultRootToken'
-
 
   # OpenSSL Environment variables
   'OPENSSL_HOMEConfigRootKey'                                                                    = 'OPENSSL_HOME'

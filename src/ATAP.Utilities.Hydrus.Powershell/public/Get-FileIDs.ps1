@@ -28,15 +28,16 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Get-SessionKey {
+Function Get-FileIDs {
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern'  )]
+  # [OutputType([int[]])] # ToDo investigate OutputType if PassThru is true
   param(
     [parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [Alias('In')]
     [string] $hydrusAccessKey
-    , [parameter()]
-    [Alias('Perms')]
-    [string] $requestedPermissions
+    , [parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
+    [Alias('Search')]
+    [hashtable[]] $searchParameters
     , [parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [string] $hydrusAPIProtocol
     , [parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
@@ -57,8 +58,7 @@ Function Get-SessionKey {
     # ToDo: require or import ATAP.Utilities.Powershell
     . $(Join-Path $([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities', 'src', 'ATAP.Utilities.PowerShell', 'public', 'Get-ParameterValueFromNeoConfigurationRoot.ps1')
 
-
-    if ($hydrusAccessKey -or $requestedPermissions -or $hydrusAPIProtocol -or $hydrusAPIServer -or $hydrusAPIPort -or $PassThru -or $computerNames) {
+    if ($hydrusAccessKey -or $searchParameters -or $hydrusAPIProtocol -or $hydrusAPIServer -or $hydrusAPIPort -or $PassThru -or $computerNames) {
       # Not from pipeline
       $noArgumentsSupplied = $false
       # Get values for any arguments not supplied
@@ -80,46 +80,34 @@ Function Get-SessionKey {
     }
     else {
       $noArgumentsSupplied = $true
+      $hydrusAPIProtocol = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIProtocol' $global:configRootKeys['hydrusAPIProtocolConfigRootKey']
+      $hydrusAPIServer = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIServer' $global:configRootKeys['hydrusAPIServerConfigRootKey']
+      $hydrusAPIPort = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIPort' $global:configRootKeys['hydrusAPIPortConfigRootKey']
     }
 
-    $page = 'session_key'
-    $webRequestArgs = @()
-    $webRequestArgsString = $webRequestArgs -join '&'
-    switch ($PSCmdlet.ParameterSetName) {
-      'DefaultParameterSetNameReplacementPattern' {
-      }
-      default { throw 'that ParameterSetName has not been implemented yet' }
-    }
+    $page = '/get_files/search_files'
+    [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
 
-    function InternalGetSessionKey {
+    function InternalGetFileIDs {
+      param(
+        [hashtable] $internalSearchParameters
+      )
 
-      Write-PSFMessage -Level Debug -Message $("-ComputerName $computername -hydrusAccessKey $hydrusAccessKey -hydrusAPIProtocol $hydrusAPIProtocol -hydrusAPIServer $hydrusAPIServer -hydrusAPIPort $hydrusAPIPort -page $page -webRequestArgsString $webRequestArgsString")
-      $result = ''
+      Write-PSFMessage -Level Debug -Message $("-ComputerName $computername -hydrusAccessKey $hydrusAccessKey -internalSearchParameters $internalSearchParameters -hydrusAPIServer $hydrusAPIServer -hydrusAPIPort $hydrusAPIPort -page $page -webRequestArgsString $webRequestArgsString")
+      $headers = @{'Hydrus-Client-API-Access-Key' = $HydrusAccessKey }
       switch ($PSCmdlet.ParameterSetName) {
         'DefaultParameterSetNameReplacementPattern' {
-          $headers = @{'Hydrus-Client-API-Access-Key' = $hydrusAccessKey }
-          $URI = [UriBuilder]::new($hydrusAPIProtocol, $hydrusAPIServer, $hydrusAPIPort, $page, $webRequestArgsString)
-          # ToDo: wrap in a try-catch and a Polly-like wrapper, include timeout, etc.
-          $sessionKey = $($(Invoke-WebRequest -Uri $URI.uri -Headers $headers).Content | ConvertFrom-Json).session_key
-          if ($PassThru) {
-            $result = @{
-              SessionKey           = $sessionKey
-              HydrusAccessKey      = $hydrusAccessKey
-              RequestedPermissions = $requestedPermissions
-              HydrusAPIProtocol    = $hydrusAPIServer
-              HydrusAPIServer      = $hydrusAPIServer
-              HydrusAPIPort        = $hydrusAPIPort
-              ComputerNames        = $computerNames
-            }
-
-          }
-          else {
-            $sessionKey
-          }
+          [void]$sb.Append('?tags=' + $(, $internalSearchParameters['tags'] | ConvertTo-Json) )
         }
-        # ToDo add the other two kinds of vaults
+        default { throw 'that ParameterSetName has not been implemented yet' }
       }
-      $result
+
+      $URI = [UriBuilder]::new($hydrusAPIProtocol, $hydrusAPIServer, $hydrusAPIPort, $page, $sb.ToString())
+      [void] $sb.Clear()
+      # ToDo: wrap in a try-catch and a Polly-like wrapper, include timeout, etc.
+      $response = Invoke-WebRequest -Uri $URI.uri -Headers $headers
+      $fileIDs = $($response.Content | ConvertFrom-Json).file_ids
+      $fileIDs
     }
   }
 
@@ -137,33 +125,65 @@ Function Get-SessionKey {
             Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
             # toDo catch the errors, add to 'Problems'
             Throw $message
-          } else {
-             # ToDo - Fix this block
-             $message = 'ToDo: pipelione process of objects with properties not yet supported'
-             Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
-             # toDo catch the errors, add to 'Problems'
-             Throw $message
-            # deconstruct the pipeline object's properties
-            # $hydrusAccessKey = $obj.PSobject.Properties['hydrusAccessKey']
-            # Write-Output $(InternalGetSessionKey)
+          }
+          elseif ($obj -is [hashtable]) {
+            # assume the hashtable is a searchParamter
+            $searchParameters = $obj
+            InternalGetFileIDs $obj
           }
 
+          else {
+            # deconstruct the pipeline object's properties
+            $PropertyNames = $obj.PSobject.Properties.Name
+            for ($PropertyNamesIndex = 0; $PropertyNamesIndex -lt $PropertyNames.Count; $PropertyNamesIndex++) {
+              $PropertyName = $PropertyNames[$PropertyNamesIndex]
+              switch ($PropertyName) {
+                'hydrusAccessKey' { $hydrusAccessKey = $obj.PSobject.Properties['hydrusAccessKey'].value; break }
+                'hydrusAPIProtocol' { $hydrusAPIProtocol = $obj.PSobject.Properties['hydrusAPIProtocol'].value; break }
+                'hydrusAPIServer' { $hydrusAPIServer = $obj.PSobject.Properties['hydrusAPIServer'].value; break }
+                'hydrusAPIPort' { $hydrusAPIPort = $obj.PSobject.Properties['hydrusAPIPort'].value; break }
+                'PassThru' { $PassThru = $obj.PSobject.Properties['PassThru'].value; break }
+                'computerNames' { $computerNames = $obj.PSobject.Properties['computerNames'].value; break }
+                default { # ignore any property names that are not parameters of this cmdlet}
+                }
+              }
+            }
+            # $SearchParameters is a hashtable array or a single hashtable
+            for ($SearchParametersIndex = 0; $SearchParametersIndex -lt $SearchParameters.Count; $SearchParametersIndex++) {
+              $SearchParameter = $SearchParameters[$SearchParametersIndex]
+            # ToDo: accumulate any errors and add them to the pipeline object
+            # If FileIDs or HashIDs passed as pipeline object parameters
+            if ($PassThru) {
+             $obj| Add-Member -MemberType NoteProperty -Name 'FileIDs' -Value $(InternalGetFileIDs $SearchParameter)
+              Write-Output $obj
+            } else {
+              Write-Output $(InternalGetFileIDs $SearchParameter)
+            }
+            }
+          }
         }
-      }
-      else {
-        # not called from a pipeline, but no arguments are supplied. That is an error because the hydrusAccessKey has to be supplied, either from a command line argument or from an environment variable
-        $message = 'the HydrusAccessKey is not supplied on the command line nor in the environment'
-        Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
-        # toDo catch the errors, add to 'Problems'
-        Throw $message
       }
     }
     else {
       # Not being used in a pipeline
-      Write-Output $(InternalGetSessionKey)
+      # $SearchParameters is a hashtable array or a single hashtable
+      for ($SearchParametersIndex = 0; $SearchParametersIndex -lt $SearchParameters.Count; $SearchParametersIndex++) {
+        $SearchParameter = $SearchParameters[$SearchParametersIndex]
+        # ToDo: implement batching
+        if ($PassThru) {
+          # Create a new object to pass down the pipeline
+          $result = [pscustomobject](@{HydrusAccessKey = $hydrusAccessKey
+              SearchParameters                         = $searchParameters
+              FileIDs                                  = $(InternalGetFileIDs $searchParameter)
+            })
+          Write-Output $result
+        }
+        else {
+          Write-Output $(InternalGetFileIDs $searchParameter)
+        }
+      }
     }
   }
-
 
   END {
     Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'

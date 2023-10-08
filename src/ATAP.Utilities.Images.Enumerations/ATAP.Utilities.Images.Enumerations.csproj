@@ -16,9 +16,8 @@
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
-    <!-- The Loader only works with NetCore 3.1, Net5.0 and Net 6.0 -->
-  <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;net5.0;net6.0;net7.0</TargetFrameworks>
-  </PropertyGroup>
+<ItemGroup>
+    <!--<ProjectReference Include="..\ATAP.Utilities.Enumeration\ATAP.Utilities.Enumeration.csproj" />-->
+  </ItemGroup>
 
 </Project>

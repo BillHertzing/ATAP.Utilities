@@ -48,6 +48,28 @@
       ]
     },
     {
+      "label": "Build C# Project",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${fileDirname}/ATAP.Utilities.Images.Enumerations.csproj",
+        "/p:GenerateFullPaths=true",
+        "/p:Configuration=Debug",
+        "/p:DeployOnBuild=true",
+        "/p:PublishProfile=\"properties/publishProfiles/Development.pubxml\"",
+        "/p:TargetFramework=net7.0",
+        "/bl:_devlogs/msbuild.binlog",
+        "/clp:NoSummary"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "echo": true
+      },
+      "problemMatcher": "$msCompile",
+      "group": "build"
+    },
+    {
       "label": "startVA",
       "command": "C:\\Program Files\\VoiceAttack\\VoiceAttack.exe",
       "type": "process",

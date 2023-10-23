@@ -70,6 +70,9 @@ $global:configRootKeys = @{
   'HydrusAPIProtocolConfigRootKey'                                                               = 'HydrusAPIProtocol'
   'HydrusAPIPortConfigRootKey'                                                                   = 'HydrusAPIPort'
 
+  # related to the Get-FileMetadata cmdlet
+  'FileMetadataBlockSizeConfigRootKey'                                                           = 'FileMetadataBlockSize'
+  'GetFileSignatureAsMetadataConfigRootKey'                                                      = 'GetFileSignatureAsMetadata'
 
   # Used by ansible
   'ansible_remote_tmpConfigRootKey'                                                              = 'ansible_remote_tmp'

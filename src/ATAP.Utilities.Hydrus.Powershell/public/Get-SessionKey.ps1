@@ -104,7 +104,7 @@ Function Get-SessionKey {
           if ($PassThru) {
             $result = @{
               SessionKey           = $sessionKey
-              HydrusAccessKey      = $hydrusAccessKey
+              HydrusSessionKey      = $hydrusSessionKey
               RequestedPermissions = $requestedPermissions
               HydrusAPIProtocol    = $hydrusAPIServer
               HydrusAPIServer      = $hydrusAPIServer

@@ -1,9 +1,11 @@
 namespace ATAP.Utilities.Images.Enumerations
 {
 
-  public enum ImageMetadataEnums
+  public enum GPSMetadataEnums
   {
     // GPS Metadata
+    // ToDo: Handle a 4-byte identifier
+    // GPSVersion = 0x0000,
     GPSVersion = 0x0000,
     GPSLatitudeRef = 0x0001,
     GPSLatitude = 0x0002,
@@ -17,10 +19,9 @@ namespace ATAP.Utilities.Images.Enumerations
     GPSMeasureMode = 0x000A,
     GPSDOP = 0x000B,
     GPSSpeed = 0x000C,
-    GPSTrack = 0x000E,
-    GPSImgDirectionRef = 0x0010,
-    GPSImgDirection = 0x0011,
-    GPSMapDatum = 0x0012,
+    GPSTrack = 0x000E, // Ambiguity - Chat GPT couldn't decide on value for the property name
+    GPSImgDirectionRef = 0x0010, // Ambiguity -  possibly 0xD. Chat GPT couldn't decide on value for the property name
+    GPSImgDirection = 0x0011, // Ambiguity - possibly 0xD. Chat GPT couldn't decide on value for the property name
     GPSDestLatitudeRef = 0x0013,
     GPSDestLatitude = 0x0014,
     GPSDestLongitudeRef = 0x0015,
@@ -29,6 +30,10 @@ namespace ATAP.Utilities.Images.Enumerations
     GPSDestBearing = 0x0018,
     GPSDestDistanceRef = 0x0019,
     GPSDestDistance = 0x001A,
+  }
+
+  public enum ImageMetadataEnums
+  {
     // exif Metadata
     ImageDescription = 0x010E,
     Make = 0x010F,

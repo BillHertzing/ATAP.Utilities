@@ -101,8 +101,7 @@ Function Add-BlogPostImages {
     # Validate that the $Settings.OutDir is writable
     $testOutFn = $settings.OutDir + 'test.txt'
     try { New-Item $testOutFn -Force -type file >$null
-    }
-    catch { # if an exception ocurrs
+    } catch { # if an exception ocurrs
       # handle the exception
       $where = $PSItem.InvocationInfo.PositionMessage
       $ErrorMessage = $_.Exception.Message
@@ -147,12 +146,11 @@ Function Add-BlogPostImages {
     # The $linkFile is the source of truth if it exists, but if it does not exist, create one from the current list of image file name in the $destinationDirectory
     $CloudHostedImageLinks = @()
     $MediaResources = @()
-    $CloudHostingImageUniqFileInfos = @();
+    $CloudHostingImageUniqFileInfos = @()
     if ($HaslinkFile) {
       $CloudHostedImageLinks = Get-Content $linkFile
       # validate and update as required
-    }
-    else {
+    } else {
       # There is no linkFile, so create the data
       # ToDo: parameter sets for "takeitfromthecloudhostingimagepath" and "takeitfromanoriginalsfolder"
       # ParameterSetName = 'FromDestinationDirectory'
@@ -167,13 +165,12 @@ Function Add-BlogPostImages {
 
         # Get just the basename fileinfo
         $ufn = $_; $destinationDirectoryFileInfos | Where-Object { $_.basename -eq $ufn } | ForEach-Object {
-          $originalImageFileInfo = $_;
+          $originalImageFileInfo = $_
           # Get the Visual Sort Order by parsing the filename
           if ($originalImageFileInfo.basename -match $visualSortOrderPattern) {
             $title = $matches.Title
             $visualSortOrder = $matches.VisualSortOrder
-          }
-          else {
+          } else {
             # ToDo: how to handle files with no VSO number in the basename
             $title = $_.basename
             $visualSortOrder = 999

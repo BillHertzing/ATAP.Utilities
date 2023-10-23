@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../"
+		}
+	],
+	"settings": {
+		"omnisharp.enableEditorConfigSupport": true,
+		"git.confirmSync": false,
+		"yaml.schemas": {},
+		"typescript.tsc.autoDetect": "on",
+		"powershell.enableProfileLoading": true
+	}
+}

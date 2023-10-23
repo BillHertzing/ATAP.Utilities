@@ -34,7 +34,7 @@ Function Get-FileIDs {
   param(
     [parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [Alias('In')]
-    [string] $hydrusAccessKey
+    [string] $hydrusSessionKey
     , [parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
     [Alias('Search')]
     [hashtable[]] $searchParameters
@@ -58,17 +58,17 @@ Function Get-FileIDs {
     # ToDo: require or import ATAP.Utilities.Powershell
     . $(Join-Path $([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities', 'src', 'ATAP.Utilities.PowerShell', 'public', 'Get-ParameterValueFromNeoConfigurationRoot.ps1')
 
-    if ($hydrusAccessKey -or $searchParameters -or $hydrusAPIProtocol -or $hydrusAPIServer -or $hydrusAPIPort -or $PassThru -or $computerNames) {
+    if ($hydrusSessionKey -or $searchParameters -or $hydrusAPIProtocol -or $hydrusAPIServer -or $hydrusAPIPort -or $PassThru -or $computerNames) {
       # Not from pipeline
       $noArgumentsSupplied = $false
       # Get values for any arguments not supplied
-      if (-not $PSBoundParameters.ContainsKey('hydrusAccessKey')) {
+      if (-not $PSBoundParameters.ContainsKey('hydrusSessionKey')) {
         # Not on command line
         if (-not $(Test-Path Env:HYDRUS_ACCESS_KEY )) {
           # Not as an envrionment variable
           # never stored in global settings
           # ToDo: if in interactive mode, get it from the user
-          $message = 'the HydrusAccessKey is not supplied on the command line nor in the environment'
+          $message = 'the HydrusSessionKey is not supplied on the command line nor in the environment'
           Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
           # toDo catch the errors, add to 'Problems'
           Throw $message
@@ -93,8 +93,8 @@ Function Get-FileIDs {
         [hashtable] $internalSearchParameters
       )
 
-      Write-PSFMessage -Level Debug -Message $("-ComputerName $computername -hydrusAccessKey $hydrusAccessKey -internalSearchParameters $internalSearchParameters -hydrusAPIServer $hydrusAPIServer -hydrusAPIPort $hydrusAPIPort -page $page -webRequestArgsString $webRequestArgsString")
-      $headers = @{'Hydrus-Client-API-Access-Key' = $HydrusAccessKey }
+      Write-PSFMessage -Level Debug -Message $("-ComputerName $computername -hydrusSessionKey $hydrusSessionKey -internalSearchParameters $internalSearchParameters -hydrusAPIServer $hydrusAPIServer -hydrusAPIPort $hydrusAPIPort -page $page -webRequestArgsString $webRequestArgsString")
+      $headers = @{'Hydrus-Client-API-Access-Key' = $HydrusSessionKey }
       switch ($PSCmdlet.ParameterSetName) {
         'DefaultParameterSetNameReplacementPattern' {
           [void]$sb.Append('?tags=' + $(, $internalSearchParameters['tags'] | ConvertTo-Json) )
@@ -104,7 +104,7 @@ Function Get-FileIDs {
 
       $URI = [UriBuilder]::new($hydrusAPIProtocol, $hydrusAPIServer, $hydrusAPIPort, $page, $sb.ToString())
       [void] $sb.Clear()
-      # ToDo: wrap in a try-catch and a Polly-like wrapper, include timeout, etc.
+      # ToDo: wrap in an async try-catch and a Polly-like wrapper, include timeout, and cancellation, etc.
       $response = Invoke-WebRequest -Uri $URI.uri -Headers $headers
       $fileIDs = $($response.Content | ConvertFrom-Json).file_ids
       $fileIDs
@@ -119,9 +119,9 @@ Function Get-FileIDs {
         # called from a pipeline
         # ToDo - fix this block
         foreach ($obj in $input) {
-          # If the input is a PSobject with properties, make sure it has hydrusAccessKey
-          if ($obj.PSobject.Properties.Name -notcontains 'hydrusAccessKey') {
-            $message = 'the HydrusAccessKey is not supplied on the command line nor in the environment'
+          # If the input is a PSobject with properties, make sure it has hydrusSessionKey
+          if ($obj.PSobject.Properties.Name -notcontains 'hydrusSessionKey') {
+            $message = 'the HydrusSessionKey is not supplied on the command line nor in the environment'
             Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
             # toDo catch the errors, add to 'Problems'
             Throw $message
@@ -138,7 +138,7 @@ Function Get-FileIDs {
             for ($PropertyNamesIndex = 0; $PropertyNamesIndex -lt $PropertyNames.Count; $PropertyNamesIndex++) {
               $PropertyName = $PropertyNames[$PropertyNamesIndex]
               switch ($PropertyName) {
-                'hydrusAccessKey' { $hydrusAccessKey = $obj.PSobject.Properties['hydrusAccessKey'].value; break }
+                'hydrusSessionKey' { $hydrusSessionKey = $obj.PSobject.Properties['hydrusSessionKey'].value; break }
                 'hydrusAPIProtocol' { $hydrusAPIProtocol = $obj.PSobject.Properties['hydrusAPIProtocol'].value; break }
                 'hydrusAPIServer' { $hydrusAPIServer = $obj.PSobject.Properties['hydrusAPIServer'].value; break }
                 'hydrusAPIPort' { $hydrusAPIPort = $obj.PSobject.Properties['hydrusAPIPort'].value; break }
@@ -172,7 +172,7 @@ Function Get-FileIDs {
         # ToDo: implement batching
         if ($PassThru) {
           # Create a new object to pass down the pipeline
-          $result = [pscustomobject](@{HydrusAccessKey = $hydrusAccessKey
+          $result = [pscustomobject](@{HydrusSessionKey = $hydrusSessionKey
               SearchParameters                         = $searchParameters
               FileIDs                                  = $(InternalGetFileIDs $searchParameter)
             })

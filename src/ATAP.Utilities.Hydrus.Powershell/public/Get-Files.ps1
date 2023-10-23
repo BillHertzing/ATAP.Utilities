@@ -33,8 +33,8 @@ Function Get-Files {
   # [OutputType([int[]])] # ToDo investigate OutputType if PassThru is true
   param(
     [parameter(Mandatory = $false, ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True)]
-    [Alias('In')]
-    [string] $hydrusAccessKey
+    [Alias('Key')]
+    [string] $hydrusSessionKey
     , [parameter(ParameterSetName = 'FileIDs', Mandatory = $false, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $True)]
     [Alias('FIDs')]
     [int[]] $FileIDs
@@ -76,17 +76,17 @@ Function Get-Files {
     # ToDo: require or import ATAP.Utilities.Powershell
     . $(Join-Path $([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities', 'src', 'ATAP.Utilities.PowerShell', 'public', 'Get-ParameterValueFromNeoConfigurationRoot.ps1')
 
-    if ($hydrusAccessKey -or $FileIDs -or $HashIDs -or $download -or $metadata -or $hydrusAPIProtocol -or $hydrusAPIServer -or $hydrusAPIPort -or $PassThru -or $computerNames) {
+    if ($hydrusSessionKey -or $FileIDs -or $HashIDs -or $download -or $metadata -or $hydrusAPIProtocol -or $hydrusAPIServer -or $hydrusAPIPort -or $PassThru -or $computerNames) {
       # Not from pipeline
       $noArgumentsSupplied = $false
       # Get values for any arguments not supplied
-      if (-not $PSBoundParameters.ContainsKey('hydrusAccessKey')) {
+      if (-not $PSBoundParameters.ContainsKey('hydrusSessionKey')) {
         # Not on command line
         if (-not $(Test-Path Env:HYDRUS_ACCESS_KEY )) {
           # Not as an envrionment variable
           # never stored in global settings
           # ToDo: if in interactive mode, get it from the user
-          $message = 'the HydrusAccessKey is not supplied on the command line nor in the environment'
+          $message = 'the HydrusSessionKey is not supplied on the command line nor in the environment'
           Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
           # toDo catch the errors, add to 'Problems'
           Throw $message
@@ -118,7 +118,7 @@ Function Get-Files {
     function InternalGetOneFile {
       Write-PSFMessage -Level Debug -Message $("-FileIDs $FileIDs")
 
-      $script:headers = @{'Hydrus-Client-API-Access-Key' = $HydrusAccessKey }
+      $script:headers = @{'Hydrus-Client-API-Access-Key' = $HydrusSessionKey }
       switch ($PSCmdlet.ParameterSetName) {
         'FileIDs' { [void]$sb.Append('?file_id=' + $fileID ) }
         'HashIDs' { [void]$sb.Append('?hashs=' + $hashID ) }
@@ -134,6 +134,7 @@ Function Get-Files {
         $contentDisposition = $response.Headers['Content-Disposition']
         $script:filename = [regex]::match($contentDisposition, 'filename="(.+)"') | ForEach-Object { $_.Groups[1].Value }
         if ($metadata) {
+          # Taking advantage of the current hydrus software design that makes the file name and it's hash idempotent
           $script:fileHash = [System.IO.Path]::GetFileNameWithoutExtension($script:filename)
         }
         # only if download is true
@@ -152,49 +153,7 @@ Function Get-Files {
       }
     }
 
-    function InternalGetOneMetadata {
-      Write-PSFMessage -Level Debug -Message $("fileHash $script:fileHash")
-      # Get the Hydrus metadata
-      $sb.Append('?hashes=' + $(@(, $script:fileHash) | ConvertTo-Json -AsArray))
-      $URI = [UriBuilder]::new($hydrusAPIProtocol, $hydrusAPIServer, $hydrusAPIPort, $getMetadataPage, $sb.ToString())
-      [void] $sb.Clear()
-      $script:metadataFileOutputPath = Join-Path $downloadDirectory $($script:fileHash + $metadataSuffix)
-      # ToDo: wrap in a try-catch and a Polly-like wrapper, include timeout, etc.
-      $response = Invoke-WebRequest -Uri $URI.uri -Headers $script:headers -OutFile $script:metadataFileOutputPath
-      # Get the EXIF metadata
-
-      # Read the image file as bytes
-      $imageBytes = [System.IO.File]::ReadAllBytes($script:imageFileOutputPath )
-      # Create a MemoryStream to read the image
-      $memoryStream = [System.IO.MemoryStream]::new($imageBytes)
-      # Load the image from the MemoryStream Note that .heic file formats (Apple iPhone) are not supported
-      # ToDo: handle heic format images
-      $image = [System.Drawing.Image]::FromStream($memoryStream)
-
-      # Get all EXIF property items
-      $exifPropertyItems = $image.PropertyItems
-      # Create a hashtable to store EXIF data
-      $exifData = @{}
-      # Iterate through the EXIF property items and store them in the hashtable
-      foreach ($propertyItem in $exifPropertyItems) {
-        $exifData[$propertyItem.Id] = $propertyItem.Value
-      }
-      # Display the EXIF data
-      $exifData
-      # Close the MemoryStream and dispose of the image
-      $memoryStream.Close()
-      $image.Dispose()
-
-      # Display the EXIF data
-      $exifData
-
-
-
-      # ToDo: implement batching
-    }
   }
-
-
 
   PROCESS {
     if ($noArgumentsSupplied) {
@@ -205,9 +164,9 @@ Function Get-Files {
         # called from a pipeline
         # ToDo - fix this block
         foreach ($obj in $input) {
-          # If the input is a PSobject with properties, make sure it has hydrusAccessKey
-          if ($obj.PSobject.Properties.Name -notcontains 'hydrusAccessKey') {
-            $message = 'the HydrusAccessKey is not supplied on the command line nor in the environment'
+          # If the input is a PSobject with properties, make sure it has hydrusSessionKey
+          if ($obj.PSobject.Properties.Name -notcontains 'hydrusSessionKey') {
+            $message = 'the HydrusSessionKey is not supplied on the command line nor in the environment'
             Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
             # toDo catch the errors, add to 'Problems'
             Throw $message
@@ -227,11 +186,11 @@ Function Get-Files {
           else {
             # deconstruct the pipeline object's properties
             $PropertyNames = $obj.PSobject.Properties.Name
-            $hydrusAccessKey = $obj.PSobject.Properties['hydrusAccessKey']
+            $hydrusSessionKey = $obj.PSobject.Properties['hydrusSessionKey']
             for ($PropertyNamesIndex = 0; $PropertyNamesIndex -lt $PropertyNames.Count; $PropertyNamesIndex++) {
               $PropertyName = $PropertyNames[$PropertyNamesIndex]
               switch ($PropertyName) {
-                'hydrusAccessKey' { $hydrusAccessKey = $obj.PSobject.Properties['hydrusAccessKey'].value; break }
+                'hydrusSessionKey' { $hydrusSessionKey = $obj.PSobject.Properties['hydrusSessionKey'].value; break }
                 'FileIDs' { $FileIDs = $obj.PSobject.Properties['FileIDs'].value; break }
                 'HashIDs' { $HashIDs = $obj.PSobject.Properties['HashIDs'].value; break }
                 'download' { $download = $obj.PSobject.Properties['download'].value; break }
@@ -257,7 +216,7 @@ Function Get-Files {
             # If FileIDs or HashIDs passed as pipeline object parameters
             if ($PassThru) {
               # $result = @{
-              #     HydrusAccessKey   = $hydrusAccessKey
+              #     HydrusSessionKey   = $hydrusSessionKey
               #     FileIDs           = $fileIDs
               #     HashIDs           = $hashIDs
               #     Download          = $download
@@ -274,8 +233,8 @@ Function Get-Files {
         }
       }
       else {
-        # not called from a pipeline, but no arguments are supplied. That is an error because the hydrusAccessKey has to be supplied, either from a command line argument or from an environment variable
-        $message = 'the HydrusAccessKey is not supplied on the command line nor in the environment'
+        # not called from a pipeline, but no arguments are supplied. That is an error because the hydrusSessionKey has to be supplied, either from a command line argument or from an environment variable
+        $message = 'the HydrusSessionKey is not supplied on the command line nor in the environment'
         Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
         # toDo catch the errors, add to 'Problems'
         Throw $message
@@ -295,7 +254,7 @@ Function Get-Files {
       if ($PassThru) {
         # If FileIDs or HashIDs passed as argument
         $result = @{
-          HydrusAccessKey   = $hydrusAccessKey
+          HydrusSessionKey   = $hydrusSessionKey
           FileIDs           = $fileIDs
           HashIDs           = $HashIDs
           Download          = $download

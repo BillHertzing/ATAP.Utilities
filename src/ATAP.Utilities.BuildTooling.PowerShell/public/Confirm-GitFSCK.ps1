@@ -2,31 +2,48 @@
 #region Confirm-GitFSCK
 <#
 .SYNOPSIS
-ToDo: write Help SYNOPSIS For this function
+Confirm-GitFSCK is a PowerShell function that runs Git's fsck --full command across multiple Git repositories within a specified path.
+
 .DESCRIPTION
-ToDo: write Help DESCRIPTION For this function
-.PARAMETER Name
-ToDo: write Help For the parameter X
-.PARAMETER Extension
-ToDo: write Help For the parameter X
+This function is designed to automate the process of running Git's fsck --full command on multiple Git repositories within a specified directory. It is useful for checking the integrity of Git repositories and identifying potential issues.
+
+.PARAMETER Path
+The path to the directory containing the Git repositories to be checked. By default, it is set to 'C:\Dropbox\whertzing\GitHub'.
+
+.PARAMETER OutPath
+The path to the output file where the results of the Git fsck commands will be stored in JSON format. By default, it is set to '\\Utat022\fs\DailyReports\Confirm-GitFSCK-Results.txt'.
+
 .INPUTS
-ToDo: write Help For the function's inputs
+None. This function does not take any input from the pipeline.
+
 .OUTPUTS
-ToDo: write Help For the function's outputs
+The function does not output objects to the pipeline. Instead, it stores the results of the Git fsck commands in a JSON file specified by the OutPath parameter.
+
 .EXAMPLE
-ToDo: write Help For example 1 of using this function
+Example 1:
+Confirm-GitFSCK -Path 'C:\Path\To\GitRepos' -OutPath 'C:\Output\Results.json'
+
+This example runs the Confirm-GitFSCK function on the specified path and saves the results in the specified JSON file.
+
 .EXAMPLE
-ToDo: write Help For example 2 of using this function
-.EXAMPLE
-ToDo: write Help For example 2 of using this function
+Example 2:
+Confirm-GitFSCK
+
+This example runs the Confirm-GitFSCK function with default parameters, checking Git repositories in the default path and saving results to the default output file.
+
 .ATTRIBUTION
-ToDo: write text describing the ideas and codes that are attributed to others
+This function was inspired by the need to automate Git repository integrity checks. It includes error handling and logging features for enhanced reliability.
+
 .LINK
-ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
+You can find more information about Git fsck in the official Git documentation:
+https://git-scm.com/docs/git-fsck
+
 .LINK
-ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
+For ideas related to PowerShell scripting and automation, you can visit the PowerShell documentation:
+https://docs.microsoft.com/en-us/powershell/
+
 .SCM
-ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
+N/A
 #>
 Function Confirm-GitFSCK {
   #region FunctionParameters

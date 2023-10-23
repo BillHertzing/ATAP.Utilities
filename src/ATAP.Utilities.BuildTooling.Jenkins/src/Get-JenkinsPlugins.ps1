@@ -1,5 +1,4 @@
 #############################################################################
-#region Get-JenkinsPlugins
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -29,11 +28,8 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
 Function Get-JenkinsPlugins {
-  #region FunctionParameters
   param (
   )
-  #endregion FunctionParameters
-  #region FunctionBeginBlock
   ########################################
   BEGIN {
     Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
@@ -49,16 +45,12 @@ Function Get-JenkinsPlugins {
     # validate InstalledPath exists
     if (!(Test-Path -Path $InstalledPath)) { throw "$InstalledPath was not found, verify at least one DotNet Runtime or SDK has been installed" }
   }
-  #endregion FunctionBeginBlock
 
-  #region FunctionProcessBlock
   ########################################
   PROCESS {
     #
   }
-  #endregion FunctionProcessBlock
 
-  #region FunctionEndBlock
   ########################################
   END {
       try {
@@ -74,7 +66,5 @@ Function Get-JenkinsPlugins {
 
     Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
   }
-  #endregion FunctionEndBlock
 }
-#endregion Get-JenkinsPlugins
 #############################################################################

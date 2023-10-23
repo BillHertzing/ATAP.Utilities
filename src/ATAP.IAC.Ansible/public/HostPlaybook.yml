@@ -422,9 +422,9 @@
         #      setup scheduled task to weekly create full backup and delete incrementals
 
         #- roles/StableDiffusionWindows
-        #    download SDXL base model
-        #    download SDXL refiner model
-        #    download SDXL VAE model
+        #    download SDXL base model (https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/sd_xl_base_1.0.safetensors)
+        #    download SDXL refiner model (https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0)
+        #    download SDXL VAE model (https://huggingface.co/stabilityai/sdxl-vae)
         #    setup and activate venv
         #    upgrade diffusers
         #    pip install transformers, accelerate,watermark,safetensors
@@ -436,6 +436,24 @@
         #    install ComfyUI-Impact-pack           # Multiple new custom nodes
         #    install ComfyUI-Manager               # Will install missing custom nodes
         #    install ComfyUI_Custom_Nodes_AlekPet  # multiple nodes including one that will visualize the prompt text
+        #    install WAS Node Suite
+        #      Navigate to your /ComfyUI/custom_nodes/ folder
+        #      Run git clone https://github.com/WASasquatch/was-node-suite-comfyui/
+        #      Navigate to your was-node-suite-comfyui folder
+        #        Portable/venv:
+        #          Run path/to/ComfUI/python_embeded/python.exe -s -m pip install -r requirements.txt
+        #        With system python
+        #         Run pip install -r requirements.txt
+        #      Start ComfyUI
+        #        WAS Suite should uninstall legacy nodes automatically for you.
+        #       Tools will be located in the WAS Suite menu.
+#
+        # Link downloaded models to comfyui locations
+        # Import or require ATAP.Utilities.Powershell package
+        # . C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1
+        # New-SymbolicLink -targetPath D:\BigDownloads\AI\Downloads\Models\sd_xl_base_1.0.safetensors -symbolicLinkPath D:\BigDownloads\AI\ComfyUI_windows_portable\ComfyUI\models/checkpoints/sd_xl_base_1.0.safetensors -force
+        # New-SymbolicLink -targetPath D:\BigDownloads\AI\Downloads\Models\sd_xl_refiner_1.0.safetensors -symbolicLinkPath D:\BigDownloads\AI\ComfyUI_windows_portable\ComfyUI\models/checkpoints/sd_xl_refiner_1.0.safetensors -force
+        # New-SymbolicLink -targetPath D:\BigDownloads\AI\Downloads\Models\vae/sdxl_vae.safetensors -symbolicLinkPath D:\BigDownloads\AI\ComfyUI_windows_portable\ComfyUI\models/vae/sdxl_vae.safetensors -force
 
         #- roles/xnviewmp   # tagging/viewing SW - best for showing metadata
         #    download installer from "https://download.xnview.com/XnViewMP-win-x64.exe"

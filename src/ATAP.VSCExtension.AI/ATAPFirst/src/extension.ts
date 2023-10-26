@@ -4,8 +4,8 @@ import { processPs1Files } from './processPs1Files';  // adjust the import to yo
 import StringBuilder from "./StringBuilder";
 
 export function activate(context: vscode.ExtensionContext) {
-  let disposablecopyToSubmit = vscode.commands.registerCommand(
-    "atapfirst.copyToSubmit",
+  let copyToSubmitDisposable = vscode.commands.registerCommand(
+    "ATAP-AIAssist.copyToSubmit",
     () => {
       let editor = vscode.window.activeTextEditor;
       if (editor) {
@@ -22,8 +22,8 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
   );
-  let disposableremoveRegion = vscode.commands.registerCommand(
-    "atapfirst.removeRegion",
+  let removeRegionDisposable = vscode.commands.registerCommand(
+    "ATAP-AIAssist.removeRegion",
     () => {
       const editor = vscode.window.activeTextEditor;
 
@@ -48,14 +48,22 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  let disposableprocessPs1Files = vscode.commands.registerCommand('atapfirst.processPs1Files', async (commandId: string) => {
-    await processPs1Files(commandId);
+  let processPs1FilesDisposable = vscode.commands.registerCommand('ATAP-AIAssist.processPs1Files', async (commandId: string | null) => {
+    const processPs1FilesRecord = await processPs1Files(commandId);
+    let message: string = '';
+    if (processPs1FilesRecord.success) {
+      message = `processPs1Files processed ${processPs1FilesRecord.numFilesProcessed} files, using commandID  ${processPs1FilesRecord.commandIDUsed}`;
+      vscode.window.showInformationMessage(`${message}`);
+    } else {
+      message = `processPs1Files failed, error message is ${processPs1FilesRecord.errorMessage}, attemptedCommandID is ${processPs1FilesRecord.commandIDUsed}`;
+      vscode.window.showErrorMessage(`${message}`);
+    }
   });
 
 
-  context.subscriptions.push(disposablecopyToSubmit);
-  context.subscriptions.push(disposableremoveRegion);
-  context.subscriptions.push(disposableprocessPs1Files);
+  context.subscriptions.push(copyToSubmitDisposable);
+  context.subscriptions.push(removeRegionDisposable);
+  context.subscriptions.push(processPs1FilesDisposable);
 
 
 

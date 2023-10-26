@@ -2,27 +2,42 @@ import * as vscode from "vscode";
 
 export async function promptForCommandID(): Promise<{
   success: boolean;
+  inputCommandID: string | null;
   validatedCommandID: string | null;
+  errorMessage: string | null;
 }> {
-  const commandIDInput = await vscode.window.showInputBox({
+  // Prompt the user for a commandID
+  const inputCommandID = await vscode.window.showInputBox({
     prompt: "Enter a commandID",
     placeHolder: "removeRegion",
   });
 
   const allCommands = await vscode.commands.getCommands(true);
-  if (commandIDInput) {
-    // Check if the input was provided
-    if (allCommands.includes(commandIDInput)) {
+  // Check if the input was provided
+  if (inputCommandID) {
+    // Check if the provided input is in the list of allCommands
+    if (allCommands.includes(inputCommandID)) {
       // validate
-      return { success: true, validatedCommandID: commandIDInput };
+      return {
+        success: true,
+        inputCommandID: inputCommandID,
+        validatedCommandID: inputCommandID,
+        errorMessage: null,
+      };
     } else {
-      vscode.window.showErrorMessage(
-        `${commandIDInput} is not a valid commandID`
-      );
-      return { success: false, validatedCommandID: null };
+      return {
+        success: false,
+        inputCommandID: inputCommandID,
+        validatedCommandID: null,
+        errorMessage: `${inputCommandID} is not a valid commandID`,
+      };
     }
   } else {
-    vscode.window.showErrorMessage("No command ID provided.");
-    return { success: false, validatedCommandID: null };
+    return {
+      success: false,
+      inputCommandID: null,
+      validatedCommandID: null,
+      errorMessage: "No command ID provided.",
+    };
   }
 }

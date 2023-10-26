@@ -1,6 +1,6 @@
 {
-  "name": "atapfirst",
-  "displayName": "ATAPFirst",
+  "name": "ATAP-AIAssist",
+  "displayName": "ATAP-AIAssist",
   "description": "AI code helper",
   "version": "0.0.1",
   "engines": {
@@ -10,25 +10,25 @@
     "Other"
   ],
   "activationEvents": [],
-  "main": "./out/extension.js",
+  "main": "./_generated/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "atapfirst.copyToSubmit",
+        "command": "ATAP-AIAssist.copyToSubmit",
         "title": "copyToSubmit"
       },
       {
-        "command": "atapfirst.removeRegion",
+        "command": "ATAP-AIAssist.removeRegion",
         "title": "Remove #region lines"
       },
       {
-        "command": "atapfirst.processPs1Files",
+        "command": "ATAP-AIAssist.processPs1Files",
         "title": "process all .ps1 files in a workspace (Requires command ID as argument)"
       }
     ],
     "keybindings": [
       {
-          "command": "atapfirst.processPs1Files",
+          "command": "ATAP-AIAssist.processPs1Files",
           "key": "ctrl+l ctrl+p"
       }
   ]
@@ -39,7 +39,7 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./_generated/test/runTest.js"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.2",

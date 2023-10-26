@@ -139,7 +139,7 @@ namespace AService01 {
 
       #region initialStartup and loadedFrom directories
       // When running as a Windows service, the initial working directory is usually %WinDir%\System32, but the program (and configuration files) is probably installed to a different directory
-      // When running as a *nix service, the initial working directory could be anything. The program (and machine-wide configuration files) are probably installed in the location whwere teh service starts. //ToDo: verify this
+      // When running as a *nix service, the initial working directory could be anything. The program (and machine-wide configuration files) are probably installed in the location whwere the service starts. //ToDo: verify this
       // When running as a Windows or Linux Console App, the initial working directory could be anything, but the program (and machine-wide configuration files) is probably installed to a different directory.
       // When running as a console app, it is very possible that there may be local (to the initial startup directory) configuration files to load
       // get the initial startup directory
@@ -266,7 +266,7 @@ namespace AService01 {
         services.AddSingleton<IStdInHandlerService, StdInHandlerService>();
         services.AddSingleton<FileSystemToObjectGraphService.IFileSystemToObjectGraphService, FileSystemToObjectGraphService.FileSystemToObjectGraphService>();
         services.AddSingleton<FileSystemGraphToDBService.IFileSystemGraphToDBService, FileSystemGraphToDBService.FileSystemGraphToDBService>();
-        //services.AddHostedService<StdInHandlerService>(); // Primary, Initial background service 
+        //services.AddHostedService<StdInHandlerService>(); // Primary, Initial background service
 
         //services.AddSingleton<IFileSystemWatchersHostedService, FileSystemWatchersHostedService>();
         //services.AddSingleton<IObservableResetableTimersHostedService, ObservableResetableTimersHostedService>();
@@ -372,7 +372,7 @@ namespace AService01 {
 
   }
 
- 
+
 
   //#if TRACE
   //  [ETWLogAttribute]

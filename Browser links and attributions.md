@@ -226,7 +226,7 @@ https://github.com/dotnet/coreclr/blob/master/Documentation/coding-guidelines/cr
 
 [Windows Performance Analyzer](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-analyzer)  How to use the Traceloogin data collected by a WPR
 
-[Download and install the Windows ADK](https://docs.microsoft.com/en-us/windows-hardware/get-started/adk-install) Windows ADK has both teh WPR and WPF tools
+[Download and install the Windows ADK](https://docs.microsoft.com/en-us/windows-hardware/get-started/adk-install) Windows ADK has both the WPR and WPF tools
 
 [Windows 10 ADK versions and download links](https://www.prajwaldesai.com/windows-10-adk-versions/) download reference for the windows ADK
 

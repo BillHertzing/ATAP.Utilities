@@ -75,7 +75,7 @@ namespace ATAP.Console.Console01 {
     #endregion
     #region Constructor
     /// <summary>
-    /// Constructor that populates all the injected services provided by a GenericHost, along with teh injected services specific to this program that are needed by this HostedService (or derivitive like BackgroundService)
+    /// Constructor that populates all the injected services provided by a GenericHost, along with the injected services specific to this program that are needed by this HostedService (or derivitive like BackgroundService)
     /// </summary>
     /// <param name="consoleSinkHostedService"></param>
     /// <param name="consoleSourceHostedService"></param>
@@ -623,7 +623,7 @@ namespace ATAP.Console.Console01 {
       #endregion
 
       // Create a list of choices
-      // ToDo: Get the list from the StringConstants, and localize them 
+      // ToDo: Get the list from the StringConstants, and localize them
       choices = new List<string>() { "1. Run ConvertFileSystemToGraphAsyncTask", "2. Subscribe ConsoleOut to ConsoleIn", "3. Unsubscribe ConsoleOut from ConsoleIn", "99: Quit" };
 
       #region Buildmenu

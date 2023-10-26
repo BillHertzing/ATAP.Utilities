@@ -29,7 +29,7 @@ This function takes a module `$Name`, module `$Version`, and the `$sourcePath` t
 ## SymbolicLink Developing functions for Build Tooling
 
 Create a symbolic link from the script under development, to the root of the jenkins job's workspace
-After initial development, the script will be part of a new release of teh module, and the symbolic link won't be needed anymore
+After initial development, the script will be part of a new release of the module, and the symbolic link won't be needed anymore
 
 `$env:Workspace` is the root of the Jenkins workspace, per node and per job
 `$localRepoRoot` is the absolute path to the root of the local repo

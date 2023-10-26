@@ -87,7 +87,7 @@ The architecture for game time decision and command issuance consists of these p
 
 ## System Clock and Game Clock
 The System Clock is not pausable. It runs from the time the plugin starts until it is stopped
-The game clock is a gated duplicate of teh system clock. The gate turns the game clock on or off. The gate is controlled by the game-level variable "GameState" which can be one of the enumeration values of `PreInitialzed`, `Initialized`, `Running`, `Paused`, `Ended`.
+The game clock is a gated duplicate of the system clock. The gate turns the game clock on or off. The gate is controlled by the game-level variable "GameState" which can be one of the enumeration values of `PreInitialzed`, `Initialized`, `Running`, `Paused`, `Ended`.
 
 ## OutputCommand
 

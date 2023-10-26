@@ -69,7 +69,7 @@ Every organization should have a group whose primary focus is security. In today
 
 As a security administrator, the security processes should perform the following:
 
-Set and retrieve secrets. Updating a secret should make the new information available to all roles that need it on all machines where teh role is expected to operate
+Set and retrieve secrets. Updating a secret should make the new information available to all roles that need it on all machines where the role is expected to operate
 Create, Delete and Update Security roles, which identify groups of secrets needed to perform an organizational role
 Assign, and revoke, users's association with Security roles
 Restrict a user's access to secrets to just those secrets needed to perform an organizational role

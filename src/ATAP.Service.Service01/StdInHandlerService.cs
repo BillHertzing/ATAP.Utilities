@@ -81,7 +81,7 @@ namespace ATAP.Utilities.HostedServices.StdInHandlerService {
 
     #region Constructor
     /// <summary>
-    /// Constructor that populates all the injected services provided by a GenericHost, along with teh injected services specific to this program that are needed by this HostedService (or derivitive like BackgroundService)
+    /// Constructor that populates all the injected services provided by a GenericHost, along with the injected services specific to this program that are needed by this HostedService (or derivitive like BackgroundService)
     /// </summary>
     /// <param name="consoleSinkHostedService"></param>
     /// <param name="consoleSourceHostedService"></param>
@@ -112,7 +112,7 @@ namespace ATAP.Utilities.HostedServices.StdInHandlerService {
       Stopwatch = new Stopwatch();
       #region Create the serviceData and initialize it from the StringConstants or this service's ConfigRoot
       this.serviceData = new StdInHandlerServiceData(
-        // ToDo: Get the list from the StringConstants, and localize them 
+        // ToDo: Get the list from the StringConstants, and localize them
         choices: new List<string>() { "1. Run FileSystemToObjectGraphAsyncTask", "2. Run FileSystemGraphToDBAsyncTask", "99: Quit this service" },
         // Create a list of choices
         stdInHandlerState: new StringBuilder(),
@@ -336,7 +336,7 @@ namespace ATAP.Utilities.HostedServices.StdInHandlerService {
     #endregion
     #region StartAsync and StopAsync methods as promised by IHostedService when IHostLifetime is ConsoleLifetime  // ToDo:, see if this is called by service and serviced
     /// <summary>
-    /// Called to start the service. 
+    /// Called to start the service.
     /// </summary>
     /// <param name="externalCancellationToken"></param> Used to signal FROM the GenericHost TO this BackgroundService a request for cancelllation
     /// <returns></returns>
@@ -383,19 +383,19 @@ namespace ATAP.Utilities.HostedServices.StdInHandlerService {
     #region Event Handlers registered with the HostApplicationLifetime events
     // Registered as a handler with the HostApplicationLifetime.ApplicationStarted event
     private void OnStarted() {
-      // Post-startup code goes here  
+      // Post-startup code goes here
     }
 
     // Registered as a handler with the HostApplicationLifetime.Application event
     // This is NOT called if the ConsoleWindows ends when the connected browser (browser opened by LaunchSettings when starting with debugger) is closed (not applicable to ConsoleLifetime generic hosts
     // This IS called if the user hits ctrl-C in the ConsoleWindow
     private void OnStopping() {
-      // On-stopping code goes here  
+      // On-stopping code goes here
     }
 
     // Registered as a handler with the HostApplicationLifetime.ApplicationStarted event
     private void OnStopped() {
-      // Post-stopped code goes here  
+      // Post-stopped code goes here
     }
 
     // Called by base.Stop. This may be called multiple times by service Stop, ApplicationStopping, and StopAsync.

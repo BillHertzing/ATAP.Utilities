@@ -1,3 +1,4 @@
+# Creating Visual Studio Code extensions
 
 Atribution:
 [Your First Extension](https://code.visualstudio.com/api/get-started/your-first-extension)
@@ -32,8 +33,8 @@ Git should already be installed
 
 Answer as follows:
  What type of extension do you want to create? New Extension (TypeScript)
-? What's the name of your extension? ATAP.ChatGPTAssistant
-? What's the identifier of your extension? atap-chatgptassistant
+? What's the name of your extension? ATAP.AIAssist
+? What's the identifier of your extension? atap-AIAssist
 ? What's the description of your extension? Use Google voice recognition to send prompts to ChatGPT and copy the results
  into a VSC Code editor.
 ? Initialize a git repository? No
@@ -43,15 +44,12 @@ Answer as follows:
 After creation, the following message appears:
 To start editing with Visual Studio Code, use the following commands:
 
-     code atap-chatgptassistant
+     code atap-AIAssist
 
 Open vsc-extension-quickstart.md inside the new extension for further instructions
 on how to modify, test and publish your extension.
 
 To run the extension you need to install the recommended extension 'amodio.tsl-problem-matcher'.
-
-For more information, also visit http://code.visualstudio.com and follow us @code.
-
 
 ? Do you want to open the new folder with Visual Studio Code? (Use arrow keys)
 > Open with `code`
@@ -66,7 +64,9 @@ For more information, also visit http://code.visualstudio.com and follow us @cod
 
 ## initial compile and run
 
-The generated scaffold has simplistic views of the VSC configuration files. These files must be integrated into the repository-wide versions of the same files. Edit the follwoing files located in `.vscode` directory under `ATAP.Utilities` repository root.
+The generated scaffold has simplistic views of the VSC configuration files. You should delete them and install symbolic links to the cross-repository version-controlled files. More information is in the repository SharedVSCode 's readme file. [TBD](TBD)#ToDo: replace with static site URL
+
+These files must be integrated into the repository-wide versions of the same files. Edit the following files located in `.vscode` directory under `ATAP.Utilities` repository root.
 
 ### launch.json
 

@@ -26,7 +26,7 @@ hydrus-networkWindows:
       Items:
       - Name: hydrus-network Pin Shortcut to Taskbar}
         source: # ToDO: get Windows start folder location "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Hydrus Network"
-      Notes: ' Must create a shortcut that adds the location to teh hydrus database on another drive or folder'
+      Notes: ' Must create a shortcut that adds the location to the hydrus database on another drive or folder'
   Notes: "# Image database and tagger. only install on one machine, that has the image files database local on an SSD"
 
 # CobianReflectorBackupSoftwareWindows:
@@ -61,13 +61,13 @@ hydrus-networkWindows:
 #         source: # ToDo: based on a hostsetting
 #         destination: # ToDo: get Windows start folder location
 #         AddedParameters: # ToDo: get location of the databae files from the host settings
-#       Notes: ' Must create a shortcut that adds the location to teh hydrus database on another drive or folder'
+#       Notes: ' Must create a shortcut that adds the location to the hydrus database on another drive or folder'
 #     - Name: Pin the Cobian Reflector shortcut to the task bar
 #       Kind: AnsiblePlayBlockPinToTaskBar
 #       Items:
 #       - Name: Cobian Reflector Pin Shortcut to Taskbar}
 #         source: # ToDO: get Windows start folder location
-#       Notes: ' Must create a shortcut that adds the location to teh hydrus database on another drive or folder'
+#       Notes: ' Must create a shortcut that adds the location to the hydrus database on another drive or folder'
 #   Notes: "# Backup software, primarily for Hydrus database. Need to figure out how to get latest version or if to use a pinned version"
 
 DittoClipboardManagerWindows:

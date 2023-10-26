@@ -239,7 +239,7 @@ $modifiedPSModulePath = $env:PSModulePath
 $modifiedPSModulePath += ';C:\Program Files\PowerShell\7'
 # Add the Desktop module path to the end of the string
 $modifiedPSModulePath += ';C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules'
-# Set the environment varialbe to teh new value
+# Set the environment varialbe to the new value
 $env:PSModulePath = $modifiedPSModulePath
 # Load the JenkinsRoleSettings for this machine into the $global:settings
 # ($global:MachineAndNodeSettings[$hostname])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']] | ForEach-Object {

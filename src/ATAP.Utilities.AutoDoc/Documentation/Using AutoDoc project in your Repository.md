@@ -4,7 +4,7 @@ The DocFx --serve will build the documentation site and make it availalbe on por
 This server is casesensitive on html references
 
 Your Logo:
-make sure the href in logo.tmpl.partial agrees in case with teh Index.html for your documentation site's default page (usually index.html)
+make sure the href in logo.tmpl.partial agrees in case with the Index.html for your documentation site's default page (usually index.html)
 
 Your Footer:
 

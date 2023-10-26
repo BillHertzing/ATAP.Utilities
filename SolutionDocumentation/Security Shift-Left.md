@@ -425,7 +425,7 @@ Example
 
 - Windows
   See [Create Your Own SSL Certificate Authority for Local HTTPS Development](https://deliciousbrains.com/ssl-certificate-authority-for-local-https-development/) for instructions using the MMC snap-in
-  ToDO: Powershell way - (Need to figure out teh proper cert store)
+  ToDO: Powershell way - (Need to figure out the proper cert store)
   ToDo: The following command did not install the cert, it just brought up the manual interactive certmgr widget
 
 `CertMgr /add $CertificatePath /s /r localMachine root `
@@ -528,7 +528,7 @@ $WinRMSSLCertificatePath -days 3650
 
 Use a specific vault for least privilege
 
-Keep the following until testing proves them unnecessary (are the RootCA Cert and teh SSL cert private/public key pairs the same? what's the "best" way to generate the PP Key pair)
+Keep the following until testing proves them unnecessary (are the RootCA Cert and the SSL cert private/public key pairs the same? what's the "best" way to generate the PP Key pair)
 
 ##### Create a private/public key pair for the SSL certificate
 

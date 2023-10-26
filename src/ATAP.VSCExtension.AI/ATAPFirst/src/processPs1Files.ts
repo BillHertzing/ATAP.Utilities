@@ -1,8 +1,21 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { promptForCommandID } from './promptForCommandID';
+
 
 export async function processPs1Files(commandId: string): Promise<void> {
+
+  (async () => {
+    const commandID = await promptForCommandID();
+
+    if (commandID !== null) {
+      console.log(`Received string: ${commandID}`);
+    } else {
+      vscode.window.showErrorMessage("either a null or invalid commandID was entered");
+    }
+  })();
+
     // Ensure a workspace is open
     if (!vscode.workspace.workspaceFolders) {
         vscode.window.showErrorMessage('No workspace is open.');
@@ -27,7 +40,7 @@ export async function processPs1Files(commandId: string): Promise<void> {
         // Apply the command to the file
         // await vscode.commands.executeCommand(commandId, fileUri);
         vscode.window.showInformationMessage(
-          "commandId ${commandId} applied to file ${fileUri}"
+          `commandId ${commandId} applied to file ${fileUri}`
         );
     }
 

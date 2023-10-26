@@ -61,6 +61,7 @@ Function Get-Sidecars {
   process {
     foreach ($script:o in $obj) {
       InternalGetSidedcar
+      "whertzing"
     }
   }
 }

@@ -1,4 +1,3 @@
-
 # ATAP.Utilities.BuildTooling.PowerShell
 
 If you are viewing this `ReadMe.md` in GitHub, [here is this same ReadMe on the documentation site]()
@@ -11,9 +10,9 @@ This package provides PowerShell goodies make it easier when developing for .Net
 
 The .psm1 file handles dot-sourcing all the .ps1 scripts in the `private` and `public` subdirectories. But for Autoload to work, the functions and cmdlets should be listed in the .psd1 file. Here's a one-liner that will get you the function names
 
-`   (gci C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\*.ps1).basename -join,"','"  `
+`  (gci C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\*.ps1).basename -join,"','" `
 
-## Building/Installation Note 
+## Building/Installation Note
 
 Production versions of the modules goes through testing and packaging, along with deployment to a local chocolatey Repository Server, from which the new production version of the package is deployed internally to the organization using Chocolatey.
 
@@ -29,7 +28,7 @@ This function takes a module `$Name`, module `$Version`, and the `$sourcePath` t
 
 ## SymbolicLink Developing functions for Build Tooling
 
-Create a symbolic link from the script under development, to the root of the jenkins  job's workspace
+Create a symbolic link from the script under development, to the root of the jenkins job's workspace
 After initial development, the script will be part of a new release of teh module, and the symbolic link won't be needed anymore
 
 `$env:Workspace` is the root of the Jenkins workspace, per node and per job
@@ -42,9 +41,7 @@ When testing, this is needed in the administrative (Elevated) PowerShell termina
 `$env:Workspace = 'C:\JenkinsAgentNode\utat022Node\workspace\Package-PowershellModule' `
 `$env:Workspace = 'D:\Jenkins\ncat016\workspace\Package-PowershellModule' `
 
-
-
-$scriptName = 'Publish-PSPackage.ps1'; $moduleName ='ATAP.Utilities.BuildTooling.PowerShell';  $relativeScriptDirectory= join-path 'src' $ModuleName 'public';$localRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities';   Remove-Item -path (join-path $env:Workspace $scriptname) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:Workspace $scriptname) -Target (join-path $localRepoRoot $relativeScriptDirectory $scriptName)
+$scriptName = 'Publish-PSPackage.ps1'; $moduleName ='ATAP.Utilities.BuildTooling.PowerShell';  $relativeScriptDirectory= join-path 'src' $ModuleName 'public';$localRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities'; Remove-Item -path (join-path $env:Workspace $scriptname) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:Workspace $scriptname) -Target (join-path $localRepoRoot $relativeScriptDirectory $scriptName)
 
 $sourceScriptName = 'Update-PackageVersion.ps1';
 $sourceModuleName ='ATAP.Utilities.Buildtooling.Powershell';
@@ -52,21 +49,19 @@ $sourceRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHu
 $targetScriptName = $sourceScriptName;
 $targetScriptDirectory ='.';
 $relativeScriptSourceDirectory = join-path 'src' $sourceModuleName 'public';
-Remove-Item -path (join-path $targetScriptDirectory  $targetScriptName) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $sourceScriptName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $sourceScriptName)
+Remove-Item -path (join-path $targetScriptDirectory $targetScriptName) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $sourceScriptName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $sourceScriptName)
 
+$scriptName = 'Update-PackageVersion.ps1'; $moduleName ='ATAP.Utilities.BuildTooling.PowerShell';  $relativeScriptDirectory= join-path 'src' $ModuleName 'public';$localRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities'; Remove-Item -path (join-path $env:Workspace $scriptname) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:Workspace $scriptname) -Target (join-path $localRepoRoot $relativeScriptDirectory $scriptName)
 
-$scriptName = 'Update-PackageVersion.ps1'; $moduleName ='ATAP.Utilities.BuildTooling.PowerShell';  $relativeScriptDirectory= join-path 'src' $ModuleName 'public';$localRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities';   Remove-Item -path (join-path $env:Workspace $scriptname) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:Workspace $scriptname) -Target (join-path $localRepoRoot $relativeScriptDirectory $scriptName)
-
-# SymbolicLinks for Git Hooks
-
+## SymbolicLinks for Git Hooks
 
 Script files called by Git Hooks must be in the `.git/hooks` subdirectory. (ToDo: explain why allowing arbitrary paths implies opinionated directory structures). But files here are not under SCM in the repository. But a symbolic link from a file somewhere in the repository (`ATAP.Utilities.BuildTooling.Powershell/public/Git-PreCommitHook.ps1`)
 
-$scriptSourceName = 'Git-PreCommitHook.ps1'; $scriptTargetName = 'PreCommitHook.ps1'; $moduleName ='ATAP.Utilities.BuildTooling.PowerShell'; $sourceRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities'; $targetRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'MSBuildPlayground';  $relativeScriptSourceDirectory = join-path 'src' $ModuleName 'public';$targetScriptDirectory = join-path $targetRepoRoot '.git' 'hooks';  Remove-Item -path (join-path $targetScriptDirectory  $scriptTargetName) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptSourceName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $scriptTargetName)
+$scriptSourceName = 'Git-PreCommitHook.ps1'; $scriptTargetName = 'PreCommitHook.ps1'; $moduleName ='ATAP.Utilities.BuildTooling.PowerShell'; $sourceRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities'; $targetRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'MSBuildPlayground';  $relativeScriptSourceDirectory = join-path 'src' $ModuleName 'public';$targetScriptDirectory = join-path $targetRepoRoot '.git' 'hooks'; Remove-Item -path (join-path $targetScriptDirectory $scriptTargetName) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptSourceName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $scriptTargetName)
 
-### Run this command in the .git/hooks subdirectory of the  $targetRepoRoot (as administrator)
+### Run this command in the .git/hooks subdirectory of the $targetRepoRoot (as administrator)
 
-Modify arguments for $targetModuleName,    $targetRepoRoot.
+Modify arguments for $targetModuleName, $targetRepoRoot.
 
 $targetModuleName ='ExamplePSModule';
 $targetRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'PlaygroundGitHooks';
@@ -76,9 +71,34 @@ $sourceRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHu
   $relativeScriptSourceDirectory = join-path 'src' $sourceModuleName 'public';
 (@{'scriptSourceName'='Invoke-GitPreCommitHook.ps1';'scriptTargetName' = 'Invoke-GitPreCommitHook.ps1';},
 @{'scriptSourceName'='Invoke-GitPostCommitHook.ps1';'scriptTargetName' = 'Invoke-GitPostCommitHook.ps1';},
-@{'scriptSourceName'='Invoke-GitPostCheckoutHook.ps1';'scriptTargetName' = 'Invoke-GitPostCheckoutHook.ps1';}) | %{$ht = $_;
-  $scriptSourceName = $ht['scriptSourceName'];
-  $scriptTargetName = $ht['scriptTargetName'];
-  Remove-Item -path (join-path $targetScriptDirectory  $scriptTargetName) -ErrorAction SilentlyContinue;
-  New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptTargetName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $scriptSourceName )
+@{'scriptSourceName'='Invoke-GitPostCheckoutHook.ps1';'scriptTargetName' = 'Invoke-GitPostCheckoutHook.ps1';}) | %{$ht = $\_;
+$scriptSourceName = $ht['scriptSourceName'];
+$scriptTargetName = $ht['scriptTargetName'];
+Remove-Item -path (join-path $targetScriptDirectory $scriptTargetName) -ErrorAction SilentlyContinue;
+New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptTargetName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $scriptSourceName )
 }
+
+## Symbolic Links for VSC settings, tasks, and launch configurations
+
+The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a subirecory `.vscode`, which contains the three files
+
+```text
+Launch.json
+tasks.json
+settings.json
+```
+
+This directory and these files need to be present at the root of each repository, and need to be source-controlled and versioned. Having multiple independent copies is prone to errors and misconfigurations. Therefore, we have created a repository named `SharedVSCode`, and placed the source-of-truth copies of these files in this git-versioned repository.
+
+We then create symbolic links from the files in this repository to symblinks that reside in the .vscode directroy under every other repository.
+
+In every new repository, after runing `git init`, run this command (as an administrator) in the root folder of the repository:
+
+```Powershell
+  $null = New-Item -ItemType Directory -Force '.vscode'
+  # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\extensions.json"  -symbolicLinkPath ".\.vscode\extensions.json" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch.json"  -symbolicLinkPath ".\.vscode\launch.json" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\settings.json"  -symbolicLinkPath ".\.vscode\settings.json" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\tasks.json"  -symbolicLinkPath ".\.vscode\tasks.json" -force
+```

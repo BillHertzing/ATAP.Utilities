@@ -4,22 +4,30 @@ import * as path from 'path';
 import { promptForCommandID } from './promptForCommandID';
 
 
-export async function processPs1Files(commandId: string): Promise<void> {
+export async function processPs1Files(commandId: string | null): Promise<{
+  success: boolean;
+  commandIDUsed: string | null;
+  numFilesProcessed: number | null;
+  errorMessage: string | null
+}> {
+  let message: string = '';
 
-  (async () => {
-    const commandID = await promptForCommandID();
+  if (commandId === null) {
+    (async () => {
+      const commandIDFromPromptRecord = await promptForCommandID();
 
-    if (commandID !== null) {
-      console.log(`Received string: ${commandID}`);
-    } else {
-      vscode.window.showErrorMessage("either a null or invalid commandID was entered");
-    }
-  })();
+      if (commandIDFromPromptRecord.success) {
+        commandId = commandIDFromPromptRecord.validatedCommandID;
+      } else {
+        message = `Prompting the user for a commandID returned the following error: ${commandIDFromPromptRecord.errorMessage}`;
+        return { success: false, commandIDUsed: null, numFilesProcessed: null, errorMessage: message };
+      }
+    })();
+  }
 
     // Ensure a workspace is open
     if (!vscode.workspace.workspaceFolders) {
-        vscode.window.showErrorMessage('No workspace is open.');
-        return;
+      return { success: false, commandIDUsed: null, numFilesProcessed: null, errorMessage: 'No workspace is open.' };
     }
 
     // Initialize the files array
@@ -43,8 +51,7 @@ export async function processPs1Files(commandId: string): Promise<void> {
           `commandId ${commandId} applied to file ${fileUri}`
         );
     }
-
-    vscode.window.showInformationMessage(`Processed ${ps1Files.length} .ps1 files.`);
+    return { success: true, commandIDUsed: commandId, numFilesProcessed: ps1Files.length, errorMessage: null };
 }
 
 function findPs1Files(dir: string, fileList: string[]) {

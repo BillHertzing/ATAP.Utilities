@@ -34,7 +34,7 @@ Git should already be installed
 Answer as follows:
  What type of extension do you want to create? New Extension (TypeScript)
 ? What's the name of your extension? ATAP.AIAssist
-? What's the identifier of your extension? atap-AIAssist
+? What's the identifier of your extension? atap-aiassist
 ? What's the description of your extension? Use Google voice recognition to send prompts to ChatGPT and copy the results
  into a VSC Code editor.
 ? Initialize a git repository? No
@@ -44,7 +44,7 @@ Answer as follows:
 After creation, the following message appears:
 To start editing with Visual Studio Code, use the following commands:
 
-     code atap-AIAssist
+     code atap-aiassist
 
 Open vsc-extension-quickstart.md inside the new extension for further instructions
 on how to modify, test and publish your extension.

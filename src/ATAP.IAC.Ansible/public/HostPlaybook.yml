@@ -29,7 +29,7 @@
   #       state: present
   #     register: wsl_status
 
-  #   - name: Reboot if installing Linux Subsytem as feature requires it
+  #   - name: Reboot if installing Linux Subsystem as feature requires it
   #     ansible.windows.win_reboot:
   #     when:
   #       wsl_status.reboot_required
@@ -151,9 +151,9 @@
         #- {name: flyway.commandline, version: latest, allowprerelease: false, addedparameters: , }
         #- {name: freevideoeditor, version: latest, allowprerelease: false, addedparameters: , } # installs to 'FlashIntegro' see if there are package parameters to support installation to a different path : default to 'VSDC'
         #- {name: fusionplusplus, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: gh, version: latest, allowprerelease: false, addedparameters: , } # move to a role to allow for configuration setings
+        #- {name: gh, version: latest, allowprerelease: false, addedparameters: , } # move to a role to allow for configuration settings
         #- {name: gimp, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: git, version: latest, allowprerelease: false, addedparameters: , } # move to a role to allow for configuration setings
+        #- {name: git, version: latest, allowprerelease: false, addedparameters: , } # move to a role to allow for configuration settings
         #- {name: gitter, version: latest, allowprerelease: false, addedparameters: , }
         #- {name: gopro-quik, version: latest, allowprerelease: false, addedparameters: , } # investigate - installation hung here
         #- {name: gpg4win, version: latest, allowprerelease: false, addedparameters: , }
@@ -359,7 +359,7 @@
         #- roles/JenkinsAgentWindows
         #- roles/npcapWindows
         #    only available as an .exe installer download from https://npcap.com/dist/npcap-1.76.exe (use latest) then run .\npcap-1.76.exe as an administrator
-        #    npcap installs as a service, but the companion servervice npcap-wifi is instaled but no started by default - change the service so it runs at hoststartup
+        #    npcap installs as a service, but the companion servervice npcap-wifi is installed but no started by default - change the service so it runs at hoststartup
         #- roles/WiresharkWindows
         #    Wireshark requires the  NPCAP software,
         #    login and select ethernet or ethernet-wifi  as initial interface to capture from
@@ -415,7 +415,7 @@
         #    New-ShortcutWithParameter -TargetPath "C:\Program Files\Hydrus Network\hydrus_client.exe" -ShortcutPath 'C:\Program Files\Hydrus Network\hydrus_client(utat022).lnk' -Parameter '-d H:\Hydrus\HydrusDatabase'
         #    pin the shortcut to the taskbar
         #    eventually Allow incoming request to hydrus-network through host firewall and network router
-        #    Backups done with Cobian Reflecter
+        #    Backups done with Cobian Reflector
         #      setup scheduled task to incrementally backup everything nightly, to $HydrusBackupDirectory (for all hosts, C:\Dropbox\HydrusBackup)
         #      setup scheduled task to weekly periodically fsck the database and image dir
         #      setup scheduled task to weekly periodically validate the backups
@@ -441,7 +441,7 @@
         #      Run git clone https://github.com/WASasquatch/was-node-suite-comfyui/
         #      Navigate to your was-node-suite-comfyui folder
         #        Portable/venv:
-        #          Run path/to/ComfUI/python_embeded/python.exe -s -m pip install -r requirements.txt
+        #          Run path/to/ComfyUI/python_embedded/python.exe -s -m pip install -r requirements.txt
         #        With system python
         #         Run pip install -r requirements.txt
         #      Start ComfyUI
@@ -469,7 +469,7 @@
         #    git clone https://github.com/arenasys/sd-tagging-helper.git
         #    install and activate venv
         #    pip3  install pillow pyqt5==5.15.7
-        #    Input image directory has to have pre-exisitng tag file; run this powershell script in the input directory
+        #    Input image directory has to have pre-existing tag file; run this powershell script in the input directory
         #      $tags = [system.collections.arraylist]::new();$( gci *.jpg) | %{$fh =$_;$base = $fh.basename;[void]$tags.clear();$tags.Add($(get-content "$base.txt" -ErrorAction SilentlyContinue));[void]$tags.Add('JoAnn2');$fh.fullname;$fh.basename;$tags;"$base.txt"} Set-Content -Path "$base.txt" -Value $tags}
         #     start.bat in sd-tagging-helper
 
@@ -478,8 +478,8 @@
         #  move N latest files to "raw input directory"
         #  input to Hydrus, tag with hydrus client
         #  further tag with xnviewmp (optional)
-        #  inport to hydrus DB and client files
-        #  backup and verify hyrdus DB and clientimages
+        #  import to hydrus DB and client files
+        #  backup and verify Hydrus DB and clientimages
 
         #- roles/LoraCreationWindows
         #  curate images in Hydrus
@@ -499,8 +499,8 @@
   # - mapusersshellfolders
   # - SetupExplorerQuickView shortcuts
   # - Setup user profiles
-  # Dropbox - per host and per user select specific folders to 'make available offline' (whertzing, Pictures, Videso, Notepad++   )
-  # Stop Windows Search indexing, remove any exisitng indexes
+  # Dropbox - per host and per user select specific folders to 'make available offline' (whertzing, Pictures, Videos, Notepad++   )
+  # Stop Windows Search indexing, remove any existing indexes
   # Notepad++
   #   - set location of configuration files to the dropbox location
   #   - set file associations
@@ -511,20 +511,20 @@
   #   - set all file associations, exclude .cab, .iso .vhd .vhdx,
   # VLC - set videos file types association
   # ILSpy -set associations for .dll files
-  # do not start OneDrive on system startup - can be done with autoruns, TBD do it with ansilbe 'currnet\version\Run'
+  # do not start OneDrive on system startup - can be done with autoruns, TBD do it with ansible 'current\version\Run'
   # do not start BCClipboard on system startup - can be done with autoruns, TBD -doit with ansible
   # do not start the scheduled task '\onedrive Reporting Task'- can be done with autoruns
-  # do not start the scheduled task '\oneDriveg Standalone Update TaskTask'- can be done with autoruns
+  # do not start the scheduled task '\oneDrive Standalone Update TaskTask'- can be done with autoruns
   # do not start the service 'Edgeupdate' on system startup - can be done with autoruns
   # do not start the service 'Edgeupdatem' on system startup - can be done with autoruns
   # do not start the service 'MicrosoftEdgeElevationService' on system startup - can be done with autoruns
   # do not run the program EdgeAutoLaunch on system startup - can be done with autoruns TBD do it  with ansible - 'CurrentVersion\run'
   # Setup profiles
-  # Configure Everything options "Double quote copy as path",, "aopen path with double click in path column"
-  # Login to Steam accunt billhertzing S2V, then get 2FA code from gmail
+  # Configure Everything options "Double quote copy as path",, "open path with double click in path column"
+  # Login to Steam account billhertzing S2V, then get 2FA code from gmail
   # Install AOEIV from steam library
   # Pushbullet - login with Google Chrome link
-  # Everything "double click  path to open folder in Explorer" and "put double quaotes around path when copying complete path"
+  # Everything "double click  path to open folder in Explorer" and "put double quotes around path when copying complete path"
   # ShareX - kotkeys conflict if onedrive is started before sharex, solved by turning off OneDrive . Settings: Paths->Use Custom Screenshots folder : C:\Dropbox\whertzing\ShareX\Screenshots  Set Theme to light
   # SpyderX - calibrate monitor/GPU after installation
   # BeyondCompare - add license, found at "C:\Dropbox\Downloads\CD Keys\BeyondCompare V4 License.txt.txt"
@@ -539,8 +539,8 @@
   # VSC - add user settings to new system, especially spell words
   # VSC - extension for Github Copilot
   # VSC - extension for Github Copilot Voice
-  # VSC - extension for DGML viewer (not in chcolatey) DGMLViewer by Allen Simonsen
-  # VSC - extension for ILSpy viewer (not in chcolatey) ILSpy by Allen Simonsen
+  # VSC - extension for DGML viewer (not in chocolatey) DGMLViewer by Allen Simonsen
+  # VSC - extension for ILSpy viewer (not in chocolatey) ILSpy by Allen Simonsen
   # Terminal -change the default profile GUID to be the GUID of the Powershell Core profile. Settings at "C:\Users\whertzing\AppData\Local\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
   # Run Samsung magician against all SSD drives, do a diagnostics scan, get benchmark for performance, do performance optimization, check Overprovisioning, check S.M.A.R.T results
   # Firewall rules module, to allow roles to define the firewall rules they need
@@ -551,7 +551,7 @@
   # $distroToInstall = Read-Host -Prompt 'Distro to install' : accept default 'ubuntu'
   # wsl --install $distroToInstall
   # wsl --set-default-version 2
-  # Settings and Windows scheduled tassk needed to setup communications into WSL container
+  # Settings and Windows scheduled task needed to setup communications into WSL container
 
   # Plex server and Fred's Videos
 
@@ -565,7 +565,7 @@
   # download python requirements:
   # pip install -r requirements.txt
   # start webserver `python3 webserver.py`
-  # Allow incoming requesty to "dataset-webui" through the Firewall
+  # Allow incoming requests to "dataset-webui" through the Firewall
   #   $PortNumber = 8080
   #   $ServiceName = "dataset-webui"
   #   New-NetFirewallRule -Name "$ServiceName-Inbound" -DisplayName "Allow $ServiceName Incoming" -Enabled True -Direction Inbound -Protocol TCP -LocalPort $PortNumber -Action Allow
@@ -574,7 +574,7 @@
 
   # Pinning a program to the taskbar seems pretty complicated, requiring a PS script and knowledge of where the executable is placed
   # and also  differs per user pr machine wide (where the .lnk isplaced)
-  # TBD - write the PS script, and deploy thhe contaning package to the target host before trying to pin anything - maybe make it a role, and have that role be a dependency for any rolethat wants t pin an app
+  # TBD - write the PS script, and deploy the contaning package to the target host before trying to pin anything - maybe make it a role, and have that role be a dependency for any rolethat wants t pin an app
 
     # if needed to change a local user password
     #   net user <username> <password>

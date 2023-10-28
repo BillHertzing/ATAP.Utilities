@@ -1,6 +1,6 @@
-# ATAP-AIAssist README
+# atap-aiassist README
 
-This is the README for your extension "ATAP-AIAssist". After writing up a brief description, we recommend including the following sections.
+This is the README for your extension "atap-aiassist". After writing up a brief description, we recommend including the following sections.
 
 ## Features
 

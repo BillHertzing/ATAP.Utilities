@@ -1,6 +1,6 @@
 
 [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
-$extensionName = 'ATAP-AIAssist'
+$extensionName = 'atap-aiassist'
 $extensionDescription = 'AI code helper'
 $extensionPublisher= 'ATAPUtilities.org'
 

@@ -78,7 +78,7 @@ Remove-Item -path (join-path $targetScriptDirectory $scriptTargetName) -ErrorAct
 New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptTargetName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $scriptSourceName )
 }
 
-## Symbolic Links for VSC settings, tasks, and launch configurations
+## Symbolic Links for VSC settings, tasks, launch configurations
 
 The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a subirecory `.vscode`, which contains the three files
 
@@ -101,4 +101,23 @@ In every new repository, after runing `git init`, run this command (as an admini
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch.json"  -symbolicLinkPath ".\.vscode\launch.json" -force
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\settings.json"  -symbolicLinkPath ".\.vscode\settings.json" -force
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\tasks.json"  -symbolicLinkPath ".\.vscode\tasks.json" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\.prettierrc.json"  -symbolicLinkPath ".\.vscode\tasks.json" -force
 ```
+
+## Symbolic Links for Prettier formatting rules and eslint rules
+
+The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a `.prettierrc.yml` with formatting rules and an `eslintrc.yml` with linting rules for Javascript at the repository base. We use the YAML format in order to support comments in the file.
+
+In every new repository, after creating the .vscode directory and its contents, run this command (as an administrator) in the root folder of the repository:
+
+```Powershell
+  # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.prettierrc.yml"  -symbolicLinkPath ".\.prettierrc.yml" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.eslintrc.yml"  -symbolicLinkPath ".\.eslintrc.yml" -force
+```
+
+## Symbolic Links and cloud-synchronization
+
+The ATAP organizations use Dropbox to sync development environments across desktops and laptops. Dropbox DOES NOT sync symbolic links. The current workaround is to ensure that symbolic links are created, manually, on every host participating in the development environment.
+
+ToDO: Use Ansible to ensure creation, update, and removal of symbolic links occur on all hosts that participate in the development process

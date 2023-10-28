@@ -1,6 +1,6 @@
 {
-  "name": "ATAP-AIAssist",
-  "displayName": "ATAP-AIAssist",
+  "name": "atap-aiassist",
+  "displayName": "atap-aiassist",
   "description": "AI code helper",
   "version": "0.0.1",
   "engines": {
@@ -9,48 +9,87 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
-  "main": "./_generated/extension.js",
+  "activationEvents": ["*"],
+  "main": "./_generated/dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "ATAP-AIAssist.copyToSubmit",
+        "command": "atap-aiassist.showVSCEnvironment",
+        "title": "ATAP-AiAssist: showVSCEnvironment"
+      },
+      {
+        "command": "atap-aiassist.removeRegion",
+        "title": "ATAP-AiAssist: Remove lines starting with #region  and #endregion"
+      },
+      {
+        "command": "atap-aiassist.processPs1Files",
+        "title": "ATAP-AiAssist: process all .ps1 files in a workspace (Requires command ID as argument)"
+      },
+      {
+        "command": "atap-aiassist.copyToSubmit",
         "title": "copyToSubmit"
-      },
-      {
-        "command": "ATAP-AIAssist.removeRegion",
-        "title": "Remove #region lines"
-      },
-      {
-        "command": "ATAP-AIAssist.processPs1Files",
-        "title": "process all .ps1 files in a workspace (Requires command ID as argument)"
       }
     ],
     "keybindings": [
       {
-          "command": "ATAP-AIAssist.processPs1Files",
+          "command": "atap-aiassist.processPs1Files",
           "key": "ctrl+l ctrl+p"
       }
+  ],
+  "configuration": [
+    {
+      "title": "ATAP-AiAssist",
+      "properties": {
+        "ATAP-AiAssist.Logger.LogLevel": {
+          "type": "string",
+          "default": "Info",
+          "enum": ["Error", "Warning", "Info", "Debug", "Trace"],
+          "description": "Log level setting."
+        },
+        "ATAP-AiAssist.Development.Logger.LogLevel": {
+          "type": "string",
+          "default": "Info",
+          "enum": ["Error", "Warning", "Info", "Debug", "Trace"],
+          "description": "Log level setting when the extension is run inside the development host."
+        },
+        "ATAP-AiAssist.Development.Editor.FilePath": {
+          "type": "string",
+          "default": "./src/test/suite/TestData1.ps1",
+          "description": "The file to open in an editor when the extension is run inside the development host."
+        },
+        "ATAP-AiAssist.Development.WorkspacePath": {
+          "type": "string",
+          "default": "C:/Dropbox/whertzing/GitHub/PlaygroundVSCExtension/helloworld/",
+          "description": "The workspace to open when the extension is run inside the development host."
+        }
+      }
+    }
   ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack --output-path=./_generated/dist/",
+    "watch": "webpack --watch --output-path=./_generated/dist/",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir ./_generated/out/",
+    "watch-tests": "tsc -p . -w --outDir ./_generated/out/",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./_generated/test/runTest.js"
+    "test": "node ./_generated/out/test/runTest.js"
   },
   "devDependencies": {
+    "@types/vscode": "^1.83.0",
     "@types/mocha": "^10.0.2",
     "@types/node": "18.x",
-    "@types/vscode": "^1.83.0",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.7.3",
-    "@vscode/test-electron": "^2.3.4",
     "eslint": "^8.50.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "ts-loader": "^9.4.4",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4",
+    "@vscode/test-electron": "^2.3.4"
   }
 }

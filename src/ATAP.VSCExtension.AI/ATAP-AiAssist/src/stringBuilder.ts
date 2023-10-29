@@ -1,4 +1,4 @@
-export default class StringBuilder {
+export class stringBuilder {
     private _textArray: string[] = [];
 
     append(text: string): void {

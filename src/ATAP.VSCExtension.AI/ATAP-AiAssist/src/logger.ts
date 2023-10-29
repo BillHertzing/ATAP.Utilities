@@ -34,7 +34,7 @@ export function setDevelopmentLoggerLogLevelFromSettings(newLevel: LogLevel): Th
   return configuration.update('Development.Logger.LogLevel', newLevel, vscode.ConfigurationTarget.Global);
 }
 
-interface ChannelInfo {
+export interface ChannelInfo {
   outputChannel: vscode.OutputChannel;
   enabled: boolean;
   level: LogLevel;
@@ -50,10 +50,19 @@ export class Logger {
     this.channels[name] = { outputChannel, enabled, level };
   }
 
-  log(message: string, level: LogLevel, channelName: string): void {
-    const channelInfo = this.channels[channelName];
-    if (channelInfo && channelInfo.enabled && level <= channelInfo.level) {
-      channelInfo.outputChannel.appendLine(`[${LogLevel[level]}] ${message}`);
+  log(message: string, level: LogLevel, channelName?: string): void {
+    if ( channelName != null) {
+      const channelInfo = this.channels[channelName];
+      if (channelInfo && channelInfo.enabled && level <= channelInfo.level) {
+        channelInfo.outputChannel.appendLine(`[${LogLevel[level]}] ${message}`);
+      }
+    } else {
+      for (const channelName in this.channels) {
+        const channelInfo = this.channels[channelName];
+        if (channelInfo && channelInfo.enabled && level <= channelInfo.level) {
+          channelInfo.outputChannel.appendLine(`[${LogLevel[level]}] ${message}`);
+        }
+      }
     }
   }
 
@@ -70,6 +79,12 @@ export class Logger {
       channelInfo.level = level;
     }
   }
+
+  getChannelInfo(channelName: string): ChannelInfo | null {
+    const channelInfo = this.channels[channelName];
+    return channelInfo ? channelInfo : null;
+  }
+
 
   dispose(): void {
     for (const channelName in this.channels) {

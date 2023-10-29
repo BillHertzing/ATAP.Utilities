@@ -10,12 +10,15 @@ import {
   setLoggerLogLevelFromSettings,
   getDevelopmentLoggerLogLevelFromSettings,
   setDevelopmentLoggerLogLevelFromSettings,
+  ChannelInfo,
 } from './logger';
 
 import * as fs from 'fs';
-import StringBuilder from './StringBuilder';
+import { stringBuilder } from './stringBuilder';
 import { checkFile } from './checkFile';
-import { processPs1Files } from './processPs1Files'; // adjust the import to your file structure
+import { processPs1Files } from './processPs1Files';
+import { mainViewTreeDataProvider } from './mainViewTreeDataProvider';
+import { FileTreeProvider } from './FileTreeProvider';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -28,16 +31,23 @@ export async function activate(context: vscode.ExtensionContext) {
   const loggerLogLevelFromSettings = getLoggerLogLevelFromSettings(); // supplies a default if not found in settings
   myLogger.createChannel('ATAP-AiAssist', loggerLogLevelFromSettings);
 
-  myLogger.log('Extension Activation', LogLevel.Info, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
+  myLogger.log('Extension Activation', LogLevel.Info);
+
 
   // Get the VSC configuration settings for this extension
   const config = vscode.workspace.getConfiguration('ATAP-AiAssist');
+
+  // Declaration of variables
+  var workspacePath: string;
 
   if (runningInDevelopment) {
     // update the loggerLogLevel with the'Development.Logger.LogLevel settings value, if it exists
     const developmentLoggerLogLevelFromSettings = getDevelopmentLoggerLogLevelFromSettings();
     myLogger.setChannelLogLevel('ATAP-AiAssist', developmentLoggerLogLevelFromSettings); // supplies a default if not found in settings
-    myLogger.log('Running in development mode.', LogLevel.Debug, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
+    myLogger.log('Running in development mode.', LogLevel.Debug);
+
+    // Focus on the output stream when strarting in development mode
+    myLogger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
 
     // in development mode, open a specific Workspace as specified in settings
     const workspacePathFromSettings = config.get<string>('Development.WorkspacePath');
@@ -55,12 +65,11 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     // Validate the workspace exists and is readable
-    var workspacePath: string;
 
     workspacePath = workspacePathFromSettingsNotNull;
 
     message = `Workspace to open when in development mode: ${workspacePath}`;
-    myLogger.log(message, LogLevel.Debug, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
+    myLogger.log(message, LogLevel.Debug);
 
     // Add a folder to the workspaceFolders collection
     const workspaceFolderURI = vscode.Uri.file(workspacePath);
@@ -90,7 +99,7 @@ export async function activate(context: vscode.ExtensionContext) {
     editorFilePath = editorFilePathFromSettingsNotNull;
 
     message = `File to open when in development mode: ${editorFilePath}`;
-    myLogger.log(message, LogLevel.Debug, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
+    myLogger.log(message, LogLevel.Debug);
 
     // ensure the root workspace is open
     const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -98,13 +107,14 @@ export async function activate(context: vscode.ExtensionContext) {
     if (workspaceFolders && workspaceFolders.length > 0) {
       // this is extra confirmation code. workspacePath (from above) should match workspaceFolders[0].uri.fsPath
       message = `workspacePath = ${workspacePath} ;  rootWorkspace = workspaceFolders[0] ; rootWorkspacePath = ${workspaceFolders[0].uri.fsPath} `;
-      myLogger.log(message, LogLevel.Debug, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
+      myLogger.log(message, LogLevel.Debug);
     } else {
       message = 'No workspace folder open!';
-      myLogger.log(message, LogLevel.Error, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
+      myLogger.log(message, LogLevel.Error);
       return; // ToDo: How to handle a terminating error - ask user what to do
     }
 
+    // combine the workspace and filepath
     const fullFilePath = path.join(workspacePath || '', editorFilePath);
     const fileUri = vscode.Uri.file(fullFilePath);
 
@@ -120,17 +130,40 @@ export async function activate(context: vscode.ExtensionContext) {
         // If e is not an instance of Error, you might want to handle it differently
         message = 'An unknown error occurred';
       }
-      myLogger.log(message, LogLevel.Error, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
+      myLogger.log(message, LogLevel.Error);
     }
   } else {
     message = 'Running in normal mode.';
-    myLogger.log(message, LogLevel.Debug, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
+    myLogger.log(message, LogLevel.Debug);
   }
+
+  // in non-development mode, we may be started without a workspace root
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (workspaceFolders && workspaceFolders.length > 0) {
+    // ToDo: ensure that We've already ensured that a workspace is open
+    workspacePath = workspaceFolders[0].uri.fsPath;
+  } else {
+  // ToDo: design the fallback - what should be the workspace root? Ask? PowershellPro Tools extension asks that....
+    workspacePath = './'; // ToDO: Priority: this probably won't work
+  }
+
+  // instantiate a mainViewTreeDataProvider instance and register that with the TreeDataProvider with the main tree view
+  const mainViewTreeDataProviderInstance = new mainViewTreeDataProvider();
+  vscode.window.createTreeView('atap-aiassistMainTreeView', { treeDataProvider: mainViewTreeDataProviderInstance });
+
+  // instantiate the FileTreeProvider and register it
+  message = 'Instantiate the custom fileTreeProvider.';
+  myLogger.log(message, LogLevel.Debug);
+
+  const rootPath = workspacePath || '';
+  const dummy:string = 'E:/'  ;
+  const fileTreeProvider = new FileTreeProvider(dummy); // rootPath
+  vscode.window.registerTreeDataProvider('atap-aiassistFileTreeView"', fileTreeProvider);
 
   // *************************************************************** //
   let copyToSubmitDisposable = vscode.commands.registerCommand('atap-aiassist.copyToSubmit', () => {
     let message: string = 'starting commandID copyToSubmit';
-    myLogger.log(message, LogLevel.Debug, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
+    myLogger.log(message, LogLevel.Debug);
 
     let editor = vscode.window.activeTextEditor;
     if (editor) {
@@ -139,10 +172,9 @@ export async function activate(context: vscode.ExtensionContext) {
       let text = document.getText(selection);
 
       let message: string = 'text fetched';
-      myLogger.log(message, LogLevel.Debug, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
-        //let textToSubmit = new StringBuilder();
+      myLogger.log(message, LogLevel.Debug);
+      let textToSubmit = new stringBuilder();
       //textToSubmit.append(text);
-
     }
   });
   context.subscriptions.push(copyToSubmitDisposable);
@@ -150,7 +182,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // *************************************************************** //
   let showVSCEnvironmentDisposable = vscode.commands.registerCommand('atap-aiassist.showVSCEnvironment', () => {
     let message: string = 'starting commandID showVSCEnvironment';
-    myLogger.log(message, LogLevel.Debug, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
+    myLogger.log(message, LogLevel.Debug);
 
     const workspaceFolders = vscode.workspace.workspaceFolders;
 
@@ -170,14 +202,14 @@ export async function activate(context: vscode.ExtensionContext) {
     } else {
       message += '; No editor open';
     }
-    myLogger.log(message, LogLevel.Debug, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
+    myLogger.log(message, LogLevel.Debug);
   });
   context.subscriptions.push(showVSCEnvironmentDisposable);
 
   // *************************************************************** //
   let removeRegionDisposable = vscode.commands.registerCommand('atap-aiassist.removeRegion', () => {
     let message: string = 'starting commandID removeRegion';
-    myLogger.log(message, LogLevel.Debug, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
+    myLogger.log(message, LogLevel.Debug);
 
     const editor = vscode.window.activeTextEditor;
 
@@ -204,7 +236,7 @@ export async function activate(context: vscode.ExtensionContext) {
     'atap-aiassist.processPs1Files',
     async (commandId: string | null) => {
       let message: string = 'starting commandID processPs1Files';
-      myLogger.log(message, LogLevel.Debug, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels (so the extension name can be removed)
+      myLogger.log(message, LogLevel.Debug);
 
       const processPs1FilesRecord = await processPs1Files(commandId);
       if (processPs1FilesRecord.success) {
@@ -217,6 +249,20 @@ export async function activate(context: vscode.ExtensionContext) {
     },
   );
   context.subscriptions.push(processPs1FilesDisposable);
+
+  // *************************************************************** //
+  let showExplorerViewDisposable = vscode.commands.registerCommand(
+    'atap-aiassist.showExplorerView',
+    async (commandId: string | null) => {
+      let message: string = 'starting commandID showExplorerView';
+      myLogger.log(message, LogLevel.Debug);
+
+      vscode.commands.executeCommand('workbench.view.explorer');
+      message = 'explorer view should be up';
+      myLogger.log(message, LogLevel.Debug);
+    },
+  );
+  context.subscriptions.push(showExplorerViewDisposable);
 }
 // This method is called when your extension is deactivated
 export function deactivate() {}

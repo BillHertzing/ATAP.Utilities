@@ -2,14 +2,18 @@
   "name": "atap-aiassist",
   "displayName": "atap-aiassist",
   "description": "AI code helper",
+  "publisher": "ATAP Utilities Foundation",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.83.0"
   },
+
   "categories": [
     "Other"
   ],
-  "activationEvents": ["*"],
+  "activationEvents": [
+    "*"
+  ],
   "main": "./_generated/dist/extension.js",
   "contributes": {
     "commands": [
@@ -28,43 +32,106 @@
       {
         "command": "atap-aiassist.copyToSubmit",
         "title": "copyToSubmit"
+      },
+      {
+        "command": "atap-aiassist.showExplorerView",
+        "title": "ATAP-AiAssist: Show Explorer View"
       }
+
     ],
     "keybindings": [
       {
-          "command": "atap-aiassist.processPs1Files",
-          "key": "ctrl+l ctrl+p"
+        "command": "atap-aiassist.processPs1Files",
+        "key": "ctrl+l ctrl+p"
       }
-  ],
-  "configuration": [
-    {
-      "title": "ATAP-AiAssist",
-      "properties": {
-        "ATAP-AiAssist.Logger.LogLevel": {
-          "type": "string",
-          "default": "Info",
-          "enum": ["Error", "Warning", "Info", "Debug", "Trace"],
-          "description": "Log level setting."
-        },
-        "ATAP-AiAssist.Development.Logger.LogLevel": {
-          "type": "string",
-          "default": "Info",
-          "enum": ["Error", "Warning", "Info", "Debug", "Trace"],
-          "description": "Log level setting when the extension is run inside the development host."
-        },
-        "ATAP-AiAssist.Development.Editor.FilePath": {
-          "type": "string",
-          "default": "./src/test/suite/TestData1.ps1",
-          "description": "The file to open in an editor when the extension is run inside the development host."
-        },
-        "ATAP-AiAssist.Development.WorkspacePath": {
-          "type": "string",
-          "default": "C:/Dropbox/whertzing/GitHub/PlaygroundVSCExtension/helloworld/",
-          "description": "The workspace to open when the extension is run inside the development host."
+    ],
+    "configuration": [
+      {
+        "title": "ATAP-AiAssist",
+        "properties": {
+          "ATAP-AiAssist.Logger.LogLevel": {
+            "type": "string",
+            "default": "Info",
+            "enum": [
+              "Error",
+              "Warning",
+              "Info",
+              "Debug",
+              "Trace"
+            ],
+            "description": "Log level setting."
+          },
+          "ATAP-AiAssist.Development.Logger.LogLevel": {
+            "type": "string",
+            "default": "Info",
+            "enum": [
+              "Error",
+              "Warning",
+              "Info",
+              "Debug",
+              "Trace"
+            ],
+            "description": "Log level setting when the extension is run inside the development host."
+          },
+          "ATAP-AiAssist.Development.Editor.FilePath": {
+            "type": "string",
+            "default": "./src/test/suite/TestData1.ps1",
+            "description": "The file to open in an editor when the extension is run inside the development host."
+          },
+          "ATAP-AiAssist.Development.WorkspacePath": {
+            "type": "string",
+            "default": "C:/Dropbox/whertzing/GitHub/PlaygroundVSCExtension/helloworld/",
+            "description": "The workspace to open when the extension is run inside the development host."
+          }
         }
       }
-    }
-  ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "atap-aiassist-activitybar-viewsContainer",
+          "title": "ATAP-AiAssist",
+          "icon": "media/ataplogo.svg"
+        }
+      ]
+    },
+    "views": {
+      "atap-aiassist-activitybar-viewsContainer": [
+        {
+          "id": "atap-aiassistMainTreeView",
+          "name": "Main Tree View"
+        }
+      ],
+      "explorer": [
+        {
+          "id": "atap-aiassistFileTreeView",
+          "name": "ATAP Custom File Tree View"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "explorer",
+        "contents": "Welcome to the ATAP AiAssist extension!\n\n[Start here](command:atap-aiassist.startCommand)",
+        "when": "config.atap-aiassist.enabled",
+        "//": "group: atap-aiassist@1",
+        "priority": 1
+      },
+      {
+        "view": "explorer",
+        "contents": "Need Help? [See our docs](https://your-extension-docs.com)",
+        "when": "config.atap-aiassist.enabled",
+        "//": "group: atap-aiassist@2",
+        "priority": 2
+      },
+      {
+        "view": "explorer",
+        "contents": "Join our [Discord Server](https://discord.gg/atap-aiassist)",
+        "when": "!config.atap-aiassist.hideDiscord",
+        "//": "group: atap-aiassist@2",
+        "priority": 3
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

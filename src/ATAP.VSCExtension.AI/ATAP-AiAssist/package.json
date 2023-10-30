@@ -26,6 +26,14 @@
         "title": "Show Quick Pick"
       },
       {
+        "command": "atap-aiassist.showRootRecordProperties",
+        "title": "Show Root Properties"
+      },
+      {
+        "command": "atap-aiassist.showSubItemProperties",
+        "title": "Show SubItem Properties"
+      },
+      {
         "command": "atap-aiassist.removeRegion",
         "title": "ATAP-AiAssist: Remove lines starting with #region  and #endregion"
       },
@@ -136,6 +144,19 @@
           ],
           "//": "group: atap-aiassist@1",
           "priority": 1
+        }
+      ]
+    },
+
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "atap-aiassist.showRootRecordProperties",
+          "when": "view == myTreeView && viewItem == myContext"
+        },
+        {
+          "command": "atap-aiassist.showSubItemProperties",
+          "when": "view == myTreeView && viewItem == myContext"
         }
       ]
     },

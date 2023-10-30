@@ -1,0 +1,68 @@
+repositoryRoot/
+├── .github/
+│   └── ISSUE_TEMPLATE/
+├── .git/
+│   ├── hooks/
+│   ├── info/
+│   ├── logs/
+│   ├── lost-found/
+│   ├── objects/
+│   ├── refs/
+│   ├── COMMIT_EDITMSG
+│   ├── FETCH_HEAD
+│   ├── HEAD
+│   ├── ORIG_HEAD
+│   ├── REBASE_HEAD
+│   ├── config
+│   ├── description
+│   ├── index
+│   ├── ms-persist.xml
+│   └── packed-refs
+├── .vscode/
+│   ├── .launch
+│   ├── .settings
+│   └── .tasks
+├── _devlogs/
+├── _site/
+├── src/
+│   ├── ATAP.Utilities.<purpose>/
+│   │   ├── Documentation/
+│   │   ├── Properties/
+│   │   │   └── AssemblyInfo.cs
+│   │   ├── bin/
+│   │   ├── obj/
+│   │   ├── ATAP.Utilities.<purpose>.cs
+│   │   └── ATAP.Utilities.<purpose>.csproj
+│   ├── ATAP.Utilities.<purpose>.Powershell/
+│   │   ├── Documentation/
+│   │   ├── private/
+│   │   │   └── CmdletOrFunction-1.ps1
+│   │   ├── public/
+│   │   │   ├── CmdletOrFunction-2.ps1
+│   │   │   └── CmdletOrFunction-3.ps1
+│   │   ├── Tests/
+│   │   │   ├── Unit/
+│   │   │   │   └── <test-file>.Tests.ps1
+│   │   │   ├── Integration/
+│   │   │   │   └── <test-file>.Tests.ps1
+│   │   │   ├── Performance/
+│   │   │   │   └── <performance-test-file>.Tests.ps1
+│   │   ├── ATAP.Utilities.<purpose>.Powershell.psd1
+│   │   └── ATAP.Utilities.<purpose>.Powershell.psm1
+│   └── ATAP.VSCExtension.<purpose>/
+│       ├── .vscode-test/
+│       ├── _generated/
+│       ├── media/
+│       ├── node_modules/
+│       ├── src/
+│       ├── .vscodeignore
+│       ├── CHANGELOG.md
+│       ├── README.md
+│       ├── <purpose>-extension-quickstart.md
+│       ├── <purpose>.code-workspace
+│       ├── package-lock.json
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── webpack.config.js
+└── test/
+    ├── ATAP.Utilities.<purpose>/

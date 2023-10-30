@@ -18,6 +18,7 @@ import { stringBuilder } from './stringBuilder';
 import { checkFile } from './checkFile';
 import { processPs1Files } from './processPs1Files';
 import { mainViewTreeDataProvider } from './mainViewTreeDataProvider';
+import { mainViewTreeItem } from './mainViewTreeItem';
 import { FileTreeProvider } from './FileTreeProvider';
 //import { mainSearchEngineProvider } from './mainSearchEngineProvider';
 
@@ -144,7 +145,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // ToDo: ensure that We've already ensured that a workspace is open
     workspacePath = workspaceFolders[0].uri.fsPath;
   } else {
-  // ToDo: design the fallback - what should be the workspace root? Ask? PowershellPro Tools extension asks that....
+    // ToDo: design the fallback - what should be the workspace root? Ask? PowershellPro Tools extension asks that....
     workspacePath = './'; // ToDO: Priority: this probably won't work
   }
 
@@ -159,7 +160,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // ToDo: figure out how the mainSearchPanel interacts with the fileTreeProvider -> mainFileViewTreeProvider
   const fileTreeProviderInstance = new FileTreeProvider(); // rootPath  dummy
   vscode.window.createTreeView('atap-aiassistFileTreeView', { treeDataProvider: fileTreeProviderInstance });
- //vscode.window.registerTreeDataProvider('atap-aiassistFileTreeView"', fileTreeProviderInstance);
+  //vscode.window.registerTreeDataProvider('atap-aiassistFileTreeView"', fileTreeProviderInstance);
 
   // *************************************************************** //
   // ToDo: register some kind of search engine provider. tags:#enabledApiProposals #enableProposedApi (deprecated) #SearchProvider #TextSearchQuery #TextSearchOptions #TextSearchComplete #vscode.CancellationToken
@@ -200,7 +201,7 @@ export async function activate(context: vscode.ExtensionContext) {
       message = 'No workspace folder open.';
     }
 
-  const editor = vscode.window.activeTextEditor;
+    const editor = vscode.window.activeTextEditor;
     if (editor) {
       const document = editor.document;
       const fileName = document.fileName;
@@ -241,6 +242,20 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   });
   context.subscriptions.push(mainViewSubItemRecordQuickPickDisposable);
+
+
+  // *************************************************************** //
+  let showSubItemPropertiesDisposable = vscode.commands.registerCommand('atap-aiassist.showSubItemProperties', (item: mainViewTreeItem) => {
+    vscode.window.showInformationMessage(JSON.stringify(item.properties));
+    message = `properties on item ${item.Philote_ID}`
+      myLogger.log(message, LogLevel.Debug);
+  });
+  context.subscriptions.push(showSubItemPropertiesDisposable)
+
+
+  let disposable = vscode.commands.registerCommand('extension.showProperties', (item: mainViewTreeItem) => {
+    vscode.window.showInformationMessage(JSON.stringify(item.properties));
+  });
 
   // *************************************************************** //
   let removeRegionDisposable = vscode.commands.registerCommand('atap-aiassist.removeRegion', () => {

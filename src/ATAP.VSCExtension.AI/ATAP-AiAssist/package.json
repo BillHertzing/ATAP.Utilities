@@ -7,7 +7,6 @@
   "engines": {
     "vscode": "^1.83.0"
   },
-
   "categories": [
     "Other"
   ],
@@ -37,7 +36,6 @@
         "command": "atap-aiassist.showExplorerView",
         "title": "ATAP-AiAssist: Show Explorer View"
       }
-
     ],
     "keybindings": [
       {
@@ -100,36 +98,25 @@
         {
           "id": "atap-aiassistMainTreeView",
           "name": "Main Tree View"
+        },
+        {
+          "id": "atap-aiassistFileTreeView",
+          "name": "Specialized File Tree View"
         }
       ],
       "explorer": [
         {
-          "id": "atap-aiassistFileTreeView",
-          "name": "ATAP Custom File Tree View"
+          "id": "atap-aiassistWelcomeView",
+          "name": "Welcome View"
         }
       ]
     },
     "viewsWelcome": [
       {
-        "view": "explorer",
+        "view": "atap-aiassistWelcomeView",
         "contents": "Welcome to the ATAP AiAssist extension!\n\n[Start here](command:atap-aiassist.startCommand)",
-        "when": "config.atap-aiassist.enabled",
         "//": "group: atap-aiassist@1",
         "priority": 1
-      },
-      {
-        "view": "explorer",
-        "contents": "Need Help? [See our docs](https://your-extension-docs.com)",
-        "when": "config.atap-aiassist.enabled",
-        "//": "group: atap-aiassist@2",
-        "priority": 2
-      },
-      {
-        "view": "explorer",
-        "contents": "Join our [Discord Server](https://discord.gg/atap-aiassist)",
-        "when": "!config.atap-aiassist.hideDiscord",
-        "//": "group: atap-aiassist@2",
-        "priority": 3
       }
     ]
   },

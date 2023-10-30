@@ -19,6 +19,7 @@ import { checkFile } from './checkFile';
 import { processPs1Files } from './processPs1Files';
 import { mainViewTreeDataProvider } from './mainViewTreeDataProvider';
 import { FileTreeProvider } from './FileTreeProvider';
+//import { mainSearchEngineProvider } from './mainSearchEngineProvider';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -152,13 +153,20 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.window.createTreeView('atap-aiassistMainTreeView', { treeDataProvider: mainViewTreeDataProviderInstance });
 
   // instantiate the FileTreeProvider and register it
-    const rootPath = workspacePath || '';
-  const dummy:string = 'E:/'  ;
+  //   const rootPath = workspacePath || '';
+  // const dummy:string = 'E:/'  ;
+  // ToDo: figure out how to focus on the place the user last left off. If no such info, focus on workspaceroot.
+  // ToDo: figure out how the mainSearchPanel interacts with the fileTreeProvider -> mainFileViewTreeProvider
   const fileTreeProviderInstance = new FileTreeProvider(); // rootPath  dummy
   vscode.window.createTreeView('atap-aiassistFileTreeView', { treeDataProvider: fileTreeProviderInstance });
  //vscode.window.registerTreeDataProvider('atap-aiassistFileTreeView"', fileTreeProviderInstance);
 
   // *************************************************************** //
+  // ToDo: register some kind of search engine provider. tags:#enabledApiProposals #enableProposedApi (deprecated) #SearchProvider #TextSearchQuery #TextSearchOptions #TextSearchComplete #vscode.CancellationToken
+  // let mainSearchTextDisposable = vscode.commands.registerCommand('extension.searchText', mainSearchText);
+  // const mainSearchEngine = new mainSearchEngineProvider();
+  // context.subscriptions.push(vscode.workspace.registerSearchProvider('myProvider', provider));
+
   let copyToSubmitDisposable = vscode.commands.registerCommand('atap-aiassist.copyToSubmit', () => {
     let message: string = 'starting commandID copyToSubmit';
     myLogger.log(message, LogLevel.Debug);
@@ -192,7 +200,7 @@ export async function activate(context: vscode.ExtensionContext) {
       message = 'No workspace folder open.';
     }
 
-    const editor = vscode.window.activeTextEditor;
+  const editor = vscode.window.activeTextEditor;
     if (editor) {
       const document = editor.document;
       const fileName = document.fileName;
@@ -203,6 +211,36 @@ export async function activate(context: vscode.ExtensionContext) {
     myLogger.log(message, LogLevel.Debug);
   });
   context.subscriptions.push(showVSCEnvironmentDisposable);
+
+  // *************************************************************** //
+  let mainViewRootRecordQuickPickDisposable = vscode.commands.registerCommand('atap-aiassist.mainViewRootRecordQuickPick', async () => {
+    const items = ['ROption 1', 'ROption 2', 'ROption 3'];
+    const pick = await vscode.window.showQuickPick(items, {
+      placeHolder: 'Select an option'
+    });
+
+    if (pick) {
+      message = `You selected ${pick}`
+      myLogger.log(message, LogLevel.Debug);
+      // ToDo: switch on result and run a command
+    }
+  });
+  context.subscriptions.push(mainViewRootRecordQuickPickDisposable);
+
+  // *************************************************************** //
+  let mainViewSubItemRecordQuickPickDisposable = vscode.commands.registerCommand('atap-aiassist.mainViewSubItemRecordQuickPick', async () => {
+    const items = ['SOption 1', 'SOption 2', 'SOption 3'];
+    const pick = await vscode.window.showQuickPick(items, {
+      placeHolder: 'Select an option'
+    });
+
+    if (pick) {
+      message = `You selected ${pick}`
+      myLogger.log(message, LogLevel.Debug);
+      // ToDo: switch on result and run a command
+    }
+  });
+  context.subscriptions.push(mainViewSubItemRecordQuickPickDisposable);
 
   // *************************************************************** //
   let removeRegionDisposable = vscode.commands.registerCommand('atap-aiassist.removeRegion', () => {

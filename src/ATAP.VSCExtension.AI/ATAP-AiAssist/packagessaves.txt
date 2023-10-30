@@ -1,0 +1,100 @@
+,
+      {
+        "view": "atap-aiassistWelcomeView",
+        "contents": "Need Help? [See our docs](https://your-extension-docs.com)",
+        "when": "config.atap-aiassist.enabled",
+        "//": "group: atap-aiassist@2",
+        "priority": 2
+      },
+      {
+        "view": "atap-aiassistWelcomeView",
+        "contents": "Join our [Discord Server](https://discord.gg/atap-aiassist)",
+        "when": "!config.atap-aiassist.hideDiscord",
+        "//": "group: atap-aiassist@2",
+        "priority": 3
+      }
+
+"when": "atap-aiassistMainTreeViewEnabled"
+          "when": "atap-aiassistFileTreeViewEnabled"
+
+
+      "explorer": [
+        {
+          "id": "atap-aiassistFileTreeView",
+          "name": "ATAP Custom File Tree View"
+        }
+      ],
+
+
+,
+        {
+          "id": "atap-aiassistWelcomeView",
+          "name": "ATAP Custom File Tree View"
+        }
+
+,
+    "viewsWelcome": [
+      {
+        "view": "atap-aiassistWelcomeView",
+        "contents": "Welcome to the ATAP AiAssist extension!\n\n[Start here](command:atap-aiassist.startCommand)",
+        "when": "config.atap-aiassist.showWelcome",
+        "//": "group: atap-aiassist@1",
+        "priority": 1
+      }
+    ]
+
+
+
+import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
+
+import { FileTreeItem } from './FileTreeItem';
+
+
+export class FileTreeProvider implements vscode.TreeDataProvider<FileTreeItem> {
+  private _onDidChangeTreeData: vscode.EventEmitter<FileTreeItem | undefined> = new vscode.EventEmitter<FileTreeItem | undefined>();
+  readonly onDidChangeTreeData: vscode.Event<FileTreeItem | undefined> = this._onDidChangeTreeData.event;
+
+  constructor(private rootPath: string) {}
+
+  refresh(): void {
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
+  getTreeItem(element: FileTreeItem): vscode.TreeItem {
+    return element;
+  }
+
+  getChildren(element?: FileTreeItem): Thenable<FileTreeItem[]> {
+    if (!this.rootPath) {
+      vscode.window.showInformationMessage('No folder or file in explorer');
+      return Promise.resolve([]);
+    }
+
+    return new Promise(resolve => {
+      const children: FileTreeItem[] = [];
+      const folderPath = element ? element.uri.fsPath : this.rootPath;
+
+      fs.readdir(folderPath, (err, files) => {
+        if (err) {
+          vscode.window.showErrorMessage('Unable to read directory');
+          return resolve([]);
+        }
+
+        files.forEach(file => {
+          const filePath = path.join(folderPath, file);
+          if (fs.statSync(filePath).isDirectory()) {
+            children.push(new FileTreeItem(vscode.Uri.file(filePath), 'folder'));
+          } else {
+            children.push(new FileTreeItem(vscode.Uri.file(filePath), 'file'));
+          }
+        });
+
+        return resolve(children);
+      });
+    });
+  }
+}
+
+

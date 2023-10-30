@@ -152,13 +152,11 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.window.createTreeView('atap-aiassistMainTreeView', { treeDataProvider: mainViewTreeDataProviderInstance });
 
   // instantiate the FileTreeProvider and register it
-  message = 'Instantiate the custom fileTreeProvider.';
-  myLogger.log(message, LogLevel.Debug);
-
-  const rootPath = workspacePath || '';
+    const rootPath = workspacePath || '';
   const dummy:string = 'E:/'  ;
-  const fileTreeProvider = new FileTreeProvider(dummy); // rootPath
-  vscode.window.registerTreeDataProvider('atap-aiassistFileTreeView"', fileTreeProvider);
+  const fileTreeProviderInstance = new FileTreeProvider(); // rootPath  dummy
+  vscode.window.createTreeView('atap-aiassistFileTreeView', { treeDataProvider: fileTreeProviderInstance });
+ //vscode.window.registerTreeDataProvider('atap-aiassistFileTreeView"', fileTreeProviderInstance);
 
   // *************************************************************** //
   let copyToSubmitDisposable = vscode.commands.registerCommand('atap-aiassist.copyToSubmit', () => {

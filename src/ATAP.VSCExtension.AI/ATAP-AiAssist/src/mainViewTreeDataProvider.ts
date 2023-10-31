@@ -2,14 +2,16 @@ import * as vscode from 'vscode';
 import { generateGUID } from './generateGuid';
 import { mainViewTreeItem } from './mainViewTreeItem';
 import {
-  Logger,
   LogLevel,
+  ChannelInfo,
+  ILogger,
+  Logger,
   getLoggerLogLevelFromSettings,
   setLoggerLogLevelFromSettings,
   getDevelopmentLoggerLogLevelFromSettings,
   setDevelopmentLoggerLogLevelFromSettings,
-  ChannelInfo,
-} from './logger';
+
+} from './Logger';
 
 
 export class mainViewTreeDataProvider implements vscode.TreeDataProvider<mainViewTreeItem> {

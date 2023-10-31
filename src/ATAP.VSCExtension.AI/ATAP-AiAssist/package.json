@@ -2,7 +2,7 @@
   "name": "atap-aiassist",
   "displayName": "atap-aiassist",
   "description": "AI code helper",
-  "publisher": "ATAP Utilities Foundation",
+  "publisher": "ataputilities",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.83.0"
@@ -17,21 +17,24 @@
   "contributes": {
     "commands": [
       {
+        "command": "atap-aiassist.startCommand",
+        "title": "ATAP-AiAssist: startCommand"
+      },
+      {
         "command": "atap-aiassist.showVSCEnvironment",
         "title": "ATAP-AiAssist: showVSCEnvironment"
       },
-
       {
         "command": "atap-aiassist.showQuickPick",
-        "title": "Show Quick Pick"
+        "title": "ATAP-AiAssist: Show Quick Pick"
       },
       {
-        "command": "atap-aiassist.showRootRecordProperties",
-        "title": "Show Root Properties"
+        "command": "atap-aiassist.showMainViewRootRecordProperties",
+        "title": "ATAP-AiAssist: Show Root Record (Main View) Properties"
       },
       {
         "command": "atap-aiassist.showSubItemProperties",
-        "title": "Show SubItem Properties"
+        "title": "ATAP-AiAssist: Show SubItem Properties"
       },
       {
         "command": "atap-aiassist.removeRegion",
@@ -43,7 +46,7 @@
       },
       {
         "command": "atap-aiassist.copyToSubmit",
-        "title": "copyToSubmit"
+        "title": "ATAP-AiAssist: copyToSubmit"
       },
       {
         "command": "atap-aiassist.showExplorerView",
@@ -72,118 +75,111 @@
             ],
             "description": "Log level setting."
           },
-            "ATAP-AiAssist.ChatGPT.APIKey": {
-              "type": "string",
-              "default": "Enter your ChatGPT API Key",
-
-              "description": "ChatGPT API Key."
-
+          "ATAP-AiAssist.ChatGPT.APIKey": {
+            "type": "string",
+            "default": "Enter your ChatGPT API Key",
+            "description": "ChatGPT API Key."
           },
-            "ATAP-AiAssist.Development.Logger.LogLevel": {
-              "type": "string",
-              "default": "Info",
-              "enum": [
-                "Error",
-                "Warning",
-                "Info",
-                "Debug",
-                "Trace"
-              ],
-              "description": "Log level setting when the extension is run inside the development host."
-            },
-            "ATAP-AiAssist.Development.Editor.FilePath": {
-              "type": "string",
-              "default": "./src/test/suite/TestData1.ps1",
-              "description": "The file to open in an editor when the extension is run inside the development host."
-            },
-            "ATAP-AiAssist.Development.WorkspacePath": {
-              "type": "string",
-              "default": "C:/Dropbox/whertzing/GitHub/PlaygroundVSCExtension/helloworld/",
-              "description": "The workspace to open when the extension is run inside the development host."
-            }
+          "ATAP-AiAssist.Development.Logger.LogLevel": {
+            "type": "string",
+            "default": "Info",
+            "enum": [
+              "Error",
+              "Warning",
+              "Info",
+              "Debug",
+              "Trace"
+            ],
+            "description": "Log level setting when the extension is run inside the development host."
+          },
+          "ATAP-AiAssist.Development.Editor.FilePath": {
+            "type": "string",
+            "default": "TestData1.ps1",
+            "description": "The file to open in an editor when the extension is run inside the development host."
+          },
+          "ATAP-AiAssist.Development.WorkspacePath": {
+            "type": "string",
+            "default": "./",
+            "description": "The workspace to open when the extension is run inside the development host."
           }
         }
-      ],
-      "viewsContainers": {
-        "activitybar": [
-          {
-            "id": "atap-aiassist-activitybar-viewsContainer",
-            "title": "ATAP-AiAssist",
-            "icon": "media/ataplogo.svg"
-          }
-        ]
-      },
-      "views": {
-        "atap-aiassist-activitybar-viewsContainer": [
-          {
-            "id": "atap-aiassistMainTreeView",
-            "name": "Main Tree View"
-          },
-          {
-            "id": "atap-aiassistFileTreeView",
-            "name": "Specialized File Tree View"
-          }
-        ],
-        "explorer": [
-          {
-            "id": "atap-aiassistWelcomeView",
-            "name": "Welcome View"
-          }
-        ]
-      },
-      "viewsWelcome": [
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
         {
-          "view": "atap-aiassistWelcomeView",
-          "contents": "Welcome to the ATAP AiAssist extension!\n\n[Start here](command:atap-aiassist.startCommand)",
-          "commands": [
-            {
-              "command": "ATAP-AiAssist.ChatGPT.AIKey",
-              "title": "Enter ChatGPT API Key",
-              "when": "ATAP-AiAssist.ChatGPT.AIKey == ''"
-            }
-          ],
-          "//": "group: atap-aiassist@1",
-          "priority": 1
+          "id": "atap-aiassist-activitybar-viewsContainer",
+          "title": "ATAP-AiAssist",
+          "icon": "media/ataplogo.svg"
         }
       ]
     },
-
-    "menus": {
-      "view/item/context": [
+    "views": {
+      "atap-aiassist-activitybar-viewsContainer": [
         {
-          "command": "atap-aiassist.showRootRecordProperties",
-          "when": "view == myTreeView && viewItem == myContext"
+          "id": "atap-aiassistMainTreeView",
+          "name": "Main Tree View"
         },
         {
-          "command": "atap-aiassist.showSubItemProperties",
-          "when": "view == myTreeView && viewItem == myContext"
+          "id": "atap-aiassistFileTreeView",
+          "name": "Specialized File Tree View"
+        }
+      ],
+      "explorer": [
+        {
+          "id": "atap-aiassistWelcomeView",
+          "name": "Welcome View"
         }
       ]
     },
-    "scripts": {
-      "vscode:prepublish": "npm run package",
-      "compile": "webpack --output-path=./_generated/dist/",
-      "watch": "webpack --watch --output-path=./_generated/dist/",
-      "package": "webpack --mode production --devtool hidden-source-map",
-      "compile-tests": "tsc -p . --outDir ./_generated/out/",
-      "watch-tests": "tsc -p . -w --outDir ./_generated/out/",
-      "pretest": "npm run compile-tests && npm run compile && npm run lint",
-      "lint": "eslint src --ext ts",
-      "test": "node ./_generated/out/test/runTest.js"
-    },
-    "devDependencies": {
-      "@types/vscode": "^1.83.0",
-      "@types/mocha": "^10.0.2",
-      "@types/node": "18.x",
-      "@typescript-eslint/eslint-plugin": "^6.7.3",
-      "@typescript-eslint/parser": "^6.7.3",
-      "eslint": "^8.50.0",
-      "glob": "^10.3.3",
-      "mocha": "^10.2.0",
-      "typescript": "^5.2.2",
-      "ts-loader": "^9.4.4",
-      "webpack": "^5.88.2",
-      "webpack-cli": "^5.1.4",
-      "@vscode/test-electron": "^2.3.4"
-    }
+    "viewsWelcome": [
+      {
+        "view": "atap-aiassistWelcomeView",
+        "contents": "Welcome to the ATAP AiAssist extension!/n/n[Start here](command:atap-aiassist.startCommand)",
+        "commands": [
+          {
+            "command": "ATAP-AiAssist.ChatGPT.AIKey",
+            "title": "Enter ChatGPT API Key",
+            "when": "ATAP-AiAssist.ChatGPT.AIKey == ''"
+          }
+        ],
+        "//": "group: atap-aiassist@1",
+        "priority": 1
+      }
+    ]
+  },
+  "menus": {
+    "view/item/context": [
+      {
+        "command": "atap-aiassist.showMainViewRootRecordProperties",
+        "when": "view == atap-aiassistMainTreeView && viewItem == mainViewTreeItem"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack --output-path=./_generated/dist/",
+    "watch": "webpack --watch --output-path=./_generated/dist/",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir ./_generated/out/",
+    "watch-tests": "tsc -p . -w --outDir ./_generated/out/",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./_generated/out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.2",
+    "@types/node": "18.x",
+    "@types/vscode": "^1.83.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.3",
+    "@typescript-eslint/parser": "^6.9.1",
+    "@vscode/test-electron": "^2.3.4",
+    "eslint": "^8.50.0",
+    "glob": "^10.3.3",
+    "mocha": "^10.2.0",
+    "ts-loader": "^9.4.4",
+    "typescript": "^5.2.2",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
   }
+}

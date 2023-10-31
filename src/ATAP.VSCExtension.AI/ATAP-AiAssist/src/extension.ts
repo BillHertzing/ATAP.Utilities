@@ -26,113 +26,111 @@ import { FileTreeProvider } from './FileTreeProvider';
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
   const runningInDevelopment = context.extensionMode === vscode.ExtensionMode.Development;
+  // Declaration of variables
   let message: string = '';
+  var workspacePath: string = '';
 
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
   const myLogger = new Logger();
   const loggerLogLevelFromSettings = getLoggerLogLevelFromSettings(); // supplies a default if not found in settings
   myLogger.createChannel('ATAP-AiAssist', loggerLogLevelFromSettings);
-
   myLogger.log('Extension Activation', LogLevel.Info);
-
 
   // Get the VSC configuration settings for this extension
   const config = vscode.workspace.getConfiguration('ATAP-AiAssist');
-
-  // Declaration of variables
-  var workspacePath: string;
 
   if (runningInDevelopment) {
     // update the loggerLogLevel with the'Development.Logger.LogLevel settings value, if it exists
     const developmentLoggerLogLevelFromSettings = getDevelopmentLoggerLogLevelFromSettings();
     myLogger.setChannelLogLevel('ATAP-AiAssist', developmentLoggerLogLevelFromSettings); // supplies a default if not found in settings
     myLogger.log('Running in development mode.', LogLevel.Debug);
-
-    // Focus on the output stream when strarting in development mode
+    // Focus on the output stream on the extension when strarting in development mode
     myLogger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
 
-    // in development mode, open a specific Workspace as specified in settings
-    const workspacePathFromSettings = config.get<string>('Development.WorkspacePath');
-    var workspacePathFromSettingsNotNull: string;
-
-    if (workspacePathFromSettings === null) {
-      // no initial workspacePath in settings
-      // ToDo: need a function to handle error conditions, ask user for input to resolve, etc.
-      message = `the setting 'ATAP-AiAssist:Development.WorkspacePath' is null`;
-      myLogger.log(message, LogLevel.Error, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels
-      return; // ToDo: only return if the user decides not to specify an initial file or is ok with no editor open
-    } else {
-      // cast the nullable type to a string, as we have explicitly tested for not null
-      workspacePathFromSettingsNotNull = <string>workspacePathFromSettings;
-    }
-
-    // Validate the workspace exists and is readable
-
-    workspacePath = workspacePathFromSettingsNotNull;
-
-    message = `Workspace to open when in development mode: ${workspacePath}`;
-    myLogger.log(message, LogLevel.Debug);
-
-    // Add a folder to the workspaceFolders collection
-    const workspaceFolderURI = vscode.Uri.file(workspacePath);
-    //ToDo: wrap in a try/catch block and handle any errors
-    vscode.workspace.updateWorkspaceFolders(0, null, {
-      uri: workspaceFolderURI,
-    });
-    // await vscode.commands.executeCommand('vscode.openFolder', uri, true);
-
-    // in development mode, open into a specific .ps1 file (relative to the workspacePath) as specified in settings
-    const editorFilePathFromSettings = config.get<string>('Development.Editor.FilePath');
-    var editorFilePathFromSettingsNotNull: string;
-    if (editorFilePathFromSettings === null) {
-      // no initial file path in settings
-      // ToDo: need a function to handle error conditions, ask user for input to resolve, etc.
-      message = `the setting 'ATAP-AiAssist:Development.Editor.FilePath' is null`;
-      myLogger.log(message, LogLevel.Error, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels
-      return; // ToDo: only return if the user decides not to specify an initial file or is ok with no editor open
-    } else {
-      // cast the nullable type to a string, as we have explicitly tested for not null
-      editorFilePathFromSettingsNotNull = <string>editorFilePathFromSettings;
-    }
-
-    // Validate the initial file path exists and is readable
-    var editorFilePath: string;
-
-    editorFilePath = editorFilePathFromSettingsNotNull;
-
-    message = `File to open when in development mode: ${editorFilePath}`;
-    myLogger.log(message, LogLevel.Debug);
-
-    // ensure the root workspace is open
+    // was the development host opened to a specific workspace, e.g., as a command line argument
     const workspaceFolders = vscode.workspace.workspaceFolders;
     // Check if a workspace is open
     if (workspaceFolders && workspaceFolders.length > 0) {
-      // this is extra confirmation code. workspacePath (from above) should match workspaceFolders[0].uri.fsPath
-      message = `workspacePath = ${workspacePath} ;  rootWorkspace = workspaceFolders[0] ; rootWorkspacePath = ${workspaceFolders[0].uri.fsPath} `;
+      // yes, a workspace was supplied when opening VSC
+      workspacePath = workspaceFolders[0].uri.fsPath;
+      message = `workspace supplied, WorkspacePath = ${workspacePath}`;
       myLogger.log(message, LogLevel.Debug);
     } else {
-      message = 'No workspace folder open!';
+      message = 'No workspace supplied!';
       myLogger.log(message, LogLevel.Error);
-      return; // ToDo: How to handle a terminating error - ask user what to do
+
+      // in development mode, if a workspace is not supplied by the invocation of VSC, open a specific Workspace as specified in settings
+      const workspacePathFromSettings = config.get<string>('Development.WorkspacePath');
+      var workspacePathFromSettingsNotNull: string;
+
+      if (workspacePathFromSettings === null) {
+        // no initial workspacePath in settings, and none supplied at startup
+        // Let VSC and the extension use their fallback resolution process to ask the user if they want to open a folder
+        message = `the setting 'ATAP-AiAssist:Development.WorkspacePath' is null`;
+        myLogger.log(message, LogLevel.Error);
+        // toDo: how to get workspace path from the fallback resolution, since it won't be set until after the extension has started. Will need callback?
+      } else {
+        // cast the nullable type to a string, as we have explicitly tested for not null
+        workspacePathFromSettingsNotNull = <string>workspacePathFromSettings;
+        // Validate the workspace exists and is readable
+
+        workspacePath = workspacePathFromSettingsNotNull;
+
+        message = `Workspace to open when in development mode: ${workspacePath}`;
+        myLogger.log(message, LogLevel.Debug);
+        // Add a folder to the workspaceFolders collection
+        const workspaceFolderURI = vscode.Uri.file(workspacePath);
+        //ToDo: wrap in a try/catch block and handle any errors
+        vscode.workspace.updateWorkspaceFolders(0, null, {
+          uri: workspaceFolderURI,
+        });
+        // ToDo: need to open it ourselves, or will VSC just do it for us?
+        // await vscode.commands.executeCommand('vscode.openFolder', uri, true);
+      }
     }
 
-    // combine the workspace and filepath
-    const fullFilePath = path.join(workspacePath || '', editorFilePath);
-    const fileUri = vscode.Uri.file(fullFilePath);
-
-    try {
-      // Open the text file
-      const document = await vscode.workspace.openTextDocument(fileUri);
-      await vscode.window.showTextDocument(document);
-    } catch (e) {
-      if (e instanceof Error) {
-        // Report the error (file may not exist, etc.)
-        message = e.message;
+    // in development mode, open into a specific .ps1 file (relative to the workspacePath) as specified in settings, but only if a workspace is somehow specified
+    /*eslint eqeqeq: ["error", "smart"]*/
+    if (workspacePath != null) {
+      const editorFilePathFromSettings = config.get<string>('Development.Editor.FilePath');
+      var editorFilePathFromSettingsNotNull: string;
+      if (editorFilePathFromSettings === null) {
+        // no initial file path in settings
+        // ToDo: need a function to handle error conditions, ask user for input to resolve, etc.
+        message = `the setting 'ATAP-AiAssist:Development.Editor.FilePath' is null`;
+        myLogger.log(message, LogLevel.Error, 'ATAP-AiAssist'); // ToDO: support logging to all enabled channels
+        return; // ToDo: only return if the user decides not to specify an initial file or is ok with no editor open
       } else {
-        // If e is not an instance of Error, you might want to handle it differently
-        message = 'An unknown error occurred';
+        // cast the nullable type to a string, as we have explicitly tested for not null
+        editorFilePathFromSettingsNotNull = <string>editorFilePathFromSettings;
       }
-      myLogger.log(message, LogLevel.Error);
+
+      // Validate the initial file path exists and is readable
+      var editorFilePath: string;
+
+      editorFilePath = editorFilePathFromSettingsNotNull;
+
+      message = `File to open when in development mode: ${editorFilePath}`;
+      myLogger.log(message, LogLevel.Debug);
+
+      // combine the workspace and filepath
+      const fullFilePath = path.join(workspacePath || '', editorFilePath);
+      const fileUri = vscode.Uri.file(fullFilePath);
+
+      try {
+        // Open the text file
+        const document = await vscode.workspace.openTextDocument(fileUri);
+        await vscode.window.showTextDocument(document);
+      } catch (e) {
+        if (e instanceof Error) {
+          // Report the error (file may not exist, etc.)
+          message = e.message;
+        } else {
+          // If e is not an instance of Error, you might want to handle it differently
+          message = 'An unknown error occurred';
+        }
+        myLogger.log(message, LogLevel.Error);
+      }
     }
   } else {
     message = 'Running in normal mode.';
@@ -150,7 +148,7 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   // instantiate a mainViewTreeDataProvider instance and register that with the TreeDataProvider with the main tree view
-  const mainViewTreeDataProviderInstance = new mainViewTreeDataProvider();
+  const mainViewTreeDataProviderInstance = new mainViewTreeDataProvider(myLogger);
   vscode.window.createTreeView('atap-aiassistMainTreeView', { treeDataProvider: mainViewTreeDataProviderInstance });
 
   // instantiate the FileTreeProvider and register it
@@ -214,48 +212,77 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(showVSCEnvironmentDisposable);
 
   // *************************************************************** //
-  let mainViewRootRecordQuickPickDisposable = vscode.commands.registerCommand('atap-aiassist.mainViewRootRecordQuickPick', async () => {
-    const items = ['ROption 1', 'ROption 2', 'ROption 3'];
-    const pick = await vscode.window.showQuickPick(items, {
-      placeHolder: 'Select an option'
-    });
+  let mainViewRootRecordQuickPickDisposable = vscode.commands.registerCommand(
+    'atap-aiassist.mainViewRootRecordQuickPick',
+    async () => {
+      const items = ['ROption 1', 'ROption 2', 'ROption 3'];
+      const pick = await vscode.window.showQuickPick(items, {
+        placeHolder: 'Select an option',
+      });
 
-    if (pick) {
-      message = `You selected ${pick}`
-      myLogger.log(message, LogLevel.Debug);
-      // ToDo: switch on result and run a command
-    }
-  });
+      if (pick) {
+        message = `You selected ${pick}`;
+        myLogger.log(message, LogLevel.Debug);
+        // ToDo: switch on result and run a command
+      }
+    },
+  );
   context.subscriptions.push(mainViewRootRecordQuickPickDisposable);
 
   // *************************************************************** //
-  let mainViewSubItemRecordQuickPickDisposable = vscode.commands.registerCommand('atap-aiassist.mainViewSubItemRecordQuickPick', async () => {
-    const items = ['SOption 1', 'SOption 2', 'SOption 3'];
-    const pick = await vscode.window.showQuickPick(items, {
-      placeHolder: 'Select an option'
-    });
+  let mainViewSubItemRecordQuickPickDisposable = vscode.commands.registerCommand(
+    'atap-aiassist.mainViewSubItemRecordQuickPick',
+    async () => {
+      const items = ['SOption 1', 'SOption 2', 'SOption 3'];
+      const pick = await vscode.window.showQuickPick(items, {
+        placeHolder: 'Select an option',
+      });
 
-    if (pick) {
-      message = `You selected ${pick}`
-      myLogger.log(message, LogLevel.Debug);
-      // ToDo: switch on result and run a command
-    }
-  });
+      if (pick) {
+        message = `You selected ${pick}`;
+        myLogger.log(message, LogLevel.Debug);
+        // ToDo: switch on result and run a command
+      }
+    },
+  );
   context.subscriptions.push(mainViewSubItemRecordQuickPickDisposable);
 
+  // *************************************************************** //
+  let showMainViewRootRecordPropertiesDisposable = vscode.commands.registerCommand(
+    'atap-aiassist.showMainViewRootRecordProperties',
+    (item: mainViewTreeItem) => {
+      let message: string = 'starting commandID showMainViewRootRecordProperties';
+      myLogger.log(message, LogLevel.Debug);
+      if (item === null) {
+        message = `item is null`;
+        myLogger.log(message, LogLevel.Debug);
+      } else {
+        message = `item is NOT null`;
+        myLogger.log(message, LogLevel.Debug);
+      }
+      // message = `Philote_ID = ${item.Philote_ID} : pickedvalue = ${item.pickedValue}; properties = ${item.properties}`;
+      // myLogger.log(message, LogLevel.Debug);
+      message = `stringified item.properties = ${JSON.stringify(item.properties)}`;
+      myLogger.log(message, LogLevel.Debug);
+      vscode.window.showInformationMessage(JSON.stringify(item.properties));
+    },
+  );
+  context.subscriptions.push(showMainViewRootRecordPropertiesDisposable);
 
   // *************************************************************** //
-  let showSubItemPropertiesDisposable = vscode.commands.registerCommand('atap-aiassist.showSubItemProperties', (item: mainViewTreeItem) => {
-    vscode.window.showInformationMessage(JSON.stringify(item.properties));
-    message = `properties on item ${item.Philote_ID}`
+  let showSubItemPropertiesDisposable = vscode.commands.registerCommand(
+    'atap-aiassist.showSubItemProperties',
+    (item: mainViewTreeItem) => {
+      let message: string = 'starting commandID showSubItemProperties';
       myLogger.log(message, LogLevel.Debug);
-  });
-  context.subscriptions.push(showSubItemPropertiesDisposable)
-
-
-  let disposable = vscode.commands.registerCommand('extension.showProperties', (item: mainViewTreeItem) => {
-    vscode.window.showInformationMessage(JSON.stringify(item.properties));
-  });
+      // message = `Philote_ID = ${item.Philote_ID} : pickedvalue = ${item.pickedValue}; properties = ${item.properties}`;
+      // myLogger.log(message, LogLevel.Debug);
+      message = `stringified item.properties = ${JSON.stringify(item.properties)}`;
+      myLogger.log(message, LogLevel.Debug);
+      vscode.window.showInformationMessage(JSON.stringify(item.properties));
+    },
+  );
+  context.subscriptions.push(showSubItemPropertiesDisposable);
 
   // *************************************************************** //
   let removeRegionDisposable = vscode.commands.registerCommand('atap-aiassist.removeRegion', () => {

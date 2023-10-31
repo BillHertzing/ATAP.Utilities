@@ -37,7 +37,7 @@ export async function promptForCommandID(): Promise<{
       success: false,
       inputCommandID: null,
       validatedCommandID: null,
-      errorMessage: "No command ID provided.",
+      errorMessage: "No command ID provided."
     };
   }
 }

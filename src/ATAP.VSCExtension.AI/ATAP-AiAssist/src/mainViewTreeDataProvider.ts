@@ -1,35 +1,61 @@
 import * as vscode from 'vscode';
 import { generateGUID } from './generateGuid';
 import { mainViewTreeItem } from './mainViewTreeItem';
+import {
+  Logger,
+  LogLevel,
+  getLoggerLogLevelFromSettings,
+  setLoggerLogLevelFromSettings,
+  getDevelopmentLoggerLogLevelFromSettings,
+  setDevelopmentLoggerLogLevelFromSettings,
+  ChannelInfo,
+} from './logger';
+
 
 export class mainViewTreeDataProvider implements vscode.TreeDataProvider<mainViewTreeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<mainViewTreeItem | null> =
     new vscode.EventEmitter<mainViewTreeItem | null>();
   readonly onDidChangeTreeData: vscode.Event<mainViewTreeItem | null> = this._onDidChangeTreeData.event;
+  private readonly logger: Logger;
+  private message: string;
+
+  constructor(logger: Logger) {
+    this.logger = logger;
+    this.message = `mainViewTreeDataProvider constructor called`;
+    this.logger.log(this.message, LogLevel.Debug);
+  }
 
   getTreeItem(element: mainViewTreeItem): vscode.TreeItem {
+    this.message = `mainViewTreeDataProviderInstance.getTreeItem called`;
+    this.logger.log(this.message, LogLevel.Debug);
     return element;
   }
 
   getChildren(element?: mainViewTreeItem): Thenable<mainViewTreeItem[]> {
+    this.message = `mainViewTreeDataProviderInstance.getChildren called`;
+    this.logger.log(this.message, LogLevel.Debug);
     if (element) {
       return Promise.resolve(this.getSubItems(element));
     } else {
       return Promise.resolve(this.getRootItems());
     }
   }
+
   private getRootItems(): mainViewTreeItem[] {
+    this.message = `mainViewTreeDataProviderInstance.getRootItems called`;
+    this.logger.log(this.message, LogLevel.Debug);
+
     // Initialize the command to be executed when the tree item is clicked
     const command: vscode.Command = {
-      command: 'atap-aiassist.mainViewRootRecordQuickPick', // The command ID
-      title: 'Show the Quick Pick on this root record', // Tooltip shown when hovering over the tree item
+      command: 'atap-aiassist.showMainViewRootRecordProperties', // The command ID
+      title: 'Show the Root Record properties on this root record', // Tooltip shown when hovering over the tree item
     };
     // ToDo: if global user state storage exists,  get the picked value from global storage for each GUID
     // ToDo: for new items get the picked value from a default structure
     // return root level items here
     const rootItems = [
-      new mainViewTreeItem('RootItem1', vscode.TreeItemCollapsibleState.Collapsed, generateGUID()), //, 'RSomething'),
-      new mainViewTreeItem('RootItem2', vscode.TreeItemCollapsibleState.Collapsed, generateGUID()), //,'RSomethingElse')
+      new mainViewTreeItem('RootItem1', vscode.TreeItemCollapsibleState.Collapsed, this.logger, generateGUID()), //, 'RSomething'),
+      new mainViewTreeItem('RootItem2', vscode.TreeItemCollapsibleState.Collapsed, this.logger, generateGUID()), //,'RSomethingElse')
     ];
 
     // Attach the command to each root item
@@ -40,14 +66,17 @@ export class mainViewTreeDataProvider implements vscode.TreeDataProvider<mainVie
   }
 
   private getSubItems(element: mainViewTreeItem): mainViewTreeItem[] {
+    this.message = `mainViewTreeDataProviderInstance.getSubItems called`;
+    this.logger.log(this.message, LogLevel.Debug);
+
     const command: vscode.Command = {
-      command: 'atap-aiassist.mainViewSubItemRecordQuickPick', // The command ID
-      title: 'Show the Quick Pick on this item record', // Tooltip shown when hovering over the tree item
+      command: 'atap-aiassist.showSubItemProperties', // The command ID
+      title: 'Show the SubItem properties on this SubItem', // Tooltip shown when hovering over the tree item
     };
     // return sub-items based on the element clicked
     const subItems = [
-      new mainViewTreeItem('SubItem1', vscode.TreeItemCollapsibleState.None, generateGUID()), //, 'SSomething'),
-      new mainViewTreeItem('SubItem2', vscode.TreeItemCollapsibleState.None, generateGUID()), //,'SSomethingElse')
+      new mainViewTreeItem('SubItem1', vscode.TreeItemCollapsibleState.None, this.logger, generateGUID()), //, 'SSomething'),
+      new mainViewTreeItem('SubItem2', vscode.TreeItemCollapsibleState.None, this.logger, generateGUID()), //,'SSomethingElse')
     ];
     // Attach the command to each first level subitem
     for (const item of subItems) {

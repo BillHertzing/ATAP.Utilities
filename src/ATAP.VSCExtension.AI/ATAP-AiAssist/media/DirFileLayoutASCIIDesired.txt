@@ -35,6 +35,7 @@ repositoryRoot/
 │   │   └── ATAP.Utilities.<purpose>.csproj
 │   ├── ATAP.Utilities.<purpose>.Powershell/
 │   │   ├── Documentation/
+│   │   ├── Packages/
 │   │   ├── private/
 │   │   │   └── CmdletOrFunction-1.ps1
 │   │   ├── public/
@@ -42,11 +43,20 @@ repositoryRoot/
 │   │   │   └── CmdletOrFunction-3.ps1
 │   │   ├── Tests/
 │   │   │   ├── Unit/
-│   │   │   │   └── <test-file>.Tests.ps1
+│   │   │   │   ├── RequiresNewProcess/
+│   │   │   │   │   └── Placeholder_NewProcess.Tests.ps1
+│   │   │   │   └── RegularTests/
+│   │   │   │       └── Placeholder.Tests.ps1
 │   │   │   ├── Integration/
-│   │   │   │   └── <test-file>.Tests.ps1
-│   │   │   ├── Performance/
-│   │   │   │   └── <performance-test-file>.Tests.ps1
+│   │   │   │   ├── RequiresNewProcess/
+│   │   │   │   │   └── Placeholder_NewProcess.Tests.ps1
+│   │   │   │   └── RegularTests/
+│   │   │   │       └── Placeholder.Tests.ps1
+│   │   │   └── Performance/
+│   │   │       ├── RequiresNewProcess/
+│   │   │       │   └── Placeholder_NewProcess.Tests.ps1
+│   │   │       └── RegularTests/
+│   │   │           └── Placeholder.Tests.ps1
 │   │   ├── ATAP.Utilities.<purpose>.Powershell.psd1
 │   │   └── ATAP.Utilities.<purpose>.Powershell.psm1
 │   └── ATAP.VSCExtension.<purpose>/

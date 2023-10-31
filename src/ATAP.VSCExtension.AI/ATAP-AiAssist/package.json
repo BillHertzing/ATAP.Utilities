@@ -135,7 +135,7 @@
     "viewsWelcome": [
       {
         "view": "atap-aiassistWelcomeView",
-        "contents": "Welcome to the ATAP AiAssist extension!/n/n[Start here](command:atap-aiassist.startCommand)",
+        "contents": "Welcome to the ATAP AiAssist extension!/r/n[Start here](command:atap-aiassist.startCommand)",
         "commands": [
           {
             "command": "ATAP-AiAssist.ChatGPT.AIKey",

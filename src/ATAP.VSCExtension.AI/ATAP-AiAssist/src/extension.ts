@@ -4,14 +4,16 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 
 import {
-  Logger,
   LogLevel,
+  ChannelInfo,
+  ILogger,
+  Logger,
   getLoggerLogLevelFromSettings,
   setLoggerLogLevelFromSettings,
   getDevelopmentLoggerLogLevelFromSettings,
   setDevelopmentLoggerLogLevelFromSettings,
-  ChannelInfo,
-} from './logger';
+
+} from './Logger';
 
 import * as fs from 'fs';
 import { stringBuilder } from './stringBuilder';
@@ -165,6 +167,12 @@ export async function activate(context: vscode.ExtensionContext) {
   // let mainSearchTextDisposable = vscode.commands.registerCommand('extension.searchText', mainSearchText);
   // const mainSearchEngine = new mainSearchEngineProvider();
   // context.subscriptions.push(vscode.workspace.registerSearchProvider('myProvider', provider));
+
+  // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
+  // Calling the constructore registers all of the commands, and creates a disposables structure
+  // const commandsService = new CommandsService(myLogger);
+  // push all the disposables onto the extension context
+  //commandsService.addUser('JohnDoe');
 
   let copyToSubmitDisposable = vscode.commands.registerCommand('atap-aiassist.copyToSubmit', () => {
     let message: string = 'starting commandID copyToSubmit';

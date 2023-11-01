@@ -22,6 +22,8 @@ import { processPs1Files } from './processPs1Files';
 import { mainViewTreeDataProvider } from './mainViewTreeDataProvider';
 import { mainViewTreeItem } from './mainViewTreeItem';
 import { FileTreeProvider } from './FileTreeProvider';
+import { CommandsService } from './CommandsService';
+
 //import { mainSearchEngineProvider } from './mainSearchEngineProvider';
 
 // This method is called when your extension is activated
@@ -169,8 +171,8 @@ export async function activate(context: vscode.ExtensionContext) {
   // context.subscriptions.push(vscode.workspace.registerSearchProvider('myProvider', provider));
 
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
-  // Calling the constructore registers all of the commands, and creates a disposables structure
-  // const commandsService = new CommandsService(myLogger);
+  // Calling the constructor registers all of the commands, and creates a disposables structure
+   const commandsService = new CommandsService(myLogger);
   // push all the disposables onto the extension context
   //commandsService.addUser('JohnDoe');
 

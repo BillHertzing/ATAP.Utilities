@@ -1,0 +1,42 @@
+@startuml
+
+class ATAPBaseCollection {
+    + constructor()
+    # createItem(item: string): void
+    # readItem(index: int): string
+    # updateItem(index: int, item: string): void
+    # deleteItem(index: int): void
+    # createKeyVal(key: string, value: ArrayListOfString): void
+    # readKeyVal(key: string): ArrayListOfString
+    # updateKeyVal(key: string, newValue: ArrayListOfString): void
+    # deleteKeyVal(key: string): void
+}
+
+class ArrayListOfString {
+    + items: string[]
+    --
+    + constructor()
+}
+
+class ATAPBaseDictionary {
+    - dictionary: { key: string, value: ArrayListOfString }
+    --
+    + constructor()
+}
+
+ATAPBaseCollection *-- ATAPBaseDictionary : contains
+ATAPBaseCollection *-- ArrayListOfString : contains
+ATAPBaseDictionary o-- "0..*" ArrayListOfString : has
+
+class HashTagCollection {
+    // HashTagCollection specific attributes and methods
+}
+
+class CategoryCollection {
+    // CategoryCollection specific attributes and methods
+}
+
+HashTagCollection <|-- ATAPBaseCollection
+CategoryCollection <|-- ATAPBaseCollection
+
+@enduml

@@ -11,30 +11,42 @@ import {
 import * as vscode from 'vscode';
 
 import { startCommand } from './startCommand';
+import { showVSCEnvironment } from './showVSCEnvironment';
 
 export class CommandsService {
   private disposables: vscode.Disposable[] = [];
+  private message: string;
 
   constructor(private logger: ILogger) {
+    this.message = 'starting CommandsService constructor';
+    this.logger.log(this.message, LogLevel.Trace);
     this.registerCommands();
+    this.message = 'leaving CommandsService constructor';
+    this.logger.log(this.message, LogLevel.Trace);
   }
 
   private registerCommands(): void {
-    this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.showVSCEnvironment,', () => {
-        let message: string = 'registering commandID showVSCEnvironment';
-        this.logger.log(message, LogLevel.Debug);
-        showVSCEnvironment(this.logger);
-      }),
-    );
+    this.message = 'starting registerCommands';
+    this.logger.log(this.message, LogLevel.Trace);
 
+    this.message = 'registering showVSCEnvironment';
+    this.logger.log(this.message, LogLevel.Trace);
+    this.disposables.push(vscode.commands.registerCommand('atap-aiassist.showVSCEnvironment', () => {
+      let message: string = 'starting commandID showVSCEnvironment';
+      this.logger.log(message, LogLevel.Debug);
+      showVSCEnvironment(this.logger);
+    }));
+
+    this.message = 'registering startCommand';
+    this.logger.log(this.message, LogLevel.Trace);
     this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.startCommand,', () => {
-        let message: string = 'registering commandID startCommand';
+      vscode.commands.registerCommand('atap-aiassist.startCommand', () => {
+        let message: string = 'starting commandID startCommand';
         this.logger.log(message, LogLevel.Debug);
         startCommand(this.logger);;
-      }),
-    );
+      }));
+
+
   }
 
   public getDisposables(): vscode.Disposable[] {
@@ -42,24 +54,3 @@ export class CommandsService {
   }
 }
 
-function showVSCEnvironment(logger: ILogger): void {
-  let message: string = 'starting commandID showVSCEnvironment';
-  logger.log(message, LogLevel.Debug);
-  const workspaceFolders = vscode.workspace.workspaceFolders;
-  // Check if a workspace is open
-  if (workspaceFolders && workspaceFolders.length > 0) {
-    // Use the URI property to get the folder path
-    message = `workspaceFolder = ${workspaceFolders[0].uri.fsPath} `;
-  } else {
-    message = 'No workspace folder open.';
-  }
-  const editor = vscode.window.activeTextEditor;
-  if (editor) {
-    const document = editor.document;
-    const fileName = document.fileName;
-    message += `; fileDirname = ${document.fileName}`;
-  } else {
-    message += '; No editor open';
-  }
-  logger.log(message, LogLevel.Debug);
-}

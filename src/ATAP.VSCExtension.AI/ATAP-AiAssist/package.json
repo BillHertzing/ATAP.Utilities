@@ -80,6 +80,21 @@
             "default": "Enter your ChatGPT API Key",
             "description": "ChatGPT API Key."
           },
+          "myExtension.categories": {
+            "type": "string",
+            "default": "{}",
+            "description": "Serialized Categories instance."
+          },
+          "myExtension.tags": {
+            "type": "string",
+            "default": "{}",
+            "description": "Serialized Tags instance."
+          },
+          "myExtension.predicates": {
+            "type": "string",
+            "default": "{}",
+            "description": "Serialized Predicates instance."
+          },
           "ATAP-AiAssist.Development.Logger.LogLevel": {
             "type": "string",
             "default": "Info",
@@ -168,12 +183,14 @@
     "test": "node ./_generated/out/test/runTest.js"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.9",
     "@types/mocha": "^10.0.2",
     "@types/node": "18.x",
     "@types/vscode": "^1.83.0",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.9.1",
     "@vscode/test-electron": "^2.3.4",
+    "chai": "^4.3.10",
     "eslint": "^8.50.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
@@ -181,5 +198,9 @@
     "typescript": "^5.2.2",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@types/js-yaml": "^4.0.8",
+    "js-yaml": "^4.1.0"
   }
 }

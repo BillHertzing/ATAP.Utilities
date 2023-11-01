@@ -12,7 +12,6 @@ import {
   setLoggerLogLevelFromSettings,
   getDevelopmentLoggerLogLevelFromSettings,
   setDevelopmentLoggerLogLevelFromSettings,
-
 } from './Logger';
 
 import * as fs from 'fs';
@@ -47,7 +46,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // update the loggerLogLevel with the'Development.Logger.LogLevel settings value, if it exists
     const developmentLoggerLogLevelFromSettings = getDevelopmentLoggerLogLevelFromSettings();
     myLogger.setChannelLogLevel('ATAP-AiAssist', developmentLoggerLogLevelFromSettings); // supplies a default if not found in settings
-    myLogger.log('Running in development mode.', LogLevel.Debug);
+    myLogger.log('Running in development mode.', LogLevel.Info);
     // Focus on the output stream on the extension when strarting in development mode
     myLogger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
 
@@ -172,9 +171,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
   // Calling the constructor registers all of the commands, and creates a disposables structure
-   const commandsService = new CommandsService(myLogger);
-  // push all the disposables onto the extension context
-  //commandsService.addUser('JohnDoe');
+  const commandsService = new CommandsService(myLogger);
+  // Add the disposables from the CommandsService to context.subscriptions
+  context.subscriptions.push(...commandsService.getDisposables());
 
   let copyToSubmitDisposable = vscode.commands.registerCommand('atap-aiassist.copyToSubmit', () => {
     let message: string = 'starting commandID copyToSubmit';
@@ -195,31 +194,31 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(copyToSubmitDisposable);
 
   // *************************************************************** //
-  let showVSCEnvironmentDisposable = vscode.commands.registerCommand('atap-aiassist.showVSCEnvironment', () => {
-    let message: string = 'starting commandID showVSCEnvironment';
-    myLogger.log(message, LogLevel.Debug);
+  // let showVSCEnvironmentDisposable = vscode.commands.registerCommand('atap-aiassist.showVSCEnvironment', () => {
+  //   let message: string = 'starting commandID showVSCEnvironment';
+  //   myLogger.log(message, LogLevel.Debug);
 
-    const workspaceFolders = vscode.workspace.workspaceFolders;
+  //   const workspaceFolders = vscode.workspace.workspaceFolders;
 
-    // Check if a workspace is open
-    if (workspaceFolders && workspaceFolders.length > 0) {
-      // Use the URI property to get the folder path
-      message = `workspaceFolder = ${workspaceFolders[0].uri.fsPath} `;
-    } else {
-      message = 'No workspace folder open.';
-    }
+  //   // Check if a workspace is open
+  //   if (workspaceFolders && workspaceFolders.length > 0) {
+  //     // Use the URI property to get the folder path
+  //     message = `workspaceFolder = ${workspaceFolders[0].uri.fsPath} `;
+  //   } else {
+  //     message = 'No workspace folder open.';
+  //   }
 
-    const editor = vscode.window.activeTextEditor;
-    if (editor) {
-      const document = editor.document;
-      const fileName = document.fileName;
-      message += `; fileDirname = ${document.fileName}`;
-    } else {
-      message += '; No editor open';
-    }
-    myLogger.log(message, LogLevel.Debug);
-  });
-  context.subscriptions.push(showVSCEnvironmentDisposable);
+  //   const editor = vscode.window.activeTextEditor;
+  //   if (editor) {
+  //     const document = editor.document;
+  //     const fileName = document.fileName;
+  //     message += `; fileDirname = ${document.fileName}`;
+  //   } else {
+  //     message += '; No editor open';
+  //   }
+  //   myLogger.log(message, LogLevel.Debug);
+  // });
+  // context.subscriptions.push(showVSCEnvironmentDisposable);
 
   // *************************************************************** //
   let mainViewRootRecordQuickPickDisposable = vscode.commands.registerCommand(

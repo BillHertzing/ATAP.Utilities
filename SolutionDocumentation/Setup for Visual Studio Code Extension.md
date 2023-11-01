@@ -44,7 +44,7 @@ Answer as follows:
 After creation, the following message appears:
 To start editing with Visual Studio Code, use the following commands:
 
-     code atap-aiassist
+code atap-aiassist
 
 Open vsc-extension-quickstart.md inside the new extension for further instructions
 on how to modify, test and publish your extension.
@@ -58,7 +58,29 @@ To run the extension you need to install the recommended extension 'amodio.tsl-p
 
 `amodio.tsl-problem-matcher`
 
-## Install the VSC extension for linting JavaScript?
+## Install the node.js module for YAML support
+
+Run from a terminal cwd at  the base of the extension directory
+
+```Powershell
+
+npm install js-yaml --save
+npm install @types/js-yaml --save
+```
+
+## Install the node.js module for assertions used in testing
+
+Run from a terminal cwd at  the base of the extension directory
+
+```Powershell
+
+npm install --save-dev chai
+npm install --save-dev @types/chai
+
+```
+
+
+## Install the VSC extension for linting JavaScript
 
 `dbaeumer.vscode-eslint`
 

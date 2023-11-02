@@ -68,17 +68,18 @@ npm install js-yaml --save
 npm install @types/js-yaml --save
 ```
 
-## Install the node.js module for assertions used in testing
+## Install the node.js modules for testing
 
-Run from a terminal cwd at  the base of the extension directory
+Run from a terminal, the base of the extension directory
 
 ```Powershell
 
+npm install --save-dev mocha
+npm install --save-dev @types/mocha
 npm install --save-dev chai
 npm install --save-dev @types/chai
 
 ```
-
 
 ## Install the VSC extension for linting JavaScript
 

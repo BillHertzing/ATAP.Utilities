@@ -2,17 +2,26 @@ import * as path from 'path';
 import * as Mocha from 'mocha';
 import * as glob from 'glob';
 
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+console.log("Got1");
+sleep(5000);
+
 export function run(): Promise<void> {
 	// Create the mocha test
 	const mocha = new Mocha({
-		ui: 'tdd',
+		ui: 'bdd',
 		color: true
 	});
-
+  console.log("Got2");
 	const testsRoot = path.resolve(__dirname, '..');
+  console.log(`testsRoot is ${testsRoot}`);
 
 	return new Promise((c, e) => {
 		const testFiles = new glob.Glob("**/**.test.js", { cwd: testsRoot });
+    console.log(`testFiles is ${testFiles}`);
 		const testFileStream = testFiles.stream();
 
 		testFileStream.on("data", (file) => {

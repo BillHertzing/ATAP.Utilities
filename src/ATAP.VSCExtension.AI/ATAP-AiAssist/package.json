@@ -41,8 +41,8 @@
         "title": "ATAP-AiAssist: Remove lines starting with #region  and #endregion"
       },
       {
-        "command": "atap-aiassist.processPs1Files",
-        "title": "ATAP-AiAssist: process all .ps1 files in a workspace (Requires command ID as argument)"
+        "command": "atap-aiassist.processFiles",
+        "title": "ATAP-AiAssist: process a list of files (parameter) by applying a lambda (parameter). Also accepts an optional ILogger parameter. Returns a list of structures consisting of filename, boolean success and number length"
       },
       {
         "command": "atap-aiassist.copyToSubmit",
@@ -200,7 +200,9 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@types/axios": "^0.14.0",
     "@types/js-yaml": "^4.0.8",
+    "axios": "^1.6.0",
     "js-yaml": "^4.1.0"
   }
 }

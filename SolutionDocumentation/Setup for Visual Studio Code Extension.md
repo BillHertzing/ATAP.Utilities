@@ -58,14 +58,17 @@ To run the extension you need to install the recommended extension 'amodio.tsl-p
 
 `amodio.tsl-problem-matcher`
 
-## Install the node.js module for YAML support
+## Install the node.js modules needed for teh production package
 
-Run from a terminal cwd at  the base of the extension directory
+The extension needs support for YAML and using a WebAPI. Run from a terminal at the base of the extension directory
 
 ```Powershell
 
 npm install js-yaml --save
 npm install @types/js-yaml --save
+npm install axios  --save
+npm install @types/axios  --save
+
 ```
 
 ## Install the node.js modules for testing

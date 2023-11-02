@@ -12,6 +12,7 @@ import * as vscode from 'vscode';
 
 import { startCommand } from './startCommand';
 import { showVSCEnvironment } from './showVSCEnvironment';
+import { sendFilesToAPI } from './sendFilesToAPI';
 
 export class CommandsService {
   private disposables: vscode.Disposable[] = [];
@@ -31,11 +32,23 @@ export class CommandsService {
 
     this.message = 'registering showVSCEnvironment';
     this.logger.log(this.message, LogLevel.Trace);
-    this.disposables.push(vscode.commands.registerCommand('atap-aiassist.showVSCEnvironment', () => {
-      let message: string = 'starting commandID showVSCEnvironment';
-      this.logger.log(message, LogLevel.Debug);
-      showVSCEnvironment(this.logger);
-    }));
+    this.disposables.push(
+      vscode.commands.registerCommand('atap-aiassist.showVSCEnvironment', () => {
+        let message: string = 'starting commandID showVSCEnvironment';
+        this.logger.log(message, LogLevel.Debug);
+        showVSCEnvironment(this.logger);
+      }),
+    );
+
+    this.message = 'registering sendFilesToAPI';
+    this.logger.log(this.message, LogLevel.Trace);
+    this.disposables.push(
+      vscode.commands.registerCommand('atap-aiassist.sendFilesToAPI', () => {
+        let message: string = 'starting commandID sendFilesToAPI';
+        this.logger.log(message, LogLevel.Debug);
+        sendFilesToAPI(context, this.logger);
+      }),
+    );
 
     this.message = 'registering startCommand';
     this.logger.log(this.message, LogLevel.Trace);
@@ -43,9 +56,9 @@ export class CommandsService {
       vscode.commands.registerCommand('atap-aiassist.startCommand', () => {
         let message: string = 'starting commandID startCommand';
         this.logger.log(message, LogLevel.Debug);
-        startCommand(this.logger);;
-      }));
-
+        startCommand(this.logger);
+      }),
+    );
 
   }
 
@@ -53,4 +66,3 @@ export class CommandsService {
     return this.disposables;
   }
 }
-

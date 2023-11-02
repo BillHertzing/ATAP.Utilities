@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import 'mocha'; // Mocha types
 import * as chai from 'chai';
-import { Philote, GUID, Int, IDType } from '../../PredicatesService'; // Adjust the import to your folder structure
+import { Philote, GUID, Int, IDType } from '../../../PredicatesService'; // Adjust the import to your folder structure
 
 const expect = chai.expect;
 import * as assert from 'assert';
-console.log("GotET");
+console.log("Extension Tests BDD");
 suite('Extension Test Suite', () => {
 	// vscode.window.showInformationMessage('Start all tests.');
 

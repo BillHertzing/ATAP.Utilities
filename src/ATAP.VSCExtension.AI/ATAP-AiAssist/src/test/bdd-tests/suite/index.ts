@@ -6,7 +6,7 @@ function sleep(milliseconds: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
-console.log("Got1");
+console.log("Index (BDD)");
 sleep(5000);
 
 export function run(): Promise<void> {
@@ -15,9 +15,8 @@ export function run(): Promise<void> {
 		ui: 'bdd',
 		color: true
 	});
-  console.log("Got2");
-	const testsRoot = path.resolve(__dirname, '..');
-  console.log(`testsRoot is ${testsRoot}`);
+  const testsRoot = path.resolve(__dirname, '..');
+  console.log(`BDD testsRoot is ${testsRoot}`);
 
 	return new Promise((c, e) => {
 		const testFiles = new glob.Glob("**/**.test.js", { cwd: testsRoot });

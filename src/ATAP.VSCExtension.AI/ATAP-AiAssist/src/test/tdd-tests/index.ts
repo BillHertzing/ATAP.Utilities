@@ -6,21 +6,21 @@ function sleep(milliseconds: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
-console.log("Index (BDD)");
+console.log("Index (TDD)");
 sleep(5000);
 
 export function run(): Promise<void> {
 	// Create the mocha test
 	const mocha = new Mocha({
-		ui: 'bdd',
+		ui: 'tdd',
 		color: true
 	});
-  const testsRoot = path.resolve(__dirname, '..');
-  console.log(`BDD testsRoot is ${testsRoot}`);
+	const testsRoot = path.resolve(__dirname, '..');
+  console.log(`testsRoot is ${testsRoot}`);
 
 	return new Promise((c, e) => {
 		const testFiles = new glob.Glob("**/**.test.js", { cwd: testsRoot });
-    console.log(`testFiles is ${testFiles}`);
+    console.log(`TDD testFiles is ${testFiles}`);
 		const testFileStream = testFiles.stream();
 
 		testFileStream.on("data", (file) => {

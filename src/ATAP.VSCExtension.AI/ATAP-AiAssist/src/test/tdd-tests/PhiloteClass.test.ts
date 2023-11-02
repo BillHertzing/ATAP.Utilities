@@ -3,6 +3,8 @@ import * as chai from 'chai';
 import { Philote, GUID, Int, IDType } from '../../PredicatesService'; // Adjust the import to your folder structure
 
 const expect = chai.expect;
+console.log("Philote Class Tests TDD");
+
 
 describe('Philote Class Tests', () => {
     let testGuid: GUID = '1234-5678-91011';

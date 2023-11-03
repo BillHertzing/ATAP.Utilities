@@ -18,10 +18,10 @@ export class CommandsService {
   private disposables: vscode.Disposable[] = [];
   private message: string;
 
-  constructor(private logger: ILogger) {
+  constructor(private logger: ILogger, private context: vscode.ExtensionContext  ) {
     this.message = 'starting CommandsService constructor';
     this.logger.log(this.message, LogLevel.Trace);
-    this.registerCommands();
+    //this.registerCommands();
     this.message = 'leaving CommandsService constructor';
     this.logger.log(this.message, LogLevel.Trace);
   }
@@ -46,7 +46,7 @@ export class CommandsService {
       vscode.commands.registerCommand('atap-aiassist.sendFilesToAPI', () => {
         let message: string = 'starting commandID sendFilesToAPI';
         this.logger.log(message, LogLevel.Debug);
-        sendFilesToAPI(context, this.logger);
+        sendFilesToAPI(this.context, this.logger);
       }),
     );
 

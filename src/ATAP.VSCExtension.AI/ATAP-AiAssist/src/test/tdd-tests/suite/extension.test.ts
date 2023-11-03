@@ -5,7 +5,7 @@ import { Philote, GUID, Int, IDType } from '../../../PredicatesService'; // Adju
 
 const expect = chai.expect;
 import * as assert from 'assert';
-console.log("Extension Tests BDD");
+console.log("Extension Tests TDD");
 suite('Extension Test Suite', () => {
 	// vscode.window.showInformationMessage('Start all tests.');
 

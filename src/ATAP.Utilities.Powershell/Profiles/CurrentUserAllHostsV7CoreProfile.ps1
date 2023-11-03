@@ -714,6 +714,15 @@ Set-Location -Path $storedInitialDir
 . (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
 Set-EnvironmentVariablesProcess
 
+# Set the name of the VSC extension project under development
+# ToDo: put this in a vsc extension as a command , and trigger the command every time an editor is activated.
+# The command has a collection set of project paths/names (populated by the list of files below src/ relative to the repoistory root)
+#  The command matches the editor's document path to (hopefully only one) element, which provide the valure for this env var
+# ToDo: put this into a ConfigRootKeys keys tor Typescript and VSC Extension process
+[Environment]::SetEnvironmentVariable("VSCExtensionProjectName", "ATAP-AiAssist", [EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable("VSCExtensionProjectRelativePath", "src/ATAP.VSCExtension.AI/ATAP-AiAssist", [EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable("VSCExtensionProjectAbsolutePath", "C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist", [EnvironmentVariableTarget]::User)
+
 # Unlock the Hashicorp Vault
 
 # Open a PSSession to all of the other hosts in my Dev/CI/CD pipeline

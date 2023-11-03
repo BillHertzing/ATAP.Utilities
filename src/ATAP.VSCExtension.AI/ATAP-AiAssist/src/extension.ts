@@ -171,7 +171,21 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
   // Calling the constructor registers all of the commands, and creates a disposables structure
-  const commandsService = new CommandsService(myLogger);
+  let commandsService: CommandsService;
+  try {
+    commandsService = new CommandsService(myLogger, context);
+  } catch (e) {
+    if (e instanceof Error) {
+      // Report the error (file may not exist, etc.)
+      message = e.message;
+    } else {
+      // If e is not an instance of Error, you might want to handle it differently
+      message = 'An unknown error occurred';
+    }
+    myLogger.log(message, LogLevel.Error);
+    throw new Error(message);
+  }
+
   // Add the disposables from the CommandsService to context.subscriptions
   context.subscriptions.push(...commandsService.getDisposables());
 

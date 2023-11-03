@@ -177,6 +177,16 @@ Write-PSFMessage -Level Verbose -Message $("Final PSModulePath in AlluserAllshel
 $elevatedSIDPattern='S-1-5-32-544|S-1-16-12288'
 if ((whoami /all) -match $elevatedSIDPattern) {Write-PSFMessage -Level Verbose -Message $("Elevated permisions")} #ToDo; change window border to yellow}
 
+# Set the name of the VSC extension project under development
+# ToDo: put this in a vsc extension as a command , and trigger the command every time an editor is activated.
+# The command has a collection set of project paths/names (populated by the list of files below src/ relative to the repoistory root)
+#  The command matches the editor's document path to (hopefully only one) element, which provide the valure for this env var
+# ToDo: put this into a ConfigRootKeys keys tor Typescript and VSC Extension process
+[Environment]::SetEnvironmentVariable("VSCExtensionProjectName", "ATAP-AiAssist", [EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable("VSCExtensionProjectRelativePath", "src/ATAP.VSCExtension.ATAPAIAssist/ATAP-AiAssist", [EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable("VSCExtensionProjectAbsolutePath", "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.VSCExtension.AI\ATAP-AiAssist", [EnvironmentVariableTarget]::User)
+
+
 # Show environment/context information when the profile runs
 # ToDo reformat using YAML
 Function Show-context{

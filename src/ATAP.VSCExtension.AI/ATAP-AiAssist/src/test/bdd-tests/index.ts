@@ -18,8 +18,8 @@ export function run(): Promise<void> {
   const testsRoot = path.resolve(__dirname, '..');
   console.log(`BDD testsRoot is ${testsRoot}`);
 
-	return new Promise((c, e) => {
-		const testFiles = new glob.Glob("**/**.test.js", { cwd: testsRoot });
+  return new Promise((c, e) => {
+    const testFiles = new glob.Glob("bdd-tests/**/**.test.js", { cwd: testsRoot });
     console.log(`testFiles is ${testFiles}`);
 		const testFileStream = testFiles.stream();
 

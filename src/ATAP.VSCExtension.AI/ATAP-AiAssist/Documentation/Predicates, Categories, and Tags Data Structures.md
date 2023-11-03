@@ -3,7 +3,7 @@
 array means array in languages that don't utilize  dotnet .Net such as Typescript and javascript, and means ArrayList in languages that do support dotnet .Net such as c# and Powershell.
 If asked for an implementation, Omit nothing, generating all types, classes, and methods requested.
 if asked for an implementation in a specific language, use the common conventions for naming variables, functions, classes, and other identifiers.
-All Types defined are of generic Type<T> where T is constrined to types GUID and Int, and should include a constructor and and ToString() methods. The type also includes static methods for convertTo_json, convertFrom_json, convertTo_yaml, convertFrom_yaml,.
+All Types defined are of generic Type< T > where T is constrined to types GUID and Int, and should include a constructor and and ToString() methods. The type also includes static methods for convertTo_json, convertFrom_json, convertTo_yaml, convertFrom_yaml,.
 The type Philote has a read-only property named ID of type T, and an array of other Philote instances named Friends.
 The type Category has a Philote instance and a read-only property of type string.
 The type Categorys has a Philote instance and an array of type Category.
@@ -64,3 +64,6 @@ export class Philote<T extends IDType> {
   }
 }
 ```
+
+Prompt:
+when VSC launches an extension development host, it needs to supply a workspace.  A repository that has been organized with 2 or more extension projects, all peers of each other. The hierarchy of JSON and Typescript files that are associated with each project are found two directory levels down from the repository root in a directory whose name is < projectName > and whose path (relative to the repository root) is src/< ProjectName >. each of the projects has its own local installation of the node.js needed to compile, package, test, and debug the extension. None of the projects have a .vscode subdirectory.  Every project utilizes the .launch, and  .tasks,  files found in a .vscode subdirectory off the Repository Root. Suggest methods to identify the project's path  (or name) when using a launch configuration, and to pass the relative path of the project's root directory to the tasks/scripts called by the launch configuration

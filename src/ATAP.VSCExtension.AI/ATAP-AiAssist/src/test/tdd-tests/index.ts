@@ -19,7 +19,7 @@ export function run(): Promise<void> {
   console.log(`testsRoot is ${testsRoot}`);
 
 	return new Promise((c, e) => {
-		const testFiles = new glob.Glob("**/**.test.js", { cwd: testsRoot });
+		const testFiles = new glob.Glob("tdd-tests/**/**.test.js", { cwd: testsRoot });
     console.log(`TDD testFiles is ${testFiles}`);
 		const testFileStream = testFiles.stream();
 

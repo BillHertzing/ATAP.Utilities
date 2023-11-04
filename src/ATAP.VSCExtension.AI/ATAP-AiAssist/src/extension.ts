@@ -130,7 +130,7 @@ export async function activate(context: vscode.ExtensionContext) {
           message = e.message;
         } else {
           // If e is not an instance of Error, you might want to handle it differently
-          message = 'An unknown error occurred';
+          message = `An unknown error occurred, and the instance of (e) returned is of type ${typeof e}`;
         }
         myLogger.log(message, LogLevel.Error);
       }
@@ -173,6 +173,8 @@ export async function activate(context: vscode.ExtensionContext) {
   // Calling the constructor registers all of the commands, and creates a disposables structure
   let commandsService: CommandsService;
   try {
+    message = `instantiate commandsService`;
+    myLogger.log(message, LogLevel.Debug);
     commandsService = new CommandsService(myLogger, context);
   } catch (e) {
     if (e instanceof Error) {
@@ -185,6 +187,8 @@ export async function activate(context: vscode.ExtensionContext) {
     myLogger.log(message, LogLevel.Error);
     throw new Error(message);
   }
+  message = `commandsService instantiated`;
+  myLogger.log(message, LogLevel.Trace);
 
   // Add the disposables from the CommandsService to context.subscriptions
   context.subscriptions.push(...commandsService.getDisposables());
@@ -207,68 +211,6 @@ export async function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(copyToSubmitDisposable);
 
-  // *************************************************************** //
-  // let showVSCEnvironmentDisposable = vscode.commands.registerCommand('atap-aiassist.showVSCEnvironment', () => {
-  //   let message: string = 'starting commandID showVSCEnvironment';
-  //   myLogger.log(message, LogLevel.Debug);
-
-  //   const workspaceFolders = vscode.workspace.workspaceFolders;
-
-  //   // Check if a workspace is open
-  //   if (workspaceFolders && workspaceFolders.length > 0) {
-  //     // Use the URI property to get the folder path
-  //     message = `workspaceFolder = ${workspaceFolders[0].uri.fsPath} `;
-  //   } else {
-  //     message = 'No workspace folder open.';
-  //   }
-
-  //   const editor = vscode.window.activeTextEditor;
-  //   if (editor) {
-  //     const document = editor.document;
-  //     const fileName = document.fileName;
-  //     message += `; fileDirname = ${document.fileName}`;
-  //   } else {
-  //     message += '; No editor open';
-  //   }
-  //   myLogger.log(message, LogLevel.Debug);
-  // });
-  // context.subscriptions.push(showVSCEnvironmentDisposable);
-
-  // *************************************************************** //
-  let mainViewRootRecordQuickPickDisposable = vscode.commands.registerCommand(
-    'atap-aiassist.mainViewRootRecordQuickPick',
-    async () => {
-      const items = ['ROption 1', 'ROption 2', 'ROption 3'];
-      const pick = await vscode.window.showQuickPick(items, {
-        placeHolder: 'Select an option',
-      });
-
-      if (pick) {
-        message = `You selected ${pick}`;
-        myLogger.log(message, LogLevel.Debug);
-        // ToDo: switch on result and run a command
-      }
-    },
-  );
-  context.subscriptions.push(mainViewRootRecordQuickPickDisposable);
-
-  // *************************************************************** //
-  let mainViewSubItemRecordQuickPickDisposable = vscode.commands.registerCommand(
-    'atap-aiassist.mainViewSubItemRecordQuickPick',
-    async () => {
-      const items = ['SOption 1', 'SOption 2', 'SOption 3'];
-      const pick = await vscode.window.showQuickPick(items, {
-        placeHolder: 'Select an option',
-      });
-
-      if (pick) {
-        message = `You selected ${pick}`;
-        myLogger.log(message, LogLevel.Debug);
-        // ToDo: switch on result and run a command
-      }
-    },
-  );
-  context.subscriptions.push(mainViewSubItemRecordQuickPickDisposable);
 
   // *************************************************************** //
   let showMainViewRootRecordPropertiesDisposable = vscode.commands.registerCommand(

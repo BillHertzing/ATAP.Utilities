@@ -2,7 +2,7 @@ import * as path from 'path';
 
 import { runTests } from '@vscode/test-electron';
 
-async function main() {
+export async function main() {
   try {
     // The folder containing the Extension Manifest package.json
     // Passed to `--extensionDevelopmentPath`
@@ -11,7 +11,6 @@ async function main() {
 
     // The paths to the test subdirectories, which now include two patterns
     // to match test files in both subdirectories.
-    // path.resolve(__dirname, './bdd-tests/suite/index') maybe?
     const extensionTestsPaths = [
       path.resolve(__dirname, './tdd-tests'),
       path.resolve(__dirname, './bdd-tests'),
@@ -27,7 +26,7 @@ async function main() {
         extensionTestsPath,
         launchArgs: [
           // This disables all installed extensions except the one being tested
-          '--disable-extensions',
+          '--disable-extensions'
           // Add other launch arguments if needed
         ],
       });

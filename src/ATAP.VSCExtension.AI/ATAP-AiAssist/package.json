@@ -22,11 +22,16 @@
       },
       {
         "command": "atap-aiassist.showVSCEnvironment",
+        "icon": "$(rocket)",
         "title": "ATAP-AiAssist: showVSCEnvironment"
       },
       {
-        "command": "atap-aiassist.showQuickPick",
+        "command": "atap-aiassist.showQuickPickExample",
         "title": "ATAP-AiAssist: Show Quick Pick"
+      },
+      {
+        "command": "atap-aiassist.quickPickFromSettings",
+        "title": "ATAP-AiAssist: Quick Pick (categorys)"
       },
       {
         "command": "atap-aiassist.showMainViewRootRecordProperties",
@@ -42,7 +47,9 @@
       },
       {
         "command": "atap-aiassist.processFiles",
-        "title": "ATAP-AiAssist: process a list of files (parameter) by applying a lambda (parameter). Also accepts an optional ILogger parameter. Returns a list of structures consisting of filename, boolean success and number length"
+        "title": "ATAP-AiAssist: process a file selector over a lambda",
+        "description": "process a list of files (parameter) by applying a lambda (parameter). Also accepts an optional ILogger parameter. Returns a list of structures consisting of filename, boolean success and number length",
+        "when": "focusedView == atap-aiassistMainTreeView"
       },
       {
         "command": "atap-aiassist.copyToSubmit",
@@ -55,8 +62,9 @@
     ],
     "keybindings": [
       {
-        "command": "atap-aiassist.processPs1Files",
-        "key": "ctrl+l ctrl+p"
+        "command": "atap-aiassist.processFiles",
+        "key": "ctrl+l ctrl+p",
+        "when": "focusedView == atap-aiassistMainTreeView"
       }
     ],
     "configuration": [
@@ -80,17 +88,17 @@
             "default": "Enter your ChatGPT API Key",
             "description": "ChatGPT API Key."
           },
-          "myExtension.categories": {
+          "ATAP-AiAssist.categorys": {
             "type": "string",
-            "default": "{}",
+            "default": "[\"code\", \"documentation\",\"testing\"]",
             "description": "Serialized Categories instance."
           },
-          "myExtension.tags": {
+          "ATAP-AiAssist.tags": {
             "type": "string",
             "default": "{}",
             "description": "Serialized Tags instance."
           },
-          "myExtension.predicates": {
+          "ATAP-AiAssist.predicates": {
             "type": "string",
             "default": "{}",
             "description": "Serialized Predicates instance."
@@ -168,6 +176,14 @@
       {
         "command": "atap-aiassist.showMainViewRootRecordProperties",
         "when": "view == atap-aiassistMainTreeView && viewItem == mainViewTreeItem"
+      }
+    ],
+    "view/title": [
+      {
+        "when": "view == atap-aiassistMainTreeView",
+        "group": "navigation",
+        "tooltip": "Show workspace and initial editor filename",
+        "command": "atap-aiassist.showVSCEnvironment"
       }
     ]
   },

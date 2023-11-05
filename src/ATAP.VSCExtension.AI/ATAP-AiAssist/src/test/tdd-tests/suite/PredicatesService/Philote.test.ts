@@ -1,5 +1,7 @@
 import * as assert from 'assert';
-import { Philote, Item, ItemCollection } from '../../../../PredicatesService';
+import { Philote, IPhilote } from '@Philote/Philote';
+
+import { Item, ItemCollection } from '@PredicatesService/PredicatesService';   //'@PredicatesService/PredicatesService';
 
 // Typically you would mock VS Code extension import if required for your tests
 // import * as vscode from 'vscode'; // Uncomment if you need to use VS Code API

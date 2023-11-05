@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import 'mocha'; // Mocha types
 import * as chai from 'chai';
-import { Philote, GUID, Int, IDType } from '../../../PredicatesService'; // Adjust the import to your folder structure
 
 const expect = chai.expect;
 import * as assert from 'assert';

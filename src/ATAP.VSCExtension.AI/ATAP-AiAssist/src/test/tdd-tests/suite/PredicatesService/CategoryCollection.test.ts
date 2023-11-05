@@ -1,7 +1,9 @@
 // TDD Test File: CategoryCollection.test.ts
 import * as assert from 'assert';
-import { Philote, Category, CategoryCollection } from '../../../../PredicatesService';
-import { GUID, Int } from '../../../../PredicatesService';
+import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
+import { Philote, IPhilote } from '@Philote/Philote';
+
+import { Category, CategoryCollection } from '@PredicatesService/PredicatesService';
 
 suite('Category Tests', () => {
   // Define some common variables for use in tests

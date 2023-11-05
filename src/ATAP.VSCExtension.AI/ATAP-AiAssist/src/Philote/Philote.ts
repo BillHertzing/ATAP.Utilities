@@ -1,15 +1,6 @@
-import {
-  GUID,
-  Int,
-  IDType,
+import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
+import { toJson, fromJson, toYaml, fromYaml } from '@Serializers/Serializers';
 
-} from './IDTypes';
-import {
-  toJson,
-  fromJson,
-  toYaml,
-  fromYaml
-} from './Serilaizers';
 
 export interface IPhilote<T extends IDType> {
   readonly ID: T;

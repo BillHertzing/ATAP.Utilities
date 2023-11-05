@@ -1,8 +1,7 @@
-import { GUID, Int, IDType } from './IDTypes';
+import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
+import { toJson, fromJson, toYaml, fromYaml } from '@Serializers/Serializers';
+import { Philote, IPhilote } from '@Philote/Philote';
 
-import { toJson, fromJson, toYaml, fromYaml } from './Serilaizers';
-
-import { Philote } from './Philote';
 
 export interface IItem<T extends IDType> {
   readonly name: string;

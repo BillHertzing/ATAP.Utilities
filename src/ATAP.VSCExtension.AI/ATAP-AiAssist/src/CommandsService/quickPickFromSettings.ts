@@ -1,15 +1,17 @@
 import { LogLevel, ILogger } from '../Logger';
+import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
+import { IItem, Item, IItemCollection, ItemCollection } from '@PredicatesService/PredicatesService';
+import { ICategory, Category, ICategoryCollection,CategoryCollection } from '@PredicatesService/PredicatesService';
+import { ITag, Tag, ITagCollection,TagCollection } from '@PredicatesService/PredicatesService';
+
 import * as vscode from 'vscode';
 
-// Import the interface and class for Category and CategoryCollection
-import { Philote, GUID, Int, IDType, ICategory, Category, ICategoryCollection, CategoryCollection } from '../PredicatesService';
-
-export async function quickPickFromSettings(
+export async function quickPickFromSettings<T extends IDType>(
   logger: ILogger,
   setting: string,
 ): Promise<{
   success: boolean;
-  pick: string | null;
+  pick: IItemCollection<T> | null;
   errorMessage: string | null;
 }> {
   let message: string = `starting commandID quickPickFromSettings, setting is ${setting}`;
@@ -28,7 +30,7 @@ export async function quickPickFromSettings(
     };
   }
 
-  const categorycollection = CategoryCollection.convertFrom_json<GUID>(settingStr);
+  const categorycollection = CategoryCollection.convertFrom_json<T>(settingStr);
   if (!categorycollection.items || categorycollection.items.length === 0) {
     message = `Could not convert to a CategoryCollection instance from atap-aiassist ${setting} : ${settingStr}`;
     logger.log(message, LogLevel.Error);

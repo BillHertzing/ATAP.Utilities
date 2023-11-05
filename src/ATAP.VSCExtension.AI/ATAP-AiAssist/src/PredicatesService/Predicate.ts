@@ -1,16 +1,14 @@
 
 
-import { IDType } from './IDTypes';
+import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
 
-import { Philote } from './Philote';
+import { Philote, IPhilote } from '@Philote/Philote';
 
 import { IItem, Item, IItemCollection, ItemCollection } from './itemGeneric';
 
 import { ICategory, Category, ICategoryCollection,CategoryCollection } from './Category';
 
 import { ITag, Tag, ITagCollection,TagCollection } from './Tag';
-
-
 
 
 

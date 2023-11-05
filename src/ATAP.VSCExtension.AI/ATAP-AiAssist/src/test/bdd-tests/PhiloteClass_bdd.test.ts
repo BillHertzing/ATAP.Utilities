@@ -1,6 +1,9 @@
 import 'mocha'; // Mocha types
 import * as chai from 'chai';
-import { Philote, GUID, Int, IDType } from '../../PredicatesService'; // Adjust the import to your folder structure
+import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
+
+import { Philote, IPhilote } from '@Philote/Philote';
+
 
 const expect = chai.expect;
 console.log("Philote Class Tests BDD");

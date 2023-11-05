@@ -1,4 +1,4 @@
-import { IDType } from './IDTypes';
+import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
 
 import { IItem, Item, IItemCollection, ItemCollection } from './itemGeneric';
 

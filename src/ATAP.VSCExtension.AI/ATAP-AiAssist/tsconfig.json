@@ -8,6 +8,16 @@
 		],
 		"sourceMap": true,
 		"rootDir": "src",
+    "baseUrl": ".", // This must be specified if "paths" is set.
+    "paths": {
+      "@IDTypes/*": ["src/IDTypes/*"],
+      "@Serializers/*": ["src/Serializers/*"],
+      "@Philote/*": ["src/Philote/*"],
+      "@Utilities/*": ["src/Utilities/*"],
+      "@PredicatesService/*": ["src/PredicatesService/*"],
+      // Add more path mappings as needed.
+    },
+
 		"strict": true,   /* enable all strict type-checking options */
 		/* Additional Checks */
 		 "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */

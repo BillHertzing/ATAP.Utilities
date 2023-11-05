@@ -12,8 +12,8 @@ import {
 } from './Serilaizers';
 
 export interface IPhilote<T extends IDType> {
-  readonly ID: T; // The ID should be public and read-only
-
+  readonly ID: T;
+  readonly others: Philote<T>[];
   convertTo_json(): string;
   convertTo_yaml(): string;
   ToString(): string;
@@ -23,9 +23,8 @@ export interface IPhilote<T extends IDType> {
 
 
 export class Philote<T extends IDType>implements IPhilote<T>  {
-  public readonly ID: T; // Public read-only
-  private readonly others: Philote<T>[]; // Private read-only array
-
+  public readonly ID: T;
+  public readonly others: Philote<T>[];
   constructor(ID: T) {
     this.ID = ID;
     this.others = [];

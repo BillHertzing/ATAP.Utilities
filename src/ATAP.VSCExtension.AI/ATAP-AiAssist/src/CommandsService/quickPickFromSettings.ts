@@ -1,8 +1,8 @@
 import { LogLevel, ILogger } from '../Logger';
 import * as vscode from 'vscode';
 
-// Import the interface and class for Category and Categorys
-import { Philote, GUID, Int, IDType, Category, Categorys } from '../PredicatesService';
+// Import the interface and class for Category and CategoryCollection
+import { Philote, GUID, Int, IDType, ICategory, Category, ICategoryCollection, CategoryCollection } from '../PredicatesService';
 
 export async function quickPickFromSettings(
   logger: ILogger,
@@ -28,9 +28,9 @@ export async function quickPickFromSettings(
     };
   }
 
-  const categorys = Categorys.convertFrom_json<GUID>(settingStr);
-  if (!categorys.categories || categorys.categories.length === 0) {
-    message = `Could not convert to a Categorys instance from atap-aiassist ${setting} : ${settingStr}`;
+  const categorycollection = CategoryCollection.convertFrom_json<GUID>(settingStr);
+  if (!categorycollection.items || categorycollection.items.length === 0) {
+    message = `Could not convert to a CategoryCollection instance from atap-aiassist ${setting} : ${settingStr}`;
     logger.log(message, LogLevel.Error);
     return {
       success: false,
@@ -39,10 +39,10 @@ export async function quickPickFromSettings(
     };
   }
 
-  categorys.categories.map((object) => object.name);
-  const optionsArray: string[] = categorys.categories.map((object) => object.name);
+  categorycollection.items.map((object) => object.name);
+  const optionsArray: string[] = categorycollection.items.map((object) => object.name);
   if (!optionsArray || optionsArray.length === 0) {
-    message = `Could not convert the categorys.categories to an optionsArray of strings`;
+    message = `Could not convert the categorycollection.items to an optionsArray of strings`;
     logger.log(message, LogLevel.Error);
     return {
       success: false,
@@ -58,7 +58,7 @@ export async function quickPickFromSettings(
 
   if (pick !== undefined) {
     // ToDo:pick is just the name, get the entire Category instance
-    const pickedCategory = categorys.findByName<GUID>(pick);
+    const pickedCategory = categorycollection.findItemByName(pick);
     return {
       success: true,
       pick: pick,

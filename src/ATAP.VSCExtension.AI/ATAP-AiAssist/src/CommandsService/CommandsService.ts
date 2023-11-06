@@ -6,6 +6,7 @@ import { showVSCEnvironment } from './showVSCEnvironment';
 import { sendFilesToAPI } from './sendFilesToAPI';
 import { showQuickPickExample } from './showQuickPickExample';
 import { quickPickFromSettings } from './quickPickFromSettings';
+import { copyToSubmit } from './copyToSubmit';
 
 export class CommandsService {
   private disposables: vscode.Disposable[] = [];
@@ -101,6 +102,31 @@ export class CommandsService {
         }
       }),
     );
+
+    this.message = 'registering copyToSubmit';
+    this.logger.log(this.message, LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand('atap-aiassist.copyToSubmit', async () => {
+        let message: string = 'starting commandID copyToSubmit';
+        this.logger.log(message, LogLevel.Debug);
+        try {
+          const result = await copyToSubmit(this.context, this.logger);
+          message = `result.success = ${result.success}, result `;
+          this.logger.log(message, LogLevel.Debug);
+        } catch (e) {
+          if (e instanceof Error) {
+            // Report the error
+            message = e.message;
+          } else {
+            // If e is not an instance of Error, you might want to handle it differently
+            message = `An unknown error occurred, and the instance of (e) returned is of type ${typeof e}`;
+          }
+          this.logger.log(message, LogLevel.Error);
+        }
+      }),
+    );
+
+
   }
 
   public getDisposables(): vscode.Disposable[] {

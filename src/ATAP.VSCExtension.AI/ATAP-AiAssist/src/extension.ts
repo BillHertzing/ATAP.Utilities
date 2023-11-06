@@ -15,7 +15,6 @@ import {
 } from './Logger';
 
 import * as fs from 'fs';
-import { stringBuilder } from './stringBuilder';
 import { checkFile } from './checkFile';
 import { processPs1Files } from './processPs1Files';
 import { mainViewTreeDataProvider } from './mainViewTreeDataProvider';
@@ -193,23 +192,6 @@ export async function activate(context: vscode.ExtensionContext) {
   // Add the disposables from the CommandsService to context.subscriptions
   context.subscriptions.push(...commandsService.getDisposables());
 
-  let copyToSubmitDisposable = vscode.commands.registerCommand('atap-aiassist.copyToSubmit', () => {
-    let message: string = 'starting commandID copyToSubmit';
-    myLogger.log(message, LogLevel.Debug);
-
-    let editor = vscode.window.activeTextEditor;
-    if (editor) {
-      let document = editor.document;
-      let selection = editor.selection;
-      let text = document.getText(selection);
-
-      let message: string = 'text fetched';
-      myLogger.log(message, LogLevel.Debug);
-      let textToSubmit = new stringBuilder();
-      //textToSubmit.append(text);
-    }
-  });
-  context.subscriptions.push(copyToSubmitDisposable);
 
 
   // *************************************************************** //

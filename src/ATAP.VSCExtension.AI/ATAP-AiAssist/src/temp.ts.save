@@ -101,7 +101,7 @@ type TypeMap<T extends IDType> = {
 
 
 // Here is our type map with the constructors of our known types.
-const typeMap: TypeMap<T> = {
+const typeMap: TypeMap<Int> = {
   "Tag": Tag,
   "TagCollection": TagCollection,
   "Category": Category,

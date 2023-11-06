@@ -10,11 +10,11 @@
 		"rootDir": "src",
     "baseUrl": ".", // This must be specified if "paths" is set.
     "paths": {
+      "@Utilities/*": ["src/Utilities/*"],
       "@Logger/*": ["src/Logger/*"],
       "@IDTypes/*": ["src/IDTypes/*"],
       "@Serializers/*": ["src/Serializers/*"],
       "@Philote/*": ["src/Philote/*"],
-      "@Utilities/*": ["src/Utilities/*"],
       "@TypeMap/*": ["src/TypeMap/*"],
       "@PredicatesService/*": ["src/PredicatesService/*"],
       // Add more path mappings as needed.

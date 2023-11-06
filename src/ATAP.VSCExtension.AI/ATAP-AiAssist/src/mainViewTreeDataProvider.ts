@@ -1,18 +1,7 @@
 import * as vscode from 'vscode';
 import { generateGuid } from '@Utilities/generateGuid';
 import { mainViewTreeItem } from './mainViewTreeItem';
-import {
-  LogLevel,
-  ChannelInfo,
-  ILogger,
-  Logger,
-  getLoggerLogLevelFromSettings,
-  setLoggerLogLevelFromSettings,
-  getDevelopmentLoggerLogLevelFromSettings,
-  setDevelopmentLoggerLogLevelFromSettings,
-
-} from './Logger';
-
+import { LogLevel, Logger } from '@Logger/Logger';
 
 export class mainViewTreeDataProvider implements vscode.TreeDataProvider<mainViewTreeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<mainViewTreeItem | null> =
@@ -56,8 +45,8 @@ export class mainViewTreeDataProvider implements vscode.TreeDataProvider<mainVie
     // ToDo: for new items get the picked value from a default structure
     // return root level items here
     const rootItems = [
-      new mainViewTreeItem('RootItem1', vscode.TreeItemCollapsibleState.Collapsed, this.logger, generateGUID()), //, 'RSomething'),
-      new mainViewTreeItem('RootItem2', vscode.TreeItemCollapsibleState.Collapsed, this.logger, generateGUID()), //,'RSomethingElse')
+      new mainViewTreeItem('RootItem1', vscode.TreeItemCollapsibleState.Collapsed, this.logger, generateGuid()), //, 'RSomething'),
+      new mainViewTreeItem('RootItem2', vscode.TreeItemCollapsibleState.Collapsed, this.logger, generateGuid()), //,'RSomethingElse')
     ];
 
     // Attach the command to each root item
@@ -77,8 +66,8 @@ export class mainViewTreeDataProvider implements vscode.TreeDataProvider<mainVie
     };
     // return sub-items based on the element clicked
     const subItems = [
-      new mainViewTreeItem('SubItem1', vscode.TreeItemCollapsibleState.None, this.logger, generateGUID()), //, 'SSomething'),
-      new mainViewTreeItem('SubItem2', vscode.TreeItemCollapsibleState.None, this.logger, generateGUID()), //,'SSomethingElse')
+      new mainViewTreeItem('SubItem1', vscode.TreeItemCollapsibleState.None, this.logger, generateGuid()), //, 'SSomething'),
+      new mainViewTreeItem('SubItem2', vscode.TreeItemCollapsibleState.None, this.logger, generateGuid()), //,'SSomethingElse')
     ];
     // Attach the command to each first level subitem
     for (const item of subItems) {

@@ -81,6 +81,11 @@ export async function sendFilesToAPI(context: vscode.ExtensionContext, logger: I
     message = `An error occurred while processing files: ${error}`;
     logger.log(message, LogLevel.Error);
   }
+
+  message = 'leaving command sendFilesToAPI';
+  logger.log(message, LogLevel.Debug);
+
+
 }
 
 // export async function  processFiles(logger: ILogger, commandId: string | null): void {

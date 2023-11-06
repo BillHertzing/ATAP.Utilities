@@ -1,1 +1,1 @@
-export { createTypeInstance } from './TypeMap';
+// export { createTypeInstance } from './TypeMap';

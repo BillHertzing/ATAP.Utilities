@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { generateGuid } from '@Utilities/generateGuid';
+import { generateGuid } from './Utilities';
 import { mainViewTreeItem } from './mainViewTreeItem';
 import { LogLevel, Logger } from '@Logger/Logger';
 

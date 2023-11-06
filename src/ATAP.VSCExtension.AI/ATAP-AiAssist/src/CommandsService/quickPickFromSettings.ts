@@ -70,11 +70,11 @@ export async function quickPickFromSettings<T extends IDType>(
   // data.Item.{ subtype } =
   if (pickedName !== undefined) {
     // ToDo:pick is just the name, get the entire Item / Collection instance
-    const pickedItem = createTypeInstance<T, settingStr>(settingStr); // ToDo: Fix: maybe use the typemap
+   // const pickedItem = createTypeInstance<T, settingStr>(settingStr); // ToDo: Fix: maybe use the typemap
 
     return {
       success: true,
-      pick: pickedItem,
+      pick: null, // pickedItem,
       errorMessage: null,
     };
   } else {

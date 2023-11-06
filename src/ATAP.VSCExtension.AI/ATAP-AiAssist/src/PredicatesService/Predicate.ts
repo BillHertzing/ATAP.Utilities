@@ -10,8 +10,6 @@ import { ICategory, Category, ICategoryCollection,CategoryCollection } from './C
 
 import { ITag, Tag, ITagCollection,TagCollection } from './Tag';
 
-
-
 export interface IPredicate<T extends IDType> extends IItem<T> {
   readonly TagCollection: TagCollection<T>;
   readonly CategoryCollection: CategoryCollection<T>;
@@ -31,6 +29,11 @@ export class Predicate<T extends IDType> extends Item<T> implements IPredicate<T
     this.TagCollection = TagCollection;
     this.CategoryCollection = CategoryCollection;
   }
+}
+
+
+export interface IPredicateCollection<T extends IDType> extends IItemCollection<T> {
+  // No new members; simply a more specific type of IItem<T> with Predicate semantics.
 }
 
 export class PredicateCollection<T extends IDType> extends ItemCollection<T> {

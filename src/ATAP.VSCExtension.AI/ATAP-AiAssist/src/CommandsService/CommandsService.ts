@@ -1,13 +1,4 @@
-import {
-  LogLevel,
-  ChannelInfo,
-  ILogger,
-  Logger,
-  getLoggerLogLevelFromSettings,
-  setLoggerLogLevelFromSettings,
-  getDevelopmentLoggerLogLevelFromSettings,
-  setDevelopmentLoggerLogLevelFromSettings,
-} from '../Logger';
+import { LogLevel, ILogger, Logger } from '@Logger/Logger';
 import * as vscode from 'vscode';
 
 import { startCommand } from './startCommand';
@@ -92,8 +83,10 @@ export class CommandsService {
         let message: string = 'starting commandID quickPickFromSettings';
         this.logger.log(message, LogLevel.Debug);
         try {
-          let setting: string = 'categorys';
-          const result = await quickPickFromSettings(this.logger,setting);
+          // ToDo: how to pass the string for 'setting' to the extension command
+          // ToDo: the extensionId.setting that needs / contains the QuickPick setting
+          let setting: string = 'CategoryCollection';
+          const result = await quickPickFromSettings(this.logger, setting);
           message = `result.success = ${result.success}, result `;
           this.logger.log(message, LogLevel.Debug);
         } catch (e) {

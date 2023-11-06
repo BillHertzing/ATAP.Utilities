@@ -1,4 +1,4 @@
-import { LogLevel, ILogger } from '../Logger';
+import { LogLevel, ILogger } from '@Logger/Logger';
 import * as vscode from 'vscode';
 
 export async function showQuickPickExample(logger: ILogger): Promise<{

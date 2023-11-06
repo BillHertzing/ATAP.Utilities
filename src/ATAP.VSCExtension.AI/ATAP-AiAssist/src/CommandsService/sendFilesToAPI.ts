@@ -55,7 +55,7 @@ export async function sendFilesToAPI(context: vscode.ExtensionContext, logger: I
   const destination: string = 'https://your.api.endpoint/submit'; // ToDo:from settings
 
   // Async function to send the file to the API
-  const sendToAPI = async (path: string, logger: ILogger): Promise< ProcessResult > => {
+  const sendToAPI = async (path: string, logger: ILogger): Promise<ProcessResult> => {
     try {
       const fileContent = fs.readFileSync(path, 'utf8');
       const response = await axios.post(destination, {
@@ -64,18 +64,11 @@ export async function sendFilesToAPI(context: vscode.ExtensionContext, logger: I
       });
       message = `File ${path} was sent successfully.`;
       logger.log(message, LogLevel.Info);
-      return new ProcessResult (
-        response.status === 200,
-       fileContent.split('\n').length,
-      );
+      return new ProcessResult(response.status === 200, fileContent.split('\n').length);
     } catch (error) {
       message = `Error sending file ${path}: ${error}`;
       logger.log(message, LogLevel.Info);
-      return new ProcessResult (
-        false,
-        undefined
-
-      );
+      return new ProcessResult(false, undefined);
     }
   };
 

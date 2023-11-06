@@ -1,7 +1,4 @@
-import {
-  LogLevel,
-  ILogger,
-} from '../Logger';
+import { LogLevel, ILogger } from '@Logger/Logger';
 import * as vscode from 'vscode';
 
 export function showVSCEnvironment(logger: ILogger): void {

@@ -1,8 +1,9 @@
-import { LogLevel, ILogger } from '../Logger';
+import { LogLevel, ILogger } from '@Logger/Logger';
 import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
-import { IItem, Item, IItemCollection, ItemCollection } from '@PredicatesService/PredicatesService';
-import { ICategory, Category, ICategoryCollection,CategoryCollection } from '@PredicatesService/PredicatesService';
-import { ITag, Tag, ITagCollection,TagCollection } from '@PredicatesService/PredicatesService';
+import { IItem, Item, IItemCollection, ItemCollection } from '../PredicatesService';
+import { ICategory, Category, ICategoryCollection, CategoryCollection } from '../PredicatesService';
+import { ITag, Tag, ITagCollection, TagCollection } from '../PredicatesService';
+import { createTypeInstance } from '@TypeMap/TypeMap';
 
 import * as vscode from 'vscode';
 
@@ -11,7 +12,7 @@ export async function quickPickFromSettings<T extends IDType>(
   setting: string,
 ): Promise<{
   success: boolean;
-  pick: IItemCollection<T> | null;
+  pick: IItemCollection<T> | IItem<T> | null;
   errorMessage: string | null;
 }> {
   let message: string = `starting commandID quickPickFromSettings, setting is ${setting}`;
@@ -54,16 +55,26 @@ export async function quickPickFromSettings<T extends IDType>(
   }
 
   // Show QuickPick with the options from settings
-  const pick = await vscode.window.showQuickPick(optionsArray, {
+  const pickedName= await vscode.window.showQuickPick(optionsArray, {
     placeHolder: 'Select an option',
   });
 
-  if (pick !== undefined) {
-    // ToDo:pick is just the name, get the entire Category instance
-    const pickedCategory = categorycollection.findItemByName(pick);
+  // Get the index of name in the name array
+  // use that index to get the correct substring from the json that describes the Item
+  //
+          // Store the selected Item (Category , Category Collection ,Tag, TagCollection)
+  //   store it into the global's user state (LastPicked)
+  // import {data} from
+  // message = `data instance ID ${data.instanceID} ; Version ${data.version} `;
+  // logger.log(message, LogLevel.Debug);
+  // data.Item.{ subtype } =
+  if (pickedName !== undefined) {
+    // ToDo:pick is just the name, get the entire Item / Collection instance
+    const pickedItem = createTypeInstance<T, settingStr>(settingStr); // ToDo: Fix: maybe use the typemap
+
     return {
       success: true,
-      pick: pick,
+      pick: pickedItem,
       errorMessage: null,
     };
   } else {

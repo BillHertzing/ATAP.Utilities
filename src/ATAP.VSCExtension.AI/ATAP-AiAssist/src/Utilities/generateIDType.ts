@@ -7,11 +7,11 @@ export function generateGuid(): string {
     return v.toString(16);
   });
 }
-
-export function generateNextInt(): number {
-  // ToDo: use a sequence, keep track of last used, supply the next in sequence
-  // ToDo: considerations for loading sequence and last used from persistence
-  //ToDo: replace Random number generator
-  return (Math.random() * 4098);
-}
+// retaining these in the hope that someday will be able to make IDType either an Int or a GUID
+// export function generateNextInt(): number {
+//   // ToDo: use a sequence, keep track of last used, supply the next in sequence
+//   // ToDo: considerations for loading sequence and last used from persistence
+//   //ToDo: replace Random number generator
+//   return (Math.random() * 4098);
+// }
 

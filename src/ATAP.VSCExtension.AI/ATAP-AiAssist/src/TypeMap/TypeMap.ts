@@ -1,8 +1,8 @@
 import { GUID, Int, IDType } from '@IDTypes/IDTypes';
 import { Philote, IPhilote } from '@Philote/Philote';
-import { IItem, Item, IItemCollection, ItemCollection } from '../PredicatesService';
-import { Category, ICategory, ICategoryCollection, CategoryCollection } from '../PredicatesService';
-import { Tag, ITag, ITagCollection, TagCollection } from '../PredicatesService';
+import { IItem, Item, IItemCollection, ItemCollection } from '../QueryContextsService';
+import { Category, ICategory, ICategoryCollection, CategoryCollection } from '../QueryContextsService';
+import { Tag, ITag, ITagCollection, TagCollection } from '../QueryContextsService';
 
 // Define a type for known singular type constructors.
 // This interface ensures any type with a string key has a constructor taking a name and an ID and returns an Item<T>

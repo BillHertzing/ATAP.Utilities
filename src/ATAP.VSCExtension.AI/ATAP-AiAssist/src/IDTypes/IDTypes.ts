@@ -1,15 +1,10 @@
-import { generateGuid, generateNextInt } from '@Utilities/index';
+import { generateGuid } from '@Utilities/index';
 
-export type GUID = string;
+export type GUID = string; // retaining these in the hope that someday will be able to make IDType either and Int or a GUID
 export type Int = number;
-export type IDType = GUID | Int;
+export type IDType = GUID; // GUID | Int; // No longer supports generic type on Philote
 
-export function nextID<T extends IDType>(type: "GUID" | "Int"): T {
-  if (type === "GUID") {
-    return generateGuid() as T;
-  } else if (type === "Int") {
-    return generateNextInt() as T;
-  }
+export function nextID(): IDType {
+    return generateGuid();
 
-  throw new Error("Unsupported ID type"); // Handle case where type is neither GUID nor Int
 }

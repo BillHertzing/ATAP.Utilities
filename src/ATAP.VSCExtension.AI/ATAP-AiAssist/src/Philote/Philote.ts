@@ -1,6 +1,13 @@
-import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
-import { toJson, fromJson, toYaml, fromYaml } from '@Serializers/Serializers';
-
+import { GUID, Int, IDType, nextID } from '@IDTypes/IDTypes';
+import {
+  SupportedSerializersEnum,
+  SerializationStructure,
+  ISerializationStructure,
+  toJson,
+  fromJson,
+  toYaml,
+  fromYaml,
+} from '@Serializers/Serializers';
 
 export interface IPhilote<T extends IDType> {
   readonly ID: T;
@@ -12,12 +19,11 @@ export interface IPhilote<T extends IDType> {
   removeOther(philote: IPhilote<T>): void; // Method to remove from the 'others' array
 }
 
-
-export class Philote<T extends IDType>implements IPhilote<T>  {
+export class Philote<T extends IDType> implements IPhilote<T> {
   public readonly ID: T;
   public readonly others: Philote<T>[];
-  constructor(ID: T) {
-    this.ID = ID;
+  constructor(iDTypeName: 'GUID' | 'Int', ID?: T) {
+    this.ID = ID !== undefined ? ID : nextID<T>(iDTypeName); // returns a random GUID string or the next sequential Int available from the ID pool
     this.others = [];
   }
 

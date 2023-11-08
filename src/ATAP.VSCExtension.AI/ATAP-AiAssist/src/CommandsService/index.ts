@@ -1,2 +1,2 @@
 export { CommandsService } from './CommandsService';
-export { quickPickFromSettings } from './quickPickFromSettings';
+// export { quickPickFromSettings } from './quickPickFromSettings';

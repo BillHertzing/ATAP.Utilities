@@ -3,7 +3,7 @@ import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
 import { IItem, Item, IItemCollection, ItemCollection } from '../PredicatesService';
 import { ICategory, Category, ICategoryCollection, CategoryCollection } from '../PredicatesService';
 import { ITag, Tag, ITagCollection, TagCollection } from '../PredicatesService';
-import { createTypeInstance } from '@TypeMap/TypeMap';
+// import { createTypeInstance } from '@TypeMap/TypeMap';
 
 import * as vscode from 'vscode';
 

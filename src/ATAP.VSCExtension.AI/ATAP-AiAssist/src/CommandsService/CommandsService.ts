@@ -69,8 +69,8 @@ export class CommandsService {
             // Report the error
             message = e.message;
           } else {
-            // If e is not an instance of Error, you might want to handle it differently
-            message = `An unknown error occurred, and the instance of (e) returned is of type ${typeof e}`;
+            // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
+            message = `An unknown error occurred during the showQuickPickExample call, and the instance of (e) returned is of type ${typeof e}`;
           }
           this.logger.log(message, LogLevel.Error);
         }
@@ -95,8 +95,8 @@ export class CommandsService {
             // Report the error
             message = e.message;
           } else {
-            // If e is not an instance of Error, you might want to handle it differently
-            message = `An unknown error occurred, and the instance of (e) returned is of type ${typeof e}`;
+            // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
+            message = `An unknown error occurred during the quickPickFromSettings call, and the instance of (e) returned is of type ${typeof e}`;
           }
           this.logger.log(message, LogLevel.Error);
         }
@@ -118,15 +118,13 @@ export class CommandsService {
             // Report the error
             message = e.message;
           } else {
-            // If e is not an instance of Error, you might want to handle it differently
-            message = `An unknown error occurred, and the instance of (e) returned is of type ${typeof e}`;
+            // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
+            message = `An unknown error occurred during the copyToSubmit call, and the instance of (e) returned is of type ${typeof e}`;
           }
           this.logger.log(message, LogLevel.Error);
         }
       }),
     );
-
-
   }
 
   public getDisposables(): vscode.Disposable[] {

@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
 import { Philote, IPhilote } from '@Philote/Philote';
 
-import { Category, CategoryCollection } from '@PredicatesService/PredicatesService';
+import { Category, CategoryCollection } from '@PredicatesService/index';
 
 suite('Category Tests', () => {
   // Define some common variables for use in tests

@@ -1,3 +1,5 @@
+// ToDo: make this a service for handing out ID
+
 export function generateGuid(): string {
   return 'xxxxxxxx-xxxx-4xxx-xxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = (Math.random() * 16) | 0,
@@ -5,3 +7,11 @@ export function generateGuid(): string {
     return v.toString(16);
   });
 }
+
+export function generateNextInt(): number {
+  // ToDo: use a sequence, keep track of last used, supply the next in sequence
+  // ToDo: considerations for loading sequence and last used from persistence
+  //ToDo: replace Random number generator
+  return (Math.random() * 4098);
+}
+

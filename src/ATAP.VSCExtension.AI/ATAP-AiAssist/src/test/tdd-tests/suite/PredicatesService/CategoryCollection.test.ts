@@ -3,15 +3,15 @@ import * as assert from 'assert';
 import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
 import { Philote, IPhilote } from '@Philote/Philote';
 
-import { Category, CategoryCollection } from '@PredicatesService/index';
+import { Category, CategoryCollection } from '@QueryContextsService/index';
 
 suite('Category Tests', () => {
   // Define some common variables for use in tests
   const guidExample: string = '123e4567-e89b-12d3-a456-426614174000';
   const intExample: Int = 10;
   let testName: string = 'ATestName';
-  test('Category<GUID> instantiation and method checks', () => {
-    const guidCategory = new Category<GUID>(testName, new Philote<string>(guidExample));
+  test('Category instantiation and method checks', () => {
+    const guidCategory = new Category(testName, new Philote<string>(guidExample));
     assert.strictEqual(guidCategory.name, testName);
     // Add more assertions as necessary to test the functionality
   });
@@ -22,9 +22,9 @@ suite('Category Tests', () => {
     // Add more assertions as necessary to test the functionality
   });
 
-  test('CategoryCollection<GUID> manipulation', () => {
-    const categoryCollectionGUID = new CategoryCollection<GUID>(new Philote<string>(guidExample));
-    const guidCategory =new Category<GUID>(testName, new Philote<string>(guidExample));
+  test('CategoryCollection manipulation', () => {
+    const categoryCollectionGUID = new CategoryCollection(new Philote<string>(guidExample));
+    const guidCategory =new Category(testName, new Philote<string>(guidExample));
     categoryCollectionGUID.addItem(guidCategory);
 
     const found = categoryCollectionGUID.findItemByName(testName);

@@ -5,19 +5,19 @@ import { DefaultConfiguration } from '../DefaultConfiguration';
 import { GlobalStateCache } from './GlobalStateCache';
 import { GUID, Int, IDType } from '@IDTypes/IDTypes';
 import {
-  Predicate,
-  IPredicate,
+  QueryContext,
+  IQueryContext,
   Category,
   ICategory,
   Tag,
   ITag,
-  PredicateCollection,
-  IPredicateCollection,
+  QueryContextCollection,
+  IQueryContextCollection,
   CategoryCollection,
   ICategoryCollection,
   TagCollection,
   ITagCollection,
-} from '@PredicatesService/index';
+} from '@QueryContextsService/index';
 
 import { SupportedSerializersEnum, SerializationStructure, ISerializationStructure, toJson, fromJson, toYaml, fromYaml } from '@Serializers/Serializers';
 

@@ -1,23 +1,74 @@
-import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
+import { GUID, Int, IDType } from '@IDTypes/IDTypes';
+import { Philote, IPhilote } from '@Philote/Philote';
+import {
+  SupportedSerializersEnum,
+  SerializationStructure,
+  ISerializationStructure,
+  toJson,
+  fromJson,
+  toYaml,
+  fromYaml,
+} from '@Serializers/Serializers';
+import {
+  ItemWithID,
+  IItemWithID,
+  ItemWithIDsService,
+  IItemWithIDsService,
+  ItemWithIDCollection,
+  IItemWithIDCollection,
+} from '@ItemWithIDsService/index';
 
-import { IItem, Item, IItemCollection, ItemCollection } from './itemGeneric';
+export type CategoryValueType = string;
 
-// Since Category<T> has no additional members over Item<T>, the ICategory<T> interface
-// is effectively the same as IItem<T> but can be used to provide more specific typing
-// where a Category rather than any Item is required.
+// Define an interface for category that extends IItemWithID
+export interface ICategory extends IItemWithID {}
 
-export interface ICategory<T extends IDType> extends IItem<T> {
-  // No new members; simply a more specific type of IItem<T> with Category semantics.
+// Category class extending ItemWithID
+export class Category extends ItemWithID implements ICategory {
+  constructor(value: CategoryValueType, ID?: Philote) {
+    super(value, ID);
+  }
+
+  dispose(): void {
+    // Call dispose for base ItemWithID
+    super.dispose();
+    // ToDo: How to get a logger without having to pass it in every function call?
+    //console.log(`Category (ID: ${this.ID.id}, Value: ${this.value}) is disposed.`);
+  }
+
+  // placedholder
+  placeholder(): void {
+    //console.log(`Placeholder method called for Category (ID: ${this.ID.id}, Value: ${this.value})`);
+  }
 }
 
-export class Category<T extends IDType> extends Item<T> {
-  // No new members added, but the type is distinct from Item
+export interface ICategoryCollection extends IItemWithIDCollection {
+  // No new members; simply a more specific type of IItemWithID with Category semantics.
 }
 
-export interface ICategoryCollection<T extends IDType> extends IItemCollection<T> {
-  // No new members; simply a more specific type of IItem<T> with Category semantics.
+export class CategoryCollection extends ItemWithIDCollection {
+  // No new members added, but the type is distinct from ItemWithIDCollection
 }
 
-export class CategoryCollection<T extends IDType> extends ItemCollection<T> {
-  // No new members added, but the type is distinct from Item
+export interface ICategorysService extends IItemWithIDsService {
+  createCategory(value: CategoryValueType, ID?: Philote): Category;
+  dispose(): void
+}
+
+// CategoryService is a factory for Category instances
+export class CategorysService extends ItemWithIDsService implements ICategorysService {
+  private categoryWithIDs: Category[] = [];
+
+  public createCategory(value: CategoryValueType, ID?: Philote): Category {
+    const category = new Category(value, ID);
+    this.categoryWithIDs.push(category);
+    return category;
+  }
+
+  dispose(): void {
+    this.categoryWithIDs.forEach((categoryWithID) => {
+      categoryWithID.dispose();
+    });
+    this.categoryWithIDs = [];
+  }
 }

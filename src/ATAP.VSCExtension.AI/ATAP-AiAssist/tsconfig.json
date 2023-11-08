@@ -19,7 +19,9 @@
       "@CommandsService/*": ["src/CommandsService/*"],
       "@Philote/*": ["src/Philote/*"],
       "@TypeMap/*": ["src/TypeMap/*"],
-      "@PredicatesService/*": ["src/PredicatesService/*"],
+      "@ItemWithIDsService/*": ["src/ItemWithIDsService/*"],
+      "@AssociationsService/*": ["src/AssociationsService/*"],
+      "@QueryContextsService/*": ["src/QueryContextsService/*"],
       // Add more path mappings as needed.
     },
 

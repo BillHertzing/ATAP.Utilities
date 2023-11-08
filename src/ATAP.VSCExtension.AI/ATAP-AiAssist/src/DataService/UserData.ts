@@ -4,19 +4,19 @@ import * as vscode from 'vscode';
 import { GlobalStateCache } from './GlobalStateCache';
 import { GUID, Int, IDType } from '@IDTypes/IDTypes';
 import {
-  Predicate,
-  IPredicate,
+  QueryContext,
+  IQueryContext,
   Category,
   ICategory,
   Tag,
   ITag,
-  PredicateCollection,
-  IPredicateCollection,
+  QueryContextCollection,
+  IQueryContextCollection,
   CategoryCollection,
   ICategoryCollection,
   TagCollection,
   ITagCollection,
-} from '@PredicatesService/index';
+} from '@QueryContextsService/index';
 
 import {
   SupportedSerializersEnum,
@@ -30,28 +30,28 @@ import {
 
 // This defines what a UserData instance looks like
 export interface IUserData<T extends IDType> {
-  readonly categoryCollection: ICategoryCollection<T>;
-  readonly predicateCollection: IPredicateCollection<T>;
-  readonly tagCollection: ITagCollection<T>;
+  readonly categoryCollection: ICategoryCollection;
+  readonly queryContextCollection: IQueryContextCollection;
+  readonly tagCollection: ITagCollection;
 }
 
-export class UserData<T extends IDType> implements IUserData<T> {
-  readonly categoryCollection: ICategoryCollection<T>;
-  readonly predicateCollection: IPredicateCollection<T>;
-  readonly tagCollection: ITagCollection<T>;
+export class UserData<T extends IDType> implements IUserData {
+  readonly categoryCollection: ICategoryCollection;
+  readonly queryContextCollection: IQueryContextCollection;
+  readonly tagCollection: ITagCollection;
 
   constructor(logger: ILogger, context: vscode.ExtensionContext);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, categoryCollection: ICategoryCollection<T>);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, predicateCollection: IPredicateCollection<T>);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, tagCollection: ITagCollection<T>);
+  constructor(logger: ILogger, context: vscode.ExtensionContext, categoryCollection: ICategoryCollection);
+  constructor(logger: ILogger, context: vscode.ExtensionContext, queryContextCollection: IQueryContextCollection);
+  constructor(logger: ILogger, context: vscode.ExtensionContext, tagCollection: ITagCollection);
   constructor(logger: ILogger, context: vscode.ExtensionContext, initializationStructure: ISerializationStructure);
 
   constructor(
     private logger: ILogger,
     private context: vscode.ExtensionContext,
-    categoryCollection?: ICategoryCollection<T>,
-    predicateCollection?: IPredicateCollection<T>,
-    tagCollection?: ITagCollection<T>,
+    categoryCollection?: ICategoryCollection,
+    queryContextCollection?: IQueryContextCollection,
+    tagCollection?: ITagCollection,
     initializationStructure?: ISerializationStructure
   ) {
 
@@ -61,17 +61,17 @@ export class UserData<T extends IDType> implements IUserData<T> {
     if (categoryCollection !== undefined) {
       this.categoryCollection = categoryCollection;
     } else {
-      this.categoryCollection = new CategoryCollection<T>();
+      this.categoryCollection = new CategoryCollection();
     }
-    if (predicateCollection !== undefined) {
-      this.predicateCollection = predicateCollection;
+    if (queryContextCollection !== undefined) {
+      this.queryContextCollection = queryContextCollection;
     } else {
-      this.predicateCollection = new PredicateCollection<T>();
+      this.queryContextCollection = new QueryContextCollection();
     }
     if (tagCollection !== undefined) {
       this.tagCollection = tagCollection;
     } else {
-      this.tagCollection = new TagCollection<T>();
+      this.tagCollection = new TagCollection();
     }
 
   }

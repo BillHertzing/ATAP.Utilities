@@ -1,41 +1,73 @@
-
-
-import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
+import { GUID, Int, IDType } from '@IDTypes/IDTypes';
 
 import { Philote, IPhilote } from '@Philote/Philote';
+import {
+  SupportedSerializersEnum,
+  SerializationStructure,
+  ISerializationStructure,
+  toJson,
+  fromJson,
+  toYaml,
+  fromYaml,
+} from '@Serializers/Serializers';
 
-import { IItem, Item, IItemCollection, ItemCollection } from './itemGeneric';
+import {
+  ItemWithID,
+  IItemWithID,
+  ItemWithIDsService,
+  IItemWithIDsService,
+  ItemWithIDCollection,
+  IItemWithIDCollection,
+} from '@ItemWithIDsService/index';
 
-import { ICategory, Category, ICategoryCollection,CategoryCollection } from './Category';
+import {
+  TagValueType,
+  Tag,
+  ITag,
+  TagCollection,
+  ITagCollection,
+  TagsService,
+  ITagsService,
+} from '@AssociationsService/index';
+import {
+  CategoryValueType,
+  Category,
+  ICategory,
+  CategoryCollection,
+  ICategoryCollection,
+  CategorysService,
+  ICategorysService,
+} from '@AssociationsService/index';
+import {
+  AssociationValueType,
+  Association,
+  IAssociation,
+  AssociationCollection,
+  IAssociationCollection,
+  AssociationsService,
+  IAssociationsService,
+} from '@AssociationsService/index';
 
-import { ITag, Tag, ITagCollection,TagCollection } from './Tag';
-
-export interface IPredicate<T extends IDType> extends IItem<T> {
-  readonly TagCollection: TagCollection<T>;
-  readonly CategoryCollection: CategoryCollection<T>;
+export interface IQueryContext extends IItemWithID {
+  readonly TagCollection: TagCollection;
+  readonly CategoryCollection: CategoryCollection;
 }
 
-export class Predicate<T extends IDType> extends Item<T> implements IPredicate<T> {
-  public readonly TagCollection: TagCollection<T>;
-  public readonly CategoryCollection: CategoryCollection<T>;
+export class QueryContext extends ItemWithID implements IQueryContext {
+  public readonly TagCollection: TagCollection;
+  public readonly CategoryCollection: CategoryCollection;
 
-  constructor(
-    name: string,
-    ID: Philote<T>,
-    TagCollection: TagCollection<T>,
-    CategoryCollection: CategoryCollection<T>,
-  ) {
-    super(name, ID); // Call to the super class constructor
+  constructor(value: string, TagCollection: TagCollection, CategoryCollection: CategoryCollection, ID?: Philote) {
+    super(value, ID); // Call to the super class constructor
     this.TagCollection = TagCollection;
     this.CategoryCollection = CategoryCollection;
   }
 }
 
-
-export interface IPredicateCollection<T extends IDType> extends IItemCollection<T> {
-  // No new members; simply a more specific type of IItem<T> with Predicate semantics.
+export interface IQueryContextCollection extends IItemWithIDCollection {
+  // No new members; simply a more specific type of IItemWithID with QueryContext semantics.
 }
 
-export class PredicateCollection<T extends IDType> extends ItemCollection<T> {
+export class QueryContextCollection extends ItemWithIDCollection {
   // No new members added, but the type is distinct from Item
 }

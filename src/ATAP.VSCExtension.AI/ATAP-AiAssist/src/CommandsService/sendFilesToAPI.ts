@@ -42,7 +42,7 @@ async function processFiles(
   return results;
 }
 
-export async function sendFilesToAPI(context: vscode.ExtensionContext, logger: ILogger) {
+export async function sendFilesToAPI(extensionContext: vscode.ExtensionContext, logger: ILogger) {
   let message: string = 'starting command sendFilesToAPI';
   logger.log(message, LogLevel.Debug);
 

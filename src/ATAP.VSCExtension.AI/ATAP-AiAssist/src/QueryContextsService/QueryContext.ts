@@ -48,19 +48,14 @@ import {
   IAssociationsService,
 } from '@AssociationsService/index';
 
-export interface IQueryContext extends IItemWithID {
-  readonly TagCollection: TagCollection;
-  readonly CategoryCollection: CategoryCollection;
-}
+export type QueryContextValueType = string;
+
+export interface IQueryContext extends IItemWithID {}
 
 export class QueryContext extends ItemWithID implements IQueryContext {
-  public readonly TagCollection: TagCollection;
-  public readonly CategoryCollection: CategoryCollection;
 
-  constructor(value: string, TagCollection: TagCollection, CategoryCollection: CategoryCollection, ID?: Philote) {
+  constructor(value: string,  ID?: Philote) {
     super(value, ID); // Call to the super class constructor
-    this.TagCollection = TagCollection;
-    this.CategoryCollection = CategoryCollection;
   }
 }
 
@@ -69,5 +64,35 @@ export interface IQueryContextCollection extends IItemWithIDCollection {
 }
 
 export class QueryContextCollection extends ItemWithIDCollection {
-  // No new members added, but the type is distinct from Item
+  static convertFrom_json(json: string): QueryContextCollection {
+    return fromJson<QueryContextCollection>(json);
+  }
+
+  static convertFrom_yaml(yaml: string): QueryContextCollection {
+    return fromYaml<QueryContextCollection>(yaml);
+  }
 }
+
+export interface IQueryContextsService extends IItemWithIDsService {
+  createQueryContext(value: QueryContextValueType, ID?: Philote): QueryContext;
+  dispose(): void;
+}
+
+// QueryContextsService is a factory for QueryContext instances
+export class QueryContextsService extends ItemWithIDsService implements IQueryContextsService {
+  private QueryContextWithIDs: QueryContext[] = [];
+
+  public createQueryContext(value: QueryContextValueType, ID?: Philote): QueryContext {
+    const queryContextWithID = new QueryContext(value, ID);
+    this.QueryContextWithIDs.push(queryContextWithID);
+    return queryContextWithID;
+  }
+
+  dispose(): void {
+    this.QueryContextWithIDs.forEach((QueryContextWithID) => {
+      QueryContextWithID.dispose();
+    });
+    this.QueryContextWithIDs = [];
+  }
+}
+

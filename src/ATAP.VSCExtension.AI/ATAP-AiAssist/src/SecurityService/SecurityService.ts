@@ -8,7 +8,7 @@ export class SecurityService {
   private message: string;
   private externalDataVetting: ExternalDataVetting;
 
-  constructor(private logger: ILogger, private context: vscode.ExtensionContext) {
+  constructor(private logger: ILogger, private extensionContext: vscode.ExtensionContext) {
     this.message = 'starting SecurityService constructor';
     this.logger.log(this.message, LogLevel.Trace);
 

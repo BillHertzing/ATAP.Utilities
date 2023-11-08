@@ -12,7 +12,7 @@ export class CommandsService {
   private disposables: vscode.Disposable[] = [];
   private message: string;
 
-  constructor(private logger: ILogger, private context: vscode.ExtensionContext) {
+  constructor(private logger: ILogger, private extensionContext: vscode.ExtensionContext) {
     this.message = 'starting CommandsService constructor';
     this.logger.log(this.message, LogLevel.Debug);
     this.registerCommands();
@@ -40,7 +40,7 @@ export class CommandsService {
       vscode.commands.registerCommand('atap-aiassist.sendFilesToAPI', () => {
         let message: string = 'starting commandID sendFilesToAPI';
         this.logger.log(message, LogLevel.Debug);
-        sendFilesToAPI(this.context, this.logger);
+        sendFilesToAPI(this.extensionContext, this.logger);
       }),
     );
 
@@ -103,28 +103,28 @@ export class CommandsService {
       }),
     );
 
-    this.message = 'registering copyToSubmit';
-    this.logger.log(this.message, LogLevel.Debug);
-    this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.copyToSubmit', async () => {
-        let message: string = 'starting commandID copyToSubmit';
-        this.logger.log(message, LogLevel.Debug);
-        try {
-          const result = await copyToSubmit(this.context, this.logger);
-          message = `result.success = ${result.success}, result `;
-          this.logger.log(message, LogLevel.Debug);
-        } catch (e) {
-          if (e instanceof Error) {
-            // Report the error
-            message = e.message;
-          } else {
-            // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
-            message = `An unknown error occurred during the copyToSubmit call, and the instance of (e) returned is of type ${typeof e}`;
-          }
-          this.logger.log(message, LogLevel.Error);
-        }
-      }),
-    );
+    // this.message = 'registering copyToSubmit';
+    // this.logger.log(this.message, LogLevel.Debug);
+    // this.disposables.push(
+    //   vscode.commands.registerCommand('atap-aiassist.copyToSubmit', async () => {
+    //     let message: string = 'starting commandID copyToSubmit';
+    //     this.logger.log(message, LogLevel.Debug);
+    //     try {
+    //       const result = await copyToSubmit(this.context, this.logger);
+    //       message = `result.success = ${result.success}, result `;
+    //       this.logger.log(message, LogLevel.Debug);
+    //     } catch (e) {
+    //       if (e instanceof Error) {
+    //         // Report the error
+    //         message = e.message;
+    //       } else {
+    //         // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
+    //         message = `An unknown error occurred during the copyToSubmit call, and the instance of (e) returned is of type ${typeof e}`;
+    //       }
+    //       this.logger.log(message, LogLevel.Error);
+    //     }
+    //   }),
+    // );
   }
 
   public getDisposables(): vscode.Disposable[] {

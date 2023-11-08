@@ -20,7 +20,6 @@ import {
 
 export type TagValueType = string;
 
-// Define an interface for tag that extends IItemWithID
 export interface ITag extends IItemWithID {}
 
 // Tag class extending ItemWithID
@@ -36,9 +35,16 @@ export class Tag extends ItemWithID implements ITag {
     //console.log(`Tag (ID: ${this.ID.id}, Value: ${this.value}) is disposed.`);
   }
 
-  // placedholder
-  placeholder(): void {
-    //console.log(`Placeholder method called for Tag (ID: ${this.ID.id}, Value: ${this.value})`);
+  static convertFrom_json(json: string): Tag {
+    return fromJson<Tag>(json);
+  }
+
+  static convertFrom_yaml(yaml: string): Tag {
+    return fromYaml<Tag>(yaml);
+  }
+
+  ToString(): string {
+    return `value: ${this.ID} ID: ${this.ID}`;
   }
 }
 
@@ -47,14 +53,21 @@ export interface ITagCollection extends IItemWithIDCollection {
 }
 
 export class TagCollection extends ItemWithIDCollection {
+  static convertFrom_json(json: string): TagCollection {
+    return fromJson<TagCollection>(json);
+  }
+
+  static convertFrom_yaml(yaml: string): TagCollection {
+    return fromYaml<TagCollection>(yaml);
+  }
 }
 
 export interface ITagsService extends IItemWithIDsService {
   createTag(value: TagValueType, ID?: Philote): Tag;
-  dispose(): void
+  dispose(): void;
 }
 
-// TagService is a factory for Tag instances
+// TagsService is a factory for Tag instances
 export class TagsService extends ItemWithIDsService implements ITagsService {
   private TagWithIDs: Tag[] = [];
 

@@ -5,6 +5,5 @@ export type Int = number;
 export type IDType = GUID; // GUID | Int; // No longer supports generic type on Philote
 
 export function nextID(): IDType {
-    return generateGuid();
-
+  return generateGuid();
 }

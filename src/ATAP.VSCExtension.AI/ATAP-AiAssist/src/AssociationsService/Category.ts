@@ -29,6 +29,14 @@ export class Category extends ItemWithID implements ICategory {
     super(value, ID);
   }
 
+  static convertFrom_json(json: string): Category {
+    return fromJson<Category>(json);
+  }
+
+  static convertFrom_yaml(yaml: string): Category {
+    return fromYaml<Category>(yaml);
+  }
+
   dispose(): void {
     // Call dispose for base ItemWithID
     super.dispose();
@@ -47,12 +55,18 @@ export interface ICategoryCollection extends IItemWithIDCollection {
 }
 
 export class CategoryCollection extends ItemWithIDCollection {
-  // No new members added, but the type is distinct from ItemWithIDCollection
+  static convertFrom_json(json: string): CategoryCollection {
+    return fromJson<CategoryCollection>(json);
+  }
+
+  static convertFrom_yaml(yaml: string): CategoryCollection {
+    return fromYaml<CategoryCollection>(yaml);
+  }
 }
 
 export interface ICategorysService extends IItemWithIDsService {
   createCategory(value: CategoryValueType, ID?: Philote): Category;
-  dispose(): void
+  dispose(): void;
 }
 
 // CategoryService is a factory for Category instances

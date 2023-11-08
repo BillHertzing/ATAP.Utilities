@@ -1,18 +1,56 @@
 import { LogLevel, ILogger } from '@Logger/Logger';
-import { GUID, Int, IDType, } from '@IDTypes/IDTypes';
-import { IItem, Item, IItemCollection, ItemCollection } from '../QueryContextsService';
-import { ICategory, Category, ICategoryCollection, CategoryCollection } from '../QueryContextsService';
-import { ITag, Tag, ITagCollection, TagCollection } from '../QueryContextsService';
+import { GUID, Int, IDType } from '@IDTypes/IDTypes';
+import {
+  ItemWithIDValueType,
+  ItemWithID,
+  IItemWithID,
+  ItemWithIDCollection,
+  IItemWithIDCollection,
+  ItemWithIDsService,
+  IItemWithIDsService,
+} from '@ItemWithIDsService/index';
+
+import {
+  TagValueType,
+  Tag,
+  ITag,
+  TagCollection,
+  ITagCollection,
+  TagsService,
+  ITagsService,
+} from '@AssociationsService/index';
+
+import {
+  CategoryValueType,
+  Category,
+  ICategory,
+  CategoryCollection,
+  ICategoryCollection,
+  CategorysService,
+  ICategorysService,
+} from '@AssociationsService/index';
+
+import {
+  AssociationValueType,
+  Association,
+  IAssociation,
+  AssociationCollection,
+  IAssociationCollection,
+  AssociationsService,
+  IAssociationsService,
+} from '@AssociationsService/index';
+
+
 // import { createTypeInstance } from '@TypeMap/TypeMap';
 
 import * as vscode from 'vscode';
 
-export async function quickPickFromSettings<T extends IDType>(
+export async function quickPickFromSettings(
   logger: ILogger,
   setting: string,
 ): Promise<{
   success: boolean;
-  pick: IItemCollection<T> | IItem<T> | null;
+  pick: IItemWithIDCollection | IItemWithID | null;
   errorMessage: string | null;
 }> {
   let message: string = `starting commandID quickPickFromSettings, setting is ${setting}`;
@@ -31,9 +69,9 @@ export async function quickPickFromSettings<T extends IDType>(
     };
   }
 
-  const categorycollection = CategoryCollection.convertFrom_json<T>(settingStr);
-  if (!categorycollection.items || categorycollection.items.length === 0) {
-    message = `Could not convert to a CategoryCollection instance from atap-aiassist ${setting} : ${settingStr}`;
+  const itemWithIDcollection = ItemWithIDCollection.convertFrom_json(settingStr);
+  if (!itemWithIDcollection.itemWithIDs || itemWithIDcollection.itemWithIDs.length === 0) {
+    message = `Could not convert to a ItemWithIDCollection instance from atap-aiassist ${setting} : ${settingStr}`;
     logger.log(message, LogLevel.Error);
     return {
       success: false,
@@ -42,10 +80,10 @@ export async function quickPickFromSettings<T extends IDType>(
     };
   }
 
-  categorycollection.items.map((object) => object.name);
-  const optionsArray: string[] = categorycollection.items.map((object) => object.name);
+  itemWithIDcollection.itemWithIDs.map((object) => object.value);
+  const optionsArray: string[] = itemWithIDcollection.itemWithIDs.map((object) => object.value);
   if (!optionsArray || optionsArray.length === 0) {
-    message = `Could not convert the categorycollection.items to an optionsArray of strings`;
+    message = `Could not convert the itemWithIDcollection.items to an optionsArray of strings`;
     logger.log(message, LogLevel.Error);
     return {
       success: false,
@@ -55,14 +93,13 @@ export async function quickPickFromSettings<T extends IDType>(
   }
 
   // Show QuickPick with the options from settings
-  const pickedName= await vscode.window.showQuickPick(optionsArray, {
+  const pickedName = await vscode.window.showQuickPick(optionsArray, {
     placeHolder: 'Select an option',
   });
 
   // Get the index of name in the name array
   // use that index to get the correct substring from the json that describes the Item
   //
-          // Store the selected Item (Category , Category Collection ,Tag, TagCollection)
   //   store it into the global's user state (LastPicked)
   // import {data} from
   // message = `data instance ID ${data.instanceID} ; Version ${data.version} `;
@@ -70,7 +107,7 @@ export async function quickPickFromSettings<T extends IDType>(
   // data.Item.{ subtype } =
   if (pickedName !== undefined) {
     // ToDo:pick is just the name, get the entire Item / Collection instance
-   // const pickedItem = createTypeInstance<T, settingStr>(settingStr); // ToDo: Fix: maybe use the typemap
+    // const pickedItem = createTypeInstance<T, settingStr>(settingStr); // ToDo: Fix: maybe use the typemap
 
     return {
       success: true,

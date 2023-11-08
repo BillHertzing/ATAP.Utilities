@@ -4,7 +4,7 @@ import { StringBuilder } from '../Utilities';
 
 
 
-export async function copyToSubmit(context: vscode.ExtensionContext, logger: ILogger) {
+export async function copyToSubmit(extensionContext: vscode.ExtensionContext, logger: ILogger) {
   let message: string = 'starting command copyToSubmit';
   logger.log(message, LogLevel.Debug);
 

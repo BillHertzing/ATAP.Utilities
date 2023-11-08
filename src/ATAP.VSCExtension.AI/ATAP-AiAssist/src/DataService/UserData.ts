@@ -1,23 +1,7 @@
 import { LogLevel, ILogger, Logger } from '@Logger/Logger';
 import * as vscode from 'vscode';
 
-import { GlobalStateCache } from './GlobalStateCache';
 import { GUID, Int, IDType } from '@IDTypes/IDTypes';
-import {
-  QueryContext,
-  IQueryContext,
-  Category,
-  ICategory,
-  Tag,
-  ITag,
-  QueryContextCollection,
-  IQueryContextCollection,
-  CategoryCollection,
-  ICategoryCollection,
-  TagCollection,
-  ITagCollection,
-} from '@QueryContextsService/index';
-
 import {
   SupportedSerializersEnum,
   SerializationStructure,
@@ -28,27 +12,81 @@ import {
   fromYaml,
 } from '@Serializers/Serializers';
 
+
+import {
+  ItemWithIDValueType,
+  ItemWithID,
+  IItemWithID,
+  ItemWithIDCollection,
+  IItemWithIDCollection,
+  ItemWithIDsService,
+  IItemWithIDsService,
+} from '@ItemWithIDsService/index';
+
+import {
+  TagValueType,
+  Tag,
+  ITag,
+  TagCollection,
+  ITagCollection,
+  TagsService,
+  ITagsService,
+} from '@AssociationsService/index';
+
+import {
+  CategoryValueType,
+  Category,
+  ICategory,
+  CategoryCollection,
+  ICategoryCollection,
+  CategorysService,
+  ICategorysService,
+} from '@AssociationsService/index';
+
+import {
+  AssociationValueType,
+  Association,
+  IAssociation,
+  AssociationCollection,
+  IAssociationCollection,
+  AssociationsService,
+  IAssociationsService,
+} from '@AssociationsService/index';
+
+import {
+  QueryContextValueType,
+  QueryContext,
+  IQueryContext,
+  QueryContextCollection,
+  IQueryContextCollection,
+  QueryContextsService,
+  IQueryContextsService,
+} from '@QueryContextsService/index';
+
+import { GlobalStateCache } from './GlobalStateCache';
+
+
 // This defines what a UserData instance looks like
-export interface IUserData<T extends IDType> {
+export interface IUserData {
   readonly categoryCollection: ICategoryCollection;
   readonly queryContextCollection: IQueryContextCollection;
   readonly tagCollection: ITagCollection;
 }
 
-export class UserData<T extends IDType> implements IUserData {
+export class UserData implements IUserData {
   readonly categoryCollection: ICategoryCollection;
   readonly queryContextCollection: IQueryContextCollection;
   readonly tagCollection: ITagCollection;
 
-  constructor(logger: ILogger, context: vscode.ExtensionContext);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, categoryCollection: ICategoryCollection);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, queryContextCollection: IQueryContextCollection);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, tagCollection: ITagCollection);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, initializationStructure: ISerializationStructure);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, categoryCollection: ICategoryCollection);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, queryContextCollection: IQueryContextCollection);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, tagCollection: ITagCollection);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, initializationStructure: ISerializationStructure);
 
   constructor(
     private logger: ILogger,
-    private context: vscode.ExtensionContext,
+    private extensionContext: vscode.ExtensionContext,
     categoryCollection?: ICategoryCollection,
     queryContextCollection?: IQueryContextCollection,
     tagCollection?: ITagCollection,

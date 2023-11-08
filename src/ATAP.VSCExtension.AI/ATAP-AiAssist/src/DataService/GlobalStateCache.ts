@@ -2,10 +2,10 @@ import * as vscode from 'vscode';
 
 export class GlobalStateCache {
     private cache: { [key: string]: any } = {};
-    private context: vscode.ExtensionContext;
+    private extensionContext: vscode.ExtensionContext;
 
-    constructor(context: vscode.ExtensionContext) {
-        this.context = context;
+    constructor(extensionContext: vscode.ExtensionContext) {
+        this.extensionContext = extensionContext;
     }
 
     getValue<T>(key: string): T | undefined {
@@ -15,7 +15,7 @@ export class GlobalStateCache {
         }
 
         // If not available, read from globalState and update the cache
-        const value = this.context.globalState.get<T>(key);
+        const value = this.extensionContext.globalState.get<T>(key);
         if (value !== undefined) {
             this.cache[key] = value;
         }
@@ -27,7 +27,7 @@ export class GlobalStateCache {
         this.cache[key] = value;
 
         // Persist the value to globalState
-        await this.context.globalState.update(key, value);
+        await this.extensionContext.globalState.update(key, value);
     }
 
     async clearValue(key: string): Promise<void> {
@@ -35,13 +35,13 @@ export class GlobalStateCache {
         delete this.cache[key];
 
         // Remove the value from globalState
-        await this.context.globalState.update(key, undefined);
+        await this.extensionContext.globalState.update(key, undefined);
     }
 }
 
 // Usage
-export function activate(context: vscode.ExtensionContext) {
-    const globalStateCache = new GlobalStateCache(context);
+export function activate(extensionContext: vscode.ExtensionContext) {
+    const globalStateCache = new GlobalStateCache(extensionContext);
 
     // Set a value
     globalStateCache.setValue('myKey', 'myValue');

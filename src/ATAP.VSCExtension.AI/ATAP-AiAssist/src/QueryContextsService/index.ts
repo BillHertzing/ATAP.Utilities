@@ -1,1 +1,9 @@
-export { IQueryContext, QueryContext, IQueryContextCollection, QueryContextCollection } from './QueryContext';
+export {
+  QueryContextValueType,
+  QueryContext,
+  IQueryContext,
+  QueryContextCollection,
+  IQueryContextCollection,
+  QueryContextsService,
+  IQueryContextsService,
+} from './QueryContext';

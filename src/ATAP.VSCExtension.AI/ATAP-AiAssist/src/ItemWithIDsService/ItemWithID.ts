@@ -28,7 +28,7 @@ export interface IItemWithID {
 
 // base itemWithID implementation
 export class ItemWithID implements IItemWithID {
-  constructor( public value: ItemWithIDValueType, public ID?: Philote) {}
+  constructor(public value: ItemWithIDValueType, public ID?: Philote) {}
   convertTo_json(): string {
     return toJson(this);
   }
@@ -159,8 +159,7 @@ export class ItemWithIDCollection implements IItemWithIDCollection {
 
 export interface IItemWithIDsService {
   createItemWithID(value: ItemWithIDValueType, ID?: Philote): ItemWithID;
-  dispose(): void
-
+  dispose(): void;
 }
 
 // ItemWithID Service to keep track of created instances of the base item
@@ -180,4 +179,3 @@ export class ItemWithIDsService {
     this.itemWithIDs = [];
   }
 }
-

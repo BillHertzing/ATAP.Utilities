@@ -4,19 +4,34 @@ import * as vscode from 'vscode';
 import { DefaultConfiguration } from '../DefaultConfiguration';
 import { GlobalStateCache } from './GlobalStateCache';
 import { GUID, Int, IDType } from '@IDTypes/IDTypes';
+
+
+import {
+  TagValueType,
+  Tag,
+  ITag,
+  TagCollection,
+  ITagCollection,
+  TagsService,
+  ITagsService,
+  } from '@AssociationsService/index';
+
+import {
+  CategoryValueType,
+  Category,
+  ICategory,
+  CategoryCollection,
+  ICategoryCollection,
+  CategorysService,
+  ICategorysService,
+} from '@AssociationsService/index';
+
+
 import {
   QueryContext,
   IQueryContext,
-  Category,
-  ICategory,
-  Tag,
-  ITag,
   QueryContextCollection,
   IQueryContextCollection,
-  CategoryCollection,
-  ICategoryCollection,
-  TagCollection,
-  ITagCollection,
 } from '@QueryContextsService/index';
 
 import { SupportedSerializersEnum, SerializationStructure, ISerializationStructure, toJson, fromJson, toYaml, fromYaml } from '@Serializers/Serializers';
@@ -24,44 +39,44 @@ import { SupportedSerializersEnum, SerializationStructure, ISerializationStructu
 import { UserData, IUserData } from './UserData';
 
 
-export interface IConfigurationData<T extends IDType> {}
+export interface IConfigurationData {}
 
-export class ConfigurationData<T extends IDType> implements IConfigurationData<T> {}
+export class ConfigurationData implements IConfigurationData {}
 
-export interface IData<T extends IDType> {
-  readonly userData: IUserData<T>;
-  readonly configurationData: IConfigurationData<T>;
+export interface IData {
+  readonly userData: IUserData;
+  readonly configurationData: IConfigurationData;
 }
 
-export class Data<T extends IDType> {
+export class Data {
   private message: string;
 
   // constructor overload signatures
-  constructor(logger: ILogger, context: vscode.ExtensionContext);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, userData: IUserData<T>);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, configurationData: IConfigurationData<T>);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, userData: IUserData);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, configurationData: IConfigurationData);
   constructor(
     logger: ILogger,
-    context: vscode.ExtensionContext,
-    userData: UserData<T>,
-    configurationData: ConfigurationData<T>,
+    extensionContext: vscode.ExtensionContext,
+    userData: UserData,
+    configurationData: ConfigurationData,
   );
-  constructor(logger: ILogger, context: vscode.ExtensionContext, initializationStructure: ISerializationStructure);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, userData: IUserData<T>, initializationStructure: ISerializationStructure);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, configurationData: IConfigurationData<T>, initializationStructure: ISerializationStructure);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, initializationStructure: ISerializationStructure);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, userData: IUserData, initializationStructure: ISerializationStructure);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, configurationData: IConfigurationData, initializationStructure: ISerializationStructure);
   constructor(
     logger: ILogger,
-    context: vscode.ExtensionContext,
-    userData: IUserData<T>,
-    configurationData: IConfigurationData<T>,
+    extensionContext: vscode.ExtensionContext,
+    userData: IUserData,
+    configurationData: IConfigurationData,
     initializationStructure: ISerializationStructure
   );
 
   constructor(
     private logger: ILogger,
-    private context: vscode.ExtensionContext,
-    readonly userData?: IUserData<T>,
-    readonly configurationData?: IConfigurationData<T>,
+    private extensionContext: vscode.ExtensionContext,
+    readonly userData?: IUserData,
+    readonly configurationData?: IConfigurationData,
     private initializationStructure?: ISerializationStructure,
   ) {
     this.message = 'starting Data constructor';
@@ -80,50 +95,50 @@ export class Data<T extends IDType> {
 
     // ToDo: version-aware configuration data loading
     // ToDo: wrap in a try catch
-    this.userData = new UserData<T>(this.logger, this.context, this.userData, this.initializationStructure.UserData);
+    this.userData = new UserData(this.logger, this.extensionContext, this.userData, this.initializationStructure.UserData);
 
     // ToDo: wrap in a try catch
-    this.configurationData = new ConfigurationData<T>(this.logger, this.context, this.configurationData, this.initializationStructure.ConfigurationData);
+    this.configurationData = new ConfigurationData(this.logger, this.extensionContext, this.configurationData, this.initializationStructure.ConfigurationData);
 
 
   }
 }
 
-export interface IDataService<T extends IDType> {
-  data:Data<T>
+export interface IDataService {
+  data:Data
 }
 
-export class DataService<T extends IDType> implements IDataService<T> {
-  public readonly data: Data<T>;
+export class DataService implements IDataService {
+  public readonly data: Data;
   private message: string;
 
   // constructor overload signatures
   //   use DefaultConfiguration for both UserData and ConfigurationData
-  constructor(logger: ILogger, context: vscode.ExtensionContext);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, userData: IUserData<T>);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, configurationData: IConfigurationData<T>);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, userData: IUserData);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, configurationData: IConfigurationData);
   constructor(
     logger: ILogger,
-    context: vscode.ExtensionContext,
-    userData: UserData<T>,
-    configurationData: ConfigurationData<T>,
+    extensionContext: vscode.ExtensionContext,
+    userData: UserData,
+    configurationData: ConfigurationData,
   );
-  constructor(logger: ILogger, context: vscode.ExtensionContext, initializationStructure: ISerializationStructure);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, userData: IUserData<T>, initializationStructure: ISerializationStructure);
-  constructor(logger: ILogger, context: vscode.ExtensionContext, configurationData: IConfigurationData<T>, initializationStructure: ISerializationStructure);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, initializationStructure: ISerializationStructure);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, userData: IUserData, initializationStructure: ISerializationStructure);
+  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext, configurationData: IConfigurationData, initializationStructure: ISerializationStructure);
   constructor(
     logger: ILogger,
-    context: vscode.ExtensionContext,
-    userData: IUserData<T>,
-    configurationData: IConfigurationData<T>,
+    extensionContext: vscode.ExtensionContext,
+    userData: IUserData,
+    configurationData: IConfigurationData,
     initializationStructure: ISerializationStructure
   );
 
   constructor(
     private logger: ILogger,
-    private context: vscode.ExtensionContext,
-    readonly userData?: IUserData<T>,
-    readonly configurationData?: IConfigurationData<T>,
+    private extensionContext: vscode.ExtensionContext,
+    readonly userData?: IUserData,
+    readonly configurationData?: IConfigurationData,
     private initializationStructure?: ISerializationStructure,
   ) {
     this.message = 'starting DataService constructor';
@@ -133,7 +148,7 @@ export class DataService<T extends IDType> implements IDataService<T> {
     // ToDo: error handling around initializationStructure parameter
     // Throw if an error is found in the initializationStructure or if using it produces an error when instantiaing the internal objects
 
-    this.data = new Data(this.logger, this.context, this.userData, this.configurationData, this.initializationStructure);
+    this.data = new Data(this.logger, this.extensionContext, this.userData, this.configurationData, this.initializationStructure);
     // Split the initializationStructure.value into user
     if (!initializationStructure || initializationStructure.value.length === 0) {
       // No initialization string provided
@@ -144,9 +159,9 @@ export class DataService<T extends IDType> implements IDataService<T> {
     this.logger.log(this.message, LogLevel.Debug);
 
     if (DefaultConfiguration.serializerName === 'YAML') {
-        this.configurationData = fromYaml<T>;
+        this.configurationData = fromYaml;
     } else if (DefaultConfiguration.serializerName === 'JSON') {
-        this.configurationData = fromJson<T>;
+        this.configurationData = fromJson;
     }
     this.message = 'leaving DataService constructor';
     this.logger.log(this.message, LogLevel.Debug);

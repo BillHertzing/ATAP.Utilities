@@ -1,44 +1,69 @@
 import { GUID, Int, IDType } from '@IDTypes/IDTypes';
 import { Philote, IPhilote } from '@Philote/Philote';
-import { IItem, Item, IItemCollection, ItemCollection } from '../QueryContextsService';
-import { Category, ICategory, ICategoryCollection, CategoryCollection } from '../QueryContextsService';
-import { Tag, ITag, ITagCollection, TagCollection } from '../QueryContextsService';
+import {
+  ItemWithID,
+  IItemWithID,
+  ItemWithIDsService,
+  IItemWithIDsService,
+  ItemWithIDCollection,
+  IItemWithIDCollection,
+} from '@ItemWithIDsService/index';
+
+import {
+  TagValueType,
+  Tag,
+  ITag,
+  TagCollection,
+  ITagCollection,
+  TagsService,
+  ITagsService,
+} from '@AssociationsService/index';
+import {
+  CategoryValueType,
+  Category,
+  ICategory,
+  CategoryCollection,
+  ICategoryCollection,
+  CategorysService,
+  ICategorysService,
+} from '@AssociationsService/index';
+
 
 // Define a type for known singular type constructors.
-// This interface ensures any type with a string key has a constructor taking a name and an ID and returns an Item<T>
-interface ITypeSingularConstructors<T extends IDType> {
-  [key: string]: new <T extends IDType>(name: string, ID: Philote<T>) => Item<T>;
+// This interface ensures any type with a string key has a constructor taking a value and an ID and returns an ItemWithID
+interface ITypeSingularConstructors {
+  [key: string]: new (value: string, ID: Philote) => ItemWithID;
 }
 
 // Here is our type map with the constructors of our known singular types.
-let typeSingularConstructorsGUID: ITypeSingularConstructors<GUID> = {
+let typeSingularConstructorsGUID: ITypeSingularConstructors = {
   Tag: Tag,
   Category: Category,
 };
 
 // Define a type for known collection type constructors.
-// This interface ensures any type with a string key has a constructor taking a name and an ID and returns an ItemCollection<T>
-interface ITypeCollectionConstructors<T extends IDType> {
-  [key: string]: new <T extends IDType>(ID: Philote<T>, items: Item<T>[]) => ItemCollection<T>;
+// This interface ensures any type with a string key has a constructor taking a name and an ID and returns an ItemWithIDCollection
+interface ITypeCollectionConstructors {
+  [key: string]: new (ID: Philote, items: ItemWithID[]) => ItemWithIDCollection;
 }
 
 // Here is our type map with the constructors of our known Collection types.
-let typeCollectionConstructorsGUID: ITypeCollectionConstructors<GUID> = {
+let typeCollectionConstructorsGUID: ITypeCollectionConstructors = {
   TagCollection: TagCollection,
   CategoryCollection: CategoryCollection,
 };
 
 // Define the TypeMap with all the possible derivatives
-interface ITypeMap<T extends IDType> {
-  [key: string]: ITypeSingularConstructors<T> | ITypeCollectionConstructors<T>;
+interface ITypeMap {
+  [key: string]: ITypeSingularConstructors | ITypeCollectionConstructors;
 }
 
 // Create a type map instance that associates string keys with class types for a specific T
-// let typeMapGUID: ITypeMap<GUID> = {
-//   Category: ITypeSingularConstructors<Category<GUID>>,
-//   Tag: ITypeSingularConstructors<Tag<GUID>>,
-//   TagCollection: ITypeCollectionConstructors<TagCollection<GUID>>,
-//   CategoryCollection: ITypeCollectionConstructors<CategoryCollection<GUID>>,
+// let typeMapGUID: ITypeMap = {
+//   Category: ITypeSingularConstructors<Category>,
+//   Tag: ITypeSingularConstructors<Tag>,
+//   TagCollection: ITypeCollectionConstructors<TagCollection>,
+//   CategoryCollection: ITypeCollectionConstructors<CategoryCollection>,
 // };
 
 // The type map will need to be instantiated with a specific IDType
@@ -48,7 +73,7 @@ interface ITypeMap<T extends IDType> {
 // type KnownTypes = keyof typeof typeMapGUID;
 
 // //  ToDo: candidate for user state?
-// function createTypeMap<T extends IDType>(): TypeMap<T> {
+// function createTypeMap(): TypeMap {
 //   return {
 //     Category: Category as any, // Type casting to any to bypass the constraint checks for demonstration.
 //     Tag: Tag as any,
@@ -63,20 +88,20 @@ interface ITypeMap<T extends IDType> {
 //     typeConstructors: ITypeConstructors found in @TypeMap/TypeMap
 //  The TypeMap feature
 // Function to create an instance based on a string type key for a specific IDType
-// export function createTypeInstance<T extends IDType, K extends keyof ITypeMap<T>>(
+// export function createTypeInstance<T extends IDType, K extends keyof ITypeMap>(
 //   typeName: K,
-//   ...args: ConstructorParameters<ITypeMap<T>[K]>
-// ): InstanceType<ITypeMap<T>[K]> {
-//   const typeMap = createTypeMap<T>();
+//   ...args: ConstructorParameters<ITypeMap[K]>
+// ): InstanceType<ITypeMap[K]> {
+//   const typeMap = createTypeMap();
 //   const TypeConstructor = typeMap[typeName];
 //   if (!TypeConstructor) {
 //   } else {
-//     return new TypeConstructor(...args) as InstanceType<TypeMap<T>[K]>;
+//     return new TypeConstructor(...args) as InstanceType<TypeMap[K]>;
 //   }
 // }
 
 // Another AI response, but needs vetting
-// export function createInstance<T extends IDType>(typeName: KnownTypes, name: string): Item<T> {
+// export function createInstance(typeName: KnownTypes, name: string): ItemWithID {
 //   const TypeConstructor: any = typeConstructors[typeName]; // Cast to any to satisfy the compiler
 
 //   if (!TypeConstructor) {
@@ -84,10 +109,10 @@ interface ITypeMap<T extends IDType> {
 //   }
 
 //   // Return a specific instance type using the new operator
-//   return new TypeConstructor<T>(name) as Item<T>;
+//   return new TypeConstructor(name) as ItemWithID;
 // }
 
 // The TypeMap represents a map to constructors.
 // Type casting to any is done to bypass the TypeScript compiler's checks. This should ideally be replaced with proper casting if your class constructors are correctly defined.
-// It's worth double-checking that your classes (Category, Tag, TagCollection) are defined in a way that their constructors are compliant with the new signature in TypeConstructor<T>.
-// The explicit cast as InstanceType<TypeMap<T>[K]> after new TypeConstructor(...args) tells TypeScript to trust our assertion that the type we are creating is indeed correct. This can be considered a type-safe cast since we have made checks for the existence of TypeConstructor.
+// It's worth double-checking that your classes (Category, Tag, TagCollection) are defined in a way that their constructors are compliant with the new signature in TypeConstructor.
+// The explicit cast as InstanceType<TypeMap[K]> after new TypeConstructor(...args) tells TypeScript to trust our assertion that the type we are creating is indeed correct. This can be considered a type-safe cast since we have made checks for the existence of TypeConstructor.

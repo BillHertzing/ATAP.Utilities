@@ -19,8 +19,24 @@ import {
   IItemWithIDCollection,
 } from '@ItemWithIDsService/index';
 
-import { TagValueType, Tag, ITag, TagCollection, ITagCollection, TagsService, ITagsService } from '@AssociationsService/index';
-import { CategoryValueType, Category, ICategory, CategoryCollection, ICategoryCollection, CategorysService, ICategorysService } from '@AssociationsService/index';
+import {
+  TagValueType,
+  Tag,
+  ITag,
+  TagCollection,
+  ITagCollection,
+  TagsService,
+  ITagsService,
+} from '@AssociationsService/index';
+import {
+  CategoryValueType,
+  Category,
+  ICategory,
+  CategoryCollection,
+  ICategoryCollection,
+  CategorysService,
+  ICategorysService,
+} from '@AssociationsService/index';
 
 export type AssociationValueType = {
   tagCollection: ITagCollection;
@@ -28,9 +44,7 @@ export type AssociationValueType = {
 };
 
 // Define an interface for association that extends IItemWithID
-export interface IAssociation extends IItemWithID {
-
-}
+export interface IAssociation extends IItemWithID {}
 
 // Association class extending ItemWithID
 export class Association extends ItemWithID implements IAssociation {
@@ -55,8 +69,7 @@ export interface IAssociationCollection extends IItemWithIDCollection {
   // No new members; simply a more specific type of IItemWithID with Association semantics.
 }
 
-export class AssociationCollection extends ItemWithIDCollection {
-}
+export class AssociationCollection extends ItemWithIDCollection {}
 
 export interface IAssociationsService extends IItemWithIDsService {
   createAssociation(value: AssociationValueType, ID?: Philote): Association;
@@ -80,4 +93,3 @@ export class AssociationsService extends ItemWithIDsService implements IAssociat
     this.associationWithIDs = [];
   }
 }
-

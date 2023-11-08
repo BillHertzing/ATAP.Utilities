@@ -3,16 +3,22 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
+import { LogLevel, Logger, getLoggerLogLevelFromSettings, getDevelopmentLoggerLogLevelFromSettings } from './Logger';
+
+import { DefaultConfiguration } from './DefaultConfiguration';
+import { DataService, IDataService } from '@DataService/DataService';
 import {
-  LogLevel,
-  ChannelInfo,
-  ILogger,
-  Logger,
-  getLoggerLogLevelFromSettings,
-  setLoggerLogLevelFromSettings,
-  getDevelopmentLoggerLogLevelFromSettings,
-  setDevelopmentLoggerLogLevelFromSettings,
-} from './Logger';
+  SupportedSerializersEnum,
+  SerializationStructure,
+  ISerializationStructure,
+  toJson,
+  fromJson,
+  toYaml,
+  fromYaml,
+} from '@Serializers/Serializers';
+
+import { SecurityService } from '@SecurityService/SecurityService';
+import { CommandsService } from './CommandsService';
 
 import * as fs from 'fs';
 import { checkFile } from './checkFile';
@@ -20,7 +26,6 @@ import { processPs1Files } from './processPs1Files';
 import { mainViewTreeDataProvider } from './mainViewTreeDataProvider';
 import { mainViewTreeItem } from './mainViewTreeItem';
 import { FileTreeProvider } from './FileTreeProvider';
-import { CommandsService } from './CommandsService';
 
 //import { mainSearchEngineProvider } from './mainSearchEngineProvider';
 
@@ -41,6 +46,26 @@ export async function activate(context: vscode.ExtensionContext) {
   // Get the VSC configuration settings for this extension
   const config = vscode.workspace.getConfiguration('ATAP-AiAssist');
 
+  // instantiate the SecurityService
+  let securityService: SecurityService;
+  try {
+    message = `instantiate securityService`;
+    myLogger.log(message, LogLevel.Debug);
+    securityService = new SecurityService(myLogger, context);
+  } catch (e) {
+    if (e instanceof Error) {
+      // Report the error (file may not exist, etc.)
+      message = e.message;
+    } else {
+      // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
+      message = 'An unknown error was caught during the SecurityService constructor';
+    }
+    myLogger.log(message, LogLevel.Error);
+    throw new Error(message);
+  }
+  message = `securityService instantiated`;
+  myLogger.log(message, LogLevel.Trace);
+
   if (runningInDevelopment) {
     // update the loggerLogLevel with the'Development.Logger.LogLevel settings value, if it exists
     const developmentLoggerLogLevelFromSettings = getDevelopmentLoggerLogLevelFromSettings();
@@ -48,6 +73,8 @@ export async function activate(context: vscode.ExtensionContext) {
     myLogger.log('Running in development mode.', LogLevel.Info);
     // Focus on the output stream on the extension when strarting in development mode
     myLogger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
+
+    // instantiate and populate the extensions Data (user and configuration data) from the development default
 
     // was the development host opened to a specific workspace, e.g., as a command line argument
     const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -135,6 +162,12 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     }
   } else {
+    // instantiate and populate the extensions Data (user and configuration data) from the production default
+    const dataServiceInitializationStructure = new SerializationStructure(
+      DefaultConfiguration.serializerName,
+      DefaultConfiguration.production.DataService,
+    );
+    const dataService = new DataService(myLogger, context, dataServiceInitializationStructure);
     message = 'Running in normal mode.';
     myLogger.log(message, LogLevel.Debug);
   }
@@ -191,8 +224,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Add the disposables from the CommandsService to context.subscriptions
   context.subscriptions.push(...commandsService.getDisposables());
-
-
 
   // *************************************************************** //
   let showMainViewRootRecordPropertiesDisposable = vscode.commands.registerCommand(

@@ -15,7 +15,7 @@ describe('Philote Class Tests', () => {
 
     describe('Constructor and basic methods', () => {
         it('Should correctly construct with GUID', () => {
-            const philote = new Philote<GUID>(testGuid);
+            const philote = new Philote<GUID>('GUID',testGuid);
             expect(philote.ID).to.equal(testGuid);
             expect(philote.others).to.deep.equal([]);
         });

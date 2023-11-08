@@ -21,8 +21,14 @@ export async function copyToSubmit(context: vscode.ExtensionContext, logger: ILo
       let textToSubmit = new StringBuilder();
       //textToSubmit.append(text);
     }
-  } catch (error) {
-    message = `An error occurred while fetching the selected text: ${error}`;
+  } catch (e) {
+    if (e instanceof Error) {
+      // Report the error
+      message = e.message;
+    } else {
+      // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
+      message = `An unknown error occurred during the copyToSubmit call, and the instance of (e) returned is of type ${typeof e}`;
+    }
     logger.log(message, LogLevel.Error);
   }
 }

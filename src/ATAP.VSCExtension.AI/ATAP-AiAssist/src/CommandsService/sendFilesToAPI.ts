@@ -65,9 +65,15 @@ export async function sendFilesToAPI(context: vscode.ExtensionContext, logger: I
       message = `File ${path} was sent successfully.`;
       logger.log(message, LogLevel.Info);
       return new ProcessResult(response.status === 200, fileContent.split('\n').length);
-    } catch (error) {
-      message = `Error sending file ${path}: ${error}`;
-      logger.log(message, LogLevel.Info);
+    } catch (e) {
+      if (e instanceof Error) {
+        // Report the error
+        message = e.message;
+      } else {
+        // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
+        message = `An unknown error occurred during the copyToSubmit call, and the instance of (e) returned is of type ${typeof e}`;
+      }
+      logger.log(message, LogLevel.Error);
       return new ProcessResult(false, undefined);
     }
   };
@@ -77,15 +83,19 @@ export async function sendFilesToAPI(context: vscode.ExtensionContext, logger: I
     const results = await processFiles(filesToProcess, sendToAPI, logger);
     message = `All files processed. Results: ${JSON.stringify(results)}`;
     logger.log(message, LogLevel.Info);
-  } catch (error) {
-    message = `An error occurred while processing files: ${error}`;
+  } catch (e) {
+    if (e instanceof Error) {
+      // Report the error
+      message = e.message;
+    } else {
+      // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
+      message = `An unknown error occurred during the processFiles call, and the instance of (e) returned is of type ${typeof e}`;
+    }
     logger.log(message, LogLevel.Error);
   }
 
   message = 'leaving command sendFilesToAPI';
   logger.log(message, LogLevel.Debug);
-
-
 }
 
 // export async function  processFiles(logger: ILogger, commandId: string | null): void {
@@ -107,14 +117,5 @@ export async function sendFilesToAPI(context: vscode.ExtensionContext, logger: I
 //   let message: string = 'starting processSingleFile';
 //   logger.log(message, LogLevel.Debug);
 
-//   try {
-//     // Simulate file processing
-//     const numLines = Math.floor(Math.random() * 100); // Dummy line count for example
-//     logger.log(LogLevel.Info, `Processing file: ${path}`);
-//     // Your file processing logic would go here
-//     return { success: true, numLinesOriginal: numLines };
-//   } catch (error) {
-//     logger.log(LogLevel.Error, `Error processing file: ${path}`);
-//     return { success: false, numLinesOriginal: 0 };
-//   }
+
 // }

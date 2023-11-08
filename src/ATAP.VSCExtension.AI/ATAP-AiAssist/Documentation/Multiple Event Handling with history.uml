@@ -1,0 +1,59 @@
+@startuml
+participant "main" as Main
+participant "VisualState" as VState
+participant "EventLogger" as Logger
+participant "EventA" as EventA
+participant "EventListenerA" as ListenerA
+participant "EventGuardA" as GuardA
+participant "EventB" as EventB
+participant "EventListenerB" as ListenerB
+participant "EventGuardB" as GuardB
+
+Main -> VState : new VisualState()
+Main -> Logger : new EventLogger()
+Main -> EventA : new EventA()
+Main -> ListenerA : new EventListenerA()
+Main -> GuardA : new EventGuardA(ListenerA)
+Main -> EventB : new EventB()
+Main -> ListenerB : new EventListenerB()
+Main -> GuardB : new EventGuardB(ListenerB)
+
+Main -> EventA : register(ListenerA)
+Main -> EventB : register(ListenerB)
+
+Main -> VState : changeState("initializing")
+note right of VState : Visual state now 'initializing'
+
+' Flow for EventA
+Main -> GuardA : setListenerReadyA(true)
+alt is ListenerA Ready?
+  Main -> VState : changeState("eventA_pending")
+  GuardA -> EventA : canFireEventA()
+  EventA -> Logger : logEventA("timestamp")
+  EventA -> VState : changeState("eventA_fired")
+  EventA -> ListenerA : handleEventA()
+  ListenerA -> Logger : logEventHandledA("timestamp")
+  ListenerA -> VState : changeState("listenerA_processing")
+  ListenerA -> VState : changeState("listenerA_done")
+else
+  Main -> EventA : waitForListenerA()
+  note right of EventA : EventA waits until listenerA is ready
+end
+
+' Flow for EventB - assuming simultaneous processing for simplicity
+Main -> GuardB : setListenerReadyB(true)
+alt is ListenerB Ready?
+  Main -> VState : changeState("eventB_pending")
+  GuardB -> EventB : canFireEventB()
+  EventB -> Logger : logEventB("timestamp")
+  EventB -> VState : changeState("eventB_fired")
+  EventB -> ListenerB : handleEventB()
+  ListenerB -> Logger : logEventHandledB("timestamp")
+  ListenerB -> VState : changeState("listenerB_processing")
+  ListenerB -> VState : changeState("listenerB_done")
+else
+  Main -> EventB : waitForListenerB()
+  note right of EventB : EventB waits until listenerB is ready
+end
+
+@enduml

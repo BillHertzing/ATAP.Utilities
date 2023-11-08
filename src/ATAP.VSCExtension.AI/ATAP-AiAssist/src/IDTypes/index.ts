@@ -1,1 +1,1 @@
-export { GUID, Int, IDType } from './IDTypes';
+export { GUID, Int, IDType, nextID } from './IDTypes';

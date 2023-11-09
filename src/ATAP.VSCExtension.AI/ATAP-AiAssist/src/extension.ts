@@ -1,24 +1,28 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import * as path from 'path';
+import { DetailedError } from '@ErrorClasses/index';
 
-import { LogLevel, Logger, getLoggerLogLevelFromSettings, getDevelopmentLoggerLogLevelFromSettings } from './Logger';
+import { LogLevel, Logger, getLoggerLogLevelFromSettings, getDevelopmentLoggerLogLevelFromSettings } from './Logger'; // '@Logger/index';
 
 import { DefaultConfiguration } from './DefaultConfiguration';
-import { DataService, IDataService } from '@DataService/DataService';
+
+
+import {  DataService, IDataService, IData, IUserData } from '@DataService/index';
+
 import {
   SupportedSerializersEnum,
   SerializationStructure,
   ISerializationStructure,
+  isSerializationStructure,
   toJson,
   fromJson,
   toYaml,
   fromYaml,
-} from '@Serializers/Serializers';
+} from './Serializers'; // '@Serializers/index';
 
-import { SecurityService } from '@SecurityService/SecurityService';
-import { CommandsService } from './CommandsService';
+import { SecurityService } from '@SecurityService/index';
+import { CommandsService } from '@CommandsService/index';
+
+import * as path from 'path';
 
 import * as fs from 'fs';
 import { checkFile } from './checkFile';
@@ -31,11 +35,12 @@ import { FileTreeProvider } from './FileTreeProvider';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export async function activate(context: vscode.ExtensionContext) {
-  const runningInDevelopment = context.extensionMode === vscode.ExtensionMode.Development;
+export async function activate(extensionContext: vscode.ExtensionContext) {
+  const runningInDevelopment = extensionContext.extensionMode === vscode.ExtensionMode.Development;
   // Declaration of variables
   let message: string = '';
-  var workspacePath: string = '';
+  let workspacePath: string = '';
+  let dataService: IDataService;
 
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
   const myLogger = new Logger();
@@ -51,7 +56,7 @@ export async function activate(context: vscode.ExtensionContext) {
   try {
     message = `instantiate securityService`;
     myLogger.log(message, LogLevel.Debug);
-    securityService = new SecurityService(myLogger, context);
+    securityService = new SecurityService(myLogger, extensionContext);
   } catch (e) {
     if (e instanceof Error) {
       // Report the error (file may not exist, etc.)
@@ -74,8 +79,22 @@ export async function activate(context: vscode.ExtensionContext) {
     // Focus on the output stream on the extension when strarting in development mode
     myLogger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
 
-    // instantiate and populate the extensions Data (user and configuration data) from the development default
+    // if a DataService initialization serialized string exists, this will try and use it to create the DataService, else return a new empty one.
+    // Will return a valid DataService instance or will throw
+    if (isSerializationStructure(DefaultConfiguration.Development['DataServiceAsSerializationStructure'])) {
+      dataService = DataService.CreateDataService(
+        myLogger,
+        extensionContext,
+        'extension.ts',
+        DefaultConfiguration.Development['DataServiceAsSerializationStructure'],
+      );
+    } else {
+      dataService = DataService.CreateDataService(myLogger, extensionContext, 'extension.ts');
+    }
 
+    message = `data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`;
+
+    myLogger.log(message, LogLevel.Info);
     // was the development host opened to a specific workspace, e.g., as a command line argument
     const workspaceFolders = vscode.workspace.workspaceFolders;
     // Check if a workspace is open
@@ -162,12 +181,19 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     }
   } else {
-    // instantiate and populate the extensions Data (user and configuration data) from the production default
-    const dataServiceInitializationStructure = new SerializationStructure(
-      DefaultConfiguration.serializerName,
-      DefaultConfiguration.production.DataService,
-    );
-    const dataService = new DataService(myLogger, context, dataServiceInitializationStructure);
+    // if a DataService initialization serialized string exists, this will try and use it to create the DataService, else return a new empty one.
+    // Will return a valid DataService instance or will throw
+    if (isSerializationStructure(DefaultConfiguration.Production['DataServiceAsSerializationStructure'])) {
+      dataService = DataService.CreateDataService(
+        myLogger,
+        extensionContext,
+        'extension.ts',
+        DefaultConfiguration.Production['DataServiceAsSerializationStructure'],
+      );
+    } else {
+      dataService = DataService.CreateDataService(myLogger, extensionContext, 'extension.ts');
+    }
+
     message = 'Running in normal mode.';
     myLogger.log(message, LogLevel.Debug);
   }
@@ -199,7 +225,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // ToDo: register some kind of search engine provider. tags:#enabledApiProposals #enableProposedApi (deprecated) #SearchProvider #TextSearchQuery #TextSearchOptions #TextSearchComplete #vscode.CancellationToken
   // let mainSearchTextDisposable = vscode.commands.registerCommand('extension.searchText', mainSearchText);
   // const mainSearchEngine = new mainSearchEngineProvider();
-  // context.subscriptions.push(vscode.workspace.registerSearchProvider('myProvider', provider));
+  // extensionContext.subscriptions.push(vscode.workspace.registerSearchProvider('myProvider', provider));
 
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
   // Calling the constructor registers all of the commands, and creates a disposables structure
@@ -207,7 +233,7 @@ export async function activate(context: vscode.ExtensionContext) {
   try {
     message = `instantiate commandsService`;
     myLogger.log(message, LogLevel.Debug);
-    commandsService = new CommandsService(myLogger, context);
+    commandsService = new CommandsService(myLogger, extensionContext);
   } catch (e) {
     if (e instanceof Error) {
       // Report the error (file may not exist, etc.)
@@ -222,8 +248,8 @@ export async function activate(context: vscode.ExtensionContext) {
   message = `commandsService instantiated`;
   myLogger.log(message, LogLevel.Trace);
 
-  // Add the disposables from the CommandsService to context.subscriptions
-  context.subscriptions.push(...commandsService.getDisposables());
+  // Add the disposables from the CommandsService to extensionContext.subscriptions
+  extensionContext.subscriptions.push(...commandsService.getDisposables());
 
   // *************************************************************** //
   let showMainViewRootRecordPropertiesDisposable = vscode.commands.registerCommand(
@@ -245,7 +271,7 @@ export async function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage(JSON.stringify(item.properties));
     },
   );
-  context.subscriptions.push(showMainViewRootRecordPropertiesDisposable);
+  extensionContext.subscriptions.push(showMainViewRootRecordPropertiesDisposable);
 
   // *************************************************************** //
   let showSubItemPropertiesDisposable = vscode.commands.registerCommand(
@@ -260,7 +286,7 @@ export async function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage(JSON.stringify(item.properties));
     },
   );
-  context.subscriptions.push(showSubItemPropertiesDisposable);
+  extensionContext.subscriptions.push(showSubItemPropertiesDisposable);
 
   // *************************************************************** //
   let removeRegionDisposable = vscode.commands.registerCommand('atap-aiassist.removeRegion', () => {
@@ -285,7 +311,7 @@ export async function activate(context: vscode.ExtensionContext) {
       vscode.workspace.applyEdit(edit);
     }
   });
-  context.subscriptions.push(removeRegionDisposable);
+  extensionContext.subscriptions.push(removeRegionDisposable);
 
   // *************************************************************** //
   let processPs1FilesDisposable = vscode.commands.registerCommand(
@@ -304,7 +330,7 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     },
   );
-  context.subscriptions.push(processPs1FilesDisposable);
+  extensionContext.subscriptions.push(processPs1FilesDisposable);
 
   // *************************************************************** //
   let showExplorerViewDisposable = vscode.commands.registerCommand(
@@ -318,7 +344,14 @@ export async function activate(context: vscode.ExtensionContext) {
       myLogger.log(message, LogLevel.Debug);
     },
   );
-  context.subscriptions.push(showExplorerViewDisposable);
+  extensionContext.subscriptions.push(showExplorerViewDisposable);
+}
+
+function deactivateExtension() {
+  // Clean up resources, like closing files or stopping services
+  // ...
 }
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+  deactivateExtension();
+}

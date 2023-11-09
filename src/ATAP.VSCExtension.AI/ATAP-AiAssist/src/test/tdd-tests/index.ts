@@ -9,6 +9,8 @@ export function run(): Promise<void> {
   const mocha = new Mocha({
     ui: 'tdd',
     color: true,
+    require: ["tsconfig-paths/register"],
+
   });
   const testsRoot = path.resolve(__dirname, '..');
   console.log(`TDD testsRoot is ${testsRoot}`);

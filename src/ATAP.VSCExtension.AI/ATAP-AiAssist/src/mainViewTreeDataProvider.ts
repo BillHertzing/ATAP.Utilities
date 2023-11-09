@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import { generateGuid } from './Utilities';
+import { generateGuid } from './Utilities'; // '@Utilities/index';
+import { LogLevel, Logger } from './Logger'; //'@Logger/index';
 import { mainViewTreeItem } from './mainViewTreeItem';
-import { LogLevel, Logger } from '@Logger/Logger';
 
 export class mainViewTreeDataProvider implements vscode.TreeDataProvider<mainViewTreeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<mainViewTreeItem | null> =

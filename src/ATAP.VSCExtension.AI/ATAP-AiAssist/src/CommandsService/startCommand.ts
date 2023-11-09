@@ -1,4 +1,4 @@
-import { LogLevel, ILogger, Logger } from '@Logger/Logger';
+import { LogLevel, ILogger, Logger } from '@Logger/index';
 import * as vscode from 'vscode';
 
 export function startCommand(logger: ILogger): void {

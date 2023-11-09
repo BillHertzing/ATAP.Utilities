@@ -1,5 +1,6 @@
-import { LogLevel, ILogger } from '@Logger/Logger';
 import * as vscode from 'vscode';
+import { DetailedError } from '@ErrorClasses/index';
+import { LogLevel, ILogger, Logger } from '@Logger/index';
 
 
 import { ExternalDataVetting } from './ExternalDataVetting';

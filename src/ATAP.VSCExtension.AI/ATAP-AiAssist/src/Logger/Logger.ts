@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { DetailedError } from '@ErrorClasses/index';
 
 export enum LogLevel {
   Error = 0,

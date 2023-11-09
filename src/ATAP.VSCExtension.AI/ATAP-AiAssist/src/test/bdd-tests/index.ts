@@ -9,6 +9,7 @@ export function run(): Promise<void> {
   const mocha = new Mocha({
     ui: 'bdd',
     color: true,
+    require: ["tsconfig-paths/register"],
   });
   const testsRoot = path.resolve(__dirname, '..');
   console.log(`BDD testsRoot is ${testsRoot}`);

@@ -10,18 +10,20 @@
 		"rootDir": "src",
     "baseUrl": ".", // This must be specified if "paths" is set.
     "paths": {
+      "@ErrorClasses/*": ["src/ErrorClasses/*"],
       "@Logger/*": ["src/Logger/*"],
       "@SecurityService/*": ["src/SecurityService/*"],
       "@IDTypes/*": ["src/IDTypes/*"],
-      "@DataService/*": ["src/DataService/*"],
       "@Utilities/*": ["src/Utilities/*"],
       "@Serializers/*": ["src/Serializers/*"],
-      "@CommandsService/*": ["src/CommandsService/*"],
       "@Philote/*": ["src/Philote/*"],
-      "@TypeMap/*": ["src/TypeMap/*"],
-      "@ItemWithIDsService/*": ["src/ItemWithIDsService/*"],
       "@AssociationsService/*": ["src/AssociationsService/*"],
+      "@ItemWithIDsService/*": ["src/ItemWithIDsService/*"],
       "@QueryContextsService/*": ["src/QueryContextsService/*"],
+      "@DataService/*": ["src/DataService/*"],
+      "@Test1": ["DataService/index.ts"],
+      "@CommandsService/*": ["src/CommandsService/*"],
+      "@TypeMap/*": ["src/TypeMap/*"],
       // Add more path mappings as needed.
     },
 

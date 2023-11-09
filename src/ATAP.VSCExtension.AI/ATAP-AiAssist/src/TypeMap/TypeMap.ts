@@ -1,5 +1,5 @@
-import { GUID, Int, IDType } from '@IDTypes/IDTypes';
-import { Philote, IPhilote } from '@Philote/Philote';
+import { GUID, Int, IDType } from '@IDTypes/index';
+import { Philote, IPhilote } from '@Philote/index';
 import {
   ItemWithID,
   IItemWithID,
@@ -85,7 +85,7 @@ interface ITypeMap {
 //   Provide the Type name as a string,
 //   All remaining arguments are sent to the Type's constructor (.ctor)
 //   Acceptable Type names are found in
-//     typeConstructors: ITypeConstructors found in @TypeMap/TypeMap
+//     typeConstructors: ITypeConstructors found in @TypeMap/index
 //  The TypeMap feature
 // Function to create an instance based on a string type key for a specific IDType
 // export function createTypeInstance<T extends IDType, K extends keyof ITypeMap>(

@@ -1,5 +1,5 @@
-import { GUID, Int, IDType } from '@IDTypes/IDTypes';
-import { Philote, IPhilote } from '@Philote/Philote';
+import { GUID, Int, IDType } from '@IDTypes/index';
+import { Philote, IPhilote } from '@Philote/index';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
@@ -8,7 +8,7 @@ import {
   fromJson,
   toYaml,
   fromYaml,
-} from '@Serializers/Serializers';
+} from '@Serializers/index';
 import {
   ItemWithID,
   IItemWithID,
@@ -53,6 +53,12 @@ export interface ITagCollection extends IItemWithIDCollection {
 }
 
 export class TagCollection extends ItemWithIDCollection {
+  constructor(ID?: Philote, tags?: ITag[]) {
+    const _ID = ID !== undefined ? ID : new Philote();
+    const _tags = tags !== undefined ? tags : [];
+    super(ID, tags);
+  }
+
   static convertFrom_json(json: string): TagCollection {
     return fromJson<TagCollection>(json);
   }
@@ -75,6 +81,13 @@ export class TagsService extends ItemWithIDsService implements ITagsService {
     const tag = new Tag(value, ID);
     this.TagWithIDs.push(tag);
     return tag;
+  }
+  static convertFrom_json(json: string): TagsService {
+    return fromJson<TagsService>(json);
+  }
+
+  static convertFrom_yaml(yaml: string): TagsService {
+    return fromYaml<TagsService>(yaml);
   }
 
   dispose(): void {

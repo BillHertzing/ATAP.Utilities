@@ -1,6 +1,7 @@
-import { GUID, Int, IDType } from '@IDTypes/IDTypes';
+import { DetailedError } from '@ErrorClasses/index';
+import { GUID, Int, IDType } from '@IDTypes/index';
 
-import { Philote, IPhilote } from '@Philote/Philote';
+import { Philote, IPhilote } from '@Philote/index';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
@@ -9,7 +10,7 @@ import {
   fromJson,
   toYaml,
   fromYaml,
-} from '@Serializers/Serializers';
+} from '@Serializers/index';
 
 import {
   ItemWithID,

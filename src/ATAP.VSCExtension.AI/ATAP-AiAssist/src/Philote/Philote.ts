@@ -1,4 +1,5 @@
-import { GUID, Int, IDType, nextID } from '@IDTypes/IDTypes';
+import { DetailedError } from '@ErrorClasses/index';
+import { GUID, Int, IDType, nextID } from '@IDTypes/index';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
@@ -7,7 +8,7 @@ import {
   fromJson,
   toYaml,
   fromYaml,
-} from '@Serializers/Serializers';
+} from '@Serializers/index';
 
 export interface IPhilote {
   readonly ID: GUID;

@@ -58,7 +58,7 @@ To run the extension you need to install the recommended extension 'amodio.tsl-p
 
 `amodio.tsl-problem-matcher`
 
-## Install the node.js modules needed for teh production package
+## Install the node.js modules needed for the production package
 
 The extension needs support for YAML and using a WebAPI. Run from a terminal at the base of the extension directory
 
@@ -71,7 +71,7 @@ npm install @types/axios  --save
 
 ```
 
-## Install the node.js modules for testing
+## Install the node.js modules for development
 
 Run from a terminal, the base of the extension directory
 
@@ -81,6 +81,8 @@ npm install --save-dev mocha
 npm install --save-dev @types/mocha
 npm install --save-dev chai
 npm install --save-dev @types/chai
+npm install --save-dev tsconfig-paths-webpack-plugin
+npm install --save-dev tsconfig-paths
 
 ```
 

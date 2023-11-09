@@ -1,6 +1,8 @@
-import { LogLevel, ILogger, Logger } from '@Logger/Logger';
-import { GUID, Int, IDType } from '@IDTypes/IDTypes';
-import { Philote, IPhilote } from '@Philote/Philote';
+
+import { DetailedError } from '@ErrorClasses/index';
+import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { GUID, Int, IDType } from '@IDTypes/index';
+import { Philote, IPhilote } from '@Philote/index';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
@@ -9,7 +11,7 @@ import {
   fromJson,
   toYaml,
   fromYaml,
-} from '@Serializers/Serializers';
+} from '@Serializers/index';
 
 import { TagValueType } from '@AssociationsService/index';
 import { CategoryValueType } from '@AssociationsService/index';
@@ -28,7 +30,9 @@ export interface IItemWithID {
 
 // base itemWithID implementation
 export class ItemWithID implements IItemWithID {
-  constructor(public value: ItemWithIDValueType, public ID?: Philote) {}
+  constructor(public value: ItemWithIDValueType, public ID?: Philote) {
+    this.ID = ID !== undefined ? ID : new Philote(); // returns a Philote with a random GUID string or the next sequential Int available from the ID pool
+  }
   convertTo_json(): string {
     return toJson(this);
   }
@@ -107,9 +111,8 @@ export class ItemWithIDCollection implements IItemWithIDCollection {
   public readonly itemWithIDs: ItemWithID[];
   public readonly ID: Philote; // Now of type Philote
 
-  constructor(ID: Philote, itemWithIDs?: ItemWithID[]) {
-    // Accepts Philote as the collection ID
-    this.ID = ID;
+  constructor(ID?: Philote, itemWithIDs?: ItemWithID[]) {
+    this.ID = ID !== undefined ? ID : new Philote(); // returns a Philote with a random GUID string or the next sequential Int available from the ID pool
     this.itemWithIDs = itemWithIDs || [];
   }
 
@@ -167,9 +170,9 @@ export class ItemWithIDsService {
   private itemWithIDs: ItemWithID[] = [];
 
   public createItemWithID(value: ItemWithIDValueType, ID?: Philote): ItemWithID {
-    const itemwithid = new ItemWithID(value, ID);
-    this.itemWithIDs.push(itemwithid);
-    return itemwithid;
+    const itemWithID = new ItemWithID(value, ID);
+    this.itemWithIDs.push(itemWithID);
+    return itemWithID;
   }
 
   dispose(): void {

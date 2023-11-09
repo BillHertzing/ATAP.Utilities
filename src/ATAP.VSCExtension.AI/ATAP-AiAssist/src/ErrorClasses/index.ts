@@ -1,0 +1,1 @@
+export { DetailedError } from './DetailedError';

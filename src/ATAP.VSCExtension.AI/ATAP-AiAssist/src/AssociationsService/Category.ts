@@ -1,5 +1,5 @@
-import { GUID, Int, IDType } from '@IDTypes/IDTypes';
-import { Philote, IPhilote } from '@Philote/Philote';
+import { GUID, Int, IDType } from '@IDTypes/index';
+import { Philote, IPhilote } from '@Philote/index';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
@@ -8,7 +8,7 @@ import {
   fromJson,
   toYaml,
   fromYaml,
-} from '@Serializers/Serializers';
+} from '@Serializers/index';
 import {
   ItemWithID,
   IItemWithID,
@@ -55,6 +55,12 @@ export interface ICategoryCollection extends IItemWithIDCollection {
 }
 
 export class CategoryCollection extends ItemWithIDCollection {
+  constructor(ID?: Philote, categorys?: ICategory[]) {
+    const _ID = ID !== undefined ? ID : new Philote();
+    const _categorys = categorys !== undefined ? categorys : [];
+    super(ID, categorys);
+  }
+
   static convertFrom_json(json: string): CategoryCollection {
     return fromJson<CategoryCollection>(json);
   }
@@ -77,6 +83,14 @@ export class CategorysService extends ItemWithIDsService implements ICategorysSe
     const category = new Category(value, ID);
     this.categoryWithIDs.push(category);
     return category;
+  }
+
+  static convertFrom_json(json: string): CategorysService {
+    return fromJson<CategorysService>(json);
+  }
+
+  static convertFrom_yaml(yaml: string): CategorysService {
+    return fromYaml<CategorysService>(yaml);
   }
 
   dispose(): void {

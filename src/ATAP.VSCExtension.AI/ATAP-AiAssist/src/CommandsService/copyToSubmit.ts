@@ -1,4 +1,4 @@
-import { LogLevel, ILogger } from '@Logger/Logger';
+import { LogLevel, ILogger } from '@Logger/index';
 import * as vscode from 'vscode';
 import { StringBuilder } from '../Utilities';
 

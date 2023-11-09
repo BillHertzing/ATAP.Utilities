@@ -1,5 +1,5 @@
-import { LogLevel, ILogger } from '@Logger/Logger';
-import { GUID, Int, IDType } from '@IDTypes/IDTypes';
+import { LogLevel, ILogger } from '@Logger/index';
+import { GUID, Int, IDType } from '@IDTypes/index';
 import {
   ItemWithIDValueType,
   ItemWithID,
@@ -41,7 +41,7 @@ import {
 } from '@AssociationsService/index';
 
 
-// import { createTypeInstance } from '@TypeMap/TypeMap';
+// import { createTypeInstance } from '@TypeMap/index';
 
 import * as vscode from 'vscode';
 
@@ -81,7 +81,7 @@ export async function quickPickFromSettings(
   }
 
   itemWithIDcollection.itemWithIDs.map((object) => object.value);
-  const optionsArray: string[] = itemWithIDcollection.itemWithIDs.map((object) => object.value);
+  const optionsArray: string[] = ['placeholder1','placeholder2']; //itemWithIDcollection.itemWithIDs.map((object) => object.value);
   if (!optionsArray || optionsArray.length === 0) {
     message = `Could not convert the itemWithIDcollection.items to an optionsArray of strings`;
     logger.log(message, LogLevel.Error);

@@ -1,72 +1,95 @@
-import * as assert from 'assert';
-import { Philote, IPhilote } from '@Philote/Philote';
+import 'mocha'; // Mocha types
+import * as chai from 'chai';
+import { Philote, IPhilote } from '@Philote/index';
+const expect = chai.expect;
+console.log("Philote Class Tests TDD");
 
-import { Item, ItemCollection } from '@QueryContextsService/QueryContextsService';
 
-// Typically you would mock VS Code extension import if required for your tests
-// import * as vscode from 'vscode'; // Uncomment if you need to use VS Code API
+describe('Philote', function() {
+  describe('constructor', function() {
+    it('should create a Philote with a default ID if none is provided', function() {
+      const philote = new Philote();
+      expect(philote.ID).to.be.a('string');
+    });
 
-suite('Extension Tests', function () {
-  // Define some common variables for use in tests
-  const guidExample: string = "123e4567-e89b-12d3-a456-426614174000";
-  let philoteGUID: Philote<string>;
-  let item1: Item<string>;
-  let itemCollection: ItemCollection<string>;
-
-  setup(() => {
-    // Initialize objects before each test
-    philoteGUID = new Philote<string>(guidExample);
-    item1 = new Item<string>("item1", philoteGUID);
-    itemCollection = new ItemCollection<string>(philoteGUID, [item1]);
+    it('should create a Philote with the given ID', function() {
+      const testID = 'test-id';
+      const philote = new Philote(testID);
+      expect(philote.ID).to.equal(testID);
+    });
   });
 
-  test('Philote should initialize correctly', () => {
-    assert.strictEqual(philoteGUID.ID, guidExample);
+  describe('addOther', function() {
+    it('should add a new Philote to the others array', function() {
+      const philote1 = new Philote();
+      const philote2 = new Philote();
+      philote1.addOther(philote2);
+      expect(philote1.others).to.include(philote2);
+    });
+
+    it('should not add the same Philote twice', function() {
+      const philote1 = new Philote();
+      const philote2 = new Philote();
+      philote1.addOther(philote2);
+      philote1.addOther(philote2);
+      expect(philote1.others).to.have.lengthOf(1);
+    });
   });
 
-  test('Item should initialize correctly', () => {
-    assert.strictEqual(item1.name, "item1");
-    assert.strictEqual(item1.ID, philoteGUID);
+  describe('removeOther', function() {
+    it('should remove a Philote from the others array', function() {
+      const philote1 = new Philote();
+      const philote2 = new Philote();
+      philote1.addOther(philote2);
+      philote1.removeOther(philote2);
+      expect(philote1.others).to.not.include(philote2);
+    });
   });
 
-  test('ItemCollection should initialize correctly and find items', () => {
-    assert.strictEqual(itemCollection.ID, philoteGUID);
-    assert.strictEqual(itemCollection.items.length, 1);
-    assert.strictEqual(itemCollection.findItemByName("item1"), item1);
+  describe('convertTo_json', function() {
+    it('should convert Philote instance to JSON string', function() {
+      const philote = new Philote();
+      const json = philote.convertTo_json();
+      expect(json).to.be.a('string');
+      expect(json).to.contain(philote.ID);
+    });
   });
 
-  test('Philote should convert to JSON and back', () => {
-    const json = philoteGUID.convertTo_json();
-    const parsedPhilote = Philote.convertFrom_json<string>(json);
-    assert.strictEqual(parsedPhilote.ID, philoteGUID.ID);
+  describe('convertFrom_json', function() {
+    it('should convert JSON string to Philote instance', function() {
+      const philote = new Philote();
+      const json = philote.convertTo_json();
+      const newPhilote = Philote.convertFrom_json(json);
+      expect(newPhilote).to.be.instanceOf(Philote);
+      expect(newPhilote.ID).to.equal(philote.ID);
+    });
   });
 
-  test('Philote should convert to YAML and back', () => {
-    const yaml = philoteGUID.convertTo_yaml();
-    const parsedPhilote = Philote.convertFrom_yaml<string>(yaml);
-    assert.strictEqual(parsedPhilote.ID, philoteGUID.ID);
+  describe('convertTo_yaml', function() {
+    it('should convert Philote instance to YAML string', function() {
+      const philote = new Philote();
+      const yaml = philote.convertTo_yaml();
+      expect(yaml).to.be.a('string');
+      expect(yaml).to.contain(philote.ID);
+    });
   });
 
-  test('ItemCollection should add items correctly', () => {
-    const newItem = new Item<string>("item2", philoteGUID);
-    itemCollection.addItem(newItem);
-    assert.strictEqual(itemCollection.items.length, 2);
-    assert.strictEqual(itemCollection.findItemByName("item2"), newItem);
+  describe('convertFrom_yaml', function() {
+    it('should convert YAML string to Philote instance', function() {
+      const philote = new Philote();
+      const yaml = philote.convertTo_yaml();
+      const newPhilote = Philote.convertFrom_yaml(yaml);
+      expect(newPhilote).to.be.instanceOf(Philote);
+      expect(newPhilote.ID).to.equal(philote.ID);
+    });
   });
 
-  test('toJson and fromJson utility for ItemCollection', () => {
-    const json = itemCollection.convertTo_json();
-    const newItemCollection = ItemCollection.convertFrom_json<string>(json);
-    assert.strictEqual(newItemCollection.ID.ID, itemCollection.ID.ID);
-    assert.strictEqual(newItemCollection.items.length, itemCollection.items.length);
+  describe('ToString', function() {
+    it('should return a string containing the ID of the Philote', function() {
+      const philote = new Philote();
+      const stringRepresentation = philote.ToString();
+      expect(stringRepresentation).to.be.a('string');
+      expect(stringRepresentation).to.contain(philote.ID);
+    });
   });
-
-  test('toYaml and fromYaml utility for ItemCollection', () => {
-    const yamlString = itemCollection.convertTo_yaml();
-    const newYamlCollection = ItemCollection.convertFrom_yaml<string>(yamlString);
-    assert.strictEqual(newYamlCollection.ID.ID, itemCollection.ID.ID);
-    assert.strictEqual(newYamlCollection.items.length, itemCollection.items.length);
-  });
-
-  // Add more tests as needed
 });

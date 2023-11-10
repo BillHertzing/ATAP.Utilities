@@ -1,11 +1,30 @@
 import * as vscode from 'vscode';
+import { GUID, Int, IDType } from '@IDTypes/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { logConstructor, logExecutionTime } from '@Decorators/index';
+import { DefaultConfiguration } from '../DefaultConfiguration';
+import { UserData, IUserData } from '@DataService/index';
+import {
+  SupportedSerializersEnum,
+  SerializationStructure,
+  ISerializationStructure,
+  isSerializationStructure,
+  toJson,
+  fromJson,
+  toYaml,
+  fromYaml,
+} from '@Serializers/index';
 
 
 import { ExternalDataVetting } from './ExternalDataVetting';
 
-export class SecurityService {
+export interface ISecurityService {
+ //version: string;
+}
+@logConstructor
+export class SecurityService implements ISecurityService {
+  //version: string = DefaultConfiguration.Production.version;
   private message: string;
   private externalDataVetting: ExternalDataVetting;
 
@@ -18,4 +37,64 @@ export class SecurityService {
     this.message = 'leaving SecurityService constructor';
     this.logger.log(this.message, LogLevel.Trace);
   }
+
+  static CreateSecurityService(
+    logger: ILogger,
+    extensionContext: vscode.ExtensionContext,
+    callingModule: string,
+    initializationStructure?: ISerializationStructure,
+  ): SecurityService {
+    let _obj: SecurityService | null;
+    if (initializationStructure) {
+      try {
+        // ToDo: deserialize based on contents of structure
+        _obj = SecurityService.convertFrom_yaml(initializationStructure.value);
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(
+            `${callingModule}: create SecurityService from DefaultConfiguration.Development["SecurityServiceAsSerializationStructure"] using convertFrom_xxx -> }`,
+            e,
+          );
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(
+            `${callingModule}: create SecurityService from DefaultConfiguration.Development["SecurityServiceAsSerializationStructure"] using convertFrom_xxx threw something other than a polymorphous Error`,
+          );
+        }
+      }
+      if (_obj === null) {
+        throw new Error(
+          `${callingModule}: create SecurityService from DefaultConfiguration.Development["SecurityServiceAsSerializationStructure"] using convertFrom_xxx produced a null`,
+        );
+      }
+      return _obj;
+    } else {
+      try {
+        _obj = new SecurityService(logger, extensionContext);
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(
+            `${callingModule}: create SecurityService from DefaultConfiguration.Development["SecurityServiceAsSerializationStructure"] -> }`,
+            e,
+          );
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(
+            `${callingModule}: create SecurityService from DefaultConfiguration.Development["SecurityServiceAsSerializationStructure"]`,
+          );
+        }
+      }
+      return _obj;
+    }
+  }
+
+  static convertFrom_json(json: string): SecurityService {
+    return fromJson<SecurityService>(json);
+  }
+
+  static convertFrom_yaml(yaml: string): SecurityService {
+    return fromYaml<SecurityService>(yaml);
+  }
+
+
 }

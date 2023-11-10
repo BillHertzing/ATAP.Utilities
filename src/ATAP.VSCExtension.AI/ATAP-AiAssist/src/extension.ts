@@ -4,9 +4,9 @@ import { DetailedError } from '@ErrorClasses/index';
 import { LogLevel, Logger, getLoggerLogLevelFromSettings, getDevelopmentLoggerLogLevelFromSettings } from './Logger'; // '@Logger/index';
 
 import { DefaultConfiguration } from './DefaultConfiguration';
+import { SecurityService, ISecurityService } from '@SecurityService/index';
 
-
-import {  DataService, IDataService, IData, IUserData } from '@DataService/index';
+import { DataService, IDataService, IData, IUserData } from '@DataService/index';
 
 import {
   SupportedSerializersEnum,
@@ -19,7 +19,6 @@ import {
   fromYaml,
 } from './Serializers'; // '@Serializers/index';
 
-import { SecurityService } from '@SecurityService/index';
 import { CommandsService } from '@CommandsService/index';
 
 import * as path from 'path';
@@ -40,6 +39,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // Declaration of variables
   let message: string = '';
   let workspacePath: string = '';
+  let securityService: ISecurityService;
   let dataService: IDataService;
 
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
@@ -52,24 +52,19 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   const config = vscode.workspace.getConfiguration('ATAP-AiAssist');
 
   // instantiate the SecurityService
-  let securityService: SecurityService;
-  try {
-    message = `instantiate securityService`;
-    myLogger.log(message, LogLevel.Debug);
-    securityService = new SecurityService(myLogger, extensionContext);
-  } catch (e) {
-    if (e instanceof Error) {
-      // Report the error (file may not exist, etc.)
-      message = e.message;
-    } else {
-      // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
-      message = 'An unknown error was caught during the SecurityService constructor';
-    }
-    myLogger.log(message, LogLevel.Error);
-    throw new Error(message);
+  // if a SecurityService initialization serialized string exists, this will try and use it to create the SecurityService, else return a new empty one.
+  // Will return a valid SecurityService instance or will throw
+  if (isSerializationStructure(DefaultConfiguration.Production['SecurityServiceAsSerializationStructure'])) {
+    securityService = SecurityService.CreateSecurityService(
+      myLogger,
+      extensionContext,
+      'extension.ts',
+      DefaultConfiguration.Production['SecurityServiceAsSerializationStructure'],
+    );
+  } else {
+    securityService = SecurityService.CreateSecurityService(myLogger, extensionContext, 'SecurityService.ts');
   }
-  message = `securityService instantiated`;
-  myLogger.log(message, LogLevel.Trace);
+  myLogger.log('CreateSecurityService done', LogLevel.Info);
 
   if (runningInDevelopment) {
     // update the loggerLogLevel with the'Development.Logger.LogLevel settings value, if it exists

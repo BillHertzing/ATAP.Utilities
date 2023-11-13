@@ -187,19 +187,19 @@ export class DataService implements IDataService {
       } catch (e) {
         if (e instanceof Error) {
           throw new DetailedError(
-            `${callingModule}: create dataService from DefaultConfiguration.Development["DataServiceAsSerializationStructure"] using convertFrom_xxx -> }`,
+            `${callingModule}: create dataService from initializationStructure using convertFrom_xxx -> }`,
             e,
           );
         } else {
           // ToDo:  investigation to determine what else might happen
           throw new Error(
-            `${callingModule}: create dataService from DefaultConfiguration.Development["DataServiceAsSerializationStructure"] using convertFrom_xxx threw something other than a polymorphous Error`,
+            `${callingModule}: create dataService from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
           );
         }
       }
       if (_obj === null) {
         throw new Error(
-          `${callingModule}: create dataService from DefaultConfiguration.Development["DataServiceAsSerializationStructure"] using convertFrom_xxx produced a null`,
+          `${callingModule}: create dataService from initializationStructure using convertFrom_xxx produced a null`,
         );
       }
       return _obj;
@@ -209,13 +209,13 @@ export class DataService implements IDataService {
       } catch (e) {
         if (e instanceof Error) {
           throw new DetailedError(
-            `${callingModule}: create dataService from DefaultConfiguration.Development["DataServiceAsSerializationStructure"] -> }`,
+            `${callingModule}: create dataService from initializationStructure -> }`,
             e,
           );
         } else {
           // ToDo:  investigation to determine what else might happen
           throw new Error(
-            `${callingModule}: create dataService from DefaultConfiguration.Development["DataServiceAsSerializationStructure"]`,
+            `${callingModule}: create dataService from initializationStructure`,
           );
         }
       }

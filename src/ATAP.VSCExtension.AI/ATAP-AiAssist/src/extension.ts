@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { DetailedError } from '@ErrorClasses/index';
 
-import { LogLevel, Logger, getLoggerLogLevelFromSettings, getDevelopmentLoggerLogLevelFromSettings } from './Logger'; // '@Logger/index';
+import { LogLevel, Logger, getLoggerLogLevelFromSettings, getDevelopmentLoggerLogLevelFromSettings } from '@Logger/index';
 
 import { DefaultConfiguration } from './DefaultConfiguration';
 import { SecurityService, ISecurityService } from '@SecurityService/index';
@@ -17,7 +17,7 @@ import {
   fromJson,
   toYaml,
   fromYaml,
-} from './Serializers'; // '@Serializers/index';
+} from '@Serializers/index';
 
 import { CommandsService } from '@CommandsService/index';
 
@@ -51,27 +51,27 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // Get the VSC configuration settings for this extension
   const config = vscode.workspace.getConfiguration('ATAP-AiAssist');
 
-  // instantiate the SecurityService
-  // if a SecurityService initialization serialized string exists, this will try and use it to create the SecurityService, else return a new empty one.
-  // Will return a valid SecurityService instance or will throw
-  if (isSerializationStructure(DefaultConfiguration.Production['SecurityServiceAsSerializationStructure'])) {
-    securityService = SecurityService.CreateSecurityService(
-      myLogger,
-      extensionContext,
-      'extension.ts',
-      DefaultConfiguration.Production['SecurityServiceAsSerializationStructure'],
-    );
-  } else {
-    securityService = SecurityService.CreateSecurityService(myLogger, extensionContext, 'SecurityService.ts');
-  }
-  myLogger.log('CreateSecurityService done', LogLevel.Info);
-
   if (runningInDevelopment) {
     // update the loggerLogLevel with the'Development.Logger.LogLevel settings value, if it exists
     const developmentLoggerLogLevelFromSettings = getDevelopmentLoggerLogLevelFromSettings();
     myLogger.setChannelLogLevel('ATAP-AiAssist', developmentLoggerLogLevelFromSettings); // supplies a default if not found in settings
     myLogger.log('Running in development mode.', LogLevel.Info);
     // Focus on the output stream on the extension when strarting in development mode
+    myLogger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
+    // instantiate the SecurityService
+    // if a SecurityService initialization serialized string exists, this will try and use it to create the SecurityService, else return a new empty one.
+    // Will return a valid SecurityService instance or will throw
+    if (isSerializationStructure(DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'])) {
+      securityService = SecurityService.CreateSecurityService(
+        myLogger,
+        extensionContext,
+        'extension.ts',
+        DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'],
+      );
+    } else {
+      securityService = SecurityService.CreateSecurityService(myLogger, extensionContext, 'SecurityService.ts');
+    }
+    myLogger.log('CreateSecurityService done', LogLevel.Info);
     myLogger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
 
     // if a DataService initialization serialized string exists, this will try and use it to create the DataService, else return a new empty one.
@@ -176,6 +176,20 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
       }
     }
   } else {
+    // instantiate the SecurityService for Production
+    // if a SecurityService initialization serialized string exists, this will try and use it to create the SecurityService, else return a new empty one.
+    // Will return a valid SecurityService instance or will throw
+    if (isSerializationStructure(DefaultConfiguration.Production['SecurityServiceAsSerializationStructure'])) {
+      securityService = SecurityService.CreateSecurityService(
+        myLogger,
+        extensionContext,
+        'extension.ts',
+        DefaultConfiguration.Production['SecurityServiceAsSerializationStructure'],
+      );
+    } else {
+      securityService = SecurityService.CreateSecurityService(myLogger, extensionContext, 'SecurityService.ts');
+    }
+    myLogger.log('CreateSecurityService done', LogLevel.Info);
     // if a DataService initialization serialized string exists, this will try and use it to create the DataService, else return a new empty one.
     // Will return a valid DataService instance or will throw
     if (isSerializationStructure(DefaultConfiguration.Production['DataServiceAsSerializationStructure'])) {

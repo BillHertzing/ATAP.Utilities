@@ -1,12 +1,16 @@
 
+import * as vscode from 'vscode';
+import { GUID, Int, IDType } from '@IDTypes/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { GUID, Int, IDType } from '@IDTypes/index';
+import { logConstructor, logExecutionTime } from '@Decorators/index';
 import { Philote, IPhilote } from '@Philote/index';
+import { DefaultConfiguration } from '../DefaultConfiguration';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
   ISerializationStructure,
+  isSerializationStructure,
   toJson,
   fromJson,
   toYaml,
@@ -16,7 +20,8 @@ import {
 import { TagValueType } from '@AssociationsService/index';
 import { CategoryValueType } from '@AssociationsService/index';
 import { AssociationValueType } from '@AssociationsService/index';
-export type ItemWithIDValueType = TagValueType | CategoryValueType | AssociationValueType;
+import { QueryContextValueType } from '@QueryContextsService/index';
+export type ItemWithIDValueType = string | number | TagValueType | CategoryValueType | AssociationValueType | QueryContextValueType;
 
 // Define an  interface for itemWithIDs
 export interface IItemWithID {
@@ -30,9 +35,63 @@ export interface IItemWithID {
 
 // base itemWithID implementation
 export class ItemWithID implements IItemWithID {
+
   constructor(public value: ItemWithIDValueType, public ID?: Philote) {
     this.ID = ID !== undefined ? ID : new Philote(); // returns a Philote with a random GUID string or the next sequential Int available from the ID pool
   }
+
+  static CreateItemWithID(
+    logger: ILogger,
+    extensionContext: vscode.ExtensionContext,
+    callingModule: string,
+    initializationStructure?: ISerializationStructure,
+): ItemWithID {
+    let _obj: ItemWithID | null;
+    if (initializationStructure) {
+      try {
+        // ToDo: deserialize based on contents of structure
+        _obj = ItemWithID.convertFrom_yaml(initializationStructure.value);
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(
+            `${callingModule}: create ItemWithID from initializationStructure using convertFrom_xxx -> }`,
+            e,
+          );
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(
+            `${callingModule}: create ItemWithID from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
+          );
+        }
+      }
+      if (_obj === null) {
+        throw new Error(
+          `${callingModule}: create ItemWithID from initializationStructureusing convertFrom_xxx produced a null`,
+        );
+      }
+      return _obj;
+    } else {
+      try {
+        _obj = new ItemWithID('aStaticItemWithID');
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(
+            `${callingModule}: create new ItemWithID error }`,
+            e,
+          );
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(
+            `${callingModule}: new ItemWithID threw something that was not polymorphus on error`,
+          );
+        }
+      }
+      return _obj;
+    }
+
+}
+
+
   convertTo_json(): string {
     return toJson(this);
   }
@@ -56,7 +115,7 @@ export class ItemWithID implements IItemWithID {
   dispose(): void {
     // placeholder:Implement disposal logic for ItemWithID if necessary
     // ToDo: How to get a logger without having to pass it in every function call?
-    //console.log(`Tag (ID: ${this.ID.id}, Value: ${this.value}) is disposed.`);
+    //console.log(`ItemWithID (ID: ${this.ID.id}, Value: ${this.value}) is disposed.`);
   }
 }
 

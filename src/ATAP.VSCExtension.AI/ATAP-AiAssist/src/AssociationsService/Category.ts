@@ -1,14 +1,21 @@
+import * as vscode from 'vscode';
 import { GUID, Int, IDType } from '@IDTypes/index';
+import { DetailedError } from '@ErrorClasses/index';
+import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { logConstructor, logExecutionTime } from '@Decorators/index';
 import { Philote, IPhilote } from '@Philote/index';
+import { DefaultConfiguration } from '../DefaultConfiguration';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
   ISerializationStructure,
+  isSerializationStructure,
   toJson,
   fromJson,
   toYaml,
   fromYaml,
 } from '@Serializers/index';
+
 import {
   ItemWithID,
   IItemWithID,
@@ -28,6 +35,58 @@ export class Category extends ItemWithID implements ICategory {
   constructor(value: CategoryValueType, ID?: Philote) {
     super(value, ID);
   }
+
+  static CreateCategory(
+    logger: ILogger,
+    extensionContext: vscode.ExtensionContext,
+    callingModule: string,
+    initializationStructure?: ISerializationStructure,
+): Category {
+    let _obj: Category | null;
+    if (initializationStructure) {
+      try {
+        // ToDo: deserialize based on contents of structure
+        _obj = Category.convertFrom_yaml(initializationStructure.value);
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(
+            `${callingModule}: create Category from initializationStructure using convertFrom_xxx -> }`,
+            e,
+          );
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(
+            `${callingModule}: create Category from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
+          );
+        }
+      }
+      if (_obj === null) {
+        throw new Error(
+          `${callingModule}: create Category from initializationStructureusing convertFrom_xxx produced a null`,
+        );
+      }
+      return _obj;
+    } else {
+      try {
+        _obj = new Category('aStaticCategory');
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(
+            `${callingModule}: create new Category error }`,
+            e,
+          );
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(
+            `${callingModule}: new Category threw something that was not polymorphus on error`,
+          );
+        }
+      }
+      return _obj;
+    }
+
+}
+
 
   static convertFrom_json(json: string): Category {
     return fromJson<Category>(json);

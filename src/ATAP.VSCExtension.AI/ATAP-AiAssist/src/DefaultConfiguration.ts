@@ -1,7 +1,7 @@
 // DefaultConfiguration.ts
 
 import { GUID, Int, IDType } from '@IDTypes/index';
-import { SupportedSerializersEnum, SerializationStructure, ISerializationStructure } from './Serializers'; //'@Serializers/index';
+import { SupportedSerializersEnum, SerializationStructure, ISerializationStructure } from '@Serializers/index';
 import { IDataService, IData, IUserData } from '@DataService/index';
 
 // everything here will be initialized before the entry point of the extension

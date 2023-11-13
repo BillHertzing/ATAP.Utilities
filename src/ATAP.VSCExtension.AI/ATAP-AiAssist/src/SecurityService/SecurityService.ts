@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import { GUID, Int, IDType } from '@IDTypes/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
 import { logConstructor, logExecutionTime } from '@Decorators/index';
+import { GUID, Int, IDType } from '@IDTypes/index';
+import { Philote, IPhilote } from '@Philote/index';
 import { DefaultConfiguration } from '../DefaultConfiguration';
 import { UserData, IUserData } from '@DataService/index';
 import {
@@ -22,7 +23,7 @@ import { ExternalDataVetting } from './ExternalDataVetting';
 export interface ISecurityService {
  //version: string;
 }
-@logConstructor
+//@logConstructor
 export class SecurityService implements ISecurityService {
   //version: string = DefaultConfiguration.Production.version;
   private message: string;
@@ -30,12 +31,12 @@ export class SecurityService implements ISecurityService {
 
   constructor(private logger: ILogger, private extensionContext: vscode.ExtensionContext) {
     this.message = 'starting SecurityService constructor';
-    this.logger.log(this.message, LogLevel.Trace);
+    this.logger.log(this.message, LogLevel.Debug);
 
     this.externalDataVetting = new ExternalDataVetting(this.logger);
 
     this.message = 'leaving SecurityService constructor';
-    this.logger.log(this.message, LogLevel.Trace);
+    this.logger.log(this.message, LogLevel.Debug);
   }
 
   static CreateSecurityService(

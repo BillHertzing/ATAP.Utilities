@@ -1,14 +1,22 @@
+
+import * as vscode from 'vscode';
 import { GUID, Int, IDType } from '@IDTypes/index';
+import { DetailedError } from '@ErrorClasses/index';
+import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { logConstructor, logExecutionTime } from '@Decorators/index';
 import { Philote, IPhilote } from '@Philote/index';
+import { DefaultConfiguration } from '../DefaultConfiguration';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
   ISerializationStructure,
+  isSerializationStructure,
   toJson,
   fromJson,
   toYaml,
   fromYaml,
 } from '@Serializers/index';
+
 import {
   ItemWithID,
   IItemWithID,
@@ -27,6 +35,56 @@ export class Tag extends ItemWithID implements ITag {
   constructor(value: TagValueType, ID?: Philote) {
     super(value, ID);
   }
+  static CreateTag(
+    logger: ILogger,
+    extensionContext: vscode.ExtensionContext,
+    callingModule: string,
+    initializationStructure?: ISerializationStructure,
+): Tag {
+    let _obj: Tag | null;
+    if (initializationStructure) {
+      try {
+        // ToDo: deserialize based on contents of structure
+        _obj = Tag.convertFrom_yaml(initializationStructure.value);
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(
+            `${callingModule}: create Tag from initializationStructure using convertFrom_xxx -> }`,
+            e,
+          );
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(
+            `${callingModule}: create Tag from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
+          );
+        }
+      }
+      if (_obj === null) {
+        throw new Error(
+          `${callingModule}: create Tag from initializationStructureusing convertFrom_xxx produced a null`,
+        );
+      }
+      return _obj;
+    } else {
+      try {
+        _obj = new Tag('aStaticTag');
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(
+            `${callingModule}: create new Tag error }`,
+            e,
+          );
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(
+            `${callingModule}: new Tag threw something that was not polymorphus on error`,
+          );
+        }
+      }
+      return _obj;
+    }
+
+}
 
   dispose(): void {
     // Call dispose for base ItemWithID

@@ -23,7 +23,7 @@
       "@ItemWithIDsService/*": ["ItemWithIDsService/*"],
       "@QueryContextsService/*": ["QueryContextsService/*"],
       "@DataService/*": ["DataService/*"],
-      "@Test1": ["DataService/index.ts"],
+      "@TokensService": ["TokensService/index.ts"],
       "@CommandsService/*": ["CommandsService/*"],
       "@TypeMap/*": ["TypeMap/*"],
       // Add more path mappings as needed.

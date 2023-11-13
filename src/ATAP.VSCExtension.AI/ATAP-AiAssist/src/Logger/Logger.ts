@@ -34,6 +34,7 @@ export class Logger implements ILogger {
   {
     Logger.staticOutputChannel= vscode.window.createOutputChannel("AiAssistStaticLogger");
   }
+
   static staticLog(message: string, level: LogLevel)
   {
       Logger.staticOutputChannel.appendLine(`[${LogLevel[level]}] ${message}`);

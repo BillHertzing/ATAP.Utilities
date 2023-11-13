@@ -26,8 +26,18 @@ export interface ILogger {
 
 export class Logger implements ILogger {
   private channels: { [key: string]: ChannelInfo } = {};
+  private static staticOutputChannel:vscode.OutputChannel ;
 
-  constructor() {}
+  constructor() { }
+
+  static staticConstructor()
+  {
+    Logger.staticOutputChannel= vscode.window.createOutputChannel("AiAssistStaticLogger");
+  }
+  static staticLog(message: string, level: LogLevel)
+  {
+      Logger.staticOutputChannel.appendLine(`[${LogLevel[level]}] ${message}`);
+}
 
   createChannel(name: string, level: LogLevel, enabled: boolean = true): void {
     const outputChannel = vscode.window.createOutputChannel(name);

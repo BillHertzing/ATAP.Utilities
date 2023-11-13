@@ -74,13 +74,13 @@ export class SecurityService implements ISecurityService {
       } catch (e) {
         if (e instanceof Error) {
           throw new DetailedError(
-            `${callingModule}: create SecurityService from DefaultConfiguration.Development["SecurityServiceAsSerializationStructure"] -> }`,
+            `${callingModule}: create new SecurityService error }`,
             e,
           );
         } else {
           // ToDo:  investigation to determine what else might happen
           throw new Error(
-            `${callingModule}: create SecurityService from DefaultConfiguration.Development["SecurityServiceAsSerializationStructure"]`,
+            `${callingModule}: new SecurityService threw something that was not polymorphus on error`,
           );
         }
       }

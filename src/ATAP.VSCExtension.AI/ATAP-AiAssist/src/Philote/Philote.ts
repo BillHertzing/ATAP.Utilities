@@ -1,14 +1,21 @@
-import { DetailedError } from '@ErrorClasses/index';
+import * as vscode from 'vscode';
 import { GUID, Int, IDType, nextID } from '@IDTypes/index';
+import { DetailedError } from '@ErrorClasses/index';
+import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { logConstructor, logExecutionTime } from '@Decorators/index';
+import { DefaultConfiguration } from '../DefaultConfiguration';
+import { UserData, IUserData } from '@DataService/index';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
   ISerializationStructure,
+  isSerializationStructure,
   toJson,
   fromJson,
   toYaml,
   fromYaml,
 } from '@Serializers/index';
+
 
 export interface IPhilote {
   readonly ID: GUID;
@@ -20,6 +27,7 @@ export interface IPhilote {
   removeOther(philote: IPhilote): void; // Method to remove from the 'others' array
 }
 
+@logConstructor
 export class Philote implements IPhilote {
   public readonly ID: GUID;
   public readonly others: Philote[];

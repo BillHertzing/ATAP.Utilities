@@ -22,7 +22,7 @@ export function logConstructor<T extends new(...args: any[]) => {}>(originalCons
   return class extends originalConstructor {
       constructor(...args: any[]) {
           super(...args);
-          console.log(`A new instance of ${originalConstructor.name} was created!`);
+          Logger.staticLog(`A new instance of ${originalConstructor.name} was created!`, LogLevel.Debug);
       }
   };
 }

@@ -68,6 +68,7 @@ export interface IData {
   readonly configurationData: IConfigurationData;
 }
 
+@logConstructor
 export class Data {
   private message: string;
   public readonly userData: IUserData;
@@ -130,6 +131,7 @@ export interface IDataService {
   data: Data;
 }
 
+@logConstructor
 export class DataService implements IDataService {
   public readonly version: string;
   public readonly data: Data;

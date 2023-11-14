@@ -107,3 +107,7 @@ export class Token extends ItemWithID implements IToken {
     return `value: ${this.ID} ID: ${this.ID}`;
   }
 }
+
+export function isToken(obj: any): obj is IToken {
+    return obj && typeof obj === 'object' && 'value' in obj;
+  }

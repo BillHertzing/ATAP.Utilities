@@ -199,8 +199,8 @@
     "test": "node --require [tsconfig-paths/register] ./_generated/out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/chai": "^4.3.9",
-    "@types/mocha": "^10.0.3",
+    "@types/chai": "^4.3.10",
+    "@types/mocha": "^10.0.4",
     "@types/node": "^18.18.8",
     "@types/vscode": "^1.83.0",
     "@typescript-eslint/eslint-plugin": "^6.7.3",

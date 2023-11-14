@@ -1,4 +1,3 @@
-
 import * as vscode from 'vscode';
 import { GUID, Int, IDType } from '@IDTypes/index';
 import { DetailedError } from '@ErrorClasses/index';
@@ -17,11 +16,20 @@ import {
   fromYaml,
 } from '@Serializers/index';
 
-import { TagValueType } from '@AssociationsService/index';
-import { CategoryValueType } from '@AssociationsService/index';
-import { AssociationValueType } from '@AssociationsService/index';
-import { QueryContextValueType } from '@QueryContextsService/index';
-export type ItemWithIDValueType = string | number | TagValueType | CategoryValueType | AssociationValueType | QueryContextValueType;
+import { TagValueType, Tag, ITag } from '@AssociationsService/index';
+import { CategoryValueType, Category, ICategory } from '@AssociationsService/index';
+import { AssociationValueType, Association, IAssociation } from '@AssociationsService/index';
+//import { TokenValueType , Token, IToken} from '@TokensService/index';
+import { QueryContextValueType, QueryContext, IQueryContext } from '@QueryContextsService/index';
+
+export type ItemWithIDValueType =
+  | string
+  | number
+  | TagValueType
+  | CategoryValueType
+  | AssociationValueType
+  | QueryContextValueType;
+export type ItemWithIDType = Tag | Category | Association | QueryContext; //| Token | QueryContextValueType;
 
 // Define an  interface for itemWithIDs
 export interface IItemWithID {
@@ -33,11 +41,11 @@ export interface IItemWithID {
   dispose(): void;
 }
 
-// base itemWithID implementation
+// base ItemWithID implementation
 export class ItemWithID implements IItemWithID {
-
+  private message: string = '';
   constructor(public value: ItemWithIDValueType, public ID?: Philote) {
-    this.ID = ID !== undefined ? ID : new Philote(); // returns a Philote with a random GUID string or the next sequential Int available from the ID pool
+    this.ID = ID !== undefined ? ID : new Philote();
   }
 
   static CreateItemWithID(
@@ -45,7 +53,7 @@ export class ItemWithID implements IItemWithID {
     extensionContext: vscode.ExtensionContext,
     callingModule: string,
     initializationStructure?: ISerializationStructure,
-): ItemWithID {
+  ): ItemWithID {
     let _obj: ItemWithID | null;
     if (initializationStructure) {
       try {
@@ -75,22 +83,15 @@ export class ItemWithID implements IItemWithID {
         _obj = new ItemWithID('aStaticItemWithID');
       } catch (e) {
         if (e instanceof Error) {
-          throw new DetailedError(
-            `${callingModule}: create new ItemWithID error }`,
-            e,
-          );
+          throw new DetailedError(`${callingModule}: create new ItemWithID error }`, e);
         } else {
           // ToDo:  investigation to determine what else might happen
-          throw new Error(
-            `${callingModule}: new ItemWithID threw something that was not polymorphus on error`,
-          );
+          throw new Error(`${callingModule}: new ItemWithID threw something that was not polymorphus on error`);
         }
       }
       return _obj;
     }
-
-}
-
+  }
 
   convertTo_json(): string {
     return toJson(this);
@@ -124,6 +125,9 @@ export interface IFindItemByValueResult {
   readonly success: boolean;
   readonly pick: IItemWithID | null;
   readonly errorMessage: string | null;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+  ToString(): string;
 }
 
 // Class implementing the IFindByValueResult interface
@@ -153,6 +157,10 @@ export class FindItemByValueResult implements IFindItemByValueResult {
   convertTo_yaml(): string {
     return toYaml(this);
   }
+  ToString(): string {
+    return `success: ${this.success} pick: ${this.pick?.ToString()} errormessage: ${this.errorMessage?.toString()}`;
+  }
+
 }
 
 export interface IItemWithIDCollection {
@@ -210,7 +218,7 @@ export class ItemWithIDCollection implements IItemWithIDCollection {
   }
 
   ToString(): string {
-    return `numElements: ${this.itemWithIDs.length} ID: ${this.ID}`;
+    return `ItemWithIDCollection: ${this.ID}; numElements: ${this.itemWithIDs.length} `;
   }
 
   dispose(): void {
@@ -221,23 +229,56 @@ export class ItemWithIDCollection implements IItemWithIDCollection {
 
 export interface IItemWithIDsService {
   createItemWithID(value: ItemWithIDValueType, ID?: Philote): ItemWithID;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+  ToString(): string;
   dispose(): void;
 }
 
+
 // ItemWithID Service to keep track of created instances of the base item
 export class ItemWithIDsService {
-  private itemWithIDs: ItemWithID[] = [];
+  private message: string = '';
+  private itemWithIDsCollection: ItemWithIDCollection;
 
-  public createItemWithID(value: ItemWithIDValueType, ID?: Philote): ItemWithID {
+  constructor(private logger: ILogger, private extensionContext: vscode.ExtensionContext) {
+    this.message = 'starting ItemWithIDsService constructor';
+    this.logger.log(this.message, LogLevel.Debug);
+
+    this.itemWithIDsCollection = new ItemWithIDCollection();
+    this.message = 'leaving ItemWithIDsService constructor';
+    this.logger.log(this.message, LogLevel.Debug);
+  }
+
+  public createItemWithIDService(value: ItemWithIDValueType, ID?: Philote): ItemWithID {
     const itemWithID = new ItemWithID(value, ID);
-    this.itemWithIDs.push(itemWithID);
+    this.itemWithIDsCollection.itemWithIDs.push(itemWithID);
     return itemWithID;
   }
 
+  convertTo_json(): string {
+    return toJson(this);
+  }
+
+  static convertFrom_json(json: string): ItemWithIDsService {
+    return fromJson<ItemWithIDsService>(json);
+  }
+
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+
+  static convertFrom_yaml(yaml: string): ItemWithIDsService {
+    return fromYaml<ItemWithIDsService>(yaml);
+  }
+
+  ToString(): string {
+    return `ItemWithIDsService has one itemWithIDsCollection: ${this.itemWithIDsCollection.ToString()} }`;
+  }
   dispose(): void {
-    this.itemWithIDs.forEach((itemWithID) => {
+    this.itemWithIDsCollection.itemWithIDs.forEach((itemWithID) => {
       itemWithID.dispose();
     });
-    this.itemWithIDs = [];
+    this.itemWithIDsCollection = new ItemWithIDCollection();
   }
 }

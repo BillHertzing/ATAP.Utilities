@@ -103,22 +103,73 @@ export interface IQueryContextsService extends IItemWithIDsService {
 export class QueryContextsService extends ItemWithIDsService implements IQueryContextsService {
   private message: string;
 
-  private QueryContextWithIDs: QueryContext[] = [];
+  private queryContextWithIDs: QueryContextCollection ;
 
   constructor(private logger: ILogger, private extensionContext: vscode.ExtensionContext) {
     super();
     this.message = 'starting QueryContextsService constructor';
     this.logger.log(this.message, LogLevel.Debug);
 
-
+    this.queryContextWithIDs = new QueryContextCollection();
     this.message = 'leaving QueryContextsService constructor';
     this.logger.log(this.message, LogLevel.Debug);
   }
+  static CreateQueryContextsService(
+    logger: ILogger,
+    extensionContext: vscode.ExtensionContext,
+    callingModule: string,
+    initializationStructure?: ISerializationStructure,
+  ): QueryContextsService {
+    let _obj: QueryContextsService | null;
+    if (initializationStructure) {
+      try {
+        // ToDo: deserialize based on contents of structure
+        _obj = QueryContextsService.convertFrom_yaml(initializationStructure.value);
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(
+            `${callingModule}: create QueryContextsService from DefaultConfiguration.Development["QueryContextsServiceAsSerializationStructure"] using convertFrom_xxx -> }`,
+            e,
+          );
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(
+            `${callingModule}: create QueryContextsService from DefaultConfiguration.Development["QueryContextsServiceAsSerializationStructure"] using convertFrom_xxx threw something other than a polymorphous Error`,
+          );
+        }
+      }
+      if (_obj === null) {
+        throw new Error(
+          `${callingModule}: create QueryContextsService from DefaultConfiguration.Development["QueryContextsServiceAsSerializationStructure"] using convertFrom_xxx produced a null`,
+        );
+      }
+      return _obj;
+    } else {
+      try {
+        _obj = new QueryContextsService(logger, extensionContext);
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(
+            `${callingModule}: create new QueryContextsService error }`,
+            e,
+          );
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(
+            `${callingModule}: new QueryContextsService threw something that was not polymorphus on error`,
+          );
+        }
+      }
+      return _obj;
+    }
+  }
 
-  public createQueryContext(value: QueryContextValueType, ID?: Philote): QueryContext {
-    const queryContextWithID = new QueryContext(value, ID);
-    this.QueryContextWithIDs.push(queryContextWithID);
-    return queryContextWithID;
+  static convertFrom_json(json: string): QueryContextsService {
+    return fromJson<QueryContextsService>(json);
+  }
+
+  static convertFrom_yaml(yaml: string): QueryContextsService {
+    return fromYaml<QueryContextsService>(yaml);
   }
 
   dispose(): void {

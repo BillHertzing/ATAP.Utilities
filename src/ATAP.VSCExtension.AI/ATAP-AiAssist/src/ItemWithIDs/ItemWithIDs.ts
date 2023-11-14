@@ -65,6 +65,51 @@ export class ItemWithID<T extends ItemWithIDTypes> implements IItemWithID<T> {
     this.value = value;
     this.ID = ID ?? new Philote();
   }
+  static CreateItemWithID(
+    logger: ILogger,
+    extensionContext: vscode.ExtensionContext,
+    callingModule: string,
+    initializationStructure?: ISerializationStructure,
+  ): ItemWithIDTypes {
+    let _obj: ItemWithIDTypes | null;
+    if (initializationStructure) {
+      try {
+        // ToDo: deserialize based on contents of structure
+        _obj = ItemWithID.convertFrom_json(initializationStructure.value);
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(
+            `${callingModule}: create ItemWithID from initializationStructure using convertFrom_xxx -> }`,
+            e,
+          );
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(
+            `${callingModule}: create ItemWithID from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
+          );
+        }
+      }
+      if (_obj === null) {
+        throw new Error(
+          `${callingModule}: create ItemWithID from initializationStructureusing convertFrom_xxx produced a null`,
+        );
+      }
+      return _obj;
+    } else {
+      try {
+        _obj = new ItemWithID('aStaticItemWithID');
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(`${callingModule}: create new ItemWithID error }`, e);
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(`${callingModule}: new ItemWithID threw something that was not polymorphus on error`);
+        }
+      }
+      return _obj;
+    }
+  }
+
 
   toString(): string {
     return `ItemWithID: ${JSON.stringify(this.value)}`;

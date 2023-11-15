@@ -1,62 +1,74 @@
 import { GUID, Int, IDType } from '@IDTypes/index';
 import { Philote, IPhilote } from '@Philote/index';
 import {
-  ItemWithID,
+  ItemWithIDValueType,
+  ItemWithIDTypes,
+  MapTypeToValueType,
+  YamlData,
+  fromYamlForItemWithID,
   IItemWithID,
-  ItemWithIDsService,
-  IItemWithIDsService,
-  ItemWithIDCollection,
-  IItemWithIDCollection,
-} from '@ItemWithIDsService/index';
-
-import {
+  ItemWithID,
+  ICollection,
+  Collection,
+  IFactory,
+  Factory,
+  ICollectionFactory,
+  CollectionFactory,
   TagValueType,
-  Tag,
   ITag,
-  TagCollection,
+  Tag,
   ITagCollection,
-  TagsService,
-  ITagsService,
-} from '@AssociationsService/index';
-import {
+  TagCollection,
   CategoryValueType,
-  Category,
   ICategory,
-  CategoryCollection,
+  Category,
   ICategoryCollection,
-  CategorysService,
-  ICategorysService,
-} from '@AssociationsService/index';
-
+  CategoryCollection,
+  TokenValueType,
+  IToken,
+  Token,
+  ITokenCollection,
+  TokenCollection,
+  AssociationValueType,
+  IAssociation,
+  Association,
+  IAssociationCollection,
+  AssociationCollection,
+  QueryContextValueType,
+  IQueryContext,
+  QueryContext,
+  IQueryContextCollection,
+  QueryContextCollection,
+} from '@ItemWithIDs/index';
 
 // Define a type for known singular type constructors.
 // This interface ensures any type with a string key has a constructor taking a value and an ID and returns an ItemWithID
-interface ITypeSingularConstructors {
-  [key: string]: new (value: string, ID: Philote) => ItemWithID;
-}
+// interface ITypeSingularConstructors {
+//   [key: string]: new (value: string, ID: Philote) => ItemWithID;
+// }
 
 // Here is our type map with the constructors of our known singular types.
-let typeSingularConstructorsGUID: ITypeSingularConstructors = {
-  Tag: Tag,
-  Category: Category,
-};
+// let typeSingularConstructorsGUID: ITypeSingularConstructors = {
+//   Tag: Tag,
+//   Category: Category,
+// };
 
 // Define a type for known collection type constructors.
 // This interface ensures any type with a string key has a constructor taking a name and an ID and returns an ItemWithIDCollection
-interface ITypeCollectionConstructors {
-  [key: string]: new (ID: Philote, items: ItemWithID[]) => ItemWithIDCollection;
-}
+// interface ITypeCollectionConstructors {
+//   [key: string]: new (ID: Philote, items: ItemWithID[]) => ItemWithIDCollection;
+// }
 
 // Here is our type map with the constructors of our known Collection types.
-let typeCollectionConstructorsGUID: ITypeCollectionConstructors = {
-  TagCollection: TagCollection,
-  CategoryCollection: CategoryCollection,
-};
+// let typeCollectionConstructorsGUID: ITypeCollectionConstructors = {
+//   TagCollection: TagCollection,
+//   CategoryCollection: CategoryCollection,
+// };
 
 // Define the TypeMap with all the possible derivatives
-interface ITypeMap {
-  [key: string]: ITypeSingularConstructors | ITypeCollectionConstructors;
-}
+// interface ITypeMap {
+//   [key: string]: ITypeSingularConstructors | ITypeCollectionConstructors;
+// }
 
 // Create a type map instance that associates string keys with class types for a specific T
 // let typeMapGUID: ITypeMap = {

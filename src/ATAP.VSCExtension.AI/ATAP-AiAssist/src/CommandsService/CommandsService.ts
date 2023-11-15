@@ -5,7 +5,7 @@ import { startCommand } from './startCommand';
 import { showVSCEnvironment } from './showVSCEnvironment';
 import { sendFilesToAPI } from './sendFilesToAPI';
 import { showQuickPickExample } from './showQuickPickExample';
-import { quickPickFromSettings } from './quickPickFromSettings';
+// import { quickPickFromSettings } from './quickPickFromSettings';
 import { copyToSubmit } from './copyToSubmit';
 
 export class CommandsService {
@@ -77,31 +77,31 @@ export class CommandsService {
       }),
     );
 
-    this.message = 'registering quickPickFromSettings';
-    this.logger.log(this.message, LogLevel.Debug);
-    this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.quickPickFromSettings', async () => {
-        let message: string = 'starting commandID quickPickFromSettings';
-        this.logger.log(message, LogLevel.Debug);
-        try {
-          // ToDo: how to pass the string for 'setting' to the extension command
-          // ToDo: the extensionId.setting that needs / contains the QuickPick setting
-          let setting: string = 'CategoryCollection';
-          const result = await quickPickFromSettings(this.logger, setting);
-          message = `result.success = ${result.success}, result `;
-          this.logger.log(message, LogLevel.Debug);
-        } catch (e) {
-          if (e instanceof Error) {
-            // Report the error
-            message = e.message;
-          } else {
-            // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
-            message = `An unknown error occurred during the quickPickFromSettings call, and the instance of (e) returned is of type ${typeof e}`;
-          }
-          this.logger.log(message, LogLevel.Error);
-        }
-      }),
-    );
+    // this.message = 'registering quickPickFromSettings';
+    // this.logger.log(this.message, LogLevel.Debug);
+    // this.disposables.push(
+    //   vscode.commands.registerCommand('atap-aiassist.quickPickFromSettings', async () => {
+    //     let message: string = 'starting commandID quickPickFromSettings';
+    //     this.logger.log(message, LogLevel.Debug);
+    //     try {
+    //       // ToDo: how to pass the string for 'setting' to the extension command
+    //       // ToDo: the extensionId.setting that needs / contains the QuickPick setting
+    //       let setting: string = 'CategoryCollection';
+    //       const result = await quickPickFromSettings(this.logger, setting);
+    //       message = `result.success = ${result.success}, result `;
+    //       this.logger.log(message, LogLevel.Debug);
+    //     } catch (e) {
+    //       if (e instanceof Error) {
+    //         // Report the error
+    //         message = e.message;
+    //       } else {
+    //         // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
+    //         message = `An unknown error occurred during the quickPickFromSettings call, and the instance of (e) returned is of type ${typeof e}`;
+    //       }
+    //       this.logger.log(message, LogLevel.Error);
+    //     }
+    //   }),
+    // );
 
     // this.message = 'registering copyToSubmit';
     // this.logger.log(this.message, LogLevel.Debug);

@@ -2,43 +2,44 @@ import { LogLevel, ILogger } from '@Logger/index';
 import { GUID, Int, IDType } from '@IDTypes/index';
 import {
   ItemWithIDValueType,
-  ItemWithID,
+  ItemWithIDTypes,
+  MapTypeToValueType,
+  YamlData,
+  fromYamlForItemWithID,
   IItemWithID,
-  ItemWithIDCollection,
-  IItemWithIDCollection,
-  ItemWithIDsService,
-  IItemWithIDsService,
-} from '@ItemWithIDsService/index';
-
-import {
+  ItemWithID,
+  ICollection,
+  Collection,
+  IFactory,
+  Factory,
+  ICollectionFactory,
+  CollectionFactory,
   TagValueType,
-  Tag,
   ITag,
-  TagCollection,
+  Tag,
   ITagCollection,
-  TagsService,
-  ITagsService,
-} from '@AssociationsService/index';
-
-import {
+  TagCollection,
   CategoryValueType,
-  Category,
   ICategory,
-  CategoryCollection,
+  Category,
   ICategoryCollection,
-  CategorysService,
-  ICategorysService,
-} from '@AssociationsService/index';
-
-import {
+  CategoryCollection,
+  TokenValueType,
+  IToken,
+  Token,
+  ITokenCollection,
+  TokenCollection,
   AssociationValueType,
-  Association,
   IAssociation,
-  AssociationCollection,
+  Association,
   IAssociationCollection,
-  AssociationsService,
-  IAssociationsService,
-} from '@AssociationsService/index';
+  AssociationCollection,
+  QueryContextValueType,
+  IQueryContext,
+  QueryContext,
+  IQueryContextCollection,
+  QueryContextCollection,
+} from '@ItemWithIDs/index';
 
 
 // import { createTypeInstance } from '@TypeMap/index';
@@ -50,7 +51,7 @@ export async function quickPickFromSettings(
   setting: string,
 ): Promise<{
   success: boolean;
-  pick: IItemWithIDCollection | IItemWithID | null;
+  pick: ICollection | IItemWithID | null;
   errorMessage: string | null;
 }> {
   let message: string = `starting commandID quickPickFromSettings, setting is ${setting}`;

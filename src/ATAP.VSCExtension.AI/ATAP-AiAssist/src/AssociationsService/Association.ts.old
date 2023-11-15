@@ -10,32 +10,47 @@ import {
   fromYaml,
 } from '@Serializers/index';
 
+
 import {
-  ItemWithID,
+  ItemWithIDValueType,
+  ItemWithIDTypes,
+  MapTypeToValueType,
+  YamlData,
+  fromYamlForItemWithID,
   IItemWithID,
-  ItemWithIDsService,
-  IItemWithIDsService,
-  ItemWithIDCollection,
-  IItemWithIDCollection,
-} from '@ItemWithIDsService/index';
-import {
+  ItemWithID,
+  ICollection,
+  Collection,
+  IFactory,
+  Factory,
+  ICollectionFactory,
+  CollectionFactory,
   TagValueType,
-  Tag,
   ITag,
-  TagCollection,
+  Tag,
   ITagCollection,
-  TagsService,
-  ITagsService,
-} from '@AssociationsService/index';
-import {
+  TagCollection,
   CategoryValueType,
-  Category,
   ICategory,
-  CategoryCollection,
+  Category,
   ICategoryCollection,
-  CategorysService,
-  ICategorysService,
-} from '@AssociationsService/index';
+  CategoryCollection,
+  TokenValueType,
+  IToken,
+  Token,
+  ITokenCollection,
+  TokenCollection,
+  AssociationValueType,
+  IAssociation,
+  Association,
+  IAssociationCollection,
+  AssociationCollection,
+  QueryContextValueType,
+  IQueryContext,
+  QueryContext,
+  IQueryContextCollection,
+  QueryContextCollection,
+} from '@ItemWithIDs/index';
 
 export type AssociationValueType = {
   tagCollection: ITagCollection;
@@ -43,9 +58,7 @@ export type AssociationValueType = {
 };
 
 // Define an interface for association that extends IItemWithID
-export interface IAssociation extends IItemWithID {
-
-}
+export interface IAssociation extends IItemWithID {}
 
 // Association class extending ItemWithID
 export class Association extends ItemWithID implements IAssociation {
@@ -110,7 +123,6 @@ export class AssociationsService extends ItemWithIDsService implements IAssociat
   static convertFrom_yaml(yaml: string): AssociationsService {
     return fromYaml<AssociationsService>(yaml);
   }
-
 
   dispose(): void {
     this.associationWithIDs.forEach((associationWithID) => {

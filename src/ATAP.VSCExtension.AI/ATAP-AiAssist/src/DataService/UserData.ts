@@ -17,53 +17,44 @@ import {
 
 import {
   ItemWithIDValueType,
-  ItemWithID,
+  ItemWithIDTypes,
+  MapTypeToValueType,
+  YamlData,
+  fromYamlForItemWithID,
   IItemWithID,
-  ItemWithIDCollection,
-  IItemWithIDCollection,
-  ItemWithIDsService,
-  IItemWithIDsService,
-} from '@ItemWithIDsService/index';
-
-import {
+  ItemWithID,
+  ICollection,
+  Collection,
+  IFactory,
+  Factory,
+  ICollectionFactory,
+  CollectionFactory,
   TagValueType,
-  Tag,
   ITag,
-  TagCollection,
+  Tag,
   ITagCollection,
-  TagsService,
-  ITagsService,
-} from '@AssociationsService/index';
-
-import {
+  TagCollection,
   CategoryValueType,
-  Category,
   ICategory,
-  CategoryCollection,
+  Category,
   ICategoryCollection,
-  CategorysService,
-  ICategorysService,
-} from '@AssociationsService/index';
-
-import {
+  CategoryCollection,
+  TokenValueType,
+  IToken,
+  Token,
+  ITokenCollection,
+  TokenCollection,
   AssociationValueType,
-  Association,
   IAssociation,
-  AssociationCollection,
+  Association,
   IAssociationCollection,
-  AssociationsService,
-  IAssociationsService,
-} from '@AssociationsService/index';
-
-import {
+  AssociationCollection,
   QueryContextValueType,
-  QueryContext,
   IQueryContext,
-  QueryContextCollection,
+  QueryContext,
   IQueryContextCollection,
-  QueryContextsService,
-  IQueryContextsService,
-} from '@QueryContextsService/index';
+  QueryContextCollection,
+} from '@ItemWithIDs/index';
 
 import { GlobalStateCache } from './GlobalStateCache';
 
@@ -75,11 +66,24 @@ export interface IUserData {
   readonly tagCollection: ITagCollection;
 }
 
+
 export class UserData implements IUserData {
-  //readonly associationCollection: IAssociationCollection;
-  //readonly categoryCollection: ICategoryCollection;
-  //readonly queryContextCollection: IQueryContextCollection;
-  readonly tagCollection: ITagCollection;
+  private tagFactory: IFactory<Tag>;
+  private tagCollectionFactory: ICollectionFactory<Tag>;
+  private categoryFactory: IFactory<Category>;
+  private categoryCollectionFactory: ICollectionFactory<Category>;
+  private tokenFactory: IFactory<Token>;
+  private tokenCollectionFactory: ICollectionFactory<Token>;
+  private associationFactory: IFactory<Association>;
+  private associationCollectionFactory: ICollectionFactory<Association>;
+  private querycontextFactory: IFactory<QueryContext>;
+  private querycontextCollectionFactory: ICollectionFactory<QueryContext>;
+
+   readonly tagCollection: ITagCollection;
+  // readonly categoryCollection: ICategoryCollection;
+  // readonly associationCollection: IAssociationCollection;
+  // readonly tokenCollection: ITokenCollection;
+  // readonly querycontextCollection: IQueryContextCollection;
 
   constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
   // constructor(
@@ -91,21 +95,36 @@ export class UserData implements IUserData {
   constructor(
     private logger: ILogger,
     private extensionContext: vscode.ExtensionContext,
-    associationCollection?: ICategoryCollection,
-    categoryCollection?: ICategoryCollection,
-    queryContextCollection?: IQueryContextCollection,
     tagCollection?: ITagCollection,
+    categoryCollection?: ICategoryCollection,
+    associationCollection?: ICategoryCollection,
+    tokenCollection?: ITokenCollection,
+    queryContextCollection?: IQueryContextCollection,
     initializationStructure?: ISerializationStructure,
   ) {
     // Initialize the global cache so we can populate it as we create the data structure
     const globalStateCache = new GlobalStateCache(extensionContext);
+    this.tagFactory = new Factory<Tag>(logger, extensionContext, Tag);
+    this.tagCollectionFactory = new CollectionFactory<Tag>(logger, extensionContext);
+    this.categoryFactory = new Factory<Category>(logger, extensionContext, Category);
+    this.categoryCollectionFactory = new CollectionFactory<Category>(logger, extensionContext);
+    this.tokenFactory = new Factory<Token>(logger, extensionContext, Token);
+    this.tokenCollectionFactory = new CollectionFactory<Token>(logger, extensionContext);
+    this.associationFactory = new Factory<Association>(logger, extensionContext, Association);
+    this.associationCollectionFactory = new CollectionFactory<Association>(logger, extensionContext);
+    this.querycontextFactory = new Factory<QueryContext>(logger, extensionContext, QueryContext);
+    this.querycontextCollectionFactory = new CollectionFactory<QueryContext>(logger, extensionContext);
 
     // if (initializationStructure !== undefined) {
     // } else {
     //   //this.associationCollection = new AssociationCollection();
     //   //this.categoryCollection = new CategoryCollection();
     //   //this.queryContextCollection = new QueryContextCollection();
-      this.tagCollection = new TagCollection();
+    this.tagCollection = this.tagCollectionFactory.createCollection();
+    // this.categoryCollection = this.categoryCollectionFactory.createCollection();
+    // this.associationCollection = this.asociationCollectionFactory.createCollection();
+    // this.tokenCollection = this.tokenCollectionFactory.createCollection();
+    // this.querycontextCollection = this.querycontextCollectionFactory.createCollection();
     // }
   }
 }

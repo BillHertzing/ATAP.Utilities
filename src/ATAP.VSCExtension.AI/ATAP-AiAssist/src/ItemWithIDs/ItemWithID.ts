@@ -18,6 +18,11 @@ import {
 
 import { isDeepEqual } from '@Utilities/index';
 
+export type StringValueType = string;
+export type TagValueType = string;
+export type CategoryValueType = string;
+export type TokenValueType = string;
+
 export type ItemWithIDValueType =
   | TagValueType
   | CategoryValueType
@@ -65,51 +70,51 @@ export class ItemWithID<T extends ItemWithIDTypes> implements IItemWithID<T> {
     this.value = value;
     this.ID = ID ?? new Philote();
   }
-  static CreateItemWithID(
-    logger: ILogger,
-    extensionContext: vscode.ExtensionContext,
-    callingModule: string,
-    initializationStructure?: ISerializationStructure,
-  ): ItemWithIDTypes {
-    let _obj: ItemWithIDTypes | null;
-    if (initializationStructure) {
-      try {
-        // ToDo: deserialize based on contents of structure
-        _obj = ItemWithID.convertFrom_json(initializationStructure.value);
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(
-            `${callingModule}: create ItemWithID from initializationStructure using convertFrom_xxx -> }`,
-            e,
-          );
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(
-            `${callingModule}: create ItemWithID from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
-          );
-        }
-      }
-      if (_obj === null) {
-        throw new Error(
-          `${callingModule}: create ItemWithID from initializationStructureusing convertFrom_xxx produced a null`,
-        );
-      }
-      return _obj;
-    } else {
-      try {
-        _obj = new ItemWithID('aStaticItemWithID');
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(`${callingModule}: create new ItemWithID error }`, e);
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(`${callingModule}: new ItemWithID threw something that was not polymorphus on error`);
-        }
-      }
-      return _obj;
-    }
-  }
 
+  // static CreateItemWithID(
+  //   logger: ILogger,
+  //   extensionContext: vscode.ExtensionContext,
+  //   callingModule: string,
+  //   initializationStructure?: ISerializationStructure,
+  // ): ItemWithIDTypes {
+  //   let _obj: ItemWithIDTypes | null;
+  //   if (initializationStructure) {
+  //     try {
+  //       // ToDo: deserialize based on contents of structure
+  //       _obj = ItemWithID.convertFrom_json(initializationStructure.value);
+  //     } catch (e) {
+  //       if (e instanceof Error) {
+  //         throw new DetailedError(
+  //           `${callingModule}: create ItemWithID from initializationStructure using convertFrom_xxx -> }`,
+  //           e,
+  //         );
+  //       } else {
+  //         // ToDo:  investigation to determine what else might happen
+  //         throw new Error(
+  //           `${callingModule}: create ItemWithID from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
+  //         );
+  //       }
+  //     }
+  //     if (_obj === null) {
+  //       throw new Error(
+  //         `${callingModule}: create ItemWithID from initializationStructureusing convertFrom_xxx produced a null`,
+  //       );
+  //     }
+  //     return _obj;
+  //   } else {
+  //     try {
+  //       _obj = new ItemWithID('aStaticItemWithID');
+  //     } catch (e) {
+  //       if (e instanceof Error) {
+  //         throw new DetailedError(`${callingModule}: create new ItemWithID error }`, e);
+  //       } else {
+  //         // ToDo:  investigation to determine what else might happen
+  //         throw new Error(`${callingModule}: new ItemWithID threw something that was not polymorphus on error`);
+  //       }
+  //     }
+  //     return _obj;
+  //   }
+  // }
 
   toString(): string {
     return `ItemWithID: ${JSON.stringify(this.value)}`;
@@ -243,7 +248,7 @@ export class CollectionFactory<T extends ItemWithIDTypes> implements ICollection
   }
 }
 
-export type TagValueType = string;
+
 
 export interface ITag extends IItemWithID<Tag> {
   toString(): string;
@@ -283,7 +288,7 @@ export class TagCollection extends Collection<Tag> implements ITagCollection {
   // }
 }
 
-export type CategoryValueType = string;
+
 
 export interface ICategory extends IItemWithID<Category> {
   toString(): string;
@@ -323,7 +328,6 @@ export class CategoryCollection extends Collection<Category> implements ICategor
   // }
 }
 
-export type TokenValueType = string;
 
 export interface IToken extends IItemWithID<Token> {
   toString(): string;
@@ -446,28 +450,3 @@ export class QueryContextCollection extends Collection<QueryContext> implements 
   // }
 }
 
-class Data {
-  private tagFactory: IFactory<Tag>;
-  private tagCollectionFactory: ICollectionFactory<Tag>;
-  private categoryFactory: IFactory<Category>;
-  private categoryCollectionFactory: ICollectionFactory<Category>;
-  private tokenFactory: IFactory<Token>;
-  private tokenCollectionFactory: ICollectionFactory<Token>;
-  private associationFactory: IFactory<Association>;
-  private associationCollectionFactory: ICollectionFactory<Association>;
-  private querycontextFactory: IFactory<QueryContext>;
-  private querycontextCollectionFactory: ICollectionFactory<QueryContext>;
-
-  constructor(logger: ILogger, context: vscode.ExtensionContext) {
-    this.tagFactory = new Factory<Tag>(logger, context, Tag);
-    this.tagCollectionFactory = new CollectionFactory<Tag>(logger, context);
-    this.categoryFactory = new Factory<Category>(logger, context, Category);
-    this.categoryCollectionFactory = new CollectionFactory<Category>(logger, context);
-    this.tokenFactory = new Factory<Token>(logger, context, Token);
-    this.tokenCollectionFactory = new CollectionFactory<Token>(logger, context);
-    this.associationFactory = new Factory<Association>(logger, context, Association);
-    this.associationCollectionFactory = new CollectionFactory<Association>(logger, context);
-    this.querycontextFactory = new Factory<QueryContext>(logger, context, QueryContext);
-    this.querycontextCollectionFactory = new CollectionFactory<QueryContext>(logger, context);
-  }
-}

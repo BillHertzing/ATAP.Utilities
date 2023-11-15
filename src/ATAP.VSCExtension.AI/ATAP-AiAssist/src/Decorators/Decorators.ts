@@ -12,6 +12,7 @@ export function logExecutionTime(target: any, propertyKey: string, descriptor: P
     const finish = performance.now(); // End timer
 
     console.log(`${propertyKey} executed in ${finish - start} milliseconds`);
+    // Logger.staticLog(`staticLogger: ${propertyKey} executed in ${finish - start} milliseconds`, LogLevel.Debug); // ToDo: theser is a bug in the staticLogger logic
     return result; // Return the original method's return value
   };
 

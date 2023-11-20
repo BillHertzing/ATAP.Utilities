@@ -23,7 +23,7 @@ import { ExternalDataVetting } from './ExternalDataVetting';
 export interface ISecurityService {
  //version: string;
 }
-//@logConstructor
+@logConstructor
 export class SecurityService implements ISecurityService {
   //version: string = DefaultConfiguration.Production.version;
   private message: string;

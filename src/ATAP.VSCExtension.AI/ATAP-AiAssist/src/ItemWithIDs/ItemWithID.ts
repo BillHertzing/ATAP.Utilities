@@ -19,9 +19,9 @@ import {
 import { isDeepEqual } from '@Utilities/index';
 
 export type StringValueType = string;
-export type TagValueType = string;
-export type CategoryValueType = string;
-export type TokenValueType = string;
+export type TagValueType = StringValueType;
+export type CategoryValueType = StringValueType;
+export type TokenValueType = StringValueType;
 
 export type ItemWithIDValueType =
   | TagValueType
@@ -62,11 +62,14 @@ export interface IItemWithID<T extends ItemWithIDTypes> {
 }
 
 // Define the ItemWithID generic class
+
 export class ItemWithID<T extends ItemWithIDTypes> implements IItemWithID<T> {
   readonly value: MapTypeToValueType<T>;
   readonly ID: IPhilote;
 
   constructor(value: MapTypeToValueType<T>, ID?: IPhilote) {
+    // ToDo: refactor the types sdo this error doesn't appear
+    // @ts-ignore
     this.value = value;
     this.ID = ID ?? new Philote();
   }
@@ -85,19 +88,19 @@ export class ItemWithID<T extends ItemWithIDTypes> implements IItemWithID<T> {
   //     } catch (e) {
   //       if (e instanceof Error) {
   //         throw new DetailedError(
-  //           `${callingModule}: create ItemWithID from initializationStructure using convertFrom_xxx -> }`,
+  //           `${callingModule}: CreateItemWithID from initializationStructure using convertFrom_xxx -> }`,
   //           e,
   //         );
   //       } else {
   //         // ToDo:  investigation to determine what else might happen
   //         throw new Error(
-  //           `${callingModule}: create ItemWithID from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
+  //           `${callingModule}: CreateItemWithID from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
   //         );
   //       }
   //     }
   //     if (_obj === null) {
   //       throw new Error(
-  //         `${callingModule}: create ItemWithID from initializationStructureusing convertFrom_xxx produced a null`,
+  //         `${callingModule}: CreateItemWithID from initializationStructureusing convertFrom_xxx produced a null`,
   //       );
   //     }
   //     return _obj;
@@ -147,7 +150,7 @@ export interface ICollection<T extends ItemWithIDTypes> {
   convertTo_yaml(): string;
   findItemWithIDByValue(value: MapTypeToValueType<T>): Promise<ItemWithID<T> | undefined>;
 }
-
+@logConstructor
 export class Collection<T extends ItemWithIDTypes> implements ICollection<T> {
   ID: Philote;
   value: ItemWithID<T>[];
@@ -171,6 +174,8 @@ export class Collection<T extends ItemWithIDTypes> implements ICollection<T> {
 
   async findItemWithIDByValue(valueToFind: MapTypeToValueType<T>): Promise<ItemWithID<T> | undefined> {
     return new Promise((resolve) => {
+      // ToDO: discovere why this is genreating an erroro
+      // @ts-ignore
       const foundItem = this.value.find((element: ItemWithID<T>) => {
         if (typeof element.value === 'object' && typeof valueToFind === 'object') {
           return isDeepEqual(element.value, valueToFind);
@@ -187,6 +192,7 @@ export interface IFactory<T extends ItemWithIDTypes> {
   dispose(instance: T): void;
 }
 
+@logConstructor
 export class Factory<T extends ItemWithIDTypes> implements IFactory<T> {
   private logger: ILogger;
   private context: vscode.ExtensionContext;
@@ -221,6 +227,7 @@ export interface ICollectionFactory<T extends ItemWithIDTypes> {
   disposeCollection(collection: Collection<T>): void;
 }
 
+@logConstructor
 export class CollectionFactory<T extends ItemWithIDTypes> implements ICollectionFactory<T> {
   private logger: ILogger;
   private context: vscode.ExtensionContext;
@@ -248,14 +255,13 @@ export class CollectionFactory<T extends ItemWithIDTypes> implements ICollection
   }
 }
 
-
-
 export interface ITag extends IItemWithID<Tag> {
   toString(): string;
 }
 
+@logConstructor
 export class Tag extends ItemWithID<Tag> implements ITag {
-  constructor(value: string, ID?: IPhilote) {
+  constructor(value: StringValueType, ID?: IPhilote) {
     super(value, ID);
   }
 
@@ -265,7 +271,8 @@ export class Tag extends ItemWithID<Tag> implements ITag {
   }
 
   // Static method to create Tag instances
-  static create(value: string): Tag {
+  @logExecutionTime
+  static create(value: StringValueType): Tag {
     return new Tag(value);
   }
 }
@@ -276,6 +283,7 @@ export interface ITagCollection extends ICollection<Tag> {
   // findTagBySomeCriteria(criteria: any): Tag | undefined;
 }
 
+@logConstructor
 export class TagCollection extends Collection<Tag> implements ITagCollection {
   constructor(value: ItemWithID<Tag>[], ID?: Philote) {
     super(value, ID);
@@ -288,12 +296,11 @@ export class TagCollection extends Collection<Tag> implements ITagCollection {
   // }
 }
 
-
-
 export interface ICategory extends IItemWithID<Category> {
   toString(): string;
 }
 
+@logConstructor
 export class Category extends ItemWithID<Category> implements ICategory {
   constructor(value: string, ID?: IPhilote) {
     super(value, ID);
@@ -310,12 +317,14 @@ export class Category extends ItemWithID<Category> implements ICategory {
   }
 }
 
+
 export interface ICategoryCollection extends ICollection<Category> {
   // Add any additional methods specific to a collection of Categorys, if necessary
   // Example:
   // findCategoryBySomeCriteria(criteria: any): Category | undefined;
 }
 
+@logConstructor
 export class CategoryCollection extends Collection<Category> implements ICategoryCollection {
   constructor(value: ItemWithID<Category>[], ID?: Philote) {
     super(value, ID);
@@ -328,11 +337,11 @@ export class CategoryCollection extends Collection<Category> implements ICategor
   // }
 }
 
-
 export interface IToken extends IItemWithID<Token> {
   toString(): string;
 }
 
+@logConstructor
 export class Token extends ItemWithID<Token> implements IToken {
   constructor(value: string, ID?: IPhilote) {
     super(value, ID);
@@ -355,6 +364,7 @@ export interface ITokenCollection extends ICollection<Token> {
   // findTokenBySomeCriteria(criteria: any): Token | undefined;
 }
 
+@logConstructor
 export class TokenCollection extends Collection<Token> implements ITokenCollection {
   constructor(value: ItemWithID<Token>[], ID?: Philote) {
     super(value, ID);
@@ -376,6 +386,7 @@ export interface IAssociation extends IItemWithID<Association> {
   toString(): string;
 }
 
+@logConstructor
 export class Association extends ItemWithID<Association> implements IAssociation {
   constructor(value: string, ID?: IPhilote) {
     super(value, ID);
@@ -398,6 +409,7 @@ export interface IAssociationCollection extends ICollection<Association> {
   // findAssociationBySomeCriteria(criteria: any): Association | undefined;
 }
 
+@logConstructor
 export class AssociationCollection extends Collection<Association> implements IAssociationCollection {
   constructor(value: ItemWithID<Association>[], ID?: Philote) {
     super(value, ID);
@@ -416,6 +428,7 @@ export interface IQueryContext extends IItemWithID<QueryContext> {
   toString(): string;
 }
 
+@logConstructor
 export class QueryContext extends ItemWithID<QueryContext> implements IQueryContext {
   constructor(value: string, ID?: IPhilote) {
     super(value, ID);
@@ -438,6 +451,7 @@ export interface IQueryContextCollection extends ICollection<QueryContext> {
   // findQueryContextBySomeCriteria(criteria: any): QueryContext | undefined;
 }
 
+@logConstructor
 export class QueryContextCollection extends Collection<QueryContext> implements IQueryContextCollection {
   constructor(value: ItemWithID<QueryContext>[], ID?: Philote) {
     super(value, ID);
@@ -449,4 +463,3 @@ export class QueryContextCollection extends Collection<QueryContext> implements 
   //   // Implementation specific to finding a querycontext based on the given criteria
   // }
 }
-

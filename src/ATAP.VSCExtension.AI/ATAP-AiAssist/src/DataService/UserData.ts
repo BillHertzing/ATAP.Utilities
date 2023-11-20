@@ -57,19 +57,20 @@ import {
 } from '@ItemWithIDs/index';
 
 import { GlobalStateCache } from './GlobalStateCache';
+import { glob } from 'glob';
 
 // This defines what a UserData instance looks like
 export interface IUserData {
   //readonly associationCollection: IAssociationCollection;
   //readonly categoryCollection: ICategoryCollection;
   //readonly queryContextCollection: IQueryContextCollection;
-  readonly tagCollection: ITagCollection;
+  // readonly tagCollection: ITagCollection;
 }
 
-
+@logConstructor
 export class UserData implements IUserData {
   private tagFactory: IFactory<Tag>;
-  private tagCollectionFactory: ICollectionFactory<Tag>;
+  // private tagCollectionFactory: ICollectionFactory<Tag>;
   private categoryFactory: IFactory<Category>;
   private categoryCollectionFactory: ICollectionFactory<Category>;
   private tokenFactory: IFactory<Token>;
@@ -79,7 +80,7 @@ export class UserData implements IUserData {
   private querycontextFactory: IFactory<QueryContext>;
   private querycontextCollectionFactory: ICollectionFactory<QueryContext>;
 
-   readonly tagCollection: ITagCollection;
+  //readonly tagCollection: ITagCollection;
   // readonly categoryCollection: ICategoryCollection;
   // readonly associationCollection: IAssociationCollection;
   // readonly tokenCollection: ITokenCollection;
@@ -104,8 +105,23 @@ export class UserData implements IUserData {
   ) {
     // Initialize the global cache so we can populate it as we create the data structure
     const globalStateCache = new GlobalStateCache(extensionContext);
-    this.tagFactory = new Factory<Tag>(logger, extensionContext, Tag);
-    this.tagCollectionFactory = new CollectionFactory<Tag>(logger, extensionContext);
+
+    //
+
+    let tagFactory = globalStateCache.getValue<Factory<Tag>>('tagFactorySingleton');
+    if (!tagFactory) {
+      tagFactory = new Factory<Tag>(logger, extensionContext, Tag);
+      globalStateCache.setValue<Factory<Tag>>('tagFactorySingleton', tagFactory);
+    }
+    this.tagFactory = tagFactory;
+
+    // let tagCollectionFactory = globalStateCache.getValue<CollectionFactory<Tag>>('tagCollectionFactorySingleton');
+    // if (!tagCollectionFactory) {
+    //   tagCollectionFactory = new CollectionFactory<Tag>(logger, extensionContext);
+    //   globalStateCache.setValue<CollectionFactory<Tag>>('tagCollectionFactorySingleton', tagCollectionFactory);
+    // }
+    // this.tagCollectionFactory = tagCollectionFactory;
+
     this.categoryFactory = new Factory<Category>(logger, extensionContext, Category);
     this.categoryCollectionFactory = new CollectionFactory<Category>(logger, extensionContext);
     this.tokenFactory = new Factory<Token>(logger, extensionContext, Token);
@@ -120,11 +136,15 @@ export class UserData implements IUserData {
     //   //this.associationCollection = new AssociationCollection();
     //   //this.categoryCollection = new CategoryCollection();
     //   //this.queryContextCollection = new QueryContextCollection();
-    this.tagCollection = this.tagCollectionFactory.createCollection();
+    // this.tagCollection = this.tagCollectionFactory.createCollection();
     // this.categoryCollection = this.categoryCollectionFactory.createCollection();
     // this.associationCollection = this.asociationCollectionFactory.createCollection();
     // this.tokenCollection = this.tokenCollectionFactory.createCollection();
     // this.querycontextCollection = this.querycontextCollectionFactory.createCollection();
     // }
+
+    // logger.log(`this.tagCollection length: ${this.tagCollection.value.length}` ,LogLevel.Info);
+    // logger.log(`this.tagCollection keys: ${this.tagCollection.value.keys}` ,LogLevel.Info);
+    // logger.log(`this.tagCollection keys: ${this.tagCollection.value.toString()}` ,LogLevel.Info);
   }
 }

@@ -156,16 +156,16 @@ export class DataService implements IDataService {
   constructor(
     private logger: ILogger,
     private extensionContext: vscode.ExtensionContext,
-    dataInitializationStructure?: ISerializationStructure,
+    //dataInitializationStructure?: ISerializationStructure,
   ) {
     this.message = 'starting DataService constructor';
     this.logger.log(this.message, LogLevel.Debug);
     // capture any errors and report them upward
     try {
-      this.data =
-        dataInitializationStructure !== undefined && dataInitializationStructure.value.length !== 0
-          ? new Data(this.logger, this.extensionContext)
-          : new Data(this.logger, this.extensionContext);
+      this.data =new Data(this.logger, this.extensionContext);
+        // dataInitializationStructure !== undefined && dataInitializationStructure.value.length !== 0
+        //   ? new Data(this.logger, this.extensionContext)
+        //   : new Data(this.logger, this.extensionContext);
     } catch (e) {
       if (e instanceof Error) {
         throw new DetailedError('DataService.ctor. create data -> }', e);

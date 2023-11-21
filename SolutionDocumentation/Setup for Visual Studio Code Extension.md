@@ -7,9 +7,9 @@ Atribution:
 
 download executable from [Node.js downbload page](https://nodejs.org/en)
 
-Scan for virus, unblock the security "came from the Internet attribute",  then install from an elevted prompt.
+Scan for virus, unblock the security "came from the Internet attribute", then install from an elevted prompt.
 
-+ use default install location '"C:\Program Files\nodejs\"'
+- use default install location '"C:\Program Files\nodejs\"'
 
 The installation wants to install npm for the package manager, but nvs will 'integrate with VSC'. I am going to take the default npm for the first attempt at installation.
 
@@ -32,11 +32,11 @@ Git should already be installed
 `yo code`
 
 Answer as follows:
- What type of extension do you want to create? New Extension (TypeScript)
+What type of extension do you want to create? New Extension (TypeScript)
 ? What's the name of your extension? ATAP.AIAssist
 ? What's the identifier of your extension? atap-aiassist
 ? What's the description of your extension? Use Google voice recognition to send prompts to ChatGPT and copy the results
- into a VSC Code editor.
+into a VSC Code editor.
 ? Initialize a git repository? No
 ? Bundle the source code with webpack? Yes
 ? Which package manager to use? npm
@@ -52,7 +52,15 @@ on how to modify, test and publish your extension.
 To run the extension you need to install the recommended extension 'amodio.tsl-problem-matcher'.
 
 ? Do you want to open the new folder with Visual Studio Code? (Use arrow keys)
+
 > Open with `code`
+
+## Install global Node support packages
+
+```Powershell
+npm install -g npm-check-updates
+
+```
 
 ## Install the VSC extension for Typescript
 
@@ -76,13 +84,20 @@ npm install @types/axios  --save
 Run from a terminal, the base of the extension directory
 
 ```Powershell
-
-npm install --save-dev mocha
-npm install --save-dev @types/mocha
-npm install --save-dev chai
-npm install --save-dev @types/chai
+npm install --save-dev vscode @types/vscode
+npm install --save-dev mocha @types/mocha
+npm install --save-dev chai @types/chai
 npm install --save-dev tsconfig-paths-webpack-plugin
 npm install --save-dev tsconfig-paths
+npm install --save-dev source-map-loader
+## needed to use webpack to transpile tests
+npm install path-browserify assert stream-browserify https-browserify os-browserify url --save-dev
+# needed for support of paths in tests
+npm install --save-dev ts-node
+npm install --save-dev module-alias
+# needed for mocking in tests
+npm install --save-dev sinon @types/sinon
+
 
 ```
 
@@ -109,6 +124,5 @@ from the generated file, copy the contents of the `tasks:` section into the glob
 from the generated file, copy the contents of the `recommendations:` and add to the corresponding key in the global file.
 
 The basic "hello World" VSC extension can now be compiled, packed, and run by pressing the `F5` key
-
 
 Also see the file X in folder x

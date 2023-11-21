@@ -1,7 +1,12 @@
 import * as vscode from 'vscode';
 import { DetailedError } from '@ErrorClasses/index';
 
-import { LogLevel, Logger, getLoggerLogLevelFromSettings, getDevelopmentLoggerLogLevelFromSettings } from '@Logger/index';
+import {
+  LogLevel,
+  Logger,
+  getLoggerLogLevelFromSettings,
+  getDevelopmentLoggerLogLevelFromSettings,
+} from '@Logger/index';
 
 import { DefaultConfiguration } from './DefaultConfiguration';
 import { SecurityService, ISecurityService } from '@SecurityService/index';
@@ -29,6 +34,9 @@ import { processPs1Files } from './processPs1Files';
 import { mainViewTreeDataProvider } from './mainViewTreeDataProvider';
 import { mainViewTreeItem } from './mainViewTreeItem';
 import { FileTreeProvider } from './FileTreeProvider';
+
+// ToDO temporary code to test the dataService
+import { Tag } from '@ItemWithIDs/index';
 
 //import { mainSearchEngineProvider } from './mainSearchEngineProvider';
 
@@ -76,19 +84,18 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
 
     // if a DataService initialization serialized string exists, this will try and use it to create the DataService, else return a new empty one.
     // Will return a valid DataService instance or will throw
-    if (isSerializationStructure(DefaultConfiguration.Development['DataServiceAsSerializationStructure'])) {
-      dataService = DataService.CreateDataService(
-        myLogger,
-        extensionContext,
-        'extension.ts',
-        DefaultConfiguration.Development['DataServiceAsSerializationStructure'],
-      );
-    } else {
-      dataService = DataService.CreateDataService(myLogger, extensionContext, 'extension.ts');
-    }
+    // if (isSerializationStructure(DefaultConfiguration.Development['DataServiceAsSerializationStructure'])) {
+    //   dataService = DataService.CreateDataService(
+    //     myLogger,
+    //     extensionContext,
+    //     'extension.ts',
+    //     DefaultConfiguration.Development['DataServiceAsSerializationStructure'],
+    //   );
+    // } else {
+    dataService = DataService.CreateDataService(myLogger, extensionContext, 'extension.ts');
+    // }
 
     message = `data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`;
-
     myLogger.log(message, LogLevel.Info);
     // was the development host opened to a specific workspace, e.g., as a command line argument
     const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -217,6 +224,12 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     workspacePath = './'; // ToDO: Priority: this probably won't work
   }
 
+  // Put data into the userdata
+  // is there data from global state? Fill the cache if so
+  // no user state, load from defaults
+
+  // ToDO temporary code to test the dataService
+  //dataService.data.userData.tagCollection.value.push(new Tag('show'));
   // instantiate a mainViewTreeDataProvider instance and register that with the TreeDataProvider with the main tree view
   const mainViewTreeDataProviderInstance = new mainViewTreeDataProvider(myLogger);
   vscode.window.createTreeView('atap-aiassistMainTreeView', { treeDataProvider: mainViewTreeDataProviderInstance });

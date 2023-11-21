@@ -1,7 +1,6 @@
-import * as path from 'path';
-import * as Mocha from 'mocha';
-import * as glob from 'glob';
-// import registerRequireHooks from 'tsconfig-paths/register';
+import path from 'path';
+import Mocha from 'mocha';
+import glob from 'glob';
 
 console.log('Index (BDD)');
 
@@ -10,7 +9,7 @@ export function run(): Promise<void> {
   const mocha = new Mocha({
     ui: 'bdd',
     color: true,
-    require: ["tsconfig-paths/register"],
+    require: ['tsconfig-paths/register'],
   });
   const testsRoot = path.resolve(__dirname, '..');
   console.log(`BDD testsRoot is ${testsRoot}`);
@@ -31,10 +30,9 @@ export function run(): Promise<void> {
     testFileStream.on('end', () => {
       let str: string = JSON.stringify(filePaths);
       console.log(`BDD testFiles is ${str}`);
-      console.log(`trying mocha.run`);
       try {
         // Run the mocha test
-        mocha.run(failures => {
+        mocha.run((failures) => {
           if (failures > 0) {
             e(new Error(`${failures} tests failed.`));
           } else {

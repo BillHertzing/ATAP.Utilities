@@ -40,15 +40,8 @@ export class GlobalStateCache {
 }
 
 // Usage
-export function activate(extensionContext: vscode.ExtensionContext) {
-    const globalStateCache = new GlobalStateCache(extensionContext);
-
     // Set a value
-    globalStateCache.setValue('myKey', 'myValue');
+    // globalStateCache.setValue('myKey', 'myValue');
 
     // Get a value
-    const myValue = globalStateCache.getValue<string>('myKey');
-    console.log(myValue); // 'myValue' or undefined
-}
-
-export function deactivate() {}
+    // myValue = globalStateCache.getValue<string>('myKey');

@@ -1,11 +1,9 @@
 import * as vscode from 'vscode';
 import { DetailedError } from '@ErrorClasses/index';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { logConstructor, logExecutionTime } from '@Decorators/index';
+import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 import { GUID, Int, IDType } from '@IDTypes/index';
 import { Philote, IPhilote } from '@Philote/index';
-import { DefaultConfiguration } from '../DefaultConfiguration';
-import { UserData, IUserData } from '@DataService/index';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
@@ -17,15 +15,13 @@ import {
   fromYaml,
 } from '@Serializers/index';
 
-
 import { ExternalDataVetting } from './ExternalDataVetting';
 
 export interface ISecurityService {
- //version: string;
+  //version: string;
 }
 @logConstructor
 export class SecurityService implements ISecurityService {
-  //version: string = DefaultConfiguration.Production.version;
   private message: string;
   private externalDataVetting: ExternalDataVetting;
 
@@ -38,7 +34,7 @@ export class SecurityService implements ISecurityService {
     this.message = 'leaving SecurityService constructor';
     this.logger.log(this.message, LogLevel.Debug);
   }
-
+  @logFunction
   static CreateSecurityService(
     logger: ILogger,
     extensionContext: vscode.ExtensionContext,
@@ -74,28 +70,21 @@ export class SecurityService implements ISecurityService {
         _obj = new SecurityService(logger, extensionContext);
       } catch (e) {
         if (e instanceof Error) {
-          throw new DetailedError(
-            `${callingModule}: create new SecurityService error }`,
-            e,
-          );
+          throw new DetailedError(`${callingModule}: create new SecurityService error }`, e);
         } else {
           // ToDo:  investigation to determine what else might happen
-          throw new Error(
-            `${callingModule}: new SecurityService threw something that was not polymorphus on error`,
-          );
+          throw new Error(`${callingModule}: new SecurityService threw something that was not polymorphus on error`);
         }
       }
       return _obj;
     }
   }
-
+  @logFunction
   static convertFrom_json(json: string): SecurityService {
     return fromJson<SecurityService>(json);
   }
-
+  @logFunction
   static convertFrom_yaml(yaml: string): SecurityService {
     return fromYaml<SecurityService>(yaml);
   }
-
-
 }

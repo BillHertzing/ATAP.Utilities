@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import { GUID, Int, IDType } from '@IDTypes/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { logConstructor, logExecutionTime } from '@Decorators/index';
-import { DefaultConfiguration } from '../DefaultConfiguration';
+import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
+import { DefaultConfiguration } from './DefaultConfiguration';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
@@ -14,7 +14,6 @@ import {
   toYaml,
   fromYaml,
 } from '@Serializers/index';
-import { GlobalStateCache } from './GlobalStateCache';
 import {
   ItemWithIDValueType,
   ItemWithIDTypes,
@@ -56,36 +55,23 @@ import {
   QueryContextCollection,
 } from '@ItemWithIDs/index';
 
-import { UserData, IUserData } from './UserData';
-
-export interface IConfigurationData {}
-
-export class ConfigurationData implements IConfigurationData {
-  private message: string;
-
-  // ToDo: constructor overloads to initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
-  constructor(
-    private logger: ILogger,
-    private extensionContext: vscode.ExtensionContext,
-    private configurationDataInitializationStructure?: ISerializationStructure,
-  ) {
-    this.message = 'starting ConfigurationData constructor';
-    this.logger.log(this.message, LogLevel.Debug);
-    this.message = 'leaving ConfigurationData constructor';
-    this.logger.log(this.message, LogLevel.Trace);
-  }
-}
+import { IStateManager, StateManager } from './StateManager';
+import { IConfigurationData, ConfigurationData } from './ConfigurationData';
 
 export interface IData {
-  readonly userData: IUserData;
+  getMasterPassword(): string | undefined;
   readonly configurationData: IConfigurationData;
+  readonly stateManager: IStateManager;
 }
 
 @logConstructor
 export class Data {
-  private message: string;
-  public readonly userData: IUserData;
+  public readonly stateManager: IStateManager;
   public readonly configurationData: IConfigurationData;
+
+  // Data that does NOT get put into globalState
+  private masterPassword: Buffer | null = null;
+  private masterPasswordTimer: NodeJS.Timeout | null = null;
 
   // constructor overload signatures to initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
   constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
@@ -101,71 +87,92 @@ export class Data {
     private userDataInitializationStructure?: ISerializationStructure,
     private configurationDataInitializationStructure?: ISerializationStructure,
   ) {
-    this.message = 'starting Data constructor';
-    this.logger.log(this.message, LogLevel.Debug);
-
-    //ToDo: initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
-    // ToDo: can do this with a terneray operator, except for executing code to select which deserializer to use
+    // instantiate the configurationData
 
     try {
-      this.userData =
-        userDataInitializationStructure !== undefined && userDataInitializationStructure.value.length !== 0
-          ? new UserData(this.logger, this.extensionContext)
-          : new UserData(this.logger, this.extensionContext);
+      this.configurationData = new ConfigurationData(this.logger, this.extensionContext);
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create userData -> }', e);
+        throw new DetailedError('Data.ctor. create configurationData -> ', e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`Data.ctor. create userData thew an object that was not of type Error ->`);
+        throw new Error(
+          `Data constructor instantiating a new StateManager threw something other than a polymorphous Error`,
+        );
       }
     }
+
+    // instantiate the stateManager
+    // ToDo: figure out what StateManager is using folder for, and how to pass it in
     try {
-      this.configurationData =
-        configurationDataInitializationStructure !== undefined &&
-        configurationDataInitializationStructure.value.length !== 0
-          ? new ConfigurationData(this.logger, this.extensionContext)
-          : new ConfigurationData(this.logger, this.extensionContext);
+      this.stateManager = new StateManager(this.logger, this.extensionContext); //, need a workspace folder passed into the constructor, see https://github.com/microsoft/vscode-cmake-tools/blob/main/src/state.ts
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create configurationData -> }', e);
+        throw new DetailedError('Data.ctor. create stateManager -> ', e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`Data.ctor. create configurationData thew an object that was not of type Error ->`);
+        throw new Error(`Data.ctor. create stateManager thew an object that was not of type Error -> `);
       }
     }
-    this.message = 'leaving Data constructor';
-    this.logger.log(this.message, LogLevel.Debug);
+
+    // When the extension starts and instantiates the Data structure, ask the user for the master password to the Keepass vault
+    // masterPassword is a secure buffer in the Data class that holds the master password to a Keepass vault
+    // it is NOT stored in the cache
+    // it is cleared after 3 hours
+    this.askForMasterPassword();
+  }
+  private askForMasterPassword(): Promise<void> {
+    return new Promise((resolve) => {
+      vscode.window
+        .showInputBox({ prompt: 'Enter the master password to the Keepass vault at TBD', password: true })
+        .then((password) => {
+          if (password) {
+            this.masterPassword = Buffer.from(password);
+
+            // Set a timer to clear the secure buffer after 3 hours
+            if (this.masterPasswordTimer) {
+              clearTimeout(this.masterPasswordTimer);
+            }
+            this.masterPasswordTimer = setTimeout(() => {
+              this.masterPassword = null;
+            }, 3 * 60 * 60 * 1000);
+          }
+          resolve();
+        });
+    });
+  }
+
+  public getMasterPassword(): string | undefined {
+    if (!this.masterPassword) {
+      this.askForMasterPassword();
+    }
+    return this.masterPassword ? this.masterPassword.toString() : undefined;
   }
 }
 
 export interface IDataService {
   version: string;
-  data: Data;
+  data: IData;
 }
 
 @logConstructor
 export class DataService implements IDataService {
   public readonly version: string;
   public readonly data: Data;
-  private message: string;
 
   // constructor overload signatures to initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
   constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
 
   constructor(
     private logger: ILogger,
-    private extensionContext: vscode.ExtensionContext,
-    //dataInitializationStructure?: ISerializationStructure,
+    private extensionContext: vscode.ExtensionContext, //dataInitializationStructure?: ISerializationStructure,
   ) {
-    this.message = 'starting DataService constructor';
-    this.logger.log(this.message, LogLevel.Debug);
     // capture any errors and report them upward
     try {
-      this.data =new Data(this.logger, this.extensionContext);
-        // dataInitializationStructure !== undefined && dataInitializationStructure.value.length !== 0
-        //   ? new Data(this.logger, this.extensionContext)
-        //   : new Data(this.logger, this.extensionContext);
+      this.data = new Data(this.logger, this.extensionContext);
+      // dataInitializationStructure !== undefined && dataInitializationStructure.value.length !== 0
+      //   ? new Data(this.logger, this.extensionContext)
+      //   : new Data(this.logger, this.extensionContext);
     } catch (e) {
       if (e instanceof Error) {
         throw new DetailedError('DataService.ctor. create data -> }', e);
@@ -178,9 +185,6 @@ export class DataService implements IDataService {
     // ToDo: version-aware configuration data loading
     this.version = DefaultConfiguration.version;
     this.data = new Data(this.logger, this.extensionContext);
-
-    this.message = 'leaving DataService constructor';
-    this.logger.log(this.message, LogLevel.Debug);
   }
 
   // ToDo: make data derive from ItemWithID, and keep track of multiple instances of data (to support profiles?)
@@ -221,15 +225,10 @@ export class DataService implements IDataService {
         _obj = new DataService(logger, extensionContext);
       } catch (e) {
         if (e instanceof Error) {
-          throw new DetailedError(
-            `${callingModule}: create dataService from initializationStructure -> }`,
-            e,
-          );
+          throw new DetailedError(`${callingModule}: create dataService from initializationStructure -> }`, e);
         } else {
           // ToDo:  investigation to determine what else might happen
-          throw new Error(
-            `${callingModule}: create dataService from initializationStructure`,
-          );
+          throw new Error(`${callingModule}: create dataService from initializationStructure`);
         }
       }
       return _obj;

@@ -1,1 +1,1 @@
-export { logConstructor, logExecutionTime } from './Decorators';
+export { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from './Decorators';

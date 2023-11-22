@@ -2,9 +2,7 @@ import * as vscode from 'vscode';
 import { GUID, Int, IDType, nextID } from '@IDTypes/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { logConstructor, logExecutionTime } from '@Decorators/index';
-import { DefaultConfiguration } from '../DefaultConfiguration';
-import { UserData, IUserData } from '@DataService/index';
+import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
@@ -15,7 +13,6 @@ import {
   toYaml,
   fromYaml,
 } from '@Serializers/index';
-
 
 export interface IPhilote {
   readonly ID: GUID;
@@ -35,14 +32,14 @@ export class Philote implements IPhilote {
     this.ID = ID !== undefined ? ID : nextID(); // returns a random GUID string or the next sequential Int available from the ID pool
     this.others = [];
   }
-
+  @logFunction
   addOther(philote: Philote): void {
     // Add philote to the others array if not already present
     if (!this.others.includes(philote)) {
       this.others.push(philote);
     }
   }
-
+  @logFunction
   removeOther(philote: Philote): void {
     // Remove philote from the others array
     const index = this.others.indexOf(philote);
@@ -50,22 +47,23 @@ export class Philote implements IPhilote {
       this.others.splice(index, 1);
     }
   }
+  @logFunction
   convertTo_json(): string {
     return toJson(this);
   }
-
+  @logFunction
   static convertFrom_json(json: string): Philote {
     return fromJson<Philote>(json);
   }
-
+  @logFunction
   convertTo_yaml(): string {
     return toYaml(this);
   }
-
+  @logFunction
   static convertFrom_yaml(yaml: string): Philote {
     return fromYaml<Philote>(yaml);
   }
-
+  @logFunction
   ToString(): string {
     return `Philote: ${this.ID}`;
   }

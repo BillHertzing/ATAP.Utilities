@@ -2,9 +2,8 @@ import * as vscode from 'vscode';
 import { GUID, Int, IDType } from '@IDTypes/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { logConstructor, logExecutionTime } from '@Decorators/index';
+import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 import { Philote, IPhilote } from '@Philote/index';
-import { DefaultConfiguration } from '../DefaultConfiguration';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
@@ -316,7 +315,6 @@ export class Category extends ItemWithID<Category> implements ICategory {
     return new Category(value);
   }
 }
-
 
 export interface ICategoryCollection extends ICollection<Category> {
   // Add any additional methods specific to a collection of Categorys, if necessary

@@ -1,2 +1,3 @@
-export {DataService, IDataService, Data, IData,   ConfigurationData, IConfigurationData } from './DataService';
-export { UserData, IUserData } from './UserData';
+export { DataService, IDataService, IData } from './DataService';
+export { IStateManager } from './StateManager';
+export { IConfigurationData } from './ConfigurationData';

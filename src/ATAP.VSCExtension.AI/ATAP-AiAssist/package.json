@@ -5,7 +5,7 @@
   "publisher": "ataputilities",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.83.0"
+    "vscode": "^1.84.0"
   },
   "categories": [
     "Other"
@@ -83,10 +83,16 @@
             ],
             "description": "Log level setting."
           },
-          "ATAP-AiAssist.ChatGPT.APIKey": {
+          "ATAP-AiAssist.KeePassKDBXPath": {
             "type": "string",
-            "default": "Enter your ChatGPT API Key",
-            "description": "ChatGPT API Key."
+            "default": "Enter the path to your KeepPass .kdbx file",
+            "description": "KeepPass .kdbx file fullpath"
+          },
+          "ATAP-AiAssist.EndpointConfigurations": {
+            "type": "string",
+            "default": "All JSON ",
+            "description": "All Endpoint Confiogurations (JSON format)",
+            "scope": "machine"
           },
           "ATAP-AiAssist.categorys": {
             "type": "string",
@@ -189,48 +195,60 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
-    "compile": "webpack --output-path=./_generated/dist/",
-    "watch": "webpack --watch --output-path=./_generated/dist/",
+    "compile": "webpack --devtool source-map --output-path=./_generated/dist/",
+    "watch": "webpack --watch --devtool source-map --output-path=./_generated/dist/",
     "package": "webpack --mode production --devtool source-map",
-    "compile-tests": "tsc -p . --outDir ./_generated/out/",
-    "watch-tests": "tsc -p . -w --outDir ./_generated/out/",
+    "compile-tests": "tsc -p . --outDir ./_generated/out  && ts-node -p . -r tsconfig-paths/register --outDir ./_generated/out",
+    "watch-tests": "tsc -p . -w --outDir ./_generated/out && ts-node -p . -w -r tsconfig-paths/register --outDir ./_generated/out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "build-tests": "webpack --config webpack.test.config.js",
-    "test": "node --require tsconfig-paths/register ./_generated/out/test/runTest.js"
+    "test": "ts-node -p . -r tsconfig-paths/register ./_generated/out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/chai": "^4.3.10",
-    "@types/mocha": "^10.0.4",
-    "@types/node": "^20.9.2",
-    "@types/sinon": "^17.0.1",
-    "@types/vscode": "^1.84.1",
-    "@typescript-eslint/eslint-plugin": "^6.11.0",
-    "@typescript-eslint/parser": "^6.11.0",
-    "@vscode/test-electron": "^2.3.6",
+    "@types/axios": "^0.14.0",
+    "@types/bluebird": "^3.5.42",
+    "@types/chai": "^4.3.11",
+    "@types/diff": "^5.0.8",
+    "@types/js-yaml": "^4.0.9",
+    "@types/kdbxweb": "^2.0.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.9.4",
+    "@types/sinon": "^17.0.2",
+    "@types/vscode": "^1.84.2",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
+    "@vscode/test-electron": "^2.3.7",
     "assert": "^2.1.0",
     "chai": "^4.3.10",
     "eslint": "^8.54.0",
     "glob": "^10.3.10",
     "https-browserify": "^1.0.0",
     "mocha": "^10.2.0",
+    "module-alias": "^2.2.3",
     "os-browserify": "^0.3.0",
     "path-browserify": "^1.0.1",
     "sinon": "^17.0.1",
     "source-map-loader": "^4.0.1",
     "stream-browserify": "^3.0.0",
     "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "tsconfig-paths-webpack-plugin": "^4.1.0",
-    "typescript": "^5.2.2",
+    "typescript": "^5.3.2",
     "url": "^0.11.3",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4"
   },
+  "_moduleAliases": {
+    "@Logger": "out/Logger"
+  },
   "dependencies": {
-    "@types/axios": "^0.14.0",
-    "@types/js-yaml": "^4.0.9",
     "axios": "^1.6.2",
-    "js-yaml": "^4.1.0"
+    "bluebird": "^3.7.2",
+    "diff": "^5.1.0",
+    "js-yaml": "^4.1.0",
+    "kdbxweb": "^2.1.1",
+    "ts-node": "^10.9.1"
   }
 }

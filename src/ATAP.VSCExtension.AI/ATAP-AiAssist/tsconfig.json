@@ -6,7 +6,7 @@
     "types": ["node"],
     "lib": ["ES2022"],
     "sourceMap": true,
-    "rootDir": "src",
+    "rootDirs": ["src", "src/ATAP.VSCExtension.AI/ATAP-AiAssist"],
     "baseUrl": "src", // This must be specified if "paths" is set.
     "paths": {
       "@ErrorClasses/*": ["ErrorClasses/*"],
@@ -23,6 +23,7 @@
       "@DataService/*": ["DataService/*"],
       "@TokensService": ["TokensService/*"],
       "@CommandsService/*": ["CommandsService/*"],
+      "@EndpointManager/*": ["EndpointManager/*"],
       "@TypeMap/*": ["TypeMap/*"]
       // Add more path mappings as needed.
     },

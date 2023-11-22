@@ -56,7 +56,6 @@ import {
   QueryContextCollection,
 } from '@ItemWithIDs/index';
 
-import { GlobalStateCache } from './GlobalStateCache';
 import { glob } from 'glob';
 
 // This defines what a UserData instance looks like
@@ -69,6 +68,7 @@ export interface IUserData {
 
 @logConstructor
 export class UserData implements IUserData {
+  private readonly cache: GlobalStateCache;
   private tagFactory: IFactory<Tag>;
   // private tagCollectionFactory: ICollectionFactory<Tag>;
   private categoryFactory: IFactory<Category>;
@@ -104,14 +104,11 @@ export class UserData implements IUserData {
     initializationStructure?: ISerializationStructure,
   ) {
     // Initialize the global cache so we can populate it as we create the data structure
-    const globalStateCache = new GlobalStateCache(extensionContext);
-
-    //
-
-    let tagFactory = globalStateCache.getValue<Factory<Tag>>('tagFactorySingleton');
+    this.cache = new GlobalStateCache(extensionContext);
+    let tagFactory = this.cache.getValue<Factory<Tag>>('tagFactorySingleton');
     if (!tagFactory) {
       tagFactory = new Factory<Tag>(logger, extensionContext, Tag);
-      globalStateCache.setValue<Factory<Tag>>('tagFactorySingleton', tagFactory);
+      this.cache.setValue<Factory<Tag>>('tagFactorySingleton', tagFactory);
     }
     this.tagFactory = tagFactory;
 
@@ -146,5 +143,13 @@ export class UserData implements IUserData {
     // logger.log(`this.tagCollection length: ${this.tagCollection.value.length}` ,LogLevel.Info);
     // logger.log(`this.tagCollection keys: ${this.tagCollection.value.keys}` ,LogLevel.Info);
     // logger.log(`this.tagCollection keys: ${this.tagCollection.value.toString()}` ,LogLevel.Info);
+  }
+
+  get replacementPattern(): string | undefined {
+    return this.cache.getValue<string>('replacementPattern');
+  }
+
+  async setReplacementPattern(value: string): Promise<void> {
+    await this.cache.setValue<string>('replacementPattern', value);
   }
 }

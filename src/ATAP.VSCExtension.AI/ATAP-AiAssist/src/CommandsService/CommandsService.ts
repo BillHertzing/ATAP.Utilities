@@ -1,5 +1,9 @@
 import { LogLevel, ILogger, Logger } from '@Logger/index';
 import * as vscode from 'vscode';
+import { DetailedError } from '@ErrorClasses/index';
+import { logConstructor } from '@Decorators/Decorators';
+
+import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
 
 import { startCommand } from './startCommand';
 import { showVSCEnvironment } from './showVSCEnvironment';
@@ -7,25 +11,20 @@ import { sendFilesToAPI } from './sendFilesToAPI';
 import { showQuickPickExample } from './showQuickPickExample';
 // import { quickPickFromSettings } from './quickPickFromSettings';
 import { copyToSubmit } from './copyToSubmit';
+import { sendQuery } from './sendQuery';
 
+@logConstructor
 export class CommandsService {
   private disposables: vscode.Disposable[] = [];
-  private message: string;
 
-  constructor(private logger: ILogger, private extensionContext: vscode.ExtensionContext) {
-    this.message = 'starting CommandsService constructor';
-    this.logger.log(this.message, LogLevel.Debug);
+  constructor(private logger: ILogger, private extensionContext: vscode.ExtensionContext, private data: IData) {
     this.registerCommands();
-    this.message = 'leaving CommandsService constructor';
-    this.logger.log(this.message, LogLevel.Debug);
   }
 
   private registerCommands(): void {
-    this.message = 'starting registerCommands';
-    this.logger.log(this.message, LogLevel.Debug);
+    this.logger.log('starting registerCommands', LogLevel.Debug);
 
-    this.message = 'registering showVSCEnvironment';
-    this.logger.log(this.message, LogLevel.Debug);
+    this.logger.log('registering showVSCEnvironment', LogLevel.Debug);
     this.disposables.push(
       vscode.commands.registerCommand('atap-aiassist.showVSCEnvironment', () => {
         let message: string = 'starting commandID showVSCEnvironment';
@@ -34,8 +33,7 @@ export class CommandsService {
       }),
     );
 
-    this.message = 'registering sendFilesToAPI';
-    this.logger.log(this.message, LogLevel.Trace);
+    this.logger.log('registering sendFilesToAPI', LogLevel.Trace);
     this.disposables.push(
       vscode.commands.registerCommand('atap-aiassist.sendFilesToAPI', () => {
         let message: string = 'starting commandID sendFilesToAPI';
@@ -44,8 +42,7 @@ export class CommandsService {
       }),
     );
 
-    this.message = 'registering startCommand';
-    this.logger.log(this.message, LogLevel.Trace);
+    this.logger.log('registering startCommand', LogLevel.Trace);
     this.disposables.push(
       vscode.commands.registerCommand('atap-aiassist.startCommand', () => {
         let message: string = 'starting commandID startCommand';
@@ -54,25 +51,42 @@ export class CommandsService {
       }),
     );
 
-    this.message = 'registering showQuickPickExample';
-    this.logger.log(this.message, LogLevel.Debug);
+    this.logger.log('registering showQuickPickExample', LogLevel.Debug);
     this.disposables.push(
       vscode.commands.registerCommand('atap-aiassist.showQuickPickExample', async () => {
-        let message: string = 'starting commandID showQuickPickExample';
-        this.logger.log(message, LogLevel.Debug);
+        this.logger.log('starting commandID showQuickPickExample', LogLevel.Debug);
         try {
           const result = await showQuickPickExample(this.logger);
-          message = `result.success = ${result.success}, result `;
-          this.logger.log(message, LogLevel.Debug);
+          this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
         } catch (e) {
           if (e instanceof Error) {
-            // Report the error
-            message = e.message;
+            throw new DetailedError('Data.ctor. create configurationData -> ', e);
           } else {
-            // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
-            message = `An unknown error occurred during the showQuickPickExample call, and the instance of (e) returned is of type ${typeof e}`;
+            // ToDo:  investigation to determine what else might happen
+            throw new Error(
+              `An unknown error occurred during the showQuickPickExample call, and the instance of (e) returned is of type ${typeof e}`,
+            );
           }
-          this.logger.log(message, LogLevel.Error);
+        }
+      }),
+    );
+
+    this.logger.log('registering sendQuery', LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand('atap-aiassist.sendQuery', async () => {
+        this.logger.log('starting commandID sendQuery', LogLevel.Debug);
+        try {
+          const result = await sendQuery(this.logger, this.data);
+          // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
+        } catch (e) {
+          if (e instanceof Error) {
+            throw new DetailedError('Data.ctor. create configurationData -> ', e);
+          } else {
+            // ToDo:  investigation to determine what else might happen
+            throw new Error(
+              `An unknown error occurred during the sendQuery call, and the instance of (e) returned is of type ${typeof e}`,
+            );
+          }
         }
       }),
     );
@@ -125,6 +139,101 @@ export class CommandsService {
     //     }
     //   }),
     // );
+
+    // // *************************************************************** //
+    // let showMainViewRootRecordPropertiesDisposable = vscode.commands.registerCommand(
+    //   'atap-aiassist.showMainViewRootRecordProperties',
+    //   (item: mainViewTreeItem) => {
+    //     let message: string = 'starting commandID showMainViewRootRecordProperties';
+    //     myLogger.log(message, LogLevel.Debug);
+    //     if (item === null) {
+    //       message = `item is null`;
+    //       myLogger.log(message, LogLevel.Debug);
+    //     } else {
+    //       message = `item is NOT null`;
+    //       myLogger.log(message, LogLevel.Debug);
+    //     }
+    //     // message = `Philote_ID = ${item.Philote_ID} : pickedvalue = ${item.pickedValue}; properties = ${item.properties}`;
+    //     // myLogger.log(message, LogLevel.Debug);
+    //     message = `stringified item.properties = ${JSON.stringify(item.properties)}`;
+    //     myLogger.log(message, LogLevel.Debug);
+    //     vscode.window.showInformationMessage(JSON.stringify(item.properties));
+    //   },
+    // );
+    // extensionContext.subscriptions.push(showMainViewRootRecordPropertiesDisposable);
+
+    // // *************************************************************** //
+    // let showSubItemPropertiesDisposable = vscode.commands.registerCommand(
+    //   'atap-aiassist.showSubItemProperties',
+    //   (item: mainViewTreeItem) => {
+    //     let message: string = 'starting commandID showSubItemProperties';
+    //     myLogger.log(message, LogLevel.Debug);
+    //     // message = `Philote_ID = ${item.Philote_ID} : pickedvalue = ${item.pickedValue}; properties = ${item.properties}`;
+    //     // myLogger.log(message, LogLevel.Debug);
+    //     message = `stringified item.properties = ${JSON.stringify(item.properties)}`;
+    //     myLogger.log(message, LogLevel.Debug);
+    //     vscode.window.showInformationMessage(JSON.stringify(item.properties));
+    //   },
+    // );
+    // extensionContext.subscriptions.push(showSubItemPropertiesDisposable);
+
+    // // *************************************************************** //
+    // let removeRegionDisposable = vscode.commands.registerCommand('atap-aiassist.removeRegion', () => {
+    //   let message: string = 'starting commandID removeRegion';
+    //   myLogger.log(message, LogLevel.Debug);
+
+    //   const editor = vscode.window.activeTextEditor;
+
+    //   if (editor) {
+    //     const document = editor.document;
+    //     const edit = new vscode.WorkspaceEdit();
+
+    //     for (let i = 0; i < document.lineCount; i++) {
+    //       const line = document.lineAt(i);
+
+    //       if (line.text.trim().startsWith('#region') || line.text.trim().startsWith('#endregion')) {
+    //         const range = line.rangeIncludingLineBreak;
+    //         edit.delete(document.uri, range);
+    //       }
+    //     }
+
+    //     vscode.workspace.applyEdit(edit);
+    //   }
+    // });
+    // extensionContext.subscriptions.push(removeRegionDisposable);
+
+    // // *************************************************************** //
+    // let processPs1FilesDisposable = vscode.commands.registerCommand(
+    //   'atap-aiassist.processPs1Files',
+    //   async (commandId: string | null) => {
+    //     let message: string = 'starting commandID processPs1Files';
+    //     myLogger.log(message, LogLevel.Debug);
+
+    //     const processPs1FilesRecord = await processPs1Files(commandId);
+    //     if (processPs1FilesRecord.success) {
+    //       message = `processPs1Files processed ${processPs1FilesRecord.numFilesProcessed} files, using commandID  ${processPs1FilesRecord.commandIDUsed}`;
+    //       vscode.window.showInformationMessage(`${message}`);
+    //     } else {
+    //       message = `processPs1Files failed, error message is ${processPs1FilesRecord.errorMessage}, attemptedCommandID is ${processPs1FilesRecord.commandIDUsed}`;
+    //       vscode.window.showErrorMessage(`${message}`);
+    //     }
+    //   },
+    // );
+    // extensionContext.subscriptions.push(processPs1FilesDisposable);
+
+    // // *************************************************************** //
+    // let showExplorerViewDisposable = vscode.commands.registerCommand(
+    //   'atap-aiassist.showExplorerView',
+    //   async (commandId: string | null) => {
+    //     let message: string = 'starting commandID showExplorerView';
+    //     myLogger.log(message, LogLevel.Debug);
+
+    //     vscode.commands.executeCommand('workbench.view.explorer');
+    //     message = 'explorer view should be up';
+    //     myLogger.log(message, LogLevel.Debug);
+    //   },
+    // );
+    // extensionContext.subscriptions.push(showExplorerViewDisposable);
   }
 
   public getDisposables(): vscode.Disposable[] {

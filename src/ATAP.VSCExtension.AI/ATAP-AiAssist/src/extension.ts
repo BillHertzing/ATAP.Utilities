@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { Buffer } from 'buffer';
 import { DetailedError } from '@ErrorClasses/index';
 
 import {
@@ -8,10 +9,9 @@ import {
   getDevelopmentLoggerLogLevelFromSettings,
 } from '@Logger/index';
 
-import { DefaultConfiguration } from './DefaultConfiguration';
 import { SecurityService, ISecurityService } from '@SecurityService/index';
 
-import { DataService, IDataService, IData, IUserData } from '@DataService/index';
+import { DataService, IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
 
 import {
   SupportedSerializersEnum,
@@ -40,6 +40,10 @@ import { Tag } from '@ItemWithIDs/index';
 
 //import { mainSearchEngineProvider } from './mainSearchEngineProvider';
 
+// objects that need to be at the global level of the module, so they are visible in both activate and deactive functions
+let dataService: IDataService;
+let promptDocument: vscode.TextDocument;
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(extensionContext: vscode.ExtensionContext) {
@@ -48,12 +52,13 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   let message: string = '';
   let workspacePath: string = '';
   let securityService: ISecurityService;
-  let dataService: IDataService;
 
+  // ToDo: create a static startup logger, and use that until the full blown logger can be instantiated
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
   const myLogger = new Logger();
-  const loggerLogLevelFromSettings = getLoggerLogLevelFromSettings(); // supplies a default if not found in settings
-  myLogger.createChannel('ATAP-AiAssist', loggerLogLevelFromSettings);
+  // const loggerLogLevelFromSettings = getLoggerLogLevelFromSettings(); // supplies a default if not found in settings
+  // myLogger.createChannel('ATAP-AiAssist', loggerLogLevelFromSettings);
+  myLogger.createChannel('ATAP-AiAssist', LogLevel.Debug);
   myLogger.log('Extension Activation', LogLevel.Info);
 
   // Get the VSC configuration settings for this extension
@@ -69,16 +74,16 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     // instantiate the SecurityService
     // if a SecurityService initialization serialized string exists, this will try and use it to create the SecurityService, else return a new empty one.
     // Will return a valid SecurityService instance or will throw
-    if (isSerializationStructure(DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'])) {
-      securityService = SecurityService.CreateSecurityService(
-        myLogger,
-        extensionContext,
-        'extension.ts',
-        DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'],
-      );
-    } else {
-      securityService = SecurityService.CreateSecurityService(myLogger, extensionContext, 'SecurityService.ts');
-    }
+    // if (isSerializationStructure(DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'])) {
+    //   securityService = SecurityService.CreateSecurityService(
+    //     myLogger,
+    //     extensionContext,
+    //     'extension.ts',
+    //     DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'],
+    //   );
+    // } else {
+    securityService = SecurityService.CreateSecurityService(myLogger, extensionContext, 'SecurityService.ts');
+    // }
     myLogger.log('CreateSecurityService done', LogLevel.Info);
     myLogger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
 
@@ -160,8 +165,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
 
       editorFilePath = editorFilePathFromSettingsNotNull;
 
-      message = `File to open when in development mode: ${editorFilePath}`;
-      myLogger.log(message, LogLevel.Debug);
+      myLogger.log(`File to open when in development mode: ${editorFilePath}`, LogLevel.Debug);
 
       // combine the workspace and filepath
       const fullFilePath = path.join(workspacePath || '', editorFilePath);
@@ -186,32 +190,32 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     // instantiate the SecurityService for Production
     // if a SecurityService initialization serialized string exists, this will try and use it to create the SecurityService, else return a new empty one.
     // Will return a valid SecurityService instance or will throw
-    if (isSerializationStructure(DefaultConfiguration.Production['SecurityServiceAsSerializationStructure'])) {
-      securityService = SecurityService.CreateSecurityService(
-        myLogger,
-        extensionContext,
-        'extension.ts',
-        DefaultConfiguration.Production['SecurityServiceAsSerializationStructure'],
-      );
-    } else {
-      securityService = SecurityService.CreateSecurityService(myLogger, extensionContext, 'SecurityService.ts');
-    }
+    // if (isSerializationStructure(DefaultConfiguration.Production['SecurityServiceAsSerializationStructure'])) {
+    //   securityService = SecurityService.CreateSecurityService(
+    //     myLogger,
+    //     extensionContext,
+    //     'extension.ts',
+    //     DefaultConfiguration.Production['SecurityServiceAsSerializationStructure'],
+    //   );
+    // } else {
+    securityService = SecurityService.CreateSecurityService(myLogger, extensionContext, 'SecurityService.ts');
+    // }
     myLogger.log('CreateSecurityService done', LogLevel.Info);
+
     // if a DataService initialization serialized string exists, this will try and use it to create the DataService, else return a new empty one.
     // Will return a valid DataService instance or will throw
-    if (isSerializationStructure(DefaultConfiguration.Production['DataServiceAsSerializationStructure'])) {
-      dataService = DataService.CreateDataService(
-        myLogger,
-        extensionContext,
-        'extension.ts',
-        DefaultConfiguration.Production['DataServiceAsSerializationStructure'],
-      );
-    } else {
-      dataService = DataService.CreateDataService(myLogger, extensionContext, 'extension.ts');
-    }
+    // if (isSerializationStructure(DefaultConfiguration.Production['DataServiceAsSerializationStructure'])) {
+    //   dataService = DataService.CreateDataService(
+    //     myLogger,
+    //     extensionContext,
+    //     'extension.ts',
+    //     DefaultConfiguration.Production['DataServiceAsSerializationStructure'],
+    //   );
+    // } else {
+    dataService = DataService.CreateDataService(myLogger, extensionContext, 'extension.ts');
+    // }
 
-    message = 'Running in normal mode.';
-    myLogger.log(message, LogLevel.Debug);
+    myLogger.log('Running in normal mode.', LogLevel.Debug);
   }
 
   // in non-development mode, we may be started without a workspace root
@@ -224,9 +228,29 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     workspacePath = './'; // ToDO: Priority: this probably won't work
   }
 
-  // Put data into the userdata
-  // is there data from global state? Fill the cache if so
-  // no user state, load from defaults
+  // Setup the promptDocument
+  // Open a new temporary document 'promptDocument' in an editor window
+
+  let promptDocument = vscode.workspace.openTextDocument({ content: '', language: 'plaintext' }).then((document) => {
+    vscode.window.showTextDocument(document).then((editor) => {
+      let lastLine = document.lineAt(document.lineCount - 1);
+      const savedPromptDocumentData = dataService.data.stateManager.getsavedPromptDocumentData();
+      let possiblePromptDocumentData: string | undefined;
+      let promptDocumentData: string;
+      if (savedPromptDocumentData) {
+        promptDocumentData = savedPromptDocumentData;
+      } else {
+        possiblePromptDocumentData = dataService.data.configurationData.getPromptExpertise();
+        if (possiblePromptDocumentData) {
+          promptDocumentData = possiblePromptDocumentData;
+        } else {
+        }
+      }
+      editor.edit((editBuilder) => {
+        editBuilder.insert(lastLine.range.end, promptDocumentData);
+      });
+    });
+  });
 
   // ToDO temporary code to test the dataService
   //dataService.data.userData.tagCollection.value.push(new Tag('show'));
@@ -255,7 +279,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   try {
     message = `instantiate commandsService`;
     myLogger.log(message, LogLevel.Debug);
-    commandsService = new CommandsService(myLogger, extensionContext);
+    commandsService = new CommandsService(myLogger, extensionContext, dataService.data);
   } catch (e) {
     if (e instanceof Error) {
       // Report the error (file may not exist, etc.)
@@ -272,105 +296,14 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
 
   // Add the disposables from the CommandsService to extensionContext.subscriptions
   extensionContext.subscriptions.push(...commandsService.getDisposables());
-
-  // *************************************************************** //
-  let showMainViewRootRecordPropertiesDisposable = vscode.commands.registerCommand(
-    'atap-aiassist.showMainViewRootRecordProperties',
-    (item: mainViewTreeItem) => {
-      let message: string = 'starting commandID showMainViewRootRecordProperties';
-      myLogger.log(message, LogLevel.Debug);
-      if (item === null) {
-        message = `item is null`;
-        myLogger.log(message, LogLevel.Debug);
-      } else {
-        message = `item is NOT null`;
-        myLogger.log(message, LogLevel.Debug);
-      }
-      // message = `Philote_ID = ${item.Philote_ID} : pickedvalue = ${item.pickedValue}; properties = ${item.properties}`;
-      // myLogger.log(message, LogLevel.Debug);
-      message = `stringified item.properties = ${JSON.stringify(item.properties)}`;
-      myLogger.log(message, LogLevel.Debug);
-      vscode.window.showInformationMessage(JSON.stringify(item.properties));
-    },
-  );
-  extensionContext.subscriptions.push(showMainViewRootRecordPropertiesDisposable);
-
-  // *************************************************************** //
-  let showSubItemPropertiesDisposable = vscode.commands.registerCommand(
-    'atap-aiassist.showSubItemProperties',
-    (item: mainViewTreeItem) => {
-      let message: string = 'starting commandID showSubItemProperties';
-      myLogger.log(message, LogLevel.Debug);
-      // message = `Philote_ID = ${item.Philote_ID} : pickedvalue = ${item.pickedValue}; properties = ${item.properties}`;
-      // myLogger.log(message, LogLevel.Debug);
-      message = `stringified item.properties = ${JSON.stringify(item.properties)}`;
-      myLogger.log(message, LogLevel.Debug);
-      vscode.window.showInformationMessage(JSON.stringify(item.properties));
-    },
-  );
-  extensionContext.subscriptions.push(showSubItemPropertiesDisposable);
-
-  // *************************************************************** //
-  let removeRegionDisposable = vscode.commands.registerCommand('atap-aiassist.removeRegion', () => {
-    let message: string = 'starting commandID removeRegion';
-    myLogger.log(message, LogLevel.Debug);
-
-    const editor = vscode.window.activeTextEditor;
-
-    if (editor) {
-      const document = editor.document;
-      const edit = new vscode.WorkspaceEdit();
-
-      for (let i = 0; i < document.lineCount; i++) {
-        const line = document.lineAt(i);
-
-        if (line.text.trim().startsWith('#region') || line.text.trim().startsWith('#endregion')) {
-          const range = line.rangeIncludingLineBreak;
-          edit.delete(document.uri, range);
-        }
-      }
-
-      vscode.workspace.applyEdit(edit);
-    }
-  });
-  extensionContext.subscriptions.push(removeRegionDisposable);
-
-  // *************************************************************** //
-  let processPs1FilesDisposable = vscode.commands.registerCommand(
-    'atap-aiassist.processPs1Files',
-    async (commandId: string | null) => {
-      let message: string = 'starting commandID processPs1Files';
-      myLogger.log(message, LogLevel.Debug);
-
-      const processPs1FilesRecord = await processPs1Files(commandId);
-      if (processPs1FilesRecord.success) {
-        message = `processPs1Files processed ${processPs1FilesRecord.numFilesProcessed} files, using commandID  ${processPs1FilesRecord.commandIDUsed}`;
-        vscode.window.showInformationMessage(`${message}`);
-      } else {
-        message = `processPs1Files failed, error message is ${processPs1FilesRecord.errorMessage}, attemptedCommandID is ${processPs1FilesRecord.commandIDUsed}`;
-        vscode.window.showErrorMessage(`${message}`);
-      }
-    },
-  );
-  extensionContext.subscriptions.push(processPs1FilesDisposable);
-
-  // *************************************************************** //
-  let showExplorerViewDisposable = vscode.commands.registerCommand(
-    'atap-aiassist.showExplorerView',
-    async (commandId: string | null) => {
-      let message: string = 'starting commandID showExplorerView';
-      myLogger.log(message, LogLevel.Debug);
-
-      vscode.commands.executeCommand('workbench.view.explorer');
-      message = 'explorer view should be up';
-      myLogger.log(message, LogLevel.Debug);
-    },
-  );
-  extensionContext.subscriptions.push(showExplorerViewDisposable);
 }
 
 function deactivateExtension() {
   // Clean up resources, like closing files or stopping services
+
+  // Save the text in the promptDocument to the stateManager
+  dataService.data.stateManager.setSavedPromptDocumentData(promptDocument.getText());
+
   // ...
 }
 // This method is called when your extension is deactivated

@@ -71,12 +71,11 @@ npm install -g npm-check-updates
 The extension needs support for YAML and using a WebAPI. Run from a terminal at the base of the extension directory
 
 ```Powershell
-
-npm install js-yaml --save
-npm install @types/js-yaml --save
-npm install axios  --save
-npm install @types/axios  --save
-
+npm install js-yaml
+npm install axios
+npm install bluebird
+npm install diff
+npm install kdbxweb
 ```
 
 ## Install the node.js modules for development
@@ -84,20 +83,37 @@ npm install @types/axios  --save
 Run from a terminal, the base of the extension directory
 
 ```Powershell
-npm install --save-dev vscode @types/vscode
-npm install --save-dev mocha @types/mocha
-npm install --save-dev chai @types/chai
+npm install --save-dev  @types/vscode
+npm install --save-dev @types/js-yaml
+npm install --save-dev @types/axios
+npm install --save-dev @types/bluebird
+npm install --save-dev @types/diff
+npm install --save-dev @types/kdbxweb
+
+## needed to support paths in both extension development and extension testing
 npm install --save-dev tsconfig-paths-webpack-plugin
 npm install --save-dev tsconfig-paths
 npm install --save-dev source-map-loader
-## needed to use webpack to transpile tests
+## needed to use webpack to transpile and run tests
+npm install --save-dev mocha @types/mocha
+npm install --save-dev chai @types/chai
 npm install path-browserify assert stream-browserify https-browserify os-browserify url --save-dev
 # needed for support of paths in tests
 npm install --save-dev ts-node
 npm install --save-dev module-alias
 # needed for mocking in tests
 npm install --save-dev sinon @types/sinon
+```
 
+### updating all node packages
+
+To update all of the packages in the project to their latest version
+
+```Powershell
+npm install -g npm-check-updates
+cd <extension development project path>
+ncu -u
+npm install
 
 ```
 
@@ -124,5 +140,6 @@ from the generated file, copy the contents of the `tasks:` section into the glob
 from the generated file, copy the contents of the `recommendations:` and add to the corresponding key in the global file.
 
 The basic "hello World" VSC extension can now be compiled, packed, and run by pressing the `F5` key
+
 
 Also see the file X in folder x

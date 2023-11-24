@@ -111,7 +111,7 @@ export class ItemWithID<T extends ItemWithIDTypes> implements IItemWithID<T> {
   //         throw new DetailedError(`${callingModule}: create new ItemWithID error }`, e);
   //       } else {
   //         // ToDo:  investigation to determine what else might happen
-  //         throw new Error(`${callingModule}: new ItemWithID threw something that was not polymorphus on error`);
+  //         throw new Error(`${callingModule}: new ItemWithID threw something that was not an error tyypeof `);
   //       }
   //     }
   //     return _obj;
@@ -315,7 +315,6 @@ export class Category extends ItemWithID<Category> implements ICategory {
     return new Category(value);
   }
 }
-
 
 export interface ICategoryCollection extends ICollection<Category> {
   // Add any additional methods specific to a collection of Categorys, if necessary

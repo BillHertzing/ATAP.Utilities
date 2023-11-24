@@ -72,10 +72,6 @@ The extension needs support for YAML and using a WebAPI. Run from a terminal at 
 
 ```Powershell
 npm install js-yaml
-npm install axios
-npm install bluebird
-npm install diff
-npm install kdbxweb
 ```
 
 ## Install the node.js modules for development
@@ -85,10 +81,6 @@ Run from a terminal, the base of the extension directory
 ```Powershell
 npm install --save-dev  @types/vscode
 npm install --save-dev @types/js-yaml
-npm install --save-dev @types/axios
-npm install --save-dev @types/bluebird
-npm install --save-dev @types/diff
-npm install --save-dev @types/kdbxweb
 
 ## needed to support paths in both extension development and extension testing
 npm install --save-dev tsconfig-paths-webpack-plugin
@@ -142,3 +134,20 @@ from the generated file, copy the contents of the `recommendations:` and add to 
 The basic "hello World" VSC extension can now be compiled, packed, and run by pressing the `F5` key
 
 Also see the file X in folder x
+
+## Application specific
+
+### chatGPT
+
+```Powershell
+npm install axios
+npm install bluebird
+npm install diff
+npm install openai
+npm install kdbxweb
+npm install @types/axios --save-dev
+npm install @types/bluebird --save-dev
+npm install @types/diff --save-dev
+npm install @types/kdbxweb --save-dev
+
+```

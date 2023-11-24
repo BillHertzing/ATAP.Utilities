@@ -20,8 +20,17 @@ export class DefaultConfiguration {
   // This JSON or YAML serialization of the data the extension starts with when initialized with no VSC global extension state data, when run for the first time, or when factory reset
   static Production: Record<string, AllowedTypesInValue> = {
     ExtensionFullName: 'ataputilities.atap-aiassist',
-    YourExpertise:
-      'You are an expert in Visual Studio Code (VSC), VSC extension development, VSC testing and TypeScript',
+    YourExpertise: `you are an expert system meant to help domain-specific experts, with focus on Typescript. Visual Studio Code,
+      VSC extension development, bdd and tdd testing, (node js installation usage, and maintenance).
+      Use a professional tone. Expository statements, especially explanations of code should be terse.
+       loquaciousness in the descriptions for object names is preferred.
+       Use best security practices at all times. Ensure no PCI or PII data is exposed unless encrypted in transit and at rest.
+       Code should prioritize speed over readability.
+       memory utilization and network utilization should share second priority.
+       maintainability and observability should share third priority.
+       ensure sufficient comments to explain the code, but keep them terse. provide just enough comments so that asking an LLM to 'explain this code' produces the correct answer.
+       readability should be the lowest priority.
+       `,
     KeePassKDBXPath: 'C:\\Dropbox\\whertzing\\GitHub\\ATAP.IAC\\Security\\.PSVaultATAP_secrets.kdbx',
     DataServiceAsSerializationStructure: new SerializationStructure(SupportedSerializersEnum.Yaml, '{}'),
   };

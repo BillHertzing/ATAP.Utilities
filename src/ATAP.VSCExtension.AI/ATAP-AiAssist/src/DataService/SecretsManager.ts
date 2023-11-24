@@ -24,11 +24,11 @@ export class SecretsManager {
     private readonly configurationData: IConfigurationData,
   ) {
     this.secretManagersMap = {} as SecretManagerMap;
-    this.secretManagersMap[SupportedSecretsVaultEnum.KeePass] = new KeePassSecretsManager(
-      this.logger,
-      this.extensionContext,
-      this.configurationData,
-    );
+    // this.secretManagersMap[SupportedSecretsVaultEnum.KeePass] = new KeePassSecretsManager(
+    //   this.logger,
+    //   this.extensionContext,
+    //   this.configurationData,
+    // );
   }
 
   //   getAPIKeyForChatGPT(): Buffer | undefined {

@@ -157,29 +157,19 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     myLogger.log('CreateSecurityService done', LogLevel.Info);
     // if a DataService initialization serialized string exists, this will try and use it to create the DataService, else return a new empty one.
     // Will return a valid DataService instance or will throw
-    if (isSerializationStructure(DefaultConfiguration.Production['DataServiceAsSerializationStructure'])) {
-      dataService = DataService.CreateDataService(
-        myLogger,
-        extensionContext,
-        'extension.ts',
-        DefaultConfiguration.Production['DataServiceAsSerializationStructure'],
-      );
-    } else {
-      dataService = DataService.CreateDataService(myLogger, extensionContext, 'extension.ts');
-    }
+    // if (isSerializationStructure(DefaultConfiguration.Production['DataServiceAsSerializationStructure'])) {
+    //   dataService = DataService.CreateDataService(
+    //     myLogger,
+    //     extensionContext,
+    //     'extension.ts',
+    //     DefaultConfiguration.Production['DataServiceAsSerializationStructure'],
+    //   );
+    // } else {
+    dataService = DataService.CreateDataService(myLogger, extensionContext, 'extension.ts');
+    // }
 
     message = 'Running in normal mode.';
     myLogger.log(message, LogLevel.Debug);
-  }
-
-  // in non-development mode, we may be started without a workspace root
-  const workspaceFolders = vscode.workspace.workspaceFolders;
-  if (workspaceFolders && workspaceFolders.length > 0) {
-    // ToDo: ensure that We've already ensured that a workspace is open
-    workspacePath = workspaceFolders[0].uri.fsPath;
-  } else {
-    // ToDo: design the fallback - what should be the workspace root? Ask? PowershellPro Tools extension asks that....
-    workspacePath = './'; // ToDO: Priority: this probably won't work
   }
 
   // instantiate a mainViewTreeDataProvider instance and register that with the TreeDataProvider with the main tree view

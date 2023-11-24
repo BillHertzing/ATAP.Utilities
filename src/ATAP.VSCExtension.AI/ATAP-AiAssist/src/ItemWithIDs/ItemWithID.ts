@@ -316,6 +316,7 @@ export class Category extends ItemWithID<Category> implements ICategory {
   }
 }
 
+
 export interface ICategoryCollection extends ICollection<Category> {
   // Add any additional methods specific to a collection of Categorys, if necessary
   // Example:

@@ -36,8 +36,6 @@ import { processPs1Files } from './processPs1Files';
 import { mainViewTreeDataProvider } from './mainViewTreeDataProvider';
 import { mainViewTreeItem } from './mainViewTreeItem';
 import { FileTreeProvider } from './FileTreeProvider';
-import { type } from 'os';
-import { logFunction } from './Decorators';
 
 //import { mainSearchEngineProvider } from './mainSearchEngineProvider';
 
@@ -154,43 +152,35 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     if (e instanceof Error) {
       throw new DetailedError(`Activation: failed to create ${tempFilePath} -> `, e);
     } else {
-      // ToDo:  investigation to determine what else might happen
-      throw new Error(
-        `Activation: failed to create ${tempFilePath} and the instance of (e) returned is of type ${typeof e}`,
-      );
+      securityService = SecurityService.CreateSecurityService(myLogger, extensionContext, 'SecurityService.ts');
     }
+    myLogger.log('CreateSecurityService done', LogLevel.Info);
+    // if a DataService initialization serialized string exists, this will try and use it to create the DataService, else return a new empty one.
+    // Will return a valid DataService instance or will throw
+    if (isSerializationStructure(DefaultConfiguration.Production['DataServiceAsSerializationStructure'])) {
+      dataService = DataService.CreateDataService(
+        myLogger,
+        extensionContext,
+        'extension.ts',
+        DefaultConfiguration.Production['DataServiceAsSerializationStructure'],
+      );
+    } else {
+      dataService = DataService.CreateDataService(myLogger, extensionContext, 'extension.ts');
+    }
+
+    message = 'Running in normal mode.';
+    myLogger.log(message, LogLevel.Debug);
   }
 
-  // Open a new temporary document 'promptDocument' in an editor window
-  let promptDocument = vscode.workspace.openTextDocument(tempFilePath).then((doc) => {
-    let document: vscode.TextDocument = doc;
-    return vscode.window.showTextDocument(document).then((ed) => {
-      let editor: vscode.TextEditor = ed;
-      let lastLine = document.lineAt(document.lineCount - 1);
-      const savedPromptDocumentData = dataService.data.stateManager.getsavedPromptDocumentData();
-      let promptDocumentData: string =
-        savedPromptDocumentData || dataService.data.configurationData.getPromptExpertise();
-
-      editor.edit((editBuilder) => {
-        editBuilder.insert(lastLine.range.end, promptDocumentData);
-      });
-      document.save();
-
-      dataService.data.setTemporaryPromptDocumentPath(tempFilePath);
-      dataService.data.setTemporaryPromptDocument(document);
-    });
-  });
-
-  // instantiate a view for the response of each AI engine
-  // ChatGPT
-
-  // Anthropic
-
-  // Bard
-
-  // Grok
-
-  // Copilot
+  // in non-development mode, we may be started without a workspace root
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (workspaceFolders && workspaceFolders.length > 0) {
+    // ToDo: ensure that We've already ensured that a workspace is open
+    workspacePath = workspaceFolders[0].uri.fsPath;
+  } else {
+    // ToDo: design the fallback - what should be the workspace root? Ask? PowershellPro Tools extension asks that....
+    workspacePath = './'; // ToDO: Priority: this probably won't work
+  }
 
   // instantiate a mainViewTreeDataProvider instance and register that with the TreeDataProvider with the main tree view
   const mainViewTreeDataProviderInstance = new mainViewTreeDataProvider(myLogger);

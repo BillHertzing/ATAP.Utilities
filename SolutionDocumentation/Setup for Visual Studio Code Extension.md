@@ -141,5 +141,4 @@ from the generated file, copy the contents of the `recommendations:` and add to 
 
 The basic "hello World" VSC extension can now be compiled, packed, and run by pressing the `F5` key
 
-
 Also see the file X in folder x

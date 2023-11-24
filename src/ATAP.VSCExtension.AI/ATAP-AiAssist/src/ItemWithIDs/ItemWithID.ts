@@ -111,7 +111,7 @@ export class ItemWithID<T extends ItemWithIDTypes> implements IItemWithID<T> {
   //         throw new DetailedError(`${callingModule}: create new ItemWithID error }`, e);
   //       } else {
   //         // ToDo:  investigation to determine what else might happen
-  //         throw new Error(`${callingModule}: new ItemWithID threw something that was not an error tyypeof `);
+  //         throw new Error(`${callingModule}: new ItemWithID threw something that was not an error typeof `);
   //       }
   //     }
   //     return _obj;
@@ -173,7 +173,7 @@ export class Collection<T extends ItemWithIDTypes> implements ICollection<T> {
 
   async findItemWithIDByValue(valueToFind: MapTypeToValueType<T>): Promise<ItemWithID<T> | undefined> {
     return new Promise((resolve) => {
-      // ToDO: discovere why this is genreating an erroro
+      // ToDO: discover why this is generating an error
       // @ts-ignore
       const foundItem = this.value.find((element: ItemWithID<T>) => {
         if (typeof element.value === 'object' && typeof valueToFind === 'object') {

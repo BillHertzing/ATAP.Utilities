@@ -1,6 +1,7 @@
 //import axios from 'axios';
 import * as diff from 'diff';
 import Promise from 'bluebird';
+import OpenAI from 'openai';
 
 import * as vscode from 'vscode';
 import axios, { AxiosRequestConfig, CancelTokenSource } from 'axios';
@@ -25,113 +26,113 @@ import {
 } from '@EndpointManager/index';
 import { logAsyncFunction } from '@Decorators/Decorators';
 
-interface IChatCompletionRequest {
-  model: string;
-  messages: Array<{ role: string; content: string }>;
-  addMessage(role: string, content: string): void;
-}
+// interface IChatCompletionRequest {
+//   model: string;
+//   messages: Array<{ role: string; content: string }>;
+//   addMessage(role: string, content: string): void;
+// }
 
-interface IChatCompletionRequest {
-  prompt: string; // required
-  maxTokens?: number; // optional
-  temperature?: number; // optional
-  topP?: number; // optional
-  frequencyPenalty?: number; // optional
-  presencePenalty?: number; // optional
-  stop?: string | string[]; // optional
-}
+// interface IChatCompletionRequest {
+//   prompt: string; // required
+//   maxTokens?: number; // optional
+//   temperature?: number; // optional
+//   topP?: number; // optional
+//   frequencyPenalty?: number; // optional
+//   presencePenalty?: number; // optional
+//   stop?: string | string[]; // optional
+// }
 
-class ChatCompletionRequest {
-  prompt: string; // required
-  maxTokens?: number; // optional
-  temperature?: number; // optional
-  topP?: number; // optional
-  frequencyPenalty?: number; // optional
-  presencePenalty?: number; // optional
-  stop?: string | string[]; // optional
+// class ChatCompletionRequest {
+//   prompt: string; // required
+//   maxTokens?: number; // optional
+//   temperature?: number; // optional
+//   topP?: number; // optional
+//   frequencyPenalty?: number; // optional
+//   presencePenalty?: number; // optional
+//   stop?: string | string[]; // optional
 
-  constructor(prompt: string) {
-    this.prompt = prompt;
-  }
+//   constructor(prompt: string) {
+//     this.prompt = prompt;
+//   }
 
-  setMaxTokens(maxTokens: number): void {
-    this.maxTokens = maxTokens;
-  }
+//   setMaxTokens(maxTokens: number): void {
+//     this.maxTokens = maxTokens;
+//   }
 
-  setTemperature(temperature: number): void {
-    this.temperature = temperature;
-  }
+//   setTemperature(temperature: number): void {
+//     this.temperature = temperature;
+//   }
 
-  setTopP(topP: number): void {
-    this.topP = topP;
-  }
+//   setTopP(topP: number): void {
+//     this.topP = topP;
+//   }
 
-  setFrequencyPenalty(frequencyPenalty: number): void {
-    this.frequencyPenalty = frequencyPenalty;
-  }
+//   setFrequencyPenalty(frequencyPenalty: number): void {
+//     this.frequencyPenalty = frequencyPenalty;
+//   }
 
-  setPresencePenalty(presencePenalty: number): void {
-    this.presencePenalty = presencePenalty;
-  }
+//   setPresencePenalty(presencePenalty: number): void {
+//     this.presencePenalty = presencePenalty;
+//   }
 
-  setStop(stop: string | string[]): void {
-    this.stop = stop;
-  }
+//   setStop(stop: string | string[]): void {
+//     this.stop = stop;
+//   }
 
-  // Method to generate the payload
-  generatePayload(): Record<string, any> {
-    const payload: Record<string, any> = {
-      prompt: this.prompt,
-    };
+//   // Method to generate the payload
+//   generatePayload(): Record<string, any> {
+//     const payload: Record<string, any> = {
+//       prompt: this.prompt,
+//     };
 
-    if (this.maxTokens !== undefined) payload.maxTokens = this.maxTokens;
-    if (this.temperature !== undefined) payload.temperature = this.temperature;
-    if (this.topP !== undefined) payload.topP = this.topP;
-    if (this.frequencyPenalty !== undefined) payload.frequencyPenalty = this.frequencyPenalty;
-    if (this.presencePenalty !== undefined) payload.presencePenalty = this.presencePenalty;
-    if (this.stop !== undefined) payload.stop = this.stop;
+//     if (this.maxTokens !== undefined) payload.maxTokens = this.maxTokens;
+//     if (this.temperature !== undefined) payload.temperature = this.temperature;
+//     if (this.topP !== undefined) payload.topP = this.topP;
+//     if (this.frequencyPenalty !== undefined) payload.frequencyPenalty = this.frequencyPenalty;
+//     if (this.presencePenalty !== undefined) payload.presencePenalty = this.presencePenalty;
+//     if (this.stop !== undefined) payload.stop = this.stop;
 
-    return payload;
-  }
-}
+//     return payload;
+//   }
+// }
 
-interface IChatCompletionResponse {
-  id: string;
-  choices: Array<any>;
-  created: number;
-  model: string;
-  system_fingerprint: string;
-  object: string;
-  usage: object;
-}
+// interface IChatCompletionResponse {
+//   id: string;
+//   choices: Array<any>;
+//   created: number;
+//   model: string;
+//   system_fingerprint: string;
+//   object: string;
+//   usage: object;
+// }
 
-class ChatCompletionResponse implements IChatCompletionResponse {
-  id: string;
-  choices: Array<any>;
-  created: number;
-  model: string;
-  system_fingerprint: string;
-  object: string;
-  usage: object;
+// class ChatCompletionResponse implements IChatCompletionResponse {
+//   id: string;
+//   choices: Array<any>;
+//   created: number;
+//   model: string;
+//   system_fingerprint: string;
+//   object: string;
+//   usage: object;
 
-  constructor(
-    id: string,
-    choices: Array<any>,
-    created: number,
-    model: string,
-    system_fingerprint: string,
-    object: string,
-    usage: object,
-  ) {
-    this.id = id;
-    this.choices = choices;
-    this.created = created;
-    this.model = model;
-    this.system_fingerprint = system_fingerprint;
-    this.object = object;
-    this.usage = usage;
-  }
-}
+//   constructor(
+//     id: string,
+//     choices: Array<any>,
+//     created: number,
+//     model: string,
+//     system_fingerprint: string,
+//     object: string,
+//     usage: object,
+//   ) {
+//     this.id = id;
+//     this.choices = choices;
+//     this.created = created;
+//     this.model = model;
+//     this.system_fingerprint = system_fingerprint;
+//     this.object = object;
+//     this.usage = usage;
+//   }
+// }
 
 const commentSyntax = {
   '.js': { singleLine: '//', multiLine: { start: '/*', end: '*/' } },
@@ -152,13 +153,6 @@ function removeComments(content: string, syntax: any): string {
 // @logAsyncFunction
 export async function sendQuery(logger: ILogger, data: IData) {
   console.log('sendQuery');
-  const keePassKDBXPath = data.configurationData.getKeePassKDBXPath();
-  console.log(`keePassKDBXPath = ${keePassKDBXPath}`);
-
-  // if (!url || !keepassSecret || !keepassFile || !masterPasswordBuffer) {
-  //   vscode.window.showErrorMessage('Missing configuration or master password');
-  //   return;
-  // }
 
   // Retrieve and concatenate document data
   let contentCommentLess = '';
@@ -186,65 +180,169 @@ export async function sendQuery(logger: ILogger, data: IData) {
 
   // Creeate an instance of the request body
 
-  try {
-    let messages = [
-      { role: 'system', content: 'This is where the Expertise prompt goes' },
-      { role: 'user', content: 'what is the cutoff date of your training' },
-      {
-        role: 'user',
-        content:
-          'list pros and cons of a VSC extension that submits code blocks to multiple Large Language Models, requests implementation completion, tests for, and algorithm performance analysis, then compares the results from multiple models and presents the concensus results to the user',
-      },
-    ];
+  // try {
+  //   let messages = [
+  //     { role: 'system', content: 'This is where the Expertise prompt goes' },
+  //     { role: 'user', content: 'what is the cutoff date of your training' },
+  //     {
+  //       role: 'user',
+  //       content:
+  //         'list pros and cons of a VSC extension that submits code blocks to multiple Large Language Models, requests implementation completion, tests for, and algorithm performance analysis, then compares the results from multiple models and presents the concensus results to the user',
+  //     },
+  //   ];
 
-    let chatCompletionRequest = new ChatCompletionRequest('text-davinci-002', messages);
-  } catch (e) {
-    if (e instanceof Error) {
-      throw new DetailedError('sendQuery.chatCompletionRequest failed -> ', e);
-    } else {
-      // ToDo:  investigation to determine what else might happen
-      throw new Error(`Data.ctor. create stateManager thew an object that was not of type Error -> `);
-    }
-  }
+  //   let chatCompletionRequest = new ChatCompletionRequest('text-davinci-002', messages);
+  // } catch (e) {
+  //   if (e instanceof Error) {
+  //     throw new DetailedError('sendQuery.chatCompletionRequest failed -> ', e);
+  //   } else {
+  //     // ToDo:  investigation to determine what else might happen
+  //     throw new Error(`Data.ctor. create stateManager thew an object that was not of type Error -> `);
+  //   }
+  // }
 
   // Get APISecretKey
   // let keePassSecretKey = endpointConfiguration[lLModel].keepass;
   let keePassSecretKey = 'APIKeyForChatGPT';
 
   // get API Token from Keepass
-  let keePassSecret: Buffer | undefined = undefined;
-  if (keePassKDBXPath) {
-    // keePass service under data seems like a good place to put it
-    keePassSecret = await data.keepassService.getSecret(keePassKDBXPath, keePassSecretKey);
+  let aPIToken: Buffer | undefined = undefined;
+
+  // Secrets class under data seems like a good place to put it
+
+  try {
+    aPIToken = await data.secretsManager.getAPIKeyForChatGPTAsync();
+    // ToDO: clear then discard the aPIToken buffer
+    // ToDo: use a Factory (Service) pattern to hand out secrets internally to the extension, to ensure they are cleaned on deactivate
+  } catch (e) {
+    if (e instanceof OpenAI.APIError) {
+      // ToDo: handle any extra data in the error
+      throw new DetailedError('sendQuery.chatCompletionRequest failed, APIError type was returned -> ', e);
+    } else {
+      if (e instanceof Error) {
+        throw new DetailedError('sendQuery.chatCompletionRequest failed -> ', e);
+      } else {
+        throw new Error(
+          `sendQuery.OpenAI connection request caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
+        );
+      }
+    }
   }
 
-  // const keepassSecret = vscode.workspace.getConfiguration().get<string>('KeepassSecret');
+  // Hmm I guess the extension should continue to operate with LLMs that do not have any authorization requirement
+  // Every LLM is potentially different, the extension should have a defaultConfiguration structure for each LLM enumeration
+  // but for now assume that an undefined aPIToken is an error
+  if (!aPIToken) {
+    throw new Error(`sendQuery: aPIToken is undefined`);
+  }
 
-  // Use Bluebird to wrap Axios call
-  // try {
-  //   const response = await Promise.resolve(
-  //     axios.post(url, contentCommentLess, {
-  //       headers: { Authorization: `Bearer ${masterPasswordBuffer.toString()}` },
-  //     }),
-  //   );
+  let openai: OpenAI;
 
-  //   // Process response to apply diffs
-  //   Object.entries(response.data).forEach(([fileName, diffContent]) => {
-  //     const filePath = vscode.workspace.textDocuments.find((doc) => doc.uri.fsPath === fileName)?.uri.fsPath;
-  //     if (filePath) {
-  //       const originalContent = fs.readFileSync(filePath, 'utf8');
-  //       const patchedContent = diff.applyPatch(originalContent, diffContent);
-  //       const tempDiffPath = path.join(os.tmpdir(), `diff_${path.basename(filePath)}`);
-  //       fs.writeFileSync(tempDiffPath, patchedContent, 'utf8');
+  try {
+    openai = new OpenAI({
+      apiKey: aPIToken.toString('utf-8'),
+    });
+    // ToDO: clear then discard the aPIToken buffer
+    // ToDo: use a Factory (Service) pattern to hand out secrets internally to the extension, to ensure they are cleaned on deactivate
+  } catch (e) {
+    if (e instanceof OpenAI.APIError) {
+      // ToDo: handle any extra data in the error
+      throw new DetailedError('sendQuery.chatCompletionRequest failed, APIError type was returned -> ', e);
+    } else {
+      if (e instanceof Error) {
+        throw new DetailedError('sendQuery.chatCompletionRequest failed -> ', e);
+      } else {
+        throw new Error(
+          `sendQuery.OpenAI connection request caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
+        );
+      }
+    }
+  }
 
-  //       const tempDiffUri = vscode.Uri.file(tempDiffPath);
-  //       vscode.commands.executeCommand('vscode.diff', vscode.Uri.file(filePath), tempDiffUri, 'Diff View');
-  //     }
-  //   });
-  // } catch (error) {
-  //   vscode.window.showErrorMessage(`Error in sendQuery: ${error}`);
-  // }
+  let stream: any; //OpenAI.ChatCompletionStream;
+  try {
+    stream = await openai.beta.chat.completions.stream({
+      messages: [{ role: 'user', content: 'Say this is a test' }],
+      model: 'gpt-3.5-turbo',
+    });
+  } catch (e) {
+    if (e instanceof OpenAI.APIError) {
+      // ToDo handle any extra data in the error
+      throw new DetailedError(
+        'sendQuery openai.beta.chat.completions.stream failed, APIError type was returned -> ',
+        e,
+      );
+    } else {
+      if (e instanceof Error) {
+        throw new DetailedError(
+          'sendQuery openai.beta.chat.completions.stream failed, generic Error was returned -> ',
+          e,
+        );
+      } else {
+        throw new Error(
+          `sendQuery openai.beta.chat.completions.stream page request caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
+        );
+      }
+    }
+  }
+
+  // stream.on('content', (delta, snapshot) => {
+  //   process.stdout.write(delta);
+  // });
+
+  for await (const chunk of stream) {
+    logger.log(chunk.choices[0]?.delta?.content || '', LogLevel.Debug);
+    console.log(chunk.choices[0]?.delta?.content || '');
+    process.stdout.write(chunk.choices[0]?.delta?.content || '');
+    logger.log(chunk.choices[0]?.snapshot?.content || '', LogLevel.Debug);
+    console.log(chunk.choices[0]?.snapshot?.content || '');
+    process.stdout.write(chunk.choices[0]?.snapshot?.content || '');
+  }
+
+  const chatCompletion = await stream.finalChatCompletion();
+  console.log(chatCompletion);
 }
+
+// error handling around a openai call uses an instanceof OpenAI.APIError
+// rethrow it wrapped in a Detailed Error
+
+// await openai.fineTunes.create({ training_file: 'file-XGinujblHPwGLSztz8cPS8XY' }).catch((e) => {
+//   if (e instanceof OpenAI.APIError) {
+//     throw new DetailedError('sendQuery.chatCompletionRequest failed -> ', e);
+//     console.log(e.name); // BadRequestError
+//     console.log(e.headers); // {server: 'nginx', ...}
+//   } else {
+//     throw e;
+//   }
+// });
+
+// const keepassSecret = vscode.workspace.getConfiguration().get<string>('KeepassSecret');
+
+// Use Bluebird to wrap Axios call
+// try {
+//   const response = await Promise.resolve(
+//     axios.post(url, contentCommentLess, {
+//       headers: { Authorization: `Bearer ${masterPasswordBuffer.toString()}` },
+//     }),
+//   );
+
+//   // Process response to apply diffs
+//   Object.entries(response.data).forEach(([fileName, diffContent]) => {
+//     const filePath = vscode.workspace.textDocuments.find((doc) => doc.uri.fsPath === fileName)?.uri.fsPath;
+//     if (filePath) {
+//       const originalContent = fs.readFileSync(filePath, 'utf8');
+//       const patchedContent = diff.applyPatch(originalContent, diffContent);
+//       const tempDiffPath = path.join(os.tmpdir(), `diff_${path.basename(filePath)}`);
+//       fs.writeFileSync(tempDiffPath, patchedContent, 'utf8');
+
+//       const tempDiffUri = vscode.Uri.file(tempDiffPath);
+//       vscode.commands.executeCommand('vscode.diff', vscode.Uri.file(filePath), tempDiffUri, 'Diff View');
+//     }
+//   });
+// } catch (error) {
+//   vscode.window.showErrorMessage(`Error in sendQuery: ${error}`);
+// }
+//}
 
 ///////////////////////////////////////////////////////////////////////
 

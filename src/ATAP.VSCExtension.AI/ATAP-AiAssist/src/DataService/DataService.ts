@@ -56,10 +56,10 @@ import {
 } from '@ItemWithIDs/index';
 
 import { IStateManager, StateManager } from './StateManager';
+import { ISecretsManager, SecretsManager } from './SecretsManager';
 import { IConfigurationData, ConfigurationData } from './ConfigurationData';
 
 export interface IData {
-  getMasterPassword(): string | undefined;
   getTemporaryPromptDocumentPath(): string | undefined;
   setTemporaryPromptDocumentPath(value: string): void;
   getTemporaryPromptDocument(): vscode.TextDocument | undefined;
@@ -67,16 +67,16 @@ export interface IData {
 
   readonly configurationData: IConfigurationData;
   readonly stateManager: IStateManager;
+  readonly secretsManager: ISecretsManager;
 }
 
 @logConstructor
 export class Data {
   public readonly stateManager: IStateManager;
   public readonly configurationData: IConfigurationData;
+  public readonly secretsManager: ISecretsManager;
 
   // Data that does NOT get put into globalState
-  private masterPassword: Buffer | null = null;
-  private masterPasswordTimer: NodeJS.Timeout | null = null;
   private temporaryPromptDocumentPath: string | undefined = undefined;
   private temporaryPromptDocument: vscode.TextDocument | undefined = undefined;
 
@@ -122,38 +122,17 @@ export class Data {
       }
     }
 
-    // When the extension starts and instantiates the Data structure, ask the user for the master password to the Keepass vault
-    // masterPassword is a secure buffer in the Data class that holds the master password to a Keepass vault
-    // it is NOT stored in the cache
-    // it is cleared after 3 hours
-    this.askForMasterPassword();
-  }
-  private askForMasterPassword(): Promise<void> {
-    return new Promise((resolve) => {
-      vscode.window
-        .showInputBox({ prompt: 'Enter the master password to the Keepass vault at TBD', password: true })
-        .then((password) => {
-          if (password) {
-            this.masterPassword = Buffer.from(password);
-
-            // Set a timer to clear the secure buffer after 3 hours
-            if (this.masterPasswordTimer) {
-              clearTimeout(this.masterPasswordTimer);
-            }
-            this.masterPasswordTimer = setTimeout(() => {
-              this.masterPassword = null;
-            }, 3 * 60 * 60 * 1000);
-          }
-          resolve();
-        });
-    });
-  }
-
-  public getMasterPassword(): string | undefined {
-    if (!this.masterPassword) {
-      this.askForMasterPassword();
+    // instantiate the secretsManager
+    try {
+      this.secretsManager = new SecretsManager(this.logger, this.extensionContext, this.configurationData); //, need a workspace folder passed into the constructor?
+    } catch (e) {
+      if (e instanceof Error) {
+        throw new DetailedError('Data.ctor. create secretsManager -> ', e);
+      } else {
+        // ToDo:  investigation to determine what else might happen
+        throw new Error(`Data.ctor. create secretsManager thew an object that was not of type Error -> `);
+      }
     }
-    return this.masterPassword ? this.masterPassword.toString() : undefined;
   }
 
   public getTemporaryPromptDocumentPath(): string | undefined {

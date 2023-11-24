@@ -13,6 +13,7 @@ import * as os from 'os';
 
 import { ILogger, LogLevel } from '@Logger/index';
 import { DataService, IData } from '@DataService/DataService';
+import { DetailedError } from '@ErrorClasses/index';
 
 import {
   EndpointManager,
@@ -23,6 +24,114 @@ import {
   LLModels,
 } from '@EndpointManager/index';
 import { logAsyncFunction } from '@Decorators/Decorators';
+
+interface IChatCompletionRequest {
+  model: string;
+  messages: Array<{ role: string; content: string }>;
+  addMessage(role: string, content: string): void;
+}
+
+interface IChatCompletionRequest {
+  prompt: string; // required
+  maxTokens?: number; // optional
+  temperature?: number; // optional
+  topP?: number; // optional
+  frequencyPenalty?: number; // optional
+  presencePenalty?: number; // optional
+  stop?: string | string[]; // optional
+}
+
+class ChatCompletionRequest {
+  prompt: string; // required
+  maxTokens?: number; // optional
+  temperature?: number; // optional
+  topP?: number; // optional
+  frequencyPenalty?: number; // optional
+  presencePenalty?: number; // optional
+  stop?: string | string[]; // optional
+
+  constructor(prompt: string) {
+    this.prompt = prompt;
+  }
+
+  setMaxTokens(maxTokens: number): void {
+    this.maxTokens = maxTokens;
+  }
+
+  setTemperature(temperature: number): void {
+    this.temperature = temperature;
+  }
+
+  setTopP(topP: number): void {
+    this.topP = topP;
+  }
+
+  setFrequencyPenalty(frequencyPenalty: number): void {
+    this.frequencyPenalty = frequencyPenalty;
+  }
+
+  setPresencePenalty(presencePenalty: number): void {
+    this.presencePenalty = presencePenalty;
+  }
+
+  setStop(stop: string | string[]): void {
+    this.stop = stop;
+  }
+
+  // Method to generate the payload
+  generatePayload(): Record<string, any> {
+    const payload: Record<string, any> = {
+      prompt: this.prompt,
+    };
+
+    if (this.maxTokens !== undefined) payload.maxTokens = this.maxTokens;
+    if (this.temperature !== undefined) payload.temperature = this.temperature;
+    if (this.topP !== undefined) payload.topP = this.topP;
+    if (this.frequencyPenalty !== undefined) payload.frequencyPenalty = this.frequencyPenalty;
+    if (this.presencePenalty !== undefined) payload.presencePenalty = this.presencePenalty;
+    if (this.stop !== undefined) payload.stop = this.stop;
+
+    return payload;
+  }
+}
+
+interface IChatCompletionResponse {
+  id: string;
+  choices: Array<any>;
+  created: number;
+  model: string;
+  system_fingerprint: string;
+  object: string;
+  usage: object;
+}
+
+class ChatCompletionResponse implements IChatCompletionResponse {
+  id: string;
+  choices: Array<any>;
+  created: number;
+  model: string;
+  system_fingerprint: string;
+  object: string;
+  usage: object;
+
+  constructor(
+    id: string,
+    choices: Array<any>,
+    created: number,
+    model: string,
+    system_fingerprint: string,
+    object: string,
+    usage: object,
+  ) {
+    this.id = id;
+    this.choices = choices;
+    this.created = created;
+    this.model = model;
+    this.system_fingerprint = system_fingerprint;
+    this.object = object;
+    this.usage = usage;
+  }
+}
 
 const commentSyntax = {
   '.js': { singleLine: '//', multiLine: { start: '/*', end: '*/' } },
@@ -42,14 +151,9 @@ function removeComments(content: string, syntax: any): string {
 
 // @logAsyncFunction
 export async function sendQuery(logger: ILogger, data: IData) {
-  // for now, assume the query will be sent to a single endpoint, and hardcode the specific endpoint in here for now
-  let endpointLLM = LLModels.ChatGPT;
-  // let endpointConfiguration = data.configurationData.getEndpointConfig()[endpointLLM];
-
-  // let keePassSecretKey = endpointConfiguration.;
   console.log('sendQuery');
-  const keePassDatabasePath = data.configurationData.getKeePassKDBXPath();
-  //const keepassSecret = vscode.workspace.getConfiguration().get<string>('KeepassSecret');
+  const keePassKDBXPath = data.configurationData.getKeePassKDBXPath();
+  console.log(`keePassKDBXPath = ${keePassKDBXPath}`);
 
   // if (!url || !keepassSecret || !keepassFile || !masterPasswordBuffer) {
   //   vscode.window.showErrorMessage('Missing configuration or master password');
@@ -70,6 +174,51 @@ export async function sendQuery(logger: ILogger, data: IData) {
   if (fs.existsSync(tempFilePath)) {
     contentCommentLess += fs.readFileSync(tempFilePath, 'utf8');
   }
+
+  // Repeat for all active LLModels (AI Engines)
+  // for now, assume the query will be sent to a single endpoint, and hardcode the specific endpoint in here for now
+  let lLModel = LLModels.ChatGPT;
+  // let endpointConfiguration = data.configurationData.getEndpointConfig()[lLModel];
+  // get URL
+  // Get json sections for the completions endpoint
+  let page = 'chat/completions';
+  let model = 'davinci';
+
+  // Creeate an instance of the request body
+
+  try {
+    let messages = [
+      { role: 'system', content: 'This is where the Expertise prompt goes' },
+      { role: 'user', content: 'what is the cutoff date of your training' },
+      {
+        role: 'user',
+        content:
+          'list pros and cons of a VSC extension that submits code blocks to multiple Large Language Models, requests implementation completion, tests for, and algorithm performance analysis, then compares the results from multiple models and presents the concensus results to the user',
+      },
+    ];
+
+    let chatCompletionRequest = new ChatCompletionRequest('text-davinci-002', messages);
+  } catch (e) {
+    if (e instanceof Error) {
+      throw new DetailedError('sendQuery.chatCompletionRequest failed -> ', e);
+    } else {
+      // ToDo:  investigation to determine what else might happen
+      throw new Error(`Data.ctor. create stateManager thew an object that was not of type Error -> `);
+    }
+  }
+
+  // Get APISecretKey
+  // let keePassSecretKey = endpointConfiguration[lLModel].keepass;
+  let keePassSecretKey = 'APIKeyForChatGPT';
+
+  // get API Token from Keepass
+  let keePassSecret: Buffer | undefined = undefined;
+  if (keePassKDBXPath) {
+    // keePass service under data seems like a good place to put it
+    keePassSecret = await data.keepassService.getSecret(keePassKDBXPath, keePassSecretKey);
+  }
+
+  // const keepassSecret = vscode.workspace.getConfiguration().get<string>('KeepassSecret');
 
   // Use Bluebird to wrap Axios call
   // try {

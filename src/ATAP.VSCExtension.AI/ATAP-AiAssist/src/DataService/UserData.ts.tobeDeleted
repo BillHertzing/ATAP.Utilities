@@ -135,7 +135,7 @@ export class UserData implements IUserData {
     //   //this.queryContextCollection = new QueryContextCollection();
     // this.tagCollection = this.tagCollectionFactory.createCollection();
     // this.categoryCollection = this.categoryCollectionFactory.createCollection();
-    // this.associationCollection = this.asociationCollectionFactory.createCollection();
+    // this.associationCollection = this.associationCollectionFactory.createCollection();
     // this.tokenCollection = this.tokenCollectionFactory.createCollection();
     // this.querycontextCollection = this.querycontextCollectionFactory.createCollection();
     // }

@@ -16,6 +16,9 @@ import {
 } from '@EndpointManager/index';
 
 export interface IConfigurationData {
+  getExtensionFullName(): string;
+  getTempDirectoryBasePath(): string;
+  getDevelopmentWorkspacePath(): string | undefined;
   getPromptExpertise(): string;
   getKeePassKDBXPath(): string;
   // getEndpointConfigs(): Record<LLModels, EndpointConfig>;
@@ -27,14 +30,25 @@ export class ConfigurationData implements IConfigurationData {
   constructor(
     private logger: ILogger,
     private extensionContext: vscode.ExtensionContext, // private configurationDataInitializationStructure?: ISerializationStructure,
+    private envKeyMap: Record<string, string[]> = {
+      //toUpper(DefaultConfiguration.Production.extensionFullName + '.' + key)
+      TempDirectoryBasePath: ['TEMP'],
+    },
   ) {}
 
-  private getSerializedString(key: string): AllowedTypesInValue {
+  private getNonNull(key: string): AllowedTypesInValue {
     const extensionID = 'ataputilities.atap-aiassist';
+
     // const cLIIdentifier = extensionID + '.' + key
     // is there a CLI argument?
-    // const eNVIdentifier = toupper(extensionID + '.' + key)
     // is there an environment variable?
+    if (this.envKeyMap[key]) {
+      for (const envKey of this.envKeyMap[key]) {
+        if (process.env[envKey]) {
+          return process.env[envKey] as string;
+        }
+      }
+    }
     // is there a setting?
     if (vscode.workspace.getConfiguration(extensionID).has(key)) {
       return vscode.workspace.getConfiguration(extensionID).get(key) as string;
@@ -51,16 +65,60 @@ export class ConfigurationData implements IConfigurationData {
     // If there is no value anywhere in the configRoot structure
     // add function to prompt user to enter the value string in the settings for key
     throw new DetailedError(
-      `ConfigurationData.getSerializedString: ${key} not found in argv, env, settings or DefaultConfiguration`,
+      `ConfigurationData.getNonNull: ${key} not found in argv, env, settings or DefaultConfiguration`,
     );
   }
 
+  private getPossiblyUndefined(key: string): AllowedTypesInValue | undefined {
+    const extensionID = 'ataputilities.atap-aiassist';
+    // const cLIIdentifier = extensionID + '.' + key
+    // is there a CLI argument?
+    // const eNVIdentifier = toUpper(extensionID + '.' + key)
+    // is there an environment variable?
+    if (this.envKeyMap[key]) {
+      for (const envKey of this.envKeyMap[key]) {
+        if (process.env[envKey]) {
+          return process.env[envKey] as string;
+        }
+      }
+    }
+    // is there a setting?
+    if (vscode.workspace.getConfiguration(extensionID).has(key)) {
+      return vscode.workspace.getConfiguration(extensionID).get(key) as string;
+    }
+    // is there a static development default?
+    if (isRunningInDevHost() && DefaultConfiguration.Development[key]) {
+      return DefaultConfiguration.Development[key];
+    }
+    // is there a static production default?
+    if (DefaultConfiguration.Production[key]) {
+      return DefaultConfiguration.Production[key];
+    }
+    return undefined;
+  }
+
+  getExtensionFullName(): string {
+    if (!DefaultConfiguration.Production['ExtensionFullName']) {
+      throw new DetailedError('ExtensionFullName not found in DefaultConfiguration.Production');
+    } else {
+      return DefaultConfiguration.Production['ExtensionFullName'] as string;
+    }
+  }
+
+  getTempDirectoryBasePath(): string {
+    // ToDo: allow for multiple temp to be set with differnet strings in different places
+    return this.getNonNull('TempDirectoryBasePath') as string;
+  }
+
+  getDevelopmentWorkspacePath(): string | undefined {
+    return this.getPossiblyUndefined('DevelopmentWorkspacePath') as string;
+  }
   getPromptExpertise(): string {
-    return this.getSerializedString('YourExpertise') as string;
+    return this.getNonNull('YourExpertise') as string;
   }
 
   getKeePassKDBXPath(): string {
-    return this.getSerializedString('KeePassKDBXPath') as string;
+    return this.getNonNull('KeePassKDBXPath') as string;
   }
 
   // getEndpointConfigs(): Record<LLModels, EndpointConfig> {
@@ -71,7 +129,7 @@ export class ConfigurationData implements IConfigurationData {
   //     //[LLModels.Copilot]: undefined,
   //     // Initialize other LLModels as needed
   //   };
-  //   const configJson = this.getSerializedString('EndpointConfigurationsAsJSON') as string;
+  //   const configJson = this.getNonNull('EndpointConfigurationsAsJSON') as string;
   //   if (configJson) {
   //     const parsedConfig: Record<string, EndpointConfig> = JSON.parse(configJson);
   //     // Iterate over the enum keys and populate enumConfig

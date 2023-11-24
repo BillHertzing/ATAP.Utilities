@@ -60,6 +60,11 @@ import { IConfigurationData, ConfigurationData } from './ConfigurationData';
 
 export interface IData {
   getMasterPassword(): string | undefined;
+  getTemporaryPromptDocumentPath(): string | undefined;
+  setTemporaryPromptDocumentPath(value: string): void;
+  getTemporaryPromptDocument(): vscode.TextDocument | undefined;
+  setTemporaryPromptDocument(value: vscode.TextDocument): void;
+
   readonly configurationData: IConfigurationData;
   readonly stateManager: IStateManager;
 }
@@ -72,6 +77,8 @@ export class Data {
   // Data that does NOT get put into globalState
   private masterPassword: Buffer | null = null;
   private masterPasswordTimer: NodeJS.Timeout | null = null;
+  private temporaryPromptDocumentPath: string | undefined = undefined;
+  private temporaryPromptDocument: vscode.TextDocument | undefined = undefined;
 
   // constructor overload signatures to initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
   constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
@@ -147,6 +154,19 @@ export class Data {
       this.askForMasterPassword();
     }
     return this.masterPassword ? this.masterPassword.toString() : undefined;
+  }
+
+  public getTemporaryPromptDocumentPath(): string | undefined {
+    return this.temporaryPromptDocumentPath ? this.temporaryPromptDocumentPath : undefined;
+  }
+  public setTemporaryPromptDocumentPath(value: string) {
+    this.temporaryPromptDocumentPath = value;
+  }
+  public getTemporaryPromptDocument(): vscode.TextDocument | undefined {
+    return this.temporaryPromptDocument ? this.temporaryPromptDocument : undefined;
+  }
+  public setTemporaryPromptDocument(value: vscode.TextDocument) {
+    this.temporaryPromptDocument = value;
   }
 }
 

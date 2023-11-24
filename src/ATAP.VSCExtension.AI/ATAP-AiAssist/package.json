@@ -26,6 +26,14 @@
         "title": "ATAP-AiAssist: showVSCEnvironment"
       },
       {
+        "command": "atap-aiassist.showPrompt",
+        "title": "ATAP-AiAssist: showPrompt (show the Prompt document window)"
+      },
+      {
+        "command": "atap-aiassist.sendQuery",
+        "title": "ATAP-AiAssist: sendQuery (send the Query and all associated information to the server)"
+      },
+      {
         "command": "atap-aiassist.showQuickPickExample",
         "title": "ATAP-AiAssist: Show Quick Pick"
       },
@@ -83,15 +91,20 @@
             ],
             "description": "Log level setting."
           },
+          "ATAP-AiAssist.DevelopmentWorkspacePath": {
+            "type": "string",
+            "default": "Enter the path to a workspace file to be used for extension startup during development",
+            "description": "the path to a workspace file to be used for extension startup during development"
+          },
           "ATAP-AiAssist.KeePassKDBXPath": {
             "type": "string",
             "default": "Enter the path to your KeepPass .kdbx file",
-            "description": "KeepPass .kdbx file fullpath"
+            "description": "KeepPass .kdbx file path"
           },
           "ATAP-AiAssist.EndpointConfigurations": {
             "type": "string",
             "default": "All JSON ",
-            "description": "All Endpoint Confiogurations (JSON format)",
+            "description": "All Endpoint Configurations (JSON format)",
             "scope": "machine"
           },
           "ATAP-AiAssist.categorys": {
@@ -241,7 +254,22 @@
     "webpack-cli": "^5.1.4"
   },
   "_moduleAliases": {
-    "@Logger": "out/Logger"
+    "@ErrorClasses/*": "_generated/out/ErrorClasses",
+    "@Logger": "_generated/out/Logger",
+    "@Decorators": "_generated/out/Decorators",
+    "@SecurityService": "_generated/out/SecurityService",
+    "@IDTypes": "_generated/out/IDTypes",
+    "@Utilities": "_generated/out/Utilities",
+    "@Serializers": "_generated/out/Serializers",
+    "@Philote": "_generated/out/Philote",
+    "@ItemWithIDs": "_generated/out/ItemWithIDs",
+    "@AssociationsService": "_generated/out/AssociationsService",
+    "@QueryContextsService": "_generated/out/QueryContextsService",
+    "@DataService": "_generated/out/DataService",
+    "@TokensService": "_generated/out/TokensService",
+    "@CommandsService": "_generated/out/CommandsService",
+    "@EndpointManager": "_generated/out/EndpointManager",
+    "@TypeMap": "_generated/out/TypeMap"
   },
   "dependencies": {
     "axios": "^1.6.2",

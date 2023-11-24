@@ -47,7 +47,7 @@ export async function sendQuery(logger: ILogger, data: IData) {
   // let endpointConfiguration = data.configurationData.getEndpointConfig()[endpointLLM];
 
   // let keePassSecretKey = endpointConfiguration.;
-
+  console.log('sendQuery');
   const keePassDatabasePath = data.configurationData.getKeePassKDBXPath();
   //const keepassSecret = vscode.workspace.getConfiguration().get<string>('KeepassSecret');
 
@@ -359,16 +359,16 @@ export async function sendQuery(logger: ILogger, data: IData) {
 // use the examples from above when creating your response.
 // you are an expert in Visual Studio Code and VSC extensions. You  are an expert in Typescript. You are an expert in Javascript. You are an expert in Node.js. You are an expert in Webpack. You are an expert in NPM. You are an expert in Mocha. You are an expert in Chai.
 // you are working on an existing extension named ataputilities.atap-aiassist that includes  os,path,fs,axios, bluebird,and diff. you are an expert in axios, bluebird, and diff
-// generate startup code for extension activation that opens a new temporary document 'PromptDocument' and reads into it any data stored in the global state that may have been saved from a previous session. If there is no saved data, the tmeporary document is initialized with the string constant 'YOurExpertise' stored in the extension Settings
+// generate startup code for extension activation that opens a new temporary document 'PromptDocument' and reads into it any data stored in the global state that may have been saved from a previous session. If there is no saved data, the temporary document is initialized with the string constant 'YOurExpertise' stored in the extension Settings
 // generate startup code for extension activation that asks the user for the master password to a Keepass vault, and stores the master password in a secure buffer.. include a timer that clears the secure buffer after 3 hours. If the extension needs the master password but the secure buffer has been cleared, ask the user again to reenter the master password
-// generate a vsc command sendQuery that calls an async function sendQuery. The async function sendQuery gets the vaule of the URL from an extension setting by the same name, gets the vaule of the Keepass secret from an extension setting by the same name, gets the vaule of the Keepass .kdbx file from an extension setting by the same name,
-// the sendQuery function uses the keepassSecret to retrieve a secret from a keypass vault and palces it into a secure buffer called APIToken.
+// generate a vsc command sendQuery that calls an async function sendQuery. The async function sendQuery gets the value of the URL from an extension setting by the same name, gets the value of the Keepass secret from an extension setting by the same name, gets the value of the Keepass .kdbx file from an extension setting by the same name,
+// the sendQuery function uses the keepassSecret to retrieve a secret from a keypass vault and places it into a secure buffer called APIToken.
 // The sendQuery function reads the data from all editor tabs, and removes the comments from the data based on the document suffix
 // the sendquery function concatenates the document filename, a ':' and the comment-free document data
 // the sendQuery function appends to the data the contents of the temporary document 'PromptDocument'
 // the sendQuery function uses bluebird to wrap an axios to call the URL, and POST the data to the URL, using the secure buffer as a bearer token.
 // expect the data returned from the URL to be a set of key value pairs, where the key is a document filename, and the value is a string of text in the diff language format
-// for every key value pair returned from the URL, the sendQuery function uses the key to find a textdocument by that name, then to apply the diff using the diff library, and place the results into a new temporary file, and diplay the compare view of the origianl document and the diff results
+// for every key value pair returned from the URL, the sendQuery function uses the key to find a textdocument by that name, then to apply the diff using the diff library, and place the results into a new temporary file, and diplay the compare view of the original document and the diff results
 
 // when the extension is deactivated, the contents of the temporary document 'PromptDocument'
-// when the extension is deleted , the contents of all tempoorary files created for the diff view of the results are stored in the global state
+// when the extension is deleted , the contents of all temporary files created for the diff view of the results are stored in the global state

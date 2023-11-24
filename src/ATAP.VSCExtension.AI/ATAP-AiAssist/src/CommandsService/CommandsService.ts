@@ -7,11 +7,13 @@ import { IDataService, IData, IStateManager, IConfigurationData } from '@DataSer
 
 import { startCommand } from './startCommand';
 import { showVSCEnvironment } from './showVSCEnvironment';
+import { showPrompt } from './showPrompt';
+import { sendQuery } from './sendQuery';
+
 import { sendFilesToAPI } from './sendFilesToAPI';
 import { showQuickPickExample } from './showQuickPickExample';
 // import { quickPickFromSettings } from './quickPickFromSettings';
 import { copyToSubmit } from './copyToSubmit';
-import { sendQuery } from './sendQuery';
 
 @logConstructor
 export class CommandsService {
@@ -30,6 +32,46 @@ export class CommandsService {
         let message: string = 'starting commandID showVSCEnvironment';
         this.logger.log(message, LogLevel.Debug);
         showVSCEnvironment(this.logger);
+      }),
+    );
+
+    this.logger.log('registering showPrompt', LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand('atap-aiassist.showPrompt', async () => {
+        this.logger.log('starting commandID showPrompt', LogLevel.Debug);
+        try {
+          const result = await showPrompt(this.logger, this.data);
+          // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
+        } catch (e) {
+          if (e instanceof Error) {
+            throw new DetailedError('Command showPrompt caught an error from function showPrompt -> ', e);
+          } else {
+            // ToDo:  investigation to determine what else might happen
+            throw new Error(
+              `Command showPrompt caught an unknown object from function showPrompt, and the instance of (e) returned is of type ${typeof e}`,
+            );
+          }
+        }
+      }),
+    );
+
+    this.logger.log('registering sendQuery', LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand('atap-aiassist.sendQuery', async () => {
+        this.logger.log('starting commandID sendQuery', LogLevel.Debug);
+        try {
+          const result = await sendQuery(this.logger, this.data);
+          // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
+        } catch (e) {
+          if (e instanceof Error) {
+            throw new DetailedError('Command sendQuery caught an error from function sendQuery -> ', e);
+          } else {
+            // ToDo:  investigation to determine what else might happen
+            throw new Error(
+              `Command sendQuery caught an unknown object from function sendQuery, and the instance of (e) returned is of type ${typeof e}`,
+            );
+          }
+        }
       }),
     );
 
@@ -65,26 +107,6 @@ export class CommandsService {
             // ToDo:  investigation to determine what else might happen
             throw new Error(
               `An unknown error occurred during the showQuickPickExample call, and the instance of (e) returned is of type ${typeof e}`,
-            );
-          }
-        }
-      }),
-    );
-
-    this.logger.log('registering sendQuery', LogLevel.Debug);
-    this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.sendQuery', async () => {
-        this.logger.log('starting commandID sendQuery', LogLevel.Debug);
-        try {
-          const result = await sendQuery(this.logger, this.data);
-          // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
-        } catch (e) {
-          if (e instanceof Error) {
-            throw new DetailedError('Data.ctor. create configurationData -> ', e);
-          } else {
-            // ToDo:  investigation to determine what else might happen
-            throw new Error(
-              `An unknown error occurred during the sendQuery call, and the instance of (e) returned is of type ${typeof e}`,
             );
           }
         }

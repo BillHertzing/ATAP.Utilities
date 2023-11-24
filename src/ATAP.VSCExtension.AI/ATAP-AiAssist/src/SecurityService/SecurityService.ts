@@ -73,7 +73,9 @@ export class SecurityService implements ISecurityService {
           throw new DetailedError(`${callingModule}: create new SecurityService error }`, e);
         } else {
           // ToDo:  investigation to determine what else might happen
-          throw new Error(`${callingModule}: new SecurityService threw something that was not polymorphus on error`);
+          throw new Error(
+            `CreateSecurityServicecaught an unknown object from SecurityService.ctor, and the instance of (e) returned is of type ${typeof e}`,
+          );
         }
       }
       return _obj;

@@ -10,7 +10,7 @@ This package provides PowerShell goodies make it easier when developing for .Net
 
 The .psm1 file handles dot-sourcing all the .ps1 scripts in the `private` and `public` subdirectories. But for Autoload to work, the functions and cmdlets should be listed in the .psd1 file. Here's a one-liner that will get you the function names
 
-`  (gci C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\*.ps1).basename -join,"','" `
+` (gci C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\*.ps1).basename -join,"','"`
 
 ## Building/Installation Note
 
@@ -90,7 +90,7 @@ settings.json
 
 This directory and these files need to be present at the root of each repository, and need to be source-controlled and versioned. Having multiple independent copies is prone to errors and misconfigurations. Therefore, we have created a repository named `SharedVSCode`, and placed the source-of-truth copies of these files in this git-versioned repository.
 
-We then create symbolic links from the files in this repository to symblinks that reside in the .vscode directroy under every other repository.
+We then create symbolic links from the files in this repository to syblinks that reside in the .vscode directory under every other repository.
 
 In every new repository, after runing `git init`, run this command (as an administrator) in the root folder of the repository:
 
@@ -104,9 +104,11 @@ In every new repository, after runing `git init`, run this command (as an admini
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\.prettierrc.json"  -symbolicLinkPath ".\.vscode\tasks.json" -force
 ```
 
-## Symbolic Links for Prettier formatting rules and eslint rules
+## Symbolic Links for Prettier formatting rules, CSpell, eslint rules
 
 The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a `.prettierrc.yml` with formatting rules and an `eslintrc.yml` with linting rules for Javascript at the repository base. We use the YAML format in order to support comments in the file.
+
+Every repository that uses Visual Studio Code as the IDE, needs a `cspell.json` with spelling rules ToDo: We use the YAML format in order to support comments in the file.
 
 In every new repository, after creating the .vscode directory and its contents, run this command (as an administrator) in the root folder of the repository:
 
@@ -114,6 +116,7 @@ In every new repository, after creating the .vscode directory and its contents, 
   # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.prettierrc.yml"  -symbolicLinkPath ".\.prettierrc.yml" -force
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.eslintrc.yml"  -symbolicLinkPath ".\.eslintrc.yml" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\cspell.json"  -symbolicLinkPath ".\.vscode\cspell.json" -force
 ```
 
 ## Symbolic Links and cloud-synchronization

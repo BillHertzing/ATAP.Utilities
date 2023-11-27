@@ -143,11 +143,14 @@ Also see the file X in folder x
 npm install axios
 npm install bluebird
 npm install diff
-npm install openai
 npm install kdbxweb
+npm install openai
+npm install prettier
+npm install strip-comments
 npm install @types/axios --save-dev
 npm install @types/bluebird --save-dev
 npm install @types/diff --save-dev
 npm install @types/kdbxweb --save-dev
-
+npm install @types/prettier --save-dev
+npm install @types/strip-comments --save-dev
 ```

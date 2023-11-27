@@ -6,11 +6,11 @@ export enum LogLevel {
   Warning = 1,
   Info = 2,
   Debug = 3,
-  Trace = 4
+  Trace = 4,
 }
 
 export interface ChannelInfo {
-  outputChannel: vscode.OutputChannel;
+  outputChannel: vscode.OutputChannel | undefined;
   enabled: boolean;
   level: LogLevel;
 }
@@ -23,22 +23,21 @@ export interface ILogger {
   getChannelInfo(channelName: string): ChannelInfo | null;
 }
 
-
 export class Logger implements ILogger {
-  private channels: { [key: string]: ChannelInfo } = {};
-  private static staticOutputChannel:vscode.OutputChannel ;
+  private channels: { [key: string]: ChannelInfo } = {
+    console: { outputChannel: undefined, enabled: true, level: LogLevel.Trace },
+  };
+  private static staticOutputChannel: vscode.OutputChannel;
 
-  constructor() { }
+  constructor() {}
 
-  static staticConstructor()
-  {
-    Logger.staticOutputChannel= vscode.window.createOutputChannel("AiAssistStaticLogger");
+  static staticConstructor() {
+    Logger.staticOutputChannel = vscode.window.createOutputChannel('AiAssistStaticLogger');
   }
 
-  static staticLog(message: string, level: LogLevel)
-  {
-      Logger.staticOutputChannel.appendLine(`[${LogLevel[level]}] ${message}`);
-}
+  static staticLog(message: string, level: LogLevel) {
+    Logger.staticOutputChannel.appendLine(`[${LogLevel[level]}] ${message}`);
+  }
 
   createChannel(name: string, level: LogLevel, enabled: boolean = true): void {
     const outputChannel = vscode.window.createOutputChannel(name);
@@ -47,16 +46,26 @@ export class Logger implements ILogger {
 
   log(message: string, level: LogLevel, channelName?: string): void {
     // eslint-disable-next-line eqeqeq
-    if ( channelName != null) {
+    if (channelName != null) {
       const channelInfo = this.channels[channelName];
       if (channelInfo && channelInfo.enabled && level <= channelInfo.level) {
-        channelInfo.outputChannel.appendLine(`[${LogLevel[level]}] ${message}`);
+        if (channelName === 'console') {
+          console.log(`[${LogLevel[level]}] ${message}`);
+        } else {
+          let _outputChannel: vscode.OutputChannel = channelInfo.outputChannel as vscode.OutputChannel;
+          _outputChannel.appendLine(`[${LogLevel[level]}] ${message}`);
+        }
       }
     } else {
       for (const channelName in this.channels) {
         const channelInfo = this.channels[channelName];
         if (channelInfo && channelInfo.enabled && level <= channelInfo.level) {
-          channelInfo.outputChannel.appendLine(`[${LogLevel[level]}] ${message}`);
+          if (channelName === 'console') {
+            console.log(`[${LogLevel[level]}] ${message}`);
+          } else {
+            let _outputChannel: vscode.OutputChannel = channelInfo.outputChannel as vscode.OutputChannel;
+            _outputChannel.appendLine(`[${LogLevel[level]}] ${message}`);
+          }
         }
       }
     }
@@ -83,11 +92,13 @@ export class Logger implements ILogger {
 
   dispose(): void {
     for (const channelName in this.channels) {
-      this.channels[channelName].outputChannel.dispose();
+      if (channelName !== 'console') {
+        let _outputChannel: vscode.OutputChannel = this.channels[channelName].outputChannel as vscode.OutputChannel;
+        _outputChannel.dispose();
+      }
     }
   }
 }
-
 
 // Configuration related functions to get values of LogLevel from the Settings
 // Function to read log level
@@ -115,4 +126,3 @@ export function setDevelopmentLoggerLogLevelFromSettings(newLevel: LogLevel): Th
   const configuration = vscode.workspace.getConfiguration('atap-aiassist');
   return configuration.update('Development.Logger.LogLevel', newLevel, vscode.ConfigurationTarget.Global);
 }
-

@@ -166,6 +166,8 @@ export class DataService implements IDataService {
     private logger: ILogger,
     private extensionContext: vscode.ExtensionContext, //dataInitializationStructure?: ISerializationStructure,
   ) {
+    // ToDo: version-aware configuration data loading; multiroot-workspace-aware
+    this.version = DefaultConfiguration.version;
     // capture any errors and report them upward
     try {
       this.data = new Data(this.logger, this.extensionContext);
@@ -180,10 +182,6 @@ export class DataService implements IDataService {
         throw new Error(`DataService.ctor. create data thew an object that was not of type Error ->`);
       }
     }
-
-    // ToDo: version-aware configuration data loading
-    this.version = DefaultConfiguration.version;
-    this.data = new Data(this.logger, this.extensionContext);
   }
 
   // ToDo: make data derive from ItemWithID, and keep track of multiple instances of data (to support profiles?)

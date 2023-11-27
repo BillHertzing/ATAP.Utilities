@@ -24,7 +24,12 @@ import {
   CopilotEndpointConfig,
   LLModels,
 } from '@EndpointManager/index';
-import { logAsyncFunction } from '@Decorators/Decorators';
+
+import { logAsyncFunction, logFunction } from '@Decorators/Decorators';
+
+import { StringBuilder } from '@Utilities/index';
+import strip from 'strip-comments';
+import * as prettier from 'prettier';
 
 // interface IChatCompletionRequest {
 //   model: string;
@@ -142,32 +147,97 @@ const commentSyntax = {
   '.cs': { singleLine: '//', multiLine: { start: '/*', end: '*/' } },
 };
 
-function removeComments(content: string, syntax: any): string {
-  // Regular expression to remove single line and multiline comments
-  const singleLineCommentRegex = new RegExp(`${syntax.singleLine}.*`, 'g');
-  const multiLineCommentRegex = new RegExp(`${syntax.multiLine.start}[\\s\\S]*?${syntax.multiLine.end}`, 'g');
+async function minifyCodeAsync(logger: ILogger, content: string, extension: any): globalThis.Promise<string> {
+  logger.log('minifyCodeAsync starting', LogLevel.Debug);
+  // Can't do anything with .txt files, so just return the content
+  if (extension === '.txt') {
+    return content;
+  }
+  let strippedContent: string;
+  try {
+    // use the strip-comments node library to remove comments from the code
+    strippedContent = strip(content);
+  } catch (e) {
+    if (e instanceof Error) {
+      throw new DetailedError('sendQuery.minifyCodeAsync calling strip failed -> ', e);
+    } else {
+      throw new Error(
+        `sendQuery.minifyCodeAsync calling strip caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
+      );
+    }
+  }
 
-  return content.replace(singleLineCommentRegex, '').replace(multiLineCommentRegex, '');
+  let minifiedContent: string;
+  try {
+    const formatPromise = prettier.format(strippedContent, {
+      filepath: `file.${extension}`,
+      printWidth: 1000,
+      tabWidth: 0,
+      semi: false,
+      singleQuote: true,
+      trailingComma: 'none',
+      bracketSpacing: false,
+      arrowParens: 'avoid',
+      endOfLine: 'lf',
+    });
+
+    const timeoutPromise = new Promise(
+      (_, reject) => setTimeout(() => reject(new Error('prettier.format timed out')), 2000), // 5 seconds timeout
+    );
+    minifiedContent = await Promise.race([formatPromise, timeoutPromise]);
+  } catch (e) {
+    if (e instanceof Error) {
+      throw new DetailedError('sendQuery.minifyCode calling prettier.format failed -> ', e);
+    } else {
+      throw new Error(
+        `sendQuery.minifyCode calling prettier.format caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
+      );
+    }
+  }
+  logger.log('minifyCodeAsync Completed', LogLevel.Debug);
+
+  return minifiedContent;
 }
 
 // @logAsyncFunction
 export async function sendQuery(logger: ILogger, data: IData) {
-  console.log('sendQuery');
-
+  logger.log('sendQuery', LogLevel.Debug);
+  let textToSubmit = new StringBuilder();
   // Retrieve and concatenate document data
-  let contentCommentLess = '';
+  let minifiedContent = '';
   for (const document of vscode.workspace.textDocuments) {
+    logger.log(
+      `document.uri  = ${document.uri}; document.uri.scheme  = ${document.uri.scheme}; document.uri.fsPath  = ${document.uri.fsPath} ; document.fileName = ${document.fileName}`,
+      LogLevel.Debug,
+    );
+
+    let content: string;
     if (document.uri.scheme === 'file') {
-      let content = removeComments(document.getText(), path.extname(document.uri.fsPath));
-      contentCommentLess += `${document.uri.fsPath}: ${content}\n\n`;
+      try {
+        content = await minifyCodeAsync(logger, document.getText(), path.extname(document.uri.fsPath));
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError('sendQuery calling minifyCodeAsync failed -> ', e);
+        } else {
+          throw new Error(
+            `sendQuery. calling minifyCodeAsync caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
+          );
+        }
+      }
+      minifiedContent += `${document.uri.fsPath}:\n ${content}\n`;
     }
   }
+  textToSubmit.append(minifiedContent);
 
   // Append data from 'PromptDocument'
   const tempFilePath = path.join(os.tmpdir(), 'PromptDocument.txt');
   if (fs.existsSync(tempFilePath)) {
-    contentCommentLess += fs.readFileSync(tempFilePath, 'utf8');
+    minifiedContent += fs.readFileSync(tempFilePath, 'utf8');
   }
+
+  textToSubmit.append(minifiedContent);
+
+  //logger.log(`textToSubmit = ${textToSubmit}`, LogLevel.Debug);
 
   // Repeat for all active LLModels (AI Engines)
   // for now, assume the query will be sent to a single endpoint, and hardcode the specific endpoint in here for now
@@ -208,8 +278,6 @@ export async function sendQuery(logger: ILogger, data: IData) {
   // get API Token from Keepass
   let aPIToken: Buffer | undefined = undefined;
 
-  // Secrets class under data seems like a good place to put it
-
   try {
     aPIToken = await data.secretsManager.getAPIKeyForChatGPTAsync();
     // ToDO: clear then discard the aPIToken buffer
@@ -228,6 +296,7 @@ export async function sendQuery(logger: ILogger, data: IData) {
       }
     }
   }
+  logger.log(`aPIToken = ${aPIToken?.toString()}`, LogLevel.Debug);
 
   // Hmm I guess the extension should continue to operate with LLMs that do not have any authorization requirement
   // Every LLM is potentially different, the extension should have a defaultConfiguration structure for each LLM enumeration
@@ -237,6 +306,7 @@ export async function sendQuery(logger: ILogger, data: IData) {
   }
 
   let openai: OpenAI;
+  logger.log(`setup a connection with OpenAI library`, LogLevel.Debug);
 
   try {
     openai = new OpenAI({
@@ -292,36 +362,19 @@ export async function sendQuery(logger: ILogger, data: IData) {
 
   for await (const chunk of stream) {
     logger.log(chunk.choices[0]?.delta?.content || '', LogLevel.Debug);
-    console.log(chunk.choices[0]?.delta?.content || '');
     process.stdout.write(chunk.choices[0]?.delta?.content || '');
     logger.log(chunk.choices[0]?.snapshot?.content || '', LogLevel.Debug);
-    console.log(chunk.choices[0]?.snapshot?.content || '');
     process.stdout.write(chunk.choices[0]?.snapshot?.content || '');
   }
 
   const chatCompletion = await stream.finalChatCompletion();
-  console.log(chatCompletion);
+  logger.log(chatCompletion, LogLevel.Debug);
 }
-
-// error handling around a openai call uses an instanceof OpenAI.APIError
-// rethrow it wrapped in a Detailed Error
-
-// await openai.fineTunes.create({ training_file: 'file-XGinujblHPwGLSztz8cPS8XY' }).catch((e) => {
-//   if (e instanceof OpenAI.APIError) {
-//     throw new DetailedError('sendQuery.chatCompletionRequest failed -> ', e);
-//     console.log(e.name); // BadRequestError
-//     console.log(e.headers); // {server: 'nginx', ...}
-//   } else {
-//     throw e;
-//   }
-// });
-
-// const keepassSecret = vscode.workspace.getConfiguration().get<string>('KeepassSecret');
 
 // Use Bluebird to wrap Axios call
 // try {
 //   const response = await Promise.resolve(
-//     axios.post(url, contentCommentLess, {
+//     axios.post(url, minifiedContent, {
 //       headers: { Authorization: `Bearer ${masterPasswordBuffer.toString()}` },
 //     }),
 //   );
@@ -419,110 +472,6 @@ export async function sendQuery(logger: ILogger, data: IData) {
 // });
 
 // context.subscriptions.push(submitCommand, cancelCommand);
-
-// async function collectContext(): Promise<string> {
-//   let combinedData = '';
-
-//   for (const document of vscode.workspace.textDocuments) {
-//     if (document.uri.scheme === 'file') {
-//       const fileName = document.fileName;
-//       const fileExtension = path.extname(fileName);
-//       const content = document.getText();
-
-//       let uncommentedContent = content;
-
-//       // Check if the language's comment syntax is known
-//       if (commentSyntax[fileExtension]) {
-//         uncommentedContent = removeComments(content, commentSyntax[fileExtension]);
-//       }
-
-//       combinedData += `${fileName}: ${uncommentedContent}\n\n`;
-//     }
-//   }
-
-//   return combinedData;
-// }
-// vscode.commands.registerCommand('extension.collectContext', async () => {
-//   try {
-//     const combinedData = await collectContext();
-//     vscode.window.showInformationMessage('Data collected from open documents.');
-//     console.log(combinedData); // Or display it in another way
-//   } catch (error) {
-//     vscode.window.showErrorMessage('Error collecting data: ' + error);
-//   }
-// });
-
-// async function processAndSubmitData(url: string, apiKey: string, cancelToken: CancelTokenSource): Promise<void> {
-//   try {
-//     const collectedData = await collectContext();
-//     await submitQuery(url, collectedData, apiKey, cancelToken);
-//     vscode.window.showInformationMessage('Data submitted successfully.');
-//   } catch (error) {
-//     vscode.window.showErrorMessage('Error processing or submitting data: ' + error);
-//   }
-// }
-
-// vscode.commands.registerCommand('extension.processAndSubmitData', async () => {
-//   const url = 'https://api.example.com/data'; // Replace with your URL
-//   const apiKey = 'your-api-key'; // Replace with your API key
-//   const cancelTokenSource = axios.CancelToken.source();
-
-//   await processAndSubmitData(url, apiKey, cancelTokenSource);
-// });
-
-// function openNewDocument() {
-//   vscode.workspace.openTextDocument({ content: '', language: 'plaintext' }).then((document) => {
-//     vscode.window.showTextDocument(document);
-//   });
-// }
-
-// function openDocumentWithDefaultText() {
-//   const defaultText = 'Hello, World!'; // Your default text here
-//   vscode.workspace.openTextDocument({ content: defaultText, language: 'plaintext' }).then((document) => {
-//     vscode.window.showTextDocument(document);
-//   });
-// }
-
-// let openDocumentReference;
-
-// function openDocumentWithDefaultText() {
-//   const defaultText = 'Hello, World!';
-//   vscode.workspace.openTextDocument({ content: defaultText }).then((document) => {
-//     openDocumentReference = document; // Store the document reference
-//     vscode.window.showTextDocument(document);
-//   });
-// }
-
-// function accessStoredDocument() {
-//   if (openDocumentReference) {
-//     // Use the stored reference here
-//     // For example, show the document again
-//     vscode.window.showTextDocument(openDocumentReference);
-//   } else {
-//     console.log('No document is stored');
-//   }
-// }
-
-// function activate(context) {
-//   // When extension is activated, retrieve stored document info
-//   let storedUri = context.globalState.get('documentUri');
-//   let storedContent = context.globalState.get('documentContent');
-
-//   if (storedUri) {
-//     vscode.workspace.openTextDocument(vscode.Uri.parse(storedUri)).then((document) => {
-//       vscode.window.showTextDocument(document);
-//     });
-//   }
-
-//   // Register command to store document info
-//   let disposable = vscode.commands.registerCommand('yourExtension.storeDocumentInfo', () => {
-//     let activeDocument = vscode.window.activeTextEditor.document;
-//     context.globalState.update('documentUri', activeDocument.uri.toString());
-//     context.globalState.update('documentContent', activeDocument.getText());
-//   });
-
-//   context.subscriptions.push(disposable);
-// }
 
 // function activate(context) {
 //   let previousActiveDocument;

@@ -215,23 +215,19 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // Calling the constructor registers all of the commands, and creates a disposables structure
   let commandsService: CommandsService;
   try {
-    message = `instantiate commandsService`;
-    myLogger.log(message, LogLevel.Debug);
+    myLogger.log(`instantiate commandsService`, LogLevel.Debug);
     commandsService = new CommandsService(myLogger, extensionContext, dataService.data);
+    myLogger.log(`commandsService instantiated`, LogLevel.Trace);
   } catch (e) {
     if (e instanceof Error) {
-      // Report the error (file may not exist, etc.)
-      message = e.message;
+      throw new DetailedError(`Activation: failed to create an instance of CommandsService -> `, e);
     } else {
-      // If e is not an instance of Error, you might want to handle it differently
-      message = 'An unknown error occurred';
+      // ToDo:  investigation to determine what else might happen
+      throw new Error(
+        `Activation: failed to create an instance of CommandsService and the object caught is of type ${typeof e}`,
+      );
     }
-    myLogger.log(message, LogLevel.Error);
-    throw new Error(message);
   }
-  message = `commandsService instantiated`;
-  myLogger.log(message, LogLevel.Trace);
-
   // Add the disposables from the CommandsService to extensionContext.subscriptions
   extensionContext.subscriptions.push(...commandsService.getDisposables());
 
@@ -239,16 +235,20 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   let allEditorsRestored = false;
   vscode.window.onDidChangeVisibleTextEditors((editors) => {
     if (!allEditorsRestored) {
-      console.log(`onDidChangeVisibleTextEditors: num editors as event arg: ${editors.length}`);
+      myLogger.log(`onDidChangeVisibleTextEditors: editors length: ${editors.length}`, LogLevel.Debug);
+
       if (editors.length === vscode.workspace.textDocuments.length) {
         allEditorsRestored = true;
       }
     }
   });
 
-  console.log(`Num editors: ${vscode.window.visibleTextEditors.length}`);
+  myLogger.log(`Num editors visible at end of activation: ${vscode.window.visibleTextEditors.length}`, LogLevel.Debug);
   vscode.window.visibleTextEditors.forEach((editor) => {
-    console.log(editor.document.fileName);
+    myLogger.log(
+      `Visible editor's document at end of activation: uri = ${editor.document.uri} filename = ${editor.document.fileName}`,
+      LogLevel.Debug,
+    );
   });
 }
 
@@ -264,6 +264,7 @@ function deactivateExtension(): Promise<void> {
     // ToDo: The code to close editors with this document does not execute correctly
     // close any editors with this document open
     let editorsDisplayingDoc = vscode.window.visibleTextEditors.filter((editor) => editor.document === promptDocument);
+    //myLogger.log(`Num editors: ${editorsDisplayingDoc.length}`, LogLevel.Debug);
     console.log(`Num editors: ${editorsDisplayingDoc.length}`);
     editorsDisplayingDoc.forEach((editor, i) => {
       console.log(i);

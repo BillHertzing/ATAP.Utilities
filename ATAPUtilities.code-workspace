@@ -1,0 +1,21 @@
+{
+  "folders": [
+    {
+      "name": "ATAP-AiAssist",
+      "path": "./src/ATAP.VSCExtension.AI/ATAP-AiAssist",
+      "settings": {
+        "cSpell.configPath": ".vscode"
+      }
+    },
+    {
+      "name": "SolutionDocumentation",
+      "path": "./SolutionDocumentation",
+      "settings": {
+        "cSpell.configPath": ".vscode"
+      }
+    }
+  ],
+  "settings": {
+    "typescript.tsc.autoDetect": "off"
+  }
+}

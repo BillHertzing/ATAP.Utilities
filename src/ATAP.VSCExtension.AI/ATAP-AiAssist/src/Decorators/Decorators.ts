@@ -44,6 +44,18 @@ export function logExecutionTime(target: any, propertyKey: string, descriptor: P
   return descriptor; // Return the modified descriptor
 }
 
+export function logConstructorWithLogger(logger: ILogger) {
+  return function <T extends new (...args: any[]) => {}>(originalConstructor: T) {
+    return class extends originalConstructor {
+      constructor(...args: any[]) {
+        logger.log(`${originalConstructor.name}.ctor Starting`, LogLevel.Debug);
+        super(...args);
+        logger.log(`${originalConstructor.name}.ctor Completed`, LogLevel.Debug);
+      }
+    };
+  };
+}
+
 export function logConstructor<T extends new (...args: any[]) => {}>(originalConstructor: T) {
   return class extends originalConstructor {
     constructor(...args: any[]) {

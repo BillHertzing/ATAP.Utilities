@@ -442,7 +442,7 @@ Example
 
 There are many scenarios that require a trusted SSL Certificate to authenticate a specific server. The examples below will create a SSL certificate for a server DN. Among other things, it can be used to support PSRemoting in a workgroup environment.
 
-Certificate creation starts with the DintiguishedNameHash  # Subject, SubjectAlternativeName, and the type of certificate (template)
+Certificate creation starts with the DistinguishedNameHash  # Subject, SubjectAlternativeName, and the type of certificate (template)
 [Distinguished Names](https://ldapwiki.com/wiki/Distinguished%20Names).
 
 Also needed are the certificate's ValidityPeriod and ValidityPeriodUnits
@@ -687,4 +687,4 @@ ATAP.Utilities.Security.Powershell
 
 #### Git
 
-Store the remote repository URL and credentialal
+Store the remote repository URL and credentials

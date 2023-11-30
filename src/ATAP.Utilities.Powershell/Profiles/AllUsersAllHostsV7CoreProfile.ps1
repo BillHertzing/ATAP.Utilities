@@ -119,14 +119,13 @@ Function Write-EnvironmentVariablesIndented {
     [int] $initialIndent = 0
     , [int] $indentIncrement = 2
   )
-  ('Machine', 'User', 'Process') | ForEach-Object { $scope = $_;
-    [System.Environment]::GetEnvironmentVariables($scope) | ForEach-Object { $envVarHashTable = $_;
+  ('Machine', 'User', 'Process') | ForEach-Object { $scope = $_
+    [System.Environment]::GetEnvironmentVariables($scope) | ForEach-Object { $envVarHashTable = $_
       $envVarHashTable.Keys | Sort-Object | ForEach-Object { $key = $_
         if ($key -eq 'path') {
           $outstr += ' ' * $initialIndent + $key + ' (' + $scope + ') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
           $($($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) | Sort-Object) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) ) + [Environment]::NewLine
-        }
-        else {
+        } else {
           $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] + '  [' + $scope + ']' + [Environment]::NewLine
         }
       }
@@ -215,8 +214,7 @@ $inheritedEnvironmentVariable = [System.Environment]::GetEnvironmentVariable('En
 $inProcessEnvironmentVariable = ''
 if ($inheritedEnvironmentVariable) {
   $inProcessEnvironmentVariable = $inheritedEnvironmentVariable
-}
-else {
+} else {
   $inProcessEnvironmentVariable = 'Production' # default for all machines is Production, can be overwritten on a per-process basis if needed
 }
 $global:settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']] = $inProcessEnvironmentVariable
@@ -225,11 +223,11 @@ $global:settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']] = $inProces
 # The $Env:PSModulePath is process-scoped, and it's initial value is supplied by the Powershell host process/engine.
 # Powershell Core supplies [Environment]::GetFolderPath('MyDocuments')\PowerShell\Modules;C:\Program Files\PowerShell\Modules;c:\program files\powershell\7\Modules; in the initial value (process scoped)
 # The engine then loads the contents of the property 'PSModulePath' from the registry Key "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
-# To see the value of this registry key/proptery, run the command
+# To see the value of this registry key/property, run the command
 #  $(Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" -name 'PSModulePath')
 # Installing some software on a host may modify this registry key, for example...
 # Installing SQL Server 2019 adds the path ;C:\Program Files (x86)\Microsoft SQL Server\150\Tools\PowerShell\Modules\ to the Registry setting for the machine scoped $Env:PSModulePath
-# For all ATAP organizationb hosts, we have made the opinionated decision to include the powershell Desktop modules in the PSModulePath for Powershell Core.
+# For all ATAP organization hosts, we have made the opinionated decision to include the powershell Desktop modules in the PSModulePath for Powershell Core.
 #  The reason? There are just too many cmdlets in the desktop modules that are needed for managing Windows hosts and netwokrs, for these modules to be left out
 # additional $PSModulePath locations depend on the user and the role the user has on the machine, so there are no more machine-specific values. See the individual user profiles for further additions to the $ENV:PSModulepath
 # Get the current $Env:PSModulePath (should be the values pre-populated by the engine, appended with the "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" PSModuleProperty )
@@ -281,8 +279,7 @@ Function Set-CredentialFile {
     if ($force) {
       # ToDo: check for ACL permissions to create
       New-Item -Path $SharedSecureCredentialDirectory -ItemType Container > $null
-    }
-    else {
+    } else {
       throw "$SharedSecureCredentialDirectory does not exist"
     }
     if ($(Test-Path -Path $credentialFilePath -PathType Leaf)) {
@@ -298,19 +295,19 @@ Function Set-CredentialFile {
   }
 }
 
-  Function Get-CredentialFile {
-    param (
-      [string] $Path
-    )
-    $credential = Import-Clixml -Path $path
-    $credential
-  }
+Function Get-CredentialFile {
+  param (
+    [string] $Path
+  )
+  $credential = Import-Clixml -Path $path
+  $credential
+}
 
-  # Set DebugPreference to Continue  to see the $global:settings and Environment variables at the completion of this profile
-  # Print the $global:settings if Debug
-  $DebugPreference = 'SilentlyContinue'
-  Write-PSFMessage -Level Debug -Message ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
-  Write-PSFMessage -Level Debug -Message ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
-  $DebugPreference = 'SilentlyContinue'
+# Set DebugPreference to Continue  to see the $global:settings and Environment variables at the completion of this profile
+# Print the $global:settings if Debug
+$DebugPreference = 'SilentlyContinue'
+Write-PSFMessage -Level Debug -Message ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
+Write-PSFMessage -Level Debug -Message ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
+$DebugPreference = 'SilentlyContinue'
 
 

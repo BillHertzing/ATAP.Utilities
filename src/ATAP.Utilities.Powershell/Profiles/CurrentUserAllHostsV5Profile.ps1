@@ -23,12 +23,12 @@ http://www.somewhere.com/attribution.html
 # Set Verbosity and Debug preferences for this profile
 $oldVerbosePreference = $script:VerbosePreference
 # Don't Print any debug messages to the console
-$DebugPreference = "SilentlyContinue"
+$DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
-$VerbosePreference = "SilentlyContinue" #"SilentlyContinue"
+$VerbosePreference = 'SilentlyContinue' #"SilentlyContinue"
 
 # Values for the machine PsPath environment variable
-  # the default location where chocolatey installs modules on this machine
+# the default location where chocolatey installs modules on this machine
 
 # To be shared with V7 machine profile or insPowershell package
 Function Write-HashIndented {
@@ -107,7 +107,7 @@ function Write-ArrayIndented {
 Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
 
 # Dot source the global:settings file from a cache
-$global:Settings=@{}
+$global:Settings = @{}
 $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']] = 'C:\ProgramData\chocolatey\lib'
 # Any machine that has openssl installed, needs to add it's path to the machine-scope path
 # This should only be done once, by a machine admin, when it is installed onto a machine
@@ -135,7 +135,7 @@ Function ConsoleSettings {
   ($console.windowSize).width = 200
   ($console.windowSize).height = 100
 }
-if ($host.ui.Rawui.WindowTitle -notmatch 'ISE') {ConsoleSettings}
+if ($host.ui.Rawui.WindowTitle -notmatch 'ISE') { ConsoleSettings }
 
 
 # Expand upon the PSModulePath according to the roles this user has on this machine# ToDo: expand the use of PSModulepAth in the globals settings files
@@ -155,47 +155,49 @@ $UserPSModulePaths = @(
   # the default location where chocolatey installs modules on this machine
   $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]
 )
-# Add the $UserPSModulePaths to the exisiting $env:PSModulePaths
-$desiredPSModulePaths = $UserPSModulePaths  + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
+# Add the $UserPSModulePaths to the existing $env:PSModulePaths
+$existing = $UserPSModulePaths + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
 # Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
-[Environment]::SetEnvironmentVariable('PSModulePath', $desiredPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
+[Environment]::SetEnvironmentVariable('PSModulePath', $existing -join [IO.Path]::PathSeparator, 'Process')
 
 
 # Clean up the $desiredPSModulePaths
 # The use of 'Get-PathVariable' function causes the pcsx module to be loaded here
-# ToDo: work out pscx for jenkins clinet agents
+# ToDo: work out pscx for jenkins client agents
 #$finalPSModulePaths = Get-PathVariable -Name 'PSModulePath' -RemoveEmptyPaths -StripQuotes
 # Set the $Env:PsModulePath to the final, clean value of $desiredPSModulePaths.
 #[Environment]::SetEnvironmentVariable('PSModulePath', $finalPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
 
 
 #$Env:PSModulePath = (join-path $env:ProgramFiles "WindowsPowerShell\Modules") + [IO.Path]::PathSeparator + $Env:PSModulePath
-if ($VerbosePreference -eq 'Continue') {Show-context}
-Write-PSFMessage -Level Verbose -Message $("Final PSModulePath in AlluserAllshell profile is: " + "`r`n`t" + (($Env:PSModulePath -split [IO.Path]::PathSeparator) -join "`r`n`t"))  -Tag 'V5UserProfile'
+if ($VerbosePreference -eq 'Continue') { Show-context }
+Write-PSFMessage -Level Verbose -Message $('Final PSModulePath in AlluserAllshell profile is: ' + "`r`n`t" + (($Env:PSModulePath -split [IO.Path]::PathSeparator) -join "`r`n`t")) -Tag 'V5UserProfile'
 
 # Is this script elevated
-$elevatedSIDPattern='S-1-5-32-544|S-1-16-12288'
-if ((whoami /all) -match $elevatedSIDPattern) {Write-PSFMessage -Level Verbose -Message $("Elevated permisions")} #ToDo; change window border to yellow}
+$elevatedSIDPattern = 'S-1-5-32-544|S-1-16-12288'
+if ((whoami /all) -match $elevatedSIDPattern) { Write-PSFMessage -Level Verbose -Message $('Elevated permissions') } #ToDo; change window border to yellow}
 
 # Set the name of the VSC extension project under development
 # ToDo: put this in a vsc extension as a command , and trigger the command every time an editor is activated.
-# The command has a collection set of project paths/names (populated by the list of files below src/ relative to the repoistory root)
-#  The command matches the editor's document path to (hopefully only one) element, which provide the valure for this env var
+# The command has a collection set of project paths/names (populated by the list of files below src/ relative to the repository root)
+#  The command matches the editor's document path to (hopefully only one) element, which provide the value for this env var
 # ToDo: put this into a ConfigRootKeys keys tor Typescript and VSC Extension process
-[Environment]::SetEnvironmentVariable("VSCExtensionProjectName", "ATAP-AiAssist", [EnvironmentVariableTarget]::User)
-[Environment]::SetEnvironmentVariable("VSCExtensionProjectRelativePath", "src/ATAP.VSCExtension.ATAPAIAssist/ATAP-AiAssist", [EnvironmentVariableTarget]::User)
-[Environment]::SetEnvironmentVariable("VSCExtensionProjectAbsolutePath", "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.VSCExtension.AI\ATAP-AiAssist", [EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable('VSCExtensionProjectName', 'ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', 'src/ATAP.VSCExtension.ATAPAIAssist/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.VSCExtension.AI\ATAP-AiAssist', [EnvironmentVariableTarget]::User)
 
+# Capture SSL keys needed to decrypt SSL traffic using wireshark
+# [Environment]::SetEnvironmentVariable( 'SSLKEYLOGFILE', 'C:/Users/whertzing/SSLKEYLOGFILE.txt', 'Machine' ) # Do this manually, it requires elevated permission
 
 # Show environment/context information when the profile runs
 # ToDo reformat using YAML
-Function Show-context{
+Function Show-context {
   # Print the version of the framework we are using
-  Write-PSFMessage -Level Verbose -Message $("Framework being used: {0}" -f $([Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory())) -Tag 'V5UserProfile'
-  Write-PSFMessage -Level Verbose -Message $("DropBoxBasePath: {0}" -f $global:DropBoxBasePath)  -Tag 'V5UserProfile'
-  Write-PSFMessage -Level Verbose -Message $("PSModulePath: {0}" -f $Env:PSModulePath)  -Tag 'V5UserProfile'
-  Write-PSFMessage -Level Verbose -Message $("Elevated permisions:" -f (whoami /all) -match $elevatedSIDPattern)  -Tag 'V5UserProfile'
-  Write-PSFMessage -Level Verbose -Message $("Drops:{0}" -f $drops)  -Tag 'V5UserProfile'
+  Write-PSFMessage -Level Verbose -Message $('Framework being used: {0}' -f $([Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory())) -Tag 'V5UserProfile'
+  Write-PSFMessage -Level Verbose -Message $('DropBoxBasePath: {0}' -f $global:DropBoxBasePath) -Tag 'V5UserProfile'
+  Write-PSFMessage -Level Verbose -Message $('PSModulePath: {0}' -f $Env:PSModulePath) -Tag 'V5UserProfile'
+  Write-PSFMessage -Level Verbose -Message $('Elevated permissions:' -f (whoami /all) -match $elevatedSIDPattern) -Tag 'V5UserProfile'
+  Write-PSFMessage -Level Verbose -Message $('Drops:{0}' -f $drops) -Tag 'V5UserProfile'
   #DebugPreference
   #VerbosePreference
   #LoggingFrameworkandLogFileLocation
@@ -206,31 +208,27 @@ Function Show-context{
 
 
 # https://stackoverflow.com/questions/138144/what-s-in-your-powershell-profile-ps1-file
-filter match( $reg )
-{
-    if ($_.tostring() -match $reg)
-        { $_ }
+filter match( $reg ) {
+  if ($_.tostring() -match $reg)
+  { $_ }
 }
 
 # behave like a grep -v command
 # but work on objects
-filter exclude( $reg )
-{
-    if (-not ($_.tostring() -match $reg))
-        { $_ }
+filter exclude( $reg ) {
+  if (-not ($_.tostring() -match $reg))
+  { $_ }
 }
 
 # behave like match but use only -like
-filter like( $glob )
-{
-    if ($_.toString() -like $glob)
-        { $_ }
+filter like( $glob ) {
+  if ($_.toString() -like $glob)
+  { $_ }
 }
 
-filter unlike( $glob )
-{
-    if (-not ($_.tostring() -like $glob))
-        { $_ }
+filter unlike( $glob ) {
+  if (-not ($_.tostring() -like $glob))
+  { $_ }
 }
 
 

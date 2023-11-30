@@ -55,7 +55,8 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
 
   // ToDo: create a static startup logger, and use that until the full blown logger can be instantiated
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
-  const myLogger = new Logger();
+  const myLogger =
+    new Logger();
   // const loggerLogLevelFromSettings = getLoggerLogLevelFromSettings(); // supplies a default if not found in settings
   // myLogger.createChannel('ATAP-AiAssist', loggerLogLevelFromSettings);
   myLogger.createChannel('ATAP-AiAssist', LogLevel.Debug);

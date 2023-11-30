@@ -341,8 +341,7 @@ Function Get-Attributions {
           }
         }
       }
-    }
-    finally {
+    } finally {
       $reader.Close()
       $FileStream.Close()
     }
@@ -371,8 +370,7 @@ Function Get-LinksFromDrafts {
       if ($matchResult.Success) {
         $Subject = $matchResult.captures.groups['Subject'].value
         #Write-PSFMessage -Level Debug -Message "Subject = $Subject"
-      }
-      else {
+      } else {
         $matchResult = [RegEx]::Matches($line, $findRegex2)
         if ($matchResult.Success) {
           $URL = $matchResult.captures.groups['URL'].value
@@ -390,8 +388,7 @@ Function Get-LinksFromDrafts {
         $URL = ''
       }
     }
-  }
-  finally {
+  } finally {
     $reader.Close()
     $Stream.Close()
   }
@@ -492,8 +489,7 @@ Function Open-BookmarksInBrave {
         foreach ($bookmark in $input) {
           $urlList += $bookmark.url
         }
-      }
-      else {
+      } else {
         $urlList = $URLs
       }
     }
@@ -614,8 +610,7 @@ Function WatchFile {
       Write-Host '.' -NoNewline
 
     } while ($true)
-  }
-  finally {
+  } finally {
     # this gets executed when user presses CTRL+C:
 
     # stop monitoring
@@ -716,12 +711,12 @@ Set-EnvironmentVariablesProcess
 
 # Set the name of the VSC extension project under development
 # ToDo: put this in a vsc extension as a command , and trigger the command every time an editor is activated.
-# The command has a collection set of project paths/names (populated by the list of files below src/ relative to the repoistory root)
-#  The command matches the editor's document path to (hopefully only one) element, which provide the valure for this env var
+# The command has a collection set of project paths/names (populated by the list of files below src/ relative to the repository root)
+#  The command matches the editor's document path to (hopefully only one) element, which provide the value for this env var
 # ToDo: put this into a ConfigRootKeys keys tor Typescript and VSC Extension process
-[Environment]::SetEnvironmentVariable("VSCExtensionProjectName", "ATAP-AiAssist", [EnvironmentVariableTarget]::User)
-[Environment]::SetEnvironmentVariable("VSCExtensionProjectRelativePath", "src/ATAP.VSCExtension.AI/ATAP-AiAssist", [EnvironmentVariableTarget]::User)
-[Environment]::SetEnvironmentVariable("VSCExtensionProjectAbsolutePath", "C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist", [EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable('VSCExtensionProjectName', 'ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', 'src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
 
 # Unlock the Hashicorp Vault
 

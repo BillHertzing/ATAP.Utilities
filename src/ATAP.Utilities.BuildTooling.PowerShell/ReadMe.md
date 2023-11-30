@@ -80,6 +80,18 @@ New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptT
 
 ## Symbolic Links for VSC settings, tasks, launch configurations
 
+### User Settings symbolic link
+
+The `settings.json` file at (e.g) `C:\Users\<username>\AppData\Roaming\Code\User` holds the final fallback to all VSC settings. It applies to all repositories and workspaces. Every developer on a host needs to link to the organizations common settings. to do this, run the following command:
+
+```Powershell
+
+New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSettings.jsonc" -symbolicLinkPath "C:\Users\<username>\AppData\Roaming\Code\User\settings.json" -force
+
+```
+
+### Repository symbolic links
+
 The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a subirecory `.vscode`, which contains the three files
 
 ```text
@@ -90,18 +102,16 @@ settings.json
 
 This directory and these files need to be present at the root of each repository, and need to be source-controlled and versioned. Having multiple independent copies is prone to errors and misconfigurations. Therefore, we have created a repository named `SharedVSCode`, and placed the source-of-truth copies of these files in this git-versioned repository.
 
-We then create symbolic links from the files in this repository to syblinks that reside in the .vscode directory under every other repository.
+We then create symbolic links from the files in this repository to symblinks that reside in the .vscode directory under every other repository.
 
-In every new repository, after runing `git init`, run this command (as an administrator) in the root folder of the repository:
+In every new repository, after runing `git init`, run these commands (as an administrator) in the root folder of the repository:
 
 ```Powershell
   $null = New-Item -ItemType Directory -Force '.vscode'
   # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\extensions.json"  -symbolicLinkPath ".\.vscode\extensions.json" -force
-  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch.json"  -symbolicLinkPath ".\.vscode\launch.json" -force
-  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\settings.json"  -symbolicLinkPath ".\.vscode\settings.json" -force
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\tasks.json"  -symbolicLinkPath ".\.vscode\tasks.json" -force
-  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\.prettierrc.json"  -symbolicLinkPath ".\.vscode\tasks.json" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\cspell.json"  -symbolicLinkPath ".\.vscode\cspell.json" -force
 ```
 
 ## Symbolic Links for Prettier formatting rules, CSpell, eslint rules
@@ -115,8 +125,18 @@ In every new repository, after creating the .vscode directory and its contents, 
 ```Powershell
   # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.prettierrc.yml"  -symbolicLinkPath ".\.prettierrc.yml" -force
-  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.eslintrc.yml"  -symbolicLinkPath ".\.eslintrc.yml" -force
-  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\cspell.json"  -symbolicLinkPath ".\.vscode\cspell.json" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.eslintrc.js"  -symbolicLinkPath ".\.eslintrc.js" -force
+```
+
+### project-specific symbolic links
+
+#### VSC Extension development symbolic links
+
+Place these symbolic links in the .vscode subdirecotry of any project that builds a VSC extension.
+
+```Powershell
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch4Extension.jsonc"  -symbolicLinkPath ".\.vscode\launch.json" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\tasks4Extension.jsonc"  -symbolicLinkPath ".\.vscode\tasks.json" -force
 ```
 
 ## Symbolic Links and cloud-synchronization

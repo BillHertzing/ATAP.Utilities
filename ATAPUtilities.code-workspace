@@ -1,21 +1,528 @@
 {
   "folders": [
+{
+      "name": "ATAP.Console.CodeAnalysis",
+      "path": "./src/ATAP.Console.CodeAnalysis"
+    },
+{
+      "name": "ATAP.Console.Console01",
+      "path": "./src/ATAP.Console.Console01"
+    },
+{
+      "name": "ATAP.Console.Console01.StringConstants",
+      "path": "./src/ATAP.Console.Console01.StringConstants"
+    },
+{
+      "name": "ATAP.Console.Console02",
+      "path": "./src/ATAP.Console.Console02"
+    },
+{
+      "name": "ATAP.Console.Console02.StringConstants",
+      "path": "./src/ATAP.Console.Console02.StringConstants"
+    },
+{
+      "name": "ATAP.Console.Console03",
+      "path": "./src/ATAP.Console.Console03"
+    },
+{
+      "name": "ATAP.Console.Console03.StringConstants",
+      "path": "./src/ATAP.Console.Console03.StringConstants"
+    },
+{
+      "name": "ATAP.Console.HelloWorld",
+      "path": "./src/ATAP.Console.HelloWorld"
+    },
+{
+      "name": "ATAP.IAC.Ansible",
+      "path": "./src/ATAP.IAC.Ansible"
+    },
+{
+      "name": "ATAP.Service.Service01",
+      "path": "./src/ATAP.Service.Service01"
+    },
+{
+      "name": "ATAP.Service.Service02",
+      "path": "./src/ATAP.Service.Service02"
+    },
+{
+      "name": "ATAP.Services.ConsoleMonitor",
+      "path": "./src/ATAP.Services.ConsoleMonitor"
+    },
+{
+      "name": "ATAP.Services.ConsoleMonitor.Interfaces",
+      "path": "./src/ATAP.Services.ConsoleMonitor.Interfaces"
+    },
+{
+      "name": "ATAP.Services.ConsoleSink",
+      "path": "./src/ATAP.Services.ConsoleSink"
+    },
+{
+      "name": "ATAP.Services.ConsoleSink.Interfaces",
+      "path": "./src/ATAP.Services.ConsoleSink.Interfaces"
+    },
+{
+      "name": "ATAP.Services.ConsoleSource",
+      "path": "./src/ATAP.Services.ConsoleSource"
+    },
+{
+      "name": "ATAP.Services.ConsoleSource.Interfaces",
+      "path": "./src/ATAP.Services.ConsoleSource.Interfaces"
+    },
+{
+      "name": "ATAP.Services.FileSystemWatchers",
+      "path": "./src/ATAP.Services.FileSystemWatchers"
+    },
+{
+      "name": "ATAP.Services.FileSystemWatchers.Interfaces",
+      "path": "./src/ATAP.Services.FileSystemWatchers.Interfaces"
+    },
+{
+      "name": "ATAP.Services.GenerateProgram",
+      "path": "./src/ATAP.Services.GenerateProgram"
+    },
+{
+      "name": "ATAP.Services.GenerateProgram.Interfaces",
+      "path": "./src/ATAP.Services.GenerateProgram.Interfaces"
+    },
+{
+      "name": "ATAP.Services.GenerateProgram.StringConstants",
+      "path": "./src/ATAP.Services.GenerateProgram.StringConstants"
+    },
+{
+      "name": "ATAP.Services.TcpWithResilience",
+      "path": "./src/ATAP.Services.TcpWithResilience"
+    },
+{
+      "name": "ATAP.Services.TcpWithResilience.Interfaces",
+      "path": "./src/ATAP.Services.TcpWithResilience.Interfaces"
+    },
+{
+      "name": "ATAP.Services.Timers",
+      "path": "./src/ATAP.Services.Timers"
+    },
+{
+      "name": "ATAP.Services.Timers.Interfaces",
+      "path": "./src/ATAP.Services.Timers.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.1ConsoleTestRunner",
+      "path": "./src/ATAP.Utilities.1ConsoleTestRunner"
+    },
+{
+      "name": "ATAP.Utilities.AutoDoc",
+      "path": "./src/ATAP.Utilities.AutoDoc"
+    },
+{
+      "name": "ATAP.Utilities.BuildTooling.Cake",
+      "path": "./src/ATAP.Utilities.BuildTooling.Cake"
+    },
+{
+      "name": "ATAP.Utilities.BuildTooling.Chocolatey",
+      "path": "./src/ATAP.Utilities.BuildTooling.Chocolatey"
+    },
+{
+      "name": "ATAP.Utilities.BuildTooling.CSharp",
+      "path": "./src/ATAP.Utilities.BuildTooling.CSharp"
+    },
+{
+      "name": "ATAP.Utilities.BuildTooling.Jenkins",
+      "path": "./src/ATAP.Utilities.BuildTooling.Jenkins"
+    },
+{
+      "name": "ATAP.Utilities.BuildTooling.PowerShell",
+      "path": "./src/ATAP.Utilities.BuildTooling.PowerShell"
+    },
+{
+      "name": "ATAP.Utilities.ChatGPT",
+      "path": "./src/ATAP.Utilities.ChatGPT"
+    },
+{
+      "name": "ATAP.Utilities.Collection.Extensions",
+      "path": "./src/ATAP.Utilities.Collection.Extensions"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Configuration",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Configuration"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Enumerations",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Enumerations"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Extensions",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Extensions"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Hardware.Enumerations",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Hardware.Enumerations"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Hardware.Extensions",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Hardware.Extensions"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Hardware.Interfaces",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Hardware.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Hardware.Models",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Hardware.Models"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Hardware.StringConstants",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Hardware.StringConstants"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Interfaces",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Models",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Models"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations",
+      "path": "./src/ATAP.Utilities.ComputerInventory.ProcessInfo.Enumerations"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions",
+      "path": "./src/ATAP.Utilities.ComputerInventory.ProcessInfo.Extensions"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces",
+      "path": "./src/ATAP.Utilities.ComputerInventory.ProcessInfo.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.ProcessInfo.Models",
+      "path": "./src/ATAP.Utilities.ComputerInventory.ProcessInfo.Models"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants",
+      "path": "./src/ATAP.Utilities.ComputerInventory.ProcessInfo.StringConstants"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Software.DefaultConfiguration"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Software.Enumerations",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Software.Enumerations"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Software.Interfaces",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Software.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.ComputerInventory.Software.Models",
+      "path": "./src/ATAP.Utilities.ComputerInventory.Software.Models"
+    },
+{
+      "name": "ATAP.Utilities.ConcurrentObservableCollections",
+      "path": "./src/ATAP.Utilities.ConcurrentObservableCollections"
+    },
+{
+      "name": "ATAP.Utilities.Configuration.Extensions",
+      "path": "./src/ATAP.Utilities.Configuration.Extensions"
+    },
+{
+      "name": "ATAP.Utilities.CryptoCoin.Enumerations",
+      "path": "./src/ATAP.Utilities.CryptoCoin.Enumerations"
+    },
+{
+      "name": "ATAP.Utilities.CryptoCoin.Extensions",
+      "path": "./src/ATAP.Utilities.CryptoCoin.Extensions"
+    },
+{
+      "name": "ATAP.Utilities.CryptoCoin.Interfaces",
+      "path": "./src/ATAP.Utilities.CryptoCoin.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.CryptoCoin.Models",
+      "path": "./src/ATAP.Utilities.CryptoCoin.Models"
+    },
+{
+      "name": "ATAP.Utilities.CryptoMiner.Enumerations",
+      "path": "./src/ATAP.Utilities.CryptoMiner.Enumerations"
+    },
+{
+      "name": "ATAP.Utilities.CryptoMiner.Extensions",
+      "path": "./src/ATAP.Utilities.CryptoMiner.Extensions"
+    },
+{
+      "name": "ATAP.Utilities.CryptoMiner.Interfaces",
+      "path": "./src/ATAP.Utilities.CryptoMiner.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.CryptoMiner.Models",
+      "path": "./src/ATAP.Utilities.CryptoMiner.Models"
+    },
+{
+      "name": "ATAP.Utilities.DatabaseManagement",
+      "path": "./src/ATAP.Utilities.DatabaseManagement"
+    },
+{
+      "name": "ATAP.Utilities.DateTime",
+      "path": "./src/ATAP.Utilities.DateTime"
+    },
+{
+      "name": "ATAP.Utilities.Enumeration",
+      "path": "./src/ATAP.Utilities.Enumeration"
+    },
+{
+      "name": "ATAP.Utilities.ETW",
+      "path": "./src/ATAP.Utilities.ETW"
+    },
+{
+      "name": "ATAP.Utilities.FIleIO",
+      "path": "./src/ATAP.Utilities.FIleIO"
+    },
+{
+      "name": "ATAP.Utilities.FileIO.PowerShell",
+      "path": "./src/ATAP.Utilities.FileIO.PowerShell"
+    },
+{
+      "name": "ATAP.Utilities.GenerateProgram",
+      "path": "./src/ATAP.Utilities.GenerateProgram"
+    },
+{
+      "name": "ATAP.Utilities.GenerateProgram.Interfaces",
+      "path": "./src/ATAP.Utilities.GenerateProgram.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.GenericHost.Extensions",
+      "path": "./src/ATAP.Utilities.GenericHost.Extensions"
+    },
+{
+      "name": "ATAP.Utilities.GenericHost.Interfaces",
+      "path": "./src/ATAP.Utilities.GenericHost.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.GraphDataStructures",
+      "path": "./src/ATAP.Utilities.GraphDataStructures"
+    },
+{
+      "name": "ATAP.Utilities.GraphDataStructures.Interfaces",
+      "path": "./src/ATAP.Utilities.GraphDataStructures.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.Http",
+      "path": "./src/ATAP.Utilities.Http"
+    },
+{
+      "name": "ATAP.Utilities.Hydrus.Powershell",
+      "path": "./src/ATAP.Utilities.Hydrus.Powershell"
+    },
+{
+      "name": "ATAP.Utilities.Images.Enumerations",
+      "path": "./src/ATAP.Utilities.Images.Enumerations"
+    },
+{
+      "name": "ATAP.Utilities.Loader",
+      "path": "./src/ATAP.Utilities.Loader"
+    },
+{
+      "name": "ATAP.Utilities.Loader.Interfaces",
+      "path": "./src/ATAP.Utilities.Loader.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.Loader.StringConstants",
+      "path": "./src/ATAP.Utilities.Loader.StringConstants"
+    },
+{
+      "name": "ATAP.Utilities.Logging",
+      "path": "./src/ATAP.Utilities.Logging"
+    },
+{
+      "name": "ATAP.Utilities.MessageQueue",
+      "path": "./src/ATAP.Utilities.MessageQueue"
+    },
+{
+      "name": "ATAP.Utilities.MessageQueue.Extensions",
+      "path": "./src/ATAP.Utilities.MessageQueue.Extensions"
+    },
+{
+      "name": "ATAP.Utilities.MessageQueue.Interfaces",
+      "path": "./src/ATAP.Utilities.MessageQueue.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.MessageQueue.Shim.RabbitMQ",
+      "path": "./src/ATAP.Utilities.MessageQueue.Shim.RabbitMQ"
+    },
+{
+      "name": "ATAP.Utilities.MessageQueue.Shim.TPL",
+      "path": "./src/ATAP.Utilities.MessageQueue.Shim.TPL"
+    },
+{
+      "name": "ATAP.Utilities.MessageQueue.StringConstants",
+      "path": "./src/ATAP.Utilities.MessageQueue.StringConstants"
+    },
+{
+      "name": "ATAP.Utilities.Neo4j.Powershell",
+      "path": "./src/ATAP.Utilities.Neo4j.Powershell"
+    },
+{
+      "name": "ATAP.Utilities.ORMLite.Models",
+      "path": "./src/ATAP.Utilities.ORMLite.Models"
+    },
+{
+      "name": "ATAP.Utilities.Persistence",
+      "path": "./src/ATAP.Utilities.Persistence"
+    },
+{
+      "name": "ATAP.Utilities.Persistence.Extensions",
+      "path": "./src/ATAP.Utilities.Persistence.Extensions"
+    },
+{
+      "name": "ATAP.Utilities.Persistence.Interfaces",
+      "path": "./src/ATAP.Utilities.Persistence.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.Persistence.StringConstants",
+      "path": "./src/ATAP.Utilities.Persistence.StringConstants"
+    },
+{
+      "name": "ATAP.Utilities.Philote",
+      "path": "./src/ATAP.Utilities.Philote"
+    },
+{
+      "name": "ATAP.Utilities.Philote.Converters.Interfaces.Save",
+      "path": "./src/ATAP.Utilities.Philote.Converters.Interfaces.Save"
+    },
+{
+      "name": "ATAP.Utilities.Philote.DefaultConfiguration",
+      "path": "./src/ATAP.Utilities.Philote.DefaultConfiguration"
+    },
+{
+      "name": "ATAP.Utilities.Philote.Interfaces",
+      "path": "./src/ATAP.Utilities.Philote.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson",
+      "path": "./src/ATAP.Utilities.Philote.JsonConverter.Shim.SystemTextJson"
+    },
+{
+      "name": "ATAP.Utilities.Powershell",
+      "path": "./src/ATAP.Utilities.Powershell"
+    },
+{
+      "name": "ATAP.Utilities.Reactive.Extensions",
+      "path": "./src/ATAP.Utilities.Reactive.Extensions"
+    },
+{
+      "name": "ATAP.Utilities.RealEstate.Enumerations",
+      "path": "./src/ATAP.Utilities.RealEstate.Enumerations"
+    },
+{
+      "name": "ATAP.Utilities.Security.Powershell",
+      "path": "./src/ATAP.Utilities.Security.Powershell"
+    },
+{
+      "name": "ATAP.Utilities.Serializer",
+      "path": "./src/ATAP.Utilities.Serializer"
+    },
+{
+      "name": "ATAP.Utilities.Serializer.Interfaces",
+      "path": "./src/ATAP.Utilities.Serializer.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.Serializer.Shim.Newtonsoft",
+      "path": "./src/ATAP.Utilities.Serializer.Shim.Newtonsoft"
+    },
+{
+      "name": "ATAP.Utilities.Serializer.Shim.Plugin",
+      "path": "./src/ATAP.Utilities.Serializer.Shim.Plugin"
+    },
+{
+      "name": "ATAP.Utilities.Serializer.Shim.ServiceStack",
+      "path": "./src/ATAP.Utilities.Serializer.Shim.ServiceStack"
+    },
+{
+      "name": "ATAP.Utilities.Serializer.Shim.SystemTextJson",
+      "path": "./src/ATAP.Utilities.Serializer.Shim.SystemTextJson"
+    },
+{
+      "name": "ATAP.Utilities.Serializer.StringConstants",
+      "path": "./src/ATAP.Utilities.Serializer.StringConstants"
+    },
+{
+      "name": "ATAP.Utilities.Speech.Powershell",
+      "path": "./src/ATAP.Utilities.Speech.Powershell"
+    },
+{
+      "name": "ATAP.Utilities.String",
+      "path": "./src/ATAP.Utilities.String"
+    },
+{
+      "name": "ATAP.Utilities.StronglyTypedIds",
+      "path": "./src/ATAP.Utilities.StronglyTypedIds"
+    },
+{
+      "name": "ATAP.Utilities.StronglyTypedIds.Interfaces",
+      "path": "./src/ATAP.Utilities.StronglyTypedIds.Interfaces"
+    },
+{
+      "name": "ATAP.Utilities.StronglyTypedIds.JsonConverter.Shim.SystemTextJson",
+      "path": "./src/ATAP.Utilities.StronglyTypedIds.JsonConverter.Shim.SystemTextJson"
+    },
+{
+      "name": "ATAP.Utilities.Testing",
+      "path": "./src/ATAP.Utilities.Testing"
+    },
+{
+      "name": "ATAP.Utilities.Testing.DI",
+      "path": "./src/ATAP.Utilities.Testing.DI"
+    },
+{
+      "name": "ATAP.Utilities.Testing.DI.Fixture.Serialization",
+      "path": "./src/ATAP.Utilities.Testing.DI.Fixture.Serialization"
+    },
+{
+      "name": "ATAP.Utilities.Testing.Fixture.Database",
+      "path": "./src/ATAP.Utilities.Testing.Fixture.Database"
+    },
+{
+      "name": "ATAP.Utilities.Testing.Fixture.Serialization",
+      "path": "./src/ATAP.Utilities.Testing.Fixture.Serialization"
+    },
+{
+      "name": "ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft",
+      "path": "./src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.Newtonsoft"
+    },
+{
+      "name": "ATAP.Utilities.Testing.Fixture.Serialization.Shim.Plugin",
+      "path": "./src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.Plugin"
+    },
+{
+      "name": "ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack",
+      "path": "./src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.ServiceStack"
+    },
+{
+      "name": "ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson",
+      "path": "./src/ATAP.Utilities.Testing.Fixture.Serialization.Shim.SystemTextJson"
+    },
+{
+      "name": "ATAP.Utilities.VoiceAttack",
+      "path": "./src/ATAP.Utilities.VoiceAttack"
+    },
+{
+      "name": "ATAP.Utilities.VoiceRecognition.Powershell",
+      "path": "./src/ATAP.Utilities.VoiceRecognition.Powershell"
+    },
+{
+      "name": "ATAP.Utilities.ZSandbox",
+      "path": "./src/ATAP.Utilities.ZSandbox"
+    },
+{
+      "name": "ATAP.VSCExtension.AI",
+      "path": "./src/ATAP.VSCExtension.AI"
+    },
     {
       "name": "ATAP-AiAssist",
-      "path": "./src/ATAP.VSCExtension.AI/ATAP-AiAssist",
-      "settings": {
-        "cSpell.configPath": ".vscode"
-      }
+      "path": "./src/ATAP.VSCExtension.AI/ATAP-AiAssist"
     },
     {
       "name": "SolutionDocumentation",
-      "path": "./SolutionDocumentation",
-      "settings": {
-        "cSpell.configPath": ".vscode"
-      }
+      "path": "./SolutionDocumentation"
     }
-  ],
-  "settings": {
-    "typescript.tsc.autoDetect": "off"
-  }
+  ]
 }

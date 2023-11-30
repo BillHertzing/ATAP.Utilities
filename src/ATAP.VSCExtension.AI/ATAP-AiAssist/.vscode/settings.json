@@ -1,3 +1,191 @@
 {
-  "cSpell.flagWords": ["teh:the"]
+  // ansible.python.interpreterPath is not recognized in the ATAP.utilities settings schema
+  // python path used in the hydrus project
+  // "ansible.python.interpreterPath": "c:\\Program Files\\PythonInterpreters\\Python3.10.11\\python.exe"
+  // python path as it was in the local User settings file
+  // "ansible.python.interpreterPath": "c:\\Python311\\python.exe",
+  // ToDo: Fix the following so it is not some random hardcoded project
+  "csharp2plantuml.inputPath": "src\\ATAP.Utilities.StronglyTypedIds",
+  "csharp2plantuml.outputPath": "SolutionDocumentation\\_generated\\plantuml",
+  "csharp2plantuml.excludePath": "obj, bin, Documentation,Properties\\AssemblyInfo.cs",
+  "dotnet-test-explorer.autoExpandTree": true,
+  "dotnet-test-explorer.codeLensFailed": "AFAiled",
+  "dotnet-test-explorer.codeLensPassed": "APAsses",
+  "dotnet-test-explorer.codeLensSkipped": "ASKipped",
+  "dotnet-test-explorer.runInParallel": true,
+  "dotnet-test-explorer.autoWatch": true,
+  "dotnet-test-explorer.enableTelemetry": false,
+  // ToDo: Fix the following, and the tests directory layout, for c#, Powershell, and Typescript projects
+  "dotnet-test-explorer.testProjectPath": "tests/**/*Tests.csproj",
+  "dotnet-test-explorer.pathForResultFile": "D:\\Temp\\dotNetCoreTestExplorerTempFiles\\",
+  "debug.onTaskErrors": "showErrors",
+  "editor.accessibilitySupport": "off",
+  "editor.formatOnType": true,
+  "editor.inlineSuggest.enabled": true,
+  "editor.inlineSuggest.showToolbar": "always",
+  "editor.insertSpaces": true,
+  "editor.linkedEditing": true,
+  "editor.renderControlCharacters": false,
+  "editor.renderWhitespace": "all",
+  "editor.tabSize": 4,
+  "files.autoSave": "onFocusChange",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "files.associations": {
+    "[Jj]enkins[Ff]ile*": "jenkinsfile"
+  },
+  "git.allowForcePush": true, // ToDO: Investigate, came from StronglyTypedPhilotes project
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  "gitlens.currentLine.enabled": false,
+  "gitlens.hovers.currentLine.over": "line",
+  "hediet.vscode-drawio.theme": "atlas",
+  "iisexpress.openInBrowser": "msedge",
+  "markdownlint.customRules": ["{docsmsft.docs-linting}/markdownlint-custom-rules/rules.js"],
+  "markdownlint.config": {
+    "MD028": false,
+    "MD025": {
+      "front_matter_title": ""
+    }
+  },
+  "mssql.logDebugInfo": true,
+  "mssql.maxRecentConnections": 10,
+  "mssql.format.placeCommasBeforeNextStatement": true,
+  "mssql.format.keywordCasing": "uppercase",
+  "mssql.format.alignColumnDefinitionsInColumns": true,
+  "mssql.connections": [
+    {
+      "connectionString": "Data Source=UTAT01;Integrated Security=True;MultipleActiveResultSets=False;Encrypt=False;TrustServerCertificate=False;Application Name=Testing",
+      "password": ""
+    },
+    {
+      "connectionString": "Server=::1;Integrated Security=True;MultipleActiveResultSets=False;Encrypt=False;TrustServerCertificate=False",
+      "profileName": "Localhost, No Database",
+      "database": "",
+      "user": "",
+      "server": "::1",
+      "authenticationType": "Integrated",
+      "password": ""
+    },
+    {
+      "authenticationType": "Integrated",
+      "server": "tcp:ncat016",
+      "database": "GenerateProgram",
+      "password": "",
+      "savePassword": true,
+      "encrypt": "Mandatory",
+      "trustServerCertificate": true
+    },
+    {
+      "authenticationType": "Integrated",
+      "server": "tcp:ncat016",
+      "database": "FileSystemAsGraphDB",
+      "password": "",
+      "savePassword": true,
+      "encrypt": "Mandatory",
+      "trustServerCertificate": true
+    },
+    {
+      "authenticationType": "Integrated",
+      "server": "tcp:ncat016",
+      "database": "ATAPUtilities",
+      "password": "",
+      "savePassword": true,
+      "encrypt": "Mandatory",
+      "trustServerCertificate": true
+    }
+  ],
+  "omnisharp.enableEditorConfigSupport": true,
+  "plantuml.render": "Local",
+  "plantuml.server": "https://www.plantuml.com/plantuml",
+  "plantuml.exportOutDir": "_site/assets/images",
+  "plantuml.exportFormat": "png",
+  "plantuml.diagramsRoot": "./",
+  "plantuml.fileExtensions": ".wsd,.pu,.puml,.plantuml,.iuml,.md",
+  "powershell.codeFormatting.autoCorrectAliases": true,
+  "powershell.codeFormatting.avoidSemicolonsAsLineTerminators": true,
+  "powershell.codeFormatting.newLineAfterCloseBrace": false,
+  "powershell.codeFormatting.newLineAfterOpenBrace": false,
+  "powershell.codeFormatting.pipelineIndentationStyle": "IncreaseIndentationForFirstPipeline",
+  "powershell.codeFormatting.trimWhitespaceAroundPipe": true,
+  "powershell.codeFormatting.useConstantStrings": true,
+  "powershell.codeFormatting.useCorrectCasing": true,
+  "powershell.codeFormatting.whitespaceBetweenParameters": true,
+  "powershell.enableProfileLoading": true,
+  "powershell.pester.debugOutputVerbosity": "Detailed",
+  "powershell.pester.useLegacyCodeLens": false,
+  "powershell.startAsLoginShell.osx": false,
+  "redhat.telemetry.enabled": true,
+  "terminal.integrated.automationProfile.linux": {},
+  "terminal.integrated.env.windows": {},
+  "terminal.integrated.profiles.windows": {
+    "PowerShellCore": {
+      "source": "PowerShell",
+      "icon": "terminal"
+    },
+    "PowerShellDesktop": {
+      "source": "PowerShellDesktop",
+      "icon": "terminal-powershell",
+      "path": ["${env:windir}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"],
+      "args": []
+    },
+    "Command Prompt": {
+      "path": ["${env:windir}\\Sysnative\\cmd.exe", "${env:windir}\\System32\\cmd.exe"],
+      "args": [],
+      "icon": "terminal-cmd"
+    },
+    "Git Bash": {
+      "source": "Git Bash"
+    },
+    "wt": {
+      "path": "C:\\Users\\whertzing\\AppData\\Local\\Microsoft\\WindowsApps\\wt.exe"
+    }
+  },
+  "terminal.integrated.scrollback": 20000,
+  "terminal.integrated.tabs.enabled": true,
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "testExplorer.addToEditorContextMenu": true,
+  "testing.alwaysRevealTestOnStateChange": true,
+  // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
+  "typescript.tsc.autoDetect": "off",
+  "xmlTools.enforcePrettySelfClosingTagOnFormat": true,
+  "yaml.schemas": {
+    "file:///c%3A/Users/whertzing/.vscode/extensions/docsmsft.docs-yaml-1.0.1/dist/toc.schema.json": "/toc\\.yml/i"
+  },
+  "vsicons.dontShowNewVersionMessage": true,
+  "workbench.editor.enablePreview": false,
+  "workbench.editor.empty.hint": "hidden",
+  "workbench.iconTheme": "vscode-icons",
+  "workbench.startupEditor": "none",
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[python]": {
+    "editor.formatOnType": true
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  // The files and search exclude settings are for VSC development
+  "files.exclude": {
+    "out": false, // set this to true to hide the "out" folder with the compiled JS files
+    "dist": false // set this to true to hide the "dist" folder with the compiled JS files
+  },
+  "search.exclude": {
+    "out": true, // set this to false to include "out" folder in search results
+    "dist": true // set this to false to include "dist" folder in search results
+  },
+  "editor.minimap.scale": 2,
+  "debug.javascript.defaultRuntimeExecutable": {
+    "pwa-node": "node"
+  }
 }

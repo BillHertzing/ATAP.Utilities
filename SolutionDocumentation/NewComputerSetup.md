@@ -29,7 +29,7 @@ BIOS changes can be made before an operating system is installed. These will be 
 - X.M.P is enabled
 - Intel Rapid Storage technology is OFF
 - change hotswap notification to "enabled"
-- select a single boot option,the USB drive (uefi)
+- select a single boot option,the USB drive (UEFI)
 - save and reboot
 
 ## Install the Operating system
@@ -44,12 +44,14 @@ Bootable USB stick is created from an ISO download and Rufus program. Rufus allo
 
 plug USB stick into bootable usb port
 Power up the machine, boot through the USB stick
+
 - follow prompts to install windows, to the M2.2 SSD drive (2TB or bigger)
 - when reboot/restart occurs, go into Bios, change boot order to be the M2.2 disk, remove the USB drive
 - save and exit
 - Follow prompts after rebooting, including setting password for first user
 
 The following steps are run via the Windows UI,
+
 ## set Timezone
 
 - via the Windows UI, change timezone as appropriate
@@ -61,7 +63,6 @@ The following steps are run via the Windows UI,
 ## Network Sharing
 
 using Windows Explorer, navigate to the `network` folder.You will see a prompt indicating network access is turned off. it will offer to turn it on. Select `make this network private and enable discovery and file sharing`
-
 
 ## Boostrap a new host for accepting communications from the IAC controller
 
@@ -122,7 +123,7 @@ Service
     RootSDDL = O:NSG:BAD:P(A;;GA;;;BA)(A;;GR;;;IU)S:P(AU;FA;GA;;;WD)(AU;SA;GXGW;;;WD)
     MaxConcurrentOperations = 4294967295
     MaxConcurrentOperationsPerUser = 1500
-    EnumerationTimeoutms = 240000
+    EnumerationTimeoutMS = 240000
     MaxConnections = 300
     MaxPacketRetrievalTimeSeconds = 120
     AllowUnencrypted = false
@@ -162,10 +163,14 @@ Detailed instructions are TBD and are per-host
 ### Test Ansible connectivity
 
 The default ansible temporary directory is 'C:\temp\ansible`, Run the command
+
 ```powershell
-# ToDo: get the actaul ansible temp directory from the settings for the new host
+
+# ToDo: get the actual ansible temp directory from the settings for the new host
 $null = New-Item -ItemType Directory -Force C:\temp\ansible
+
 ````
+
 Ensure the organization's `hosts` file includes the new Windows host.
 Ensure the Ansible inventory files include the new host
 Ensure the organization's IAC data files include the new host
@@ -192,11 +197,9 @@ Run This
 ansible-playbook -l $newhostname playbooks/WindowsHostsPlaybook.yml -i ./nonproduction_inventory.yml  --tags "Preamble"  -e 'user=whertzing password=obfuscated'
 Chocolatey packages
 
-
 ### Document the Operating System baseline (optional)
 
 run the program 'Everything' from a USB stick, get list to a file "01 Clean Windows 11 install, Step 01 Files.efu"
-
 
 ## Install Python for Windows for bootstrapping
 
@@ -239,19 +242,15 @@ Remove-Item "Setup.msix"
 
 `winget install --name 'python 3.10' --version '3.10.11' --accept-package-agreements --accept-source-agreements --silent --location 'C:\Program Files\PythonInterpreters' --source 'winget' --verbose --scope machine --force``
 
-
 ## Add new host to the IAC configuration
 
 At this point, the new host is ready to accept further configuration from the AnsibleController host. See [TBD] for the
-
 
 ### Driver updates
 
 Use the Windows GUI to install driver updates, update all that are out of date
 Windows Update -> Advanced Options -> Optional Updates
 
-
 ### Install Dropbox, and sync
 
 ### Map User Directories to dropbox
-

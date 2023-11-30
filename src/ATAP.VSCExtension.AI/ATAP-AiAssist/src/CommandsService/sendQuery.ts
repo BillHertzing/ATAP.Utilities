@@ -11,8 +11,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 //import * as diff from 'diff';
 import * as os from 'os';
+import { exec } from 'child_process';
 
-import { ILogger, LogLevel } from '@Logger/index';
+import * as Logger from '@Logger/index';
 import { DataService, IData } from '@DataService/DataService';
 import { DetailedError } from '@ErrorClasses/index';
 
@@ -147,8 +148,8 @@ const commentSyntax = {
   '.cs': { singleLine: '//', multiLine: { start: '/*', end: '*/' } },
 };
 
-async function minifyCodeAsync(logger: ILogger, content: string, extension: any): globalThis.Promise<string> {
-  logger.log('minifyCodeAsync starting', LogLevel.Debug);
+async function minifyCodeAsync(logger: Logger.ILogger, content: string, extension: any): globalThis.Promise<string> {
+  logger.log('minifyCodeAsync starting', Logger.LogLevel.Debug);
   // Can't do anything with .txt files, so just return the content
   if (extension === '.txt') {
     return content;
@@ -194,21 +195,21 @@ async function minifyCodeAsync(logger: ILogger, content: string, extension: any)
       );
     }
   }
-  logger.log('minifyCodeAsync Completed', LogLevel.Debug);
+  logger.log('minifyCodeAsync Completed', Logger.LogLevel.Debug);
 
   return minifiedContent;
 }
 
 // @logAsyncFunction
-export async function sendQuery(logger: ILogger, data: IData) {
-  logger.log('sendQuery', LogLevel.Debug);
+export async function sendQuery(logger: Logger.ILogger, data: IData) {
+  logger.log('sendQuery', Logger.LogLevel.Debug);
   let textToSubmit = new StringBuilder();
   // Retrieve and concatenate document data
   let minifiedContent = '';
   for (const document of vscode.workspace.textDocuments) {
     logger.log(
       `document.uri  = ${document.uri}; document.uri.scheme  = ${document.uri.scheme}; document.uri.fsPath  = ${document.uri.fsPath} ; document.fileName = ${document.fileName}`,
-      LogLevel.Debug,
+      Logger.LogLevel.Debug,
     );
 
     let content: string;
@@ -278,25 +279,48 @@ export async function sendQuery(logger: ILogger, data: IData) {
   // get API Token from Keepass
   let aPIToken: Buffer | undefined = undefined;
 
-  try {
-    aPIToken = await data.secretsManager.getAPIKeyForChatGPTAsync();
-    // ToDO: clear then discard the aPIToken buffer
-    // ToDo: use a Factory (Service) pattern to hand out secrets internally to the extension, to ensure they are cleaned on deactivate
-  } catch (e) {
-    if (e instanceof OpenAI.APIError) {
-      // ToDo: handle any extra data in the error
-      throw new DetailedError('sendQuery.chatCompletionRequest failed, APIError type was returned -> ', e);
-    } else {
-      if (e instanceof Error) {
-        throw new DetailedError('sendQuery.chatCompletionRequest failed -> ', e);
-      } else {
-        throw new Error(
-          `sendQuery.OpenAI connection request caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
-        );
+  // ToDo: use a Factory (Service) pattern to hand out secrets internally to the extension, to ensure they are cleaned on deactivate
+
+  function getApiToken(): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      try {
+        const kPScriptPath = '"C:/Program Files/KeePass Password Safe 2/KPScript.exe"';
+        const kdbxFilePath = '"C:/Dropbox/whertzing/GitHub/ATAP.IAC/Security/ATAP_KeePassDatabase.kdbx"';
+        // let masterPassword: KdbxWeb.ProtectedValue masterpassword from data.SecretsService.getMasterPassword()
+        const masterPasswordBuffer = Buffer.from('EncryptMySecrets', 'utf-8');
+        const args = `-c:GetEntryString ${kdbxFilePath}  -pw:${masterPasswordBuffer.toString()} -ref-Title:"ChatGPTAPIToken" -Field:Password -FailIfNoEntry -FailIfNotExists -Spr`;
+        exec(`${kPScriptPath} ${args}`, (error, stdout, stderr) => {
+          if (error) {
+            return reject(new DetailedError('KPScript exec failed -> ', error));
+          }
+          if (stderr) {
+            return reject(new DetailedError(`KPScript exec returned data in stderr -> ${stderr}`));
+          }
+          resolve(Buffer.from(stdout, 'utf-8'));
+        });
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError('sendQuery KPScript exec failed -> ', e);
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(`sendQuery KPScript exec failed and the instance of (e) returned is of type ${typeof e}`);
+        }
       }
+    });
+  }
+
+  try {
+    aPIToken = await getApiToken();
+    // Keep only the first line of the APIToken
+    aPIToken = Buffer.from(aPIToken.toString().split('\n')[0], 'utf-8');
+  } catch (e) {
+    if (e instanceof Error) {
+      throw new DetailedError('sendQuery getApiToken failed -> ', e);
+    } else {
+      // ToDo:  investigation to determine what else might happen
+      throw new Error(`sendQuery getApiToken failed and the instance of (e) returned is of type ${typeof e}`);
     }
   }
-  logger.log(`aPIToken = ${aPIToken?.toString()}`, LogLevel.Debug);
 
   // Hmm I guess the extension should continue to operate with LLMs that do not have any authorization requirement
   // Every LLM is potentially different, the extension should have a defaultConfiguration structure for each LLM enumeration
@@ -305,22 +329,21 @@ export async function sendQuery(logger: ILogger, data: IData) {
     throw new Error(`sendQuery: aPIToken is undefined`);
   }
 
-  let openai: OpenAI;
-  logger.log(`setup a connection with OpenAI library`, LogLevel.Debug);
-
+  logger.log(`setup an OpenAI instance with OpenAI library`, Logger.LogLevel.Debug);
+  let openai: OpenAI | undefined = undefined;
   try {
     openai = new OpenAI({
-      apiKey: aPIToken.toString('utf-8'),
+      apiKey: aPIToken.toString(),
     });
-    // ToDO: clear then discard the aPIToken buffer
     // ToDo: use a Factory (Service) pattern to hand out secrets internally to the extension, to ensure they are cleaned on deactivate
+    aPIToken.fill(0);
   } catch (e) {
     if (e instanceof OpenAI.APIError) {
       // ToDo: handle any extra data in the error
-      throw new DetailedError('sendQuery.chatCompletionRequest failed, APIError type was returned -> ', e);
+      throw new DetailedError('sendQuery.OpenAI connection request  failed, APIError type was returned -> ', e);
     } else {
       if (e instanceof Error) {
-        throw new DetailedError('sendQuery.chatCompletionRequest failed -> ', e);
+        throw new DetailedError('sendQuery.OpenAI connection request failed -> ', e);
       } else {
         throw new Error(
           `sendQuery.OpenAI connection request caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
@@ -329,6 +352,13 @@ export async function sendQuery(logger: ILogger, data: IData) {
     }
   }
 
+  // // for testing
+  // const chatCompletionTest = await openai.chat.completions.create({
+  //   messages: [{ role: 'user', content: 'Say this is a test' }],
+  //   model: 'gpt-3.5-turbo',
+  // });
+
+  logger.log(`Open the connection to OPenAI API, ask for streaming response`, Logger.LogLevel.Debug);
   let stream: any; //OpenAI.ChatCompletionStream;
   try {
     stream = await openai.beta.chat.completions.stream({
@@ -360,15 +390,22 @@ export async function sendQuery(logger: ILogger, data: IData) {
   //   process.stdout.write(delta);
   // });
 
+  let resultContent: StringBuilder = new StringBuilder();
+  let resultSnapshot: StringBuilder = new StringBuilder();
+
   for await (const chunk of stream) {
-    logger.log(chunk.choices[0]?.delta?.content || '', LogLevel.Debug);
+    logger.log(chunk.choices[0]?.delta?.content || '', Logger.LogLevel.Debug);
     process.stdout.write(chunk.choices[0]?.delta?.content || '');
-    logger.log(chunk.choices[0]?.snapshot?.content || '', LogLevel.Debug);
+    resultContent.append(chunk.choices[0]?.delta?.content || '');
+    logger.log(chunk.choices[0]?.snapshot?.content || '', Logger.LogLevel.Debug);
     process.stdout.write(chunk.choices[0]?.snapshot?.content || '');
+    resultSnapshot.append(chunk.choices[0]?.snapshot?.content || '');
   }
 
   const chatCompletion = await stream.finalChatCompletion();
-  logger.log(chatCompletion, LogLevel.Debug);
+  logger.log(chatCompletion, Logger.LogLevel.Debug);
+  logger.log(`resultContent = ${resultContent.toString()}`, Logger.LogLevel.Debug);
+  logger.log(`resultSnapshot = ${resultSnapshot.toString()}`, Logger.LogLevel.Debug);
 }
 
 // Use Bluebird to wrap Axios call

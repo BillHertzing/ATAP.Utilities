@@ -32,122 +32,9 @@ import { StringBuilder } from '@Utilities/index';
 import strip from 'strip-comments';
 import * as prettier from 'prettier';
 
-// interface IChatCompletionRequest {
-//   model: string;
-//   messages: Array<{ role: string; content: string }>;
-//   addMessage(role: string, content: string): void;
-// }
+import { IQueryResultBase, IQueryResultOpenAPI } from '@QueryService/index';
 
-// interface IChatCompletionRequest {
-//   prompt: string; // required
-//   maxTokens?: number; // optional
-//   temperature?: number; // optional
-//   topP?: number; // optional
-//   frequencyPenalty?: number; // optional
-//   presencePenalty?: number; // optional
-//   stop?: string | string[]; // optional
-// }
-
-// class ChatCompletionRequest {
-//   prompt: string; // required
-//   maxTokens?: number; // optional
-//   temperature?: number; // optional
-//   topP?: number; // optional
-//   frequencyPenalty?: number; // optional
-//   presencePenalty?: number; // optional
-//   stop?: string | string[]; // optional
-
-//   constructor(prompt: string) {
-//     this.prompt = prompt;
-//   }
-
-//   setMaxTokens(maxTokens: number): void {
-//     this.maxTokens = maxTokens;
-//   }
-
-//   setTemperature(temperature: number): void {
-//     this.temperature = temperature;
-//   }
-
-//   setTopP(topP: number): void {
-//     this.topP = topP;
-//   }
-
-//   setFrequencyPenalty(frequencyPenalty: number): void {
-//     this.frequencyPenalty = frequencyPenalty;
-//   }
-
-//   setPresencePenalty(presencePenalty: number): void {
-//     this.presencePenalty = presencePenalty;
-//   }
-
-//   setStop(stop: string | string[]): void {
-//     this.stop = stop;
-//   }
-
-//   // Method to generate the payload
-//   generatePayload(): Record<string, any> {
-//     const payload: Record<string, any> = {
-//       prompt: this.prompt,
-//     };
-
-//     if (this.maxTokens !== undefined) payload.maxTokens = this.maxTokens;
-//     if (this.temperature !== undefined) payload.temperature = this.temperature;
-//     if (this.topP !== undefined) payload.topP = this.topP;
-//     if (this.frequencyPenalty !== undefined) payload.frequencyPenalty = this.frequencyPenalty;
-//     if (this.presencePenalty !== undefined) payload.presencePenalty = this.presencePenalty;
-//     if (this.stop !== undefined) payload.stop = this.stop;
-
-//     return payload;
-//   }
-// }
-
-// interface IChatCompletionResponse {
-//   id: string;
-//   choices: Array<any>;
-//   created: number;
-//   model: string;
-//   system_fingerprint: string;
-//   object: string;
-//   usage: object;
-// }
-
-// class ChatCompletionResponse implements IChatCompletionResponse {
-//   id: string;
-//   choices: Array<any>;
-//   created: number;
-//   model: string;
-//   system_fingerprint: string;
-//   object: string;
-//   usage: object;
-
-//   constructor(
-//     id: string,
-//     choices: Array<any>,
-//     created: number,
-//     model: string,
-//     system_fingerprint: string,
-//     object: string,
-//     usage: object,
-//   ) {
-//     this.id = id;
-//     this.choices = choices;
-//     this.created = created;
-//     this.model = model;
-//     this.system_fingerprint = system_fingerprint;
-//     this.object = object;
-//     this.usage = usage;
-//   }
-// }
-
-const commentSyntax = {
-  '.js': { singleLine: '//', multiLine: { start: '/*', end: '*/' } },
-  '.ts': { singleLine: '//', multiLine: { start: '/*', end: '*/' } },
-  '.py': { singleLine: '#', multiLine: { start: '"""', end: '"""' } },
-  '.ps1': { singleLine: '#', multiLine: { start: '<#', end: '#>' } },
-  '.cs': { singleLine: '//', multiLine: { start: '/*', end: '*/' } },
-};
-
+// ToDo: understand and document why globalThis is required. Failure to use globalThis results in the following error: the return type of an async function or method must be the global Promise<T> type. Did you mean to write 'Promise<string>'?
 async function minifyCodeAsync(logger: Logger.ILogger, content: string, extension: any): globalThis.Promise<string> {
   logger.log('minifyCodeAsync starting', Logger.LogLevel.Debug);
   // Can't do anything with .txt files, so just return the content
@@ -201,10 +88,28 @@ async function minifyCodeAsync(logger: Logger.ILogger, content: string, extensio
 }
 
 // @logAsyncFunction
-export async function sendQuery(logger: Logger.ILogger, data: IData) {
+export async function sendQuery(logger: Logger.ILogger, data: IData): globalThis.Promise<void> {
+  // Optional field for error message}> {
   logger.log('sendQuery', Logger.LogLevel.Debug);
   let textToSubmit = new StringBuilder();
-  // Retrieve and concatenate document data
+  //
+
+  // Start with historical data from the previous query
+
+  // Add text from the prompt document if it exists
+  const tempFilePath = data.getTemporaryPromptDocumentPath();
+  if (tempFilePath) {
+    // ToDo: wrap in a try catch
+    if (fs.existsSync(tempFilePath as string)) {
+      // ToDo: wrap in a try catch
+      const tempFileContent = fs.readFileSync(tempFilePath, 'utf8');
+
+      textToSubmit.append(tempFileContent);
+
+      logger.log(`tempFilePath = ${tempFilePath} ; tempFileContent  = ${tempFileContent}`, Logger.LogLevel.Debug);
+    }
+  }
+  // Retrieve and concatenate all text documents currently open in text editors
   let minifiedContent = '';
   for (const document of vscode.workspace.textDocuments) {
     logger.log(
@@ -225,29 +130,21 @@ export async function sendQuery(logger: Logger.ILogger, data: IData) {
           );
         }
       }
-      minifiedContent += `${document.uri.fsPath}:\n ${content}\n`;
+      minifiedContent += `Filename: ${document.uri.fsPath}:\n ${content}\n`;
     }
   }
-  textToSubmit.append(minifiedContent);
-
-  // Append data from 'PromptDocument'
-  const tempFilePath = path.join(os.tmpdir(), 'PromptDocument.txt');
-  if (fs.existsSync(tempFilePath)) {
-    minifiedContent += fs.readFileSync(tempFilePath, 'utf8');
-  }
-
   textToSubmit.append(minifiedContent);
 
   //logger.log(`textToSubmit = ${textToSubmit}`, LogLevel.Debug);
 
   // Repeat for all active LLModels (AI Engines)
   // for now, assume the query will be sent to a single endpoint, and hardcode the specific endpoint in here for now
-  let lLModel = LLModels.ChatGPT;
+  // let lLModel = LLModels.ChatGPT;
   // let endpointConfiguration = data.configurationData.getEndpointConfig()[lLModel];
   // get URL
   // Get json sections for the completions endpoint
-  let page = 'chat/completions';
-  let model = 'davinci';
+  //let page = 'chat/completions';
+  //let model = 'davinci';
 
   // Creeate an instance of the request body
 
@@ -312,7 +209,9 @@ export async function sendQuery(logger: Logger.ILogger, data: IData) {
   try {
     aPIToken = await getApiToken();
     // Keep only the first line of the APIToken
-    aPIToken = Buffer.from(aPIToken.toString().split('\n')[0], 'utf-8');
+    // use a regular expression for the split to handle both \n (*nix and macOS) and \r\n (Windows)
+
+    aPIToken = Buffer.from(aPIToken.toString().split(/\r?\n/)[0], 'utf-8');
   } catch (e) {
     if (e instanceof Error) {
       throw new DetailedError('sendQuery getApiToken failed -> ', e);
@@ -328,84 +227,6 @@ export async function sendQuery(logger: Logger.ILogger, data: IData) {
   if (!aPIToken) {
     throw new Error(`sendQuery: aPIToken is undefined`);
   }
-
-  logger.log(`setup an OpenAI instance with OpenAI library`, Logger.LogLevel.Debug);
-  let openai: OpenAI | undefined = undefined;
-  try {
-    openai = new OpenAI({
-      apiKey: aPIToken.toString(),
-    });
-    // ToDo: use a Factory (Service) pattern to hand out secrets internally to the extension, to ensure they are cleaned on deactivate
-    aPIToken.fill(0);
-  } catch (e) {
-    if (e instanceof OpenAI.APIError) {
-      // ToDo: handle any extra data in the error
-      throw new DetailedError('sendQuery.OpenAI connection request  failed, APIError type was returned -> ', e);
-    } else {
-      if (e instanceof Error) {
-        throw new DetailedError('sendQuery.OpenAI connection request failed -> ', e);
-      } else {
-        throw new Error(
-          `sendQuery.OpenAI connection request caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
-        );
-      }
-    }
-  }
-
-  // // for testing
-  // const chatCompletionTest = await openai.chat.completions.create({
-  //   messages: [{ role: 'user', content: 'Say this is a test' }],
-  //   model: 'gpt-3.5-turbo',
-  // });
-
-  logger.log(`Open the connection to OPenAI API, ask for streaming response`, Logger.LogLevel.Debug);
-  let stream: any; //OpenAI.ChatCompletionStream;
-  try {
-    stream = await openai.beta.chat.completions.stream({
-      messages: [{ role: 'user', content: 'Say this is a test' }],
-      model: 'gpt-3.5-turbo',
-    });
-  } catch (e) {
-    if (e instanceof OpenAI.APIError) {
-      // ToDo handle any extra data in the error
-      throw new DetailedError(
-        'sendQuery openai.beta.chat.completions.stream failed, APIError type was returned -> ',
-        e,
-      );
-    } else {
-      if (e instanceof Error) {
-        throw new DetailedError(
-          'sendQuery openai.beta.chat.completions.stream failed, generic Error was returned -> ',
-          e,
-        );
-      } else {
-        throw new Error(
-          `sendQuery openai.beta.chat.completions.stream page request caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
-        );
-      }
-    }
-  }
-
-  // stream.on('content', (delta, snapshot) => {
-  //   process.stdout.write(delta);
-  // });
-
-  let resultContent: StringBuilder = new StringBuilder();
-  let resultSnapshot: StringBuilder = new StringBuilder();
-
-  for await (const chunk of stream) {
-    logger.log(chunk.choices[0]?.delta?.content || '', Logger.LogLevel.Debug);
-    process.stdout.write(chunk.choices[0]?.delta?.content || '');
-    resultContent.append(chunk.choices[0]?.delta?.content || '');
-    logger.log(chunk.choices[0]?.snapshot?.content || '', Logger.LogLevel.Debug);
-    process.stdout.write(chunk.choices[0]?.snapshot?.content || '');
-    resultSnapshot.append(chunk.choices[0]?.snapshot?.content || '');
-  }
-
-  const chatCompletion = await stream.finalChatCompletion();
-  logger.log(chatCompletion, Logger.LogLevel.Debug);
-  logger.log(`resultContent = ${resultContent.toString()}`, Logger.LogLevel.Debug);
-  logger.log(`resultSnapshot = ${resultSnapshot.toString()}`, Logger.LogLevel.Debug);
 }
 
 // Use Bluebird to wrap Axios call
@@ -435,21 +256,6 @@ export async function sendQuery(logger: Logger.ILogger, data: IData) {
 //}
 
 ///////////////////////////////////////////////////////////////////////
-
-// // Retrieve all text documents currently open in text editors
-// const documents = vscode.workspace.textDocuments;
-
-// documents.forEach((document) => {
-//   // Ignore documents that aren't associated with a file (e.g., untitled documents)
-//   if (document.uri.scheme === 'file') {
-//     const fileName = document.fileName;
-//     const content = document.getText();
-
-//     // Log or display the file name and its content
-//     console.log(`File Name: ${fileName}`);
-//     console.log(`Content: ${content}\n\n`);
-//   }
-// });
 
 // async function submitQuery(url: string, data: any, apiKey: string, cancelToken: CancelTokenSource): Promise<any> {
 //   const config: AxiosRequestConfig = {
@@ -586,6 +392,114 @@ export async function sendQuery(logger: Logger.ILogger, data: IData) {
 //     } catch (error) {
 //       console.error('Error deleting temp file:', error);
 //     }
+//   }
+// }
+
+// interface IChatCompletionRequest {
+//   model: string;
+//   messages: Array<{ role: string; content: string }>;
+//   addMessage(role: string, content: string): void;
+// }
+
+// interface IChatCompletionRequest {
+//   prompt: string; // required
+//   maxTokens?: number; // optional
+//   temperature?: number; // optional
+//   topP?: number; // optional
+//   frequencyPenalty?: number; // optional
+//   presencePenalty?: number; // optional
+//   stop?: string | string[]; // optional
+// }
+
+// class ChatCompletionRequest {
+//   prompt: string; // required
+//   maxTokens?: number; // optional
+//   temperature?: number; // optional
+//   topP?: number; // optional
+//   frequencyPenalty?: number; // optional
+//   presencePenalty?: number; // optional
+//   stop?: string | string[]; // optional
+
+//   constructor(prompt: string) {
+//     this.prompt = prompt;
+//   }
+
+//   setMaxTokens(maxTokens: number): void {
+//     this.maxTokens = maxTokens;
+//   }
+
+//   setTemperature(temperature: number): void {
+//     this.temperature = temperature;
+//   }
+
+//   setTopP(topP: number): void {
+//     this.topP = topP;
+//   }
+
+//   setFrequencyPenalty(frequencyPenalty: number): void {
+//     this.frequencyPenalty = frequencyPenalty;
+//   }
+
+//   setPresencePenalty(presencePenalty: number): void {
+//     this.presencePenalty = presencePenalty;
+//   }
+
+//   setStop(stop: string | string[]): void {
+//     this.stop = stop;
+//   }
+
+//   // Method to generate the payload
+//   generatePayload(): Record<string, any> {
+//     const payload: Record<string, any> = {
+//       prompt: this.prompt,
+//     };
+
+//     if (this.maxTokens !== undefined) payload.maxTokens = this.maxTokens;
+//     if (this.temperature !== undefined) payload.temperature = this.temperature;
+//     if (this.topP !== undefined) payload.topP = this.topP;
+//     if (this.frequencyPenalty !== undefined) payload.frequencyPenalty = this.frequencyPenalty;
+//     if (this.presencePenalty !== undefined) payload.presencePenalty = this.presencePenalty;
+//     if (this.stop !== undefined) payload.stop = this.stop;
+
+//     return payload;
+//   }
+// }
+
+// interface IChatCompletionResponse {
+//   id: string;
+//   choices: Array<any>;
+//   created: number;
+//   model: string;
+//   system_fingerprint: string;
+//   object: string;
+//   usage: object;
+// }
+
+// class ChatCompletionResponse implements IChatCompletionResponse {
+//   id: string;
+//   choices: Array<any>;
+//   created: number;
+//   model: string;
+//   system_fingerprint: string;
+//   object: string;
+//   usage: object;
+
+//   constructor(
+//     id: string,
+//     choices: Array<any>,
+//     created: number,
+//     model: string,
+//     system_fingerprint: string,
+//     object: string,
+//     usage: object,
+//   ) {
+//     this.id = id;
+//     this.choices = choices;
+//     this.created = created;
+//     this.model = model;
+//     this.system_fingerprint = system_fingerprint;
+//     this.object = object;
+//     this.usage = usage;
 //   }
 // }
 

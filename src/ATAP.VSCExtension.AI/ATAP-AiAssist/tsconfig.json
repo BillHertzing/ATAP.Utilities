@@ -22,6 +22,7 @@
       "@QueryContextsService/*": ["QueryContextsService/*"],
       "@DataService/*": ["DataService/*"],
       "@TokensService": ["TokensService/*"],
+      "@QueryService/*": ["QueryService/*"],
       "@CommandsService/*": ["CommandsService/*"],
       "@EndpointManager/*": ["EndpointManager/*"],
       "@TypeMap/*": ["TypeMap/*"]

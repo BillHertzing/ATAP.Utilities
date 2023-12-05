@@ -438,7 +438,7 @@ export class QueryContext extends ItemWithID<QueryContext> implements IQueryCont
   }
 
   // Static method to create QueryContext instances
-  static create(value: string): QueryContext {
+  static Create(value: string): QueryContext {
     return new QueryContext(value);
   }
 }

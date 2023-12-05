@@ -58,6 +58,7 @@ import {
 import { IStateManager, StateManager } from './StateManager';
 import { ISecretsManager, SecretsManager } from './SecretsManager';
 import { IConfigurationData, ConfigurationData } from './ConfigurationData';
+import { PathLike } from 'fs';
 
 export interface IData {
   getTemporaryPromptDocumentPath(): string | undefined;
@@ -95,7 +96,6 @@ export class Data {
     private configurationDataInitializationStructure?: ISerializationStructure,
   ) {
     // instantiate the configurationData
-
     try {
       this.configurationData = new ConfigurationData(this.logger, this.extensionContext);
     } catch (e) {
@@ -104,7 +104,7 @@ export class Data {
       } else {
         // ToDo:  investigation to determine what else might happen
         throw new Error(
-          `Data constructor instantiating a new StateManager threw something other than a polymorphous Error`,
+          `Data constructor instantiating a new ConfigurationData threw something other than a polymorphous Error`,
         );
       }
     }
@@ -135,6 +135,9 @@ export class Data {
     }
   }
 
+  async initializeAsync() {
+    //await this.stateManager.in;
+  }
   public getTemporaryPromptDocumentPath(): string | undefined {
     return this.temporaryPromptDocumentPath ? this.temporaryPromptDocumentPath : undefined;
   }

@@ -10,9 +10,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-
-  ],
+  "activationEvents": [],
   "main": "./_generated/dist/extension.js",
   "contributes": {
     "commands": [
@@ -269,6 +267,7 @@
     "@DataService": "_generated/out/DataService",
     "@TokensService": "_generated/out/TokensService",
     "@CommandsService": "_generated/out/CommandsService",
+    "@QueryService": "_generated/out/QueryService",
     "@EndpointManager": "_generated/out/EndpointManager",
     "@TypeMap": "_generated/out/TypeMap"
   },

@@ -7,7 +7,7 @@ import { IDataService, IData, IStateManager, IConfigurationData } from '@DataSer
 import * as KdbxWeb from 'kdbxweb';
 import fs from 'fs';
 import path from 'path';
-import { log } from 'console';
+import { exec } from 'child_process';
 
 export enum SupportedSecretsVaultEnum {
   KeePass = 'KeePass',
@@ -15,6 +15,7 @@ export enum SupportedSecretsVaultEnum {
 
 export interface ISecretsManager {
   getAPIKeyForChatGPTAsync(): Promise<Buffer | undefined>;
+  getApiTokenAsync(): Promise<Buffer>;
 }
 
 type SecretManagerMap = { [key in SupportedSecretsVaultEnum]: IBaseSecretsManager };
@@ -99,8 +100,6 @@ interface IBaseSecretsManager {
 // ToDo: @logConstructor need an abstract class decorator
 abstract class BaseSecretsManager implements IBaseSecretsManager {
   constructor(logger: ILogger, extensionContext: vscode.ExtensionContext) {}
-  //abstract getValue<T>(key: string): T | undefined;
-  // abstract getValueAsync<T>(key: string): Promise<T | undefined>;
   abstract getValueAsync<T>(keyPath: string[]): Promise<T | undefined>;
 }
 
@@ -187,6 +186,35 @@ class KeePassSecretsManager extends BaseSecretsManager implements IKeePassSecret
       await this.askForMasterPasswordAsync();
     }
     return this.masterPassword ? this.masterPassword : null;
+  }
+
+  @logAsyncFunction
+  public async getApiTokenAsync(): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      try {
+        const kPScriptPath = '"C:/Program Files/KeePass Password Safe 2/KPScript.exe"';
+        const kdbxFilePath = '"C:/Dropbox/whertzing/GitHub/ATAP.IAC/Security/ATAP_KeePassDatabase.kdbx"';
+        // let masterPassword: KdbxWeb.ProtectedValue masterpassword from data.SecretsService.getMasterPassword()
+        const masterPasswordBuffer = Buffer.from('EncryptMySecrets', 'utf-8');
+        const args = `-c:GetEntryString ${kdbxFilePath}  -pw:${masterPasswordBuffer.toString()} -ref-Title:"ChatGPTAPIToken" -Field:Password -FailIfNoEntry -FailIfNotExists -Spr`;
+        exec(`${kPScriptPath} ${args}`, (error, stdout, stderr) => {
+          if (error) {
+            return reject(new DetailedError('KPScript exec failed -> ', error));
+          }
+          if (stderr) {
+            return reject(new DetailedError(`KPScript exec returned data in stderr -> ${stderr}`));
+          }
+          resolve(Buffer.from(stdout, 'utf-8'));
+        });
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError('sendQuery KPScript exec failed -> ', e);
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(`sendQuery KPScript exec failed and the instance of (e) returned is of type ${typeof e}`);
+        }
+      }
+    });
   }
 
   @logAsyncFunction

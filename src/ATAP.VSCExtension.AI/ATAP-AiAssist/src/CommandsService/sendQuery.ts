@@ -11,11 +11,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 //import * as diff from 'diff';
 import * as os from 'os';
-import { exec } from 'child_process';
 
 import * as Logger from '@Logger/index';
 import { DataService, IData } from '@DataService/DataService';
 import { DetailedError } from '@ErrorClasses/index';
+import { ISecretsManager } from '@DataService/index';
 
 import {
   EndpointManager,
@@ -146,29 +146,6 @@ export async function sendQuery(logger: Logger.ILogger, data: IData): globalThis
   //let page = 'chat/completions';
   //let model = 'davinci';
 
-  // Creeate an instance of the request body
-
-  // try {
-  //   let messages = [
-  //     { role: 'system', content: 'This is where the Expertise prompt goes' },
-  //     { role: 'user', content: 'what is the cutoff date of your training' },
-  //     {
-  //       role: 'user',
-  //       content:
-  //         'list pros and cons of a VSC extension that submits code blocks to multiple Large Language Models, requests implementation completion, tests for, and algorithm performance analysis, then compares the results from multiple models and presents the concensus results to the user',
-  //     },
-  //   ];
-
-  //   let chatCompletionRequest = new ChatCompletionRequest('text-davinci-002', messages);
-  // } catch (e) {
-  //   if (e instanceof Error) {
-  //     throw new DetailedError('sendQuery.chatCompletionRequest failed -> ', e);
-  //   } else {
-  //     // ToDo:  investigation to determine what else might happen
-  //     throw new Error(`Data.ctor. create stateManager thew an object that was not of type Error -> `);
-  //   }
-  // }
-
   // Get APISecretKey
   // let keePassSecretKey = endpointConfiguration[lLModel].keepass;
   let keePassSecretKey = 'APIKeyForChatGPT';
@@ -178,46 +155,18 @@ export async function sendQuery(logger: Logger.ILogger, data: IData): globalThis
 
   // ToDo: use a Factory (Service) pattern to hand out secrets internally to the extension, to ensure they are cleaned on deactivate
 
-  function getApiToken(): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      try {
-        const kPScriptPath = '"C:/Program Files/KeePass Password Safe 2/KPScript.exe"';
-        const kdbxFilePath = '"C:/Dropbox/whertzing/GitHub/ATAP.IAC/Security/ATAP_KeePassDatabase.kdbx"';
-        // let masterPassword: KdbxWeb.ProtectedValue masterpassword from data.SecretsService.getMasterPassword()
-        const masterPasswordBuffer = Buffer.from('EncryptMySecrets', 'utf-8');
-        const args = `-c:GetEntryString ${kdbxFilePath}  -pw:${masterPasswordBuffer.toString()} -ref-Title:"ChatGPTAPIToken" -Field:Password -FailIfNoEntry -FailIfNotExists -Spr`;
-        exec(`${kPScriptPath} ${args}`, (error, stdout, stderr) => {
-          if (error) {
-            return reject(new DetailedError('KPScript exec failed -> ', error));
-          }
-          if (stderr) {
-            return reject(new DetailedError(`KPScript exec returned data in stderr -> ${stderr}`));
-          }
-          resolve(Buffer.from(stdout, 'utf-8'));
-        });
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError('sendQuery KPScript exec failed -> ', e);
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(`sendQuery KPScript exec failed and the instance of (e) returned is of type ${typeof e}`);
-        }
-      }
-    });
-  }
-
   try {
-    aPIToken = await getApiToken();
+    aPIToken = await data.secretsManager.getApiTokenAsync();
     // Keep only the first line of the APIToken
     // use a regular expression for the split to handle both \n (*nix and macOS) and \r\n (Windows)
 
     aPIToken = Buffer.from(aPIToken.toString().split(/\r?\n/)[0], 'utf-8');
   } catch (e) {
     if (e instanceof Error) {
-      throw new DetailedError('sendQuery getApiToken failed -> ', e);
+      throw new DetailedError('sendQuery getApiTokenAsync failed -> ', e);
     } else {
       // ToDo:  investigation to determine what else might happen
-      throw new Error(`sendQuery getApiToken failed and the instance of (e) returned is of type ${typeof e}`);
+      throw new Error(`sendQuery getApiTokenAsync failed and the instance of (e) returned is of type ${typeof e}`);
     }
   }
 

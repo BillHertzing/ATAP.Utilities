@@ -34,14 +34,14 @@ export type ItemWithIDTypes = Tag | Category | Association | Token | QueryContex
 export type MapTypeToValueType<T> = T extends Tag
   ? TagValueType
   : T extends Category
-  ? CategoryValueType
-  : T extends Association
-  ? AssociationValueType
-  : T extends Token
-  ? TokenValueType
-  : T extends QueryContext
-  ? QueryContextValueType
-  : never;
+    ? CategoryValueType
+    : T extends Association
+      ? AssociationValueType
+      : T extends Token
+        ? TokenValueType
+        : T extends QueryContext
+          ? QueryContextValueType
+          : never;
 
 import * as yaml from 'js-yaml';
 export interface YamlData<T extends ItemWithIDTypes> {
@@ -73,51 +73,6 @@ export class ItemWithID<T extends ItemWithIDTypes> implements IItemWithID<T> {
     this.ID = ID ?? new Philote();
   }
 
-  // static CreateItemWithID(
-  //   logger: ILogger,
-  //   extensionContext: vscode.ExtensionContext,
-  //   callingModule: string,
-  //   initializationStructure?: ISerializationStructure,
-  // ): ItemWithIDTypes {
-  //   let _obj: ItemWithIDTypes | null;
-  //   if (initializationStructure) {
-  //     try {
-  //       // ToDo: deserialize based on contents of structure
-  //       _obj = ItemWithID.convertFrom_json(initializationStructure.value);
-  //     } catch (e) {
-  //       if (e instanceof Error) {
-  //         throw new DetailedError(
-  //           `${callingModule}: CreateItemWithID from initializationStructure using convertFrom_xxx -> }`,
-  //           e,
-  //         );
-  //       } else {
-  //         // ToDo:  investigation to determine what else might happen
-  //         throw new Error(
-  //           `${callingModule}: CreateItemWithID from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
-  //         );
-  //       }
-  //     }
-  //     if (_obj === null) {
-  //       throw new Error(
-  //         `${callingModule}: CreateItemWithID from initializationStructureusing convertFrom_xxx produced a null`,
-  //       );
-  //     }
-  //     return _obj;
-  //   } else {
-  //     try {
-  //       _obj = new ItemWithID('aStaticItemWithID');
-  //     } catch (e) {
-  //       if (e instanceof Error) {
-  //         throw new DetailedError(`${callingModule}: create new ItemWithID error }`, e);
-  //       } else {
-  //         // ToDo:  investigation to determine what else might happen
-  //         throw new Error(`${callingModule}: new ItemWithID threw something that was not an error typeof `);
-  //       }
-  //     }
-  //     return _obj;
-  //   }
-  // }
-
   toString(): string {
     return `ItemWithID: ${JSON.stringify(this.value)}`;
   }
@@ -140,6 +95,51 @@ export class ItemWithID<T extends ItemWithIDTypes> implements IItemWithID<T> {
   //   return new ItemWithID<T>(data.value as MapTypeToValueType<T>);
   // }
 }
+
+// static CreateItemWithID(
+//   logger: ILogger,
+//   extensionContext: vscode.ExtensionContext,
+//   callingModule: string,
+//   initializationStructure?: ISerializationStructure,
+// ): ItemWithIDTypes {
+//   let _obj: ItemWithIDTypes | null;
+//   if (initializationStructure) {
+//     try {
+//       // ToDo: deserialize based on contents of structure
+//       _obj = ItemWithID.convertFrom_json(initializationStructure.value);
+//     } catch (e) {
+//       if (e instanceof Error) {
+//         throw new DetailedError(
+//           `${callingModule}: CreateItemWithID from initializationStructure using convertFrom_xxx -> }`,
+//           e,
+//         );
+//       } else {
+//         // ToDo:  investigation to determine what else might happen
+//         throw new Error(
+//           `${callingModule}: CreateItemWithID from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
+//         );
+//       }
+//     }
+//     if (_obj === null) {
+//       throw new Error(
+//         `${callingModule}: CreateItemWithID from initializationStructureusing convertFrom_xxx produced a null`,
+//       );
+//     }
+//     return _obj;
+//   } else {
+//     try {
+//       _obj = new ItemWithID('aStaticItemWithID');
+//     } catch (e) {
+//       if (e instanceof Error) {
+//         throw new DetailedError(`${callingModule}: create new ItemWithID error }`, e);
+//       } else {
+//         // ToDo:  investigation to determine what else might happen
+//         throw new Error(`${callingModule}: new ItemWithID threw something that was not an error typeof `);
+//       }
+//     }
+//     return _obj;
+//   }
+// }
 
 export interface ICollection<T extends ItemWithIDTypes> {
   ID: Philote;
@@ -420,7 +420,7 @@ export class AssociationCollection extends Collection<Association> implements IA
   // }
 }
 
-export type QueryContextValueType = string;
+export type QueryContextValueType = TokenCollection | QueryContext;
 
 export interface IQueryContext extends IItemWithID<QueryContext> {
   toString(): string;
@@ -459,5 +459,49 @@ export class QueryContextCollection extends Collection<QueryContext> implements 
   // Example:
   // findQueryContextBySomeCriteria(criteria: any): QueryContext | undefined {
   //   // Implementation specific to finding a querycontext based on the given criteria
+  // }
+}
+
+// { role: 'system', content: 'This is where the Expertise prompt goes' },
+//     { role: 'user', content: 'what is the cutoff date of your training' }
+
+export type ConversationValueType = { role: string; content: string };
+
+export interface IConversation extends IItemWithID<Conversation> {
+  toString(): string;
+}
+
+@logConstructor
+export class Conversation extends ItemWithID<Conversation> implements IConversation {
+  constructor(value: string, ID?: IPhilote) {
+    super(value, ID);
+  }
+
+  // Implement the toString method
+  toString(): string {
+    return `Conversation ID:${this.ID.ToString()} ;Conversation value:${this.value}`;
+  }
+
+  // Static method to create Conversation instances
+  static Create(value: string): Conversation {
+    return new Conversation(value);
+  }
+}
+
+export interface IConversationCollection extends ICollection<Conversation> {
+  // Add any additional methods specific to a collection of Conversations, if necessary
+  // Example:
+  // findConversationBySomeCriteria(criteria: any): Conversation | undefined;
+}
+
+@logConstructor
+export class ConversationCollection extends Collection<Conversation> implements IConversationCollection {
+  constructor(value: ItemWithID<Conversation>[], ID?: Philote) {
+    super(value, ID);
+  }
+
+  // Implement any additional methods specific to ConversationCollection
+  // Example:
+  // findConversationBySomeCriteria(criteria: any): Conversation | undefined {
   // }
 }

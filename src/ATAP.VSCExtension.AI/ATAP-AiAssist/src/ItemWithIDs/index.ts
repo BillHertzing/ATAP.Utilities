@@ -37,4 +37,9 @@ export {
   QueryContext,
   IQueryContextCollection,
   QueryContextCollection,
+  ConversationValueType,
+  IConversation,
+  Conversation,
+  IConversationCollection,
+  ConversationCollection,
 } from './ItemWithID';

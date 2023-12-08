@@ -33,6 +33,7 @@ import strip from 'strip-comments';
 import * as prettier from 'prettier';
 
 import { IQueryResultBase, IQueryResultOpenAPI } from '@QueryService/index';
+import { sendQueryOpenAIAsync } from '@QueryService/QOpenAI';
 
 // ToDo: understand and document why globalThis is required. Failure to use globalThis results in the following error: the return type of an async function or method must be the global Promise<T> type. Did you mean to write 'Promise<string>'?
 async function minifyCodeAsync(logger: Logger.ILogger, content: string, extension: any): globalThis.Promise<string> {
@@ -146,36 +147,7 @@ export async function sendQuery(logger: Logger.ILogger, data: IData): globalThis
   //let page = 'chat/completions';
   //let model = 'davinci';
 
-  // Get APISecretKey
-  // let keePassSecretKey = endpointConfiguration[lLModel].keepass;
-  let keePassSecretKey = 'APIKeyForChatGPT';
-
-  // get API Token from Keepass
-  let aPIToken: Buffer | undefined = undefined;
-
-  // ToDo: use a Factory (Service) pattern to hand out secrets internally to the extension, to ensure they are cleaned on deactivate
-
-  try {
-    aPIToken = await data.secretsManager.getApiTokenAsync();
-    // Keep only the first line of the APIToken
-    // use a regular expression for the split to handle both \n (*nix and macOS) and \r\n (Windows)
-
-    aPIToken = Buffer.from(aPIToken.toString().split(/\r?\n/)[0], 'utf-8');
-  } catch (e) {
-    if (e instanceof Error) {
-      throw new DetailedError('sendQuery getApiTokenAsync failed -> ', e);
-    } else {
-      // ToDo:  investigation to determine what else might happen
-      throw new Error(`sendQuery getApiTokenAsync failed and the instance of (e) returned is of type ${typeof e}`);
-    }
-  }
-
-  // Hmm I guess the extension should continue to operate with LLMs that do not have any authorization requirement
-  // Every LLM is potentially different, the extension should have a defaultConfiguration structure for each LLM enumeration
-  // but for now assume that an undefined aPIToken is an error
-  if (!aPIToken) {
-    throw new Error(`sendQuery: aPIToken is undefined`);
-  }
+  sendQueryOpenAIAsync(logger, textToSubmit.toString(), data);
 }
 
 // Use Bluebird to wrap Axios call

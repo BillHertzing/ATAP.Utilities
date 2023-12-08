@@ -34,6 +34,7 @@ Ensure sufficient comments to explain the code, but keep them terse. Provide jus
     DataServiceAsSerializationStructure: new SerializationStructure(SupportedSerializersEnum.Yaml, '{}'),
   };
   static Development: Record<string, AllowedTypesInValue> = {
+    KeePassKDBXPath: '"C:/Dropbox/whertzing/GitHub/ATAP.IAC/Security/ATAP_KeePassDatabase.kdbx"',
     DataServiceAsSerializationStructure: {
       serializerEnum: SupportedSerializersEnum.Yaml,
       value: '{}',

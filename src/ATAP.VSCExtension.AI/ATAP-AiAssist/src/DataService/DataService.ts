@@ -56,7 +56,7 @@ import {
 } from '@ItemWithIDs/index';
 
 import { IStateManager, StateManager } from './StateManager';
-import { ISecretsManager, SecretsManager } from './SecretsManager';
+import { SupportedSecretsVaultEnum, ISecretsManager, SecretsManager } from './SecretsManager';
 import { IConfigurationData, ConfigurationData } from './ConfigurationData';
 import { PathLike } from 'fs';
 
@@ -124,7 +124,12 @@ export class Data {
 
     // instantiate the secretsManager
     try {
-      this.secretsManager = new SecretsManager(this.logger, this.extensionContext, this.configurationData); //, need a workspace folder passed into the constructor?
+      this.secretsManager = new SecretsManager(
+        SupportedSecretsVaultEnum.KeePass,
+        this.logger,
+        this.extensionContext,
+        this.configurationData,
+      ); //, need a workspace folder passed into the constructor?
     } catch (e) {
       if (e instanceof Error) {
         throw new DetailedError('Data.ctor. create secretsManager -> ', e);

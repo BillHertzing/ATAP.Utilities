@@ -34,16 +34,42 @@ import * as prettier from 'prettier';
 
 import { IQueryResultBase, IQueryResultOpenAPI, QueryResultOpenAPI } from '@QueryService/index';
 
-async function sendQueryOpenAI(
+import { PasswordEntryType } from '@DataService/index';
+
+export async function sendQueryOpenAIAsync(
   logger: ILogger,
   textToSubmit: string,
-  aPIToken?: Buffer,
+  data: IData,
 ): globalThis.Promise<IQueryResultOpenAPI> {
-  // Hmm I guess the extension should continue to operate with LLMs that do not have any authorization requirement
-  // Every LLM is potentially different, the extension should have a defaultConfiguration structure for each LLM enumeration
-  // but for now assume that an undefined aPIToken is an error
-  if (!aPIToken) {
-    throw new Error(`sendQuery: aPIToken is undefined`);
+  // Get APISecretKey
+  // let keePassSecretKey = endpointConfiguration[lLModel].keepass;
+  // let keePassSecretKey = 'APIKeyForChatGPT';
+
+  // get API Token from Keepass
+  let aPIToken: PasswordEntryType = undefined;
+
+  // ToDo: use a Factory (Service) pattern to hand out secrets internally to the extension, to ensure they are cleaned on deactivate
+
+  try {
+    aPIToken = await data.secretsManager.getAPITokenForChatGPTAsync();
+    // Hmm I guess the extension should continue to operate with LLMs that do not have any authorization requirement
+    // Every LLM is potentially different, the extension should have a defaultConfiguration structure for each LLM enumeration
+    // but for now assume that an undefined aPIToken is an error
+    if (!aPIToken) {
+      throw new Error(`sendQueryOpenAIAsync calling getAPITokenForChatGPTAsync aPIToken is undefined`);
+    }
+    // Keep only the first line of the APIToken
+    // use a regular expression for the split to handle both \n (*nix and macOS) and \r\n (Windows)
+    aPIToken = Buffer.from(aPIToken.toString().split(/\r?\n/)[0], 'utf-8');
+  } catch (e) {
+    if (e instanceof Error) {
+      throw new DetailedError('sendQueryOpenAIAsync getAPITokenForChatGPTAsync failed -> ', e);
+    } else {
+      // ToDo:  investigation to determine what else might happen
+      throw new Error(
+        `sendQueryOpenAIAsync getAPITokenForChatGPTAsync failed and the instance of (e) returned is of type ${typeof e}`,
+      );
+    }
   }
 
   logger.log(`setup an OpenAI instance with OpenAI library`, LogLevel.Debug);

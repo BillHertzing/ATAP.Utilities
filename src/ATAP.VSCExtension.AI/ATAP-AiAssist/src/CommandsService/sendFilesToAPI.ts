@@ -42,61 +42,61 @@ async function processFiles(
   return results;
 }
 
-export async function sendFilesToAPI(extensionContext: vscode.ExtensionContext, logger: ILogger) {
-  let message: string = 'starting command sendFilesToAPI';
-  logger.log(message, LogLevel.Debug);
+// export async function sendFilesToAPI(extensionContext: vscode.ExtensionContext, logger: ILogger) {
+//   let message: string = 'starting command sendFilesToAPI';
+//   logger.log(message, LogLevel.Debug);
 
-  // List of file paths to be processed
-  const filesToProcess: string[] = [
-    // Populate this array with actual file paths
-  ];
+//   // List of file paths to be processed
+//   const filesToProcess: string[] = [
+//     // Populate this array with actual file paths
+//   ];
 
-  // Destination web address
-  const destination: string = 'https://your.api.endpoint/submit'; // ToDo:from settings
+//   // Destination web address
+//   const destination: string = 'https://your.api.endpoint/submit'; // ToDo:from settings
 
-  // Async function to send the file to the API
-  const sendToAPI = async (path: string, logger: ILogger): Promise<ProcessResult> => {
-    try {
-      const fileContent = fs.readFileSync(path, 'utf8');
-      const response = await axios.post(destination, {
-        file: fileContent,
-        filename: path,
-      });
-      message = `File ${path} was sent successfully.`;
-      logger.log(message, LogLevel.Info);
-      return new ProcessResult(response.status === 200, fileContent.split('\n').length);
-    } catch (e) {
-      if (e instanceof Error) {
-        // Report the error
-        message = e.message;
-      } else {
-        // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
-        message = `An unknown error occurred during the copyToSubmit call, and the instance of (e) returned is of type ${typeof e}`;
-      }
-      logger.log(message, LogLevel.Error);
-      return new ProcessResult(false, undefined);
-    }
-  };
+// Async function to send the file to the API
+// const sendToAPI = async (path: string, logger: ILogger): Promise<ProcessResult> => {
+//   try {
+//     const fileContent = fs.readFileSync(path, 'utf8');
+//     const response = await axios.post(destination, {
+//       file: fileContent,
+//       filename: path,
+//     });
+//     message = `File ${path} was sent successfully.`;
+//     logger.log(message, LogLevel.Info);
+//     return new ProcessResult(response.status === 200, fileContent.split('\n').length);
+//   } catch (e) {
+//     if (e instanceof Error) {
+//       // Report the error
+//       message = e.message;
+//     } else {
+//       // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
+//       message = `An unknown error occurred during the copyToSubmit call, and the instance of (e) returned is of type ${typeof e}`;
+//     }
+//     logger.log(message, LogLevel.Error);
+//     return new ProcessResult(false, undefined);
+//   }
+// };
 
-  // Call 'processFiles' with 'filesToProcess' and 'sendToAPI'
-  try {
-    const results = await processFiles(filesToProcess, sendToAPI, logger);
-    message = `All files processed. Results: ${JSON.stringify(results)}`;
-    logger.log(message, LogLevel.Info);
-  } catch (e) {
-    if (e instanceof Error) {
-      // Report the error
-      message = e.message;
-    } else {
-      // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
-      message = `An unknown error occurred during the processFiles call, and the instance of (e) returned is of type ${typeof e}`;
-    }
-    logger.log(message, LogLevel.Error);
-  }
+// Call 'processFiles' with 'filesToProcess' and 'sendToAPI'
+//   try {
+//     const results = await processFiles(filesToProcess, sendToAPI, logger);
+//     message = `All files processed. Results: ${JSON.stringify(results)}`;
+//     logger.log(message, LogLevel.Info);
+//   } catch (e) {
+//     if (e instanceof Error) {
+//       // Report the error
+//       message = e.message;
+//     } else {
+//       // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
+//       message = `An unknown error occurred during the processFiles call, and the instance of (e) returned is of type ${typeof e}`;
+//     }
+//     logger.log(message, LogLevel.Error);
+//   }
 
-  message = 'leaving command sendFilesToAPI';
-  logger.log(message, LogLevel.Debug);
-}
+//   message = 'leaving command sendFilesToAPI';
+//   logger.log(message, LogLevel.Debug);
+// }
 
 // export async function  processFiles(logger: ILogger, commandId: string | null): void {
 //   let message: string = 'starting commandID processFiles';
@@ -116,6 +116,5 @@ export async function sendFilesToAPI(extensionContext: vscode.ExtensionContext, 
 // async function processSingleFile(path: string, logger: ILogger): Promise<ProcessResult> {
 //   let message: string = 'starting processSingleFile';
 //   logger.log(message, LogLevel.Debug);
-
 
 // }

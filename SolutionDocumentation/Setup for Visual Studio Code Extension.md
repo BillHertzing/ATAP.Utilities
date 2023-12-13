@@ -72,6 +72,7 @@ The extension needs support for YAML and using a WebAPI. Run from a terminal at 
 
 ```Powershell
 npm install js-yaml
+npm install events
 ```
 
 ## Install the node.js modules for development
@@ -81,6 +82,7 @@ Run from a terminal, the base of the extension directory
 ```Powershell
 npm install --save-dev  @types/vscode
 npm install --save-dev @types/js-yaml
+npm install --save-dev @types/events
 
 ## needed to support paths in both extension development and extension testing
 npm install --save-dev tsconfig-paths-webpack-plugin

@@ -4,13 +4,12 @@ import { DetailedError } from '@ErrorClasses/index';
 import { logConstructor } from '@Decorators/Decorators';
 
 import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
+import { IQueryService } from '@QueryService/index';
 
 import { startCommand } from './startCommand';
 import { showVSCEnvironment } from './showVSCEnvironment';
 import { showPrompt } from './showPrompt';
-import { sendQuery } from './sendQuery';
 
-import { sendFilesToAPI } from './sendFilesToAPI';
 import { showQuickPickExample } from './showQuickPickExample';
 // import { quickPickFromSettings } from './quickPickFromSettings';
 import { copyToSubmit } from './copyToSubmit';
@@ -19,7 +18,12 @@ import { copyToSubmit } from './copyToSubmit';
 export class CommandsService {
   private disposables: vscode.Disposable[] = [];
 
-  constructor(private logger: ILogger, private extensionContext: vscode.ExtensionContext, private data: IData) {
+  constructor(
+    private logger: ILogger,
+    private extensionContext: vscode.ExtensionContext,
+    private data: IData,
+    private queryService: IQueryService,
+  ) {
     this.registerCommands();
   }
 
@@ -60,27 +64,22 @@ export class CommandsService {
       vscode.commands.registerCommand('atap-aiassist.sendQuery', async () => {
         this.logger.log('starting commandID sendQuery', LogLevel.Debug);
         try {
-          const result = await sendQuery(this.logger, this.data);
+          await this.queryService.QueryAsync();
           // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
         } catch (e) {
+          // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
           if (e instanceof Error) {
-            throw new DetailedError('Command sendQuery caught an error from function sendQuery -> ', e);
+            this.logger.log(`Command sendQuery caught an error from function sendQuery: ${e.message}`, LogLevel.Error);
+            // ToDo: display a visual error indicator to the user
           } else {
             // ToDo:  investigation to determine what else might happen
-            throw new Error(
+            this.logger.log(
               `Command sendQuery caught an unknown object from function sendQuery, and the instance of (e) returned is of type ${typeof e}`,
+              LogLevel.Error,
             );
+            // ToDo: display a visual error indicator to the user
           }
         }
-      }),
-    );
-
-    this.logger.log('registering sendFilesToAPI', LogLevel.Trace);
-    this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.sendFilesToAPI', () => {
-        let message: string = 'starting commandID sendFilesToAPI';
-        this.logger.log(message, LogLevel.Debug);
-        sendFilesToAPI(this.extensionContext, this.logger);
       }),
     );
 

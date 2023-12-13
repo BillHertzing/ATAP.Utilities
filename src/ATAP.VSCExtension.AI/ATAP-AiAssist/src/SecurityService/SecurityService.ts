@@ -22,17 +22,13 @@ export interface ISecurityService {
 }
 @logConstructor
 export class SecurityService implements ISecurityService {
-  private message: string;
   private externalDataVetting: ExternalDataVetting;
 
-  constructor(private logger: ILogger, private extensionContext: vscode.ExtensionContext) {
-    this.message = 'starting SecurityService constructor';
-    this.logger.log(this.message, LogLevel.Debug);
-
+  constructor(
+    private logger: ILogger,
+    private extensionContext: vscode.ExtensionContext,
+  ) {
     this.externalDataVetting = new ExternalDataVetting(this.logger);
-
-    this.message = 'leaving SecurityService constructor';
-    this.logger.log(this.message, LogLevel.Debug);
   }
   @logFunction
   static CreateSecurityService(

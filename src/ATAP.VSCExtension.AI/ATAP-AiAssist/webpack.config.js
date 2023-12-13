@@ -5,7 +5,7 @@
 const path = require("path");
 
 // use tsconfig paths
-const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin").TsconfigPathsPlugin;;
+const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin").TsconfigPathsPlugin;
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -24,6 +24,7 @@ const extensionConfig = {
   },
   externals: {
     vscode: "commonjs vscode", // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
+    prettier: "commonjs prettier", // this line will exclude 'prettier' from the bundle. It has a transitive dependency which webpack cannot resolve
     // modules added here also need to be added in the .vscodeignore file
   },
   resolve: {
@@ -46,6 +47,11 @@ const extensionConfig = {
             loader: "ts-loader",
           },
         ],
+      },
+      {
+        test: /\.mjs$/,
+        include: /node_modules/,
+        type: "javascript/auto",
       },
     ],
   },

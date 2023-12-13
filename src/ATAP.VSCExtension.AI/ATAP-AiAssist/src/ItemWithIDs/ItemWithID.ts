@@ -465,43 +465,43 @@ export class QueryContextCollection extends Collection<QueryContext> implements 
 // { role: 'system', content: 'This is where the Expertise prompt goes' },
 //     { role: 'user', content: 'what is the cutoff date of your training' }
 
-export type ConversationValueType = { role: string; content: string };
+// export type ConversationValueType = { role: string; content: string };
 
-export interface IConversation extends IItemWithID<Conversation> {
-  toString(): string;
-}
+// export interface IConversation extends IItemWithID<Conversation> {
+//   toString(): string;
+// }
 
-@logConstructor
-export class Conversation extends ItemWithID<Conversation> implements IConversation {
-  constructor(value: string, ID?: IPhilote) {
-    super(value, ID);
-  }
+// @logConstructor
+// export class Conversation extends ItemWithID<Conversation> implements IConversation {
+//   constructor(value: string, ID?: IPhilote) {
+//     super(value, ID);
+//   }
 
-  // Implement the toString method
-  toString(): string {
-    return `Conversation ID:${this.ID.ToString()} ;Conversation value:${this.value}`;
-  }
+//   // Implement the toString method
+//   toString(): string {
+//     return `Conversation ID:${this.ID.ToString()} ;Conversation value:${this.value}`;
+//   }
 
-  // Static method to create Conversation instances
-  static Create(value: string): Conversation {
-    return new Conversation(value);
-  }
-}
+//   // Static method to create Conversation instances
+//   static Create(value: string): Conversation {
+//     return new Conversation(value);
+//   }
+// }
 
-export interface IConversationCollection extends ICollection<Conversation> {
-  // Add any additional methods specific to a collection of Conversations, if necessary
-  // Example:
-  // findConversationBySomeCriteria(criteria: any): Conversation | undefined;
-}
+// export interface IConversationCollection extends ICollection<Conversation> {
+//   // Add any additional methods specific to a collection of Conversations, if necessary
+//   // Example:
+//   // findConversationBySomeCriteria(criteria: any): Conversation | undefined;
+// }
 
-@logConstructor
-export class ConversationCollection extends Collection<Conversation> implements IConversationCollection {
-  constructor(value: ItemWithID<Conversation>[], ID?: Philote) {
-    super(value, ID);
-  }
+// @logConstructor
+// export class ConversationCollection extends Collection<Conversation> implements IConversationCollection {
+//   constructor(value: ItemWithID<Conversation>[], ID?: Philote) {
+//     super(value, ID);
+//   }
 
-  // Implement any additional methods specific to ConversationCollection
-  // Example:
-  // findConversationBySomeCriteria(criteria: any): Conversation | undefined {
-  // }
-}
+//   // Implement any additional methods specific to ConversationCollection
+//   // Example:
+//   // findConversationBySomeCriteria(criteria: any): Conversation | undefined {
+//   // }
+// }

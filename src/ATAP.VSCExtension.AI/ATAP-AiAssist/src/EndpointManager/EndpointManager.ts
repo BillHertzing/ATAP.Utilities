@@ -128,7 +128,7 @@ export class EndpointManager {
   convertTo_json(): string {
     return toJson(this);
   }
-  // for developemnt purposes only
+  // for development purposes only
   // create an endpointconfigs and serialize it to json
 
   devEndpointConfigsAsJson(): string {

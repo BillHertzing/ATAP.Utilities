@@ -41,11 +41,11 @@ import {
   QueryContext,
   IQueryContextCollection,
   QueryContextCollection,
-  ConversationValueType,
-  IConversation,
-  Conversation,
-  IConversationCollection,
-  ConversationCollection,
+  // ConversationValueType,
+  // IConversation,
+  // Conversation,
+  // IConversationCollection,
+  // ConversationCollection,
 } from '@ItemWithIDs/index';
 import { log } from 'console';
 
@@ -74,10 +74,10 @@ export interface IStateManager {
   setCurrentQueryContext(value: IQueryContext): Promise<void>;
   getQueryContextCollection(): IQueryContextCollection | undefined;
   setQueryContextCollection(value: IQueryContextCollection): Promise<void>;
-  getCurrentConversation(): IConversation | undefined;
-  setCurrentConversation(value: IConversation): Promise<void>;
-  getConversationCollection(): IConversationCollection | undefined;
-  setConversationCollection(value: IConversationCollection): Promise<void>;
+  // getCurrentConversation(): IConversation | undefined;
+  // setCurrentConversation(value: IConversation): Promise<void>;
+  // getConversationCollection(): IConversationCollection | undefined;
+  // setConversationCollection(value: IConversationCollection): Promise<void>;
 }
 
 export class StateManager {
@@ -152,23 +152,23 @@ export class StateManager {
       })();
       // ToDo: possibly add validationthat the new collection was created
     }
-    if (!this.cache.getValue<ConversationCollection>('ConversationCollection')) {
-      // Immediately Invoked Async Function Expression (IIFE)
-      (() => {
-        this.cache
-          .setValue<ConversationCollection>('ConversationCollection', new ConversationCollection([]))
-          .catch((e) => {
-            if (e instanceof Error) {
-              throw new DetailedError(`StateManager.constructor: failed to set ConversationCollection -> `, e);
-            } else {
-              throw new Error(
-                `StateManager .ctor: failed to set ConversationCollection and the instance of (e) returned is of type ${typeof e}`,
-              );
-            }
-          });
-      })();
-      // ToDo: possibly add validationthat the new collection was created
-    }
+    // if (!this.cache.getValue<ConversationCollection>('ConversationCollection')) {
+    //   // Immediately Invoked Async Function Expression (IIFE)
+    //   (() => {
+    //     this.cache
+    //       .setValue<ConversationCollection>('ConversationCollection', new ConversationCollection([]))
+    //       .catch((e) => {
+    //         if (e instanceof Error) {
+    //           throw new DetailedError(`StateManager.constructor: failed to set ConversationCollection -> `, e);
+    //         } else {
+    //           throw new Error(
+    //             `StateManager .ctor: failed to set ConversationCollection and the instance of (e) returned is of type ${typeof e}`,
+    //           );
+    //         }
+    //       });
+    //   })();
+    //   // ToDo: possibly add validationthat the new collection was created
+    // }
   }
 
   getsavedPromptDocumentData(): string | undefined {
@@ -266,21 +266,21 @@ export class StateManager {
   async setQueryContextCollection(value: IQueryContextCollection): Promise<void> {
     await this.cache.setValue<IQueryContextCollection>('QueryContextCollection', value);
   }
-  getCurrentConversation(): IConversation | undefined {
-    return this.cache.getValue<IConversation>('Conversation');
-  }
+  // getCurrentConversation(): IConversation | undefined {
+  //   return this.cache.getValue<IConversation>('Conversation');
+  // }
 
-  async setCurrentConversation(value: IConversation): Promise<void> {
-    await this.cache.setValue<IConversation>('Conversation', value);
-  }
+  // async setCurrentConversation(value: IConversation): Promise<void> {
+  //   await this.cache.setValue<IConversation>('Conversation', value);
+  // }
 
-  getConversationCollection(): IConversationCollection | undefined {
-    return this.cache.getValue<IConversationCollection>('ConversationCollection');
-  }
+  // getConversationCollection(): IConversationCollection | undefined {
+  //   return this.cache.getValue<IConversationCollection>('ConversationCollection');
+  // }
 
-  async setConversationCollection(value: IConversationCollection): Promise<void> {
-    await this.cache.setValue<IConversationCollection>('ConversationCollection', value);
-  }
+  // async setConversationCollection(value: IConversationCollection): Promise<void> {
+  //   await this.cache.setValue<IConversationCollection>('ConversationCollection', value);
+  // }
 }
 
 class GlobalStateCache {

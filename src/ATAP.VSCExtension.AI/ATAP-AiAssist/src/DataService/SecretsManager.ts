@@ -46,7 +46,7 @@ export class SecretsManager implements ISecretsManager {
         );
         break;
       default:
-        throw new DetailedError(`SecretsManager constructor does not support the ${selectedSecretsVault} vault`);
+        throw new DetailedError(`SecretsManager .ctor does not support the ${selectedSecretsVault} vault`);
     }
   }
 
@@ -58,14 +58,11 @@ export class SecretsManager implements ISecretsManager {
       //  so we need to make sure the inputBox is on top.
       // But secretsManager is instantiated in the extension's Data structure, which is instantiated in the extension's activate function
 
-      // let mp: KdbxWeb.ProtectedValue = KdbxWeb.ProtectedValue.fromString('NopeNotReallyThePassword');
-      // console.log('mp = ', mp.toString());
-
-      // this.masterPassword = KdbxWeb.ProtectedValue.fromString('NopeNotReallyThePassword');
       const pwd = await vscode.window.showInputBox({
         prompt: `Enter the master password to the Secrets vault`,
         password: true,
       });
+
       if (pwd) {
         try {
           // ToDo: I18N
@@ -90,6 +87,11 @@ export class SecretsManager implements ISecretsManager {
           },
           3 * 60 * 60 * 1000,
         );
+
+        // Resolve the promise with the master password
+        return this.masterPassword; //resolve(this.masterPassword);
+      } else {
+        return null; // resolve(null);
       }
     });
   }
@@ -143,7 +145,7 @@ class KeePassSecretsManager implements ISecretsManager {
   @logAsyncFunction
   async getAPITokenForChatGPTAsync(): Promise<PasswordEntryType> {
     let aPIToken: PasswordEntryType;
-    // ToDo: Move the processing of kdbx, argv, env, and include the possibility of development and production defaultconfiguration fields for some LLMs
+    // ToDo: Move the processing of kdbx, argv, env, and include the possibility of development and production default configuration values for some LLMs
     // Does the environment have a APITokenForChatGPT?
     // Is it a CLI argument passed in argv?
     // Is it in environment variables (specific to the extension)?
@@ -167,11 +169,13 @@ class KeePassSecretsManager implements ISecretsManager {
     return aPIToken;
   }
 
-  // Implement the abstract base function using the kdbxweb library
+  // Implement the abstract base function.
+  // ToDO: use a strategy pattern to decide if the implementation will use the kdbxweb library or KPScript
   @logAsyncFunction
   async getValueAsync<Buffer>(keyPath: string[], entryTitle: string): Promise<PasswordEntryType> {
     // get the masterPassword from the SecretsManager. It will ask the user via an inputbox if it is not defined. It might return null if the user cancels the inputBox
     let _masterPassword: MasterPasswordType = null;
+
     try {
       _masterPassword = await this.callGetMasterPasswordAsync();
     } catch (e) {

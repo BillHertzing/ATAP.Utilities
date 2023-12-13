@@ -58,6 +58,7 @@ import {
 import { IStateManager, StateManager } from './StateManager';
 import { SupportedSecretsVaultEnum, ISecretsManager, SecretsManager } from './SecretsManager';
 import { IConfigurationData, ConfigurationData } from './ConfigurationData';
+import { IEventManager, EventManager } from './EventManager';
 import { PathLike } from 'fs';
 
 export interface IData {
@@ -69,6 +70,7 @@ export interface IData {
   readonly configurationData: IConfigurationData;
   readonly stateManager: IStateManager;
   readonly secretsManager: ISecretsManager;
+  readonly eventManager: IEventManager;
 }
 
 @logConstructor
@@ -76,6 +78,7 @@ export class Data {
   public readonly stateManager: IStateManager;
   public readonly configurationData: IConfigurationData;
   public readonly secretsManager: ISecretsManager;
+  public readonly eventManager: IEventManager;
 
   // Data that does NOT get put into globalState
   private temporaryPromptDocumentPath: string | undefined = undefined;
@@ -136,6 +139,17 @@ export class Data {
       } else {
         // ToDo:  investigation to determine what else might happen
         throw new Error(`Data.ctor. create secretsManager thew an object that was not of type Error -> `);
+      }
+    }
+    // instantiate the eventManager
+    try {
+      this.eventManager = new EventManager(this.logger, this.extensionContext, this.configurationData); //, need a workspace folder passed into the constructor?
+    } catch (e) {
+      if (e instanceof Error) {
+        throw new DetailedError('Data.ctor. create eventManager -> ', e);
+      } else {
+        // ToDo:  investigation to determine what else might happen
+        throw new Error(`Data.ctor. create eventManager thew an object that was not of type Error -> `);
       }
     }
   }

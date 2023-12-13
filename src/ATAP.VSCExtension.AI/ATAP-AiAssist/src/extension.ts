@@ -30,6 +30,7 @@ import {
 import { isRunningInDevHost } from '@Utilities/index';
 
 import { CommandsService } from '@CommandsService/index';
+import { IQueryService, QueryService } from '@QueryService/index';
 
 import { checkFile } from './checkFile';
 import { processPs1Files } from './processPs1Files';
@@ -52,11 +53,11 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   let message: string = '';
   let workspacePath: string = '';
   let securityService: ISecurityService;
+  let queryService: IQueryService;
 
   // ToDo: create a static startup logger, and use that until the full blown logger can be instantiated
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
-  const myLogger =
-    new Logger();
+  const myLogger = new Logger();
   // const loggerLogLevelFromSettings = getLoggerLogLevelFromSettings(); // supplies a default if not found in settings
   // myLogger.createChannel('ATAP-AiAssist', loggerLogLevelFromSettings);
   myLogger.createChannel('ATAP-AiAssist', LogLevel.Debug);
@@ -101,6 +102,29 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // }
 
   myLogger.log(`data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`, LogLevel.Info);
+
+  // ToDo: wrap in a try/catch block
+  queryService = QueryService.CreateQueryService(myLogger, extensionContext, dataService.data, 'extension.ts');
+
+  // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
+  // Calling the constructor registers all of the commands, and creates a disposables structure
+  let commandsService: CommandsService;
+  try {
+    myLogger.log(`instantiate commandsService`, LogLevel.Debug);
+    commandsService = new CommandsService(myLogger, extensionContext, dataService.data, queryService);
+    myLogger.log(`commandsService instantiated`, LogLevel.Trace);
+  } catch (e) {
+    if (e instanceof Error) {
+      throw new DetailedError(`Activation: failed to create an instance of CommandsService -> `, e);
+    } else {
+      // ToDo:  investigation to determine what else might happen
+      throw new Error(
+        `Activation: failed to create an instance of CommandsService and the object caught is of type ${typeof e}`,
+      );
+    }
+  }
+  // Add the disposables from the CommandsService to extensionContext.subscriptions
+  extensionContext.subscriptions.push(...commandsService.getDisposables());
 
   // identify the current workspace context. Compare to stored state information, and update if necessary
   const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -211,26 +235,6 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // let mainSearchTextDisposable = vscode.commands.registerCommand('extension.searchText', mainSearchText);
   // const mainSearchEngine = new mainSearchEngineProvider();
   // extensionContext.subscriptions.push(vscode.workspace.registerSearchProvider('myProvider', provider));
-
-  // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
-  // Calling the constructor registers all of the commands, and creates a disposables structure
-  let commandsService: CommandsService;
-  try {
-    myLogger.log(`instantiate commandsService`, LogLevel.Debug);
-    commandsService = new CommandsService(myLogger, extensionContext, dataService.data);
-    myLogger.log(`commandsService instantiated`, LogLevel.Trace);
-  } catch (e) {
-    if (e instanceof Error) {
-      throw new DetailedError(`Activation: failed to create an instance of CommandsService -> `, e);
-    } else {
-      // ToDo:  investigation to determine what else might happen
-      throw new Error(
-        `Activation: failed to create an instance of CommandsService and the object caught is of type ${typeof e}`,
-      );
-    }
-  }
-  // Add the disposables from the CommandsService to extensionContext.subscriptions
-  extensionContext.subscriptions.push(...commandsService.getDisposables());
 
   //debugging
   let allEditorsRestored = false;

@@ -8,3 +8,4 @@ vsc-extension-quickstart.md
 **/.eslintrc.json
 **/*.map
 **/*.ts
+node_modules/prettier/**  // prettier has a dynamic dependency, whihc webpack can't handle, so it has to be excluded from the extension bundle, and must be installed globally

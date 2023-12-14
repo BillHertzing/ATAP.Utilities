@@ -90,56 +90,56 @@ export class ItemWithID<T extends ItemWithIDTypes> implements IItemWithID<T> {
     return toYaml(this);
   }
 
-  // static convertFrom_yaml<T extends ItemWithIDTypes>(yaml: string): ItemWithID<T> {
-  //   const data = fromYaml(yaml); // Assuming fromYaml is a function to parse YAML string
-  //   return new ItemWithID<T>(data.value as MapTypeToValueType<T>);
-  // }
-}
+  static convertFrom_yaml<T extends ItemWithIDTypes>(yamlString: string): ItemWithID<T> {
+    const data = fromYamlForItemWithID<T>(yamlString);
+    return new ItemWithID<T>(data.value);
+  }
 
-// static CreateItemWithID(
-//   logger: ILogger,
-//   extensionContext: vscode.ExtensionContext,
-//   callingModule: string,
-//   initializationStructure?: ISerializationStructure,
-// ): ItemWithIDTypes {
-//   let _obj: ItemWithIDTypes | null;
-//   if (initializationStructure) {
-//     try {
-//       // ToDo: deserialize based on contents of structure
-//       _obj = ItemWithID.convertFrom_json(initializationStructure.value);
-//     } catch (e) {
-//       if (e instanceof Error) {
-//         throw new DetailedError(
-//           `${callingModule}: CreateItemWithID from initializationStructure using convertFrom_xxx -> }`,
-//           e,
-//         );
-//       } else {
-//         // ToDo:  investigation to determine what else might happen
-//         throw new Error(
-//           `${callingModule}: CreateItemWithID from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
-//         );
-//       }
-//     }
-//     if (_obj === null) {
-//       throw new Error(
-//         `${callingModule}: CreateItemWithID from initializationStructureusing convertFrom_xxx produced a null`,
-//       );
-//     }
-//     return _obj;
-//   } else {
-//     try {
-//       _obj = new ItemWithID('aStaticItemWithID');
-//     } catch (e) {
-//       if (e instanceof Error) {
-//         throw new DetailedError(`${callingModule}: create new ItemWithID error }`, e);
-//       } else {
-//         // ToDo:  investigation to determine what else might happen
-//         throw new Error(`${callingModule}: new ItemWithID threw something that was not an error typeof `);
-//       }
-//     }
-//     return _obj;
-//   }
-// }
+  static CreateItemWithID(
+    logger: ILogger,
+    extensionContext: vscode.ExtensionContext,
+    callingModule: string,
+    initializationStructure?: ISerializationStructure,
+  ): ItemWithIDTypes {
+    let _obj: ItemWithIDTypes | null;
+    if (initializationStructure) {
+      try {
+        // ToDo: deserialize based on contents of structure
+        _obj = ItemWithID.convertFrom_json(initializationStructure.value);
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(
+            `${callingModule}: CreateItemWithID from initializationStructure using convertFrom_xxx -> }`,
+            e,
+          );
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(
+            `${callingModule}: CreateItemWithID from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
+          );
+        }
+      }
+      if (_obj === null) {
+        throw new Error(
+          `${callingModule}: CreateItemWithID from initializationStructureusing convertFrom_xxx produced a null`,
+        );
+      }
+      return _obj;
+    } else {
+      try {
+        _obj = new ItemWithID('aStaticItemWithID');
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(`${callingModule}: create new ItemWithID error }`, e);
+        } else {
+          // ToDo:  investigation to determine what else might happen
+          throw new Error(`${callingModule}: new ItemWithID threw something that was not an error typeof `);
+        }
+      }
+      return _obj;
+    }
+  }
+}
 
 export interface ICollection<T extends ItemWithIDTypes> {
   ID: Philote;
@@ -375,10 +375,17 @@ export class TokenCollection extends Collection<Token> implements ITokenCollecti
   // }
 }
 
-export type AssociationValueType = {
+export interface IAssociationValueType {
   tagCollection: ITagCollection;
   categoryCollection: ICategoryCollection;
-};
+}
+
+export class AssociationValueType implements IAssociationValueType {
+  constructor(
+    readonly tagCollection: ITagCollection,
+    readonly categoryCollection: ICategoryCollection,
+  ) {}
+}
 
 export interface IAssociation extends IItemWithID<Association> {
   toString(): string;
@@ -421,6 +428,12 @@ export class AssociationCollection extends Collection<Association> implements IA
 }
 
 export type QueryContextValueType = TokenCollection | QueryContext;
+
+// add a readonly Association collection to the QueryContext
+export interface IQueryContextValueType {
+  tokenCollection: TokenCollection;
+  queryContext: QueryContext;
+}
 
 export interface IQueryContext extends IItemWithID<QueryContext> {
   toString(): string;

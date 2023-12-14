@@ -2,13 +2,13 @@ import { LogLevel, ILogger } from '@Logger/index';
 import * as vscode from 'vscode';
 
 export function showVSCEnvironment(logger: ILogger): void {
-  let message: string = 'starting commandID showVSCEnvironment';
-  logger.log(message, LogLevel.Debug);
+  let message: string;
+  logger.log('starting function showVSCEnvironment', LogLevel.Debug);
   const workspaceFolders = vscode.workspace.workspaceFolders;
   // Check if a workspace is open
   if (workspaceFolders && workspaceFolders.length > 0) {
     // Use the URI property to get the folder path
-    message = `workspaceFolder = ${workspaceFolders[0].uri.fsPath} `;
+    message = `workspaceFolder = ${workspaceFolders[0].uri.fsPath}`;
   } else {
     message = 'No workspace folder open.';
   }

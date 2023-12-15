@@ -10,7 +10,7 @@ import { startCommand } from './startCommand';
 import { showVSCEnvironment } from './showVSCEnvironment';
 import { showPrompt } from './showPrompt';
 
-import { showQuickPickExample } from './showQuickPickExample';
+import { showStatusMenu } from './showStatusMenu';
 // import { quickPickFromSettings } from './quickPickFromSettings';
 import { copyToSubmit } from './copyToSubmit';
 
@@ -63,6 +63,10 @@ export class CommandsService {
     this.disposables.push(
       vscode.commands.registerCommand('atap-aiassist.sendQuery', async () => {
         this.logger.log('starting commandID sendQuery', LogLevel.Debug);
+        //change the visualstate of the statusBarItem
+        // Event fired
+        //statusBarItem.text = `$(sync~spin) Event Initializing`;
+        //statusBarItem.show();
         try {
           await this.queryService.QueryAsync();
           // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
@@ -92,12 +96,12 @@ export class CommandsService {
       }),
     );
 
-    this.logger.log('registering showQuickPickExample', LogLevel.Debug);
+    this.logger.log('registering showStatusMenu', LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.showQuickPickExample', async () => {
-        this.logger.log('starting commandID showQuickPickExample', LogLevel.Debug);
+      vscode.commands.registerCommand('atap-aiassist.showStatusMenu', async () => {
+        this.logger.log('starting commandID showStatusMenu', LogLevel.Debug);
         try {
-          const result = await showQuickPickExample(this.logger);
+          const result = await showStatusMenu(this.logger, this.data);
           this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
         } catch (e) {
           if (e instanceof Error) {

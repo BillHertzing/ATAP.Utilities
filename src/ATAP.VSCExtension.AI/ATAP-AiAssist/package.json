@@ -32,8 +32,8 @@
         "title": "ATAP-AiAssist: sendQuery (send the Query and all associated information to the server)"
       },
       {
-        "command": "atap-aiassist.showQuickPickExample",
-        "title": "ATAP-AiAssist: Show Quick Pick"
+        "command": "atap-aiassist.showStatusMenu",
+        "title": "ATAP-AiAssist: Show Status menu"
       },
       {
         "command": "atap-aiassist.quickPickFromSettings",

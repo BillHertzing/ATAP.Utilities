@@ -78,6 +78,13 @@ export interface IStateManager {
   // setCurrentConversation(value: IConversation): Promise<void>;
   // getConversationCollection(): IConversationCollection | undefined;
   // setConversationCollection(value: IConversationCollection): Promise<void>;
+
+  getCurrentMode(): string | undefined;
+  setCurrentMode(value: string): Promise<void>;
+  getCurrentCommand(): string | undefined;
+  setCurrentCommand(value: string): Promise<void>;
+  getCurrentSources(): string | undefined;
+  setCurrentSources(value: string): Promise<void>;
 }
 
 export class StateManager {
@@ -281,6 +288,30 @@ export class StateManager {
   // async setConversationCollection(value: IConversationCollection): Promise<void> {
   //   await this.cache.setValue<IConversationCollection>('ConversationCollection', value);
   // }
+
+  getCurrentMode(): string | undefined {
+    return this.cache.getValue<string>('Mode');
+  }
+
+  async setCurrentMode(value: string): Promise<void> {
+    await this.cache.setValue<string>('Mode', value);
+  }
+
+  getCurrentCommand(): string | undefined {
+    return this.cache.getValue<string>('Command');
+  }
+
+  async setCurrentCommand(value: string): Promise<void> {
+    await this.cache.setValue<string>('Command', value);
+  }
+
+  getCurrentSources(): string | undefined {
+    return this.cache.getValue<string>('Sources');
+  }
+
+  async setCurrentSources(value: string): Promise<void> {
+    await this.cache.setValue<string>('Sources', value);
+  }
 }
 
 class GlobalStateCache {

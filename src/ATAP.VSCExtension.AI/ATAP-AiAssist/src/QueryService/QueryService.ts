@@ -175,7 +175,7 @@ export class QueryService implements IQueryService {
 
   @logAsyncFunction
   async QueryAsync(queryEngine?: SupportedQueryEnginesEnum): Promise<void> {
-    // Call CreateQueryAsync, wait for it to complete, then call SendQueryAsync.
+    // Call CreateQueryAsync, wait for it to complete, then call SendQueryAsync, register the function that handles the event QueryResultsChatGPTCompletelyReceived
   }
 
   @logAsyncFunction

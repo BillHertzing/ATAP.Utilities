@@ -1,14 +1,22 @@
 import { LogLevel, ILogger } from '@Logger/index';
+import { IData } from '@DataService/index';
 import * as vscode from 'vscode';
 
-export async function showQuickPickExample(logger: ILogger): Promise<{
+export async function showStatusMenu(
+  logger: ILogger,
+  data: IData,
+): Promise<{
   success: boolean;
   pick: string | null;
   errorMessage: string | null;
 }> {
-  let message: string = 'starting commandID showQuickPickExample';
-  logger.log(message, LogLevel.Debug);
-  const items = ['ROption 1', 'ROption 2', 'ROption 3'];
+  logger.log('starting function showStatusMenu', LogLevel.Debug);
+
+  const items = [
+    `mode: ${data.stateManager.getCurrentMode()}`,
+    `command: ${data.stateManager.getCurrentCommand()}`,
+    `sources: ${data.stateManager.getCurrentSources()}`,
+  ];
   const pick = await vscode.window.showQuickPick(items, {
     placeHolder: 'Select an option',
   });
@@ -20,11 +28,10 @@ export async function showQuickPickExample(logger: ILogger): Promise<{
       errorMessage: null,
     };
   } else {
-    message = 'Quick Pick was canceled';
     return {
       success: false,
       pick: null,
-      errorMessage: message,
+      errorMessage: 'Status menu was was canceled',
     };
   }
 }

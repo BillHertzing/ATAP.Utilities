@@ -126,16 +126,6 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // Add the disposables from the CommandsService to extensionContext.subscriptions
   extensionContext.subscriptions.push(...commandsService.getDisposables());
 
-  // Create a status bar item for the extension
-  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  // Initial state
-  statusBarItem.text = `$(robot) ShowAiAssist status menu`;
-  statusBarItem.command = 'atap-aiassist.showStatusMenu';
-  statusBarItem.tooltip = 'Click to choose an action';
-  extensionContext.subscriptions.push(statusBarItem);
-
-  statusBarItem.show();
-
   // identify the current workspace context. Compare to stored state information, and update if necessary
   const workspaceFolders = vscode.workspace.workspaceFolders;
 

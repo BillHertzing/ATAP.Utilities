@@ -16,8 +16,6 @@ export class ExternalDataVetting {
       // Vet all external data here
       // Use a third-party library to vet the data
       this.logger.log(`ToDo:add data vetting for ${data}`, LogLevel.Debug);
-      // If the data is valid, raise the follwon event
-      eventEmitter.emit(EventToRaiseMagicString, data);
     });
   }
 }

@@ -47,7 +47,10 @@ import {
   // IConversationCollection,
   // ConversationCollection,
 } from '@ItemWithIDs/index';
-import { log } from 'console';
+
+import { ModeMenuItemEnum, CommandMenuItemEnum } from '@StateMachineService/index';
+
+import { IConfigurationData } from './ConfigurationData';
 
 export interface IStateManager {
   getsavedPromptDocumentData(): string | undefined;
@@ -79,10 +82,10 @@ export interface IStateManager {
   // getConversationCollection(): IConversationCollection | undefined;
   // setConversationCollection(value: IConversationCollection): Promise<void>;
 
-  getCurrentMode(): string | undefined;
-  setCurrentMode(value: string): Promise<void>;
-  getCurrentCommand(): string | undefined;
-  setCurrentCommand(value: string): Promise<void>;
+  getCurrentMode(): ModeMenuItemEnum | undefined;
+  setCurrentMode(value: ModeMenuItemEnum): Promise<void>;
+  getCurrentCommand(): CommandMenuItemEnum | undefined;
+  setCurrentCommand(value: CommandMenuItemEnum): Promise<void>;
   getCurrentSources(): string | undefined;
   setCurrentSources(value: string): Promise<void>;
 }
@@ -92,6 +95,7 @@ export class StateManager {
   constructor(
     private logger: ILogger,
     readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
+    private readonly configurationData: IConfigurationData,
   ) {
     this.cache = new GlobalStateCache(extensionContext);
     // create new collections if there is no collection in GlobalState
@@ -176,21 +180,37 @@ export class StateManager {
     //   })();
     //   // ToDo: possibly add validationthat the new collection was created
     // }
-    if (!this.cache.getValue<string>('CurrentMode')) {
-      // Immediately Invoked Async Function Expression (IIFE)
+    let lclCurrentMode = this.cache.getValue<ModeMenuItemEnum>('CurrentMode');
+    if (!lclCurrentMode || (lclCurrentMode && lclCurrentMode === undefined)) {
+      logger.log(`StateManager.constructor: CurrentMode exists as undefined`, LogLevel.Debug);
       (() => {
-        this.cache.setValue<string>('CurrentMode', '@Workspace').catch((e) => {
+        this.cache.clearValue('CurrentMode').catch((e) => {
           if (e instanceof Error) {
-            throw new DetailedError(`StateManager.constructor: failed to set CurrentMode -> `, e);
+            throw new DetailedError(`StateManager.constructor: failed to clear CurrentMode -> `, e);
           } else {
             throw new Error(
-              `StateManager .ctor: failed to set CurrentMode and the instance of (e) returned is of type ${typeof e}`,
+              `StateManager.constructor: failed to clear CurrentMode and the instance of (e) returned is of type ${typeof e} and value is ${e}`,
             );
           }
         });
       })();
-      // ToDo: possibly add validationthat the CurrentMode was correctly created and initialized
+      // Immediately Invoked Async Function Expression (IIFE)
+      (() => {
+        this.cache
+          .setValue<ModeMenuItemEnum>('CurrentMode', this.configurationData.getDefaultCurrentMode())
+          .catch((e) => {
+            if (e instanceof Error) {
+              throw new DetailedError(`StateManager.constructor: failed to set CurrentMode -> `, e);
+            } else {
+              throw new Error(
+                `StateManager .ctor: failed to set CurrentMode and the instance of (e) returned is of type ${typeof e}`,
+              );
+            }
+          });
+      })();
     }
+    // ToDo: possibly add validationthat the CurrentMode was correctly created and initialized
+    logger.log(`CurrentMode = ${this.cache.getValue<ModeMenuItemEnum>('CurrentMode')}`, LogLevel.Debug);
 
     if (!this.cache.getValue<string>('CurrentCommand')) {
       // Immediately Invoked Async Function Expression (IIFE)
@@ -206,6 +226,7 @@ export class StateManager {
         });
       })();
     }
+    logger.log(`CurrentCommand = ${this.cache.getValue<ModeMenuItemEnum>('CurrentCommand')}`, LogLevel.Debug);
 
     if (!this.cache.getValue<string>('CurrentSources')) {
       // Immediately Invoked Async Function Expression (IIFE)
@@ -221,6 +242,9 @@ export class StateManager {
         });
       })();
     }
+
+    // ToDo: possibly add validationthat the CurrentMode was correctly created and initialized
+    logger.log(`CurrentSources = ${this.cache.getValue<string>('CurrentSources')}`, LogLevel.Debug);
   }
 
   getsavedPromptDocumentData(): string | undefined {
@@ -334,28 +358,28 @@ export class StateManager {
   //   await this.cache.setValue<IConversationCollection>('ConversationCollection', value);
   // }
 
-  getCurrentMode(): string | undefined {
-    return this.cache.getValue<string>('Mode');
+  getCurrentMode(): ModeMenuItemEnum | undefined {
+    return this.cache.getValue<ModeMenuItemEnum>('CurrentMode');
   }
 
-  async setCurrentMode(value: string): Promise<void> {
-    await this.cache.setValue<string>('Mode', value);
+  async setCurrentMode(value: ModeMenuItemEnum): Promise<void> {
+    await this.cache.setValue<ModeMenuItemEnum>('CurrentMode', value);
   }
 
-  getCurrentCommand(): string | undefined {
-    return this.cache.getValue<string>('Command');
+  getCurrentCommand(): CommandMenuItemEnum | undefined {
+    return this.cache.getValue<CommandMenuItemEnum>('CurrentCommand');
   }
 
-  async setCurrentCommand(value: string): Promise<void> {
-    await this.cache.setValue<string>('Command', value);
+  async setCurrentCommand(value: CommandMenuItemEnum): Promise<void> {
+    await this.cache.setValue<CommandMenuItemEnum>('CurrentCommand', value);
   }
 
   getCurrentSources(): string | undefined {
-    return this.cache.getValue<string>('Sources');
+    return this.cache.getValue<string>('CurrentSources');
   }
 
   async setCurrentSources(value: string): Promise<void> {
-    await this.cache.setValue<string>('Sources', value);
+    await this.cache.setValue<string>('CurrentSources', value);
   }
 }
 

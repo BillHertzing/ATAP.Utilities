@@ -2,9 +2,9 @@ import * as vscode from 'vscode';
 import { LogLevel, ILogger } from '@Logger/index';
 import { IData } from '@DataService/index';
 
-import { StatusMenuItemEnum, IPickItemsInitializer } from '@StateMachineService/index';
+import { ModeMenuItemEnum, IPickItemsInitializer } from '@StateMachineService/index';
 
-export async function showStatusMenuAsync(
+export async function showModeMenuAsync(
   logger: ILogger,
   data: IData,
   pickItemsInitializer: IPickItemsInitializer,
@@ -12,28 +12,28 @@ export async function showStatusMenuAsync(
   // cancellationToken?: vscode.CancellationToken,
 ): Promise<{
   success: boolean;
-  statusMenuItem: StatusMenuItemEnum | null;
+  modeMenuItem: ModeMenuItemEnum | null;
   errorMessage: string | null;
 }> {
-  logger.log('starting function showStatusMenuAsync', LogLevel.Debug);
+  logger.log('starting function showModeMenuAsync', LogLevel.Debug);
 
-  const pick = await vscode.window.showQuickPick(pickItemsInitializer.statusMenuItems, {
+  const pick = await vscode.window.showQuickPick(pickItemsInitializer.modeMenuItems, {
     placeHolder: 'Select an option',
   });
 
   if (pick !== undefined) {
-    const statusMenuItem = pick.label as StatusMenuItemEnum;
+    const modeMenuItem = pick.label as ModeMenuItemEnum;
 
     return {
       success: true,
-      statusMenuItem: statusMenuItem,
+      modeMenuItem: modeMenuItem,
       errorMessage: null,
     };
   } else {
     return {
       success: false,
-      statusMenuItem: null,
-      errorMessage: 'Status menu was was canceled',
+      modeMenuItem: null,
+      errorMessage: 'Mode menu was was canceled',
     };
   }
 }

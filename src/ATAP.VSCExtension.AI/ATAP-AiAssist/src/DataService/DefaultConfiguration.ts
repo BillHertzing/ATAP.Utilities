@@ -1,16 +1,19 @@
 import { SupportedSerializersEnum, SerializationStructure, ISerializationStructure } from '@Serializers/index';
 import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
+import { ModeMenuItemEnum, CommandMenuItemEnum, StatusMenuItemEnum } from '@StateMachineService/index';
 
 // everything here will be initialized before the entry point of the extension
 // These are the Interfaces for objects that are allowed to be stored in the DefaultConfiguration
 export type AllowedTypesInValue =
-  | undefined
+  // | undefined
   | string
   | number
   | ISerializationStructure
   | IDataService
   | IStateManager
-  | IConfigurationData;
+  | IConfigurationData
+  | ModeMenuItemEnum
+  | CommandMenuItemEnum;
 
 export class DefaultConfiguration {
   // This is the default configuration for the extension, per the version number above
@@ -32,6 +35,9 @@ Ensure sufficient comments to explain the code, but keep them terse. Provide jus
  `,
     KeePassKDBXPath: 'C:\\Dropbox\\whertzing\\GitHub\\ATAP.IAC\\Security\\.PSVaultATAP_secrets.kdbx',
     DataServiceAsSerializationStructure: new SerializationStructure(SupportedSerializersEnum.Yaml, '{}'),
+    CurrentMode: ModeMenuItemEnum.Workspace,
+    CurrentCommand: CommandMenuItemEnum.Chat,
+    CurrentSources: 'workspace',
   };
   static Development: Record<string, AllowedTypesInValue> = {
     KeePassKDBXPath: '"C:/Dropbox/whertzing/GitHub/ATAP.IAC/Security/ATAP_KeePassDatabase.kdbx"',

@@ -11,7 +11,14 @@ import { showVSCEnvironment } from './showVSCEnvironment';
 import { showPrompt } from './showPrompt';
 
 import { showStatusMenuAsync } from './showStatusMenuAsync';
-import { StatusMenuItemEnum } from '@StateMachineService/index';
+import { showModeMenuAsync } from './showModeMenuAsync';
+import { showCommandMenuAsync } from './showCommandMenuAsync';
+import {
+  StatusMenuItemEnum,
+  ModeMenuItemEnum,
+  CommandMenuItemEnum,
+  IPickItemsInitializer,
+} from '@StateMachineService/index';
 // import { quickPickFromSettings } from './quickPickFromSettings';
 import { copyToSubmit } from './copyToSubmit';
 
@@ -24,6 +31,7 @@ export class CommandsService {
     private extensionContext: vscode.ExtensionContext,
     private data: IData,
     private queryService: IQueryService,
+    private pickItemsInitializer: IPickItemsInitializer,
   ) {
     this.registerCommands();
   }
@@ -97,13 +105,14 @@ export class CommandsService {
       }),
     );
 
+    // register the command to show the status menu
     this.logger.log('registering showStatusMenuAsync', LogLevel.Debug);
     this.disposables.push(
       vscode.commands.registerCommand('atap-aiassist.showStatusMenuAsync', async () => {
         this.logger.log('starting commandID showStatusMenuAsync', LogLevel.Debug);
         let result: StatusMenuItemEnum | null = null;
         try {
-          const _result = await showStatusMenuAsync(this.logger, this.data);
+          const _result = await showStatusMenuAsync(this.logger, this.data, this.pickItemsInitializer);
           this.logger.log(
             `result.success = ${_result.success}, result.statusMenuItem = ${_result.statusMenuItem?.toString()} `,
             LogLevel.Debug,
@@ -131,31 +140,75 @@ export class CommandsService {
       }),
     );
 
-    // this.message = 'registering quickPickFromSettings';
-    // this.logger.log(this.message, LogLevel.Debug);
-    // this.disposables.push(
-    //   vscode.commands.registerCommand('atap-aiassist.quickPickFromSettings', async () => {
-    //     let message: string = 'starting commandID quickPickFromSettings';
-    //     this.logger.log(message, LogLevel.Debug);
-    //     try {
-    //       // ToDo: how to pass the string for 'setting' to the extension command
-    //       // ToDo: the extensionId.setting that needs / contains the QuickPick setting
-    //       let setting: string = 'CategoryCollection';
-    //       const result = await quickPickFromSettings(this.logger, setting);
-    //       message = `result.success = ${result.success}, result `;
-    //       this.logger.log(message, LogLevel.Debug);
-    //     } catch (e) {
-    //       if (e instanceof Error) {
-    //         // Report the error
-    //         message = e.message;
-    //       } else {
-    //         // ToDo: e is not an instance of Error, needs investigation to determine what else might happen
-    //         message = `An unknown error occurred during the quickPickFromSettings call, and the instance of (e) returned is of type ${typeof e}`;
-    //       }
-    //       this.logger.log(message, LogLevel.Error);
-    //     }
-    //   }),
-    // );
+    // register the command to show the Mode menu
+    this.logger.log('registering showModeMenuAsync', LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand('atap-aiassist.showModeMenuAsync', async () => {
+        this.logger.log('starting commandID showModeMenuAsync', LogLevel.Debug);
+        let result: ModeMenuItemEnum | null = null;
+        try {
+          const _result = await showModeMenuAsync(this.logger, this.data, this.pickItemsInitializer);
+          this.logger.log(
+            `result.success = ${_result.success}, result.modeMenuItem = ${_result.modeMenuItem?.toString()} `,
+            LogLevel.Debug,
+          );
+          if (_result.success) {
+            result = _result.modeMenuItem;
+            // ToDo: fire an event to handle the results of the quickPick
+            this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', result, 'handleModeMenuResults');
+          } else {
+            this.logger.log('showModeMenuAsync was cancelled', LogLevel.Debug);
+          }
+        } catch (e) {
+          if (e instanceof Error) {
+            throw new DetailedError(
+              'atap-aiassist.showModeMenuAsync function showModeMenuAsync returned an error -> ',
+              e,
+            );
+          } else {
+            // ToDo:  investigation to determine what else might happen
+            throw new Error(
+              `atap-aiassist.showModeMenuAsync function showModeMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
+            );
+          }
+        }
+      }),
+    );
+
+    // register the command to show the Command menu
+    this.logger.log('registering showCommandMenuAsync', LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand('atap-aiassist.showCommandMenuAsync', async () => {
+        this.logger.log('starting commandID showCommandMenuAsync', LogLevel.Debug);
+        let result: CommandMenuItemEnum | null = null;
+        try {
+          const _result = await showCommandMenuAsync(this.logger, this.data, this.pickItemsInitializer);
+          this.logger.log(
+            `result.success = ${_result.success}, result.commandMenuItem = ${_result.commandMenuItem?.toString()} `,
+            LogLevel.Debug,
+          );
+          if (_result.success) {
+            result = _result.commandMenuItem;
+          } else {
+            this.logger.log('showCommandMenuAsync was cancelled', LogLevel.Debug);
+          }
+        } catch (e) {
+          if (e instanceof Error) {
+            throw new DetailedError(
+              'atap-aiassist.showCommandMenuAsync function showCommandMenuAsync returned an error -> ',
+              e,
+            );
+          } else {
+            // ToDo:  investigation to determine what else might happen
+            throw new Error(
+              `atap-aiassist.showCommandMenuAsync function showCommandMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
+            );
+          }
+        }
+        // ToDo: fire an event to handle the results of the quickPick
+        this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', result, 'handleCommandMenuResults');
+      }),
+    );
 
     // this.message = 'registering copyToSubmit';
     // this.logger.log(this.message, LogLevel.Debug);

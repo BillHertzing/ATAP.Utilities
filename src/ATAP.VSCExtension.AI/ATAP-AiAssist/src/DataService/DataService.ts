@@ -115,7 +115,7 @@ export class Data {
     // instantiate the stateManager
     // ToDo: figure out what StateManager is using folder for, and how to pass it in
     try {
-      this.stateManager = new StateManager(this.logger, this.extensionContext); //, need a workspace folder passed into the constructor, see https://github.com/microsoft/vscode-cmake-tools/blob/main/src/state.ts
+      this.stateManager = new StateManager(this.logger, this.extensionContext, this.configurationData); //, need a workspace folder passed into the constructor, see https://github.com/microsoft/vscode-cmake-tools/blob/main/src/state.ts
     } catch (e) {
       if (e instanceof Error) {
         throw new DetailedError('Data.ctor. create stateManager -> ', e);

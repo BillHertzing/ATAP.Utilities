@@ -1,1 +1,7 @@
-export { IStateMachineService, StateMachineService, StatusMenuItemEnum } from './StateMachineService';
+export {
+  IStateMachineService,
+  StateMachineService,
+  StatusMenuItemEnum,
+  ModeMenuItemEnum,
+  CommandMenuItemEnum,
+} from './StateMachineService';

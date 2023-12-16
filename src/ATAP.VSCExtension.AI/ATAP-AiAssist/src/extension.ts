@@ -57,6 +57,8 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   let workspacePath: string = '';
   let securityService: ISecurityService;
   let queryService: IQueryService;
+  let stateMachineService: IStateMachineService;
+  let commandsService: CommandsService;
 
   // ToDo: create a static startup logger, and use that until the full blown logger can be instantiated
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
@@ -112,11 +114,10 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   queryService = QueryService.CreateQueryService(myLogger, extensionContext, dataService.data, 'extension.ts');
 
   //create a StateMachineService instance
-  const stateMachineService = new StateMachineService(myLogger, dataService.data);
+  stateMachineService = StateMachineService.Create(myLogger, extensionContext, dataService.data, 'extension.ts');
 
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
   // Calling the constructor registers all of the commands, and creates a disposables structure
-  let commandsService: CommandsService;
   try {
     myLogger.log(`instantiate commandsService`, LogLevel.Debug);
     commandsService = new CommandsService(myLogger, extensionContext, dataService.data, queryService);

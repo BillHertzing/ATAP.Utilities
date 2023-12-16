@@ -1,23 +1,15 @@
-import { LogLevel, ILogger } from '@Logger/index';
-import { IData } from '@DataService/index';
-import * as vscode from 'vscode';
-
+import vscode from 'vscode';
 import { StatusMenuItemEnum } from '@StateMachineService/index';
 
-export async function showStatusMenuAsync(
-  logger: ILogger,
-  data: IData,
-  // ToDo: add a cancellationToken
-  // cancellationToken?: vscode.CancellationToken,
-): Promise<{
-  success: boolean;
-  statusMenuItem: StatusMenuItemEnum | null;
-  errorMessage: string | null;
-}> {
-  logger.log('starting function showStatusMenuAsync', LogLevel.Debug);
+export static class PickItemsInitialize {
+    public readonly statusMenuItems: vscode.QuickPickItem[];
 
-  // ToDo: maintain a reference to the quickPick so that it can be canceled during extension deactivation or at any time via a cancellation token
-  // ToDo: create the items at extension activation so they don't get recreated over and over
+  constructor() {
+    this.statusMenuItems = initializeStatusMenuItems();
+  }
+
+
+  static initializeStatusMenuItems(): vscode.QuickPickItem[] {
   const items: vscode.QuickPickItem[] = [];
   for (const key in StatusMenuItemEnum) {
     if (StatusMenuItemEnum.hasOwnProperty(key)) {
@@ -51,25 +43,11 @@ export async function showStatusMenuAsync(
       }
       items.push({ label, description });
     }
-  }
-
-  const pick = await vscode.window.showQuickPick(items, {
-    placeHolder: 'Select an option',
-  });
-
-  if (pick !== undefined) {
-    const statusMenuItem = pick.label as StatusMenuItemEnum;
-
-    return {
-      success: true,
-      statusMenuItem: statusMenuItem,
-      errorMessage: null,
-    };
-  } else {
-    return {
-      success: false,
-      statusMenuItem: null,
-      errorMessage: 'Status menu was was canceled',
-    };
+}
+return items;
   }
 }
+
+
+}
+

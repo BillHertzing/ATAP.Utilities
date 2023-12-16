@@ -62,7 +62,7 @@ export class QueryService implements IQueryService {
     private readonly data: IData,
   ) {}
 
-  @logExecutionTime
+  @logFunction
   static CreateQueryService(
     logger: ILogger,
     extensionContext: vscode.ExtensionContext,

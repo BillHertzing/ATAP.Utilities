@@ -120,7 +120,13 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // Calling the constructor registers all of the commands, and creates a disposables structure
   try {
     myLogger.log(`instantiate commandsService`, LogLevel.Debug);
-    commandsService = new CommandsService(myLogger, extensionContext, dataService.data, queryService);
+    commandsService = new CommandsService(
+      myLogger,
+      extensionContext,
+      dataService.data,
+      queryService,
+      stateMachineService.getPickItemsInitializer(),
+    );
     myLogger.log(`commandsService instantiated`, LogLevel.Trace);
   } catch (e) {
     if (e instanceof Error) {

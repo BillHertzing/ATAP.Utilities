@@ -5,3 +5,5 @@ export {
   ModeMenuItemEnum,
   CommandMenuItemEnum,
 } from './StateMachineService';
+
+export { IPickItemsInitializer, PickItemsInitializer } from './PickItemsInitializer';

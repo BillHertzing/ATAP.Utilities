@@ -15,12 +15,16 @@ import {
   CopilotEndpointConfig,
 } from '@EndpointManager/index';
 
+import { ModeMenuItemEnum, CommandMenuItemEnum, StatusMenuItemEnum } from '@StateMachineService/index';
+
 export interface IConfigurationData {
   getExtensionFullName(): string;
   getTempDirectoryBasePath(): string;
   getDevelopmentWorkspacePath(): string | undefined;
   getPromptExpertise(): string;
   getKeePassKDBXPath(): string;
+  getDefaultCurrentMode(): ModeMenuItemEnum;
+  getDefaultCurrentCommand(): CommandMenuItemEnum;
   // getEndpointConfigs(): Record<LLModels, EndpointConfig>;
 }
 
@@ -188,5 +192,12 @@ export class ConfigurationData implements IConfigurationData {
     vscode.workspace
       .getConfiguration('ataputilities.atap-aiassist')
       .update('EndpointConfigurations', configJson, vscode.ConfigurationTarget.Global);
+  }
+
+  getDefaultCurrentMode(): ModeMenuItemEnum {
+    return this.getNonNull('DefaultCurrentMode') as ModeMenuItemEnum;
+  }
+  getDefaultCurrentCommand(): CommandMenuItemEnum {
+    return this.getNonNull('DefaultCurrentCommand') as CommandMenuItemEnum;
   }
 }

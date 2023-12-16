@@ -15,9 +15,11 @@ import {
   fromYaml,
 } from '@Serializers/index';
 
-import { ExternalDataVetting } from './ExternalDataVetting';
+import { IExternalDataVetting, ExternalDataVetting } from './ExternalDataVetting';
 
 export interface ISecurityService {
+  getExternalDataVetting(): IExternalDataVetting;
+
   //version: string;
 }
 @logConstructor
@@ -76,6 +78,11 @@ export class SecurityService implements ISecurityService {
       }
       return _obj;
     }
+  }
+
+  @logFunction
+  getExternalDataVetting(): IExternalDataVetting {
+    return this.externalDataVetting;
   }
   @logFunction
   static convertFrom_json(json: string): SecurityService {

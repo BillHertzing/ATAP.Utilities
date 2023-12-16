@@ -1,1 +1,1 @@
-export { IStateMachineService, StateMachineService } from "./StateMachineService";
+export { IStateMachineService, StateMachineService, StatusMenuItemEnum } from './StateMachineService';

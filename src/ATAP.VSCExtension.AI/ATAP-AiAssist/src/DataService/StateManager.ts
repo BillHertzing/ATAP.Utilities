@@ -176,6 +176,51 @@ export class StateManager {
     //   })();
     //   // ToDo: possibly add validationthat the new collection was created
     // }
+    if (!this.cache.getValue<string>('CurrentMode')) {
+      // Immediately Invoked Async Function Expression (IIFE)
+      (() => {
+        this.cache.setValue<string>('CurrentMode', '@Workspace').catch((e) => {
+          if (e instanceof Error) {
+            throw new DetailedError(`StateManager.constructor: failed to set CurrentMode -> `, e);
+          } else {
+            throw new Error(
+              `StateManager .ctor: failed to set CurrentMode and the instance of (e) returned is of type ${typeof e}`,
+            );
+          }
+        });
+      })();
+      // ToDo: possibly add validationthat the CurrentMode was correctly created and initialized
+    }
+
+    if (!this.cache.getValue<string>('CurrentCommand')) {
+      // Immediately Invoked Async Function Expression (IIFE)
+      (() => {
+        this.cache.setValue<string>('CurrentCommand', '/fix').catch((e) => {
+          if (e instanceof Error) {
+            throw new DetailedError(`StateManager.constructor: failed to set CurrentCommand -> `, e);
+          } else {
+            throw new Error(
+              `StateManager .ctor: failed to set CurrentCommand and the instance of (e) returned is of type ${typeof e}`,
+            );
+          }
+        });
+      })();
+    }
+
+    if (!this.cache.getValue<string>('CurrentSources')) {
+      // Immediately Invoked Async Function Expression (IIFE)
+      (() => {
+        this.cache.setValue<string>('CurrentSources', 'all').catch((e) => {
+          if (e instanceof Error) {
+            throw new DetailedError(`StateManager.constructor: failed to set CurrentSources -> `, e);
+          } else {
+            throw new Error(
+              `StateManager .ctor: failed to set CurrentSources and the instance of (e) returned is of type ${typeof e}`,
+            );
+          }
+        });
+      })();
+    }
   }
 
   getsavedPromptDocumentData(): string | undefined {

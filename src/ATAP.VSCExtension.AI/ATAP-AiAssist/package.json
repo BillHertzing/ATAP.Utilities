@@ -32,7 +32,7 @@
         "title": "ATAP-AiAssist: sendQuery (send the Query and all associated information to the server)"
       },
       {
-        "command": "atap-aiassist.showStatusMenu",
+        "command": "atap-aiassist.showStatusMenuAsync",
         "title": "ATAP-AiAssist: Show Status menu"
       },
       {
@@ -253,23 +253,22 @@
     "webpack-cli": "^5.1.4"
   },
   "_moduleAliases": {
-    "@ErrorClasses/*": "_generated/out/ErrorClasses",
-    "@Logger": "_generated/out/Logger",
-    "@Decorators": "_generated/out/Decorators",
-    "@SecurityService": "_generated/out/SecurityService",
-    "@IDTypes": "_generated/out/IDTypes",
-    "@Utilities": "_generated/out/Utilities",
-    "@Serializers": "_generated/out/Serializers",
-    "@Philote": "_generated/out/Philote",
-    "@ItemWithIDs": "_generated/out/ItemWithIDs",
-    "@AssociationsService": "_generated/out/AssociationsService",
-    "@QueryContextsService": "_generated/out/QueryContextsService",
-    "@DataService": "_generated/out/DataService",
-    "@TokensService": "_generated/out/TokensService",
     "@CommandsService": "_generated/out/CommandsService",
-    "@QueryService": "_generated/out/QueryService",
+    "@DataService": "_generated/out/DataService",
+    "@Decorators": "_generated/out/Decorators",
     "@EndpointManager": "_generated/out/EndpointManager",
-    "@TypeMap": "_generated/out/TypeMap"
+    "@ErrorClasses/*": "_generated/out/ErrorClasses",
+    "@EventEmitters/*": "_generated/out/EventEmitters",
+    "@IDTypes": "_generated/out/IDTypes",
+    "@ItemWithIDs": "_generated/out/ItemWithIDs",
+    "@Logger": "_generated/out/Logger",
+    "@Philote": "_generated/out/Philote",
+    "@QueryService": "_generated/out/QueryService",
+    "@SecurityService": "_generated/out/SecurityService",
+    "@Serializers": "_generated/out/Serializers",
+    "@StateMachineService": "_generated/out/StateMachineService",
+    "@TypeMap": "_generated/out/TypeMap",
+    "@Utilities": "_generated/out/Utilities"
   },
   "dependencies": {
     "axios": "^1.6.2",

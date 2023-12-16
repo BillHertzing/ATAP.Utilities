@@ -9,7 +9,6 @@
     "rootDirs": ["src", "src/ATAP.VSCExtension.AI/ATAP-AiAssist"],
     "baseUrl": "src", // This must be specified if "paths" is set.
     "paths": {
-      "@AssociationsService/*": ["AssociationsService/*"],
       "@CommandsService/*": ["CommandsService/*"],
       "@DataService/*": ["DataService/*"],
       "@Decorators/*": ["Decorators/*"],
@@ -19,13 +18,11 @@
       "@IDTypes/*": ["IDTypes/*"],
       "@ItemWithIDs/*": ["ItemWithIDs/*"],
       "@Logger/*": ["Logger/*"],
-      "@OpenAiService": ["OpenAiService/*"],
       "@Philote/*": ["Philote/*"],
-      "@QueryContextsService/*": ["QueryContextsService/*"],
       "@QueryService/*": ["QueryService/*"],
       "@Serializers/*": ["Serializers/*"],
       "@SecurityService/*": ["SecurityService/*"],
-      "@TokensService": ["TokensService/*"],
+      "@StateMachineService/*": ["StateMachineService/*"],
       "@TypeMap/*": ["TypeMap/*"],
       "@Utilities/*": ["Utilities/*"]
       // Add more path mappings as needed.

@@ -7,7 +7,7 @@ import { IDataService, IData, IStateManager, IConfigurationData } from '@DataSer
 import { EventEmitter } from 'events';
 
 export interface IEventManager {
-  GetEventEmitter(): EventEmitter;
+  getEventEmitter(): EventEmitter;
 }
 
 @logConstructor
@@ -23,7 +23,7 @@ export class EventManager implements IEventManager {
     this.eventEmitter = new EventEmitter();
   }
 
-  public GetEventEmitter() {
+  public getEventEmitter() {
     return this.eventEmitter;
   }
 }

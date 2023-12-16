@@ -30,6 +30,9 @@ import {
 import { isRunningInDevHost } from '@Utilities/index';
 
 import { CommandsService } from '@CommandsService/index';
+
+import { IStateMachineService, StateMachineService } from '@StateMachineService/index';
+
 import { IQueryService, QueryService } from '@QueryService/index';
 
 import { checkFile } from './checkFile';
@@ -103,8 +106,13 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
 
   myLogger.log(`data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`, LogLevel.Info);
 
+  securityService.getExternalDataVetting().AttachListener(dataService.data.eventManager.getEventEmitter());
+
   // ToDo: wrap in a try/catch block
   queryService = QueryService.CreateQueryService(myLogger, extensionContext, dataService.data, 'extension.ts');
+
+  //create a StateMachineService instance
+  const stateMachineService = new StateMachineService(myLogger, dataService.data);
 
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
   // Calling the constructor registers all of the commands, and creates a disposables structure
@@ -129,11 +137,10 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // Create a status bar item for the extension
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   // Initial state
-  statusBarItem.text = `$(robot) ShowAiAssist status menu`;
-  statusBarItem.command = 'atap-aiassist.showStatusMenu';
-  statusBarItem.tooltip = 'Click to choose an action';
+  statusBarItem.text = `$(robot) AiAssist`;
+  statusBarItem.command = 'atap-aiassist.showStatusMenuAsync';
+  statusBarItem.tooltip = 'Show AiAssist status menu';
   extensionContext.subscriptions.push(statusBarItem);
-
   statusBarItem.show();
 
   // identify the current workspace context. Compare to stored state information, and update if necessary

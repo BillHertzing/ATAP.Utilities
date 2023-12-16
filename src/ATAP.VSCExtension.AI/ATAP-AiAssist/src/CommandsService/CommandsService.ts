@@ -1,7 +1,7 @@
 import { LogLevel, ILogger, Logger } from '@Logger/index';
 import * as vscode from 'vscode';
 import { DetailedError } from '@ErrorClasses/index';
-import { logConstructor } from '@Decorators/Decorators';
+import { logConstructor } from '@Decorators/index';
 
 import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
 import { IQueryService } from '@QueryService/index';
@@ -10,7 +10,8 @@ import { startCommand } from './startCommand';
 import { showVSCEnvironment } from './showVSCEnvironment';
 import { showPrompt } from './showPrompt';
 
-import { showStatusMenu } from './showStatusMenu';
+import { showStatusMenuAsync } from './showStatusMenuAsync';
+import { StatusMenuItemEnum } from '@StateMachineService/index';
 // import { quickPickFromSettings } from './quickPickFromSettings';
 import { copyToSubmit } from './copyToSubmit';
 
@@ -96,23 +97,37 @@ export class CommandsService {
       }),
     );
 
-    this.logger.log('registering showStatusMenu', LogLevel.Debug);
+    this.logger.log('registering showStatusMenuAsync', LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.showStatusMenu', async () => {
-        this.logger.log('starting commandID showStatusMenu', LogLevel.Debug);
+      vscode.commands.registerCommand('atap-aiassist.showStatusMenuAsync', async () => {
+        this.logger.log('starting commandID showStatusMenuAsync', LogLevel.Debug);
+        let result: StatusMenuItemEnum | null = null;
         try {
-          const result = await showStatusMenu(this.logger, this.data);
-          this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
+          const _result = await showStatusMenuAsync(this.logger, this.data);
+          this.logger.log(
+            `result.success = ${_result.success}, result.statusMenuItem = ${_result.statusMenuItem?.toString()} `,
+            LogLevel.Debug,
+          );
+          if (_result.success) {
+            result = _result.statusMenuItem;
+          } else {
+            this.logger.log('showStatusMenuAsync was cancelled', LogLevel.Debug);
+          }
         } catch (e) {
           if (e instanceof Error) {
-            throw new DetailedError('Data.ctor. create configurationData -> ', e);
+            throw new DetailedError(
+              'atap-aiassist.showStatusMenuAsync function showStatusMenuAsync returned an error -> ',
+              e,
+            );
           } else {
             // ToDo:  investigation to determine what else might happen
             throw new Error(
-              `An unknown error occurred during the showQuickPickExample call, and the instance of (e) returned is of type ${typeof e}`,
+              `atap-aiassist.showStatusMenuAsync function showStatusMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
             );
           }
         }
+        // ToDo: fire an event to handle the results of the quickPick
+        this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', result, 'handleStatusMenuResults');
       }),
     );
 

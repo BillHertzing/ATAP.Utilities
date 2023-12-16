@@ -17,14 +17,41 @@ export async function showStatusMenuAsync(
   logger.log('starting function showStatusMenuAsync', LogLevel.Debug);
 
   // ToDo: maintain a reference to the quickPick so that it can be canceled during extension deactivation or at any time via a cancellation token
-
-  const items: vscode.QuickPickItem[] = [
-    { label: `mode: ${data.stateManager.getCurrentMode()}`, description: 'Change CurrentMode' },
-    { label: `command: ${data.stateManager.getCurrentCommand()}`, description: 'Change getCurrentCommand' },
-    { label: `sources: ${data.stateManager.getCurrentSources()}`, description: 'Change getCurrentSources' },
-    { label: '──────────', kind: vscode.QuickPickItemKind.Separator },
-    { label: 'Show Logs', description: 'Show logs in output channel' },
-  ];
+  // ToDo: create the items at extension activation so they don't get recreated over and over
+  const items: vscode.QuickPickItem[] = [];
+  for (const key in StatusMenuItemEnum) {
+    if (StatusMenuItemEnum.hasOwnProperty(key)) {
+      const enumValue = StatusMenuItemEnum[key as keyof typeof StatusMenuItemEnum];
+      let label: string;
+      let description: string;
+      let kind: vscode.QuickPickItemKind;
+      switch (enumValue) {
+        case StatusMenuItemEnum.Mode:
+          label = `${enumValue}: ${data.stateManager.getCurrentMode()}`;
+          description = 'Change CurrentMode';
+          break;
+        case StatusMenuItemEnum.Command:
+          label = `${enumValue}: ${data.stateManager.getCurrentCommand()}`;
+          description = 'Change CurrentCommand';
+          break;
+        case StatusMenuItemEnum.Sources:
+          label = `${enumValue}: ${data.stateManager.getCurrentSources()}`;
+          description = 'Change Sources';
+          break;
+        case StatusMenuItemEnum.ShowLogs:
+          label = '──────────';
+          description = '';
+          kind = vscode.QuickPickItemKind.Separator;
+          items.push({ label, kind });
+          label = `${enumValue}`;
+          description = 'Show AiAssist logs in output channel';
+          break;
+        default:
+          continue;
+      }
+      items.push({ label, description });
+    }
+  }
 
   const pick = await vscode.window.showQuickPick(items, {
     placeHolder: 'Select an option',
@@ -32,6 +59,7 @@ export async function showStatusMenuAsync(
 
   if (pick !== undefined) {
     const statusMenuItem = pick.label as StatusMenuItemEnum;
+
     return {
       success: true,
       statusMenuItem: statusMenuItem,

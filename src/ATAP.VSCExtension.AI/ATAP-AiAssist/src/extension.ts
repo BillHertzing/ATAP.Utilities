@@ -35,7 +35,6 @@ import { IStateMachineService, StateMachineService } from '@StateMachineService/
 
 import { IQueryService, QueryService } from '@QueryService/index';
 
-import { checkFile } from './checkFile';
 import { processPs1Files } from './processPs1Files';
 import { mainViewTreeDataProvider } from './mainViewTreeDataProvider';
 import { mainViewTreeItem } from './mainViewTreeItem';
@@ -62,11 +61,9 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
 
   // ToDo: create a static startup logger, and use that until the full blown logger can be instantiated
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
-  const myLogger = new Logger();
-  // const loggerLogLevelFromSettings = getLoggerLogLevelFromSettings(); // supplies a default if not found in settings
-  // myLogger.createChannel('ATAP-AiAssist', loggerLogLevelFromSettings);
-  myLogger.createChannel('ATAP-AiAssist', LogLevel.Debug);
-  myLogger.log('Extension Activation', LogLevel.Info);
+  const logger = new Logger();
+  logger.createChannel('ATAP-AiAssist', LogLevel.Debug);
+  logger.log('Extension Activation', LogLevel.Info);
 
   // Get the VSC configuration settings for this extension
   const config = vscode.workspace.getConfiguration('ATAP-AiAssist');
@@ -74,60 +71,63 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   if (runningInDevelopment) {
     // update the loggerLogLevel with the'Development.Logger.LogLevel settings value, if it exists
     const developmentLoggerLogLevelFromSettings = getDevelopmentLoggerLogLevelFromSettings();
-    myLogger.setChannelLogLevel('ATAP-AiAssist', developmentLoggerLogLevelFromSettings); // supplies a default if not found in settings
-    myLogger.log('Running in development mode.', LogLevel.Info);
+    logger.setChannelLogLevel('ATAP-AiAssist', developmentLoggerLogLevelFromSettings); // supplies a default if not found in settings
+    logger.log('Running in development mode.', LogLevel.Info);
     // Focus on the output stream when starting the extension in development mode
-    myLogger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
+    logger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
   }
   // instantiate the SecurityService
   // if a SecurityService initialization serialized string exists, this will try and use it to create the SecurityService, else return a new empty one.
   // Will return a valid SecurityService instance or will throw
   // if (isSerializationStructure(DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'])) {
   //   securityService = SecurityService.CreateSecurityService(
-  //     myLogger,
+  //     logger,
   //     extensionContext,
   //     'extension.ts',
   //     DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'],
   //   );
   // } else {
-  securityService = SecurityService.CreateSecurityService(myLogger, extensionContext, 'SecurityService.ts');
+  // ToDo: wrap in a try/catch block
+  securityService = SecurityService.CreateSecurityService(logger, extensionContext, 'SecurityService.ts');
   // }
 
   // if a DataService initialization serialized string exists, this will try and use it to create the DataService, else return a new empty one.
   // Will return a valid DataService instance or will throw
   // if (isSerializationStructure(DefaultConfiguration.Development['DataServiceAsSerializationStructure'])) {
   //   dataService = DataService.CreateDataService(
-  //     myLogger,
+  //     logger,
   //     extensionContext,
   //     'extension.ts',
   //     DefaultConfiguration.Development['DataServiceAsSerializationStructure'],
   //   );
   // } else {
-  dataService = DataService.CreateDataService(myLogger, extensionContext, 'extension.ts');
+  // ToDo: wrap in a try/catch block
+  dataService = DataService.CreateDataService(logger, extensionContext, 'extension.ts');
   // }
 
-  myLogger.log(`data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`, LogLevel.Info);
+  logger.log(`data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`, LogLevel.Debug);
 
+  // ToDo: wrap in a try/catch block
   securityService.getExternalDataVetting().AttachListener(dataService.data.eventManager.getEventEmitter());
 
   // ToDo: wrap in a try/catch block
-  queryService = QueryService.CreateQueryService(myLogger, extensionContext, dataService.data, 'extension.ts');
+  queryService = QueryService.CreateQueryService(logger, extensionContext, dataService.data, 'extension.ts');
 
-  //create a StateMachineService instance
-  stateMachineService = StateMachineService.Create(myLogger, extensionContext, dataService.data, 'extension.ts');
+  // ToDo: wrap in a try/catch block
+  stateMachineService = StateMachineService.Create(logger, extensionContext, dataService.data, 'extension.ts');
 
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
   // Calling the constructor registers all of the commands, and creates a disposables structure
   try {
-    myLogger.log(`instantiate commandsService`, LogLevel.Debug);
+    logger.log(`instantiate commandsService`, LogLevel.Debug);
     commandsService = new CommandsService(
-      myLogger,
+      logger,
       extensionContext,
       dataService.data,
       queryService,
       stateMachineService.getPickItemsInitializer(),
     );
-    myLogger.log(`commandsService instantiated`, LogLevel.Trace);
+    logger.log(`commandsService instantiated`, LogLevel.Trace);
   } catch (e) {
     if (e instanceof Error) {
       throw new DetailedError(`Activation: failed to create an instance of CommandsService -> `, e);
@@ -242,7 +242,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // Copilot
 
   // instantiate a mainViewTreeDataProvider instance and register that with the TreeDataProvider with the main tree view
-  const mainViewTreeDataProviderInstance = new mainViewTreeDataProvider(myLogger);
+  const mainViewTreeDataProviderInstance = new mainViewTreeDataProvider(logger);
   vscode.window.createTreeView('atap-aiassistMainTreeView', { treeDataProvider: mainViewTreeDataProviderInstance });
 
   // instantiate the FileTreeProvider and register it
@@ -264,7 +264,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   let allEditorsRestored = false;
   vscode.window.onDidChangeVisibleTextEditors((editors) => {
     if (!allEditorsRestored) {
-      myLogger.log(`onDidChangeVisibleTextEditors: editors length: ${editors.length}`, LogLevel.Debug);
+      logger.log(`onDidChangeVisibleTextEditors: editors length: ${editors.length}`, LogLevel.Debug);
 
       if (editors.length === vscode.workspace.textDocuments.length) {
         allEditorsRestored = true;
@@ -272,9 +272,9 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     }
   });
 
-  myLogger.log(`Num editors visible at end of activation: ${vscode.window.visibleTextEditors.length}`, LogLevel.Debug);
+  logger.log(`Num editors visible at end of activation: ${vscode.window.visibleTextEditors.length}`, LogLevel.Debug);
   vscode.window.visibleTextEditors.forEach((editor) => {
-    myLogger.log(
+    logger.log(
       `Visible editor's document at end of activation: uri = ${editor.document.uri} filename = ${editor.document.fileName}`,
       LogLevel.Debug,
     );
@@ -293,7 +293,7 @@ function deactivateExtension(): Promise<void> {
     // ToDo: The code to close editors with this document does not execute correctly
     // close any editors with this document open
     let editorsDisplayingDoc = vscode.window.visibleTextEditors.filter((editor) => editor.document === promptDocument);
-    //myLogger.log(`Num editors: ${editorsDisplayingDoc.length}`, LogLevel.Debug);
+    //logger.log(`Num editors: ${editorsDisplayingDoc.length}`, LogLevel.Debug);
     console.log(`Num editors: ${editorsDisplayingDoc.length}`);
     editorsDisplayingDoc.forEach((editor, i) => {
       console.log(i);

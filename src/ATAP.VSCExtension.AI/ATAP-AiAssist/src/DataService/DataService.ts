@@ -74,6 +74,7 @@ export interface IData {
   readonly secretsManager: ISecretsManager;
   readonly eventManager: IEventManager;
   readonly fileManager: IFileManager;
+  dispose(): void;
 }
 
 @logConstructor
@@ -87,6 +88,8 @@ export class Data {
   // Data that does NOT get put into globalState
   private temporaryPromptDocumentPath: string | undefined = undefined;
   private temporaryPromptDocument: vscode.TextDocument | undefined = undefined;
+
+  private disposed = false;
 
   // constructor overload signatures to initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
   constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
@@ -160,7 +163,7 @@ export class Data {
 
     // instantiate the fileManager
     try {
-      this.fileManager = new FileManager(this.logger); //, need a workspace folder passed into the constructor?
+      this.fileManager = new FileManager(this.logger, this.configurationData); //, need a workspace folder passed into the constructor?
     } catch (e) {
       if (e instanceof Error) {
         throw new DetailedError('Data.ctor. create fileManager -> ', e);
@@ -186,18 +189,30 @@ export class Data {
   public setTemporaryPromptDocument(value: vscode.TextDocument) {
     this.temporaryPromptDocument = value;
   }
+  dispose() {
+    if (!this.disposed) {
+      // release resources
+      this.fileManager.dispose();
+      this.eventManager.dispose();
+      this.secretsManager.dispose();
+      this.stateManager.dispose();
+      this.configurationData.dispose();
+      this.disposed = true;
+    }
+  }
 }
 
 export interface IDataService {
   version: string;
   data: IData;
+  dispose(): void;
 }
 
 @logConstructor
 export class DataService implements IDataService {
   public readonly version: string;
   public readonly data: Data;
-
+  private disposed = false;
   // constructor overload signatures to initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
   constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
 
@@ -277,5 +292,13 @@ export class DataService implements IDataService {
 
   static convertFrom_yaml(yaml: string): DataService {
     return fromYaml<DataService>(yaml);
+  }
+
+  dispose() {
+    if (!this.disposed) {
+      // release any resources
+      this.data.dispose();
+      this.disposed = true;
+    }
   }
 }

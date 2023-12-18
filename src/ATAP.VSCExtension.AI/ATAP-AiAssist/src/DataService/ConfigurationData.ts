@@ -26,10 +26,12 @@ export interface IConfigurationData {
   getDefaultCurrentMode(): ModeMenuItemEnum;
   getDefaultCurrentCommand(): CommandMenuItemEnum;
   // getEndpointConfigs(): Record<LLModels, EndpointConfig>;
+  dispose(): void;
 }
 
 @logConstructor
 export class ConfigurationData implements IConfigurationData {
+  private disposed = false;
   // ToDo: constructor overloads to initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
   constructor(
     private logger: ILogger,
@@ -199,5 +201,11 @@ export class ConfigurationData implements IConfigurationData {
   }
   getDefaultCurrentCommand(): CommandMenuItemEnum {
     return this.getNonNull('DefaultCurrentCommand') as CommandMenuItemEnum;
+  }
+  dispose() {
+    if (!this.disposed) {
+      // release any resources
+      this.disposed = true;
+    }
   }
 }

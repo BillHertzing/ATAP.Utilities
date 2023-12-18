@@ -8,12 +8,13 @@ import { EventEmitter } from 'events';
 
 export interface IEventManager {
   getEventEmitter(): EventEmitter;
+  dispose(): void;
 }
 
 @logConstructor
 export class EventManager implements IEventManager {
   private eventEmitter: EventEmitter;
-
+  private disposed = false;
   constructor(
     private readonly logger: ILogger,
     private readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
@@ -25,5 +26,12 @@ export class EventManager implements IEventManager {
 
   public getEventEmitter() {
     return this.eventEmitter;
+  }
+
+  dispose() {
+    if (!this.disposed) {
+      // release any resources
+      this.disposed = true;
+    }
   }
 }

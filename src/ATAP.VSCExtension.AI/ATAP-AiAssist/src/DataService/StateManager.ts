@@ -88,10 +88,12 @@ export interface IStateManager {
   setCurrentCommand(value: CommandMenuItemEnum): Promise<void>;
   getCurrentSources(): string | undefined;
   setCurrentSources(value: string): Promise<void>;
+  dispose(): void;
 }
 
 export class StateManager {
   private readonly cache: GlobalStateCache;
+  private disposed = false;
   constructor(
     private logger: ILogger,
     readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
@@ -381,12 +383,18 @@ export class StateManager {
   async setCurrentSources(value: string): Promise<void> {
     await this.cache.setValue<string>('CurrentSources', value);
   }
+  dispose() {
+    if (!this.disposed) {
+      // release the GlobalStateCache
+      this.disposed = true;
+    }
+  }
 }
 
 class GlobalStateCache {
   private readonly cache: { [key: string]: any } = {};
   private readonly extensionContext: vscode.ExtensionContext;
-
+  private disposed = false;
   constructor(extensionContext: vscode.ExtensionContext) {
     this.extensionContext = extensionContext;
   }
@@ -438,6 +446,13 @@ class GlobalStateCache {
           `GlobalStateCache: failed to clear ${key} and the instance of (e) returned is of type ${typeof e}`,
         );
       }
+    }
+  }
+
+  dispose() {
+    if (!this.disposed) {
+      // release any resources
+      this.disposed = true;
     }
   }
 }

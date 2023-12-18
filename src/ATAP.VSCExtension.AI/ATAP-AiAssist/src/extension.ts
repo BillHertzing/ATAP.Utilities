@@ -179,56 +179,42 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     }
   }
 
-  // Setup the promptDocument
-  // Create a temporary file name for this session
-  const tempDirectoryBasePath = dataService.data.configurationData.getTempDirectoryBasePath();
-  const tempDir = path.join(tempDirectoryBasePath, dataService.data.configurationData.getExtensionFullName());
-  const randomFileName = crypto.randomBytes(16).toString('hex') + '.txt';
-  const tempFilePath = path.join(tempDir, randomFileName);
-  try {
-    fs.mkdirSync(tempDir, { recursive: true });
-  } catch (e) {
-    if (e instanceof Error) {
-      throw new DetailedError(`Activation: failed to create ${tempDir} -> `, e);
-    } else {
-      // ToDo:  investigation to determine what else might happen
-      throw new Error(
-        `Activation: failed to create ${tempDir} and the instance of (e) returned is of type ${typeof e}`,
-      );
-    }
-  }
-  try {
-    fs.writeFileSync(tempFilePath, '');
-  } catch (e) {
-    if (e instanceof Error) {
-      throw new DetailedError(`Activation: failed to create ${tempFilePath} -> `, e);
-    } else {
-      // ToDo:  investigation to determine what else might happen
-      throw new Error(
-        `Activation: failed to create ${tempFilePath} and the instance of (e) returned is of type ${typeof e}`,
-      );
-    }
-  }
+  // If the mode is 'Chat',
+  // then see if a Conversation document has been restored from a previous session
+  // and if not, create a new Conversation document
 
-  // Open a new temporary document 'promptDocument' in an editor window
-  let promptDocument = vscode.workspace.openTextDocument(tempFilePath).then((doc) => {
-    let document: vscode.TextDocument = doc;
-    return vscode.window.showTextDocument(document).then((ed) => {
-      let editor: vscode.TextEditor = ed;
-      let lastLine = document.lineAt(document.lineCount - 1);
-      const savedPromptDocumentData = dataService.data.stateManager.getsavedPromptDocumentData();
-      let promptDocumentData: string =
-        savedPromptDocumentData || dataService.data.configurationData.getPromptExpertise();
+  // try {
+  //   fs.writeFileSync(tempFilePath, '');
+  // } catch (e) {
+  //   if (e instanceof Error) {
+  //     throw new DetailedError(`Activation: failed to create ${tempFilePath} -> `, e);
+  //   } else {
+  //     // ToDo:  investigation to determine what else might happen
+  //     throw new Error(
+  //       `Activation: failed to create ${tempFilePath} and the instance of (e) returned is of type ${typeof e}`,
+  //     );
+  //   }
+  // }
 
-      editor.edit((editBuilder) => {
-        editBuilder.insert(lastLine.range.end, promptDocumentData);
-      });
-      document.save();
+  // // Open a new temporary document 'promptDocument' in an editor window
+  // let promptDocument = vscode.workspace.openTextDocument(tempFilePath).then((doc) => {
+  //   let document: vscode.TextDocument = doc;
+  //   return vscode.window.showTextDocument(document).then((ed) => {
+  //     let editor: vscode.TextEditor = ed;
+  //     let lastLine = document.lineAt(document.lineCount - 1);
+  //     const savedPromptDocumentData = dataService.data.stateManager.getsavedPromptDocumentData();
+  //     let promptDocumentData: string =
+  //       savedPromptDocumentData || dataService.data.configurationData.getPromptExpertise();
 
-      dataService.data.setTemporaryPromptDocumentPath(tempFilePath);
-      dataService.data.setTemporaryPromptDocument(document);
-    });
-  });
+  //     editor.edit((editBuilder) => {
+  //       editBuilder.insert(lastLine.range.end, promptDocumentData);
+  //     });
+  //     document.save();
+
+  //     dataService.data.setTemporaryPromptDocumentPath(tempFilePath);
+  //     dataService.data.setTemporaryPromptDocument(document);
+  //   });
+  // });
 
   // instantiate a view for the response of each AI engine
   // ChatGPT
@@ -284,6 +270,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
 function deactivateExtension(): Promise<void> {
   return new Promise((resolve) => {
     // Clean up resources, like closing files or stopping services
+    dataService.dispose();
 
     // Cleanup temporary prompt document
     let promptDocument = dataService.data.getTemporaryPromptDocument() as vscode.TextDocument;

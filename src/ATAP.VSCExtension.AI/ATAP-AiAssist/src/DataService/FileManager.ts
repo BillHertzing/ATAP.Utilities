@@ -8,10 +8,13 @@ import { logConstructor } from '@Decorators/index';
 import { ILogger } from '@Logger/index';
 import { IConfigurationData } from '@DataService/index';
 
+type AsyncFileFunction = (file: vscode.Uri) => Promise<void>;
+
 export interface IFileManager {
   temporaryFilePaths: fs.PathLike[];
   checkFileAsync(path: string, mode: number): Promise<boolean>;
   getNewTemporaryFilePath(extension: string): number;
+  processFilesAsync(extension: string, func: AsyncFileFunction): Promise<void>;
   dispose(): void;
 }
 
@@ -62,6 +65,18 @@ export class FileManager implements IFileManager {
     const temporaryFilePath = path.join(this.temporaryFileDirectoryPath.toString(), randomFileName);
     this.temporaryFilePaths.push(temporaryFilePath);
     return this.temporaryFilePaths.length - 1;
+  }
+
+  async processFilesAsync(extension: string, func: AsyncFileFunction): Promise<void> {
+    // Search for all files with the given extension in the workspace
+    let pattern = `**/*.${extension}`;
+    let files = await vscode.workspace.findFiles(pattern);
+
+    // Loop through the results
+    for (let file of files) {
+      // Apply the function to each file
+      await func(file);
+    }
   }
 
   dispose() {

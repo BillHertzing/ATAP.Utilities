@@ -13,16 +13,25 @@ export type AllowedTypesInValue =
   | IStateManager
   | IConfigurationData
   | ModeMenuItemEnum
-  | CommandMenuItemEnum;
+  | CommandMenuItemEnum
+  | SupportedSerializersEnum;
 
 export class DefaultConfiguration {
   // This is the default configuration for the extension, per the version number above
   static version: string = 'v0.0.1'; // manipulated by the CI/CD tools
-  // The default serializer used throughout the default configuration
-  static serializerName: SupportedSerializersEnum = SupportedSerializersEnum.Yaml;
-  // This JSON or YAML serialization of the data the extension starts with when initialized with no VSC global extension state data, when run for the first time, or when factory reset
+
+  // The bottom of the configuration root, the values used if there is no corresponding CLI argument, no corresponding environment variable, no test environment default, or no development environment default
   static Production: Record<string, AllowedTypesInValue> = {
-    ExtensionFullName: 'ataputilities.atap-aiassist',
+    CurrentMode: ModeMenuItemEnum.Workspace,
+    CurrentCommand: CommandMenuItemEnum.Chat,
+    CurrentSources: 'workspace',
+    ConversationFileName: 'Conversations.json',
+    CloudBasePath: 'C:\\Dropbox',
+    DataServiceAsSerializationStructure: new SerializationStructure(SupportedSerializersEnum.Yaml, '{}'),
+    extensionID: 'ataputilities.atap-aiassist',
+    KeePassKDBXPath: 'C:\\Dropbox\\whertzing\\GitHub\\ATAP.IAC\\Security\\.PSVaultATAP_secrets.kdbx',
+    // The default serializer
+    serializerName: SupportedSerializersEnum.Yaml,
     YourExpertise: `you are an expert system meant to help domain-specific experts, with focus on Typescript, Visual Studio Code,
 VSC extension development, bdd and tdd testing, (node js installation usage, and maintenance).
 Use a professional tone. Expository statements, especially explanations of code should be terse.
@@ -33,17 +42,21 @@ Memory utilization and network utilization should share second priority.
 Maintainability and observability should share third priority.
 Ensure sufficient comments to explain the code, but keep them terse. Provide just enough comments so that asking a Large Language Model (LLM) to 'explain this code' produces the correct answer.
  `,
-    KeePassKDBXPath: 'C:\\Dropbox\\whertzing\\GitHub\\ATAP.IAC\\Security\\.PSVaultATAP_secrets.kdbx',
-    DataServiceAsSerializationStructure: new SerializationStructure(SupportedSerializersEnum.Yaml, '{}'),
-    CurrentMode: ModeMenuItemEnum.Workspace,
-    CurrentCommand: CommandMenuItemEnum.Chat,
-    CurrentSources: 'workspace',
   };
+
+  // The development environment default values, used if there is no corresponding CLI argument, no corresponding environment variable, and no test environment default
   static Development: Record<string, AllowedTypesInValue> = {
-    KeePassKDBXPath: '"C:/Dropbox/whertzing/GitHub/ATAP.IAC/Security/ATAP_KeePassDatabase.kdbx"',
-    DataServiceAsSerializationStructure: {
-      serializerEnum: SupportedSerializersEnum.Yaml,
-      value: '{}',
-    },
+    //KeePassKDBXPath: '"C:/Dropbox/whertzing/GitHub/ATAP.IAC/Security/ATAP_KeePassDatabase.kdbx"',
+    // DataServiceAsSerializationStructure: {
+    //   serializerEnum: SupportedSerializersEnum.Yaml,
+    //   value: '{}',
+    // },
+    ConversationFileName: 'devConversations.json',
+  };
+
+  // The Testing environment default values, used if there is no corresponding CLI argument, no corresponding environment variable, and no test environment default
+  static Testing: Record<string, AllowedTypesInValue> = {
+    //KeePassKDBXPath: '"C:/Dropbox/whertzing/GitHub/ATAP.IAC/Security/ATAP_KeePassDatabase.kdbx"',
+    ConversationFileName: 'testingConversations.json',
   };
 }

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 import { DetailedError } from '@ErrorClasses/index';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
@@ -15,13 +16,15 @@ import {
   CopilotEndpointConfig,
 } from '@EndpointManager/index';
 
-import { ModeMenuItemEnum, CommandMenuItemEnum, StatusMenuItemEnum } from '@StateMachineService/index';
+import { ModeMenuItemEnum, CommandMenuItemEnum } from '@StateMachineService/index';
 
 export interface IConfigurationData {
-  getExtensionFullName(): string;
+  readonly conversationFilePath: string;
+  readonly extensionID: string;
+  readonly promptExpertise: string;
+  readonly serializerName: string;
   getTempDirectoryBasePath(): string;
   getDevelopmentWorkspacePath(): string | undefined;
-  getPromptExpertise(): string;
   getKeePassKDBXPath(): string;
   getDefaultCurrentMode(): ModeMenuItemEnum;
   getDefaultCurrentCommand(): CommandMenuItemEnum;
@@ -37,13 +40,15 @@ export class ConfigurationData implements IConfigurationData {
     private logger: ILogger,
     private extensionContext: vscode.ExtensionContext, // private configurationDataInitializationStructure?: ISerializationStructure,
     private envKeyMap: Record<string, string[]> = {
-      //toUpper(DefaultConfiguration.Production.extensionFullName + '.' + key)
+      //toUpper(DefaultConfiguration.Production.extensionID + '.' + key)
       TempDirectoryBasePath: ['TEMP'],
+      CloudBasePath: ['CLOUD_BASE_PATH'],
     },
   ) {}
 
+  @logFunction
   private getNonNull(key: string): AllowedTypesInValue {
-    const extensionID = 'ataputilities.atap-aiassist';
+    const extensionID = this.extensionID;
 
     // const cLIIdentifier = extensionID + '.' + key
     // is there a CLI argument?
@@ -75,6 +80,7 @@ export class ConfigurationData implements IConfigurationData {
     );
   }
 
+  @logFunction
   private getPossiblyUndefined(key: string): AllowedTypesInValue | undefined {
     const extensionID = 'ataputilities.atap-aiassist';
     // const cLIIdentifier = extensionID + '.' + key
@@ -102,13 +108,33 @@ export class ConfigurationData implements IConfigurationData {
     }
     return undefined;
   }
+  @logFunction
+  get conversationFilePath(): string {
+    console.log(`CloudBasePath ${this.getNonNull('CloudBasePath')}`, LogLevel.Debug);
+    console.log(`extensionID ${this.getNonNull('extensionID')}`, LogLevel.Debug);
+    console.log(`ConversationFileName ${this.getNonNull('ConversationFileName')}`, LogLevel.Debug);
 
-  getExtensionFullName(): string {
-    if (!DefaultConfiguration.Production['ExtensionFullName']) {
-      throw new DetailedError('ExtensionFullName not found in DefaultConfiguration.Production');
+    return path.join(
+      this.getNonNull('CloudBasePath') as string,
+      this.getNonNull('extensionID') as string,
+      this.getNonNull('ConversationFileName') as string,
+    ) as string;
+  }
+  @logFunction
+  get extensionID(): string {
+    if (!DefaultConfiguration.Production['extensionID']) {
+      throw new DetailedError('extensionID not found in DefaultConfiguration.Production');
     } else {
-      return DefaultConfiguration.Production['ExtensionFullName'] as string;
+      return DefaultConfiguration.Production['extensionID'] as string;
     }
+  }
+  @logFunction
+  get promptExpertise(): string {
+    return this.getNonNull('YourExpertise') as string;
+  }
+  @logFunction
+  get serializerName(): string {
+    return this.getNonNull('YourExpertise') as string;
   }
 
   getTempDirectoryBasePath(): string {
@@ -118,9 +144,6 @@ export class ConfigurationData implements IConfigurationData {
 
   getDevelopmentWorkspacePath(): string | undefined {
     return this.getPossiblyUndefined('DevelopmentWorkspacePath') as string;
-  }
-  getPromptExpertise(): string {
-    return this.getNonNull('YourExpertise') as string;
   }
 
   getKeePassKDBXPath(): string {

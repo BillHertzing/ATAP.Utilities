@@ -68,7 +68,27 @@ export class QueryPairValueType {
     return toYaml(this);
   }
 }
-export type ItemWithIDValueType = string | IAssociationValueType | IQueryPairValueType;
+
+export interface IQueryPairCollectionValueType {
+  queryPairCollection: IQueryPair[];
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+}
+@logConstructor
+export class QueryPairCollectionValueType {
+  constructor(readonly queryPairCollection: IQueryPair[]) {}
+  toString(): string {
+    return `QueryPairCollectionValueType queryPairCollection:${this.queryPairCollection.toString()}}`;
+  }
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+}
+export type ItemWithIDValueType = string | IAssociationValueType | IQueryPairValueType | IQueryPairCollectionValueType;
 
 // export type MapTypeToValueType<T> = T extends Tag
 //   ? TagValueType
@@ -88,7 +108,7 @@ export type ItemWithIDValueType = string | IAssociationValueType | IQueryPairVal
 //   return yaml.load(yamlString) as YamlData<T, V>;
 // };
 
-export type ItemWithIDTypes = Tag | Category | Association | QueryRequest | QueryResponse | QueryPair;
+export type ItemWithIDTypes = Tag | Category | Association | QueryRequest | QueryResponse | QueryPair | QueryPairCollection;
 
 export interface IItemWithID<T extends ItemWithIDTypes, V extends ItemWithIDValueType> {
   readonly value: V;
@@ -460,5 +480,37 @@ export class QueryPairCollection extends Collection<QueryPair, QueryPairValueTyp
   }
   // findQueryPairBySomeCriteria(criteria: any): QueryPair | undefined {
   //   // Implementation specific to finding a querypair based on the given criteria
+  // }
+}
+
+export interface IConversationCollection extends ICollection<QueryPairCollection, QueryPairCollectionValueType> {
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+  // findConversationBySomeCriteria(criteria: any): Conversation | undefined;
+}
+
+@logConstructor
+export class ConversationCollection
+  extends Collection<QueryPairCollection, QueryPairCollectionValueType>
+  implements IConversationCollection
+{
+  constructor(value: ItemWithID<QueryPairCollection, QueryPairCollectionValueType>[], ID?: Philote) {
+    super(value, ID);
+  }
+  @logFunction
+  toString(): string {
+    return `ConversationCollection ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+  // findConversationBySomeCriteria(criteria: any): Conversation | undefined {
+  //   // Implementation specific to finding a conversation based on the given criteria
   // }
 }

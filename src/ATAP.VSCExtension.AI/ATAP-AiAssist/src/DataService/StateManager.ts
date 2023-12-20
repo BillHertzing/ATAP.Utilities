@@ -40,8 +40,8 @@ import {
   QueryPair,
   IQueryPairCollection,
   QueryPairCollection,
-  //IConversationCollection,
-  //ConversationCollection,
+  IConversationCollection,
+  ConversationCollection,
 } from '@ItemWithIDs/index';
 
 import { ModeMenuItemEnum, CommandMenuItemEnum } from '@StateMachineService/index';
@@ -69,14 +69,6 @@ export interface IStateManager {
   setCurrentAssociation(value: IAssociation): Promise<void>;
   getAssociationCollection(): IAssociationCollection | undefined;
   setAssociationCollection(value: IAssociationCollection): Promise<void>;
-  getCurrentQueryContext(): IQueryContext | undefined;
-  setCurrentQueryContext(value: IQueryContext): Promise<void>;
-  getQueryContextCollection(): IQueryContextCollection | undefined;
-  setQueryContextCollection(value: IQueryContextCollection): Promise<void>;
-  // getCurrentConversation(): IConversation | undefined;
-  // setCurrentConversation(value: IConversation): Promise<void>;
-  // getConversationCollection(): IConversationCollection | undefined;
-  // setConversationCollection(value: IConversationCollection): Promise<void>;
 
   getCurrentMode(): ModeMenuItemEnum | undefined;
   setCurrentMode(value: ModeMenuItemEnum): Promise<void>;
@@ -144,23 +136,23 @@ export class StateManager {
       })();
     }
     // ToDo: possibly add validationthat the new collection was created
-    if (!this.cache.getValue<QueryContextCollection>('QueryContextCollection')) {
-      // Immediately Invoked Async Function Expression (IIFE)
-      (() => {
-        this.cache
-          .setValue<QueryContextCollection>('QueryContextCollection', new QueryContextCollection([]))
-          .catch((e) => {
-            if (e instanceof Error) {
-              throw new DetailedError(`StateManager.constructor: failed to set QueryContextCollection -> `, e);
-            } else {
-              throw new Error(
-                `StateManager .ctor: failed to set QueryContextCollection and the instance of (e) returned is of type ${typeof e}`,
-              );
-            }
-          });
-      })();
-      // ToDo: possibly add validationthat the new collection was created
-    }
+    // if (!this.cache.getValue<QueryContextCollection>('QueryContextCollection')) {
+    //   // Immediately Invoked Async Function Expression (IIFE)
+    //   (() => {
+    //     this.cache
+    //       .setValue<QueryContextCollection>('QueryContextCollection', new QueryContextCollection([]))
+    //       .catch((e) => {
+    //         if (e instanceof Error) {
+    //           throw new DetailedError(`StateManager.constructor: failed to set QueryContextCollection -> `, e);
+    //         } else {
+    //           throw new Error(
+    //             `StateManager .ctor: failed to set QueryContextCollection and the instance of (e) returned is of type ${typeof e}`,
+    //           );
+    //         }
+    //       });
+    //   })();
+    //   // ToDo: possibly add validationthat the new collection was created
+    // }
     // if (!this.cache.getValue<ConversationCollection>('ConversationCollection')) {
     //   // Immediately Invoked Async Function Expression (IIFE)
     //   (() => {
@@ -325,35 +317,20 @@ export class StateManager {
     await this.cache.setValue<IAssociationCollection>('AssociationCollection', value);
   }
 
-  getCurrentQueryContext(): IQueryContext | undefined {
-    return this.cache.getValue<IQueryContext>('QueryContext');
-  }
-
-  async setCurrentQueryContext(value: IQueryContext): Promise<void> {
-    await this.cache.setValue<IQueryContext>('QueryContext', value);
-  }
-
-  getQueryContextCollection(): IQueryContextCollection | undefined {
-    return this.cache.getValue<IQueryContextCollection>('QueryContextCollection');
-  }
-
-  async setQueryContextCollection(value: IQueryContextCollection): Promise<void> {
-    await this.cache.setValue<IQueryContextCollection>('QueryContextCollection', value);
-  }
-  // getCurrentConversation(): IConversation | undefined {
-  //   return this.cache.getValue<IConversation>('Conversation');
+  // getCurrentQueryContext(): IQueryContext | undefined {
+  //   return this.cache.getValue<IQueryContext>('QueryContext');
   // }
 
-  // async setCurrentConversation(value: IConversation): Promise<void> {
-  //   await this.cache.setValue<IConversation>('Conversation', value);
+  // async setCurrentQueryContext(value: IQueryContext): Promise<void> {
+  //   await this.cache.setValue<IQueryContext>('QueryContext', value);
   // }
 
-  // getConversationCollection(): IConversationCollection | undefined {
-  //   return this.cache.getValue<IConversationCollection>('ConversationCollection');
+  // getQueryContextCollection(): IQueryContextCollection | undefined {
+  //   return this.cache.getValue<IQueryContextCollection>('QueryContextCollection');
   // }
 
-  // async setConversationCollection(value: IConversationCollection): Promise<void> {
-  //   await this.cache.setValue<IConversationCollection>('ConversationCollection', value);
+  // async setQueryContextCollection(value: IQueryContextCollection): Promise<void> {
+  //   await this.cache.setValue<IQueryContextCollection>('QueryContextCollection', value);
   // }
 
   getCurrentMode(): ModeMenuItemEnum | undefined {

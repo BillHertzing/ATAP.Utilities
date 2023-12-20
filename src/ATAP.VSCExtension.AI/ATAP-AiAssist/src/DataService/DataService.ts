@@ -14,47 +14,6 @@ import {
   toYaml,
   fromYaml,
 } from '@Serializers/index';
-import {
-  TagValueType,
-  CategoryValueType,
-  IAssociationValueType,
-  AssociationValueType,
-  QueryRequestValueType,
-  QueryResponseValueType,
-  IQueryPairValueType,
-  QueryPairValueType,
-  ItemWithIDValueType,
-  ItemWithIDTypes,
-  //  MapTypeToValueType,
-  //  YamlData,
-  //  fromYamlForItemWithID,
-  IItemWithID,
-  ItemWithID,
-  ICollection,
-  Collection,
-  ITag,
-  Tag,
-  ITagCollection,
-  TagCollection,
-  ICategory,
-  Category,
-  ICategoryCollection,
-  CategoryCollection,
-  IAssociation,
-  Association,
-  IAssociationCollection,
-  AssociationCollection,
-  IQueryRequest,
-  QueryRequest,
-  IQueryResponse,
-  QueryResponse,
-  IQueryPair,
-  QueryPair,
-  IQueryPairCollection,
-  QueryPairCollection,
-  //IConversationCollection,
-  //ConversationCollection,
-} from '@ItemWithIDs/index';
 
 import { IStateManager, StateManager } from './StateManager';
 import { SupportedSecretsVaultEnum, ISecretsManager, SecretsManager } from './SecretsManager';
@@ -173,6 +132,10 @@ export class Data {
         throw new Error(`Data.ctor. create fileManager thew an object that was not of type Error -> `);
       }
     }
+
+    // Load the conversation collection
+    const cc = this.fileManager.conversationCollection;
+    this.logger.log(`Data.ctor. conversationCollection: ${cc}`, LogLevel.Debug);
   }
 
   async initializeAsync() {

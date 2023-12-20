@@ -1,8 +1,5 @@
 import * as vscode from 'vscode';
-import { Buffer } from 'buffer';
-import * as path from 'path';
 import * as fs from 'fs';
-import * as crypto from 'crypto';
 
 import { DetailedError } from '@ErrorClasses/index';
 import {
@@ -204,7 +201,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   //     let lastLine = document.lineAt(document.lineCount - 1);
   //     const savedPromptDocumentData = dataService.data.stateManager.getsavedPromptDocumentData();
   //     let promptDocumentData: string =
-  //       savedPromptDocumentData || dataService.data.configurationData.getPromptExpertise();
+  //       savedPromptDocumentData || dataService.data.configurationData.promptExpertise;
 
   //     editor.edit((editBuilder) => {
   //       editBuilder.insert(lastLine.range.end, promptDocumentData);

@@ -7,6 +7,8 @@ export {
   QueryResponseValueType,
   IQueryPairValueType,
   QueryPairValueType,
+  IQueryPairCollectionValueType,
+  QueryPairCollectionValueType,
   ItemWithIDValueType,
   ItemWithIDTypes,
   //  MapTypeToValueType,
@@ -36,6 +38,6 @@ export {
   QueryPair,
   IQueryPairCollection,
   QueryPairCollection,
-  //IConversationCollection,
-  //ConversationCollection,
+  IConversationCollection,
+  ConversationCollection,
 } from './ItemWithID';

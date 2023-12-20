@@ -16,7 +16,10 @@ export interface ISerializationStructure {
   readonly serializerEnum: SupportedSerializersEnum;
 }
 export class SerializationStructure implements ISerializationStructure {
-  constructor(readonly serializerEnum: SupportedSerializersEnum, readonly value: string) { }
+  constructor(
+    readonly serializerEnum: SupportedSerializersEnum,
+    readonly value: string,
+  ) {}
 
   //  getConversionFunction() {
   //   switch (this.serializerEnum) {
@@ -33,4 +36,3 @@ export class SerializationStructure implements ISerializationStructure {
 export function isSerializationStructure(obj: any): obj is ISerializationStructure {
   return obj && typeof obj === 'object' && 'value' in obj;
 }
-

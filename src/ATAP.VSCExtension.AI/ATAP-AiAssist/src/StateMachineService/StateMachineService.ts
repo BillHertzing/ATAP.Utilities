@@ -33,13 +33,14 @@ export enum CommandMenuItemEnum {
 }
 
 export interface IStateMachineService {
-  getPickItemsInitializer(): IPickItemsInitializer;
+  initialize(): void;
+  readonly pickItemsInitializer: IPickItemsInitializer;
   getNextState(): string;
   getCurrentState(): string;
 }
 
 export class StateMachineService implements IStateMachineService {
-  private readonly pickItemsInitializer: IPickItemsInitializer = new PickItemsInitializer();
+  readonly pickItemsInitializer: IPickItemsInitializer = new PickItemsInitializer();
 
   constructor(
     private readonly logger: ILogger,
@@ -130,6 +131,9 @@ export class StateMachineService implements IStateMachineService {
   }
 
   @logFunction
+  initialize(): void {}
+
+  @logFunction
   getNextState(): string {
     return 'next state';
   }
@@ -139,8 +143,7 @@ export class StateMachineService implements IStateMachineService {
     return 'current state';
   }
 
-  @logFunction
-  getPickItemsInitializer(): IPickItemsInitializer {
+  get PickItemsInitializer(): IPickItemsInitializer {
     return this.pickItemsInitializer;
   }
 

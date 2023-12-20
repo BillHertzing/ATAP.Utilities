@@ -1,6 +1,7 @@
 import { SupportedSerializersEnum, SerializationStructure, ISerializationStructure } from '@Serializers/index';
 import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
 import { ModeMenuItemEnum, CommandMenuItemEnum, StatusMenuItemEnum } from '@StateMachineService/index';
+import { LogLevel } from '@Logger/index';
 
 // everything here will be initialized before the entry point of the extension
 // These are the Interfaces for objects that are allowed to be stored in the DefaultConfiguration
@@ -14,7 +15,8 @@ export type AllowedTypesInValue =
   | IConfigurationData
   | ModeMenuItemEnum
   | CommandMenuItemEnum
-  | SupportedSerializersEnum;
+  | SupportedSerializersEnum
+  | LogLevel;
 
 export class DefaultConfiguration {
   // This is the default configuration for the extension, per the version number above
@@ -58,5 +60,6 @@ Ensure sufficient comments to explain the code, but keep them terse. Provide jus
   static Testing: Record<string, AllowedTypesInValue> = {
     //KeePassKDBXPath: '"C:/Dropbox/whertzing/GitHub/ATAP.IAC/Security/ATAP_KeePassDatabase.kdbx"',
     ConversationFileName: 'testingConversations.json',
+    debuggerLogLevel: LogLevel.Debug,
   };
 }

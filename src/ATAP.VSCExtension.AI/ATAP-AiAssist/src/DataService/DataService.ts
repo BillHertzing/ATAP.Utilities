@@ -132,10 +132,6 @@ export class Data {
         throw new Error(`Data.ctor. create fileManager thew an object that was not of type Error -> `);
       }
     }
-
-    // Load the conversation collection
-    const cc = this.fileManager.conversationCollection;
-    this.logger.log(`Data.ctor. conversationCollection: ${cc}`, LogLevel.Debug);
   }
 
   async initializeAsync() {
@@ -153,6 +149,7 @@ export class Data {
   public setTemporaryPromptDocument(value: vscode.TextDocument) {
     this.temporaryPromptDocument = value;
   }
+  @logFunction
   dispose() {
     if (!this.disposed) {
       // release resources
@@ -205,7 +202,7 @@ export class DataService implements IDataService {
   // ToDo: make data derive from ItemWithID, and keep track of multiple instances of data (to support profiles?)
   // ToDo: ensure compatability  between the dataService rehydrated from the Default Configuration with  actual version number of the extension
   @logExecutionTime
-  static CreateDataService(
+  static create(
     logger: ILogger,
     extensionContext: vscode.ExtensionContext,
     callingModule: string,
@@ -257,7 +254,7 @@ export class DataService implements IDataService {
   static convertFrom_yaml(yaml: string): DataService {
     return fromYaml<DataService>(yaml);
   }
-
+  @logFunction
   dispose() {
     if (!this.disposed) {
       // release any resources

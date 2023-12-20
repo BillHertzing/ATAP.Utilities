@@ -38,6 +38,7 @@ import { mainViewTreeItem } from './mainViewTreeItem';
 import { FileTreeProvider } from './FileTreeProvider';
 import { type } from 'os';
 import { logFunction } from './Decorators';
+import { DefaultConfiguration } from '@DataService/DefaultConfiguration';
 
 //import { mainSearchEngineProvider } from './mainSearchEngineProvider';
 
@@ -47,7 +48,6 @@ let dataService: IDataService;
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(extensionContext: vscode.ExtensionContext) {
-  const runningInDevelopment = isRunningInDevHost();
   // Declaration of variables
   let message: string = '';
   let workspacePath: string = '';
@@ -56,20 +56,35 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   let stateMachineService: IStateMachineService;
   let commandsService: CommandsService;
 
+  // If the extension is running in the development host, set the environment variable 'Environment' to 'Development'
+  // This overrides whateve value of Environment variable was set when the extension started
+  if (isRunningInDevHost()) {
+    process.env['Environment'] = 'Development';
+  }
+
+  const extensionID = extensionContext.extension.id;
+  const extensionname = extensionID.split('.')[1];
+
   // ToDo: create a static startup logger, and use that until the full blown logger can be instantiated
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
   const logger = new Logger();
-  logger.createChannel('ATAP-AiAssist', LogLevel.Debug);
-  logger.log('Extension Activation', LogLevel.Info);
+  // Channel name is the name of the extension
+  logger.createChannel(extensionname, LogLevel.Info);
 
+  // if the environment variable 'Environment' is set to 'Development', set the logger's channel's loglevel to LogLevel.Debug
+  // if the debuggerLogLevel in the extensions setting, use that value,
+  // else if the debuggerLogLevel in the DefaultConfiguration.Development, use that value
   // Get the VSC configuration settings for this extension
-  const config = vscode.workspace.getConfiguration('ATAP-AiAssist');
-
-  if (runningInDevelopment) {
-    // update the loggerLogLevel with the'Development.Logger.LogLevel settings value, if it exists
-    const developmentLoggerLogLevelFromSettings = getDevelopmentLoggerLogLevelFromSettings();
-    logger.setChannelLogLevel('ATAP-AiAssist', developmentLoggerLogLevelFromSettings); // supplies a default if not found in settings
-    logger.log('Running in development mode.', LogLevel.Info);
+  if (process.env['Environment'] === 'Development') {
+    // ToDO: test for an environment variable for debuggerLogLevel, and if it exists, use that value
+    const settings = vscode.workspace.getConfiguration(extensionname);
+    const settingsDebuggerLogLevel = settings.get<LogLevel>('debuggerLogLevel');
+    if (settingsDebuggerLogLevel) {
+      logger.setChannelLogLevel(extensionname, settingsDebuggerLogLevel);
+    } else if ('debuggerLogLevel' in DefaultConfiguration.Development) {
+      const defaultConfigurationDebuggerLogLevel = DefaultConfiguration.Development.debuggerLogLevel as LogLevel;
+      logger.setChannelLogLevel(extensionname, defaultConfigurationDebuggerLogLevel);
+    }
     // Focus on the output stream when starting the extension in development mode
     logger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
   }
@@ -85,7 +100,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   //   );
   // } else {
   // ToDo: wrap in a try/catch block
-  securityService = SecurityService.CreateSecurityService(logger, extensionContext, 'SecurityService.ts');
+  securityService = SecurityService.create(logger, extensionContext, 'extension.ts');
   // }
 
   // if a DataService initialization serialized string exists, this will try and use it to create the DataService, else return a new empty one.
@@ -99,16 +114,16 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   //   );
   // } else {
   // ToDo: wrap in a try/catch block
-  dataService = DataService.CreateDataService(logger, extensionContext, 'extension.ts');
+  dataService = DataService.create(logger, extensionContext, 'extension.ts');
   // }
 
   logger.log(`data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`, LogLevel.Debug);
 
   // ToDo: wrap in a try/catch block
-  securityService.getExternalDataVetting().AttachListener(dataService.data.eventManager.getEventEmitter());
+  securityService.externalDataVetting.AttachListener(dataService.data.eventManager.getEventEmitter());
 
   // ToDo: wrap in a try/catch block
-  queryService = QueryService.CreateQueryService(logger, extensionContext, dataService.data, 'extension.ts');
+  queryService = QueryService.create(logger, extensionContext, dataService.data, 'extension.ts');
 
   // ToDo: wrap in a try/catch block
   stateMachineService = StateMachineService.Create(logger, extensionContext, dataService.data, 'extension.ts');
@@ -116,15 +131,13 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
   // Calling the constructor registers all of the commands, and creates a disposables structure
   try {
-    logger.log(`instantiate commandsService`, LogLevel.Debug);
     commandsService = new CommandsService(
       logger,
       extensionContext,
       dataService.data,
       queryService,
-      stateMachineService.getPickItemsInitializer(),
+      stateMachineService.pickItemsInitializer,
     );
-    logger.log(`commandsService instantiated`, LogLevel.Trace);
   } catch (e) {
     if (e instanceof Error) {
       throw new DetailedError(`Activation: failed to create an instance of CommandsService -> `, e);
@@ -142,10 +155,13 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   // Initial state
   statusBarItem.text = `$(robot) AiAssist`;
-  statusBarItem.command = 'atap-aiassist.showStatusMenuAsync';
+  statusBarItem.command = `${extensionname}.showStatusMenuAsync`;
   statusBarItem.tooltip = 'Show AiAssist status menu';
   extensionContext.subscriptions.push(statusBarItem);
   statusBarItem.show();
+
+  // Call the Initialize function in the StateMachineService
+  stateMachineService.initialize();
 
   // identify the current workspace context. Compare to stored state information, and update if necessary
   const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -154,6 +170,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     // A workspace or multi-root workspace has been opened
     workspaceFolders.forEach((folder) => {
       const workspacePath = folder.uri.fsPath;
+      logger.log(`workspacePath = ${workspacePath}`, LogLevel.Debug);
       // Do something with workspacePath
     });
   } else {
@@ -165,7 +182,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     }
   }
 
-  if (runningInDevelopment) {
+  if (process.env['Environment'] === 'Development') {
     // in development mode, if a workspace is not supplied when the extension is activated,
     //  open a specific Workspace as specified in development configuration if one is defined
     const developmentWorkspacePath = dataService.data.configurationData.getDevelopmentWorkspacePath();

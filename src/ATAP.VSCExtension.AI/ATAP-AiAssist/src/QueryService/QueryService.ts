@@ -63,7 +63,7 @@ export class QueryService implements IQueryService {
   ) {}
 
   @logFunction
-  static CreateQueryService(
+  static create(
     logger: ILogger,
     extensionContext: vscode.ExtensionContext,
     data: IData,

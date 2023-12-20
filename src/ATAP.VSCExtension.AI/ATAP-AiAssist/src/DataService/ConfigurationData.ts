@@ -20,6 +20,7 @@ import { ModeMenuItemEnum, CommandMenuItemEnum } from '@StateMachineService/inde
 
 export interface IConfigurationData {
   readonly conversationFilePath: string;
+  readonly debuggerLogLevel: LogLevel;
   readonly extensionID: string;
   readonly promptExpertise: string;
   readonly serializerName: string;
@@ -108,7 +109,6 @@ export class ConfigurationData implements IConfigurationData {
     }
     return undefined;
   }
-  @logFunction
   get conversationFilePath(): string {
     console.log(`CloudBasePath ${this.getNonNull('CloudBasePath')}`, LogLevel.Debug);
     console.log(`extensionID ${this.getNonNull('extensionID')}`, LogLevel.Debug);
@@ -120,7 +120,9 @@ export class ConfigurationData implements IConfigurationData {
       this.getNonNull('ConversationFileName') as string,
     ) as string;
   }
-  @logFunction
+  get debuggerLogLevel(): LogLevel {
+    return this.getNonNull('debuggerLogLevel') as LogLevel;
+  }
   get extensionID(): string {
     if (!DefaultConfiguration.Production['extensionID']) {
       throw new DetailedError('extensionID not found in DefaultConfiguration.Production');
@@ -128,13 +130,12 @@ export class ConfigurationData implements IConfigurationData {
       return DefaultConfiguration.Production['extensionID'] as string;
     }
   }
-  @logFunction
   get promptExpertise(): string {
     return this.getNonNull('YourExpertise') as string;
   }
-  @logFunction
+
   get serializerName(): string {
-    return this.getNonNull('YourExpertise') as string;
+    return this.getNonNull('serializerName') as string;
   }
 
   getTempDirectoryBasePath(): string {

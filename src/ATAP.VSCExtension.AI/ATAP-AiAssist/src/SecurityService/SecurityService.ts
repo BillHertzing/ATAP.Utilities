@@ -18,22 +18,21 @@ import {
 import { IExternalDataVetting, ExternalDataVetting } from './ExternalDataVetting';
 
 export interface ISecurityService {
-  getExternalDataVetting(): IExternalDataVetting;
+  readonly externalDataVetting: IExternalDataVetting;
 
   //version: string;
 }
 @logConstructor
 export class SecurityService implements ISecurityService {
-  private externalDataVetting: ExternalDataVetting;
-
+  readonly _externalDataVetting: IExternalDataVetting;
   constructor(
     private logger: ILogger,
     private extensionContext: vscode.ExtensionContext,
   ) {
-    this.externalDataVetting = new ExternalDataVetting(this.logger);
+    this._externalDataVetting = new ExternalDataVetting(logger);
   }
   @logFunction
-  static CreateSecurityService(
+  static create(
     logger: ILogger,
     extensionContext: vscode.ExtensionContext,
     callingModule: string,
@@ -80,10 +79,10 @@ export class SecurityService implements ISecurityService {
     }
   }
 
-  @logFunction
-  getExternalDataVetting(): IExternalDataVetting {
-    return this.externalDataVetting;
+  get externalDataVetting(): IExternalDataVetting {
+    return this._externalDataVetting;
   }
+
   @logFunction
   static convertFrom_json(json: string): SecurityService {
     return fromJson<SecurityService>(json);

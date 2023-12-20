@@ -88,7 +88,6 @@ export class FileManager implements IFileManager {
     readonly configurationData: IConfigurationData,
   ) {}
 
-  @logFunction
   get temporaryFileDirectoryPath(): fs.PathLike {
     // lazy load the temporaryFileDirectoryPath
     if (!this._temporaryFileDirectoryPath) {
@@ -116,7 +115,7 @@ export class FileManager implements IFileManager {
     }
     return this._temporaryFileDirectoryPath as fs.PathLike;
   }
-  @logFunction
+
   get conversationCollection(): IConversationCollection {
     if (!this._conversationCollection) {
       // Lazy load the conversation collection

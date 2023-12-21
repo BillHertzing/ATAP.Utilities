@@ -4,10 +4,10 @@ import { LogLevel, ILogger, Logger } from '@Logger/index';
 // A method decorator that logs the entry into a synchronous method
 export function logFunction(target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
   const originalMethod = descriptor.value; // Save a reference to the original method
-  console.log(`${propertyKey} Starting`);
   descriptor.value = function (...args: any[]) {
+    console.log(`${target.constructor.name} ${propertyKey} Starting`);
     const result = originalMethod.apply(this, args); // Call the original method
-    console.log(`${propertyKey} Completed`);
+    console.log(`${target.constructor.name} ${propertyKey} Completed`);
     // Logger.staticLog(`staticLogger: ${propertyKey} executed in ${finish - start} milliseconds`, LogLevel.Debug); // ToDo: theser is a bug in the staticLogger logic
     return result; // Return the original method's return value
   };
@@ -17,10 +17,10 @@ export function logFunction(target: any, propertyKey: string, descriptor: Proper
 // A method decorator that logs the entry into a synchronous method
 export function logAsyncFunction(target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
   const originalMethod = descriptor.value; // Save a reference to the original method
-  console.log(`${propertyKey} Starting`);
   descriptor.value = async function (...args: any[]) {
+    console.log(`${target.constructor.name} ${propertyKey} Starting`);
     const result = await originalMethod.apply(this, args); // Call the original method
-    console.log(`${propertyKey} Completed`);
+    console.log(`${target.constructor.name} ${propertyKey} Completed`);
     // Logger.staticLog(`staticLogger: ${propertyKey} executed in ${finish - start} milliseconds`, LogLevel.Debug); // ToDo: theser is a bug in the staticLogger logic
     return result; // Return the original method's return value
   };
@@ -32,12 +32,12 @@ export function logExecutionTime(target: any, propertyKey: string, descriptor: P
   const originalMethod = descriptor.value; // Save a reference to the original method
 
   descriptor.value = function (...args: any[]) {
-    console.log(`${propertyKey} Starting`);
+    console.log(`${target.constructor.name} ${propertyKey} Starting`);
     const start = performance.now(); // Start timer
     const result = originalMethod.apply(this, args); // Call the original method
     const finish = performance.now(); // End timer
-    console.log(`${propertyKey} Completed`);
-    console.log(`${propertyKey} Executed in ${finish - start} milliseconds`);
+    console.log(`${target.constructor.name} ${propertyKey} Completed`);
+    console.log(`${target.constructor.name} ${propertyKey} Executed in ${finish - start} milliseconds`);
     // Logger.staticLog(`staticLogger: ${propertyKey} executed in ${finish - start} milliseconds`, LogLevel.Debug); // ToDo: theser is a bug in the staticLogger logic
     return result; // Return the original method's return value
   };

@@ -201,13 +201,14 @@ export class DataService implements IDataService {
 
   // ToDo: make data derive from ItemWithID, and keep track of multiple instances of data (to support profiles?)
   // ToDo: ensure compatability  between the dataService rehydrated from the Default Configuration with  actual version number of the extension
-  @logExecutionTime
   static create(
     logger: ILogger,
     extensionContext: vscode.ExtensionContext,
     callingModule: string,
     initializationStructure?: ISerializationStructure,
   ): DataService {
+    Logger.staticLog(`DataService.create called`, LogLevel.Debug);
+
     let _obj: DataService | null;
     if (initializationStructure) {
       try {

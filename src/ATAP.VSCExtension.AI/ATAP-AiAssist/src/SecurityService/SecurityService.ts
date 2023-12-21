@@ -31,13 +31,15 @@ export class SecurityService implements ISecurityService {
   ) {
     this._externalDataVetting = new ExternalDataVetting(logger);
   }
-  @logFunction
+
   static create(
     logger: ILogger,
     extensionContext: vscode.ExtensionContext,
     callingModule: string,
     initializationStructure?: ISerializationStructure,
   ): SecurityService {
+    Logger.staticLog(`SecurityService.create called`, LogLevel.Debug);
+
     let _obj: SecurityService | null;
     if (initializationStructure) {
       try {
@@ -83,11 +85,9 @@ export class SecurityService implements ISecurityService {
     return this._externalDataVetting;
   }
 
-  @logFunction
   static convertFrom_json(json: string): SecurityService {
     return fromJson<SecurityService>(json);
   }
-  @logFunction
   static convertFrom_yaml(yaml: string): SecurityService {
     return fromYaml<SecurityService>(yaml);
   }

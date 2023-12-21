@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ILogger, LogLevel } from '@Logger/index';
+import { ILogger, Logger, LogLevel } from '@Logger/index';
 import { IData } from '@DataService/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { logConstructor, logFunction } from '@Decorators/index';
@@ -75,14 +75,15 @@ export class StateMachineService implements IStateMachineService {
     });
   }
 
-  @logFunction
-  static Create(
+  static create(
     logger: ILogger,
     extensionContext: vscode.ExtensionContext,
     data: IData,
     callingModule: string,
     initializationStructure?: ISerializationStructure,
   ): StateMachineService {
+    Logger.staticLog(`StateMachineService.create called`, LogLevel.Debug);
+
     let _obj: StateMachineService | null;
     if (initializationStructure) {
       try {

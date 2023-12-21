@@ -51,7 +51,7 @@ export class Philote implements IPhilote {
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+
   static convertFrom_json(json: string): Philote {
     return fromJson<Philote>(json);
   }
@@ -59,10 +59,11 @@ export class Philote implements IPhilote {
   convertTo_yaml(): string {
     return toYaml(this);
   }
-  @logFunction
+
   static convertFrom_yaml(yaml: string): Philote {
     return fromYaml<Philote>(yaml);
   }
+
   @logFunction
   ToString(): string {
     return `Philote: ${this.ID}`;

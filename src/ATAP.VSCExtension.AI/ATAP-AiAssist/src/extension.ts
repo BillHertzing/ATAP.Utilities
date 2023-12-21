@@ -2,12 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 import { DetailedError } from '@ErrorClasses/index';
-import {
-  LogLevel,
-  Logger,
-  getLoggerLogLevelFromSettings,
-  getDevelopmentLoggerLogLevelFromSettings,
-} from '@Logger/index';
+import { LogLevel, Logger } from '@Logger/index';
 
 import { SecurityService, ISecurityService } from '@SecurityService/index';
 
@@ -24,7 +19,7 @@ import {
   fromYaml,
 } from '@Serializers/index';
 
-import { isRunningInDevHost } from '@Utilities/index';
+import { isRunningInTestingEnvironment, isRunningInDevelopmentEnvironment } from '@Utilities/index';
 
 import { CommandsService } from '@CommandsService/index';
 
@@ -48,6 +43,8 @@ let dataService: IDataService;
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(extensionContext: vscode.ExtensionContext) {
+  // Initialize the static logger
+  Logger.staticConstructor();
   // Declaration of variables
   let message: string = '';
   let workspacePath: string = '';
@@ -56,26 +53,21 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   let stateMachineService: IStateMachineService;
   let commandsService: CommandsService;
 
-  // If the extension is running in the development host, set the environment variable 'Environment' to 'Development'
-  // This overrides whateve value of Environment variable was set when the extension started
-  if (isRunningInDevHost()) {
-    process.env['Environment'] = 'Development';
-  }
-
   const extensionID = extensionContext.extension.id;
   const extensionname = extensionID.split('.')[1];
 
-  // ToDo: create a static startup logger, and use that until the full blown logger can be instantiated
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
   const logger = new Logger();
   // Channel name is the name of the extension
   logger.createChannel(extensionname, LogLevel.Info);
 
-  // if the environment variable 'Environment' is set to 'Development', set the logger's channel's loglevel to LogLevel.Debug
-  // if the debuggerLogLevel in the extensions setting, use that value,
-  // else if the debuggerLogLevel in the DefaultConfiguration.Development, use that value
-  // Get the VSC configuration settings for this extension
-  if (process.env['Environment'] === 'Development') {
+  // If the extension is running in the development host, or if the environment variable 'Environment' is set to 'Development',
+  //   set the environment variable 'Environment' to 'Development'. This overrides whateve value of Environment variable was set when the extension started
+  //   set the logger's channel's loglevel to LogLevel.Debug initially
+  //   ToDo: use a static map from DefaultConfig to check for a debuggerLogLevel in an environment variable
+  //   if the debuggerLogLevel is set in the extension's setting, use that value,
+  //   else if the debuggerLogLevel in the DefaultConfiguration.Development, use that value
+  if (isRunningInDevelopmentEnvironment()) {
     // ToDO: test for an environment variable for debuggerLogLevel, and if it exists, use that value
     const settings = vscode.workspace.getConfiguration(extensionname);
     const settingsDebuggerLogLevel = settings.get<LogLevel>('debuggerLogLevel');
@@ -117,7 +109,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   dataService = DataService.create(logger, extensionContext, 'extension.ts');
   // }
 
-  logger.log(`data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`, LogLevel.Debug);
+  // logger.log(`data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`, LogLevel.Debug);
 
   // ToDo: wrap in a try/catch block
   securityService.externalDataVetting.AttachListener(dataService.data.eventManager.getEventEmitter());
@@ -126,7 +118,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   queryService = QueryService.create(logger, extensionContext, dataService.data, 'extension.ts');
 
   // ToDo: wrap in a try/catch block
-  stateMachineService = StateMachineService.Create(logger, extensionContext, dataService.data, 'extension.ts');
+  stateMachineService = StateMachineService.create(logger, extensionContext, dataService.data, 'extension.ts');
 
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
   // Calling the constructor registers all of the commands, and creates a disposables structure
@@ -151,47 +143,47 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // Add the disposables from the CommandsService to extensionContext.subscriptions
   extensionContext.subscriptions.push(...commandsService.getDisposables());
 
-  // Create a status bar item for the extension
-  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  // Initial state
-  statusBarItem.text = `$(robot) AiAssist`;
-  statusBarItem.command = `${extensionname}.showStatusMenuAsync`;
-  statusBarItem.tooltip = 'Show AiAssist status menu';
-  extensionContext.subscriptions.push(statusBarItem);
-  statusBarItem.show();
+  // // Create a status bar item for the extension
+  // const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  // // Initial state
+  // statusBarItem.text = `$(robot) AiAssist`;
+  // statusBarItem.command = `${extensionname}.showStatusMenuAsync`;
+  // statusBarItem.tooltip = 'Show AiAssist status menu';
+  // extensionContext.subscriptions.push(statusBarItem);
+  // statusBarItem.show();
 
-  // Call the Initialize function in the StateMachineService
-  stateMachineService.initialize();
+  // // Call the Initialize function in the StateMachineService
+  // stateMachineService.initialize();
 
-  // identify the current workspace context. Compare to stored state information, and update if necessary
-  const workspaceFolders = vscode.workspace.workspaceFolders;
+  // // identify the current workspace context. Compare to stored state information, and update if necessary
+  // const workspaceFolders = vscode.workspace.workspaceFolders;
 
-  if (workspaceFolders && workspaceFolders.length > 0) {
-    // A workspace or multi-root workspace has been opened
-    workspaceFolders.forEach((folder) => {
-      const workspacePath = folder.uri.fsPath;
-      logger.log(`workspacePath = ${workspacePath}`, LogLevel.Debug);
-      // Do something with workspacePath
-    });
-  } else {
-    // No workspace has been opened
-    // If the stored state matches, no action is needed, otherwise updated the stored state with the current workspace
-    if (dataService.data.stateManager.getWorkspacePath() !== undefined) {
-      await dataService.data.stateManager.setWorkspacePath('');
-      // ToDo: fire the trigger for the workspacePath change event
-    }
-  }
+  // if (workspaceFolders && workspaceFolders.length > 0) {
+  //   // A workspace or multi-root workspace has been opened
+  //   workspaceFolders.forEach((folder) => {
+  //     const workspacePath = folder.uri.fsPath;
+  //     logger.log(`workspacePath = ${workspacePath}`, LogLevel.Debug);
+  //     // Do something with workspacePath
+  //   });
+  // } else {
+  //   // No workspace has been opened
+  //   // If the stored state matches, no action is needed, otherwise updated the stored state with the current workspace
+  //   if (dataService.data.stateManager.getWorkspacePath() !== undefined) {
+  //     await dataService.data.stateManager.setWorkspacePath('');
+  //     // ToDo: fire the trigger for the workspacePath change event
+  //   }
+  // }
 
-  if (process.env['Environment'] === 'Development') {
-    // in development mode, if a workspace is not supplied when the extension is activated,
-    //  open a specific Workspace as specified in development configuration if one is defined
-    const developmentWorkspacePath = dataService.data.configurationData.getDevelopmentWorkspacePath();
-    if (developmentWorkspacePath !== undefined) {
-      // ToDo:validate the path exists and is readable and writeable
-      await dataService.data.stateManager.setWorkspacePath(developmentWorkspacePath);
-      // ToDo: fire the trigger for the workspacePath change event
-    }
-  }
+  // if (process.env['Environment'] === 'Development') {
+  //   // in development mode, if a workspace is not supplied when the extension is activated,
+  //   //  open a specific Workspace as specified in development configuration if one is defined
+  //   const developmentWorkspacePath = dataService.data.configurationData.getDevelopmentWorkspacePath();
+  //   if (developmentWorkspacePath !== undefined) {
+  //     // ToDo:validate the path exists and is readable and writeable
+  //     await dataService.data.stateManager.setWorkspacePath(developmentWorkspacePath);
+  //     // ToDo: fire the trigger for the workspacePath change event
+  //   }
+  // }
 
   // If the mode is 'Chat',
   // then see if a Conversation document has been restored from a previous session
@@ -241,44 +233,44 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
 
   // Copilot
 
-  // instantiate a mainViewTreeDataProvider instance and register that with the TreeDataProvider with the main tree view
-  const mainViewTreeDataProviderInstance = new mainViewTreeDataProvider(logger);
-  vscode.window.createTreeView('atap-aiassistMainTreeView', { treeDataProvider: mainViewTreeDataProviderInstance });
+  // // instantiate a mainViewTreeDataProvider instance and register that with the TreeDataProvider with the main tree view
+  // const mainViewTreeDataProviderInstance = new mainViewTreeDataProvider(logger);
+  // vscode.window.createTreeView('atap-aiassistMainTreeView', { treeDataProvider: mainViewTreeDataProviderInstance });
 
-  // instantiate the FileTreeProvider and register it
-  //   const rootPath = workspacePath || '';
-  // const dummy:string = 'E:/'  ;
-  // ToDo: figure out how to focus on the place the user last left off. If no such info, focus on workspaceroot.
-  // ToDo: figure out how the mainSearchPanel interacts with the fileTreeProvider -> mainFileViewTreeProvider
-  const fileTreeProviderInstance = new FileTreeProvider(); // rootPath  dummy
-  vscode.window.createTreeView('atap-aiassistFileTreeView', { treeDataProvider: fileTreeProviderInstance });
-  //vscode.window.registerTreeDataProvider('atap-aiassistFileTreeView"', fileTreeProviderInstance);
+  // // instantiate the FileTreeProvider and register it
+  // //   const rootPath = workspacePath || '';
+  // // const dummy:string = 'E:/'  ;
+  // // ToDo: figure out how to focus on the place the user last left off. If no such info, focus on workspaceroot.
+  // // ToDo: figure out how the mainSearchPanel interacts with the fileTreeProvider -> mainFileViewTreeProvider
+  // const fileTreeProviderInstance = new FileTreeProvider(); // rootPath  dummy
+  // vscode.window.createTreeView('atap-aiassistFileTreeView', { treeDataProvider: fileTreeProviderInstance });
+  // //vscode.window.registerTreeDataProvider('atap-aiassistFileTreeView"', fileTreeProviderInstance);
 
-  // *************************************************************** //
-  // ToDo: register some kind of search engine provider. tags:#enabledApiProposals #enableProposedApi (deprecated) #SearchProvider #TextSearchQuery #TextSearchOptions #TextSearchComplete #vscode.CancellationToken
-  // let mainSearchTextDisposable = vscode.commands.registerCommand('extension.searchText', mainSearchText);
-  // const mainSearchEngine = new mainSearchEngineProvider();
-  // extensionContext.subscriptions.push(vscode.workspace.registerSearchProvider('myProvider', provider));
+  // // *************************************************************** //
+  // // ToDo: register some kind of search engine provider. tags:#enabledApiProposals #enableProposedApi (deprecated) #SearchProvider #TextSearchQuery #TextSearchOptions #TextSearchComplete #vscode.CancellationToken
+  // // let mainSearchTextDisposable = vscode.commands.registerCommand('extension.searchText', mainSearchText);
+  // // const mainSearchEngine = new mainSearchEngineProvider();
+  // // extensionContext.subscriptions.push(vscode.workspace.registerSearchProvider('myProvider', provider));
 
-  //debugging
-  let allEditorsRestored = false;
-  vscode.window.onDidChangeVisibleTextEditors((editors) => {
-    if (!allEditorsRestored) {
-      logger.log(`onDidChangeVisibleTextEditors: editors length: ${editors.length}`, LogLevel.Debug);
+  // //debugging
+  // let allEditorsRestored = false;
+  // vscode.window.onDidChangeVisibleTextEditors((editors) => {
+  //   if (!allEditorsRestored) {
+  //     logger.log(`onDidChangeVisibleTextEditors: editors length: ${editors.length}`, LogLevel.Debug);
 
-      if (editors.length === vscode.workspace.textDocuments.length) {
-        allEditorsRestored = true;
-      }
-    }
-  });
+  //     if (editors.length === vscode.workspace.textDocuments.length) {
+  //       allEditorsRestored = true;
+  //     }
+  //   }
+  // });
 
-  logger.log(`Num editors visible at end of activation: ${vscode.window.visibleTextEditors.length}`, LogLevel.Debug);
-  vscode.window.visibleTextEditors.forEach((editor) => {
-    logger.log(
-      `Visible editor's document at end of activation: uri = ${editor.document.uri} filename = ${editor.document.fileName}`,
-      LogLevel.Debug,
-    );
-  });
+  // logger.log(`Num editors visible at end of activation: ${vscode.window.visibleTextEditors.length}`, LogLevel.Debug);
+  // vscode.window.visibleTextEditors.forEach((editor) => {
+  //   logger.log(
+  //     `Visible editor's document at end of activation: uri = ${editor.document.uri} filename = ${editor.document.fileName}`,
+  //     LogLevel.Debug,
+  //   );
+  // });
 }
 
 function deactivateExtension(): Promise<void> {

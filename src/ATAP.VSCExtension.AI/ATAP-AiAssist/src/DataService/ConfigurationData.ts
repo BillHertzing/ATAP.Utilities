@@ -5,7 +5,7 @@ import { DetailedError } from '@ErrorClasses/index';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 import { DefaultConfiguration, AllowedTypesInValue } from './DefaultConfiguration';
-import { isRunningInDevHost } from '@Utilities/index';
+import { isRunningInDevelopmentEnvironment, isRunningInTestingEnvironment } from '@Utilities/index';
 import {
   LLModels,
   HttpVerb,
@@ -40,6 +40,8 @@ export class ConfigurationData implements IConfigurationData {
   constructor(
     private logger: ILogger,
     private extensionContext: vscode.ExtensionContext, // private configurationDataInitializationStructure?: ISerializationStructure,
+    // ToDo: make the envKeyMap a static property of the class, so it can be used during extension activation
+
     private envKeyMap: Record<string, string[]> = {
       //toUpper(DefaultConfiguration.Production.extensionID + '.' + key)
       TempDirectoryBasePath: ['TEMP'],
@@ -62,11 +64,12 @@ export class ConfigurationData implements IConfigurationData {
       }
     }
     // is there a setting?
+    // ToDo: upgrade to using a type map if in fact settings can be enumerations, or if we want to support serialized objects in settings
     if (vscode.workspace.getConfiguration(extensionID).has(key)) {
       return vscode.workspace.getConfiguration(extensionID).get(key) as string;
     }
     // is there a static development default?
-    if (isRunningInDevHost() && DefaultConfiguration.Development[key]) {
+    if (isRunningInDevelopmentEnvironment() && key in DefaultConfiguration.Development) {
       return DefaultConfiguration.Development[key];
     }
     // is there a static production default?
@@ -100,7 +103,7 @@ export class ConfigurationData implements IConfigurationData {
       return vscode.workspace.getConfiguration(extensionID).get(key) as string;
     }
     // is there a static development default?
-    if (isRunningInDevHost() && DefaultConfiguration.Development[key]) {
+    if (isRunningInDevelopmentEnvironment() && key in DefaultConfiguration.Development) {
       return DefaultConfiguration.Development[key];
     }
     // is there a static production default?

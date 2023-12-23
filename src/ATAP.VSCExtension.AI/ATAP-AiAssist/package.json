@@ -44,8 +44,20 @@
         "title": "ATAP-AiAssist: Show Command menu"
       },
       {
-        "command": "atap-aiassist.quickPickFromSettings",
-        "title": "ATAP-AiAssist: Quick Pick (categorys)"
+        "command": "atap-aiassist.saveTagCollectionAsync",
+        "title": "ATAP-AiAssist: save the tag collection to disk"
+      },
+      {
+        "command": "atap-aiassist.saveCategoryCollectionAsync",
+        "title": "ATAP-AiAssist: save the category collection to disk"
+      },
+      {
+        "command": "atap-aiassist.saveAssociationCollectionAsync",
+        "title": "ATAP-AiAssist: save the association collection to disk"
+      },
+      {
+        "command": "atap-aiassist.saveConversationCollectionAsync",
+        "title": "ATAP-AiAssist: save the conversation collection to disk"
       },
       {
         "command": "atap-aiassist.showMainViewRootRecordProperties",

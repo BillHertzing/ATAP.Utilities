@@ -8,18 +8,7 @@ import { SecurityService, ISecurityService } from '@SecurityService/index';
 
 import { DataService, IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
 
-import {
-  SupportedSerializersEnum,
-  SerializationStructure,
-  ISerializationStructure,
-  isSerializationStructure,
-  toJson,
-  fromJson,
-  toYaml,
-  fromYaml,
-} from '@Serializers/index';
-
-import { isRunningInTestingEnvironment, isRunningInDevelopmentEnvironment } from '@Utilities/index';
+import { isRunningInTestingEnvironment, isRunningInDevelopmentEnvironment, HandleError } from '@Utilities/index';
 
 import { CommandsService } from '@CommandsService/index';
 
@@ -143,17 +132,17 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // Add the disposables from the CommandsService to extensionContext.subscriptions
   extensionContext.subscriptions.push(...commandsService.getDisposables());
 
-  // // Create a status bar item for the extension
-  // const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  // // Initial state
-  // statusBarItem.text = `$(robot) AiAssist`;
-  // statusBarItem.command = `${extensionname}.showStatusMenuAsync`;
-  // statusBarItem.tooltip = 'Show AiAssist status menu';
-  // extensionContext.subscriptions.push(statusBarItem);
-  // statusBarItem.show();
+  // Create a status bar item for the extension
+  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  // Initial state
+  statusBarItem.text = `$(robot) AiAssist`;
+  statusBarItem.command = `${extensionname}.showStatusMenuAsync`;
+  statusBarItem.tooltip = 'Show AiAssist status menu';
+  extensionContext.subscriptions.push(statusBarItem);
+  statusBarItem.show();
 
-  // // Call the Initialize function in the StateMachineService
-  // stateMachineService.initialize();
+  // Call the Initialize function in the StateMachineService
+  stateMachineService.initialize();
 
   // // identify the current workspace context. Compare to stored state information, and update if necessary
   // const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -273,10 +262,10 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // });
 }
 
-function deactivateExtension(): Promise<void> {
+async function deactivateExtensionAsync(): Promise<void> {
   return new Promise((resolve) => {
     // Clean up resources, like closing files or stopping services
-    dataService.dispose();
+    dataService.disposeAsync();
 
     // Cleanup temporary prompt document
     let promptDocument = dataService.data.getTemporaryPromptDocument() as vscode.TextDocument;
@@ -311,26 +300,19 @@ function deactivateExtension(): Promise<void> {
     try {
       fs.unlinkSync(dataService.data.getTemporaryPromptDocumentPath() as string);
     } catch (e) {
-      if (e instanceof Error) {
-        throw new DetailedError(
-          `deactivate: failed to delete ${dataService.data.getTemporaryPromptDocumentPath()} -> `,
-          e,
-        );
-      } else {
-        throw new Error(
-          `deactivate: failed to delete ${dataService.data.getTemporaryPromptDocumentPath()} and the instance of (e) returned is of type ${typeof e}`,
-        );
-      }
+      HandleError(
+        e,
+        'Activation',
+        'deactivateExtensionAsync',
+        `failed to delete ${dataService.data.getTemporaryPromptDocumentPath()}`,
+      );
     }
     resolve();
   });
 }
 
 // This method is called when your extension is deactivated
-export function deactivate(): Promise<void> {
+export async function deactivate(): Promise<void> {
   console.log('deactivate');
-  return new Promise((resolve) => {
-    deactivateExtension();
-    resolve();
-  });
+  await deactivateExtensionAsync();
 }

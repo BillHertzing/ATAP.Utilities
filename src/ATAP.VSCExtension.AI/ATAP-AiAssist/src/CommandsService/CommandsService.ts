@@ -1,6 +1,6 @@
 import { LogLevel, ILogger, Logger } from '@Logger/index';
 import * as vscode from 'vscode';
-import { DetailedError } from '@ErrorClasses/index';
+import { DetailedError, HandleError } from '@ErrorClasses/index';
 import { logConstructor } from '@Decorators/index';
 
 import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
@@ -19,7 +19,12 @@ import {
   CommandMenuItemEnum,
   IPickItemsInitializer,
 } from '@StateMachineService/index';
-// import { quickPickFromSettings } from './quickPickFromSettings';
+import {
+  saveTagCollectionAsync,
+  saveCategoryCollectionAsync,
+  saveAssociationCollectionAsync,
+  saveConversationCollectionAsync,
+} from './saveCollectionAsync';
 import { copyToSubmit } from './copyToSubmit';
 
 @logConstructor
@@ -210,6 +215,82 @@ export class CommandsService {
       }),
     );
 
+    // register the command to save the tag collection
+    this.logger.log('registering saveTagCollectionAsync', LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand('atap-aiassist.saveTagCollectionAsync', async () => {
+        this.logger.log('starting commandID saveTagCollectionAsync', LogLevel.Debug);
+        try {
+          await saveTagCollectionAsync(this.logger, this.data);
+          this.logger.log(`saveTagCollectionAsync completed} `, LogLevel.Debug);
+        } catch (e) {
+          HandleError(e, 'commandsService', 'saveTagCollectionAsync', 'failed calling saveTagCollectionAsync');
+        }
+        // Add the event that makes the tag editor go from dirty to clean
+        // this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', 'saveTagCollectionAsyncCompleted');
+      }),
+    );
+
+    // register the command to save the category collection
+    this.logger.log('registering saveCategoryCollectionAsync', LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand('atap-aiassist.saveCategoryCollectionAsync', async () => {
+        this.logger.log('starting commandID saveCategoryCollectionAsync', LogLevel.Debug);
+        try {
+          await saveCategoryCollectionAsync(this.logger, this.data);
+          this.logger.log(`saveCategoryCollectionAsync completed} `, LogLevel.Debug);
+        } catch (e) {
+          HandleError(
+            e,
+            'commandsService',
+            'saveCategoryCollectionAsync',
+            'failed calling saveCategoryCollectionAsync',
+          );
+        }
+        // Add the event that makes the category editor go from dirty to clean
+        // this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', 'saveCategoryCollectionAsyncCompleted');
+      }),
+    );
+    // register the command to save the association collection
+    this.logger.log('registering saveAssociationCollectionAsync', LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand('atap-aiassist.saveAssociationCollectionAsync', async () => {
+        this.logger.log('starting commandID saveAssociationCollectionAsync', LogLevel.Debug);
+        try {
+          await saveAssociationCollectionAsync(this.logger, this.data);
+          this.logger.log(`saveAssociationCollectionAsync completed} `, LogLevel.Debug);
+        } catch (e) {
+          HandleError(
+            e,
+            'commandsService',
+            'saveAssociationCollectionAsync',
+            'failed calling saveAssociationCollectionAsync',
+          );
+        }
+        // Add the event that makes the association editor go from dirty to clean
+        // this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', 'saveAssociationCollectionAsyncCompleted');
+      }),
+    );
+    // register the command to save the Conversation collection
+    this.logger.log('registering saveConversationCollectionAsync', LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand('atap-aiassist.saveConversationCollectionAsync', async () => {
+        this.logger.log('starting commandID saveConversationCollectionAsync', LogLevel.Debug);
+        try {
+          await saveConversationCollectionAsync(this.logger, this.data);
+          this.logger.log(`saveConversationCollectionAsync completed} `, LogLevel.Debug);
+        } catch (e) {
+          HandleError(
+            e,
+            'commandsService',
+            'saveConversationCollectionAsync',
+            'failed calling saveConversationCollectionAsync',
+          );
+        }
+        // Add the event that makes the Conversation editor go from dirty to clean
+        // this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', 'saveConversationCollectionAsyncCompleted');
+      }),
+    );
     // this.message = 'registering copyToSubmit';
     // this.logger.log(this.message, LogLevel.Debug);
     // this.disposables.push(

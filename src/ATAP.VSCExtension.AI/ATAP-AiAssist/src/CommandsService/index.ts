@@ -1,2 +1,7 @@
 export { CommandsService } from './CommandsService';
-// export { quickPickFromSettings } from './quickPickFromSettings';
+export {
+  saveTagCollectionAsync,
+  saveCategoryCollectionAsync,
+  saveAssociationCollectionAsync,
+  saveConversationCollectionAsync,
+} from './saveCollectionAsync';

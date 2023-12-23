@@ -59,16 +59,10 @@ export interface IStateManager {
   setWorkspaceRootFolderPath(value: string): Promise<void>;
   getCurrentTag(): ITag | undefined;
   setCurrentTag(value: ITag): Promise<void>;
-  getTagCollection(): ITagCollection | undefined;
-  setTagCollection(value: ITagCollection): Promise<void>;
   getCurrentCategory(): ICategory | undefined;
   setCurrentCategory(value: ICategory): Promise<void>;
-  getCategoryCollection(): ICategoryCollection | undefined;
-  setCategoryCollection(value: ICategoryCollection): Promise<void>;
   getCurrentAssociation(): IAssociation | undefined;
   setCurrentAssociation(value: IAssociation): Promise<void>;
-  getAssociationCollection(): IAssociationCollection | undefined;
-  setAssociationCollection(value: IAssociationCollection): Promise<void>;
 
   getCurrentMode(): ModeMenuItemEnum | undefined;
   setCurrentMode(value: ModeMenuItemEnum): Promise<void>;

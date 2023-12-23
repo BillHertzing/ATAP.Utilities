@@ -34,7 +34,7 @@ export interface IData {
   readonly secretsManager: ISecretsManager;
   readonly eventManager: IEventManager;
   readonly fileManager: IFileManager;
-  dispose(): void;
+  disposeAsync(): void;
 }
 
 @logConstructor
@@ -149,11 +149,11 @@ export class Data {
   public setTemporaryPromptDocument(value: vscode.TextDocument) {
     this.temporaryPromptDocument = value;
   }
-  @logFunction
-  dispose() {
+  @logAsyncFunction
+  async disposeAsync() {
     if (!this.disposed) {
       // release resources
-      this.fileManager.dispose();
+      await this.fileManager.disposeAsync();
       this.eventManager.dispose();
       this.secretsManager.dispose();
       this.stateManager.dispose();
@@ -166,7 +166,7 @@ export class Data {
 export interface IDataService {
   version: string;
   data: IData;
-  dispose(): void;
+  disposeAsync(): void;
 }
 
 @logConstructor
@@ -255,11 +255,11 @@ export class DataService implements IDataService {
   static convertFrom_yaml(yaml: string): DataService {
     return fromYaml<DataService>(yaml);
   }
-  @logFunction
-  dispose() {
+  @logAsyncFunction
+  async disposeAsync() {
     if (!this.disposed) {
       // release any resources
-      this.data.dispose();
+      await this.data.disposeAsync();
       this.disposed = true;
     }
   }

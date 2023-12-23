@@ -132,7 +132,14 @@ export class StateMachineService implements IStateMachineService {
   }
 
   @logFunction
-  initialize(): void {}
+  initialize(): void {
+    // load all collections into the FileManager from the filesystem
+    const tagCollection = this.data.fileManager.tagCollection;
+    const categoryCollection = this.data.fileManager.categoryCollection;
+    const associationCollection = this.data.fileManager.associationCollection;
+    const conversationCollection = this.data.fileManager.conversationCollection;
+    //' const IDLookupCollection = this.data.fileManager.IDLookupCollection;
+  }
 
   @logFunction
   getNextState(): string {

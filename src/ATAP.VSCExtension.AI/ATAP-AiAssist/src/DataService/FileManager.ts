@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
+import { promises as fs, PathLike, existsSync, readFileSync, mkdirSync } from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { DetailedError } from '@ErrorClasses/index';
@@ -15,7 +15,7 @@ import {
   fromYaml,
 } from '@Serializers/index';
 
-import { ILogger } from '@Logger/index';
+import { ILogger, LogLevel } from '@Logger/index';
 import { IConfigurationData } from '@DataService/index';
 
 import {
@@ -62,25 +62,37 @@ import {
   ConversationCollection,
 } from '@ItemWithIDs/index';
 
-import { log } from 'console';
+import { HandleError } from '@Utilities/index';
 
 type AsyncFileFunction = (file: vscode.Uri) => Promise<void>;
 
 export interface IFileManager {
+  readonly tagCollection: ITagCollection | undefined;
+  readonly categoryCollection: ICategoryCollection | undefined;
+  readonly associationCollection: IAssociationCollection | undefined;
   readonly conversationCollection: IConversationCollection;
-  readonly temporaryFileDirectoryPath: fs.PathLike;
-  readonly temporaryFilePaths: fs.PathLike[];
+
+  readonly temporaryFileDirectoryPath: PathLike;
+  readonly temporaryFilePaths: PathLike[];
   checkFileAsync(path: string, mode: number): Promise<boolean>;
+  saveTagCollectionAsync(): Promise<void>;
+  saveCategoryCollectionAsync(): Promise<void>;
+  saveAssociationCollectionAsync(): Promise<void>;
+  saveConversationCollectionAsync(): Promise<void>;
+
   getNewTemporaryFilePathIndex(extension: string): number;
   processFilesAsync(extension: string, func: AsyncFileFunction): Promise<void>;
-  dispose(): void;
+  disposeAsync(): void;
 }
 
 @logConstructor
 export class FileManager implements IFileManager {
-  private _temporaryFileDirectoryPath: fs.PathLike | undefined;
+  private _temporaryFileDirectoryPath: PathLike | undefined;
   private _conversationCollection: ConversationCollection | undefined;
-  public readonly temporaryFilePaths: fs.PathLike[] = [];
+  private _tagCollection: ITagCollection | undefined;
+  private _associationCollection: IAssociationCollection | undefined;
+  private _categoryCollection: ICategoryCollection | undefined;
+  public readonly temporaryFilePaths: PathLike[] = [];
   private disposed = false;
 
   constructor(
@@ -88,7 +100,7 @@ export class FileManager implements IFileManager {
     readonly configurationData: IConfigurationData,
   ) {}
 
-  get temporaryFileDirectoryPath(): fs.PathLike {
+  get temporaryFileDirectoryPath(): PathLike {
     // lazy load the temporaryFileDirectoryPath
     if (!this._temporaryFileDirectoryPath) {
       this._temporaryFileDirectoryPath = path.join(
@@ -96,7 +108,7 @@ export class FileManager implements IFileManager {
         this.configurationData.extensionID,
       );
       try {
-        fs.mkdirSync(this._temporaryFileDirectoryPath, { recursive: true });
+        mkdirSync(this._temporaryFileDirectoryPath, { recursive: true });
       } catch (e) {
         if (e instanceof Error) {
           throw new DetailedError(
@@ -113,29 +125,237 @@ export class FileManager implements IFileManager {
         }
       }
     }
-    return this._temporaryFileDirectoryPath as fs.PathLike;
+    return this._temporaryFileDirectoryPath as PathLike;
+  }
+
+  get tagCollection(): ITagCollection {
+    if (!this._tagCollection) {
+      // Lazy load the tag collection
+      // does the file configurationData.tagsFilePath exist?
+      let data: string;
+      if (existsSync(this.configurationData.tagsFilePath)) {
+        // read the data
+        try {
+          data = readFileSync(this.configurationData.tagsFilePath, 'utf8');
+        } catch (e) {
+          HandleError(e, 'FileManager', 'tagCollection', this.configurationData.tagsFilePath);
+          throw e;
+        }
+        // use the serializer to deserialize the data
+        if (this.configurationData.serializerName === SupportedSerializersEnum.Json) {
+          const parsedData = JSON.parse(data);
+          this._tagCollection = parsedData as TagCollection;
+        } else if (this.configurationData.serializerName === SupportedSerializersEnum.Yaml) {
+          const parsedData = fromYaml(data);
+          this._tagCollection = parsedData as TagCollection;
+        }
+      } else {
+        let value: ItemWithID<Tag, string>[] = [];
+        this._tagCollection = new TagCollection(value);
+      }
+    } else {
+      // create a new tag collection
+      let value: ItemWithID<Tag, string>[] = [];
+      this._tagCollection = new TagCollection(value);
+    }
+
+    return this._tagCollection as TagCollection;
+  }
+
+  @logAsyncFunction
+  async saveTagCollectionAsync(): Promise<void> {
+    this.logger.log('starting function saveTagCollectionAsync', LogLevel.Debug);
+    // write the tag collection to disk
+    // serialize the tag collection
+    let data: string = '';
+    if (this.configurationData.serializerName === SupportedSerializersEnum.Json) {
+      data = JSON.stringify(this._tagCollection);
+    } else if (this.configurationData.serializerName === SupportedSerializersEnum.Yaml) {
+      data = toYaml(this._tagCollection);
+    } else {
+      throw new Error(`Unsupported serializer: ${this.configurationData.serializerName}`);
+    }
+    // write the data to disk
+    try {
+      await this.createFileAndWriteAsync(this.configurationData.tagsFilePath, data);
+    } catch (e) {
+      HandleError(
+        e,
+        'FileManager',
+        'saveTagCollectionAsync',
+        `failed calling createFileAndWriteAsync(${this.configurationData.tagsFilePath}, ${data}`,
+      );
+    }
+
+    this.logger.log('finished function saveTagCollectionAsync', LogLevel.Debug);
+  }
+
+  get categoryCollection(): ICategoryCollection {
+    if (!this._categoryCollection) {
+      // Lazy load the category collection
+      // does the file configurationData.categorysFilePath exist?
+      let data: string;
+      if (existsSync(this.configurationData.categorysFilePath)) {
+        // read the data
+        try {
+          data = readFileSync(this.configurationData.categorysFilePath, 'utf8');
+        } catch (e) {
+          if (e instanceof Error) {
+            throw new DetailedError(
+              `FileManager categoryCollection: failed to read ${this.configurationData.categorysFilePath} -> `,
+              e,
+            );
+          } else {
+            // ToDo:  investigation to determine what else might happen
+            throw new Error(
+              `FileManager categoryCollection: failed to read ${
+                this.configurationData.categorysFilePath
+              } and the instance of (e) returned is of type ${typeof e}`,
+            );
+          }
+        }
+        // use the serializer to deserialize the data
+        if (this.configurationData.serializerName === SupportedSerializersEnum.Json) {
+          const parsedData = JSON.parse(data);
+          this._categoryCollection = parsedData as CategoryCollection;
+        } else if (this.configurationData.serializerName === SupportedSerializersEnum.Yaml) {
+          const parsedData = fromYaml(data);
+          this._categoryCollection = parsedData as CategoryCollection;
+        }
+      } else {
+        let value: ItemWithID<Category, string>[] = [];
+        this._categoryCollection = new CategoryCollection(value);
+      }
+    } else {
+      // create a new category collection
+      let value: ItemWithID<Category, string>[] = [];
+      this._categoryCollection = new CategoryCollection(value);
+    }
+
+    return this._categoryCollection as CategoryCollection;
+  }
+
+  @logAsyncFunction
+  async saveCategoryCollectionAsync(): Promise<void> {
+    this.logger.log('starting function saveCategoryCollectionAsync', LogLevel.Debug);
+    // write the category collection to disk
+    // serialize the category collection
+    let data: string = '';
+    if (this.configurationData.serializerName === SupportedSerializersEnum.Json) {
+      data = JSON.stringify(this._categoryCollection);
+    } else if (this.configurationData.serializerName === SupportedSerializersEnum.Yaml) {
+      data = toYaml(this._categoryCollection);
+    } else {
+      throw new Error(`Unsupported serializer: ${this.configurationData.serializerName}`);
+    }
+    // write the data to disk
+    try {
+      await this.createFileAndWriteAsync(this.configurationData.categorysFilePath, data);
+    } catch (e) {
+      HandleError(
+        e,
+        'FileManager',
+        'saveCategoryCollectionAsync',
+        `failed calling createFileAndWriteAsync(${this.configurationData.categorysFilePath}, ${data}`,
+      );
+    }
+
+    this.logger.log('finished function saveCategoryCollectionAsync', LogLevel.Debug);
+  }
+
+  get associationCollection(): IAssociationCollection {
+    if (!this._associationCollection) {
+      // Lazy load the association collection
+      // does the file configurationData.associationsFilePath exist?
+      let data: string;
+      if (existsSync(this.configurationData.associationsFilePath)) {
+        // read the data
+        try {
+          data = readFileSync(this.configurationData.associationsFilePath, 'utf8');
+        } catch (e) {
+          if (e instanceof Error) {
+            throw new DetailedError(
+              `FileManager associationCollection: failed to read ${this.configurationData.associationsFilePath} -> `,
+              e,
+            );
+          } else {
+            // ToDo:  investigation to determine what else might happen
+            throw new Error(
+              `FileManager associationCollection: failed to read ${
+                this.configurationData.associationsFilePath
+              } and the instance of (e) returned is of type ${typeof e}`,
+            );
+          }
+        }
+        // use the serializer to deserialize the data
+        if (this.configurationData.serializerName === SupportedSerializersEnum.Json) {
+          const parsedData = JSON.parse(data);
+          this._associationCollection = parsedData as AssociationCollection;
+        } else if (this.configurationData.serializerName === SupportedSerializersEnum.Yaml) {
+          const parsedData = fromYaml(data);
+          this._associationCollection = parsedData as AssociationCollection;
+        }
+      } else {
+        let value: ItemWithID<Association, AssociationValueType>[] = [];
+        this._associationCollection = new AssociationCollection(value);
+      }
+    } else {
+      // create a new association collection
+      let value: ItemWithID<Association, AssociationValueType>[] = [];
+      this._associationCollection = new AssociationCollection(value);
+    }
+
+    return this._associationCollection as AssociationCollection;
+  }
+
+  @logAsyncFunction
+  async saveAssociationCollectionAsync(): Promise<void> {
+    this.logger.log('starting function saveAssociationCollectionAsync', LogLevel.Debug);
+    // write the association collection to disk
+    // serialize the association collection
+    let data: string = '';
+    if (this.configurationData.serializerName === SupportedSerializersEnum.Json) {
+      data = JSON.stringify(this._associationCollection);
+    } else if (this.configurationData.serializerName === SupportedSerializersEnum.Yaml) {
+      data = toYaml(this._associationCollection);
+    } else {
+      throw new Error(`Unsupported serializer: ${this.configurationData.serializerName}`);
+    }
+    // write the data to disk
+    try {
+      await this.createFileAndWriteAsync(this.configurationData.associationsFilePath, data);
+    } catch (e) {
+      HandleError(
+        e,
+        'FileManager',
+        'saveAssociationCollectionAsync',
+        `failed calling createFileAndWriteAsync(${this.configurationData.associationsFilePath}, ${data}`,
+      );
+    }
+
+    this.logger.log('finished function saveAssociationCollectionAsync', LogLevel.Debug);
   }
 
   get conversationCollection(): IConversationCollection {
     if (!this._conversationCollection) {
       // Lazy load the conversation collection
-      // does the file configurationData.conversationFilePath exist?
+      // does the file configurationData.conversationsFilePath exist?
       let data: string;
-      if (fs.existsSync(this.configurationData.conversationFilePath)) {
+      if (existsSync(this.configurationData.conversationsFilePath)) {
         // read the data
         try {
-          data = fs.readFileSync(this.configurationData.conversationFilePath, 'utf8');
+          data = readFileSync(this.configurationData.conversationsFilePath, 'utf8');
         } catch (e) {
           if (e instanceof Error) {
             throw new DetailedError(
-              `FileManager conversationCollection: failed to read ${this.configurationData.conversationFilePath} -> `,
+              `FileManager conversationCollection: failed to read ${this.configurationData.conversationsFilePath} -> `,
               e,
             );
           } else {
             // ToDo:  investigation to determine what else might happen
             throw new Error(
               `FileManager conversationCollection: failed to read ${
-                this.configurationData.conversationFilePath
+                this.configurationData.conversationsFilePath
               } and the instance of (e) returned is of type ${typeof e}`,
             );
           }
@@ -162,16 +382,92 @@ export class FileManager implements IFileManager {
   }
 
   @logAsyncFunction
-  public checkFileAsync(path: fs.PathLike, mode: number): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      fs.access(path, mode, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(true);
-        }
-      });
+  async saveConversationCollectionAsync(): Promise<void> {
+    this.logger.log('starting function saveConversationCollectionAsync', LogLevel.Debug);
+    // write the conversation collection to disk
+    // serialize the conversation collection
+    let data: string = '';
+    if (this.configurationData.serializerName === SupportedSerializersEnum.Json) {
+      data = JSON.stringify(this._conversationCollection);
+    } else if (this.configurationData.serializerName === SupportedSerializersEnum.Yaml) {
+      data = toYaml(this._conversationCollection);
+    } else {
+      throw new Error(`Unsupported serializer: ${this.configurationData.serializerName}`);
+    }
+    // write the data to disk
+    try {
+      await this.createFileAndWriteAsync(this.configurationData.conversationsFilePath, data);
+    } catch (e) {
+      HandleError(
+        e,
+        'FileManager',
+        'saveConversationCollectionAsync',
+        `failed calling createFileAndWriteAsync(${this.configurationData.conversationsFilePath}, ${data}`,
+      );
+    }
+
+    this.logger.log('finished function saveConversationCollectionAsync', LogLevel.Debug);
+  }
+
+  @logAsyncFunction
+  async checkFileAsync(path: PathLike, mode: number): Promise<boolean> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        await fs.access(path, mode);
+      } catch (e) {
+        reject(e);
+      }
+      resolve(true);
     });
+  }
+
+  //   return new Promise((resolve, reject) => {
+  //     fs.access(path, mode, (err) => {
+  //       if (err) {
+  //         reject(err);
+  //       } else {
+  //         resolve(true);
+  //       }
+  //     });
+  //   });
+  // }
+
+  @logAsyncFunction
+  async createDirectoryIfNeededAsync(path: PathLike): Promise<void> {
+    //this.logger.log(`FileManager.createDirectoryIfNeededAsync: creating ${path}`, LogLevel.Debug);
+    try {
+      await fs.mkdir(path, { recursive: true });
+    } catch (e) {
+      if (e instanceof Error) {
+        throw new DetailedError(`FileManager createDirectoryIfNeededAsync: failed to create ${path} -> `, e);
+      } else {
+        throw new Error(
+          `FileManager createDirectoryIfNeededAsync: failed to create ${path} and the instance of (e) returned is of type ${typeof e}`,
+        );
+      }
+    }
+    this.logger.log(`FileManager.createDirectoryIfNeededAsync: created ${path}`, LogLevel.Debug);
+  }
+
+  @logAsyncFunction
+  async createFileAndWriteAsync(filePath: PathLike, content: string): Promise<void> {
+    //      this.logger.log(`FileManager.createFileAndWriteAsync: creating ${filePath}`, LogLevel.Debug);
+    //this.logger.log(`FileManager.createFileAndWriteAsync: path=${path.dirname(filePath.toString())}`, LogLevel.Debug);
+
+    this.createDirectoryIfNeededAsync(path.dirname(filePath.toString()))
+      .then(() => {
+        this.logger.log(`FileManager.createFileAndWriteAsync: writing ${filePath}`, LogLevel.Debug);
+        fs.writeFile(filePath, content)
+          .then(() => {
+            this.logger.log(`FileManager.createFileAndWriteAsync: wrote ${filePath}`, LogLevel.Debug);
+          })
+          .catch((e) => {
+            HandleError(e, 'FileManager', 'createFileAndWriteAsync', `failed attempting to write ${filePath}`);
+          });
+      })
+      .catch((e) => {
+        HandleError(e, 'FileManager', 'createDirectoryIfNeededAsync', `failed attempting ot create ${path}`);
+      });
   }
 
   @logFunction
@@ -195,10 +491,63 @@ export class FileManager implements IFileManager {
     }
   }
 
-  @logFunction
-  disposeConversationCollection() {
-    // write the conversation collection to disk
+  @logAsyncFunction
+  async disposeTagCollectionAsync() {
+    // write the tag collection to disk
+    // serialize the tag collection
+    let data: string = '';
+    if (this.configurationData.serializerName === SupportedSerializersEnum.Json) {
+      data = JSON.stringify(this._tagCollection);
+    } else if (this.configurationData.serializerName === SupportedSerializersEnum.Yaml) {
+      data = toYaml(this._tagCollection);
+    } else {
+      throw new Error(`Unsupported serializer: ${this.configurationData.serializerName}`);
+    }
+    // write the data to disk
+    try {
+      await this.createFileAndWriteAsync(this.configurationData.tagsFilePath, data);
+    } catch (e) {
+      HandleError(e, 'FileManager', 'disposeTagCollection', this.configurationData.tagsFilePath);
+      throw e;
+    }
+    this._tagCollection = undefined;
+  }
 
+  @logAsyncFunction
+  async disposeCategoryCollectionAsync() {
+    try {
+      await this.saveConversationCollectionAsync();
+    } catch (e) {
+      HandleError(e, 'FileManager', 'disposeCategoryCollection', this.configurationData.categorysFilePath);
+    }
+    this._categoryCollection = undefined;
+  }
+
+  @logAsyncFunction
+  async disposeAssociationCollectionAsync() {
+    // write the association collection to disk
+    // serialize the association collection
+    let data: string = '';
+    if (this.configurationData.serializerName === SupportedSerializersEnum.Json) {
+      data = JSON.stringify(this._associationCollection);
+    } else if (this.configurationData.serializerName === SupportedSerializersEnum.Yaml) {
+      data = toYaml(this._associationCollection);
+    } else {
+      throw new Error(`Unsupported serializer: ${this.configurationData.serializerName}`);
+    }
+    // write the data to disk
+    try {
+      await this.createFileAndWriteAsync(this.configurationData.associationsFilePath, data);
+    } catch (e) {
+      HandleError(e, 'FileManager', 'disposeAssociationCollection', this.configurationData.associationsFilePath);
+    }
+    this._associationCollection = undefined;
+  }
+
+  @logAsyncFunction
+  async disposeConversationCollectionAsync() {
+    await this.saveConversationCollectionAsync();
+    // write the conversation collection to disk
     // serialize the conversation collection
     let data: string = '';
     if (this.configurationData.serializerName === SupportedSerializersEnum.Json) {
@@ -208,35 +557,32 @@ export class FileManager implements IFileManager {
     } else {
       throw new Error(`Unsupported serializer: ${this.configurationData.serializerName}`);
     }
-
     // write the data to disk
     try {
-      fs.writeFileSync(this.configurationData.conversationFilePath, data);
+      await this.createFileAndWriteAsync(this.configurationData.conversationsFilePath, data);
     } catch (e) {
-      if (e instanceof Error) {
-        throw new DetailedError(
-          `FileManager disposeConversationCollection: failed to write ${this.configurationData.conversationFilePath} -> `,
-          e,
-        );
-      } else {
-        // ToDo:  investigation to determine what else might happen
-        throw new Error(
-          `FileManager disposeConversationCollection: failed to write ${
-            this.configurationData.conversationFilePath
-          } and the instance of (e) returned is of type ${typeof e}`,
-        );
-      }
+      HandleError(e, 'FileManager', 'disposeConversationCollection', this.configurationData.conversationsFilePath);
     }
     this._conversationCollection = undefined;
   }
-
-  @logFunction
-  dispose() {
+  @logAsyncFunction
+  async disposeAsync() {
     if (!this.disposed) {
       // release any resources
-      // Write the conversation collection to disk
-      this.disposeConversationCollection();
-      this.disposed = true;
+      // Write the Tag, Category,ASsociation, and Conversation collection to disk
+      try {
+        const results = await Promise.all([
+          this.disposeTagCollectionAsync(),
+          this.disposeCategoryCollectionAsync(),
+          this.disposeAssociationCollectionAsync(),
+          this.disposeConversationCollectionAsync(),
+        ]);
+        this.disposed = true;
+      } catch (e) {
+        if (e instanceof Error) {
+          throw new DetailedError(`FileManager disposeAsync: failed to dispose -> `, e);
+        }
+      }
     }
   }
 }

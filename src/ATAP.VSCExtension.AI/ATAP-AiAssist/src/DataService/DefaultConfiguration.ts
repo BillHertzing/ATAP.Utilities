@@ -27,7 +27,10 @@ export class DefaultConfiguration {
     CurrentMode: ModeMenuItemEnum.Workspace,
     CurrentCommand: CommandMenuItemEnum.Chat,
     CurrentSources: 'workspace',
-    ConversationFileName: 'Conversations.json',
+    TagsFileName: 'Tags.json',
+    CategorysFileName: 'Categorys.json',
+    AssociationsFileName: 'Associations.json',
+    ConversationsFileName: 'Conversations.json',
     CloudBasePath: 'C:\\Dropbox',
     DataServiceAsSerializationStructure: new SerializationStructure(SupportedSerializersEnum.Yaml, '{}'),
     extensionID: 'ataputilities.atap-aiassist',
@@ -53,13 +56,13 @@ Ensure sufficient comments to explain the code, but keep them terse. Provide jus
     //   serializerEnum: SupportedSerializersEnum.Yaml,
     //   value: '{}',
     // },
-    ConversationFileName: 'devConversations.json',
+    ConversationsFileName: 'devConversations.json',
   };
 
   // The Testing environment default values, used if there is no corresponding CLI argument, no corresponding environment variable, and no test environment default
   static Testing: Record<string, AllowedTypesInValue> = {
     //KeePassKDBXPath: '"C:/Dropbox/whertzing/GitHub/ATAP.IAC/Security/ATAP_KeePassDatabase.kdbx"',
-    ConversationFileName: 'testingConversations.json',
+    ConversationsFileName: 'testingConversations.json',
     debuggerLogLevel: LogLevel.Debug,
   };
 }

@@ -19,7 +19,10 @@ import {
 import { ModeMenuItemEnum, CommandMenuItemEnum } from '@StateMachineService/index';
 
 export interface IConfigurationData {
-  readonly conversationFilePath: string;
+  readonly tagsFilePath: string;
+  readonly categorysFilePath: string;
+  readonly associationsFilePath: string;
+  readonly conversationsFilePath: string;
   readonly debuggerLogLevel: LogLevel;
   readonly extensionID: string;
   readonly promptExpertise: string;
@@ -49,7 +52,7 @@ export class ConfigurationData implements IConfigurationData {
     },
   ) {}
 
-  @logFunction
+  //@logFunction
   private getNonNull(key: string): AllowedTypesInValue {
     const extensionID = this.extensionID;
 
@@ -112,17 +115,35 @@ export class ConfigurationData implements IConfigurationData {
     }
     return undefined;
   }
-  get conversationFilePath(): string {
-    console.log(`CloudBasePath ${this.getNonNull('CloudBasePath')}`, LogLevel.Debug);
-    console.log(`extensionID ${this.getNonNull('extensionID')}`, LogLevel.Debug);
-    console.log(`ConversationFileName ${this.getNonNull('ConversationFileName')}`, LogLevel.Debug);
-
+  get tagsFilePath(): string {
     return path.join(
       this.getNonNull('CloudBasePath') as string,
       this.getNonNull('extensionID') as string,
-      this.getNonNull('ConversationFileName') as string,
+      this.getNonNull('TagsFileName') as string,
     ) as string;
   }
+  get categorysFilePath(): string {
+    return path.join(
+      this.getNonNull('CloudBasePath') as string,
+      this.getNonNull('extensionID') as string,
+      this.getNonNull('CategorysFileName') as string,
+    ) as string;
+  }
+  get associationsFilePath(): string {
+    return path.join(
+      this.getNonNull('CloudBasePath') as string,
+      this.getNonNull('extensionID') as string,
+      this.getNonNull('AssociationsFileName') as string,
+    ) as string;
+  }
+  get conversationsFilePath(): string {
+    return path.join(
+      this.getNonNull('CloudBasePath') as string,
+      this.getNonNull('extensionID') as string,
+      this.getNonNull('ConversationsFileName') as string,
+    ) as string;
+  }
+
   get debuggerLogLevel(): LogLevel {
     return this.getNonNull('debuggerLogLevel') as LogLevel;
   }

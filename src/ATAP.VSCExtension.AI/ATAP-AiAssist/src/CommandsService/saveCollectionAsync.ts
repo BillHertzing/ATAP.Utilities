@@ -1,37 +1,59 @@
 import { LogLevel, ILogger } from '@Logger/index';
-import { IData } from '@DataService/index';
-import * as vscode from 'vscode';
+import { IData, IFileManager } from '@DataService/index';
+import {} from '@DataService/index';
+import { HandleError } from '@ErrorClasses/index';
 
-export async function showStatusMenu(
-  logger: ILogger,
-  data: IData,
-): Promise<{
-  success: boolean;
-  pick: string | null;
-  errorMessage: string | null;
-}> {
-  logger.log('starting function showStatusMenu', LogLevel.Debug);
+export async function saveTagCollectionAsync(logger: ILogger, data: IData): Promise<void> {
+  try {
+    logger.log('starting function saveTagCollectionAsync', LogLevel.Debug);
+    await data.fileManager.saveTagCollectionAsync();
+    logger.log('finished function saveTagCollectionAsync', LogLevel.Debug);
+  } catch (e) {
+    HandleError(e, 'classless', 'saveTagCollectionAsync', `failed calling data.fileManager.saveTagCollectionAsync()`);
+  }
+}
 
-  const items = [
-    `mode: ${data.stateManager.getCurrentMode()}`,
-    `command: ${data.stateManager.getCurrentCommand()}`,
-    `sources: ${data.stateManager.getCurrentSources()}`,
-  ];
-  const pick = await vscode.window.showQuickPick(items, {
-    placeHolder: 'Select an option',
-  });
+export async function saveCategoryCollectionAsync(logger: ILogger, data: IData): Promise<void> {
+  try {
+    logger.log('starting function saveCategoryCollectionAsync', LogLevel.Debug);
+    await data.fileManager.saveCategoryCollectionAsync();
+    logger.log('finished function saveCategoryCollectionAsync', LogLevel.Debug);
+  } catch (e) {
+    HandleError(
+      e,
+      'classless',
+      'saveCategoryCollectionAsync',
+      `failed calling data.fileManager.saveCategoryCollectionAsync()`,
+    );
+  }
+}
 
-  if (pick !== undefined) {
-    return {
-      success: true,
-      pick: pick,
-      errorMessage: null,
-    };
-  } else {
-    return {
-      success: false,
-      pick: null,
-      errorMessage: 'Status menu was was canceled',
-    };
+export async function saveAssociationCollectionAsync(logger: ILogger, data: IData): Promise<void> {
+  try {
+    logger.log('starting function saveAssociationCollectionAsync', LogLevel.Debug);
+    await data.fileManager.saveAssociationCollectionAsync();
+    logger.log('finished function saveAssociationCollectionAsync', LogLevel.Debug);
+  } catch (e) {
+    HandleError(
+      e,
+      'classless',
+      'saveAssociationCollectionAsync',
+      `failed calling data.fileManager.saveAssociationCollectionAsync()`,
+    );
+  }
+}
+
+export async function saveConversationCollectionAsync(logger: ILogger, data: IData): Promise<void> {
+  try {
+    logger.log('starting function saveConversationCollectionAsync', LogLevel.Debug);
+    await data.fileManager.saveConversationCollectionAsync();
+    logger.log('finished function saveConversationCollectionAsync', LogLevel.Debug);
+  } catch (e) {
+    HandleError(
+      e,
+      'classless',
+      'saveConversationCollectionAsync',
+      `failed calling data.fileManager.saveConversationCollectionAsync()`,
+    );
   }
 }

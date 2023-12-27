@@ -8,7 +8,7 @@ import { EventEmitter } from 'events';
 
 export interface IEventManager {
   getEventEmitter(): EventEmitter;
-  dispose(): void;
+  disposeAsync(): void;
 }
 
 @logConstructor
@@ -28,7 +28,8 @@ export class EventManager implements IEventManager {
     return this.eventEmitter;
   }
 
-  dispose() {
+  @logAsyncFunction
+  async disposeAsync() {
     if (!this.disposed) {
       // release any resources
       this.disposed = true;

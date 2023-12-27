@@ -30,6 +30,8 @@ import { copyToSubmit } from './copyToSubmit';
 @logConstructor
 export class CommandsService {
   private disposables: vscode.Disposable[] = [];
+  private readonly extensionID : string;
+  private readonly extensionName: string;
 
   constructor(
     private logger: ILogger,
@@ -38,6 +40,8 @@ export class CommandsService {
     private queryService: IQueryService,
     private pickItemsInitializer: IPickItemsInitializer,
   ) {
+    this.extensionID = extensionContext.extension.id;
+    this.extensionName = this.extensionID.split('.')[1];
     this.registerCommands();
   }
 
@@ -46,7 +50,7 @@ export class CommandsService {
 
     this.logger.log('registering showVSCEnvironment', LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.showVSCEnvironment', () => {
+      vscode.commands.registerCommand(`${this.extensionName}.showVSCEnvironment`, () => {
         let message: string = 'starting commandID showVSCEnvironment';
         this.logger.log(message, LogLevel.Debug);
         showVSCEnvironment(this.logger);
@@ -75,7 +79,7 @@ export class CommandsService {
 
     this.logger.log('registering sendQuery', LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.sendQuery', async () => {
+      vscode.commands.registerCommand(`${this.extensionName}.sendQuery`, async () => {
         this.logger.log('starting commandID sendQuery', LogLevel.Debug);
         //change the visualstate of the statusBarItem
         // Event fired
@@ -103,7 +107,7 @@ export class CommandsService {
 
     this.logger.log('registering startCommand', LogLevel.Trace);
     this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.startCommand', () => {
+      vscode.commands.registerCommand(`${this.extensionName}.startCommand`, () => {
         let message: string = 'starting commandID startCommand';
         this.logger.log(message, LogLevel.Debug);
         startCommand(this.logger);
@@ -113,7 +117,7 @@ export class CommandsService {
     // register the command to show the status menu
     this.logger.log('registering showStatusMenuAsync', LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.showStatusMenuAsync', async () => {
+      vscode.commands.registerCommand(`${this.extensionName}.showStatusMenuAsync`, async () => {
         this.logger.log('starting commandID showStatusMenuAsync', LogLevel.Debug);
         let result: StatusMenuItemEnum | null = null;
         try {
@@ -130,13 +134,13 @@ export class CommandsService {
         } catch (e) {
           if (e instanceof Error) {
             throw new DetailedError(
-              'atap-aiassist.showStatusMenuAsync function showStatusMenuAsync returned an error -> ',
+              `${this.extensionName}.showStatusMenuAsync function showStatusMenuAsync returned an error -> `,
               e,
             );
           } else {
             // ToDo:  investigation to determine what else might happen
             throw new Error(
-              `atap-aiassist.showStatusMenuAsync function showStatusMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
+              `${this.extensionName}.showStatusMenuAsync function showStatusMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
             );
           }
         }
@@ -148,7 +152,7 @@ export class CommandsService {
     // register the command to show the Mode menu
     this.logger.log('registering showModeMenuAsync', LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.showModeMenuAsync', async () => {
+      vscode.commands.registerCommand(`${this.extensionName}.showModeMenuAsync`, async () => {
         this.logger.log('starting commandID showModeMenuAsync', LogLevel.Debug);
         let result: ModeMenuItemEnum | null = null;
         try {
@@ -167,13 +171,13 @@ export class CommandsService {
         } catch (e) {
           if (e instanceof Error) {
             throw new DetailedError(
-              'atap-aiassist.showModeMenuAsync function showModeMenuAsync returned an error -> ',
+              `${this.extensionName}.showModeMenuAsync function showModeMenuAsync returned an error -> `,
               e,
             );
           } else {
             // ToDo:  investigation to determine what else might happen
             throw new Error(
-              `atap-aiassist.showModeMenuAsync function showModeMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
+              `testchanged.showModeMenuAsync function showModeMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
             );
           }
         }
@@ -183,7 +187,7 @@ export class CommandsService {
     // register the command to show the Command menu
     this.logger.log('registering showCommandMenuAsync', LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.showCommandMenuAsync', async () => {
+      vscode.commands.registerCommand(`${this.extensionName}.showCommandMenuAsync`, async () => {
         this.logger.log('starting commandID showCommandMenuAsync', LogLevel.Debug);
         let result: CommandMenuItemEnum | null = null;
         try {
@@ -200,13 +204,13 @@ export class CommandsService {
         } catch (e) {
           if (e instanceof Error) {
             throw new DetailedError(
-              'atap-aiassist.showCommandMenuAsync function showCommandMenuAsync returned an error -> ',
+              `${this.extensionName}.showCommandMenuAsync function showCommandMenuAsync returned an error -> `,
               e,
             );
           } else {
             // ToDo:  investigation to determine what else might happen
             throw new Error(
-              `atap-aiassist.showCommandMenuAsync function showCommandMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
+              `${this.extensionName}.showCommandMenuAsync function showCommandMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
             );
           }
         }
@@ -218,7 +222,7 @@ export class CommandsService {
     // register the command to save the tag collection
     this.logger.log('registering saveTagCollectionAsync', LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.saveTagCollectionAsync', async () => {
+      vscode.commands.registerCommand(`${this.extensionName}.saveTagCollectionAsync`, async () => {
         this.logger.log('starting commandID saveTagCollectionAsync', LogLevel.Debug);
         try {
           await saveTagCollectionAsync(this.logger, this.data);
@@ -234,7 +238,7 @@ export class CommandsService {
     // register the command to save the category collection
     this.logger.log('registering saveCategoryCollectionAsync', LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.saveCategoryCollectionAsync', async () => {
+      vscode.commands.registerCommand(`${this.extensionName}.saveCategoryCollectionAsync`, async () => {
         this.logger.log('starting commandID saveCategoryCollectionAsync', LogLevel.Debug);
         try {
           await saveCategoryCollectionAsync(this.logger, this.data);
@@ -254,7 +258,7 @@ export class CommandsService {
     // register the command to save the association collection
     this.logger.log('registering saveAssociationCollectionAsync', LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.saveAssociationCollectionAsync', async () => {
+      vscode.commands.registerCommand(`${this.extensionName}.saveAssociationCollectionAsync`, async () => {
         this.logger.log('starting commandID saveAssociationCollectionAsync', LogLevel.Debug);
         try {
           await saveAssociationCollectionAsync(this.logger, this.data);
@@ -274,7 +278,7 @@ export class CommandsService {
     // register the command to save the Conversation collection
     this.logger.log('registering saveConversationCollectionAsync', LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.saveConversationCollectionAsync', async () => {
+      vscode.commands.registerCommand(`${this.extensionName}.saveConversationCollectionAsync`, async () => {
         this.logger.log('starting commandID saveConversationCollectionAsync', LogLevel.Debug);
         try {
           await saveConversationCollectionAsync(this.logger, this.data);
@@ -294,7 +298,7 @@ export class CommandsService {
     // this.message = 'registering copyToSubmit';
     // this.logger.log(this.message, LogLevel.Debug);
     // this.disposables.push(
-    //   vscode.commands.registerCommand('atap-aiassist.copyToSubmit', async () => {
+    //   vscode.commands.registerCommand(`${this.extensionName}.copyToSubmit`, async () => {
     //     let message: string = 'starting commandID copyToSubmit';
     //     this.logger.log(message, LogLevel.Debug);
     //     try {
@@ -316,7 +320,7 @@ export class CommandsService {
 
     // // *************************************************************** //
     // let showMainViewRootRecordPropertiesDisposable = vscode.commands.registerCommand(
-    //   'atap-aiassist.showMainViewRootRecordProperties',
+    //   `${this.extensionName}.showMainViewRootRecordProperties`,
     //   (item: mainViewTreeItem) => {
     //     let message: string = 'starting commandID showMainViewRootRecordProperties';
     //     myLogger.log(message, LogLevel.Debug);
@@ -338,7 +342,7 @@ export class CommandsService {
 
     // // *************************************************************** //
     // let showSubItemPropertiesDisposable = vscode.commands.registerCommand(
-    //   'atap-aiassist.showSubItemProperties',
+    //   `${this.extensionName}.showSubItemProperties`,
     //   (item: mainViewTreeItem) => {
     //     let message: string = 'starting commandID showSubItemProperties';
     //     myLogger.log(message, LogLevel.Debug);
@@ -352,7 +356,7 @@ export class CommandsService {
     // extensionContext.subscriptions.push(showSubItemPropertiesDisposable);
 
     // // *************************************************************** //
-    // let removeRegionDisposable = vscode.commands.registerCommand('atap-aiassist.removeRegion', () => {
+    // let removeRegionDisposable = vscode.commands.registerCommand(`${this.extensionName}.removeRegion`, () => {
     //   let message: string = 'starting commandID removeRegion';
     //   myLogger.log(message, LogLevel.Debug);
 
@@ -378,7 +382,7 @@ export class CommandsService {
 
     // // *************************************************************** //
     // let processPs1FilesDisposable = vscode.commands.registerCommand(
-    //   'atap-aiassist.processPs1Files',
+    //   `${this.extensionName}.processPs1Files`,
     //   async (commandId: string | null) => {
     //     let message: string = 'starting commandID processPs1Files';
     //     myLogger.log(message, LogLevel.Debug);
@@ -397,7 +401,7 @@ export class CommandsService {
 
     // // *************************************************************** //
     // let showExplorerViewDisposable = vscode.commands.registerCommand(
-    //   'atap-aiassist.showExplorerView',
+    //   `${this.extensionName}.showExplorerView`,
     //   async (commandId: string | null) => {
     //     let message: string = 'starting commandID showExplorerView';
     //     myLogger.log(message, LogLevel.Debug);

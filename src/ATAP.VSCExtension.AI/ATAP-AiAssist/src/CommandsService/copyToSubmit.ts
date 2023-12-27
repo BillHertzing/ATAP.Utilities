@@ -2,8 +2,6 @@ import { LogLevel, ILogger } from '@Logger/index';
 import * as vscode from 'vscode';
 import { StringBuilder } from '../Utilities';
 
-
-
 export async function copyToSubmit(extensionContext: vscode.ExtensionContext, logger: ILogger) {
   let message: string = 'starting command copyToSubmit';
   logger.log(message, LogLevel.Debug);

@@ -15,6 +15,7 @@ export type AllowedTypesInValue =
   | IConfigurationData
   | ModeMenuItemEnum
   | CommandMenuItemEnum
+  | string[]
   | SupportedSerializersEnum
   | LogLevel;
 
@@ -24,9 +25,9 @@ export class DefaultConfiguration {
 
   // The bottom of the configuration root, the values used if there is no corresponding CLI argument, no corresponding environment variable, no test environment default, or no development environment default
   static Production: Record<string, AllowedTypesInValue> = {
-    CurrentMode: ModeMenuItemEnum.Workspace,
-    CurrentCommand: CommandMenuItemEnum.Chat,
-    CurrentSources: 'workspace',
+    currentMode: ModeMenuItemEnum.Workspace,
+    currentCommand: CommandMenuItemEnum.Chat,
+    currentSources: ["workspace"],
     TagsFileName: 'Tags.json',
     CategorysFileName: 'Categorys.json',
     AssociationsFileName: 'Associations.json',

@@ -62,7 +62,7 @@ import {
   ConversationCollection,
 } from '@ItemWithIDs/index';
 
-import { HandleError } from '@Utilities/index';
+import { HandleError } from '@ErrorClasses/index';
 
 type AsyncFileFunction = (file: vscode.Uri) => Promise<void>;
 

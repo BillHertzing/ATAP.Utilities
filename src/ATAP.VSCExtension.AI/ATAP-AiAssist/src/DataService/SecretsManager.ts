@@ -18,7 +18,7 @@ export type PasswordEntryType = Buffer | null | undefined;
 
 export interface ISecretsManager {
   getAPITokenForChatGPTAsync(): Promise<PasswordEntryType>;
-  dispose(): void;
+  disposeAsync(): void;
 }
 
 // holds all the possible secrets managers (currently only KeePassSecretsManager)
@@ -113,12 +113,13 @@ export class SecretsManager implements ISecretsManager {
     return this.secretManagersMap[this.selectedSecretsVault].getAPITokenForChatGPTAsync();
   }
 
-  dispose() {
+  @logAsyncFunction
+  async disposeAsync() {
     if (!this.disposed) {
       // release all SecreteManagers
       switch (this.selectedSecretsVault) {
         case SupportedSecretsVaultEnum.KeePass:
-          this.secretManagersMap[SupportedSecretsVaultEnum.KeePass].dispose();
+          await this.secretManagersMap[SupportedSecretsVaultEnum.KeePass].disposeAsync();
           break;
         default:
           throw new DetailedError(`SecretsManager .dispose does not support the ${this.selectedSecretsVault} vault`);
@@ -326,7 +327,8 @@ class KeePassSecretsManager implements ISecretsManager {
     // }
   }
 
-  dispose() {
+  @logAsyncFunction
+  async disposeAsync() {
     if (!this.disposed) {
       // release any resources
       this.disposed = true;

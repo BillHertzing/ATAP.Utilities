@@ -41,12 +41,16 @@ export interface IStateMachineService {
 
 export class StateMachineService implements IStateMachineService {
   readonly pickItemsInitializer: IPickItemsInitializer = new PickItemsInitializer();
+  private readonly extensionID : string;
+  private readonly extensionName: string;
 
   constructor(
     private readonly logger: ILogger,
     private readonly data: IData,
     private readonly extensionContext: vscode.ExtensionContext,
   ) {
+    this.extensionID = extensionContext.extension.id;
+    this.extensionName = this.extensionID.split('.')[1];
     //attach a listener to the 'handleStatusMenuResults' event
     this.data.eventManager.getEventEmitter().on('handleStatusMenuResults', (statusMenuItem: StatusMenuItemEnum) => {
       this.logger.log(
@@ -163,12 +167,12 @@ export class StateMachineService implements IStateMachineService {
       case StatusMenuItemEnum.Mode:
         this.logger.log(`handle ${StatusMenuItemEnum.Mode}`, LogLevel.Debug);
         // call showModeMenuAsync
-        vscode.commands.executeCommand('atap-aiassist.showModeMenuAsync');
+        vscode.commands.executeCommand(`${this.extensionName}.showModeMenuAsync`);
         break;
       case StatusMenuItemEnum.Command:
         this.logger.log(`ToDo: handle ${StatusMenuItemEnum.Command}`, LogLevel.Debug);
         // call showCommandMenuAsync
-        vscode.commands.executeCommand('atap-aiassist.showCommandMenuAsync');
+        vscode.commands.executeCommand(`${this.extensionName}.showCommandMenuAsync`);
 
         break;
       case StatusMenuItemEnum.Sources:
@@ -191,7 +195,7 @@ export class StateMachineService implements IStateMachineService {
   handleModeMenuResults(modeMenuItem: ModeMenuItemEnum): void {
     this.logger.log(`handleModeMenuResults received ${modeMenuItem.toString()}`, LogLevel.Debug);
     // make this the currentMode
-    this.data.stateManager.setCurrentMode(modeMenuItem);
+    this.data.stateManager.currentMode = modeMenuItem;
     // switch on the modeMenuItem
     switch (modeMenuItem) {
       case ModeMenuItemEnum.Workspace:
@@ -208,7 +212,7 @@ export class StateMachineService implements IStateMachineService {
         break;
       default:
     }
-    this.logger.log(`CurrentMode is now ${this.data.stateManager.getCurrentMode()}`, LogLevel.Debug);
+    this.logger.log(`CurrentMode is now ${this.data.stateManager.currentMode}`, LogLevel.Debug);
   }
 
   // handleCommandMenuResults
@@ -216,7 +220,7 @@ export class StateMachineService implements IStateMachineService {
   handleCommandMenuResults(commandMenuItem: CommandMenuItemEnum): void {
     this.logger.log(`handleCommandMenuResults received ${commandMenuItem.toString()}`, LogLevel.Debug);
     // make this the currentMode
-    this.data.stateManager.setCurrentCommand(commandMenuItem);
+    this.data.stateManager.currentCommand = commandMenuItem;
     // switch on the commandMenuItem
     switch (commandMenuItem) {
       case CommandMenuItemEnum.Chat:
@@ -233,6 +237,6 @@ export class StateMachineService implements IStateMachineService {
         break;
       default:
     }
-    this.logger.log(`CurrentCommand is now ${this.data.stateManager.getCurrentCommand()}`, LogLevel.Debug);
+    this.logger.log(`CurrentCommand is now ${this.data.stateManager.currentCommand}`, LogLevel.Debug);
   }
 }

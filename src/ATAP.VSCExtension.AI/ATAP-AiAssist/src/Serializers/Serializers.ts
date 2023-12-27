@@ -16,10 +16,7 @@ export interface ISerializationStructure {
   readonly serializerEnum: SupportedSerializersEnum;
 }
 export class SerializationStructure implements ISerializationStructure {
-  constructor(
-    readonly serializerEnum: SupportedSerializersEnum,
-    readonly value: string,
-  ) {}
+  constructor(readonly serializerEnum: SupportedSerializersEnum, readonly value: string) { }
 
   //  getConversionFunction() {
   //   switch (this.serializerEnum) {

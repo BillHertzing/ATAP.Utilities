@@ -27,13 +27,14 @@ export interface IConfigurationData {
   readonly extensionID: string;
   readonly promptExpertise: string;
   readonly serializerName: string;
+  readonly currentMode: ModeMenuItemEnum;
+  readonly currentCommand: CommandMenuItemEnum;
+  readonly currentSources: string[];
   getTempDirectoryBasePath(): string;
   getDevelopmentWorkspacePath(): string | undefined;
   getKeePassKDBXPath(): string;
-  getDefaultCurrentMode(): ModeMenuItemEnum;
-  getDefaultCurrentCommand(): CommandMenuItemEnum;
   // getEndpointConfigs(): Record<LLModels, EndpointConfig>;
-  dispose(): void;
+  disposeAsync(): void;
 }
 
 @logConstructor
@@ -75,6 +76,10 @@ export class ConfigurationData implements IConfigurationData {
     if (isRunningInDevelopmentEnvironment() && key in DefaultConfiguration.Development) {
       return DefaultConfiguration.Development[key];
     }
+    // is there a static testing default?
+    // if (isRunningInTestingEnvironment() && key in DefaultConfiguration.Testing) {
+    //   return DefaultConfiguration.Testing[key];
+    // }
     // is there a static production default?
     if (DefaultConfiguration.Production[key]) {
       return DefaultConfiguration.Production[key];
@@ -83,7 +88,7 @@ export class ConfigurationData implements IConfigurationData {
     // If there is no value anywhere in the configRoot structure
     // add function to prompt user to enter the value string in the settings for key
     throw new DetailedError(
-      `ConfigurationData.getNonNull: ${key} not found in argv, env, settings or DefaultConfiguration`,
+      `ConfigurationData.getNonNull: ${key} not found in argv, env, settings or DefaultConfiguration`
     );
   }
 
@@ -109,6 +114,11 @@ export class ConfigurationData implements IConfigurationData {
     if (isRunningInDevelopmentEnvironment() && key in DefaultConfiguration.Development) {
       return DefaultConfiguration.Development[key];
     }
+    // is there a static testing default?
+    // if (isRunningInTestingEnvironment() && key in DefaultConfiguration.Testing) {
+    //   return DefaultConfiguration.Testing[key];
+    // }
+
     // is there a static production default?
     if (DefaultConfiguration.Production[key]) {
       return DefaultConfiguration.Production[key];
@@ -142,6 +152,16 @@ export class ConfigurationData implements IConfigurationData {
       this.getNonNull('extensionID') as string,
       this.getNonNull('ConversationsFileName') as string,
     ) as string;
+  }
+
+  get currentMode(): ModeMenuItemEnum {
+    return this.getNonNull('currentMode') as ModeMenuItemEnum;
+  }
+  get currentCommand(): CommandMenuItemEnum {
+    return this.getNonNull('currentCommand') as CommandMenuItemEnum;
+  }
+  get currentSources(): string[] {
+    return this.getNonNull('currentSources') as string[];
   }
 
   get debuggerLogLevel(): LogLevel {
@@ -244,13 +264,8 @@ export class ConfigurationData implements IConfigurationData {
       .update('EndpointConfigurations', configJson, vscode.ConfigurationTarget.Global);
   }
 
-  getDefaultCurrentMode(): ModeMenuItemEnum {
-    return this.getNonNull('DefaultCurrentMode') as ModeMenuItemEnum;
-  }
-  getDefaultCurrentCommand(): CommandMenuItemEnum {
-    return this.getNonNull('DefaultCurrentCommand') as CommandMenuItemEnum;
-  }
-  dispose() {
+  @logAsyncFunction
+  async disposeAsync() {
     if (!this.disposed) {
       // release any resources
       this.disposed = true;

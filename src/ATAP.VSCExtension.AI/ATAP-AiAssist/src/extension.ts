@@ -1,14 +1,18 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 
-import { DetailedError } from '@ErrorClasses/index';
+import { DetailedError, HandleError } from '@ErrorClasses/index';
 import { LogLevel, Logger } from '@Logger/index';
+
+import { logFunction } from './Decorators';
+import { DefaultConfiguration } from '@DataService/DefaultConfiguration';
+
 
 import { SecurityService, ISecurityService } from '@SecurityService/index';
 
 import { DataService, IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
 
-import { isRunningInTestingEnvironment, isRunningInDevelopmentEnvironment, HandleError } from '@Utilities/index';
+import { isRunningInTestingEnvironment, isRunningInDevelopmentEnvironment } from '@Utilities/index';
 
 import { CommandsService } from '@CommandsService/index';
 
@@ -21,8 +25,6 @@ import { mainViewTreeDataProvider } from './mainViewTreeDataProvider';
 import { mainViewTreeItem } from './mainViewTreeItem';
 import { FileTreeProvider } from './FileTreeProvider';
 import { type } from 'os';
-import { logFunction } from './Decorators';
-import { DefaultConfiguration } from '@DataService/DefaultConfiguration';
 
 //import { mainSearchEngineProvider } from './mainSearchEngineProvider';
 
@@ -48,7 +50,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
   const logger = new Logger();
   // Channel name is the name of the extension
-  logger.createChannel(extensionname, LogLevel.Info);
+  logger.createChannel(extensionname, LogLevel.Debug);
 
   // If the extension is running in the development host, or if the environment variable 'Environment' is set to 'Development',
   //   set the environment variable 'Environment' to 'Development'. This overrides whateve value of Environment variable was set when the extension started
@@ -69,6 +71,8 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     // Focus on the output stream when starting the extension in development mode
     logger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
   }
+    logger.log(`${this.extensionName} Activation Begun`, LogLevel.Info);
+
   // instantiate the SecurityService
   // if a SecurityService initialization serialized string exists, this will try and use it to create the SecurityService, else return a new empty one.
   // Will return a valid SecurityService instance or will throw
@@ -263,9 +267,9 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
 }
 
 async function deactivateExtensionAsync(): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     // Clean up resources, like closing files or stopping services
-    dataService.disposeAsync();
+    await dataService.disposeAsync();
 
     // Cleanup temporary prompt document
     let promptDocument = dataService.data.getTemporaryPromptDocument() as vscode.TextDocument;

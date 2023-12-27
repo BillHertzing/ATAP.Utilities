@@ -154,10 +154,10 @@ export class Data {
     if (!this.disposed) {
       // release resources
       await this.fileManager.disposeAsync();
-      this.eventManager.dispose();
-      this.secretsManager.dispose();
-      this.stateManager.dispose();
-      this.configurationData.dispose();
+      await this.eventManager.disposeAsync();
+      await this.secretsManager.disposeAsync();
+      await this.stateManager.disposeAsync();
+      await this.configurationData.disposeAsync();
       this.disposed = true;
     }
   }

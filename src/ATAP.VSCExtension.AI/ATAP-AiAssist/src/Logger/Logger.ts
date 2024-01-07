@@ -7,6 +7,7 @@ export enum LogLevel {
   Info = 2,
   Debug = 3,
   Trace = 4,
+  Performance = 5,
 }
 
 export interface ChannelInfo {
@@ -98,31 +99,4 @@ export class Logger implements ILogger {
       }
     }
   }
-}
-
-// Configuration related functions to get values of LogLevel from the Settings
-// Function to read log level
-export function getLoggerLogLevelFromSettings(): LogLevel {
-  const configuration = vscode.workspace.getConfiguration('atap-aiassist');
-  const logLevel = configuration.get<LogLevel>('Logger.LogLevel', LogLevel.Info); // default to LogLevel.Info
-  return logLevel;
-}
-
-// Function to update log level
-export function setLoggerLogLevelFromSettings(newLevel: LogLevel): Thenable<void> {
-  const configuration = vscode.workspace.getConfiguration('atap-aiassist');
-  return configuration.update('Logger.LogLevel', newLevel, vscode.ConfigurationTarget.Global);
-}
-
-// Function to read the Development log level
-export function getDevelopmentLoggerLogLevelFromSettings(): LogLevel {
-  const configuration = vscode.workspace.getConfiguration('atap-aiassist');
-  const logLevel = configuration.get<LogLevel>('Development.Logger.LogLevel', LogLevel.Debug); // default to LogLevel.Debug
-  return logLevel;
-}
-
-// Function to update the Development log level
-export function setDevelopmentLoggerLogLevelFromSettings(newLevel: LogLevel): Thenable<void> {
-  const configuration = vscode.workspace.getConfiguration('atap-aiassist');
-  return configuration.update('Development.Logger.LogLevel', newLevel, vscode.ConfigurationTarget.Global);
 }

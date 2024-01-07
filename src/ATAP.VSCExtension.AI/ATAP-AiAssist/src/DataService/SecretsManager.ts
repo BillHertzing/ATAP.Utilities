@@ -18,6 +18,7 @@ export type PasswordEntryType = Buffer | null | undefined;
 
 export interface ISecretsManager {
   getAPITokenForChatGPTAsync(): Promise<PasswordEntryType>;
+  disposeAsync(): void;
 }
 
 // holds all the possible secrets managers (currently only KeePassSecretsManager)
@@ -28,6 +29,7 @@ export class SecretsManager implements ISecretsManager {
   private readonly secretManagersMap: SecretManagerMap;
   private masterPassword: MasterPasswordType = null;
   private masterPasswordTimer: NodeJS.Timeout | undefined = undefined;
+  private disposed = false;
 
   constructor(
     private readonly selectedSecretsVault: SupportedSecretsVaultEnum,
@@ -110,6 +112,22 @@ export class SecretsManager implements ISecretsManager {
     // ToDo: wrap in a try/catch
     return this.secretManagersMap[this.selectedSecretsVault].getAPITokenForChatGPTAsync();
   }
+
+  @logAsyncFunction
+  async disposeAsync() {
+    if (!this.disposed) {
+      // release all SecreteManagers
+      switch (this.selectedSecretsVault) {
+        case SupportedSecretsVaultEnum.KeePass:
+          await this.secretManagersMap[SupportedSecretsVaultEnum.KeePass].disposeAsync();
+          break;
+        default:
+          throw new DetailedError(`SecretsManager .dispose does not support the ${this.selectedSecretsVault} vault`);
+      }
+
+      this.disposed = true;
+    }
+  }
 }
 
 // When the extension starts and instantiates a SecretsManager the Data structure,
@@ -129,6 +147,7 @@ class KeePassSecretsManager implements ISecretsManager {
   private KeePassAccess: KeePassAccessEnum = KeePassAccessEnum.KpScript;
   // ToDo: replace with pathlike
   private keePassKDBXPath: string;
+  private disposed = false;
 
   constructor(
     callGetMasterPasswordAsync: () => Promise<MasterPasswordType>,
@@ -306,6 +325,14 @@ class KeePassSecretsManager implements ISecretsManager {
     //       `KeePassSecretsManager getValueAsync does not support the ${this.KeePassAccess} Access value`,
     //     );
     // }
+  }
+
+  @logAsyncFunction
+  async disposeAsync() {
+    if (!this.disposed) {
+      // release any resources
+      this.disposed = true;
+    }
   }
 }
 

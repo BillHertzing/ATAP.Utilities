@@ -1,0 +1,44 @@
+@startuml
+
+[*] --> Initialize
+
+state Initialize {
+    [*] --> Initialized
+    Initialized -down-> CurrentMode_chat : deactivate / dispose()
+}
+
+state CurrentMode_chat {
+    entry: SetUIElement(Busy)
+    exit: SetUIElement(Free)
+
+    state DocumentStatus {
+        state DocumentClean {
+            entry: SetUIElement(Busy)
+            exit: SetUIElement(Free)
+        }
+
+        state DocumentDirty {
+            entry: SetUIElement(Busy)
+            exit: SetUIElement(Free)
+        }
+
+        [*] --> DocumentClean
+        DocumentClean --> DocumentDirty : DocumentModified / onDocumentModified()
+        DocumentDirty --> DocumentClean : SaveDocument / onSaveDocument()
+    }
+
+    CurrentMode_chat -right-> CurrentMode_fix : ChangeCurrentMode[ModeChangeTo == "fix"] / onChangeCurrentMode()
+    CurrentMode_chat --> CurrentMode_chat : ChangeCurrentMode[ModeChangeTo != "fix"]
+}
+
+state CurrentMode_fix {
+    entry: SetUIElement(Busy)
+    exit: SetUIElement(Free)
+
+    CurrentMode_fix -left-> CurrentMode_chat : ChangeCurrentMode[ModeChangeTo == "chat"] / onChangeCurrentMode()
+    CurrentMode_fix --> CurrentMode_fix : ChangeCurrentMode[ModeChangeTo != "chat"]
+}
+
+state Disposed
+
+@enduml

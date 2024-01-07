@@ -1,9 +1,3 @@
-import * as vscode from 'vscode';
-import { GUID, Int, IDType } from '@IDTypes/index';
-import { DetailedError } from '@ErrorClasses/index';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
-import { Philote, IPhilote } from '@Philote/index';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
@@ -14,507 +8,509 @@ import {
   toYaml,
   fromYaml,
 } from '@Serializers/index';
-
-import { isDeepEqual } from '@Utilities/index';
-
-export type StringValueType = string;
-export type TagValueType = StringValueType;
-export type CategoryValueType = StringValueType;
-export type TokenValueType = StringValueType;
-
-export type ItemWithIDValueType =
-  | TagValueType
-  | CategoryValueType
-  | AssociationValueType
-  | TokenValueType
-  | QueryContextValueType;
-
-export type ItemWithIDTypes = Tag | Category | Association | Token | QueryContext;
-
-export type MapTypeToValueType<T> = T extends Tag
-  ? TagValueType
-  : T extends Category
-    ? CategoryValueType
-    : T extends Association
-      ? AssociationValueType
-      : T extends Token
-        ? TokenValueType
-        : T extends QueryContext
-          ? QueryContextValueType
-          : never;
-
 import * as yaml from 'js-yaml';
-export interface YamlData<T extends ItemWithIDTypes> {
-  value: MapTypeToValueType<T>;
-}
 
-export const fromYamlForItemWithID = <T extends ItemWithIDTypes>(yamlString: string): YamlData<T> => {
-  return yaml.load(yamlString) as YamlData<T>;
-};
+import { DetailedError } from '@ErrorClasses/index';
+import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 
-// Define the IItemWithID interface with type constraints
-export interface IItemWithID<T extends ItemWithIDTypes> {
-  readonly value: MapTypeToValueType<T>;
+import { Philote, IPhilote } from '@Philote/index';
+import { log } from 'console';
+
+export type TagValueType = string;
+export type CategoryValueType = string;
+export type QueryRequestValueType = string;
+export type QueryResponseValueType = string;
+
+export interface IAssociationValueType {
+  tagCollection: ITagCollection;
+  categoryCollection: ICategoryCollection;
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
 }
-
-// Define the ItemWithID generic class
-
-export class ItemWithID<T extends ItemWithIDTypes> implements IItemWithID<T> {
-  readonly value: MapTypeToValueType<T>;
-  readonly ID: IPhilote;
-
-  constructor(value: MapTypeToValueType<T>, ID?: IPhilote) {
-    // ToDo: refactor the types sdo this error doesn't appear
-    // @ts-ignore
-    this.value = value;
-    this.ID = ID ?? new Philote();
-  }
-
+@logConstructor
+export class AssociationValueType {
+  constructor(
+    readonly tagCollection: ITagCollection,
+    readonly categoryCollection: ICategoryCollection,
+  ) {}
   toString(): string {
-    return `ItemWithID: ${JSON.stringify(this.value)}`;
+    return `AssociationValueType tagCollection:${this.tagCollection.toString()}; categoryCollection:${this.categoryCollection.toString()}`;
   }
-
   convertTo_json(): string {
     return toJson(this);
   }
-
-  static convertFrom_json<T extends ItemWithIDTypes>(json: string): ItemWithID<T> {
-    const data = JSON.parse(json);
-    return new ItemWithID<T>(data.value as MapTypeToValueType<T>);
-  }
-
   convertTo_yaml(): string {
     return toYaml(this);
   }
-
-  static convertFrom_yaml<T extends ItemWithIDTypes>(yamlString: string): ItemWithID<T> {
-    const data = fromYamlForItemWithID<T>(yamlString);
-    return new ItemWithID<T>(data.value);
-  }
-
-  static CreateItemWithID(
-    logger: ILogger,
-    extensionContext: vscode.ExtensionContext,
-    callingModule: string,
-    initializationStructure?: ISerializationStructure,
-  ): ItemWithIDTypes {
-    let _obj: ItemWithIDTypes | null;
-    if (initializationStructure) {
-      try {
-        // ToDo: deserialize based on contents of structure
-        _obj = ItemWithID.convertFrom_json(initializationStructure.value);
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(
-            `${callingModule}: CreateItemWithID from initializationStructure using convertFrom_xxx -> }`,
-            e,
-          );
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(
-            `${callingModule}: CreateItemWithID from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
-          );
-        }
-      }
-      if (_obj === null) {
-        throw new Error(
-          `${callingModule}: CreateItemWithID from initializationStructureusing convertFrom_xxx produced a null`,
-        );
-      }
-      return _obj;
-    } else {
-      try {
-        _obj = new ItemWithID('aStaticItemWithID');
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(`${callingModule}: create new ItemWithID error }`, e);
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(`${callingModule}: new ItemWithID threw something that was not an error typeof `);
-        }
-      }
-      return _obj;
-    }
-  }
 }
-
-export interface ICollection<T extends ItemWithIDTypes> {
-  ID: Philote;
-  value: ItemWithID<T>[];
+export interface IQueryPairValueType {
+  queryRequest: IQueryRequest;
+  queryResponse: IQueryResponse;
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
-  findItemWithIDByValue(value: MapTypeToValueType<T>): Promise<ItemWithID<T> | undefined>;
 }
 @logConstructor
-export class Collection<T extends ItemWithIDTypes> implements ICollection<T> {
-  ID: Philote;
-  value: ItemWithID<T>[];
-
-  constructor(value: ItemWithID<T>[], ID?: Philote) {
-    this.value = value;
-    this.ID = ID ?? new Philote();
+export class QueryPairValueType {
+  constructor(
+    readonly queryRequest: IQueryRequest,
+    readonly queryResponse: IQueryResponse,
+  ) {}
+  toString(): string {
+    return `QueryPairValueType queryRequest:${this.queryRequest.toString()}; queryResponse:${this.queryResponse.toString()}`;
   }
-
   convertTo_json(): string {
     return toJson(this);
   }
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+}
 
+export interface IQueryPairCollectionValueType {
+  queryPairCollection: IQueryPair[];
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+}
+@logConstructor
+export class QueryPairCollectionValueType {
+  constructor(readonly queryPairCollection: IQueryPair[]) {}
+  toString(): string {
+    return `QueryPairCollectionValueType queryPairCollection:${this.queryPairCollection.toString()}}`;
+  }
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+}
+export type ItemWithIDValueType = string | IAssociationValueType | IQueryPairValueType | IQueryPairCollectionValueType;
+
+// export type MapTypeToValueType<T> = T extends Tag
+//   ? TagValueType
+//   : T extends Category
+//     ? CategoryValueType
+//     : T extends Association
+//       ? AssociationValueType
+//       : never;
+
+// export interface YamlData<T extends ItemWithIDTypes, V extends ItemWithIDValueType> {
+//   value: MapTypeToValueType<T>;
+// }
+
+// export const fromYamlForItemWithID = <T extends ItemWithIDTypes, V extends ItemWithIDValueType>(
+//   yamlString: string,
+// ): YamlData<T, V> => {
+//   return yaml.load(yamlString) as YamlData<T, V>;
+// };
+
+export type ItemWithIDTypes = Tag | Category | Association | QueryRequest | QueryResponse | QueryPair | QueryPairCollection;
+
+export interface IItemWithID<T extends ItemWithIDTypes, V extends ItemWithIDValueType> {
+  readonly value: V;
+  readonly ID: Philote;
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+}
+@logConstructor
+export class ItemWithID<T extends ItemWithIDTypes, V extends ItemWithIDValueType> {
+  constructor(
+    readonly value: V,
+    readonly ID: IPhilote = new Philote(),
+  ) {}
+  static create<T extends ItemWithIDTypes, V extends ItemWithIDValueType>(value: V): ItemWithID<T, V> {
+    return new ItemWithID<T, V>(value);
+  }
+  @logFunction
+  toString(): string {
+    return `ItemWithID ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
   convertTo_yaml(): string {
     return toYaml(this);
   }
 
-  toString(): string {
-    return `Collection ID ${this.ID.ToString()}: ${this.value.map((item) => item.toString()).join(', ')}`;
-  }
+  // static convertFrom_json<T extends ItemWithIDTypes, V extends ItemWithIDValueType>(json: string): ItemWithID<T,V> {
+  //   const data = JSON.parse(json);
+  //   return new ItemWithID<T,V>(data.value as MapTypeToValueType<T>);
+  // }
 
-  async findItemWithIDByValue(valueToFind: MapTypeToValueType<T>): Promise<ItemWithID<T> | undefined> {
-    return new Promise((resolve) => {
-      // ToDO: discover why this is generating an error
-      // @ts-ignore
-      const foundItem = this.value.find((element: ItemWithID<T>) => {
-        if (typeof element.value === 'object' && typeof valueToFind === 'object') {
-          return isDeepEqual(element.value, valueToFind);
-        }
-        return element.value === valueToFind;
-      });
-      resolve(foundItem);
-    });
-  }
+  // static convertFrom_yaml<T extends ItemWithIDTypes, V extends ItemWithIDValueType>(
+  //   yamlString: string,
+  // ): ItemWithID<T, V> {
+  //   const data = fromYamlForItemWithID<T, V>(yamlString);
+  //   return new ItemWithID<T, V>(data.value);
+  // }
 }
 
-export interface IFactory<T extends ItemWithIDTypes> {
-  create(...args: any[]): T;
-  dispose(instance: T): void;
-}
-
-@logConstructor
-export class Factory<T extends ItemWithIDTypes> implements IFactory<T> {
-  private logger: ILogger;
-  private context: vscode.ExtensionContext;
-  private instances: Set<T>;
-  private typeConstructor: { create: (...args: any[]) => T };
-
-  constructor(logger: ILogger, context: vscode.ExtensionContext, typeConstructor: { create: (...args: any[]) => T }) {
-    this.logger = logger;
-    this.context = context;
-    this.instances = new Set<T>();
-    this.typeConstructor = typeConstructor;
-  }
-
-  create(...args: any[]): T {
-    const instance = this.typeConstructor.create(...args);
-    this.instances.add(instance);
-    return instance;
-  }
-
-  dispose(instance: T): void {
-    if (this.instances.has(instance)) {
-      // Perform any necessary cleanup for the instance
-      // ...
-
-      this.instances.delete(instance);
-    }
-  }
-}
-
-export interface ICollectionFactory<T extends ItemWithIDTypes> {
-  createCollection(...args: any[]): Collection<T>;
-  disposeCollection(collection: Collection<T>): void;
-}
-
-@logConstructor
-export class CollectionFactory<T extends ItemWithIDTypes> implements ICollectionFactory<T> {
-  private logger: ILogger;
-  private context: vscode.ExtensionContext;
-  private collections: Set<Collection<T>>;
-
-  constructor(logger: ILogger, context: vscode.ExtensionContext) {
-    this.logger = logger;
-    this.context = context;
-    this.collections = new Set<Collection<T>>();
-  }
-
-  createCollection(...args: [ItemWithID<T>[], Philote?]): Collection<T> {
-    const collection = new Collection<T>(...args);
-    // ... other logic ...
-    return collection;
-  }
-
-  disposeCollection(collection: Collection<T>): void {
-    if (this.collections.has(collection)) {
-      // Perform any necessary cleanup for the collection
-      // ...
-
-      this.collections.delete(collection);
-    }
-  }
-}
-
-export interface ITag extends IItemWithID<Tag> {
+export interface ICollection<T extends ItemWithIDTypes, V extends ItemWithIDValueType> {
+  readonly value: ItemWithID<T, V>[];
+  readonly ID: Philote;
   toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+}
+@logConstructor
+export class Collection<T extends ItemWithIDTypes, V extends ItemWithIDValueType> implements ICollection<T, V> {
+  constructor(
+    readonly value: ItemWithID<T, V>[],
+    readonly ID: IPhilote = new Philote(),
+  ) {}
+  static create<T extends ItemWithIDTypes, V extends ItemWithIDValueType>(value: ItemWithID<T, V>[]): Collection<T, V> {
+    return new Collection<T, V>(value);
+  }
+  @logFunction
+  toString(): string {
+    return `Collection ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
 }
 
+export interface ITag extends IItemWithID<Tag, string> {
+  readonly value: string;
+  readonly ID: Philote;
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+}
 @logConstructor
-export class Tag extends ItemWithID<Tag> implements ITag {
-  constructor(value: StringValueType, ID?: IPhilote) {
+export class Tag extends ItemWithID<Tag, string> implements ITag {
+  constructor(
+    readonly value: string,
+    readonly ID: IPhilote = new Philote(),
+  ) {
     super(value, ID);
   }
-
-  // Implement the toString method
+  // static create(value: string): Tag {
+  //   return new Tag(value);
+  // }
+  @logFunction
   toString(): string {
-    return `Tag ID:${this.ID.ToString()} ;Tag value:${this.value}`;
+    return `Tag ID:${this.ID.ToString()}; value:${this.value.toString()}`;
   }
-
-  // Static method to create Tag instances
-  @logExecutionTime
-  static create(value: StringValueType): Tag {
-    return new Tag(value);
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
   }
 }
 
-export interface ITagCollection extends ICollection<Tag> {
-  // Add any additional methods specific to a collection of Tags, if necessary
-  // Example:
+export interface ITagCollection extends ICollection<Tag, TagValueType> {
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
   // findTagBySomeCriteria(criteria: any): Tag | undefined;
 }
-
 @logConstructor
-export class TagCollection extends Collection<Tag> implements ITagCollection {
-  constructor(value: ItemWithID<Tag>[], ID?: Philote) {
+export class TagCollection extends Collection<Tag, TagValueType> implements ITagCollection {
+  constructor(value: ItemWithID<Tag, TagValueType>[], ID?: Philote) {
     super(value, ID);
   }
-
-  // Implement any additional methods specific to TagCollection
-  // Example:
+  create(value: ItemWithID<Tag, TagValueType>[]): TagCollection {
+    return new TagCollection(value);
+  }
+  @logFunction
+  toString(): string {
+    return `TagCollection ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
   // findTagBySomeCriteria(criteria: any): Tag | undefined {
   //   // Implementation specific to finding a tag based on the given criteria
   // }
 }
 
-export interface ICategory extends IItemWithID<Category> {
+export interface ICategory {
   toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
 }
-
 @logConstructor
-export class Category extends ItemWithID<Category> implements ICategory {
-  constructor(value: string, ID?: IPhilote) {
+export class Category extends ItemWithID<Category, string> implements ICategory {
+  constructor(
+    value: string,
+    readonly ID: IPhilote = new Philote(),
+  ) {
     super(value, ID);
   }
-
-  // Implement the toString method
+  // static create(value: string): Category {
+  //   return new Category(value);
+  // }
+  @logFunction
   toString(): string {
-    return `Category ID:${this.ID.ToString()} ;Category value:${this.value}`;
+    return `Category ID:${this.ID.ToString()}; value:${this.value.toString()}`;
   }
-
-  // Static method to create Category instances
-  static create(value: string): Category {
-    return new Category(value);
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
   }
 }
 
-export interface ICategoryCollection extends ICollection<Category> {
-  // Add any additional methods specific to a collection of Categorys, if necessary
-  // Example:
+export interface ICategoryCollection extends ICollection<Category, CategoryValueType> {
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
   // findCategoryBySomeCriteria(criteria: any): Category | undefined;
 }
 
 @logConstructor
-export class CategoryCollection extends Collection<Category> implements ICategoryCollection {
-  constructor(value: ItemWithID<Category>[], ID?: Philote) {
+export class CategoryCollection extends Collection<Category, CategoryValueType> implements ICategoryCollection {
+  constructor(value: ItemWithID<Category, CategoryValueType>[], ID?: Philote) {
     super(value, ID);
   }
-
-  // Implement any additional methods specific to CategoryCollection
-  // Example:
+  @logFunction
+  toString(): string {
+    return `CategoryCollection ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
   // findCategoryBySomeCriteria(criteria: any): Category | undefined {
-  //   // Implementation specific to finding a tag based on the given criteria
+  //   // Implementation specific to finding a category based on the given criteria
   // }
 }
 
-export interface IToken extends IItemWithID<Token> {
+export interface IAssociation {
   toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
 }
-
 @logConstructor
-export class Token extends ItemWithID<Token> implements IToken {
-  constructor(value: string, ID?: IPhilote) {
+export class Association extends ItemWithID<Association, IAssociationValueType> implements IAssociation {
+  constructor(value: IAssociationValueType, ID?: IPhilote) {
     super(value, ID);
   }
-
-  // Implement the toString method
-  toString(): string {
-    return `Token ID:${this.ID.ToString()} ;Token value:${this.value}`;
-  }
-
-  // Static method to create Token instances
-  static create(value: string): Token {
-    return new Token(value);
-  }
-}
-
-export interface ITokenCollection extends ICollection<Token> {
-  // Add any additional methods specific to a collection of Tokens, if necessary
-  // Example:
-  // findTokenBySomeCriteria(criteria: any): Token | undefined;
-}
-
-@logConstructor
-export class TokenCollection extends Collection<Token> implements ITokenCollection {
-  constructor(value: ItemWithID<Token>[], ID?: Philote) {
-    super(value, ID);
-  }
-
-  // Implement any additional methods specific to TokenCollection
-  // Example:
-  // findTokenBySomeCriteria(criteria: any): Token | undefined {
-  //   // Implementation specific to finding a token based on the given criteria
+  // static create(value: IAssociationValueType): Association {
+  //   return new Association(value);
   // }
-}
-
-export interface IAssociationValueType {
-  tagCollection: ITagCollection;
-  categoryCollection: ICategoryCollection;
-}
-
-export class AssociationValueType implements IAssociationValueType {
-  constructor(
-    readonly tagCollection: ITagCollection,
-    readonly categoryCollection: ICategoryCollection,
-  ) {}
-}
-
-export interface IAssociation extends IItemWithID<Association> {
-  toString(): string;
-}
-
-@logConstructor
-export class Association extends ItemWithID<Association> implements IAssociation {
-  constructor(value: string, ID?: IPhilote) {
-    super(value, ID);
-  }
-
-  // Implement the toString method
+  @logFunction
   toString(): string {
-    return `Association ID:${this.ID.ToString()} ;Association value:${this.value}`;
+    return `Association ID:${this.ID.ToString()}; value:${this.value.toString()}`;
   }
-
-  // Static method to create Association instances
-  static create(value: string): Association {
-    return new Association(value);
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
   }
 }
 
-export interface IAssociationCollection extends ICollection<Association> {
-  // Add any additional methods specific to a collection of Associations, if necessary
-  // Example:
+export interface IAssociationCollection extends ICollection<Association, AssociationValueType> {
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
   // findAssociationBySomeCriteria(criteria: any): Association | undefined;
 }
 
 @logConstructor
-export class AssociationCollection extends Collection<Association> implements IAssociationCollection {
-  constructor(value: ItemWithID<Association>[], ID?: Philote) {
+export class AssociationCollection
+  extends Collection<Association, AssociationValueType>
+  implements IAssociationCollection
+{
+  constructor(value: ItemWithID<Association, AssociationValueType>[], ID?: Philote) {
     super(value, ID);
   }
-
-  // Implement any additional methods specific to AssociationCollection
-  // Example:
+  @logFunction
+  toString(): string {
+    return `AssociationCollection ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
   // findAssociationBySomeCriteria(criteria: any): Association | undefined {
   //   // Implementation specific to finding a association based on the given criteria
   // }
 }
 
-export type QueryContextValueType = TokenCollection | QueryContext;
-
-// add a readonly Association collection to the QueryContext
-export interface IQueryContextValueType {
-  tokenCollection: TokenCollection;
-  queryContext: QueryContext;
-}
-
-export interface IQueryContext extends IItemWithID<QueryContext> {
+export interface IQueryRequest extends IItemWithID<QueryRequest, string> {
+  readonly value: string;
+  readonly ID: Philote;
   toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
 }
-
 @logConstructor
-export class QueryContext extends ItemWithID<QueryContext> implements IQueryContext {
-  constructor(value: string, ID?: IPhilote) {
+export class QueryRequest extends ItemWithID<QueryRequest, string> implements IQueryRequest {
+  constructor(
+    readonly value: string,
+    readonly ID: IPhilote = new Philote(),
+  ) {
     super(value, ID);
   }
-
-  // Implement the toString method
+  // static create(value: string): QueryRequest {
+  //   return new QueryRequest(value);
+  // }
+  @logFunction
   toString(): string {
-    return `QueryContext ID:${this.ID.ToString()} ;QueryContext value:${this.value}`;
+    return `QueryRequest ID:${this.ID.ToString()}; value:${this.value.toString()}`;
   }
-
-  // Static method to create QueryContext instances
-  static Create(value: string): QueryContext {
-    return new QueryContext(value);
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
   }
 }
 
-export interface IQueryContextCollection extends ICollection<QueryContext> {
-  // Add any additional methods specific to a collection of QueryContexts, if necessary
-  // Example:
-  // findQueryContextBySomeCriteria(criteria: any): QueryContext | undefined;
+export interface IQueryResponse extends IItemWithID<QueryResponse, string> {
+  readonly value: string;
+  readonly ID: Philote;
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+}
+@logConstructor
+export class QueryResponse extends ItemWithID<QueryResponse, string> implements IQueryResponse {
+  constructor(
+    readonly value: string,
+    readonly ID: IPhilote = new Philote(),
+  ) {
+    super(value, ID);
+  }
+  // static create(value: string): QueryResponse {
+  //   return new QueryResponse(value);
+  // }
+  @logFunction
+  toString(): string {
+    return `QueryResponse ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+}
+
+export interface IQueryPair {
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+}
+@logConstructor
+export class QueryPair extends ItemWithID<QueryPair, IQueryPairValueType> implements IQueryPair {
+  constructor(value: IQueryPairValueType, ID?: IPhilote) {
+    super(value, ID);
+  }
+  // static create(value: IQueryPairValueType): QueryPair {
+  //   return new QueryPair(value);
+  // }
+  @logFunction
+  toString(): string {
+    return `QueryPair ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+}
+
+export interface IQueryPairCollection extends ICollection<QueryPair, QueryPairValueType> {
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+  // findQueryPairBySomeCriteria(criteria: any): QueryPair | undefined;
 }
 
 @logConstructor
-export class QueryContextCollection extends Collection<QueryContext> implements IQueryContextCollection {
-  constructor(value: ItemWithID<QueryContext>[], ID?: Philote) {
+export class QueryPairCollection extends Collection<QueryPair, QueryPairValueType> implements IQueryPairCollection {
+  constructor(value: ItemWithID<QueryPair, QueryPairValueType>[], ID?: Philote) {
     super(value, ID);
   }
-
-  // Implement any additional methods specific to QueryContextCollection
-  // Example:
-  // findQueryContextBySomeCriteria(criteria: any): QueryContext | undefined {
-  //   // Implementation specific to finding a querycontext based on the given criteria
+  @logFunction
+  toString(): string {
+    return `QueryPairCollection ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+  // findQueryPairBySomeCriteria(criteria: any): QueryPair | undefined {
+  //   // Implementation specific to finding a querypair based on the given criteria
   // }
 }
 
-// { role: 'system', content: 'This is where the Expertise prompt goes' },
-//     { role: 'user', content: 'what is the cutoff date of your training' }
+export interface IConversationCollection extends ICollection<QueryPairCollection, QueryPairCollectionValueType> {
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+  // findConversationBySomeCriteria(criteria: any): Conversation | undefined;
+}
 
-// export type ConversationValueType = { role: string; content: string };
-
-// export interface IConversation extends IItemWithID<Conversation> {
-//   toString(): string;
-// }
-
-// @logConstructor
-// export class Conversation extends ItemWithID<Conversation> implements IConversation {
-//   constructor(value: string, ID?: IPhilote) {
-//     super(value, ID);
-//   }
-
-//   // Implement the toString method
-//   toString(): string {
-//     return `Conversation ID:${this.ID.ToString()} ;Conversation value:${this.value}`;
-//   }
-
-//   // Static method to create Conversation instances
-//   static Create(value: string): Conversation {
-//     return new Conversation(value);
-//   }
-// }
-
-// export interface IConversationCollection extends ICollection<Conversation> {
-//   // Add any additional methods specific to a collection of Conversations, if necessary
-//   // Example:
-//   // findConversationBySomeCriteria(criteria: any): Conversation | undefined;
-// }
-
-// @logConstructor
-// export class ConversationCollection extends Collection<Conversation> implements IConversationCollection {
-//   constructor(value: ItemWithID<Conversation>[], ID?: Philote) {
-//     super(value, ID);
-//   }
-
-//   // Implement any additional methods specific to ConversationCollection
-//   // Example:
-//   // findConversationBySomeCriteria(criteria: any): Conversation | undefined {
-//   // }
-// }
+@logConstructor
+export class ConversationCollection
+  extends Collection<QueryPairCollection, QueryPairCollectionValueType>
+  implements IConversationCollection
+{
+  constructor(value: ItemWithID<QueryPairCollection, QueryPairCollectionValueType>[], ID?: Philote) {
+    super(value, ID);
+  }
+  @logFunction
+  toString(): string {
+    return `ConversationCollection ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+  // findConversationBySomeCriteria(criteria: any): Conversation | undefined {
+  //   // Implementation specific to finding a conversation based on the given criteria
+  // }
+}

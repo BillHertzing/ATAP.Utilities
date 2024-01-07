@@ -62,14 +62,14 @@ export class QueryService implements IQueryService {
     private readonly data: IData,
   ) {}
 
-  @logExecutionTime
-  static CreateQueryService(
+  static create(
     logger: ILogger,
     extensionContext: vscode.ExtensionContext,
     data: IData,
     callingModule: string,
     initializationStructure?: ISerializationStructure,
   ): QueryService {
+    Logger.staticLog(`QueryService.create called`, LogLevel.Debug);
     let _obj: QueryService | null;
     if (initializationStructure) {
       try {

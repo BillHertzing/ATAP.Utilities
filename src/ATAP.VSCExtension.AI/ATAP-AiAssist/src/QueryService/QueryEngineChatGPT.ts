@@ -186,7 +186,7 @@ export class QueryEngineChatGPT implements IQueryEngineChatGPT {
     const results = new QueryResultChatGPT(chatCompletion, resultContent, resultSnapshot, isValid, errorMessage);
     // Emit event after the stream is fully received
     this.data.eventManager
-      .GetEventEmitter()
+      .getEventEmitter()
       .emit('ExternalDataReceived', results, 'QueryResultsChatGPTCompletelyReceived');
   }
 }

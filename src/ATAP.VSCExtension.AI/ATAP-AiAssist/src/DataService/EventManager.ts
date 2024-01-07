@@ -7,13 +7,14 @@ import { IDataService, IData, IStateManager, IConfigurationData } from '@DataSer
 import { EventEmitter } from 'events';
 
 export interface IEventManager {
-  GetEventEmitter(): EventEmitter;
+  getEventEmitter(): EventEmitter;
+  disposeAsync(): void;
 }
 
 @logConstructor
 export class EventManager implements IEventManager {
   private eventEmitter: EventEmitter;
-
+  private disposed = false;
   constructor(
     private readonly logger: ILogger,
     private readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
@@ -23,7 +24,15 @@ export class EventManager implements IEventManager {
     this.eventEmitter = new EventEmitter();
   }
 
-  public GetEventEmitter() {
+  public getEventEmitter() {
     return this.eventEmitter;
+  }
+
+  @logAsyncFunction
+  async disposeAsync() {
+    if (!this.disposed) {
+      // release any resources
+      this.disposed = true;
+    }
   }
 }

@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 import { DetailedError } from '@ErrorClasses/index';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 import { DefaultConfiguration, AllowedTypesInValue } from './DefaultConfiguration';
-import { isRunningInDevHost } from '@Utilities/index';
+import { isRunningInDevelopmentEnvironment, isRunningInTestingEnvironment } from '@Utilities/index';
 import {
   LLModels,
   HttpVerb,
@@ -15,29 +16,49 @@ import {
   CopilotEndpointConfig,
 } from '@EndpointManager/index';
 
+import { ModeMenuItemEnum, CommandMenuItemEnum } from '@StateMachineService/index';
+
 export interface IConfigurationData {
-  getExtensionFullName(): string;
+  readonly currentEnvironment: string;
+  readonly tagsFilePath: string;
+  readonly categorysFilePath: string;
+  readonly associationsFilePath: string;
+  readonly conversationsFilePath: string;
+  readonly debuggerLogLevel: LogLevel;
+  readonly extensionID: string;
+  readonly promptExpertise: string;
+  readonly serializerName: string;
+  readonly currentMode: ModeMenuItemEnum;
+  readonly currentCommand: CommandMenuItemEnum;
+  readonly currentSources: string[];
+  readonly priorMode: ModeMenuItemEnum;
+  readonly priorCommand: CommandMenuItemEnum;
   getTempDirectoryBasePath(): string;
   getDevelopmentWorkspacePath(): string | undefined;
-  getPromptExpertise(): string;
   getKeePassKDBXPath(): string;
   // getEndpointConfigs(): Record<LLModels, EndpointConfig>;
+  disposeAsync(): void;
 }
 
 @logConstructor
 export class ConfigurationData implements IConfigurationData {
+  private disposed = false;
   // ToDo: constructor overloads to initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
   constructor(
     private logger: ILogger,
     private extensionContext: vscode.ExtensionContext, // private configurationDataInitializationStructure?: ISerializationStructure,
+    // ToDo: make the envKeyMap a static property of the class, so it can be used during extension activation
+
     private envKeyMap: Record<string, string[]> = {
-      //toUpper(DefaultConfiguration.Production.extensionFullName + '.' + key)
+      //toUpper(DefaultConfiguration.Production.extensionID + '.' + key)
       TempDirectoryBasePath: ['TEMP'],
+      CloudBasePath: ['CLOUD_BASE_PATH'],
     },
   ) {}
 
+  //@logFunction
   private getNonNull(key: string): AllowedTypesInValue {
-    const extensionID = 'ataputilities.atap-aiassist';
+    const extensionID = this.extensionID;
 
     // const cLIIdentifier = extensionID + '.' + key
     // is there a CLI argument?
@@ -50,13 +71,18 @@ export class ConfigurationData implements IConfigurationData {
       }
     }
     // is there a setting?
+    // ToDo: upgrade to using a type map if in fact settings can be enumerations, or if we want to support serialized objects in settings
     if (vscode.workspace.getConfiguration(extensionID).has(key)) {
       return vscode.workspace.getConfiguration(extensionID).get(key) as string;
     }
     // is there a static development default?
-    if (isRunningInDevHost() && DefaultConfiguration.Development[key]) {
+    if (isRunningInDevelopmentEnvironment() && key in DefaultConfiguration.Development) {
       return DefaultConfiguration.Development[key];
     }
+    // is there a static testing default?
+    // if (isRunningInTestingEnvironment() && key in DefaultConfiguration.Testing) {
+    //   return DefaultConfiguration.Testing[key];
+    // }
     // is there a static production default?
     if (DefaultConfiguration.Production[key]) {
       return DefaultConfiguration.Production[key];
@@ -65,10 +91,11 @@ export class ConfigurationData implements IConfigurationData {
     // If there is no value anywhere in the configRoot structure
     // add function to prompt user to enter the value string in the settings for key
     throw new DetailedError(
-      `ConfigurationData.getNonNull: ${key} not found in argv, env, settings or DefaultConfiguration`,
+      `ConfigurationData.getNonNull: ${key} not found in argv, env, settings or DefaultConfiguration`
     );
   }
 
+  @logFunction
   private getPossiblyUndefined(key: string): AllowedTypesInValue | undefined {
     const extensionID = 'ataputilities.atap-aiassist';
     // const cLIIdentifier = extensionID + '.' + key
@@ -87,22 +114,92 @@ export class ConfigurationData implements IConfigurationData {
       return vscode.workspace.getConfiguration(extensionID).get(key) as string;
     }
     // is there a static development default?
-    if (isRunningInDevHost() && DefaultConfiguration.Development[key]) {
+    if (isRunningInDevelopmentEnvironment() && key in DefaultConfiguration.Development) {
       return DefaultConfiguration.Development[key];
     }
+    // is there a static testing default?
+    // if (isRunningInTestingEnvironment() && key in DefaultConfiguration.Testing) {
+    //   return DefaultConfiguration.Testing[key];
+    // }
+
     // is there a static production default?
     if (DefaultConfiguration.Production[key]) {
       return DefaultConfiguration.Production[key];
     }
     return undefined;
   }
-
-  getExtensionFullName(): string {
-    if (!DefaultConfiguration.Production['ExtensionFullName']) {
-      throw new DetailedError('ExtensionFullName not found in DefaultConfiguration.Production');
+  get currentEnvironment(): string {
+    if (isRunningInDevelopmentEnvironment()) {
+      return 'Development';
+    } else if (isRunningInTestingEnvironment()) {
+      return 'Testing';
     } else {
-      return DefaultConfiguration.Production['ExtensionFullName'] as string;
+      return 'Production';
     }
+  }
+
+  get tagsFilePath(): string {
+    return path.join(
+      this.getNonNull('CloudBasePath') as string,
+      this.getNonNull('extensionID') as string,
+      this.getNonNull('TagsFileName') as string,
+    ) as string;
+  }
+  get categorysFilePath(): string {
+    return path.join(
+      this.getNonNull('CloudBasePath') as string,
+      this.getNonNull('extensionID') as string,
+      this.getNonNull('CategorysFileName') as string,
+    ) as string;
+  }
+  get associationsFilePath(): string {
+    return path.join(
+      this.getNonNull('CloudBasePath') as string,
+      this.getNonNull('extensionID') as string,
+      this.getNonNull('AssociationsFileName') as string,
+    ) as string;
+  }
+  get conversationsFilePath(): string {
+    return path.join(
+      this.getNonNull('CloudBasePath') as string,
+      this.getNonNull('extensionID') as string,
+      this.getNonNull('ConversationsFileName') as string,
+    ) as string;
+  }
+
+  get currentMode(): ModeMenuItemEnum {
+    return this.getNonNull('currentMode') as ModeMenuItemEnum;
+  }
+  get currentCommand(): CommandMenuItemEnum {
+    return this.getNonNull('currentCommand') as CommandMenuItemEnum;
+  }
+  get currentSources(): string[] {
+    return this.getNonNull('currentSources') as string[];
+  }
+
+  get debuggerLogLevel(): LogLevel {
+    return this.getNonNull('debuggerLogLevel') as LogLevel;
+  }
+  get extensionID(): string {
+    if (!DefaultConfiguration.Production['extensionID']) {
+      throw new DetailedError('extensionID not found in DefaultConfiguration.Production');
+    } else {
+      return DefaultConfiguration.Production['extensionID'] as string;
+    }
+  }
+  get priorMode(): ModeMenuItemEnum {
+    return this.getNonNull('priorMode') as ModeMenuItemEnum;
+  }
+  get priorCommand(): CommandMenuItemEnum {
+    return this.getNonNull('priorCommand') as CommandMenuItemEnum;
+  }
+
+  get promptExpertise(): string {
+    return this.getNonNull('YourExpertise') as string;
+  }
+
+  get serializerName(): string {
+    return this.getNonNull('serializerName') as string;
   }
 
   getTempDirectoryBasePath(): string {
@@ -112,9 +209,6 @@ export class ConfigurationData implements IConfigurationData {
 
   getDevelopmentWorkspacePath(): string | undefined {
     return this.getPossiblyUndefined('DevelopmentWorkspacePath') as string;
-  }
-  getPromptExpertise(): string {
-    return this.getNonNull('YourExpertise') as string;
   }
 
   getKeePassKDBXPath(): string {
@@ -188,5 +282,13 @@ export class ConfigurationData implements IConfigurationData {
     vscode.workspace
       .getConfiguration('ataputilities.atap-aiassist')
       .update('EndpointConfigurations', configJson, vscode.ConfigurationTarget.Global);
+  }
+
+  @logAsyncFunction
+  async disposeAsync() {
+    if (!this.disposed) {
+      // release any resources
+      this.disposed = true;
+    }
   }
 }

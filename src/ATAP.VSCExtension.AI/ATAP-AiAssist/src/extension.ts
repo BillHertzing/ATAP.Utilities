@@ -1,118 +1,125 @@
 import * as vscode from 'vscode';
-import { Buffer } from 'buffer';
-import * as path from 'path';
 import * as fs from 'fs';
-import * as crypto from 'crypto';
 
-import { DetailedError } from '@ErrorClasses/index';
-import {
-  LogLevel,
-  Logger,
-  getLoggerLogLevelFromSettings,
-  getDevelopmentLoggerLogLevelFromSettings,
-} from '@Logger/index';
+import { DetailedError, HandleError } from '@ErrorClasses/index';
+import { LogLevel, Logger } from '@Logger/index';
+
+import { logFunction } from './Decorators';
+import { DefaultConfiguration } from '@DataService/DefaultConfiguration';
 
 import { SecurityService, ISecurityService } from '@SecurityService/index';
 
 import { DataService, IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
 
-import {
-  SupportedSerializersEnum,
-  SerializationStructure,
-  ISerializationStructure,
-  isSerializationStructure,
-  toJson,
-  fromJson,
-  toYaml,
-  fromYaml,
-} from '@Serializers/index';
-
-import { isRunningInDevHost } from '@Utilities/index';
+import { isRunningInTestingEnvironment, isRunningInDevelopmentEnvironment } from '@Utilities/index';
 
 import { CommandsService } from '@CommandsService/index';
+
+import { IStateMachineService, StateMachineService } from '@StateMachineService/index';
+
 import { IQueryService, QueryService } from '@QueryService/index';
 
-import { checkFile } from './checkFile';
 import { processPs1Files } from './processPs1Files';
 import { mainViewTreeDataProvider } from './mainViewTreeDataProvider';
 import { mainViewTreeItem } from './mainViewTreeItem';
 import { FileTreeProvider } from './FileTreeProvider';
 import { type } from 'os';
-import { logFunction } from './Decorators';
 
 //import { mainSearchEngineProvider } from './mainSearchEngineProvider';
 
 // objects that need to be at the global level of the module, so they are visible in both activate and deactivate functions
 let dataService: IDataService;
+let stateMachineService: IStateMachineService;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(extensionContext: vscode.ExtensionContext) {
-  const runningInDevelopment = isRunningInDevHost();
+  // Initialize the static logger
+  Logger.staticConstructor();
+  Logger.staticLog(`${extensionContext.extension.id} activating`, LogLevel.Info);
   // Declaration of variables
   let message: string = '';
   let workspacePath: string = '';
   let securityService: ISecurityService;
   let queryService: IQueryService;
+  let commandsService: CommandsService;
 
-  // ToDo: create a static startup logger, and use that until the full blown logger can be instantiated
+  const extensionID = extensionContext.extension.id;
+  const extensionName = extensionID.split('.')[1];
+
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
-  const myLogger = new Logger();
-  // const loggerLogLevelFromSettings = getLoggerLogLevelFromSettings(); // supplies a default if not found in settings
-  // myLogger.createChannel('ATAP-AiAssist', loggerLogLevelFromSettings);
-  myLogger.createChannel('ATAP-AiAssist', LogLevel.Debug);
-  myLogger.log('Extension Activation', LogLevel.Info);
+  const logger = new Logger();
+  // Channel name is the name of the extension
+  logger.createChannel(extensionName, LogLevel.Debug);
+  logger.setChannelEnabled('console', true);
+  logger.setChannelEnabled(extensionName, true);
 
-  // Get the VSC configuration settings for this extension
-  const config = vscode.workspace.getConfiguration('ATAP-AiAssist');
-
-  if (runningInDevelopment) {
-    // update the loggerLogLevel with the'Development.Logger.LogLevel settings value, if it exists
-    const developmentLoggerLogLevelFromSettings = getDevelopmentLoggerLogLevelFromSettings();
-    myLogger.setChannelLogLevel('ATAP-AiAssist', developmentLoggerLogLevelFromSettings); // supplies a default if not found in settings
-    myLogger.log('Running in development mode.', LogLevel.Info);
+  // If the extension is running in the development host, or if the environment variable 'Environment' is set to 'Development',
+  //   set the environment variable 'Environment' to 'Development'. This overrides whateve value of Environment variable was set when the extension started
+  //   set the logger's channel's loglevel to LogLevel.Debug initially
+  //   ToDo: use a static map from DefaultConfig to check for a debuggerLogLevel in an environment variable
+  //   if the debuggerLogLevel is set in the extension's setting, use that value,
+  //   else if the debuggerLogLevel in the DefaultConfiguration.Development, use that value
+  if (isRunningInDevelopmentEnvironment()) {
+    // ToDO: test for an environment variable for debuggerLogLevel, and if it exists, use that value
+    const settings = vscode.workspace.getConfiguration(extensionName);
+    const settingsDebuggerLogLevel = settings.get<LogLevel>('debuggerLogLevel');
+    if (settingsDebuggerLogLevel) {
+      logger.setChannelLogLevel(extensionName, settingsDebuggerLogLevel);
+    } else if ('debuggerLogLevel' in DefaultConfiguration.Development) {
+      const defaultConfigurationDebuggerLogLevel = DefaultConfiguration.Development.debuggerLogLevel as LogLevel;
+      logger.setChannelLogLevel(extensionName, defaultConfigurationDebuggerLogLevel);
+    }
     // Focus on the output stream when starting the extension in development mode
-    myLogger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
+    logger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
   }
+  logger.log(`${extensionName} Activation Begun`, LogLevel.Info);
+
   // instantiate the SecurityService
   // if a SecurityService initialization serialized string exists, this will try and use it to create the SecurityService, else return a new empty one.
   // Will return a valid SecurityService instance or will throw
   // if (isSerializationStructure(DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'])) {
   //   securityService = SecurityService.CreateSecurityService(
-  //     myLogger,
+  //     logger,
   //     extensionContext,
   //     'extension.ts',
   //     DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'],
   //   );
   // } else {
-  securityService = SecurityService.CreateSecurityService(myLogger, extensionContext, 'SecurityService.ts');
+  // ToDo: wrap in a try/catch block
+  securityService = SecurityService.create(logger, extensionContext, 'extension.ts');
   // }
 
   // if a DataService initialization serialized string exists, this will try and use it to create the DataService, else return a new empty one.
   // Will return a valid DataService instance or will throw
   // if (isSerializationStructure(DefaultConfiguration.Development['DataServiceAsSerializationStructure'])) {
   //   dataService = DataService.CreateDataService(
-  //     myLogger,
+  //     logger,
   //     extensionContext,
   //     'extension.ts',
   //     DefaultConfiguration.Development['DataServiceAsSerializationStructure'],
   //   );
   // } else {
-  dataService = DataService.CreateDataService(myLogger, extensionContext, 'extension.ts');
+  // ToDo: wrap in a try/catch block
+  dataService = DataService.create(logger, extensionContext, 'extension.ts');
   // }
 
-  myLogger.log(`data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`, LogLevel.Info);
+  // logger.log(`data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`, LogLevel.Debug);
 
   // ToDo: wrap in a try/catch block
-  queryService = QueryService.CreateQueryService(myLogger, extensionContext, dataService.data, 'extension.ts');
+  securityService.externalDataVetting.AttachListener(dataService.data.eventManager.getEventEmitter());
+
+  // ToDo: wrap in a try/catch block
+  queryService = QueryService.create(logger, extensionContext, dataService.data, 'extension.ts');
+
+  // ToDo: wrap in a try/catch block
+  // creating the SatateMachineService starts all of the state machines
+  stateMachineService = StateMachineService.create(logger, extensionContext, dataService.data, 'extension.ts');
 
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
   // Calling the constructor registers all of the commands, and creates a disposables structure
-  let commandsService: CommandsService;
   try {
-    myLogger.log(`instantiate commandsService`, LogLevel.Debug);
-    commandsService = new CommandsService(myLogger, extensionContext, dataService.data, queryService);
-    myLogger.log(`commandsService instantiated`, LogLevel.Trace);
+    commandsService = new CommandsService(logger, extensionContext, dataService.data, stateMachineService);
   } catch (e) {
     if (e instanceof Error) {
       throw new DetailedError(`Activation: failed to create an instance of CommandsService -> `, e);
@@ -125,86 +132,84 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   }
   // Add the disposables from the CommandsService to extensionContext.subscriptions
   extensionContext.subscriptions.push(...commandsService.getDisposables());
+  // Create a status bar item for the extension
+  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  // Initial state
+  statusBarItem.text = `$(robot) AiAssist`;
+  statusBarItem.command = `${extensionName}.showStatusMenuAsync`;
+  statusBarItem.tooltip = 'Show AiAssist status menu';
+  extensionContext.subscriptions.push(statusBarItem);
+  statusBarItem.show();
 
-  // identify the current workspace context. Compare to stored state information, and update if necessary
-  const workspaceFolders = vscode.workspace.workspaceFolders;
+  // Start the state machine
+  stateMachineService.start();
 
-  if (workspaceFolders && workspaceFolders.length > 0) {
-    // A workspace or multi-root workspace has been opened
-    workspaceFolders.forEach((folder) => {
-      const workspacePath = folder.uri.fsPath;
-      // Do something with workspacePath
-    });
-  } else {
-    // No workspace has been opened
-    // If the stored state matches, no action is needed, otherwise updated the stored state with the current workspace
-    if (dataService.data.stateManager.getWorkspacePath() !== undefined) {
-      await dataService.data.stateManager.setWorkspacePath('');
-      // ToDo: fire the trigger for the workspacePath change event
-    }
-  }
+  // // identify the current workspace context. Compare to stored state information, and update if necessary
+  // const workspaceFolders = vscode.workspace.workspaceFolders;
 
-  if (runningInDevelopment) {
-    // in development mode, if a workspace is not supplied when the extension is activated,
-    //  open a specific Workspace as specified in development configuration if one is defined
-    const developmentWorkspacePath = dataService.data.configurationData.getDevelopmentWorkspacePath();
-    if (developmentWorkspacePath !== undefined) {
-      // ToDo:validate the path exists and is readable and writeable
-      await dataService.data.stateManager.setWorkspacePath(developmentWorkspacePath);
-      // ToDo: fire the trigger for the workspacePath change event
-    }
-  }
+  // if (workspaceFolders && workspaceFolders.length > 0) {
+  //   // A workspace or multi-root workspace has been opened
+  //   workspaceFolders.forEach((folder) => {
+  //     const workspacePath = folder.uri.fsPath;
+  //     logger.log(`workspacePath = ${workspacePath}`, LogLevel.Debug);
+  //     // Do something with workspacePath
+  //   });
+  // } else {
+  //   // No workspace has been opened
+  //   // If the stored state matches, no action is needed, otherwise updated the stored state with the current workspace
+  //   if (dataService.data.stateManager.getWorkspacePath() !== undefined) {
+  //     await dataService.data.stateManager.setWorkspacePath('');
+  //     // ToDo: fire the trigger for the workspacePath change event
+  //   }
+  // }
 
-  // Setup the promptDocument
-  // Create a temporary file name for this session
-  const tempDirectoryBasePath = dataService.data.configurationData.getTempDirectoryBasePath();
-  const tempDir = path.join(tempDirectoryBasePath, dataService.data.configurationData.getExtensionFullName());
-  const randomFileName = crypto.randomBytes(16).toString('hex') + '.txt';
-  const tempFilePath = path.join(tempDir, randomFileName);
-  try {
-    fs.mkdirSync(tempDir, { recursive: true });
-  } catch (e) {
-    if (e instanceof Error) {
-      throw new DetailedError(`Activation: failed to create ${tempDir} -> `, e);
-    } else {
-      // ToDo:  investigation to determine what else might happen
-      throw new Error(
-        `Activation: failed to create ${tempDir} and the instance of (e) returned is of type ${typeof e}`,
-      );
-    }
-  }
-  try {
-    fs.writeFileSync(tempFilePath, '');
-  } catch (e) {
-    if (e instanceof Error) {
-      throw new DetailedError(`Activation: failed to create ${tempFilePath} -> `, e);
-    } else {
-      // ToDo:  investigation to determine what else might happen
-      throw new Error(
-        `Activation: failed to create ${tempFilePath} and the instance of (e) returned is of type ${typeof e}`,
-      );
-    }
-  }
+  // if (process.env['Environment'] === 'Development') {
+  //   // in development mode, if a workspace is not supplied when the extension is activated,
+  //   //  open a specific Workspace as specified in development configuration if one is defined
+  //   const developmentWorkspacePath = dataService.data.configurationData.getDevelopmentWorkspacePath();
+  //   if (developmentWorkspacePath !== undefined) {
+  //     // ToDo:validate the path exists and is readable and writeable
+  //     await dataService.data.stateManager.setWorkspacePath(developmentWorkspacePath);
+  //     // ToDo: fire the trigger for the workspacePath change event
+  //   }
+  // }
 
-  // Open a new temporary document 'promptDocument' in an editor window
-  let promptDocument = vscode.workspace.openTextDocument(tempFilePath).then((doc) => {
-    let document: vscode.TextDocument = doc;
-    return vscode.window.showTextDocument(document).then((ed) => {
-      let editor: vscode.TextEditor = ed;
-      let lastLine = document.lineAt(document.lineCount - 1);
-      const savedPromptDocumentData = dataService.data.stateManager.getsavedPromptDocumentData();
-      let promptDocumentData: string =
-        savedPromptDocumentData || dataService.data.configurationData.getPromptExpertise();
+  // If the mode is 'Chat',
+  // then see if a Conversation document has been restored from a previous session
+  // and if not, create a new Conversation document
 
-      editor.edit((editBuilder) => {
-        editBuilder.insert(lastLine.range.end, promptDocumentData);
-      });
-      document.save();
+  // try {
+  //   fs.writeFileSync(tempFilePath, '');
+  // } catch (e) {
+  //   if (e instanceof Error) {
+  //     throw new DetailedError(`Activation: failed to create ${tempFilePath} -> `, e);
+  //   } else {
+  //     // ToDo:  investigation to determine what else might happen
+  //     throw new Error(
+  //       `Activation: failed to create ${tempFilePath} and the instance of (e) returned is of type ${typeof e}`,
+  //     );
+  //   }
+  // }
 
-      dataService.data.setTemporaryPromptDocumentPath(tempFilePath);
-      dataService.data.setTemporaryPromptDocument(document);
-    });
-  });
+  // // Open a new temporary document 'promptDocument' in an editor window
+  // let promptDocument = vscode.workspace.openTextDocument(tempFilePath).then((doc) => {
+  //   let document: vscode.TextDocument = doc;
+  //   return vscode.window.showTextDocument(document).then((ed) => {
+  //     let editor: vscode.TextEditor = ed;
+  //     let lastLine = document.lineAt(document.lineCount - 1);
+  //     const savedPromptDocumentData = dataService.data.stateManager.getsavedPromptDocumentData();
+  //     let promptDocumentData: string =
+  //       savedPromptDocumentData || dataService.data.configurationData.promptExpertise;
+
+  //     editor.edit((editBuilder) => {
+  //       editBuilder.insert(lastLine.range.end, promptDocumentData);
+  //     });
+  //     document.save();
+
+  //     dataService.data.setTemporaryPromptDocumentPath(tempFilePath);
+  //     dataService.data.setTemporaryPromptDocument(document);
+  //   });
+  // });
 
   // instantiate a view for the response of each AI engine
   // ChatGPT
@@ -217,49 +222,53 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
 
   // Copilot
 
-  // instantiate a mainViewTreeDataProvider instance and register that with the TreeDataProvider with the main tree view
-  const mainViewTreeDataProviderInstance = new mainViewTreeDataProvider(myLogger);
-  vscode.window.createTreeView('atap-aiassistMainTreeView', { treeDataProvider: mainViewTreeDataProviderInstance });
+  // // instantiate a mainViewTreeDataProvider instance and register that with the TreeDataProvider with the main tree view
+  // const mainViewTreeDataProviderInstance = new mainViewTreeDataProvider(logger);
+  // vscode.window.createTreeView('atap-aiassistMainTreeView', { treeDataProvider: mainViewTreeDataProviderInstance });
 
-  // instantiate the FileTreeProvider and register it
-  //   const rootPath = workspacePath || '';
-  // const dummy:string = 'E:/'  ;
-  // ToDo: figure out how to focus on the place the user last left off. If no such info, focus on workspaceroot.
-  // ToDo: figure out how the mainSearchPanel interacts with the fileTreeProvider -> mainFileViewTreeProvider
-  const fileTreeProviderInstance = new FileTreeProvider(); // rootPath  dummy
-  vscode.window.createTreeView('atap-aiassistFileTreeView', { treeDataProvider: fileTreeProviderInstance });
-  //vscode.window.registerTreeDataProvider('atap-aiassistFileTreeView"', fileTreeProviderInstance);
+  // // instantiate the FileTreeProvider and register it
+  // //   const rootPath = workspacePath || '';
+  // // const dummy:string = 'E:/'  ;
+  // // ToDo: figure out how to focus on the place the user last left off. If no such info, focus on workspaceroot.
+  // // ToDo: figure out how the mainSearchPanel interacts with the fileTreeProvider -> mainFileViewTreeProvider
+  // const fileTreeProviderInstance = new FileTreeProvider(); // rootPath  dummy
+  // vscode.window.createTreeView('atap-aiassistFileTreeView', { treeDataProvider: fileTreeProviderInstance });
+  // //vscode.window.registerTreeDataProvider('atap-aiassistFileTreeView"', fileTreeProviderInstance);
 
-  // *************************************************************** //
-  // ToDo: register some kind of search engine provider. tags:#enabledApiProposals #enableProposedApi (deprecated) #SearchProvider #TextSearchQuery #TextSearchOptions #TextSearchComplete #vscode.CancellationToken
-  // let mainSearchTextDisposable = vscode.commands.registerCommand('extension.searchText', mainSearchText);
-  // const mainSearchEngine = new mainSearchEngineProvider();
-  // extensionContext.subscriptions.push(vscode.workspace.registerSearchProvider('myProvider', provider));
+  // // *************************************************************** //
+  // // ToDo: register some kind of search engine provider. tags:#enabledApiProposals #enableProposedApi (deprecated) #SearchProvider #TextSearchQuery #TextSearchOptions #TextSearchComplete #vscode.CancellationToken
+  // // let mainSearchTextDisposable = vscode.commands.registerCommand('extension.searchText', mainSearchText);
+  // // const mainSearchEngine = new mainSearchEngineProvider();
+  // // extensionContext.subscriptions.push(vscode.workspace.registerSearchProvider('myProvider', provider));
 
-  //debugging
-  let allEditorsRestored = false;
-  vscode.window.onDidChangeVisibleTextEditors((editors) => {
-    if (!allEditorsRestored) {
-      myLogger.log(`onDidChangeVisibleTextEditors: editors length: ${editors.length}`, LogLevel.Debug);
+  // //debugging
+  // let allEditorsRestored = false;
+  // vscode.window.onDidChangeVisibleTextEditors((editors) => {
+  //   if (!allEditorsRestored) {
+  //     logger.log(`onDidChangeVisibleTextEditors: editors length: ${editors.length}`, LogLevel.Debug);
 
-      if (editors.length === vscode.workspace.textDocuments.length) {
-        allEditorsRestored = true;
-      }
-    }
-  });
+  //     if (editors.length === vscode.workspace.textDocuments.length) {
+  //       allEditorsRestored = true;
+  //     }
+  //   }
+  // });
 
-  myLogger.log(`Num editors visible at end of activation: ${vscode.window.visibleTextEditors.length}`, LogLevel.Debug);
-  vscode.window.visibleTextEditors.forEach((editor) => {
-    myLogger.log(
-      `Visible editor's document at end of activation: uri = ${editor.document.uri} filename = ${editor.document.fileName}`,
-      LogLevel.Debug,
-    );
-  });
+  // logger.log(`Num editors visible at end of activation: ${vscode.window.visibleTextEditors.length}`, LogLevel.Debug);
+  // vscode.window.visibleTextEditors.forEach((editor) => {
+  //   logger.log(
+  //     `Visible editor's document at end of activation: uri = ${editor.document.uri} filename = ${editor.document.fileName}`,
+  //     LogLevel.Debug,
+  //   );
+  // });
 }
 
-function deactivateExtension(): Promise<void> {
-  return new Promise((resolve) => {
+async function deactivateExtensionAsync(): Promise<void> {
+  return new Promise(async (resolve) => {
+    // Dispose of the state machine service
+    await stateMachineService.disposeAsync();
+
     // Clean up resources, like closing files or stopping services
+    await dataService.disposeAsync();
 
     // Cleanup temporary prompt document
     let promptDocument = dataService.data.getTemporaryPromptDocument() as vscode.TextDocument;
@@ -269,7 +278,7 @@ function deactivateExtension(): Promise<void> {
     // ToDo: The code to close editors with this document does not execute correctly
     // close any editors with this document open
     let editorsDisplayingDoc = vscode.window.visibleTextEditors.filter((editor) => editor.document === promptDocument);
-    //myLogger.log(`Num editors: ${editorsDisplayingDoc.length}`, LogLevel.Debug);
+    //logger.log(`Num editors: ${editorsDisplayingDoc.length}`, LogLevel.Debug);
     console.log(`Num editors: ${editorsDisplayingDoc.length}`);
     editorsDisplayingDoc.forEach((editor, i) => {
       console.log(i);
@@ -294,26 +303,19 @@ function deactivateExtension(): Promise<void> {
     try {
       fs.unlinkSync(dataService.data.getTemporaryPromptDocumentPath() as string);
     } catch (e) {
-      if (e instanceof Error) {
-        throw new DetailedError(
-          `deactivate: failed to delete ${dataService.data.getTemporaryPromptDocumentPath()} -> `,
-          e,
-        );
-      } else {
-        throw new Error(
-          `deactivate: failed to delete ${dataService.data.getTemporaryPromptDocumentPath()} and the instance of (e) returned is of type ${typeof e}`,
-        );
-      }
+      HandleError(
+        e,
+        'Activation',
+        'deactivateExtensionAsync',
+        `failed to delete ${dataService.data.getTemporaryPromptDocumentPath()}`,
+      );
     }
     resolve();
   });
 }
 
 // This method is called when your extension is deactivated
-export function deactivate(): Promise<void> {
+export async function deactivate(): Promise<void> {
   console.log('deactivate');
-  return new Promise((resolve) => {
-    deactivateExtension();
-    resolve();
-  });
+  await deactivateExtensionAsync();
 }

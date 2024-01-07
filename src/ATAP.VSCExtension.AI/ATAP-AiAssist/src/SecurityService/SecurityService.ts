@@ -15,28 +15,31 @@ import {
   fromYaml,
 } from '@Serializers/index';
 
-import { ExternalDataVetting } from './ExternalDataVetting';
+import { IExternalDataVetting, ExternalDataVetting } from './ExternalDataVetting';
 
 export interface ISecurityService {
+  readonly externalDataVetting: IExternalDataVetting;
+
   //version: string;
 }
 @logConstructor
 export class SecurityService implements ISecurityService {
-  private externalDataVetting: ExternalDataVetting;
-
+  readonly _externalDataVetting: IExternalDataVetting;
   constructor(
     private logger: ILogger,
     private extensionContext: vscode.ExtensionContext,
   ) {
-    this.externalDataVetting = new ExternalDataVetting(this.logger);
+    this._externalDataVetting = new ExternalDataVetting(logger);
   }
-  @logFunction
-  static CreateSecurityService(
+
+  static create(
     logger: ILogger,
     extensionContext: vscode.ExtensionContext,
     callingModule: string,
     initializationStructure?: ISerializationStructure,
   ): SecurityService {
+    Logger.staticLog(`SecurityService.create called`, LogLevel.Debug);
+
     let _obj: SecurityService | null;
     if (initializationStructure) {
       try {
@@ -77,11 +80,14 @@ export class SecurityService implements ISecurityService {
       return _obj;
     }
   }
-  @logFunction
+
+  get externalDataVetting(): IExternalDataVetting {
+    return this._externalDataVetting;
+  }
+
   static convertFrom_json(json: string): SecurityService {
     return fromJson<SecurityService>(json);
   }
-  @logFunction
   static convertFrom_yaml(yaml: string): SecurityService {
     return fromYaml<SecurityService>(yaml);
   }

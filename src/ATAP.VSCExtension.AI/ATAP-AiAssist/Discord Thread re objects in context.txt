@@ -1,0 +1,163 @@
+xState noob here... 
+
+I've been exploring the use of XState for managing user interaction and document fetching in a VSC extension. However, I've encountered a specific challenge that I'm hoping to get some guidance on. Most examples and documentation I've read demonstrate the use of scalar values in the config section of a state machine. However, I was wondering if it is possible to supply an an entire object, specifically an instance of an "IData" interface (see below), when the actor is initialized /started?
+
+How can I pass an instance of an IData interface to the config section of my state machine in XState? Are there any best practices or patterns I should follow? Additionally, I would like to understand how the state machine can interact with this IData instance throughout its states and transitions (using the getters and setters, both sync and async, in the Manager instances), and any potential pitfalls or performance considerations I should be aware of when supplying complex objects to a state machine.
+
+I would greatly appreciate any examples, advice, or resources you could share regarding this topic. Thank you in advance for your help!
+
+export interface IData {
+  readonly configurationData: IConfigurationData; // getters for properties that return a value from (in priority order) argv, env, DefaultConfiguration.Development, DefaultConfiguration.Testing, DefaultConfiguration.Production...
+  readonly stateManager: IStateManager;  // getters and async setters for a cache-fronted access to the VSC global state storage for an extension
+  readonly secretsManager: ISecretsManager; // async getters for property values stored in various 3rd-party password managers
+  readonly fileManager: IFileManager; // async getters and async setters for large collections stored in filesystem storage as JSON or YAML encoded strings, with updating the filesystem on command or on disposeAsync
+  disposeAsync(): void;  // called during extension deactivation, calls disposeAsync() on each of the Managers. Resolves when all Managers have resolved their disposeAsync() methods.
+  // If a manager supplies objects that needs disposing of, the manager uses a factory pattern and records each object that is handed out, so that all of them can be properly disposed of during extension deactivation 
+}
+
+P.S. my very first, incomplete and naive machines are at 
+https://stately.ai/registry/editor/3d1b7273-cdb5-4d17-ad73-c2ed29751a21?mode=design&machineId=221753bc-f237-425e-9699-5002a59af324
+https://stately.ai/registry/editor/3d1b7273-cdb5-4d17-ad73-c2ed29751a21?mode=design&machineId=30986a2c-6bed-46dd-815f-3e35c866e1c6
+
+
+
+xState noob... 
+
+I'd like to use xState for managing user interaction and document fetching in a VSC extension.  I'm having an issue understanding config. Most examples and documentation  use scalar values in the config section of a state machine. Is it possible to supply an entire object, specifically an instance of an IData interface (see below) when the actor is started? How can I pass an instance of an IData interface to the config section? How does the state machine logic interact with this IData instance using the getters and setters, both sync and async, in the Manager instances?
+
+I would appreciate any advice/links, I'm happy to RTFM. TYIA!
+
+```Typescript
+export interface IData {
+  readonly configurationData: IConfigurationData; // getters for properties. returns a value from (in priority order) argv, env, DefaultConfiguration.Development, DefaultConfiguration.Production
+  readonly stateManager: IStateManager;  // getters and async setters for cache-fronted access to the VSC global state data storage
+  readonly secretsManager: ISecretsManager; // async getters for property values stored in various 3rd-party password managers
+  readonly fileManager: IFileManager; // async getters and async setters for properties (large arrays) stored in the filesystem as JSON or YAML encoded strings, with updating the filesystem on command or on disposeAsync()
+  disposeAsync(): void;  // called during extension deactivation, calls disposeAsync() on each of the Managers. If necessary, a manager may use a factory pattern to create, record, and hand out an object, so that all disposable objects can be properly disposed of during extension deactivation 
+}
+```
+my very first, incomplete, naive machines :
+https://stately.ai/registry/editor/3d1b7273-cdb5-4d17-ad73-c2ed29751a21?mode=design&machineId=221753bc-f237-425e-9699-5002a59af324
+https://stately.ai/registry/editor/3d1b7273-cdb5-4d17-ad73-c2ed29751a21?mode=design&machineId=30986a2c-6bed-46dd-815f-3e35c866e1c6
+
+
+2014-01-02
+Passing input objects to invoked Actors
+xState noob here...
+I've created a simple three state machine (InitialState, SecondState, FinalState), and have successfully imported an object (data:IData) into the machine and logged it to the console. In the 'Second State', I can successfully invoke an actor defined inline. But I'm having trouble figuring out how to pass objects to the input of the invoked actor. I've read the many sections on input quite a few times, but no luck getting the syntax I need correct...Any help wouild be appreciated
+``` Typescript
+export const minimalMachineWithActorMachine = createMachine(
+  {
+    types: {
+      context: {} as { logger: ILogger; data: IData },
+      input: {} as { logger: ILogger; data: IData },
+      events: {} as { type: 'C1' },
+    },
+    context: ({ input }) => ({ logger: input.logger, data: input.data }),
+    id: 'minimalMachineWithActorMachine',
+    initial: 'Initial State',
+    states: { /* ... */
+	'Second State': {
+        entry: {
+          type: 'SecondStateEntryAction',
+        },
+        invoke: {
+          src: 'SecondStateActor',
+          // The input stanza below is wrong, its where I'm havingproblems understanding...
+          input: ({  logger:ILogger, data:IData }) => ({
+            logger: logger,
+            data: data,
+          }),
+          onDone: {
+            target: 'Final State',
+          },
+        },
+      },
+	  /*... */
+	  },
+  },
+  {
+    actors:{
+	// *  again, the input sections below throw a bunch of errors, and ${logger} ${data} "can't be found"
+        SecondStateActor: fromPromise(async ({ logger:ILogger, data:IData }) => {
+            console.log(`Second State invoke called`);
+            console.log(`logger: ${logger}`);
+            console.log(`data: ${data}`);
+            await true;
+            let pick: string = 'ABC';
+            return pick;
+          })
+    },
+	 actions: { /* ...*/
+	 },
+  },
+);
+
+const mMWAActor = createActor(minimalMachineWithActorMachine, {
+    input:{
+        logger: new Logger(),
+        data: new Data()
+    }
+});
+```
+
+
+AAI StateMachine
+
+a parent machine with an Idle state, FirstState, FinalState and ErrorState. The primary machine accepts an input parameter called loggerData that is of type ILoggerData {interface ILoggerData = logger:ILogger, data:Idata}. The event 'triggerFirstStateEvent' causes the transition from Idle to FirstState. It supplies the input loggerData parameter and also a parameter named 'enumToChangeType' of an enumeration type  'EnumToChangeType', having values 'Mode' and 'Command'. FirstState is a Parentstate with a child state 'ShowAndSelectEnumValueState', and a second child state 'ChangeCurrentValueofEnumState'. 'ShowAndSelectEnumValueState' has an invoked actor that invokes the 'ShowAndSelectEnumValueLogic'. 'ChangeCurrentValueofEnumState' has an invoked actor that invokes the 'ChangeCurrentValueofEnumStateLogic'.  The 'ShowAndSelectEnumValueLogic' calls an async function 'GetUserInput', which has two parameters: 'loggerData: ILoggerData, enumToChangeType: EnumToChangeType, and returns a value of 'QuickPickItem |udefined' to be stored in a local constant 'pick'. If 'pick.label' is 'undefined; the state transitions to the parent machine's 'Idle' state. if 'pick.label' === data.pickItems.currentMode ;' the state transitions to the parent machine's 'Idle' state. otherwise, the state transitions to the 'ChangeCurrentValueofEnumState', and supplies the loggerData, the. ' enumToChangeType ', and the pick.label as dynamic parameters to the 'ChangeCurrentValueofEnumState' and the 'ChangeCurrentValueofEnumStateLogic'. The 'ChangeCurrentValueofEnumStateLogic' sets a local 'constant priorEnumValue = data.pickItems.currentMode' and a local 'constant newEnumvalue - pick. label as ModeItmeEnum' The actor performs a switch statement on each possible pair of priorEnum and newEnumValue , and calls further invoked actor logic. Those actor logic names follow the pattern 'Change<priorEnumValue>To<newEnumValue>ActorLogic. Create placeholder instances for the source of those functions. Each should simply return onDone, or have an OnError event handler that transitions to the primary Machine's onError, supplying to the parent machines OnError state the reason why the 'furtherInvokedActorLogic' failed When the 'furtherInvokedActorLogic' completes succesfully, the 'ChangeCurrentValueofEnumState' should have an exit action that calls the function 'data.stateManger.currentMode = pick.label'. 
+
+Best Practices for structuring the statemachine files?
+
+xState noob here...
+I expect the primary machine definition for my application to get pretty large. I'd like to modularize it to a big degree, so no single file grows too large. I have some states/actors/actions/transitions that are both self-contained and resued/triggered by the same top-level event,  having different event data. Is it 'better' to have these groups coded as parent states with multiple child states in the primary machine's definition, or 'better' to create a 'child state machine' using a seperate .ts file, and invoking the 'child state machine' in the state which would be the parent in the parent-child architecture? It seems to me that having the logic in the 'child state machine' file would be 'better' (in the sense of reducing the line count in the primary machine definition's .ts file). All the internal states, internal transitions, entry/exit actions, guards, type defintions for a group would be in one file, with just the calling state defined in the primary file. Are there any 'cons' to building multiple 'child state machines', or, is this the best way to approach code reuse vs parent states?
+
+
+Thank you for that insight! I spent the morning building the child machine, and I'd like to get that working before I refactor it away :). The documentation says 'Any XState actor can be invoked, including simple Promise-based actors, or even complex machine-based actors.' I can 'invoke' an instance of a PromiseLogic (created with fromPromise) with no problem. But I can't seem to figure out how to invoke a machine-based actor from a state? I have a breakpoint on the first line of the invoked instance of the machineLogic (built by calling createMachine) and it is not being reached. But the state's Entry action is being called, and it seems to be immediatly transitiong to onError without executing any of the child machine logic. If I 'invoke' an instance of a createMachine({...}), do I also need to create an actor and start that actor? and if so, where?
+
+
+
+I have a file qPMachineLogic.ts with
+```Typescript
+export const quickPickMachineLogic = createMachine({...})
+``` 
+and a file pMachine.ts with 
+```Typescript
+export const primaryMachine = createMachine ({
+ context: {} as { loggerData: ILoggerData },
+ input: {} as { loggerData: ILoggerData },
+ events: {} as
+  | { type: 'quickPickEvent', kindOfEnumeration: QuickPickEnumeration}
+  | { type: 'Error' }
+  | { type: 'Dispose' }
+  | { type: 'DisposeComplete' },
+ id: 'primaryMachine',
+ initial: 'idle',
+ states: {
+  idle: {
+   on: {
+    quickPickEvent: {
+     target: 'quickPickState',
+    },
+    ...
+   ,
+  },
+  quickPickState: {
+   invoke: {
+    id: 'quickPickActor', // how do I create and start the child Actor based on the following machineLogic?
+    src: quickPickMachineLogic,
+    input: ({ context, event }) => ({
+     logger: context.loggerData.logger,
+     data: context.loggerData.data,
+     // kindOfEnumeration: event.kindOfEnumeration 
+     // the commented line above fails with the error: "Property 'kindOfEnumeration' does not exist on type '{ type: "quickPick"; kindOfEnumeration: QuickPickEnumeration; } | { type: "Error"; } | { type: "Dispose"; } | { type: "DisposeComplete"; }'. Property 'kindOfEnumeration' does not exist on type '{ type: "Error"; }'
+     // the following line suggested by GitHub Copilot, it compiles, but ... Will every additional payload field in other events require a similar guard?
+     kindOfEnumeration: event.type === 'quickPick' ? (event as { type: 'quickPick', kindOfEnumeration: QuickPickEnumeration }).kindOfEnumeration : undefined,
+    }),
+    onDone: [...],
+    onError: [...],
+    },
+   },
+  ...
+})
+
+I've no idea where to create and start the child quickPickActor?

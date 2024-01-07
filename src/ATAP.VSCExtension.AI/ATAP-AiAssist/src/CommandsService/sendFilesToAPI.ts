@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import axios from 'axios';
 import { LogLevel, ILogger } from '../Logger';
 
 interface IProcessResult {

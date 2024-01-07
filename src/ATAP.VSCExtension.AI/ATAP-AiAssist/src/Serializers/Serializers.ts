@@ -33,4 +33,3 @@ export class SerializationStructure implements ISerializationStructure {
 export function isSerializationStructure(obj: any): obj is ISerializationStructure {
   return obj && typeof obj === 'object' && 'value' in obj;
 }
-

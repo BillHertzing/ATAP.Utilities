@@ -1,11 +1,1 @@
-export {
-  LogLevel,
-  ChannelInfo,
-  ILogger,
-  Logger,
-  getLoggerLogLevelFromSettings,
-  setLoggerLogLevelFromSettings,
-  getDevelopmentLoggerLogLevelFromSettings,
-  setDevelopmentLoggerLogLevelFromSettings,
-} from './Logger';
-
+export { LogLevel, ChannelInfo, ILogger, Logger } from './Logger';

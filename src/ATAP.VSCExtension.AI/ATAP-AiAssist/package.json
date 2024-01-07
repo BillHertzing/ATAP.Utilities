@@ -1,0 +1,336 @@
+{
+  "name": "atap-aiassist",
+  "displayName": "atap-aiassist",
+  "description": "AI code helper",
+  "publisher": "ataputilities",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.84.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./_generated/dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "atap-aiassist.startCommand",
+        "title": "ATAP-AiAssist: startCommand"
+      },
+      {
+        "command": "atap-aiassist.showVSCEnvironment",
+        "icon": "$(rocket)",
+        "title": "ATAP-AiAssist: showVSCEnvironment"
+      },
+      {
+        "command": "atap-aiassist.showPrompt",
+        "title": "ATAP-AiAssist: showPrompt (show the Prompt document window)"
+      },
+      {
+        "command": "atap-aiassist.sendQuery",
+        "title": "ATAP-AiAssist: sendQuery (send the Query and all associated information to the server)"
+      },
+      {
+        "command": "atap-aiassist.showStatusMenuAsync",
+        "title": "ATAP-AiAssist: Show Status menu"
+      },
+      {
+        "command": "atap-aiassist.showModeMenuAsync",
+        "title": "ATAP-AiAssist: Show Mode menu"
+      },
+      {
+        "command": "atap-aiassist.showCommandMenuAsync",
+        "title": "ATAP-AiAssist: Show Command menu"
+      },
+      {
+        "command": "atap-aiassist.saveTagCollectionAsync",
+        "title": "ATAP-AiAssist: save the tag collection to disk"
+      },
+      {
+        "command": "atap-aiassist.saveCategoryCollectionAsync",
+        "title": "ATAP-AiAssist: save the category collection to disk"
+      },
+      {
+        "command": "atap-aiassist.saveAssociationCollectionAsync",
+        "title": "ATAP-AiAssist: save the association collection to disk"
+      },
+      {
+        "command": "atap-aiassist.saveConversationCollectionAsync",
+        "title": "ATAP-AiAssist: save the conversation collection to disk"
+      },
+      {
+        "command": "atap-aiassist.primaryActor.quickPickStatus",
+        "title": "ATAP-AiAssist.quickPick",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "atap-aiassist.primaryActor.quickPickMode",
+        "title": "ATAP-AiAssist.quickPick",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "atap-aiassist.primaryActor.quickPickCommand",
+        "title": "ATAP-AiAssist.quickPick",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "atap-aiassist.showMainViewRootRecordProperties",
+        "title": "ATAP-AiAssist: Show Root Record (Main View) Properties"
+      },
+      {
+        "command": "atap-aiassist.showSubItemProperties",
+        "title": "ATAP-AiAssist: Show SubItem Properties"
+      },
+      {
+        "command": "atap-aiassist.removeRegion",
+        "title": "ATAP-AiAssist: Remove lines starting with #region  and #endregion"
+      },
+      {
+        "command": "atap-aiassist.processFiles",
+        "title": "ATAP-AiAssist: process a file selector over a lambda",
+        "description": "process a list of files (parameter) by applying a lambda (parameter). Also accepts an optional ILogger parameter. Returns a list of structures consisting of filename, boolean success and number length",
+        "when": "focusedView == atap-aiassistMainTreeView"
+      },
+      {
+        "command": "atap-aiassist.copyToSubmit",
+        "title": "ATAP-AiAssist: copyToSubmit"
+      },
+      {
+        "command": "atap-aiassist.showExplorerView",
+        "title": "ATAP-AiAssist: Show Explorer View"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "atap-aiassist.processFiles",
+        "key": "ctrl+l ctrl+p",
+        "when": "focusedView == atap-aiassistMainTreeView"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "ATAP-AiAssist",
+        "properties": {
+          "ATAP-AiAssist.Logger.LogLevel": {
+            "type": "string",
+            "default": "Info",
+            "enum": [
+              "Error",
+              "Warning",
+              "Info",
+              "Debug",
+              "Trace"
+            ],
+            "description": "Log level setting."
+          },
+          "ATAP-AiAssist.DevelopmentWorkspacePath": {
+            "type": "string",
+            "default": "Enter the path to a workspace file to be used for extension startup during development",
+            "description": "the path to a workspace file to be used for extension startup during development"
+          },
+          "ATAP-AiAssist.KeePassKDBXPath": {
+            "type": "string",
+            "default": "Enter the path to your KeepPass .kdbx file",
+            "description": "KeepPass .kdbx file path"
+          },
+          "ATAP-AiAssist.EndpointConfigurations": {
+            "type": "string",
+            "default": "All JSON ",
+            "description": "All Endpoint Configurations (JSON format)",
+            "scope": "machine"
+          },
+          "ATAP-AiAssist.categorys": {
+            "type": "string",
+            "default": "[\"code\", \"documentation\",\"testing\"]",
+            "description": "Serialized Categories instance."
+          },
+          "ATAP-AiAssist.tags": {
+            "type": "string",
+            "default": "{}",
+            "description": "Serialized Tags instance."
+          },
+          "ATAP-AiAssist.predicates": {
+            "type": "string",
+            "default": "{}",
+            "description": "Serialized Predicates instance."
+          },
+          "ATAP-AiAssist.Development.Logger.LogLevel": {
+            "type": "string",
+            "default": "Info",
+            "enum": [
+              "Error",
+              "Warning",
+              "Info",
+              "Debug",
+              "Trace"
+            ],
+            "description": "Log level setting when the extension is run inside the development host."
+          },
+          "ATAP-AiAssist.Development.Editor.FilePath": {
+            "type": "string",
+            "default": "TestData1.ps1",
+            "description": "The file to open in an editor when the extension is run inside the development host."
+          },
+          "ATAP-AiAssist.Development.WorkspacePath": {
+            "type": "string",
+            "default": "./",
+            "description": "The workspace to open when the extension is run inside the development host."
+          }
+        }
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "atap-aiassist-activitybar-viewsContainer",
+          "title": "ATAP-AiAssist",
+          "icon": "media/ataplogo.svg"
+        }
+      ]
+    },
+    "views": {
+      "atap-aiassist-activitybar-viewsContainer": [
+        {
+          "id": "atap-aiassistMainTreeView",
+          "name": "Main Tree View"
+        },
+        {
+          "id": "atap-aiassistFileTreeView",
+          "name": "Specialized File Tree View"
+        }
+      ],
+      "explorer": [
+        {
+          "id": "atap-aiassistWelcomeView",
+          "name": "ATAP"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "atap-aiassistWelcomeView",
+        "contents": "Welcome to the ATAP AiAssist extension!\n[Start here](command:atap-aiassist.startCommand)",
+        "commands": [
+          {
+            "command": "ATAP-AiAssist.ChatGPT.AIKey",
+            "title": "Enter ChatGPT API Key",
+            "when": "ATAP-AiAssist.ChatGPT.AIKey == ''"
+          }
+        ],
+        "//": "group: atap-aiassist@1",
+        "priority": 1
+      }
+    ]
+  },
+  "menus": {
+    "view/item/context": [
+      {
+        "command": "atap-aiassist.showMainViewRootRecordProperties",
+        "when": "view == atap-aiassistMainTreeView && viewItem == mainViewTreeItem"
+      }
+    ],
+    "view/title": [
+      {
+        "when": "view == atap-aiassistMainTreeView",
+        "group": "navigation",
+        "tooltip": "Show workspace and initial editor filename",
+        "command": "atap-aiassist.showVSCEnvironment"
+      }
+    ],
+    "editor/title": [
+      {
+        "command": "atap-aiassist.primaryActor.ET1",
+        "group": "navigation"
+      }
+    ],
+    "editor/title/context": [
+      {
+        "command": "atap-aiassist.primaryActor.ETC1",
+        "group": "atap-aiassist"
+      },
+      {
+        "command": "atap-aiassist.primaryActor.ETC2",
+        "group": "atap-aiassist"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack --devtool source-map --output-path=./_generated/dist/",
+    "watch": "webpack --watch --devtool source-map --output-path=./_generated/dist/",
+    "package": "webpack --mode production --devtool source-map",
+    "compile-tests": "tsc -p . --outDir ./_generated/out  && ts-node -p . -r tsconfig-paths/register --outDir ./_generated/out",
+    "watch-tests": "tsc -p . -w --outDir ./_generated/out && ts-node -p . -w -r tsconfig-paths/register --outDir ./_generated/out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "build-tests": "webpack --config webpack.test.config.js",
+    "test": "ts-node -p . -r tsconfig-paths/register ./_generated/out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/bluebird": "^3.5.42",
+    "@types/chai": "^4.3.11",
+    "@types/diff": "^5.0.9",
+    "@types/js-yaml": "^4.0.9",
+    "@types/kdbxweb": "^2.0.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.10.5",
+    "@types/prettier": "^3.0.0",
+    "@types/sinon": "^17.0.2",
+    "@types/strip-comments": "^2.0.4",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.16.0",
+    "@typescript-eslint/parser": "^6.16.0",
+    "@vscode/test-electron": "^2.3.8",
+    "assert": "^2.1.0",
+    "chai": "^5.0.0",
+    "eslint": "^8.56.0",
+    "glob": "^10.3.10",
+    "https-browserify": "^1.0.0",
+    "mocha": "^10.2.0",
+    "module-alias": "^2.2.3",
+    "os-browserify": "^0.3.0",
+    "path-browserify": "^1.0.1",
+    "sinon": "^17.0.1",
+    "stream-browserify": "^3.0.0",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "tsconfig-paths-webpack-plugin": "^4.1.0",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "_moduleAliases": {
+    "@CommandsService": "_generated/out/CommandsService",
+    "@DataService": "_generated/out/DataService",
+    "@Decorators": "_generated/out/Decorators",
+    "@EndpointManager": "_generated/out/EndpointManager",
+    "@ErrorClasses/*": "_generated/out/ErrorClasses",
+    "@EventEmitters/*": "_generated/out/EventEmitters",
+    "@IDTypes": "_generated/out/IDTypes",
+    "@ItemWithIDs": "_generated/out/ItemWithIDs",
+    "@Logger": "_generated/out/Logger",
+    "@Philote": "_generated/out/Philote",
+    "@QueryService": "_generated/out/QueryService",
+    "@SecurityService": "_generated/out/SecurityService",
+    "@Serializers": "_generated/out/Serializers",
+    "@StateMachineService": "_generated/out/StateMachineService",
+    "@TypeMap": "_generated/out/TypeMap",
+    "@Utilities": "_generated/out/Utilities"
+  },
+  "dependencies": {
+    "axios": "^1.6.3",
+    "bluebird": "^3.7.2",
+    "diff": "^5.1.0",
+    "encoding": "^0.1.13",
+    "js-yaml": "^4.1.0",
+    "kdbxweb": "^2.1.1",
+    "openai": "^4.24.1",
+    "prettier": "^3.1.1",
+    "strip-comments": "^2.0.1",
+    "ts-node": "^10.9.2",
+    "xstate": "^5.4.1"
+  }
+}

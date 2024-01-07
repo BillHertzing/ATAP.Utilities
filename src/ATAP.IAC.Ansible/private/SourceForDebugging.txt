@@ -1,0 +1,188 @@
+using System.Collections.Generic;
+namespace ATAP.IAC.Ansible {
+public class AnsibleMeta : IAnsibleMeta
+{
+  public string DependentRoleNames { get; set; }
+
+  public AnsibleMeta() { }
+}
+  public class AnsiblePlay : IAnsiblePlay
+  {
+    public string Name { get; set; }
+    public AnsiblePlayBlockKind Kind { get; private set; }
+    public List<IAnsiblePlayBlockCommon> Items { get; set; }
+    public AnsiblePlay(string name, AnsiblePlayBlockKind kind, List<IAnsiblePlayBlockCommon> items)
+    {
+      Name = name;
+      Items = items;
+      Kind = kind;
+    }
+  }
+public class AnsiblePlayBlockChocolateyPackages : IAnsiblePlayBlockChocolateyPackages
+{
+  public string Name { get; set; }
+  public string Version { get; set; }
+  public bool Prerelease { get; set; }
+  public List<string> AddedParameters { get; set; }
+
+  public AnsiblePlayBlockChocolateyPackages(string name, string version, bool prerelease, List<string> addedParameters)
+  {
+    Name = name;
+    Version = version;
+    Prerelease = prerelease;
+    AddedParameters = addedParameters;
+  }
+}
+public class AnsiblePlayBlockCopyFiles : IAnsiblePlayBlockCopyFiles
+{
+  public string Name { get; set; }
+  public string Source { get; set; }
+  public string Destination { get; set; }
+
+  public AnsiblePlayBlockCopyFiles(string name, string source, string destination)
+  {
+    Name = name;
+    Source = source;
+    Destination = destination;
+  }
+}
+public enum AnsiblePlayBlockKind
+{
+  AnsiblePlayBlockChocolateyPackages,
+  AnsiblePlayBlockCopyFiles,
+  AnsiblePlayBlockRegistrySettings,
+  AnsiblePlayBlockSymbolicLinks,
+  AnsiblePlayBlockUserWindows
+}
+public class AnsiblePlayBlockRegistrySettings : IAnsiblePlayBlockRegistrySettings
+{
+  public string Name { get; set; }
+  public string Purpose { get; set; }
+  public string Path { get; set; }
+  public string Type { get; set; }
+  public string Value { get; set; }
+  public AnsiblePlayBlockRegistrySettings(string purpose, string name, string path, string type, string value)
+  {
+    Name = name;
+    Purpose = purpose;
+    Path = path;
+    Type = type;
+    Value = value;
+  }
+}
+  public class AnsiblePlayBlockSymbolicLinks : IAnsiblePlayBlockSymbolicLinks
+  {
+    public string Name { get; set; }
+    public string Source { get; set; }
+    public string Destination { get; set; }
+    public AnsiblePlayBlockSymbolicLinks(string name, string source, string destination)
+    {
+      Name = name;
+      Source = source;
+      Destination = destination;
+    }
+  }
+public class AnsiblePlayBlockUserWindows : IAnsiblePlayBlockUserWindows
+{
+  public string Name { get; set; }
+  public string Fullname { get; set; }
+  public string Description { get; set; }
+  public string Groups { get; set; }
+  public string Password { get; set; }
+  public AnsiblePlayBlockUserWindows(string name, string fullname, string description, string groups, string password)
+  {
+    Name = name;
+    Fullname = fullname;
+    Description = description;
+    Groups = groups;
+    Password = password;
+  }
+}
+public class AnsibleRole : IAnsibleRole
+{
+  public string Name { get; set; }
+  public IAnsibleMeta AnsibleMeta { get; set; }
+  public IAnsibleTask AnsibleTask { get; set; }
+
+  public AnsibleRole(string name, IAnsibleMeta ansibleMeta, IAnsibleTask ansibleTask)
+  {
+    Name = name;
+    AnsibleMeta = ansibleMeta;
+    AnsibleTask = ansibleTask;
+  }
+}
+  public class AnsibleTask : IAnsibleTask
+  {
+    public string Name { get; set; }
+    public List<IAnsiblePlay> Items { get; set; }
+
+    public AnsibleTask(string name, List<IAnsiblePlay> items)
+    {
+      Name = name;
+      Items = items;
+    }
+  }
+  public interface IAnsibleMeta
+  {
+    string DependentRoleNames { get; set; }
+  }
+  public interface IAnsiblePlay
+  {
+    string Name { get; set; }
+    AnsiblePlayBlockKind Kind { get; }
+
+    List<IAnsiblePlayBlockCommon> Items { get; set; }
+  }
+// Interface for AnsiblePlayBlockChocolateyPackages, derived from IAnsiblePlayBlockCommon
+public interface IAnsiblePlayBlockChocolateyPackages : IAnsiblePlayBlockCommon
+{
+  string Version { get; set; }
+  bool Prerelease { get; set; }
+  List<string> AddedParameters { get; set; }
+}
+  // AnsiblePlayBlockCommon interface capturing shared components
+  public interface IAnsiblePlayBlockCommon
+  {
+    string Name { get; set; }
+  }
+// Interface for AnsiblePlayBlockCopyFiles, derived from IAnsiblePlayBlockCommon
+public interface IAnsiblePlayBlockCopyFiles : IAnsiblePlayBlockCommon
+{
+  string Source { get; set; }
+  string Destination { get; set; }
+}
+// Interface for AnsiblePlayBlockRegistrySettings, derived from IAnsiblePlayBlockCommon
+public interface IAnsiblePlayBlockRegistrySettings : IAnsiblePlayBlockCommon
+{
+  string Purpose { get; set; }
+  string Path { get; set; }
+  string Type { get; set; }
+  string Value { get; set; }
+}
+// Interface for AnsiblePlayBlockSymbolicLinks, derived from IAnsiblePlayBlockCommon
+public interface IAnsiblePlayBlockSymbolicLinks : IAnsiblePlayBlockCommon
+{
+  string Source { get; set; }
+  string Destination { get; set; }
+}
+// Interface for AnsiblePlayBlockUserWindows, derived from IAnsiblePlayBlockCommon
+public interface IAnsiblePlayBlockUserWindows : IAnsiblePlayBlockCommon
+{
+  string Fullname { get; set; }
+  string Description { get; set; }
+  string Groups { get; set; }
+  string Password { get; set; }
+}
+public interface IAnsibleRole
+{
+    string Name { get; set; }
+    IAnsibleMeta AnsibleMeta { get; set; }
+    IAnsibleTask AnsibleTask { get; set; }
+
+}
+public interface IAnsibleTask
+{
+  string Name { get; set; }
+  List<IAnsiblePlay> Items { get; set; }
+}
+}

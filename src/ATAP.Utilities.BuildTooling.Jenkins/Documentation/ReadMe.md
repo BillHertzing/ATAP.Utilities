@@ -18,6 +18,7 @@ http://yourjenkins/quietDown - Keep current jbs running but disallow any new one
 http://[jenkins-server]/exit - To shutdown
 
 (Administering Jenkins](https://wiki.jenkins.io/display/JENKINS/Administering+Jenkins) - Backup / restore; Copy/Move/Rename jobs; Jenkins directory structure; exit/restart/reload URL commands
+
 ```plantuml
 @startuml
 

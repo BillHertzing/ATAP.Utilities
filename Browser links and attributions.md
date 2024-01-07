@@ -226,7 +226,7 @@ https://github.com/dotnet/coreclr/blob/master/Documentation/coding-guidelines/cr
 
 [Windows Performance Analyzer](https://docs.microsoft.com/en-us/windows-hardware/test/wpt/windows-performance-analyzer)  How to use the Traceloogin data collected by a WPR
 
-[Download and install the Windows ADK](https://docs.microsoft.com/en-us/windows-hardware/get-started/adk-install) Windows ADK has both teh WPR and WPF tools
+[Download and install the Windows ADK](https://docs.microsoft.com/en-us/windows-hardware/get-started/adk-install) Windows ADK has both the WPR and WPF tools
 
 [Windows 10 ADK versions and download links](https://www.prajwaldesai.com/windows-10-adk-versions/) download reference for the windows ADK
 
@@ -681,6 +681,7 @@ ILSpy vsix
 [SQL Server Connection Strings](https://www.connectionstrings.com/sql-server/) Many examples of connection strings for various providerss, clits (MSDataShape, SQLClient .Net Framework, etc)
 
 # Object-Object mapper
+
 [Why use Threenine.Map](https://threeninemap.readthedocs.io/en/latest/Getting-started.html)  Library on top of auto-mapper
 
 # Build and Package
@@ -805,15 +806,15 @@ https://www.itprotoday.com/powershell/windows-powershell-range-operator-tricks
 [DocFX TOC Generator](https://github.com/systemgroupnet/docfx-toc-generator) - TOC generator
 
 # Chrome Bookmarks
+
 [Export Chrome Bookmarks to CSV file using PowerShell](https://stackoverflow.com/questions/47345612/export-chrome-bookmarks-to-csv-file-using-powershell)
 
 
 ## VoiceAttack
+
 [Using Voice Dictation for In-Game Chatting with VoiceAttack & Google](https://forum.il2sturmovik.com/topic/61552-using-voice-dictation-for-in-game-chatting-with-voiceattack-google/)
 
 [CODING BY VOICE WITH VOICE ATTACK: A PRACTICAL GUIDE FOR PROGRAMMERS](https://www.learncodebygaming.com/blog/coding-by-voice-with-voice-attack-a-practical-guide-for-programmers)
-
-[Using Voice Dictation for In-Game Chatting with VoiceAttack & Google](https://forum.il2sturmovik.com/topic/61552-using-voice-dictation-for-in-game-chatting-with-voiceattack-google/)
 
 [Speaking numbers](https://forum.voiceattack.com/smf/index.php?topic=3872.0)
 

@@ -154,7 +154,7 @@ namespace ATAP.Utilities.VoiceAttack.Game.AOE.II {
       #region Environment determination and validation
       // ToDo: Before the genericHost is built, have to use a StringConstant for the string that means "Production", and hope the ConfigurationRoot value for Environment matches the StringConstant
       // Determine the environment (Debug, TestingUnit, TestingX, QA, QA1, QA2, ..., Staging, Production) to use from the initialconfigurationRoot
-      envNameFromConfiguration = configurationRoot.GetValue<string>(StringConstantsGenericHost.EnvironmentConfigRootKey, StringConstantsGenericHost.EnvironmentDefault);
+      envNameFromConfiguration = configurationRoot.GetValue<string>(StringConstantsGenericHost.ENVIRONMENTConfigRootKey, StringConstantsGenericHost.EnvironmentDefault);
       Serilog.Log.Debug("{0} {1}: Initial environment name: {2}", "PluginVAGameAOEII", "GetConfigurationRootFromConfigurationSections", envNameFromConfiguration);
 
       // optional: Validate that the environment provided is one this program understands how to use

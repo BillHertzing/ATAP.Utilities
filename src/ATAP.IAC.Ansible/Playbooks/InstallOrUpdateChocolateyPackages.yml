@@ -1,0 +1,65 @@
+---
+# code: language=ansible
+- name: Install or Update Chocolatey packages based on list in file
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/rawchocopackages.yml'
+  tasks:
+    # - name: Confirm WinRM active
+    #   ansible.windows.win_powershell:
+    #     executable: pwsh.exe
+    #     script: |
+    #       $port = (Get-Item -LiteralPath WSMan:\localhost\Client\DefaultPorts\HTTP).Value
+    #       $onlinePorts = @(Get-ChildItem -LiteralPath WSMan:\localhost\Listener |
+    #       Where-Object { 'Transport=HTTP' -in $_.Keys } |
+    #       Get-ChildItem |
+    #       Where-Object Name -eq Port |
+    #       Select-Object -ExpandProperty Value)
+    #       if ($port -notin $onlinePorts) {
+    #         "The default client port $port is not set up as a WSMan HTTP listener, win_dsc will not work."
+    #       }
+    - name: Ensure Chocolatey is installed
+      win_dsc:
+        resource_name: cChoco # ChocolateySource
+        state: present
+        choco_install_arguments: '/y'
+    - name: Ensure cChoco module is imported
+      win_psmodule:
+        name: cChoco
+        repository: PSGallery
+      # win_dsc:
+      #   resource_name: choco
+      #   state: present
+      #   choco_install_arguments: '/y'
+    - name: Loop over the packages in the file
+      debug:
+        msg: "The Name is {{ item.Name }} and the version is {{ item.Version }}"
+      loop: "{{ variable_list }}"
+      vars:
+        variable_list: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/rawchocopackages.yml') | from_yaml }}"
+    - name:  use chocolatey to install package
+      win_dsc:
+        resource_name: cChocoPackageInstaller
+        Name: "{{ item.Name }}"
+        Version: "{{ item.Version }}"
+        Ensure: Present
+        Params: '--params=''"/S"'''
+      loop: "{{ variable_list }}"
+      vars:
+        variable_list: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/rawchocopackages.yml') | from_yaml }}"
+    # - name:  use chocolatey to install package
+    #   win_chocolatey:
+    #     name: "{{ item.Name }}"
+    #     version: "{{ item.Version }}"
+    #     force: yes
+    #   loop: "{{ variable_list }}"
+    #   vars:
+    #     variable_list: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/rawchocopackages.yml') | from_yaml }}"
+    # - name: debug chocolatey output
+    #   ansible.builtin.debug:
+    #     var: command_output.stdout_lines
+    #   loop: "{{ variable_list }}"
+    #   vars:
+    #     variable_list: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/rawchocopackages.yml') | from_yaml }}"
+

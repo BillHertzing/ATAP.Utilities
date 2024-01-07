@@ -166,7 +166,7 @@ Set-DbaSpConfigure -SqlInstance $serversmo -Name 'clr enabled' -Value 1 >> $null
 # Make this new database the default for the AdminLogin, grant it three roles
 Set-DbaLogin -SqlInstance $serverSMO -Login $config['AdminLogin'] -DefaultDatabase $config['DatabaseName']
 
-# ToDo: is a User Login required for ths database? Or just use the Windows account under whihc the scripts are running?
+# ToDo: is a User Login required for ths database? Or just use the Windows account under which the scripts are running?
 # if ((Get-DbaLogin -SqlInstance $serverSMO -Login $config['UserLogin']) -ne $null) {
   # # Delete the existing login
   # # ToDo: Error handling

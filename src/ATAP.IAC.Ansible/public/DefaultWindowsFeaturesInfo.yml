@@ -1,0 +1,10 @@
+Defender:
+  version: Latest
+  comments: ""
+Hyperviser:
+  version: Latest
+  comments: "Required for WSL"
+SSH.Server:
+  version: latest
+  comments: ""
+

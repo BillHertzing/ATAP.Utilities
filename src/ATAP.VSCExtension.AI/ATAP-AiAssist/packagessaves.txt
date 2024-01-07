@@ -1,0 +1,184 @@
+,
+      {
+        "view": "atap-aiassistWelcomeView",
+        "contents": "Need Help? [See our docs](https://your-extension-docs.com)",
+        "when": "config.atap-aiassist.enabled",
+        "//": "group: atap-aiassist@2",
+        "priority": 2
+      },
+      {
+        "view": "atap-aiassistWelcomeView",
+        "contents": "Join our [Discord Server](https://discord.gg/atap-aiassist)",
+        "when": "!config.atap-aiassist.hideDiscord",
+        "//": "group: atap-aiassist@2",
+        "priority": 3
+      }
+
+"when": "atap-aiassistMainTreeViewEnabled"
+          "when": "atap-aiassistFileTreeViewEnabled"
+
+
+      "explorer": [
+        {
+          "id": "atap-aiassistFileTreeView",
+          "name": "ATAP Custom File Tree View"
+        }
+      ],
+
+
+,
+        {
+          "id": "atap-aiassistWelcomeView",
+          "name": "ATAP Custom File Tree View"
+        }
+
+,
+    "viewsWelcome": [
+      {
+        "view": "atap-aiassistWelcomeView",
+        "contents": "Welcome to the ATAP AiAssist extension!\n\n[Start here](command:atap-aiassist.startCommand)",
+        "when": "config.atap-aiassist.showWelcome",
+        "//": "group: atap-aiassist@1",
+        "priority": 1
+      }
+    ]
+
+
+
+import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
+
+import { FileTreeItem } from './FileTreeItem';
+
+
+export class FileTreeProvider implements vscode.TreeDataProvider<FileTreeItem> {
+  private _onDidChangeTreeData: vscode.EventEmitter<FileTreeItem | undefined> = new vscode.EventEmitter<FileTreeItem | undefined>();
+  readonly onDidChangeTreeData: vscode.Event<FileTreeItem | undefined> = this._onDidChangeTreeData.event;
+
+  constructor(private rootPath: string) {}
+
+  refresh(): void {
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
+  getTreeItem(element: FileTreeItem): vscode.TreeItem {
+    return element;
+  }
+
+  getChildren(element?: FileTreeItem): Thenable<FileTreeItem[]> {
+    if (!this.rootPath) {
+      vscode.window.showInformationMessage('No folder or file in explorer');
+      return Promise.resolve([]);
+    }
+
+    return new Promise(resolve => {
+      const children: FileTreeItem[] = [];
+      const folderPath = element ? element.uri.fsPath : this.rootPath;
+
+      fs.readdir(folderPath, (err, files) => {
+        if (err) {
+          vscode.window.showErrorMessage('Unable to read directory');
+          return resolve([]);
+        }
+
+        files.forEach(file => {
+          const filePath = path.join(folderPath, file);
+          if (fs.statSync(filePath).isDirectory()) {
+            children.push(new FileTreeItem(vscode.Uri.file(filePath), 'folder'));
+          } else {
+            children.push(new FileTreeItem(vscode.Uri.file(filePath), 'file'));
+          }
+        });
+
+        return resolve(children);
+      });
+    });
+  }
+}
+
+
+
+
+        // The Microsoft Powershell extension has problems when starting in the development host, because it doesn't have an initial workspaceRoot
+        "--disable-extension=ms-vscode.PowerShell",
+        // Because the Microsoft Powershell extension has been disabled, the Ironman Power Shell Pro Tools extension must also be disabled
+        "--disable-extension=ironmansoftware.powershellprotools",
+        // For development , disable all of the normal extensions used in production
+        "--disable-extension=aaron-bond.better-comments",
+        "--disable-extension=alefragnani.Bookmarks",
+        "--disable-extension=ambooth.git-rename",
+        //"--disable-extension=amodio.tsl-problem-matcher",
+        "--disable-extension=blackmist.LinkCheckMD",
+        "--disable-extension=codezombiech.gitignore",
+        "--disable-extension=DavidAnson.vscode-markdownlint",
+        "--disable-extension=dbaeumer.vscode-eslint",
+        "--disable-extension=dbizzy.dbizzy",
+        "--disable-extension=docsmsft.docs-linting",
+        "--disable-extension=docsmsft.docs-metadata",
+        "--disable-extension=docsmsft.docs-visual-areas",
+        "--disable-extension=DominicVonk.vscode-resx-editor",
+        "--disable-extension=DotJoshJohnson.xml",
+        "--disable-extension=eamodio.gitlens",
+        "--disable-extension=EditorConfig.EditorConfig",
+        "--disable-extension=esbenp.prettier-vscode",
+        "--disable-extension=fernandoescolar.vscode-solution-explorer",
+        "--disable-extension=formulahendry.dotnet-test-explorer",
+        "--disable-extension=geeksharp.openssl-configuration-file",
+        "--disable-extension=gep13.chocolatey-vscode",
+        "--disable-extension=GitHub.vscode-pull-request-github",
+        "--disable-extension=hashhar.gitattributes",
+        --disable-extension=hbenl.vscode-test-explorer",
+        "--disable-extension=hediet.vscode-drawio",
+        "--disable-extension=HuggingFace.huggingface-vscode",
+        "--disable-extension=icsharpcode.ilspy-vscode",
+        "--disable-extension=ionutvmi.reg",
+        "--disable-extension=jchannon.csharpextensions",
+        "--disable-extension=jebbs.plantuml",
+        "--disable-extension=jmrog.vscode-nuget-package-manager",
+        "--disable-extension=MattiasBaake.vscode-snippets-for-ansible",
+        "--disable-extension=Mebrahtom.plantumlpreviewer",
+        "--disable-extension=mhutchie.git-graph",
+        "--disable-extension=ms-azuretools.vscode-docker",
+        "--disable-extension=ms-dotnettools.csdevkit",
+        "--disable-extension=ms-dotnettools.csharp",
+       "--disable-extension=ms-dotnettools.vscode-dotnet-runtime",
+        "--disable-extension=ms-dotnettools.vscodeintellicode-csharp",
+        "--disable-extension=ms-mssql.data-workspace-vscode",
+        "--disable-extension=ms-mssql.mssql",
+        "--disable-extension=ms-mssql.sql-bindings-vscode",
+        "--disable-extension=ms-mssql.sql-database-projects-vscode",
+        "--disable-extension=ms-python.isort",
+        "--disable-extension=ms-python.python",
+        "--disable-extension=ms-python.vscode-pylance",
+        // "--disable-extension=ms-vscode-remote.remote-containers",
+        // "--disable-extension=ms-vscode-remote.remote-ssh",
+        // "--disable-extension=ms-vscode-remote.remote-ssh-edit",
+        // "--disable-extension=ms-vscode-remote.remote-wsl",
+        // "--disable-extension=ms-vscode-remote.vscode-remote-extensionpack",
+        // "--disable-extension=ms-vscode.remote-explorer",
+        // "--disable-extension=ms-vscode.remote-server",
+        "--disable-extension=ms-vscode.test-adapter-converter",
+        "--disable-extension=NicolasVuillamy.vscode-groovy-lint",
+        "--disable-extension=pierre3.csharp-to-plantuml",
+        "--disable-extension=PrateekMahendrakar.resxpress",
+        "--disable-extension=rebornix.ruby",
+        "--disable-extension=recode4dev.jenkinsfile",
+        "--disable-extension=redhat.vscode-commons",
+        "--disable-extension=redhat.vscode-yaml",
+        "--disable-extension=ryu1kn.edit-with-shell",
+        "--disable-extension=streetsidesoftware.code-spell-checker",
+        "--disable-extension=tintoy.msbuild-project-tools",
+        // "--disable-extension=vscode-icons-team.vscode-icons",
+        "--disable-extension=warren-buckley.iis-express",
+        "--disable-extension=wingrunr21.vscode-ruby",
+        "--disable-extension=vscode.git",
+        "--disable-extension=vscode.git-base",
+        "--disable-extension=vscode.github",
+        "--disable-extension=vscode.github-authentication",
+        "--disable-extension=ms-dotnettools.dotnet-interactive-vscode",
+        "--disable-extension=vscode.emmet",
+        "--disable-extension=vscode.merge-conflict",
+        // "--disable-extension=vscode.json-language-features",
+        // "--disable-extension=vscode.npm"
+

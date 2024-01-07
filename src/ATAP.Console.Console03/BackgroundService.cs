@@ -77,7 +77,7 @@ namespace ATAP.Console.Console03 {
     #endregion
     #region Constructor
     /// <summary>
-    /// Constructor that populates all the injected services provided by a GenericHost, along with teh injected services specific to this program that are needed by this HostedService (or derivitive like BackgroundService)
+    /// Constructor that populates all the injected services provided by a GenericHost, along with the injected services specific to this program that are needed by this HostedService (or derivitive like BackgroundService)
     /// </summary>
     /// <param name="consoleSinkHostedService"></param>
     /// <param name="consoleSourceHostedService"></param>
@@ -244,7 +244,7 @@ namespace ATAP.Console.Console03 {
       #region tempout
       switch (inputLine) {
         case "1":
-          // ToDo: Get these from the Console03 application configuration 
+          // ToDo: Get these from the Console03 application configuration
           // ToDo: Get these from the database or from a configurationRoot (priority?)
           string GenerateProgramDBConnectionString = "";
           Philote<GAssemblyGroup> assemblyGroupPhilote = new Philote<GAssemblyGroup>();
@@ -298,7 +298,7 @@ namespace ATAP.Console.Console03 {
             convertFileSystemToGraphProgress = null;
           }
           #endregion
-          /* Persistence is not used in the Console03 Background Serveice nor in the GenerateProgram entry points it calls 
+          /* Persistence is not used in the Console03 Background Serveice nor in the GenerateProgram entry points it calls
 
           #region PersistenceViaFiles setup
           // Ensure the Node and Edge files are empty and can be written to
@@ -357,7 +357,7 @@ namespace ATAP.Console.Console03 {
           Persistence<IInsertResultsAbstract> persistence = new Persistence<IInsertResultsAbstract>(insertFunc);
           #endregion
           */
-          /* PickAndSave is not used in the Console03 Background Serveice nor in the GenerateProgram entry points it calls 
+          /* PickAndSave is not used in the Console03 Background Serveice nor in the GenerateProgram entry points it calls
           #region PickAndSaveViaFiles setup
           // Ensure the Archived files are empty and can be written to
           // Call the SetupViaFileFuncBuilder here, execute the Func that comes back, with filePathsPickAndSave as the argument
@@ -441,10 +441,10 @@ namespace ATAP.Console.Console03 {
           }
           finally {
             // Dispose of the objects that need disposing
-            /* PickAndSave is not used in the Console03 Background Serveice nor in the GenerateProgram entry points it calls 
+            /* PickAndSave is not used in the Console03 Background Serveice nor in the GenerateProgram entry points it calls
             setupResultsPickAndSave.Dispose();
             */
-            /* Persistence is not used in the Console03 Background Serveice nor in the GenerateProgram entry points it calls 
+            /* Persistence is not used in the Console03 Background Serveice nor in the GenerateProgram entry points it calls
             setupResultsPersistence.Dispose();
             */
           }
@@ -636,7 +636,7 @@ namespace ATAP.Console.Console03 {
       #endregion
 
       // Create a list of choices
-      // ToDo: Get the list from the StringConstants, and localize them 
+      // ToDo: Get the list from the StringConstants, and localize them
       choices = new List<string>() { "1. Run ConvertFileSystemToGraphAsyncTask", "2. Subscribe ConsoleOut to ConsoleIn", "3. Unsubscribe ConsoleOut from ConsoleIn", "99: Quit" };
 
       #region Buildmenu

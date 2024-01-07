@@ -11,7 +11,7 @@ choco install rabbitmq
 This will also install the Erlang language server!
 Assistant design
 
-The APAT Voiceattack plugin is intended to be an assistant for playing games. It offers these featires:
+The APATAPAT Voiceattack plugin is intended to be an assistant for playing games. It offers these featires:
 
 1) Coach mode: The plugin will provide verbal reminders of actions to  take
 
@@ -87,7 +87,7 @@ The architecture for game time decision and command issuance consists of these p
 
 ## System Clock and Game Clock
 The System Clock is not pausable. It runs from the time the plugin starts until it is stopped
-The game clock is a gated duplicate of teh system clock. The gate turns the game clock on or off. The gate is controlled by the game-level variable "GameState" which can be one of the enumeration values of `PreInitialzed`, `Initialized`, `Running`, `Paused`, `Ended`.
+The game clock is a gated duplicate of the system clock. The gate turns the game clock on or off. The gate is controlled by the game-level variable "GameState" which can be one of the enumeration values of `PreInitialzed`, `Initialized`, `Running`, `Paused`, `Ended`.
 
 ## OutputCommand
 

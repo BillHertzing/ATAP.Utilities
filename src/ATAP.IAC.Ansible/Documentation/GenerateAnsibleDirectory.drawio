@@ -1,0 +1,102 @@
+<mxfile host="65bd71144e">
+    <diagram id="0ACJjv6f-qCOk69bz6GI" name="Page-1">
+        <mxGraphModel dx="967" dy="509" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="19" value="Create Ansible Directory" style="shape=umlFrame;whiteSpace=wrap;html=1;width=120;height=30;boundedLbl=1;verticalAlign=middle;align=left;spacingLeft=5;" vertex="1" parent="1">
+                    <mxGeometry x="35" y="460" width="680" height="740" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" value="HostSettings Type 1 (common)" style="html=1;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="40" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="User GUIDS" style="html=1;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="320" width="200" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="Host Names" style="html=1;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="160" width="200" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="SettingsKeys&lt;br&gt;&lt;div style=&quot;color: rgb(204, 204, 204); background-color: rgb(31, 31, 31); font-family: Consolas, &amp;quot;Courier New&amp;quot;, monospace; font-size: 14px; line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #9cdcfe;&quot;&gt;PowershellModuleNames&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;background-color: rgb(31, 31, 31); font-family: Consolas, &amp;quot;Courier New&amp;quot;, monospace; font-size: 14px; line-height: 19px;&quot;&gt;&lt;div style=&quot;color: rgb(204, 204, 204); line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #9cdcfe;&quot;&gt;WindowsFeatureNames&lt;/span&gt; &lt;/div&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;color: rgb(204, 204, 204); line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #9cdcfe;&quot;&gt;RegistrySettings&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;color: rgb(204, 204, 204); line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #9cdcfe;&quot;&gt;ChocolateyPackageNames&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;color: rgb(204, 204, 204); line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #9cdcfe;&quot;&gt;NetworkSettings&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;font color=&quot;#9cdcfe&quot;&gt;Script/Environment settings&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="html=1;" parent="1" vertex="1">
+                    <mxGeometry x="580" y="190" width="220" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" value="Settings Collections" style="html=1;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="40" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="Sorted and evaulated Settings" style="html=1;" parent="1" vertex="1">
+                    <mxGeometry x="290" y="40" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="Group Settings" style="html=1;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="240" width="110" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="Host Settings" style="html=1;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="160" width="110" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="User Settings" style="html=1;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="320" width="110" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="Group Names" style="html=1;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="240" width="200" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="Role Names" style="html=1;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="400" width="200" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="Role Settings" style="html=1;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="400" width="110" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="" style="ellipse;html=1;shape=startState;fillColor=#000000;strokeColor=#ff0000;fontColor=#F06593;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="510" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;verticalAlign=bottom;endArrow=open;endSize=8;strokeColor=#ff0000;fontColor=#F06593;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="17" edge="1" target="21">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="125" y="570" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="20" value="Host Settings&lt;br&gt;Keys" style="html=1;" vertex="1" parent="1">
+                    <mxGeometry x="80" y="560" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="Create Host Settings" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;bpmnShapeType=call;taskMarker=script;" vertex="1" parent="1">
+                    <mxGeometry x="240" y="620" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="Host Settings&lt;br&gt;Default Values" style="html=1;" vertex="1" parent="1">
+                    <mxGeometry x="80" y="620" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="23" value="Host Names" style="html=1;" vertex="1" parent="1">
+                    <mxGeometry x="80" y="680" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" value="Host-specific Settings&lt;br&gt;Values" style="html=1;" vertex="1" parent="1">
+                    <mxGeometry x="80" y="740" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="29" value="Host Settings&lt;br&gt;Per-host&lt;br&gt;Specific Settings Key:Value" style="html=1;" vertex="1" parent="1">
+                    <mxGeometry x="230" y="720" width="150" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="30" value="{annotation1}" style="endArrow=open;html=1;rounded=0;align=center;verticalAlign=top;endFill=0;labelBackgroundColor=none;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="21" target="33">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="360" y="660" as="sourcePoint"/>
+                        <mxPoint x="520" y="660" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="31" value="Edge1" style="resizable=0;html=1;align=left;verticalAlign=bottom;labelBackgroundColor=none;" connectable="0" vertex="1" parent="30">
+                    <mxGeometry x="-1" relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="32" value="[guard]" style="resizable=0;html=1;align=right;verticalAlign=bottom;labelBackgroundColor=none;" connectable="0" vertex="1" parent="30">
+                    <mxGeometry x="1" relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" value="Create Group Settings" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;bpmnShapeType=call;taskMarker=script;" vertex="1" parent="1">
+                    <mxGeometry x="490" y="820" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" value="Group Names" style="html=1;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="800" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="35" value="Per-Group Settings&lt;br&gt;Keys" style="html=1;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="860" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="36" value="Per-Group Settings&lt;br&gt;Default Values" style="html=1;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="920" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="37" value="Host-Group Settings&lt;br&gt;Per-host and then per-Group&lt;br&gt;Specific Settings Key:Value" style="html=1;" vertex="1" parent="1">
+                    <mxGeometry x="490" y="940" width="150" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

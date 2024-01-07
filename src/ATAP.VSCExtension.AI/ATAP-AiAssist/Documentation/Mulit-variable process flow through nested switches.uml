@@ -1,0 +1,99 @@
+@startuml
+start
+
+:read var1;
+switch (var1)
+case ("value1")
+  :read var2;
+  switch (var2)
+  case ("value2-1")
+    :read var3;
+    switch (var3)
+    case ("value3-1")
+      :handle value1, value2-1, value3-1;
+    case ("value3-2")
+      :handle value1, value2-1, value3-2;
+    endswitch
+  case ("value2-2")
+    :read var3;
+    switch (var3)
+    case ("value3-1")
+      :handle value1, value2-2, value3-1;
+    case ("value3-2")
+      :handle value1, value2-2, value3-2;
+    endswitch
+  endswitch
+case ("value1-2")
+  :read var2;
+  switch (var2)
+  case ("value2-1")
+    :read var3;
+    switch (var3)
+    case ("value3-1")
+      :handle value1-2, value2-1, value3-1;
+    case ("value3-2")
+      :handle value1-2, value2-1, value3-2;
+    endswitch
+  case ("value2-2")
+    :read var3;
+    switch (var3)
+    case ("value3-1")
+      :handle value1-2, value2-2, value3-1;
+    case ("value3-2")
+      :handle value1-2, value2-2, value3-2;
+    endswitch
+  endswitch
+endswitch
+
+stop
+@enduml
+
+@startuml
+start
+
+:read var1;
+switch (var1)
+case (Enum1::ValueA)
+  :read var2;
+  switch (var2)
+  case (Enum2::ValueA)
+    :read var3;
+    switch (var3)
+    case (Enum3::ValueA)
+      :handle Enum1::ValueA, Enum2::ValueA, Enum3::ValueA;
+    case (Enum3::ValueB)
+      :handle Enum1::ValueA, Enum2::ValueA, Enum3::ValueB;
+    endswitch
+  case (Enum2::ValueB)
+    :read var3;
+    switch (var3)
+    case (Enum3::ValueA)
+      :handle Enum1::ValueA, Enum2::ValueB, Enum3::ValueA;
+    case (Enum3::ValueB)
+      :handle Enum1::ValueA, Enum2::ValueB, Enum3::ValueB;
+    endswitch
+  endswitch
+case (Enum1::ValueB)
+  :read var2;
+  switch (var2)
+  case (Enum2::ValueA)
+    :read var3;
+    switch (var3)
+    case (Enum3::ValueA)
+      :handle Enum1::ValueB, Enum2::ValueA, Enum3::ValueA;
+    case (Enum3::ValueB)
+      :handle Enum1::ValueB, Enum2::ValueA, Enum3::ValueB;
+    endswitch
+  case (Enum2::ValueB)
+    :read var3;
+    switch (var3)
+    case (Enum3::ValueA)
+      :handle Enum1::ValueB, Enum2::ValueB, Enum3::ValueA;
+    case (Enum3::ValueB)
+      :handle Enum1::ValueB, Enum2::ValueB, Enum3::ValueB;
+    endswitch
+  endswitch
+endswitch
+
+stop
+@enduml

@@ -172,7 +172,7 @@ namespace ATAP.Console.Console03 {
       #region Environment determination and validation
       // ToDo: Before the genericHost is built, have to use a StringConstant for the string that means "Production", and hope the ConfigurationRoot value for Environment matches the StringConstant
       // Determine the environment (Debug, TestingUnit, TestingX, QA, QA1, QA2, ..., Staging, Production) to use from the initialGenericHostConfigurationRoot
-      var envNameFromConfiguration = genericHostConfigurationRoot.GetValue<string>(GenericHostStringConstants.EnvironmentConfigRootKey, GenericHostStringConstants.EnvironmentDefault);
+      var envNameFromConfiguration = genericHostConfigurationRoot.GetValue<string>(GenericHostStringConstants.ENVIRONMENTConfigRootKey, GenericHostStringConstants.EnvironmentDefault);
       mELlogger.LogDebug(debugLocalizer["{0} {1}: Initial environment name: {2}", "Program", "Main", envNameFromConfiguration]);
 
       // optional: Validate that the environment provided is one this program understands how to use

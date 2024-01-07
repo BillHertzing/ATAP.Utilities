@@ -551,7 +551,7 @@ namespace ATAP.Utilities.ComputerInventory.Hardware {
     AsyncFileReadBlocksize = (asyncFileReadBlockSize >= 0) ? asyncFileReadBlockSize : throw new ArgumentOutOfRangeException($"asyncFileReadBlockSize must be greater than 0, received {asyncFileReadBlockSize}");
     // MD5=mD5??throw new ArgumentNullException(nameof(mD5));
   }
-  /*  Move this stuff to teh Expression for the Action that will validate the DB
+  /*  Move this stuff to the Expression for the Action that will validate the DB
    *  The block below is somewhat out of date, the structures carry two,
    *  separate GUIDs for DB id and in-memory id
   if (DBFetch==null) {

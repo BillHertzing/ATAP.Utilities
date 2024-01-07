@@ -9,7 +9,7 @@
 $config = @{};
 $config['ServerInstance'] = '::1'
 $config['DatabaseName'] = "ATAPUtilities"
-$config['ProjectFolder'] = 'Flyway'  #join-path $config['DatabaseName']
+$config['ProjectFolder'] = 'Flyway'  
 
 $config['RecoveryModel'] = 'Simple'
 $config['BackupFilePath'] = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\Databases\ATAPUtilities\Backups\'

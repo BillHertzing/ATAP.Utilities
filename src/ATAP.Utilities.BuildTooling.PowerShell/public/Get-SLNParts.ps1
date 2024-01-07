@@ -27,7 +27,7 @@ Defaults to 'Statistic <SLNName> <daterangeofdata>.csv'
 .EXAMPLE
 
 # Run this in a Solution directory
-# Add this file to a Direcotry ./Build, ensure there is a directory   ./Artifacts
+# Add this file to a Directory ./Build, ensure there is a directory   ./Artifacts
 ./Build/Get-SLNParts.ps1 -InDir '.' -OutDir './Artifacts' -InFnFilePattern '*.sln' -OutFn ReconstitutedSLN.sln
 #>
 
@@ -71,15 +71,23 @@ Function Get-SLNParts {
 
   # Output tests
   if (-not (Test-Path -Path $settings.OutDir -PathType Container)) {
-    # ToDo rewrite to add -Force paramter and don't create a non-existent directory unless -Force is true
-    New-Item -ItemType directory -Path $settings.OutDir
-  }  # else { throw "$settings.OutDir is not a directory" }
-  # Validate that the $Settings.OutDir is writeable
-  $testOutFn = $settings.OutDir + 'test.txt'
-  try { New-Item $testOutFn -Force -type file >$null }
-  catch { #Log('Error', "Can't write to file $testOutFn");
-    throw "Can't write to file $testOutFn"
+    throw "$settings.OutDir is not a directory"
   }
+  # Validate that the $Settings.OutDir is writable
+  $testOutFn = $settings.OutDir + 'test.txt'
+  try { New-Item $testOutFn -Force -type file >$null
+  }
+  catch { # if an exception ocurrs
+    # handle the exception
+    $where = $PSItem.InvocationInfo.PositionMessage
+    $ErrorMessage = $_.Exception.Message
+    $FailedItem = $_.Exception.ItemName
+    #Log('Error', "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where.");
+    Throw "new-item $testOutFn -force -type file failed with $FailedItem : $ErrorMessage at $where."
+  }
+  # Remove the test file
+  Remove-Item $testOutFn -ErrorAction Stop
+
   # Remove the test file
   Remove-Item $testOutFn
   $OutFn = Join-Path $settings.OutDir $settings.OutFn

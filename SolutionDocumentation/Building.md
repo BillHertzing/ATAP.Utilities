@@ -19,11 +19,26 @@ Microsoft Visual Studio Test Extensions
 Project System Tools (Structured MSBUILD log viewer) https://marketplace.visualstudio.com/items?itemName=VisualStudioProductTeam.ProjectSystemTools and http://msbuildlog.com/
 
 ## NuGet packages
+
+Both the c# code and the powershell modules need packaging. The two process are dissimilar, and need individual explanations
+
+### powershell packaging
+
+1) Create the .psm1 from the contents of the private and public subdirectories
+2) Update the .psd1
+3) Get the information from the .pssproj
+4) Write the .nuspec
+5) Pack the .nupkg
+
+
 ### Solution-wide
+
 Install the MSBuild tasks and tooing to support rapid development builds, where each build should propagate to (local) NuGet feed.
 Install-Package UtilPack.NuGet.Push.MSBuild
 ### Library Specific
+
 #### Common to all Unit Test projects
+
 Xunit
 FluentAsserrtations
 MOQ
@@ -32,7 +47,7 @@ Polly
 Servicestack
 
 ## Historical lessons learned
-Need is a way to version every Assembly/DDLL File/NugetPackage for lifecyclestages Development, QA, Staging, and Production
+Need is a way to version every Assembly/DLL File/NugetPackage for lifecyclestages Development, QA, Staging, and Production
 Versioning should be able to be applied at a solution level to all projects
 Versioning should be applied to individual projects during development, and QA lifecycle stages.
 Every visual studio build should increment the build number (or revision), and the NuGet packageversion
@@ -40,12 +55,12 @@ NuGet PackageVersion should mirror the major.minor.patch numbers found in the as
 Solution-wide version numbers are stored in the .sln file, and represent the last public released version (major,minor.patch)
 Project-specific version numbers are stored in a properties/AssemblyInfo.cs file.
 
-Hardest part of the problem is hooking up the tasks that reads and changes the data inside of AssemblyInfo.cs fiile
+Hardest part of the problem is hooking up the tasks that reads and changes the data inside of AssemblyInfo.cs file
 task should run only if an assembly is going to be built (i.e., the .proj outputs are out-of-date with respect to the .proj inputs.
 assemblyInfo.cs file should be changed only if the assembly is being built.
 AssemblyVersion, AssemblyFileVersion, and AssemblyInformationalVersion are read from the assemblyInfo.cs file, and possibly modified and written back out to the same file.
-If the solution or project is multitargeted, the assembly info is changed only once, and before the compilation portion of the build ocures.
-If the solution or project is not multitargeted, the assembly info is still changed only once, and still before the compilation portion of the build ocures.
+If the solution or project is multitargeted, the assembly info is changed only once, and before the compilation portion of the build occurs.
+If the solution or project is not multitargeted, the assembly info is still changed only once, and still before the compilation portion of the build occurs.
 If the Major, Minor, Patch, Build, Version, and/or PackageVersion info in the Solution is greater than the corresponding version in the .proj file, then assemblyInfo.cs should be changed, and this should be done before the evaluation of inputs and outputs takes place
 
 Set the parallel build options to build only 1 tasks to see the exact order that build tasks are called
@@ -150,7 +165,7 @@ https://github.com/KirillOsenkov/MSBuildStructuredLog/releases/download/v2.0.46/
 Only goes into .csproj files for executables, not libraries.
 For Plugins (which are loaded at runtime), you may need an app.config for the Main.exe. put  specific .app
 
-[app.config file in the new .csproj format](https://stackoverflow.com/questions/59959513/app-config-file-in-the-new-csproj-format) - Martin Ullrich - good instructions and explanation. the PrepareForBuild msbuild target will automatically pick up the file and subsequent build steps can also edit this file as the logical file. 
+[app.config file in the new .csproj format](https://stackoverflow.com/questions/59959513/app-config-file-in-the-new-csproj-format) - Martin Ullrich - good instructions and explanation. the PrepareForBuild msbuild target will automatically pick up the file and subsequent build steps can also edit this file as the logical file.
 
 <AppConfig>App.config</AppConfig>
 
@@ -172,3 +187,43 @@ Nice article here [Authenticode Signing Service and Client](https://github.com/d
 # Image Optimization
 
 [imgbot](imgbot.net) - lossless compression, but only in GitHub. Automatically sends a pull request to the repository.
+
+
+## Powershell Packaging
+
+[Hitchhikers Guide to the PowerShell Module Pipeline](https://xainey.github.io/2017/powershell-module-pipeline/)
+
+[PowerShell Scaffolding – How I build modules](https://invoke-automation.blog/2019/09/24/powershell-scaffolding-how-i-build-modules/)
+
+[PlasterTemplates](https://github.com/KevinMarquette/PlasterTemplates)
+
+[Catesta](https://github.com/techthoughts2/Catesta)
+
+[PlasterPlethora | A plethora of Plaster templates.](https://kandi.openweaver.com/powershell/larssb/PlasterPlethora#Summary)
+
+[Jenkins - User Interface for your Powershell tasks by Kirill Kravtsov](https://www.youtube.com/watch?v=2lrrrknwy5M)
+
+`Register-PackageSource -Name chocolatey -Location http://chocolatey.org/api/v2 -Provider PSModule -Verbose`
+
+`Register-PSRepository -Name 'LocalRepo' -SourceLocation 'C:\Repo' -PublishLocation 'C:\Repo' -InstallationPolicy Trusted`
+
+ `Register-PSRepository -Name 'LocalDevelopmentPSRepository' -SourceLocation '\\utat022\FS\DevelopmentPackages\PSFileRepository' -PublishLocation '\\utat022\FS\DevelopmentPackages\PSFileRepository' -InstallationPolicy Trusted`
+
+ Publish-Module -Path .\MyModule -Repository Demo_Nuget_Feed -NuGetApiKey 'use real NuGetApiKey for real nuget server here'
+
+[NuGet package manager – Build a PowerShell package repository](https://4sysops.com/archives/nuget-package-manager-build-a-powershell-package-repository/)
+
+[Build and install local Chocolatey packages with PowerShell](https://4sysops.com/archives/build-and-install-local-chocolatey-packages-with-powershell/)
+
+[Understanding Chocolatey NuGet packages](https://4sysops.com/archives/understanding-chocolatey-nuget-packages/)
+
+[Psake PowershellBuild](https://github.com/psake/PowerShellBuild)
+
+[Build Automation in PowerShell](https://github.com/nightroman/Invoke-Build)
+
+[Catesta is a PowerShell module project generator](https://github.com/techthoughts2/Catesta)
+
+
+
+
+

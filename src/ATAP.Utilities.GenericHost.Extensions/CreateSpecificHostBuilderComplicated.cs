@@ -49,7 +49,7 @@ namespace ATAP.Console.Console01.Complicated {
   //      // use additional logging providers based on Environment
   //      // ToDo: replace with latest pattern to determine environment (IsDevelopment on the new 3.x host?)
   //      //var tst = this.HostEnvironment.IsProduction();
-  //      var env = genericHostBuilderContext.Configuration.GetValue<string>(StringConstants.EnvironmentConfigRootKey);
+  //      var env = genericHostBuilderContext.Configuration.GetValue<string>(StringConstants.ENVIRONMENTConfigRootKey);
   //      switch (env) {
   //        case StringConstants.EnvironmentDevelopment:
   //          // This is where many developer conveniences are configured for Development environment
@@ -87,7 +87,7 @@ namespace ATAP.Console.Console01.Complicated {
   //      // configHostedAppHostBuilder.AddInMemoryCollection(DefaultConfiguration.aceCommanderWebHostConfigurationCompileTimeProduction);
   //      // Add additional required configuration variables to be provided in configuration for other environments
   //      //ToDo replace the following string case with .IsDevelopment() etc. from IHostExtensions
-  //      string env = genericHostBuilderContext.Configuration.GetValue<string>(StringConstants.EnvironmentConfigRootKey);
+  //      string env = genericHostBuilderContext.Configuration.GetValue<string>(StringConstants.ENVIRONMENTConfigRootKey);
   //      switch (env) {
   //        case StringConstants.EnvironmentDevelopment:
   //          // This is where many developer conveniences are configured for Development environment
@@ -162,7 +162,7 @@ namespace ATAP.Console.Console01.Complicated {
   //              }
   //              //ToDo replace the following string case with .IsDevelopment() etc. from IHostExtensions
 
-  //              string env = genericHostConfigurationRoot.GetValue<string>(StringConstants.EnvironmentConfigRootKey);
+  //              string env = genericHostConfigurationRoot.GetValue<string>(StringConstants.ENVIRONMENTConfigRootKey);
   //              switch (env) {
   //                case StringConstants.EnvironmentDevelopment:
   //                  // This is where many developer conveniences are configured for Development environment

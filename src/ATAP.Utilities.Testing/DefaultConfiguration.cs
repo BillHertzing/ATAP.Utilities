@@ -5,7 +5,7 @@ namespace ATAP.Utilities.Testing {
     public static Dictionary<string, string> Production =
     new Dictionary<string, string> {
       #region GenericTestDefault settings for production
-      {StringConstants.EnvironmentConfigRootKey, StringConstants.EnvironmentDefault},
+      {StringConstants.ENVIRONMENTConfigRootKey, StringConstants.EnvironmentDefault},
       #endregion
     };
   }

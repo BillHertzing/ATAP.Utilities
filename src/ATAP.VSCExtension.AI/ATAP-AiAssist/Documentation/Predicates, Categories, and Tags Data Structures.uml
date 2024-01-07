@@ -1,0 +1,97 @@
+@startuml
+
+!define ArrayList(x) List<x>
+
+class Philote<T> {
+  + ReadOnly ID : T
+  - Friends : ArrayList<Philote>
+  + Philote()
+  + ToString(): string
+  + {static} convertTo_json(): string
+  + {static} convertFrom_json(): Philote
+  + {static} convertTo_yaml(): string
+  + {static} convertFrom_yaml(): Philote
+}
+
+class Category<T> {
+  - philote : Philote<T>
+  + ReadOnly Name : string
+  + Category()
+  + ToString(): string
+  + {static} convertTo_json(): string
+  + {static} convertFrom_json(): Category
+  + {static} convertTo_yaml(): string
+  + {static} convertFrom_yaml(): Category
+}
+
+class Categorys<T> {
+  - philote : Philote<T>
+  - categories : ArrayList<Category>
+  + Categorys()
+  + ToString(): string
+  + {static} convertTo_json(): string
+  + {static} convertFrom_json(): Categorys
+  + {static} convertTo_yaml(): string
+  + {static} convertFrom_yaml(): Categorys
+}
+
+class Tag<T> {
+  - philote : Philote<T>
+  + Name : string
+  + Tag()
+  + ToString(): string
+  + {static} convertTo_json(): string
+  + {static} convertFrom_json(): Tag
+  + {static} convertTo_yaml(): string
+  + {static} convertFrom_yaml(): Tag
+}
+
+class Tags<T> {
+  - philote : Philote<T>
+  - tags : ArrayList<Tag>
+  + Tags()
+  + ToString(): string
+  + {static} convertTo_json(): string
+  + {static} convertFrom_json(): Tags
+  + {static} convertTo_yaml(): string
+  + {static} convertFrom_yaml(): Tags
+}
+
+class Predicate<T> {
+  - philote : Philote<T>
+  + ReadOnly Name : string
+  + ReadOnly Categories : Categorys
+  + ReadOnly Tags : Tags
+  + Predicate()
+  + ToString(): string
+  + {static} convertTo_json(): string
+  + {static} convertFrom_json(): Predicate
+  + {static} convertTo_yaml(): string
+  + {static} convertFrom_yaml(): Predicate
+}
+
+class Predicates<T> {
+  - philote : Philote<T>
+  - predicates : ArrayList<Predicate>
+  + Predicates()
+  + ToString(): string
+  + {static} convertTo_json(): string
+  + {static} convertFrom_json(): Predicates
+  + {static} convertTo_yaml(): string
+  + {static} convertFrom_yaml(): Predicates
+}
+
+Philote -- Category : Contains >
+Philote -- Categorys : Contains >
+Philote -- Tag : Contains >
+Philote -- Tags : Contains >
+Philote -- Predicate : Contains >
+Philote -- Predicates : Contains >
+
+Categorys -- Category : Contains >
+Tags -- Tag : Contains >
+Predicates -- Predicate : Contains >
+Predicate -- Categorys : Uses >
+Predicate -- Tags : Uses >
+
+@enduml

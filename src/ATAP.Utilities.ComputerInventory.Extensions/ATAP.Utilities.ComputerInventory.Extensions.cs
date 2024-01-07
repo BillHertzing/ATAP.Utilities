@@ -36,7 +36,7 @@ namespace ATAP.Utilities.ComputerInventory
         FanControllerEnabled = computerHardware.isFanControllerEnabled,
         GPUEnabled = computerHardware.isVideoCardsEnabled
   };
-  // ToDo: Get teh HardwareMonitorLib to work, right now, it throws an exception it can't find system.management dll
+  // ToDo: Get the HardwareMonitorLib to work, right now, it throws an exception it can't find system.management dll
   //computer.Open();
 #else
 #endif

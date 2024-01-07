@@ -10,7 +10,7 @@ namespace AService01 {
     public static Dictionary<string, string> Production =
     new Dictionary<string, string> {
 #region GenericHostDefault settings
-      {GenericHostStringConstants.EnvironmentConfigRootKey, GenericHostStringConstants.EnvironmentProduction},
+      {GenericHostStringConstants.ENVIRONMENTConfigRootKey, GenericHostStringConstants.EnvironmentProduction},
       {GenericHostStringConstants.KindOfHostBuilderToBuildConfigRootKey,SupportedKindsOfHostBuilders.ConsoleHostBuilder.ToString()},
       {GenericHostStringConstants.WebHostBuilderToBuildConfigRootKey, SupportedWebHostBuilders.KestrelAloneWebHostBuilder.ToString()},
       {GenericHostStringConstants.GenericHostLifetimeConfigRootKey, SupportedGenericHostLifetimes.ConsoleLifetime.ToString()},

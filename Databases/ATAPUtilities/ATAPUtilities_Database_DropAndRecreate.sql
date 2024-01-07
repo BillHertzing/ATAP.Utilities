@@ -15,11 +15,11 @@ DECLARE
   @DatabaseIndexStatementsFileGroupFullPath nvarchar(4000)
 
 :setvar DatabaseName "ATAPUtilities"
-:setvar BackupFilePath "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\Databases\ATAPUtilities\Backups\\"
+:setvar BackupFilePath "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\Databases\ATAPUtilities\Backups\"
 :setvar DatabaseDataFileFullPath "C:\LocalDBs\ATAPUtilities\Data\ATAPUtilities.mdf"
-:setvar DatabaseDataStatementsFileGroupFullPath "C:\LocalDBs\ATAPUtilities\Data\ATAPUtilities_Statements.mdf"
 :setvar DatabaseLogFileFullPath "C:\LocalDBs\ATAPUtilities\Log\ATAPUtilities_log.ldf"
 :setvar DatabaseIndexFileFullPath "C:\LocalDBs\ATAPUtilities\Index\ATAPUtilitiesIDX.mdf"
+:setvar DatabaseDataStatementsFileGroupFullPath "C:\LocalDBs\ATAPUtilities\Data\ATAPUtilities_Statements.mdf"
 :setvar DatabaseIndexStatementsFileGroupFullPath "C:\LocalDBs\ATAPUtilities\Index\ATAPUtilitiesIDX_Statements.mdf"
 :ON error EXIT
 

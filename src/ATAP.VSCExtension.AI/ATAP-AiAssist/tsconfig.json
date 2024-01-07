@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "module": "Node16",
+    "target": "ES2022",
+    "experimentalDecorators": true,
+    "types": ["node"],
+    "lib": ["ES2022"],
+    "sourceMap": true,
+    "rootDirs": ["src", "src/ATAP.VSCExtension.AI/ATAP-AiAssist"],
+    "baseUrl": "src", // This must be specified if "paths" is set.
+    "paths": {
+      "@CommandsService/*": ["CommandsService/*"],
+      "@DataService/*": ["DataService/*"],
+      "@Decorators/*": ["Decorators/*"],
+      "@EndpointManager/*": ["EndpointManager/*"],
+      "@ErrorClasses/*": ["ErrorClasses/*"],
+      "@EventEmitters/*": ["EventEmitters/*"],
+      "@IDTypes/*": ["IDTypes/*"],
+      "@ItemWithIDs/*": ["ItemWithIDs/*"],
+      "@Logger/*": ["Logger/*"],
+      "@Philote/*": ["Philote/*"],
+      "@QueryService/*": ["QueryService/*"],
+      "@Serializers/*": ["Serializers/*"],
+      "@SecurityService/*": ["SecurityService/*"],
+      "@StateMachineService/*": ["StateMachineService/*"],
+      "@TypeMap/*": ["TypeMap/*"],
+      "@Utilities/*": ["Utilities/*"]
+      // Add more path mappings as needed.
+    },
+
+    "strict": true /* enable all strict type-checking options */,
+    /* Additional Checks */
+    "noImplicitReturns": true /* Report error when not all code paths in function return a value. */,
+    "noFallthroughCasesInSwitch": true /* Report errors for fallthrough cases in switch statement. */
+    // "noUnusedParameters": true,  /* Report errors on unused parameters. */
+  }
+}

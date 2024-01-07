@@ -87,7 +87,7 @@ namespace FileSystemGraphToDBService {
     #endregion
     #region Constructor
     /// <summary>
-    /// Constructor that populates all the injected services provided by a GenericHost, along with teh injected services specific to this program that are needed by this HostedService (or derivitive like BackgroundService)
+    /// Constructor that populates all the injected services provided by a GenericHost, along with the injected services specific to this program that are needed by this HostedService (or derivitive like BackgroundService)
     /// </summary>
     /// <param name="consoleSinkHostedService"></param>
     /// <param name="consoleSourceHostedService"></param>

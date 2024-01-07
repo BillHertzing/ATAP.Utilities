@@ -1,0 +1,12 @@
+// import { main as runTestMain } from './runTest';
+
+// async function main() {
+//   console.log(`index.ts main function starting. cwd is ${process.cwd()}`);
+//   await runTestMain(); // call the main function from runTest.ts
+//   console.log(`index.ts main function ending`);
+// }
+
+// // Call main to execute the sequence
+// main().catch((err) => {
+//   console.error('index.ts main function, An error occurred:', err);
+// });

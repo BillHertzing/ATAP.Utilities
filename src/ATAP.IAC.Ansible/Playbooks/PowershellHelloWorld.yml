@@ -1,0 +1,26 @@
+---
+# code: language=ansible
+- name: Powershell Hello world
+  hosts: all
+  # become: yes
+  vars:
+    greeting: "vars:greeting is Hello World"
+  tasks:
+    - name: Basic Hello World
+      ansible.windows.win_powershell:
+        executable: pwsh.exe
+        script: |
+          write-output "Basic Hello World"
+          write-host "Basic Hello World to Host"
+          "Basic naked Hello World"
+          $Ansible.Result = @{'HelloWorldKey'='Hello World'}
+    - name: Parameterized Hello World
+      ansible.windows.win_powershell:
+        executable: pwsh.exe
+        script: |
+          param (
+            [String]
+            $Greeting,
+          )
+          $Ansible.Result = @{'Greeting'=$Greeting}
+

@@ -1,19 +1,19 @@
 # Devops Guidelines
 
-How touse the ATQAP.Utiliites..BuildTooling.Jenkins pipelines and tools in a Windows environment
+How to use the ATAP.Utilities.BuildTooling.Jenkins pipelines and tools in a Windows environment
 
 ## Overview
 
-https://developer.okta.com/blog/2019/07/26/jenkins-continuous-integration-csharp-aspnetcore
+[Build Continuous Integration with Jenkins in C#](https://developer.okta.com/blog/2019/07/26/jenkins-continuous-integration-csharp-aspnetcore)
 
 
 ## Conventions
 
-An ATAP Utilities Jenkins pipeline has a lot of options. All have a default value, and all c an be override at multiple levels.
+An ATAP Utilities Jenkins pipeline has a lot of options. All have a default value, and all can be override at multiple levels.
 
 ## Dotnet Core ConfigurationRoot
 
-Configuration is handeled by creating a Configuration root object.  ToDo: Insert link to MS documentation.
+Configuration is handled by creating a Configuration root object.  ToDo: Insert link to MS documentation.
 
 ```Plantuml
 @startStandardConfigurationRoot
@@ -50,13 +50,45 @@ Injecting ConfigurationRoot
 
 This module holds most of the Powershell functions used by the developers and the CI/CD pipeline steps. During the development of a new feature used by developers, the pipelines, or the end users, module development takes place in parallel with pipeline development to add new stuff to the Product
 
-we publish Powershell packages, src, documentation and optionally tests and localization, via nuget packages, and chocolatey package manager. Chocolatey and the installation script coooperate to set the package installation location and append the information to the system or user PATH environment variable.
+we publish Powershell packages, src, documentation and optionally tests and localization, via nuget packages, PSGallery, and the chocolatey package manager. Chocolatey and the installation script cooperate to set the package installation location and append the information to the system or user PATH environment variable.
 
 ToDo: Once installed, the path to the executable must be supplied to the database under the key for the machine name. See the ATAP Utilities packages for computer hardware, software, and processes for the data structures to record necessary information.
+
 ## Installing powershell modules on DevOps machines
 
-https://github.com/anpur/powershellget-module
-Install-Module MyModule -Repository Demo_Nuget_Feed -Scope CurrentUser
+Powershell modules can be installed using Chocolatey, PowershellGet, or NuGet package providers
+
+The PackageSource (location) for each provider and Lifecycle stage is found at ```$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]```
+
+DevOps machines are considered 'production' unless specifically assigned a development or test role. As such, all DevOps production machines should use only production modules. The PackageSource for production modules are found in found in ```$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]``` under the subkeys ```$global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageNameConfigRootKey']```, ```RepositoryPowershellGetProductionWebServerProductionPackageNameConfigRootKey```, and ```RepositoryChocolateyProductionWebServerProductionPackageNameConfigRootKey```. Using the publicly published modules ensures that internally, the DevOps machines use the same cade that the public uses.
+
+Modules that are published only internally, not for general public consumption, can also be found under the subkeys ```RepositoryNuGetFilesystemProductionPackageNameConfigRootKey```, ```RepositoryPowershellGetFilesystemProductionPackageNameConfigRootKey```, and ```RepositoryChocolateyFilesystemProductionPackageNameConfigRootKey```
+
+
+The Development repository is at:
+The QualityAssurance repositories are at locations matching this pattern:
+The Staging Repositories are at locations matching this pattern:
+The Production (Public) repositories are at: Chocolatey, PSGallery, NuGet
+
+Repository meta information is kept in the global data structures keyed for each machine.
+
+### Using NuGet Provider
+
+NuGet configuration file listing the available NuGet package sources is nuget.config, located in the filesystem at the base of all development respoitories. Every DevOps machine that will use the NuGet package provider for pulling or pushing packages needs a copy of this file. The contents of this file should match the values found in ```$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]```
+see also [Common NuGet configurations:Config file locations and uses](https://learn.microsoft.com/en-us/nuget/consume-packages/configuring-nuget-behavior#config-file-locations-and-uses)
+
+The IAC (official) version is stored in "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\Resources\NuGet.Config". After installing the module to machine scope using the production package from the ChocolateyGet provider, the installation will create a symbolic link from the installed NuGet.Config in the Resources subdir, to the root of the repository(s). Manually this looks like
+
+```Powershell
+Remove-Item -path (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'NuGet.Config') -ErrorAction SilentlyContinue
+New-Item -ItemType SymbolicLink -path (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'NuGet.Config') -Target (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.BuildTooling.PowerShell','Resources','NuGet.Config')
+```
+
+### Using PowershellGet provider
+
+[Unofficial example of PowerShellGet-friendly package. How to create, publish and use](https://github.com/anpur/powershellget-module)
+
+```Install-Module '<ModuleName>' -Scope CurrentUser```
 
 ToDo: Once installed, the path to the module must be supplied to the database under the key for the machine name. See the ATAP Utilities packages for computer hardware, software, and processes for the data structures to record necessary information.
 
@@ -64,9 +96,13 @@ The module contains Functions, and also information about the expected environme
 
 ToDo: Find a tool that reads FunctionHelp blocks and turns them into HTML pages. Ask the DocFx folks?
 
+### Using the Chocolatey provider
+
+
+
 ## Certificates
 
-https://stackoverflow.com/questions/21076179/pkix-path-building-failed-and-unable-to-find-valid-certification-path-to-requ
+<https://stackoverflow.com/questions/21076179/pkix-path-building-failed-and-unable-to-find-valid-certification-path-to-requ>
 
 https://stackoverflow.com/questions/63482370/unable-to-find-a-valid-certification-path-to-requested-target
 
@@ -92,18 +128,64 @@ ToDo: install a formatter for Jenkinsfile
 
 ## Installing an agent
 
-### Getting the Controllers Instance ID:
-ou can also capture the value by visiting the Instance Identity page, at something like "https://myjenkins.example.com/instance-identity".
+### Getting the Controllers Instance ID
 
-### Configuring the Agent as a Windows Service
+You can also capture the value by visiting the Instance Identity page, at something like "https://myjenkins.example.com/instance-identity".
 
-https://wiki.jenkins.io/display/JENKINS/Installing+Jenkins+as+a+Windows+service
+### Configuring the Agent as a Windows Service using WinSW
 
-https://support.cloudbees.com/hc/en-us/articles/217423827-How-to-Install-Several-Windows-Slaves-as-a-Service-
+[Jenkins : Installing Jenkins as a Windows service](https://wiki.jenkins.io/display/JENKINS/Installing+Jenkins+as+a+Windows+service)
 
-## Starting an Agent
+[How to install Windows agents as a service?](https://support.cloudbees.com/hc/en-us/articles/217423827-How-to-Install-Several-Windows-Slaves-as-a-Service-)
+[Windows Service Wrapper in less restrictive license](https://github.com/winsw/winsw/blob/master/doc/installation.md#winsw-installation-guide)
 
-https://github.com/jenkinsci/remoting/blob/master/docs/inbound-agent.md
+Name of Windows User account used to run the Jenkins Controller service is `JenkinsControllerSrvAcc`, password is stored as a secret somewhere (toDo: Create secrets files (encrypted) somewhere on dropbox not in github). Temporary value is `NotSecret`
+
+Name of Windows User account used to run the Jenkins Agent service is found in the setting `$($global:settings[$global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']])`, password Temporary value is `NotSecret`, used in the service as "LogOnAs"
+
+-  Download the WinSW executable, and rename it to `JenkinsAgent-<Client Version>-<DotNetDesktopframeworkVersion>.exe`
+-  Create the file `JenkinsAgent-<Client Version>-<DotNetDesktopFrameworkVersion>.xml`, populate it as follows:
+
+``` xml
+<service>
+  <id>JenkinsAgent</id>
+  <name>Jenkins Agent</name>
+  <description>This service runs an agent for Jenkins automation server.</description>
+  <executable>java.exe</executable>
+  <arguments>-Xrs -jar &quot;"C:\JenkinsAgentNode\utat022Node\agent.jar"&quot; -jnlpUrl http://utat022:4040/computer/utat022Node/jenkins-agent.jnlp -secret 925f7db2725b5a2c1d72d4289439ba848fdd934b59e4722694f72081c56618b7 -workDir "C:\JenkinsAgentNode"</arguments>
+  <logmode>rotate</logmode>
+  <onfailure action="restart">
+    <download from=" http://utat022:4040/jnlpJars/slave.jar" to="%BASE%\jenkins-client.jar">
+      <extensions>
+        <extension className="winsw.Plugins.RunawayProcessKiller.RunawayProcessKillerExtension" enabled="true" id="killOnStartup">
+          <pidfile>%BASE%\jenkins_agent.pid</pidfile>
+          <stopTimeout>5000</stopTimeout>
+          <stopParentFirst>false</stopParentFirst>
+        </extension>
+      </extensions>
+    </download>
+  </onfailure>
+<serviceaccount>
+  <domain>utat022</domain>
+  <user>JenkinsAgentSrvAcct</user>
+  <password>NotSecret</password>
+  <allowservicelogon>true</allowservicelogon>
+</serviceaccount>
+</service>
+```
+
+Note that the Java.exe does not specify a path. Instead it will use the first java.exe found in the process's `$env:Path`. This is based on the machine profile and the user rpofile for `JenkinsAgentSrvAcct`
+The configuration specifies that the agent jar file is found exactly at
+The jnlpURL argument is  using http (TBD switch to https when Jenkins Controller is configured with a SSL certificate)
+The 'secret' comes from the node configuration page
+The WorkDir should depend on the current node's global settings
+
+Start an administrator Powershell terminal session
+Change to the directory `C:\JenkinsAgentNode` and run the command `.\Jenkins-client-2.9.0-net461.exe Install` (use `.\Jenkins-client-2.9.0-net461.exe Uninstall` first, if a service already exists and you are chaning its configuration)
+
+## Starting an Agent from the command line
+
+[Launching inbound agents](https://github.com/jenkinsci/remoting/blob/master/docs/inbound-agent.md)
 
 This command can be configured, then run via any shell, on the server where the agent service is expected to run
 
@@ -125,10 +207,12 @@ java -jar agent.jar -jnlpUrl <jnlp url> -secret @secret-file -workDir <work dire
 ```
 
 Or this
+
 ```Text
 java -jar agent.jar \
   @agent_options.cfg
 ```
+
  With an `agent_options.cfg` file containing
 
 ```Text
@@ -141,8 +225,7 @@ java -jar agent.jar \
 
 ## Cleanup failed runs
 
-https://stackoverflow.com/questions/37468455/jenkins-pipeline-wipe-out-workspace
-
+[Jenkins Pipeline Wipe Out Workspace](https://stackoverflow.com/questions/37468455/jenkins-pipeline-wipe-out-workspace)
 
 ```Groovy
 pipeline {
@@ -157,16 +240,18 @@ pipeline {
     }
 }
 ```
+
 Follow these steps:
 
 1) Navigate to the latest build of the pipeline job you would like to clean the workspace of.
 1) Click the Replay link in the LHS menu.
 1) Paste the above script in the text box and click Run
 
-
 Also try variations on the below script... Will work for default workspace as well
-```Groovy
 
+TBD use CustomWorkDirPath instead of hardcoded.
+
+```Groovy
 pipeline {
     agent {
         node {
@@ -203,9 +288,10 @@ Executable code being built has to be built inside a loop that calls the build w
 
 ### dotnet build stage
 
-#### [MSBuild Structured Log](https://github.com/KirillOsenkov/MSBuildStructuredLog) is a logger for creating detailed logs of the build process
+#### Detailed logs of the build process
 
- [StructuredLogger Nuget package](https://www.nuget.org/packages/MSBuild.StructuredLogger/2.1.507)
+- [MSBuild Structured Log](https://github.com/KirillOsenkov/MSBuildStructuredLog) is a logger for creating detailed logs of the build process
+- [StructuredLogger Nuget package](https://www.nuget.org/packages/MSBuild.StructuredLogger/2.1.507)
 
 1) Install the package as part of the .csproj file
 2) add the switch /logger:BinaryLogger,"packages\MSBuild.StructuredLogger.2.1.507\lib\netstandard2.0\StructuredLogger.dll";"C:\Users\SomeUser\Desktop\binarylog.binlog"
@@ -214,10 +300,11 @@ ToDo: version control? hardcoded version number in switch?
 
 ## PlantUmlClassDiagramGenerator stage
 
+[PlantUmlClassDiagramGenerator](https://www.nuget.org/packages/PlantUmlClassDiagramGenerator)
 ### prerequisites
 
 ToDo: Move into prerequisites step of the pipeline, test for installed and minimum required version
-https://www.nuget.org/packages/PlantUmlClassDiagramGenerator
+
 dotnet tool install --global PlantUmlClassDiagramGenerator
 
 ### command line
@@ -228,21 +315,21 @@ puml-gen "./" "./" -dir -createAssociation -excludePaths "bin,obj,Properties"
 
 ## "'Test' stage"
 
-#dotnet test command
+### dotnet test command
 
-https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-test
+[dotnet test](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-test)
 
-### OPtimizations
+### Optimizations
 
 Since the Jenkinsfile has already built the code and the tests, add the following arguments `--nologo --no-restore --no-build`
 
 ### Where to find the binaries to run
 
---output <OUTPUT_DIRECTORY>  defaults to default path is ./bin/<configuration>/<framework>/  but ATAP Standard ?todo:? Expects a `Published` directory to be the location . From within test code methods , ` AppDomain.BaseDirectory` will return the location from whihc the tests are running
+--output <OUTPUT_DIRECTORY>  defaults to default path is ./bin/<configuration>/<framework>/  but ATAP Standard ?todo:? Expects a `Published` directory to be the location . From within test code methods , ` AppDomain.BaseDirectory` will return the location from which the tests are running
 
 ### Where to put the test results
 
---results-directory <RESULTS_DIR>   default is `TestResults` subdirectory in the directory that contains the project file
+--results-directory <RESULTS_DIR>   default is `TestResults` subdirectory in the `_generated` subdirectory alongside the project file
 
 ### Runtime Identifier
 
@@ -250,13 +337,15 @@ Since the Jenkinsfile has already built the code and the tests, add the followin
 
 ### Build configuration
 
-The build stage should loop over each value of the configuration list <Debug>,<Production>,<ProductionwithTrace> and build the .dll anmd .exe files once with each value
+The build stage should loop over each value of the configuration list \<Debug>,\<Production>,\<ProductionWithTrace> and build the .dll and .exe files once with each value
 
 --configuration <CONFIGURATION>  - defaults to `Debug`
 
 ###  Code Coverage
 
-Install [Coverlet]()
+Install [Coverlet](https://github.com/coverlet-coverage/coverlet)
+
+[Use code coverage for unit testing](https://docs.microsoft.com/en-us/dotnet/core/testing/unit-testing-code-coverage?tabs=windows#code-coverage-tooling)
 
 `--collect:"XPlat Code Coverage"` option to `dotnet test`
 
@@ -264,16 +353,14 @@ Install [Coverlet]()
 
 ### Runssettings arguments passed via command line
 
-
-
 ### Runsettings files
 
 ## Documentation Generation
 
-The stage needs a step that moves the readme.html over to index.hmtl, renames any generated assets located in _site/Assets/*, and reworks the asset links from readme to index
+The stage needs a step that moves the readme.html over to index.html, renames any generated assets located in _site/Assets/*, and reworks the asset links from readme to index
 
-The post build cleanup stage should include a step that removes generated `.puml`  files from directories where a source file contaains the source of the diagram.
+The post build cleanup stage should include a step that removes generated `.puml`  files from directories where a source file contains the source of the diagram.
 
 ToDo: Better would be to put all generated files in a tree structure located somewhere below _generated, and then convert each to an asset and write that asset to the correct subdir under _site/assets, such that the subdir matches the subdir where the source code was found
 
-C2Plpantuml puts one .puml file for each class/interface/etc. found in a compilation unit into the directory alongside the compilation unit. ToDo: move these to a identical tree under _generated. Convert each to an asset and put them into the correct subdir under _site/assets. Have a build step create a `,compilationunit>.md file, and populate it with a link toeach assets that came from the original source file
+C2Plantuml puts one .puml file for each class/interface/etc. found in a compilation unit into the directory alongside the compilation unit. ToDo: move these to a identical tree under _generated. Convert each to an asset and put them into the correct subdir under _site/assets. Have a build step create a `<compilationunit>.md file, and populate it with a link between each svg asset and the original source code file from which it was generated

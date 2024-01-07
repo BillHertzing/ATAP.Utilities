@@ -1,0 +1,9 @@
+---
+# code: language=ansible
+- name: Ensure 7-Zip is installed through Chocolatey
+  hosts: all
+  tasks:
+    - name: Install 7Zip
+      win_chocolatey:
+        name: 7zip
+        state: present

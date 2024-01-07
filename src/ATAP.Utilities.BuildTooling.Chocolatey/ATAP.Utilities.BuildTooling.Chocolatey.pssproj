@@ -13,7 +13,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>ATAP.Utilities.BuildTooling.Chocolatey</RootNamespace>
     <AssemblyName>ATAP.Utilities.BuildTooling.Chocolatey</AssemblyName>
-    <Name>ATAP.Utilities.BuildToolingtmp</Name>
+    <Name>ATAP.Utilities.BuildTooling.Chocolatey</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

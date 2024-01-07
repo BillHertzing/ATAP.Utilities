@@ -1,0 +1,45 @@
+---
+# code: language=ansible
+- name: Test Win_Environment Module for Environment Variables (ansible.windows.win_environment)
+  hosts: all
+  vars:
+    TestVariableName: "ATestVariable"
+    TestVariableValue: "TheTestVariableValue"
+
+  tasks:
+    - name: Confirm (remove if found) the environment variable "{{TestVariableName}}" is missing at the machine level
+      ansible.windows.win_environment:
+       state: absent
+       name: "{{TestVariableName}}"
+       level: machine
+
+    - name: Set the environment variable "{{TestVariableName}}"  at the machine level
+      ansible.windows.win_environment:
+       state: present
+       name: "{{TestVariableName}}"
+       value: "{{TestVariableValue}}"
+       level: machine
+
+    - name: Get the value of the "{{TestVariableName}}" Environment variable
+      ansible.windows.win_shell: |
+        pwsh {
+          param
+          (
+            [Parameter(Mandatory=$True,Position=1)]
+            [string]$TestVariableName
+          )
+          Write-output "the value of $TestVariableName is $([Environment]::GetEnvironmentVariable($TestVariableName))"
+        }
+      args:
+        TestVariableName: "{{TestVariableName}}"
+      register: command_output
+
+    - name: command output
+      ansible.builtin.debug:
+        var: command_output.stdout_lines
+
+    - name: Remove the environment variable "{{TestVariableName}}" at the machine level
+      ansible.windows.win_environment:
+        state: absent
+        name: "{{TestVariableName}}"
+        level: machine

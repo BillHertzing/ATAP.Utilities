@@ -1,0 +1,43 @@
+---
+# code: language=ansible
+# These are the packages that are installed with AllUser scope. Computers / containers used in the organization are expected to have these resources available / shared by all users of the computer / container
+- name: Install or Update Powershell V7 Modules based on list in file
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/Windows/AnsibleHostInventory/All/PS7ModuleNameList.yml'
+  tasks:
+
+    - name: Ensure NuGet is installed
+      community.windows.win_psmodule:
+        name: NuGet
+        accept_license: true
+        AcceptLicense: true
+        skip_publisher_check: true
+        repository: PSGallery
+        scope: AllUsers
+
+    - name: Ensure PackageManagement is installed
+      community.windows.win_psmodule:
+        name: PackageManagement
+        repository: PSGallery
+        scope: AllUsers
+
+    - name: Loop over the Modules in the file
+      community.windows.win_psmodule:
+        name: "{{ item.name }}"
+        repository: PSGallery
+        scope: AllUsers
+      loop: "{{ variable_list }}"
+      vars:
+      # ToDO: The role-specific list variables of module names are found in the subdirectory TBD
+      # ToDO: The lifecycle-specific list variables of module names are found in the subdirectory TBD
+      # ToDo: the assignmnet of role(s) and lifecycle support to host is found in the file(s) TBD
+        variable_list: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/Windows/AnsibleHostInventory/All/PS7ModuleNameList.yml') | from_yaml }}"
+    # - name: debug chocolatey output
+    #   ansible.builtin.debug:
+    #     var: command_output.stdout_lines
+    #   loop: "{{ variable_list }}"
+    #   vars:
+    #     variable_list: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/rawchocopackages.yml') | from_yaml }}"
+

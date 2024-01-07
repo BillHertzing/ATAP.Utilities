@@ -60,6 +60,21 @@
         "title": "ATAP-AiAssist: save the conversation collection to disk"
       },
       {
+        "command": "atap-aiassist.primaryActor.quickPickStatus",
+        "title": "ATAP-AiAssist.quickPick",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "atap-aiassist.primaryActor.quickPickMode",
+        "title": "ATAP-AiAssist.quickPick",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "atap-aiassist.primaryActor.quickPickCommand",
+        "title": "ATAP-AiAssist.quickPick",
+        "icon": "$(wand)"
+      },
+      {
         "command": "atap-aiassist.showMainViewRootRecordProperties",
         "title": "ATAP-AiAssist: Show Root Record (Main View) Properties"
       },
@@ -222,6 +237,22 @@
         "tooltip": "Show workspace and initial editor filename",
         "command": "atap-aiassist.showVSCEnvironment"
       }
+    ],
+    "editor/title": [
+      {
+        "command": "atap-aiassist.primaryActor.ET1",
+        "group": "navigation"
+      }
+    ],
+    "editor/title/context": [
+      {
+        "command": "atap-aiassist.primaryActor.ETC1",
+        "group": "atap-aiassist"
+      },
+      {
+        "command": "atap-aiassist.primaryActor.ETC2",
+        "group": "atap-aiassist"
+      }
     ]
   },
   "scripts": {
@@ -249,11 +280,11 @@
     "@types/sinon": "^17.0.2",
     "@types/strip-comments": "^2.0.4",
     "@types/vscode": "^1.85.0",
-    "@typescript-eslint/eslint-plugin": "^6.15.0",
-    "@typescript-eslint/parser": "^6.15.0",
+    "@typescript-eslint/eslint-plugin": "^6.16.0",
+    "@typescript-eslint/parser": "^6.16.0",
     "@vscode/test-electron": "^2.3.8",
     "assert": "^2.1.0",
-    "chai": "^4.3.10",
+    "chai": "^5.0.0",
     "eslint": "^8.56.0",
     "glob": "^10.3.10",
     "https-browserify": "^1.0.0",
@@ -290,7 +321,7 @@
     "@Utilities": "_generated/out/Utilities"
   },
   "dependencies": {
-    "axios": "^1.6.2",
+    "axios": "^1.6.3",
     "bluebird": "^3.7.2",
     "diff": "^5.1.0",
     "encoding": "^0.1.13",
@@ -299,6 +330,7 @@
     "openai": "^4.24.1",
     "prettier": "^3.1.1",
     "strip-comments": "^2.0.1",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "xstate": "^5.4.1"
   }
 }

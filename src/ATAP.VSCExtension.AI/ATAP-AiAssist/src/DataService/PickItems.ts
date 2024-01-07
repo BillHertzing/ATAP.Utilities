@@ -1,23 +1,20 @@
 import vscode from 'vscode';
 import { ModeMenuItemEnum, CommandMenuItemEnum, StatusMenuItemEnum } from '@StateMachineService/index';
+import {IData} from '@DataService/index';
 
-export interface IPickItemsInitializer {
+export interface IPickItems {
   statusMenuItems: vscode.QuickPickItem[];
   modeMenuItems: vscode.QuickPickItem[];
   commandMenuItems: vscode.QuickPickItem[];
 }
-export class PickItemsInitializer {
-  public readonly statusMenuItems: vscode.QuickPickItem[];
-  public readonly modeMenuItems: vscode.QuickPickItem[];
-  public readonly commandMenuItems: vscode.QuickPickItem[];
+export class PickItems {
+  // public readonly statusMenuItems: vscode.QuickPickItem[];
+  // public readonly modeMenuItems: vscode.QuickPickItem[];
+  // public readonly commandMenuItems: vscode.QuickPickItem[];
 
-  constructor() {
-    this.statusMenuItems = PickItemsInitializer.initializeStatusMenuItems();
-    this.modeMenuItems = PickItemsInitializer.initializeModeMenuItems();
-    this.commandMenuItems = PickItemsInitializer.initializeCommandMenuItems();
-  }
+  constructor(private readonly data: IData) {  }
 
-  static initializeStatusMenuItems(): vscode.QuickPickItem[] {
+  get statusMenuItems(): vscode.QuickPickItem[] {
     const items: vscode.QuickPickItem[] = [];
     for (const key in StatusMenuItemEnum) {
       if (StatusMenuItemEnum.hasOwnProperty(key)) {
@@ -28,11 +25,11 @@ export class PickItemsInitializer {
         switch (enumValue) {
           case StatusMenuItemEnum.Mode:
             label = `${enumValue}`;
-            description = 'Change CurrentMode';
+            description = `Change CurrentMode: ${this.data.stateManager.currentMode}`;
             break;
           case StatusMenuItemEnum.Command:
             label = `${enumValue}`;
-            description = 'Change CurrentCommand';
+            description = `Change CurrentCommand: ${this.data.stateManager.currentCommand}`;
             break;
           case StatusMenuItemEnum.Sources:
             label = `${enumValue}`;
@@ -55,8 +52,9 @@ export class PickItemsInitializer {
     return items;
   }
 
-  static initializeModeMenuItems(): vscode.QuickPickItem[] {
+  get modeMenuItems(): vscode.QuickPickItem[] {
     const items: vscode.QuickPickItem[] = [];
+    const currentMode = this.data.stateManager.currentMode;
     for (const key in ModeMenuItemEnum) {
       if (ModeMenuItemEnum.hasOwnProperty(key)) {
         const enumValue = ModeMenuItemEnum[key as keyof typeof ModeMenuItemEnum];
@@ -66,19 +64,19 @@ export class PickItemsInitializer {
         switch (enumValue) {
           case ModeMenuItemEnum.Workspace:
             label = `${enumValue}`;
-            description = 'Use Workspace';
+            description = 'Use Workspace' + (currentMode === ModeMenuItemEnum.Workspace ? '✓' : ' ');
             break;
           case ModeMenuItemEnum.VSCode:
             label = `${enumValue}`;
-            description = 'Use VSCode';
+            description = 'Use VSCode' + (currentMode === ModeMenuItemEnum.VSCode ? '✓' : ' ');
             break;
           case ModeMenuItemEnum.ChatGPT:
             label = `${enumValue}`;
-            description = 'Use ChatGPT';
+            description = 'Use ChatGPT' + (currentMode === ModeMenuItemEnum.ChatGPT ? '✓' : ' ');
             break;
           case ModeMenuItemEnum.Claude:
             label = `${enumValue}`;
-            description = 'Use Claude';
+            description = 'Use Claude' + (currentMode === ModeMenuItemEnum.Claude ? '✓' : ' ');
             break;
           default:
             continue;
@@ -89,7 +87,7 @@ export class PickItemsInitializer {
     return items;
   }
 
-  static initializeCommandMenuItems(): vscode.QuickPickItem[] {
+   get commandMenuItems(): vscode.QuickPickItem[] {
     const items: vscode.QuickPickItem[] = [];
     for (const key in CommandMenuItemEnum) {
       if (CommandMenuItemEnum.hasOwnProperty(key)) {

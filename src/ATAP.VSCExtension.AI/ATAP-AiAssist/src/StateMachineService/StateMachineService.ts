@@ -2,9 +2,35 @@ import * as vscode from 'vscode';
 import { ILogger, Logger, LogLevel } from '@Logger/index';
 import { IData } from '@DataService/index';
 import { DetailedError } from '@ErrorClasses/index';
-import { logConstructor, logFunction } from '@Decorators/index';
+import { logConstructor, logFunction, logAsyncFunction } from '@Decorators/index';
 import { ISerializationStructure, fromJson, fromYaml } from '@Serializers/index';
-import { IPickItemsInitializer, PickItemsInitializer } from './PickItemsInitializer';
+import { Actor, createActor, assign, createMachine, fromCallback, StateMachine, fromPromise } from 'xstate';
+import { resolve } from 'path';
+import { IPickItems, PickItems } from '@DataService/PickItems';
+import { primaryMachine } from './PrimaryMachine';
+import { QuickPickEnumeration } from './PrimaryMachine';
+
+// Common interface for input to actor and action logic
+export interface ILoggerData {
+  readonly logger: ILogger;
+  readonly data: IData;
+}
+export class LoggerData implements ILoggerData {
+  constructor(
+    readonly logger: ILogger,
+    readonly data: IData,
+  ) {}
+}
+export interface IQuickPickInput extends ILoggerData {
+  kindOfEnumeration: QuickPickEnumeration;
+}
+export class QuickPickInput implements IQuickPickInput {
+  constructor(
+    readonly kindOfEnumeration: QuickPickEnumeration,
+    readonly logger: ILogger,
+    readonly data: IData,
+  ) {}
+}
 
 // an enumeration to represent the StatusMenuItem choices
 export enum StatusMenuItemEnum {
@@ -32,17 +58,24 @@ export enum CommandMenuItemEnum {
   Document = 'Document',
 }
 
+// The enumeration types for which the quickPickActorLogic can be used
+export type PickableEnumerationTypes = StatusMenuItemEnum | ModeMenuItemEnum | CommandMenuItemEnum;
+
+//
 export interface IStateMachineService {
-  initialize(): void;
-  readonly pickItemsInitializer: IPickItemsInitializer;
-  getNextState(): string;
-  getCurrentState(): string;
+  quickPick(kindOfEnumeration: QuickPickEnumeration): void;
+  start(): void;
+  disposeAsync(): void;
 }
 
+@logConstructor
 export class StateMachineService implements IStateMachineService {
-  readonly pickItemsInitializer: IPickItemsInitializer = new PickItemsInitializer();
-  private readonly extensionID : string;
+  private readonly extensionID: string;
   private readonly extensionName: string;
+
+  private primaryActor;
+
+  private disposed = false;
 
   constructor(
     private readonly logger: ILogger,
@@ -51,6 +84,7 @@ export class StateMachineService implements IStateMachineService {
   ) {
     this.extensionID = extensionContext.extension.id;
     this.extensionName = this.extensionID.split('.')[1];
+
     //attach a listener to the 'handleStatusMenuResults' event
     this.data.eventManager.getEventEmitter().on('handleStatusMenuResults', (statusMenuItem: StatusMenuItemEnum) => {
       this.logger.log(
@@ -77,6 +111,16 @@ export class StateMachineService implements IStateMachineService {
       );
       this.handleCommandMenuResults(commandMenuItem);
     });
+
+    this.primaryActor = createActor(primaryMachine, { input: { loggerData: new LoggerData(this.logger, this.data) } });
+  }
+  @logFunction
+  quickPick(kindOfEnumeration: QuickPickEnumeration): void {
+    this.primaryActor.send({ type: 'quickPickEvent', kindOfEnumeration });
+  }
+  @logFunction
+  testActorsaveFile(): void {
+    // placeholder
   }
 
   static create(
@@ -136,27 +180,11 @@ export class StateMachineService implements IStateMachineService {
   }
 
   @logFunction
-  initialize(): void {
-    // load all collections into the FileManager from the filesystem
-    const tagCollection = this.data.fileManager.tagCollection;
-    const categoryCollection = this.data.fileManager.categoryCollection;
-    const associationCollection = this.data.fileManager.associationCollection;
-    const conversationCollection = this.data.fileManager.conversationCollection;
-    //' const IDLookupCollection = this.data.fileManager.IDLookupCollection;
-  }
+  initialize(): void {}
 
   @logFunction
-  getNextState(): string {
-    return 'next state';
-  }
-
-  @logFunction
-  getCurrentState(): string {
-    return 'current state';
-  }
-
-  get PickItemsInitializer(): IPickItemsInitializer {
-    return this.pickItemsInitializer;
+  start(): void {
+    this.primaryActor.start();
   }
 
   @logFunction
@@ -239,4 +267,187 @@ export class StateMachineService implements IStateMachineService {
     }
     this.logger.log(`CurrentCommand is now ${this.data.stateManager.currentCommand}`, LogLevel.Debug);
   }
+
+  @logAsyncFunction
+  async disposeAsync() {
+    if (!this.disposed) {
+      // Dispose of the primary actor
+      this.primaryActor.send({ type: 'disposeEvent' });
+      // ToDo: await the transition to the 'Done' state
+      this.disposed = true;
+    }
+  }
 }
+
+// UpdateCurrentModeStateEntryAction: ({ context, event }) => {
+//   context.logger.log(`UpdateCurrentModeStateEntryAction called`, LogLevel.Debug);
+//   context.logger.log(`event type: ${event.type}`, LogLevel.Debug);
+// },
+// UpdateCurrentModeStateExitAction: ({ context, event }) => {
+//   context.logger.log(`UpdateCurrentModeStateExitAction called`, LogLevel.Debug);
+//   context.logger.log(`event type: ${event.type}`, LogLevel.Debug);
+// },
+
+// guards:{
+//   'isNotNull': ({context}) => {
+//     return !context.pick;
+//   }
+// },
+
+// "Vet User Input": {
+//   invoke:{
+//     id:"Vet User Input Logic",
+//     src: commandMenuLogic,
+//     onDone:{
+//       target:"UpdateMode",
+//       actions: assign({
+//         modeMenuItem: (_, event) => event.data,
+//       }),
+//     },
+//     onError:{
+//       target:"New state 1",
+//       actions: assign({
+//         errorMessage: (_, event) => event.data,
+//       }),
+//     },
+//   }
+//   on: {
+//     handleMenuResults: {
+//       target: "UpdateMode",
+//     },
+//     maliciousInputDetected: {
+//       target: "New state 1",
+//     },
+//   },
+// },
+//     Done: {
+//       type: 'final',
+//     },
+//     UpdateMode: {
+//       on: {
+//         always: {
+//           target: 'FireModeChanged',
+//         },
+//       },
+//     },
+//     'New state 1': {},
+//     FireModeChanged: {
+//       always: {
+//         target: 'Done',
+//       },
+//     },
+//   },
+// },
+
+// @logFunction
+// async queryAsync ():Promise<void> {
+//   return new Promise((resolve, reject) => {
+//     this.primaryActor.send({ type: 'query' });
+//     this.primaryActor.onTransition((state) => {
+//       if (state.matches('success')) {
+//         resolve();
+//       } else if (state.matches('failure')) {
+//         reject();
+//       }
+//     });
+//   });
+// }
+
+// setup({
+//   actors: { commandMenuLogic }
+// }).createMachine({
+//     // cspell:ignore-next-line
+//     id: 'primaryMachine',
+//     initial: 'preinitialize',
+//     context: this.data,
+//     states: {
+//       preinitialize: {
+//         on: {
+//           Initialize: 'initializing',
+//         },
+//       },
+//       initializing: {
+//         on: {
+//           InitializationComplete: 'idle',
+//         },
+//       },
+//        idle: {
+//         on: {
+//           QUERY: 'querying',
+//           COMMANDMENU: 'commandMenu',
+//         },
+//       },
+//       commandMenu: {
+//         on: {
+//           ShowQuickPickAndWaitForCompletion: 'idle',
+//           COMMANDMENU: 'commandMenu',
+//         },
+//       },
+//       querying: {
+//         on: {
+//           QUERY: 'querying',
+//           SUCCESS: 'success',
+//           FAILURE: 'failure',
+//         },
+//       },
+//       success: {
+//         on: {
+//           QUERY: 'querying',
+//         },
+//       },
+//       failure: {
+//         on: {
+//           QUERY: 'querying',
+//         },
+//       },
+//     },
+//   });
+
+// Create the primary actor and start it
+//this.primaryActor = createActor(this.primaryMachine).start();
+
+//  const commandMenuLogic = fromPromise(async () => {
+//   return CommandMenuItemEnum.Chat;
+// });
+
+// interface IVetUnsafeData {
+//   unsafeData: string;
+//   subsequentEvent: Event;
+// }
+
+// const VetUserInputLogic = fromPromise<
+//   {
+//     safeUserInputData: string;
+//   },
+//   { unsafeUserInputData: string }
+// >((input: { unsafeUserInputData: string }) => {
+//   //const safeUserinputData = await // send string to 3rd party virus scanner;
+//   const safeUserinputData = input.unsafeUserInputData;
+// });
+
+// | { type: 'UserInputComplete' }
+// | { type: 'handleMenuResults' }
+// | { type: 'maliciousInputDetected' },
+
+// UpdateCurrentModeState: {
+//   entry: [{
+//     type: 'UpdateCurrentModeStateEntryAction',
+//   }],
+//   exit: {
+//     type: 'UpdateCurrentModeStateExitAction',
+//   },
+//   invoke: {
+//     src: 'UpdateCurrentModeActor',
+//     input: ({ context }) => ({
+//       logger: context.logger,
+//       data: context.data,
+//       pick: ModeMenuItemEnum
+//     }),
+//     onDone: {
+//       target: 'Idle',
+//     },
+//   },
+//   // always: {
+//   //   target: 'Idle',
+//   // },
+// },

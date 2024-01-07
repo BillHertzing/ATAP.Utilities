@@ -2,12 +2,13 @@ import * as vscode from 'vscode';
 import { LogLevel, ILogger } from '@Logger/index';
 import { IData } from '@DataService/index';
 
-import { StatusMenuItemEnum, IPickItemsInitializer } from '@StateMachineService/index';
+import { StatusMenuItemEnum } from '@StateMachineService/index';
 
 export async function showStatusMenuAsync(
   logger: ILogger,
   data: IData,
-  pickItemsInitializer: IPickItemsInitializer,
+  quickPickItems:vscode.QuickPickItem[]
+  
   // ToDo: add a cancellationToken
   // cancellationToken?: vscode.CancellationToken,
 ): Promise<{
@@ -17,7 +18,7 @@ export async function showStatusMenuAsync(
 }> {
   logger.log('starting function showStatusMenuAsync', LogLevel.Debug);
 
-  const pick = await vscode.window.showQuickPick(pickItemsInitializer.statusMenuItems, {
+  const pick = await vscode.window.showQuickPick(quickPickItems, {
     placeHolder: 'Select an option',
   });
 

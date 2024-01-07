@@ -20,6 +20,7 @@ import { SupportedSecretsVaultEnum, ISecretsManager, SecretsManager } from './Se
 import { IConfigurationData, ConfigurationData } from './ConfigurationData';
 import { IEventManager, EventManager } from './EventManager';
 import { IFileManager, FileManager } from './FileManager';
+import { IPickItems, PickItems } from './PickItems';
 
 import { PathLike } from 'fs';
 
@@ -34,6 +35,7 @@ export interface IData {
   readonly secretsManager: ISecretsManager;
   readonly eventManager: IEventManager;
   readonly fileManager: IFileManager;
+  readonly pickItems: IPickItems;
   disposeAsync(): void;
 }
 
@@ -44,6 +46,7 @@ export class Data {
   public readonly secretsManager: ISecretsManager;
   public readonly eventManager: IEventManager;
   public readonly fileManager: IFileManager;
+  public readonly pickItems: IPickItems;
 
   // Data that does NOT get put into globalState
   private temporaryPromptDocumentPath: string | undefined = undefined;
@@ -130,6 +133,18 @@ export class Data {
       } else {
         // ToDo:  investigation to determine what else might happen
         throw new Error(`Data.ctor. create fileManager thew an object that was not of type Error -> `);
+      }
+    }
+
+    // Instantiate the pickItems
+    try {
+      this.pickItems = new PickItems(this);
+    } catch (e) {
+      if (e instanceof Error) {
+        throw new DetailedError('Data.ctor. create pickItems -> ', e);
+      } else {
+        // ToDo:  investigation to determine what else might happen
+        throw new Error(`Data.ctor. create pickItems thew an object that was not of type Error -> `);
       }
     }
   }

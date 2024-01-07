@@ -19,7 +19,7 @@ export interface IPhilote {
   readonly others: Philote[];
   convertTo_json(): string;
   convertTo_yaml(): string;
-  ToString(): string;
+  toString(): string;
   addOther(philote: IPhilote): void; // Method to add to the 'others' array
   removeOther(philote: IPhilote): void; // Method to remove from the 'others' array
 }
@@ -65,7 +65,7 @@ export class Philote implements IPhilote {
   }
 
   @logFunction
-  ToString(): string {
+  toString(): string {
     return `Philote: ${this.ID}`;
   }
 }

@@ -89,9 +89,9 @@ describe('Philote Class', function() {
   });
 
   describe('String Representation', function() {
-    it('When calling ToString, then it should return a string containing the ID of the Philote', function() {
+    it('When calling toString, then it should return a string containing the ID of the Philote', function() {
       const philote = new Philote();
-      const stringRepresentation = philote.ToString();
+      const stringRepresentation = philote.toString();
       expect(stringRepresentation).to.be.a('string');
       expect(stringRepresentation).to.contain(philote.ID);
     });

@@ -55,8 +55,8 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   logger.setChannelEnabled(extensionName, true);
 
   // If the extension is running in the development host, or if the environment variable 'Environment' is set to 'Development',
-  //   set the environment variable 'Environment' to 'Development'. This overrides whateve value of Environment variable was set when the extension started
-  //   set the logger's channel's loglevel to LogLevel.Debug initially
+  //   set the environment variable 'Environment' to 'Development'. This overrides whatever value of Environment variable was set when the extension started
+  //   set the logger's channel's LogLevel to LogLevel.Debug initially
   //   ToDo: use a static map from DefaultConfig to check for a debuggerLogLevel in an environment variable
   //   if the debuggerLogLevel is set in the extension's setting, use that value,
   //   else if the debuggerLogLevel in the DefaultConfiguration.Development, use that value
@@ -113,7 +113,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   queryService = QueryService.create(logger, extensionContext, dataService.data, 'extension.ts');
 
   // ToDo: wrap in a try/catch block
-  // creating the SatateMachineService starts all of the state machines
+  // creating the StateMachineService starts all of the state machines
   stateMachineService = StateMachineService.create(logger, extensionContext, dataService.data, 'extension.ts');
 
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger

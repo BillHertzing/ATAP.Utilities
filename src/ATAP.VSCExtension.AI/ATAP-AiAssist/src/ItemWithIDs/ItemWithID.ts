@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import {
   SupportedSerializersEnum,
   SerializationStructure,
@@ -8,19 +9,22 @@ import {
   toYaml,
   fromYaml,
 } from '@Serializers/index';
+
 import * as yaml from 'js-yaml';
 
 import { DetailedError } from '@ErrorClasses/index';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 
+import { GUID, Int, IDType, nextID } from '@IDTypes/index';
 import { Philote, IPhilote } from '@Philote/index';
-import { log } from 'console';
 
 export type TagValueType = string;
 export type CategoryValueType = string;
 export type QueryRequestValueType = string;
 export type QueryResponseValueType = string;
+
+export type AiAssistCancellationTokenSourceValueType = vscode.CancellationTokenSource;
 
 export interface IAssociationValueType {
   tagCollection: ITagCollection;
@@ -88,7 +92,8 @@ export class QueryPairCollectionValueType {
     return toYaml(this);
   }
 }
-export type ItemWithIDValueType = string | IAssociationValueType | IQueryPairValueType | IQueryPairCollectionValueType;
+
+export type ItemWithIDValueType = string | AiAssistCancellationTokenSourceValueType | IAssociationValueType | IQueryPairValueType | IQueryPairCollectionValueType;
 
 // export type MapTypeToValueType<T> = T extends Tag
 //   ? TagValueType
@@ -108,7 +113,8 @@ export type ItemWithIDValueType = string | IAssociationValueType | IQueryPairVal
 //   return yaml.load(yamlString) as YamlData<T, V>;
 // };
 
-export type ItemWithIDTypes = Tag | Category | Association | QueryRequest | QueryResponse | QueryPair | QueryPairCollection;
+
+export type ItemWithIDTypes = Tag | Category | vscode.CancellationTokenSource | Association | QueryRequest | QueryResponse | QueryPair | QueryPairCollection ;
 
 export interface IItemWithID<T extends ItemWithIDTypes, V extends ItemWithIDValueType> {
   readonly value: V;
@@ -128,7 +134,7 @@ export class ItemWithID<T extends ItemWithIDTypes, V extends ItemWithIDValueType
   }
   @logFunction
   toString(): string {
-    return `ItemWithID ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+    return `ItemWithID ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {
@@ -158,6 +164,8 @@ export interface ICollection<T extends ItemWithIDTypes, V extends ItemWithIDValu
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
+  findById(criteria: GUID): T | undefined;
+
 }
 @logConstructor
 export class Collection<T extends ItemWithIDTypes, V extends ItemWithIDValueType> implements ICollection<T, V> {
@@ -170,7 +178,7 @@ export class Collection<T extends ItemWithIDTypes, V extends ItemWithIDValueType
   }
   @logFunction
   toString(): string {
-    return `Collection ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+    return `Collection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {
@@ -180,6 +188,11 @@ export class Collection<T extends ItemWithIDTypes, V extends ItemWithIDValueType
   convertTo_yaml(): string {
     return toYaml(this);
   }
+  // find within this value an instance of type T based on it's Philote's GUID
+  findById<T, V>(criteria: GUID): T | undefined {
+    return this.value.find((item) => item.ID.toString() === criteria.toString()) as T;
+  }
+
 }
 
 export interface ITag extends IItemWithID<Tag, string> {
@@ -202,7 +215,7 @@ export class Tag extends ItemWithID<Tag, string> implements ITag {
   // }
   @logFunction
   toString(): string {
-    return `Tag ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+    return `Tag ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {
@@ -218,7 +231,6 @@ export interface ITagCollection extends ICollection<Tag, TagValueType> {
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
-  // findTagBySomeCriteria(criteria: any): Tag | undefined;
 }
 @logConstructor
 export class TagCollection extends Collection<Tag, TagValueType> implements ITagCollection {
@@ -230,7 +242,7 @@ export class TagCollection extends Collection<Tag, TagValueType> implements ITag
   }
   @logFunction
   toString(): string {
-    return `TagCollection ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+    return `TagCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {
@@ -240,9 +252,6 @@ export class TagCollection extends Collection<Tag, TagValueType> implements ITag
   convertTo_yaml(): string {
     return toYaml(this);
   }
-  // findTagBySomeCriteria(criteria: any): Tag | undefined {
-  //   // Implementation specific to finding a tag based on the given criteria
-  // }
 }
 
 export interface ICategory {
@@ -263,7 +272,7 @@ export class Category extends ItemWithID<Category, string> implements ICategory 
   // }
   @logFunction
   toString(): string {
-    return `Category ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+    return `Category ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {
@@ -279,7 +288,6 @@ export interface ICategoryCollection extends ICollection<Category, CategoryValue
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
-  // findCategoryBySomeCriteria(criteria: any): Category | undefined;
 }
 
 @logConstructor
@@ -289,7 +297,7 @@ export class CategoryCollection extends Collection<Category, CategoryValueType> 
   }
   @logFunction
   toString(): string {
-    return `CategoryCollection ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+    return `CategoryCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {
@@ -299,10 +307,65 @@ export class CategoryCollection extends Collection<Category, CategoryValueType> 
   convertTo_yaml(): string {
     return toYaml(this);
   }
-  // findCategoryBySomeCriteria(criteria: any): Category | undefined {
-  //   // Implementation specific to finding a category based on the given criteria
-  // }
 }
+
+export interface IAiAssistCancellationTokenSource extends IItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType> {
+  readonly value: AiAssistCancellationTokenSourceValueType;
+  readonly ID: Philote;
+  toString(): string;
+}
+@logConstructor
+export class AiAssistCancellationTokenSource extends ItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType> implements IAiAssistCancellationTokenSource {
+  constructor(
+    readonly value: AiAssistCancellationTokenSourceValueType,
+    readonly ID: IPhilote = new Philote(),
+  ) {
+    super(value, ID);
+  }
+  // static create(value: AiAssistCancellationTokenSourceValueType): Tag {
+  //   return new AiAssistCancellationTokenSource(value);
+  // }
+  @logFunction
+  toString(): string {
+    return `AiAssistCancellationTokenSource ID:${this.ID.toString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+}
+
+export interface IAiAssistCancellationTokenSourceCollection extends ICollection<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType> {
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+}
+@logConstructor
+export class AiAssistCancellationTokenSourceCollection extends Collection<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType> implements IAiAssistCancellationTokenSourceCollection {
+  constructor(value: ItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType>[], ID?: Philote) {
+    super(value, ID);
+  }
+  create(value: ItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType>[]): AiAssistCancellationTokenSourceCollection {
+    return new AiAssistCancellationTokenSourceCollection(value);
+  }
+  @logFunction
+  toString(): string {
+    return `AiAssistCancellationTokenSourceCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+}
+
 
 export interface IAssociation {
   toString(): string;
@@ -319,7 +382,7 @@ export class Association extends ItemWithID<Association, IAssociationValueType> 
   // }
   @logFunction
   toString(): string {
-    return `Association ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+    return `Association ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {
@@ -335,7 +398,6 @@ export interface IAssociationCollection extends ICollection<Association, Associa
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
-  // findAssociationBySomeCriteria(criteria: any): Association | undefined;
 }
 
 @logConstructor
@@ -348,7 +410,7 @@ export class AssociationCollection
   }
   @logFunction
   toString(): string {
-    return `AssociationCollection ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+    return `AssociationCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {
@@ -358,9 +420,6 @@ export class AssociationCollection
   convertTo_yaml(): string {
     return toYaml(this);
   }
-  // findAssociationBySomeCriteria(criteria: any): Association | undefined {
-  //   // Implementation specific to finding a association based on the given criteria
-  // }
 }
 
 export interface IQueryRequest extends IItemWithID<QueryRequest, string> {
@@ -383,7 +442,7 @@ export class QueryRequest extends ItemWithID<QueryRequest, string> implements IQ
   // }
   @logFunction
   toString(): string {
-    return `QueryRequest ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+    return `QueryRequest ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {
@@ -415,7 +474,7 @@ export class QueryResponse extends ItemWithID<QueryResponse, string> implements 
   // }
   @logFunction
   toString(): string {
-    return `QueryResponse ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+    return `QueryResponse ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {
@@ -442,7 +501,7 @@ export class QueryPair extends ItemWithID<QueryPair, IQueryPairValueType> implem
   // }
   @logFunction
   toString(): string {
-    return `QueryPair ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+    return `QueryPair ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {
@@ -458,7 +517,6 @@ export interface IQueryPairCollection extends ICollection<QueryPair, QueryPairVa
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
-  // findQueryPairBySomeCriteria(criteria: any): QueryPair | undefined;
 }
 
 @logConstructor
@@ -468,7 +526,7 @@ export class QueryPairCollection extends Collection<QueryPair, QueryPairValueTyp
   }
   @logFunction
   toString(): string {
-    return `QueryPairCollection ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+    return `QueryPairCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {
@@ -478,16 +536,12 @@ export class QueryPairCollection extends Collection<QueryPair, QueryPairValueTyp
   convertTo_yaml(): string {
     return toYaml(this);
   }
-  // findQueryPairBySomeCriteria(criteria: any): QueryPair | undefined {
-  //   // Implementation specific to finding a querypair based on the given criteria
-  // }
 }
 
 export interface IConversationCollection extends ICollection<QueryPairCollection, QueryPairCollectionValueType> {
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
-  // findConversationBySomeCriteria(criteria: any): Conversation | undefined;
 }
 
 @logConstructor
@@ -500,7 +554,7 @@ export class ConversationCollection
   }
   @logFunction
   toString(): string {
-    return `ConversationCollection ID:${this.ID.ToString()}; value:${this.value.toString()}`;
+    return `ConversationCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {
@@ -510,7 +564,4 @@ export class ConversationCollection
   convertTo_yaml(): string {
     return toYaml(this);
   }
-  // findConversationBySomeCriteria(criteria: any): Conversation | undefined {
-  //   // Implementation specific to finding a conversation based on the given criteria
-  // }
 }

@@ -1,1 +1,53 @@
-C:/Dropbox/whertzing/GitHub/SharedVSCode/.vscode/cspell.json
+{
+  "version": "0.2",
+  "dictionaryDefinitions": [
+    {
+      "name": "ATAPDictionary",
+      "path": "C:/Dropbox/whertzing/GitHub/SharedVSCode/.vscode/ATAP_cspell_dictionary.txt",
+      "addWords": true
+    }
+  ],
+  "dictionaries": ["ATAPDictionary"],
+  "allowCompoundWords": true,
+  "enableFiletypes": [
+    "csharp",
+    "css",
+    "html",
+    "java",
+    "javascript",
+    "json",
+    "jsonc",
+    "markdown",
+    "plaintext",
+    "powershell",
+    "python",
+    "sql",
+    "typescript",
+    "uml",
+    "xml",
+    "yaml"
+  ],
+  "enabledLanguageIds": [
+    "csharp",
+    "css",
+    "html",
+    "java",
+    "javascript",
+    "json",
+    "markdown",
+    "plaintext",
+    "powershell",
+    "python",
+    "sql",
+    "typescript",
+    "uml",
+    "xml",
+    "yaml"
+  ],
+  // "cSpell.ignorePaths": ["package-lock.json", "node_modules", "vscode-extension", ".git/objects", ".vscode-insiders"],
+  "flagWords": ["teh:the"],
+  "overrides": [],
+  "words": [],
+  "ignoreWords": [],
+  "import": []
+}

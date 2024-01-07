@@ -68,6 +68,8 @@ export interface IStateManager {
   currentMode: ModeMenuItemEnum;
   currentCommand: CommandMenuItemEnum;
   currentSources: string[];
+  priorMode: ModeMenuItemEnum;
+  priorCommand: CommandMenuItemEnum;
   disposeAsync(): void;
 }
 
@@ -222,6 +224,50 @@ export class StateManager implements IStateManager {
 
     // ToDo: possibly add validationthat the CurrentMode was correctly created and initialized
     logger.log(`CurrentSources = ${this.cache.getValue<string>('CurrentSources')}`, LogLevel.Debug);
+
+    let _priorMode = this.cache.getValue<ModeMenuItemEnum>('priorMode');
+    if (!_priorMode || (_priorMode && _priorMode === undefined)) {
+      logger.log(`StateManager.constructor: priorMode exists as undefined`, LogLevel.Debug);
+      // Immediately Invoked Async Function Expression (IIFE)
+      (() => {
+        this.cache.setValue<ModeMenuItemEnum>('priorMode', this.configurationData.priorMode).catch((e) => {
+          if (e instanceof Error) {
+            throw new DetailedError(`StateManager.constructor: failed to set priorMode -> `, e);
+          } else {
+            throw new Error(
+              `StateManager .ctor: failed to set priorMode and the instance of (e) returned is of type ${typeof e}`,
+            );
+          }
+        });
+      })();
+      // At this point the cache will no longer be undefined
+      this.priorCommand = this.cache.getValue<CommandMenuItemEnum>('priorMode') as CommandMenuItemEnum;
+    }
+    // ToDo: possibly add validationthat the PriorMode was correctly created and initialized
+    logger.log(`priorMode = ${this.priorMode}`, LogLevel.Debug);
+  
+    let _priorCommand = this.cache.getValue<ModeMenuItemEnum>('priorMode');
+    if (!_priorCommand || (_priorCommand && _priorCommand === undefined)) {
+      logger.log(`StateManager.constructor: priorCommand exists as undefined`, LogLevel.Debug);
+      // Immediately Invoked Async Function Expression (IIFE)
+      (() => {
+        this.cache.setValue<CommandMenuItemEnum>('priorCommand', this.configurationData.priorCommand).catch((e) => {
+          if (e instanceof Error) {
+            throw new DetailedError(`StateManager.constructor: failed to set priorCommand -> `, e);
+          } else {
+            throw new Error(
+              `StateManager .ctor: failed to set priorCommand and the instance of (e) returned is of type ${typeof e}`,
+            );
+          }
+        });
+      })();
+      // At this point the cache will no longer be undefined
+      this.priorCommand = this.cache.getValue<CommandMenuItemEnum>('priorCommand') as CommandMenuItemEnum;
+    }
+    // ToDo: possibly add validationthat the PriorCommand was correctly created and initialized
+    logger.log(`priorCommand = ${this.priorCommand}`, LogLevel.Debug);
+  
+  
   }
 
   getsavedPromptDocumentData(): string | undefined {
@@ -331,6 +377,13 @@ export class StateManager implements IStateManager {
     await this.cache.setValue<string[]>('currentSources', value);
   }
 
+  async handlePriorModeChangedAsync(value: ModeMenuItemEnum): Promise<void> {
+    await this.cache.setValue<ModeMenuItemEnum>('priorMode', value);
+  }
+  async handlePriorCommandChangedAsync(value: CommandMenuItemEnum): Promise<void> {
+    await this.cache.setValue<CommandMenuItemEnum>('priorCommand', value);
+  }
+
   get currentMode(): ModeMenuItemEnum {
     return this.cache.getValue<ModeMenuItemEnum>('currentMode') as ModeMenuItemEnum;
   }
@@ -354,6 +407,22 @@ export class StateManager implements IStateManager {
   set currentSources(value: string[]) {
     this.currentSources = value;
     this.handleCurrentSourcesChangedAsync(value);
+  }
+
+  get priorMode(): ModeMenuItemEnum {
+    return this.cache.getValue<ModeMenuItemEnum>('priorMode') as ModeMenuItemEnum;
+  }
+
+  set priorMode(value: ModeMenuItemEnum) {
+    this.handlePriorModeChangedAsync(value);
+  }
+
+  get priorCommand(): CommandMenuItemEnum {
+    return this.cache.getValue<CommandMenuItemEnum>('priorCommand') as CommandMenuItemEnum;
+  }
+
+  set priorCommand(value: CommandMenuItemEnum) {
+    this.handlePriorCommandChangedAsync(value);
   }
 
   @logAsyncFunction

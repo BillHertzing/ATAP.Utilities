@@ -2,12 +2,12 @@ import * as vscode from 'vscode';
 import { LogLevel, ILogger } from '@Logger/index';
 import { IData } from '@DataService/index';
 
-import { ModeMenuItemEnum, IPickItemsInitializer } from '@StateMachineService/index';
+import { ModeMenuItemEnum } from '@StateMachineService/index';
 
 export async function showModeMenuAsync(
   logger: ILogger,
   data: IData,
-  pickItemsInitializer: IPickItemsInitializer,
+  quickPickItems:vscode.QuickPickItem[]
   // ToDo: add a cancellationToken
   // cancellationToken?: vscode.CancellationToken,
 ): Promise<{
@@ -17,7 +17,7 @@ export async function showModeMenuAsync(
 }> {
   logger.log('starting function showModeMenuAsync', LogLevel.Debug);
 
-  const pick = await vscode.window.showQuickPick(pickItemsInitializer.modeMenuItems, {
+  const pick = await vscode.window.showQuickPick(quickPickItems, {
     placeHolder: 'Select an option',
   });
 

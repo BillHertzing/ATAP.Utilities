@@ -1,6 +1,7 @@
 import vscode from 'vscode';
 import { ModeMenuItemEnum, CommandMenuItemEnum, StatusMenuItemEnum } from '@StateMachineService/index';
-import {IData} from '@DataService/index';
+import {IData } from '@DataService/index';
+
 
 export interface IPickItems {
   statusMenuItems: vscode.QuickPickItem[];

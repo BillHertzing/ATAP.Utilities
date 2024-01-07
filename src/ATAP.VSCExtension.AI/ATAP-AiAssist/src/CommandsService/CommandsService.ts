@@ -8,16 +8,16 @@ import { IQueryService } from '@QueryService/index';
 
 import { startCommand } from './startCommand';
 import { showVSCEnvironment } from './showVSCEnvironment';
-import { showPrompt } from './showPrompt';
 
 import { showStatusMenuAsync } from './showStatusMenuAsync';
 import { showModeMenuAsync } from './showModeMenuAsync';
 import { showCommandMenuAsync } from './showCommandMenuAsync';
+
 import {
   StatusMenuItemEnum,
   ModeMenuItemEnum,
   CommandMenuItemEnum,
-  IPickItemsInitializer,
+  IStateMachineService,
 } from '@StateMachineService/index';
 import {
   saveTagCollectionAsync,
@@ -26,19 +26,27 @@ import {
   saveConversationCollectionAsync,
 } from './saveCollectionAsync';
 import { copyToSubmit } from './copyToSubmit';
+import { stat } from 'fs';
+import { QuickPickEnumeration } from '@StateMachineService/PrimaryMachine';
+
+
+export interface ICommandsService {
+  readonly stateMachineService: IStateMachineService;
+  getDisposables(): vscode.Disposable[];
+}
 
 @logConstructor
 export class CommandsService {
   private disposables: vscode.Disposable[] = [];
-  private readonly extensionID : string;
+  private readonly extensionID: string;
   private readonly extensionName: string;
+  private _stateMachineService: IStateMachineService | null = null;
 
   constructor(
     private logger: ILogger,
     private extensionContext: vscode.ExtensionContext,
     private data: IData,
-    private queryService: IQueryService,
-    private pickItemsInitializer: IPickItemsInitializer,
+    private stateMachineService: IStateMachineService,
   ) {
     this.extensionID = extensionContext.extension.id;
     this.extensionName = this.extensionID.split('.')[1];
@@ -121,7 +129,7 @@ export class CommandsService {
         this.logger.log('starting commandID showStatusMenuAsync', LogLevel.Debug);
         let result: StatusMenuItemEnum | null = null;
         try {
-          const _result = await showStatusMenuAsync(this.logger, this.data, this.pickItemsInitializer);
+          const _result = await showStatusMenuAsync(this.logger, this.data, this.data.pickItems.statusMenuItems);
           this.logger.log(
             `result.success = ${_result.success}, result.statusMenuItem = ${_result.statusMenuItem?.toString()} `,
             LogLevel.Debug,
@@ -140,7 +148,9 @@ export class CommandsService {
           } else {
             // ToDo:  investigation to determine what else might happen
             throw new Error(
-              `${this.extensionName}.showStatusMenuAsync function showStatusMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
+              `${
+                this.extensionName
+              }.showStatusMenuAsync function showStatusMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
             );
           }
         }
@@ -156,14 +166,14 @@ export class CommandsService {
         this.logger.log('starting commandID showModeMenuAsync', LogLevel.Debug);
         let result: ModeMenuItemEnum | null = null;
         try {
-          const _result = await showModeMenuAsync(this.logger, this.data, this.pickItemsInitializer);
+          const _result = await showModeMenuAsync(this.logger, this.data, this.data.pickItems.modeMenuItems);
           this.logger.log(
             `result.success = ${_result.success}, result.modeMenuItem = ${_result.modeMenuItem?.toString()} `,
             LogLevel.Debug,
           );
           if (_result.success) {
             result = _result.modeMenuItem;
-            // ToDo: fire an event to handle the results of the quickPick
+            // fire an event to handle the results of the quickPick
             this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', result, 'handleModeMenuResults');
           } else {
             this.logger.log('showModeMenuAsync was cancelled', LogLevel.Debug);
@@ -177,7 +187,9 @@ export class CommandsService {
           } else {
             // ToDo:  investigation to determine what else might happen
             throw new Error(
-              `testchanged.showModeMenuAsync function showModeMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
+              `${
+                this.extensionName
+              }.showModeMenuAsync function showModeMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
             );
           }
         }
@@ -191,13 +203,15 @@ export class CommandsService {
         this.logger.log('starting commandID showCommandMenuAsync', LogLevel.Debug);
         let result: CommandMenuItemEnum | null = null;
         try {
-          const _result = await showCommandMenuAsync(this.logger, this.data, this.pickItemsInitializer);
+          const _result = await showCommandMenuAsync(this.logger, this.data, this.data.pickItems.commandMenuItems);
           this.logger.log(
             `result.success = ${_result.success}, result.commandMenuItem = ${_result.commandMenuItem?.toString()} `,
             LogLevel.Debug,
           );
           if (_result.success) {
             result = _result.commandMenuItem;
+            // ToDo: fire an event to handle the results of the quickPick
+            this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', result, 'handleCommandMenuResults');
           } else {
             this.logger.log('showCommandMenuAsync was cancelled', LogLevel.Debug);
           }
@@ -210,12 +224,12 @@ export class CommandsService {
           } else {
             // ToDo:  investigation to determine what else might happen
             throw new Error(
-              `${this.extensionName}.showCommandMenuAsync function showCommandMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
+              `${
+                this.extensionName
+              }.showCommandMenuAsync function showCommandMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
             );
           }
         }
-        // ToDo: fire an event to handle the results of the quickPick
-        this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', result, 'handleCommandMenuResults');
       }),
     );
 
@@ -293,6 +307,47 @@ export class CommandsService {
         }
         // Add the event that makes the Conversation editor go from dirty to clean
         // this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', 'saveConversationCollectionAsyncCompleted');
+      }),
+    );
+
+    // ************************************************************ //
+    // register the command to send the quickPick event (with kindOfQuickPick=Status) to the primaryActor
+    this.logger.log('registering primaryActor.quickPickStatus', LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickStatus`, () => {
+        this.logger.log('starting commandService.primaryActor.quickPickStatus', LogLevel.Debug);
+        try {
+          this.stateMachineService.quickPick(QuickPickEnumeration.StatusMenuItemEnum);
+          this.logger.log(`completed commandService.primaryActor.quickPickStatus`, LogLevel.Debug);
+        } catch (e) {
+          HandleError(e, 'commandsService', 'primaryActor.quickPickStatus', 'failed calling primaryActor C1');
+        }
+      }),
+    );
+    // register the command to send the quickPick event (with kindOfQuickPick=Mode) to the primaryActor
+    this.logger.log('registering primaryActor.quickPickMode', LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickMode`, () => {
+        this.logger.log('starting commandService.primaryActor.quickPickMode', LogLevel.Debug);
+        try {
+          this.stateMachineService.quickPick(QuickPickEnumeration.ModeMenuItemEnum);
+          this.logger.log(`completed commandService.primaryActor.quickPickMode`, LogLevel.Debug);
+        } catch (e) {
+          HandleError(e, 'commandsService', 'primaryActor.quickPickMode', 'failed calling primaryActor C1');
+        }
+      }),
+    );
+    // register the command to send the quickPick event (with kindOfQuickPick=Command) to the primaryActor
+    this.logger.log('registering primaryActor.quickPickCommand', LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickCommand`, () => {
+        this.logger.log('starting commandService.primaryActor.quickPickCommand', LogLevel.Debug);
+        try {
+          this.stateMachineService.quickPick(QuickPickEnumeration.CommandMenuItemEnum);
+          this.logger.log(`completed commandService.primaryActor.quickPickCommand`, LogLevel.Debug);
+        } catch (e) {
+          HandleError(e, 'commandsService', 'primaryActor.quickPickCommand', 'failed calling primaryActor C1');
+        }
       }),
     );
     // this.message = 'registering copyToSubmit';

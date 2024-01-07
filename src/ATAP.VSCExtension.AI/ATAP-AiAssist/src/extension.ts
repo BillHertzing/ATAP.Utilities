@@ -7,7 +7,6 @@ import { LogLevel, Logger } from '@Logger/index';
 import { logFunction } from './Decorators';
 import { DefaultConfiguration } from '@DataService/DefaultConfiguration';
 
-
 import { SecurityService, ISecurityService } from '@SecurityService/index';
 
 import { DataService, IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
@@ -30,27 +29,31 @@ import { type } from 'os';
 
 // objects that need to be at the global level of the module, so they are visible in both activate and deactivate functions
 let dataService: IDataService;
+let stateMachineService: IStateMachineService;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(extensionContext: vscode.ExtensionContext) {
   // Initialize the static logger
   Logger.staticConstructor();
+  Logger.staticLog(`${extensionContext.extension.id} activating`, LogLevel.Info);
   // Declaration of variables
   let message: string = '';
   let workspacePath: string = '';
   let securityService: ISecurityService;
   let queryService: IQueryService;
-  let stateMachineService: IStateMachineService;
   let commandsService: CommandsService;
 
   const extensionID = extensionContext.extension.id;
-  const extensionname = extensionID.split('.')[1];
+  const extensionName = extensionID.split('.')[1];
 
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
   const logger = new Logger();
   // Channel name is the name of the extension
-  logger.createChannel(extensionname, LogLevel.Debug);
+  logger.createChannel(extensionName, LogLevel.Debug);
+    logger.setChannelEnabled('console', true);
+      logger.setChannelEnabled(extensionName, true);
+
 
   // If the extension is running in the development host, or if the environment variable 'Environment' is set to 'Development',
   //   set the environment variable 'Environment' to 'Development'. This overrides whateve value of Environment variable was set when the extension started
@@ -60,18 +63,18 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   //   else if the debuggerLogLevel in the DefaultConfiguration.Development, use that value
   if (isRunningInDevelopmentEnvironment()) {
     // ToDO: test for an environment variable for debuggerLogLevel, and if it exists, use that value
-    const settings = vscode.workspace.getConfiguration(extensionname);
+    const settings = vscode.workspace.getConfiguration(extensionName);
     const settingsDebuggerLogLevel = settings.get<LogLevel>('debuggerLogLevel');
     if (settingsDebuggerLogLevel) {
-      logger.setChannelLogLevel(extensionname, settingsDebuggerLogLevel);
+      logger.setChannelLogLevel(extensionName, settingsDebuggerLogLevel);
     } else if ('debuggerLogLevel' in DefaultConfiguration.Development) {
       const defaultConfigurationDebuggerLogLevel = DefaultConfiguration.Development.debuggerLogLevel as LogLevel;
-      logger.setChannelLogLevel(extensionname, defaultConfigurationDebuggerLogLevel);
+      logger.setChannelLogLevel(extensionName, defaultConfigurationDebuggerLogLevel);
     }
     // Focus on the output stream when starting the extension in development mode
     logger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
   }
-    logger.log(`${this.extensionName} Activation Begun`, LogLevel.Info);
+  logger.log(`${extensionName} Activation Begun`, LogLevel.Info);
 
   // instantiate the SecurityService
   // if a SecurityService initialization serialized string exists, this will try and use it to create the SecurityService, else return a new empty one.
@@ -110,7 +113,8 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // ToDo: wrap in a try/catch block
   queryService = QueryService.create(logger, extensionContext, dataService.data, 'extension.ts');
 
-  // ToDo: wrap in a try/catch block
+    // ToDo: wrap in a try/catch block
+  // creating the SatateMachineService starts all of the state machines
   stateMachineService = StateMachineService.create(logger, extensionContext, dataService.data, 'extension.ts');
 
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
@@ -120,8 +124,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
       logger,
       extensionContext,
       dataService.data,
-      queryService,
-      stateMachineService.pickItemsInitializer,
+      stateMachineService
     );
   } catch (e) {
     if (e instanceof Error) {
@@ -135,18 +138,18 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   }
   // Add the disposables from the CommandsService to extensionContext.subscriptions
   extensionContext.subscriptions.push(...commandsService.getDisposables());
-
   // Create a status bar item for the extension
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   // Initial state
   statusBarItem.text = `$(robot) AiAssist`;
-  statusBarItem.command = `${extensionname}.showStatusMenuAsync`;
+  statusBarItem.command = `${extensionName}.showStatusMenuAsync`;
   statusBarItem.tooltip = 'Show AiAssist status menu';
   extensionContext.subscriptions.push(statusBarItem);
   statusBarItem.show();
 
-  // Call the Initialize function in the StateMachineService
-  stateMachineService.initialize();
+  // Start the state machine
+  stateMachineService.start();
+
 
   // // identify the current workspace context. Compare to stored state information, and update if necessary
   // const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -268,6 +271,10 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
 
 async function deactivateExtensionAsync(): Promise<void> {
   return new Promise(async (resolve) => {
+
+    // Dispose of the state machine service
+    await stateMachineService.disposeAsync();
+
     // Clean up resources, like closing files or stopping services
     await dataService.disposeAsync();
 

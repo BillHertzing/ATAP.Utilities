@@ -19,6 +19,7 @@ import {
 import { ModeMenuItemEnum, CommandMenuItemEnum } from '@StateMachineService/index';
 
 export interface IConfigurationData {
+  readonly currentEnvironment: string;
   readonly tagsFilePath: string;
   readonly categorysFilePath: string;
   readonly associationsFilePath: string;
@@ -30,6 +31,8 @@ export interface IConfigurationData {
   readonly currentMode: ModeMenuItemEnum;
   readonly currentCommand: CommandMenuItemEnum;
   readonly currentSources: string[];
+  readonly priorMode: ModeMenuItemEnum;
+  readonly priorCommand: CommandMenuItemEnum;
   getTempDirectoryBasePath(): string;
   getDevelopmentWorkspacePath(): string | undefined;
   getKeePassKDBXPath(): string;
@@ -125,6 +128,16 @@ export class ConfigurationData implements IConfigurationData {
     }
     return undefined;
   }
+  get currentEnvironment(): string {
+    if (isRunningInDevelopmentEnvironment()) {
+      return 'Development';
+    } else if (isRunningInTestingEnvironment()) {
+      return 'Testing';
+    } else {
+      return 'Production';
+    }
+  }
+
   get tagsFilePath(): string {
     return path.join(
       this.getNonNull('CloudBasePath') as string,
@@ -174,6 +187,13 @@ export class ConfigurationData implements IConfigurationData {
       return DefaultConfiguration.Production['extensionID'] as string;
     }
   }
+  get priorMode(): ModeMenuItemEnum {
+    return this.getNonNull('priorMode') as ModeMenuItemEnum;
+  }
+  get priorCommand(): CommandMenuItemEnum {
+    return this.getNonNull('priorCommand') as CommandMenuItemEnum;
+  }
+
   get promptExpertise(): string {
     return this.getNonNull('YourExpertise') as string;
   }

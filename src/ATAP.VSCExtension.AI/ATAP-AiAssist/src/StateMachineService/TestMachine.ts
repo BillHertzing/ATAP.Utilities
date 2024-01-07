@@ -2,7 +2,7 @@ import { ILogger, Logger, LogLevel } from '@Logger/index';
 import { IData } from '@DataService/index';
 import { Actor, createActor, assign, createMachine, fromCallback, StateMachine, fromPromise } from 'xstate';
 
-import {ILoggerData } from '@StateMachineService/index';
+import { ILoggerData } from '@StateMachineService/index';
 
 // Machine Logic to do an async file save (TBD with retry logic)
 import { saveFileActorLogic } from './SaveFileActorLogic';
@@ -17,7 +17,7 @@ export const testMachine = createMachine(
       input: {} as { loggerData: ILoggerData },
       events: {} as { type: 'saveFile' },
     },
-    context: ({ input }) => ({ loggerData: input.loggerData}),
+    context: ({ input }) => ({ loggerData: input.loggerData }),
     id: 'testMachine',
     initial: 'Idle',
     states: {

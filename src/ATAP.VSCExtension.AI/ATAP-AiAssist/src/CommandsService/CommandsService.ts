@@ -195,10 +195,9 @@ export class CommandsService {
     this.logger.log('registering primaryActor.quickPickStatus', LogLevel.Debug);
     this.disposables.push(
       vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickStatus`, () => {
-        this.logger.log('starting commandService.primaryActor.quickPickStatus', LogLevel.Debug);
+        this.logger.log('starting commandService.primaryActor.quickPickStatus (FireAndForget)', LogLevel.Debug);
         try {
           this.stateMachineService.quickPick(QuickPickEnumeration.StatusMenuItemEnum);
-          this.logger.log(`completed commandService.primaryActor.quickPickStatus`, LogLevel.Debug);
         } catch (e) {
           HandleError(e, 'commandsService', 'primaryActor.quickPickStatus', 'failed calling primaryActor C1');
         }
@@ -208,10 +207,9 @@ export class CommandsService {
     this.logger.log('registering primaryActor.quickPickMode', LogLevel.Debug);
     this.disposables.push(
       vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickMode`, () => {
-        this.logger.log('starting commandService.primaryActor.quickPickMode', LogLevel.Debug);
+        this.logger.log('starting commandService.primaryActor.quickPickMode (FireAndForget)', LogLevel.Debug);
         try {
           this.stateMachineService.quickPick(QuickPickEnumeration.ModeMenuItemEnum);
-          this.logger.log(`completed commandService.primaryActor.quickPickMode`, LogLevel.Debug);
         } catch (e) {
           HandleError(e, 'commandsService', 'primaryActor.quickPickMode', 'failed calling primaryActor C1');
         }
@@ -221,10 +219,9 @@ export class CommandsService {
     this.logger.log('registering primaryActor.quickPickCommand', LogLevel.Debug);
     this.disposables.push(
       vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickCommand`, () => {
-        this.logger.log('starting commandService.primaryActor.quickPickCommand', LogLevel.Debug);
+        this.logger.log('starting commandService.primaryActor.quickPickCommand (FireAndForget)', LogLevel.Debug);
         try {
           this.stateMachineService.quickPick(QuickPickEnumeration.CommandMenuItemEnum);
-          this.logger.log(`completed commandService.primaryActor.quickPickCommand`, LogLevel.Debug);
         } catch (e) {
           HandleError(e, 'commandsService', 'primaryActor.quickPickCommand', 'failed calling primaryActor C1');
         }

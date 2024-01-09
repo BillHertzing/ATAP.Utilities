@@ -17,7 +17,7 @@ import {
 import { quickPickActor, quickPickMachineLogic } from './quickPickMachineLogic';
 import { ILoggerData } from '@StateMachineService/index';
 import { IQuickPickInput, IUpdateUIInput } from './StateMachineService';
-//import { showQuickPickActorLogic } from './showQuickPickActorLogic';
+import { showQuickPickActorLogic } from './showQuickPickActorLogic';
 import { changeQuickPickActorLogic } from './changeQuickPickActorLogic';
 import { StatusMenuItemEnum, ModeMenuItemEnum, CommandMenuItemEnum } from '@StateMachineService/index';
 
@@ -67,6 +67,14 @@ export const primaryMachine = setup({
     },
     showQuickPickStateEntryAction: ({ context, event }) => {
       context.logger.log(`showQuickPickStateEntryAction called`, LogLevel.Debug);
+      const kindOfEnumeration =
+        event.type === 'quickPickEvent'
+          ? (event as { type: 'quickPickEvent'; kindOfEnumeration: QuickPickEnumeration }).kindOfEnumeration
+          : undefined;
+      context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
+    },
+    showQuickPickStateOnDoneAction: ({ context, event }) => {
+      context.logger.log(`showQuickPickStateOnDoneAction called`, LogLevel.Debug);
       const kindOfEnumeration =
         event.type === 'quickPickEvent'
           ? (event as { type: 'quickPickEvent'; kindOfEnumeration: QuickPickEnumeration }).kindOfEnumeration
@@ -215,76 +223,7 @@ export const primaryMachine = setup({
                 },
                 invoke: {
                   id: 'showQuickPickActor',
-                  src: fromPromise(async ({ input }: { input: IQuickPickInput }) => {
-                    input.logger.log(
-                      `showQuickPickActorLogic called with KindOfEnumeration= ${input.kindOfEnumeration}`,
-                      LogLevel.Debug,
-                    );
-                    let quickPickItems: vscode.QuickPickItem[];
-                    let prompt: string;
-                    let pick: vscode.QuickPickItem | undefined;
-                    switch (input.kindOfEnumeration) {
-                      case QuickPickEnumeration.StatusMenuItemEnum:
-                        quickPickItems = input.data.pickItems.statusMenuItems;
-                        prompt = `pick an action from list below to execute it`;
-                        pick = await vscode.window.showQuickPick(quickPickItems, {
-                          placeHolder: prompt,
-                        });
-                        if (pick !== undefined) {
-                          const statusMenuItem = pick.label as StatusMenuItemEnum;
-                          switch (statusMenuItem) {
-                            case StatusMenuItemEnum.Mode:
-                              input.logger.log(`handle ${StatusMenuItemEnum.Mode}`, LogLevel.Debug);
-                              vscode.commands.executeCommand(`atap-aiassist.primaryActor.quickPickMode`);
-                              break;
-                            case StatusMenuItemEnum.Command:
-                              input.logger.log(`handle ${StatusMenuItemEnum.Command}`, LogLevel.Debug);
-                              vscode.commands.executeCommand(`atap-aiassist.primaryActor.quickPickCommand`);
-                              break;
-                            case StatusMenuItemEnum.Sources:
-                              input.logger.log(`ToDo: handle ${StatusMenuItemEnum.Sources}`, LogLevel.Debug);
-                              break;
-                            case StatusMenuItemEnum.ShowLogs:
-                              input.logger.log(`handle ${StatusMenuItemEnum.ShowLogs}`, LogLevel.Debug);
-                              input.logger.getChannelInfo('atap-aiassist')?.outputChannel?.show(true);
-                              break;
-                            default:
-                              // ToDo: investigate a better way than throwing inside an actor logic....
-                              throw new DetailedError(
-                                `showQuickPickActor received an unexpected statusMenuItem: ${statusMenuItem}`,
-                              );
-                              break;
-                          }
-                        }
-                        break;
-                      case QuickPickEnumeration.ModeMenuItemEnum:
-                        quickPickItems = input.data.pickItems.modeMenuItems;
-                        prompt = `currentMode is ${input.data.stateManager.currentMode}, select from list below to change it`;
-                        pick = await vscode.window.showQuickPick(quickPickItems, {
-                          placeHolder: prompt,
-                        });
-                        if (pick !== undefined) {
-                          input.data.stateManager.currentMode = pick.label as ModeMenuItemEnum;
-                        }
-                        break;
-                      case QuickPickEnumeration.CommandMenuItemEnum:
-                        quickPickItems = input.data.pickItems.commandMenuItems;
-                        prompt = `currentCommand is ${input.data.stateManager.currentCommand}, select from list below to change it`;
-                        pick = await vscode.window.showQuickPick(quickPickItems, {
-                          placeHolder: prompt,
-                        });
-
-                        const priorCommand = input.data.stateManager.currentCommand;
-                        if (pick !== undefined) {
-                          input.data.stateManager.currentCommand = pick.label as CommandMenuItemEnum;
-                        }
-                        break;
-                    }
-                    if (pick === undefined) {
-                      throw new Error('undefined');
-                    }
-                    return pick?.label, input.kindOfEnumeration;
-                  }),
+                  src: showQuickPickActorLogic,
                   input: ({ context, event }) => ({
                     logger: context.logger,
                     data: context.data,
@@ -298,8 +237,10 @@ export const primaryMachine = setup({
                     {
                       //target: '#primaryMachine.operationState.idleState',
                       target: 'updateUIState',
+                      //actions: assign({ data: ({ event }) => event.output }),
                     },
                   ],
+
                   onError: [
                     {
                       // use the error message to guard the target transitions

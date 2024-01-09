@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
 
+import { SupportedQueryEnginesEnum } from '@BaseEnumerations/index';
+
 import { LogLevel, ILogger, Logger } from '@Logger/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 
 import {
-  SupportedSerializersEnum,
   SerializationStructure,
   ISerializationStructure,
   isSerializationStructure,
@@ -30,17 +31,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import strip from 'strip-comments';
 import * as prettier from 'prettier';
-
-export enum SupportedQueryEnginesEnum {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  ChatGPT = 'ChatGPT',
-  // Anthropic
-  // Claude = 'Claude',
-  // Bard
-  //  Bard = 'Bard',
-  // Grok
-  // Grok = 'Grok',
-}
 
 export interface IQueryService {
   QueryAsync(queryEngine?: SupportedQueryEnginesEnum): Promise<void>;

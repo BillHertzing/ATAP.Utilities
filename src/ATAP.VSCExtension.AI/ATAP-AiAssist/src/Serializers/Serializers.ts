@@ -1,9 +1,6 @@
 import * as yaml from 'js-yaml';
 
-export enum SupportedSerializersEnum {
-  Yaml = 'YAML',
-  Json = 'JSON',
-}
+import { SupportedSerializersEnum } from '@BaseEnumerations/index';
 
 // Utility methods for JSON and YAML conversion. YAML conversion is done with js-yaml
 export const toJson = (obj: any): string => JSON.stringify(obj);
@@ -16,7 +13,10 @@ export interface ISerializationStructure {
   readonly serializerEnum: SupportedSerializersEnum;
 }
 export class SerializationStructure implements ISerializationStructure {
-  constructor(readonly serializerEnum: SupportedSerializersEnum, readonly value: string) { }
+  constructor(
+    readonly serializerEnum: SupportedSerializersEnum,
+    readonly value: string,
+  ) {}
 
   //  getConversionFunction() {
   //   switch (this.serializerEnum) {

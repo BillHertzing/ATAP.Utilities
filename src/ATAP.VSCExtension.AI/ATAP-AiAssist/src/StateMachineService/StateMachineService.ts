@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ILogger, Logger, LogLevel } from '@Logger/index';
+import { LogLevel, ILogger, Logger } from '@Logger/index';
 import { IData } from '@DataService/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction } from '@Decorators/index';
@@ -7,7 +7,13 @@ import { ISerializationStructure, fromJson, fromYaml } from '@Serializers/index'
 import { Actor, createActor, assign, createMachine, fromCallback, StateMachine, fromPromise } from 'xstate';
 import { resolve } from 'path';
 import { primaryMachine } from './PrimaryMachine';
-import { QuickPickEnumeration } from './PrimaryMachine';
+import {
+  CommandMenuItemEnum,
+  ModeMenuItemEnum,
+  QuickPickEnumeration,
+  StatusMenuItemEnum,
+  SupportedQueryEnginesEnum,
+} from '@BaseEnumerations/index';
 
 // Common interface for input to actor and action logic
 export interface ILoggerData {
@@ -47,32 +53,6 @@ export class UpdateUIInput implements IUpdateUIInput {
     readonly logger: ILogger,
     readonly data: IData,
   ) {}
-}
-
-// an enumeration to represent the StatusMenuItem choices
-export enum StatusMenuItemEnum {
-  Mode = 'Mode',
-  Command = 'Command',
-  Sources = 'Sources',
-  ShowLogs = 'ShowLogs',
-}
-
-// an enumeration to represent the ModeItem choices
-export enum ModeMenuItemEnum {
-  Workspace = 'Workspace',
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  VSCode = 'VSCode',
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  ChatGPT = 'ChatGPT',
-  Claude = 'Claude',
-}
-
-// an enumeration to represent the CommandItem choices
-export enum CommandMenuItemEnum {
-  Chat = 'Chat',
-  Fix = 'Fix',
-  Test = 'Test',
-  Document = 'Document',
 }
 
 // The enumeration types for which the quickPickActorLogic can be used

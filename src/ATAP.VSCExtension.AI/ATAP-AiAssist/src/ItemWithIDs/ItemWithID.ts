@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import {
-  SupportedSerializersEnum,
   SerializationStructure,
   ISerializationStructure,
   isSerializationStructure,
@@ -13,7 +12,7 @@ import {
 import * as yaml from 'js-yaml';
 
 import { DetailedError } from '@ErrorClasses/index';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { ILogger, Logger } from '@Logger/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 
 import { GUID, Int, IDType, nextID } from '@IDTypes/index';
@@ -93,7 +92,12 @@ export class QueryPairCollectionValueType {
   }
 }
 
-export type ItemWithIDValueType = string | AiAssistCancellationTokenSourceValueType | IAssociationValueType | IQueryPairValueType | IQueryPairCollectionValueType;
+export type ItemWithIDValueType =
+  | string
+  | AiAssistCancellationTokenSourceValueType
+  | IAssociationValueType
+  | IQueryPairValueType
+  | IQueryPairCollectionValueType;
 
 // export type MapTypeToValueType<T> = T extends Tag
 //   ? TagValueType
@@ -113,8 +117,15 @@ export type ItemWithIDValueType = string | AiAssistCancellationTokenSourceValueT
 //   return yaml.load(yamlString) as YamlData<T, V>;
 // };
 
-
-export type ItemWithIDTypes = Tag | Category | vscode.CancellationTokenSource | Association | QueryRequest | QueryResponse | QueryPair | QueryPairCollection ;
+export type ItemWithIDTypes =
+  | Tag
+  | Category
+  | vscode.CancellationTokenSource
+  | Association
+  | QueryRequest
+  | QueryResponse
+  | QueryPair
+  | QueryPairCollection;
 
 export interface IItemWithID<T extends ItemWithIDTypes, V extends ItemWithIDValueType> {
   readonly value: V;
@@ -165,7 +176,6 @@ export interface ICollection<T extends ItemWithIDTypes, V extends ItemWithIDValu
   convertTo_json(): string;
   convertTo_yaml(): string;
   findById(criteria: GUID): T | undefined;
-
 }
 @logConstructor
 export class Collection<T extends ItemWithIDTypes, V extends ItemWithIDValueType> implements ICollection<T, V> {
@@ -192,7 +202,6 @@ export class Collection<T extends ItemWithIDTypes, V extends ItemWithIDValueType
   findById<T, V>(criteria: GUID): T | undefined {
     return this.value.find((item) => item.ID.toString() === criteria.toString()) as T;
   }
-
 }
 
 export interface ITag extends IItemWithID<Tag, string> {
@@ -309,13 +318,17 @@ export class CategoryCollection extends Collection<Category, CategoryValueType> 
   }
 }
 
-export interface IAiAssistCancellationTokenSource extends IItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType> {
+export interface IAiAssistCancellationTokenSource
+  extends IItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType> {
   readonly value: AiAssistCancellationTokenSourceValueType;
   readonly ID: Philote;
   toString(): string;
 }
 @logConstructor
-export class AiAssistCancellationTokenSource extends ItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType> implements IAiAssistCancellationTokenSource {
+export class AiAssistCancellationTokenSource
+  extends ItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType>
+  implements IAiAssistCancellationTokenSource
+{
   constructor(
     readonly value: AiAssistCancellationTokenSourceValueType,
     readonly ID: IPhilote = new Philote(),
@@ -339,17 +352,26 @@ export class AiAssistCancellationTokenSource extends ItemWithID<vscode.Cancellat
   }
 }
 
-export interface IAiAssistCancellationTokenSourceCollection extends ICollection<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType> {
+export interface IAiAssistCancellationTokenSourceCollection
+  extends ICollection<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType> {
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
 }
 @logConstructor
-export class AiAssistCancellationTokenSourceCollection extends Collection<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType> implements IAiAssistCancellationTokenSourceCollection {
-  constructor(value: ItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType>[], ID?: Philote) {
+export class AiAssistCancellationTokenSourceCollection
+  extends Collection<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType>
+  implements IAiAssistCancellationTokenSourceCollection
+{
+  constructor(
+    value: ItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType>[],
+    ID?: Philote,
+  ) {
     super(value, ID);
   }
-  create(value: ItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType>[]): AiAssistCancellationTokenSourceCollection {
+  create(
+    value: ItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType>[],
+  ): AiAssistCancellationTokenSourceCollection {
     return new AiAssistCancellationTokenSourceCollection(value);
   }
   @logFunction
@@ -365,7 +387,6 @@ export class AiAssistCancellationTokenSourceCollection extends Collection<vscode
     return toYaml(this);
   }
 }
-
 
 export interface IAssociation {
   toString(): string;

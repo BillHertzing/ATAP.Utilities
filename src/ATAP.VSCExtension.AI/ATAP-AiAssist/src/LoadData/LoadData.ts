@@ -5,7 +5,6 @@ import { LogLevel, ILogger, Logger } from '@Logger/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 import { Philote, IPhilote } from '@Philote/index';
 import {
-  SupportedSerializersEnum,
   SerializationStructure,
   ISerializationStructure,
   isSerializationStructure,

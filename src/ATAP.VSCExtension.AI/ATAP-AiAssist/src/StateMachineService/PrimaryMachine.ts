@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ILogger, Logger, LogLevel } from '@Logger/index';
+import { LogLevel, ILogger } from '@Logger/index';
 import { IData } from '@DataService/index';
 import { DetailedError } from '@ErrorClasses/index';
 import {
@@ -19,14 +19,14 @@ import { ILoggerData } from '@StateMachineService/index';
 import { IQuickPickInput, IUpdateUIInput } from './StateMachineService';
 import { showQuickPickActorLogic } from './showQuickPickActorLogic';
 import { changeQuickPickActorLogic } from './changeQuickPickActorLogic';
-import { StatusMenuItemEnum, ModeMenuItemEnum, CommandMenuItemEnum } from '@StateMachineService/index';
 
-// an enumeration of the kinds of enumerations that can be quickpicked
-export enum QuickPickEnumeration {
-  StatusMenuItemEnum = 'StatusMenuItemEnum',
-  ModeMenuItemEnum = 'ModeMenuItemEnum',
-  CommandMenuItemEnum = 'CommandMenuItemEnum',
-}
+import {
+  CommandMenuItemEnum,
+  ModeMenuItemEnum,
+  QuickPickEnumeration,
+  StatusMenuItemEnum,
+  SupportedQueryEnginesEnum,
+} from '@BaseEnumerations/index';
 
 // Guard function to check if a pick label is undefined
 const lableIsUndefined = (context: { loggerData: ILoggerData }, event: any) => {

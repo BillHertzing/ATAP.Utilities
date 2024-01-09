@@ -291,6 +291,7 @@
     "webpack-cli": "^5.1.4"
   },
   "_moduleAliases": {
+    "@BaseEnumerations": "_generated/out/BaseEnumerations",
     "@CommandsService": "_generated/out/CommandsService",
     "@DataService": "_generated/out/DataService",
     "@Decorators": "_generated/out/Decorators",

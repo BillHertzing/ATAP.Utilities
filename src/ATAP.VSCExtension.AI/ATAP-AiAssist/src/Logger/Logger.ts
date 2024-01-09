@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { DetailedError } from '@ErrorClasses/index';
 
+// an enumeration to represent the differing Logging levels
 export enum LogLevel {
   Error = 0,
   Warning = 1,

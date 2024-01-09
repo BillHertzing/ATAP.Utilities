@@ -1,5 +1,6 @@
 import { match } from 'assert';
-import { Logger, LogLevel } from '@Logger/index';
+
+import { LogLevel, ILogger, Logger } from '@Logger/index';
 
 export function isRunningInDevelopmentEnvironment(): boolean {
   // Logger.staticLog('isRunningInDevelopmentEnvironment called', LogLevel.Debug);

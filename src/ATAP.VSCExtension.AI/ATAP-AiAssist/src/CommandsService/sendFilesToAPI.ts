@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { LogLevel, ILogger } from '../Logger';
+import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { DetailedError, HandleError } from '@ErrorClasses/index';
+import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 
 interface IProcessResult {
   success: boolean;

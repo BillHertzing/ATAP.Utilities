@@ -5,7 +5,6 @@ import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from 
 import { GUID, Int, IDType } from '@IDTypes/index';
 import { Philote, IPhilote } from '@Philote/index';
 import {
-  SupportedSerializersEnum,
   SerializationStructure,
   ISerializationStructure,
   isSerializationStructure,

@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
+
 import { GUID, Int, IDType, nextID } from '@IDTypes/index';
 import { DetailedError } from '@ErrorClasses/index';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { LogLevel, ILogger } from '@Logger/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 import {
-  SupportedSerializersEnum,
   SerializationStructure,
   ISerializationStructure,
   isSerializationStructure,

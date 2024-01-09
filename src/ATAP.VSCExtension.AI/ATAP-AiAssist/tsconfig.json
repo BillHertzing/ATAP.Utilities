@@ -9,6 +9,7 @@
     "rootDirs": ["src", "src/ATAP.VSCExtension.AI/ATAP-AiAssist"],
     "baseUrl": "src", // This must be specified if "paths" is set.
     "paths": {
+      "@BaseEnumerations/*": ["BaseEnumerations/*"],
       "@CommandsService/*": ["CommandsService/*"],
       "@DataService/*": ["DataService/*"],
       "@Decorators/*": ["Decorators/*"],

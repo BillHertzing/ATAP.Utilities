@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { DetailedError } from '@ErrorClasses/index';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { LogLevel, ILogger } from '@Logger/index';
 import { logConstructor, logFunction } from '@Decorators/index';
 
 import { EventEmitter } from 'events';

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { LogLevel, ILogger } from '@Logger/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';

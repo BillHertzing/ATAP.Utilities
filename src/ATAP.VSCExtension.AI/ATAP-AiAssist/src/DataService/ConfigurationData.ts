@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
-import { DetailedError } from '@ErrorClasses/index';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { DetailedError, HandleError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 import { DefaultConfiguration, AllowedTypesInValue } from './DefaultConfiguration';
 import { isRunningInDevelopmentEnvironment, isRunningInTestingEnvironment } from '@Utilities/index';
@@ -15,8 +15,12 @@ import {
   GrokEndpointConfig,
   CopilotEndpointConfig,
 } from '@EndpointManager/index';
-
-import { ModeMenuItemEnum, CommandMenuItemEnum } from '@StateMachineService/index';
+import {
+  ModeMenuItemEnum,
+  CommandMenuItemEnum,
+  StatusMenuItemEnum,
+  SupportedSerializersEnum,
+} from '@BaseEnumerations/index';
 
 export interface IConfigurationData {
   readonly currentEnvironment: string;
@@ -91,7 +95,7 @@ export class ConfigurationData implements IConfigurationData {
     // If there is no value anywhere in the configRoot structure
     // add function to prompt user to enter the value string in the settings for key
     throw new DetailedError(
-      `ConfigurationData.getNonNull: ${key} not found in argv, env, settings or DefaultConfiguration`
+      `ConfigurationData.getNonNull: ${key} not found in argv, env, settings or DefaultConfiguration`,
     );
   }
 

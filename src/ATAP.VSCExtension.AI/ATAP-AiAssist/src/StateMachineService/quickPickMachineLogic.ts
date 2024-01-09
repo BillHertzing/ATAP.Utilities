@@ -1,11 +1,17 @@
 import * as vscode from 'vscode';
 import { ILogger, Logger, LogLevel } from '@Logger/index';
 import { createMachine, createActor, sendTo } from 'xstate';
-import { ILoggerData, StatusMenuItemEnum, ModeMenuItemEnum, CommandMenuItemEnum } from '@StateMachineService/index';
+import { ILoggerData } from '@StateMachineService/index';
 
+import {
+  CommandMenuItemEnum,
+  ModeMenuItemEnum,
+  QuickPickEnumeration,
+  StatusMenuItemEnum,
+  SupportedQueryEnginesEnum,
+} from '@BaseEnumerations/index';
 import { showQuickPickActorLogic } from './showQuickPickActorLogic';
 import { changeQuickPickActorLogic } from './changeQuickPickActorLogic';
-import { QuickPickEnumeration } from './PrimaryMachine';
 import { IQuickPickInput } from './StateMachineService';
 
 export const quickPickMachineLogic = createMachine(

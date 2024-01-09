@@ -6,7 +6,6 @@ import { logConstructor, logFunction, logAsyncFunction } from '@Decorators/index
 import { ISerializationStructure, fromJson, fromYaml } from '@Serializers/index';
 import { Actor, createActor, assign, createMachine, fromCallback, StateMachine, fromPromise } from 'xstate';
 import { resolve } from 'path';
-import { IPickItems, PickItems } from '@DataService/PickItems';
 import { primaryMachine } from './PrimaryMachine';
 import { QuickPickEnumeration } from './PrimaryMachine';
 
@@ -26,6 +25,24 @@ export interface IQuickPickInput extends ILoggerData {
 }
 export class QuickPickInput implements IQuickPickInput {
   constructor(
+    readonly kindOfEnumeration: QuickPickEnumeration,
+    readonly logger: ILogger,
+    readonly data: IData,
+  ) {}
+}
+
+export interface IUpdateUIInput extends IQuickPickInput {
+  priorMode: ModeMenuItemEnum;
+  currentMode: ModeMenuItemEnum;
+  priorCommand: CommandMenuItemEnum;
+  currentCommand: CommandMenuItemEnum;
+}
+export class UpdateUIInput implements IUpdateUIInput {
+  constructor(
+    readonly priorMode: ModeMenuItemEnum,
+    readonly currentMode: ModeMenuItemEnum,
+    readonly priorCommand: CommandMenuItemEnum,
+    readonly currentCommand: CommandMenuItemEnum,
     readonly kindOfEnumeration: QuickPickEnumeration,
     readonly logger: ILogger,
     readonly data: IData,
@@ -112,7 +129,23 @@ export class StateMachineService implements IStateMachineService {
       this.handleCommandMenuResults(commandMenuItem);
     });
 
-    this.primaryActor = createActor(primaryMachine, { input: { loggerData: new LoggerData(this.logger, this.data) } });
+    this.primaryActor = createActor(primaryMachine, {
+      input: { logger: this.logger, data: this.data },
+      // for Debugging
+      // inspect: (inspEvent) => {
+      //   if (inspEvent.type === '@xstate.snapshot') {
+      //     this.logger.log(
+      //       `StateMachineService inspect received event type @xstate.snapshot. event: ${inspEvent.event}, snapshot: ${inspEvent.snapshot}`,
+      //       LogLevel.Debug,
+      //     );
+      //   } else if (inspEvent.type === '@xstate.actor') {
+      //     this.logger.log(
+      //       `StateMachineService inspect received event type @xstate.actorevent. actorRef: ${inspEvent.actorRef} rootId: ${inspEvent.rootId}`,
+      //       LogLevel.Debug,
+      //     );
+      //   }
+      // },
+    });
   }
   @logFunction
   quickPick(kindOfEnumeration: QuickPickEnumeration): void {
@@ -208,7 +241,7 @@ export class StateMachineService implements IStateMachineService {
         break;
       case StatusMenuItemEnum.ShowLogs:
         this.logger.log(`handle ${StatusMenuItemEnum.ShowLogs}`, LogLevel.Debug);
-        this.logger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
+        this.logger.getChannelInfo('atap-aiassist')?.outputChannel?.show(true);
         break;
       default:
         // ToDo: investigate a better way than throwing inside an event handler....

@@ -1,6 +1,6 @@
 import vscode from 'vscode';
 import { ModeMenuItemEnum, CommandMenuItemEnum, StatusMenuItemEnum } from '@StateMachineService/index';
-import {IData} from '@DataService/index';
+import { IData } from '@DataService/index';
 
 export interface IPickItems {
   statusMenuItems: vscode.QuickPickItem[];
@@ -8,11 +8,7 @@ export interface IPickItems {
   commandMenuItems: vscode.QuickPickItem[];
 }
 export class PickItems {
-  // public readonly statusMenuItems: vscode.QuickPickItem[];
-  // public readonly modeMenuItems: vscode.QuickPickItem[];
-  // public readonly commandMenuItems: vscode.QuickPickItem[];
-
-  constructor(private readonly data: IData) {  }
+  constructor(private readonly data: IData) {}
 
   get statusMenuItems(): vscode.QuickPickItem[] {
     const items: vscode.QuickPickItem[] = [];
@@ -64,19 +60,19 @@ export class PickItems {
         switch (enumValue) {
           case ModeMenuItemEnum.Workspace:
             label = `${enumValue}`;
-            description = 'Use Workspace' + (currentMode === ModeMenuItemEnum.Workspace ? '✓' : ' ');
+            description = 'Use Workspace' + (currentMode === ModeMenuItemEnum.Workspace ? ' ✓' : ' ');
             break;
           case ModeMenuItemEnum.VSCode:
             label = `${enumValue}`;
-            description = 'Use VSCode' + (currentMode === ModeMenuItemEnum.VSCode ? '✓' : ' ');
+            description = 'Use VSCode' + (currentMode === ModeMenuItemEnum.VSCode ? ' ✓' : ' ');
             break;
           case ModeMenuItemEnum.ChatGPT:
             label = `${enumValue}`;
-            description = 'Use ChatGPT' + (currentMode === ModeMenuItemEnum.ChatGPT ? '✓' : ' ');
+            description = 'Use ChatGPT' + (currentMode === ModeMenuItemEnum.ChatGPT ? ' ✓' : ' ');
             break;
           case ModeMenuItemEnum.Claude:
             label = `${enumValue}`;
-            description = 'Use Claude' + (currentMode === ModeMenuItemEnum.Claude ? '✓' : ' ');
+            description = 'Use Claude' + (currentMode === ModeMenuItemEnum.Claude ? ' ✓' : ' ');
             break;
           default:
             continue;
@@ -87,7 +83,7 @@ export class PickItems {
     return items;
   }
 
-   get commandMenuItems(): vscode.QuickPickItem[] {
+  get commandMenuItems(): vscode.QuickPickItem[] {
     const items: vscode.QuickPickItem[] = [];
     for (const key in CommandMenuItemEnum) {
       if (CommandMenuItemEnum.hasOwnProperty(key)) {

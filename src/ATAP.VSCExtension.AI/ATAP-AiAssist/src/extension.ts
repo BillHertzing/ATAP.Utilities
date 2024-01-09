@@ -71,7 +71,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
       logger.setChannelLogLevel(extensionName, defaultConfigurationDebuggerLogLevel);
     }
     // Focus on the output stream when starting the extension in development mode
-    logger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
+    logger.getChannelInfo('atap-aiassist')?.outputChannel?.show(true);
   }
   logger.log(`${extensionName} Activation Begun`, LogLevel.Info);
 

@@ -213,7 +213,7 @@
         "contents": "Welcome to the ATAP AiAssist extension!\n[Start here](command:atap-aiassist.startCommand)",
         "commands": [
           {
-            "command": "ATAP-AiAssist.ChatGPT.AIKey",
+            "command": "atap-aiassist.ChatGPT.AIKey",
             "title": "Enter ChatGPT API Key",
             "when": "ATAP-AiAssist.ChatGPT.AIKey == ''"
           }

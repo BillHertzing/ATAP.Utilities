@@ -64,49 +64,49 @@ export class CommandsService {
       }),
     );
 
-    this.logger.log('registering showPrompt', LogLevel.Debug);
-    this.disposables.push(
-      vscode.commands.registerCommand('atap-aiassist.showPrompt', async () => {
-        this.logger.log('starting commandID showPrompt', LogLevel.Debug);
-        try {
-          const result = await showPrompt(this.logger, this.data);
-          // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
-        } catch (e) {
-          if (e instanceof Error) {
-            throw new DetailedError('Command showPrompt caught an error from function showPrompt -> ', e);
-          } else {
-            // ToDo:  investigation to determine what else might happen
-            throw new Error(
-              `Command showPrompt caught an unknown object from function showPrompt, and the instance of (e) returned is of type ${typeof e}`,
-            );
-          }
-        }
-      }),
-    );
+    // this.logger.log('registering showPrompt', LogLevel.Debug);
+    // this.disposables.push(
+    //   vscode.commands.registerCommand('atap-aiassist.showPrompt', async () => {
+    //     this.logger.log('starting commandID showPrompt', LogLevel.Debug);
+    //     try {
+    //       const result = await showPrompt(this.logger, this.data);
+    //       // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
+    //     } catch (e) {
+    //       if (e instanceof Error) {
+    //         throw new DetailedError('Command showPrompt caught an error from function showPrompt -> ', e);
+    //       } else {
+    //         // ToDo:  investigation to determine what else might happen
+    //         throw new Error(
+    //           `Command showPrompt caught an unknown object from function showPrompt, and the instance of (e) returned is of type ${typeof e}`,
+    //         );
+    //       }
+    //     }
+    //   }),
+    // );
 
-    this.logger.log('registering sendQuery', LogLevel.Debug);
-    this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.sendQuery`, async () => {
-        this.logger.log('starting commandID sendQuery', LogLevel.Debug);
-        try {
-          await this.queryService.QueryAsync();
-          // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
-        } catch (e) {
-          // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
-          if (e instanceof Error) {
-            this.logger.log(`Command sendQuery caught an error from function sendQuery: ${e.message}`, LogLevel.Error);
-            // ToDo: display a visual error indicator to the user
-          } else {
-            // ToDo:  investigation to determine what else might happen
-            this.logger.log(
-              `Command sendQuery caught an unknown object from function sendQuery, and the instance of (e) returned is of type ${typeof e}`,
-              LogLevel.Error,
-            );
-            // ToDo: display a visual error indicator to the user
-          }
-        }
-      }),
-    );
+    // this.logger.log('registering sendQuery', LogLevel.Debug);
+    // this.disposables.push(
+    //   vscode.commands.registerCommand(`${this.extensionName}.sendQuery`, async () => {
+    //     this.logger.log('starting commandID sendQuery', LogLevel.Debug);
+    //     try {
+    //       await this.queryService.QueryAsync();
+    //       // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
+    //     } catch (e) {
+    //       // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
+    //       if (e instanceof Error) {
+    //         this.logger.log(`Command sendQuery caught an error from function sendQuery: ${e.message}`, LogLevel.Error);
+    //         // ToDo: display a visual error indicator to the user
+    //       } else {
+    //         // ToDo:  investigation to determine what else might happen
+    //         this.logger.log(
+    //           `Command sendQuery caught an unknown object from function sendQuery, and the instance of (e) returned is of type ${typeof e}`,
+    //           LogLevel.Error,
+    //         );
+    //         // ToDo: display a visual error indicator to the user
+    //       }
+    //     }
+    //   }),
+    // );
 
     this.logger.log('registering startCommand', LogLevel.Trace);
     this.disposables.push(

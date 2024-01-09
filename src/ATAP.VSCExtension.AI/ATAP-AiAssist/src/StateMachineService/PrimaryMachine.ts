@@ -235,11 +235,11 @@ export const primaryMachine = setup({
                           switch (statusMenuItem) {
                             case StatusMenuItemEnum.Mode:
                               input.logger.log(`handle ${StatusMenuItemEnum.Mode}`, LogLevel.Debug);
-                              vscode.commands.executeCommand(`"atap-aiassist".primaryActor.quickPickMode`);
+                              vscode.commands.executeCommand(`atap-aiassist.primaryActor.quickPickMode`);
                               break;
                             case StatusMenuItemEnum.Command:
                               input.logger.log(`handle ${StatusMenuItemEnum.Command}`, LogLevel.Debug);
-                              vscode.commands.executeCommand(`"atap-aiassist".primaryActor.quickPickCommand`);
+                              vscode.commands.executeCommand(`atap-aiassist.primaryActor.quickPickCommand`);
                               break;
                             case StatusMenuItemEnum.Sources:
                               input.logger.log(`ToDo: handle ${StatusMenuItemEnum.Sources}`, LogLevel.Debug);

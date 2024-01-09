@@ -102,33 +102,6 @@ export class StateMachineService implements IStateMachineService {
     this.extensionID = extensionContext.extension.id;
     this.extensionName = this.extensionID.split('.')[1];
 
-    //attach a listener to the 'handleStatusMenuResults' event
-    this.data.eventManager.getEventEmitter().on('handleStatusMenuResults', (statusMenuItem: StatusMenuItemEnum) => {
-      this.logger.log(
-        `StateMachineService onHandleStatusMenuResults received ${statusMenuItem.toString()}`,
-        LogLevel.Debug,
-      );
-      this.handleStatusMenuResults(statusMenuItem);
-    });
-
-    //attach a listener to the 'handleModeMenuResults' event
-    this.data.eventManager.getEventEmitter().on('handleModeMenuResults', (modeMenuItem: ModeMenuItemEnum) => {
-      this.logger.log(
-        `StateMachineService onHandleModeMenuResults received ${modeMenuItem.toString()}`,
-        LogLevel.Debug,
-      );
-      this.handleModeMenuResults(modeMenuItem);
-    });
-
-    //attach a listener to the 'handleCommandMenuResults' event
-    this.data.eventManager.getEventEmitter().on('handleCommandMenuResults', (commandMenuItem: CommandMenuItemEnum) => {
-      this.logger.log(
-        `StateMachineService onHandleCommandMenuResults received ${commandMenuItem.toString()}`,
-        LogLevel.Debug,
-      );
-      this.handleCommandMenuResults(commandMenuItem);
-    });
-
     this.primaryActor = createActor(primaryMachine, {
       input: { logger: this.logger, data: this.data },
       // for Debugging
@@ -218,87 +191,6 @@ export class StateMachineService implements IStateMachineService {
   @logFunction
   start(): void {
     this.primaryActor.start();
-  }
-
-  @logFunction
-  handleStatusMenuResults(statusMenuItem: StatusMenuItemEnum): void {
-    this.logger.log(`handleStatusMenuResults received ${statusMenuItem.toString()}`, LogLevel.Debug);
-    // switch on the statusMenuItem
-    switch (statusMenuItem) {
-      case StatusMenuItemEnum.Mode:
-        this.logger.log(`handle ${StatusMenuItemEnum.Mode}`, LogLevel.Debug);
-        // call showModeMenuAsync
-        vscode.commands.executeCommand(`${this.extensionName}.showModeMenuAsync`);
-        break;
-      case StatusMenuItemEnum.Command:
-        this.logger.log(`ToDo: handle ${StatusMenuItemEnum.Command}`, LogLevel.Debug);
-        // call showCommandMenuAsync
-        vscode.commands.executeCommand(`${this.extensionName}.showCommandMenuAsync`);
-
-        break;
-      case StatusMenuItemEnum.Sources:
-        this.logger.log(`ToDo: handle ${StatusMenuItemEnum.Sources}`, LogLevel.Debug);
-        break;
-      case StatusMenuItemEnum.ShowLogs:
-        this.logger.log(`handle ${StatusMenuItemEnum.ShowLogs}`, LogLevel.Debug);
-        this.logger.getChannelInfo('atap-aiassist')?.outputChannel?.show(true);
-        break;
-      default:
-        // ToDo: investigate a better way than throwing inside an event handler....
-        throw new DetailedError(` onHandleStatusMenuResults received an unexpected statusMenuItem: ${statusMenuItem}`);
-        break;
-    }
-    // ToDo: is there anything we need to do after handling the statusMenuItem? Visual feedback? etc.
-  }
-
-  // handleModeMenuResults
-  @logFunction
-  handleModeMenuResults(modeMenuItem: ModeMenuItemEnum): void {
-    this.logger.log(`handleModeMenuResults received ${modeMenuItem.toString()}`, LogLevel.Debug);
-    // make this the currentMode
-    this.data.stateManager.currentMode = modeMenuItem;
-    // switch on the modeMenuItem
-    switch (modeMenuItem) {
-      case ModeMenuItemEnum.Workspace:
-        this.logger.log(`ToDo: handle ${ModeMenuItemEnum.Workspace}`, LogLevel.Debug);
-        break;
-      case ModeMenuItemEnum.VSCode:
-        this.logger.log(`ToDo: handle ${ModeMenuItemEnum.VSCode}`, LogLevel.Debug);
-        break;
-      case ModeMenuItemEnum.ChatGPT:
-        this.logger.log(`ToDo: handle ${ModeMenuItemEnum.ChatGPT}`, LogLevel.Debug);
-        break;
-      case ModeMenuItemEnum.Claude:
-        this.logger.log(`ToDo: handle ${ModeMenuItemEnum.Claude}`, LogLevel.Debug);
-        break;
-      default:
-    }
-    this.logger.log(`CurrentMode is now ${this.data.stateManager.currentMode}`, LogLevel.Debug);
-  }
-
-  // handleCommandMenuResults
-  @logFunction
-  handleCommandMenuResults(commandMenuItem: CommandMenuItemEnum): void {
-    this.logger.log(`handleCommandMenuResults received ${commandMenuItem.toString()}`, LogLevel.Debug);
-    // make this the currentMode
-    this.data.stateManager.currentCommand = commandMenuItem;
-    // switch on the commandMenuItem
-    switch (commandMenuItem) {
-      case CommandMenuItemEnum.Chat:
-        this.logger.log(`ToDo: handle ${CommandMenuItemEnum.Chat}`, LogLevel.Debug);
-        break;
-      case CommandMenuItemEnum.Fix:
-        this.logger.log(`ToDo: handle ${CommandMenuItemEnum.Fix}`, LogLevel.Debug);
-        break;
-      case CommandMenuItemEnum.Test:
-        this.logger.log(`ToDo: handle ${CommandMenuItemEnum.Test}`, LogLevel.Debug);
-        break;
-      case CommandMenuItemEnum.Document:
-        this.logger.log(`ToDo: handle ${CommandMenuItemEnum.Document}`, LogLevel.Debug);
-        break;
-      default:
-    }
-    this.logger.log(`CurrentCommand is now ${this.data.stateManager.currentCommand}`, LogLevel.Debug);
   }
 
   @logAsyncFunction

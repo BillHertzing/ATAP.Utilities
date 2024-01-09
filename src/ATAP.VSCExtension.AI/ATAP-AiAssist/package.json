@@ -32,18 +32,6 @@
         "title": "ATAP-AiAssist: sendQuery (send the Query and all associated information to the server)"
       },
       {
-        "command": "atap-aiassist.showStatusMenuAsync",
-        "title": "ATAP-AiAssist: Show Status menu"
-      },
-      {
-        "command": "atap-aiassist.showModeMenuAsync",
-        "title": "ATAP-AiAssist: Show Mode menu"
-      },
-      {
-        "command": "atap-aiassist.showCommandMenuAsync",
-        "title": "ATAP-AiAssist: Show Command menu"
-      },
-      {
         "command": "atap-aiassist.saveTagCollectionAsync",
         "title": "ATAP-AiAssist: save the tag collection to disk"
       },

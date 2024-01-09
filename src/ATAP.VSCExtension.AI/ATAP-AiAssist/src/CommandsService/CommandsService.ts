@@ -9,10 +9,6 @@ import { IQueryService } from '@QueryService/index';
 import { startCommand } from './startCommand';
 import { showVSCEnvironment } from './showVSCEnvironment';
 
-import { showStatusMenuAsync } from './showStatusMenuAsync';
-import { showModeMenuAsync } from './showModeMenuAsync';
-import { showCommandMenuAsync } from './showCommandMenuAsync';
-
 import {
   StatusMenuItemEnum,
   ModeMenuItemEnum,
@@ -114,117 +110,6 @@ export class CommandsService {
         let message: string = 'starting commandID startCommand';
         this.logger.log(message, LogLevel.Debug);
         startCommand(this.logger);
-      }),
-    );
-
-    // register the command to show the status menu
-    this.logger.log('registering showStatusMenuAsync', LogLevel.Debug);
-    this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.showStatusMenuAsync`, async () => {
-        this.logger.log('starting commandID showStatusMenuAsync', LogLevel.Debug);
-        let result: StatusMenuItemEnum | null = null;
-        try {
-          const _result = await showStatusMenuAsync(this.logger, this.data, this.data.pickItems.statusMenuItems);
-          this.logger.log(
-            `result.success = ${_result.success}, result.statusMenuItem = ${_result.statusMenuItem?.toString()} `,
-            LogLevel.Debug,
-          );
-          if (_result.success) {
-            result = _result.statusMenuItem;
-          } else {
-            this.logger.log('showStatusMenuAsync was cancelled', LogLevel.Debug);
-          }
-        } catch (e) {
-          if (e instanceof Error) {
-            throw new DetailedError(
-              `${this.extensionName}.showStatusMenuAsync function showStatusMenuAsync returned an error -> `,
-              e,
-            );
-          } else {
-            // ToDo:  investigation to determine what else might happen
-            throw new Error(
-              `${
-                this.extensionName
-              }.showStatusMenuAsync function showStatusMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
-            );
-          }
-        }
-        // ToDo: fire an event to handle the results of the quickPick
-        this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', result, 'handleStatusMenuResults');
-      }),
-    );
-
-    // register the command to show the Mode menu
-    this.logger.log('registering showModeMenuAsync', LogLevel.Debug);
-    this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.showModeMenuAsync`, async () => {
-        this.logger.log('starting commandID showModeMenuAsync', LogLevel.Debug);
-        let result: ModeMenuItemEnum | null = null;
-        try {
-          const _result = await showModeMenuAsync(this.logger, this.data, this.data.pickItems.modeMenuItems);
-          this.logger.log(
-            `result.success = ${_result.success}, result.modeMenuItem = ${_result.modeMenuItem?.toString()} `,
-            LogLevel.Debug,
-          );
-          if (_result.success) {
-            result = _result.modeMenuItem;
-            // fire an event to handle the results of the quickPick
-            this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', result, 'handleModeMenuResults');
-          } else {
-            this.logger.log('showModeMenuAsync was cancelled', LogLevel.Debug);
-          }
-        } catch (e) {
-          if (e instanceof Error) {
-            throw new DetailedError(
-              `${this.extensionName}.showModeMenuAsync function showModeMenuAsync returned an error -> `,
-              e,
-            );
-          } else {
-            // ToDo:  investigation to determine what else might happen
-            throw new Error(
-              `${
-                this.extensionName
-              }.showModeMenuAsync function showModeMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
-            );
-          }
-        }
-      }),
-    );
-
-    // register the command to show the Command menu
-    this.logger.log('registering showCommandMenuAsync', LogLevel.Debug);
-    this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.showCommandMenuAsync`, async () => {
-        this.logger.log('starting commandID showCommandMenuAsync', LogLevel.Debug);
-        let result: CommandMenuItemEnum | null = null;
-        try {
-          const _result = await showCommandMenuAsync(this.logger, this.data, this.data.pickItems.commandMenuItems);
-          this.logger.log(
-            `result.success = ${_result.success}, result.commandMenuItem = ${_result.commandMenuItem?.toString()} `,
-            LogLevel.Debug,
-          );
-          if (_result.success) {
-            result = _result.commandMenuItem;
-            // ToDo: fire an event to handle the results of the quickPick
-            this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', result, 'handleCommandMenuResults');
-          } else {
-            this.logger.log('showCommandMenuAsync was cancelled', LogLevel.Debug);
-          }
-        } catch (e) {
-          if (e instanceof Error) {
-            throw new DetailedError(
-              `${this.extensionName}.showCommandMenuAsync function showCommandMenuAsync returned an error -> `,
-              e,
-            );
-          } else {
-            // ToDo:  investigation to determine what else might happen
-            throw new Error(
-              `${
-                this.extensionName
-              }.showCommandMenuAsync function showCommandMenuAsync returned an error, and the instance of (e) returned is of type ${typeof e}`,
-            );
-          }
-        }
       }),
     );
 

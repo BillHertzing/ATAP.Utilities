@@ -136,7 +136,8 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   // Initial state
   statusBarItem.text = `$(robot) AiAssist`;
-  statusBarItem.command = `${extensionName}.showStatusMenuAsync`;
+  // call the quickpick command that sends the quickpickEvent to the statemachine (with kindOfQuickPick=Status) to the primaryActor
+  statusBarItem.command = `${extensionName}.primaryActor.quickPickStatus`;
   statusBarItem.tooltip = 'Show AiAssist status menu';
   extensionContext.subscriptions.push(statusBarItem);
   statusBarItem.show();

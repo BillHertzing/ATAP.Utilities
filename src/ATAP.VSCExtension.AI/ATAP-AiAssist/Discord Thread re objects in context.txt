@@ -161,3 +161,63 @@ export const primaryMachine = createMachine ({
 })
 
 I've no idea where to create and start the child quickPickActor?
+
+
+struggling with actions: and assign() in handling the onDone event of an invoked actor. 
+
+VSC extensions have an async UI command 'vscode.window.showQuickPick'. I want a state that will invoke actor logic, then update context based on the result. 
+The state is named 'quickPickState' and is transitioned into via the 'quickPickEvent'.
+the 'quickPickEvent' is defined in setup->types->events as ' |{ type: 'quickPickEvent'; kindOfEnumeration: QuickPickEnumeration }'
+'QuickPickEnumeration' is an enumeration that lists the enumerations that can be shown/selected with 'vscode.window.showQuickPick'
+'quickPickState' invokes a service (src:) named 'showQuickPickActorLogic'
+the input: stanza is 
+```
+  input: ({ context, event }) => ({
+    logger: context.logger,
+    data: context.data,
+    kindOfEnumeration:
+      event.type === 'quickPickEvent'
+        ? (event as { type: 'quickPickEvent'; kindOfEnumeration: QuickPickEnumeration })
+            .kindOfEnumeration
+        : undefined,
+  }),
+```
+
+A) the 'showQuickPickActorLogic' actor logic should:
+  1) create the contents of the parameters for showQuickPick based off the input.data and input.kindOfEnumeration 
+  2) await a call to 'vscode.window.showQuickPick'
+  3) return the value entered by the user. The returned value has different shapes depending on the value of 'kindOfEnumeration'. The following interfaces and uniontype define the shape of the data to be returned
+```
+export interface IQuickPickActorLogicModeOutput {
+  kindOfEnumeration: QuickPickEnumeration;
+  newMode: ModeMenuItemEnum;
+}
+export interface IQuickPickActorLogicCommandOutput {
+  kindOfEnumeration: QuickPickEnumeration;
+  newCommand: CommandMenuItemEnum;
+}
+export interface IQuickPickActorLogicQueryEnginesOutput {
+  kindOfEnumeration: QuickPickEnumeration;
+  newQueryEngineFlags: QueryEngineFlagsEnum;
+}
+export interface IQuickPickActorLogicVCSCommandOutput {
+  kindOfEnumeration: QuickPickEnumeration;
+  newVCSCommand: StatusMenuItemEnum;
+}
+export type showQuickPickActorLogicOutputTypeUnion =
+  | IQuickPickActorLogicModeOutput
+  | IQuickPickActorLogicCommandOutput
+  | IQuickPickActorLogicQueryEnginesOutput
+  | IQuickPickActorLogicVCSCommandOutput;
+```
+  
+B) the onDone action should
+  1) look at the value of 'kindOfEnumeration' to determine the shape of the data it has received, and then switch on the 'kindOfEnumeration'
+    when 'Mode' or 'Command' => assign to a 'currentMode or 'currentCommand' found in context.data. I'm using (e.g., when kindOfEnumeration is 'ModeMenuItems'
+    ```Typescript
+      assignAction = assign({
+        ...context.data,
+        stateManager: { ...context.data.stateManager, currentMode: (data as IQuickPickActorLogicModeOutput).newMode },
+      });
+```
+

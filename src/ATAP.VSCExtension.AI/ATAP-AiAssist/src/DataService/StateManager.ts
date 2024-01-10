@@ -45,7 +45,7 @@ import {
   ConversationCollection,
 } from '@ItemWithIDs/index';
 
-import { ModeMenuItemEnum, CommandMenuItemEnum } from '@BaseEnumerations/index';
+import { ModeMenuItemEnum, CommandMenuItemEnum, QueryEngineFlagsEnum } from '@BaseEnumerations/index';
 
 import { IConfigurationData } from './ConfigurationData';
 
@@ -64,6 +64,8 @@ export interface IStateManager {
   setCurrentCategory(value: ICategory): Promise<void>;
   getCurrentAssociation(): IAssociation | undefined;
   setCurrentAssociation(value: IAssociation): Promise<void>;
+
+  currentQueryEngines: QueryEngineFlagsEnum;
 
   currentMode: ModeMenuItemEnum;
   currentCommand: CommandMenuItemEnum;
@@ -96,7 +98,7 @@ export class StateManager implements IStateManager {
           }
         });
       })();
-      // ToDo: possibly add validationthat the new collection was created
+      // ToDo: possibly add validation that the new collection was created
     }
     if (!this.cache.getValue<CategoryCollection>('CategoryCollection')) {
       // Immediately Invoked Async Function Expression (IIFE)
@@ -111,7 +113,7 @@ export class StateManager implements IStateManager {
           }
         });
       })();
-      // ToDo: possibly add validationthat the new collection was created
+      // ToDo: possibly add validation that the new collection was created
     }
     if (!this.cache.getValue<AssociationCollection>('AssociationCollection')) {
       // Immediately Invoked Async Function Expression (IIFE)
@@ -129,7 +131,7 @@ export class StateManager implements IStateManager {
           });
       })();
     }
-    // ToDo: possibly add validationthat the new collection was created
+    // ToDo: possibly add validation that the new collection was created
     // if (!this.cache.getValue<QueryContextCollection>('QueryContextCollection')) {
     //   // Immediately Invoked Async Function Expression (IIFE)
     //   (() => {
@@ -145,7 +147,7 @@ export class StateManager implements IStateManager {
     //         }
     //       });
     //   })();
-    //   // ToDo: possibly add validationthat the new collection was created
+    //   // ToDo: possibly add validation that the new collection was created
     // }
     // if (!this.cache.getValue<ConversationCollection>('ConversationCollection')) {
     //   // Immediately Invoked Async Function Expression (IIFE)
@@ -162,7 +164,7 @@ export class StateManager implements IStateManager {
     //         }
     //       });
     //   })();
-    //   // ToDo: possibly add validationthat the new collection was created
+    //   // ToDo: possibly add validation that the new collection was created
     // }
 
     let _currentMode = this.cache.getValue<ModeMenuItemEnum>('currentMode');
@@ -181,12 +183,12 @@ export class StateManager implements IStateManager {
         });
       })();
       // At this point the cache will no longer be undefined
-      this.currentCommand = this.cache.getValue<CommandMenuItemEnum>('currentMode') as CommandMenuItemEnum;
+      this.currentMode = this.cache.getValue<ModeMenuItemEnum>('currentMode') as ModeMenuItemEnum;
     }
-    // ToDo: possibly add validationthat the CurrentMode was correctly created and initialized
+    // ToDo: possibly add validation that the CurrentMode was correctly created and initialized
     logger.log(`currentMode = ${this.currentMode}`, LogLevel.Debug);
 
-    let _currentCommand = this.cache.getValue<ModeMenuItemEnum>('currentMode');
+    let _currentCommand = this.cache.getValue<ModeMenuItemEnum>('currentCommand');
     if (!_currentCommand || (_currentCommand && _currentCommand === undefined)) {
       logger.log(`StateManager.constructor: currentCommand exists as undefined`, LogLevel.Debug);
       // Immediately Invoked Async Function Expression (IIFE)
@@ -204,8 +206,33 @@ export class StateManager implements IStateManager {
       // At this point the cache will no longer be undefined
       this.currentCommand = this.cache.getValue<CommandMenuItemEnum>('currentCommand') as CommandMenuItemEnum;
     }
-    // ToDo: possibly add validationthat the CurrentCommand was correctly created and initialized
+    // ToDo: possibly add validation that the CurrentCommand was correctly created and initialized
     logger.log(`currentCommand = ${this.currentCommand}`, LogLevel.Debug);
+
+    let _currentQueryEngines = this.cache.getValue<QueryEngineFlagsEnum>('currentQueryEngines');
+    if (!_currentQueryEngines || (_currentQueryEngines && _currentQueryEngines === undefined)) {
+      logger.log(`StateManager.constructor: currentQueryEngines exists as undefined`, LogLevel.Debug);
+      // Immediately Invoked Async Function Expression (IIFE)
+      (() => {
+        this.cache
+          .setValue<QueryEngineFlagsEnum>('currentCommand', this.configurationData.currentQueryEngines)
+          .catch((e) => {
+            if (e instanceof Error) {
+              throw new DetailedError(`StateManager.constructor: failed to set currentQueryEngines -> `, e);
+            } else {
+              throw new Error(
+                `StateManager .ctor: failed to set currentQueryEngines and the instance of (e) returned is of type ${typeof e}`,
+              );
+            }
+          });
+      })();
+      // At this point the cache will no longer be undefined
+      this.currentQueryEngines = this.cache.getValue<QueryEngineFlagsEnum>(
+        'currentQueryEngines',
+      ) as QueryEngineFlagsEnum;
+    }
+    // ToDo: possibly add validation that the currentQueryEngines was correctly created and initialized
+    logger.log(`currentQueryEngines = ${this.currentQueryEngines}`, LogLevel.Debug);
 
     if (!this.cache.getValue<string>('CurrentSources')) {
       // Immediately Invoked Async Function Expression (IIFE)
@@ -222,7 +249,7 @@ export class StateManager implements IStateManager {
       })();
     }
 
-    // ToDo: possibly add validationthat the CurrentMode was correctly created and initialized
+    // ToDo: possibly add validation that the CurrentMode was correctly created and initialized
     logger.log(`CurrentSources = ${this.cache.getValue<string>('CurrentSources')}`, LogLevel.Debug);
 
     let _priorMode = this.cache.getValue<ModeMenuItemEnum>('priorMode');
@@ -243,7 +270,7 @@ export class StateManager implements IStateManager {
       // At this point the cache will no longer be undefined
       this.priorCommand = this.cache.getValue<CommandMenuItemEnum>('priorMode') as CommandMenuItemEnum;
     }
-    // ToDo: possibly add validationthat the PriorMode was correctly created and initialized
+    // ToDo: possibly add validation that the PriorMode was correctly created and initialized
     logger.log(`priorMode = ${this.priorMode}`, LogLevel.Debug);
 
     let _priorCommand = this.cache.getValue<ModeMenuItemEnum>('priorMode');
@@ -264,7 +291,7 @@ export class StateManager implements IStateManager {
       // At this point the cache will no longer be undefined
       this.priorCommand = this.cache.getValue<CommandMenuItemEnum>('priorCommand') as CommandMenuItemEnum;
     }
-    // ToDo: possibly add validationthat the PriorCommand was correctly created and initialized
+    // ToDo: possibly add validation that the PriorCommand was correctly created and initialized
     logger.log(`priorCommand = ${this.priorCommand}`, LogLevel.Debug);
   }
 
@@ -371,6 +398,10 @@ export class StateManager implements IStateManager {
     await this.cache.setValue<CommandMenuItemEnum>('currentCommand', value);
   }
 
+  async handleCurrentQueryEnginesChangedAsync(value: QueryEngineFlagsEnum): Promise<void> {
+    await this.cache.setValue<QueryEngineFlagsEnum>('currentQueryEngines', value);
+  }
+
   async handleCurrentSourcesChangedAsync(value: string[]): Promise<void> {
     await this.cache.setValue<string[]>('currentSources', value);
   }
@@ -396,6 +427,14 @@ export class StateManager implements IStateManager {
 
   set currentCommand(value: CommandMenuItemEnum) {
     this.handleCurrentCommandChangedAsync(value);
+  }
+
+  get currentQueryEngines(): QueryEngineFlagsEnum {
+    return this.cache.getValue<QueryEngineFlagsEnum>('currentQueryEngines') as QueryEngineFlagsEnum;
+  }
+
+  set currentQueryEngines(value: QueryEngineFlagsEnum) {
+    this.handleCurrentQueryEnginesChangedAsync(value);
   }
 
   get currentSources(): string[] {

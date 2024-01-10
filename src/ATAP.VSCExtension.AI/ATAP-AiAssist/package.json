@@ -63,6 +63,11 @@
         "icon": "$(wand)"
       },
       {
+        "command": "atap-aiassist.primaryActor.quickPickQueryEngines",
+        "title": "ATAP-AiAssist.quickPick",
+        "icon": "$(wand)"
+      },
+      {
         "command": "atap-aiassist.showMainViewRootRecordProperties",
         "title": "ATAP-AiAssist: Show Root Record (Main View) Properties"
       },

@@ -14,11 +14,12 @@ import {
   raise,
   setup,
 } from 'xstate';
-import { quickPickActor, quickPickMachineLogic } from './quickPickMachineLogic';
-import { ILoggerData } from '@StateMachineService/index';
-import { IQuickPickInput, IUpdateUIInput } from './StateMachineService';
-import { showQuickPickActorLogic } from './showQuickPickActorLogic';
-import { changeQuickPickActorLogic } from './changeQuickPickActorLogic';
+
+import {
+  showQuickPickActorLogic,
+  showQuickPickActorLogicOutputTypeUnion,
+  handleShowQuickPickActorLogicOutputAction,
+} from './showQuickPickActorLogic';
 
 import {
   CommandMenuItemEnum,
@@ -29,7 +30,7 @@ import {
 } from '@BaseEnumerations/index';
 
 // Guard function to check if a pick label is undefined
-const lableIsUndefined = (context: { loggerData: ILoggerData }, event: any) => {
+const lableIsUndefined = (context: { logger: ILogger; data: IData }, event: any) => {
   return event.type === 'errorEvent' && event.data === 'undefined';
 };
 
@@ -42,7 +43,8 @@ export const primaryMachine = setup({
       | { type: 'quickPickEvent'; kindOfEnumeration: QuickPickEnumeration }
       | { type: 'errorEvent'; message: string }
       | { type: 'disposeEvent' }
-      | { type: 'disposingCompleteEvent' };
+      | { type: 'disposingCompleteEvent' }
+      | { type: 'done.invoke.showQuickPickActorLogic'; data: showQuickPickActorLogicOutputTypeUnion };
   },
   actions: {
     idleStateEntryAction: ({ context, event }) => {
@@ -100,6 +102,7 @@ export const primaryMachine = setup({
           break;
       }
     },
+
     changeQuickPickStateEntryAction: ({ context, event }) => {
       context.logger.log(`changeQuickPickStateEntryAction called`, LogLevel.Debug);
       const kindOfEnumeration =
@@ -237,6 +240,8 @@ export const primaryMachine = setup({
                     {
                       //target: '#primaryMachine.operationState.idleState',
                       target: 'updateUIState',
+                      actions: handleShowQuickPickActorLogicOutputAction,
+
                       //actions: assign({ data: ({ event }) => event.output }),
                     },
                   ],

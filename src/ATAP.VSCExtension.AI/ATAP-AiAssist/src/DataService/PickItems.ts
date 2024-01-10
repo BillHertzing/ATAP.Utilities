@@ -8,6 +8,8 @@ import { IData } from '@DataService/index';
 import {
   CommandMenuItemEnum,
   ModeMenuItemEnum,
+  QueryEngineFlagsEnum,
+  QueryEngineNamesEnum,
   QuickPickEnumeration,
   StatusMenuItemEnum,
   SupportedQueryEnginesEnum,
@@ -16,6 +18,7 @@ import {
 export interface IPickItems {
   statusMenuItems: vscode.QuickPickItem[];
   modeMenuItems: vscode.QuickPickItem[];
+  queryEnginesMenuItems: vscode.QuickPickItem[];
   commandMenuItems: vscode.QuickPickItem[];
 }
 export class PickItems {
@@ -94,6 +97,44 @@ export class PickItems {
     return items;
   }
 
+  get queryEnginesMenuItems(): vscode.QuickPickItem[] {
+    const items: vscode.QuickPickItem[] = [];
+    const currentQueryEngines = this.data.stateManager.currentQueryEngines;
+    for (const key in QueryEngineNamesEnum) {
+      if (QueryEngineNamesEnum.hasOwnProperty(key)) {
+        const enumNameValue = QueryEngineNamesEnum[key as keyof typeof QueryEngineNamesEnum];
+        const enumFlagValue = QueryEngineFlagsEnum[key as keyof typeof QueryEngineFlagsEnum];
+        let label: string;
+        let description: string;
+        switch (enumNameValue) {
+          case QueryEngineNamesEnum.ChatGPT:
+            label = `${enumNameValue}`;
+            description =
+              `Toggle ${enumNameValue}, currently ` + (currentQueryEngines & enumFlagValue ? 'enabled' : 'disabled');
+            break;
+          case QueryEngineNamesEnum.Claude:
+            label = `${enumNameValue}`;
+            description =
+              `Toggle ${enumNameValue}, currently ` + (currentQueryEngines & enumFlagValue ? 'enabled' : 'disabled');
+            break;
+          case QueryEngineNamesEnum.Bard:
+            label = `${enumNameValue}`;
+            description =
+              `Toggle ${enumNameValue}, currently ` + (currentQueryEngines & enumFlagValue ? 'enabled' : 'disabled');
+            break;
+          case QueryEngineNamesEnum.Grok:
+            label = `${enumNameValue}`;
+            description =
+              `Toggle ${enumNameValue}, currently ` + (currentQueryEngines & enumFlagValue ? 'enabled' : 'disabled');
+            break;
+          default:
+            continue;
+        }
+        items.push({ label, description });
+      }
+    }
+    return items;
+  }
   get commandMenuItems(): vscode.QuickPickItem[] {
     const items: vscode.QuickPickItem[] = [];
     for (const key in CommandMenuItemEnum) {

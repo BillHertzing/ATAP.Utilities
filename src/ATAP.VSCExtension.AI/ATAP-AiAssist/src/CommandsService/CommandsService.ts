@@ -230,6 +230,21 @@ export class CommandsService {
         }
       }),
     );
+
+    // register the command to send the quickPick event (with kindOfQuickPick=QueryEngines) to the primaryActor
+    this.logger.log('registering primaryActor.quickPickQueryEngines', LogLevel.Debug);
+    this.disposables.push(
+      vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickQueryEngines`, () => {
+        this.logger.log('starting commandService.primaryActor.quickPickQueryEngines (FireAndForget)', LogLevel.Debug);
+        try {
+          this.stateMachineService.quickPick(QuickPickEnumeration.QueryEnginesMenuItemEnum);
+        } catch (e) {
+          HandleError(e, 'commandsService', 'primaryActor.quickPickQueryEngines', 'failed calling primaryActor C1');
+        }
+      }),
+    );
+
+    // ************************************************************ //
     // this.message = 'registering copyToSubmit';
     // this.logger.log(this.message, LogLevel.Debug);
     // this.disposables.push(

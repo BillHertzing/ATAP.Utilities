@@ -18,6 +18,7 @@ import {
 import {
   ModeMenuItemEnum,
   CommandMenuItemEnum,
+  QueryEngineFlagsEnum,
   StatusMenuItemEnum,
   SupportedSerializersEnum,
 } from '@BaseEnumerations/index';
@@ -34,6 +35,7 @@ export interface IConfigurationData {
   readonly serializerName: string;
   readonly currentMode: ModeMenuItemEnum;
   readonly currentCommand: CommandMenuItemEnum;
+  readonly currentQueryEngines: QueryEngineFlagsEnum;
   readonly currentSources: string[];
   readonly priorMode: ModeMenuItemEnum;
   readonly priorCommand: CommandMenuItemEnum;
@@ -176,6 +178,9 @@ export class ConfigurationData implements IConfigurationData {
   }
   get currentCommand(): CommandMenuItemEnum {
     return this.getNonNull('currentCommand') as CommandMenuItemEnum;
+  }
+  get currentQueryEngines(): QueryEngineFlagsEnum {
+    return this.getNonNull('currentQueryEngines') as QueryEngineFlagsEnum;
   }
   get currentSources(): string[] {
     return this.getNonNull('currentSources') as string[];

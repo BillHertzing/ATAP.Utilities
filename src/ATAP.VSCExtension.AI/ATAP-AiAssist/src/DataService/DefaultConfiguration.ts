@@ -3,7 +3,12 @@ import { DetailedError, HandleError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
 import { SerializationStructure, ISerializationStructure } from '@Serializers/index';
-import { ModeMenuItemEnum, CommandMenuItemEnum, SupportedSerializersEnum } from '@BaseEnumerations/index';
+import {
+  ModeMenuItemEnum,
+  CommandMenuItemEnum,
+  QueryEngineFlagsEnum,
+  SupportedSerializersEnum,
+} from '@BaseEnumerations/index';
 
 // everything here will be initialized before the entry point of the extension
 // These are the Interfaces for objects that are allowed to be stored in the DefaultConfiguration
@@ -17,6 +22,7 @@ export type AllowedTypesInValue =
   | IConfigurationData
   | ModeMenuItemEnum
   | CommandMenuItemEnum
+  | QueryEngineFlagsEnum
   | string[]
   | SupportedSerializersEnum
   | LogLevel;
@@ -31,6 +37,7 @@ export class DefaultConfiguration {
     priorMode: ModeMenuItemEnum.Workspace,
     currentCommand: CommandMenuItemEnum.Chat,
     priorCommand: CommandMenuItemEnum.Chat,
+    currentQueryEngines: QueryEngineFlagsEnum.ChatGPT,
     currentSources: ['workspace'],
     TagsFileName: 'Tags.json',
     CategorysFileName: 'Categorys.json',

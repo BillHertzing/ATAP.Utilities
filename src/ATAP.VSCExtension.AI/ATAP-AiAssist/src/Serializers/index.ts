@@ -2,6 +2,7 @@ export {
   SerializationStructure,
   ISerializationStructure,
   isSerializationStructure,
+  stringifyWithCircularReference,
   toJson,
   fromJson,
   toYaml,

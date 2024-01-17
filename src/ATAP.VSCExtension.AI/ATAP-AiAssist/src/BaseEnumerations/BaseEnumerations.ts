@@ -3,11 +3,11 @@ export enum SupportedQueryEnginesEnum {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   ChatGPT = 'ChatGPT',
   // Anthropic
-  // Claude = 'Claude',
+  Claude = 'Claude',
   // Bard
-  //  Bard = 'Bard',
+  Bard = 'Bard',
   // Grok
-  // Grok = 'Grok',
+  Grok = 'Grok',
 }
 
 export enum QueryEngineNamesEnum {
@@ -34,12 +34,11 @@ export enum QueryEngineFlagsEnum {
   Grok = 1 << 3,
 }
 
-// an enumeration to represent the StatusMenuItem choices
-export enum StatusMenuItemEnum {
-  Mode = 'Mode',
-  Command = 'Command',
-  QueryEngines = 'QueryEngines',
-  Sources = 'Sources',
+// an enumeration to represent the VCSCommandMenuItem choices
+export enum VCSCommandMenuItemEnum {
+  SelectMode = 'SelectMode',
+  SelectQueryAgentCommand = 'SelectQueryAgentCommand',
+  SelectQueryEngines = 'SelectQueryEngines',
   ShowLogs = 'ShowLogs',
 }
 
@@ -53,8 +52,8 @@ export enum ModeMenuItemEnum {
   Claude = 'Claude',
 }
 
-// an enumeration to represent the CommandItem choices
-export enum CommandMenuItemEnum {
+// an enumeration to represent the QueryAgentCommandItem choices
+export enum QueryAgentCommandMenuItemEnum {
   Chat = 'Chat',
   Fix = 'Fix',
   Test = 'Test',
@@ -63,9 +62,10 @@ export enum CommandMenuItemEnum {
 
 // an enumeration of the kinds of enumerations that can be quickpicked
 export enum QuickPickEnumeration {
-  StatusMenuItemEnum = 'StatusMenuItemEnum',
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  VCSCommandMenuItemEnum = 'VCSCommandMenuItemEnum',
   ModeMenuItemEnum = 'ModeMenuItemEnum',
-  CommandMenuItemEnum = 'CommandMenuItemEnum',
+  QueryAgentCommandMenuItemEnum = 'QueryAgentCommandMenuItemEnum',
   QueryEnginesMenuItemEnum = 'QueryEnginesMenuItemEnum',
 }
 

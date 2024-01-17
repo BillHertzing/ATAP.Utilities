@@ -221,3 +221,158 @@ B) the onDone action should
       });
 ```
 
+code structure setup->create->provide?
+
+Reading the recent discord threads about v5 Actors and basics of provice and createMachine, the most recent impromptue podcast on actors, and the V5 documentation... I still have questions :-)
+
+It looks like the suggested structure is 
+setup: identify the things (context shape, input shape, states, actions, actors, events, guards to be used in the machine, and specify (at least the shapes of the inputs /output/payloads)
+create: structure these things into the flow of states, events, actions, invoked actors, and guards.
+provide (optional): write the ts code that implements the 'things' that were defined in setup. This is required if setup just defined the shapes of inputs and outputs, and optional if setup defined the entire default logic in addition to tehe shapes of inputs and outputs.
+
+However, I'm still floundering. I've spent about three days trying to figure out how to even ask the questions I need answers to. I have tried to come up with the smallest possible machine that illustrates where I'm stuck. Inline in comments are the places where I need better understanding. Any pointers would be much appreciated.
+
+(I also have earlier, more complex iterations on codesandbox and on stately, but the following post is the minimalist machine I've come up with.)
+
+,
+import * as vscode from 'vscode';
+
+export enum EN1{
+  En1EL1
+}
+
+export enum EN2{
+  En2EL1
+}
+
+export enum QuickPickEnumeration {
+  EN1,
+  EN2
+}
+
+export const reallySimpleQPMachine = setup({
+  types{} as {
+    context: { logger: ILogger; data: IData };
+    input: { logger: ILogger; data: IData };
+    events:
+      | QP1: {kindOfEnumeration:QuickPickEnumeration, cTSId: string}
+    }
+  actors: {
+    QPActorLogic: () =>{ //what goes into the first () to specify the shape of the input and the shape of the output?
+      return { kindOfEnumeration: input.kindOfEnumeration, pickLabel: pick.label }; 
+    }}, // the QPActorLogis is a 'FromPromise'
+      // I'm unsure of where and how to declare the shape of the input to this 'FromPromise' actor
+      // The input is as shaped below in the definitions of the QPState            
+      // The onDone event's payload should look like {kindOfEnumeration:QuickPickEnumeration, pickLabel:string, cTSId: string}
+  }
+  actions: {
+    modifyContextAction: {() =>{}},  // needs to return a 'thing' that 'fit', as an argument to assign in the QPState OnDone
+    // This needs to return one of three things
+    //{...context.data,stateManager: {...context.data.stateManager,currentEN1: eventData.pickLabel as EN1,},}
+    //{...context.data,stateManager: {...context.data.stateManager,currentEN2: eventData.pickLabel as EN2,},}
+    //{...context.data,cTSManager: {...context.data.cTSManager.remove(context.data.cTSManager.FindByID(cTSId)),},}
+    // the logic to decide which to return is based on the onDone event's payload 
+  }
+}).createMachine ({
+  id:'m1';
+  context: ({ input }) => ({ logger: input.logger, data: input.data }),
+  initial: 'idleState',
+  states: {
+    idleState: {
+      on: {
+       QP1: {
+         target: QPState
+       },
+      },
+    },
+    QPState: {
+      description:
+        "A state that allows a user to see a list of available enumeration values, pick one, updates the 'currentValue' of the enumeration in the context, and then returns to the idleState.. Supports LostFocus and CancellationToken, both are based on specific strings supplied to pickLabel, and both return to idleState",
+      src: QPActorLogic, // identify the source of the invoked logic for this state
+      input: ({ context, event }) => ({ // define the shape of the input that will be sent to the invoked logic
+       logger: context.logger,
+       data: context.data,
+       kindOfEnumeration:
+         event.type === 'QP1'
+           ? (event as { type: 'QP1'; kindOfEnumeration: QuickPickEnumeration, cTSId: string }).kindOfEnumeration
+           : undefined,
+       cTSId:
+         event.type === 'QP1'
+           ? (event as { type: 'QP1'; kindOfEnumeration: QuickPickEnumeration, cTSId: string }).cTSId
+           : undefined,
+           , cTS: vscode.CancellationTokenSource
+      )},
+      onDone { // what happens when the QPActorLogic resolves the promise
+        target: idleState
+        action:[
+        // the modifyContextAction should return something that will fit the expected paramter type for 'assign'
+        // I'm unsure how to pass the onDone event's payload into the modifyContextAction
+          assign(modifyContextAction), 
+        ],
+      }
+    },
+  }
+})
+
+
+
+Ah - I think I've found how to articulate my issue. I'm having trouble with the intersection of actions, and conditional assigns. The doc for 'assign-action' says 'Assignments can be an object of key-value pairs where the keys are context keys and the values are either static values or expressions that return the new value:' In QPState, it invokes a fromPromise actor (qPActorLogic), and returns an enumeration and a string (data in done_invoke_QPActorLogic_Event). In the onDone actions: entry, the goal is to assign the string to one of multiple context properties based on the value of the enueration, and call a Remove method on a property of the context.
+I'm stuck trying to define the updateContext and invoke the UpdateContext 
+
+enum CEnum {
+  C1 = 'C1',
+  C2 = 'C2',
+}
+enum MEnum {
+  M1 = 'M1',
+  M2 = 'M2',
+}
+enum Kenum {
+  Cenum = 'Cenum',
+  Menum = 'Menum',
+}
+
+// there is a State QPState and it invokes a fromPromise actor qPActorLogic that returns a done_invoke_QPActorLogic_Event
+type done_invoke_QPActorLogic_Event = {
+  // this is a psuedo name for the event
+  type: 'done.invoke.QPActorLogic_Event';
+  data: { k: Kenum; cTSId: string, s:string };
+};
+
+// This is psuedocode for how the context should be modified when done_invoke_QPActorLogic_Event arrives....
+// I cannot get the magic sauce for the correct syntax declaring this function
+function updateContext({ context: { logger: ILogger; data: IData }, event: done_invoke_QPActorLogic_Event }) => {
+  if (event.type === 'done.invoke.QPActorLogic_Event' && event.data.k === Kenum.Menum) {
+    context.data.stateManager.currentMode = event.data.s as MEnum;// psuedocode for what the assign should do...
+    // maybe like this? but this is incorrect, it doesn't recognize context or event correctly...
+    // assign({
+    // ...context.data,
+    // stateManager: {
+    //   ...context.data.stateManager,
+    //   currentMode: (
+    //     event as { type: 'done.invoke.QPActorLogic_Event'; data: { k: Kenum; cTSId: string, s:string } }
+    //   ).data.s as MEnum,
+    // },
+  }
+  if (event.type === 'done.invoke.QPActorLogic_Event' && event.data.k === Kenum.Cenum) {
+    context.data.stateManager.currentCmd = event.data.s as CEnum; // psuedocode for what the assign should do...
+  }
+  context.data.cTSManager.cTSCollection.Remove(event.data.cTSId); // does this even require an assign action?
+  // Note that the updateContext should perform two assignments, one for the enum value and one to remove the cTSId from the CtsCollection
+};
+
+// The QPState should have an onDone entry that implements the intent of the updateContext above,
+onDone: [
+  {
+    target: 'updateUIState',
+    actions: [
+      // ?????
+      {
+        type: 'updateContext', // I assume this should be an action Object with dynamic action parameters...
+        params: ({ context, event }) => ({
+          // I cannot get the magic sauce for the correct syntax to invoke the function above with the correct parameters
+        }),
+      },
+    ],
+  },
+];

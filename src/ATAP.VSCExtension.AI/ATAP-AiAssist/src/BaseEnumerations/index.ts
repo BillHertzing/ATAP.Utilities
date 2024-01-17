@@ -1,10 +1,10 @@
 export {
-  CommandMenuItemEnum,
+  QueryAgentCommandMenuItemEnum,
   ModeMenuItemEnum,
   QueryEngineFlagsEnum,
   QueryEngineNamesEnum,
   QuickPickEnumeration,
-  StatusMenuItemEnum,
+  VCSCommandMenuItemEnum,
   SupportedQueryEnginesEnum,
   SupportedSerializersEnum,
 } from './BaseEnumerations';

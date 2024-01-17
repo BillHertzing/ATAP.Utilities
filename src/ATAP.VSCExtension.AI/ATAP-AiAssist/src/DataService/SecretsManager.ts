@@ -158,7 +158,7 @@ class KeePassSecretsManager implements ISecretsManager {
     //super(logger, extensionContext, configurationData);
     this.callGetMasterPasswordAsync = callGetMasterPasswordAsync;
     this.keePassKDBXPath = configurationData.getKeePassKDBXPath(); // guaranteed to return a nonnull or throw an error
-    logger.log(`keePassKDBXPath = ${this.keePassKDBXPath}`, LogLevel.Debug);
+    logger.log(`keePassKDBXPath = ${this.keePassKDBXPath}`, LogLevel.Trace);
   }
 
   @logAsyncFunction

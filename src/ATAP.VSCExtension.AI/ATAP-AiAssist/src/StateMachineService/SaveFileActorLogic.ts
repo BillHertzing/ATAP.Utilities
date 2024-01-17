@@ -18,7 +18,7 @@ export const saveFileActorLogic = fromPromise(async ({ input }: { input: ISaveFi
   }
   //   let quickPickItems: vscode.QuickPickItem[] = input.data.pickItems.modeMenuItems;
   //   let prompt: string = `currentMode is ${input.data.stateManager.currentMode}, select from list below to change it`;
-  //   const pick = await vscode.window.showQuickPick(quickPickItems, {
+  //   const pick = await vscode.window.quickPick(quickPickItems, {
   //     placeHolder: prompt,
   //   });
   //   if (pick !== undefined) {

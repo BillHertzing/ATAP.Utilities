@@ -48,7 +48,7 @@
         "title": "ATAP-AiAssist: save the conversation collection to disk"
       },
       {
-        "command": "atap-aiassist.primaryActor.quickPickStatus",
+        "command": "atap-aiassist.primaryActor.quickPickVCSCommand",
         "title": "ATAP-AiAssist.quickPick",
         "icon": "$(wand)"
       },
@@ -58,7 +58,7 @@
         "icon": "$(wand)"
       },
       {
-        "command": "atap-aiassist.primaryActor.quickPickCommand",
+        "command": "atap-aiassist.primaryActor.quickPickQueryAgentCommand",
         "title": "ATAP-AiAssist.quickPick",
         "icon": "$(wand)"
       },

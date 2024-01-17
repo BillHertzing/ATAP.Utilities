@@ -5,7 +5,7 @@ import { IDataService, IData, IStateManager, IConfigurationData } from '@DataSer
 import { SerializationStructure, ISerializationStructure } from '@Serializers/index';
 import {
   ModeMenuItemEnum,
-  CommandMenuItemEnum,
+  QueryAgentCommandMenuItemEnum,
   QueryEngineFlagsEnum,
   SupportedSerializersEnum,
 } from '@BaseEnumerations/index';
@@ -21,7 +21,7 @@ export type AllowedTypesInValue =
   | IStateManager
   | IConfigurationData
   | ModeMenuItemEnum
-  | CommandMenuItemEnum
+  | QueryAgentCommandMenuItemEnum
   | QueryEngineFlagsEnum
   | string[]
   | SupportedSerializersEnum
@@ -35,8 +35,8 @@ export class DefaultConfiguration {
   static Production: Record<string, AllowedTypesInValue> = {
     currentMode: ModeMenuItemEnum.Workspace,
     priorMode: ModeMenuItemEnum.Workspace,
-    currentCommand: CommandMenuItemEnum.Chat,
-    priorCommand: CommandMenuItemEnum.Chat,
+    currentQueryAgentCommand: QueryAgentCommandMenuItemEnum.Chat,
+    priorQueryAgentCommand: QueryAgentCommandMenuItemEnum.Chat,
     currentQueryEngines: QueryEngineFlagsEnum.ChatGPT,
     currentSources: ['workspace'],
     TagsFileName: 'Tags.json',

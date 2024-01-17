@@ -33,3 +33,17 @@ export class SerializationStructure implements ISerializationStructure {
 export function isSerializationStructure(obj: any): obj is ISerializationStructure {
   return obj && typeof obj === 'object' && 'value' in obj;
 }
+
+export function stringifyWithCircularReference(obj: any): string {
+  const seen = new WeakSet();
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        // Circular reference found, discard key
+        return;
+      }
+      seen.add(value);
+    }
+    return value;
+  });
+}

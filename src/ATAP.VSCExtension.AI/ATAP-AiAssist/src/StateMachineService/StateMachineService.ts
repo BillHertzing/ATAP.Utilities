@@ -3,17 +3,21 @@ import { LogLevel, ILogger, Logger } from '@Logger/index';
 import { IData } from '@DataService/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction } from '@Decorators/index';
-import { ISerializationStructure, fromJson, fromYaml } from '@Serializers/index';
+import { ISerializationStructure, stringifyWithCircularReference, fromJson, fromYaml } from '@Serializers/index';
 import { Actor, createActor, assign, createMachine, fromCallback, StateMachine, fromPromise } from 'xstate';
 import { resolve } from 'path';
-import { primaryMachine } from './PrimaryMachine';
+
 import {
-  CommandMenuItemEnum,
+  QueryAgentCommandMenuItemEnum,
   ModeMenuItemEnum,
   QuickPickEnumeration,
-  StatusMenuItemEnum,
+  VCSCommandMenuItemEnum,
   SupportedQueryEnginesEnum,
 } from '@BaseEnumerations/index';
+
+// common type
+
+export type LoggerDataT = { logger: ILogger; data: IData };
 
 // Common interface for input to actor and action logic
 export interface ILoggerData {
@@ -26,41 +30,35 @@ export class LoggerData implements ILoggerData {
     readonly data: IData,
   ) {}
 }
-export interface IQuickPickInput extends ILoggerData {
-  kindOfEnumeration: QuickPickEnumeration;
-}
-export class QuickPickInput implements IQuickPickInput {
-  constructor(
-    readonly kindOfEnumeration: QuickPickEnumeration,
-    readonly logger: ILogger,
-    readonly data: IData,
-  ) {}
-}
 
-export interface IUpdateUIInput extends IQuickPickInput {
-  priorMode: ModeMenuItemEnum;
-  currentMode: ModeMenuItemEnum;
-  priorCommand: CommandMenuItemEnum;
-  currentCommand: CommandMenuItemEnum;
-}
-export class UpdateUIInput implements IUpdateUIInput {
-  constructor(
-    readonly priorMode: ModeMenuItemEnum,
-    readonly currentMode: ModeMenuItemEnum,
-    readonly priorCommand: CommandMenuItemEnum,
-    readonly currentCommand: CommandMenuItemEnum,
-    readonly kindOfEnumeration: QuickPickEnumeration,
-    readonly logger: ILogger,
-    readonly data: IData,
-  ) {}
-}
+import { QuickPickEventPayload } from './quickPickActorLogic';
+
+import { primaryMachine } from './PrimaryMachine';
+
+// export interface IUpdateUIInput extends IQuickPickInput {
+//   priorMode: ModeMenuItemEnum;
+//   currentMode: ModeMenuItemEnum;
+//   priorQueryAgentCommand: QueryAgentCommandMenuItemEnum;
+//   currentQueryAgentCommand: QueryAgentCommandMenuItemEnum;
+// }
+// export class UpdateUIInput implements IUpdateUIInput {
+//   constructor(
+//     readonly priorMode: ModeMenuItemEnum,
+//     readonly currentMode: ModeMenuItemEnum,
+//     readonly priorQueryAgentCommand: QueryAgentCommandMenuItemEnum,
+//     readonly currentQueryAgentCommand: QueryAgentCommandMenuItemEnum,
+//     readonly kindOfEnumeration: QuickPickEnumeration,
+//     readonly logger: ILogger,
+//     readonly data: IData,
+//   ) {}
+// }
 
 // The enumeration types for which the quickPickActorLogic can be used
-export type PickableEnumerationTypes = StatusMenuItemEnum | ModeMenuItemEnum | CommandMenuItemEnum;
+// export type PickableEnumerationTypes = VCSCommandMenuItemEnum | ModeMenuItemEnum | QueryAgentCommandMenuItemEnum;
 
 //
 export interface IStateMachineService {
-  quickPick(kindOfEnumeration: QuickPickEnumeration): void;
+  quickPick(data: QuickPickEventPayload): void;
   start(): void;
   disposeAsync(): void;
 }
@@ -70,6 +68,7 @@ export class StateMachineService implements IStateMachineService {
   private readonly extensionID: string;
   private readonly extensionName: string;
 
+  private dummy: string = 'dummy';
   private primaryActor;
 
   private disposed = false;
@@ -83,26 +82,37 @@ export class StateMachineService implements IStateMachineService {
     this.extensionName = this.extensionID.split('.')[1];
 
     this.primaryActor = createActor(primaryMachine, {
-      input: { logger: this.logger, data: this.data },
+      input: { logger: this.logger, data: this.data, dummy: this.dummy },
       // for Debugging
-      // inspect: (inspEvent) => {
-      //   if (inspEvent.type === '@xstate.snapshot') {
-      //     this.logger.log(
-      //       `StateMachineService inspect received event type @xstate.snapshot. event: ${inspEvent.event}, snapshot: ${inspEvent.snapshot}`,
-      //       LogLevel.Debug,
-      //     );
-      //   } else if (inspEvent.type === '@xstate.actor') {
-      //     this.logger.log(
-      //       `StateMachineService inspect received event type @xstate.actorevent. actorRef: ${inspEvent.actorRef} rootId: ${inspEvent.rootId}`,
-      //       LogLevel.Debug,
-      //     );
-      //   }
-      // },
+      inspect: (inspEvent) => {
+        // this.logger.log(
+        //   `StateMachineService inspect received inspEvent.type = ${inspEvent.type}`, //${stringifyWithCircularReference(inspEvent)}`,
+        //   LogLevel.Debug,
+        // );
+        if (inspEvent.type === '@xstate.snapshot') {
+          this.logger.log(
+            `StateMachineService inspect received event type @xstate.snapshot. event.type: ${inspEvent.event.type} event.input: ${inspEvent.event.input} event.output: ${inspEvent.event.output} snapshot.status: ${inspEvent.snapshot.status}`,
+            LogLevel.Debug,
+          );
+        } else if (inspEvent.type === '@xstate.actor') {
+          this.logger.log(
+            `StateMachineService inspect received event type @xstate.actor. actorRef.id: ${
+              inspEvent.actorRef.id
+            } rootId: ${inspEvent.rootId.toString()}`,
+            LogLevel.Debug,
+          );
+        } else if (inspEvent.type === '@xstate.event') {
+          this.logger.log(
+            `StateMachineService inspect received event type @xstate.event. event.type: ${inspEvent.event.type} event.input: ${inspEvent.event.input} event.output: ${inspEvent.event.output}`,
+            LogLevel.Debug,
+          );
+        }
+      },
     });
   }
   @logFunction
-  quickPick(kindOfEnumeration: QuickPickEnumeration): void {
-    this.primaryActor.send({ type: 'quickPickEvent', kindOfEnumeration });
+  quickPick(payload: QuickPickEventPayload): void {
+    this.primaryActor.send({ type: 'quickPickEvent', data: payload });
   }
   @logFunction
   testActorsaveFile(): void {
@@ -202,7 +212,7 @@ export class StateMachineService implements IStateMachineService {
 // "Vet User Input": {
 //   invoke:{
 //     id:"Vet User Input Logic",
-//     src: commandMenuLogic,
+//     src: queryAgentCommandMenuLogic,
 //     onDone:{
 //       target:"UpdateMode",
 //       actions: assign({
@@ -259,7 +269,7 @@ export class StateMachineService implements IStateMachineService {
 // }
 
 // setup({
-//   actors: { commandMenuLogic }
+//   actors: { queryAgentCommandMenuLogic }
 // }).createMachine({
 //     // cspell:ignore-next-line
 //     id: 'primaryMachine',
@@ -282,7 +292,7 @@ export class StateMachineService implements IStateMachineService {
 //           COMMANDMENU: 'commandMenu',
 //         },
 //       },
-//       commandMenu: {
+//       queryAgentCommandMenu: {
 //         on: {
 //           ShowQuickPickAndWaitForCompletion: 'idle',
 //           COMMANDMENU: 'commandMenu',
@@ -311,8 +321,8 @@ export class StateMachineService implements IStateMachineService {
 // Create the primary actor and start it
 //this.primaryActor = createActor(this.primaryMachine).start();
 
-//  const commandMenuLogic = fromPromise(async () => {
-//   return CommandMenuItemEnum.Chat;
+//  const queryAgentCommandMenuLogic = fromPromise(async () => {
+//   return QueryAgentCommandMenuItemEnum.Chat;
 // });
 
 // interface IVetUnsafeData {

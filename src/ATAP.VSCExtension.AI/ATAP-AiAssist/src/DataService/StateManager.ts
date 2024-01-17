@@ -45,7 +45,7 @@ import {
   ConversationCollection,
 } from '@ItemWithIDs/index';
 
-import { ModeMenuItemEnum, CommandMenuItemEnum, QueryEngineFlagsEnum } from '@BaseEnumerations/index';
+import { ModeMenuItemEnum, QueryAgentCommandMenuItemEnum, QueryEngineFlagsEnum } from '@BaseEnumerations/index';
 
 import { IConfigurationData } from './ConfigurationData';
 
@@ -68,10 +68,10 @@ export interface IStateManager {
   currentQueryEngines: QueryEngineFlagsEnum;
 
   currentMode: ModeMenuItemEnum;
-  currentCommand: CommandMenuItemEnum;
+  currentQueryAgentCommand: QueryAgentCommandMenuItemEnum;
   currentSources: string[];
   priorMode: ModeMenuItemEnum;
-  priorCommand: CommandMenuItemEnum;
+  priorQueryAgentCommand: QueryAgentCommandMenuItemEnum;
   disposeAsync(): void;
 }
 
@@ -188,26 +188,33 @@ export class StateManager implements IStateManager {
     // ToDo: possibly add validation that the CurrentMode was correctly created and initialized
     logger.log(`currentMode = ${this.currentMode}`, LogLevel.Debug);
 
-    let _currentCommand = this.cache.getValue<ModeMenuItemEnum>('currentCommand');
-    if (!_currentCommand || (_currentCommand && _currentCommand === undefined)) {
-      logger.log(`StateManager.constructor: currentCommand exists as undefined`, LogLevel.Debug);
+    let _currentQueryAgentCommand = this.cache.getValue<ModeMenuItemEnum>('currentQueryAgentCommand');
+    if (!_currentQueryAgentCommand || (_currentQueryAgentCommand && _currentQueryAgentCommand === undefined)) {
+      logger.log(`StateManager.constructor: currentQueryAgentCommand exists as undefined`, LogLevel.Debug);
       // Immediately Invoked Async Function Expression (IIFE)
       (() => {
-        this.cache.setValue<CommandMenuItemEnum>('currentCommand', this.configurationData.currentCommand).catch((e) => {
-          if (e instanceof Error) {
-            throw new DetailedError(`StateManager.constructor: failed to set currentCommand -> `, e);
-          } else {
-            throw new Error(
-              `StateManager .ctor: failed to set currentCommand and the instance of (e) returned is of type ${typeof e}`,
-            );
-          }
-        });
+        this.cache
+          .setValue<QueryAgentCommandMenuItemEnum>(
+            'currentQueryAgentCommand',
+            this.configurationData.currentQueryAgentCommand,
+          )
+          .catch((e) => {
+            if (e instanceof Error) {
+              throw new DetailedError(`StateManager.constructor: failed to set currentQueryAgentCommand -> `, e);
+            } else {
+              throw new Error(
+                `StateManager .ctor: failed to set currentQueryAgentCommand and the instance of (e) returned is of type ${typeof e}`,
+              );
+            }
+          });
       })();
       // At this point the cache will no longer be undefined
-      this.currentCommand = this.cache.getValue<CommandMenuItemEnum>('currentCommand') as CommandMenuItemEnum;
+      this.currentQueryAgentCommand = this.cache.getValue<QueryAgentCommandMenuItemEnum>(
+        'currentQueryAgentCommand',
+      ) as QueryAgentCommandMenuItemEnum;
     }
     // ToDo: possibly add validation that the CurrentCommand was correctly created and initialized
-    logger.log(`currentCommand = ${this.currentCommand}`, LogLevel.Debug);
+    logger.log(`currentQueryAgentCommand = ${this.currentQueryAgentCommand}`, LogLevel.Debug);
 
     let _currentQueryEngines = this.cache.getValue<QueryEngineFlagsEnum>('currentQueryEngines');
     if (!_currentQueryEngines || (_currentQueryEngines && _currentQueryEngines === undefined)) {
@@ -215,7 +222,7 @@ export class StateManager implements IStateManager {
       // Immediately Invoked Async Function Expression (IIFE)
       (() => {
         this.cache
-          .setValue<QueryEngineFlagsEnum>('currentCommand', this.configurationData.currentQueryEngines)
+          .setValue<QueryEngineFlagsEnum>('currentQueryAgentCommand', this.configurationData.currentQueryEngines)
           .catch((e) => {
             if (e instanceof Error) {
               throw new DetailedError(`StateManager.constructor: failed to set currentQueryEngines -> `, e);
@@ -268,31 +275,40 @@ export class StateManager implements IStateManager {
         });
       })();
       // At this point the cache will no longer be undefined
-      this.priorCommand = this.cache.getValue<CommandMenuItemEnum>('priorMode') as CommandMenuItemEnum;
+      this.priorQueryAgentCommand = this.cache.getValue<QueryAgentCommandMenuItemEnum>(
+        'priorMode',
+      ) as QueryAgentCommandMenuItemEnum;
     }
     // ToDo: possibly add validation that the PriorMode was correctly created and initialized
     logger.log(`priorMode = ${this.priorMode}`, LogLevel.Debug);
 
-    let _priorCommand = this.cache.getValue<ModeMenuItemEnum>('priorMode');
-    if (!_priorCommand || (_priorCommand && _priorCommand === undefined)) {
-      logger.log(`StateManager.constructor: priorCommand exists as undefined`, LogLevel.Debug);
+    let _priorQueryAgentCommand = this.cache.getValue<ModeMenuItemEnum>('priorMode');
+    if (!_priorQueryAgentCommand || (_priorQueryAgentCommand && _priorQueryAgentCommand === undefined)) {
+      logger.log(`StateManager.constructor: priorQueryAgentCommand exists as undefined`, LogLevel.Debug);
       // Immediately Invoked Async Function Expression (IIFE)
       (() => {
-        this.cache.setValue<CommandMenuItemEnum>('priorCommand', this.configurationData.priorCommand).catch((e) => {
-          if (e instanceof Error) {
-            throw new DetailedError(`StateManager.constructor: failed to set priorCommand -> `, e);
-          } else {
-            throw new Error(
-              `StateManager .ctor: failed to set priorCommand and the instance of (e) returned is of type ${typeof e}`,
-            );
-          }
-        });
+        this.cache
+          .setValue<QueryAgentCommandMenuItemEnum>(
+            'priorQueryAgentCommand',
+            this.configurationData.priorQueryAgentCommand,
+          )
+          .catch((e) => {
+            if (e instanceof Error) {
+              throw new DetailedError(`StateManager.constructor: failed to set priorQueryAgentCommand -> `, e);
+            } else {
+              throw new Error(
+                `StateManager .ctor: failed to set priorQueryAgentCommand and the instance of (e) returned is of type ${typeof e}`,
+              );
+            }
+          });
       })();
       // At this point the cache will no longer be undefined
-      this.priorCommand = this.cache.getValue<CommandMenuItemEnum>('priorCommand') as CommandMenuItemEnum;
+      this.priorQueryAgentCommand = this.cache.getValue<QueryAgentCommandMenuItemEnum>(
+        'priorQueryAgentCommand',
+      ) as QueryAgentCommandMenuItemEnum;
     }
     // ToDo: possibly add validation that the PriorCommand was correctly created and initialized
-    logger.log(`priorCommand = ${this.priorCommand}`, LogLevel.Debug);
+    logger.log(`priorQueryAgentCommand = ${this.priorQueryAgentCommand}`, LogLevel.Debug);
   }
 
   getsavedPromptDocumentData(): string | undefined {
@@ -394,8 +410,8 @@ export class StateManager implements IStateManager {
   async handleCurrentModeChangedAsync(value: ModeMenuItemEnum): Promise<void> {
     await this.cache.setValue<ModeMenuItemEnum>('currentMode', value);
   }
-  async handleCurrentCommandChangedAsync(value: CommandMenuItemEnum): Promise<void> {
-    await this.cache.setValue<CommandMenuItemEnum>('currentCommand', value);
+  async handleCurrentQueryAgentCommandChangedAsync(value: QueryAgentCommandMenuItemEnum): Promise<void> {
+    await this.cache.setValue<QueryAgentCommandMenuItemEnum>('currentQueryAgentCommand', value);
   }
 
   async handleCurrentQueryEnginesChangedAsync(value: QueryEngineFlagsEnum): Promise<void> {
@@ -409,8 +425,8 @@ export class StateManager implements IStateManager {
   async handlePriorModeChangedAsync(value: ModeMenuItemEnum): Promise<void> {
     await this.cache.setValue<ModeMenuItemEnum>('priorMode', value);
   }
-  async handlePriorCommandChangedAsync(value: CommandMenuItemEnum): Promise<void> {
-    await this.cache.setValue<CommandMenuItemEnum>('priorCommand', value);
+  async handlePriorQueryAgentCommandChangedAsync(value: QueryAgentCommandMenuItemEnum): Promise<void> {
+    await this.cache.setValue<QueryAgentCommandMenuItemEnum>('priorQueryAgentCommand', value);
   }
 
   get currentMode(): ModeMenuItemEnum {
@@ -421,12 +437,14 @@ export class StateManager implements IStateManager {
     this.handleCurrentModeChangedAsync(value);
   }
 
-  get currentCommand(): CommandMenuItemEnum {
-    return this.cache.getValue<CommandMenuItemEnum>('currentCommand') as CommandMenuItemEnum;
+  get currentQueryAgentCommand(): QueryAgentCommandMenuItemEnum {
+    return this.cache.getValue<QueryAgentCommandMenuItemEnum>(
+      'currentQueryAgentCommand',
+    ) as QueryAgentCommandMenuItemEnum;
   }
 
-  set currentCommand(value: CommandMenuItemEnum) {
-    this.handleCurrentCommandChangedAsync(value);
+  set currentQueryAgentCommand(value: QueryAgentCommandMenuItemEnum) {
+    this.handleCurrentQueryAgentCommandChangedAsync(value);
   }
 
   get currentQueryEngines(): QueryEngineFlagsEnum {
@@ -454,12 +472,14 @@ export class StateManager implements IStateManager {
     this.handlePriorModeChangedAsync(value);
   }
 
-  get priorCommand(): CommandMenuItemEnum {
-    return this.cache.getValue<CommandMenuItemEnum>('priorCommand') as CommandMenuItemEnum;
+  get priorQueryAgentCommand(): QueryAgentCommandMenuItemEnum {
+    return this.cache.getValue<QueryAgentCommandMenuItemEnum>(
+      'priorQueryAgentCommand',
+    ) as QueryAgentCommandMenuItemEnum;
   }
 
-  set priorCommand(value: CommandMenuItemEnum) {
-    this.handlePriorCommandChangedAsync(value);
+  set priorQueryAgentCommand(value: QueryAgentCommandMenuItemEnum) {
+    this.handlePriorQueryAgentCommandChangedAsync(value);
   }
 
   @logAsyncFunction

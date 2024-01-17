@@ -4,198 +4,135 @@ import { DetailedError, HandleError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 
 import {
-  CommandMenuItemEnum,
+  QueryAgentCommandMenuItemEnum,
   ModeMenuItemEnum,
   QueryEngineNamesEnum,
   QueryEngineFlagsEnum,
   QuickPickEnumeration,
-  StatusMenuItemEnum,
+  VCSCommandMenuItemEnum,
   SupportedQueryEnginesEnum,
 } from '@BaseEnumerations/index';
 
 import { fromCallback, StateMachine, fromPromise, assign, ActionFunction } from 'xstate';
 
 import { IData } from '@DataService/index';
+import { ILoggerData, LoggerDataT, MachineContextT } from '@StateMachineService/index';
 
-import { IQuickPickInput } from './StateMachineService';
+export type QuickPickEventPayload = {
+  kindOfEnumeration: QuickPickEnumeration;
+  cTSId: string;
+};
 
-export interface IQuickPickActorLogicModeOutput {
-  kindOfEnumeration: QuickPickEnumeration;
-  newMode: ModeMenuItemEnum;
-}
-export interface IQuickPickActorLogicCommandOutput {
-  kindOfEnumeration: QuickPickEnumeration;
-  newCommand: CommandMenuItemEnum;
-}
-export interface IQuickPickActorLogicQueryEnginesOutput {
-  kindOfEnumeration: QuickPickEnumeration;
-  newQueryEngineFlags: QueryEngineFlagsEnum;
-}
-export interface IQuickPickActorLogicVCSCommandOutput {
-  kindOfEnumeration: QuickPickEnumeration;
-  newVCSCommand: StatusMenuItemEnum;
-}
-export type showQuickPickActorLogicOutputTypeUnion =
-  | IQuickPickActorLogicModeOutput
-  | IQuickPickActorLogicCommandOutput
-  | IQuickPickActorLogicQueryEnginesOutput
-  | IQuickPickActorLogicVCSCommandOutput;
+export type QPActorLogicInput = QuickPickEventPayload;
 
-export const showQuickPickActorLogic = fromPromise(async ({ input }: { input: IQuickPickInput }) => {
-  input.logger.log(`showQuickPickActorLogic called with KindOfEnumeration= ${input.kindOfEnumeration}`, LogLevel.Debug);
+export type QPActorLogicOutput = {
+  kindOfEnumeration: QuickPickEnumeration;
+  pickLabel: string;
+  cTSId: string;
+};
+
+export type QuickPickInputT = MachineContextT & { kindOfEnumeration: QuickPickEnumeration; cTSId: string };
+
+export interface IQuickPickInput extends ILoggerData {
+  kindOfEnumeration: QuickPickEnumeration;
+}
+
+export class QuickPickInput implements IQuickPickInput {
+  constructor(
+    readonly kindOfEnumeration: QuickPickEnumeration,
+    readonly logger: ILogger,
+    readonly data: IData,
+  ) {}
+}
+export const quickPickActorLogic = fromPromise(async ({ input }: { input: QuickPickInputT }) => {
+  input.logger.log(`quickPickActorLogic called with KindOfEnumeration= ${input.kindOfEnumeration}`, LogLevel.Debug);
+
   let quickPickItems: vscode.QuickPickItem[];
   let prompt: string;
   let pick: vscode.QuickPickItem | undefined;
+  let pickLabel: string;
   switch (input.kindOfEnumeration) {
     case QuickPickEnumeration.ModeMenuItemEnum:
       quickPickItems = input.data.pickItems.modeMenuItems;
       prompt = `currentMode is ${input.data.stateManager.currentMode}, select from list below to change it`;
-      pick = await vscode.window.showQuickPick(quickPickItems, {
-        placeHolder: prompt,
-      });
-      let _newMode: ModeMenuItemEnum;
-      if (pick !== undefined) {
-        _newMode = pick.label as ModeMenuItemEnum;
-      } else {
-        throw new Error('undefined');
-      }
-      return { newMode: _newMode, kindOfEnumeration: input.kindOfEnumeration };
-    case QuickPickEnumeration.CommandMenuItemEnum:
-      quickPickItems = input.data.pickItems.commandMenuItems;
-      prompt = `currentCommand is ${input.data.stateManager.currentCommand}, select from list below to change it`;
-      pick = await vscode.window.showQuickPick(quickPickItems, {
-        placeHolder: prompt,
-      });
-      let _newCommand: CommandMenuItemEnum;
-      if (pick !== undefined) {
-        _newCommand = pick.label as CommandMenuItemEnum;
-      } else {
-        throw new Error('undefined');
-      }
-      return { newCommand: _newCommand, kindOfEnumeration: input.kindOfEnumeration };
+      break;
+    case QuickPickEnumeration.QueryAgentCommandMenuItemEnum:
+      quickPickItems = input.data.pickItems.queryAgentCommandMenuItems;
+      prompt = `currentQueryAgentCommand is ${input.data.stateManager.currentQueryAgentCommand}, select from list below to change it`;
+      break;
     case QuickPickEnumeration.QueryEnginesMenuItemEnum:
       quickPickItems = input.data.pickItems.queryEnginesMenuItems;
       prompt = `currently active Query Engines are shown below, select one from the list to toggle it`;
-      pick = await vscode.window.showQuickPick(quickPickItems, {
-        placeHolder: prompt,
-      });
-      // ToDo: is it necessary to create and track a priorQueryEngines field
-      //const priorCommand = input.data.stateManager.currentCommand;
-      let _newQueryEngines: QueryEngineFlagsEnum = input.data.stateManager.currentQueryEngines;
-      if (pick !== undefined) {
-        const _selectedQueryEngineName = pick.label as QueryEngineNamesEnum;
-        switch (_selectedQueryEngineName) {
-          case QueryEngineNamesEnum.Grok:
-            _newQueryEngines ^= QueryEngineFlagsEnum.Grok;
-            break;
-          case QueryEngineNamesEnum.ChatGPT:
-            _newQueryEngines ^= QueryEngineFlagsEnum.ChatGPT;
-            break;
-          case QueryEngineNamesEnum.Claude:
-            _newQueryEngines ^= QueryEngineFlagsEnum.Claude;
-            break;
-          case QueryEngineNamesEnum.Bard:
-            _newQueryEngines ^= QueryEngineFlagsEnum.Bard;
-            break;
-          default:
-            throw new Error(
-              `showQuickPickActor received an unexpected _selectedQueryEngineName: ${_selectedQueryEngineName}`,
-            );
-        }
-      } else {
-        throw new Error('undefined');
-      }
-      return { newQueryEngineFlags: _newQueryEngines, kindOfEnumeration: input.kindOfEnumeration };
-    case QuickPickEnumeration.StatusMenuItemEnum:
-      quickPickItems = input.data.pickItems.statusMenuItems;
+      break;
+    case QuickPickEnumeration.VCSCommandMenuItemEnum:
+      quickPickItems = input.data.pickItems.vCSCommandMenuItems;
       prompt = `pick an action from list below to execute it`;
-      pick = await vscode.window.showQuickPick(quickPickItems, {
-        placeHolder: prompt,
-      });
-      let _newVCSCommand: string;
-      if (pick !== undefined) {
-        const statusMenuItem = pick.label as StatusMenuItemEnum;
-        switch (statusMenuItem) {
-          case StatusMenuItemEnum.Mode:
-            input.logger.log(`handle ${StatusMenuItemEnum.Mode}`, LogLevel.Debug);
-            _newVCSCommand = 'atap-aiassist.primaryActor.quickPickMode';
-            //vscode.commands.executeCommand(`atap-aiassist.primaryActor.quickPickMode`);
-            break;
-          case StatusMenuItemEnum.Command:
-            input.logger.log(`handle ${StatusMenuItemEnum.Command}`, LogLevel.Debug);
-            _newVCSCommand = 'atap-aiassist.primaryActor.quickPickCommand';
-            // vscode.commands.executeCommand(`atap-aiassist.primaryActor.quickPickCommand`);
-            break;
-          case StatusMenuItemEnum.QueryEngines:
-            input.logger.log(`handle ${StatusMenuItemEnum.QueryEngines}`, LogLevel.Debug);
-            _newVCSCommand = 'atap-aiassist.primaryActor.quickPickQueryEngines';
-            // vscode.commands.executeCommand(`atap-aiassist.primaryActor.quickPickQueryEngines`);
-            break;
-          case StatusMenuItemEnum.Sources:
-            input.logger.log(`ToDo: handle ${StatusMenuItemEnum.Sources}`, LogLevel.Debug);
-            _newVCSCommand = 'atap-aiassist.primaryActor.quickPickSources';
-            break;
-          case StatusMenuItemEnum.ShowLogs:
-            input.logger.log(`handle ${StatusMenuItemEnum.ShowLogs}`, LogLevel.Debug);
-            // ToDo: code smell Figure out how to return this instead of calling it here...
-            input.logger.getChannelInfo('atap-aiassist')?.outputChannel?.show(true);
-            _newVCSCommand = 'input.logger.getChannelInfo("atap-aiassist")?.outputChannel?.show(true)';
-            break;
-          default:
-            // ToDo: investigate a better way than throwing inside an actor logic....
-            throw new Error(`showQuickPickActor received an unexpected statusMenuItem: ${statusMenuItem}`);
-            break;
-        }
-      } else {
-        throw new Error('undefined');
-      }
-      return { kindOfEnumeration: input.kindOfEnumeration, newVCSCommand: _newVCSCommand };
+      break;
     default:
       input.logger.log(
-        `showQuickPickActorLogic called with an unknown KindOfEnumeration = ${input.kindOfEnumeration}`,
+        `quickPickActorLogic called with an unknown KindOfEnumeration = ${input.kindOfEnumeration}`,
         LogLevel.Debug,
       );
-      throw new Error(`showQuickPickActorLogic called with an unknown KindOfEnumeration = ${input.kindOfEnumeration}`);
+      throw new Error(`quickPickActorLogic called with an unknown KindOfEnumeration = ${input.kindOfEnumeration}`);
   }
+  const cancellationToken = new vscode.CancellationTokenSource().token; // .  input.data.cancellationTokenSourceManager.cancellationTokenSourceCollection.FindByID(cTSId).token;
+  pick = await vscode.window.showQuickPick(
+    quickPickItems,
+    {
+      placeHolder: prompt,
+    },
+    cancellationToken,
+  );
+  // ToDo: make the various cancellation conditions into an enumeration, and return that as part of the retrun structure?
+  if (cancellationToken.isCancellationRequested) {
+    pickLabel = 'undefined:CancellationRequested';
+  } else if (pick === undefined) {
+    pickLabel = 'undefined:LostFocus';
+  } else {
+    pickLabel = pick.label;
+  }
+  input.logger.log(
+    `quickPickActorLogic leaving with KindOfEnumeration= ${input.kindOfEnumeration}, pickLabel: ${pickLabel}`,
+    LogLevel.Debug,
+  );
+  return { kindOfEnumeration: input.kindOfEnumeration, pickLabel: pickLabel, cTSId: input.cTSId };
 });
 
-export const handleShowQuickPickActorLogicOutputAction: ActionFunction<{ logger: ILogger; data: IData }> = (
-  context: { logger: ILogger; data: IData },
-  event: { type: 'done.invoke.showQuickPickActorLogic'; data: showQuickPickActorLogicOutputTypeUnion },
-) => {
-  context.logger.log(`handleShowQuickPickActorLogicOutput called `, LogLevel.Debug);
-  if (event.type === 'done.invoke.showQuickPickActorLogic' && event.data) {
-    const data = event.data as showQuickPickActorLogicOutputTypeUnion;
-    let assignAction: any;
-    switch (data.kindOfEnumeration) {
-      case QuickPickEnumeration.ModeMenuItemEnum:
-        assignAction = assign({
-          ...context.data,
-          stateManager: { ...context.data.stateManager, currentMode: (data as IQuickPickActorLogicModeOutput).newMode },
-        });
-        break;
-      case QuickPickEnumeration.CommandMenuItemEnum:
-        assignAction = assign({
-          ...context.data,
-          stateManager: {
-            ...context.data.stateManager,
-            currentCommand: (data as IQuickPickActorLogicCommandOutput).newCommand,
-          },
-        });
-        break;
-      case QuickPickEnumeration.QueryEnginesMenuItemEnum:
-        throw new Error(`ToDo: handle this kindOfEnumeration: ${data.kindOfEnumeration}`);
-      case QuickPickEnumeration.StatusMenuItemEnum:
-        throw new Error(`ToDo: handle this kindOfEnumeration: ${data.kindOfEnumeration}`);
-      // return {
-      //   ...context.data,
-      //   stateManager: { ...context.data.stateManager, currentQueryEngineFlags: data.newQueryEngineFlags },
-      // };
-      //
-    }
-    // Execute the assign action to update the context
-    assignAction(context, event);
-  }
-  // Throw  if this action is called with an event type other than 'done.invoke.showQuickPickActorLogic'
-  throw new Error(`handleShowQuickPickActorLogicOutput called with event type ${event.type}`);
-};
+// case QuickPickEnumeration.VCSCommandMenuItemEnum:
+//   let _newVCSCommand: string;
+//   if (pick !== undefined) {
+//     const vCSCommandMenuItem = pick.label as VCSCommandMenuItemEnum;
+//     switch (vCSCommandMenuItem) {
+//       case VCSCommandMenuItemEnum.Mode:
+//         input.logger.log(`handle ${VCSCommandMenuItemEnum.Mode}`, LogLevel.Debug);
+//         _newVCSCommand = 'atap-aiassist.primaryActor.quickPickMode';
+//         //vscode.commands.executeCommand(`atap-aiassist.primaryActor.quickPickMode`);
+//         break;
+//       case VCSCommandMenuItemEnum.Command:
+//         input.logger.log(`handle ${VCSCommandMenuItemEnum.Command}`, LogLevel.Debug);
+//         _newVCSCommand = 'atap-aiassist.primaryActor.quickPickCommand';
+//         // vscode.commands.executeCommand(`atap-aiassist.primaryActor.quickPickCommand`);
+//         break;
+//       case VCSCommandMenuItemEnum.QueryEngines:
+//         input.logger.log(`handle ${VCSCommandMenuItemEnum.QueryEngines}`, LogLevel.Debug);
+//         _newVCSCommand = 'atap-aiassist.primaryActor.quickPickQueryEngines';
+//         // vscode.commands.executeCommand(`atap-aiassist.primaryActor.quickPickQueryEngines`);
+//         break;
+//       case VCSCommandMenuItemEnum.Sources:
+//         input.logger.log(`ToDo: handle ${VCSCommandMenuItemEnum.Sources}`, LogLevel.Debug);
+//         _newVCSCommand = 'atap-aiassist.primaryActor.quickPickSources';
+//         break;
+//       case VCSCommandMenuItemEnum.ShowLogs:
+//         input.logger.log(`handle ${VCSCommandMenuItemEnum.ShowLogs}`, LogLevel.Debug);
+//         // ToDo: code smell Figure out how to return this instead of calling it here...
+//         input.logger.getChannelInfo('atap-aiassist')?.outputChannel?.show(true);
+//         _newVCSCommand = 'input.logger.getChannelInfo("atap-aiassist")?.outputChannel?.show(true)';
+//         break;
+//       default:
+//         // ToDo: investigate a better way than throwing inside an actor logic....
+//         throw new Error(`quickPickActor received an unexpected vCSCommandMenuItem: ${vCSCommandMenuItem}`);
+//         break;
+//     }
+//   } else {
+//     throw new Error('undefined');
+//   }

@@ -1,3 +1,3 @@
 export { IStateMachineService, StateMachineService } from './StateMachineService';
-export { primaryMachine } from './PrimaryMachine';
-export { ILoggerData } from './StateMachineService';
+export { primaryMachine, MachineContextT, QuickPickEventPayload } from './PrimaryMachine';
+export { ILoggerData, LoggerDataT } from './StateMachineService';

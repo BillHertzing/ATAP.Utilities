@@ -27,7 +27,7 @@ export interface ILogger {
 
 export class Logger implements ILogger {
   private channels: { [key: string]: ChannelInfo } = {
-    console: { outputChannel: undefined, enabled: true, level: LogLevel.Trace },
+    console: { outputChannel: undefined, enabled: true, level: LogLevel.Debug },
   };
   private static staticOutputChannel: vscode.OutputChannel;
 

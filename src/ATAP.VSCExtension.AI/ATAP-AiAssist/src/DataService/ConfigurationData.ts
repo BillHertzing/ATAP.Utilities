@@ -17,9 +17,9 @@ import {
 } from '@EndpointManager/index';
 import {
   ModeMenuItemEnum,
-  CommandMenuItemEnum,
+  QueryAgentCommandMenuItemEnum,
   QueryEngineFlagsEnum,
-  StatusMenuItemEnum,
+  VCSCommandMenuItemEnum,
   SupportedSerializersEnum,
 } from '@BaseEnumerations/index';
 
@@ -34,11 +34,11 @@ export interface IConfigurationData {
   readonly promptExpertise: string;
   readonly serializerName: string;
   readonly currentMode: ModeMenuItemEnum;
-  readonly currentCommand: CommandMenuItemEnum;
+  readonly currentQueryAgentCommand: QueryAgentCommandMenuItemEnum;
   readonly currentQueryEngines: QueryEngineFlagsEnum;
   readonly currentSources: string[];
   readonly priorMode: ModeMenuItemEnum;
-  readonly priorCommand: CommandMenuItemEnum;
+  readonly priorQueryAgentCommand: QueryAgentCommandMenuItemEnum;
   getTempDirectoryBasePath(): string;
   getDevelopmentWorkspacePath(): string | undefined;
   getKeePassKDBXPath(): string;
@@ -176,8 +176,8 @@ export class ConfigurationData implements IConfigurationData {
   get currentMode(): ModeMenuItemEnum {
     return this.getNonNull('currentMode') as ModeMenuItemEnum;
   }
-  get currentCommand(): CommandMenuItemEnum {
-    return this.getNonNull('currentCommand') as CommandMenuItemEnum;
+  get currentQueryAgentCommand(): QueryAgentCommandMenuItemEnum {
+    return this.getNonNull('currentQueryAgentCommand') as QueryAgentCommandMenuItemEnum;
   }
   get currentQueryEngines(): QueryEngineFlagsEnum {
     return this.getNonNull('currentQueryEngines') as QueryEngineFlagsEnum;
@@ -199,8 +199,8 @@ export class ConfigurationData implements IConfigurationData {
   get priorMode(): ModeMenuItemEnum {
     return this.getNonNull('priorMode') as ModeMenuItemEnum;
   }
-  get priorCommand(): CommandMenuItemEnum {
-    return this.getNonNull('priorCommand') as CommandMenuItemEnum;
+  get priorQueryAgentCommand(): QueryAgentCommandMenuItemEnum {
+    return this.getNonNull('priorQueryAgentCommand') as QueryAgentCommandMenuItemEnum;
   }
 
   get promptExpertise(): string {

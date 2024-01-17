@@ -8,15 +8,15 @@ import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from 
 
 import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
 import { IQueryService } from '@QueryService/index';
-import { IStateMachineService, StateMachineService } from '@StateMachineService/index';
+import { IStateMachineService, StateMachineService, QuickPickEventPayload } from '@StateMachineService/index';
 
 import { startCommand } from './startCommand';
 import { showVSCEnvironment } from './showVSCEnvironment';
 
 import {
   ModeMenuItemEnum,
-  CommandMenuItemEnum,
-  StatusMenuItemEnum,
+  QueryAgentCommandMenuItemEnum,
+  VCSCommandMenuItemEnum,
   SupportedSerializersEnum,
   QuickPickEnumeration,
 } from '@BaseEnumerations/index';
@@ -52,24 +52,24 @@ export class CommandsService {
   }
 
   private registerCommands(): void {
-    this.logger.log('starting registerCommands', LogLevel.Debug);
+    this.logger.log('starting registerCommands', LogLevel.Trace);
 
-    this.logger.log('registering showVSCEnvironment', LogLevel.Debug);
+    this.logger.log('registering showVSCEnvironment', LogLevel.Trace);
     this.disposables.push(
       vscode.commands.registerCommand(`${this.extensionName}.showVSCEnvironment`, () => {
         let message: string = 'starting commandID showVSCEnvironment';
-        this.logger.log(message, LogLevel.Debug);
+        this.logger.log(message, LogLevel.Trace);
         showVSCEnvironment(this.logger);
       }),
     );
 
-    // this.logger.log('registering showPrompt', LogLevel.Debug);
+    // this.logger.log('registering showPrompt', LogLevel.Trace);
     // this.disposables.push(
     //   vscode.commands.registerCommand('atap-aiassist.showPrompt', async () => {
-    //     this.logger.log('starting commandID showPrompt', LogLevel.Debug);
+    //     this.logger.log('starting commandID showPrompt', LogLevel.Trace);
     //     try {
     //       const result = await showPrompt(this.logger, this.data);
-    //       // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
+    //       // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);
     //     } catch (e) {
     //       if (e instanceof Error) {
     //         throw new DetailedError('Command showPrompt caught an error from function showPrompt -> ', e);
@@ -83,13 +83,13 @@ export class CommandsService {
     //   }),
     // );
 
-    // this.logger.log('registering sendQuery', LogLevel.Debug);
+    // this.logger.log('registering sendQuery', LogLevel.Trace);
     // this.disposables.push(
     //   vscode.commands.registerCommand(`${this.extensionName}.sendQuery`, async () => {
-    //     this.logger.log('starting commandID sendQuery', LogLevel.Debug);
+    //     this.logger.log('starting commandID sendQuery', LogLevel.Trace);
     //     try {
     //       await this.queryService.QueryAsync();
-    //       // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Debug);
+    //       // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);
     //     } catch (e) {
     //       // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
     //       if (e instanceof Error) {
@@ -111,19 +111,19 @@ export class CommandsService {
     this.disposables.push(
       vscode.commands.registerCommand(`${this.extensionName}.startCommand`, () => {
         let message: string = 'starting commandID startCommand';
-        this.logger.log(message, LogLevel.Debug);
+        this.logger.log(message, LogLevel.Trace);
         startCommand(this.logger);
       }),
     );
 
     // register the command to save the tag collection
-    this.logger.log('registering saveTagCollectionAsync', LogLevel.Debug);
+    this.logger.log('registering saveTagCollectionAsync', LogLevel.Trace);
     this.disposables.push(
       vscode.commands.registerCommand(`${this.extensionName}.saveTagCollectionAsync`, async () => {
-        this.logger.log('starting commandID saveTagCollectionAsync', LogLevel.Debug);
+        this.logger.log('starting commandID saveTagCollectionAsync', LogLevel.Trace);
         try {
           await saveTagCollectionAsync(this.logger, this.data);
-          this.logger.log(`saveTagCollectionAsync completed} `, LogLevel.Debug);
+          this.logger.log(`saveTagCollectionAsync completed} `, LogLevel.Trace);
         } catch (e) {
           HandleError(e, 'commandsService', 'saveTagCollectionAsync', 'failed calling saveTagCollectionAsync');
         }
@@ -133,13 +133,13 @@ export class CommandsService {
     );
 
     // register the command to save the category collection
-    this.logger.log('registering saveCategoryCollectionAsync', LogLevel.Debug);
+    this.logger.log('registering saveCategoryCollectionAsync', LogLevel.Trace);
     this.disposables.push(
       vscode.commands.registerCommand(`${this.extensionName}.saveCategoryCollectionAsync`, async () => {
-        this.logger.log('starting commandID saveCategoryCollectionAsync', LogLevel.Debug);
+        this.logger.log('starting commandID saveCategoryCollectionAsync', LogLevel.Trace);
         try {
           await saveCategoryCollectionAsync(this.logger, this.data);
-          this.logger.log(`saveCategoryCollectionAsync completed} `, LogLevel.Debug);
+          this.logger.log(`saveCategoryCollectionAsync completed} `, LogLevel.Trace);
         } catch (e) {
           HandleError(
             e,
@@ -153,13 +153,13 @@ export class CommandsService {
       }),
     );
     // register the command to save the association collection
-    this.logger.log('registering saveAssociationCollectionAsync', LogLevel.Debug);
+    this.logger.log('registering saveAssociationCollectionAsync', LogLevel.Trace);
     this.disposables.push(
       vscode.commands.registerCommand(`${this.extensionName}.saveAssociationCollectionAsync`, async () => {
-        this.logger.log('starting commandID saveAssociationCollectionAsync', LogLevel.Debug);
+        this.logger.log('starting commandID saveAssociationCollectionAsync', LogLevel.Trace);
         try {
           await saveAssociationCollectionAsync(this.logger, this.data);
-          this.logger.log(`saveAssociationCollectionAsync completed} `, LogLevel.Debug);
+          this.logger.log(`saveAssociationCollectionAsync completed} `, LogLevel.Trace);
         } catch (e) {
           HandleError(
             e,
@@ -173,10 +173,10 @@ export class CommandsService {
       }),
     );
     // register the command to save the Conversation collection
-    this.logger.log('registering saveConversationCollectionAsync', LogLevel.Debug);
+    this.logger.log('registering saveConversationCollectionAsync', LogLevel.Trace);
     this.disposables.push(
       vscode.commands.registerCommand(`${this.extensionName}.saveConversationCollectionAsync`, async () => {
-        this.logger.log('starting commandID saveConversationCollectionAsync', LogLevel.Debug);
+        this.logger.log('starting commandID saveConversationCollectionAsync', LogLevel.Trace);
         try {
           await saveConversationCollectionAsync(this.logger, this.data);
           this.logger.log(`saveConversationCollectionAsync completed} `, LogLevel.Debug);
@@ -194,15 +194,18 @@ export class CommandsService {
     );
 
     // ************************************************************ //
-    // register the command to send the quickPick event (with kindOfQuickPick=Status) to the primaryActor
-    this.logger.log('registering primaryActor.quickPickStatus', LogLevel.Debug);
+    // register the command to send the quickPick event (with kindOfQuickPick=VCSCommand) to the primaryActor
+    this.logger.log('registering primaryActor.quickPickVCSCommand', LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickStatus`, () => {
-        this.logger.log('starting commandService.primaryActor.quickPickStatus (FireAndForget)', LogLevel.Debug);
+      vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickVCSCommand`, () => {
+        this.logger.log('starting commandService.primaryActor.quickPickVCSCommand (FireAndForget)', LogLevel.Debug);
         try {
-          this.stateMachineService.quickPick(QuickPickEnumeration.StatusMenuItemEnum);
+          this.stateMachineService.quickPick({
+            kindOfEnumeration: QuickPickEnumeration.VCSCommandMenuItemEnum,
+            cTSId: 'GetARealCTSId',
+          });
         } catch (e) {
-          HandleError(e, 'commandsService', 'primaryActor.quickPickStatus', 'failed calling primaryActor C1');
+          HandleError(e, 'commandsService', 'primaryActor.quickPickVCSCommand', 'failed calling primaryActor C1');
         }
       }),
     );
@@ -212,21 +215,40 @@ export class CommandsService {
       vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickMode`, () => {
         this.logger.log('starting commandService.primaryActor.quickPickMode (FireAndForget)', LogLevel.Debug);
         try {
-          this.stateMachineService.quickPick(QuickPickEnumeration.ModeMenuItemEnum);
+          this.stateMachineService.quickPick({
+            kindOfEnumeration: QuickPickEnumeration.ModeMenuItemEnum,
+            cTSId: 'GetARealCTSId',
+          });
         } catch (e) {
-          HandleError(e, 'commandsService', 'primaryActor.quickPickMode', 'failed calling primaryActor C1');
+          HandleError(
+            e,
+            'commandsService',
+            'primaryActor.quickPickMode',
+            'failed calling this.stateMachineService.quickPick',
+          );
         }
       }),
     );
     // register the command to send the quickPick event (with kindOfQuickPick=Command) to the primaryActor
-    this.logger.log('registering primaryActor.quickPickCommand', LogLevel.Debug);
+    this.logger.log('registering primaryActor.quickPickQueryAgentCommand', LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickCommand`, () => {
-        this.logger.log('starting commandService.primaryActor.quickPickCommand (FireAndForget)', LogLevel.Debug);
+      vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickQueryAgentCommand`, () => {
+        this.logger.log(
+          'starting commandService.primaryActor.quickPickQueryAgentCommand (FireAndForget)',
+          LogLevel.Debug,
+        );
         try {
-          this.stateMachineService.quickPick(QuickPickEnumeration.CommandMenuItemEnum);
+          this.stateMachineService.quickPick({
+            kindOfEnumeration: QuickPickEnumeration.QueryAgentCommandMenuItemEnum,
+            cTSId: 'GetARealCTSId',
+          });
         } catch (e) {
-          HandleError(e, 'commandsService', 'primaryActor.quickPickCommand', 'failed calling primaryActor C1');
+          HandleError(
+            e,
+            'commandsService',
+            'primaryActor.quickPickQueryAgentCommand',
+            'failed calling this.stateMachineService.quickPick',
+          );
         }
       }),
     );
@@ -237,24 +259,32 @@ export class CommandsService {
       vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickQueryEngines`, () => {
         this.logger.log('starting commandService.primaryActor.quickPickQueryEngines (FireAndForget)', LogLevel.Debug);
         try {
-          this.stateMachineService.quickPick(QuickPickEnumeration.QueryEnginesMenuItemEnum);
+          this.stateMachineService.quickPick({
+            kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
+            cTSId: 'GetARealCTSId',
+          });
         } catch (e) {
-          HandleError(e, 'commandsService', 'primaryActor.quickPickQueryEngines', 'failed calling primaryActor C1');
+          HandleError(
+            e,
+            'commandsService',
+            'primaryActor.quickPickQueryEngines',
+            'failed calling this.stateMachineService.quickPick',
+          );
         }
       }),
     );
 
     // ************************************************************ //
     // this.message = 'registering copyToSubmit';
-    // this.logger.log(this.message, LogLevel.Debug);
+    // this.logger.log(this.message, LogLevel.Trace);
     // this.disposables.push(
     //   vscode.commands.registerCommand(`${this.extensionName}.copyToSubmit`, async () => {
     //     let message: string = 'starting commandID copyToSubmit';
-    //     this.logger.log(message, LogLevel.Debug);
+    //     this.logger.log(message, LogLevel.Trace);
     //     try {
     //       const result = await copyToSubmit(this.context, this.logger);
     //       message = `result.success = ${result.success}, result `;
-    //       this.logger.log(message, LogLevel.Debug);
+    //       this.logger.log(message, LogLevel.Trace);
     //     } catch (e) {
     //       if (e instanceof Error) {
     //         // Report the error
@@ -273,18 +303,18 @@ export class CommandsService {
     //   `${this.extensionName}.showMainViewRootRecordProperties`,
     //   (item: mainViewTreeItem) => {
     //     let message: string = 'starting commandID showMainViewRootRecordProperties';
-    //     myLogger.log(message, LogLevel.Debug);
+    //     myLogger.log(message, LogLevel.Trace);
     //     if (item === null) {
     //       message = `item is null`;
-    //       myLogger.log(message, LogLevel.Debug);
+    //       myLogger.log(message, LogLevel.Trace);
     //     } else {
     //       message = `item is NOT null`;
-    //       myLogger.log(message, LogLevel.Debug);
+    //       myLogger.log(message, LogLevel.Trace);
     //     }
     //     // message = `Philote_ID = ${item.Philote_ID} : pickedvalue = ${item.pickedValue}; properties = ${item.properties}`;
-    //     // myLogger.log(message, LogLevel.Debug);
+    //     // myLogger.log(message, LogLevel.Trace);
     //     message = `stringified item.properties = ${JSON.stringify(item.properties)}`;
-    //     myLogger.log(message, LogLevel.Debug);
+    //     myLogger.log(message, LogLevel.Trace);
     //     vscode.window.showInformationMessage(JSON.stringify(item.properties));
     //   },
     // );
@@ -295,11 +325,11 @@ export class CommandsService {
     //   `${this.extensionName}.showSubItemProperties`,
     //   (item: mainViewTreeItem) => {
     //     let message: string = 'starting commandID showSubItemProperties';
-    //     myLogger.log(message, LogLevel.Debug);
+    //     myLogger.log(message, LogLevel.Trace);
     //     // message = `Philote_ID = ${item.Philote_ID} : pickedvalue = ${item.pickedValue}; properties = ${item.properties}`;
-    //     // myLogger.log(message, LogLevel.Debug);
+    //     // myLogger.log(message, LogLevel.Trace);
     //     message = `stringified item.properties = ${JSON.stringify(item.properties)}`;
-    //     myLogger.log(message, LogLevel.Debug);
+    //     myLogger.log(message, LogLevel.Trace);
     //     vscode.window.showInformationMessage(JSON.stringify(item.properties));
     //   },
     // );
@@ -308,7 +338,7 @@ export class CommandsService {
     // // *************************************************************** //
     // let removeRegionDisposable = vscode.commands.registerCommand(`${this.extensionName}.removeRegion`, () => {
     //   let message: string = 'starting commandID removeRegion';
-    //   myLogger.log(message, LogLevel.Debug);
+    //   myLogger.log(message, LogLevel.Trace);
 
     //   const editor = vscode.window.activeTextEditor;
 
@@ -335,7 +365,7 @@ export class CommandsService {
     //   `${this.extensionName}.processPs1Files`,
     //   async (commandId: string | null) => {
     //     let message: string = 'starting commandID processPs1Files';
-    //     myLogger.log(message, LogLevel.Debug);
+    //     myLogger.log(message, LogLevel.Trace);
 
     //     const processPs1FilesRecord = await processPs1Files(commandId);
     //     if (processPs1FilesRecord.success) {
@@ -354,11 +384,11 @@ export class CommandsService {
     //   `${this.extensionName}.showExplorerView`,
     //   async (commandId: string | null) => {
     //     let message: string = 'starting commandID showExplorerView';
-    //     myLogger.log(message, LogLevel.Debug);
+    //     myLogger.log(message, LogLevel.Trace);
 
     //     vscode.commands.executeCommand('workbench.view.explorer');
     //     message = 'explorer view should be up';
-    //     myLogger.log(message, LogLevel.Debug);
+    //     myLogger.log(message, LogLevel.Trace);
     //   },
     // );
     // extensionContext.subscriptions.push(showExplorerViewDisposable);

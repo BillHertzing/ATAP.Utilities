@@ -14,8 +14,6 @@ import {
   setup,
 } from 'xstate';
 
-import { quickPickActorLogic } from './quickPickActorLogic';
-
 import {
   QueryAgentCommandMenuItemEnum,
   ModeMenuItemEnum,
@@ -26,22 +24,11 @@ import {
   SupportedQueryEnginesEnum,
 } from '@BaseEnumerations/index';
 
+import { quickPickActorLogic, QuickPickEventPayloadT, QPActorLogicOutputT } from './quickPickActorLogic';
+
 export type LoggerDataT = { logger: ILogger; data: IData };
 
-export type MachineContextT = LoggerDataT & { dummy: string };
-
-export type QuickPickEventPayload = {
-  kindOfEnumeration: QuickPickEnumeration;
-  cTSId: string;
-};
-
-type QPActorLogicInput = QuickPickEventPayload;
-
-type QPActorLogicOutput = {
-  kindOfEnumeration: QuickPickEnumeration;
-  pickLabel: string;
-  cTSId: string;
-};
+export type MachineContextT = LoggerDataT; // & { };
 
 // create the primaryMachine definition
 export const primaryMachine = setup({
@@ -49,12 +36,12 @@ export const primaryMachine = setup({
     context: MachineContextT;
     input: MachineContextT;
     events:
-      | { type: 'quickPickEvent'; data: QuickPickEventPayload }
+      | { type: 'quickPickEvent'; data: QuickPickEventPayloadT }
       | { type: 'errorEvent'; message: string }
       | { type: 'disposeEvent' }
       | { type: 'disposingCompleteEvent' }
-      | { type: 'done.invoke.quickPickActorLogic'; data: QPActorLogicOutput }
-      | { type: 'xstate.done.actor.quickPickActor'; output: QPActorLogicOutput };
+      | { type: 'done.invoke.quickPickActorLogic'; data: QPActorLogicOutputT }
+      | { type: 'xstate.done.actor.quickPickActor'; output: QPActorLogicOutputT };
   },
   actions: {
     idleStateEntryAction: ({ context, event }) => {
@@ -69,18 +56,24 @@ export const primaryMachine = setup({
       context.logger.log(`event type: ${event.type}`, LogLevel.Debug);
     },
     quickPickStateEntryAction: ({ context, event }) => {
-      context.logger.log(`quickPickStateEntryAction called`, LogLevel.Debug);
-      const kindOfEnumeration =
-        event.type === 'quickPickEvent'
-          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayload }).data.kindOfEnumeration
-          : undefined;
-      context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
+      // This is easier to understand, put only works if there is just one event that can enter the state
+      context.logger.log(
+        `quickPickStateEntryAction called with kindOfEnumeration: : ${(event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration}`,
+        LogLevel.Debug,
+      );
+      // This works if there are multiple events that can enter the state, because it explicitly tests the event type
+      // context.logger.log(`quickPickStateEntryAction called `, LogLevel.Debug);
+      // const kindOfEnumeration =
+      //   event.type === 'quickPickEvent'
+      //     ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
+      //     : undefined;
+      // context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
     },
     quickPickStateOnDoneAction: ({ context, event }) => {
       context.logger.log(`quickPickStateOnDoneAction called`, LogLevel.Debug);
       const kindOfEnumeration =
         event.type === 'quickPickEvent'
-          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayload }).data.kindOfEnumeration
+          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
           : undefined;
       context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
     },
@@ -88,7 +81,7 @@ export const primaryMachine = setup({
       context.logger.log(`quickPickStateExitAction called`, LogLevel.Debug);
       const kindOfEnumeration =
         event.type === 'quickPickEvent'
-          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayload }).data.kindOfEnumeration
+          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
           : undefined;
       context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
       switch (kindOfEnumeration) {
@@ -106,12 +99,11 @@ export const primaryMachine = setup({
           break;
       }
     },
-
     changeQuickPickStateEntryAction: ({ context, event }) => {
       context.logger.log(`changeQuickPickStateEntryAction called`, LogLevel.Debug);
       const kindOfEnumeration =
         event.type === 'quickPickEvent'
-          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayload }).data.kindOfEnumeration
+          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
           : undefined;
 
       context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
@@ -120,7 +112,7 @@ export const primaryMachine = setup({
       context.logger.log(`updateUIStateEntryAction called`, LogLevel.Debug);
       const kindOfEnumeration =
         event.type === 'quickPickEvent'
-          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayload }).data.kindOfEnumeration
+          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
           : undefined;
 
       context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
@@ -129,7 +121,7 @@ export const primaryMachine = setup({
       context.logger.log(`updateUIStateExitAction called`, LogLevel.Debug);
       const kindOfEnumeration =
         event.type === 'quickPickEvent'
-          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayload }).data.kindOfEnumeration
+          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
           : undefined;
       context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
       switch (kindOfEnumeration) {
@@ -176,9 +168,9 @@ export const primaryMachine = setup({
   //   // cSpell:disable
   //   // cSpell:enable
   {
+    // ToDo: Disable VSC telemetry
     id: 'primaryMachine',
-    context: ({ input }) => ({ logger: input.logger, data: input.data, dummy: input.dummy }),
-    // input: ({ context }) => ({ loggerData: context.loggerData }),
+    context: ({ input }) => ({ logger: input.logger, data: input.data }), //, dummy: input.dummy, dummy2: input.dummy2 }),
     type: 'parallel',
     states: {
       operationState: {
@@ -212,9 +204,6 @@ export const primaryMachine = setup({
           quickPickStateP: {
             description:
               "A parent state with child states that allow a user to see a list of available enumeration values, pick one, update the extension (transition it) to the UI indicated by the new value, update the 'currentValue' of the enumeration, and then return to the Idle state.",
-            // entry: {
-            //   type: 'quickPickStateEntryAction',
-            // },
             // exit: {
             //   type: 'quickPickStateExitAction',
             // },
@@ -222,9 +211,9 @@ export const primaryMachine = setup({
             states: {
               quickPickState: {
                 description: 'A state where an actor is invoked to show and let the user select an enum value.',
-                // entry: {
-                //   type: 'quickPickStateEntryAction',
-                // },
+                entry: {
+                  type: 'quickPickStateEntryAction',
+                },
                 // exit: {
                 //   type: 'quickPickStateExitAction',
                 // },
@@ -234,10 +223,17 @@ export const primaryMachine = setup({
                   input: ({ context, event }) => ({
                     logger: context.logger,
                     data: context.data,
-                    kindOfEnumeration:
-                      event.type === 'quickPickEvent'
-                        ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayload }).data.kindOfEnumeration
-                        : undefined,
+                    kindOfEnumeration: (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data
+                      .kindOfEnumeration,
+                    cTSId: (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.cTSId,
+                    // kindOfEnumeration:
+                    //   event.type === 'quickPickEvent'
+                    //     ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
+                    //     : undefined,
+                    // cTSId:
+                    //   event.type === 'quickPickEvent'
+                    //     ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.cTSId
+                    //     : undefined,
                   }),
                   onDone: {
                     target: '#primaryMachine.operationState.idleState',
@@ -246,7 +242,7 @@ export const primaryMachine = setup({
                       context.logger.log('quickPickState onDone enqueueActions started', LogLevel.Debug);
                       const _event = event as {
                         type: 'xstate.done.actor.quickPickActor'; // is xstate.done.actor... the correct event for enqueuing actions?
-                        output: QPActorLogicOutput;
+                        output: QPActorLogicOutputT;
                       };
                       if (_event && typeof _event.output !== 'undefined') {
                         if (!_event.output.pickLabel.startsWith('undefined:')) {
@@ -256,55 +252,20 @@ export const primaryMachine = setup({
                                 `quickPickState enqueuing assign(currentMode = ${_event.output.pickLabel})`,
                                 LogLevel.Debug,
                               );
-                              enqueue.assign({
-                                dummy: ({ context, event }) => _event.output.pickLabel,
+                              enqueue.assign(({ context }) => {
+                                context.data.stateManager.priorMode = context.data.stateManager.currentMode;
+                                context.data.stateManager.currentMode = _event.output.pickLabel as ModeMenuItemEnum;
+                                return context;
                               });
-                              enqueue.assign({
-                                data: {
-                                  ...context.data,
-                                  stateManager: {
-                                    ...context.data.stateManager,
-                                    priorMode: context.data.stateManager.currentMode,
-                                  },
-                                },
-                              });
-                              enqueue.assign({
-                                data: {
-                                  ...context.data,
-                                  stateManager: {
-                                    ...context.data.stateManager,
-                                    currentMode: _event.output.pickLabel as ModeMenuItemEnum,
-                                  },
-                                },
-                              });
-                              // 'context.context.data.stateManager.currentMode': _event.output
-                              //   .pickLabel as ModeMenuItemEnum,
-                              // });
                               break;
                             case QuickPickEnumeration.QueryAgentCommandMenuItemEnum:
-                              enqueue.assign({
-                                data: {
-                                  ...context.data,
-                                  stateManager: {
-                                    ...context.data.stateManager,
-                                    priorQueryAgentCommand: context.data.stateManager.currentQueryAgentCommand,
-                                  },
-                                },
+                              enqueue.assign(({ context }) => {
+                                context.data.stateManager.priorQueryAgentCommand =
+                                  context.data.stateManager.currentQueryAgentCommand;
+                                context.data.stateManager.currentQueryAgentCommand = _event.output
+                                  .pickLabel as QueryAgentCommandMenuItemEnum;
+                                return context;
                               });
-                              enqueue.assign({
-                                data: {
-                                  ...context.data,
-                                  stateManager: {
-                                    ...context.data.stateManager,
-                                    currentQueryAgentCommand: _event.output.pickLabel as QueryAgentCommandMenuItemEnum,
-                                  },
-                                },
-                              });
-
-                              // assign({
-                              //   ' ...context.data, stateManager: { ...context.data.stateManager,currentQueryAgentCommand':
-                              //     _event.output.pickLabel as QueryAgentCommandMenuItemEnum,
-                              // });
                               break;
                             case QuickPickEnumeration.QueryEnginesMenuItemEnum:
                               let _newQueryEngines: QueryEngineFlagsEnum =
@@ -328,14 +289,9 @@ export const primaryMachine = setup({
                                     `quickPickStateInvokedActorOnDoneAction received an unexpected _selectedQueryEngineName: ${_selectedQueryEngineName}`,
                                   );
                               }
-                              enqueue.assign({
-                                data: {
-                                  ...context.data,
-                                  stateManager: {
-                                    ...context.data.stateManager,
-                                    currentQueryEngines: _newQueryEngines,
-                                  },
-                                },
+                              enqueue.assign(({ context }) => {
+                                context.data.stateManager.currentQueryEngines = _newQueryEngines;
+                                return context;
                               });
                               break;
                           }
@@ -375,7 +331,7 @@ export const primaryMachine = setup({
             ],
           },
         },
-      }, // end of OperationState
+      },
       disposeState: {
         // 2nd parallel state. This state can be transitioned to from any state
         initial: 'inactiveState',
@@ -413,127 +369,3 @@ export const primaryMachine = setup({
     },
   },
 );
-
-// Helper function to update enums in context
-// const updateContext = (context: { logger:ILogger, data: IData }, event: any) => {
-//   if (event.type === 'quickPickEvent') {
-//     const kindOfEnumeration = (event as { type: 'quickPick'; data: QuickPickEventPayload })
-//       .kindOfEnumeration;
-//     switch (kindOfEnumeration) {
-//       case QuickPickEnumeration.VCSCommandMenuItemEnum:
-//         break;
-//       case QuickPickEnumeration.ModeMenuItemEnum:
-//         context.data.stateManager.priorMode = context.data.stateManager.currentMode;
-//         context.data.stateManager.currentMode = event.data as ModeMenuItemEnum;
-
-//         break;
-//       case QuickPickEnumeration.QueryAgentCommandMenuItemEnum:
-//         context.data.stateManager.priorQueryAgentCommand = context.data.stateManager.currentQueryAgentCommand;
-//         context.data.stateManager.currentQueryAgentCommand = event.data as QueryAgentCommandMenuItemEnum;
-//         break;
-//     }
-//   }
-// };
-
-// enum CEnum {
-//   C1 = 'C1',
-//   C2 = 'C2',
-// }
-// enum MEnum {
-//   M1 = 'M1',
-//   M2 = 'M2',
-// }
-// enum Kenum {
-//   Cenum = 'Cenum',
-//   Menum = 'Menum',
-// }
-
-// // there is a State QPState and it invokes a fromPromise actor qPActorLogic that returns a done_invoke_QPActorLogic_Event
-// type done_invoke_QPActorLogic_Event = {
-//   // this is a psuedo name for the event
-//   type: 'done.invoke.QPActorLogic_Event';
-//   data: { k: Kenum; cTSId: string, s:string };
-// };
-
-// // This is psuedocode for how the context should be modified when done_invoke_QPActorLogic_Event arrives....
-// // I cannot get the magic sauce for the correct syntax declaring this function
-// function updateContext({ context: LoggerDataT, event: done_invoke_QPActorLogic_Event }) => {
-//   if (event.type === 'done.invoke.QPActorLogic_Event' && event.data.k === Kenum.Menum) {
-//     context.data.stateManager.currentMode = event.data.s as MEnum;// psuedocode for what the assign should do...
-//     // maybe like this? but this is incorrect, it doesn't recognize context or event correctly...
-//     // assign({
-//     // ...context.data,
-//     // stateManager: {
-//     //   ...context.data.stateManager,
-//     //   currentMode: (
-//     //     event as { type: 'done.invoke.QPActorLogic_Event'; data: { k: Kenum; cTSId: string, s:string } }
-//     //   ).data.s as MEnum,
-//     // },
-//   }
-//   if (event.type === 'done.invoke.QPActorLogic_Event' && event.data.k === Kenum.Cenum) {
-//     context.data.stateManager.currentCmd = event.data.s as CEnum; // psuedocode for what the assign should do...
-//   }
-//   context.data.cTSManager.cTSCollection.Remove(event.data.cTSId); // does this even require an assign action?
-//   // Note that the updateContext should perform two assignments, one for the enum value and one to remove the cTSId from the CtsCollection
-// };
-
-// // The QPState should have an onDone entry that implements the intent of the updateContext above,
-// onDone: [
-//   {
-//     target: 'updateUIState',
-//     actions: [
-//       // ?????
-//       {
-//         type: 'updateContext', // I assume this should be an action Object with dynamic action parameters...
-//         params: ({ context, event }) => ({
-//           // I cannot get the magic sauce for the correct syntax to invoke the function above with the correct parameters
-//         }),
-//       },
-//     ],
-//   },
-// ];
-
-// const quickPickAssignments = (
-//   context: LoggerDataT,
-//   event: { type: 'done.invoke.quickPickActorLogic'; data: QPActorLogicOutput },
-// ): { [key: string]: string } => {
-//   let assignments: { [key: string]: string } = {};
-//   switch (event.data.kindOfEnumeration) {
-//     case QuickPickEnumeration.ModeMenuItemEnum:
-//       assignments[' ...context.data, stateManager: { ...context.data.stateManager,currentMode'] = (
-//         event as { type: 'done.invoke.quickPickActorLogic'; data: QPActorLogicOutput }
-//       ).data.pickLabel as ModeMenuItemEnum;
-//       break;
-//     case QuickPickEnumeration.QueryAgentCommandMenuItemEnum:
-//       assignments[' ...context.data, stateManager: { ...context.data.stateManager,currentQueryAgentCommand'] = (
-//         event as { type: 'done.invoke.quickPickActorLogic'; data: QPActorLogicOutput }
-//       ).data.pickLabel as QueryAgentCommandMenuItemEnum;
-//       break;
-//     case QuickPickEnumeration.QueryEnginesMenuItemEnum:
-//       // in this case leg, the name entered by the user is used to get a flag bit, which is XOR'd with the current flag bits
-//       let _newQueryEngines: QueryEngineFlagsEnum = context.data.stateManager.currentQueryEngines;
-//       const _selectedQueryEngineName = event.data.pickLabel as QueryEngineNamesEnum;
-//       switch (_selectedQueryEngineName) {
-//         case QueryEngineNamesEnum.Grok:
-//           _newQueryEngines ^= QueryEngineFlagsEnum.Grok;
-//           break;
-//         case QueryEngineNamesEnum.ChatGPT:
-//           _newQueryEngines ^= QueryEngineFlagsEnum.ChatGPT;
-//           break;
-//         case QueryEngineNamesEnum.Claude:
-//           _newQueryEngines ^= QueryEngineFlagsEnum.Claude;
-//           break;
-//         case QueryEngineNamesEnum.Bard:
-//           _newQueryEngines ^= QueryEngineFlagsEnum.Bard;
-//           break;
-//         default:
-//           throw new Error(
-//             `quickPickActor received an unexpected _selectedQueryEngineName: ${_selectedQueryEngineName}`,
-//           );
-//       }
-
-//       //assignments[' ...context.data, stateManager: { ...context.data.stateManager,currentQueryEngines'] = _newQueryEngines;
-//       break;
-//   }
-//   return assignments;
-// };

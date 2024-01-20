@@ -46,7 +46,6 @@ export class Data {
   public readonly eventManager: IEventManager;
   public readonly fileManager: IFileManager;
   public readonly pickItems: IPickItems;
-  dummy: string = '';
 
   // Data that does NOT get put into globalState
   private temporaryPromptDocumentPath: string | undefined = undefined;

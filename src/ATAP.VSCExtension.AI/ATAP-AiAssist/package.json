@@ -268,13 +268,13 @@
     "@types/js-yaml": "^4.0.9",
     "@types/kdbxweb": "^2.0.0",
     "@types/mocha": "^10.0.6",
-    "@types/node": "^20.10.5",
+    "@types/node": "^20.11.5",
     "@types/prettier": "^3.0.0",
-    "@types/sinon": "^17.0.2",
+    "@types/sinon": "^17.0.3",
     "@types/strip-comments": "^2.0.4",
     "@types/vscode": "^1.85.0",
-    "@typescript-eslint/eslint-plugin": "^6.16.0",
-    "@typescript-eslint/parser": "^6.16.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
     "@vscode/test-electron": "^2.3.8",
     "assert": "^2.1.0",
     "chai": "^5.0.0",
@@ -315,16 +315,19 @@
     "@Utilities": "_generated/out/Utilities"
   },
   "dependencies": {
-    "axios": "^1.6.3",
+    "@statelyai/inspect": "^0.2.0",
+    "axios": "^1.6.5",
     "bluebird": "^3.7.2",
+    "bufferutil": "^4.0.8",
     "diff": "^5.1.0",
     "encoding": "^0.1.13",
     "js-yaml": "^4.1.0",
     "kdbxweb": "^2.1.1",
-    "openai": "^4.24.1",
-    "prettier": "^3.1.1",
+    "openai": "^4.24.7",
+    "prettier": "^3.2.4",
     "strip-comments": "^2.0.1",
     "ts-node": "^10.9.2",
-    "xstate": "^5.4.1"
+    "utf-8-validate": "^6.0.3",
+    "xstate": "^5.5.1"
   }
 }

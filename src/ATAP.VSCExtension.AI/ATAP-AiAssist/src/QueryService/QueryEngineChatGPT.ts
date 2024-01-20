@@ -1,6 +1,6 @@
 import { LogLevel, ILogger } from '@Logger/index';
 import { PasswordEntryType, IData } from '@DataService/index';
-import { DetailedError } from '@ErrorClasses/index';
+import { DetailedError, HandleError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 
 import {
@@ -56,15 +56,11 @@ export class QueryEngineChatGPT implements IQueryEngineChatGPT {
 
     // Immediately Invoked Async Function Expression (IIFE)
     (async () => {
-      aPIToken = await this.data.secretsManager.getAPITokenForChatGPTAsync().catch((e) => {
-        if (e instanceof Error) {
-          throw new DetailedError(`QueryEngineChatGPT .ctor: failed calling getAPITokenForChatGPTAsync -> `, e);
-        } else {
-          throw new Error(
-            `QueryEngineChatGPT .ctor: failed calling getAPITokenForChatGPTAsync and the instance of (e) returned is of type ${typeof e}`,
-          );
-        }
-      });
+      try {
+        aPIToken = await this.data.secretsManager.getAPITokenForChatGPTAsync();
+      } catch (e) {
+        HandleError(e, 'QueryEngineChatGPT', '.ctor', 'failed calling getAPITokenForChatGPTAsync');
+      }
     })();
 
     // Hmm I guess the extension should continue to operate with LLMs that do not have any authorization requirement
@@ -88,17 +84,11 @@ export class QueryEngineChatGPT implements IQueryEngineChatGPT {
       if (e instanceof OpenAI.APIError) {
         // ToDo: handle any extra data in the error
         throw new DetailedError(
-          'QueryEngineChatGPT .ctor OpenAI instance creation failed, APIError type was returned -> ',
+          'QueryEngineChatGPT .ctor failed getting new OpenAI instance, OpenAI.APIError type was returned -> ',
           e,
         );
       } else {
-        if (e instanceof Error) {
-          throw new DetailedError('QueryEngineChatGPT .ctor OpenAI instance creation failed -> ', e);
-        } else {
-          throw new Error(
-            `QueryEngineChatGPT .ctor OpenAI instance creation failed failed, caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
-          );
-        }
+        HandleError(e, 'QueryEngineChatGPT', '.ctor', 'failed getting new OpenAI instance');
       }
     }
   }
@@ -122,20 +112,11 @@ export class QueryEngineChatGPT implements IQueryEngineChatGPT {
       if (e instanceof OpenAI.APIError) {
         // ToDo handle any extra data in the error
         throw new DetailedError(
-          'QueryEngineChatGPT SendQueryAsync openai.beta.chat.completions.stream() failed, APIError type was returned -> ',
+          'QueryEngineChatGPT SendQueryAsync openai.beta.chat.completions.stream() failed, OpenAI.APIError type was returned -> ',
           e,
         );
       } else {
-        if (e instanceof Error) {
-          throw new DetailedError(
-            'QueryEngineChatGPT SendQueryAsync openai.beta.chat.completions.stream() failed, Error was returned -> ',
-            e,
-          );
-        } else {
-          throw new Error(
-            `QueryEngineChatGPT SendQueryAsync openai.beta.chat.completions.stream() failed, function call caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
-          );
-        }
+        HandleError(e, 'QueryEngineChatGPT', '.SendQueryAsync', 'failed calling openai.beta.chat.completions.stream()');
       }
     }
 

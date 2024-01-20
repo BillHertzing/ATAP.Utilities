@@ -1,18 +1,18 @@
 import * as vscode from 'vscode';
 import { ILogger, Logger, LogLevel } from '@Logger/index';
 import { Actor, createActor, assign, createMachine, fromCallback, StateMachine, fromPromise } from 'xstate';
-import { ILoggerData } from '@StateMachineService/index';
+import { MachineContextT } from '@StateMachineService/index';
 
 export enum SaveFileEnumeration {
   TagsCollection = 'TagsCollection',
   CategoryCollection = 'CategoryCollection',
 }
 
-interface ISaveFileInput extends ILoggerData {
+export type SaveFileInputT = MachineContextT & {
   filePath: string;
   collectionEnumeration: SaveFileEnumeration;
-}
-export const saveFileActorLogic = fromPromise(async ({ input }: { input: ISaveFileInput }) => {
+};
+export const saveFileActorLogic = fromPromise(async ({ input }: { input: SaveFileInputT }) => {
   input.logger.log(`saveFileActor called`, LogLevel.Debug);
   switch (input.collectionEnumeration) {
   }

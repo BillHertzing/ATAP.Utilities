@@ -186,7 +186,7 @@ export class StateManager implements IStateManager {
       this.currentMode = this.cache.getValue<ModeMenuItemEnum>('currentMode') as ModeMenuItemEnum;
     }
     // ToDo: possibly add validation that the CurrentMode was correctly created and initialized
-    logger.log(`currentMode = ${this.currentMode}`, LogLevel.Debug);
+    // logger.log(`currentMode = ${this.currentMode}`, LogLevel.Debug);
 
     let _currentQueryAgentCommand = this.cache.getValue<ModeMenuItemEnum>('currentQueryAgentCommand');
     if (!_currentQueryAgentCommand || (_currentQueryAgentCommand && _currentQueryAgentCommand === undefined)) {
@@ -214,7 +214,7 @@ export class StateManager implements IStateManager {
       ) as QueryAgentCommandMenuItemEnum;
     }
     // ToDo: possibly add validation that the CurrentCommand was correctly created and initialized
-    logger.log(`currentQueryAgentCommand = ${this.currentQueryAgentCommand}`, LogLevel.Debug);
+    //  logger.log(`currentQueryAgentCommand = ${this.currentQueryAgentCommand}`, LogLevel.Debug);
 
     let _currentQueryEngines = this.cache.getValue<QueryEngineFlagsEnum>('currentQueryEngines');
     if (!_currentQueryEngines || (_currentQueryEngines && _currentQueryEngines === undefined)) {
@@ -239,7 +239,7 @@ export class StateManager implements IStateManager {
       ) as QueryEngineFlagsEnum;
     }
     // ToDo: possibly add validation that the currentQueryEngines was correctly created and initialized
-    logger.log(`currentQueryEngines = ${this.currentQueryEngines}`, LogLevel.Debug);
+    //logger.log(`currentQueryEngines = ${this.currentQueryEngines}`, LogLevel.Debug);
 
     if (!this.cache.getValue<string>('CurrentSources')) {
       // Immediately Invoked Async Function Expression (IIFE)
@@ -257,7 +257,7 @@ export class StateManager implements IStateManager {
     }
 
     // ToDo: possibly add validation that the CurrentMode was correctly created and initialized
-    logger.log(`CurrentSources = ${this.cache.getValue<string>('CurrentSources')}`, LogLevel.Debug);
+    // logger.log(`CurrentSources = ${this.cache.getValue<string>('CurrentSources')}`, LogLevel.Debug);
 
     let _priorMode = this.cache.getValue<ModeMenuItemEnum>('priorMode');
     if (!_priorMode || (_priorMode && _priorMode === undefined)) {
@@ -280,7 +280,7 @@ export class StateManager implements IStateManager {
       ) as QueryAgentCommandMenuItemEnum;
     }
     // ToDo: possibly add validation that the PriorMode was correctly created and initialized
-    logger.log(`priorMode = ${this.priorMode}`, LogLevel.Debug);
+    // logger.log(`priorMode = ${this.priorMode}`, LogLevel.Debug);
 
     let _priorQueryAgentCommand = this.cache.getValue<ModeMenuItemEnum>('priorMode');
     if (!_priorQueryAgentCommand || (_priorQueryAgentCommand && _priorQueryAgentCommand === undefined)) {
@@ -308,7 +308,7 @@ export class StateManager implements IStateManager {
       ) as QueryAgentCommandMenuItemEnum;
     }
     // ToDo: possibly add validation that the PriorCommand was correctly created and initialized
-    logger.log(`priorQueryAgentCommand = ${this.priorQueryAgentCommand}`, LogLevel.Debug);
+    // logger.log(`priorQueryAgentCommand = ${this.priorQueryAgentCommand}`, LogLevel.Debug);
   }
 
   getsavedPromptDocumentData(): string | undefined {

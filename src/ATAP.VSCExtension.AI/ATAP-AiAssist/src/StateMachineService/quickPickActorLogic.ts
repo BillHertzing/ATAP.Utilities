@@ -15,36 +15,22 @@ import {
 
 import { fromCallback, StateMachine, fromPromise, assign, ActionFunction } from 'xstate';
 
-import { IData } from '@DataService/index';
-import { ILoggerData, LoggerDataT, MachineContextT } from '@StateMachineService/index';
+import { MachineContextT } from '@StateMachineService/index';
 
-export type QuickPickEventPayload = {
+export type QuickPickEventPayloadT = {
   kindOfEnumeration: QuickPickEnumeration;
   cTSId: string;
 };
 
-export type QPActorLogicInput = QuickPickEventPayload;
+export type QPActorLogicInputT = MachineContextT & QuickPickEventPayloadT;
 
-export type QPActorLogicOutput = {
+export type QPActorLogicOutputT = {
   kindOfEnumeration: QuickPickEnumeration;
   pickLabel: string;
   cTSId: string;
 };
 
-export type QuickPickInputT = MachineContextT & { kindOfEnumeration: QuickPickEnumeration; cTSId: string };
-
-export interface IQuickPickInput extends ILoggerData {
-  kindOfEnumeration: QuickPickEnumeration;
-}
-
-export class QuickPickInput implements IQuickPickInput {
-  constructor(
-    readonly kindOfEnumeration: QuickPickEnumeration,
-    readonly logger: ILogger,
-    readonly data: IData,
-  ) {}
-}
-export const quickPickActorLogic = fromPromise(async ({ input }: { input: QuickPickInputT }) => {
+export const quickPickActorLogic = fromPromise(async ({ input }: { input: QPActorLogicInputT }) => {
   input.logger.log(`quickPickActorLogic called with KindOfEnumeration= ${input.kindOfEnumeration}`, LogLevel.Debug);
 
   let quickPickItems: vscode.QuickPickItem[];

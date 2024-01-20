@@ -376,3 +376,7 @@ onDone: [
     ],
   },
 ];
+
+
+Question on assign and complex context objects
+in my use case, the (simplified) context on which I'd like the primaryMachine to operate consists of an object 'data' with readonly properties p1, p2 of types P1Type={subO1:SubO1Type} and P2Type={SubO2Type}. SubO1Type has number of properties with custom setters, and SubO2Type has a number of properties that are object collections (arrays and dictionaries) with custom methods on those object collections.   I need to understand how to use assign (actually, enqueue.assign) to call context.data.p1.propertyWithCustomSetter1('newValue'), or context.data.p2.collectionA.remove("anIdToRemove"). All of the assign examples I've found in the documentation (save one) just modify scaler values on the context. The only non-scaler assign I've found in the documents is [Cheatsheet: register an invoked actor with the system](https://stately.ai/docs/system#cheatsheet-explicitly-assign-a-systemid) and it took me a bit of research to understand that it works by returning a shallow copy of an existing array to replace the existing array on its context. 

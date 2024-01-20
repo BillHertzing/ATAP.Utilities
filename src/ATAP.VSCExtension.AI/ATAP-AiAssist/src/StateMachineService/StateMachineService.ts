@@ -5,7 +5,7 @@ import { DetailedError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction } from '@Decorators/index';
 import { ISerializationStructure, stringifyWithCircularReference, fromJson, fromYaml } from '@Serializers/index';
 import { Actor, createActor, assign, createMachine, fromCallback, StateMachine, fromPromise } from 'xstate';
-import { resolve } from 'path';
+import { createBrowserInspector } from '@statelyai/inspect';
 
 import {
   QueryAgentCommandMenuItemEnum,
@@ -19,46 +19,12 @@ import {
 
 export type LoggerDataT = { logger: ILogger; data: IData };
 
-// Common interface for input to actor and action logic
-export interface ILoggerData {
-  readonly logger: ILogger;
-  readonly data: IData;
-}
-export class LoggerData implements ILoggerData {
-  constructor(
-    readonly logger: ILogger,
-    readonly data: IData,
-  ) {}
-}
-
-import { QuickPickEventPayload } from './quickPickActorLogic';
+import { QuickPickEventPayloadT } from './quickPickActorLogic';
 
 import { primaryMachine } from './PrimaryMachine';
 
-// export interface IUpdateUIInput extends IQuickPickInput {
-//   priorMode: ModeMenuItemEnum;
-//   currentMode: ModeMenuItemEnum;
-//   priorQueryAgentCommand: QueryAgentCommandMenuItemEnum;
-//   currentQueryAgentCommand: QueryAgentCommandMenuItemEnum;
-// }
-// export class UpdateUIInput implements IUpdateUIInput {
-//   constructor(
-//     readonly priorMode: ModeMenuItemEnum,
-//     readonly currentMode: ModeMenuItemEnum,
-//     readonly priorQueryAgentCommand: QueryAgentCommandMenuItemEnum,
-//     readonly currentQueryAgentCommand: QueryAgentCommandMenuItemEnum,
-//     readonly kindOfEnumeration: QuickPickEnumeration,
-//     readonly logger: ILogger,
-//     readonly data: IData,
-//   ) {}
-// }
-
-// The enumeration types for which the quickPickActorLogic can be used
-// export type PickableEnumerationTypes = VCSCommandMenuItemEnum | ModeMenuItemEnum | QueryAgentCommandMenuItemEnum;
-
-//
 export interface IStateMachineService {
-  quickPick(data: QuickPickEventPayload): void;
+  quickPick(data: QuickPickEventPayloadT): void;
   start(): void;
   disposeAsync(): void;
 }
@@ -67,8 +33,7 @@ export interface IStateMachineService {
 export class StateMachineService implements IStateMachineService {
   private readonly extensionID: string;
   private readonly extensionName: string;
-
-  private dummy: string = 'dummy';
+  private readonly primaryMachineInspector = createBrowserInspector();
   private primaryActor;
 
   private disposed = false;
@@ -80,15 +45,16 @@ export class StateMachineService implements IStateMachineService {
   ) {
     this.extensionID = extensionContext.extension.id;
     this.extensionName = this.extensionID.split('.')[1];
-
+    const primaryMachineInspector = createBrowserInspector(); // This line produces the errorMessage
     this.primaryActor = createActor(primaryMachine, {
-      input: { logger: this.logger, data: this.data, dummy: this.dummy },
+      input: { logger: this.logger, data: this.data },
+      // inspect: this.primaryMachineInspector.inspect,
       // for Debugging
       inspect: (inspEvent) => {
-        // this.logger.log(
-        //   `StateMachineService inspect received inspEvent.type = ${inspEvent.type}`, //${stringifyWithCircularReference(inspEvent)}`,
-        //   LogLevel.Debug,
-        // );
+        this.logger.log(
+          `StateMachineService inspect received inspEvent.type = ${inspEvent.type}`, //${stringifyWithCircularReference(inspEvent)}`,
+          LogLevel.Debug,
+        );
         if (inspEvent.type === '@xstate.snapshot') {
           this.logger.log(
             `StateMachineService inspect received event type @xstate.snapshot. event.type: ${inspEvent.event.type} event.input: ${inspEvent.event.input} event.output: ${inspEvent.event.output} snapshot.status: ${inspEvent.snapshot.status}`,
@@ -111,7 +77,7 @@ export class StateMachineService implements IStateMachineService {
     });
   }
   @logFunction
-  quickPick(payload: QuickPickEventPayload): void {
+  quickPick(payload: QuickPickEventPayloadT): void {
     this.primaryActor.send({ type: 'quickPickEvent', data: payload });
   }
   @logFunction

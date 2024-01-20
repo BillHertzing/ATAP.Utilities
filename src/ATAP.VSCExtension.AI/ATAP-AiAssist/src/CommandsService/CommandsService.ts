@@ -8,7 +8,7 @@ import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from 
 
 import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
 import { IQueryService } from '@QueryService/index';
-import { IStateMachineService, StateMachineService, QuickPickEventPayload } from '@StateMachineService/index';
+import { IStateMachineService, QuickPickEventPayloadT } from '@StateMachineService/index';
 
 import { startCommand } from './startCommand';
 import { showVSCEnvironment } from './showVSCEnvironment';

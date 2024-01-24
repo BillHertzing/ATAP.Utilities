@@ -17,21 +17,30 @@ export interface ChannelInfo {
   level: LogLevel;
 }
 
-export interface ILogger {
-  createChannel(name: string, level: LogLevel, enabled: boolean): void;
+export interface IScopedLogger {
+  readonly scope: string;
   log(message: string, level: LogLevel, channelName?: string): void;
+  logWithScope(message: string, scope: string, level: LogLevel, channelName?: string): void;
+}
+
+export interface ILogger extends IScopedLogger {
+  readonly scope: string;
+  createChannel(name: string, level: LogLevel, enabled: boolean): void;
   setChannelEnabled(channelName: string, enabled: boolean): void;
   setChannelLogLevel(channelName: string, level: LogLevel): void;
   getChannelInfo(channelName: string): ChannelInfo | null;
 }
 
 export class Logger implements ILogger {
+  readonly scope: string;
   private channels: { [key: string]: ChannelInfo } = {
     console: { outputChannel: undefined, enabled: true, level: LogLevel.Debug },
   };
   private static staticOutputChannel: vscode.OutputChannel;
 
-  constructor() {}
+  constructor(scope: string) {
+    this.scope = scope;
+  }
 
   static staticConstructor() {
     Logger.staticOutputChannel = vscode.window.createOutputChannel('AiAssistStaticLogger');
@@ -73,6 +82,32 @@ export class Logger implements ILogger {
     }
   }
 
+  logWithScope(message: string, scope: string, level: LogLevel, channelName?: string): void {
+    // eslint-disable-next-line eqeqeq
+    if (channelName != null) {
+      const channelInfo = this.channels[channelName];
+      if (channelInfo && channelInfo.enabled && level <= channelInfo.level) {
+        if (channelName === 'console') {
+          console.log(`[${LogLevel[level]}] [${scope}] ${message}`);
+        } else {
+          let _outputChannel: vscode.OutputChannel = channelInfo.outputChannel as vscode.OutputChannel;
+          _outputChannel.appendLine(`[${LogLevel[level]}] [${scope}] ${message}`);
+        }
+      }
+    } else {
+      for (const channelName in this.channels) {
+        const channelInfo = this.channels[channelName];
+        if (channelInfo && channelInfo.enabled && level <= channelInfo.level) {
+          if (channelName === 'console') {
+            console.log(`[${LogLevel[level]}] [${this.scope}] ${message}`);
+          } else {
+            let _outputChannel: vscode.OutputChannel = channelInfo.outputChannel as vscode.OutputChannel;
+            _outputChannel.appendLine(`[${LogLevel[level]}] [${scope}] ${message}`);
+          }
+        }
+      }
+    }
+  }
   setChannelEnabled(channelName: string, enabled: boolean): void {
     const channelInfo = this.channels[channelName];
     if (channelInfo) {

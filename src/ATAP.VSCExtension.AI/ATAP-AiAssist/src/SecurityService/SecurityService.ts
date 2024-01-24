@@ -28,6 +28,7 @@ export class SecurityService implements ISecurityService {
     private logger: ILogger,
     private extensionContext: vscode.ExtensionContext,
   ) {
+    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
     this._externalDataVetting = new ExternalDataVetting(logger);
   }
 

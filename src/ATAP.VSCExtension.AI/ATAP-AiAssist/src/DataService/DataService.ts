@@ -19,6 +19,10 @@ import { SupportedSecretsVaultEnum, ISecretsManager, SecretsManager } from './Se
 import { IConfigurationData, ConfigurationData } from './ConfigurationData';
 import { IEventManager, EventManager } from './EventManager';
 import { IFileManager, FileManager } from './FileManager';
+import {
+  IAiAssistCancellationTokenSourceManager,
+  AiAssistCancellationTokenSourceManager,
+} from './AiAssistCancellationTokenSourceManager';
 import { IPickItems, PickItems } from './PickItems';
 
 import { PathLike } from 'fs';
@@ -34,6 +38,7 @@ export interface IData {
   readonly secretsManager: ISecretsManager;
   readonly eventManager: IEventManager;
   readonly fileManager: IFileManager;
+  readonly aiAssistCancellationTokenSourceManager: IAiAssistCancellationTokenSourceManager;
   readonly pickItems: IPickItems;
   disposeAsync(): void;
 }
@@ -45,6 +50,7 @@ export class Data {
   public readonly secretsManager: ISecretsManager;
   public readonly eventManager: IEventManager;
   public readonly fileManager: IFileManager;
+  public readonly aiAssistCancellationTokenSourceManager: IAiAssistCancellationTokenSourceManager;
   public readonly pickItems: IPickItems;
 
   // Data that does NOT get put into globalState
@@ -67,6 +73,8 @@ export class Data {
     private userDataInitializationStructure?: ISerializationStructure,
     private configurationDataInitializationStructure?: ISerializationStructure,
   ) {
+    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
+
     // instantiate the configurationData
     try {
       this.configurationData = new ConfigurationData(this.logger, this.extensionContext);
@@ -135,6 +143,19 @@ export class Data {
       }
     }
 
+    // instantiate the aiAssistCancellationTokenSourceManager
+    try {
+      this.aiAssistCancellationTokenSourceManager = new AiAssistCancellationTokenSourceManager(this.logger);
+    } catch (e) {
+      if (e instanceof Error) {
+        throw new DetailedError('Data.ctor. create aiAssistCancellationTokenSourceManager -> ', e);
+      } else {
+        // ToDo:  investigation to determine what else might happen
+        throw new Error(
+          `Data.ctor. create aiAssistCancellationTokenSourceManager thew an object that was not of type Error -> `,
+        );
+      }
+    }
     // Instantiate the pickItems
     try {
       this.pickItems = new PickItems(this);
@@ -195,6 +216,8 @@ export class DataService implements IDataService {
     private logger: ILogger,
     private extensionContext: vscode.ExtensionContext, //dataInitializationStructure?: ISerializationStructure,
   ) {
+    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
+
     // ToDo: version-aware configuration data loading; multiroot-workspace-aware
     this.version = DefaultConfiguration.version;
     // capture any errors and report them upward

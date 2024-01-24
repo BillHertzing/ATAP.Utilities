@@ -48,7 +48,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   const extensionName = extensionID.split('.')[1];
 
   // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
-  const logger = new Logger();
+  const logger = new Logger('');
   // Channel name is the name of the extension
   logger.createChannel(extensionName, LogLevel.Debug);
   logger.setChannelEnabled('console', true);

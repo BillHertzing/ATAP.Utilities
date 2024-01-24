@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { LogLevel, IScopedLogger } from '@Logger/index';
 import { DetailedError, HandleError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 
-export function showVSCEnvironment(logger: ILogger): void {
+export function showVSCEnvironment(logger: IScopedLogger): void {
   let message: string;
   logger.log('starting function showVSCEnvironment', LogLevel.Debug);
   const workspaceFolders = vscode.workspace.workspaceFolders;

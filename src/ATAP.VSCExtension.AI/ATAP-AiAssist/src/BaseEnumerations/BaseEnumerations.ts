@@ -69,6 +69,11 @@ export enum QuickPickEnumeration {
   QueryEnginesMenuItemEnum = 'QueryEnginesMenuItemEnum',
 }
 
+export enum QueryFragmentEnum {
+  StringFragment = 'StringFragment',
+  FileFragment = 'FileFragment',
+}
+
 export enum SupportedSerializersEnum {
   Yaml = 'YAML',
   Json = 'JSON',

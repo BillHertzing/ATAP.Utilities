@@ -20,11 +20,13 @@ import {
 export type LoggerDataT = { logger: ILogger; data: IData };
 
 import { QuickPickEventPayloadT } from './quickPickActorLogic';
+import { QueryEventPayloadT } from './queryMachine';
 
 import { primaryMachine } from './PrimaryMachine';
 
 export interface IStateMachineService {
   quickPick(data: QuickPickEventPayloadT): void;
+  sendQuery(data: QueryEventPayloadT): void;
   start(): void;
   disposeAsync(): void;
 }
@@ -45,6 +47,7 @@ export class StateMachineService implements IStateMachineService {
   ) {
     this.extensionID = extensionContext.extension.id;
     this.extensionName = this.extensionID.split('.')[1];
+    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
     const primaryMachineInspector = createBrowserInspector(); // This line produces the errorMessage
     this.primaryActor = createActor(primaryMachine, {
       input: { logger: this.logger, data: this.data },
@@ -79,6 +82,10 @@ export class StateMachineService implements IStateMachineService {
   @logFunction
   quickPick(payload: QuickPickEventPayloadT): void {
     this.primaryActor.send({ type: 'quickPickEvent', data: payload });
+  }
+  @logFunction
+  sendQuery(payload: QueryEventPayloadT): void {
+    this.primaryActor.send({ type: 'queryEvent', data: payload });
   }
   @logFunction
   testActorsaveFile(): void {

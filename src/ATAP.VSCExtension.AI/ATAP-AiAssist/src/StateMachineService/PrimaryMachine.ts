@@ -25,6 +25,7 @@ import {
 } from '@BaseEnumerations/index';
 
 import { quickPickActorLogic, QuickPickEventPayloadT, QPActorLogicOutputT } from './quickPickActorLogic';
+import { queryMachine, QueryEventPayloadT } from './queryMachine';
 
 export type LoggerDataT = { logger: ILogger; data: IData };
 
@@ -37,6 +38,7 @@ export const primaryMachine = setup({
     input: MachineContextT;
     events:
       | { type: 'quickPickEvent'; data: QuickPickEventPayloadT }
+      | { type: 'queryEvent'; data: QueryEventPayloadT }
       | { type: 'errorEvent'; message: string }
       | { type: 'disposeEvent' }
       | { type: 'disposingCompleteEvent' }
@@ -188,6 +190,9 @@ export const primaryMachine = setup({
               quickPickEvent: {
                 target: 'quickPickStateP',
               },
+              queryEvent: {
+                target: 'queryState',
+              },
             },
           },
           errorState: {
@@ -313,6 +318,39 @@ export const primaryMachine = setup({
                     { target: '#primaryMachine.operationState.errorState' },
                   ],
                 },
+              },
+            },
+          },
+          queryState: {
+            description: 'A state where an machine is invoked to send a query to all enabled QueryEngines.',
+            // entry: {
+            //   type: 'queryStateEntryAction',
+            // },
+            // exit: {
+            //   type: 'queryStateStateExitAction',
+            // },
+            invoke: {
+              id: 'queryMachine',
+              src: queryMachine,
+              input: ({ context, event }) => ({
+                logger: context.logger,
+                data: context.data,
+                queryFragmentCollection: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data
+                  .queryFragmentCollection,
+                // kindOfEnumeration: (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data
+                //   .kindOfEnumeration,
+                // cTSId: (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.cTSId,
+                // kindOfEnumeration:
+                //   event.type === 'quickPickEvent'
+                //     ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
+                //     : undefined,
+                // cTSId:
+                //   event.type === 'quickPickEvent'
+                //     ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.cTSId
+                //     : undefined,
+              }),
+              onDone: {
+                target: '#primaryMachine.operationState.idleState',
               },
             },
           },

@@ -28,6 +28,7 @@ export interface IConfigurationData {
   readonly tagsFilePath: string;
   readonly categorysFilePath: string;
   readonly associationsFilePath: string;
+  readonly queryFragmentsFilePath: string;
   readonly conversationsFilePath: string;
   readonly debuggerLogLevel: LogLevel;
   readonly extensionID: string;
@@ -60,7 +61,9 @@ export class ConfigurationData implements IConfigurationData {
       TempDirectoryBasePath: ['TEMP'],
       CloudBasePath: ['CLOUD_BASE_PATH'],
     },
-  ) {}
+  ) {
+    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
+  }
 
   //@logFunction
   private getNonNull(key: string): AllowedTypesInValue {
@@ -146,30 +149,37 @@ export class ConfigurationData implements IConfigurationData {
 
   get tagsFilePath(): string {
     return path.join(
-      this.getNonNull('CloudBasePath') as string,
+      this.getNonNull('cloudBasePath') as string,
       this.getNonNull('extensionID') as string,
-      this.getNonNull('TagsFileName') as string,
+      this.getNonNull('tagsFileName') as string,
     ) as string;
   }
   get categorysFilePath(): string {
     return path.join(
-      this.getNonNull('CloudBasePath') as string,
+      this.getNonNull('cloudBasePath') as string,
       this.getNonNull('extensionID') as string,
-      this.getNonNull('CategorysFileName') as string,
+      this.getNonNull('categorysFileName') as string,
     ) as string;
   }
   get associationsFilePath(): string {
     return path.join(
-      this.getNonNull('CloudBasePath') as string,
+      this.getNonNull('cloudBasePath') as string,
       this.getNonNull('extensionID') as string,
-      this.getNonNull('AssociationsFileName') as string,
+      this.getNonNull('associationsFileName') as string,
+    ) as string;
+  }
+  get queryFragmentsFilePath(): string {
+    return path.join(
+      this.getNonNull('cloudBasePath') as string,
+      this.getNonNull('extensionID') as string,
+      this.getNonNull('queryFragmentsFileName') as string,
     ) as string;
   }
   get conversationsFilePath(): string {
     return path.join(
-      this.getNonNull('CloudBasePath') as string,
+      this.getNonNull('cloudBasePath') as string,
       this.getNonNull('extensionID') as string,
-      this.getNonNull('ConversationsFileName') as string,
+      this.getNonNull('conversationsFileName') as string,
     ) as string;
   }
 

@@ -4,6 +4,7 @@ export {
   QueryEngineFlagsEnum,
   QueryEngineNamesEnum,
   QuickPickEnumeration,
+  QueryFragmentEnum,
   VCSCommandMenuItemEnum,
   SupportedQueryEnginesEnum,
   SupportedSerializersEnum,

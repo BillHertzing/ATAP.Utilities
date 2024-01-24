@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { LogLevel, ILogger } from '@Logger/index';
+import { LogLevel, ILogger, Logger } from '@Logger/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
@@ -37,6 +37,8 @@ export class SecretsManager implements ISecretsManager {
     private readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
     private readonly configurationData: IConfigurationData,
   ) {
+    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
+
     this.secretManagersMap = {} as SecretManagerMap;
     switch (selectedSecretsVault) {
       case SupportedSecretsVaultEnum.KeePass:

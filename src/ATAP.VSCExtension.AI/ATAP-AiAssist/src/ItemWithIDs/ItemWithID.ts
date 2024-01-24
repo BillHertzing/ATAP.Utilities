@@ -18,6 +18,8 @@ import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from 
 import { GUID, Int, IDType, nextID } from '@IDTypes/index';
 import { Philote, IPhilote } from '@Philote/index';
 
+import { QueryFragmentEnum } from '@BaseEnumerations/index';
+
 export type TagValueType = string;
 export type CategoryValueType = string;
 export type QueryRequestValueType = string;
@@ -48,6 +50,31 @@ export class AssociationValueType {
     return toYaml(this);
   }
 }
+
+export interface IQueryFragmentValueType {
+  readonly kindOfFragment: QueryFragmentEnum;
+  value: string; // ToDo: Type to ValueTypeMapping string, pathlike or a collectionID of a queryFragmentCollection;
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+}
+@logConstructor
+export class QueryFragmentValueType implements IQueryFragmentValueType {
+  constructor(
+    readonly kindOfFragment: QueryFragmentEnum,
+    readonly value: string, // ToDo: Type to ValueTypeMapping string, pathlike or a collectionID of a queryFragmentCollection;
+  ) {}
+  toString(): string {
+    return `QueryFragmentValueType kindOfFragment:${this.kindOfFragment.toString()}; value:${toJson(this.value)}`;
+  }
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+}
+
 export interface IQueryPairValueType {
   queryRequest: IQueryRequest;
   queryResponse: IQueryResponse;
@@ -92,12 +119,15 @@ export class QueryPairCollectionValueType {
   }
 }
 
+export type CancellationTokenSourceValueType = vscode.CancellationTokenSource;
+
 export type ItemWithIDValueType =
   | string
-  | AiAssistCancellationTokenSourceValueType
   | IAssociationValueType
+  | IQueryFragmentValueType
   | IQueryPairValueType
-  | IQueryPairCollectionValueType;
+  | IQueryPairCollectionValueType
+  | AiAssistCancellationTokenSourceValueType;
 
 // export type MapTypeToValueType<T> = T extends Tag
 //   ? TagValueType
@@ -120,12 +150,14 @@ export type ItemWithIDValueType =
 export type ItemWithIDTypes =
   | Tag
   | Category
-  | vscode.CancellationTokenSource
   | Association
+  | QueryFragment
   | QueryRequest
   | QueryResponse
   | QueryPair
-  | QueryPairCollection;
+  | QueryPairCollection
+  | AiAssistCancellationTokenSource
+  | AiAssistCancellationTokenSourceCollection;
 
 export interface IItemWithID<T extends ItemWithIDTypes, V extends ItemWithIDValueType> {
   readonly value: V;
@@ -319,14 +351,14 @@ export class CategoryCollection extends Collection<Category, CategoryValueType> 
 }
 
 export interface IAiAssistCancellationTokenSource
-  extends IItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType> {
+  extends IItemWithID<AiAssistCancellationTokenSource, AiAssistCancellationTokenSourceValueType> {
   readonly value: AiAssistCancellationTokenSourceValueType;
   readonly ID: Philote;
   toString(): string;
 }
 @logConstructor
 export class AiAssistCancellationTokenSource
-  extends ItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType>
+  extends ItemWithID<AiAssistCancellationTokenSource, AiAssistCancellationTokenSourceValueType>
   implements IAiAssistCancellationTokenSource
 {
   constructor(
@@ -353,24 +385,24 @@ export class AiAssistCancellationTokenSource
 }
 
 export interface IAiAssistCancellationTokenSourceCollection
-  extends ICollection<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType> {
+  extends ICollection<AiAssistCancellationTokenSource, AiAssistCancellationTokenSourceValueType> {
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
 }
 @logConstructor
 export class AiAssistCancellationTokenSourceCollection
-  extends Collection<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType>
+  extends Collection<AiAssistCancellationTokenSource, AiAssistCancellationTokenSourceValueType>
   implements IAiAssistCancellationTokenSourceCollection
 {
   constructor(
-    value: ItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType>[],
+    value: ItemWithID<AiAssistCancellationTokenSource, AiAssistCancellationTokenSourceValueType>[],
     ID?: Philote,
   ) {
     super(value, ID);
   }
   create(
-    value: ItemWithID<vscode.CancellationTokenSource, AiAssistCancellationTokenSourceValueType>[],
+    value: ItemWithID<AiAssistCancellationTokenSource, AiAssistCancellationTokenSourceValueType>[],
   ): AiAssistCancellationTokenSourceCollection {
     return new AiAssistCancellationTokenSourceCollection(value);
   }
@@ -432,6 +464,66 @@ export class AssociationCollection
   @logFunction
   toString(): string {
     return `AssociationCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+}
+
+export interface IQueryFragment extends IItemWithID<QueryFragment, QueryFragmentValueType> {
+  readonly value: QueryFragmentValueType;
+  readonly ID: Philote;
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+}
+@logConstructor
+export class QueryFragment extends ItemWithID<QueryFragment, QueryFragmentValueType> implements IQueryFragment {
+  constructor(
+    readonly value: QueryFragmentValueType,
+    readonly ID: IPhilote = new Philote(),
+  ) {
+    super(value, ID);
+  }
+  // static create(value: QueryFragmentValueType): QueryFragment {
+  //   return new QueryFragment(value);
+  // }
+  @logFunction
+  toString(): string {
+    return `QueryFragment ID:${this.ID.toString()}; value:${this.value.toString()}`;
+  }
+  @logFunction
+  convertTo_json(): string {
+    return toJson(this);
+  }
+  @logFunction
+  convertTo_yaml(): string {
+    return toYaml(this);
+  }
+}
+
+export interface IQueryFragmentCollection extends ICollection<QueryFragment, QueryFragmentValueType> {
+  toString(): string;
+  convertTo_json(): string;
+  convertTo_yaml(): string;
+}
+
+@logConstructor
+export class QueryFragmentCollection
+  extends Collection<QueryFragment, QueryFragmentValueType>
+  implements IQueryFragmentCollection
+{
+  constructor(value: ItemWithID<QueryFragment, QueryFragmentValueType>[], ID?: Philote) {
+    super(value, ID);
+  }
+  @logFunction
+  toString(): string {
+    return `QueryFragmentCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
   @logFunction
   convertTo_json(): string {

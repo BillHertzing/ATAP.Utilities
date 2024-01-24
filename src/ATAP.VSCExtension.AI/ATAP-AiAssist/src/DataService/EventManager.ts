@@ -20,6 +20,8 @@ export class EventManager implements IEventManager {
     private readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
     private readonly configurationData: IConfigurationData,
   ) {
+    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
+
     //ToDo: wrap in a try/catch
     this.eventEmitter = new EventEmitter();
   }

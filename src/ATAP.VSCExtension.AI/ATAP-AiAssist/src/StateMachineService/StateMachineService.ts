@@ -12,7 +12,6 @@ import {
   ModeMenuItemEnum,
   QuickPickEnumeration,
   VCSCommandMenuItemEnum,
-  SupportedQueryEnginesEnum,
 } from '@BaseEnumerations/index';
 
 // common type
@@ -20,7 +19,7 @@ import {
 export type LoggerDataT = { logger: ILogger; data: IData };
 
 import { QuickPickEventPayloadT } from './quickPickActorLogic';
-import { QueryEventPayloadT } from './queryMachine';
+import { QueryEventPayloadT } from './queryActorLogic';
 
 import { primaryMachine } from './PrimaryMachine';
 

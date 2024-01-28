@@ -3,6 +3,8 @@ import { LogLevel, ILogger } from '@Logger/index';
 import { IData } from '@DataService/index';
 import { DetailedError, HandleError } from '@ErrorClasses/index';
 
+import { QueryEngineNamesEnum, QueryEngineFlagsEnum } from '@BaseEnumerations/index';
+
 import { IQueryFragment, IQueryFragmentCollection } from '@ItemWithIDs/index';
 
 import {
@@ -26,6 +28,9 @@ import {
   ParallelQueryActorLogicInputT,
   ParallelQueryActorLogicOutputT,
   parallelQueryActorLogic,
+  SingleQueryActorLogicInputT,
+  SingleQueryActorLogicOutputT,
+  fetchingFromBardActorLogic,
 } from './queryActorLogic';
 
 export type QueryEventPayloadT = {
@@ -34,7 +39,8 @@ export type QueryEventPayloadT = {
 };
 
 export type QueryEventOutputT = {
-  data: { result: boolean; individualQueryResults: Array<string> };
+  responses: { [key in QueryEngineNamesEnum]: string };
+  errors: { [key in QueryEngineNamesEnum]: string };
 };
 
 // create the queryMachine definition
@@ -45,188 +51,288 @@ export const queryMachine = setup({
     events:
       | { type: 'queryEvent'; data: QueryEventPayloadT }
       | { type: 'gatherQueryFragmentsEvent'; data: GatherQueryFragmentsActorLogicInputT }
-      | { type: 'parallelQueryEvent'; data: ParallelQueryActorLogicInputT }
-      | { type: 'xstate.done.actor.GatherQueryFragmentsActor'; output: GatherQueryFragmentsActorLogicOutputT }
+      | { type: 'xstate.done.actor.gatherQueryFragmentsActor'; output: GatherQueryFragmentsActorLogicOutputT }
+      | { type: 'xstate.error.actor.gatherQueryFragmentsActor'; output: GatherQueryFragmentsActorLogicOutputT }
+      | { type: 'gatherQueryFragmentsActorLogicSucceeded'; output: GatherQueryFragmentsActorLogicOutputT }
+      | { type: 'gatherQueryFragmentsActorLogicError'; output: GatherQueryFragmentsActorLogicOutputT }
+      | { type: 'gatherQueryFragmentsActorLogicCancelled'; output: GatherQueryFragmentsActorLogicOutputT }
       | { type: 'xstate.done.actor.ParallelQueryFragmentsActor'; output: ParallelQueryActorLogicOutputT }
-      | { type: 'disposeEvent' }
+      | { type: 'xstate.error.actor.ParallelQueryFragmentsActor'; output: ParallelQueryActorLogicOutputT }
+      | { type: 'sendQueryToBardEvent'; data: SingleQueryActorLogicInputT }
+      | { type: 'sendQueryToChatGPTEvent'; data: SingleQueryActorLogicInputT }
+      | { type: 'sendQueryToClaudeEvent'; data: SingleQueryActorLogicInputT }
+      | { type: 'sendQueryToGrokEvent'; data: SingleQueryActorLogicInputT }
+      | { type: 'allSingleQueriesCompletedEvent'; data: ParallelQueryActorLogicOutputT }
+
+      // ToDo: define the mechanism to resolve the call to invoke (queryMachine) in the parent with an object of type QueryEventOutputT to the caller. The response can mix successfull queryEngine calls and unsuccessful ones
+      | { type: 'queryCompleteEvent'; data: QueryEventOutputT }
+      | { type: 'disposeEvent' } // Can be called at any time. The queryMachine must free any allocated resources and transition to the disposeState.doneState.
       | { type: 'disposingCompleteEvent' };
   },
-  actions: {},
-}).createMachine(
-  //   // cSpell:disable
-  //   // cSpell:enable
-  {
-    // ToDo: Disable VSC telemetry
-    id: 'queryMachine',
-    context: ({ input }) => ({ logger: input.logger, data: input.data }),
-    type: 'parallel',
-    states: {
-      queryState: {
-        description:
-          'A parent state with child states that allow a user to send an ordered collection of queryfragments, update the extension (transition it) to the UI indicated by the new value, update the conversation, and then return to the Idle state.',
-        // entry: { type: 'queryStateEntryAction' },
-        // exit: {
-        //   type: 'quickPickStateExitAction',
-        // },
-        initial: 'gatherQueryFragmentsState',
-        // assemble the fragments into a string
-        // call await to read from files
-        // call every queryAgent to get the query results
-        // create a new temporary file for each queryAgent's results, populate it, and open it in an editortab
-        // perhaps store every queryAgent's results in a single file as well, with spans to identify the results
-
-        states: {
-          gatherQueryFragmentsState: {
-            description:
-              'given an ordered collection of fragment identifiers, gather the fragments and assemble them into a query string',
-            // entry: {
-            //   type: 'gatherQueryFragmentsStateEntryAction',
-            // },
-            // exit: {
-            //   type: 'gatherQueryFragmentsStateExitAction',
-            // },
-            invoke: {
-              id: 'queryGatherFragmentsActor',
-              src: gatherQueryFragmentsActorLogic,
-              input: ({ context, event }) => ({
+  actions: {
+    conditionallyEnqueueRaiseSpecificSendQueryToQueryEnginesAction: ({ context, event }) => {
+      enqueueActions(({ context, event, enqueue, check }) => {
+        context.logger.log('conditionallyEnqueueRaiseSpecificSendQueryToQueryEnginesAction started', LogLevel.Debug);
+        const _event = event as {
+          type: 'xstate.done.actor.gatherQueryFragmentsActor';
+          output: GatherQueryFragmentsActorLogicOutputT;
+        };
+        if (_event && typeof _event.output !== 'undefined') {
+          const _queryString = _event.output.queryString;
+          const _cTSToken = _event.output.cTSToken;
+          const _currentActiveQueryEngines = context.data.stateManager.currentQueryEngines;
+          if (_event.output.cTSToken.isCancellationRequested || !_queryString.length) {
+            // Just quit the entry action because the gatherSendQueryPromisesStateActorLogic will recognize these conditions and handle appropriately
+          }
+          if (_currentActiveQueryEngines & QueryEngineFlagsEnum.Bard) {
+            enqueue.raise({
+              type: 'sendQueryToBardEvent',
+              data: {
                 logger: context.logger,
                 data: context.data,
-                queryFragmentCollection: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data
-                  .queryFragmentCollection,
-                cTSToken: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data.cTSToken,
-              }),
-              onDone: {
-                target: 'parallelQueryState',
-                // actions:
-                //       enqueueActions(({ context, event, enqueue, check }) => {
-                //   context.logger.log('quickPickState onDone enqueueActions started', LogLevel.Debug);
-                //   const _event = event as {
-                //     type: 'xstate.done.actor.quickPickActor'; // is xstate.done.actor... the correct event for enqueuing actions?
-                //     output: QPActorLogicOutputT;
-                //   };
-                //   if (_event && typeof _event.output !== 'undefined') {
-                //     if (!_event.output.pickLabel.startsWith('undefined:')) {
-                //       switch (_event.output.kindOfEnumeration) {
-                //         case QuickPickEnumeration.ModeMenuItemEnum:
-                //           context.logger.log(
-                //             `quickPickState enqueuing assign(currentMode = ${_event.output.pickLabel})`,
-                //             LogLevel.Debug,
-                //           );
-                //           enqueue.assign(({ context }) => {
-                //             context.data.stateManager.priorMode = context.data.stateManager.currentMode;
-                //             context.data.stateManager.currentMode = _event.output.pickLabel as ModeMenuItemEnum;
-                //             return context;
-                //           });
-                //           break;
-                //         case QuickPickEnumeration.QueryAgentCommandMenuItemEnum:
-                //           enqueue.assign(({ context }) => {
-                //             context.data.stateManager.priorQueryAgentCommand =
-                //               context.data.stateManager.currentQueryAgentCommand;
-                //             context.data.stateManager.currentQueryAgentCommand = _event.output
-                //               .pickLabel as QueryAgentCommandMenuItemEnum;
-                //             return context;
-                //           });
-                //           break;
-                //         case QuickPickEnumeration.QueryEnginesMenuItemEnum:
-                //           let _newQueryEngines: QueryEngineFlagsEnum = context.data.stateManager.currentQueryEngines;
-                //           const _selectedQueryEngineName = event.output.pickLabel as QueryEngineNamesEnum;
-                //           switch (_selectedQueryEngineName) {
-                //             case QueryEngineNamesEnum.Grok:
-                //               _newQueryEngines ^= QueryEngineFlagsEnum.Grok;
-                //               break;
-                //             case QueryEngineNamesEnum.ChatGPT:
-                //               _newQueryEngines ^= QueryEngineFlagsEnum.ChatGPT;
-                //               break;
-                //             case QueryEngineNamesEnum.Claude:
-                //               _newQueryEngines ^= QueryEngineFlagsEnum.Claude;
-                //               break;
-                //             case QueryEngineNamesEnum.Bard:
-                //               _newQueryEngines ^= QueryEngineFlagsEnum.Bard;
-                //               break;
-                //             default:
-                //               throw new Error(
-                //                 `quickPickStateInvokedActorOnDoneAction received an unexpected _selectedQueryEngineName: ${_selectedQueryEngineName}`,
-                //               );
-                //           }
-                //           enqueue.assign(({ context }) => {
-                //             context.data.stateManager.currentQueryEngines = _newQueryEngines;
-                //             return context;
-                //           });
-                //           break;
-                //       }
-                //     }
-                //     // ToDo the unconditional assignment here to remove the cancellationTokenSource from the cTSCollection
-                //     // context.data.cTSManager.cTSCollection.Remove(event.data.cTSId); // does this even require an assign action?
-                //     // ToDo: should we keep the cancellation tokens around and record the cancellation reason? Would require a periodic GC if so...
-                //     // ToDo: we could GC the CTS collection on idleState entry...
-                //   }
-                // }),
-              },
-              onError: [
-                {
-                  // use the error message to guard the target transitions
-                  // if the error message is 'undefined', just go to the idleState
-                  //target: '#primaryMachine.operationState.idleState',
-                },
-                // Any other error go to the errorState
-                //{ target: '#primaryMachine.operationState.errorState' },
-              ],
-            },
-          },
-          parallelQueryState: {
-            description: 'given a query string, send it to every enabled queryAgent and collect the results',
-            invoke: {
-              id: 'gatherQueryFragmentsActorLogic',
-              src: parallelQueryActorLogic,
-              input: ({ context, event }) =>
-                ({
-                  logger: context.logger,
-                  data: context.data,
-                  queryFragmentCollection: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data
-                    .queryFragmentCollection,
-                  cTSToken: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data.cTSToken,
-                }) as GatherQueryFragmentsActorLogicInputT,
-              onDone: {
-                target: 'parallelQueryState',
-              },
-            },
-          },
-        },
-      },
-      disposeState: {
-        // 2nd parallel state. This state can be transitioned to from any state
-        initial: 'inactiveState',
-        states: {
-          inactiveState: {
-            on: {
-              disposeEvent: 'disposingState',
-            },
-          },
-          disposingState: {
-            entry: {
-              type: 'disposingStateEntryAction',
-            },
-            exit: {
-              type: 'disposingStateExitAction',
-            },
-            on: {
-              disposingCompleteEvent: {
-                target: 'doneState',
-              },
-            },
-          },
-          doneState: {
-            entry: {
-              type: 'doneStateEntryAction',
-            },
-            type: 'final',
-          },
-        },
-      },
-    },
-    on: {
-      // Global transition to disposingState
-      disposeEvent: '.disposeState.disposingState',
+                queryString: _queryString,
+                cTSToken: _cTSToken,
+              } as SingleQueryActorLogicInputT,
+            });
+          }
+
+          if (_currentActiveQueryEngines & QueryEngineFlagsEnum.ChatGPT) {
+            enqueue.raise({
+              type: 'sendQueryToChatGPTEvent',
+              data: {
+                logger: context.logger,
+                data: context.data,
+                queryString: _queryString,
+                cTSToken: _cTSToken,
+              } as SingleQueryActorLogicInputT,
+            });
+          }
+          if (_currentActiveQueryEngines & QueryEngineFlagsEnum.Claude) {
+            enqueue.raise({
+              type: 'sendQueryToClaudeEvent',
+              data: {
+                logger: context.logger,
+                data: context.data,
+                queryString: _queryString,
+                cTSToken: _cTSToken,
+              } as SingleQueryActorLogicInputT,
+            });
+          }
+          if (_currentActiveQueryEngines & QueryEngineFlagsEnum.Grok) {
+            enqueue.raise({
+              type: 'sendQueryToGrokEvent',
+              data: {
+                logger: context.logger,
+                data: context.data,
+                queryString: _queryString,
+                cTSToken: _cTSToken,
+              } as SingleQueryActorLogicInputT,
+            });
+          }
+        }
+      });
     },
   },
-);
+}).createMachine({
+  id: 'queryMachine',
+  context: ({ input }) => ({ logger: input.logger, data: input.data }),
+  type: 'parallel',
+  states: {
+    queryState: {
+      initial: 'gatherQueryFragmentsState',
+      states: {
+        gatherQueryFragmentsState: {
+          description:
+            'given an ordered collection of fragment identifiers, gather the fragments and assemble them into a query string',
+          invoke: {
+            id: 'gatherQueryFragmentsActor',
+            src: gatherQueryFragmentsActorLogic,
+            input: ({ context, event }) => ({
+              logger: context.logger,
+              data: context.data,
+              queryFragmentCollection: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data
+                .queryFragmentCollection,
+              cTSToken: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data.cTSToken,
+            }),
+            onDone: {
+              actions: (context, event) => {
+                const _event = event as {
+                  type: 'xstate.done.actor.gatherQueryFragmentsActor';
+                  output: GatherQueryFragmentsActorLogicOutputT;
+                };
+                // send the output of the actor to the parallelQueryState
+                // the actor retruns an instance of GatherQueryFragmentsActorLogicOutputT},
+                // the next state requires an instance of ParallelQueryActorLogicInputT
+                // ToDo: create code that will send the output on to the next state
+                return {
+                  type: 'gatherQueryFragmentsActorLogicSucceeded',
+                  output: {} as GatherQueryFragmentsActorLogicOutputT,
+                };
+              },
+            },
+            onError: {
+              actions: (context, event) => {
+                const _event = event as {
+                  type: 'xstate.error.actor.gatherQueryFragmentsActor';
+                  output: GatherQueryFragmentsActorLogicOutputT;
+                };
+                if (_event.output.cancelled) {
+                  return {
+                    type: 'gatherQueryFragmentsActorLogicCancelled',
+                    output: {} as GatherQueryFragmentsActorLogicOutputT,
+                  };
+                }
+                return {
+                  type: 'gatherQueryFragmentsActorLogicError',
+                  output: {} as GatherQueryFragmentsActorLogicOutputT,
+                };
+              },
+            },
+            on: {
+              gatherQueryFragmentsActorLogicSucceeded: '.parallelQueryState',
+              gatherQueryFragmentsActorLogicCancelled: '.cancelledState',
+              gatherQueryFragmentsActorLogicError: '.errorState',
+            },
+          },
+        },
+
+        parallelQueryState: {
+          description: 'given a query string, send it to every enabled queryAgent and collect the results',
+          type: 'parallel',
+          entry: {
+            type: 'conditionallyEnqueueRaiseSpecificSendQueryToQueryEnginesAction',
+          },
+          states: {
+            sendQueryToBardState: {
+              states: {
+                waitingforSendQueryToBardState: {
+                  on: { sendQueryToBardEvent: { target: 'fetchingFromBardState' } },
+                },
+                fetchingFromBardState: {
+                  invoke: {
+                    id: 'fetchingFromBardActor',
+                    src: fetchingFromBardActorLogic,
+                    input: ({ context, event }) => ({
+                      logger: context.logger,
+                      data: context.data,
+                      queryString: (event as { type: 'sendQueryToBardEvent'; data: SingleQueryActorLogicInputT }).data
+                        .queryString,
+                      cTSToken: (event as { type: 'sendQueryToBardEvent'; data: SingleQueryActorLogicInputT }).data
+                        .cTSToken,
+                    }),
+                    onDone: {
+                      actions: (context, event) => {
+                        const _event = event as {
+                          type: 'xstate.done.actor.fetchingFromBardActor';
+                          output: SingleQueryActorLogicOutputT;
+                        };
+                        // send the output of the actor to the parallelQueryState
+                        // the actor retruns an instance of GatherQueryFragmentsActorLogicOutputT},
+                        // the next state requires an instance of ParallelQueryActorLogicInputT
+                        // ToDo: create code that will send the output on to the next state
+                        return {
+                          type: 'gatherQueryFragmentsActorLogicSucceeded',
+                          output: {} as SingleQueryActorLogicOutputT,
+                        };
+                      },
+                    },
+                    onError: {},
+                  },
+                  on: {},
+                },
+              },
+            },
+            sendQueryToChatGPTState: {
+              states: {
+                waitingforSendQueryToChatGPTState: {
+                  on: { sendQueryToChatGPTEvent: { target: 'fetchingFromChatGPTState' } },
+                },
+                fetchingFromChatGPTState: {
+                  //...// }
+                },
+              },
+            },
+            sendQueryToClaudeState: {
+              states: {
+                waitingforSendQueryToClaudeState: {
+                  on: { sendQueryToClaudeEvent: { target: 'fetchingFromClaudeState' } },
+                },
+                fetchingFromClaudeState: {
+                  /*...*/
+                },
+              },
+            },
+            sendQueryToGrokState: {
+              states: {
+                waitingforSendQueryToGrokState: {
+                  on: { sendQueryToGrokEvent: { target: 'fetchingFromGrokState' } },
+                },
+                fetchingFromGrokState: {
+                  /*...*/
+                },
+              },
+            },
+
+            waitingToResolveAllQueriesState: {
+              /* the invoke with a promise.all happens here, where the actors in the promise.all are just the enabled fetchingFrom... actors
+                 when all of the active queryengines resolve or reject, move to the FormattingAllQueryResultsState
+                 when allSingleQueriesCompletedEvent happens*/
+              invoke: {
+                id: 'waitingToResolveAllQueriesActor',
+                src: waitingToResolveAllQueriesActorLogic, // This logic should be FromPromise, and the promise should be Promise.all of the active query engines
+                onDone: {},
+                onError: {},
+              },
+              on: { allSingleQueriesCompletedEvent: { target: 'formattingAllQueryResultsState' } },
+            },
+          },
+        },
+        formattingAllQueryResultsState: {
+          /* this is a final state
+          it needs to ensure that the results are formatted and returned to the caller
+          */
+        },
+        cancelledState: {
+          /*...*/
+        },
+        errorState: {
+          /*...*/
+        },
+      },
+    },
+    disposeState: {
+      // 2nd parallel state. This state can be transitioned to from any state
+      initial: 'inactiveState',
+      states: {
+        inactiveState: {
+          on: {
+            disposeEvent: 'disposingState',
+          },
+        },
+        disposingState: {
+          // entry: {
+          //   type: 'disposingStateEntryAction',
+          // },
+          // exit: {
+          //   type: 'disposingStateExitAction',
+          // },
+          on: {
+            disposingCompleteEvent: {
+              target: 'doneState',
+            },
+          },
+        },
+        doneState: {
+          // entry: {
+          //   type: 'doneStateEntryAction',
+          // },
+          type: 'final',
+        },
+      },
+    },
+  },
+  on: {
+    // Global transition to disposingState
+    disposeEvent: '.disposeState.disposingState',
+  },
+});

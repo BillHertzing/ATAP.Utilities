@@ -21,7 +21,6 @@ import {
   QueryEngineFlagsEnum,
   QuickPickEnumeration,
   VCSCommandMenuItemEnum,
-  SupportedQueryEnginesEnum,
 } from '@BaseEnumerations/index';
 
 import { quickPickActorLogic, QuickPickEventPayloadT, QPActorLogicOutputT } from './quickPickActorLogic';
@@ -231,18 +230,9 @@ export const primaryMachine = setup({
                     kindOfEnumeration: (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data
                       .kindOfEnumeration,
                     cTSId: (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.cTSId,
-                    // kindOfEnumeration:
-                    //   event.type === 'quickPickEvent'
-                    //     ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
-                    //     : undefined,
-                    // cTSId:
-                    //   event.type === 'quickPickEvent'
-                    //     ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.cTSId
-                    //     : undefined,
                   }),
                   onDone: {
-                    target: '#primaryMachine.operationState.idleState',
-                    // target: 'updateUIState',
+                    target: '#primaryMachine.operationState.updateUIState',
                     actions: enqueueActions(({ context, event, enqueue, check }) => {
                       context.logger.log('quickPickState onDone enqueueActions started', LogLevel.Debug);
                       const _event = event as {
@@ -321,6 +311,7 @@ export const primaryMachine = setup({
               },
             },
           },
+
           queryState: {
             description: 'A state where an machine is invoked to send a query to all enabled QueryEngines.',
             // entry: {
@@ -337,20 +328,10 @@ export const primaryMachine = setup({
                 data: context.data,
                 queryFragmentCollection: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data
                   .queryFragmentCollection,
-                // kindOfEnumeration: (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data
-                //   .kindOfEnumeration,
-                // cTSId: (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.cTSId,
-                // kindOfEnumeration:
-                //   event.type === 'quickPickEvent'
-                //     ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
-                //     : undefined,
-                // cTSId:
-                //   event.type === 'quickPickEvent'
-                //     ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.cTSId
-                //     : undefined,
+                cTSToken: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data.cTSToken,
               }),
               onDone: {
-                target: '#primaryMachine.operationState.idleState',
+                target: '#primaryMachine.operationState.updateUIState',
               },
             },
           },
@@ -362,6 +343,7 @@ export const primaryMachine = setup({
             exit: {
               type: 'updateUIStateExitAction',
             },
+            // ToDo: all the various on... events
             always: [
               {
                 target: '#primaryMachine.operationState.idleState',

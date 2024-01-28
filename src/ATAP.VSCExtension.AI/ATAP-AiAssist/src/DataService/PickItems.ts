@@ -12,7 +12,6 @@ import {
   QueryEngineNamesEnum,
   QuickPickEnumeration,
   VCSCommandMenuItemEnum,
-  SupportedQueryEnginesEnum,
 } from '@BaseEnumerations/index';
 
 export interface IPickItems {

@@ -10,7 +10,6 @@ import {
   QueryEngineFlagsEnum,
   QuickPickEnumeration,
   VCSCommandMenuItemEnum,
-  SupportedQueryEnginesEnum,
 } from '@BaseEnumerations/index';
 
 import { fromCallback, StateMachine, fromPromise, assign, ActionFunction } from 'xstate';

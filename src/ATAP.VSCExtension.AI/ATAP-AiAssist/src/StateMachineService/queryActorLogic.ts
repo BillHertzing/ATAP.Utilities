@@ -9,15 +9,24 @@ import {
   QueryEngineNamesEnum,
   QueryEngineFlagsEnum,
   VCSCommandMenuItemEnum,
-  SupportedQueryEnginesEnum,
   QueryFragmentEnum,
 } from '@BaseEnumerations/index';
+
+import { IQueryFragment, IQueryFragmentCollection } from '@ItemWithIDs/index';
 
 import { fromCallback, StateMachine, fromPromise, assign, ActionFunction } from 'xstate';
 
 import { MachineContextT } from '@StateMachineService/index';
 
-import { QueryEventPayloadT } from './queryMachine';
+export type QueryEventPayloadT = {
+  queryFragmentCollection: IQueryFragmentCollection;
+  cTSToken: vscode.CancellationToken;
+};
+
+export type QueryEventOutputT = {
+  responses: { [key in QueryEngineNamesEnum]: string };
+  errors: { [key in QueryEngineNamesEnum]: DetailedError[] };
+};
 
 export type QueryActorLogicInputT = MachineContextT & QueryEventPayloadT;
 
@@ -27,81 +36,98 @@ export type QueryActorLogicOutputT = {
 
 export type GatherQueryFragmentsActorLogicInputT = QueryActorLogicInputT;
 
-export type GatherQueryFragmentsActorLogicOutputT = { queryString: string };
+export type GatherQueryFragmentsActorLogicOutputT = {
+  queryString: string;
+  cTSToken: vscode.CancellationToken;
+  cancelled: boolean;
+  error?: DetailedError;
+};
 
-export const gatherQueryFragmentsActorLogic = fromPromise(
-  async ({ input }: { input: GatherQueryFragmentsActorLogicInputT }) => {
-    let cancelled: boolean = false;
-    let queryString = '';
-    input.logger.log(`gatherQueryFragmentsActorLogic called`, LogLevel.Debug);
-    // always test the cancellation token on entry to the function to see if it has already been cancelled
-    if (!input.cTSToken.isCancellationRequested) {
-      // switch on the fragmentKind and collect accordingly
-      for (const queryFragmentId of input.queryFragmentCollection?.ID.ID) {
-        //ToDo: wrap in try catch
-        const queryFragment = input.data.fileManager.queryFragmentCollection?.findById(queryFragmentId);
-        switch (queryFragment?.value.kindOfFragment) {
-          case QueryFragmentEnum.StringFragment:
-            queryString += queryFragment.value;
-            break;
-          case QueryFragmentEnum.FileFragment:
-            queryString += queryFragment.value;
-            break;
-          default:
-            throw new Error(`Unhandled queryFragment.kindOfFragment: ${queryFragment?.value.kindOfFragment}`);
-        }
-      }
-    } else {
-      // ToDo: make the various cancellation conditions into an enumeration, and return that as part of the retrun structure?
-      cancelled = true;
-    }
-    input.logger.log(
-      `gatherQueryFragmentsActorLogic leaving with queryString= ${queryString}, cancelled: ${cancelled}`,
-      LogLevel.Debug,
-    );
+export const gatherQueryFragmentsActorLogic = fromPromise<
+  GatherQueryFragmentsActorLogicOutputT,
+  GatherQueryFragmentsActorLogicInputT
+>(async ({ input }: { input: GatherQueryFragmentsActorLogicInputT }) => {
+  let cancelled: boolean = false;
+  let queryString = '';
+  input.logger.log(`gatherQueryFragmentsActorLogic called`, LogLevel.Debug);
+  // always test the cancellation token on entry to the function to see if it has already been cancelled
+  if (input.cTSToken.isCancellationRequested) {
     return {
       queryString: queryString,
-      cancelled: cancelled,
+      cancelled: true,
+      cTSToken: input.cTSToken,
     } as GatherQueryFragmentsActorLogicOutputT;
-  },
-);
+  }
+  // if the queryFragmentCollection is not defionmed or is empty, then return an error
+  if (!input.queryFragmentCollection || input.queryFragmentCollection.value.length === 0) {
+    return {
+      queryString: queryString,
+      cancelled: false,
+      cTSToken: input.cTSToken,
+      error: new DetailedError('queryFragmentCollection is not defined or empty'),
+    } as GatherQueryFragmentsActorLogicOutputT;
+  }
+  // switch on the fragmentKind and collect accordingly
+  for (const queryFragmentId of input.queryFragmentCollection?.ID.ID) {
+    //ToDo: wrap in try catch
+    const queryFragment = input.data.fileManager.queryFragmentCollection?.findById(queryFragmentId);
+    switch (queryFragment?.value.kindOfFragment) {
+      case QueryFragmentEnum.StringFragment:
+        queryString += queryFragment.value;
+        break;
+      case QueryFragmentEnum.FileFragment:
+        queryString += queryFragment.value;
+        break;
+      default:
+        throw new Error(`Unhandled queryFragment.kindOfFragment: ${queryFragment?.value.kindOfFragment}`);
+    }
+  }
+  input.logger.log(
+    `gatherQueryFragmentsActorLogic leaving with queryString= ${queryString}, cancelled: ${cancelled}`,
+    LogLevel.Debug,
+  );
+  return {
+    queryString: queryString,
+    cancelled: cancelled,
+    cTSToken: input.cTSToken,
+  } as GatherQueryFragmentsActorLogicOutputT;
+});
 
 // **********************************************************************************************************************
 
-export type ParallelQueryActorLogicInputT = MachineContextT &
-  QueryActorLogicInputT &
-  GatherQueryFragmentsActorLogicOutputT;
+export type ParallelQueryActorLogicInputT = MachineContextT & GatherQueryFragmentsActorLogicOutputT;
 
 export type ParallelQueryActorLogicResultsT = {
-  results: { queryEngineName: string; queryResult: string }[];
-  success: boolean;
+  results?: Record<QueryEngineNamesEnum, string>;
 };
 
 export type ParallelQueryActorLogicOutputT = {
   results: ParallelQueryActorLogicResultsT;
   cancelled: boolean;
+  errors?: Record<QueryEngineNamesEnum, DetailedError>;
+  cTSToken: vscode.CancellationToken;
 };
 
 export const parallelQueryActorLogic = fromPromise(async ({ input }: { input: ParallelQueryActorLogicInputT }) => {
   input.logger.log(`parallelQueryActorLogic called`, LogLevel.Debug);
   let cancelled: boolean = false;
   let success: boolean = false;
-  let results: ParallelQueryActorLogicResultsT = { results: [], success: false };
+  let results: ParallelQueryActorLogicResultsT = {} as ParallelQueryActorLogicResultsT;
   // always test the cancellation token on entry to the function to see if it has already been cancelled
-  if (!input.cTSToken.isCancellationRequested) {
-    let _qs = input.queryString;
-    // dispatch to active,and await all
-    // ToDo: add resilience to the query engine dispatching
-  } else {
-    // ToDo: make the various cancellation conditions into an enumeration, and return that as part of the retrun structure?
-    cancelled = true;
+  if (input.cTSToken.isCancellationRequested) {
+    return { results: results, cancelled: true, cTSToken: input.cTSToken } as ParallelQueryActorLogicOutputT;
   }
-
-  input.logger.log(
-    `parallelQueryActorLogic leaving with results = ${results}, cancelled: ${cancelled}`,
-    LogLevel.Debug,
-  );
-  return { results: results, cancelled: cancelled } as ParallelQueryActorLogicOutputT;
+  // if the input queryString is undefined or '', return an error
+  if (!input.queryString || input.queryString === '') {
+    return {
+      results: results,
+      cancelled: false,
+      cTSToken: input.cTSToken,
+      error: new DetailedError('queryString is not defined or empty'),
+    } as ParallelQueryActorLogicOutputT;
+  }
+  // passes all checks so return and continue
+  return { results: results, cancelled: cancelled, cTSToken: input.cTSToken } as ParallelQueryActorLogicOutputT;
 });
 
 // **********************************************************************************************************************
@@ -109,28 +135,48 @@ export const parallelQueryActorLogic = fromPromise(async ({ input }: { input: Pa
 export type SingleQueryActorLogicInputT = ParallelQueryActorLogicInputT;
 
 export type SingleQueryActorLogicOutputT = {
-  response: string | undefined;
-  success: boolean;
+  response?: string;
+  error?: DetailedError;
   cancelled: boolean;
 };
 
-export const singleQueryActorLogic = fromPromise(async ({ input }: { input: SingleQueryActorLogicInputT }) => {
-  input.logger.log(`singleQueryActorLogic called`, LogLevel.Debug);
-  let cancelled: boolean = false;
-  let success: boolean = false;
-  let response: string | undefined = undefined;
-  // always test the cancellation token on entry to the function to see if it has already been cancelled
-  if (!input.cTSToken.isCancellationRequested) {
+export const singleQueryActorLogic = fromPromise<SingleQueryActorLogicOutputT, SingleQueryActorLogicInputT>(
+  async ({ input }: { input: SingleQueryActorLogicInputT }) => {
+    input.logger.log(`singleQueryActorLogic called`, LogLevel.Debug);
+    // always test the cancellation token on entry to the function to see if it has already been cancelled
+    if (input.cTSToken.isCancellationRequested) {
+      return { cancelled: true } as SingleQueryActorLogicOutputT;
+    }
     let _qs = input.queryString;
-    // use the queryService to handle the query to a queryEngine
-  } else {
-    // ToDo: make the various cancellation conditions into an enumeration, and return that as part of the retrun structure?
-    cancelled = true;
-  }
+    let response: string;
+    response = 'ResponseFrom QueryEnginePlaceholder';
+    // ToDo: use the queryService to handle the query to a queryEngine
+    return { response: response, cancelled: false } as SingleQueryActorLogicOutputT;
+  },
+);
 
-  input.logger.log(
-    `singleQueryActorLogic leaving with respone = ${response}, success = ${success}, cancelled = ${cancelled}`,
-    LogLevel.Debug,
-  );
-  return { response: response, success: success, cancelled: cancelled } as SingleQueryActorLogicOutputT;
-});
+// **********************************************************************************************************************
+
+export const fetchingFromBardActorLogic = fromPromise<SingleQueryActorLogicOutputT, SingleQueryActorLogicInputT>(
+  async ({ input }: { input: SingleQueryActorLogicInputT }) => {
+    input.logger.log(`fetchingFromBardActorLogic called`, LogLevel.Debug);
+    // always test the cancellation token on entry to the function to see if it has already been cancelled
+    if (input.cTSToken.isCancellationRequested) {
+      input.logger.log(`fetchingFromBardActorLogic leaving with cancelled = true`, LogLevel.Debug);
+      return { cancelled: true } as SingleQueryActorLogicOutputT;
+    }
+
+    let _qs = input.queryString;
+    let response: string;
+    response = 'ResponseFrom QueryEnginePlaceholder';
+    // use the queryService to handle the query to the Bard queryEngine
+    // ToDo: use the queryService to handle the query to a queryEngine
+    return { response: response, cancelled: false } as SingleQueryActorLogicOutputT;
+
+    input.logger.log(
+      `fetchingFromBardActorLogic leaving with response = ${response}, cancelled = false`,
+      LogLevel.Debug,
+    );
+    return { response: response, cancelled: false } as SingleQueryActorLogicOutputT;
+  },
+);

@@ -1,4 +1,4 @@
-xState noob here... 
+xState noob here...
 
 I've been exploring the use of XState for managing user interaction and document fetching in a VSC extension. However, I've encountered a specific challenge that I'm hoping to get some guidance on. Most examples and documentation I've read demonstrate the use of scalar values in the config section of a state machine. However, I was wondering if it is possible to supply an an entire object, specifically an instance of an "IData" interface (see below), when the actor is initialized /started?
 
@@ -12,16 +12,16 @@ export interface IData {
   readonly secretsManager: ISecretsManager; // async getters for property values stored in various 3rd-party password managers
   readonly fileManager: IFileManager; // async getters and async setters for large collections stored in filesystem storage as JSON or YAML encoded strings, with updating the filesystem on command or on disposeAsync
   disposeAsync(): void;  // called during extension deactivation, calls disposeAsync() on each of the Managers. Resolves when all Managers have resolved their disposeAsync() methods.
-  // If a manager supplies objects that needs disposing of, the manager uses a factory pattern and records each object that is handed out, so that all of them can be properly disposed of during extension deactivation 
+  // If a manager supplies objects that needs disposing of, the manager uses a factory pattern and records each object that is handed out, so that all of them can be properly disposed of during extension deactivation
 }
 
-P.S. my very first, incomplete and naive machines are at 
+P.S. my very first, incomplete and naive machines are at
 https://stately.ai/registry/editor/3d1b7273-cdb5-4d17-ad73-c2ed29751a21?mode=design&machineId=221753bc-f237-425e-9699-5002a59af324
 https://stately.ai/registry/editor/3d1b7273-cdb5-4d17-ad73-c2ed29751a21?mode=design&machineId=30986a2c-6bed-46dd-815f-3e35c866e1c6
 
 
 
-xState noob... 
+xState noob...
 
 I'd like to use xState for managing user interaction and document fetching in a VSC extension.  I'm having an issue understanding config. Most examples and documentation  use scalar values in the config section of a state machine. Is it possible to supply an entire object, specifically an instance of an IData interface (see below) when the actor is started? How can I pass an instance of an IData interface to the config section? How does the state machine logic interact with this IData instance using the getters and setters, both sync and async, in the Manager instances?
 
@@ -33,7 +33,7 @@ export interface IData {
   readonly stateManager: IStateManager;  // getters and async setters for cache-fronted access to the VSC global state data storage
   readonly secretsManager: ISecretsManager; // async getters for property values stored in various 3rd-party password managers
   readonly fileManager: IFileManager; // async getters and async setters for properties (large arrays) stored in the filesystem as JSON or YAML encoded strings, with updating the filesystem on command or on disposeAsync()
-  disposeAsync(): void;  // called during extension deactivation, calls disposeAsync() on each of the Managers. If necessary, a manager may use a factory pattern to create, record, and hand out an object, so that all disposable objects can be properly disposed of during extension deactivation 
+  disposeAsync(): void;  // called during extension deactivation, calls disposeAsync() on each of the Managers. If necessary, a manager may use a factory pattern to create, record, and hand out an object, so that all disposable objects can be properly disposed of during extension deactivation
 }
 ```
 my very first, incomplete, naive machines :
@@ -104,23 +104,23 @@ const mMWAActor = createActor(minimalMachineWithActorMachine, {
 
 AAI StateMachine
 
-a parent machine with an Idle state, FirstState, FinalState and ErrorState. The primary machine accepts an input parameter called loggerData that is of type ILoggerData {interface ILoggerData = logger:ILogger, data:Idata}. The event 'triggerFirstStateEvent' causes the transition from Idle to FirstState. It supplies the input loggerData parameter and also a parameter named 'enumToChangeType' of an enumeration type  'EnumToChangeType', having values 'Mode' and 'Command'. FirstState is a Parentstate with a child state 'ShowAndSelectEnumValueState', and a second child state 'ChangeCurrentValueofEnumState'. 'ShowAndSelectEnumValueState' has an invoked actor that invokes the 'ShowAndSelectEnumValueLogic'. 'ChangeCurrentValueofEnumState' has an invoked actor that invokes the 'ChangeCurrentValueofEnumStateLogic'.  The 'ShowAndSelectEnumValueLogic' calls an async function 'GetUserInput', which has two parameters: 'loggerData: ILoggerData, enumToChangeType: EnumToChangeType, and returns a value of 'QuickPickItem |udefined' to be stored in a local constant 'pick'. If 'pick.label' is 'undefined; the state transitions to the parent machine's 'Idle' state. if 'pick.label' === data.pickItems.currentMode ;' the state transitions to the parent machine's 'Idle' state. otherwise, the state transitions to the 'ChangeCurrentValueofEnumState', and supplies the loggerData, the. ' enumToChangeType ', and the pick.label as dynamic parameters to the 'ChangeCurrentValueofEnumState' and the 'ChangeCurrentValueofEnumStateLogic'. The 'ChangeCurrentValueofEnumStateLogic' sets a local 'constant priorEnumValue = data.pickItems.currentMode' and a local 'constant newEnumvalue - pick. label as ModeItmeEnum' The actor performs a switch statement on each possible pair of priorEnum and newEnumValue , and calls further invoked actor logic. Those actor logic names follow the pattern 'Change<priorEnumValue>To<newEnumValue>ActorLogic. Create placeholder instances for the source of those functions. Each should simply return onDone, or have an OnError event handler that transitions to the primary Machine's onError, supplying to the parent machines OnError state the reason why the 'furtherInvokedActorLogic' failed When the 'furtherInvokedActorLogic' completes succesfully, the 'ChangeCurrentValueofEnumState' should have an exit action that calls the function 'data.stateManger.currentMode = pick.label'. 
+a parent machine with an Idle state, FirstState, FinalState and ErrorState. The primary machine accepts an input parameter called loggerData that is of type ILoggerData {interface ILoggerData = logger:ILogger, data:Idata}. The event 'triggerFirstStateEvent' causes the transition from Idle to FirstState. It supplies the input loggerData parameter and also a parameter named 'enumToChangeType' of an enumeration type  'EnumToChangeType', having values 'Mode' and 'Command'. FirstState is a Parentstate with a child state 'ShowAndSelectEnumValueState', and a second child state 'ChangeCurrentValueofEnumState'. 'ShowAndSelectEnumValueState' has an invoked actor that invokes the 'ShowAndSelectEnumValueLogic'. 'ChangeCurrentValueofEnumState' has an invoked actor that invokes the 'ChangeCurrentValueofEnumStateLogic'.  The 'ShowAndSelectEnumValueLogic' calls an async function 'GetUserInput', which has two parameters: 'loggerData: ILoggerData, enumToChangeType: EnumToChangeType, and returns a value of 'QuickPickItem |udefined' to be stored in a local constant 'pick'. If 'pick.label' is 'undefined; the state transitions to the parent machine's 'Idle' state. if 'pick.label' === data.pickItems.currentMode ;' the state transitions to the parent machine's 'Idle' state. otherwise, the state transitions to the 'ChangeCurrentValueofEnumState', and supplies the loggerData, the. ' enumToChangeType ', and the pick.label as dynamic parameters to the 'ChangeCurrentValueofEnumState' and the 'ChangeCurrentValueofEnumStateLogic'. The 'ChangeCurrentValueofEnumStateLogic' sets a local 'constant priorEnumValue = data.pickItems.currentMode' and a local 'constant newEnumvalue - pick. label as ModeItmeEnum' The actor performs a switch statement on each possible pair of priorEnum and newEnumValue , and calls further invoked actor logic. Those actor logic names follow the pattern 'Change<priorEnumValue>To<newEnumValue>ActorLogic. Create placeholder instances for the source of those functions. Each should simply return onDone, or have an OnError event handler that transitions to the primary Machine's onError, supplying to the parent machines OnError state the reason why the 'furtherInvokedActorLogic' failed When the 'furtherInvokedActorLogic' completes successfully, the 'ChangeCurrentValueofEnumState' should have an exit action that calls the function 'data.stateManger.currentMode = pick.label'.
 
 Best Practices for structuring the statemachine files?
 
 xState noob here...
-I expect the primary machine definition for my application to get pretty large. I'd like to modularize it to a big degree, so no single file grows too large. I have some states/actors/actions/transitions that are both self-contained and resued/triggered by the same top-level event,  having different event data. Is it 'better' to have these groups coded as parent states with multiple child states in the primary machine's definition, or 'better' to create a 'child state machine' using a seperate .ts file, and invoking the 'child state machine' in the state which would be the parent in the parent-child architecture? It seems to me that having the logic in the 'child state machine' file would be 'better' (in the sense of reducing the line count in the primary machine definition's .ts file). All the internal states, internal transitions, entry/exit actions, guards, type defintions for a group would be in one file, with just the calling state defined in the primary file. Are there any 'cons' to building multiple 'child state machines', or, is this the best way to approach code reuse vs parent states?
+I expect the primary machine definition for my application to get pretty large. I'd like to modularize it to a big degree, so no single file grows too large. I have some states/actors/actions/transitions that are both self-contained and reused/triggered by the same top-level event,  having different event data. Is it 'better' to have these groups coded as parent states with multiple child states in the primary machine's definition, or 'better' to create a 'child state machine' using a seperate .ts file, and invoking the 'child state machine' in the state which would be the parent in the parent-child architecture? It seems to me that having the logic in the 'child state machine' file would be 'better' (in the sense of reducing the line count in the primary machine definition's .ts file). All the internal states, internal transitions, entry/exit actions, guards, type defintions for a group would be in one file, with just the calling state defined in the primary file. Are there any 'cons' to building multiple 'child state machines', or, is this the best way to approach code reuse vs parent states?
 
 
-Thank you for that insight! I spent the morning building the child machine, and I'd like to get that working before I refactor it away :). The documentation says 'Any XState actor can be invoked, including simple Promise-based actors, or even complex machine-based actors.' I can 'invoke' an instance of a PromiseLogic (created with fromPromise) with no problem. But I can't seem to figure out how to invoke a machine-based actor from a state? I have a breakpoint on the first line of the invoked instance of the machineLogic (built by calling createMachine) and it is not being reached. But the state's Entry action is being called, and it seems to be immediatly transitiong to onError without executing any of the child machine logic. If I 'invoke' an instance of a createMachine({...}), do I also need to create an actor and start that actor? and if so, where?
+Thank you for that insight! I spent the morning building the child machine, and I'd like to get that working before I refactor it away :). The documentation says 'Any XState actor can be invoked, including simple Promise-based actors, or even complex machine-based actors.' I can 'invoke' an instance of a PromiseLogic (created with fromPromise) with no problem. But I can't seem to figure out how to invoke a machine-based actor from a state? I have a breakpoint on the first line of the invoked instance of the machineLogic (built by calling createMachine) and it is not being reached. But the state's Entry action is being called, and it seems to be immediately transitioning to onError without executing any of the child machine logic. If I 'invoke' an instance of a createMachine({...}), do I also need to create an actor and start that actor? and if so, where?
 
 
 
 I have a file qPMachineLogic.ts with
 ```Typescript
 export const quickPickMachineLogic = createMachine({...})
-``` 
-and a file pMachine.ts with 
+```
+and a file pMachine.ts with
 ```Typescript
 export const primaryMachine = createMachine ({
  context: {} as { loggerData: ILoggerData },
@@ -148,7 +148,7 @@ export const primaryMachine = createMachine ({
     input: ({ context, event }) => ({
      logger: context.loggerData.logger,
      data: context.loggerData.data,
-     // kindOfEnumeration: event.kindOfEnumeration 
+     // kindOfEnumeration: event.kindOfEnumeration
      // the commented line above fails with the error: "Property 'kindOfEnumeration' does not exist on type '{ type: "quickPick"; kindOfEnumeration: QuickPickEnumeration; } | { type: "Error"; } | { type: "Dispose"; } | { type: "DisposeComplete"; }'. Property 'kindOfEnumeration' does not exist on type '{ type: "Error"; }'
      // the following line suggested by GitHub Copilot, it compiles, but ... Will every additional payload field in other events require a similar guard?
      kindOfEnumeration: event.type === 'quickPick' ? (event as { type: 'quickPick', kindOfEnumeration: QuickPickEnumeration }).kindOfEnumeration : undefined,
@@ -163,14 +163,14 @@ export const primaryMachine = createMachine ({
 I've no idea where to create and start the child quickPickActor?
 
 
-struggling with actions: and assign() in handling the onDone event of an invoked actor. 
+struggling with actions: and assign() in handling the onDone event of an invoked actor.
 
-VSC extensions have an async UI command 'vscode.window.showQuickPick'. I want a state that will invoke actor logic, then update context based on the result. 
+VSC extensions have an async UI command 'vscode.window.showQuickPick'. I want a state that will invoke actor logic, then update context based on the result.
 The state is named 'quickPickState' and is transitioned into via the 'quickPickEvent'.
 the 'quickPickEvent' is defined in setup->types->events as ' |{ type: 'quickPickEvent'; kindOfEnumeration: QuickPickEnumeration }'
 'QuickPickEnumeration' is an enumeration that lists the enumerations that can be shown/selected with 'vscode.window.showQuickPick'
 'quickPickState' invokes a service (src:) named 'showQuickPickActorLogic'
-the input: stanza is 
+the input: stanza is
 ```
   input: ({ context, event }) => ({
     logger: context.logger,
@@ -184,7 +184,7 @@ the input: stanza is
 ```
 
 A) the 'showQuickPickActorLogic' actor logic should:
-  1) create the contents of the parameters for showQuickPick based off the input.data and input.kindOfEnumeration 
+  1) create the contents of the parameters for showQuickPick based off the input.data and input.kindOfEnumeration
   2) await a call to 'vscode.window.showQuickPick'
   3) return the value entered by the user. The returned value has different shapes depending on the value of 'kindOfEnumeration'. The following interfaces and uniontype define the shape of the data to be returned
 ```
@@ -210,7 +210,7 @@ export type showQuickPickActorLogicOutputTypeUnion =
   | IQuickPickActorLogicQueryEnginesOutput
   | IQuickPickActorLogicVCSCommandOutput;
 ```
-  
+
 B) the onDone action should
   1) look at the value of 'kindOfEnumeration' to determine the shape of the data it has received, and then switch on the 'kindOfEnumeration'
     when 'Mode' or 'Command' => assign to a 'currentMode or 'currentCommand' found in context.data. I'm using (e.g., when kindOfEnumeration is 'ModeMenuItems'
@@ -225,10 +225,10 @@ code structure setup->create->provide?
 
 Reading the recent discord threads about v5 Actors and basics of provice and createMachine, the most recent impromptue podcast on actors, and the V5 documentation... I still have questions :-)
 
-It looks like the suggested structure is 
+It looks like the suggested structure is
 setup: identify the things (context shape, input shape, states, actions, actors, events, guards to be used in the machine, and specify (at least the shapes of the inputs /output/payloads)
 create: structure these things into the flow of states, events, actions, invoked actors, and guards.
-provide (optional): write the ts code that implements the 'things' that were defined in setup. This is required if setup just defined the shapes of inputs and outputs, and optional if setup defined the entire default logic in addition to tehe shapes of inputs and outputs.
+provide (optional): write the ts code that implements the 'things' that were defined in setup. This is required if setup just defined the shapes of inputs and outputs, and optional if setup defined the entire default logic in addition to the shapes of inputs and outputs.
 
 However, I'm still floundering. I've spent about three days trying to figure out how to even ask the questions I need answers to. I have tried to come up with the smallest possible machine that illustrates where I'm stuck. Inline in comments are the places where I need better understanding. Any pointers would be much appreciated.
 
@@ -259,10 +259,10 @@ export const reallySimpleQPMachine = setup({
     }
   actors: {
     QPActorLogic: () =>{ //what goes into the first () to specify the shape of the input and the shape of the output?
-      return { kindOfEnumeration: input.kindOfEnumeration, pickLabel: pick.label }; 
+      return { kindOfEnumeration: input.kindOfEnumeration, pickLabel: pick.label };
     }}, // the QPActorLogis is a 'FromPromise'
       // I'm unsure of where and how to declare the shape of the input to this 'FromPromise' actor
-      // The input is as shaped below in the definitions of the QPState            
+      // The input is as shaped below in the definitions of the QPState
       // The onDone event's payload should look like {kindOfEnumeration:QuickPickEnumeration, pickLabel:string, cTSId: string}
   }
   actions: {
@@ -271,7 +271,7 @@ export const reallySimpleQPMachine = setup({
     //{...context.data,stateManager: {...context.data.stateManager,currentEN1: eventData.pickLabel as EN1,},}
     //{...context.data,stateManager: {...context.data.stateManager,currentEN2: eventData.pickLabel as EN2,},}
     //{...context.data,cTSManager: {...context.data.cTSManager.remove(context.data.cTSManager.FindByID(cTSId)),},}
-    // the logic to decide which to return is based on the onDone event's payload 
+    // the logic to decide which to return is based on the onDone event's payload
   }
 }).createMachine ({
   id:'m1';
@@ -305,9 +305,9 @@ export const reallySimpleQPMachine = setup({
       onDone { // what happens when the QPActorLogic resolves the promise
         target: idleState
         action:[
-        // the modifyContextAction should return something that will fit the expected paramter type for 'assign'
+        // the modifyContextAction should return something that will fit the expected parameter type for 'assign'
         // I'm unsure how to pass the onDone event's payload into the modifyContextAction
-          assign(modifyContextAction), 
+          assign(modifyContextAction),
         ],
       }
     },
@@ -317,7 +317,7 @@ export const reallySimpleQPMachine = setup({
 
 
 Ah - I think I've found how to articulate my issue. I'm having trouble with the intersection of actions, and conditional assigns. The doc for 'assign-action' says 'Assignments can be an object of key-value pairs where the keys are context keys and the values are either static values or expressions that return the new value:' In QPState, it invokes a fromPromise actor (qPActorLogic), and returns an enumeration and a string (data in done_invoke_QPActorLogic_Event). In the onDone actions: entry, the goal is to assign the string to one of multiple context properties based on the value of the enueration, and call a Remove method on a property of the context.
-I'm stuck trying to define the updateContext and invoke the UpdateContext 
+I'm stuck trying to define the updateContext and invoke the UpdateContext
 
 enum CEnum {
   C1 = 'C1',
@@ -379,4 +379,42 @@ onDone: [
 
 
 Question on assign and complex context objects
-in my use case, the (simplified) context on which I'd like the primaryMachine to operate consists of an object 'data' with readonly properties p1, p2 of types P1Type={subO1:SubO1Type} and P2Type={SubO2Type}. SubO1Type has number of properties with custom setters, and SubO2Type has a number of properties that are object collections (arrays and dictionaries) with custom methods on those object collections.   I need to understand how to use assign (actually, enqueue.assign) to call context.data.p1.propertyWithCustomSetter1('newValue'), or context.data.p2.collectionA.remove("anIdToRemove"). All of the assign examples I've found in the documentation (save one) just modify scaler values on the context. The only non-scaler assign I've found in the documents is [Cheatsheet: register an invoked actor with the system](https://stately.ai/docs/system#cheatsheet-explicitly-assign-a-systemid) and it took me a bit of research to understand that it works by returning a shallow copy of an existing array to replace the existing array on its context. 
+in my use case, the (simplified) context on which I'd like the primaryMachine to operate consists of an object 'data' with readonly properties p1, p2 of types P1Type={subO1:SubO1Type} and P2Type={SubO2Type}. SubO1Type has number of properties with custom setters, and SubO2Type has a number of properties that are object collections (arrays and dictionaries) with custom methods on those object collections.   I need to understand how to use assign (actually, enqueue.assign) to call context.data.p1.propertyWithCustomSetter1('newValue'), or context.data.p2.collectionA.remove("anIdToRemove"). All of the assign examples I've found in the documentation (save one) just modify scaler values on the context. The only non-scaler assign I've found in the documents is [Cheatsheet: register an invoked actor with the system](https://stately.ai/docs/system#cheatsheet-explicitly-assign-a-systemid) and it took me a bit of research to understand that it works by returning a shallow copy of an existing array to replace the existing array on its context.
+
+
+How to structure conditional parallel states
+when my machine receives a 'sendQueryEvent' event, it should transition to a sendQueryState which will:
+1) assemble data from the sendQueryEvent payload
+1) check a flags enum value 'context.data.currentActiveQueryEngines'
+1) foreach set bit in the flags variable, invoke in parallel promise-based logic (sendQuery) for the corresponding queryEngine.
+1) wait for all queryEngines.sendQuery to return. Individually, each queryEngine logic may resolve to success or error.
+1) after all query engines have returned, construct a results object type QueryEventOutputT = {
+  responses: {SupportedQueryEnginesEnum, string};
+  errors: {SupportedQueryEnginesEnum, string};
+};
+
+How best to layout the state machine?
+  sendQueryState should be a parent state.
+    The initial child state is createQueryStringState, which takes the sendQueryEvent payload
+      and assembles a string (queryString). It uses promise-based async logic and may resolve successfully or with an error.
+
+// how best to architect this part is my question
+Solution 1: use parallel child states, one for each enabled queryEngine.
+  conditionally enter one or more parallel child states.
+  Each child state has onDone and onError blocks that transition to a state (?) that is waiting on a Promise.all from  (??)
+Solution 2: use a single child state that invokes an action that waits for Promise.all on individual from-promise actors (??)
+Solution 3: use a single child state that invokes a single actor logic that handles all the parallelism
+// end how best to architect this part is my question
+
+  createQueryResultSummaryState is the last state in sendQueryState.
+    createQueryResultSummaryState invokes actor logic that takes the individual results from the promise-based logic called above,
+      creates the QueryEventOutputT object, and returns that object.
+    createQueryResultSummaryState transitions back to the parent machine's "idleState" if there are no errors
+    createQueryResultSummaryState transitions back to the parent machine's "errorState" if there are  one or more errors in the results object
+
+I think that using Solution 1 is better, but I can't see how to conditionally start a parallel state only if its corresponding flag variable bit is set in context.data.currentActiveQueryEngines
+
+Solution 2 has the same problem, how to conditionally invoke one or more actors based on the values in the context.data.currentActiveQueryEngines
+
+I could go write solution 3, but then the state machine loses all visibility into the individual queryEngines' sendQuery method. I would prefer to see the parallelism in the state machine's definition..
+

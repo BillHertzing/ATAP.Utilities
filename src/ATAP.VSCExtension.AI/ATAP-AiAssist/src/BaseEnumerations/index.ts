@@ -6,6 +6,5 @@ export {
   QuickPickEnumeration,
   QueryFragmentEnum,
   VCSCommandMenuItemEnum,
-  SupportedQueryEnginesEnum,
   SupportedSerializersEnum,
 } from './BaseEnumerations';

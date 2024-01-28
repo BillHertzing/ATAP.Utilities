@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { SupportedQueryEnginesEnum } from '@BaseEnumerations/index';
+import { QueryEngineNamesEnum } from '@BaseEnumerations/index';
 
 import { LogLevel, ILogger, Logger } from '@Logger/index';
 import { DetailedError } from '@ErrorClasses/index';
@@ -33,13 +33,12 @@ import strip from 'strip-comments';
 import * as prettier from 'prettier';
 
 export interface IQueryService {
-  QueryAsync(queryEngine?: SupportedQueryEnginesEnum): Promise<void>;
-  ConstructQueryAsync(queryEngine?: SupportedQueryEnginesEnum): Promise<void>;
-  SendQueryAsync(textToSubmit: string, queryEngine?: SupportedQueryEnginesEnum): Promise<void>;
+  ConstructQueryAsync(queryEngine?: QueryEngineNamesEnum): Promise<void>;
+  SendQueryAsync(textToSubmit: string, queryEngine?: QueryEngineNamesEnum): Promise<void>;
   MinifyCodeAsync(content: string, extension: string): Promise<string>;
 }
 // holds all the possible query engines (currently only QueryEngineChatGPT)
-type QueryEnginesMap = { [key in SupportedQueryEnginesEnum]: IQueryEngine };
+type QueryEnginesMap = { [key in QueryEngineNamesEnum]: IQueryEngine };
 
 @logConstructor
 export class QueryService implements IQueryService {
@@ -164,12 +163,7 @@ export class QueryService implements IQueryService {
   }
 
   @logAsyncFunction
-  async QueryAsync(queryEngine?: SupportedQueryEnginesEnum): Promise<void> {
-    // Call CreateQueryAsync, wait for it to complete, then call SendQueryAsync.
-  }
-
-  @logAsyncFunction
-  async ConstructQueryAsync(queryEngine?: SupportedQueryEnginesEnum): Promise<void> {
+  async ConstructQueryAsync(queryEngine?: QueryEngineNamesEnum): Promise<void> {
     // get the query from the active editor and the data from the data service
     // Create the text to submit
     let textToSubmit: string;
@@ -177,15 +171,15 @@ export class QueryService implements IQueryService {
 
     // add anything that is engine specific
     let engineSpecificTextToSubmit: string;
-    // store this in Data in a dictionary indexed by SupportedQueryEnginesEnum
+    // store this in Data in a dictionary indexed by QueryEngineNamesEnum
     engineSpecificTextToSubmit = textToSubmit;
   }
 
   @logAsyncFunction
-  async SendQueryAsync(textToSubmit: string, queryEngine?: SupportedQueryEnginesEnum): Promise<void> {
+  async SendQueryAsync(textToSubmit: string, queryEngine?: QueryEngineNamesEnum): Promise<void> {
     if (!queryEngine) {
       // send the query to every engine
-      for (var _queryEngine of Object.values(SupportedQueryEnginesEnum).filter(isNaN as any)) {
+      for (var _queryEngine of Object.values(QueryEngineNamesEnum).filter(isNaN as any)) {
         try {
           let responseData = await this.SendQueryAsync(textToSubmit, _queryEngine);
         } catch (e) {
@@ -203,11 +197,11 @@ export class QueryService implements IQueryService {
       }
     } else {
       switch (queryEngine) {
-        case SupportedQueryEnginesEnum.ChatGPT:
+        case QueryEngineNamesEnum.ChatGPT:
           // load the query engine if it is not already loaded
-          if (!this.queryEnginesMap[SupportedQueryEnginesEnum.ChatGPT]) {
+          if (!this.queryEnginesMap[QueryEngineNamesEnum.ChatGPT]) {
             try {
-              this.queryEnginesMap[SupportedQueryEnginesEnum.ChatGPT] = new QueryEngineChatGPT(this.logger, this.data);
+              this.queryEnginesMap[QueryEngineNamesEnum.ChatGPT] = new QueryEngineChatGPT(this.logger, this.data);
             } catch (e) {
               if (e instanceof Error) {
                 throw new DetailedError(
@@ -238,13 +232,13 @@ export class QueryService implements IQueryService {
             }
           }
           break;
-        // case SupportedQueryEnginesEnum.Claude:
+        // case QueryEngineNamesEnum.Claude:
         //   this.queryEnginesMap[queryEngine] = new ClaudeQueryEngine(logger);
         //   break;
-        // case SupportedQueryEnginesEnum.Bard:
+        // case QueryEngineNamesEnum.Bard:
         //   this.queryEnginesMap[queryEngine] = new BardQueryEngine(logger);
         //   break;
-        // case SupportedQueryEnginesEnum.Grok:
+        // case QueryEngineNamesEnum.Grok:
         //   this.queryEnginesMap[queryEngine] = new GrokQueryEngine(logger);
         //   break;
         default:

@@ -94,14 +94,9 @@ export class QueryEngineChatGPT implements IQueryEngineChatGPT {
   }
 
   @logAsyncFunction
-  async QueryAsync(): Promise<void> {}
-
-  @logAsyncFunction
-  async ConstructQueryAsync(): Promise<void> {}
-
-  @logAsyncFunction
   async SendQueryAsync(textToSubmit: string): Promise<void> {
     let stream: any; //OpenAI.ChatCompletionStream;
+    // ToDo: wrap in a resilience policy to handle transient errors
     try {
       stream = await this.openai.beta.chat.completions.stream({
         messages: [{ role: 'user', content: textToSubmit.toString() }],

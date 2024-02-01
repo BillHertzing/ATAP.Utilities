@@ -42,13 +42,13 @@ export class CommandsService {
   private disposables: vscode.Disposable[] = [];
   private readonly extensionID: string;
   private readonly extensionName: string;
-  private _stateMachineService: IStateMachineService | null = null;
 
   constructor(
     private logger: IScopedLogger,
     private extensionContext: vscode.ExtensionContext,
     private data: IData,
     private stateMachineService: IStateMachineService,
+    private queryService: IQueryService,
   ) {
     this.extensionID = extensionContext.extension.id;
     this.extensionName = this.extensionID.split('.')[1];
@@ -278,6 +278,7 @@ export class CommandsService {
         try {
           this.stateMachineService.sendQuery({
             queryFragmentCollection: this.data.fileManager.queryFragmentCollection,
+            queryService: this.queryService,
             cTSToken: cancellationTokenSource.token,
           } as QueryEventPayloadT);
           // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);

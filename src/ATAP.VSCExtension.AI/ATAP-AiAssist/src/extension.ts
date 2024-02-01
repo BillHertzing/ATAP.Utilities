@@ -119,7 +119,13 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
   // Calling the constructor registers all of the commands, and creates a disposables structure
   try {
-    commandsService = new CommandsService(logger, extensionContext, dataService.data, stateMachineService);
+    commandsService = new CommandsService(
+      logger,
+      extensionContext,
+      dataService.data,
+      stateMachineService,
+      queryService,
+    );
   } catch (e) {
     if (e instanceof Error) {
       throw new DetailedError(`Activation: failed to create an instance of CommandsService -> `, e);

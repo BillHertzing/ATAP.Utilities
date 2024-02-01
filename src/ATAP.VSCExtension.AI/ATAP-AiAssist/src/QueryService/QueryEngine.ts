@@ -10,7 +10,7 @@ import { IDataService, IData, IStateManager, IConfigurationData } from '@DataSer
 import { IQueryEngineChatGPT, QueryEngineChatGPT } from './QueryEngineChatGPT';
 
 export interface IQueryEngine {
-  SendQueryAsync(textToSubmit: string): Promise<void>;
+  sendQueryAsync(textToSubmit: string, cTSToken: vscode.CancellationToken): Promise<void>;
 }
 
 // @logConstructor
@@ -20,5 +20,5 @@ export abstract class QueryEngine implements IQueryEngine {
     private readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
     private readonly configurationData: IConfigurationData,
   ) {}
-  abstract SendQueryAsync(textToSubmit: string): Promise<void>;
+  abstract sendQueryAsync(textToSubmit: string, cTSToken: vscode.CancellationToken): Promise<void>;
 }

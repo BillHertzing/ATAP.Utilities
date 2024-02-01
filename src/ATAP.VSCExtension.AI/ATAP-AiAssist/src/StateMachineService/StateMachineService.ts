@@ -4,7 +4,16 @@ import { IData } from '@DataService/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction } from '@Decorators/index';
 import { ISerializationStructure, stringifyWithCircularReference, fromJson, fromYaml } from '@Serializers/index';
-import { Actor, createActor, assign, createMachine, fromCallback, StateMachine, fromPromise } from 'xstate';
+import {
+  Actor,
+  createActor,
+  assign,
+  createMachine,
+  fromCallback,
+  StateMachine,
+  fromPromise,
+  AnyStateMachine,
+} from 'xstate';
 import { createBrowserInspector } from '@statelyai/inspect';
 
 import {
@@ -19,9 +28,9 @@ import {
 export type LoggerDataT = { logger: ILogger; data: IData };
 
 import { QuickPickEventPayloadT } from './quickPickActorLogic';
-import { QueryEventPayloadT } from './queryActorLogic';
+import { QueryEventPayloadT, QueryOutputT } from './queryMachine';
 
-import { primaryMachine } from './PrimaryMachine';
+import { primaryMachine } from './primaryMachine';
 
 export interface IStateMachineService {
   quickPick(data: QuickPickEventPayloadT): void;
@@ -70,8 +79,23 @@ export class StateMachineService implements IStateMachineService {
             LogLevel.Debug,
           );
         } else if (inspEvent.type === '@xstate.event') {
+          const _preamble = `StateMachineService inspect received event type @xstate.event. event.type: ${inspEvent.event.type} ; actorRefID: ${inspEvent.actorRef.id} ; `;
+          let _input = '';
+          switch (inspEvent.event.type) {
+            case 'xstate.init':
+              _input = inspEvent.event.input;
+              break;
+            case 'queryEvent':
+              _input = inspEvent.event.input;
+              break;
+            case 'xstate.error.actor.queryMachine':
+              _input = inspEvent.event.input;
+              break;
+            default:
+              _input = 'unknown';
+          }
           this.logger.log(
-            `StateMachineService inspect received event type @xstate.event. event.type: ${inspEvent.event.type} event.input: ${inspEvent.event.input} event.output: ${inspEvent.event.output}`,
+            `${_preamble} event.input: ${_input} event.output: ${inspEvent.event.output}`,
             LogLevel.Debug,
           );
         }

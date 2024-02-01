@@ -1,5 +1,5 @@
 export { IStateMachineService, StateMachineService } from './StateMachineService';
-export { primaryMachine, MachineContextT } from './PrimaryMachine';
+export { primaryMachine, MachineContextT } from './primaryMachine';
 export { QuickPickEventPayloadT } from './quickPickActorLogic';
-export { QueryEventPayloadT, QueryEventOutputT } from './queryActorLogic';
+export { QueryEventPayloadT, QueryOutputT } from './queryMachine';
 export { LoggerDataT } from './StateMachineService';

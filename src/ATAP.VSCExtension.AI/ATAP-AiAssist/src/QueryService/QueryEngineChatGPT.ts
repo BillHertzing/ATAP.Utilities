@@ -1,3 +1,5 @@
+import * as vscode from 'vscode';
+
 import { LogLevel, ILogger } from '@Logger/index';
 import { PasswordEntryType, IData } from '@DataService/index';
 import { DetailedError, HandleError } from '@ErrorClasses/index';
@@ -38,7 +40,7 @@ export class QueryResultChatGPT extends QueryResultBase implements IQueryResultC
 }
 
 export interface IQueryEngineChatGPT extends IQueryEngine {
-  SendQueryAsync(textToSubmit: string): Promise<void>;
+  sendQueryAsync(textToSubmit: string, cTSToken: vscode.CancellationToken): Promise<void>;
 }
 
 @logConstructor
@@ -94,7 +96,7 @@ export class QueryEngineChatGPT implements IQueryEngineChatGPT {
   }
 
   @logAsyncFunction
-  async SendQueryAsync(textToSubmit: string): Promise<void> {
+  async sendQueryAsync(textToSubmit: string): Promise<void> {
     let stream: any; //OpenAI.ChatCompletionStream;
     // ToDo: wrap in a resilience policy to handle transient errors
     try {
@@ -107,11 +109,11 @@ export class QueryEngineChatGPT implements IQueryEngineChatGPT {
       if (e instanceof OpenAI.APIError) {
         // ToDo handle any extra data in the error
         throw new DetailedError(
-          'QueryEngineChatGPT SendQueryAsync openai.beta.chat.completions.stream() failed, OpenAI.APIError type was returned -> ',
+          'QueryEngineChatGPT sendQueryAsync openai.beta.chat.completions.stream() failed, OpenAI.APIError type was returned -> ',
           e,
         );
       } else {
-        HandleError(e, 'QueryEngineChatGPT', '.SendQueryAsync', 'failed calling openai.beta.chat.completions.stream()');
+        HandleError(e, 'QueryEngineChatGPT', '.sendQueryAsync', 'failed calling openai.beta.chat.completions.stream()');
       }
     }
 
@@ -132,18 +134,18 @@ export class QueryEngineChatGPT implements IQueryEngineChatGPT {
     } catch (e) {
       if (e instanceof OpenAI.APIError) {
         throw new DetailedError(
-          'QueryEngineChatGPT SendQueryAsync error occurred reading chunk of openai.beta.chat.completions.stream,  APIError type was returned -> ',
+          'QueryEngineChatGPT sendQueryAsync error occurred reading chunk of openai.beta.chat.completions.stream,  APIError type was returned -> ',
           e,
         );
       } else if (e instanceof Error) {
         throw new DetailedError(
-          'QueryEngineChatGPT SendQueryAsync error occurred reading chunk of openai.beta.chat.completions.stream, Error type was returned -> ',
+          'QueryEngineChatGPT sendQueryAsync error occurred reading chunk of openai.beta.chat.completions.stream, Error type was returned -> ',
           e,
         );
       } else {
         // Handle unknown error types
         throw new Error(
-          `QueryEngineChatGPT SendQueryAsync error occurred reading chunk of openai.beta.chat.completions.stream, and the instance of (e) returned is of type ${typeof e}`,
+          `QueryEngineChatGPT sendQueryAsync error occurred reading chunk of openai.beta.chat.completions.stream, and the instance of (e) returned is of type ${typeof e}`,
         );
       }
     }

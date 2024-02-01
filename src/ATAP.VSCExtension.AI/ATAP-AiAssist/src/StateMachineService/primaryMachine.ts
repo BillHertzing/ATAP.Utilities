@@ -24,7 +24,7 @@ import {
 } from '@BaseEnumerations/index';
 
 import { quickPickActorLogic, QuickPickEventPayloadT, QPActorLogicOutputT } from './quickPickActorLogic';
-import { queryMachine, QueryEventPayloadT } from './queryMachine';
+import { queryMachine, QueryEventPayloadT, QueryOutputT } from './queryMachine';
 
 export type LoggerDataT = { logger: ILogger; data: IData };
 
@@ -38,6 +38,9 @@ export const primaryMachine = setup({
     events:
       | { type: 'quickPickEvent'; data: QuickPickEventPayloadT }
       | { type: 'queryEvent'; data: QueryEventPayloadT }
+      | { type: 'querySucceeded'; data: QueryOutputT }
+      | { type: 'queryCancelled' }
+      | { type: 'queryError' }
       | { type: 'errorEvent'; message: string }
       | { type: 'disposeEvent' }
       | { type: 'disposingCompleteEvent' }
@@ -328,11 +331,35 @@ export const primaryMachine = setup({
                 data: context.data,
                 queryFragmentCollection: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data
                   .queryFragmentCollection,
+                queryService: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data.queryService,
                 cTSToken: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data.cTSToken,
               }),
               onDone: {
-                target: '#primaryMachine.operationState.updateUIState',
+                actions: (context) => {
+                  const _event = context.event as {
+                    type: 'xstate.done.actor.queryMachine';
+                    output: QueryOutputT;
+                  };
+                  // if the ActorLogic was cancelled, send the appropriate event
+                  if (_event.output.cancelled) {
+                    return {
+                      type: 'queryCancelled',
+                    };
+                  }
+                  return {
+                    type: 'querySucceeded',
+                    output: {
+                      responses: _event.output.responses,
+                      errors: _event.output.errors,
+                      cancelled: _event.output.cancelled,
+                    } as QueryOutputT,
+                  };
+                },
               },
+            },
+            on: {
+              querySucceeded: 'updateUIState',
+              queryCancelled: 'idleState',
             },
           },
           updateUIState: {

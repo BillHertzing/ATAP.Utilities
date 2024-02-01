@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { QueryEngineNamesEnum } from '@BaseEnumerations/index';
 
 import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { DetailedError } from '@ErrorClasses/index';
+import { DetailedError, HandleError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
 
 import {
@@ -34,7 +34,11 @@ import * as prettier from 'prettier';
 
 export interface IQueryService {
   ConstructQueryAsync(queryEngine?: QueryEngineNamesEnum): Promise<void>;
-  SendQueryAsync(textToSubmit: string, queryEngine?: QueryEngineNamesEnum): Promise<void>;
+  sendQueryAsync(
+    textToSubmit: string,
+    queryEngineName: QueryEngineNamesEnum,
+    cTSToken: vscode.CancellationToken,
+  ): Promise<void>;
   MinifyCodeAsync(content: string, extension: string): Promise<string>;
 }
 // holds all the possible query engines (currently only QueryEngineChatGPT)
@@ -176,74 +180,39 @@ export class QueryService implements IQueryService {
   }
 
   @logAsyncFunction
-  async SendQueryAsync(textToSubmit: string, queryEngine?: QueryEngineNamesEnum): Promise<void> {
-    if (!queryEngine) {
-      // send the query to every engine
-      for (var _queryEngine of Object.values(QueryEngineNamesEnum).filter(isNaN as any)) {
-        try {
-          let responseData = await this.SendQueryAsync(textToSubmit, _queryEngine);
-        } catch (e) {
-          if (e instanceof Error) {
-            throw new DetailedError(
-              `QueryService SendQueryAsync (all): failed calling SendQueryAsync on the engine ${queryEngine} -> `,
-              e,
-            );
-          } else {
-            throw new Error(
-              `QueryService SendQueryAsync (all) failed calling SendQueryAsync on the engine ${queryEngine}, and the instance of (e) returned is of type ${typeof e}`,
-            );
+  async sendQueryAsync(
+    textToSubmit: string,
+    queryEngineName: QueryEngineNamesEnum,
+    cTSToken: vscode.CancellationToken,
+  ): Promise<void> {
+    switch (queryEngineName) {
+      case QueryEngineNamesEnum.ChatGPT:
+        // load the query engine if it is not already loaded
+        if (!this.queryEnginesMap[QueryEngineNamesEnum.ChatGPT]) {
+          try {
+            this.queryEnginesMap[QueryEngineNamesEnum.ChatGPT] = new QueryEngineChatGPT(this.logger, this.data);
+          } catch (e) {
+            HandleError(e, 'queryService', 'sendQueryAsync', 'calling QueryEngineChatGPT .ctor');
           }
         }
-      }
-    } else {
-      switch (queryEngine) {
-        case QueryEngineNamesEnum.ChatGPT:
-          // load the query engine if it is not already loaded
-          if (!this.queryEnginesMap[QueryEngineNamesEnum.ChatGPT]) {
-            try {
-              this.queryEnginesMap[QueryEngineNamesEnum.ChatGPT] = new QueryEngineChatGPT(this.logger, this.data);
-            } catch (e) {
-              if (e instanceof Error) {
-                throw new DetailedError(
-                  `QueryService SendQueryAsync: failed attempting to create an instance of a QueryEngineChatGPT -> `,
-                  e,
-                );
-              } else {
-                // ToDo:  investigation to determine what else might happen
-                throw new Error(
-                  `QueryService SendQueryAsync: failed attempting to create an instance of a QueryEngineChatGPT and the instance of (e) returned is of type ${typeof e}`,
-                );
-              }
-            }
-          }
-          try {
-            // call SendQueryAsync on the specific QueryEngine
-            let responseData = await this.queryEnginesMap[queryEngine].SendQueryAsync(textToSubmit);
-          } catch (e) {
-            if (e instanceof Error) {
-              throw new DetailedError(
-                `QueryService SendQueryAsync: failed calling SendQueryAsync on the engine ${queryEngine} -> `,
-                e,
-              );
-            } else {
-              throw new Error(
-                `QueryService SendQueryAsync failed calling SendQueryAsync on the engine ${queryEngine}, and the instance of (e) returned is of type ${typeof e}`,
-              );
-            }
-          }
-          break;
-        // case QueryEngineNamesEnum.Claude:
-        //   this.queryEnginesMap[queryEngine] = new ClaudeQueryEngine(logger);
-        //   break;
-        // case QueryEngineNamesEnum.Bard:
-        //   this.queryEnginesMap[queryEngine] = new BardQueryEngine(logger);
-        //   break;
-        // case QueryEngineNamesEnum.Grok:
-        //   this.queryEnginesMap[queryEngine] = new GrokQueryEngine(logger);
-        //   break;
-        default:
-          throw new Error(`QueryService SendQueryAsync Unsupported query engine ${queryEngine}`);
-      }
+        try {
+          // call sendQueryAsync on the specific QueryEngine
+          let responseData = await this.queryEnginesMap[queryEngineName].sendQueryAsync(textToSubmit, cTSToken);
+        } catch (e) {
+          HandleError(e, 'queryService', 'sendQueryAsync', 'calling sendQueryAsyn');
+        }
+        break;
+      // case QueryEngineNamesEnum.Claude:
+      //   this.queryEnginesMap[queryEngine] = new ClaudeQueryEngine(logger);
+      //   break;
+      // case QueryEngineNamesEnum.Bard:
+      //   this.queryEnginesMap[queryEngine] = new BardQueryEngine(logger);
+      //   break;
+      // case QueryEngineNamesEnum.Grok:
+      //   this.queryEnginesMap[queryEngine] = new GrokQueryEngine(logger);
+      //   break;
+      default:
+        throw new Error(`QueryService sendQueryAsync Unsupported query engine ${queryEngineName}`);
     }
   }
 }

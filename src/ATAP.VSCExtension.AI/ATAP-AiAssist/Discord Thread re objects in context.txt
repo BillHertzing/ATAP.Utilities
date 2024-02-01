@@ -418,3 +418,46 @@ Solution 2 has the same problem, how to conditionally invoke one or more actors 
 
 I could go write solution 3, but then the state machine loses all visibility into the individual queryEngines' sendQuery method. I would prefer to see the parallelism in the state machine's definition..
 
+
+
+The following code in setup generates the following error on the line ```data: {```
+'Object literal may only specify known properties, and 'data' does not exist
+   in type 'EventObject | SendExpr<MachineContext, EventObject, undefined, EventObject'
+
+```Typescript
+export const queryMachine = setup({
+  types: {} as {
+    context: QueryMachineContextT;
+    input: QueryMachineContextT;
+    events:
+      | { type: 'sendQueryToBardEvent'; data: SSQInputT };
+  },
+actions: {
+  // The following action is called when entering the 'parallelQueryState'
+    conditionallyRaiseSingleQueryEvents: ({ context, event }) => {
+      enqueueActions(({ context, event, enqueue, check }) => {
+        context.logger.log('conditionallyEnqueueRaiseSpecificSendQueryToQueryEnginesAction started', LogLevel.Debug);
+        const _event = event as {
+          type: 'xstate.done.actor.gatherQueryFragmentsActor';
+          output: GatherQueryFragmentsActorLogicOutputT;
+        };
+        if (_event && typeof _event.output !== 'undefined') {
+          if (_event.output.cTSToken.isCancellationRequested || !_event.output.queryString.length) {
+            // Just quit the entry action
+            return;
+          }
+          const _queryString = _event.output.queryString;
+          const _cTSToken = _event.output.cTSToken;
+          const _currentActiveQueryEngines = context.currentQueryEngines;
+          if (_currentActiveQueryEngines & QueryEngineFlagsEnum.Bard) {
+            enqueue.raise({
+              type: 'sendQueryToBardEvent',
+              data: {  //**** The error message appears here! ****//
+                logger: context.logger,
+                data: context.data,
+                queryString: _queryString,
+                cTSToken: _cTSToken,
+              } as SSQInputT,
+          /*  More tests and enqueue.raise for other enabled QueryEngines
+});}}})}}})
+```

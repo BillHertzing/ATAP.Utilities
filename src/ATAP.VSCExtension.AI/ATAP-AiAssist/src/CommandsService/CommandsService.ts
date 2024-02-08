@@ -278,7 +278,6 @@ export class CommandsService {
         try {
           this.stateMachineService.sendQuery({
             queryFragmentCollection: this.data.fileManager.queryFragmentCollection,
-            queryService: this.queryService,
             cTSToken: cancellationTokenSource.token,
           } as QueryEventPayloadT);
           // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);

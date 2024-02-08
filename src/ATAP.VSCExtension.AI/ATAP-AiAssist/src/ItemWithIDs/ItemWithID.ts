@@ -207,7 +207,7 @@ export interface ICollection<T extends ItemWithIDTypes, V extends ItemWithIDValu
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
-  findById(criteria: GUID): T | undefined;
+  findById<T>(criteria: GUID): T | undefined;
 }
 @logConstructor
 export class Collection<T extends ItemWithIDTypes, V extends ItemWithIDValueType> implements ICollection<T, V> {
@@ -231,7 +231,7 @@ export class Collection<T extends ItemWithIDTypes, V extends ItemWithIDValueType
     return toYaml(this);
   }
   // find within this value an instance of type T based on it's Philote's GUID
-  findById<T, V>(criteria: GUID): T | undefined {
+  findById<T>(criteria: GUID): T | undefined {
     return this.value.find((item) => item.ID.toString() === criteria.toString()) as T;
   }
 }
@@ -505,6 +505,10 @@ export class QueryFragment extends ItemWithID<QueryFragment, QueryFragmentValueT
   convertTo_yaml(): string {
     return toYaml(this);
   }
+  @logFunction
+  findByID(criteria: GUID): string {
+    return toYaml(this);
+  }
 }
 
 export interface IQueryFragmentCollection extends ICollection<QueryFragment, QueryFragmentValueType> {
@@ -521,6 +525,12 @@ export class QueryFragmentCollection
   constructor(value: ItemWithID<QueryFragment, QueryFragmentValueType>[], ID?: Philote) {
     super(value, ID);
   }
+
+  @logFunction
+  findByID(criteria: GUID): QueryFragment {
+    return super.findById<QueryFragment>(criteria) as QueryFragment;
+  }
+
   @logFunction
   toString(): string {
     return `QueryFragmentCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;

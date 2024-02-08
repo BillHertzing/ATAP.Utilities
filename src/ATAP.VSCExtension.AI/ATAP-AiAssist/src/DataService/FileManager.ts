@@ -372,7 +372,7 @@ export class FileManager implements IFileManager {
           this._queryFragmentCollection = parsedData as QueryFragmentCollection;
         }
       } else {
-        // if the local copy is not defined and the file doesn't exist, create a new conversation collection
+        // if the local copy is not defined and the file doesn't exist, create a new QueryFragmenCollection
         let value: ItemWithID<QueryFragment, QueryFragmentValueType>[] = [];
         this._queryFragmentCollection = new QueryFragmentCollection(value);
         // TEMP: populate a collection of string QueryFragments

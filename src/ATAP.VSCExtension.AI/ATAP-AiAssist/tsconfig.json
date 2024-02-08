@@ -8,6 +8,7 @@
     "sourceMap": true,
     "rootDirs": ["src", "src/ATAP.VSCExtension.AI/ATAP-AiAssist"],
     "baseUrl": "src", // This must be specified if "paths" is set.
+    "skipLibCheck": true, // recommended by xState library
     "paths": {
       "@BaseEnumerations/*": ["BaseEnumerations/*"],
       "@CommandsService/*": ["CommandsService/*"],
@@ -25,15 +26,14 @@
       "@SecurityService/*": ["SecurityService/*"],
       "@StateMachineService/*": ["StateMachineService/*"],
       "@TypeMap/*": ["TypeMap/*"],
-      "@Utilities/*": ["Utilities/*"]
+      "@Utilities/*": ["Utilities/*"],
       // Add more path mappings as needed.
     },
 
-    "strict": true /* enable all strict type-checking options */,
-    /* Additional Checks */
-    "noImplicitReturns": true /* Report error when not all code paths in function return a value. */,
-    "noFallthroughCasesInSwitch": true /* Report errors for fallthrough cases in switch statement. */
+    "strict": true, // enable all strict type-checking options
+    "noImplicitReturns": true, // Report error when not all code paths in function return a value.
+    "noFallthroughCasesInSwitch": true, // Report errors for fallthrough cases in switch statement.
     // "noUnusedParameters": true,  /* Report errors on unused parameters. */
   },
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist"],
 }

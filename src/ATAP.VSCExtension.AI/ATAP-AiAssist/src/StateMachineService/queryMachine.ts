@@ -21,7 +21,7 @@ import {
   setup,
 } from 'xstate';
 
-import { MachineContextT } from '@StateMachineService/index';
+import { PrimaryMachineContextT } from '@StateMachineService/index';
 
 import {
   GatheringActorLogicInputT,
@@ -29,17 +29,17 @@ import {
   gatheringActorLogic,
   ParallelQueryActorLogicInputT,
   ParallelQueryActorLogicOutputT,
-  WaitingForAllActorLogicInputT,
   SingleQueryActorLogicInputT,
   SingleQueryActorLogicOutputT,
   fetchingFromQueryEngineActorLogic,
   fetchingFromBardActorLogic,
-  waitingForAllActorLogic,
+  FetchingFromSingleQueryEngineOutputT,
+  WaitingForAllActorLogicInputT,
   WaitingForAllActorLogicOutputT,
+  waitingForAllActorLogic,
 } from './queryActorLogic';
 
 export type QueryEventPayloadT = {
-  queryService: IQueryService;
   queryFragmentCollection: IQueryFragmentCollection;
   cTSToken: vscode.CancellationToken;
 };
@@ -50,9 +50,11 @@ export type QueryOutputT = {
   cancelled: boolean;
 };
 
-export type QueryMachineContextT = MachineContextT & { queryService: IQueryService };
-
-export type SingleQueryActorStateOutputT = SingleQueryActorLogicOutputT;
+export type QueryMachineContextT = PrimaryMachineContextT & {
+  queryService: IQueryService;
+  queryFragmentCollection: IQueryFragmentCollection;
+  cTSToken: vscode.CancellationToken;
+};
 
 export type WaitingForAllOutputT = {
   responses?: { [key in QueryEngineNamesEnum]: string };
@@ -74,31 +76,29 @@ export const queryMachine = setup({
       | { type: 'gatheringActorLogicSucceeded'; output: GatheringActorLogicOutputT }
       | { type: 'gatheringActorLogicError'; output: GatheringActorLogicOutputT }
       | { type: 'gatheringActorLogicCancelled' }
-      | { type: 'xstate.done.actor.ParallelQueryFragmentsActor'; output: ParallelQueryActorLogicOutputT }
-      | { type: 'xstate.error.actor.ParallelQueryFragmentsActor'; e: Error }
+      // | { type: 'xstate.done.actor.ParallelQueryFragmentsActor'; output: ParallelQueryActorLogicOutputT }
+      // | { type: 'xstate.error.actor.ParallelQueryFragmentsActor'; e: Error }
       | { type: 'waitingForAllEvent'; data: WaitingForAllActorLogicInputT }
+      | { type: 'sendQueryToBardEvent'; data: SingleQueryActorLogicInputT }
       | { type: 'sendQueryToChatGPTEvent'; data: SingleQueryActorLogicInputT }
       | { type: 'sendQueryToClaudeEvent'; data: SingleQueryActorLogicInputT }
       | { type: 'sendQueryToGrokEvent'; data: SingleQueryActorLogicInputT }
-      | { type: 'sendQueryToBardEvent'; data: SingleQueryActorLogicInputT }
       | { type: 'xstate.done.actor.sendQueryToBardActor'; output: SingleQueryActorLogicOutputT }
       | { type: 'xstate.error.actor.sendQueryToBardActor'; e: Error }
       | { type: 'sendQueryToBardSucceeded'; data: SingleQueryActorLogicOutputT }
       | { type: 'sendQueryToBardCancelled' }
       | { type: 'sendQueryToBardError' }
-
-      // ToDo: define the mechanism to resolve the call to invoke (queryMachine) in the parent with an object of type QueryOutputT to the caller. The response can mix successfull queryEngine calls and unsuccessful ones
       | {
           type: 'xstate.done.actor.waitingForAllActor';
           output: WaitingForAllActorLogicOutputT;
         }
       | {
           type: 'xstate.error.actor.waitingForAllActor';
-          // output: WaitingForAllActorLogicOutputT;
+          output: WaitingForAllActorLogicOutputT;
         }
       | { type: 'waitingForAllSettled'; data: WaitingForAllOutputT }
+      | { type: 'waitingForAllError'; e: Error }
       | { type: 'waitingForAllCancelled' }
-      | { type: 'waitingForAllError' }
       | { type: 'cancelledEvent'; data: { cancelled: true } }
       | { type: 'errorEvent'; data: QueryOutputT }
       | { type: 'disposeEvent' } // Can be called at any time. The queryMachine must free any allocated resources and transition to the disposeState.doneState.
@@ -171,7 +171,13 @@ export const queryMachine = setup({
   },
 }).createMachine({
   id: 'queryMachine',
-  context: ({ input }) => ({ logger: input.logger, data: input.data, queryService: input.queryService }),
+  context: ({ input }) => ({
+    logger: input.logger,
+    data: input.data,
+    queryService: input.queryService,
+    queryFragmentCollection: input.queryFragmentCollection,
+    cTSToken: input.cTSToken,
+  }),
   type: 'parallel',
   states: {
     operation: {
@@ -186,9 +192,8 @@ export const queryMachine = setup({
             input: ({ context, event }) => ({
               logger: context.logger,
               data: context.data,
-              queryFragmentCollection: (event as { type: 'xstate.init'; data: QueryEventPayloadT }).data
-                .queryFragmentCollection,
-              cTSToken: (event as { type: 'xstate.init'; data: QueryEventPayloadT }).data.cTSToken,
+              queryFragmentCollection: context.queryFragmentCollection,
+              cTSToken: context.cTSToken,
             }),
             onDone: {
               actions: (context) => {
@@ -249,6 +254,8 @@ export const queryMachine = setup({
                     input: ({ context, event }) => ({
                       logger: context.logger,
                       data: context.data,
+                      queryService: (event as { type: 'sendQueryToBardEvent'; data: SingleQueryActorLogicInputT }).data
+                        .queryService,
                       queryString: (event as { type: 'sendQueryToBardEvent'; data: SingleQueryActorLogicInputT }).data
                         .queryString,
                       cTSToken: (event as { type: 'sendQueryToBardEvent'; data: SingleQueryActorLogicInputT }).data
@@ -272,7 +279,7 @@ export const queryMachine = setup({
                             response: _event.output.response,
                             error: _event.output.error,
                             cancelled: _event.output.cancelled,
-                          } as SingleQueryActorStateOutputT,
+                          } as FetchingFromSingleQueryEngineOutputT,
                         };
                       },
                     },

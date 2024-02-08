@@ -12,7 +12,7 @@ import {
   QueryFragmentEnum,
 } from '@BaseEnumerations/index';
 
-import { IQueryFragment, IQueryFragmentCollection } from '@ItemWithIDs/index';
+import { IQueryFragment, QueryFragment, IQueryFragmentCollection } from '@ItemWithIDs/index';
 
 import { fromCallback, StateMachine, fromPromise, ActorRef, assign, ActionFunction } from 'xstate';
 
@@ -20,13 +20,7 @@ import { QueryMachineContextT, QueryEventPayloadT } from './queryMachine';
 
 import { IQueryService } from '@QueryService/index';
 
-export type QueryActorLogicInputT = QueryMachineContextT & QueryEventPayloadT;
-
-export type QueryActorLogicOutputT = {
-  cTSId: string;
-};
-
-export type GatheringActorLogicInputT = QueryActorLogicInputT;
+export type GatheringActorLogicInputT = QueryMachineContextT & QueryEventPayloadT;
 
 export type GatheringActorLogicOutputT = {
   queryString: string;
@@ -39,6 +33,8 @@ export const gatheringActorLogic = fromPromise<GatheringActorLogicOutputT, Gathe
   async ({ input }: { input: GatheringActorLogicInputT }) => {
     let cancelled: boolean = false;
     let queryString = '';
+    let _queryFragmentCollection: IQueryFragmentCollection;
+    let _queryFragment: IQueryFragment;
     input.logger.log(`gatheringActorLogic called`, LogLevel.Debug);
     // always test the cancellation token on entry to the function to see if it has already been cancelled
     if (input.cTSToken.isCancellationRequested) {
@@ -48,8 +44,9 @@ export const gatheringActorLogic = fromPromise<GatheringActorLogicOutputT, Gathe
         cTSToken: input.cTSToken,
       } as GatheringActorLogicOutputT;
     }
+    _queryFragmentCollection = input.queryFragmentCollection;
     // if the queryFragmentCollection is not defined or is empty, then return an error
-    if (!input.queryFragmentCollection || input.queryFragmentCollection.value.length === 0) {
+    if (!_queryFragmentCollection || _queryFragmentCollection.value.length === 0) {
       return {
         queryString: queryString,
         cancelled: false,
@@ -58,20 +55,23 @@ export const gatheringActorLogic = fromPromise<GatheringActorLogicOutputT, Gathe
       } as GatheringActorLogicOutputT;
     }
     // switch on the fragmentKind and collect accordingly
-    for (const queryFragmentId of input.queryFragmentCollection?.ID.ID) {
+    _queryFragmentCollection.value.forEach((element) => {
       //ToDo: wrap in try catch
-      const queryFragment = input.data.fileManager.queryFragmentCollection?.findById(queryFragmentId);
-      switch (queryFragment?.value.kindOfFragment) {
+      const queryFragment = _queryFragmentCollection.findById<QueryFragment>(element.ID.ID);
+      if (!queryFragment) {
+        throw new DetailedError(`queryFragment with ID: ${element.ID.ID} not found in queryFragmentCollection`);
+      }
+      switch (queryFragment.value.kindOfFragment) {
         case QueryFragmentEnum.StringFragment:
-          queryString += queryFragment.value;
+          queryString += _queryFragment.value;
           break;
         case QueryFragmentEnum.FileFragment:
-          queryString += queryFragment.value;
+          queryString += _queryFragment.value;
           break;
         default:
-          throw new Error(`Unhandled queryFragment.kindOfFragment: ${queryFragment?.value.kindOfFragment}`);
+          throw new Error(`Unhandled queryFragment.kindOfFragment: ${_queryFragment.value.kindOfFragment}`);
       }
-    }
+    });
     input.logger.log(
       `gatheringActorLogic leaving with queryString= ${queryString}, cancelled: ${cancelled}`,
       LogLevel.Debug,
@@ -128,6 +128,8 @@ export type SingleQueryActorLogicOutputT = {
   cancelled: boolean;
 };
 
+export type FetchingFromSingleQueryEngineOutputT = SingleQueryActorLogicOutputT;
+
 // ToDo: Wish I could add a third type parameter to fromPromise to make it generic on the QueryEngineNamesEnum type
 export const fetchingFromQueryEngineActorLogic = fromPromise<SingleQueryActorLogicOutputT, SingleQueryActorLogicInputT>(
   async ({ input }: { input: SingleQueryActorLogicInputT }) => {
@@ -140,6 +142,38 @@ export const fetchingFromQueryEngineActorLogic = fromPromise<SingleQueryActorLog
     response = 'ResponseFrom QueryEnginePlaceholder';
     // ToDo: use the queryService to handle the query to a queryEngine
     await input.queryService.sendQueryAsync(input.queryString, input.queryEngineName, input.cTSToken);
+    return { response: response, cancelled: false } as SingleQueryActorLogicOutputT;
+  },
+);
+
+// **********************************************************************************************************************
+
+export const fetchingFromBardActorLogic = fromPromise<SingleQueryActorLogicOutputT, SingleQueryActorLogicInputT>(
+  async ({ input }: { input: SingleQueryActorLogicInputT }) => {
+    input.logger.log(`fetchingFromBardActorLogic called`, LogLevel.Debug);
+    // always test the cancellation token on entry to the function to see if it has already been cancelled
+    if (input.cTSToken.isCancellationRequested) {
+      input.logger.log(`fetchingFromBardActorLogic leaving on entrance with cancelled = true`, LogLevel.Debug);
+      return { cancelled: true } as SingleQueryActorLogicOutputT;
+    }
+    let _qs = input.queryString;
+    let response: string;
+    response = 'Response From QueryEngine Placeholder';
+    // use the queryService to handle the query to the Bard queryEngine
+    try {
+      // ToDo: use the queryService to handle the query to a queryEngine
+    } catch (e) {
+      HandleError(e, 'queryMachine', 'fetchingFromBardActorLogic', 'failed calling queryService.sendQueryToBard');
+    }
+    // always test the cancellation token after returning from an await to see if the function being awaited has already been cancelled
+    if (input.cTSToken.isCancellationRequested) {
+      input.logger.log(`fetchingFromBardActorLogic leaving after awaitwith cancelled = true`, LogLevel.Debug);
+      return { cancelled: true } as SingleQueryActorLogicOutputT;
+    }
+    input.logger.log(
+      `fetchingFromBardActorLogic leaving with response = ${response}, cancelled = false`,
+      LogLevel.Debug,
+    );
     return { response: response, cancelled: false } as SingleQueryActorLogicOutputT;
   },
 );
@@ -163,7 +197,7 @@ export const waitingForAllActorLogic = fromPromise<WaitingForAllActorLogicOutput
     input.logger.log(`waitingForAllActorLogic`, LogLevel.Debug);
     // always test the cancellation token on entry to the function to see if it has already been cancelled
     if (input.cTSToken.isCancellationRequested) {
-      input.logger.log(`fetchingFromBardActorLogic leaving with cancelled = true`, LogLevel.Debug);
+      input.logger.log(`waitingForAllActorLogic leaving on entrance with cancelled = true`, LogLevel.Debug);
       return { cancelled: true } as WaitingForAllActorLogicOutputT;
     }
     const activeQueryEngineActorRefs = input.actorCollection;
@@ -173,35 +207,12 @@ export const waitingForAllActorLogic = fromPromise<WaitingForAllActorLogicOutput
     //     fetchingFromQueryEngineActorLogic({ input: { ...input, queryEngineName: queryEngineName } }),
     //   ),
     // );
-    return { cancelled: false } as WaitingForAllActorLogicOutputT;
-  },
-);
-// **********************************************************************************************************************
-
-export const fetchingFromBardActorLogic = fromPromise<SingleQueryActorLogicOutputT, SingleQueryActorLogicInputT>(
-  async ({ input }: { input: SingleQueryActorLogicInputT }) => {
-    input.logger.log(`fetchingFromBardActorLogic called`, LogLevel.Debug);
-    // always test the cancellation token on entry to the function to see if it has already been cancelled
+    // always test the cancellation token after returning from an await to see if the function being awaited has already been cancelled
     if (input.cTSToken.isCancellationRequested) {
-      input.logger.log(`fetchingFromBardActorLogic leaving with cancelled = true`, LogLevel.Debug);
+      input.logger.log(`waitingForAllActorLogic leaving after await with cancelled = true`, LogLevel.Debug);
       return { cancelled: true } as SingleQueryActorLogicOutputT;
     }
 
-    let _qs = input.queryString;
-    let response: string;
-    response = 'ResponseFrom QueryEnginePlaceholder';
-    // use the queryService to handle the query to the Bard queryEngine
-    try {
-      // ToDo: use the queryService to handle the query to a queryEngine
-    } catch (e) {
-      HandleError(e, 'queryMachine', 'fetchingFromBardActorLogic', 'failed calling queryService.sendQueryToBard');
-    }
-    return { response: response, cancelled: false } as SingleQueryActorLogicOutputT;
-
-    input.logger.log(
-      `fetchingFromBardActorLogic leaving with response = ${response}, cancelled = false`,
-      LogLevel.Debug,
-    );
-    return { response: response, cancelled: false } as SingleQueryActorLogicOutputT;
+    return { cancelled: false } as WaitingForAllActorLogicOutputT;
   },
 );

@@ -23,6 +23,8 @@ import {
   VCSCommandMenuItemEnum,
 } from '@BaseEnumerations/index';
 
+import { IQueryService } from '@QueryService/index';
+
 // common type
 
 export type LoggerDataT = { logger: ILogger; data: IData };
@@ -51,6 +53,7 @@ export class StateMachineService implements IStateMachineService {
   constructor(
     private readonly logger: ILogger,
     private readonly data: IData,
+    private readonly queryService: IQueryService,
     private readonly extensionContext: vscode.ExtensionContext,
   ) {
     this.extensionID = extensionContext.extension.id;
@@ -58,14 +61,14 @@ export class StateMachineService implements IStateMachineService {
     this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
     const primaryMachineInspector = createBrowserInspector(); // This line produces the errorMessage
     this.primaryActor = createActor(primaryMachine, {
-      input: { logger: this.logger, data: this.data },
+      input: { logger: this.logger, data: this.data, queryService: this.queryService },
       // inspect: this.primaryMachineInspector.inspect,
       // for Debugging
       inspect: (inspEvent) => {
-        this.logger.log(
-          `StateMachineService inspect received inspEvent.type = ${inspEvent.type}`, //${stringifyWithCircularReference(inspEvent)}`,
-          LogLevel.Debug,
-        );
+        // this.logger.log(
+        //   `StateMachineService inspect received inspEvent.type = ${inspEvent.type}`, //${stringifyWithCircularReference(inspEvent)}`,
+        //   LogLevel.Debug,
+        // );
         if (inspEvent.type === '@xstate.snapshot') {
           this.logger.log(
             `StateMachineService inspect received event type @xstate.snapshot. event.type: ${inspEvent.event.type} event.input: ${inspEvent.event.input} event.output: ${inspEvent.event.output} snapshot.status: ${inspEvent.snapshot.status}`,
@@ -86,7 +89,7 @@ export class StateMachineService implements IStateMachineService {
               _input = inspEvent.event.input;
               break;
             case 'queryEvent':
-              _input = inspEvent.event.input;
+              _input = inspEvent.event.data;
               break;
             case 'xstate.error.actor.queryMachine':
               _input = inspEvent.event.input;
@@ -98,6 +101,8 @@ export class StateMachineService implements IStateMachineService {
             `${_preamble} event.input: ${_input} event.output: ${inspEvent.event.output}`,
             LogLevel.Debug,
           );
+        } else {
+          this.logger.log(`StateMachineService inspect received unexpected event type ${inspEvent}`, LogLevel.Debug);
         }
       },
     });
@@ -110,6 +115,7 @@ export class StateMachineService implements IStateMachineService {
   sendQuery(payload: QueryEventPayloadT): void {
     this.primaryActor.send({ type: 'queryEvent', data: payload });
   }
+
   @logFunction
   testActorsaveFile(): void {
     // placeholder
@@ -119,6 +125,7 @@ export class StateMachineService implements IStateMachineService {
     logger: ILogger,
     extensionContext: vscode.ExtensionContext,
     data: IData,
+    queryService: IQueryService,
     callingModule: string,
     initializationStructure?: ISerializationStructure,
   ): StateMachineService {
@@ -150,7 +157,7 @@ export class StateMachineService implements IStateMachineService {
       return _obj;
     } else {
       try {
-        _obj = new StateMachineService(logger, data, extensionContext);
+        _obj = new StateMachineService(logger, data, queryService, extensionContext);
       } catch (e) {
         if (e instanceof Error) {
           throw new DetailedError(`${callingModule}: create stateMachineService from initializationStructure -> }`, e);

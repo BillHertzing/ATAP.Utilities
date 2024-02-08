@@ -114,7 +114,19 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
 
   // ToDo: wrap in a try/catch block
   // creating the StateMachineService starts all of the state machines
-  stateMachineService = StateMachineService.create(logger, extensionContext, dataService.data, 'extension.ts');
+  try {
+    stateMachineService = new StateMachineService(logger, dataService.data, queryService, extensionContext);
+  } catch (e) {
+    HandleError(e, 'Activation', 'activate', `failed to create an instance of StateMachineService`);
+  }
+
+  // stateMachineService = StateMachineService.create(
+  //   logger,
+  //   extensionContext,
+  //   dataService.data,
+  //   queryService,
+  //   'extension.ts',
+  // );
 
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
   // Calling the constructor registers all of the commands, and creates a disposables structure

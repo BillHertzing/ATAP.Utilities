@@ -23,29 +23,31 @@ import {
   VCSCommandMenuItemEnum,
 } from '@BaseEnumerations/index';
 
+import { IQueryService } from '@QueryService/index';
+import { LoggerDataT } from '@StateMachineService/index';
+
 import { quickPickActorLogic, QuickPickEventPayloadT, QPActorLogicOutputT } from './quickPickActorLogic';
 import { queryMachine, QueryEventPayloadT, QueryOutputT } from './queryMachine';
 
-export type LoggerDataT = { logger: ILogger; data: IData };
-
-export type MachineContextT = LoggerDataT; // & { };
+export type PrimaryMachineContextT = LoggerDataT & { queryService: IQueryService };
 
 // create the primaryMachine definition
 export const primaryMachine = setup({
   types: {} as {
-    context: MachineContextT;
-    input: MachineContextT;
+    context: PrimaryMachineContextT;
+    input: PrimaryMachineContextT;
     events:
       | { type: 'quickPickEvent'; data: QuickPickEventPayloadT }
+      | { type: 'done.invoke.quickPickActorLogic'; data: QPActorLogicOutputT }
+      | { type: 'xstate.done.actor.quickPickActor'; output: QPActorLogicOutputT }
       | { type: 'queryEvent'; data: QueryEventPayloadT }
+      | { type: 'xstate.done.actor.queryMachineActor'; data: QueryOutputT }
       | { type: 'querySucceeded'; data: QueryOutputT }
       | { type: 'queryCancelled' }
       | { type: 'queryError' }
       | { type: 'errorEvent'; message: string }
       | { type: 'disposeEvent' }
-      | { type: 'disposingCompleteEvent' }
-      | { type: 'done.invoke.quickPickActorLogic'; data: QPActorLogicOutputT }
-      | { type: 'xstate.done.actor.quickPickActor'; output: QPActorLogicOutputT };
+      | { type: 'disposingCompleteEvent' };
   },
   actions: {
     idleStateEntryAction: ({ context, event }) => {
@@ -174,7 +176,7 @@ export const primaryMachine = setup({
   {
     // ToDo: Disable VSC telemetry
     id: 'primaryMachine',
-    context: ({ input }) => ({ logger: input.logger, data: input.data }), //, dummy: input.dummy, dummy2: input.dummy2 }),
+    context: ({ input }) => ({ logger: input.logger, data: input.data, queryService: input.queryService }), //, dummy: input.dummy, dummy2: input.dummy2 }),
     type: 'parallel',
     states: {
       operationState: {
@@ -324,20 +326,20 @@ export const primaryMachine = setup({
             //   type: 'queryStateStateExitAction',
             // },
             invoke: {
-              id: 'queryMachine',
+              id: 'queryMachineActor',
               src: queryMachine,
               input: ({ context, event }) => ({
                 logger: context.logger,
                 data: context.data,
+                queryService: context.queryService,
                 queryFragmentCollection: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data
                   .queryFragmentCollection,
-                queryService: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data.queryService,
                 cTSToken: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data.cTSToken,
               }),
               onDone: {
                 actions: (context) => {
                   const _event = context.event as {
-                    type: 'xstate.done.actor.queryMachine';
+                    type: 'xstate.done.actor.queryMachineActor';
                     output: QueryOutputT;
                   };
                   // if the ActorLogic was cancelled, send the appropriate event

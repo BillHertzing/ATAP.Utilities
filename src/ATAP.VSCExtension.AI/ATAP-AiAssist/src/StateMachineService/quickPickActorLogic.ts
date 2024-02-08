@@ -14,14 +14,14 @@ import {
 
 import { fromCallback, StateMachine, fromPromise, assign, ActionFunction } from 'xstate';
 
-import { MachineContextT } from '@StateMachineService/index';
+import { PrimaryMachineContextT } from '@StateMachineService/index';
 
 export type QuickPickEventPayloadT = {
   kindOfEnumeration: QuickPickEnumeration;
   cTSId: string;
 };
 
-export type QPActorLogicInputT = MachineContextT & QuickPickEventPayloadT;
+export type QPActorLogicInputT = PrimaryMachineContextT & QuickPickEventPayloadT;
 
 export type QPActorLogicOutputT = {
   kindOfEnumeration: QuickPickEnumeration;

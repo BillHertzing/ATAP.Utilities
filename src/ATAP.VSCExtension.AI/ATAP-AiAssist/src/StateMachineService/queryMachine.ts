@@ -73,6 +73,8 @@ export const queryMachine = setup({
       | { type: 'gatherQueryFragmentsEvent'; data: GatheringActorLogicInputT }
       | { type: 'xstate.done.actor.gatheringActor'; output: GatheringActorLogicOutputT }
       | { type: 'xstate.error.actor.gatheringActor'; output: GatheringActorLogicOutputT }
+      | { type: 'xstate.promise.resolve'; output: GatheringActorLogicOutputT }
+      | { type: 'xstate.done.actor.gatheringActor'; output: GatheringActorLogicOutputT }
       | { type: 'gatheringActorLogicSucceeded'; output: GatheringActorLogicOutputT }
       | { type: 'gatheringActorLogicError'; output: GatheringActorLogicOutputT }
       | { type: 'gatheringActorLogicCancelled' }
@@ -106,6 +108,7 @@ export const queryMachine = setup({
   },
   actions: {
     // ToDo: this action goes into the extend stanza after PR xxx is incorporated into xState
+    raiseSingleEngineQueryEventsAction: ({ context, event }) => {},
     // raiseSingleEngineQueryEventsAction: ({ context, event }) => {
     //   enqueueActions(({ context, event, enqueue, check }) => {
     //     context.logger.log('raiseSingleEngineQueryEventsAction started', LogLevel.Debug);
@@ -230,7 +233,7 @@ export const queryMachine = setup({
             },
           },
           on: {
-            gatheringActorLogicSucceeded: 'parallelQueryingState',
+            gatheringActorLogicSucceeded: '#queryMachine.operation.parallelQueryingState',
             gatheringActorLogicCancelled: '#queryMachine.operation.cancelledState',
             gatheringActorLogicError: '#queryMachine.operation.errorState',
           },
@@ -254,12 +257,11 @@ export const queryMachine = setup({
                     input: ({ context, event }) => ({
                       logger: context.logger,
                       data: context.data,
-                      queryService: (event as { type: 'sendQueryToBardEvent'; data: SingleQueryActorLogicInputT }).data
-                        .queryService,
+                      queryFragmentCollection: context.queryFragmentCollection,
+                      queryService: context.queryService,
                       queryString: (event as { type: 'sendQueryToBardEvent'; data: SingleQueryActorLogicInputT }).data
                         .queryString,
-                      cTSToken: (event as { type: 'sendQueryToBardEvent'; data: SingleQueryActorLogicInputT }).data
-                        .cTSToken,
+                      cTSToken: context.cTSToken,
                     }),
                     onDone: {
                       actions: (context) => {
@@ -352,8 +354,7 @@ export const queryMachine = setup({
                       data: WaitingForAllActorLogicInputT;
                     }
                   ).data.actorCollection,
-                  cTSToken: (event as { type: 'waitingForAllEvent'; data: WaitingForAllActorLogicInputT }).data
-                    .cTSToken,
+                  cTSToken: context.cTSToken,
                 }),
                 onDone: {
                   actions: (context) => {

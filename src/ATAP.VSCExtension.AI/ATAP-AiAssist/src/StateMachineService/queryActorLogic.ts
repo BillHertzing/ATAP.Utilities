@@ -56,20 +56,16 @@ export const gatheringActorLogic = fromPromise<GatheringActorLogicOutputT, Gathe
     }
     // switch on the fragmentKind and collect accordingly
     _queryFragmentCollection.value.forEach((element) => {
-      //ToDo: wrap in try catch
-      const queryFragment = _queryFragmentCollection.findById<QueryFragment>(element.ID.ID);
-      if (!queryFragment) {
-        throw new DetailedError(`queryFragment with ID: ${element.ID.ID} not found in queryFragmentCollection`);
-      }
-      switch (queryFragment.value.kindOfFragment) {
+      switch (element.value.kindOfFragment) {
         case QueryFragmentEnum.StringFragment:
-          queryString += _queryFragment.value;
+          queryString += element.value.value;
           break;
         case QueryFragmentEnum.FileFragment:
-          queryString += _queryFragment.value;
+          //ToDo: Implement FileFragment
+          //queryString += element.value;
           break;
         default:
-          throw new Error(`Unhandled queryFragment.kindOfFragment: ${_queryFragment.value.kindOfFragment}`);
+          throw new Error(`Unhandled queryFragment.kindOfFragment: ${element.value.kindOfFragment}`);
       }
     });
     input.logger.log(

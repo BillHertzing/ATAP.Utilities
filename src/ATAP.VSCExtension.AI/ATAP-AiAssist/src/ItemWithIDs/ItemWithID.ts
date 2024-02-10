@@ -505,13 +505,10 @@ export class QueryFragment extends ItemWithID<QueryFragment, QueryFragmentValueT
   convertTo_yaml(): string {
     return toYaml(this);
   }
-  @logFunction
-  findByID(criteria: GUID): string {
-    return toYaml(this);
-  }
 }
 
 export interface IQueryFragmentCollection extends ICollection<QueryFragment, QueryFragmentValueType> {
+  findByID<QueryFragment>(criteria: GUID): QueryFragment;
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
@@ -527,7 +524,7 @@ export class QueryFragmentCollection
   }
 
   @logFunction
-  findByID(criteria: GUID): QueryFragment {
+  findByID<QueryFragment>(criteria: GUID): QueryFragment {
     return super.findById<QueryFragment>(criteria) as QueryFragment;
   }
 

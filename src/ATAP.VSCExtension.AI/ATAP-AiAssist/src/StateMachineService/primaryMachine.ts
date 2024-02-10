@@ -49,127 +49,7 @@ export const primaryMachine = setup({
       | { type: 'disposeEvent' }
       | { type: 'disposingCompleteEvent' };
   },
-  actions: {
-    idleStateEntryAction: ({ context, event }) => {
-      context.logger.log(`IdleStateEntryAction called`, LogLevel.Debug);
-      context.logger.log(
-        `context.data.configurationData.currentEnvironment: ${context.data.configurationData.currentEnvironment}`,
-        LogLevel.Debug,
-      );
-    },
-    idleStateExitAction: ({ context, event }) => {
-      context.logger.log(`IdleStateExitAction called`, LogLevel.Debug);
-      context.logger.log(`event type: ${event.type}`, LogLevel.Debug);
-    },
-    quickPickStateEntryAction: ({ context, event }) => {
-      // This is easier to understand, put only works if there is just one event that can enter the state
-      context.logger.log(
-        `quickPickStateEntryAction called with kindOfEnumeration: : ${(event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration}`,
-        LogLevel.Debug,
-      );
-      // This works if there are multiple events that can enter the state, because it explicitly tests the event type
-      // context.logger.log(`quickPickStateEntryAction called `, LogLevel.Debug);
-      // const kindOfEnumeration =
-      //   event.type === 'quickPickEvent'
-      //     ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
-      //     : undefined;
-      // context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
-    },
-    quickPickStateOnDoneAction: ({ context, event }) => {
-      context.logger.log(`quickPickStateOnDoneAction called`, LogLevel.Debug);
-      const kindOfEnumeration =
-        event.type === 'quickPickEvent'
-          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
-          : undefined;
-      context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
-    },
-    quickPickStateExitAction: ({ context, event }) => {
-      context.logger.log(`quickPickStateExitAction called`, LogLevel.Debug);
-      const kindOfEnumeration =
-        event.type === 'quickPickEvent'
-          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
-          : undefined;
-      context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
-      switch (kindOfEnumeration) {
-        case QuickPickEnumeration.VCSCommandMenuItemEnum:
-          context.logger.log(`VCSCommandQuickPick, no current value`, LogLevel.Debug);
-          break;
-        case QuickPickEnumeration.ModeMenuItemEnum:
-          context.logger.log(`currentMode: ${context.data.stateManager.currentMode}`, LogLevel.Debug);
-          break;
-        case QuickPickEnumeration.QueryAgentCommandMenuItemEnum:
-          context.logger.log(
-            `currentQueryAgentCommand: ${context.data.stateManager.currentQueryAgentCommand}`,
-            LogLevel.Debug,
-          );
-          break;
-      }
-    },
-    changeQuickPickStateEntryAction: ({ context, event }) => {
-      context.logger.log(`changeQuickPickStateEntryAction called`, LogLevel.Debug);
-      const kindOfEnumeration =
-        event.type === 'quickPickEvent'
-          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
-          : undefined;
-
-      context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
-    },
-    updateUIStateEntryAction: ({ context, event }) => {
-      context.logger.log(`updateUIStateEntryAction called`, LogLevel.Debug);
-      const kindOfEnumeration =
-        event.type === 'quickPickEvent'
-          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
-          : undefined;
-
-      context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
-    },
-    updateUIStateExitAction: ({ context, event }) => {
-      context.logger.log(`updateUIStateExitAction called`, LogLevel.Debug);
-      const kindOfEnumeration =
-        event.type === 'quickPickEvent'
-          ? (event as { type: 'quickPickEvent'; data: QuickPickEventPayloadT }).data.kindOfEnumeration
-          : undefined;
-      context.logger.log(`event type: ${event.type}, kindOfEnumeration: : ${kindOfEnumeration}`, LogLevel.Debug);
-      switch (kindOfEnumeration) {
-        case QuickPickEnumeration.VCSCommandMenuItemEnum:
-          context.logger.log(`updateUIStateExitAction, no current value`, LogLevel.Debug);
-          break;
-        case QuickPickEnumeration.ModeMenuItemEnum:
-          context.logger.log(
-            `priorMode: ${context.data.stateManager.priorMode}, currentMode: ${context.data.stateManager.currentMode}`,
-            LogLevel.Debug,
-          );
-          break;
-        case QuickPickEnumeration.QueryAgentCommandMenuItemEnum:
-          context.logger.log(
-            `priorQueryAgentCommand: ${context.data.stateManager.priorQueryAgentCommand}, currentQueryAgentCommand: ${context.data.stateManager.currentQueryAgentCommand}`,
-            LogLevel.Debug,
-          );
-          break;
-      }
-    },
-    errorStateEntryAction: ({ context, event }) => {
-      context.logger.log(`errorStateEntryAction called`, LogLevel.Debug);
-      context.logger.log(`event type: ${event.type}, event.error: ${event}`, LogLevel.Debug);
-    },
-    errorStateExitAction: ({ context, event }) => {
-      context.logger.log(`errorStateExitAction called`, LogLevel.Debug);
-      context.logger.log(`event type: ${event.type}, event.error: ${event}`, LogLevel.Debug);
-    },
-
-    disposingStateEntryAction: ({ context, event }) => {
-      context.logger.log(`disposingStateEntryAction called`, LogLevel.Debug);
-      context.logger.log(`event type: ${event.type}`, LogLevel.Debug);
-    },
-    disposingStateExitAction: ({ context, event }) => {
-      context.logger.log(`disposingStateExitAction called`, LogLevel.Debug);
-      context.logger.log(`event type: ${event.type}`, LogLevel.Debug);
-    },
-    doneStateEntryAction: ({ context, event }) => {
-      context.logger.log(`DoneStateEntryAction called`, LogLevel.Debug);
-      context.logger.log(`event type: ${event.type}`, LogLevel.Debug);
-    },
-  },
+  actions: {},
 }).createMachine(
   //   // cSpell:disable
   //   // cSpell:enable
@@ -184,12 +64,6 @@ export const primaryMachine = setup({
         initial: 'idleState',
         states: {
           idleState: {
-            entry: {
-              type: 'idleStateEntryAction',
-            },
-            exit: {
-              type: 'idleStateExitAction',
-            },
             on: {
               quickPickEvent: {
                 target: 'quickPickStateP',
@@ -200,12 +74,7 @@ export const primaryMachine = setup({
             },
           },
           errorState: {
-            entry: {
-              type: 'errorStateEntryAction',
-            },
-            exit: {
-              type: 'errorStateExitAction',
-            },
+            // ToDO: add code to attempt to remediate the error, otherwise transition to finalErrorState and throw an error
             always: {
               target: 'idleState',
             },
@@ -213,19 +82,10 @@ export const primaryMachine = setup({
           quickPickStateP: {
             description:
               "A parent state with child states that allow a user to see a list of available enumeration values, pick one, update the extension (transition it) to the UI indicated by the new value, update the 'currentValue' of the enumeration, and then return to the Idle state.",
-            // exit: {
-            //   type: 'quickPickStateExitAction',
-            // },
             initial: 'quickPickState',
             states: {
               quickPickState: {
                 description: 'A state where an actor is invoked to show and let the user select an enum value.',
-                entry: {
-                  type: 'quickPickStateEntryAction',
-                },
-                // exit: {
-                //   type: 'quickPickStateExitAction',
-                // },
                 invoke: {
                   id: 'quickPickActor',
                   src: quickPickActorLogic,

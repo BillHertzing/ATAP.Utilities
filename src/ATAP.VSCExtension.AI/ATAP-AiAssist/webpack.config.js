@@ -41,7 +41,11 @@ const extensionConfig = {
     rules: [
       {
         test: /\.ts$/,
-        exclude: /node_modules/,
+        exclude: [
+          /src\\StateMachineService\\queryMachine.ts/,
+          /src\\StateMachineService\\primaryMachine.ts/,
+          /node_modules/,
+        ],
         use: [
           {
             loader: "ts-loader",

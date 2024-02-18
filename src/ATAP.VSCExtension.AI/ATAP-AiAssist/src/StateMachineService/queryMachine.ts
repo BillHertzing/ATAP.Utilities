@@ -51,8 +51,8 @@ export type QueryOutputT = {
 };
 
 export type QueryMachineContextT = PrimaryMachineContextT & {
-  queryService: IQueryService;
   queryFragmentCollection: IQueryFragmentCollection;
+  queryString: string;
   cTSToken: vscode.CancellationToken;
 };
 
@@ -199,24 +199,42 @@ export const queryMachine = setup({
               cTSToken: context.cTSToken,
             }),
             onDone: {
-              actions: (context) => {
-                const _event = context.event as {
-                  type: 'xstate.done.actor.gatheringActor';
-                  output: GatheringActorLogicOutputT;
-                };
+              actions: [
+              ({ context, event }) => {
+                console.log(/* ... */);
+              },
+                              ({ context, event }) => {
+                console.log(/* ... */);
+              },
+                (context) => {
+                  const _event = context.event as {
+                    type: 'xstate.done.actor.gatheringActor';
+                    output: GatheringActorLogicOutputT;
+                  };
+                },
+                assign(({ context, event }) => {
+                  return {
+                    queryString: event.output.queryString,
+                  };
+                }),
+                                raise({
+                  type: 'gatheringActorLogicSucceeded', 'params':
+                });
+
+              ],
                 // if the ActorLogic was cancelled, send the appropriate event
                 if (_event.output.cancelled) {
                   return {
                     type: 'gatheringActorLogicCancelled',
                   };
                 }
-                return {
-                  type: 'gatheringActorLogicSucceeded',
-                  output: {
-                    queryString: _event.output.queryString,
-                    cTSToken: _event.output.cTSToken,
-                  } as ParallelQueryActorLogicInputT,
-                };
+                // return {
+                //   type: 'gatheringActorLogicSucceeded',
+                //   output: {
+                //     queryString: _event.output.queryString,
+                //     cTSToken: _event.output.cTSToken,
+                //   } as ParallelQueryActorLogicInputT,
+                // };
               },
             },
             onError: {

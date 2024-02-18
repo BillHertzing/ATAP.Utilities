@@ -32,7 +32,7 @@ export type LoggerDataT = { logger: ILogger; data: IData };
 import { QuickPickEventPayloadT } from './quickPickActorLogic';
 import { QueryEventPayloadT, QueryOutputT } from './queryMachine';
 
-import { primaryMachine } from './primaryMachine';
+import { primaryMachine } from './primaryMachineSimple';
 
 export interface IStateMachineService {
   quickPick(data: QuickPickEventPayloadT): void;
@@ -61,35 +61,45 @@ export class StateMachineService implements IStateMachineService {
     this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
     const primaryMachineInspector = createBrowserInspector(); // This line produces the errorMessage
     this.primaryActor = createActor(primaryMachine, {
-      input: { logger: this.logger, data: this.data, queryService: this.queryService },
+      input: {
+        logger: this.logger,
+        data: this.data,
+        queryService: this.queryService,
+        queryString: '',
+        queryError: undefined,
+        queryCancelled: false,
+        queryActorCollection: undefined,
+        queryResponses: {},
+        queryErrors: {},
+        queryCTSToken: undefined,
+      },
       // inspect: this.primaryMachineInspector.inspect,
       // for Debugging
       inspect: (inspEvent) => {
-        // this.logger.log(
-        //   `StateMachineService inspect received inspEvent.type = ${inspEvent.type}`, //${stringifyWithCircularReference(inspEvent)}`,
-        //   LogLevel.Debug,
-        // );
         let _eventInput = '';
         let _eventData = '';
         let _eventOutput = '';
         let _inspEventEventType = '';
         if (inspEvent.type === '@xstate.snapshot') {
           switch (inspEvent.event.type) {
+            case 'queryEvent':
             case 'xstate.init':
+            case 'xstate.done.actor.gatheringActor':
+            case 'xstate.promise.resolve':
               break;
             default:
               _inspEventEventType = 'inspEvent.event.type is unknown';
           }
           this.logger.log(
-            `StateMachineService inspect received inspEvent type @xstate.snapshot. event.type: ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ''}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ''}${_inspEventEventType ? `event_output: ${inspEvent.event.output}` : ''}${_inspEventEventType ? _inspEventEventType : ''}  snapshot.status: ${inspEvent.snapshot.status}`,
-            LogLevel.Debug,
+            `StateMachineService inspect received inspEvent type @xstate.snapshot. event.type: ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ''}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ''}${_inspEventEventType ? _inspEventEventType : ''}  snapshot.status: ${inspEvent.snapshot.status}`,
+            LogLevel.Trace,
           );
         } else if (inspEvent.type === '@xstate.actor') {
           this.logger.log(
             `StateMachineService inspect received inspEvent type @xstate.actor. actorRef.id: ${
               inspEvent.actorRef.id
             } rootId: ${inspEvent.rootId.toString()}`,
-            LogLevel.Debug,
+            LogLevel.Trace,
           );
         } else if (inspEvent.type === '@xstate.event') {
           const _preamble = `StateMachineService inspect received inspEvent type @xstate.event. event.type: ${inspEvent.event.type} ; actorRefID: ${inspEvent.actorRef.id} `;
@@ -106,7 +116,7 @@ export class StateMachineService implements IStateMachineService {
           }
           this.logger.log(
             `${_preamble} ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ''}${inspEvent.event.data ? `event_data: ${inspEvent.event.data}` : ''}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ''}${_inspEventEventType ? _inspEventEventType : ''}`,
-            LogLevel.Debug,
+            LogLevel.Trace,
           );
         } else {
           this.logger.log(`StateMachineService inspect received unexpected event type ${inspEvent}`, LogLevel.Debug);
@@ -116,11 +126,11 @@ export class StateMachineService implements IStateMachineService {
   }
   @logFunction
   quickPick(payload: QuickPickEventPayloadT): void {
-    this.primaryActor.send({ type: 'quickPickEvent', data: payload });
+    // this.primaryActor.send({ type: 'quickPickEvent', data: payload });
   }
   @logFunction
   sendQuery(payload: QueryEventPayloadT): void {
-    this.primaryActor.send({ type: 'queryEvent', data: payload });
+    this.primaryActor.send({ type: 'queryEvent', payload: payload });
   }
 
   @logFunction

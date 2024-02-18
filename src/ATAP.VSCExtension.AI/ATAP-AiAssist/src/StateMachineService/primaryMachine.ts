@@ -23,6 +23,22 @@ import {
   VCSCommandMenuItemEnum,
 } from '@BaseEnumerations/index';
 
+import {
+  GatheringActorLogicInputT,
+  GatheringActorLogicOutputT,
+  gatheringActorLogic,
+  ParallelQueryActorLogicInputT,
+  ParallelQueryActorLogicOutputT,
+  SingleQueryActorLogicInputT,
+  SingleQueryActorLogicOutputT,
+  fetchingFromQueryEngineActorLogic,
+  fetchingFromBardActorLogic,
+  FetchingFromSingleQueryEngineOutputT,
+  WaitingForAllActorLogicInputT,
+  WaitingForAllActorLogicOutputT,
+  waitingForAllActorLogic,
+} from './queryActorLogic';
+
 import { IQueryService } from '@QueryService/index';
 import { LoggerDataT } from '@StateMachineService/index';
 
@@ -31,32 +47,71 @@ import { queryMachine, QueryEventPayloadT, QueryOutputT } from './queryMachine';
 
 export type PrimaryMachineContextT = LoggerDataT & { queryService: IQueryService };
 
+function returnResultsStateEntryAction(context: PrimaryMachineContextT, event: any) {
+  const _event = event as { type: 'xstate.done.actor.gatheringActor'; output: GatheringActorLogicOutputT };
+  context.logger.log('returnResultsStateEntryAction started', LogLevel.Debug);
+  // if (_event.output.cancelled) {
+  //   return {
+  //     type: 'queryCancelled',
+  //     payload: {
+  //       responses: {},
+  //       errors: {},
+  //       cancelled: true,
+  //     },
+  //   };
+  // }
+  // return {
+  //   type: 'querySucceeded',
+  //   payload: {
+  //     responses: {},
+  //     errors: {},
+  //     cancelled: false,
+  //   },
+  // };
+}
+
 // create the primaryMachine definition
 export const primaryMachine = setup({
   types: {} as {
-    context: PrimaryMachineContextT;
+    context: PrimaryMachineContextT & { queryString: string };
     input: PrimaryMachineContextT;
     events:
-      | { type: 'quickPickEvent'; data: QuickPickEventPayloadT }
-      | { type: 'done.invoke.quickPickActorLogic'; data: QPActorLogicOutputT }
-      | { type: 'xstate.done.actor.quickPickActor'; output: QPActorLogicOutputT }
-      | { type: 'queryEvent'; data: QueryEventPayloadT }
-      | { type: 'xstate.done.actor.queryMachineActor'; data: QueryOutputT }
-      | { type: 'querySucceeded'; data: QueryOutputT }
-      | { type: 'queryCancelled' }
-      | { type: 'queryError' }
-      | { type: 'errorEvent'; message: string }
-      | { type: 'disposeEvent' }
-      | { type: 'disposingCompleteEvent' };
+    | { type: 'quickPickEvent'; data: QuickPickEventPayloadT }
+    | { type: 'done.invoke.quickPickActorLogic'; data: QPActorLogicOutputT }
+    | { type: 'xstate.done.actor.quickPickActor'; output: QPActorLogicOutputT }
+    | { type: 'xstate.done.actor.queryMachineActor'; data: QueryOutputT }
+    | { type: 'queryEvent'; payload: QueryEventPayloadT }
+    | { type: 'querySucceeded'; payload: QueryOutputT }
+    | { type: 'queryCancelled'; payload: QueryOutputT }
+    | { type: 'queryError'; payload: QueryOutputT }
+    | { type: 'gatherQueryFragmentsEvent'; payload: GatheringActorLogicInputT }
+    | { type: 'gatheringActorLogicSucceeded'; output: GatheringActorLogicOutputT }
+    | { type: 'gatheringActorLogicError'; output: GatheringActorLogicOutputT }
+    | { type: 'gatheringActorLogicCancelled'; output: GatheringActorLogicOutputT }
+    | { type: 'gatheringActorLogicSucceeded'; output: GatheringActorLogicOutputT }
+    | { type: 'gatheringActorLogicError'; output: GatheringActorLogicOutputT }
+    | { type: 'gatheringActorLogicCancelled'; output: GatheringActorLogicOutputT }
+    | { type: 'errorEvent'; message: string }
+    | { type: 'disposeEvent' }
+    | { type: 'disposingCompleteEvent' };
   },
-  actions: {},
+  actions: {
+    assignQueryString: assign({
+      queryString: (_, { output }: { output: queryString }) => output,
+    }),
+  },
 }).createMachine(
   //   // cSpell:disable
   //   // cSpell:enable
   {
     // ToDo: Disable VSC telemetry
     id: 'primaryMachine',
-    context: ({ input }) => ({ logger: input.logger, data: input.data, queryService: input.queryService }), //, dummy: input.dummy, dummy2: input.dummy2 }),
+    context: ({ input }) => ({
+      logger: input.logger,
+      data: input.data,
+      queryService: input.queryService,
+      queryString: '',
+    }), //, dummy: input.dummy, dummy2: input.dummy2 }),
     type: 'parallel',
     states: {
       operationState: {
@@ -69,7 +124,7 @@ export const primaryMachine = setup({
                 target: 'quickPickStateP',
               },
               queryEvent: {
-                target: 'queryState',
+                target: 'queryingState',
               },
             },
           },
@@ -100,6 +155,7 @@ export const primaryMachine = setup({
                     target: '#primaryMachine.operationState.updateUIState',
                     actions: enqueueActions(({ context, event, enqueue, check }) => {
                       context.logger.log('quickPickState onDone enqueueActions started', LogLevel.Debug);
+
                       const _event = event as {
                         type: 'xstate.done.actor.quickPickActor'; // is xstate.done.actor... the correct event for enqueuing actions?
                         output: QPActorLogicOutputT;
@@ -177,51 +233,62 @@ export const primaryMachine = setup({
             },
           },
 
-          queryState: {
-            description: 'A state where an machine is invoked to send a query to all enabled QueryEngines.',
-            // entry: {
-            //   type: 'queryStateEntryAction',
-            // },
-            // exit: {
-            //   type: 'queryStateStateExitAction',
-            // },
-            invoke: {
-              id: 'queryMachineActor',
-              src: queryMachine,
-              input: ({ context, event }) => ({
-                logger: context.logger,
-                data: context.data,
-                queryService: context.queryService,
-                queryFragmentCollection: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data
-                  .queryFragmentCollection,
-                cTSToken: (event as { type: 'queryEvent'; data: QueryEventPayloadT }).data.cTSToken,
-              }),
-              onDone: {
-                actions: (context) => {
-                  const _event = context.event as {
-                    type: 'xstate.done.actor.queryMachineActor';
-                    output: QueryOutputT;
-                  };
-                  // if the ActorLogic was cancelled, send the appropriate event
-                  if (_event.output.cancelled) {
-                    return {
-                      type: 'queryCancelled',
-                    };
-                  }
-                  return {
-                    type: 'querySucceeded',
-                    output: {
-                      responses: _event.output.responses,
-                      errors: _event.output.errors,
-                      cancelled: _event.output.cancelled,
-                    } as QueryOutputT,
-                  };
+          queryingState: {
+            description:
+              'A parent state that encapsulates multiple state for handling parallel queries to multiple QueryAgents.',
+            initial: 'gatheringState',
+            states: {
+              gatheringState: {
+                description:
+                  'given an ordered collection of fragment identifiers, gather the fragments and assemble them into a query string',
+                invoke: {
+                  id: 'gatheringActor',
+                  src: gatheringActorLogic,
+                  input: ({ context, event }) => ({
+                    logger: context.logger,
+                    data: context.data,
+                    queryFragmentCollection: (event as { type: 'queryEvent'; payload: QueryEventPayloadT }).payload
+                      .queryFragmentCollection,
+                    cTSToken: (event as { type: 'queryEvent'; payload: QueryEventPayloadT }).payload.cTSToken,
+                  }),
+                  onDone: [
+                    actions: {
+                    {
+                      type: 'assignqueryString',
+                      params: event,
+                    },
+                  },
+                  ],
+
+                  onError: '#primaryMachine.operationState.errorState',
                 },
+                on: {
+                  gatheringActorLogicCancelled: {
+                    target: '#primaryMachine.operationState.idleState',
+                  },
+                  gatheringActorLogicError: {
+                    // ToDo: send the specific error information to the primary machine error state
+                    target: '#primaryMachine.operationState.errorState',
+                  },
+                  gatheringActorLogicSucceeded: {
+                    target: '#primaryMachine.operationState.queryingState.returnResultsState',
+                  },
+                },
+              },
+              returnResultsState: {
+                description: 'assign the results to the context',
+                entry: 'returnResultsStateEntryAction',
+                target: '#primaryMachine.operationState.updateUIState',
+                output: { responses: {}, errors: {}, cancelled: true } as QueryOutputT,
               },
             },
             on: {
-              querySucceeded: 'updateUIState',
-              queryCancelled: 'idleState',
+              querySucceeded: {
+                target: 'updateUIState',
+              },
+              queryCancelled: {
+                target: 'idleState',
+              },
             },
           },
           updateUIState: {

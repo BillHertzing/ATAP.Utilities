@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { ILogger, Logger, LogLevel } from '@Logger/index';
 import { Actor, createActor, assign, createMachine, fromCallback, StateMachine, fromPromise } from 'xstate';
-import { PrimaryMachineContextT } from '@StateMachineService/index';
+import { PrimaryMachineContextT } from './primaryMachineTypes';
 
 export enum SaveFileEnumeration {
   TagsCollection = 'TagsCollection',

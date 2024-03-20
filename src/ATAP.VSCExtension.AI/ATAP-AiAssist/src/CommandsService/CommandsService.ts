@@ -8,7 +8,12 @@ import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from 
 
 import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
 import { IQueryService } from '@QueryService/index';
-import { IStateMachineService, QuickPickEventPayloadT } from '@StateMachineService/index';
+import {
+  IStateMachineService,
+  IQuickPickEventPayload,
+  createQuickPickValue,
+  IQueryEventPayload,
+} from '@StateMachineService/index';
 
 import { startCommand } from './startCommand';
 import { showVSCEnvironment } from './showVSCEnvironment';
@@ -29,8 +34,6 @@ import {
   saveAssociationCollectionAsync,
   saveConversationCollectionAsync,
 } from './saveCollectionAsync';
-
-import { QueryEventPayloadT } from '@StateMachineService/index';
 
 export interface ICommandsService {
   readonly stateMachineService: IStateMachineService;
@@ -190,14 +193,21 @@ export class CommandsService {
     this.disposables.push(
       vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickVCSCommand`, () => {
         this.logger.log('starting commandService.primaryActor.quickPickVCSCommand (FireAndForget)', LogLevel.Debug);
-        try {
-          this.stateMachineService.quickPick({
-            kindOfEnumeration: QuickPickEnumeration.VCSCommandMenuItemEnum,
-            cTSId: 'GetARealCTSId',
-          });
-        } catch (e) {
-          HandleError(e, 'commandsService', 'primaryActor.quickPickVCSCommand', 'failed calling primaryActor C1');
-        }
+        // let cancellationTokenSource = new vscode.CancellationTokenSource();
+        // this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
+        //   new AiAssistCancellationTokenSource(cancellationTokenSource),
+        // );
+        // let _prompt: string = `select one from list below, current selection is: ToDo: need current VCS command or remove this one`;
+
+        // try {
+        //   this.stateMachineService.quickPick({
+        //     quickPickKindOfEnumeration: QuickPickEnumeration.VCSCommandMenuItemEnum,
+        //     quickPickPrompt: _prompt,
+        //     cTSToken: cancellationTokenSource.token,
+        //   } as IQuickPickEventPayload);
+        // } catch (e) {
+        //   HandleError(e, 'commandsService', 'primaryActor.quickPickVCSCommand', 'failed calling primaryActor C1');
+        // }
       }),
     );
     // register the command to send the quickPick event (with kindOfQuickPick=Mode) to the primaryActor
@@ -205,10 +215,16 @@ export class CommandsService {
     this.disposables.push(
       vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickMode`, () => {
         this.logger.log('starting commandService.primaryActor.quickPickMode (FireAndForget)', LogLevel.Trace);
+        let cancellationTokenSource = new vscode.CancellationTokenSource();
+        this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
+          new AiAssistCancellationTokenSource(cancellationTokenSource),
+        );
         try {
           this.stateMachineService.quickPick({
-            kindOfEnumeration: QuickPickEnumeration.ModeMenuItemEnum,
-            cTSId: 'GetARealCTSId',
+            pickItems: this.data.pickItems.modeMenuItems,
+            pickValue: createQuickPickValue(QuickPickEnumeration.ModeMenuItemEnum, this.data.stateManager.currentMode),
+            prompt: `currentMode is ${this.data.stateManager.currentMode}, select from list below to change it`,
+            cTSToken: cancellationTokenSource.token,
           });
         } catch (e) {
           HandleError(
@@ -228,10 +244,19 @@ export class CommandsService {
           'starting commandService.primaryActor.quickPickQueryAgentCommand (FireAndForget)',
           LogLevel.Debug,
         );
+        let cancellationTokenSource = new vscode.CancellationTokenSource();
+        this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
+          new AiAssistCancellationTokenSource(cancellationTokenSource),
+        );
         try {
           this.stateMachineService.quickPick({
-            kindOfEnumeration: QuickPickEnumeration.QueryAgentCommandMenuItemEnum,
-            cTSId: 'GetARealCTSId',
+            pickItems: this.data.pickItems.queryAgentCommandMenuItems,
+            pickValue: createQuickPickValue(
+              QuickPickEnumeration.QueryAgentCommandMenuItemEnum,
+              this.data.stateManager.currentQueryAgentCommand,
+            ),
+            prompt: `currentQueryAgentCommand is ${this.data.stateManager.currentQueryAgentCommand}, select from list below to change it`,
+            cTSToken: cancellationTokenSource.token,
           });
         } catch (e) {
           HandleError(
@@ -249,10 +274,19 @@ export class CommandsService {
     this.disposables.push(
       vscode.commands.registerCommand(`${this.extensionName}.primaryActor.quickPickQueryEngines`, () => {
         this.logger.log('starting commandService.primaryActor.quickPickQueryEngines (FireAndForget)', LogLevel.Debug);
+        let cancellationTokenSource = new vscode.CancellationTokenSource();
+        this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
+          new AiAssistCancellationTokenSource(cancellationTokenSource),
+        );
         try {
           this.stateMachineService.quickPick({
-            kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
-            cTSId: 'GetARealCTSId',
+            pickItems: this.data.pickItems.queryAgentCommandMenuItems,
+            pickValue: createQuickPickValue(
+              QuickPickEnumeration.QueryEnginesMenuItemEnum,
+              this.data.stateManager.currentQueryEngines,
+            ),
+            prompt: `currently active Query Engines are shown below, select one from the list to toggle it`,
+            cTSToken: cancellationTokenSource.token,
           });
         } catch (e) {
           // ToDo: // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
@@ -279,7 +313,7 @@ export class CommandsService {
           this.stateMachineService.sendQuery({
             queryFragmentCollection: this.data.fileManager.queryFragmentCollection,
             cTSToken: cancellationTokenSource.token,
-          } as QueryEventPayloadT);
+          } as IQueryEventPayload);
           // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);
         } catch (e) {
           // ToDo: // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them

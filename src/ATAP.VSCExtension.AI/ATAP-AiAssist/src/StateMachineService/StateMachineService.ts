@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { LogLevel, ILogger, IScopedLogger, Logger } from '@Logger/index';
 import { IData } from '@DataService/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction } from '@Decorators/index';
 import { ISerializationStructure, stringifyWithCircularReference, fromJson, fromYaml } from '@Serializers/index';
+import { QueryEngineNamesEnum } from '@BaseEnumerations/index';
 import {
   Actor,
   createActor,
@@ -29,14 +30,13 @@ import { IQueryService } from '@QueryService/index';
 
 export type LoggerDataT = { logger: ILogger; data: IData };
 
-import { QuickPickEventPayloadT } from './quickPickActorLogic';
-import { QueryEventPayloadT, QueryOutputT } from './queryMachine';
+import { IQuickPickEventPayload, IQueryEventPayload } from '@StateMachineService/index';
 
-import { primaryMachine } from './primaryMachineSimple';
+import { primaryMachine } from './primaryMachine';
 
 export interface IStateMachineService {
-  quickPick(data: QuickPickEventPayloadT): void;
-  sendQuery(data: QueryEventPayloadT): void;
+  quickPick(data: IQuickPickEventPayload): void;
+  sendQuery(data: IQueryEventPayload): void;
   start(): void;
   disposeAsync(): void;
 }
@@ -51,7 +51,7 @@ export class StateMachineService implements IStateMachineService {
   private disposed = false;
 
   constructor(
-    private readonly logger: ILogger,
+    private readonly logger: IScopedLogger,
     private readonly data: IData,
     private readonly queryService: IQueryService,
     private readonly extensionContext: vscode.ExtensionContext,
@@ -63,15 +63,7 @@ export class StateMachineService implements IStateMachineService {
     this.primaryActor = createActor(primaryMachine, {
       input: {
         logger: this.logger,
-        data: this.data,
         queryService: this.queryService,
-        queryString: '',
-        queryError: undefined,
-        queryCancelled: false,
-        queryActorCollection: undefined,
-        queryResponses: {},
-        queryErrors: {},
-        queryCTSToken: undefined,
       },
       // inspect: this.primaryMachineInspector.inspect,
       // for Debugging
@@ -103,7 +95,6 @@ export class StateMachineService implements IStateMachineService {
           );
         } else if (inspEvent.type === '@xstate.event') {
           const _preamble = `StateMachineService inspect received inspEvent type @xstate.event. event.type: ${inspEvent.event.type} ; actorRefID: ${inspEvent.actorRef.id} `;
-
           switch (inspEvent.event.type) {
             case 'xstate.init':
             case 'queryEvent':
@@ -125,12 +116,12 @@ export class StateMachineService implements IStateMachineService {
     });
   }
   @logFunction
-  quickPick(payload: QuickPickEventPayloadT): void {
-    // this.primaryActor.send({ type: 'quickPickEvent', data: payload });
+  quickPick(payload: IQuickPickEventPayload): void {
+    this.primaryActor.send({ type: 'QUICKPICK_START', payload: payload });
   }
   @logFunction
-  sendQuery(payload: QueryEventPayloadT): void {
-    this.primaryActor.send({ type: 'queryEvent', payload: payload });
+  sendQuery(payload: IQueryEventPayload): void {
+    this.primaryActor.send({ type: 'QUERY_START', payload: payload });
   }
 
   @logFunction
@@ -139,7 +130,7 @@ export class StateMachineService implements IStateMachineService {
   }
 
   static create(
-    logger: ILogger,
+    logger: IScopedLogger,
     extensionContext: vscode.ExtensionContext,
     data: IData,
     queryService: IQueryService,
@@ -207,7 +198,7 @@ export class StateMachineService implements IStateMachineService {
   async disposeAsync() {
     if (!this.disposed) {
       // Dispose of the primary actor
-      this.primaryActor.send({ type: 'disposeEvent' });
+      this.primaryActor.send({ type: 'DISPOSE_START' });
       // ToDo: await the transition to the 'Done' state
       this.disposed = true;
     }

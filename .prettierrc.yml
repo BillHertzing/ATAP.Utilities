@@ -1,5 +1,5 @@
 # Prettier configuration file in YAML format
-printWidth: 120 # Maximum line length
+printWidth: 240 # Maximum line length
 tabWidth: 2 # Number of spaces per indentation level
 trailingComma: all # Trailing commas where valid in ES5 (objects, arrays, etc.)
 semi: true # Print semicolons at the ends of statements

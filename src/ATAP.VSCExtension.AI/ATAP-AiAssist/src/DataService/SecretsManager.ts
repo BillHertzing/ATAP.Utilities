@@ -37,7 +37,7 @@ export class SecretsManager implements ISecretsManager {
     private readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
     private readonly configurationData: IConfigurationData,
   ) {
-    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
+    this.logger = new Logger(this.logger, this.constructor.name);
 
     this.secretManagersMap = {} as SecretManagerMap;
     switch (selectedSecretsVault) {

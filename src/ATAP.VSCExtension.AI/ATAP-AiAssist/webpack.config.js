@@ -17,7 +17,7 @@ const extensionConfig = {
 
   entry: "./src/extension.ts", // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
   output: {
-    // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
+    // the bundle is stored in the '_generated/dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
     path: path.resolve(__dirname, "_generated/dist"),
     filename: "extension.js",
     libraryTarget: "commonjs2",
@@ -25,6 +25,8 @@ const extensionConfig = {
   externals: {
     vscode: "commonjs vscode", // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
     prettier: "commonjs prettier", // this line will exclude 'prettier' from the bundle. It has a transitive dependency which webpack cannot resolve
+
+    // ToDo remove the pino prettier dependency?
     // modules added here also need to be added in the .vscodeignore file
   },
   resolve: {
@@ -41,11 +43,7 @@ const extensionConfig = {
     rules: [
       {
         test: /\.ts$/,
-        exclude: [
-          /src\\StateMachineService\\queryMachine.ts/,
-          /src\\StateMachineService\\primaryMachine.ts/,
-          /node_modules/,
-        ],
+        exclude: [/node_modules/],
         use: [
           {
             loader: "ts-loader",

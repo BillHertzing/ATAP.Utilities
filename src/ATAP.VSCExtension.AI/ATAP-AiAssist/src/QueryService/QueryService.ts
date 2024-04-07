@@ -53,54 +53,56 @@ export class QueryService implements IQueryService {
     private readonly logger: ILogger,
     private readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
     private readonly data: IData,
-  ) {}
-
-  static create(
-    logger: ILogger,
-    extensionContext: vscode.ExtensionContext,
-    data: IData,
-    callingModule: string,
-    initializationStructure?: ISerializationStructure,
-  ): QueryService {
-    Logger.staticLog(`QueryService.create called`, LogLevel.Debug);
-    let _obj: QueryService | null;
-    if (initializationStructure) {
-      try {
-        // ToDo: deserialize based on contents of structure
-        _obj = QueryService.convertFrom_yaml(initializationStructure.value);
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(
-            `${callingModule}: create queryService from initializationStructure using convertFrom_xxx -> }`,
-            e,
-          );
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(
-            `${callingModule}: create queryService from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
-          );
-        }
-      }
-      if (_obj === null) {
-        throw new Error(
-          `${callingModule}: create queryService from initializationStructure using convertFrom_xxx produced a null`,
-        );
-      }
-      return _obj;
-    } else {
-      try {
-        _obj = new QueryService(logger, extensionContext, data);
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(`${callingModule}: create queryService from initializationStructure -> }`, e);
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(`${callingModule}: create queryService from initializationStructure`);
-        }
-      }
-      return _obj;
-    }
+  ) {
+    this.logger = new Logger(this.logger, this.constructor.name);
   }
+
+  // static create(
+  //   logger: ILogger,
+  //   extensionContext: vscode.ExtensionContext,
+  //   data: IData,
+  //   callingModule: string,
+  //   initializationStructure?: ISerializationStructure,
+  // ): QueryService {
+  //   Logger.staticLog(`QueryService.create called`, LogLevel.Debug);
+  //   let _obj: QueryService | null;
+  //   if (initializationStructure) {
+  //     try {
+  //       // ToDo: deserialize based on contents of structure
+  //       _obj = QueryService.convertFrom_yaml(initializationStructure.value);
+  //     } catch (e) {
+  //       if (e instanceof Error) {
+  //         throw new DetailedError(
+  //           `${callingModule}: create queryService from initializationStructure using convertFrom_xxx -> }`,
+  //           e,
+  //         );
+  //       } else {
+  //         // ToDo:  investigation to determine what else might happen
+  //         throw new Error(
+  //           `${callingModule}: create queryService from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
+  //         );
+  //       }
+  //     }
+  //     if (_obj === null) {
+  //       throw new Error(
+  //         `${callingModule}: create queryService from initializationStructure using convertFrom_xxx produced a null`,
+  //       );
+  //     }
+  //     return _obj;
+  //   } else {
+  //     try {
+  //       _obj = new QueryService(logger, extensionContext, data);
+  //     } catch (e) {
+  //       if (e instanceof Error) {
+  //         throw new DetailedError(`${callingModule}: create queryService from initializationStructure -> }`, e);
+  //       } else {
+  //         // ToDo:  investigation to determine what else might happen
+  //         throw new Error(`${callingModule}: create queryService from initializationStructure`);
+  //       }
+  //     }
+  //     return _obj;
+  //   }
+  // }
 
   static convertFrom_json(json: string): QueryService {
     return fromJson<QueryService>(json);

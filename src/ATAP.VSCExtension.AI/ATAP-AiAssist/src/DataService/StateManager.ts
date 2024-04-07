@@ -79,11 +79,11 @@ export class StateManager implements IStateManager {
   private readonly cache: GlobalStateCache;
   private disposed = false;
   constructor(
-    private logger: ILogger,
+    private readonly logger: ILogger,
     readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
     private readonly configurationData: IConfigurationData,
   ) {
-    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
+    this.logger = new Logger(this.logger, this.constructor.name);
     this.cache = new GlobalStateCache(extensionContext);
     // create new collections if there is no collection in GlobalState
     if (!this.cache.getValue<TagCollection>('TagCollection')) {

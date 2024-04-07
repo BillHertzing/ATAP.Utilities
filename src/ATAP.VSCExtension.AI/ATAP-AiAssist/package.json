@@ -32,6 +32,10 @@
         "title": "ATAP-AiAssist: sendQuery (send the Query and all associated information to the server)"
       },
       {
+        "command": "atap-aiassist.sendTest",
+        "title": "ATAP-AiAssist: sendTest (whatever the test command does)"
+      },
+      {
         "command": "atap-aiassist.saveTagCollectionAsync",
         "title": "ATAP-AiAssist: save the tag collection to disk"
       },
@@ -48,22 +52,22 @@
         "title": "ATAP-AiAssist: save the conversation collection to disk"
       },
       {
-        "command": "atap-aiassist.primaryActor.quickPickVCSCommand",
+        "command": "atap-aiassist.quickPickVCSCommand",
         "title": "ATAP-AiAssist.quickPick",
         "icon": "$(wand)"
       },
       {
-        "command": "atap-aiassist.primaryActor.quickPickMode",
+        "command": "atap-aiassist.quickPickMode",
         "title": "ATAP-AiAssist.quickPick",
         "icon": "$(wand)"
       },
       {
-        "command": "atap-aiassist.primaryActor.quickPickQueryAgentCommand",
+        "command": "atap-aiassist.quickPickQueryAgentCommand",
         "title": "ATAP-AiAssist.quickPick",
         "icon": "$(wand)"
       },
       {
-        "command": "atap-aiassist.primaryActor.quickPickQueryEngines",
+        "command": "atap-aiassist.quickPickQueryEngines",
         "title": "ATAP-AiAssist.quickPick",
         "icon": "$(wand)"
       },
@@ -233,17 +237,17 @@
     ],
     "editor/title": [
       {
-        "command": "atap-aiassist.primaryActor.ET1",
+        "command": "atap-aiassist.ET1",
         "group": "navigation"
       }
     ],
     "editor/title/context": [
       {
-        "command": "atap-aiassist.primaryActor.ETC1",
+        "command": "atap-aiassist.ETC1",
         "group": "atap-aiassist"
       },
       {
-        "command": "atap-aiassist.primaryActor.ETC2",
+        "command": "atap-aiassist.ETC2",
         "group": "atap-aiassist"
       }
     ]
@@ -324,6 +328,8 @@
     "js-yaml": "^4.1.0",
     "kdbxweb": "^2.1.1",
     "openai": "^4.28.4",
+    "pino": "^8.19.0",
+    "pino-pretty": "^11.0.0",
     "prettier": "^3.2.5",
     "strip-comments": "^2.0.1",
     "ts-node": "^10.9.2",

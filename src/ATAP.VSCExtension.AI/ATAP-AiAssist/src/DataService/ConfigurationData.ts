@@ -3,7 +3,12 @@ import * as path from 'path';
 
 import { LogLevel, ILogger, Logger } from '@Logger/index';
 import { DetailedError, HandleError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
+import {
+  logConstructor,
+  logFunction,
+  logAsyncFunction,
+  logExecutionTime,
+} from '@Decorators/index';
 import { DefaultConfiguration, AllowedTypesInValue } from './DefaultConfiguration';
 import { isRunningInDevelopmentEnvironment, isRunningInTestingEnvironment } from '@Utilities/index';
 import {
@@ -23,7 +28,7 @@ import {
   SupportedSerializersEnum,
 } from '@BaseEnumerations/index';
 
-export interface IConfigurationData {
+export interface IConfigurationData  {
   readonly currentEnvironment: string;
   readonly tagsFilePath: string;
   readonly categorysFilePath: string;
@@ -52,7 +57,7 @@ export class ConfigurationData implements IConfigurationData {
   private disposed = false;
   // ToDo: constructor overloads to initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
   constructor(
-    private logger: ILogger,
+    public readonly logger: ILogger,
     private extensionContext: vscode.ExtensionContext, // private configurationDataInitializationStructure?: ISerializationStructure,
     // ToDo: make the envKeyMap a static property of the class, so it can be used during extension activation
 
@@ -62,7 +67,7 @@ export class ConfigurationData implements IConfigurationData {
       CloudBasePath: ['CLOUD_BASE_PATH'],
     },
   ) {
-    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
+    this.logger = new Logger(this.logger, this.constructor.name);
   }
 
   //@logFunction

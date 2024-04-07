@@ -27,8 +27,8 @@ export interface IAiAssistCancellationTokenSourceManager {
 export class AiAssistCancellationTokenSourceManager implements IAiAssistCancellationTokenSourceManager {
   private _aiAssistCancellationTokenSourceCollection: IAiAssistCancellationTokenSourceCollection | undefined;
   private disposed = false;
-  constructor(readonly logger: ILogger) {
-    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
+  constructor(private readonly logger: ILogger) {
+    this.logger = new Logger(this.logger, this.constructor.name);
   }
 
   get aiAssistCancellationTokenSourceCollection(): IAiAssistCancellationTokenSourceCollection {

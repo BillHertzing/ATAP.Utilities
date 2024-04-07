@@ -730,3 +730,151 @@ If I want a state to spawn off a new childMachine and store a reference to it in
 Best practice to return data from spawned child machines?
 
 When my child actors (machine logic) start (spawns), I store each child actors' ActorRef in a dictionary. When each child actor finishes, I need to signal the parent and return some data. The child machine can send an event to the parent and include all the data in the payload, or, send an event with just the child actor's identifying information (dictionary key), and have the parent machine use the dictionary key to get its ActorRef and then confirm the child actor is done and get the it's snapshot.output. Which is the better practice?
+
+sendTo problems
+
+The following snippet is an `entry:` `action`, I am using `inspect` to log every `inspEvent`, and can see the action being called in the log (`[Debug] StateMachineService @xstate.action actor: quickPickMachine action.type: sendQuickPickMachineDoneEventToParent`), and I can see the logger message in the log (`[Debug] sendQuickPickMachineDoneEventToParent, received event type is xstate.done.actor.quickPickMachineActor, sendingTo x:0`). But I don't see the 'QUICKPICK_DONE' event in the `inspect` stream, and the parent machine is not reacting as expected (transitioning). So I must have done something wrong in writing the `sendTo`. Could someone kindly point out what I've done wrong? TIA!
+
+```Typescript
+    sendQuickPickMachineDoneEventToParent: ({ context, event }) => {
+      context.logger.log(
+        `sendQuickPickMachineDoneEvent, received event type is ${event.type}, sendingTo ${context.parent.id}`,
+        LogLevel.Debug,
+      );
+      sendTo(context.parent, {
+        type: 'QUICKPICK_DONE',
+      });
+    },
+```
+
+Followup...
+
+This is the defintion of an action ( I changed its name...) in my machine's `setup...
+
+```Typescript
+setup(
+/*... */
+actions: {
+tellSomeoneImFinishedAction: (
+   _,
+   params: {
+     logger: IScopedLogger;
+     sendToTargetActorRef: ActorRef<any, any>;
+     eventCausingTheTransitionIntoOuterDoneState: any;
+   },
+ ) => {
+   params.logger.log(
+     `tellSomeoneImFinishedAction, eventCausingTheTransitionIntoOuterDoneState is ${params.eventCausingTheTransitionIntoOuterDoneState.type}, sendingTo ${params.sendToTargetActorRef.id}, event is ${params.eventCausingTheTransitionIntoOuterDoneState}`,
+     LogLevel.Debug,
+   );
+   // discriminate on event that triggers this action and send QUICKPICK_DONE or DISPOSE_COMPLETE
+   let _eventToSend: { type: 'QUICKPICK_DONE' } | { type: 'DISPOSE_COMPLETE' };
+   switch (params.eventCausingTheTransitionIntoOuterDoneState.type) {
+     case 'xstate.done.actor.quickPickActor':
+       _eventToSend = { type: 'QUICKPICK_DONE' };
+       break;
+     case 'xstate.done.actor.disposeActor':
+       _eventToSend = { type: 'DISPOSE_COMPLETE' };
+       break;
+     default:
+       throw new Error(
+         `tellSomeoneImFinishedAction received an unexpected event type: ${params.eventCausingTheTransitionIntoOuterDoneState.type}`,
+       );
+   }
+   // can't quite puzzle out how to get it to return the sendTo Action to be executed
+   // none of the following work... I just tried throwing a bunch of different syntax at it to see if anything sticks...
+   return sendTo(params.sendToTargetActorRef, _eventToSend); // this is the one I expected to work...  It doesn't...
+   return sendTo(params.sendToTargetActorRef, _eventToSend); // this is the one I expected to work...  It doesn't...
+   // return sendTo(() => params.sendToTargetActorRef, _eventToSend);
+   // ... None of the following are even syntactically correct
+   // return sendTo(() => {params.sendToTargetActorRef, _eventToSend;});
+   // return sendTo((params) => params.sendToTargetActorRef, _eventToSend);
+   // return sendTo((params) => {params.sendToTargetActorRef, _eventToSend});
+   // return sendTo(({params}) => params.sendToTargetActorRef, _eventToSend);
+   // return sendTo(({ params }) => { params.sendToTargetActorRef, _eventToSend});
+ },
+},
+)
+```
+
+I can successfull call this action in the entry property of the `outerDoneState`, like this:
+
+```Typescript
+outerDoneState: {
+  type: 'final',
+  entry: [
+   {
+     type: 'tellSomeoneImFinishedAction',
+     params: ({ context, event }) => ({
+       logger: context.logger,
+       sendToTargetActorRef: context.parent,
+       eventCausingTheTransitionIntoOuterDoneState: event,
+     }),
+   },
+    //sendTo(({ context }) => context.parent, { type: 'QUICKPICK_DONE' }), // just FYI, this line, if uncommented, will work...
+  ],
+},
+```
+
+`inspect` shows the action is called and the logger logs the fact that the action was called, with correct parameters, but the parent doesn't get the event...
+
+to @SilentEcho
+Thank You! I started my xState journey about 10 weeks ago, and your answer really cleared up a lot of xState action stuff for me. To summarize, I can put the sendTo(...) special action wherever an action can go , and it has two arguments, either or both of which can be a lambda that closes over their params argument. I ended up with the following:
+
+```Typescript
+export interface INotifyCompleteActionParameters {
+  logger: IScopedLogger;
+  sendToTargetActorRef: ActorRef<any, any>;
+  eventCausingTheTransitionIntoOuterDoneState: QuickPickMachineCompletionEventsT;
+}
+
+setup(
+ actions:{
+ notifyCompleteAction: sendTo(
+  (_, params: INotifyCompleteActionParameters) => {
+   params.logger.log(`notifyCompleteAction, in the destination selector lambda, sendToTargetActorRef is ${params.sendToTargetActorRef.id}`, LogLevel.Debug,);
+    return params.sendToTargetActorRef;
+  },
+  (_, params: INotifyCompleteActionParameters) => {
+    params.logger.log(`notifyCompleteAction, in the event selector lambda, eventCausingTheTransitionIntoOuterDoneState is ${params.eventCausingTheTransitionIntoOuterDoneState.type}`, LogLevel.Debug, );
+    // discriminate on event that triggers this action and send QUICKPICK_DONE or DISPOSE_COMPLETE
+    let _eventToSend: { type: 'QUICKPICK_DONE' } | { type: 'DISPOSE_COMPLETE' };
+    switch (params.eventCausingTheTransitionIntoOuterDoneState.type) {
+      case 'xstate.done.actor.quickPickActor':
+        _eventToSend = { type: 'QUICKPICK_DONE' };
+        break;
+      case 'xstate.done.actor.quickPickDisposeActor':
+        _eventToSend = { type: 'DISPOSE_COMPLETE' };
+        break;
+      // ToDo: add case legs for the two error events that come from the quickPickActor and quickPickDisposeActor
+      default:
+        throw new Error(`notifyCompleteAction received an unexpected event type: ${params.eventCausingTheTransitionIntoOuterDoneState.type}`,);
+    }
+    params.logger.log(`notifyCompleteAction, in the event selector lambda, _eventToSend is ${_eventToSend.type}`, LogLevel.Debug,);
+    return _eventToSend;
+  },
+ ),
+},
+).createMachine(
+/*...*/
+outerDoneState: {
+  type: 'final',
+  entry: [
+   // call the notifyComplete action here, setting the value of the params' properties to values pulled from the context and the event
+   // that entered the outerDonestate.
+   // When notifyCompleteAction is called, the lambda's supplied as arguments to sendTo (because they close over params), will use the values
+   //  set into params here, when the lambdas run
+   {
+    type: 'notifyCompleteAction',
+    params: ({ context, event }) =>
+      ({
+        logger: context.logger,
+        sendToTargetActorRef: context.parent,
+        eventCausingTheTransitionIntoOuterDoneState: event,
+      }) as INotifyCompleteActionParameters,
+    },
+  ],
+},
+/*...*/
+)
+```

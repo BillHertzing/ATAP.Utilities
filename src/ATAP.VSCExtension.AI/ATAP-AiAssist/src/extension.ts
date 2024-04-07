@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 import { DetailedError, HandleError } from '@ErrorClasses/index';
-import { LogLevel, Logger } from '@Logger/index';
+import { LogLevel, ILogger, Logger } from '@Logger/index';
 
 import { logFunction } from './Decorators';
 import { DefaultConfiguration } from '@DataService/DefaultConfiguration';
@@ -34,9 +34,10 @@ let stateMachineService: IStateMachineService;
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(extensionContext: vscode.ExtensionContext) {
-  // Initialize the static logger
-  Logger.staticConstructor();
-  Logger.staticLog(`${extensionContext.extension.id} activating`, LogLevel.Info);
+  // create the initial logger instance for the extension,
+  //  by default write all log messages to the console and to an output channel having the same name as the extension, with a LogLevel of Info
+  const logger = Logger.createLogger(extensionContext.extension.id.split('.')[1]);
+  logger.info(`${extensionContext.extension.id} activating`);
   // Declaration of variables
   let message: string = '';
   let workspacePath: string = '';
@@ -46,13 +47,6 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
 
   const extensionID = extensionContext.extension.id;
   const extensionName = extensionID.split('.')[1];
-
-  // create a logger instance, by default write to an output channel having the same name as the extension, with a LogLevel of Info
-  const logger = new Logger('');
-  // Channel name is the name of the extension
-  logger.createChannel(extensionName, LogLevel.Debug);
-  logger.setChannelEnabled('console', true);
-  logger.setChannelEnabled(extensionName, true);
 
   // If the extension is running in the development host, or if the environment variable 'Environment' is set to 'Development',
   //   set the environment variable 'Environment' to 'Development'. This overrides whatever value of Environment variable was set when the extension started
@@ -64,14 +58,14 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     // ToDO: test for an environment variable for debuggerLogLevel, and if it exists, use that value
     const settings = vscode.workspace.getConfiguration(extensionName);
     const settingsDebuggerLogLevel = settings.get<LogLevel>('debuggerLogLevel');
-    if (settingsDebuggerLogLevel) {
-      logger.setChannelLogLevel(extensionName, settingsDebuggerLogLevel);
-    } else if ('debuggerLogLevel' in DefaultConfiguration.Development) {
-      const defaultConfigurationDebuggerLogLevel = DefaultConfiguration.Development.debuggerLogLevel as LogLevel;
-      logger.setChannelLogLevel(extensionName, defaultConfigurationDebuggerLogLevel);
-    }
-    // Focus on the output stream when starting the extension in development mode
-    logger.getChannelInfo('atap-aiassist')?.outputChannel?.show(true);
+    //   if (settingsDebuggerLogLevel) {
+    //     logger.setChannelLogLevel(extensionName, settingsDebuggerLogLevel);
+    //   } else if ('debuggerLogLevel' in DefaultConfiguration.Development) {
+    //     const defaultConfigurationDebuggerLogLevel = DefaultConfiguration.Development.debuggerLogLevel as LogLevel;
+    //     logger.setChannelLogLevel(extensionName, defaultConfigurationDebuggerLogLevel);
+    //   }
+    //   // Focus on the output stream when starting the extension in development mode
+    //   logger.getChannelInfo('atap-aiassist')?.outputChannel?.show(true);
   }
   logger.log(`${extensionName} Activation Begun`, LogLevel.Info);
 
@@ -87,7 +81,9 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   //   );
   // } else {
   // ToDo: wrap in a try/catch block
-  securityService = SecurityService.create(logger, extensionContext, 'extension.ts');
+  // ToDo support rehydration of the SecurityService from a serialized structure
+  // securityService =   SecurityService.create(logger, extensionContext, 'extension.ts');
+  securityService = new SecurityService(logger, extensionContext);
   // }
 
   // if a DataService initialization serialized string exists, this will try and use it to create the DataService, else return a new empty one.
@@ -101,7 +97,8 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   //   );
   // } else {
   // ToDo: wrap in a try/catch block
-  dataService = DataService.create(logger, extensionContext, 'extension.ts');
+  // ToDo support rehydration of the DataService from a serialized structure
+  dataService = new DataService(logger, extensionContext);
   // }
 
   // logger.log(`data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`, LogLevel.Debug);
@@ -110,7 +107,9 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   securityService.externalDataVetting.AttachListener(dataService.data.eventManager.getEventEmitter());
 
   // ToDo: wrap in a try/catch block
-  queryService = QueryService.create(logger, extensionContext, dataService.data, 'extension.ts');
+  // ToDo support rehydration of the QueryService from a serialized structure
+
+  queryService = new QueryService(logger, extensionContext, dataService.data);
 
   // ToDo: wrap in a try/catch block
   // creating the StateMachineService starts all of the state machines

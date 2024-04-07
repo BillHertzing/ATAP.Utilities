@@ -1,30 +1,25 @@
 import { randomOutcome } from '@Utilities/index'; // ToDo: replace with a mocked iQueryService instead of using this import
 import * as vscode from 'vscode';
-import { LogLevel, IScopedLogger } from '@Logger/index';
+import { LogLevel, ILogger } from '@Logger/index';
 import { DetailedError, HandleError } from '@ErrorClasses/index';
 
-import { ActorRef, assertEvent, assign, fromPromise, sendTo, setup } from 'xstate';
+import { ActorRef, assertEvent, assign, fromPromise, OutputFrom, sendTo, setup } from 'xstate';
+
+import { IData } from '@DataService/index';
 
 import {
   ModeMenuItemEnum,
   QueryAgentCommandMenuItemEnum,
   QueryFragmentEnum,
   QuickPickEnumeration,
+  QueryEngineNamesEnum,
+  QueryEngineFlagsEnum,
 } from '@BaseEnumerations/index';
 
 import { IQueryService } from '@QueryService/index';
 
 import { IQueryFragmentCollection } from '@ItemWithIDs/index';
 
-/*
-export enum QuickPickEnumeration {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  VCSCommandMenuItemEnum = 'VCSCommandMenuItemEnum',
-  ModeMenuItemEnum = 'ModeMenuItemEnum',
-  QueryAgentCommandMenuItemEnum = 'QueryAgentCommandMenuItemEnum',
-  QueryEnginesMenuItemEnum = 'QueryEnginesMenuItemEnum',
-}
-*/
 export interface IQuickPickTypeMapping {
   [QuickPickEnumeration.ModeMenuItemEnum]: ModeMenuItemEnum;
   [QuickPickEnumeration.QueryEnginesMenuItemEnum]: QueryEngineFlagsEnum;
@@ -38,7 +33,7 @@ export type QuickPickValueT =
   | [QuickPickEnumeration.QueryAgentCommandMenuItemEnum, QueryAgentCommandMenuItemEnum];
 export function createQuickPickValue<K extends QuickPickMappingKeysT>(
   type: K,
-  value: IQuickPickTypeMapping[K],
+  value?: IQuickPickTypeMapping[K],
 ): QuickPickValueT {
   return [type, value] as QuickPickValueT;
 }
@@ -46,10 +41,13 @@ export function createQuickPickValue<K extends QuickPickMappingKeysT>(
 // **********************************************************************************************************************
 // types and interfaces across all machines
 export interface IAllMachinesBaseContext {
-  logger: IScopedLogger;
+  logger: ILogger;
 }
 
-export type ActorRefAndSubscriptionT = { actorRef: ActorRef<any, any>; subscription: any };
+export interface IActorRefAndSubscription {
+  actorRef: ActorRef<any, any>;
+  subscription: any;
+}
 export interface IAllMachinesCommonResults {
   isCancelled: boolean;
   errorMessage?: string;
@@ -57,131 +55,69 @@ export interface IAllMachinesCommonResults {
 
 // **********************************************************************************************************************
 // types and interfaces for the quickPickMachine
-export type QuickPickActorRefAndSubscriptionT = { actorRef: ActorRef<any, any>; subscription: any };
-// what the quickPickMachine contributes to the primaryMachine's context
+export interface IQuickPickActorRefAndSubscription extends IActorRefAndSubscription {}
+// what the quickPickActor contributes to the primaryMachine's context
 export interface IQuickPickMachineComponentOfPrimaryMachineContext {
-  quickPickMachineActorRef?: QuickPickActorRefAndSubscriptionT;
+  quickPickMachineActorRefAndSubscription?: IQuickPickActorRefAndSubscription;
+  quickPickMachineOutput?: IQuickPickMachineOutput;
 }
 export interface IQuickPickEventPayload {
+  kindOfEnumeration: QuickPickEnumeration;
+  cTSToken: vscode.CancellationToken;
+}
+export interface IQuickPickMachineInput
+  extends Omit<IQuickPickEventPayload, 'kindOfEnumeration'>,
+    IAllMachinesBaseContext {
   pickValue: QuickPickValueT;
   pickItems: vscode.QuickPickItem[];
   prompt: string;
-  cTSToken: vscode.CancellationToken;
-}
-export interface IQuickPickMachineInput extends IAllMachinesBaseContext, IQuickPickEventPayload {
   parent: ActorRef<any, any>;
 }
 export interface IQuickPickMachineContext extends IQuickPickMachineInput, IAllMachinesCommonResults {
   isLostFocus: boolean;
 }
 export interface IQuickPickMachineOutput extends IAllMachinesCommonResults {
-  pickValue?: QuickPickValueT;
+  pickValue: QuickPickValueT;
   isLostFocus: boolean;
 }
-export interface IQuickPickActorLogicInput extends IAllMachinesBaseContext, IQuickPickEventPayload {}
+export interface IQuickPickActorLogicInput
+  extends Omit<IQuickPickMachineContext, 'parent' | 'isCancelled' | 'isLostFocus'> {}
 export interface IQuickPickActorLogicOutput {
   pickValue: QuickPickValueT;
   isCancelled: boolean;
   isLostFocus: boolean;
 }
-
-/*******************************************************************/
-export enum QueryEngineNamesEnum {
-  // OpenAi's AI
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  ChatGPT = 'ChatGPT',
-  // Anthropic's AI
-  Claude = 'Claude',
-  // Google's AI
-  Bard = 'Bard',
-  // X's AI
-  Grok = 'Grok',
+export interface INotifyCompleteActionParameters {
+  logger: ILogger;
+  sendToTargetActorRef: ActorRef<any, any>;
+  eventCausingTheTransitionIntoOuterDoneState: QuickPickMachineCompletionEventsT;
 }
-export enum QueryEngineFlagsEnum {
-  // OpenAi's AI
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  ChatGPT = 1 << 0,
-  // Anthropic's AI
-  Claude = 1 << 1,
-  // Google's AI
-  Bard = 1 << 2,
-  // X's AI
-  Grok = 1 << 3,
+export type QuickPickMachineCompletionEventsT =
+  | { type: 'xstate.done.actor.quickPickActor'; output: IQuickPickActorLogicOutput }
+  | { type: 'xstate.error.actor.quickPickActor'; message: string }
+  | { type: 'xstate.done.actor.quickPickDisposeActor' }
+  | { type: 'xstate.error.actor.quickPickDisposeActor'; message: string };
+
+export interface IAssignQuickPickActorDoneOutputToQuickPickMachineContextActionParameters
+  extends IQuickPickMachineOutput {
+  errorMessage?: string;
 }
 
 // **********************************************************************************************************************
-// context type, input type, output type, and event payload types for the QueryMachine
-// what the quickPickMachine contributes to the primaryMachine's context
-export interface IQueryMachineComponentOfPrimaryMachineContext {
-  queryMachineActorRef?: ActorRefAndSubscriptionT;
-  queryMachineOutput?: IQueryMachineOutput;
-}
-export interface IQueryEventPayload {
-  queryFragmentCollection: IQueryFragmentCollection;
-  currentQueryEngines: QueryEngineFlagsEnum;
-  cTSToken: vscode.CancellationToken;
-}
-export interface IQueryMachineInput extends IAllMachinesBaseContext, IQueryEventPayload {
-  parent: ActorRef<any, any>;
-  queryService: IQueryService;
-}
-export type QuerySingleEngineActorOutputsT = Record<QueryEngineNamesEnum, IQuerySingleEngineActorLogicOutput>;
-export type QuerySingleEngineActorRefsT = Record<QueryEngineNamesEnum, ActorRefAndSubscriptionT>;
-export interface IQueryMachineContext
-  extends IQueryMachineInput,
-    IQueryGatheringActorComponentOfQueryMachineContext,
-    IQuerySingleEngineComponentOfQueryMachineContext,
-    IAllMachinesCommonResults {}
-export interface IQueryMachineOutput extends IAllMachinesCommonResults {
-  querySingleEngineActorOutputs?: QuerySingleEngineActorOutputsT;
-}
+// context type, input type, output type, and event{ type: 'QUERY_DONE' } | { type: 'DISPOSE_COMPLETE' } payload types for the QueryMultipleEngineMachine
+/*  Values imported from the queryMultipleEngineMachine*/
+import {
+  IQueryMultipleEngineMachineOutput,
+  IQueryMultipleEngineEventPayload,
+  queryMultipleEngineMachine,
+} from '@StateMachineService/index';
 
-// **********************************************************************************************************************
-// input and output to the QueryGatheringActorLogicSource
-export interface IQueryGatheringActorComponentOfQueryMachineContext {
-  queryString?: string;
+export interface IQueryMultipleEngineMachineActorRefAndSubscription extends IActorRefAndSubscription {}
+// what the QueryMultipleEngineMachine contributes to the primaryMachine's context
+export interface IQueryMultipleEngineMachineComponentOfPrimaryMachineContext {
+  queryMultipleEngineMachineActorRefAndSubscription?: IQueryMultipleEngineMachineActorRefAndSubscription;
+  queryMultipleEngineMachineOutput?: IQueryMultipleEngineMachineOutput;
 }
-export interface IQueryGatheringActorLogicInput extends IAllMachinesBaseContext {
-  queryFragmentCollection: IQueryFragmentCollection;
-  cTSToken: vscode.CancellationToken;
-}
-export interface IQueryGatheringActorLogicOutput
-  extends IQueryGatheringActorComponentOfQueryMachineContext,
-    IAllMachinesCommonResults {}
-// **********************************************************************************************************************
-// context type, input type, output type, and event payload types for the querySingleEngineMachine
-export interface IQuerySingleEngineComponentOfQueryMachineContext {
-  querySingleEngineActorRefs?: QuerySingleEngineActorRefsT;
-  querySingleEngineActorOutputs?: QuerySingleEngineActorOutputsT;
-}
-export interface IQuerySingleEngineMachineInput extends IAllMachinesBaseContext {
-  parent: ActorRef<any, any>;
-  queryService: IQueryService;
-  queryString: string;
-  queryEngineName: QueryEngineNamesEnum;
-  cTSToken: vscode.CancellationToken;
-}
-export interface IQuerySingleEngineMachineContext extends IQuerySingleEngineMachineInput, IAllMachinesCommonResults {
-  response?: string;
-}
-export interface IQuerySingleEngineMachineOutput extends IQuerySingleEngineActorLogicOutput {}
-// **********************************************************************************************************************
-// context type, input type, output type, and event payload types for the querySingleEngineActorLogic
-export interface IQuerySingleEngineActorLogicInput {
-  logger: IScopedLogger;
-  queryService: IQueryService;
-  queryString?: string;
-  queryEngineName: QueryEngineNamesEnum;
-  cTSToken: vscode.CancellationToken;
-}
-export interface IQuerySingleEngineActorLogicOutput extends IAllMachinesCommonResults {
-  queryEngineName: QueryEngineNamesEnum;
-  response?: string;
-}
-export interface IQuerySingleEngineMachineDoneEventPayload {
-  queryEngineName: QueryEngineNamesEnum;
-}
-
 // **********************************************************************************************************************
 // Actor Logic for the quickPickMachine
 export const quickPickActorLogic = fromPromise(async ({ input }: { input: IQuickPickActorLogicInput }) => {
@@ -193,7 +129,7 @@ export const quickPickActorLogic = fromPromise(async ({ input }: { input: IQuick
   let _isCancelled: boolean = false;
   let _isLostFocus: boolean = false;
   let _pickValue: QuickPickValueT = input.pickValue;
-  const _quickPickKindOfEnumeration = input.pickValue[0];
+  const kindOfEnumeration = input.pickValue[0];
   _pick = await vscode.window.showQuickPick(
     input.pickItems,
     {
@@ -203,15 +139,17 @@ export const quickPickActorLogic = fromPromise(async ({ input }: { input: IQuick
   );
   if (input.cTSToken.isCancellationRequested) {
     _isCancelled = true;
+    _pickValue = createQuickPickValue(kindOfEnumeration, undefined);
   } else if (_pick === undefined) {
     _isLostFocus = true;
+    _pickValue = createQuickPickValue(kindOfEnumeration, undefined);
   } else {
-    switch (_quickPickKindOfEnumeration) {
+    switch (kindOfEnumeration) {
       case QuickPickEnumeration.ModeMenuItemEnum:
-        _pickValue = createQuickPickValue(_quickPickKindOfEnumeration, _pick.label as ModeMenuItemEnum);
+        _pickValue = createQuickPickValue(kindOfEnumeration, _pick.label as ModeMenuItemEnum);
         break;
       case QuickPickEnumeration.QueryAgentCommandMenuItemEnum:
-        _pickValue = createQuickPickValue(_quickPickKindOfEnumeration, _pick.label as QueryAgentCommandMenuItemEnum);
+        _pickValue = createQuickPickValue(kindOfEnumeration, _pick.label as QueryAgentCommandMenuItemEnum);
         break;
       case QuickPickEnumeration.QueryEnginesMenuItemEnum:
         let _newQueryEngines: QueryEngineFlagsEnum = input.pickValue[1] as QueryEngineFlagsEnum;
@@ -231,14 +169,17 @@ export const quickPickActorLogic = fromPromise(async ({ input }: { input: IQuick
           default:
             throw new Error(`quickPickActorLogic received an unexpected QueryEngineName: ${_pick.label}`);
         }
-        _pickValue = createQuickPickValue(_quickPickKindOfEnumeration, _newQueryEngines as QueryEngineFlagsEnum);
+        _pickValue = createQuickPickValue(kindOfEnumeration, _newQueryEngines as QueryEngineFlagsEnum);
         break;
       default:
-        throw new Error(
-          `quickPickActorLogic received an unexpected quickPickKindOfEnumeration: ${_quickPickKindOfEnumeration}`,
-        );
+        throw new Error(`quickPickActorLogic received an unexpected kindOfEnumeration: ${kindOfEnumeration}`);
     }
   }
+  input.logger.log(
+    `quickPickActorLogic returning pickValue ${_pickValue}, isCancelled= ${_isCancelled}, isLostFocus= ${_isLostFocus}`,
+    LogLevel.Debug,
+  );
+
   return {
     pickValue: _pickValue,
     isCancelled: _isCancelled,
@@ -254,34 +195,96 @@ export const quickPickMachine = setup({
     input: IQuickPickMachineInput;
     output: IQuickPickMachineOutput;
     events:
-      | { type: 'QUICKPICK_QUICKPICK_MACHINE_DONE' }
-      | { type: 'done.invoke.quickPickActorLogic'; data: IQuickPickActorLogicOutput }
-      | { type: 'xstate.done.actor.quickPickActor'; output: IQuickPickActorLogicOutput }
+      | QuickPickMachineCompletionEventsT
+      | { type: 'QUICKPICK_DONE' }
       | { type: 'DISPOSE_START' } // Can be called at any time. The machine must transition to the disposeState.disposingState, where any allocated resources will be freed.
       | { type: 'DISPOSE_COMPLETE' };
   },
   actions: {
-    sendQuickPickMachineDoneEvent: (context) => {
-      sendTo(context.context.parent, {
-        type: 'QUICKPICK_DONE',
-      });
-    },
-    disposingStateEntryAction: (context) => {
-      context.context.logger.log(`disposingStateEntryAction, event type is ${context.event.type}`, LogLevel.Debug);
+    assignQuickPickActorDoneOutputToQuickPickMachineContext: assign(({ event }) => {
+      assertEvent(event, 'xstate.done.actor.quickPickActor');
+      return {
+        pickValue: event.output.pickValue,
+        isCancelled: event.output.isCancelled,
+        isLostFocus: event.output.isLostFocus,
+      };
+    }),
+    // assignQuickPickActorDoneOutputToQuickPickMachineContext2: assign(
+    //   _,
+    //   params: IAssignQuickPickActorDoneOutputToQuickPickMachineContextActionParameters,
+    // ) => {
+    //   params.logger.log(
+    //     `assignQuickPickActorDoneOutputToQuickPickMachineContext2, pickValue= ${params.pickValue}, isCancelled= ${params.isCancelled}, isLostFocus= ${params.isLostFocus}, errorMessage= ${params.errorMessage!}`,
+    //     LogLevel.Debug,
+    //   );
+    //   return assign({
+    //     pickValue: params.pickValue,
+    //     isCancelled: params.isCancelled,
+    //     isLostFocus: params.isLostFocus,
+    //     errorMessage: params.errorMessage,
+    //   });
+    // },
+    assignQuickPickActorErrorOutputToQuickPickMachineContext: assign(({ context, event }) => {
+      assertEvent(event, 'xstate.error.actor.quickPickActor');
+      return {
+        pickValue: createQuickPickValue(context.pickValue[0], undefined),
+        isCancelled: false,
+        isLostFocus: false,
+        errorMessage: event.message,
+      };
+    }),
+    // the sendTo(...) is a special action that can go wherever an action can go
+    //  it has two arguments, either or both of which can be a lambda that closes over their params argument
+    //   The first lambda returns an actorRef, and the second lambda returns an event, thus satisfying the two argument types that sendTo expects
+    notifyCompleteAction: sendTo(
+      (_, params: INotifyCompleteActionParameters) => {
+        params.logger.log(
+          `notifyCompleteAction, in the destination selector lambda, sendToTargetActorRef is ${params.sendToTargetActorRef.id}`,
+          LogLevel.Debug,
+        );
+        return params.sendToTargetActorRef;
+      },
+      (_, params: INotifyCompleteActionParameters) => {
+        params.logger.log(
+          `notifyCompleteAction, in the event selector lambda, eventCausingTheTransitionIntoOuterDoneState is ${params.eventCausingTheTransitionIntoOuterDoneState.type}`,
+          LogLevel.Debug,
+        );
+        // discriminate on event that triggers this action and send QUICKPICK_DONE or DISPOSE_COMPLETE
+        let _eventToSend: { type: 'QUICKPICK_DONE' } | { type: 'DISPOSE_COMPLETE' };
+        switch (params.eventCausingTheTransitionIntoOuterDoneState.type) {
+          case 'xstate.done.actor.quickPickActor':
+            _eventToSend = { type: 'QUICKPICK_DONE' };
+            break;
+          case 'xstate.done.actor.quickPickDisposeActor':
+            _eventToSend = { type: 'DISPOSE_COMPLETE' };
+            break;
+          // ToDo: add case legs for the two error events that come from the quickPickActor and quickPickDisposeActor
+          default:
+            throw new Error(
+              `notifyCompleteAction received an unexpected event type: ${params.eventCausingTheTransitionIntoOuterDoneState.type}`,
+            );
+        }
+        params.logger.log(
+          `notifyCompleteAction, in the event selector lambda, _eventToSend is ${_eventToSend.type}`,
+          LogLevel.Debug,
+        );
+        return _eventToSend;
+      },
+    ),
+    disposingStateEntryAction: ({ context, event }) => {
+      context.logger.log(`disposingStateEntryAction, event type is ${event.type}`, LogLevel.Debug);
       // ToDo: add code to dispose of any allocated resource
     },
-    disposeCompleteStateEntryAction: (context) => {
-      context.context.logger.log(
-        `disposeCompleteStateEntryAction, event type is ${context.event.type}`,
+
+    debugQuickPickMachineContext: ({ context, event }) => {
+      context.logger.log(
+        `debugQuickPickMachineContext, context.pickValue: ${context.pickValue}, context.isCancelled: ${context.isCancelled} context.isLostFocus: ${context.isLostFocus}`,
         LogLevel.Debug,
       );
-      sendTo(context.context.parent, {
-        type: 'DISPOSE_COMPLETE',
-      });
     },
   },
   actors: {
-    quickPickActorLogic: quickPickActorLogic,
+    quickPickActor: quickPickActorLogic,
   },
 }).createMachine({
   id: 'quickPickMachine',
@@ -301,558 +304,121 @@ export const quickPickMachine = setup({
     isLostFocus: context.isLostFocus,
     errorMessage: context.errorMessage,
   }),
-  type: 'parallel',
+  initial: 'startedState',
   states: {
-    operationState: {
-      // This state handles the main operation of the machine. First of two parallel states
-      initial: 'quickPickState',
+    startedState: {
+      entry: ({ context }) => {
+        context.logger.log(`quickPickMachine startedState entry`, LogLevel.Debug);
+      },
+      type: 'parallel',
       states: {
-        quickPickState: {
-          description:
-            'A state where an actor is invoked to show and let the user select an enum value from a QuickPick list.',
-          invoke: {
-            id: 'quickPickActor',
-            src: 'quickPickActorLogic',
-            input: ({ context }) => ({
+        operationState: {
+          // This state handles the main operation of the machine. First of two parallel states
+          initial: 'quickPickState',
+          states: {
+            quickPickState: {
+              description:
+                'A state where an actor is invoked to show and let the user select an enum value from a QuickPick list.',
+              invoke: {
+                id: 'quickPickActor',
+                src: 'quickPickActor',
+                input: ({ context }) => ({
+                  logger: context.logger,
+                  cTSToken: context.cTSToken,
+                  pickValue: context.pickValue,
+                  pickItems: context.pickItems,
+                  prompt: context.prompt,
+                }),
+                onDone: {
+                  target: 'innerDoneState',
+                  actions: [
+                    {
+                      type: 'assignQuickPickActorDoneOutputToQuickPickMachineContext',
+                      params: ({ context, event }) => ({
+                        logger: context.logger,
+                        pickValue: event.output.pickValue,
+                        isCancelled: event.output.isCancelled,
+                        isLostFocus: event.output.isLostFocus,
+                      }),
+                    },
+                  ],
+                },
+                onError: {
+                  target: 'errorState',
+                  actions: 'assignQuickPickActorErrorOutputToQuickPickMachineContext',
+                },
+              },
+            },
+            errorState: {
+              // ToDO: add code to attempt to remediate the error, otherwise transition to innerDoneState
+              always: {
+                target: 'innerDoneState',
+              },
+            },
+            innerDoneState: {
+              description: 'quickPickMachine is done. Transition to the outerDoneState',
+              always: '#quickPickMachine.outerDoneState',
+            },
+          },
+        },
+        disposeState: {
+          // 2nd parallel state. This state can be transitioned to from any state
+          initial: 'inactiveState',
+          states: {
+            inactiveState: {
+              on: {
+                DISPOSE_START: 'disposingState',
+              },
+            },
+            disposingState: {
+              entry: 'disposingStateEntryAction',
+              on: {
+                DISPOSE_COMPLETE: {
+                  target: 'disposeCompleteState',
+                },
+              },
+            },
+            disposeCompleteState: {
+              always: '#quickPickMachine.outerDoneState',
+            },
+          },
+        },
+      },
+    },
+    outerDoneState: {
+      type: 'final',
+      entry: [
+        // call the notifyComplete action here, setting the value of the params' properties to values pulled from the context and the event
+        // that entered the outerDonestate.
+        // When notifyCompleteAction is called, the lambda's supplied as arguments to sendTo (because they close over params), will use the values
+        //  set into params here, when the lambdas run
+        {
+          type: 'notifyCompleteAction',
+          params: ({ context, event }) =>
+            ({
               logger: context.logger,
-              cTSToken: context.cTSToken,
-              pickValue: context.pickValue,
-              pickItems: context.pickItems,
-              prompt: context.prompt,
-            }),
-            onDone: {
-              target: 'doneState',
-              actions: assign({
-                pickValue: (_, event) => (event as any).data.pickValue,
-                isCancelled: (_, event) => (event as any).data.isCancelled,
-                isLostFocus: (_, event) => (event as any).data.isLostFocus,
-              }),
-            },
-            onError: {
-              target: 'errorState',
-              actions: assign({
-                pickValue: undefined,
-                isCancelled: false,
-                isLostFocus: false,
-                errorMessage: (_, event) => (event as any).message,
-              }),
-            },
-          },
+              sendToTargetActorRef: context.parent,
+              eventCausingTheTransitionIntoOuterDoneState: event,
+            }) as INotifyCompleteActionParameters,
         },
-        errorState: {
-          // ToDO: add code to attempt to remediate the error, otherwise transition to doneState
-          always: {
-            target: 'doneState',
-          },
-        },
-        doneState: {
-          description: 'quickPickMachine is done. Send the QUICKPICK_DONE to the parent machine',
-          type: 'final',
-          entry: 'sendQuickPickMachineDoneEvent',
-        },
-      },
+        'debugQuickPickMachineContext',
+      ],
     },
-    disposeState: {
-      // 2nd parallel state. This state can be transitioned to from any state
-      initial: 'inactiveState',
-      states: {
-        inactiveState: {
-          on: {
-            DISPOSE_START: 'disposingState',
-          },
-        },
-        disposingState: {
-          entry: 'disposingStateEntryAction',
-          on: {
-            DISPOSE_COMPLETE: {
-              target: 'disposeCompleteState',
-            },
-          },
-        },
-        disposeCompleteState: {
-          entry: 'disposeCompleteStateEntryAction',
-          type: 'final',
-        },
-      },
-    },
-  },
-  on: {
-    // Global transition to disposingState
-    DISPOSE_START: 'disposeState',
   },
 });
 
 /*******************************************************************/
-/* Query Machine */
-// **********************************************************************************************************************
-// actor logic for the queryGatheringActor
-
-export const queryGatheringActorLogic = fromPromise<IQueryGatheringActorLogicOutput, IQueryGatheringActorLogicInput>(
-  async ({ input }: { input: IQueryGatheringActorLogicInput }) => {
-    let _queryString = '';
-    let _queryFragmentCollection: IQueryFragmentCollection;
-    input.logger.log(`queryGatheringActorLogic called`, LogLevel.Debug);
-    // always test the cancellation token on entry to the function to see if it has already been cancelled
-    if (input.cTSToken.isCancellationRequested) {
-      input.logger.log(`queryGatheringActorLogic leaving with cancelled = true`, LogLevel.Debug);
-      return {
-        queryString: '',
-        isCancelled: true,
-      } as IQueryGatheringActorLogicOutput;
-    }
-    _queryFragmentCollection = input.queryFragmentCollection;
-    // if the queryFragmentCollection is not defined or is empty, then return an error
-    if (!_queryFragmentCollection || _queryFragmentCollection.value.length === 0) {
-      throw new Error('queryGatheringActorLogic: queryFragmentCollection is not defined or empty');
-    }
-    // switch on the fragmentKind and collect accordingly
-    _queryFragmentCollection.value.forEach((element) => {
-      // test for cancellation each time around the loop
-      // if (input.queryCTSToken.isCancellationRequested) {
-      //   input.logger.log(`gatheringActorLogic leaving with cancelled = true`, LogLevel.Debug);
-      //   return {
-      //     queryString: '',
-      //     cancelled: true,
-      //     cTSToken: input.cTSToken,
-      //   } as QueryGatheringActorLogicOutputT;
-      // }
-      switch (element.value.kindOfFragment) {
-        case QueryFragmentEnum.StringFragment:
-          _queryString += element.value.value;
-          break;
-        case QueryFragmentEnum.FileFragment:
-          //ToDo: Implement FileFragment
-          //queryString += element.value;
-          break;
-        default:
-          throw new Error(
-            `queryGatheringActorLogic: Unhandled queryFragment.kindOfFragment: ${element.value.kindOfFragment}`,
-          );
-      }
-    });
-    input.logger.log(`queryGatheringActorLogic leaving with queryString= ${_queryString}`, LogLevel.Debug);
-    return {
-      queryString: _queryString,
-      isCancelled: false,
-    } as IQueryGatheringActorLogicOutput;
-  },
-);
-
-// **********************************************************************************************************************
-// actor logic definition for the querySingleEngineActorLogic
-export const querySingleEngineActorLogic = fromPromise<
-  IQuerySingleEngineActorLogicOutput,
-  IQuerySingleEngineActorLogicInput
->(async ({ input }: { input: IQuerySingleEngineActorLogicInput }) => {
-  input.logger.log(`querySingleActorLogic called`, LogLevel.Debug);
-  // always test the cancellation token on entry to the function to see if it has already been cancelled
-  if (input.cTSToken?.isCancellationRequested) {
-    return { isCancelled: true } as IQuerySingleEngineActorLogicOutput;
-  }
-  let _qs = input.queryString;
-  let _queryResponse: { result?: string; isCancelled: boolean };
-  // use the queryService to handle the query to the Bard queryEngine
-  try {
-    _queryResponse = await randomOutcome('Response FromBard');
-    // ToDo: use the queryService to handle the query to a queryEngine. For testing and development, pass an instance of queryService that uses a mock inside the sendQueryAsync
-    // _queryResponse = await input.queryService.sendQueryAsync(
-    //   input.queryString as string,
-    //   input.queryEngineName,
-    //   input.cTSToken,
-    // );
-  } catch (e) {
-    // Rethrow the error with a more detailed error message
-    HandleError(e, 'queryXXX', 'querySingleActorLogic', 'failed calling queryService.sendQueryAsync');
-  }
-  // always test the cancellation token after returning from an await to see if the function being awaited was cancelled
-  if (input.cTSToken?.isCancellationRequested) {
-    input.logger.log(
-      `querySingleActorLogic leaving after await queryService.sendQueryAsync with cancelled = true`,
-      LogLevel.Debug,
-    );
-    return { isCancelled: true } as IQuerySingleEngineActorLogicOutput;
-  }
-  input.logger.log(
-    `querySingleActorLogic leaving with response = ${_queryResponse.result}, cancelled = false`,
-    LogLevel.Debug,
-  );
-  return {
-    queryEngineName: input.queryEngineName,
-    queryResponse: _queryResponse.result,
-    isCancelled: false,
-  } as IQuerySingleEngineActorLogicOutput;
-});
-
-// **********************************************************************************************************************
-// Machine definition for the querySingleEngineMachine
-
-export const querySingleEngineMachine = setup({
-  types: {} as {
-    context: IQuerySingleEngineMachineContext;
-    input: IQuerySingleEngineMachineInput;
-    output: IQuerySingleEngineMachineOutput;
-    events:
-      | { type: 'QUERY.SINGLE_ENGINE_MACHINE_DONE'; payload: IQuerySingleEngineMachineDoneEventPayload }
-      | { type: 'xstate.done.actor.querySingleEngineActor'; data: IQuerySingleEngineActorLogicOutput }
-      | { type: 'xstate.error.actor.querySingleEngineActor'; data: { name: string; message: string } }
-      | { type: 'DISPOSE_START' } // Can be called at any time. The machine must transition to the disposeState.disposingState, where any allocated resources will be freed.
-      | { type: 'DISPOSE_COMPLETE' };
-    children: {
-      querySingleEngineActor: 'querySingleEngineActor';
-    };
-  },
-  actors: {
-    querySingleEngineActor: querySingleEngineActorLogic,
-  },
-  actions: {
-    disposingStateEntryAction: (context) => {
-      context.context.logger.log(`disposingStateEntryAction, event type is ${context.event.type}`, LogLevel.Debug);
-      // ToDo: add code to dispose of any allocated resource
-    },
-    disposeCompleteStateEntryAction: (context) => {
-      context.context.logger.log(
-        `disposeCompleteStateEntryAction, event type is ${context.event.type}`,
-        LogLevel.Debug,
-      );
-      sendTo(context.context.parent, {
-        type: 'DISPOSE_COMPLETE',
-      });
-    },
-    sendQuerySingleEngineMachineDoneEvent: ({ context }) => {
-      sendTo(context.parent, {
-        type: 'QUERY.SiNGLE_ENGINE_MACHINE_DONE',
-        payload: { queryEngineName: context.queryEngineName } as IQuerySingleEngineMachineDoneEventPayload,
-      });
-    },
-  },
-}).createMachine({
-  context: ({ input }) => ({
-    logger: input.logger,
-    parent: input.parent,
-    queryService: input.queryService,
-    queryString: '',
-    queryEngineName: input.queryEngineName,
-    isCancelled: false,
-    cTSToken: input.cTSToken,
-  }),
-  output: ({ context }) => ({
-    queryEngineName: context.queryEngineName,
-    response: context.response,
-    isCancelled: context.isCancelled,
-    errorMessage: context.errorMessage,
-  }),
-  type: 'parallel',
-  states: {
-    operationState: {
-      states: {
-        querySingleEngineActorState: {
-          description: 'send a query to a single queryAgent and collect the result',
-          invoke: {
-            id: 'querySingleEngineActor',
-            src: 'querySingleEngineActor',
-            input: ({ context }) => ({
-              logger: context.logger,
-              queryService: context.queryService,
-              queryString: context.queryString,
-              queryEngineName: context.queryEngineName,
-              cTSToken: context.cTSToken,
-            }),
-            onDone: {
-              target: 'doneState',
-              // set the context for response and isCancelled
-              actions: assign({
-                response: (_, event) => (event as any).output.response,
-                isCancelled: (_, event) => (event as any).output.isCancelled,
-              }),
-            },
-            onError: {
-              // set the context for errorMessage and isCancelled
-              target: 'errorState',
-              actions: [
-                assign({
-                  response: undefined,
-                  isCancelled: false,
-                  errorMessage: (_, event) => (event as any).message,
-                }),
-              ],
-            },
-          },
-          errorState: {
-            // ToDO: add code to attempt to remediate the error, otherwise transition to doneState
-            always: {
-              target: 'doneState',
-            },
-          },
-          doneState: {
-            description:
-              'querySingleEngineMachine  is done. send the QUERY.SINGLE_ENGINE_MACHINE_DONE event to the parent machine (queryMachine)',
-            type: 'final',
-            entry: 'sendQuerySingleEngineMachineDoneEvent',
-          },
-        },
-      },
-    },
-    disposeState: {
-      // 2nd parallel state. This state can be transitioned to from any state
-      initial: 'inactiveState',
-      states: {
-        inactiveState: {
-          on: {
-            DISPOSE_START: 'disposingState',
-          },
-        },
-        disposingState: {
-          entry: 'disposingStateEntryAction',
-          on: {
-            DISPOSE_COMPLETE: {
-              target: 'disposeCompleteState',
-            },
-          },
-        },
-        disposeCompleteState: {
-          entry: 'disposeCompleteStateEntryAction',
-          type: 'final',
-        },
-      },
-    },
-  },
-});
-
-// **********************************************************************************************************************
-// Machine definition for the queryMachine
-export const queryMachine = setup({
-  types: {} as {
-    context: IQueryMachineContext;
-    input: IQueryMachineInput;
-    output: IQueryMachineOutput;
-    events:
-      | { type: 'QUERY.SINGLE_ENGINE_MACHINE_DONE'; payload: IQuerySingleEngineMachineDoneEventPayload }
-      | { type: 'QUERY.QUERY_MACHINE_DONE' }
-      | { type: 'DISPOSE_START' } // Can be called at any time. The machine must transition to the disposeState.disposingState, where any allocated resources will be freed.
-      | { type: 'DISPOSE_COMPLETE' };
-    children: {
-      gatheringActor: 'gatheringActorLogic';
-      querySingleEngineMachine: 'querySingleEngineMachine';
-    };
-  },
-  actors: {
-    gatheringActorLogic: queryGatheringActorLogic,
-    querySingleEngineMachine: querySingleEngineMachine,
-  },
-  actions: {
-    // spawn a querySingleEngineMachine for each enabled queryAgent and store the actor references in the context.querySingleEngineActorRefs
-    fetchingStateEntryAction: assign({
-      querySingleEngineActorRefs: ({ context, spawn, event, self }) => {
-        // create a local variable to hold the new querySingleEngineActorRefs object
-        let _querySingleEngineActorRefs: QuerySingleEngineActorRefsT = {} as QuerySingleEngineActorRefsT;
-        // spawn a querySingleEngineMachine for each enabled queryAgent
-        Object.entries(QueryEngineFlagsEnum)
-          .filter(
-            // get just the active query engines
-            ([name, queryEngineFlagValue]) =>
-              context.currentQueryEngines & (queryEngineFlagValue as QueryEngineFlagsEnum),
-          )
-          // convert from the name of the enumeration values (string) to the actual entire enumeration object
-          .map(([name]) => QueryEngineNamesEnum[name as keyof typeof QueryEngineNamesEnum])
-          // iterate over each active enumeration object and spawn a querySingleEngineMachine for each
-          .forEach((name) => {
-            const _actorRef = spawn('querySingleEngineMachine', {
-              systemId: `qSAM-${name}`,
-              id: 'querySingleEngineMachine',
-              input: {
-                logger: context.logger,
-                queryEngineName: name,
-                parent: self,
-                queryService: context.queryService,
-                queryString: context.queryString as string,
-                cTSToken: context.cTSToken,
-              },
-            });
-            const _subscription = _actorRef.subscribe((state) => {});
-            //store the spawned actor reference and its subscription in the querySingleEngineActorRefs object keyed by the enumeration object
-            _querySingleEngineActorRefs[name] = { actorRef: _actorRef, subscription: _subscription };
-          });
-        // return the new _querySingleEngineActorRefs structure, placing it into the context.querySingleEngineActorRefs
-        return _querySingleEngineActorRefs;
-      },
-    }),
-    sendQueryMachineDoneEvent: (context) => {
-      sendTo(context.context.parent, {
-        type: 'QUERY.QUERY_MACHINE_DONE',
-      });
-    },
-    disposingStateEntryAction: (context) => {
-      context.context.logger.log(`disposingStateEntryAction, event type is ${context.event.type}`, LogLevel.Debug);
-      // ToDo: add code to dispose of any allocated resource
-    },
-    disposeCompleteStateEntryAction: (context) => {
-      context.context.logger.log(
-        `disposeCompleteStateEntryAction, event type is ${context.event.type}`,
-        LogLevel.Debug,
-      );
-      sendTo(context.context.parent, {
-        type: 'DISPOSE_COMPLETE',
-      });
-    },
-  },
-  guards: {
-    allQuerySingleEngineActorOutputsDefined: (context) => {
-      const _querySingleEngineActorRefs = context.context.querySingleEngineActorRefs as QuerySingleEngineActorRefsT;
-      const _querySingleEngineActorOutputs = context.context
-        .querySingleEngineActorOutputs as QuerySingleEngineActorOutputsT;
-      return (
-        Object.keys(context.context.querySingleEngineActorRefs as QuerySingleEngineActorRefsT).length ===
-        Object.keys(context.context.querySingleEngineActorOutputs as QuerySingleEngineActorOutputsT).length
-      );
-    },
-  },
-}).createMachine({
-  id: 'queryMachine',
-  context: ({ input }) => ({
-    logger: input.logger,
-    parent: input.parent,
-    queryService: input.queryService,
-    queryFragmentCollection: input.queryFragmentCollection,
-    currentQueryEngines: input.currentQueryEngines,
-    cTSToken: input.cTSToken,
-    isCancelled: false,
-  }),
-  output: ({ context }) => ({
-    querySingleEngineActorOutputs: context.querySingleEngineActorOutputs,
-    isCancelled: context.isCancelled,
-    errorMessage: context.errorMessage,
-  }),
-  type: 'parallel',
-  states: {
-    operationState: {
-      initial: 'gatheringState',
-      states: {
-        gatheringState: {
-          description:
-            'given an ordered collection of fragment identifiers, gather the fragments and assemble them into a query string',
-          invoke: {
-            id: 'gatheringActor',
-            src: 'gatheringActorLogic',
-            input: ({ context }) => ({
-              logger: context.logger,
-              queryFragmentCollection: context.queryFragmentCollection,
-              cTSToken: context.cTSToken,
-            }),
-            onDone: {
-              target: 'fetchingState',
-              actions:
-                // set the context for queryString and isCancelled
-                assign({
-                  queryString: (_, event) => (event as any).output.queryString,
-                  //isCancelled: (_, event) => (event as {type: 'xstate.done.actor.gatheringActor'; output: IQueryGatheringActorLogicOutput}).output.isCancelled,           }
-                  isCancelled: (_, event) => (event as any).output.isCancelled,
-                }),
-            },
-            onError: {
-              target: 'errorState',
-              actions:
-                // set the context for errorMessage and isCancelled
-                assign({
-                  queryString: undefined,
-                  isCancelled: false,
-                  errorMessage: (_, event) => (event as any).message,
-                }),
-            },
-          },
-        },
-        fetchingState: {
-          id: 'fetchingState',
-          description: 'given a query string, send it to every enabled queryAgent and collect the results',
-          entry: 'fetchingStateEntryAction', // this entry action spawns a querySingleEngineMachine for each enabled queryAgent and stores the actor references in the context.querySingleEngineActorRefs
-
-          // when a querySingleEngineMachine is done, it will send the QUERY.SINGLE_ENGINE_MACHINE_DONE event to this machine
-          // when this machine receives a QUERY.SINGLE_ENGINE_MACHINE_DONE event it will:
-          // read the event payload for the engineName
-          // get the corresponding actorRef, confirm it is in done state,
-          // and assign the output of the querySingleEngineMachine of type IQuerySingleEngineMachineOutput to the value of context.querySingleEngineActorOutputs instance keyed by the engineName
-          // ToDo: Notify this machine's parent machine (primaryMachine) that one querySingleEngineMachine is done and send the instance of the IQuerySingleEngineMachineOutput to its parent
-          // transition to the doneState guarded by condition that all of the context.querySingleEngineActorOutputs instances are defined for every entry in context.querySingleEngineActorRefs
-          on: {
-            'QUERY.SINGLE_ENGINE_MACHINE_DONE': {
-              target: 'waitingForAllState',
-              actions: [
-                // assign to querySingleEngineActorOutputs in this machine's context the output of the querySingleEngineMachine
-                assign(({ context, event }) => {
-                  assertEvent(event, 'QUERY.SINGLE_ENGINE_MACHINE_DONE');
-                  const _queryEngineName = event.payload.queryEngineName;
-                  const _querySingleEngineMachineRef = context.querySingleEngineActorRefs![_queryEngineName];
-                  // confirm the querySingleEngineMachine is done
-                  if (_querySingleEngineMachineRef.actorRef.getSnapshot().status !== 'done') {
-                    throw new Error('OMG how can this happen??!! Gotta submit an xState issue if this ever pops up');
-                  }
-                  const _querySingleEngineActorResponse = _querySingleEngineMachineRef.actorRef.getSnapshot().output;
-                  const _querySingleEngineActorOutputs =
-                    context.querySingleEngineActorOutputs as QuerySingleEngineActorOutputsT;
-                  _querySingleEngineActorOutputs[_queryEngineName] = _querySingleEngineActorResponse;
-                  return {
-                    querySingleEngineActorOutputs: _querySingleEngineActorOutputs,
-                  };
-                }),
-              ],
-            },
-          },
-        },
-        waitingForAllState: {
-          // if all context.querySingleEngineActorOutputs are defined, transition to the doneState
-          // else transition back to the fetchingState, (note that reset is NOT true, so entry actions will not be re-executed)
-          always: [
-            { target: 'doneState', guard: 'allQuerySingleEngineActorOutputsDefined' },
-            { target: 'fetchingState' },
-          ],
-        },
-        errorState: {
-          // ToDO: add code to attempt to remediate the error, otherwise transition to doneState
-          always: {
-            target: 'doneState',
-          },
-        },
-        doneState: {
-          description:
-            'all querySingleEngineMachines are done the querySingleEngineActorOutputs are all defined. Send the QUERY.QUERY_MACHINE_DONE to the parent machine',
-          type: 'final',
-          entry: 'sendQueryMachineDoneEvent',
-        },
-      },
-    },
-    disposeState: {
-      // 2nd parallel state. This state can be transitioned to from any state
-      initial: 'inactiveState',
-      states: {
-        inactiveState: {
-          on: {
-            DISPOSE_START: 'disposingState',
-          },
-        },
-        disposingState: {
-          entry: 'disposingStateEntryAction',
-          on: {
-            DISPOSE_COMPLETE: {
-              target: 'disposeCompleteState',
-            },
-          },
-        },
-        disposeCompleteState: {
-          entry: 'disposeCompleteStateEntryAction',
-          type: 'final',
-        },
-      },
-    },
-  },
-});
+/* Primary Machine */
 
 export interface IPrimaryMachineInput extends IAllMachinesBaseContext {
   queryService: IQueryService;
+  data: IData;
 }
 
 export interface IPrimaryMachineContext
   extends IPrimaryMachineInput,
     IQuickPickMachineComponentOfPrimaryMachineContext,
-    IQueryMachineComponentOfPrimaryMachineContext {}
+    IQueryMultipleEngineMachineComponentOfPrimaryMachineContext {}
 
 // create the primaryMachine definition
 export const primaryMachine = setup({
@@ -861,79 +427,162 @@ export const primaryMachine = setup({
     input: IPrimaryMachineInput;
     events:
       | { type: 'QUICKPICK_START'; payload: IQuickPickEventPayload }
-      | { type: 'QUICKPICK_QUICKPICK_MACHINE_DONE' }
-      | { type: 'QUERY_START'; payload: IQueryEventPayload }
-      | { type: 'QUERY_QUERY_MACHINE_DONE' }
+      | { type: 'QUICKPICK_DONE' }
+      | { type: 'QUERY_START'; payload: IQueryMultipleEngineEventPayload }
+      | { type: 'QUERY_DONE' }
       | { type: 'DISPOSE_START' } // Can be called at any time. The machine must transition to the disposeState.disposingState, where any allocated resources will be freed.
       | { type: 'DISPOSE_COMPLETE' };
   },
   actions: {
     spawnQuickPickMachine: assign(({ context, spawn, event, self }) => {
+      assertEvent(event, 'QUICKPICK_START');
+      let _pickItems: vscode.QuickPickItem[];
+      let _pickValue: QuickPickValueT;
+      let _prompt = '';
+      switch (event.payload.kindOfEnumeration) {
+        case QuickPickEnumeration.ModeMenuItemEnum:
+          _pickValue = createQuickPickValue(event.payload.kindOfEnumeration, context.data.stateManager.currentMode);
+          _pickItems = context.data.pickItems.modeMenuItems;
+          _prompt = `currently active Mode is ${context.data.stateManager.currentMode}, select one from the list to change it`;
+          break;
+        case QuickPickEnumeration.QueryAgentCommandMenuItemEnum:
+          _pickValue = createQuickPickValue(
+            event.payload.kindOfEnumeration,
+            context.data.stateManager.currentQueryAgentCommand,
+          );
+          _pickItems = context.data.pickItems.queryAgentCommandMenuItems;
+          _prompt = `currently active Query Agent Command is ${context.data.stateManager.currentQueryAgentCommand}, select one from the list to change it`;
+          break;
+        case QuickPickEnumeration.QueryEnginesMenuItemEnum:
+          _pickValue = createQuickPickValue(
+            event.payload.kindOfEnumeration,
+            context.data.stateManager.currentQueryEngines,
+          );
+          _pickItems = context.data.pickItems.queryEnginesMenuItems;
+          _prompt = `currently active Query Engines are shown below, select one from the list to change it`;
+          break;
+        default:
+          throw new Error(
+            `primaryMachine received an unexpected kindOfEnumeration: ${event.payload.kindOfEnumeration}`,
+          );
+      }
       const _actorRef = spawn('quickPickMachine', {
         systemId: 'quickPickMachine',
         id: 'quickPickMachine',
         input: {
           logger: context.logger,
           parent: self,
-          pickValue: (event as { type: 'QUICKPICK_START'; payload: IQuickPickEventPayload }).payload.pickValue,
-          pickItems: (event as { type: 'QUICKPICK_START'; payload: IQuickPickEventPayload }).payload.pickItems,
-          prompt: (event as { type: 'QUICKPICK_START'; payload: IQuickPickEventPayload }).payload.prompt,
-          cTSToken: (event as { type: 'QUICKPICK_START'; payload: IQuickPickEventPayload }).payload.cTSToken,
+          pickValue: _pickValue,
+          pickItems: _pickItems,
+          prompt: _prompt,
+          cTSToken: event.payload.cTSToken,
         },
       });
-      const _subscription = _actorRef.subscribe((state) => {
-        /* ToDo: */
+      const _subscription = _actorRef.subscribe((x) => {
+        context.logger.log(`spawnQuickPickMachine subscription called with x = ${x}`, LogLevel.Debug);
       });
       return {
-        quickPickMachineActorRef: {
+        quickPickMachineActorRefAndSubscription: {
           actorRef: _actorRef,
           subscription: _subscription,
         },
       };
     }),
-    spawnQueryMachine: assign(({ context, spawn, event, self }) => {
-      const _actorRef = spawn('queryMachine', {
-        systemId: 'queryMachine',
-        id: 'queryMachine',
+    spawnMultipleEngineQueryMachine: assign(({ context, spawn, event, self }) => {
+      context.logger.log(`spawnMultipleEngineQueryMachine called`, LogLevel.Debug);
+      assertEvent(event, 'QUERY_START');
+      const _currentQueryEngines = context.data.stateManager.currentQueryEngines;
+      const _actorRef = spawn('queryMultipleEngineMachine', {
+        systemId: 'queryMultipleEngineMachine',
+        id: 'queryMultipleEngineMachine',
         input: {
           logger: context.logger,
           parent: self,
           queryService: context.queryService,
-          queryFragmentCollection: (event as { type: 'QUERY_START'; payload: IQueryEventPayload }).payload
-            .queryFragmentCollection,
-          currentQueryEngines: (event as { type: 'QUERY_START'; payload: IQueryEventPayload }).payload
-            .currentQueryEngines,
-          cTSToken: (event as { type: 'QUERY_START'; payload: IQueryEventPayload }).payload.cTSToken,
+          queryFragmentCollection: event.payload.queryFragmentCollection,
+          currentQueryEngines: _currentQueryEngines,
+          cTSToken: event.payload.cTSToken,
         },
       });
-      const _subscription = _actorRef.subscribe((state) => {});
-
+      const _subscription = _actorRef.subscribe((x) => {
+        context.logger.log(`spawnMultipleEngineQueryMachine subscription called with x = ${x}`, LogLevel.Debug);
+      });
       return {
-        queryMachineActorRef: {
+        queryMultipleEngineMachineActorRefAndSubscription: {
           actorRef: _actorRef,
           subscription: _subscription,
         },
+      };
+    }),
+    // copy the results (output) from the quickPickMachine to the context
+    assignQuickPickMachineDoneOutputToPrimaryMachineContext: assign(({ context }) => {
+      context.logger.log(`assignQuickPickMachineDoneOutputToPrimaryMachineContext called`, LogLevel.Debug);
+      const _quickPickMachineActorRef =
+        context.quickPickMachineActorRefAndSubscription as IQuickPickActorRefAndSubscription;
+      // confirm the quickPickMachineActor is done
+      if (_quickPickMachineActorRef.actorRef.getSnapshot().status !== 'done') {
+        throw new Error('OMG how can this happen??!! Gotta submit an xState issue if this ever pops up');
+      }
+      // ToDo: unsubscribe from the quickPickMachineActorRef
+      // ToDo: set the actorRef to undefined
+      // Save the output of the quickPickMachine to the IData instance
+      return {
+        quickPickMachineOutput: context.quickPickMachineActorRefAndSubscription!.actorRef.getSnapshot().output,
+        data: {
+          ...context.data,
+          stateManager: {
+            ...context.data.stateManager,
+            currentQueryEngines:
+              context.quickPickMachineActorRefAndSubscription!.actorRef.getSnapshot().output.pickValue.value,
+          },
+        },
+        quickPickMachineActorRefAndSubscription: undefined,
+      };
+    }),
+    // copy the results (output) from the queryMultipleEngineMachine to the context
+    assignQueryMultipleEngineMachineDoneOutputToPrimaryMachineContext: assign(({ context }) => {
+      context.logger.log(`assignQueryMultipleEngineMachineDoneOutputToPrimaryMachineContext called`, LogLevel.Debug);
+      const _queryMultipleEngineMachineActorRef =
+        context.queryMultipleEngineMachineActorRefAndSubscription as IQueryMultipleEngineMachineActorRefAndSubscription;
+      // confirm the queryMultipleEngineMachineActor is done
+      if (_queryMultipleEngineMachineActorRef.actorRef.getSnapshot().status !== 'done') {
+        throw new Error('OMG how can this happen??!! Gotta submit an xState issue if this ever pops up');
+      }
+      // ToDo: unsubscribe from the quickPickMachineActorRef
+      // ToDo: set the actorRef to undefined
+      return {
+        quickPickMachineOutput: context.quickPickMachineActorRefAndSubscription!.actorRef.getSnapshot().output,
+        quickPickMachineActorRefAndSubscription: undefined,
       };
     }),
     updateUIStateEntryAction: (context) => {
       context.context.logger.log(`updateUIStateEntryAction, event type is ${context.event.type}`, LogLevel.Debug);
     },
     updateUIStateExitAction: (context) => {
-      context.context.logger.log(
-        `updateUIStateupdateUIStateExitActionEntryAction, event type is ${context.event.type}`,
-        LogLevel.Debug,
-      );
+      context.context.logger.log(`updateUIStateExitAction, event type is ${context.event.type}`, LogLevel.Debug);
     },
-    updateUIStateQueryMachineDone: ({ context, event }) => {
-      assertEvent(event, 'QUERY_QUERY_MACHINE_DONE');
-      context.logger.log(
-        `updateUIStateupdateUIStateExitActionEntryAction, context.queryMachineOutput is ${context.queryMachineOutput}`,
-        LogLevel.Debug,
-      );
-      // if queryMachineOutput.isCancelled is true, clean up any small UI elements
-      // if queryMachineOutput.errorMessage is defined, display the error message in the UI
-      // if queryMachineOutput.isCancelled is false,
-      //  and also context.queryMachineOutput!.querySingleEngineActorOutputs.isCancelled is false for all keys, then update the UI
+    updateUIAction: ({ context, event }) => {
+      context.logger.log(`updateUIAction, event type is ${event.type}`, LogLevel.Debug);
+      switch (event.type) {
+        case 'QUERY_DONE':
+          context.logger.log(
+            `updateUIStateEntry, received event type is ${event.type}, context.queryMultipleEngineMachineOutput is ${context.queryMultipleEngineMachineOutput}`,
+            LogLevel.Debug,
+          );
+          break;
+        case 'QUICKPICK_DONE':
+          context.logger.log(
+            `updateUIStateEntry, received event type is ${event.type}, context.quickPickMachineOutput is ${context.quickPickMachineOutput}`,
+            LogLevel.Debug,
+          );
+          break;
+        default:
+          throw new Error(`updateUIStateEntry received an unexpected event type: ${event.type}`);
+      }
+      // if queryMultipleEngineMachineOutput.isCancelled is true, clean up any small UI elements
+      // if queryMultipleEngineMachineOutput.errorMessage is defined, display the error message in the UI
+      // if queryMultipleEngineMachineOutput.isCancelled is false,
+      //  and also context.queryMultipleEngineMachineOutput!.querySingleEngineActorOutputs.isCancelled is false for all keys, then update the UI
       // ToDO: what if some are cancelled but others have returned responses?
     },
     disposingStateEntryAction: ({ context, event }) => {
@@ -942,24 +591,36 @@ export const primaryMachine = setup({
     disposeCompleteStateEntryAction: ({ context, event }) => {
       context.logger.log(`disposeCompleteStateEntryAction, event type is ${event.type}`, LogLevel.Debug);
       // Todo: add code to send the DISPOSE_EVENT to any spawned MachineActorRef so that it can free any allocated resources
-      // ToDo: current machineActorRefs are queryMachineActorRef and (toDo) quickPickMachineActorRef
+      // ToDo: current machineActorRefs are queryMultipleEngineMachineMachineActorRefAndSubscription and quickPickMachineActorRefAndSubscription
       // ToDo: add code to dispose of any allocated resource
+    },
+    debugPrimaryMachineContext: ({ context, event }) => {
+      context.logger.log(
+        `debugPrimaryMachineContext, context.quickPickMachineOutput.pickValue: ${context.quickPickMachineOutput!.pickValue}, context.quickPickMachineOutput.isCancelled: ${context.quickPickMachineOutput!.isCancelled}, context.quickPickMachineOutput.isLostFocus: ${context.quickPickMachineOutput!.isLostFocus}, context.quickPickMachineOutput.errorMessage: ${context.quickPickMachineOutput!.errorMessage}, context.quickPickMachineActorRefAndSubscription: ${context.quickPickMachineActorRefAndSubscription}, context.queryMultipleEngineMachineOutput: ${context.queryMultipleEngineMachineOutput}, context.queryMultipleEngineMachineActorRefAndSubscription: ${context.queryMultipleEngineMachineActorRefAndSubscription}`,
+        LogLevel.Debug,
+      );
+    },
+    debugPrimaryMachineData: ({ context, event }) => {
+      context.logger.log(
+        `debugPrimaryMachineContext, context.quickPickMachineOutput.pickValue: ${context.quickPickMachineOutput!.pickValue}, context.quickPickMachineOutput.isCancelled: ${context.quickPickMachineOutput!.isCancelled}, context.quickPickMachineOutput.isLostFocus: ${context.quickPickMachineOutput!.isLostFocus}, context.quickPickMachineOutput.errorMessage: ${context.quickPickMachineOutput!.errorMessage}, context.quickPickMachineActorRefAndSubscription: ${context.quickPickMachineActorRefAndSubscription}, context.queryMultipleEngineMachineOutput: ${context.queryMultipleEngineMachineOutput}, context.queryMultipleEngineMachineActorRefAndSubscription: ${context.queryMultipleEngineMachineActorRefAndSubscription}`,
+        LogLevel.Debug,
+      );
     },
   },
   actors: {
     quickPickMachine: quickPickMachine,
-    queryMachine: queryMachine,
+    queryMultipleEngineMachine: queryMultipleEngineMachine,
   },
 }).createMachine({
   id: 'primaryMachine',
   context: ({ input }) => ({
     logger: input.logger,
-    //data: input.data,
-    quickPickMachineActorRef: undefined,
+    data: input.data,
+    quickPickMachineActorRefAndSubscription: undefined,
     quickPickMachineOutput: undefined,
     queryService: input.queryService,
-    queryMachineActorRef: undefined,
-    queryMachineOutput: undefined,
+    queryMultipleEngineMachineActorRefAndSubscription: undefined,
+    queryMultipleEngineMachineOutput: undefined,
   }),
   type: 'parallel',
   states: {
@@ -975,22 +636,17 @@ export const primaryMachine = setup({
             QUERY_START: {
               target: 'queryingState',
             },
-            QUERY_QUERY_MACHINE_DONE: {
+            QUERY_DONE: {
               target: 'updateUIState',
-              actions: assign({
-                queryMachineOutput: ({ context }) => {
-                  // copy the results (output) from the queryMachine to the context
-                  const _queryMachineActorRef = context.queryMachineActorRef as ActorRefAndSubscriptionT;
-                  // confirm the queryMachineActor is done
-                  if (_queryMachineActorRef.actorRef.getSnapshot().status !== 'done') {
-                    throw new Error('OMG how can this happen??!! Gotta submit an xState issue if this ever pops up');
-                  }
-                  return _queryMachineActorRef.actorRef.getSnapshot().output as IQueryMachineOutput;
-                },
-                queryMachineActorRef: undefined,
-              }),
+              // copy the results (output) from the queryMultipleEngineMachine to the context
+              actions: 'assignQueryMultipleEngineMachineDoneOutputToPrimaryMachineContext',
             },
-            QUICKPICK_QUICKPICK_MACHINE_DONE: {
+            QUICKPICK_DONE: {
+              target: 'updateUIState',
+              // copy the results (output) from the quickPickMachine to the context
+              actions: ['assignQuickPickMachineDoneOutputToPrimaryMachineContext', 'debugPrimaryMachineContext'],
+            },
+            'xstate.done.actor.quickPickMachine': {
               target: 'updateUIState',
             },
           },
@@ -1009,27 +665,37 @@ export const primaryMachine = setup({
         },
         queryingState: {
           description:
-            'A state that spawns a queryMachine which encapsulates multiple states for handling parallel queries to multiple QueryAgents.',
-          entry: 'spawnQueryMachine', // spawn the queryMachine and store the reference in the context
+            'A state that spawns a queryMultipleEngineMachine which encapsulates multiple states for handling parallel queries to multiple QueryAgents.',
+          entry: [
+            'spawnMultipleEngineQueryMachine',
+            ({ context }) => {
+              context.logger.log('queryingState entry', LogLevel.Debug);
+            },
+          ], // spawn the queryMultipleEngineMachine and store the reference in the context
           always: 'idleState',
         },
         updateUIState: {
           description: 'appearance',
           entry: 'updateUIStateEntryAction',
           exit: 'updateUIStateExitAction',
+          always: {
+            target: 'idleState',
+            actions: 'updateUIAction',
+          },
           // ToDo: all the various on... events
           on: {
-            QUERY_QUERY_MACHINE_DONE: {
+            QUERY_DONE: {
               target: 'idleState',
-              actions: 'updateUIStateQueryMachineDone',
+              actions: 'updateUIAction',
             },
-            QUICKPICK_QUICKPICK_MACHINE_DONE: {
+            QUICKPICK_DONE: {
               target: 'idleState',
             },
           },
         },
       },
     },
+
     disposeState: {
       // 2nd parallel state. This state can be transitioned to from any state
       initial: 'inactiveState',
@@ -1054,9 +720,5 @@ export const primaryMachine = setup({
         },
       },
     },
-  },
-  on: {
-    // Global transition to disposingState
-    DISPOSE_START: 'disposingState',
   },
 });

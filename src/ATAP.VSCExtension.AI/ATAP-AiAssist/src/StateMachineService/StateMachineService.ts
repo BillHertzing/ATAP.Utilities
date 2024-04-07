@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { LogLevel, ILogger, IScopedLogger, Logger } from '@Logger/index';
+import { LogLevel, ILogger, Logger } from '@Logger/index';
 import { IData } from '@DataService/index';
 import { DetailedError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction } from '@Decorators/index';
@@ -7,6 +7,8 @@ import { ISerializationStructure, stringifyWithCircularReference, fromJson, from
 import { QueryEngineNamesEnum } from '@BaseEnumerations/index';
 import {
   Actor,
+  ActorRef,
+  AnyActorLogic,
   createActor,
   assign,
   createMachine,
@@ -33,10 +35,13 @@ export type LoggerDataT = { logger: ILogger; data: IData };
 import { IQuickPickEventPayload, IQueryEventPayload } from '@StateMachineService/index';
 
 import { primaryMachine } from './primaryMachine';
+import { inspector } from '@StateMachineService/inspector';
+import { testMachine } from './testMachine';
 
 export interface IStateMachineService {
   quickPick(data: IQuickPickEventPayload): void;
   sendQuery(data: IQueryEventPayload): void;
+  sendTest(data: IQueryEventPayload): void;
   start(): void;
   disposeAsync(): void;
 }
@@ -46,82 +51,61 @@ export class StateMachineService implements IStateMachineService {
   private readonly extensionID: string;
   private readonly extensionName: string;
   private readonly primaryMachineInspector = createBrowserInspector();
-  private primaryActor;
+  private primaryActor: ActorRef<any, any, any> | undefined;
+  private testActor;
 
   private disposed = false;
 
   constructor(
-    private readonly logger: IScopedLogger,
+    private readonly logger: ILogger,
     private readonly data: IData,
     private readonly queryService: IQueryService,
     private readonly extensionContext: vscode.ExtensionContext,
   ) {
     this.extensionID = extensionContext.extension.id;
     this.extensionName = this.extensionID.split('.')[1];
-    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
+    this.logger = new Logger(this.logger, this.constructor.name);
     const primaryMachineInspector = createBrowserInspector(); // This line produces the errorMessage
-    this.primaryActor = createActor(primaryMachine, {
+    // this.primaryActor = createActor(primaryMachine, {
+    //   input: {
+    //     logger: this.logger,
+    //     data: this.data,
+    //     queryService: this.queryService,
+    //   },
+    //   // for Debugging
+    //   inspect: (inspEvent) => {
+    //     inspector(this.logger, inspEvent);
+    //   },
+    // });
+    let cancellationTokenSource = new vscode.CancellationTokenSource();
+    this.testActor = createActor(testMachine, {
       input: {
         logger: this.logger,
+        queryEngineName: QueryEngineNamesEnum.ChatGPT,
+        queryString: 'test',
         queryService: this.queryService,
+        parent: this.primaryActor!,
+        cTSToken: cancellationTokenSource.token,
       },
-      // inspect: this.primaryMachineInspector.inspect,
       // for Debugging
       inspect: (inspEvent) => {
-        let _eventInput = '';
-        let _eventData = '';
-        let _eventOutput = '';
-        let _inspEventEventType = '';
-        if (inspEvent.type === '@xstate.snapshot') {
-          switch (inspEvent.event.type) {
-            case 'queryEvent':
-            case 'xstate.init':
-            case 'xstate.done.actor.gatheringActor':
-            case 'xstate.promise.resolve':
-              break;
-            default:
-              _inspEventEventType = 'inspEvent.event.type is unknown';
-          }
-          this.logger.log(
-            `StateMachineService inspect received inspEvent type @xstate.snapshot. event.type: ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ''}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ''}${_inspEventEventType ? _inspEventEventType : ''}  snapshot.status: ${inspEvent.snapshot.status}`,
-            LogLevel.Trace,
-          );
-        } else if (inspEvent.type === '@xstate.actor') {
-          this.logger.log(
-            `StateMachineService inspect received inspEvent type @xstate.actor. actorRef.id: ${
-              inspEvent.actorRef.id
-            } rootId: ${inspEvent.rootId.toString()}`,
-            LogLevel.Trace,
-          );
-        } else if (inspEvent.type === '@xstate.event') {
-          const _preamble = `StateMachineService inspect received inspEvent type @xstate.event. event.type: ${inspEvent.event.type} ; actorRefID: ${inspEvent.actorRef.id} `;
-          switch (inspEvent.event.type) {
-            case 'xstate.init':
-            case 'queryEvent':
-            case 'xstate.error.actor.queryMachine':
-            case 'xstate.promise.resolve':
-            case 'xstate.done.actor.gatheringActor':
-              break;
-            default:
-              _inspEventEventType = 'inspEvent.event.type is unknown';
-          }
-          this.logger.log(
-            `${_preamble} ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ''}${inspEvent.event.data ? `event_data: ${inspEvent.event.data}` : ''}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ''}${_inspEventEventType ? _inspEventEventType : ''}`,
-            LogLevel.Trace,
-          );
-        } else {
-          this.logger.log(`StateMachineService inspect received unexpected event type ${inspEvent}`, LogLevel.Debug);
-        }
+        inspector(this.logger, inspEvent);
       },
     });
+    this.testActor.start();
   }
   @logFunction
   quickPick(payload: IQuickPickEventPayload): void {
-    this.primaryActor.send({ type: 'QUICKPICK_START', payload: payload });
+    this.primaryActor!.send({ type: 'QUICKPICK_START', payload: payload });
   }
   @logFunction
   sendQuery(payload: IQueryEventPayload): void {
-    this.primaryActor.send({ type: 'QUERY_START', payload: payload });
+    this.primaryActor!.send({ type: 'QUERY_START', payload: payload });
+  }
+
+  @logFunction
+  sendTest(payload: IQueryEventPayload): void {
+    this.testActor.send({ type: 'QSE_START' });
   }
 
   @logFunction
@@ -129,54 +113,54 @@ export class StateMachineService implements IStateMachineService {
     // placeholder
   }
 
-  static create(
-    logger: IScopedLogger,
-    extensionContext: vscode.ExtensionContext,
-    data: IData,
-    queryService: IQueryService,
-    callingModule: string,
-    initializationStructure?: ISerializationStructure,
-  ): StateMachineService {
-    Logger.staticLog(`StateMachineService.create called`, LogLevel.Debug);
+  // static create(
+  //   logger: ILogger,
+  //   extensionContext: vscode.ExtensionContext,
+  //   data: IData,
+  //   queryService: IQueryService,
+  //   callingModule: string,
+  //   initializationStructure?: ISerializationStructure,
+  // ): StateMachineService {
+  //   Logger.staticLog(`StateMachineService.create called`, LogLevel.Debug);
 
-    let _obj: StateMachineService | null;
-    if (initializationStructure) {
-      try {
-        // ToDo: deserialize based on contents of structure
-        _obj = StateMachineService.convertFrom_yaml(initializationStructure.value);
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(
-            `${callingModule}: create stateMachineService from initializationStructure using convertFrom_xxx -> }`,
-            e,
-          );
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(
-            `${callingModule}: create stateMachineService from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
-          );
-        }
-      }
-      if (_obj === null) {
-        throw new Error(
-          `${callingModule}: create stateMachineService from initializationStructure using convertFrom_xxx produced a null`,
-        );
-      }
-      return _obj;
-    } else {
-      try {
-        _obj = new StateMachineService(logger, data, queryService, extensionContext);
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(`${callingModule}: create stateMachineService from initializationStructure -> }`, e);
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(`${callingModule}: create stateMachineService from initializationStructure`);
-        }
-      }
-      return _obj;
-    }
-  }
+  //   let _obj: StateMachineService | null;
+  //   if (initializationStructure) {
+  //     try {
+  //       // ToDo: deserialize based on contents of structure
+  //       _obj = StateMachineService.convertFrom_yaml(initializationStructure.value);
+  //     } catch (e) {
+  //       if (e instanceof Error) {
+  //         throw new DetailedError(
+  //           `${callingModule}: create stateMachineService from initializationStructure using convertFrom_xxx -> }`,
+  //           e,
+  //         );
+  //       } else {
+  //         // ToDo:  investigation to determine what else might happen
+  //         throw new Error(
+  //           `${callingModule}: create stateMachineService from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
+  //         );
+  //       }
+  //     }
+  //     if (_obj === null) {
+  //       throw new Error(
+  //         `${callingModule}: create stateMachineService from initializationStructure using convertFrom_xxx produced a null`,
+  //       );
+  //     }
+  //     return _obj;
+  //   } else {
+  //     try {
+  //       _obj = new StateMachineService(logger, data, queryService, extensionContext);
+  //     } catch (e) {
+  //       if (e instanceof Error) {
+  //         throw new DetailedError(`${callingModule}: create stateMachineService from initializationStructure -> }`, e);
+  //       } else {
+  //         // ToDo:  investigation to determine what else might happen
+  //         throw new Error(`${callingModule}: create stateMachineService from initializationStructure`);
+  //       }
+  //     }
+  //     return _obj;
+  //   }
+  // }
 
   static convertFrom_json(json: string): StateMachineService {
     return fromJson<StateMachineService>(json);
@@ -191,14 +175,14 @@ export class StateMachineService implements IStateMachineService {
 
   @logFunction
   start(): void {
-    this.primaryActor.start();
+    this.primaryActor!.start();
   }
 
   @logAsyncFunction
   async disposeAsync() {
     if (!this.disposed) {
       // Dispose of the primary actor
-      this.primaryActor.send({ type: 'DISPOSE_START' });
+      this.primaryActor!.send({ type: 'DISPOSE_START' });
       // ToDo: await the transition to the 'Done' state
       this.disposed = true;
     }

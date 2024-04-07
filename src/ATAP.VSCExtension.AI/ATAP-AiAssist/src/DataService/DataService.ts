@@ -68,13 +68,12 @@ export class Data {
   );
 
   constructor(
-    private logger: ILogger,
+    private readonly logger: ILogger,
     private extensionContext: vscode.ExtensionContext,
     private userDataInitializationStructure?: ISerializationStructure,
     private configurationDataInitializationStructure?: ISerializationStructure,
   ) {
-    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
-
+    this.logger = new Logger(this.logger, this.constructor.name);
     // instantiate the configurationData
     try {
       this.configurationData = new ConfigurationData(this.logger, this.extensionContext);
@@ -213,10 +212,11 @@ export class DataService implements IDataService {
   constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
 
   constructor(
-    private logger: ILogger,
+    private readonly logger: ILogger,
     private extensionContext: vscode.ExtensionContext, //dataInitializationStructure?: ISerializationStructure,
   ) {
-    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
+    this.logger = new Logger(this.logger, this.constructor.name);
+    this.logger.log(`DataService.ctor Starting`, LogLevel.Trace);
 
     // ToDo: version-aware configuration data loading; multiroot-workspace-aware
     this.version = DefaultConfiguration.version;
@@ -234,56 +234,57 @@ export class DataService implements IDataService {
         throw new Error(`DataService.ctor. create data thew an object that was not of type Error ->`);
       }
     }
+    this.logger.log(`DataService.ctor Ending`, LogLevel.Trace);
   }
 
   // ToDo: make data derive from ItemWithID, and keep track of multiple instances of data (to support profiles?)
   // ToDo: ensure compatability  between the dataService rehydrated from the Default Configuration with  actual version number of the extension
-  static create(
-    logger: ILogger,
-    extensionContext: vscode.ExtensionContext,
-    callingModule: string,
-    initializationStructure?: ISerializationStructure,
-  ): DataService {
-    Logger.staticLog(`DataService.create called`, LogLevel.Debug);
+  // static create(
+  //   logger: ILogger,
+  //   extensionContext: vscode.ExtensionContext,
+  //   callingModule: string,
+  //   initializationStructure?: ISerializationStructure,
+  // ): DataService {
+  //   Logger.staticLog(`DataService.create called`, LogLevel.Debug);
 
-    let _obj: DataService | null;
-    if (initializationStructure) {
-      try {
-        // ToDo: deserialize based on contents of structure
-        _obj = DataService.convertFrom_yaml(initializationStructure.value);
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(
-            `${callingModule}: create dataService from initializationStructure using convertFrom_xxx -> }`,
-            e,
-          );
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(
-            `${callingModule}: create dataService from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
-          );
-        }
-      }
-      if (_obj === null) {
-        throw new Error(
-          `${callingModule}: create dataService from initializationStructure using convertFrom_xxx produced a null`,
-        );
-      }
-      return _obj;
-    } else {
-      try {
-        _obj = new DataService(logger, extensionContext);
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(`${callingModule}: create dataService from initializationStructure -> }`, e);
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(`${callingModule}: create dataService from initializationStructure`);
-        }
-      }
-      return _obj;
-    }
-  }
+  //   let _obj: DataService | null;
+  //   if (initializationStructure) {
+  //     try {
+  //       // ToDo: deserialize based on contents of structure
+  //       _obj = DataService.convertFrom_yaml(initializationStructure.value);
+  //     } catch (e) {
+  //       if (e instanceof Error) {
+  //         throw new DetailedError(
+  //           `${callingModule}: create dataService from initializationStructure using convertFrom_xxx -> }`,
+  //           e,
+  //         );
+  //       } else {
+  //         // ToDo:  investigation to determine what else might happen
+  //         throw new Error(
+  //           `${callingModule}: create dataService from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
+  //         );
+  //       }
+  //     }
+  //     if (_obj === null) {
+  //       throw new Error(
+  //         `${callingModule}: create dataService from initializationStructure using convertFrom_xxx produced a null`,
+  //       );
+  //     }
+  //     return _obj;
+  //   } else {
+  //     try {
+  //       _obj = new DataService(logger, extensionContext);
+  //     } catch (e) {
+  //       if (e instanceof Error) {
+  //         throw new DetailedError(`${callingModule}: create dataService from initializationStructure -> }`, e);
+  //       } else {
+  //         // ToDo:  investigation to determine what else might happen
+  //         throw new Error(`${callingModule}: create dataService from initializationStructure`);
+  //       }
+  //     }
+  //     return _obj;
+  //   }
+  // }
 
   static convertFrom_json(json: string): DataService {
     return fromJson<DataService>(json);

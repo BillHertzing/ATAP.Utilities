@@ -104,10 +104,10 @@ export class FileManager implements IFileManager {
   private disposed = false;
 
   constructor(
-    readonly logger: ILogger,
+    private readonly logger: ILogger,
     readonly configurationData: IConfigurationData,
   ) {
-    this.logger = new Logger(`${logger.scope}.${this.constructor.name}`);
+    this.logger = new Logger(this.logger, this.constructor.name);
   }
 
   get temporaryFileDirectoryPath(): PathLike {

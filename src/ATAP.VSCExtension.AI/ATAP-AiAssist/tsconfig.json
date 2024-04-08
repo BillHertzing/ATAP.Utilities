@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
-    "module": "Node16",
+    "module": "ES2022",
     "target": "ES2022",
-    "experimentalDecorators": true,
+    "moduleResolution": "node",
     "types": ["node"],
     "lib": ["ES2022"],
+    "experimentalDecorators": true,
     "sourceMap": true,
     "rootDirs": ["src", "src/ATAP.VSCExtension.AI/ATAP-AiAssist"],
     "baseUrl": "src", // This must be specified if "paths" is set.
@@ -35,5 +36,5 @@
     "noFallthroughCasesInSwitch": true // Report errors for fallthrough cases in switch statement.
     // "noUnusedParameters": true,  /* Report errors on unused parameters. */
   },
-  "exclude": ["node_modules", "dist", "_generated"]
+  "exclude": ["node_modules", "_generated"]
 }

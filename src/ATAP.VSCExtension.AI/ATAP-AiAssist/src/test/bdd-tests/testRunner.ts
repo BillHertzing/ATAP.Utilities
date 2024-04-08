@@ -1,6 +1,7 @@
-import path from 'path';
-import Mocha from 'mocha';
-import glob from 'glob';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+import * as Mocha from 'mocha';
+import * as glob from 'glob';
 
 console.log('Index (BDD)');
 
@@ -11,7 +12,7 @@ export function run(): Promise<void> {
     color: true,
     require: ['tsconfig-paths/register'],
   });
-  const testsRoot = path.resolve(__dirname, '..');
+  const testsRoot = dirname(fileURLToPath(import.meta.url));
   console.log(`BDD testsRoot is ${testsRoot}`);
 
   return new Promise((c, e) => {
@@ -21,8 +22,8 @@ export function run(): Promise<void> {
 
     testFileStream.on('data', (file) => {
       // Resolve and add file path to the array
-      filePaths.push(path.resolve(testsRoot, file));
-      mocha.addFile(path.resolve(testsRoot, file));
+      filePaths.push(resolve(testsRoot, file));
+      mocha.addFile(resolve(testsRoot, file));
     });
     testFileStream.on('error', (err) => {
       e(err);

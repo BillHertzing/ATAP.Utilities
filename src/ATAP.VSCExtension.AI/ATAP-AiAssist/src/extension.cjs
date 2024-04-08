@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
+//import * as fs from 'fs';
 
 import { DetailedError, HandleError } from '@ErrorClasses/index';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
 
-import { logFunction } from './Decorators';
+import { logFunction } from '@Decorators/index';
 import { DefaultConfiguration } from '@DataService/DefaultConfiguration';
 
 import { SecurityService, ISecurityService } from '@SecurityService/index';
@@ -319,18 +319,22 @@ async function deactivateExtensionAsync(): Promise<void> {
       });
     });
 
-    // delete the temporary file
-    try {
-      fs.unlinkSync(dataService.data.getTemporaryPromptDocumentPath() as string);
-    } catch (e) {
-      HandleError(
-        e,
-        'Activation',
-        'deactivateExtensionAsync',
-        `failed to delete ${dataService.data.getTemporaryPromptDocumentPath()}`,
-      );
-    }
-    resolve();
+    // delete the temporary files
+    // import the fs module here, only if needed
+    await import('fs')
+      .then(async (fs) => {
+        await fs.unlink(dataService.data.getTemporaryPromptDocumentPath() as string, (err) => {
+          HandleError(
+            err,
+            'Activation',
+            'deactivateExtensionAsync',
+            `failed to delete ${dataService.data.getTemporaryPromptDocumentPath()}`,
+          );
+        });
+      })
+      .catch((e) => {
+        HandleError(e, 'Activation', 'deactivateExtensionAsync', `failed to dynamically import fs module`);
+      });
   });
 }
 

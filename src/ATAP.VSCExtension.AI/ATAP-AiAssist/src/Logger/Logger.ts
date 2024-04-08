@@ -61,7 +61,7 @@ export class Logger implements ILogger {
   private static destinations: Partial<DestinationType>;
   public readonly scope: string;
 
-  // This creates the Logger static instance data for the
+  // This creates the Logger static instance data and the initial set of destinations
   static createLogger(rootScope: string, extensionName?: string): ILogger {
     // Create the static set of destinations for the logger class
     // configure the logger instance to write to the console and to an output channel having the same name as the extension, with a LogLevel of Info

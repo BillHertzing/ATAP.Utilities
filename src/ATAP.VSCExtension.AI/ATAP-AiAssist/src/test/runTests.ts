@@ -1,6 +1,7 @@
-import Mocha from 'mocha';
+import * as Mocha from 'mocha';
 import { glob, globSync, globStream, globStreamSync, Glob } from 'glob';
-import * as path from 'path';
+import { dirname, resolve, join } from 'path';
+import { fileURLToPath } from 'url';
 
 async function runTests(testsRoot: string, pattern: string, mochaOpts: Mocha.MochaOptions) {
   console.log(
@@ -8,11 +9,16 @@ async function runTests(testsRoot: string, pattern: string, mochaOpts: Mocha.Moc
   );
   const mocha = new Mocha(mochaOpts);
 
-  // Use glob to return an array of filenames
   const testFiles = await glob(pattern, { cwd: testsRoot, nodir: true });
-  console.log(`runTests.ts: runTests: testFiles is ${testFiles.toString()}`);
-
-  // Add collected files to Mocha
+  // Use glob to return an array of file paths that match the pattern
+  // const testFiles = await glob(pattern, { cwd: testsRoot, nodir: true }, (err: Error, testfiles: string[]) => {
+  // glob(pattern, { cwd: testsRoot, nodir: true }, (err: Error, testFiles: string[]) => {
+  //   if (err) {
+  //     console.error(`runTests.ts: runTests: glob error: ${err}`);
+  //     throw err;
+  //   }
+  //   console.log(`runTests.ts: runTests: testFiles is ${testFiles.toString()}`);
+  //   // Add collected files to Mocha
   testFiles.forEach((file) => {
     console.log(`runTests.ts: runTests: file is ${file}`);
     mocha.addFile(file);
@@ -21,7 +27,7 @@ async function runTests(testsRoot: string, pattern: string, mochaOpts: Mocha.Moc
   // Run the tests
   return new Promise<number>((resolve, reject) => {
     console.log(`runTests.ts: runTests: mocha.files is ${mocha.files.toString()}`);
-    mocha.run((failures) => {
+    mocha.run((failures: number) => {
       if (failures > 0) {
         reject(new Error(`${failures} tests failed.`));
       } else {
@@ -46,11 +52,11 @@ async function runTests(testsRoot: string, pattern: string, mochaOpts: Mocha.Moc
 }
 
 export async function run(): Promise<void> {
-  const testsRoot = path.resolve(__dirname, '.');
+  const testsRoot = resolve(dirname(fileURLToPath(import.meta.url)), '.');
   console.log(`runTests.ts: run: testsRoot is ${testsRoot}`);
-  const bddFailures = await runTests(path.join(testsRoot, 'bdd_tests'), '**/*.test.js', { ui: 'bdd' });
+  const bddFailures = await runTests(join(testsRoot, 'bdd_tests\\'), './**/*.test.js', { ui: 'bdd' });
   console.log(`runTests.ts: run: bddFailures is ${bddFailures}`);
-  const tddFailures = await runTests(path.join(testsRoot, 'tdd_tests'), '**/*.test.js', { ui: 'tdd' });
+  const tddFailures = await runTests(join(testsRoot, 'tdd_tests\\'), './**/*.test.js', { ui: 'tdd' });
   console.log(`runTests.ts: run: tddFailures is ${tddFailures}`);
 
   if (bddFailures + tddFailures > 0) {

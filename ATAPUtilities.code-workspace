@@ -528,5 +528,8 @@
       "name": "SolutionDocumentation",
       "path": "./SolutionDocumentation"
     }
-  ]
+  ],
+  "settings": {
+    "powershell.cwd": "ATAP.Utilities"
+  }
 }

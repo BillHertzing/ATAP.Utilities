@@ -1,4 +1,4 @@
-import vscode from 'vscode';
+import * as vscode from 'vscode';
 import { LogLevel, ILogger, Logger } from '@Logger/index';
 import { DetailedError, HandleError } from '@ErrorClasses/index';
 import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';

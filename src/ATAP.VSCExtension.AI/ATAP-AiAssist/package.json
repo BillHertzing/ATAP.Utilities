@@ -12,7 +12,7 @@
     "Other"
   ],
   "activationEvents": [],
-  "main": "./_generated/dist/extension.js",
+  "main": "./_generated/development/extension.js",
   "contributes": {
     "commands": [
       {
@@ -255,19 +255,19 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
-    "compile": "webpack --devtool source-map --output-path=./_generated/dist/",
-    "watch": "webpack --watch --devtool source-map --output-path=./_generated/dist/",
-    "package": "webpack --mode production --devtool source-map",
-    "compile-tests": "tsc -p . --outDir ./_generated/tests  && ts-node -p . -r tsconfig-paths/register --outDir ./_generated/tests",
-    "watch-tests": "tsc -p . -w --outDir ./_generated/tests && ts-node -p . -w -r tsconfig-paths/register --outDir ./_generated/tests",
+    "typeCheck": "tsc -p . --noEmit",
+    "compile": "tsc -p . --outDir ./_generated/development --module commonjs && ts-node -p . -r tsconfig-paths/register --outDir ./_generated/development",
+    "Webpack": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool no-source-map",
+    "compile-tests": "tsc -p . --outDir ./_generated/testing  && ts-node -p . -r tsconfig-paths/register --outDir ./_generated/testing",
+    "watch-tests": "tsc -p . -w --outDir ./_generated/testing && ts-node -p . -w -r tsconfig-paths/register --outDir ./_generated/testing",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "build-tests": "webpack --config webpack.test.config.js",
-    "test": "ts-node -p . -r tsconfig-paths/register ./_generated/tests/test/runTest.js"
+    "test": "ts-node -p . -r tsconfig-paths/register ./_generated/testing/test/runTest.js",
   },
   "devDependencies": {
-    "@types/axios": "^0.14.0",
-    "@types/bluebird": "^3.5.42",
     "@types/chai": "^4.3.14",
     "@types/diff": "^5.0.9",
     "@types/glob": "^8.1.0",
@@ -322,8 +322,6 @@
   },
   "dependencies": {
     "@statelyai/inspect": "^0.2.5",
-    "axios": "^1.6.8",
-    "bluebird": "^3.7.2",
     "bufferutil": "^4.0.8",
     "diff": "^5.2.0",
     "encoding": "^0.1.13",

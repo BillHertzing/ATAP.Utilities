@@ -29,7 +29,7 @@ import {
 
 import * as fs from 'fs';
 import * as path from 'path';
-import strip from 'strip-comments';
+import * as strip from 'strip-comments';
 import * as prettier from 'prettier';
 
 export interface IQueryService {

@@ -878,3 +878,5 @@ outerDoneState: {
 /*...*/
 )
 ```
+
+I need contents launch.json and tasks.json, tsconfig.json, tsconfig.extension.json. tsconfig should transpile all .ts (excpet extension.ts) files in src/\*\* using EMS. tsconfig.extension.json should extend tsconfig.json to transpile only src/extension.ts into extension.js. Output dir is ./\_generated/dist. entry is extension.js. I need webpack.config.js that creates output in ./\_generated/dist for development environment, ./\_generated/tests for testing environment, and ./generated/production for production environment, based on an environment variable named environment having values of development, testing, and production. development and testing should use sourcemaps, production should not. add tasks that run the extension in devlopemtn mode, tasks that run all tests, and a task the transpiles to productio nand then packages the extension for production

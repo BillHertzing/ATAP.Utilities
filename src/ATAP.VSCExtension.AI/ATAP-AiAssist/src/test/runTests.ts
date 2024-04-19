@@ -52,7 +52,7 @@ async function runTests(testsRoot: string, pattern: string, mochaOpts: Mocha.Moc
 }
 
 export async function run(): Promise<void> {
-  const testsRoot = resolve(dirname(fileURLToPath(import.meta.url)), '.');
+  const testsRoot = __dirname; // resolve(dirname(fileURLToPath(import.meta.url)), '.');
   console.log(`runTests.ts: run: testsRoot is ${testsRoot}`);
   const bddFailures = await runTests(join(testsRoot, 'bdd_tests\\'), './**/*.test.js', { ui: 'bdd' });
   console.log(`runTests.ts: run: bddFailures is ${bddFailures}`);

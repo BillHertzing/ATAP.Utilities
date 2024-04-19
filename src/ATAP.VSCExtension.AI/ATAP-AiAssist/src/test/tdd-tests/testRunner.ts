@@ -1,6 +1,6 @@
-import path from 'path';
-import Mocha from 'mocha';
-import glob from 'glob';
+import * as path from 'path';
+import * as Mocha from 'mocha';
+import * as glob from 'glob';
 
 console.log('Index (TDD)');
 

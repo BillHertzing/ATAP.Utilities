@@ -714,9 +714,11 @@ Set-EnvironmentVariablesProcess
 # The command has a collection set of project paths/names (populated by the list of files below src/ relative to the repository root)
 #  The command matches the editor's document path to (hopefully only one) element, which provide the value for this env var
 # ToDo: put this into a ConfigRootKeys keys tor Typescript and VSC Extension process
-[Environment]::SetEnvironmentVariable('VSCExtensionProjectName', 'ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-[Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', 'src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+# [Environment]::SetEnvironmentVariable('VSCExtensionProjectName', 'ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+# [Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', 'src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+# [Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', '.', [EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/PlaygroundVSCExtension/Building', [EnvironmentVariableTarget]::User)
 
 # Unlock the Hashicorp Vault
 

@@ -5,8 +5,8 @@ import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from 
 import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
 
 import * as KdbxWeb from 'kdbxweb';
-import fs from 'fs';
-import path from 'path';
+import  * as fs from 'fs';
+import * as path from 'path';
 import { exec } from 'child_process';
 
 export enum SupportedSecretsVaultEnum {

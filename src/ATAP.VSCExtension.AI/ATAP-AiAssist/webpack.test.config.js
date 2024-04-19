@@ -1,13 +1,15 @@
 import { dirname, resolve } from "path";
 import * as webpack from "webpack";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default {
   mode: "development", // development mode for better source maps
-  entry: "./src/test/runTest.ts",
+  entry: "./src/test/runTests.ts",
   output: {
     filename: "tests.bundle.js",
     // the bundle is stored in the '_generated/tests' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
-    path: resolve(dirname(fileURLToPath(import.meta.url)), "_generated/tests"),
+    path: resolve(__dirname, "_generated/tests"),
   },
 
   module: {

@@ -12,7 +12,7 @@ export function run(): Promise<void> {
     color: true,
     require: ['tsconfig-paths/register'],
   });
-  const testsRoot = dirname(fileURLToPath(import.meta.url));
+  const testsRoot = __dirname; // dirname(fileURLToPath(import.meta.url));
   console.log(`BDD testsRoot is ${testsRoot}`);
 
   return new Promise((c, e) => {

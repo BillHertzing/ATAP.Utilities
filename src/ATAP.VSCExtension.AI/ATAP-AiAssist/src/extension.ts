@@ -1,29 +1,29 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 //import * as fs from 'fs';
 
-import { DetailedError, HandleError } from '@ErrorClasses/index';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
+import { DetailedError, HandleError } from "@ErrorClasses/index";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
 
-import { logFunction } from '@Decorators/index';
-import { DefaultConfiguration } from '@DataService/DefaultConfiguration';
+import { logFunction } from "@Decorators/index";
+import { DefaultConfiguration } from "@DataService/DefaultConfiguration";
 
-import { SecurityService, ISecurityService } from '@SecurityService/index';
+import { SecurityService, ISecurityService } from "@SecurityService/index";
 
-import { DataService, IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
+import { DataService, IDataService, IData, IStateManager, IConfigurationData } from "@DataService/index";
 
-import { isRunningInTestingEnvironment, isRunningInDevelopmentEnvironment } from '@Utilities/index';
+import { isRunningInTestingEnvironment, isRunningInDevelopmentEnvironment } from "@Utilities/index";
 
-import { CommandsService } from '@CommandsService/index';
+import { CommandsService } from "@CommandsService/index";
 
-import { IStateMachineService, StateMachineService } from '@StateMachineService/index';
+import { IStateMachineService, StateMachineService } from "@StateMachineService/index";
 
-import { IQueryService, QueryService } from '@QueryService/index';
+import { IQueryService, QueryService } from "@QueryService/index";
 
-import { processPs1Files } from './processPs1Files';
-import { mainViewTreeDataProvider } from './mainViewTreeDataProvider';
-import { mainViewTreeItem } from './mainViewTreeItem';
-import { FileTreeProvider } from './FileTreeProvider';
-import { type } from 'os';
+import { processPs1Files } from "./processPs1Files";
+import { mainViewTreeDataProvider } from "./mainViewTreeDataProvider";
+import { mainViewTreeItem } from "./mainViewTreeItem";
+import { FileTreeProvider } from "./FileTreeProvider";
+import { type } from "os";
 
 //import { mainSearchEngineProvider } from './mainSearchEngineProvider';
 
@@ -36,17 +36,17 @@ let stateMachineService: IStateMachineService;
 export async function activate(extensionContext: vscode.ExtensionContext) {
   // create the initial logger instance for the extension,
   //  by default write all log messages to the console and to an output channel having the same name as the extension, with a LogLevel of Info
-  const logger = Logger.createLogger(extensionContext.extension.id.split('.')[1]);
+  const logger = Logger.createLogger(extensionContext.extension.id.split(".")[1]);
   logger.info(`${extensionContext.extension.id} activating`);
   // Declaration of variables
-  let message: string = '';
-  let workspacePath: string = '';
+  let message: string = "";
+  let workspacePath: string = "";
   let securityService: ISecurityService;
   let queryService: IQueryService;
   let commandsService: CommandsService;
 
   const extensionID = extensionContext.extension.id;
-  const extensionName = extensionID.split('.')[1];
+  const extensionName = extensionID.split(".")[1];
 
   // If the extension is running in the development host, or if the environment variable 'Environment' is set to 'Development',
   //   set the environment variable 'Environment' to 'Development'. This overrides whatever value of Environment variable was set when the extension started
@@ -57,7 +57,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   if (isRunningInDevelopmentEnvironment()) {
     // ToDO: test for an environment variable for debuggerLogLevel, and if it exists, use that value
     const settings = vscode.workspace.getConfiguration(extensionName);
-    const settingsDebuggerLogLevel = settings.get<LogLevel>('debuggerLogLevel');
+    const settingsDebuggerLogLevel = settings.get<LogLevel>("debuggerLogLevel");
     //   if (settingsDebuggerLogLevel) {
     //     logger.setChannelLogLevel(extensionName, settingsDebuggerLogLevel);
     //   } else if ('debuggerLogLevel' in DefaultConfiguration.Development) {
@@ -116,7 +116,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   try {
     stateMachineService = new StateMachineService(logger, dataService.data, queryService, extensionContext);
   } catch (e) {
-    HandleError(e, 'Activation', 'activate', `failed to create an instance of StateMachineService`);
+    HandleError(e, "Activation", "activate", `failed to create an instance of StateMachineService`);
   }
 
   // stateMachineService = StateMachineService.create(
@@ -130,21 +130,13 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
   // Calling the constructor registers all of the commands, and creates a disposables structure
   try {
-    commandsService = new CommandsService(
-      logger,
-      extensionContext,
-      dataService.data,
-      stateMachineService,
-      queryService,
-    );
+    commandsService = new CommandsService(logger, extensionContext, dataService.data, stateMachineService, queryService);
   } catch (e) {
     if (e instanceof Error) {
       throw new DetailedError(`Activation: failed to create an instance of CommandsService -> `, e);
     } else {
       // ToDo:  investigation to determine what else might happen
-      throw new Error(
-        `Activation: failed to create an instance of CommandsService and the object caught is of type ${typeof e}`,
-      );
+      throw new Error(`Activation: failed to create an instance of CommandsService and the object caught is of type ${typeof e}`);
     }
   }
   // Add the disposables from the CommandsService to extensionContext.subscriptions
@@ -155,7 +147,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   statusBarItem.text = `$(robot) AiAssist`;
   // set the statusbaritem's command to the VCSCommand sends the quickpickEvent (with kindOfQuickPick=VCSCommand) to the primaryActor
   statusBarItem.command = `${extensionName}.primaryActor.quickPickVCSCommand`;
-  statusBarItem.tooltip = 'Show AiAssist status menu';
+  statusBarItem.tooltip = "Show AiAssist status menu";
   extensionContext.subscriptions.push(statusBarItem);
   statusBarItem.show();
 
@@ -308,12 +300,12 @@ async function deactivateExtensionAsync(): Promise<void> {
         if (i === editorsDisplayingDoc.length - 1) {
           // If this is the last editor, close it directly
           console.log(`Closing ${editor.document.fileName} directly`);
-          vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+          vscode.commands.executeCommand("workbench.action.closeActiveEditor");
         } else {
           // Otherwise, set a timeout to allow the editor to come into focus before closing it
           setTimeout(() => {
             console.log(`Closing ${editor.document.fileName} after timeout`);
-            vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+            vscode.commands.executeCommand("workbench.action.closeActiveEditor");
           }, 500);
         }
       });
@@ -321,25 +313,20 @@ async function deactivateExtensionAsync(): Promise<void> {
 
     // delete the temporary files
     // import the fs module here, only if needed
-    await import('fs')
+    await import("fs")
       .then(async (fs) => {
         await fs.unlink(dataService.data.getTemporaryPromptDocumentPath() as string, (err) => {
-          HandleError(
-            err,
-            'Activation',
-            'deactivateExtensionAsync',
-            `failed to delete ${dataService.data.getTemporaryPromptDocumentPath()}`,
-          );
+          HandleError(err, "Activation", "deactivateExtensionAsync", `failed to delete ${dataService.data.getTemporaryPromptDocumentPath()}`);
         });
       })
       .catch((e) => {
-        HandleError(e, 'Activation', 'deactivateExtensionAsync', `failed to dynamically import fs module`);
+        HandleError(e, "Activation", "deactivateExtensionAsync", `failed to dynamically import fs module`);
       });
   });
 }
 
 // This method is called when your extension is deactivated
 export async function deactivate(): Promise<void> {
-  console.log('deactivate');
+  console.log("deactivate");
   await deactivateExtensionAsync();
 }

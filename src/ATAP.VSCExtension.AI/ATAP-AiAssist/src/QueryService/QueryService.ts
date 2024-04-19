@@ -201,7 +201,7 @@ export class QueryService implements IQueryService {
           // call sendQueryAsync on the specific QueryEngine
           let responseData = await this.queryEnginesMap[queryEngineName].sendQueryAsync(textToSubmit, cTSToken);
         } catch (e) {
-          HandleError(e, 'queryService', 'sendQueryAsync', 'calling sendQueryAsyn');
+          HandleError(e, 'queryService', 'sendQueryAsync', 'calling sendQueryAsync');
         }
         break;
       // case QueryEngineNamesEnum.Claude:

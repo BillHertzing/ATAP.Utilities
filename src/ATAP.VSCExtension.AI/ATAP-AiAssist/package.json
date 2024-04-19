@@ -265,7 +265,7 @@
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "build-tests": "webpack --config webpack.test.config.js",
-    "test": "ts-node -p . -r tsconfig-paths/register ./_generated/testing/test/runTest.js",
+    "test": "ts-node -p . -r tsconfig-paths/register ./_generated/testing/test/runTest.js"
   },
   "devDependencies": {
     "@types/chai": "^4.3.14",

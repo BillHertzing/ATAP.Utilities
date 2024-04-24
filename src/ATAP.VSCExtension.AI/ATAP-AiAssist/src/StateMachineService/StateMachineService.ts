@@ -90,6 +90,50 @@ export class StateMachineService implements IStateMachineService {
       // for Debugging
       inspect: (inspEvent) => {
         inspector(this.logger, inspEvent);
+        let _eventInput = '';
+        let _eventData = '';
+        let _eventOutput = '';
+        let _inspEventEventType = '';
+        if (inspEvent.type === '@xstate.snapshot') {
+          switch (inspEvent.event.type) {
+            case 'queryEvent':
+            case 'xstate.init':
+            case 'xstate.done.actor.gatheringActor':
+            case 'xstate.promise.resolve':
+              break;
+            default:
+              _inspEventEventType = 'inspEvent.event.type is unknown';
+          }
+          this.logger.log(
+            `StateMachineService inspect received inspEvent type @xstate.snapshot. event.type: ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ''}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ''}${_inspEventEventType ? _inspEventEventType : ''}  snapshot.status: ${inspEvent.snapshot.status}`,
+            LogLevel.Trace,
+          );
+        } else if (inspEvent.type === '@xstate.actor') {
+          this.logger.log(
+            `StateMachineService inspect received inspEvent type @xstate.actor. actorRef.id: ${
+              inspEvent.actorRef.id
+            } rootId: ${inspEvent.rootId.toString()}`,
+            LogLevel.Trace,
+          );
+        } else if (inspEvent.type === '@xstate.event') {
+          const _preamble = `StateMachineService inspect received inspEvent type @xstate.event. event.type: ${inspEvent.event.type} ; actorRefID: ${inspEvent.actorRef.id} `;
+          switch (inspEvent.event.type) {
+            case 'xstate.init':
+            case 'queryEvent':
+            case 'xstate.error.actor.queryMachine':
+            case 'xstate.promise.resolve':
+            case 'xstate.done.actor.gatheringActor':
+              break;
+            default:
+              _inspEventEventType = 'inspEvent.event.type is unknown';
+          }
+          this.logger.log(
+            `${_preamble} ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ''}${inspEvent.event.data ? `event_data: ${inspEvent.event.data}` : ''}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ''}${_inspEventEventType ? _inspEventEventType : ''}`,
+            LogLevel.Trace,
+          );
+        } else {
+          this.logger.log(`StateMachineService inspect received unexpected event type ${inspEvent}`, LogLevel.Debug);
+        }
       },
     });
     this.testActor.start();

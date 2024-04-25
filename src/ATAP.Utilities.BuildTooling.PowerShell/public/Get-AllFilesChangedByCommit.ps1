@@ -33,18 +33,18 @@ ${$status - join Environment.NewLine}
     # record the current Branch and HEAD commit
     $initialBranch = git branch --show-current
     $initialCommitSHA = git rev-parse HEAD
-    # very crucial. this is where we tell git we are checking out only SOME of the files in the repository
-    git config core.sparsecheckout true
-    # ToDo: wrap in a try-catch block for error handling
-    git sparse-checkout init
-
     # cleanup function to be called on an exit
     function Remove-Worktree {
-      Param ($TempWorktreePath)
+      Param (
+        [validateNotNullOrEmpty()]
+        $TempWorktreePath,
+        [validateNotNullOrEmpty()]
+        $currentRepositoryPath
+      )
+      Set-Location -Path $currentRepositoryPath
       # ToDo: wrap in a try-catch block for error handling
       git worktree remove -f $TempWorktreePath
     }
-
   }
   #endregion BeginBlock
   #region ProcessBlock
@@ -66,13 +66,19 @@ The CommitSHA is not valid. This function will abort.
 
     $modifiedOrAddedFilesArray = $modifiedOrAddedNamesStatusArray | ForEach-Object { $relativeFilePath = $_.Split("`t")[1]; $relativeFilePath -notcontains ' ' ? $relativeFilePath : '"' + $relativeFilePath + '"' }
 
-    $modifiedOrAddedFilesString = $modifiedOrAddedFilesArray -join ' '
     # Create a temporary worktree for the repository
     $TempWorktreePath = Join-Path -Path $TempPath -ChildPath (Split-Path -Path $currentRepositoryPath -Leaf) -AdditionalChildPath 'worktree'
     # ToDo: wrap in a try-catch block for error handling
     git worktree add --detach $TempWorktreePath -f --no-checkout > $null
-    # configure sparse-checkout and checkout only modified or added files
+    # Change the current working directory,
+    #  because git works on the temporary worktree when invoked from the root of the temporary worktree
     Set-Location -Path $TempWorktreePath
+    # configure sparse-checkout and checkout only modified or added files
+    # very crucial. this is where we tell the temporary worktree git we are checking out only SOME of the files in the repository
+    git config --local core.sparsecheckout true
+    # ToDo: wrap in a try-catch block for error handling
+    git sparse-checkout init
+
     # ToDo: wrap in a try-catch block for error handling
     for ($i = 0; $i -lt $modifiedOrAddedFilesArray.Count; $i++) {
       if ($i -eq 0) {
@@ -93,13 +99,17 @@ The CommitSHA is not valid. This function will abort.
 
     # copy the worktree to the output
     # workaround because sparse checkout is not working as expected
-    Copy-Item -Path $TempWorktreePath -Destination $outputSHAPath -Recurse -Force
+    Get-ChildItem $TempWorktreePath | ForEach-Object {
+      $changedFilePath = $_.FullName
+      $changedFilePath -notcontains ' ' ? $changedFilePath : '"' + $changedFilePath + '"'
+      Write-PSFMessage -Level Important -Message $changedFilePath -Tag ''
+      Copy-Item $changedFilePath -Destination $outputSHAPath -Recurse -Force
+    }
     # $modifiedOrAddedFilesArray | ForEach-Object { Copy-Item -Path $_ -Destination $outputSHAPath -Recurse -Force }
 
-    # remove the worktree
-    Set-Location -Path $currentRepositoryPath
+    # remove the temporary worktree. This will cwd back to the original repository
     # ToDo: wrap in a try-catch block for error handling
-    Remove-Worktree $TempWorktreePath
+    Remove-Worktree $TempWorktreePath $currentRepositoryPath
   }
   #endregion ProcessBlock
   #region EndBlock

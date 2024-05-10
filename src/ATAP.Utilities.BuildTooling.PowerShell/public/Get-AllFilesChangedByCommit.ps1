@@ -1,3 +1,14 @@
+<#
+Useage:
+$tempPath = 'D:\Temp\T1'
+$currentRepositoryPath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities'
+$initialSHA = 'f731a579e3acc4934e31fd417f0888cb171023c4'
+git log --format="%H" $initialSHA^..HEAD | ForEach-Object {
+  Get-AllFilesChangedByCommit -CommitSHA $_ -TempPath $tempPath -currentRepositoryPath $currentRepositoryPath
+}
+gci (join-path $tempPath (Split-Path -Path $currentRepositoryPath -Leaf)) | sort LastWriteTime | %{$_.name}
+#>
+
 Function Get-AllFilesChangedByCommit {
   [CmdletBinding( DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern' )]
   Param (
@@ -42,6 +53,13 @@ ${$status - join Environment.NewLine}
         $currentRepositoryPath
       )
       Set-Location -Path $currentRepositoryPath
+      if ([string]::IsNullOrWhiteSpace($TempWorktreePath)) {
+        $message = @'
+The TempWorktreePath is null or empty. This function will abort.
+'@
+        Write-PSFMessage -Level Error -Message $message -Tag ''
+        throw $message
+      }
       # ToDo: wrap in a try-catch block for error handling
       git worktree remove -f $TempWorktreePath
     }
@@ -61,10 +79,10 @@ The CommitSHA is not valid. This function will abort.
     # Extract only the filename part after the status and tab
     # wrap each in double quotes in case the filepath includes spaces
     # ToDo: wrap in a try-catch block for error handling
-    $modifiedOrAddedNamesStatusArray = git diff-tree --no-commit-id --name-status -r $commitSHA | Where-Object {
+    [array]$modifiedOrAddedNamesStatusArray = git diff-tree --no-commit-id --name-status -r $commitSHA | Where-Object {
       $_ -match '^(A|M)\t' }
 
-    $modifiedOrAddedFilesArray = $modifiedOrAddedNamesStatusArray | ForEach-Object { $relativeFilePath = $_.Split("`t")[1]; $relativeFilePath -notcontains ' ' ? $relativeFilePath : '"' + $relativeFilePath + '"' }
+    [array]$modifiedOrAddedFilesArray = $modifiedOrAddedNamesStatusArray | ForEach-Object { $relativeFilePath = $_.Split("`t")[1]; $relativeFilePath -notcontains ' ' ? $relativeFilePath : '"' + $relativeFilePath + '"' }
 
     # Create a temporary worktree for the repository
     $TempWorktreePath = Join-Path -Path $TempPath -ChildPath (Split-Path -Path $currentRepositoryPath -Leaf) -AdditionalChildPath 'worktree'
@@ -75,7 +93,7 @@ The CommitSHA is not valid. This function will abort.
     Set-Location -Path $TempWorktreePath
     # configure sparse-checkout and checkout only modified or added files
     # very crucial. this is where we tell the temporary worktree git we are checking out only SOME of the files in the repository
-    git config --local core.sparsecheckout true
+    git config --worktree core.sparsecheckout true
     # ToDo: wrap in a try-catch block for error handling
     git sparse-checkout init
 
@@ -97,15 +115,13 @@ The CommitSHA is not valid. This function will abort.
       New-Item -ItemType Directory -Path $outputSHAPath -Force > $null
     }
 
-    # copy the worktree to the output
-    # workaround because sparse checkout is not working as expected
+    # copy the files and subdirectorties recursively from the temporary worktree to the output
     Get-ChildItem $TempWorktreePath | ForEach-Object {
       $changedFilePath = $_.FullName
       $changedFilePath -notcontains ' ' ? $changedFilePath : '"' + $changedFilePath + '"'
       Write-PSFMessage -Level Important -Message $changedFilePath -Tag ''
       Copy-Item $changedFilePath -Destination $outputSHAPath -Recurse -Force
     }
-    # $modifiedOrAddedFilesArray | ForEach-Object { Copy-Item -Path $_ -Destination $outputSHAPath -Recurse -Force }
 
     # remove the temporary worktree. This will cwd back to the original repository
     # ToDo: wrap in a try-catch block for error handling

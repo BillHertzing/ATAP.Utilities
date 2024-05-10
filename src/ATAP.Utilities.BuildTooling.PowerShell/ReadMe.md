@@ -116,7 +116,7 @@ In every new repository, after runing `git init`, run these commands (as an admi
 
 ## Symbolic Links for Prettier formatting rules, CSpell, eslint rules
 
-The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a `.prettierrc.yml` with formatting rules and an `eslintrc.yml` with linting rules for Javascript at the repository base. We use the YAML format in order to support comments in the file.
+The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a `.prettierrc.yml` with formatting rules and an `.eslintrc.js` with linting rules for Javascript at the repository base. We use the YAML format in order to support comments in the file.
 
 Every repository that uses Visual Studio Code as the IDE, needs a `cspell.json` with spelling rules ToDo: We use the YAML format in order to support comments in the file.
 

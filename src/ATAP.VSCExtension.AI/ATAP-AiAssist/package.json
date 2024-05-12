@@ -1,6 +1,6 @@
 {
   "name": "atap-aiassist",
-  "type": "commonjs",
+  "type": "module",
   "displayName": "atap-aiassist",
   "description": "AI code helper",
   "publisher": "ataputilities",
@@ -256,7 +256,7 @@
   "scripts": {
     "vscode:prepublish": "npm run package",
     "typeCheck": "tsc -p . --noEmit",
-    "compile": "tsc -p . --outDir ./_generated/development --module commonjs && ts-node -p . -r tsconfig-paths/register --outDir ./_generated/development",
+    "compile": "tsc -p . --outDir ./_generated/development && ts-node -p . -r tsconfig-paths/register --outDir ./_generated/development",
     "Webpack": "webpack",
     "watch": "webpack --watch",
     "package": "webpack --mode production --devtool no-source-map",
@@ -268,6 +268,7 @@
     "test": "ts-node -p . -r tsconfig-paths/register ./_generated/testing/test/runTest.js"
   },
   "devDependencies": {
+    "@eslint/js": "^9.2.0",
     "@types/chai": "^4.3.15",
     "@types/diff": "^5.2.0",
     "@types/glob": "^8.1.0",
@@ -279,12 +280,10 @@
     "@types/sinon": "^17.0.3",
     "@types/strip-comments": "^2.0.4",
     "@types/vscode": "^1.88.0",
-    "@typescript-eslint/eslint-plugin": "^7.8.0",
-    "@typescript-eslint/parser": "^7.8.0",
     "@vscode/test-electron": "^2.3.9",
     "assert": "^2.1.0",
     "chai": "^5.1.0",
-    "eslint": "^9.1.1",
+    "eslint": "^8.57.0",
     "glob": "^10.3.12",
     "https-browserify": "^1.0.0",
     "mocha": "^10.4.0",
@@ -298,6 +297,7 @@
     "tsconfig-paths": "^4.2.0",
     "tsconfig-paths-webpack-plugin": "^4.1.0",
     "typescript": "^5.4.5",
+    "typescript-eslint": "^7.8.0",
     "vscode-test": "^1.6.1",
     "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4"

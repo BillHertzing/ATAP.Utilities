@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "ES2022",
     "target": "ES2022",
     "moduleResolution": "node",
     "types": ["node"],
@@ -33,6 +33,7 @@
 
     "strict": true, // enable all strict type-checking options
     "noImplicitReturns": true, // Report error when not all code paths in function return a value.
+    "noImplicitAny": false, // Report error when a value is implicitly any
     "noFallthroughCasesInSwitch": true, // Report errors for fallthrough cases in switch statement.
     // "noUnusedParameters": true,  /* Report errors on unused parameters. */
     "outDir": "_generated/oops" // This is where the generated files will be placed",

@@ -718,7 +718,7 @@ Set-EnvironmentVariablesProcess
 # [Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', 'src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
 # [Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
 [Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', '.', [EnvironmentVariableTarget]::User)
-[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/PlaygroundVSCExtension/Building', [EnvironmentVariableTarget]::User)
+[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
 
 # Unlock the Hashicorp Vault
 

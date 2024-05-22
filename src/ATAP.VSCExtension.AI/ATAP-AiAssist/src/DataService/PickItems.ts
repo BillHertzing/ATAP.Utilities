@@ -1,9 +1,14 @@
-import * as vscode from 'vscode';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { DetailedError, HandleError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
+import * as vscode from "vscode";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError, HandleError } from "@ErrorClasses/index";
+import {
+  logConstructor,
+  logFunction,
+  logAsyncFunction,
+  logExecutionTime,
+} from "@Decorators/index";
 
-import { IData } from '@DataService/index';
+import { IData } from "@DataService/index";
 
 import {
   QueryAgentCommandMenuItemEnum,
@@ -12,7 +17,7 @@ import {
   QueryEngineNamesEnum,
   QuickPickEnumeration,
   VCSCommandMenuItemEnum,
-} from '@BaseEnumerations/index';
+} from "@BaseEnumerations/index";
 
 export interface IPickItems {
   vCSCommandMenuItems: vscode.QuickPickItem[];
@@ -27,10 +32,10 @@ export class PickItems {
     const items: vscode.QuickPickItem[] = [];
     for (const key in VCSCommandMenuItemEnum) {
       if (VCSCommandMenuItemEnum.hasOwnProperty(key)) {
-        const enumValue = VCSCommandMenuItemEnum[key as keyof typeof VCSCommandMenuItemEnum];
+        const enumValue =
+          VCSCommandMenuItemEnum[key as keyof typeof VCSCommandMenuItemEnum];
         let label: string;
         let description: string;
-        let kind: vscode.QuickPickItemKind;
         switch (enumValue) {
           case VCSCommandMenuItemEnum.SelectMode:
             label = `${enumValue}`;
@@ -42,15 +47,15 @@ export class PickItems {
             break;
           case VCSCommandMenuItemEnum.SelectQueryEngines:
             label = `${enumValue}`;
-            description = 'Select CurrentQueryEngines';
+            description = "Select CurrentQueryEngines";
             break;
           case VCSCommandMenuItemEnum.ShowLogs:
-            label = '──────────';
-            description = '';
-            kind = vscode.QuickPickItemKind.Separator;
+            label = "──────────";
+            description = "";
+            let kind = vscode.QuickPickItemKind.Separator;
             items.push({ label, kind });
             label = `${enumValue}`;
-            description = 'Show AiAssist logs in output channel';
+            description = "Show AiAssist logs in output channel";
             break;
           default:
             continue;
@@ -66,26 +71,34 @@ export class PickItems {
     const currentMode = this.data.stateManager.currentMode;
     for (const key in ModeMenuItemEnum) {
       if (ModeMenuItemEnum.hasOwnProperty(key)) {
-        const enumValue = ModeMenuItemEnum[key as keyof typeof ModeMenuItemEnum];
+        const enumValue =
+          ModeMenuItemEnum[key as keyof typeof ModeMenuItemEnum];
         let label: string;
         let description: string;
-        let kind: vscode.QuickPickItemKind;
         switch (enumValue) {
           case ModeMenuItemEnum.Workspace:
             label = `${enumValue}`;
-            description = 'Use Workspace' + (currentMode === ModeMenuItemEnum.Workspace ? ' ✓' : ' ');
+            description =
+              "Use Workspace" +
+              (currentMode === ModeMenuItemEnum.Workspace ? " ✓" : " ");
             break;
           case ModeMenuItemEnum.VSCode:
             label = `${enumValue}`;
-            description = 'Use VSCode' + (currentMode === ModeMenuItemEnum.VSCode ? ' ✓' : ' ');
+            description =
+              "Use VSCode" +
+              (currentMode === ModeMenuItemEnum.VSCode ? " ✓" : " ");
             break;
           case ModeMenuItemEnum.ChatGPT:
             label = `${enumValue}`;
-            description = 'Use ChatGPT' + (currentMode === ModeMenuItemEnum.ChatGPT ? ' ✓' : ' ');
+            description =
+              "Use ChatGPT" +
+              (currentMode === ModeMenuItemEnum.ChatGPT ? " ✓" : " ");
             break;
           case ModeMenuItemEnum.Claude:
             label = `${enumValue}`;
-            description = 'Use Claude' + (currentMode === ModeMenuItemEnum.Claude ? ' ✓' : ' ');
+            description =
+              "Use Claude" +
+              (currentMode === ModeMenuItemEnum.Claude ? " ✓" : " ");
             break;
           default:
             continue;
@@ -101,30 +114,36 @@ export class PickItems {
     const currentQueryEngines = this.data.stateManager.currentQueryEngines;
     for (const key in QueryEngineNamesEnum) {
       if (QueryEngineNamesEnum.hasOwnProperty(key)) {
-        const enumNameValue = QueryEngineNamesEnum[key as keyof typeof QueryEngineNamesEnum];
-        const enumFlagValue = QueryEngineFlagsEnum[key as keyof typeof QueryEngineFlagsEnum];
+        const enumNameValue =
+          QueryEngineNamesEnum[key as keyof typeof QueryEngineNamesEnum];
+        const enumFlagValue =
+          QueryEngineFlagsEnum[key as keyof typeof QueryEngineFlagsEnum];
         let label: string;
         let description: string;
         switch (enumNameValue) {
           case QueryEngineNamesEnum.ChatGPT:
             label = `${enumNameValue}`;
             description =
-              `Toggle ${enumNameValue}, currently ` + (currentQueryEngines & enumFlagValue ? 'enabled' : 'disabled');
+              `Toggle ${enumNameValue}, currently ` +
+              (currentQueryEngines & enumFlagValue ? "enabled" : "disabled");
             break;
           case QueryEngineNamesEnum.Claude:
             label = `${enumNameValue}`;
             description =
-              `Toggle ${enumNameValue}, currently ` + (currentQueryEngines & enumFlagValue ? 'enabled' : 'disabled');
+              `Toggle ${enumNameValue}, currently ` +
+              (currentQueryEngines & enumFlagValue ? "enabled" : "disabled");
             break;
           case QueryEngineNamesEnum.Bard:
             label = `${enumNameValue}`;
             description =
-              `Toggle ${enumNameValue}, currently ` + (currentQueryEngines & enumFlagValue ? 'enabled' : 'disabled');
+              `Toggle ${enumNameValue}, currently ` +
+              (currentQueryEngines & enumFlagValue ? "enabled" : "disabled");
             break;
           case QueryEngineNamesEnum.Grok:
             label = `${enumNameValue}`;
             description =
-              `Toggle ${enumNameValue}, currently ` + (currentQueryEngines & enumFlagValue ? 'enabled' : 'disabled');
+              `Toggle ${enumNameValue}, currently ` +
+              (currentQueryEngines & enumFlagValue ? "enabled" : "disabled");
             break;
           default:
             continue;
@@ -136,31 +155,50 @@ export class PickItems {
   }
   get queryAgentCommandMenuItems(): vscode.QuickPickItem[] {
     const items: vscode.QuickPickItem[] = [];
-    const currentQueryAgentCommand = this.data.stateManager.currentQueryAgentCommand;
+    const currentQueryAgentCommand =
+      this.data.stateManager.currentQueryAgentCommand;
 
     for (const key in QueryAgentCommandMenuItemEnum) {
       if (QueryAgentCommandMenuItemEnum.hasOwnProperty(key)) {
-        const enumValue = QueryAgentCommandMenuItemEnum[key as keyof typeof QueryAgentCommandMenuItemEnum];
+        const enumValue =
+          QueryAgentCommandMenuItemEnum[
+            key as keyof typeof QueryAgentCommandMenuItemEnum
+          ];
         let label: string;
         let description: string;
-        let kind: vscode.QuickPickItemKind;
         switch (enumValue) {
           case QueryAgentCommandMenuItemEnum.Chat:
             label = `${enumValue}`;
-            description = 'Chat' + (currentQueryAgentCommand === QueryAgentCommandMenuItemEnum.Chat ? ' ✓' : ' ');
+            description =
+              "Chat" +
+              (currentQueryAgentCommand === QueryAgentCommandMenuItemEnum.Chat
+                ? " ✓"
+                : " ");
             break;
           case QueryAgentCommandMenuItemEnum.Fix:
             label = `${enumValue}`;
-            description = 'Fix' + (currentQueryAgentCommand === QueryAgentCommandMenuItemEnum.Fix ? ' ✓' : ' ');
+            description =
+              "Fix" +
+              (currentQueryAgentCommand === QueryAgentCommandMenuItemEnum.Fix
+                ? " ✓"
+                : " ");
             break;
           case QueryAgentCommandMenuItemEnum.Test:
             label = `${enumValue}`;
-            description = 'Test' + (currentQueryAgentCommand === QueryAgentCommandMenuItemEnum.Test ? ' ✓' : ' ');
+            description =
+              "Test" +
+              (currentQueryAgentCommand === QueryAgentCommandMenuItemEnum.Test
+                ? " ✓"
+                : " ");
             break;
           case QueryAgentCommandMenuItemEnum.Document:
             label = `${enumValue}`;
             description =
-              'Document' + (currentQueryAgentCommand === QueryAgentCommandMenuItemEnum.Document ? ' ✓' : ' ');
+              "Document" +
+              (currentQueryAgentCommand ===
+              QueryAgentCommandMenuItemEnum.Document
+                ? " ✓"
+                : " ");
             break;
           default:
             continue;

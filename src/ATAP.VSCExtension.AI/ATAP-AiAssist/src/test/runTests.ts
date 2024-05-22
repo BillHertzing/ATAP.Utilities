@@ -1,9 +1,14 @@
-import * as Mocha from 'mocha';
-import { glob, globSync, globStream, globStreamSync, Glob } from 'glob';
-import { dirname, resolve, join } from 'path';
-import { fileURLToPath } from 'url';
+import { glob, globSync, globStream, globStreamSync, Glob } from "glob";
+import { dirname, resolve, join } from "path";
+import { fileURLToPath } from "url";
+// import * as Mocha from "mocha";
+const Mocha = require("mocha");
 
-async function runTests(testsRoot: string, pattern: string, mochaOpts: Mocha.MochaOptions) {
+async function runTests(
+  testsRoot: string,
+  pattern: string,
+  mochaOpts: Mocha.MochaOptions,
+) {
   console.log(
     `runTests.ts: runTests: testsRoot is ${testsRoot}; pattern is ${pattern}; mochaOpts is ${mochaOpts.toString()} `,
   );
@@ -26,7 +31,9 @@ async function runTests(testsRoot: string, pattern: string, mochaOpts: Mocha.Moc
 
   // Run the tests
   return new Promise<number>((resolve, reject) => {
-    console.log(`runTests.ts: runTests: mocha.files is ${mocha.files.toString()}`);
+    console.log(
+      `runTests.ts: runTests: mocha.files is ${mocha.files.toString()}`,
+    );
     mocha.run((failures: number) => {
       if (failures > 0) {
         reject(new Error(`${failures} tests failed.`));
@@ -54,13 +61,21 @@ async function runTests(testsRoot: string, pattern: string, mochaOpts: Mocha.Moc
 export async function run(): Promise<void> {
   const testsRoot = __dirname; // resolve(dirname(fileURLToPath(import.meta.url)), '.');
   console.log(`runTests.ts: run: testsRoot is ${testsRoot}`);
-  const bddFailures = await runTests(join(testsRoot, 'bdd_tests\\'), './**/*.test.js', { ui: 'bdd' });
+  const bddFailures = await runTests(
+    join(testsRoot, "bdd_tests\\"),
+    "./**/*.test.js",
+    { ui: "bdd" },
+  );
   console.log(`runTests.ts: run: bddFailures is ${bddFailures}`);
-  const tddFailures = await runTests(join(testsRoot, 'tdd_tests\\'), './**/*.test.js', { ui: 'tdd' });
+  const tddFailures = await runTests(
+    join(testsRoot, "tdd_tests\\"),
+    "./**/*.test.js",
+    { ui: "tdd" },
+  );
   console.log(`runTests.ts: run: tddFailures is ${tddFailures}`);
 
   if (bddFailures + tddFailures > 0) {
-    throw new Error('Tests failed');
+    throw new Error("Tests failed");
   }
 }
 

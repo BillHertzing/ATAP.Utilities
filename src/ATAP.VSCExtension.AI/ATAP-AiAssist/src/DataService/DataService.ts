@@ -1,9 +1,14 @@
-import * as vscode from 'vscode';
-import { GUID, Int, IDType } from '@IDTypes/index';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { DetailedError, HandleError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
-import { DefaultConfiguration } from './DefaultConfiguration';
+import * as vscode from "vscode";
+import { GUID, Int, IDType } from "@IDTypes/index";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError, HandleError } from "@ErrorClasses/index";
+import {
+  logConstructor,
+  logFunction,
+  logAsyncFunction,
+  logExecutionTime,
+} from "@Decorators/index";
+import { DefaultConfiguration } from "./DefaultConfiguration";
 import {
   SerializationStructure,
   ISerializationStructure,
@@ -12,20 +17,25 @@ import {
   fromJson,
   toYaml,
   fromYaml,
-} from '@Serializers/index';
+} from "@Serializers/index";
 
-import { IStateManager, StateManager } from './StateManager';
-import { SupportedSecretsVaultEnum, ISecretsManager, SecretsManager } from './SecretsManager';
-import { IConfigurationData, ConfigurationData } from './ConfigurationData';
-import { IEventManager, EventManager } from './EventManager';
-import { IFileManager, FileManager } from './FileManager';
+import { IStateManager, StateManager } from "./StateManager";
+import {
+  SupportedSecretsVaultEnum,
+  ISecretsManager,
+  SecretsManager,
+} from "./SecretsManager";
+import { IConfigurationData, ConfigurationData } from "./ConfigurationData";
+import { IEventManager, EventManager } from "./EventManager";
+import { IFileManager, FileManager } from "./FileManager";
 import {
   IAiAssistCancellationTokenSourceManager,
   AiAssistCancellationTokenSourceManager,
-} from './AiAssistCancellationTokenSourceManager';
-import { IPickItems, PickItems } from './PickItems';
+} from "./AiAssistCancellationTokenSourceManager";
+import { IPickItems, PickItems } from "./PickItems"; // if pickitems is ESM (.ts / .js) then import it like this
+// const { IPickItems, PickItems } = require("./PickItems"); // if pickitems is commonJS (.cts / .cjs) then import it like this
 
-import { PathLike } from 'fs';
+import { PathLike } from "fs";
 
 export interface IData {
   getTemporaryPromptDocumentPath(): string | undefined;
@@ -76,10 +86,13 @@ export class Data {
     this.logger = new Logger(this.logger, this.constructor.name);
     // instantiate the configurationData
     try {
-      this.configurationData = new ConfigurationData(this.logger, this.extensionContext);
+      this.configurationData = new ConfigurationData(
+        this.logger,
+        this.extensionContext,
+      );
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create configurationData -> ', e);
+        throw new DetailedError("Data.ctor. create configurationData -> ", e);
       } else {
         // ToDo:  investigation to determine what else might happen
         throw new Error(
@@ -91,13 +104,19 @@ export class Data {
     // instantiate the stateManager
     // ToDo: figure out what StateManager is using folder for, and how to pass it in
     try {
-      this.stateManager = new StateManager(this.logger, this.extensionContext, this.configurationData); //, need a workspace folder passed into the constructor, see https://github.com/microsoft/vscode-cmake-tools/blob/main/src/state.ts
+      this.stateManager = new StateManager(
+        this.logger,
+        this.extensionContext,
+        this.configurationData,
+      ); //, need a workspace folder passed into the constructor, see https://github.com/microsoft/vscode-cmake-tools/blob/main/src/state.ts
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create stateManager -> ', e);
+        throw new DetailedError("Data.ctor. create stateManager -> ", e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`Data.ctor. create stateManager thew an object that was not of type Error -> `);
+        throw new Error(
+          `Data.ctor. create stateManager thew an object that was not of type Error -> `,
+        );
       }
     }
 
@@ -111,22 +130,30 @@ export class Data {
       ); //, need a workspace folder passed into the constructor?
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create secretsManager -> ', e);
+        throw new DetailedError("Data.ctor. create secretsManager -> ", e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`Data.ctor. create secretsManager thew an object that was not of type Error -> `);
+        throw new Error(
+          `Data.ctor. create secretsManager thew an object that was not of type Error -> `,
+        );
       }
     }
 
     // instantiate the eventManager
     try {
-      this.eventManager = new EventManager(this.logger, this.extensionContext, this.configurationData); //, need a workspace folder passed into the constructor?
+      this.eventManager = new EventManager(
+        this.logger,
+        this.extensionContext,
+        this.configurationData,
+      ); //, need a workspace folder passed into the constructor?
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create eventManager -> ', e);
+        throw new DetailedError("Data.ctor. create eventManager -> ", e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`Data.ctor. create eventManager thew an object that was not of type Error -> `);
+        throw new Error(
+          `Data.ctor. create eventManager thew an object that was not of type Error -> `,
+        );
       }
     }
 
@@ -135,19 +162,25 @@ export class Data {
       this.fileManager = new FileManager(this.logger, this.configurationData); //, need a workspace folder passed into the constructor?
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create fileManager -> ', e);
+        throw new DetailedError("Data.ctor. create fileManager -> ", e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`Data.ctor. create fileManager thew an object that was not of type Error -> `);
+        throw new Error(
+          `Data.ctor. create fileManager thew an object that was not of type Error -> `,
+        );
       }
     }
 
     // instantiate the aiAssistCancellationTokenSourceManager
     try {
-      this.aiAssistCancellationTokenSourceManager = new AiAssistCancellationTokenSourceManager(this.logger);
+      this.aiAssistCancellationTokenSourceManager =
+        new AiAssistCancellationTokenSourceManager(this.logger);
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create aiAssistCancellationTokenSourceManager -> ', e);
+        throw new DetailedError(
+          "Data.ctor. create aiAssistCancellationTokenSourceManager -> ",
+          e,
+        );
       } else {
         // ToDo:  investigation to determine what else might happen
         throw new Error(
@@ -160,10 +193,12 @@ export class Data {
       this.pickItems = new PickItems(this);
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create pickItems -> ', e);
+        throw new DetailedError("Data.ctor. create pickItems -> ", e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`Data.ctor. create pickItems thew an object that was not of type Error -> `);
+        throw new Error(
+          `Data.ctor. create pickItems thew an object that was not of type Error -> `,
+        );
       }
     }
   }
@@ -172,13 +207,17 @@ export class Data {
     //await this.stateManager.in;
   }
   public getTemporaryPromptDocumentPath(): string | undefined {
-    return this.temporaryPromptDocumentPath ? this.temporaryPromptDocumentPath : undefined;
+    return this.temporaryPromptDocumentPath
+      ? this.temporaryPromptDocumentPath
+      : undefined;
   }
   public setTemporaryPromptDocumentPath(value: string) {
     this.temporaryPromptDocumentPath = value;
   }
   public getTemporaryPromptDocument(): vscode.TextDocument | undefined {
-    return this.temporaryPromptDocument ? this.temporaryPromptDocument : undefined;
+    return this.temporaryPromptDocument
+      ? this.temporaryPromptDocument
+      : undefined;
   }
   public setTemporaryPromptDocument(value: vscode.TextDocument) {
     this.temporaryPromptDocument = value;
@@ -228,10 +267,12 @@ export class DataService implements IDataService {
       //   : new Data(this.logger, this.extensionContext);
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('DataService.ctor. create data -> }', e);
+        throw new DetailedError("DataService.ctor. create data -> }", e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`DataService.ctor. create data thew an object that was not of type Error ->`);
+        throw new Error(
+          `DataService.ctor. create data thew an object that was not of type Error ->`,
+        );
       }
     }
     this.logger.log(`DataService.ctor Ending`, LogLevel.Trace);

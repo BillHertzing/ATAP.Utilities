@@ -1,22 +1,33 @@
-import * as vscode from 'vscode';
-import { copyToSubmit } from './copyToSubmit';
-import { stat } from 'fs';
+import * as vscode from "vscode";
+vscode;
+import { copyToSubmit } from "./copyToSubmit";
+import { stat } from "fs";
 
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { DetailedError, HandleError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError, HandleError } from "@ErrorClasses/index";
+import {
+  logConstructor,
+  logFunction,
+  logAsyncFunction,
+  logExecutionTime,
+} from "@Decorators/index";
 
-import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
-import { IQueryService } from '@QueryService/index';
+import {
+  IDataService,
+  IData,
+  IStateManager,
+  IConfigurationData,
+} from "@DataService/index";
+import { IQueryService } from "@QueryService/index";
 import {
   IStateMachineService,
   IQuickPickEventPayload,
   createQuickPickValue,
   IQueryEventPayload,
-} from '@StateMachineService/index';
+} from "@StateMachineService/index";
 
-import { startCommand } from './startCommand';
-import { showVSCEnvironment } from './showVSCEnvironment';
+import { startCommand } from "./startCommand";
+import { showVSCEnvironment } from "./showVSCEnvironment";
 
 import {
   ModeMenuItemEnum,
@@ -24,20 +35,20 @@ import {
   VCSCommandMenuItemEnum,
   SupportedSerializersEnum,
   QuickPickEnumeration,
-} from '@BaseEnumerations/index';
+} from "@BaseEnumerations/index";
 
-import { AiAssistCancellationTokenSource } from '@ItemWithIDs/index';
+import { AiAssistCancellationTokenSource } from "@ItemWithIDs/index";
 
 import {
   saveTagCollectionAsync,
   saveCategoryCollectionAsync,
   saveAssociationCollectionAsync,
   saveConversationCollectionAsync,
-} from './saveCollectionAsync';
+} from "./saveCollectionAsync";
 
 export interface ICommandsService {
   readonly stateMachineService: IStateMachineService;
-  getDisposables(): vscode.Disposable[];
+  getDisposables(): Disposable[];
 }
 
 @logConstructor
@@ -54,21 +65,24 @@ export class CommandsService {
     private queryService: IQueryService,
   ) {
     this.extensionID = extensionContext.extension.id;
-    this.extensionName = this.extensionID.split('.')[1];
+    this.extensionName = this.extensionID.split(".")[1];
     this.logger = new Logger(this.logger, this.constructor.name);
     this.registerCommands();
   }
 
   private registerCommands(): void {
-    this.logger.log('starting registerCommands', LogLevel.Trace);
+    this.logger.log("starting registerCommands", LogLevel.Trace);
 
-    this.logger.log('registering showVSCEnvironment', LogLevel.Trace);
+    this.logger.log("registering showVSCEnvironment", LogLevel.Trace);
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.showVSCEnvironment`, () => {
-        let message: string = 'starting commandID showVSCEnvironment';
-        this.logger.log(message, LogLevel.Trace);
-        showVSCEnvironment(this.logger);
-      }),
+      vscode.commands.registerCommand(
+        `${this.extensionName}.showVSCEnvironment`,
+        () => {
+          let message: string = "starting commandID showVSCEnvironment";
+          this.logger.log(message, LogLevel.Trace);
+          showVSCEnvironment(this.logger);
+        },
+      ),
     );
 
     // this.logger.log('registering showPrompt', LogLevel.Trace);
@@ -91,241 +105,334 @@ export class CommandsService {
     //   }),
     // );
 
-    this.logger.log('registering startCommand', LogLevel.Trace);
+    this.logger.log("registering startCommand", LogLevel.Trace);
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.startCommand`, () => {
-        let message: string = 'starting commandID startCommand';
-        this.logger.log(message, LogLevel.Trace);
-        startCommand(this.logger);
-      }),
+      vscode.commands.registerCommand(
+        `${this.extensionName}.startCommand`,
+        () => {
+          let message: string = "starting commandID startCommand";
+          this.logger.log(message, LogLevel.Trace);
+          startCommand(this.logger);
+        },
+      ),
     );
 
     // register the command to save the tag collection
-    this.logger.log('registering saveTagCollectionAsync', LogLevel.Trace);
+    this.logger.log("registering saveTagCollectionAsync", LogLevel.Trace);
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.saveTagCollectionAsync`, async () => {
-        this.logger.log('starting commandID saveTagCollectionAsync', LogLevel.Trace);
-        try {
-          await saveTagCollectionAsync(this.logger, this.data);
-          this.logger.log(`saveTagCollectionAsync completed} `, LogLevel.Trace);
-        } catch (e) {
-          HandleError(e, 'commandsService', 'saveTagCollectionAsync', 'failed calling saveTagCollectionAsync');
-        }
-        // Add the event that makes the tag editor go from dirty to clean
-        // this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', 'saveTagCollectionAsyncCompleted');
-      }),
+      vscode.commands.registerCommand(
+        `${this.extensionName}.saveTagCollectionAsync`,
+        async () => {
+          this.logger.log(
+            "starting commandID saveTagCollectionAsync",
+            LogLevel.Trace,
+          );
+          try {
+            await saveTagCollectionAsync(this.logger, this.data);
+            this.logger.log(
+              `saveTagCollectionAsync completed} `,
+              LogLevel.Trace,
+            );
+          } catch (e) {
+            HandleError(
+              e,
+              "commandsService",
+              "saveTagCollectionAsync",
+              "failed calling saveTagCollectionAsync",
+            );
+          }
+          // Add the event that makes the tag editor go from dirty to clean
+          // this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', 'saveTagCollectionAsyncCompleted');
+        },
+      ),
     );
 
     // register the command to save the category collection
-    this.logger.log('registering saveCategoryCollectionAsync', LogLevel.Trace);
+    this.logger.log("registering saveCategoryCollectionAsync", LogLevel.Trace);
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.saveCategoryCollectionAsync`, async () => {
-        this.logger.log('starting commandID saveCategoryCollectionAsync', LogLevel.Trace);
-        try {
-          await saveCategoryCollectionAsync(this.logger, this.data);
-          this.logger.log(`saveCategoryCollectionAsync completed} `, LogLevel.Trace);
-        } catch (e) {
-          HandleError(
-            e,
-            'commandsService',
-            'saveCategoryCollectionAsync',
-            'failed calling saveCategoryCollectionAsync',
+      vscode.commands.registerCommand(
+        `${this.extensionName}.saveCategoryCollectionAsync`,
+        async () => {
+          this.logger.log(
+            "starting commandID saveCategoryCollectionAsync",
+            LogLevel.Trace,
           );
-        }
-        // Add the event that makes the category editor go from dirty to clean
-        // this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', 'saveCategoryCollectionAsyncCompleted');
-      }),
+          try {
+            await saveCategoryCollectionAsync(this.logger, this.data);
+            this.logger.log(
+              `saveCategoryCollectionAsync completed} `,
+              LogLevel.Trace,
+            );
+          } catch (e) {
+            HandleError(
+              e,
+              "commandsService",
+              "saveCategoryCollectionAsync",
+              "failed calling saveCategoryCollectionAsync",
+            );
+          }
+          // Add the event that makes the category editor go from dirty to clean
+          // this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', 'saveCategoryCollectionAsyncCompleted');
+        },
+      ),
     );
     // register the command to save the association collection
-    this.logger.log('registering saveAssociationCollectionAsync', LogLevel.Trace);
+    this.logger.log(
+      "registering saveAssociationCollectionAsync",
+      LogLevel.Trace,
+    );
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.saveAssociationCollectionAsync`, async () => {
-        this.logger.log('starting commandID saveAssociationCollectionAsync', LogLevel.Trace);
-        try {
-          await saveAssociationCollectionAsync(this.logger, this.data);
-          this.logger.log(`saveAssociationCollectionAsync completed} `, LogLevel.Trace);
-        } catch (e) {
-          HandleError(
-            e,
-            'commandsService',
-            'saveAssociationCollectionAsync',
-            'failed calling saveAssociationCollectionAsync',
+      vscode.commands.registerCommand(
+        `${this.extensionName}.saveAssociationCollectionAsync`,
+        async () => {
+          this.logger.log(
+            "starting commandID saveAssociationCollectionAsync",
+            LogLevel.Trace,
           );
-        }
-        // Add the event that makes the association editor go from dirty to clean
-        // this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', 'saveAssociationCollectionAsyncCompleted');
-      }),
+          try {
+            await saveAssociationCollectionAsync(this.logger, this.data);
+            this.logger.log(
+              `saveAssociationCollectionAsync completed} `,
+              LogLevel.Trace,
+            );
+          } catch (e) {
+            HandleError(
+              e,
+              "commandsService",
+              "saveAssociationCollectionAsync",
+              "failed calling saveAssociationCollectionAsync",
+            );
+          }
+          // Add the event that makes the association editor go from dirty to clean
+          // this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', 'saveAssociationCollectionAsyncCompleted');
+        },
+      ),
     );
     // register the command to save the Conversation collection
-    this.logger.log('registering saveConversationCollectionAsync', LogLevel.Trace);
+    this.logger.log(
+      "registering saveConversationCollectionAsync",
+      LogLevel.Trace,
+    );
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.saveConversationCollectionAsync`, async () => {
-        this.logger.log('starting commandID saveConversationCollectionAsync', LogLevel.Trace);
-        try {
-          await saveConversationCollectionAsync(this.logger, this.data);
-          this.logger.log(`saveConversationCollectionAsync completed} `, LogLevel.Debug);
-        } catch (e) {
-          HandleError(
-            e,
-            'commandsService',
-            'saveConversationCollectionAsync',
-            'failed calling saveConversationCollectionAsync',
+      vscode.commands.registerCommand(
+        `${this.extensionName}.saveConversationCollectionAsync`,
+        async () => {
+          this.logger.log(
+            "starting commandID saveConversationCollectionAsync",
+            LogLevel.Trace,
           );
-        }
-        // Add the event that makes the Conversation editor go from dirty to clean
-        // this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', 'saveConversationCollectionAsyncCompleted');
-      }),
+          try {
+            await saveConversationCollectionAsync(this.logger, this.data);
+            this.logger.log(
+              `saveConversationCollectionAsync completed} `,
+              LogLevel.Debug,
+            );
+          } catch (e) {
+            HandleError(
+              e,
+              "commandsService",
+              "saveConversationCollectionAsync",
+              "failed calling saveConversationCollectionAsync",
+            );
+          }
+          // Add the event that makes the Conversation editor go from dirty to clean
+          // this.data.eventManager.getEventEmitter().emit('ExternalDataReceived', 'saveConversationCollectionAsyncCompleted');
+        },
+      ),
     );
 
     // *************************************************************** //
     // register the command to send the quickPick event (with kindOfQuickPick=VCSCommand) to the primaryActor
-    this.logger.log('registering quickPickVCSCommand', LogLevel.Debug);
+    this.logger.log("registering quickPickVCSCommand", LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.quickPickVCSCommand`, () => {
-        this.logger.log('starting commandService.quickPickVCSCommand (FireAndForget)', LogLevel.Debug);
-        // let cancellationTokenSource = new vscode.CancellationTokenSource();
-        // this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
-        //   new AiAssistCancellationTokenSource(cancellationTokenSource),
-        // );
-        // let _prompt: string = `select one from list below, current selection is: ToDo: need current VCS command or remove this one`;
+      vscode.commands.registerCommand(
+        `${this.extensionName}.quickPickVCSCommand`,
+        () => {
+          this.logger.log(
+            "starting commandService.quickPickVCSCommand (FireAndForget)",
+            LogLevel.Debug,
+          );
+          // let cancellationTokenSource = new vscode.CancellationTokenSource();
+          // this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
+          //   new AiAssistCancellationTokenSource(cancellationTokenSource),
+          // );
+          // let _prompt: string = `select one from list below, current selection is: ToDo: need current VCS command or remove this one`;
 
-        // try {
-        //   this.stateMachineService.quickPick({
-        //     quickPickKindOfEnumeration: QuickPickEnumeration.VCSCommandMenuItemEnum,
-        //     quickPickPrompt: _prompt,
-        //     cTSToken: cancellationTokenSource.token,
-        //   } as IQuickPickEventPayload);
-        // } catch (e) {
-        //   HandleError(e, 'commandsService', 'quickPickVCSCommand', 'failed calling primaryActor C1');
-        // }
-      }),
+          // try {
+          //   this.stateMachineService.quickPick({
+          //     quickPickKindOfEnumeration: QuickPickEnumeration.VCSCommandMenuItemEnum,
+          //     quickPickPrompt: _prompt,
+          //     cTSToken: cancellationTokenSource.token,
+          //   } as IQuickPickEventPayload);
+          // } catch (e) {
+          //   HandleError(e, 'commandsService', 'quickPickVCSCommand', 'failed calling primaryActor C1');
+          // }
+        },
+      ),
     );
     // register the command to send the quickPick event (with kindOfQuickPick=Mode) to the primaryActor
-    this.logger.log('registering quickPickMode', LogLevel.Trace);
+    this.logger.log("registering quickPickMode", LogLevel.Trace);
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.quickPickMode`, () => {
-        this.logger.log('starting commandService.quickPickMode (FireAndForget)', LogLevel.Trace);
-        let cancellationTokenSource = new vscode.CancellationTokenSource();
-        this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
-          new AiAssistCancellationTokenSource(cancellationTokenSource),
-        );
-        try {
-          this.stateMachineService.quickPick({
-            kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
-            cTSToken: cancellationTokenSource.token,
-          });
-        } catch (e) {
-          HandleError(e, 'commandsService', 'quickPickMode', 'failed calling this.stateMachineService.quickPick');
-        }
-      }),
+      vscode.commands.registerCommand(
+        `${this.extensionName}.quickPickMode`,
+        () => {
+          this.logger.log(
+            "starting commandService.quickPickMode (FireAndForget)",
+            LogLevel.Trace,
+          );
+          let cancellationTokenSource = new vscode.CancellationTokenSource();
+          this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
+            new AiAssistCancellationTokenSource(cancellationTokenSource),
+          );
+          try {
+            this.stateMachineService.quickPick({
+              kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
+              cTSToken: cancellationTokenSource.token,
+            });
+          } catch (e) {
+            HandleError(
+              e,
+              "commandsService",
+              "quickPickMode",
+              "failed calling this.stateMachineService.quickPick",
+            );
+          }
+        },
+      ),
     );
     // register the command to send the quickPick event (with kindOfQuickPick=Command) to the primaryActor
-    this.logger.log('registering quickPickQueryAgentCommand', LogLevel.Trace);
+    this.logger.log("registering quickPickQueryAgentCommand", LogLevel.Trace);
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.quickPickQueryAgentCommand`, () => {
-        this.logger.log('starting commandService.quickPickQueryAgentCommand (FireAndForget)', LogLevel.Debug);
-        let cancellationTokenSource = new vscode.CancellationTokenSource();
-        this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
-          new AiAssistCancellationTokenSource(cancellationTokenSource),
-        );
-        try {
-          this.stateMachineService.quickPick({
-            kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
-            cTSToken: cancellationTokenSource.token,
-          });
-        } catch (e) {
-          HandleError(
-            e,
-            'commandsService',
-            'quickPickQueryAgentCommand',
-            'failed calling this.stateMachineService.quickPick',
+      vscode.commands.registerCommand(
+        `${this.extensionName}.quickPickQueryAgentCommand`,
+        () => {
+          this.logger.log(
+            "starting commandService.quickPickQueryAgentCommand (FireAndForget)",
+            LogLevel.Debug,
           );
-        }
-      }),
+          let cancellationTokenSource = new vscode.CancellationTokenSource();
+          this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
+            new AiAssistCancellationTokenSource(cancellationTokenSource),
+          );
+          try {
+            this.stateMachineService.quickPick({
+              kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
+              cTSToken: cancellationTokenSource.token,
+            });
+          } catch (e) {
+            HandleError(
+              e,
+              "commandsService",
+              "quickPickQueryAgentCommand",
+              "failed calling this.stateMachineService.quickPick",
+            );
+          }
+        },
+      ),
     );
 
     // register the command to send the quickPick event (with kindOfQuickPick=QueryEngines) to the primaryActor
-    this.logger.log('registering quickPickQueryEngines', LogLevel.Trace);
+    this.logger.log("registering quickPickQueryEngines", LogLevel.Trace);
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.quickPickQueryEngines`, () => {
-        this.logger.log('starting commandService.quickPickQueryEngines (FireAndForget)', LogLevel.Debug);
-        let cancellationTokenSource = new vscode.CancellationTokenSource();
-        this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
-          new AiAssistCancellationTokenSource(cancellationTokenSource),
-        );
-        try {
-          this.stateMachineService.quickPick({
-            kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
-            cTSToken: cancellationTokenSource.token,
-          });
-        } catch (e) {
-          // ToDo: // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
-          HandleError(
-            e,
-            'commandsService',
-            'quickPickQueryEngines',
-            'failed calling this.stateMachineService.quickPick',
+      vscode.commands.registerCommand(
+        `${this.extensionName}.quickPickQueryEngines`,
+        () => {
+          this.logger.log(
+            "starting commandService.quickPickQueryEngines (FireAndForget)",
+            LogLevel.Debug,
           );
-        }
-      }),
+          let cancellationTokenSource = new vscode.CancellationTokenSource();
+          this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
+            new AiAssistCancellationTokenSource(cancellationTokenSource),
+          );
+          try {
+            this.stateMachineService.quickPick({
+              kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
+              cTSToken: cancellationTokenSource.token,
+            });
+          } catch (e) {
+            // ToDo: // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
+            HandleError(
+              e,
+              "commandsService",
+              "quickPickQueryEngines",
+              "failed calling this.stateMachineService.quickPick",
+            );
+          }
+        },
+      ),
     );
 
     // *************************************************************** //
-    this.logger.log('registering sendQuery', LogLevel.Debug);
+    this.logger.log("registering sendQuery", LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.sendQuery`, async () => {
-        this.logger.log('starting commandService.stateMachineService.sendQuery (FireAndForget)', LogLevel.Debug);
-        let cancellationTokenSource = new vscode.CancellationTokenSource();
-        this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
-          new AiAssistCancellationTokenSource(cancellationTokenSource),
-        );
-        try {
-          this.stateMachineService.sendQuery({
-            queryFragmentCollection: this.data.fileManager.queryFragmentCollection,
-            cTSToken: cancellationTokenSource.token,
-          } as IQueryEventPayload);
-          // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);
-        } catch (e) {
-          // ToDo: // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
-
-          HandleError(
-            e,
-            'commandsService',
-            'stateMachineService.sendQuery',
-            'failed calling this.stateMachineService.sendQuery',
+      vscode.commands.registerCommand(
+        `${this.extensionName}.sendQuery`,
+        async () => {
+          this.logger.log(
+            "starting commandService.stateMachineService.sendQuery (FireAndForget)",
+            LogLevel.Debug,
           );
-          // ToDo: display a visual error indicator to the user
-        }
-      }),
+          let cancellationTokenSource = new vscode.CancellationTokenSource();
+          this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
+            new AiAssistCancellationTokenSource(cancellationTokenSource),
+          );
+          try {
+            this.stateMachineService.sendQuery({
+              queryFragmentCollection:
+                this.data.fileManager.queryFragmentCollection,
+              cTSToken: cancellationTokenSource.token,
+            } as IQueryEventPayload);
+            // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);
+          } catch (e) {
+            // ToDo: // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
+
+            HandleError(
+              e,
+              "commandsService",
+              "stateMachineService.sendQuery",
+              "failed calling this.stateMachineService.sendQuery",
+            );
+            // ToDo: display a visual error indicator to the user
+          }
+        },
+      ),
     );
 
     // *************************************************************** //
-    this.logger.log('registering sendTest', LogLevel.Debug);
+    this.logger.log("registering sendTest", LogLevel.Debug);
     this.disposables.push(
-      vscode.commands.registerCommand(`${this.extensionName}.sendTest`, async () => {
-        this.logger.log('starting commandService.stateMachineService.sendTest (FireAndForget)', LogLevel.Debug);
-        let cancellationTokenSource = new vscode.CancellationTokenSource();
-        this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
-          new AiAssistCancellationTokenSource(cancellationTokenSource),
-        );
-        try {
-          this.stateMachineService.sendTest({
-            queryFragmentCollection: this.data.fileManager.queryFragmentCollection,
-            cTSToken: cancellationTokenSource.token,
-          } as IQueryEventPayload);
-          // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);
-        } catch (e) {
-          // ToDo: // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
-
-          HandleError(
-            e,
-            'commandsService',
-            'stateMachineService.sendTest',
-            'failed calling this.stateMachineService.sendTest',
+      vscode.commands.registerCommand(
+        `${this.extensionName}.sendTest`,
+        async () => {
+          this.logger.log(
+            "starting commandService.stateMachineService.sendTest (FireAndForget)",
+            LogLevel.Debug,
           );
-          // ToDo: display a visual error indicator to the user
-        }
-      }),
+          let cancellationTokenSource = new vscode.CancellationTokenSource();
+          this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
+            new AiAssistCancellationTokenSource(cancellationTokenSource),
+          );
+          try {
+            this.stateMachineService.sendTest({
+              queryFragmentCollection:
+                this.data.fileManager.queryFragmentCollection,
+              cTSToken: cancellationTokenSource.token,
+            } as IQueryEventPayload);
+            // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);
+          } catch (e) {
+            // ToDo: // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
+
+            HandleError(
+              e,
+              "commandsService",
+              "stateMachineService.sendTest",
+              "failed calling this.stateMachineService.sendTest",
+            );
+            // ToDo: display a visual error indicator to the user
+          }
+        },
+      ),
     );
 
     // ************************************************************ //

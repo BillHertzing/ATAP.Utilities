@@ -1,10 +1,15 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
-import { QueryEngineNamesEnum } from '@BaseEnumerations/index';
+import { QueryEngineNamesEnum } from "@BaseEnumerations/index";
 
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { DetailedError, HandleError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError, HandleError } from "@ErrorClasses/index";
+import {
+  logConstructor,
+  logFunction,
+  logAsyncFunction,
+  logExecutionTime,
+} from "@Decorators/index";
 
 import {
   SerializationStructure,
@@ -14,9 +19,14 @@ import {
   fromJson,
   toYaml,
   fromYaml,
-} from '@Serializers/index';
+} from "@Serializers/index";
 
-import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
+import {
+  IDataService,
+  IData,
+  IStateManager,
+  IConfigurationData,
+} from "@DataService/index";
 
 import {
   IQueryEngine,
@@ -25,12 +35,14 @@ import {
   QueryEngineChatGPT,
   IQueryResultBase,
   QueryResultBase,
-} from '@QueryService/index';
+} from "@QueryService/index";
 
-import * as fs from 'fs';
-import * as path from 'path';
-import * as strip from 'strip-comments';
-import * as prettier from 'prettier';
+import * as fs from "fs";
+import * as path from "path";
+import * as prettier from "prettier";
+
+//import * as strip from "strip-comments";
+const strip = require("strip-comments");
 
 export interface IQueryService {
   ConstructQueryAsync(queryEngine?: QueryEngineNamesEnum): Promise<void>;
@@ -51,7 +63,7 @@ export class QueryService implements IQueryService {
 
   constructor(
     private readonly logger: ILogger,
-    private readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
+    private readonly extensionContext: vscode.ExtensionContext, // readonly folder: vscode.WorkspaceFolder,
     private readonly data: IData,
   ) {
     this.logger = new Logger(this.logger, this.constructor.name);
@@ -115,7 +127,7 @@ export class QueryService implements IQueryService {
   @logAsyncFunction
   async MinifyCodeAsync(content: string, extension: string): Promise<string> {
     // Can't do anything with .txt files, so just return the content
-    if (extension === '.txt') {
+    if (extension === ".txt") {
       return content;
     }
     let strippedContent: string;
@@ -124,7 +136,10 @@ export class QueryService implements IQueryService {
       strippedContent = strip(content);
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('sendQuery.minifyCodeAsync calling strip failed -> ', e);
+        throw new DetailedError(
+          "sendQuery.minifyCodeAsync calling strip failed -> ",
+          e,
+        );
       } else {
         throw new Error(
           `sendQuery.minifyCodeAsync calling strip caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
@@ -140,24 +155,36 @@ export class QueryService implements IQueryService {
         tabWidth: 0,
         semi: false,
         singleQuote: true,
-        trailingComma: 'none',
+        trailingComma: "none",
         bracketSpacing: false,
-        arrowParens: 'avoid',
-        endOfLine: 'lf',
+        arrowParens: "avoid",
+        endOfLine: "lf",
       });
 
       const timeoutPromise = new Promise(
-        (_, reject) => setTimeout(() => reject(new Error('prettier.format timed out')), 2000), // 5 seconds timeout
+        (_, reject) =>
+          setTimeout(
+            () => reject(new Error("prettier.format timed out")),
+            2000,
+          ), // 5 seconds timeout
       );
-      const possibleContent = await Promise.race([formatPromise, timeoutPromise]);
+      const possibleContent = await Promise.race([
+        formatPromise,
+        timeoutPromise,
+      ]);
       //ToDo: handle timeout (reject the promise with a timeout error)
-      if (typeof possibleContent !== 'string') {
-        throw new Error('QueryService MinifyCodeAsync the call to prettier.format timed out');
+      if (typeof possibleContent !== "string") {
+        throw new Error(
+          "QueryService MinifyCodeAsync the call to prettier.format timed out",
+        );
       }
       minifiedContent = possibleContent as string;
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('QueryService.MinifyCodeAsync calling prettier.format failed -> ', e);
+        throw new DetailedError(
+          "QueryService.MinifyCodeAsync calling prettier.format failed -> ",
+          e,
+        );
       } else {
         throw new Error(
           `QueryService.MinifyCodeAsync calling prettier.format caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
@@ -173,7 +200,7 @@ export class QueryService implements IQueryService {
     // get the query from the active editor and the data from the data service
     // Create the text to submit
     let textToSubmit: string;
-    textToSubmit = 'abc';
+    textToSubmit = "abc";
 
     // add anything that is engine specific
     let engineSpecificTextToSubmit: string;
@@ -192,16 +219,29 @@ export class QueryService implements IQueryService {
         // load the query engine if it is not already loaded
         if (!this.queryEnginesMap[QueryEngineNamesEnum.ChatGPT]) {
           try {
-            this.queryEnginesMap[QueryEngineNamesEnum.ChatGPT] = new QueryEngineChatGPT(this.logger, this.data);
+            this.queryEnginesMap[QueryEngineNamesEnum.ChatGPT] =
+              new QueryEngineChatGPT(this.logger, this.data);
           } catch (e) {
-            HandleError(e, 'queryService', 'sendQueryAsync', 'calling QueryEngineChatGPT .ctor');
+            HandleError(
+              e,
+              "queryService",
+              "sendQueryAsync",
+              "calling QueryEngineChatGPT .ctor",
+            );
           }
         }
         try {
           // call sendQueryAsync on the specific QueryEngine
-          let responseData = await this.queryEnginesMap[queryEngineName].sendQueryAsync(textToSubmit, cTSToken);
+          let responseData = await this.queryEnginesMap[
+            queryEngineName
+          ].sendQueryAsync(textToSubmit, cTSToken);
         } catch (e) {
-          HandleError(e, 'queryService', 'sendQueryAsync', 'calling sendQueryAsync');
+          HandleError(
+            e,
+            "queryService",
+            "sendQueryAsync",
+            "calling sendQueryAsync",
+          );
         }
         break;
       // case QueryEngineNamesEnum.Claude:
@@ -214,7 +254,9 @@ export class QueryService implements IQueryService {
       //   this.queryEnginesMap[queryEngine] = new GrokQueryEngine(logger);
       //   break;
       default:
-        throw new Error(`QueryService sendQueryAsync Unsupported query engine ${queryEngineName}`);
+        throw new Error(
+          `QueryService sendQueryAsync Unsupported query engine ${queryEngineName}`,
+        );
     }
   }
 }

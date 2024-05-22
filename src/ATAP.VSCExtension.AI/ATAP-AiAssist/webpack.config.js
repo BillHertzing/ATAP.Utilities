@@ -19,15 +19,24 @@ const __dirname = dirname(__filename);
 async function findTypeScriptFiles(directoryPath) {
   const discoveredFiles = []; // Array to store results
   const rootPath = directoryPath;
-  const files = await fs.promises.readdir(directoryPath, { withFileTypes: true });
+  const files = await fs.promises.readdir(directoryPath, {
+    withFileTypes: true,
+  });
   for (const file of files) {
-    const filePath = join(directoryPath, file.name).replace(/^src/, "./src").replace(/\.ts$/, "");
+    const filePath = join(directoryPath, file.name)
+      .replace(/^src/, ".\\src")
+      .replace(/\.[mc]{0,1}ts$/, "");
 
     if (file.isDirectory()) {
       // Recursively explore subdirectories
       const nestedFiles = await findTypeScriptFiles(filePath);
       discoveredFiles.push(...nestedFiles);
-    } else if (file.name.endsWith(".ts") || file.name.endsWith(".mts")) {
+    } else if (
+      file.name.endsWith(".ts") ||
+      file.name.endsWith(".cts") ||
+      file.name.endsWith(".mts") ||
+      file.name.endsWith(".tsx")
+    ) {
       discoveredFiles.push(filePath);
     }
   }
@@ -51,27 +60,26 @@ const webpackConfigFunction = async (env) => {
     // console.log("basePath", basePath);
     const config = {
       development: {
-        outputPath: resolve(basePath, "development"),
-        //entry: files,
-        entry: "extension.ts",
-        //filename: "extension.mts",
-        filename: "[name].js", // [name] is a placeholder, it creates an output file for each entry name
         mode: "development",
         devtool: "source-map",
+        entry: "./src/extension.ts",
+        outputPath: resolve(basePath, "development"),
+        // filename: "[name].js" [name] is a placeholder, it creates an output file for each entry name
+        filename: "extension.js",
       },
       testing: {
-        outputPath: resolve(basePath, "testing"),
-        filename: "tests.bundle.js",
         mode: "development",
         devtool: "inline-source-map",
-        entry: resolve(__dirname, "src/test/runTests.ts"),
+        entry: "./src/test/runTests.ts",
+        outputPath: resolve(basePath, "testing"),
+        filename: "tests.bundle.js",
       },
       production: {
         outputPath: resolve(basePath, "production"),
         filename: "bundle.js",
         mode: "production",
         devtool: false,
-        entry: "./src/extension.mts",
+        entry: "./src/extension.ts",
       },
     };
     return config[environment];
@@ -89,7 +97,6 @@ const webpackConfigFunction = async (env) => {
   // return a webpack configuration structure specific to the environment
   return {
     target: "node", // VS Code extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
-
     mode: environmentSpecificConfig.mode,
     entry: environmentSpecificConfig.entry,
     output: {
@@ -105,7 +112,16 @@ const webpackConfigFunction = async (env) => {
     },
     resolve: {
       // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
-      extensions: [".ts", ".mts", ".tsx", ".js", ".jsx"],
+      extensions: [
+        ".ts",
+        ".cts",
+        ".mts",
+        ".tsx",
+        ".js",
+        ".cjs",
+        ".mjs",
+        ".jsx",
+      ],
       // Add the plugin to the list of plugins
       plugins: [
         new TsconfigPathsPlugin({
@@ -116,14 +132,16 @@ const webpackConfigFunction = async (env) => {
     module: {
       rules: [
         {
-          test: /\.[m]*ts$/,
+          test: /\.[mc]{0,1}ts[x]{0,1}$/,
           exclude: [/node_modules/],
           use: [
             {
               loader: "ts-loader",
               options: {
+                configFile:
+                  "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\src\\ATAP.VSCExtension.AI\\ATAP-AiAssist\\tsconfig.json", //"./tsconfig.json",
                 // to speed up build times, we can use transpileOnly mode. Does no type checking
-                transpileOnly: true,
+                //transpileOnly: true,
                 colors: true,
                 // experimentalFileCaching: true,
                 // cacheDirectory: resolve(dirname(fileURLToPath(import.meta.url)), ".cache"),
@@ -141,12 +159,12 @@ const webpackConfigFunction = async (env) => {
           include: /node_modules/,
           type: "javascript/auto",
         },
-        // need to better understand why we might need to load .js files with source-map-loader
-        // {
-        //   test: /\.js$/,
-        //   use: "source-map-loader",
-        //   enforce: "pre",
-        // },
+        //need to better understand why we might need to load .js files with source-map-loader
+        {
+          test: /\.js$/,
+          use: "source-map-loader",
+          enforce: "pre",
+        },
       ],
     },
     infrastructureLogging: {
@@ -155,8 +173,13 @@ const webpackConfigFunction = async (env) => {
   };
 };
 console.log("env.Environment", process.env.Environment);
-const webpackConfigurationStructure = await webpackConfigFunction({ Environment: "development" });
-console.log("webpackConfigurationStructure", JSON.stringify(webpackConfigurationStructure));
+const webpackConfigurationStructure = await webpackConfigFunction({
+  Environment: "development",
+});
+console.log(
+  "webpackConfigurationStructure",
+  JSON.stringify(webpackConfigurationStructure, null, 2),
+);
 export default webpackConfigurationStructure;
 // export default {
 //   mode: "none", // this leaves the source code as close as possible to the original (when packaging we set this to 'production')
@@ -204,6 +227,11 @@ export default webpackConfigurationStructure;
 //         test: /\.mjs$/,
 //         include: /node_modules/,
 //         type: "javascript/auto",
+//       },
+//       {
+//         test: /\.js$/,
+//         use: "source-map-loader",
+//         enforce: "pre",
 //       },
 //     ],
 //   },

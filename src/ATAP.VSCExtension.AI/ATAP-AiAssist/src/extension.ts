@@ -1,100 +1,100 @@
 import * as vscode from "vscode";
-// import * as fs from "fs";
+import * as fs from "fs";
 
-// import { DetailedError, HandleError } from "@ErrorClasses/index";
-//import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError, HandleError } from "@ErrorClasses/index";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
 
-// import { logFunction } from "@Decorators/index";
-// import { DefaultConfiguration } from "@DataService/DefaultConfiguration";
+import { logFunction } from "@Decorators/index";
+import { DefaultConfiguration } from "@DataService/DefaultConfiguration";
 
-// import { SecurityService, ISecurityService } from "@SecurityService/index";
+import { SecurityService, ISecurityService } from "@SecurityService/index";
 
-// import {
-//   DataService,
-//   IDataService,
-//   IData,
-//   IStateManager,
-//   IConfigurationData,
-// } from "@DataService/index";
+import {
+  DataService,
+  IDataService,
+  IData,
+  IStateManager,
+  IConfigurationData,
+} from "@DataService/index";
 
-// import {
-//   isRunningInTestingEnvironment,
-//   isRunningInDevelopmentEnvironment,
-// } from "@Utilities/index";
+import {
+  isRunningInTestingEnvironment,
+  isRunningInDevelopmentEnvironment,
+} from "@Utilities/index";
 
-// import { CommandsService } from "@CommandsService/index";
+import { CommandsService } from "@CommandsService/index";
 
-// import {
-//   IStateMachineService,
-//   StateMachineService,
-// } from "@StateMachineService/index";
+import {
+  IStateMachineService,
+  StateMachineService,
+} from "@StateMachineService/index";
 
-// import { IQueryService, QueryService } from "@QueryService/index";
+import { IQueryService, QueryService } from "@QueryService/index";
 
-// import { processPs1Files } from "./processPs1Files";
-// import { mainViewTreeDataProvider } from "./mainViewTreeDataProvider";
-// import { mainViewTreeItem } from "./mainViewTreeItem";
-// import { FileTreeProvider } from "./FileTreeProvider";
-// import { type } from "os";
+import { processPs1Files } from "./processPs1Files";
+import { mainViewTreeDataProvider } from "./mainViewTreeDataProvider";
+import { mainViewTreeItem } from "./mainViewTreeItem";
+import { FileTreeProvider } from "./FileTreeProvider";
+import { type } from "os";
 
-// //import { mainSearchEngineProvider } from './mainSearchEngineProvider';
+//import { mainSearchEngineProvider } from './mainSearchEngineProvider';
 
-// // objects that need to be at the global level of the module, so they are visible in both activate and deactivate functions
-// let dataService: IDataService;
-// let stateMachineService: IStateMachineService;
+// objects that need to be at the global level of the module, so they are visible in both activate and deactivate functions
+let dataService: IDataService;
+let stateMachineService: IStateMachineService;
 
-// // This method is called when your extension is activated
-// // Your extension is activated the very first time the command is executed
+// This method is called when your extension is activated
+// Your extension is activated the very first time the command is executed
 export async function activate(extensionContext: vscode.ExtensionContext) {
   // create the initial logger instance for the extension,
   //  by default write all log messages to the console and to an output channel having the same name as the extension, with a LogLevel of Info
-  // const logger = Logger.createLogger(
-  //   extensionContext.extension.id.split(".")[1],
-  // );
-  // logger.info(`${extensionContext.extension.id} activating`);
-  // // Declaration of variables
-  // let message: string = "";
-  // let workspacePath: string = "";
-  // let securityService: ISecurityService;
-  // let queryService: IQueryService;
-  // let commandsService: CommandsService;
-  // const extensionID = extensionContext.extension.id;
-  // const extensionName = extensionID.split(".")[1];
-  // // If the extension is running in the development host, or if the environment variable 'Environment' is set to 'Development',
-  // //   set the environment variable 'Environment' to 'Development'. This overrides whatever value of Environment variable was set when the extension started
-  // //   set the logger's channel's LogLevel to LogLevel.Debug initially
-  // //   ToDo: use a static map from DefaultConfig to check for a debuggerLogLevel in an environment variable
-  // //   if the debuggerLogLevel is set in the extension's setting, use that value,
-  // //   else if the debuggerLogLevel in the DefaultConfiguration.Development, use that value
-  // if (isRunningInDevelopmentEnvironment()) {
-  //   // ToDO: test for an environment variable for debuggerLogLevel, and if it exists, use that value
-  //   const settings = vscode.workspace.getConfiguration(extensionName);
-  //   const settingsDebuggerLogLevel = settings.get<LogLevel>("debuggerLogLevel");
-  //   //   if (settingsDebuggerLogLevel) {
-  //   //     logger.setChannelLogLevel(extensionName, settingsDebuggerLogLevel);
-  //   //   } else if ('debuggerLogLevel' in DefaultConfiguration.Development) {
-  //   //     const defaultConfigurationDebuggerLogLevel = DefaultConfiguration.Development.debuggerLogLevel as LogLevel;
-  //   //     logger.setChannelLogLevel(extensionName, defaultConfigurationDebuggerLogLevel);
-  //   //   }
-  //   //   // Focus on the output stream when starting the extension in development mode
-  //   //   logger.getChannelInfo('atap-aiassist')?.outputChannel?.show(true);
-  // }
-  // logger.log(`${extensionName} Activation Begun`, LogLevel.Info);
-  // // instantiate the SecurityService
-  // // if a SecurityService initialization serialized string exists, this will try and use it to create the SecurityService, else return a new empty one.
-  // // Will return a valid SecurityService instance or will throw
-  // // if (isSerializationStructure(DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'])) {
-  // //   securityService = SecurityService.CreateSecurityService(
-  // //     logger,
-  // //     extensionContext,
-  // //     'extension.ts',
-  // //     DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'],
-  // //   );
-  // // } else {
-  // // ToDo: wrap in a try/catch block
-  // // ToDo support rehydration of the SecurityService from a serialized structure
-  // // securityService =   SecurityService.create(logger, extensionContext, 'extension.ts');
-  // securityService = new SecurityService(logger, extensionContext);
+  const logger = Logger.createLogger(
+    extensionContext.extension.id.split(".")[1],
+  );
+  logger.info(`${extensionContext.extension.id} activating`);
+  // Declaration of variables
+  let message: string = "";
+  let workspacePath: string = "";
+  let securityService: ISecurityService;
+  let queryService: IQueryService;
+  let commandsService: CommandsService;
+  const extensionID = extensionContext.extension.id;
+  const extensionName = extensionID.split(".")[1];
+  // If the extension is running in the development host, or if the environment variable 'Environment' is set to 'Development',
+  //   set the environment variable 'Environment' to 'Development'. This overrides whatever value of Environment variable was set when the extension started
+  //   set the logger's channel's LogLevel to LogLevel.Debug initially
+  //   ToDo: use a static map from DefaultConfig to check for a debuggerLogLevel in an environment variable
+  //   if the debuggerLogLevel is set in the extension's setting, use that value,
+  //   else if the debuggerLogLevel in the DefaultConfiguration.Development, use that value
+  if (isRunningInDevelopmentEnvironment()) {
+    // ToDO: test for an environment variable for debuggerLogLevel, and if it exists, use that value
+    const settings = vscode.workspace.getConfiguration(extensionName);
+    const settingsDebuggerLogLevel = settings.get<LogLevel>("debuggerLogLevel");
+    //   if (settingsDebuggerLogLevel) {
+    //     logger.setChannelLogLevel(extensionName, settingsDebuggerLogLevel);
+    //   } else if ('debuggerLogLevel' in DefaultConfiguration.Development) {
+    //     const defaultConfigurationDebuggerLogLevel = DefaultConfiguration.Development.debuggerLogLevel as LogLevel;
+    //     logger.setChannelLogLevel(extensionName, defaultConfigurationDebuggerLogLevel);
+    //   }
+    //   // Focus on the output stream when starting the extension in development mode
+    //   logger.getChannelInfo('atap-aiassist')?.outputChannel?.show(true);
+  }
+  logger.log(`${extensionName} Activation Begun`, LogLevel.Info);
+  // instantiate the SecurityService
+  // if a SecurityService initialization serialized string exists, this will try and use it to create the SecurityService, else return a new empty one.
+  // Will return a valid SecurityService instance or will throw
+  // if (isSerializationStructure(DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'])) {
+  //   securityService = SecurityService.CreateSecurityService(
+  //     logger,
+  //     extensionContext,
+  //     'extension.ts',
+  //     DefaultConfiguration.Development['SecurityServiceAsSerializationStructure'],
+  //   );
+  // } else {
+  // ToDo: wrap in a try/catch block
+  // ToDo support rehydration of the SecurityService from a serialized structure
+  // securityService =   SecurityService.create(logger, extensionContext, 'extension.ts');
+  securityService = new SecurityService(logger, extensionContext);
   // // }
   // // if a DataService initialization serialized string exists, this will try and use it to create the DataService, else return a new empty one.
   // // Will return a valid DataService instance or will throw
@@ -106,11 +106,11 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // //     DefaultConfiguration.Development['DataServiceAsSerializationStructure'],
   // //   );
   // // } else {
-  // // ToDo: wrap in a try/catch block
-  // // ToDo support rehydration of the DataService from a serialized structure
-  // dataService = new DataService(logger, extensionContext);
-  // // }
-  // // logger.log(`data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`, LogLevel.Debug);
+  // ToDo: wrap in a try/catch block
+  // ToDo support rehydration of the DataService from a serialized structure
+  dataService = new DataService(logger, extensionContext);
+  // }
+  // logger.log(`data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`, LogLevel.Debug);
   // // ToDo: wrap in a try/catch block
   // securityService.externalDataVetting.AttachListener(
   //   dataService.data.eventManager.getEventEmitter(),
@@ -167,7 +167,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // }
   // // Add the disposables from the CommandsService to extensionContext.subscriptions
   // extensionContext.subscriptions.push(...commandsService.getDisposables());
-  // // Create a status bar item for the extension
+  // // // Create a status bar item for the extension
   // const statusBarItem = vscode.window.createStatusBarItem(
   //   vscode.StatusBarAlignment.Right,
   //   100,

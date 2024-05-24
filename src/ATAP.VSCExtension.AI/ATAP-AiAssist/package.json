@@ -258,7 +258,7 @@
     "esbuild:development:bundle": "node ./scripts/esbuild.mjs --outDir=./_generated/development --env=development",
     "esbuild:production:bundle": "node ./scripts/esbuild.mjs --outDir=./_generated/production --env=production",
     "esbuild:production:compile": "npm-run-all -p esbuild:checkTypes esbuild:production:bundle",
-    "build:development": "tsc -p tsconfig.json --outDir ./_generated/development",
+    "build:development": "npx esbuild ./src/extension.ts --bundle --outfile=./_generated/development/extension.js --platform=node --target=node14 --external:vscode --sourcemap --minify=false",
     "start:development": "node _generated/development/extension.js",
     "start:testing": "node _generated/testing/extension.js",
     "start:production": "node _generated/production/extension.js",

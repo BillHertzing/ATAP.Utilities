@@ -64,9 +64,9 @@ export class CommandsService {
     private stateMachineService: IStateMachineService,
     private queryService: IQueryService,
   ) {
+    this.logger = new Logger(this.logger, "CommandsService");
     this.extensionID = extensionContext.extension.id;
     this.extensionName = this.extensionID.split(".")[1];
-    this.logger = new Logger(this.logger, this.constructor.name);
     this.registerCommands();
   }
 

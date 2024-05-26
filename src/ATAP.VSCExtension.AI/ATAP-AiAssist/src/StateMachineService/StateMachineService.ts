@@ -1,10 +1,19 @@
-import * as vscode from 'vscode';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { IData } from '@DataService/index';
-import { DetailedError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction } from '@Decorators/index';
-import { ISerializationStructure, stringifyWithCircularReference, fromJson, fromYaml } from '@Serializers/index';
-import { QueryEngineNamesEnum } from '@BaseEnumerations/index';
+import * as vscode from "vscode";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { IData } from "@DataService/index";
+import { DetailedError } from "@ErrorClasses/index";
+import {
+  logConstructor,
+  logFunction,
+  logAsyncFunction,
+} from "@Decorators/index";
+import {
+  ISerializationStructure,
+  stringifyWithCircularReference,
+  fromJson,
+  fromYaml,
+} from "@Serializers/index";
+import { QueryEngineNamesEnum } from "@BaseEnumerations/index";
 import {
   Actor,
   ActorRef,
@@ -16,27 +25,30 @@ import {
   StateMachine,
   fromPromise,
   AnyStateMachine,
-} from 'xstate';
-import { createBrowserInspector } from '@statelyai/inspect';
+} from "xstate";
+import { createBrowserInspector } from "@statelyai/inspect";
 
 import {
   QueryAgentCommandMenuItemEnum,
   ModeMenuItemEnum,
   QuickPickEnumeration,
   VCSCommandMenuItemEnum,
-} from '@BaseEnumerations/index';
+} from "@BaseEnumerations/index";
 
-import { IQueryService } from '@QueryService/index';
+import { IQueryService } from "@QueryService/index";
 
 // common type
 
 export type LoggerDataT = { logger: ILogger; data: IData };
 
-import { IQuickPickEventPayload, IQueryEventPayload } from '@StateMachineService/index';
+import {
+  IQuickPickEventPayload,
+  IQueryEventPayload,
+} from "@StateMachineService/index";
 
-import { primaryMachine } from './primaryMachine';
-import { inspector } from '@StateMachineService/inspector';
-import { testMachine } from './testMachine';
+import { primaryMachine } from "./primaryMachine";
+import { inspector } from "@StateMachineService/inspector";
+import { testMachine } from "./testMachine";
 
 export interface IStateMachineService {
   quickPick(data: IQuickPickEventPayload): void;
@@ -62,9 +74,9 @@ export class StateMachineService implements IStateMachineService {
     private readonly queryService: IQueryService,
     private readonly extensionContext: vscode.ExtensionContext,
   ) {
+    this.logger = new Logger(this.logger, "StateMachineService");
     this.extensionID = extensionContext.extension.id;
-    this.extensionName = this.extensionID.split('.')[1];
-    this.logger = new Logger(this.logger, this.constructor.name);
+    this.extensionName = this.extensionID.split(".")[1];
     const primaryMachineInspector = createBrowserInspector(); // This line produces the errorMessage
     // this.primaryActor = createActor(primaryMachine, {
     //   input: {
@@ -82,7 +94,7 @@ export class StateMachineService implements IStateMachineService {
       input: {
         logger: this.logger,
         queryEngineName: QueryEngineNamesEnum.ChatGPT,
-        queryString: 'test',
+        queryString: "test",
         queryService: this.queryService,
         parent: this.primaryActor!,
         cTSToken: cancellationTokenSource.token,
@@ -90,49 +102,52 @@ export class StateMachineService implements IStateMachineService {
       // for Debugging
       inspect: (inspEvent) => {
         inspector(this.logger, inspEvent);
-        let _eventInput = '';
-        let _eventData = '';
-        let _eventOutput = '';
-        let _inspEventEventType = '';
-        if (inspEvent.type === '@xstate.snapshot') {
+        let _eventInput = "";
+        let _eventData = "";
+        let _eventOutput = "";
+        let _inspEventEventType = "";
+        if (inspEvent.type === "@xstate.snapshot") {
           switch (inspEvent.event.type) {
-            case 'queryEvent':
-            case 'xstate.init':
-            case 'xstate.done.actor.gatheringActor':
-            case 'xstate.promise.resolve':
+            case "queryEvent":
+            case "xstate.init":
+            case "xstate.done.actor.gatheringActor":
+            case "xstate.promise.resolve":
               break;
             default:
-              _inspEventEventType = 'inspEvent.event.type is unknown';
+              _inspEventEventType = "inspEvent.event.type is unknown";
           }
           this.logger.log(
-            `StateMachineService inspect received inspEvent type @xstate.snapshot. event.type: ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ''}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ''}${_inspEventEventType ? _inspEventEventType : ''}  snapshot.status: ${inspEvent.snapshot.status}`,
+            `StateMachineService inspect received inspEvent type @xstate.snapshot. event.type: ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ""}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ""}${_inspEventEventType ? _inspEventEventType : ""}  snapshot.status: ${inspEvent.snapshot.status}`,
             LogLevel.Trace,
           );
-        } else if (inspEvent.type === '@xstate.actor') {
+        } else if (inspEvent.type === "@xstate.actor") {
           this.logger.log(
             `StateMachineService inspect received inspEvent type @xstate.actor. actorRef.id: ${
               inspEvent.actorRef.id
             } rootId: ${inspEvent.rootId.toString()}`,
             LogLevel.Trace,
           );
-        } else if (inspEvent.type === '@xstate.event') {
+        } else if (inspEvent.type === "@xstate.event") {
           const _preamble = `StateMachineService inspect received inspEvent type @xstate.event. event.type: ${inspEvent.event.type} ; actorRefID: ${inspEvent.actorRef.id} `;
           switch (inspEvent.event.type) {
-            case 'xstate.init':
-            case 'queryEvent':
-            case 'xstate.error.actor.queryMachine':
-            case 'xstate.promise.resolve':
-            case 'xstate.done.actor.gatheringActor':
+            case "xstate.init":
+            case "queryEvent":
+            case "xstate.error.actor.queryMachine":
+            case "xstate.promise.resolve":
+            case "xstate.done.actor.gatheringActor":
               break;
             default:
-              _inspEventEventType = 'inspEvent.event.type is unknown';
+              _inspEventEventType = "inspEvent.event.type is unknown";
           }
           this.logger.log(
-            `${_preamble} ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ''}${inspEvent.event.data ? `event_data: ${inspEvent.event.data}` : ''}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ''}${_inspEventEventType ? _inspEventEventType : ''}`,
+            `${_preamble} ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ""}${inspEvent.event.data ? `event_data: ${inspEvent.event.data}` : ""}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ""}${_inspEventEventType ? _inspEventEventType : ""}`,
             LogLevel.Trace,
           );
         } else {
-          this.logger.log(`StateMachineService inspect received unexpected event type ${inspEvent}`, LogLevel.Debug);
+          this.logger.log(
+            `StateMachineService inspect received unexpected event type ${inspEvent}`,
+            LogLevel.Debug,
+          );
         }
       },
     });
@@ -140,16 +155,16 @@ export class StateMachineService implements IStateMachineService {
   }
   @logFunction
   quickPick(payload: IQuickPickEventPayload): void {
-    this.primaryActor!.send({ type: 'QUICKPICK_START', payload: payload });
+    this.primaryActor!.send({ type: "QUICKPICK_START", payload: payload });
   }
   @logFunction
   sendQuery(payload: IQueryEventPayload): void {
-    this.primaryActor!.send({ type: 'QUERY_START', payload: payload });
+    this.primaryActor!.send({ type: "QUERY_START", payload: payload });
   }
 
   @logFunction
   sendTest(payload: IQueryEventPayload): void {
-    this.testActor.send({ type: 'QSE_START' });
+    this.testActor.send({ type: "QSE_START" });
   }
 
   @logFunction
@@ -226,7 +241,7 @@ export class StateMachineService implements IStateMachineService {
   async disposeAsync() {
     if (!this.disposed) {
       // Dispose of the primary actor
-      this.primaryActor!.send({ type: 'DISPOSE_START' });
+      this.primaryActor!.send({ type: "DISPOSE_START" });
       // ToDo: await the transition to the 'Done' state
       this.disposed = true;
     }

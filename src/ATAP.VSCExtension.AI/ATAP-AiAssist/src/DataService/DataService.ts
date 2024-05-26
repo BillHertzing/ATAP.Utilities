@@ -70,12 +70,12 @@ export class Data {
   private disposed = false;
 
   // constructor overload signatures to initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
-  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
-  constructor(
-    logger: ILogger,
-    extensionContext: vscode.ExtensionContext,
-    userDataInitializationStructure: ISerializationStructure,
-  );
+  // constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
+  // constructor(
+  //   logger: ILogger,
+  //   extensionContext: vscode.ExtensionContext,
+  //   userDataInitializationStructure: ISerializationStructure,
+  // );
 
   constructor(
     private readonly logger: ILogger,
@@ -83,7 +83,7 @@ export class Data {
     private userDataInitializationStructure?: ISerializationStructure,
     private configurationDataInitializationStructure?: ISerializationStructure,
   ) {
-    this.logger = new Logger(this.logger, this.constructor.name);
+    this.logger = new Logger(this.logger, "Data");
     // instantiate the configurationData
     try {
       this.configurationData = new ConfigurationData(
@@ -248,13 +248,13 @@ export class DataService implements IDataService {
   public readonly data: Data;
   private disposed = false;
   // constructor overload signatures to initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
-  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
+  // constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
 
   constructor(
     private readonly logger: ILogger,
     private extensionContext: vscode.ExtensionContext, //dataInitializationStructure?: ISerializationStructure,
   ) {
-    this.logger = new Logger(this.logger, this.constructor.name);
+    this.logger = new Logger(this.logger, "DataService");
     this.logger.log(`DataService.ctor Starting`, LogLevel.Trace);
 
     // ToDo: version-aware configuration data loading; multiroot-workspace-aware

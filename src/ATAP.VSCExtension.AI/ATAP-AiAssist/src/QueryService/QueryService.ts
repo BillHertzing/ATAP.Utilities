@@ -51,7 +51,7 @@ export interface IQueryService {
     queryEngineName: QueryEngineNamesEnum,
     cTSToken: vscode.CancellationToken,
   ): Promise<void>;
-  MinifyCodeAsync(content: string, extension: string): Promise<string>;
+  // MinifyCodeAsync(content: string, extension: string): Promise<string>;
 }
 // holds all the possible query engines (currently only QueryEngineChatGPT)
 type QueryEnginesMap = { [key in QueryEngineNamesEnum]: IQueryEngine };
@@ -124,76 +124,76 @@ export class QueryService implements IQueryService {
     return fromYaml<QueryService>(yaml);
   }
 
-  @logAsyncFunction
-  async MinifyCodeAsync(content: string, extension: string): Promise<string> {
-    // Can't do anything with .txt files, so just return the content
-    if (extension === ".txt") {
-      return content;
-    }
-    let strippedContent: string;
-    try {
-      // use the strip-comments node library to remove comments from the code
-      strippedContent = strip(content);
-    } catch (e) {
-      if (e instanceof Error) {
-        throw new DetailedError(
-          "sendQuery.minifyCodeAsync calling strip failed -> ",
-          e,
-        );
-      } else {
-        throw new Error(
-          `sendQuery.minifyCodeAsync calling strip caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
-        );
-      }
-    }
+  // @logAsyncFunction
+  // async MinifyCodeAsync(content: string, extension: string): Promise<string> {
+  //   // Can't do anything with .txt files, so just return the content
+  //   if (extension === ".txt") {
+  //     return content;
+  //   }
+  //   let strippedContent: string;
+  //   try {
+  //     // use the strip-comments node library to remove comments from the code
+  //     strippedContent = strip(content);
+  //   } catch (e) {
+  //     if (e instanceof Error) {
+  //       throw new DetailedError(
+  //         "sendQuery.minifyCodeAsync calling strip failed -> ",
+  //         e,
+  //       );
+  //     } else {
+  //       throw new Error(
+  //         `sendQuery.minifyCodeAsync calling strip caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
+  //       );
+  //     }
+  //   }
 
-    let minifiedContent: string;
-    try {
-      const formatPromise = prettier.format(strippedContent, {
-        filepath: `file.${extension}`,
-        printWidth: 1000,
-        tabWidth: 0,
-        semi: false,
-        singleQuote: true,
-        trailingComma: "none",
-        bracketSpacing: false,
-        arrowParens: "avoid",
-        endOfLine: "lf",
-      });
+  //   let minifiedContent: string;
+  //   try {
+  //     const formatPromise = prettier.format(strippedContent, {
+  //       filepath: `file.${extension}`,
+  //       printWidth: 1000,
+  //       tabWidth: 0,
+  //       semi: false,
+  //       singleQuote: true,
+  //       trailingComma: "none",
+  //       bracketSpacing: false,
+  //       arrowParens: "avoid",
+  //       endOfLine: "lf",
+  //     });
 
-      const timeoutPromise = new Promise(
-        (_, reject) =>
-          setTimeout(
-            () => reject(new Error("prettier.format timed out")),
-            2000,
-          ), // 5 seconds timeout
-      );
-      const possibleContent = await Promise.race([
-        formatPromise,
-        timeoutPromise,
-      ]);
-      //ToDo: handle timeout (reject the promise with a timeout error)
-      if (typeof possibleContent !== "string") {
-        throw new Error(
-          "QueryService MinifyCodeAsync the call to prettier.format timed out",
-        );
-      }
-      minifiedContent = possibleContent as string;
-    } catch (e) {
-      if (e instanceof Error) {
-        throw new DetailedError(
-          "QueryService.MinifyCodeAsync calling prettier.format failed -> ",
-          e,
-        );
-      } else {
-        throw new Error(
-          `QueryService.MinifyCodeAsync calling prettier.format caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
-        );
-      }
-    }
+  //     const timeoutPromise = new Promise(
+  //       (_, reject) =>
+  //         setTimeout(
+  //           () => reject(new Error("prettier.format timed out")),
+  //           2000,
+  //         ), // 5 seconds timeout
+  //     );
+  //     const possibleContent = await Promise.race([
+  //       formatPromise,
+  //       timeoutPromise,
+  //     ]);
+  //     //ToDo: handle timeout (reject the promise with a timeout error)
+  //     if (typeof possibleContent !== "string") {
+  //       throw new Error(
+  //         "QueryService MinifyCodeAsync the call to prettier.format timed out",
+  //       );
+  //     }
+  //     minifiedContent = possibleContent as string;
+  //   } catch (e) {
+  //     if (e instanceof Error) {
+  //       throw new DetailedError(
+  //         "QueryService.MinifyCodeAsync calling prettier.format failed -> ",
+  //         e,
+  //       );
+  //     } else {
+  //       throw new Error(
+  //         `QueryService.MinifyCodeAsync calling prettier.format caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
+  //       );
+  //     }
+  //   }
 
-    return minifiedContent;
-  }
+  //   return minifiedContent;
+  // }
 
   @logAsyncFunction
   async ConstructQueryAsync(queryEngine?: QueryEngineNamesEnum): Promise<void> {

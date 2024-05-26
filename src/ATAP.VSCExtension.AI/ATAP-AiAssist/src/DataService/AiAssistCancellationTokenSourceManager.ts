@@ -1,10 +1,21 @@
-import * as vscode from 'vscode';
-import { promises as fs, PathLike, existsSync, readFileSync, mkdirSync } from 'fs';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { DetailedError, HandleError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
-import { SupportedSerializersEnum } from '@BaseEnumerations/index';
-import { IConfigurationData } from '@DataService/index';
+import * as vscode from "vscode";
+import {
+  promises as fs,
+  PathLike,
+  existsSync,
+  readFileSync,
+  mkdirSync,
+} from "fs";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError, HandleError } from "@ErrorClasses/index";
+import {
+  logConstructor,
+  logFunction,
+  logAsyncFunction,
+  logExecutionTime,
+} from "@Decorators/index";
+import { SupportedSerializersEnum } from "@BaseEnumerations/index";
+import { IConfigurationData } from "@DataService/index";
 
 import {
   AiAssistCancellationTokenSourceValueType,
@@ -16,27 +27,41 @@ import {
   AiAssistCancellationTokenSource,
   IAiAssistCancellationTokenSourceCollection,
   AiAssistCancellationTokenSourceCollection,
-} from '@ItemWithIDs/index';
+} from "@ItemWithIDs/index";
 
 export interface IAiAssistCancellationTokenSourceManager {
-  readonly aiAssistCancellationTokenSourceCollection: IAiAssistCancellationTokenSourceCollection | undefined;
+  readonly aiAssistCancellationTokenSourceCollection:
+    | IAiAssistCancellationTokenSourceCollection
+    | undefined;
   disposeAsync(): void;
 }
 
 @logConstructor
-export class AiAssistCancellationTokenSourceManager implements IAiAssistCancellationTokenSourceManager {
-  private _aiAssistCancellationTokenSourceCollection: IAiAssistCancellationTokenSourceCollection | undefined;
+export class AiAssistCancellationTokenSourceManager
+  implements IAiAssistCancellationTokenSourceManager
+{
+  private _aiAssistCancellationTokenSourceCollection:
+    | IAiAssistCancellationTokenSourceCollection
+    | undefined;
   private disposed = false;
   constructor(private readonly logger: ILogger) {
-    this.logger = new Logger(this.logger, this.constructor.name);
+    this.logger = new Logger(
+      this.logger,
+      "AiAssistCancellationTokenSourceManager",
+    );
   }
 
   get aiAssistCancellationTokenSourceCollection(): IAiAssistCancellationTokenSourceCollection {
     if (!this._aiAssistCancellationTokenSourceCollection) {
-      let value: ItemWithID<AiAssistCancellationTokenSource, AiAssistCancellationTokenSourceValueType>[] = [];
-      this._aiAssistCancellationTokenSourceCollection = new AiAssistCancellationTokenSourceCollection(value);
+      let value: ItemWithID<
+        AiAssistCancellationTokenSource,
+        AiAssistCancellationTokenSourceValueType
+      >[] = [];
+      this._aiAssistCancellationTokenSourceCollection =
+        new AiAssistCancellationTokenSourceCollection(value);
     }
-    return this._aiAssistCancellationTokenSourceCollection as IAiAssistCancellationTokenSourceCollection;
+    return this
+      ._aiAssistCancellationTokenSourceCollection as IAiAssistCancellationTokenSourceCollection;
   }
 
   @logAsyncFunction
@@ -49,11 +74,16 @@ export class AiAssistCancellationTokenSourceManager implements IAiAssistCancella
     if (!this.disposed) {
       // cancel any cancellable async tasks
       try {
-        const results = await Promise.all([this.disposeCancellationTokenSourceCollectionAsync()]);
+        const results = await Promise.all([
+          this.disposeCancellationTokenSourceCollectionAsync(),
+        ]);
         this.disposed = true;
       } catch (e) {
         if (e instanceof Error) {
-          throw new DetailedError(`CancellationTokenSourceManager disposeAsync: failed to dispose -> `, e);
+          throw new DetailedError(
+            `CancellationTokenSourceManager disposeAsync: failed to dispose -> `,
+            e,
+          );
         }
       }
     }

@@ -1,16 +1,26 @@
-import * as vscode from 'vscode';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { DetailedError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
-import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
+import * as vscode from "vscode";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError } from "@ErrorClasses/index";
+import {
+  logConstructor,
+  logFunction,
+  logAsyncFunction,
+  logExecutionTime,
+} from "@Decorators/index";
+import {
+  IDataService,
+  IData,
+  IStateManager,
+  IConfigurationData,
+} from "@DataService/index";
 
-import * as KdbxWeb from 'kdbxweb';
-import  * as fs from 'fs';
-import * as path from 'path';
-import { exec } from 'child_process';
+import * as KdbxWeb from "kdbxweb";
+import * as fs from "fs";
+import * as path from "path";
+import { exec } from "child_process";
 
 export enum SupportedSecretsVaultEnum {
-  KeePass = 'KeePass',
+  KeePass = "KeePass",
 }
 
 export type MasterPasswordType = Buffer | null | undefined;
@@ -37,20 +47,23 @@ export class SecretsManager implements ISecretsManager {
     private readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
     private readonly configurationData: IConfigurationData,
   ) {
-    this.logger = new Logger(this.logger, this.constructor.name);
+    this.logger = new Logger(this.logger, "SecretsManager");
 
     this.secretManagersMap = {} as SecretManagerMap;
     switch (selectedSecretsVault) {
       case SupportedSecretsVaultEnum.KeePass:
-        this.secretManagersMap[SupportedSecretsVaultEnum.KeePass] = new KeePassSecretsManager(
-          this.GetMasterPasswordAsync.bind(this),
-          this.logger,
-          this.extensionContext,
-          this.configurationData,
-        );
+        this.secretManagersMap[SupportedSecretsVaultEnum.KeePass] =
+          new KeePassSecretsManager(
+            this.GetMasterPasswordAsync.bind(this),
+            this.logger,
+            this.extensionContext,
+            this.configurationData,
+          );
         break;
       default:
-        throw new DetailedError(`SecretsManager .ctor does not support the ${selectedSecretsVault} vault`);
+        throw new DetailedError(
+          `SecretsManager .ctor does not support the ${selectedSecretsVault} vault`,
+        );
     }
   }
 
@@ -70,10 +83,13 @@ export class SecretsManager implements ISecretsManager {
       if (pwd) {
         try {
           // ToDo: I18N
-          this.masterPassword = Buffer.from(pwd, 'utf-8');
+          this.masterPassword = Buffer.from(pwd, "utf-8");
         } catch (e) {
           if (e instanceof Error) {
-            throw new DetailedError(`SecretsManager AskForMasterPasswordAsync failed -> `, e);
+            throw new DetailedError(
+              `SecretsManager AskForMasterPasswordAsync failed -> `,
+              e,
+            );
           } else {
             throw new Error(
               `SecretsManager AskForMasterPasswordAsync failed. It caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
@@ -112,7 +128,9 @@ export class SecretsManager implements ISecretsManager {
   @logAsyncFunction
   async getAPITokenForChatGPTAsync(): Promise<MasterPasswordType> {
     // ToDo: wrap in a try/catch
-    return this.secretManagersMap[this.selectedSecretsVault].getAPITokenForChatGPTAsync();
+    return this.secretManagersMap[
+      this.selectedSecretsVault
+    ].getAPITokenForChatGPTAsync();
   }
 
   @logAsyncFunction
@@ -121,10 +139,14 @@ export class SecretsManager implements ISecretsManager {
       // release all SecreteManagers
       switch (this.selectedSecretsVault) {
         case SupportedSecretsVaultEnum.KeePass:
-          await this.secretManagersMap[SupportedSecretsVaultEnum.KeePass].disposeAsync();
+          await this.secretManagersMap[
+            SupportedSecretsVaultEnum.KeePass
+          ].disposeAsync();
           break;
         default:
-          throw new DetailedError(`SecretsManager .dispose does not support the ${this.selectedSecretsVault} vault`);
+          throw new DetailedError(
+            `SecretsManager .dispose does not support the ${this.selectedSecretsVault} vault`,
+          );
       }
 
       this.disposed = true;
@@ -153,14 +175,18 @@ class KeePassSecretsManager implements ISecretsManager {
 
   constructor(
     callGetMasterPasswordAsync: () => Promise<MasterPasswordType>,
-    private logger: ILogger,
+    private readonly logger: ILogger,
     extensionContext: vscode.ExtensionContext,
     configurationData: IConfigurationData,
   ) {
     //super(logger, extensionContext, configurationData);
+    this.logger = new Logger(this.logger, "KeePassSecretsManager");
     this.callGetMasterPasswordAsync = callGetMasterPasswordAsync;
     this.keePassKDBXPath = configurationData.getKeePassKDBXPath(); // guaranteed to return a nonnull or throw an error
-    logger.log(`keePassKDBXPath = ${this.keePassKDBXPath}`, LogLevel.Trace);
+    this.logger.log(
+      `keePassKDBXPath = ${this.keePassKDBXPath}`,
+      LogLevel.Trace,
+    );
   }
 
   @logAsyncFunction
@@ -172,9 +198,9 @@ class KeePassSecretsManager implements ISecretsManager {
     // Is it in environment variables (specific to the extension)?
     // Is it in environment variables (specific to the library. for ChatGPT, this is process.env["OPENAI_API_KEY"])?
     // is it hardcoded for this LLM in the defaultConfiguration structures
-    const keyPath = ['Internet', 'ChatGPT'];
+    const keyPath = ["Internet", "ChatGPT"];
     try {
-      aPIToken = await this.getValueAsync(keyPath, 'ChatGPTAPIToken');
+      aPIToken = await this.getValueAsync(keyPath, "ChatGPTAPIToken");
     } catch (e) {
       if (e instanceof Error) {
         throw new DetailedError(
@@ -193,7 +219,10 @@ class KeePassSecretsManager implements ISecretsManager {
   // Implement the abstract base function.
   // ToDO: use a strategy pattern to decide if the implementation will use the kdbxweb library or KPScript
   @logAsyncFunction
-  async getValueAsync<Buffer>(keyPath: string[], entryTitle: string): Promise<PasswordEntryType> {
+  async getValueAsync<Buffer>(
+    keyPath: string[],
+    entryTitle: string,
+  ): Promise<PasswordEntryType> {
     // get the masterPassword from the SecretsManager. It will ask the user via an inputbox if it is not defined. It might return null if the user cancels the inputBox
     let _masterPassword: MasterPasswordType = null;
 
@@ -201,7 +230,10 @@ class KeePassSecretsManager implements ISecretsManager {
       _masterPassword = await this.callGetMasterPasswordAsync();
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError(`KeePassSecretsManager getValueAsync failed -> `, e);
+        throw new DetailedError(
+          `KeePassSecretsManager getValueAsync failed -> `,
+          e,
+        );
       } else {
         throw new Error(
           `KeePassSecretsManager getValueAsync failed. It caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
@@ -211,33 +243,48 @@ class KeePassSecretsManager implements ISecretsManager {
 
     if (!_masterPassword) {
       // ToDo: look to support other LLM models and APIs that don't require any secrets from the secrets vault
-      throw new Error('KeePassSecretsManager getValueAsync failed. The masterPassword is null');
+      throw new Error(
+        "KeePassSecretsManager getValueAsync failed. The masterPassword is null",
+      );
     }
 
     switch (this.KeePassAccess) {
       case KeePassAccessEnum.KpScript:
         return new Promise((resolve, reject) => {
           try {
-            const kPScriptPath = '"C:/Program Files/KeePass Password Safe 2/KPScript.exe"';
-            const keePassKDBXPath = '"C:/Dropbox/whertzing/GitHub/ATAP.IAC/Security/ATAP_KeePassDatabase.kdbx"';
+            const kPScriptPath =
+              '"C:/Program Files/KeePass Password Safe 2/KPScript.exe"';
+            const keePassKDBXPath =
+              '"C:/Dropbox/whertzing/GitHub/ATAP.IAC/Security/ATAP_KeePassDatabase.kdbx"';
             // ToDo: Fix this
-            const masterPasswordBuffer = Buffer.from('EncryptMySecrets', 'utf-8');
+            const masterPasswordBuffer = Buffer.from(
+              "EncryptMySecrets",
+              "utf-8",
+            );
             const args = `-c:GetEntryString ${keePassKDBXPath}  -pw:${masterPasswordBuffer.toString()} -ref-Title:"${entryTitle}" -Field:Password -FailIfNoEntry -FailIfNotExists -Spr`;
             exec(`${kPScriptPath} ${args}`, (error, stdout, stderr) => {
               if (error) {
-                return reject(new DetailedError('KPScript exec failed -> ', error));
+                return reject(
+                  new DetailedError("KPScript exec failed -> ", error),
+                );
               }
               if (stderr) {
-                return reject(new DetailedError(`KPScript exec returned data in stderr -> ${stderr}`));
+                return reject(
+                  new DetailedError(
+                    `KPScript exec returned data in stderr -> ${stderr}`,
+                  ),
+                );
               }
-              resolve(Buffer.from(stdout, 'utf-8'));
+              resolve(Buffer.from(stdout, "utf-8"));
             });
           } catch (e) {
             if (e instanceof Error) {
-              throw new DetailedError('sendQuery KPScript exec failed -> ', e);
+              throw new DetailedError("sendQuery KPScript exec failed -> ", e);
             } else {
               // ToDo:  investigation to determine what else might happen
-              throw new Error(`sendQuery KPScript exec failed and the instance of (e) returned is of type ${typeof e}`);
+              throw new Error(
+                `sendQuery KPScript exec failed and the instance of (e) returned is of type ${typeof e}`,
+              );
             }
           }
         });

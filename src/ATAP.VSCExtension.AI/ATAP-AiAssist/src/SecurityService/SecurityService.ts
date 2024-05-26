@@ -1,9 +1,14 @@
-import * as vscode from 'vscode';
-import { DetailedError } from '@ErrorClasses/index';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
-import { GUID, Int, IDType } from '@IDTypes/index';
-import { Philote, IPhilote } from '@Philote/index';
+import * as vscode from "vscode";
+import { DetailedError } from "@ErrorClasses/index";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import {
+  logConstructor,
+  logFunction,
+  logAsyncFunction,
+  logExecutionTime,
+} from "@Decorators/index";
+import { GUID, Int, IDType } from "@IDTypes/index";
+import { Philote, IPhilote } from "@Philote/index";
 import {
   SerializationStructure,
   ISerializationStructure,
@@ -12,25 +17,28 @@ import {
   fromJson,
   toYaml,
   fromYaml,
-} from '@Serializers/index';
+} from "@Serializers/index";
 
-import { IExternalDataVetting, ExternalDataVetting } from './ExternalDataVetting';
+import {
+  IExternalDataVetting,
+  ExternalDataVetting,
+} from "./ExternalDataVetting";
 
 export interface ISecurityService {
   readonly externalDataVetting: IExternalDataVetting;
 
   //version: string;
 }
-@logConstructor
+//@logConstructor
 export class SecurityService implements ISecurityService {
   readonly _externalDataVetting: IExternalDataVetting;
   constructor(
     private readonly logger: ILogger,
     private extensionContext: vscode.ExtensionContext,
   ) {
-    this.logger = new Logger(this.logger, this.constructor.name);
+    this.logger = new Logger(this.logger, "SecurityService");
     this.logger.log(`SecurityService.ctor Starting`, LogLevel.Trace);
-    this._externalDataVetting = new ExternalDataVetting(logger);
+    this._externalDataVetting = new ExternalDataVetting(this.logger);
     this.logger.log(`SecurityService.ctor Ending`, LogLevel.Trace);
   }
 

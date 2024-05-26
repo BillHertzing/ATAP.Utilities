@@ -1,9 +1,14 @@
-import * as vscode from 'vscode';
-import { DetailedError } from '@ErrorClasses/index';
+import * as vscode from "vscode";
+import { DetailedError } from "@ErrorClasses/index";
+
+// The ATAP Logger  module provides a logginginterface between the program and an underlying logger library
+// Currently the underlying logger library is pino
+// The Logger module defines logging destinations and levels, and provides a set of logging methods
+// support logging destinations include the debug console, a VSC output channel for extensions, a file, a UDP port, and TBD
 
 // implement the logger using pino
-import pino from 'pino'; // eslint-disable-line @typescript-eslint/no-var-requires
-import pinoPretty from 'pino-pretty'; // eslint-disable-line @typescript-eslint/no-var-requires
+import pino from "pino"; // eslint-disable-line @typescript-eslint/no-var-requires
+import pinoPretty from "pino-pretty"; // eslint-disable-line @typescript-eslint/no-var-requires
 
 // an enumeration to represent the differing Logging levels
 export enum LogLevel {
@@ -21,21 +26,48 @@ export enum DestinationEnum {
   Console = 0,
   Extension = 1,
   File = 2,
+  UDP = 3,
 }
 
-export interface ChannelInfo {
-  outputChannel: vscode.OutputChannel | undefined;
+export interface IDestinationCommonInformation {
   enabled: boolean;
   level: LogLevel;
 }
+
+export interface IConsoleDestinationInformation
+  extends IDestinationCommonInformation {}
+
+export interface IExtensionDestinationInformation
+  extends IDestinationCommonInformation {
+  outputChannel: vscode.OutputChannel;
+}
+
+export interface IFileDestinationInformation
+  extends IDestinationCommonInformation {
+  filePath: string;
+}
+
+export interface IUDPDestinationInformation
+  extends IDestinationCommonInformation {
+  uDPPort: number;
+}
+// export interface ChannelInfo {
+//   outputChannel: vscode.OutputChannel | undefined;
+//   enabled: boolean;
+//   level: LogLevel;
+// }
 
 export interface DestinationInfo {
   enabled: boolean;
   level: LogLevel;
-  options: Record<string, any>;
+  channelDestinationInformation?: IConsoleDestinationInformation;
+  extensionDestinationInformation?: IExtensionDestinationInformation;
+  fileDestinationInformation?: IFileDestinationInformation;
+  uDPDestinationInformation?: IUDPDestinationInformation;
+  pinoOptions?: Record<string, any>;
 }
 
-export type DestinationType = Record<DestinationEnum, DestinationInfo>;
+export type DestinationType = Partial<Record<DestinationEnum, DestinationInfo>>;
 
 export interface ILogger {
   readonly scope: string;
@@ -46,132 +78,211 @@ export interface ILogger {
   debug(message: string, scope?: string, channelName?: string): void;
   trace(message: string, scope?: string, channelName?: string): void;
   performance(message: string, scope?: string, channelName?: string): void;
-  log(message: string, level: LogLevel, scope?: string, channelName?: string): void;
+  log(message: string, level: LogLevel, destinationID?: string): void;
   dispose(): void;
 }
 
+// The initial implementation of the Logger creates the destination information during the creation of the Logger class
+// ToDo: read the initial logger configuration from the extension's VSC and User settings
+// ToDo: Add the ability to enable / disable existing destinations, add and remove destinations, and to change the level of a destination
 export class Logger implements ILogger {
   private static extensionName: string;
-  private static rootScope: string;
-  private static channels: { [key: string]: ChannelInfo } = {
-    console: { outputChannel: undefined, enabled: true, level: LogLevel.Debug },
-  };
   private static pinoLogger: pino.Logger;
   private static staticOutputChannel: vscode.OutputChannel;
-  private static destinations: Partial<DestinationType>;
+  private static staticOutputChannelStream = {
+    write: (message) => {
+      Logger.staticOutputChannel.append(message);
+    },
+  };
+  private static pinoStreams = [
+    { stream: process.stdout },
+    { stream: Logger.staticOutputChannelStream },
+  ];
+  private static destinations: DestinationType;
   public readonly scope: string;
 
   // This creates the Logger static instance data and the initial set of destinations
-  static createLogger(rootScope: string, extensionName?: string): ILogger {
+  static createLogger(extensionName: string): ILogger {
+    // ToDO: create a logger display name from the extension name
+    Logger.extensionName = extensionName;
+    //ToDo: create a disply name for the output Channel from the extension name
+    Logger.staticOutputChannel = vscode.window.createOutputChannel(
+      Logger.extensionName,
+    );
+    Logger.staticOutputChannelStream = {
+      write: (message) => {
+        Logger.staticOutputChannel.append(message);
+      },
+    };
+
     // Create the static set of destinations for the logger class
     // configure the logger instance to write to the console and to an output channel having the same name as the extension, with a LogLevel of Info
+    // Logger.destinations = {
+    //   [DestinationEnum.Console]: {
+    //     enabled: true,
+    //     level: LogLevel.Debug,
+    //     stream: process.stdout,
+    //     options: {},
+    //   },
+    //   [DestinationEnum.Extension]: {
+    //     enabled: true,
+    //     level: LogLevel.Debug,
+    //     stream: {
+    //       write: (message) => {
+    //         Logger.staticOutputChannel.append(message);
+    //       },
+    //     },
+    //     options: { append: true },
+    //   },
+    // };
+    // ToDO: Accept File and other destinations (UDP, URL, Telemetry, etc.)
+    //[DestinationEnum.File]: { enabled: false, level: LogLevel.Debug, options: {} // }
+    // create a transport that uses the pino pretty printer, Colorizer, and specific Time format
+    // const pinoPrettyTransport = pinoPretty({
+    //   colorize: true,
+    //   translateTime: "SYS:standard",
+    // });
+    Logger.staticOutputChannel.appendLine(
+      "test message from staticOutputChannel",
+    );
 
-    Logger.extensionName = extensionName ? extensionName : rootScope;
+    const basicPino = pino({ level: "debug" });
+    basicPino.info("test message from basicPino to stdout");
 
-    Logger.staticOutputChannel = vscode.window.createOutputChannel(Logger.extensionName);
-    Logger.destinations = {
-      [DestinationEnum.Console]: { enabled: true, level: LogLevel.Debug, stream: process.stdout, options: {} },
-      //[DestinationEnum.Extension]: { enabled: true, level: LogLevel.Debug, options: {outputChannel: vscode.OutputChannel} } },
-      //[DestinationEnum.File]: { enabled: false, level: LogLevel.Debug, options: {},
-    } as Partial<DestinationType>;
-    // create channels for the exrtension (rootScope) and the console
-    if (true) {
-      Logger.createChannel(rootScope, LogLevel.Debug, true);
-      Logger.setChannelEnabled('console', true);
-      Logger.setChannelEnabled(rootScope, true);
-    }
-    const transport = pinoPretty({
+    const prettyStream = pinoPretty({
       colorize: true,
-      translateTime: 'SYS:standard',
+      translateTime: "yyyy-mm-dd HH:MM:ss.l",
+      ignore: "pid,hostname",
+      // destination: 1, // Explicitly define stdout as the destination
     });
-    Logger.pinoLogger = pino(
+
+    const prettyLoggerStream = pino(
       {
-        level: 'trace',
+        level: "trace",
       },
-      transport,
-    ).child({ bindings: () => ({}) });
-    return new Logger(null, rootScope);
+      prettyStream.pipe(process.stdout),
+    );
+
+    prettyLoggerStream.info("test message from prettyLoggerStream to stdout");
+    // ToDo: figure out why transports don't seem to work inside a VSC extension. it may have to do with the fact that Transports are run in a separate Node worker thread
+    // const prettyTransport = {
+    //   target: "pino-pretty",
+    //   options: {
+    //     colorize: true,
+    //     translateTime: "yyyy-mm-dd HH:MM:ss.l",
+    //     ignore: "pid,hostname", // Optional: adjust based on your preference
+    //   },
+    // };
+    // const prettyLoggerTransport = pino({
+    //   level: "trace",
+    //   transport: {
+    //     target: "pino-pretty",
+    //     options: {
+    //       colorize: true,
+    //       translateTime: "yyyy-mm-dd HH:MM:ss.l",
+    //       ignore: "pid,hostname", // Optional: adjust based on your preference
+    //     },
+    //   },
+    // });
+
+    // prettyLoggerTransport.info(
+    //   "test message from prettyLoggerTransport to stdout",
+    // );
+
+    // Assign the pinoLogger static variable to one of the pino instances
+    Logger.pinoLogger = prettyLoggerStream;
+
+    Logger.pinoLogger.info("test message from pinoLogger");
+    // the base scope for the logger is the extension name
+    return new Logger(null, extensionName);
   }
 
   constructor(logger: ILogger | null, scope: string) {
     if (logger) {
-      this.scope = logger.scope + '.' + scope;
+      this.scope = logger.scope + "." + scope;
     } else {
       this.scope = scope;
     }
   }
 
+  addScope(message: string): string {
+    return `[${this.scope}] ${message}`;
+  }
+
   fatal(message: string): void {
-    Logger.pinoLogger.fatal(message);
+    Logger.pinoLogger.fatal(this.addScope(message));
   }
 
   error(message: string): void {
-    Logger.pinoLogger.error(message);
+    Logger.pinoLogger.error(this.addScope(message));
   }
 
   warn(message: string): void {
-    Logger.pinoLogger.warn(message);
+    Logger.pinoLogger.warn(this.addScope(message));
   }
 
   info(message: string): void {
-    Logger.pinoLogger.info(message);
+    Logger.pinoLogger.info(this.addScope(message));
   }
 
   debug(message: string): void {
-    Logger.pinoLogger.debug(message);
+    Logger.pinoLogger.debug(this.addScope(message));
   }
 
   trace(message: string): void {
-    Logger.pinoLogger.trace(message);
+    Logger.pinoLogger.trace(this.addScope(message));
   }
 
   performance(message: string): void {
-    Logger.pinoLogger.trace(message);
-  }
-
-  static staticLog(message: string, level: LogLevel) {
-    const _message = `[${LogLevel[level]}] [${new Date().toISOString()}] ${message}`;
-
-    Logger.staticOutputChannel.appendLine(_message);
-  }
-
-  static createChannel(name: string, level: LogLevel, enabled: boolean = true): void {
-    const outputChannel = vscode.window.createOutputChannel(name);
-    this.channels[name] = { outputChannel, enabled, level };
-  }
-
-  static setChannelEnabled(channelName: string, enabled: boolean): void {
-    const channelInfo = this.channels[channelName];
-    if (channelInfo) {
-      channelInfo.enabled = enabled;
-    }
+    Logger.pinoLogger.trace(this.addScope(message));
   }
 
   log(message: string, level: LogLevel, channelName?: string): void {
-    const _message = `[${LogLevel[level]}] [${new Date().toISOString()}] ${message}`;
     switch (level) {
       case LogLevel.Fatal:
-        this.fatal(_message);
+        this.fatal(message);
         break;
       case LogLevel.Error:
-        this.error(_message);
+        this.error(message);
         break;
       case LogLevel.Warn:
-        this.warn(_message);
+        this.warn(message);
         break;
       case LogLevel.Info:
-        this.info(_message);
+        this.info(message);
         break;
       case LogLevel.Debug:
-        this.debug(_message);
+        this.debug(message);
         break;
       case LogLevel.Trace:
-        this.trace(_message);
+        this.trace(message);
         break;
       case LogLevel.Performance:
-        this.performance(_message);
+        this.performance(message);
         break;
     }
+
+    // static staticLog(message: string, level: LogLevel) {
+    //   const _message = `[${LogLevel[level]}] [${new Date().toISOString()}] ${message}`;
+
+    //   Logger.staticOutputChannel.appendLine(_message);
+    // }
+
+    // static createChannel(
+    //   name: string,
+    //   level: LogLevel,
+    //   enabled: boolean = true,
+    // ): void {
+    //   const outputChannel = vscode.window.createOutputChannel(name);
+    //   this.channels[name] = { outputChannel, enabled, level };
+    // }
+
+    // static setChannelEnabled(channelName: string, enabled: boolean): void {
+    //   const channelInfo = this.channels[channelName];
+    //   if (channelInfo) {
+    //     channelInfo.enabled = enabled;
+    //   }
+    // }
 
     // // eslint-disable-next-line eqeqeq
     // if (channelName != null) {

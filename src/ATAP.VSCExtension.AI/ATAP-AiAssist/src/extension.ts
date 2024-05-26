@@ -47,11 +47,11 @@ let stateMachineService: IStateMachineService;
 // Your extension is activated the very first time the command is executed
 export async function activate(extensionContext: vscode.ExtensionContext) {
   // create the initial logger instance for the extension,
-  //  by default write all log messages to the console and to an output channel having the same name as the extension, with a LogLevel of Info
   const logger = Logger.createLogger(
     extensionContext.extension.id.split(".")[1],
   );
   logger.info(`${extensionContext.extension.id} activating`);
+  // ToDO: after creation of the configRoot for the extension, modify the Logger destinations accordingly
   // Declaration of variables
   let message: string = "";
   let workspacePath: string = "";
@@ -67,6 +67,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   //   if the debuggerLogLevel is set in the extension's setting, use that value,
   //   else if the debuggerLogLevel in the DefaultConfiguration.Development, use that value
   if (isRunningInDevelopmentEnvironment()) {
+    logger.log(`Running in Development`, LogLevel.Info);
     // ToDO: test for an environment variable for debuggerLogLevel, and if it exists, use that value
     const settings = vscode.workspace.getConfiguration(extensionName);
     const settingsDebuggerLogLevel = settings.get<LogLevel>("debuggerLogLevel");
@@ -111,75 +112,75 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   dataService = new DataService(logger, extensionContext);
   // }
   // logger.log(`data ID/version = 'TheOnlydataSoFar' / ${dataService.version}`, LogLevel.Debug);
-  // // ToDo: wrap in a try/catch block
-  // securityService.externalDataVetting.AttachListener(
-  //   dataService.data.eventManager.getEventEmitter(),
-  // );
-  // // ToDo: wrap in a try/catch block
-  // // ToDo support rehydration of the QueryService from a serialized structure
-  // queryService = new QueryService(logger, extensionContext, dataService.data);
-  // // ToDo: wrap in a try/catch block
-  // // creating the StateMachineService starts all of the state machines
-  // try {
-  //   stateMachineService = new StateMachineService(
-  //     logger,
-  //     dataService.data,
-  //     queryService,
-  //     extensionContext,
-  //   );
-  // } catch (e) {
-  //   HandleError(
-  //     e,
-  //     "Activation",
-  //     "activate",
-  //     `failed to create an instance of StateMachineService`,
-  //   );
-  // }
-  // // stateMachineService = StateMachineService.create(
+  // ToDo: wrap in a try/catch block
+  securityService.externalDataVetting.AttachListener(
+    dataService.data.eventManager.getEventEmitter(),
+  );
+  // ToDo: wrap in a try/catch block
+  // ToDo support rehydration of the QueryService from a serialized structure
+  queryService = new QueryService(logger, extensionContext, dataService.data);
+  // ToDo: wrap in a try/catch block
+  // creating the StateMachineService starts all of the state machines
+  try {
+    stateMachineService = new StateMachineService(
+      logger,
+      dataService.data,
+      queryService,
+      extensionContext,
+    );
+  } catch (e) {
+    HandleError(
+      e,
+      "Activation",
+      "activate",
+      `failed to create an instance of StateMachineService`,
+    );
+  }
+  // stateMachineService = StateMachineService.create(
   // //   logger,
   // //   extensionContext,
   // //   dataService.data,
   // //   queryService,
   // //   'extension.ts',
   // // );
-  // // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
-  // // Calling the constructor registers all of the commands, and creates a disposables structure
-  // try {
-  //   commandsService = new CommandsService(
-  //     logger,
-  //     extensionContext,
-  //     dataService.data,
-  //     stateMachineService,
-  //     queryService,
-  //   );
-  // } catch (e) {
-  //   if (e instanceof Error) {
-  //     throw new DetailedError(
-  //       `Activation: failed to create an instance of CommandsService -> `,
-  //       e,
-  //     );
-  //   } else {
-  //     // ToDo:  investigation to determine what else might happen
-  //     throw new Error(
-  //       `Activation: failed to create an instance of CommandsService and the object caught is of type ${typeof e}`,
-  //     );
-  //   }
-  // }
-  // // Add the disposables from the CommandsService to extensionContext.subscriptions
-  // extensionContext.subscriptions.push(...commandsService.getDisposables());
-  // // // Create a status bar item for the extension
-  // const statusBarItem = vscode.window.createStatusBarItem(
-  //   vscode.StatusBarAlignment.Right,
-  //   100,
-  // );
-  // // Initial state
-  // statusBarItem.text = `$(robot) AiAssist`;
-  // // set the statusbaritem's command to the VCSCommand sends the quickpickEvent (with kindOfQuickPick=VCSCommand) to the primaryActor
-  // statusBarItem.command = `${extensionName}.primaryActor.quickPickVCSCommand`;
-  // statusBarItem.tooltip = "Show AiAssist status menu";
-  // extensionContext.subscriptions.push(statusBarItem);
-  // statusBarItem.show();
-  // // Start the state machine
+  // Register this extension's commands using the CommandsService.ts module and Dependency Injection for the logger
+  // Calling the constructor registers all of the commands, and creates a disposables structure
+  try {
+    commandsService = new CommandsService(
+      logger,
+      extensionContext,
+      dataService.data,
+      stateMachineService,
+      queryService,
+    );
+  } catch (e) {
+    if (e instanceof Error) {
+      throw new DetailedError(
+        `Activation: failed to create an instance of CommandsService -> `,
+        e,
+      );
+    } else {
+      // ToDo:  investigation to determine what else might happen
+      throw new Error(
+        `Activation: failed to create an instance of CommandsService and the object caught is of type ${typeof e}`,
+      );
+    }
+  }
+  // Add the disposables from the CommandsService to extensionContext.subscriptions
+  extensionContext.subscriptions.push(...commandsService.getDisposables());
+  // Create a status bar item for the extension
+  const statusBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    100,
+  );
+  // Initial state
+  statusBarItem.text = `$(robot) AiAssist`;
+  // set the statusbaritem's command to the VCSCommand sends the quickpickEvent (with kindOfQuickPick=VCSCommand) to the primaryActor
+  statusBarItem.command = `${extensionName}.quickPickVCSCommand`;
+  statusBarItem.tooltip = "Show AiAssist status menu";
+  extensionContext.subscriptions.push(statusBarItem);
+  statusBarItem.show();
+  // Start the state machine
   // stateMachineService.start();
   // // Initialize the UI to the saved appearance it had when the extension was last deactivated, or to a default appearance if there is no saved appearance.
   // // // identify the current workspace context. Compare to stored state information, and update if necessary
@@ -282,68 +283,68 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   // // });
 }
 
-// async function deactivateExtensionAsync(): Promise<void> {
-//   return new Promise(async (resolve) => {
-//     // Dispose of the state machine service
-//     await stateMachineService.disposeAsync();
+async function deactivateExtensionAsync(): Promise<void> {
+  return new Promise(async (resolve) => {
+    // Dispose of the state machine service
+    await stateMachineService.disposeAsync();
 
-//     // Clean up resources, like closing files or stopping services
-//     await dataService.disposeAsync();
+    // Clean up resources, like closing files or stopping services
+    await dataService.disposeAsync();
 
-//     // Cleanup temporary prompt document
-//     let promptDocument =
-//       dataService.data.getTemporaryPromptDocument() as vscode.TextDocument;
-//     // Save the text in the promptDocument to the stateManager
-//     dataService.data.stateManager.setSavedPromptDocumentData(
-//       promptDocument.getText(),
-//     );
+    // Cleanup temporary prompt document
+    let promptDocument =
+      dataService.data.getTemporaryPromptDocument() as vscode.TextDocument;
+    // Save the text in the promptDocument to the stateManager
+    dataService.data.stateManager.setSavedPromptDocumentData(
+      promptDocument.getText(),
+    );
 
-//     // ToDo: The code to close editors with this document does not execute correctly
-//     // close any editors with this document open
-//     let editorsDisplayingDoc = vscode.window.visibleTextEditors.filter(
-//       (editor) => editor.document === promptDocument,
-//     );
-//     //logger.log(`Num editors: ${editorsDisplayingDoc.length}`, LogLevel.Debug);
-//     console.log(`Num editors: ${editorsDisplayingDoc.length}`);
-//     editorsDisplayingDoc.forEach((editor, i) => {
-//       console.log(i);
+    // ToDo: The code to close editors with this document does not execute correctly
+    // close any editors with this document open
+    let editorsDisplayingDoc = vscode.window.visibleTextEditors.filter(
+      (editor) => editor.document === promptDocument,
+    );
+    //logger.log(`Num editors: ${editorsDisplayingDoc.length}`, LogLevel.Debug);
+    console.log(`Num editors: ${editorsDisplayingDoc.length}`);
+    editorsDisplayingDoc.forEach((editor, i) => {
+      console.log(i);
 
-//       vscode.window
-//         .showTextDocument(editor.document, { preserveFocus: false })
-//         .then(() => {
-//           console.log(`Closing ${editor.document.fileName}`);
-//           if (i === editorsDisplayingDoc.length - 1) {
-//             // If this is the last editor, close it directly
-//             console.log(`Closing ${editor.document.fileName} directly`);
-//             vscode.commands.executeCommand(
-//               "workbench.action.closeActiveEditor",
-//             );
-//           } else {
-//             // Otherwise, set a timeout to allow the editor to come into focus before closing it
-//             setTimeout(() => {
-//               console.log(`Closing ${editor.document.fileName} after timeout`);
-//               vscode.commands.executeCommand(
-//                 "workbench.action.closeActiveEditor",
-//               );
-//             }, 500);
-//           }
-//         });
-//     });
+      vscode.window
+        .showTextDocument(editor.document, { preserveFocus: false })
+        .then(() => {
+          console.log(`Closing ${editor.document.fileName}`);
+          if (i === editorsDisplayingDoc.length - 1) {
+            // If this is the last editor, close it directly
+            console.log(`Closing ${editor.document.fileName} directly`);
+            vscode.commands.executeCommand(
+              "workbench.action.closeActiveEditor",
+            );
+          } else {
+            // Otherwise, set a timeout to allow the editor to come into focus before closing it
+            setTimeout(() => {
+              console.log(`Closing ${editor.document.fileName} after timeout`);
+              vscode.commands.executeCommand(
+                "workbench.action.closeActiveEditor",
+              );
+            }, 500);
+          }
+        });
+    });
 
-//     // delete the temporary files
-//     await fs.unlink(
-//       dataService.data.getTemporaryPromptDocumentPath() as string,
-//       (err) => {
-//         HandleError(
-//           err,
-//           "Activation",
-//           "deactivateExtensionAsync",
-//           `failed to delete ${dataService.data.getTemporaryPromptDocumentPath()}`,
-//         );
-//       },
-//     );
-//   });
-// }
+    // delete the temporary files
+    await fs.unlink(
+      dataService.data.getTemporaryPromptDocumentPath() as string,
+      (err) => {
+        HandleError(
+          err,
+          "Activation",
+          "deactivateExtensionAsync",
+          `failed to delete ${dataService.data.getTemporaryPromptDocumentPath()}`,
+        );
+      },
+    );
+  });
+}
 
 // This method is called when your extension is deactivated
 export async function deactivate(): Promise<void> {

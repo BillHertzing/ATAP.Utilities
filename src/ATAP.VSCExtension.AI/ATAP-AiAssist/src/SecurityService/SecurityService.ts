@@ -29,7 +29,7 @@ export interface ISecurityService {
 
   //version: string;
 }
-//@logConstructor
+@logConstructor
 export class SecurityService implements ISecurityService {
   readonly _externalDataVetting: IExternalDataVetting;
   constructor(
@@ -37,9 +37,7 @@ export class SecurityService implements ISecurityService {
     private extensionContext: vscode.ExtensionContext,
   ) {
     this.logger = new Logger(this.logger, "SecurityService");
-    this.logger.log(`SecurityService.ctor Starting`, LogLevel.Trace);
     this._externalDataVetting = new ExternalDataVetting(this.logger);
-    this.logger.log(`SecurityService.ctor Ending`, LogLevel.Trace);
   }
 
   // ToDO add a static create method that will create a new instance from a serialized structure

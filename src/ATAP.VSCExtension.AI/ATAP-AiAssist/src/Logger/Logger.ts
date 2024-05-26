@@ -9,6 +9,7 @@ import { DetailedError } from "@ErrorClasses/index";
 // implement the logger using pino
 import pino from "pino"; // eslint-disable-line @typescript-eslint/no-var-requires
 import pinoPretty from "pino-pretty"; // eslint-disable-line @typescript-eslint/no-var-requires
+import { PassThrough } from "stream";
 
 // an enumeration to represent the differing Logging levels
 export enum LogLevel {
@@ -146,20 +147,26 @@ export class Logger implements ILogger {
       "test message from staticOutputChannel",
     );
 
-    const basicPino = pino({ level: "debug" });
+    const basicPino = pino({
+      level: "trace",
+      transport: { target: "pino-pretty" },
+    });
     basicPino.info("test message from basicPino to stdout");
 
     const prettyStream = pinoPretty({
       colorize: true,
       translateTime: "yyyy-mm-dd HH:MM:ss.l",
       ignore: "pid,hostname",
-      // destination: 1, // Explicitly define stdout as the destination
     });
+
+    const combinedStream = new PassThrough();
+    combinedStream.pipe(prettyStream).pipe(process.stdout);
 
     const prettyLoggerStream = pino(
       {
         level: "trace",
       },
+      //combinedStream,
       prettyStream.pipe(process.stdout),
     );
 
@@ -192,7 +199,7 @@ export class Logger implements ILogger {
     // Assign the pinoLogger static variable to one of the pino instances
     Logger.pinoLogger = prettyLoggerStream;
 
-    Logger.pinoLogger.info("test message from pinoLogger");
+    // Logger.pinoLogger.info("test message from pinoLogger");
     // the base scope for the logger is the extension name
     return new Logger(null, extensionName);
   }

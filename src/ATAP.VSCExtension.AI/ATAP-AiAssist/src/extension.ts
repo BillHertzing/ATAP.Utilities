@@ -80,7 +80,6 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     //   // Focus on the output stream when starting the extension in development mode
     //   logger.getChannelInfo('atap-aiassist')?.outputChannel?.show(true);
   }
-  logger.log(`${extensionName} Activation Begun`, LogLevel.Info);
   // instantiate the SecurityService
   // if a SecurityService initialization serialized string exists, this will try and use it to create the SecurityService, else return a new empty one.
   // Will return a valid SecurityService instance or will throw

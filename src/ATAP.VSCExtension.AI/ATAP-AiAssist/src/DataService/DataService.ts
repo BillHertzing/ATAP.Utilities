@@ -76,7 +76,6 @@ export class Data {
   //   extensionContext: vscode.ExtensionContext,
   //   userDataInitializationStructure: ISerializationStructure,
   // );
-
   constructor(
     private readonly logger: ILogger,
     private extensionContext: vscode.ExtensionContext,
@@ -255,8 +254,6 @@ export class DataService implements IDataService {
     private extensionContext: vscode.ExtensionContext, //dataInitializationStructure?: ISerializationStructure,
   ) {
     this.logger = new Logger(this.logger, "DataService");
-    this.logger.log(`DataService.ctor Starting`, LogLevel.Trace);
-
     // ToDo: version-aware configuration data loading; multiroot-workspace-aware
     this.version = DefaultConfiguration.version;
     // capture any errors and report them upward
@@ -275,7 +272,6 @@ export class DataService implements IDataService {
         );
       }
     }
-    this.logger.log(`DataService.ctor Ending`, LogLevel.Trace);
   }
 
   // ToDo: make data derive from ItemWithID, and keep track of multiple instances of data (to support profiles?)

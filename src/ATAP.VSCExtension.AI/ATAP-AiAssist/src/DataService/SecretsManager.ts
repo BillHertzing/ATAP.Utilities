@@ -54,10 +54,10 @@ export class SecretsManager implements ISecretsManager {
       case SupportedSecretsVaultEnum.KeePass:
         this.secretManagersMap[SupportedSecretsVaultEnum.KeePass] =
           new KeePassSecretsManager(
-            this.GetMasterPasswordAsync.bind(this),
             this.logger,
             this.extensionContext,
             this.configurationData,
+            this.GetMasterPasswordAsync.bind(this),
           );
         break;
       default:
@@ -174,10 +174,10 @@ class KeePassSecretsManager implements ISecretsManager {
   private disposed = false;
 
   constructor(
-    callGetMasterPasswordAsync: () => Promise<MasterPasswordType>,
     private readonly logger: ILogger,
     extensionContext: vscode.ExtensionContext,
     configurationData: IConfigurationData,
+    callGetMasterPasswordAsync: () => Promise<MasterPasswordType>,
   ) {
     //super(logger, extensionContext, configurationData);
     this.logger = new Logger(this.logger, "KeePassSecretsManager");

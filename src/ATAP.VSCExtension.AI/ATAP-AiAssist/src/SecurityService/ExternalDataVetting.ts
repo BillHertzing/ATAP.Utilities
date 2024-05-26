@@ -9,11 +9,10 @@ export interface IExternalDataVetting {
   AttachListener(eventEmitter: EventEmitter): void;
 }
 
-// @logConstructor
+@logConstructor
 export class ExternalDataVetting {
   constructor(private readonly logger: ILogger) {
     this.logger = new Logger(this.logger, "ExternalDataVetting");
-    this.logger.log(`ExternalDataVetting.ctor Ending`, LogLevel.Trace);
   }
 
   AttachListener(eventEmitter: EventEmitter): void {

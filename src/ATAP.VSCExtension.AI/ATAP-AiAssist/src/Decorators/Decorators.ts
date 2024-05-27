@@ -44,8 +44,21 @@ export function logFunction(
 ): PropertyDescriptor {
   const originalMethod = descriptor.value; // Save a reference to the original method
   descriptor.value = function (...args: any[]) {
+    // let logger: ILogger | null = (this as any)["logger"];
+    // if (logger !== null && logger !== undefined) {
+    //   logger.log(
+    //     `${target.constructor.name} ${propertyKey} Starting`,
+    //     LogLevel.Debug,
+    //   );
+    // }
     console.log(`${target.constructor.name} ${propertyKey} Starting`);
     const result = originalMethod.apply(this, args); // Call the original method
+    // if (logger !== null && logger !== undefined) {
+    //   logger.log(
+    //     `${target.constructor.name} ${propertyKey} Completed`,
+    //     LogLevel.Debug,
+    //   );
+    // }
     console.log(`${target.constructor.name} ${propertyKey} Completed`);
     return result; // Return the original method's return value
   };

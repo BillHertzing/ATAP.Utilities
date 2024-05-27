@@ -1,6 +1,6 @@
 import { randomOutcome } from "@Utilities/index"; // ToDo: replace with a mocked iQueryService instead of using this import
 import * as vscode from "vscode";
-import { LogLevel, ILogger } from "@Logger/index";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
 import { DetailedError, HandleError } from "@ErrorClasses/index";
 
 import {
@@ -335,7 +335,8 @@ export const quickPickMachine = setup({
 }).createMachine({
   id: "quickPickMachine",
   context: ({ input }) => ({
-    logger: input.logger,
+    logger: new Logger(input.logger, "quickPickMachine"),
+    // logger: context.logger,
     parent: input.parent,
     pickValue: input.pickValue,
     pickItems: input.pickItems,
@@ -721,7 +722,7 @@ export const primaryMachine = setup({
 }).createMachine({
   id: "primaryMachine",
   context: ({ input }) => ({
-    logger: input.logger,
+    logger: new Logger(input.logger, "primaryMachine"),
     data: input.data,
     quickPickMachineActorRefAndSubscription: undefined,
     quickPickMachineOutput: undefined,
@@ -746,8 +747,10 @@ export const primaryMachine = setup({
             QUERY_DONE: {
               target: "updateUIState",
               // copy the results (output) from the queryMultipleEngineMachine to the context
-              actions:
+              actions: [
                 "assignQueryMultipleEngineMachineDoneOutputToPrimaryMachineContext",
+                "debugPrimaryMachineContext",
+              ],
             },
             QUICKPICK_DONE: {
               target: "updateUIState",

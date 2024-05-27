@@ -78,17 +78,17 @@ export class StateMachineService implements IStateMachineService {
     this.extensionID = extensionContext.extension.id;
     this.extensionName = this.extensionID.split(".")[1];
     const primaryMachineInspector = createBrowserInspector(); // This line produces the errorMessage
-    // this.primaryActor = createActor(primaryMachine, {
-    //   input: {
-    //     logger: this.logger,
-    //     data: this.data,
-    //     queryService: this.queryService,
-    //   },
-    //   // for Debugging
-    //   inspect: (inspEvent) => {
-    //     inspector(this.logger, inspEvent);
-    //   },
-    // });
+    this.primaryActor = createActor(primaryMachine, {
+      input: {
+        logger: this.logger,
+        data: this.data,
+        queryService: this.queryService,
+      },
+      // for Debugging
+      inspect: (inspEvent) => {
+        inspector(this.logger, inspEvent);
+      },
+    });
     let cancellationTokenSource = new vscode.CancellationTokenSource();
     this.testActor = createActor(testMachine, {
       input: {
@@ -100,6 +100,7 @@ export class StateMachineService implements IStateMachineService {
         cTSToken: cancellationTokenSource.token,
       },
       // for Debugging
+
       inspect: (inspEvent) => {
         inspector(this.logger, inspEvent);
         let _eventInput = "";

@@ -66,7 +66,7 @@ export class QueryService implements IQueryService {
     private readonly extensionContext: vscode.ExtensionContext, // readonly folder: vscode.WorkspaceFolder,
     private readonly data: IData,
   ) {
-    this.logger = new Logger(this.logger, this.constructor.name);
+    this.logger = new Logger(this.logger, "QueryService");
   }
 
   // static create(

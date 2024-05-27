@@ -170,6 +170,11 @@ export class Logger implements ILogger {
       prettyStream.pipe(process.stdout),
     );
 
+    // const streams: pino.DestinationStream[] = [
+    //   { stream: prettyLoggerStream },
+    //   { stream: process.stdout },
+    // ];
+
     prettyLoggerStream.info("test message from prettyLoggerStream to stdout");
     // ToDo: figure out why transports don't seem to work inside a VSC extension. it may have to do with the fact that Transports are run in a separate Node worker thread
     // const prettyTransport = {
@@ -198,6 +203,7 @@ export class Logger implements ILogger {
 
     // Assign the pinoLogger static variable to one of the pino instances
     Logger.pinoLogger = prettyLoggerStream;
+    //Logger.pinoLogger = pino({ level: "trace" }, pino.multistream(streams));
 
     // Logger.pinoLogger.info("test message from pinoLogger");
     // the base scope for the logger is the extension name

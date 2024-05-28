@@ -164,7 +164,7 @@ export class Logger implements ILogger {
 
     const prettyLoggerStream = pino(
       {
-        level: "trace",
+        level: "debug",
       },
       //combinedStream,
       prettyStream.pipe(process.stdout),

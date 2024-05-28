@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 import {
   SerializationStructure,
   ISerializationStructure,
@@ -7,25 +7,26 @@ import {
   fromJson,
   toYaml,
   fromYaml,
-} from '@Serializers/index';
+} from "@Serializers/index";
 
-import * as yaml from 'js-yaml';
+import * as yaml from "js-yaml";
 
-import { DetailedError } from '@ErrorClasses/index';
-import { ILogger, Logger } from '@Logger/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
+import { DetailedError } from "@ErrorClasses/index";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { logConstructor, logMethod, logAsyncFunction } from "@Decorators/index";
 
-import { GUID, Int, IDType, nextID } from '@IDTypes/index';
-import { Philote, IPhilote } from '@Philote/index';
+import { GUID, Int, IDType, nextID } from "@IDTypes/index";
+import { Philote, IPhilote } from "@Philote/index";
 
-import { QueryFragmentEnum } from '@BaseEnumerations/index';
+import { QueryFragmentEnum } from "@BaseEnumerations/index";
 
 export type TagValueType = string;
 export type CategoryValueType = string;
 export type QueryRequestValueType = string;
 export type QueryResponseValueType = string;
 
-export type AiAssistCancellationTokenSourceValueType = vscode.CancellationTokenSource;
+export type AiAssistCancellationTokenSourceValueType =
+  vscode.CancellationTokenSource;
 
 export interface IAssociationValueType {
   tagCollection: ITagCollection;
@@ -159,7 +160,10 @@ export type ItemWithIDTypes =
   | AiAssistCancellationTokenSource
   | AiAssistCancellationTokenSourceCollection;
 
-export interface IItemWithID<T extends ItemWithIDTypes, V extends ItemWithIDValueType> {
+export interface IItemWithID<
+  T extends ItemWithIDTypes,
+  V extends ItemWithIDValueType,
+> {
   readonly value: V;
   readonly ID: Philote;
   toString(): string;
@@ -167,23 +171,28 @@ export interface IItemWithID<T extends ItemWithIDTypes, V extends ItemWithIDValu
   convertTo_yaml(): string;
 }
 @logConstructor
-export class ItemWithID<T extends ItemWithIDTypes, V extends ItemWithIDValueType> {
+export class ItemWithID<
+  T extends ItemWithIDTypes,
+  V extends ItemWithIDValueType,
+> {
   constructor(
     readonly value: V,
     readonly ID: IPhilote = new Philote(),
   ) {}
-  static create<T extends ItemWithIDTypes, V extends ItemWithIDValueType>(value: V): ItemWithID<T, V> {
+  static create<T extends ItemWithIDTypes, V extends ItemWithIDValueType>(
+    value: V,
+  ): ItemWithID<T, V> {
     return new ItemWithID<T, V>(value);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `ItemWithID ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
@@ -201,7 +210,10 @@ export class ItemWithID<T extends ItemWithIDTypes, V extends ItemWithIDValueType
   // }
 }
 
-export interface ICollection<T extends ItemWithIDTypes, V extends ItemWithIDValueType> {
+export interface ICollection<
+  T extends ItemWithIDTypes,
+  V extends ItemWithIDValueType,
+> {
   readonly value: ItemWithID<T, V>[];
   readonly ID: Philote;
   toString(): string;
@@ -210,29 +222,37 @@ export interface ICollection<T extends ItemWithIDTypes, V extends ItemWithIDValu
   findById<T>(criteria: GUID): T | undefined;
 }
 @logConstructor
-export class Collection<T extends ItemWithIDTypes, V extends ItemWithIDValueType> implements ICollection<T, V> {
+export class Collection<
+  T extends ItemWithIDTypes,
+  V extends ItemWithIDValueType,
+> implements ICollection<T, V>
+{
   constructor(
     readonly value: ItemWithID<T, V>[],
     readonly ID: IPhilote = new Philote(),
   ) {}
-  static create<T extends ItemWithIDTypes, V extends ItemWithIDValueType>(value: ItemWithID<T, V>[]): Collection<T, V> {
+  static create<T extends ItemWithIDTypes, V extends ItemWithIDValueType>(
+    value: ItemWithID<T, V>[],
+  ): Collection<T, V> {
     return new Collection<T, V>(value);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `Collection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
   // find within this value an instance of type T based on it's Philote's GUID
   findById<T>(criteria: GUID): T | undefined {
-    return this.value.find((item) => item.ID.toString() === criteria.toString()) as T;
+    return this.value.find(
+      (item) => item.ID.toString() === criteria.toString(),
+    ) as T;
   }
 }
 
@@ -254,15 +274,15 @@ export class Tag extends ItemWithID<Tag, string> implements ITag {
   // static create(value: string): Tag {
   //   return new Tag(value);
   // }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `Tag ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
@@ -274,22 +294,25 @@ export interface ITagCollection extends ICollection<Tag, TagValueType> {
   convertTo_yaml(): string;
 }
 @logConstructor
-export class TagCollection extends Collection<Tag, TagValueType> implements ITagCollection {
+export class TagCollection
+  extends Collection<Tag, TagValueType>
+  implements ITagCollection
+{
   constructor(value: ItemWithID<Tag, TagValueType>[], ID?: Philote) {
     super(value, ID);
   }
   create(value: ItemWithID<Tag, TagValueType>[]): TagCollection {
     return new TagCollection(value);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `TagCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
@@ -301,7 +324,10 @@ export interface ICategory {
   convertTo_yaml(): string;
 }
 @logConstructor
-export class Category extends ItemWithID<Category, string> implements ICategory {
+export class Category
+  extends ItemWithID<Category, string>
+  implements ICategory
+{
   constructor(
     value: string,
     readonly ID: IPhilote = new Philote(),
@@ -311,54 +337,64 @@ export class Category extends ItemWithID<Category, string> implements ICategory 
   // static create(value: string): Category {
   //   return new Category(value);
   // }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `Category ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
 }
 
-export interface ICategoryCollection extends ICollection<Category, CategoryValueType> {
+export interface ICategoryCollection
+  extends ICollection<Category, CategoryValueType> {
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
 }
 
 @logConstructor
-export class CategoryCollection extends Collection<Category, CategoryValueType> implements ICategoryCollection {
+export class CategoryCollection
+  extends Collection<Category, CategoryValueType>
+  implements ICategoryCollection
+{
   constructor(value: ItemWithID<Category, CategoryValueType>[], ID?: Philote) {
     super(value, ID);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `CategoryCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
 }
 
 export interface IAiAssistCancellationTokenSource
-  extends IItemWithID<AiAssistCancellationTokenSource, AiAssistCancellationTokenSourceValueType> {
+  extends IItemWithID<
+    AiAssistCancellationTokenSource,
+    AiAssistCancellationTokenSourceValueType
+  > {
   readonly value: AiAssistCancellationTokenSourceValueType;
   readonly ID: Philote;
   toString(): string;
 }
 @logConstructor
 export class AiAssistCancellationTokenSource
-  extends ItemWithID<AiAssistCancellationTokenSource, AiAssistCancellationTokenSourceValueType>
+  extends ItemWithID<
+    AiAssistCancellationTokenSource,
+    AiAssistCancellationTokenSourceValueType
+  >
   implements IAiAssistCancellationTokenSource
 {
   constructor(
@@ -370,51 +406,63 @@ export class AiAssistCancellationTokenSource
   // static create(value: AiAssistCancellationTokenSourceValueType): Tag {
   //   return new AiAssistCancellationTokenSource(value);
   // }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `AiAssistCancellationTokenSource ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
 }
 
 export interface IAiAssistCancellationTokenSourceCollection
-  extends ICollection<AiAssistCancellationTokenSource, AiAssistCancellationTokenSourceValueType> {
+  extends ICollection<
+    AiAssistCancellationTokenSource,
+    AiAssistCancellationTokenSourceValueType
+  > {
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
 }
 @logConstructor
 export class AiAssistCancellationTokenSourceCollection
-  extends Collection<AiAssistCancellationTokenSource, AiAssistCancellationTokenSourceValueType>
+  extends Collection<
+    AiAssistCancellationTokenSource,
+    AiAssistCancellationTokenSourceValueType
+  >
   implements IAiAssistCancellationTokenSourceCollection
 {
   constructor(
-    value: ItemWithID<AiAssistCancellationTokenSource, AiAssistCancellationTokenSourceValueType>[],
+    value: ItemWithID<
+      AiAssistCancellationTokenSource,
+      AiAssistCancellationTokenSourceValueType
+    >[],
     ID?: Philote,
   ) {
     super(value, ID);
   }
   create(
-    value: ItemWithID<AiAssistCancellationTokenSource, AiAssistCancellationTokenSourceValueType>[],
+    value: ItemWithID<
+      AiAssistCancellationTokenSource,
+      AiAssistCancellationTokenSourceValueType
+    >[],
   ): AiAssistCancellationTokenSourceCollection {
     return new AiAssistCancellationTokenSourceCollection(value);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `AiAssistCancellationTokenSourceCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
@@ -426,28 +474,32 @@ export interface IAssociation {
   convertTo_yaml(): string;
 }
 @logConstructor
-export class Association extends ItemWithID<Association, IAssociationValueType> implements IAssociation {
+export class Association
+  extends ItemWithID<Association, IAssociationValueType>
+  implements IAssociation
+{
   constructor(value: IAssociationValueType, ID?: IPhilote) {
     super(value, ID);
   }
   // static create(value: IAssociationValueType): Association {
   //   return new Association(value);
   // }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `Association ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
 }
 
-export interface IAssociationCollection extends ICollection<Association, AssociationValueType> {
+export interface IAssociationCollection
+  extends ICollection<Association, AssociationValueType> {
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
@@ -458,24 +510,28 @@ export class AssociationCollection
   extends Collection<Association, AssociationValueType>
   implements IAssociationCollection
 {
-  constructor(value: ItemWithID<Association, AssociationValueType>[], ID?: Philote) {
+  constructor(
+    value: ItemWithID<Association, AssociationValueType>[],
+    ID?: Philote,
+  ) {
     super(value, ID);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `AssociationCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
 }
 
-export interface IQueryFragment extends IItemWithID<QueryFragment, QueryFragmentValueType> {
+export interface IQueryFragment
+  extends IItemWithID<QueryFragment, QueryFragmentValueType> {
   readonly value: QueryFragmentValueType;
   readonly ID: Philote;
   toString(): string;
@@ -483,7 +539,10 @@ export interface IQueryFragment extends IItemWithID<QueryFragment, QueryFragment
   convertTo_yaml(): string;
 }
 @logConstructor
-export class QueryFragment extends ItemWithID<QueryFragment, QueryFragmentValueType> implements IQueryFragment {
+export class QueryFragment
+  extends ItemWithID<QueryFragment, QueryFragmentValueType>
+  implements IQueryFragment
+{
   constructor(
     readonly value: QueryFragmentValueType,
     readonly ID: IPhilote = new Philote(),
@@ -493,21 +552,22 @@ export class QueryFragment extends ItemWithID<QueryFragment, QueryFragmentValueT
   // static create(value: QueryFragmentValueType): QueryFragment {
   //   return new QueryFragment(value);
   // }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `QueryFragment ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
 }
 
-export interface IQueryFragmentCollection extends ICollection<QueryFragment, QueryFragmentValueType> {
+export interface IQueryFragmentCollection
+  extends ICollection<QueryFragment, QueryFragmentValueType> {
   findByID<QueryFragment>(criteria: GUID): QueryFragment;
   toString(): string;
   convertTo_json(): string;
@@ -519,24 +579,27 @@ export class QueryFragmentCollection
   extends Collection<QueryFragment, QueryFragmentValueType>
   implements IQueryFragmentCollection
 {
-  constructor(value: ItemWithID<QueryFragment, QueryFragmentValueType>[], ID?: Philote) {
+  constructor(
+    value: ItemWithID<QueryFragment, QueryFragmentValueType>[],
+    ID?: Philote,
+  ) {
     super(value, ID);
   }
 
-  @logFunction
+  @logMethod(LogLevel.Trace)
   findByID<QueryFragment>(criteria: GUID): QueryFragment {
     return super.findById<QueryFragment>(criteria) as QueryFragment;
   }
 
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `QueryFragmentCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
@@ -550,7 +613,10 @@ export interface IQueryRequest extends IItemWithID<QueryRequest, string> {
   convertTo_yaml(): string;
 }
 @logConstructor
-export class QueryRequest extends ItemWithID<QueryRequest, string> implements IQueryRequest {
+export class QueryRequest
+  extends ItemWithID<QueryRequest, string>
+  implements IQueryRequest
+{
   constructor(
     readonly value: string,
     readonly ID: IPhilote = new Philote(),
@@ -560,15 +626,15 @@ export class QueryRequest extends ItemWithID<QueryRequest, string> implements IQ
   // static create(value: string): QueryRequest {
   //   return new QueryRequest(value);
   // }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `QueryRequest ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
@@ -582,7 +648,10 @@ export interface IQueryResponse extends IItemWithID<QueryResponse, string> {
   convertTo_yaml(): string;
 }
 @logConstructor
-export class QueryResponse extends ItemWithID<QueryResponse, string> implements IQueryResponse {
+export class QueryResponse
+  extends ItemWithID<QueryResponse, string>
+  implements IQueryResponse
+{
   constructor(
     readonly value: string,
     readonly ID: IPhilote = new Philote(),
@@ -592,15 +661,15 @@ export class QueryResponse extends ItemWithID<QueryResponse, string> implements 
   // static create(value: string): QueryResponse {
   //   return new QueryResponse(value);
   // }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `QueryResponse ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
@@ -612,53 +681,64 @@ export interface IQueryPair {
   convertTo_yaml(): string;
 }
 @logConstructor
-export class QueryPair extends ItemWithID<QueryPair, IQueryPairValueType> implements IQueryPair {
+export class QueryPair
+  extends ItemWithID<QueryPair, IQueryPairValueType>
+  implements IQueryPair
+{
   constructor(value: IQueryPairValueType, ID?: IPhilote) {
     super(value, ID);
   }
   // static create(value: IQueryPairValueType): QueryPair {
   //   return new QueryPair(value);
   // }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `QueryPair ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
 }
 
-export interface IQueryPairCollection extends ICollection<QueryPair, QueryPairValueType> {
+export interface IQueryPairCollection
+  extends ICollection<QueryPair, QueryPairValueType> {
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
 }
 
 @logConstructor
-export class QueryPairCollection extends Collection<QueryPair, QueryPairValueType> implements IQueryPairCollection {
-  constructor(value: ItemWithID<QueryPair, QueryPairValueType>[], ID?: Philote) {
+export class QueryPairCollection
+  extends Collection<QueryPair, QueryPairValueType>
+  implements IQueryPairCollection
+{
+  constructor(
+    value: ItemWithID<QueryPair, QueryPairValueType>[],
+    ID?: Philote,
+  ) {
     super(value, ID);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `QueryPairCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
 }
 
-export interface IConversationCollection extends ICollection<QueryPairCollection, QueryPairCollectionValueType> {
+export interface IConversationCollection
+  extends ICollection<QueryPairCollection, QueryPairCollectionValueType> {
   toString(): string;
   convertTo_json(): string;
   convertTo_yaml(): string;
@@ -669,18 +749,21 @@ export class ConversationCollection
   extends Collection<QueryPairCollection, QueryPairCollectionValueType>
   implements IConversationCollection
 {
-  constructor(value: ItemWithID<QueryPairCollection, QueryPairCollectionValueType>[], ID?: Philote) {
+  constructor(
+    value: ItemWithID<QueryPairCollection, QueryPairCollectionValueType>[],
+    ID?: Philote,
+  ) {
     super(value, ID);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `ConversationCollection ID:${this.ID.toString()}; value:${this.value.toString()}`;
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }

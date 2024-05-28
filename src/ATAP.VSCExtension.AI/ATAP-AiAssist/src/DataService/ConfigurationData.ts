@@ -3,12 +3,7 @@ import * as path from "path";
 
 import { LogLevel, ILogger, Logger } from "@Logger/index";
 import { DetailedError, HandleError } from "@ErrorClasses/index";
-import {
-  logConstructor,
-  logFunction,
-  logAsyncFunction,
-  logExecutionTime,
-} from "@Decorators/index";
+import { logConstructor, logMethod, logAsyncFunction } from "@Decorators/index";
 import {
   DefaultConfiguration,
   AllowedTypesInValue,
@@ -76,7 +71,7 @@ export class ConfigurationData implements IConfigurationData {
     this.logger = new Logger(this.logger, "ConfigurationData");
   }
 
-  //@logFunction
+  @logMethod(LogLevel.Trace)
   private getNonNull(key: string): AllowedTypesInValue {
     const extensionID = this.extensionID;
 
@@ -118,7 +113,7 @@ export class ConfigurationData implements IConfigurationData {
     );
   }
 
-  @logFunction
+  @logMethod(LogLevel.Trace)
   private getPossiblyUndefined(key: string): AllowedTypesInValue | undefined {
     const extensionID = "ataputilities.atap-aiassist";
     // const cLIIdentifier = extensionID + '.' + key

@@ -1,16 +1,24 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { DetailedError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
-import { StringBuilder } from '@Utilities/index';
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError } from "@ErrorClasses/index";
+import { logConstructor, logMethod, logAsyncFunction } from "@Decorators/index";
+import { StringBuilder } from "@Utilities/index";
 
-import { IDataService, IData, IStateManager, IConfigurationData } from '@DataService/index';
+import {
+  IDataService,
+  IData,
+  IStateManager,
+  IConfigurationData,
+} from "@DataService/index";
 
-import { IQueryEngineChatGPT, QueryEngineChatGPT } from './QueryEngineChatGPT';
+import { IQueryEngineChatGPT, QueryEngineChatGPT } from "./QueryEngineChatGPT";
 
 export interface IQueryEngine {
-  sendQueryAsync(textToSubmit: string, cTSToken: vscode.CancellationToken): Promise<void>;
+  sendQueryAsync(
+    textToSubmit: string,
+    cTSToken: vscode.CancellationToken,
+  ): Promise<void>;
 }
 
 // @logConstructor
@@ -20,5 +28,8 @@ export abstract class QueryEngine implements IQueryEngine {
     private readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
     private readonly configurationData: IConfigurationData,
   ) {}
-  abstract sendQueryAsync(textToSubmit: string, cTSToken: vscode.CancellationToken): Promise<void>;
+  abstract sendQueryAsync(
+    textToSubmit: string,
+    cTSToken: vscode.CancellationToken,
+  ): Promise<void>;
 }

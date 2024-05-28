@@ -1,18 +1,18 @@
-import * as vscode from 'vscode';
-import { ActorRef } from 'xstate';
-import { LogLevel, ILogger } from '@Logger/index';
-import { DetailedError, HandleError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
-import { IData } from '@DataService/index';
+import * as vscode from "vscode";
+import { ActorRef } from "xstate";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError, HandleError } from "@ErrorClasses/index";
+import { logConstructor, logMethod, logAsyncFunction } from "@Decorators/index";
+import { IData } from "@DataService/index";
 
 import {
   QueryAgentCommandMenuItemEnum,
   ModeMenuItemEnum,
   QuickPickEnumeration,
   VCSCommandMenuItemEnum,
-} from '@BaseEnumerations/index';
+} from "@BaseEnumerations/index";
 
-import { LoggerDataT } from '@StateMachineService/index';
+import { LoggerDataT } from "@StateMachineService/index";
 
 export type QuickPickMachineComponentOfPrimaryMachineContextT = {
   quickPickMachineActorRef?: ActorRef<any, any>;

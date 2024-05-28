@@ -37,6 +37,43 @@ export function logFunctionFactory(hasLogger: IHasLogger, level: LogLevel) {
   };
 }
 */
+
+export function logMethod(level: LogLevel) {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor,
+  ) {
+    const originalMethod = descriptor.value; // Save a reference to the original method
+
+    descriptor.value = function (...args: any[]) {
+      // Now 'this' is correctly bound to the class instance
+      // Ensure 'this.logger' is accessible and has a 'log' method
+      let logger: ILogger = (this as any).logger;
+      if (logger && typeof logger.log === "function") {
+        logger = new Logger(logger, propertyKey);
+        logger.log("Starting", level);
+      }
+      const start = level === LogLevel.Performance ? performance.now() : null;
+      const result = originalMethod.apply(this, args); // Call the original method
+      if (logger && typeof logger.log === "function") {
+        logger.log(
+          `Completed${level === LogLevel.Performance && start ? ` Elapsed Time: ${performance.now() - start}ms` : ""}`,
+          level,
+        );
+      }
+      // // If Performance, calculate elapsed time
+      // if (level === LogLevel.Performance && start) {
+      //   const finish = performance.now();
+      //   if (logger && typeof logger.log === "function") {
+      //     logger.log(`Elapsed Time: ${finish - start}ms`, level);
+      //   }
+      // }
+      return result; // Return the original method's return value
+    };
+  };
+}
+
 export function logFunction(
   target: any,
   propertyKey: string,

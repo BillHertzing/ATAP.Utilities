@@ -1,11 +1,14 @@
-import * as vscode from 'vscode';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { DetailedError, HandleError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
-import { StringBuilder } from '../Utilities';
+import * as vscode from "vscode";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError, HandleError } from "@ErrorClasses/index";
+import { logConstructor, logMethod, logAsyncFunction } from "@Decorators/index";
+import { StringBuilder } from "../Utilities";
 
-export async function copyToSubmit(extensionContext: vscode.ExtensionContext, logger: ILogger) {
-  let message: string = 'starting command copyToSubmit';
+export async function copyToSubmit(
+  extensionContext: vscode.ExtensionContext,
+  logger: ILogger,
+) {
+  let message: string = "starting command copyToSubmit";
   logger.log(message, LogLevel.Debug);
 
   // ToDo: make this an async function

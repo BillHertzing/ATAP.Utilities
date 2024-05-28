@@ -1,0 +1,70 @@
+@startuml
+
+[*] --> quickPickMachine : start
+
+state quickPickMachine {
+    [*] --> startedState
+    state startedState {
+        [*] --> parallelStates
+
+        state parallelStates {
+            [*] --> operationState : startedState entry
+            state operationState {
+                [*] --> quickPickState : quickPickState entry
+                quickPickState --> innerDoneState : onDone
+                quickPickState --> errorState : onError
+                errorState --> innerDoneState : always
+                innerDoneState --> [*] : always
+            }
+
+            [*] --> disposeState : inactiveState
+            state disposeState {
+                inactiveState --> disposingState : DISPOSE_START
+                disposingState --> disposeCompleteState : DISPOSE_COMPLETE
+                disposeCompleteState --> [*] : always
+            }
+        }
+    }
+
+    startedState --> outerDoneState : innerDoneState
+    state outerDoneState {
+        [*] --> finalState : notifyCompleteAction
+        finalState --> [*] : debugQuickPickMachineContext
+    }
+}
+
+[*] --> primaryMachine : start
+
+state primaryMachine {
+    [*] --> parallelPrimaryStates
+    state parallelPrimaryStates {
+        [*] --> operationState : idleState
+        state operationState {
+            [*] --> idleState : initial
+            idleState --> quickPickState : QUICKPICK_START
+            idleState --> queryingState : QUERY_START
+            idleState --> updateUIState : QUICKPICK_DONE, QUERY_DONE
+
+            state quickPickState {
+                [*] --> [*] : spawnQuickPickMachine
+            }
+
+            state queryingState {
+                [*] --> [*] : spawnMultipleEngineQueryMachine
+            }
+
+            state updateUIState {
+                [*] --> idleState : always, updateUIAction
+            }
+        }
+
+        [*] --> disposeState : inactiveState
+        state disposeState {
+            inactiveState --> disposingState : DISPOSE_START
+            disposingState --> disposeCompleteState : DISPOSE_COMPLETE
+            disposeCompleteState --> [*] : always
+        }
+    }
+}
+
+@enduml

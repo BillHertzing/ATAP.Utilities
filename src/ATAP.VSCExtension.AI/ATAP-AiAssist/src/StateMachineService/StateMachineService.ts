@@ -2,11 +2,7 @@ import * as vscode from "vscode";
 import { LogLevel, ILogger, Logger } from "@Logger/index";
 import { IData } from "@DataService/index";
 import { DetailedError } from "@ErrorClasses/index";
-import {
-  logConstructor,
-  logFunction,
-  logAsyncFunction,
-} from "@Decorators/index";
+import { logConstructor, logMethod, logAsyncFunction } from "@Decorators/index";
 import {
   ISerializationStructure,
   stringifyWithCircularReference,
@@ -63,6 +59,8 @@ export class StateMachineService implements IStateMachineService {
   private readonly extensionID: string;
   private readonly extensionName: string;
   private readonly primaryMachineInspector = createBrowserInspector();
+  private readonly primaryMachineInspectorLogger: ILogger;
+  private readonly testMachineInspectorLogger: ILogger;
   private primaryActor: ActorRef<any, any, any> | undefined;
   private testActor;
 
@@ -78,6 +76,10 @@ export class StateMachineService implements IStateMachineService {
     this.extensionID = extensionContext.extension.id;
     this.extensionName = this.extensionID.split(".")[1];
     const primaryMachineInspector = createBrowserInspector(); // This line produces the errorMessage
+    this.primaryMachineInspectorLogger = new Logger(
+      this.logger,
+      "Inspector(Primary)",
+    );
     this.primaryActor = createActor(primaryMachine, {
       input: {
         logger: this.logger,
@@ -86,9 +88,13 @@ export class StateMachineService implements IStateMachineService {
       },
       // for Debugging
       inspect: (inspEvent) => {
-        inspector(this.logger, inspEvent);
+        inspector(this.primaryMachineInspectorLogger, inspEvent);
       },
     });
+    this.testMachineInspectorLogger = new Logger(
+      this.logger,
+      "Inspector(Test)",
+    );
     let cancellationTokenSource = new vscode.CancellationTokenSource();
     this.testActor = createActor(testMachine, {
       input: {
@@ -102,7 +108,7 @@ export class StateMachineService implements IStateMachineService {
       // for Debugging
 
       inspect: (inspEvent) => {
-        inspector(this.logger, inspEvent);
+        inspector(this.testMachineInspectorLogger, inspEvent);
         let _eventInput = "";
         let _eventData = "";
         let _eventOutput = "";
@@ -152,23 +158,23 @@ export class StateMachineService implements IStateMachineService {
         }
       },
     });
-    this.testActor.start();
+    // this.testActor.start();
   }
-  @logFunction
+  @logMethod(LogLevel.Debug)
   quickPick(payload: IQuickPickEventPayload): void {
     this.primaryActor!.send({ type: "QUICKPICK_START", payload: payload });
   }
-  @logFunction
+  @logMethod(LogLevel.Debug)
   sendQuery(payload: IQueryEventPayload): void {
     this.primaryActor!.send({ type: "QUERY_START", payload: payload });
   }
 
-  @logFunction
+  @logMethod(LogLevel.Debug)
   sendTest(payload: IQueryEventPayload): void {
     this.testActor.send({ type: "QSE_START" });
   }
 
-  @logFunction
+  @logMethod(LogLevel.Debug)
   testActorsaveFile(): void {
     // placeholder
   }
@@ -230,10 +236,10 @@ export class StateMachineService implements IStateMachineService {
     return fromYaml<StateMachineService>(yaml);
   }
 
-  @logFunction
+  @logMethod(LogLevel.Trace)
   initialize(): void {}
 
-  @logFunction
+  @logMethod(LogLevel.Trace)
   start(): void {
     this.primaryActor!.start();
   }
@@ -309,7 +315,7 @@ export class StateMachineService implements IStateMachineService {
 //   },
 // },
 
-// @logFunction
+// @logMethod(LogLevel.Trace)
 // async queryAsync ():Promise<void> {
 //   return new Promise((resolve, reject) => {
 //     this.primaryActor.send({ type: 'query' });

@@ -1,8 +1,8 @@
-import * as vscode from 'vscode';
-import * as fs from 'fs';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { DetailedError, HandleError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
+import * as vscode from "vscode";
+import * as fs from "fs";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError, HandleError } from "@ErrorClasses/index";
+import { logConstructor, logMethod, logAsyncFunction } from "@Decorators/index";
 
 interface IProcessResult {
   success: boolean;
@@ -27,10 +27,13 @@ class ProcessResult implements IProcessResult {
 
 async function processFiles(
   paths: string[],
-  asyncFunctionToExecute: (path: string, logger: ILogger) => Promise<ProcessResult>,
+  asyncFunctionToExecute: (
+    path: string,
+    logger: ILogger,
+  ) => Promise<ProcessResult>,
   logger: ILogger,
 ): Promise<ProcessResult[]> {
-  let message: string = 'starting processFiles';
+  let message: string = "starting processFiles";
   logger.log(message, LogLevel.Debug);
 
   const results: ProcessResult[] = [];

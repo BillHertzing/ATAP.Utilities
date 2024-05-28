@@ -1,9 +1,9 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
-import { GUID, Int, IDType, nextID } from '@IDTypes/index';
-import { DetailedError } from '@ErrorClasses/index';
-import { LogLevel, ILogger } from '@Logger/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
+import { GUID, Int, IDType, nextID } from "@IDTypes/index";
+import { DetailedError } from "@ErrorClasses/index";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { logConstructor, logMethod, logAsyncFunction } from "@Decorators/index";
 import {
   SerializationStructure,
   ISerializationStructure,
@@ -12,7 +12,7 @@ import {
   fromJson,
   toYaml,
   fromYaml,
-} from '@Serializers/index';
+} from "@Serializers/index";
 
 export interface IPhilote {
   readonly ID: GUID;
@@ -28,18 +28,22 @@ export interface IPhilote {
 export class Philote implements IPhilote {
   public readonly ID: GUID;
   public readonly others: Philote[];
-  constructor(ID?: GUID) {
+  constructor(
+    private readonly logger: ILogger,
+    ID?: GUID,
+  ) {
+    this.logger = new Logger(this.logger, "Philote");
     this.ID = ID !== undefined ? ID : nextID(); // returns a random GUID string or the next sequential Int available from the ID pool
     this.others = [];
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   addOther(philote: Philote): void {
     // Add philote to the others array if not already present
     if (!this.others.includes(philote)) {
       this.others.push(philote);
     }
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   removeOther(philote: Philote): void {
     // Remove philote from the others array
     const index = this.others.indexOf(philote);
@@ -47,7 +51,7 @@ export class Philote implements IPhilote {
       this.others.splice(index, 1);
     }
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_json(): string {
     return toJson(this);
   }
@@ -55,7 +59,7 @@ export class Philote implements IPhilote {
   static convertFrom_json(json: string): Philote {
     return fromJson<Philote>(json);
   }
-  @logFunction
+  @logMethod(LogLevel.Trace)
   convertTo_yaml(): string {
     return toYaml(this);
   }
@@ -64,7 +68,7 @@ export class Philote implements IPhilote {
     return fromYaml<Philote>(yaml);
   }
 
-  @logFunction
+  @logMethod(LogLevel.Trace)
   toString(): string {
     return `Philote: ${this.ID}`;
   }

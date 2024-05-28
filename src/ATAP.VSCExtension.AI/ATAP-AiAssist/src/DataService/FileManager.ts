@@ -10,12 +10,8 @@ import {
 } from "fs";
 import { LogLevel, ILogger, Logger } from "@Logger/index";
 import { DetailedError, HandleError } from "@ErrorClasses/index";
-import {
-  logConstructor,
-  logFunction,
-  logAsyncFunction,
-  logExecutionTime,
-} from "@Decorators/index";
+import { logConstructor, logMethod, logAsyncFunction } from "@Decorators/index";
+
 import {
   SupportedSerializersEnum,
   QueryFragmentEnum,
@@ -702,7 +698,7 @@ export class FileManager implements IFileManager {
       });
   }
 
-  @logFunction
+  @logMethod(LogLevel.Trace)
   getNewTemporaryFilePathIndex(extension: string): number {
     const randomFileName = crypto.randomBytes(16).toString("hex") + extension;
     const temporaryFilePath = path.join(

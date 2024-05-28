@@ -5,6 +5,7 @@
 
 export {
   logConstructor,
+  logMethod,
   logFunction,
   logAsyncFunction,
   logExecutionTime,
@@ -12,4 +13,4 @@ export {
     IHasLogger,
   logFunctionFactory,
   */
-} from './Decorators';
+} from "./Decorators";

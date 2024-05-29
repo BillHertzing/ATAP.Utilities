@@ -29,14 +29,14 @@ export class Philote implements IPhilote {
   public readonly ID: GUID;
   public readonly others: Philote[];
   constructor(
-    private readonly logger: ILogger,
+    //private readonly logger: ILogger,
     ID?: GUID,
   ) {
-    this.logger = new Logger(this.logger, "Philote");
+    //this.logger = new Logger(this.logger, "Philote");
     this.ID = ID !== undefined ? ID : nextID(); // returns a random GUID string or the next sequential Int available from the ID pool
     this.others = [];
   }
-  @logMethod(LogLevel.Trace)
+  @logMethod(LogLevel.Debug)
   addOther(philote: Philote): void {
     // Add philote to the others array if not already present
     if (!this.others.includes(philote)) {

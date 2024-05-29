@@ -333,6 +333,7 @@ export const quickPickMachine = setup({
     quickPickActor: quickPickActorLogic,
   },
 }).createMachine({
+  /** @xstate-layout N4IgpgJg5mDOIC5QEcCuBLAxgawApewFkBDTAC3QDswA6WAF2ICd7IBlR1mgewAcwmxeum6UOQ2mgL4c41gGIIo2lQBu3bJIw4Z2AIKZ63JgG0ADAF1EoXt1jpho6yAAeiALQBGABzeaAVn8AJgBOADYAFk8Qs38wkJCggBoQAE8PTzM-AGZc7LMEoKD-XM8ggF9ylKkdAhJyKloGZlYIOVo+ASERMU4taQJ2+QEmYxpeABshADNjAFsaGrwCAyNTS2dbe0dKZzcEaIB2AOzvT08I4JCIkLiwlPSELyyaPPzC4tKKqpAl3XqKNQ6IwWOw+jx+IIdu0aCNjENzFYkCAtg4entENl-GYaBFvLdPIcggUImF-CEHohErizBFQt5-J5sp4yWZvtVtMscADGsCWmCJBCutDwVRqEwACLKBEbZGonYYg7+Y4RCLZELZQ6RMKHRm6ykIYo4plBbI3Mnec1ZSocgbc0iApog1owiDoWBbMAwqikYSqL19eQSgCSbFwAHk2ABRAD6bAAKnoAErxxGbOxopzI-aHBI0Ymmswsy7ZIJkg3uYnZGi+ELF4mHesRG2-Tn-B285qgtrgt0euwBwV91GUKBDENhyOxgDC4cIuAAMlH41G03KMwrs4hDt4ggFElkzJFiplsgbcjQ2f5VSEzlFNXTmz8-nUO0Cuy7e+7Pa7vwPp9wcyTGArAykiNgbuiW4IJafiNv4ZxnEWeLqgaFzGrczLHteCSRJUPyUNwEBwM4L72g01DptsUGgPs7i5HugShJE0SxPEFJpB4YQvDEQTeGYZpMt4ZLsq2dpEG+Tr8j2EhUZmuzQZWloBFcLExHECQVsEng1sqYS7maUQMqJZESRRUndjCnRQj07RyZutEeKaYQqcxUTqexyScU8px+GWhxqma15YdkLamTy77OgKXDWd0ogwqZdnrtRWaOU8fE0Bc+nEmEQS6sJwQVvkOlFEURI+NEOFhGFbavuZfKWeCsUioKcJMElEEpQpaWlJluVBBc6oBTchznnu+nxBcxLRPxjY1eJEUWZ+grNbZoqUOKUrUB1KKQalrgeMchzHcd5zYrldK5GhWo0CEuo7ucdJFHd821ORjoNctXDDgOO3yjRB0IPE-g0LqVy+MhZIcY89HKRqES0uEubXrmhyvVyZkfR+0W0D9sCDlwPqGOg-p-Xt3WA2c1a5I+pK6mU5beZWd01rWfHcbeOq3Oj7b1djMnfX++O-v29ijmTXWKgF1Zg-S-FZeSFanplRLwUehxZMEJm1e9nZRQLuNCwThui2AAFARMIHG-ZAM5t41O5PbuS5pajIGjEAT6bk8S5mafH+DzdUfdwqCsJK0p9Db+37KcNBhDq+I+KqyPOeety3WENMknxJ5PpUQA */
   id: "quickPickMachine",
   context: ({ input }) => ({
     logger: new Logger(input.logger, "quickPickMachine"),
@@ -462,6 +463,8 @@ export const quickPickMachine = setup({
 /*******************************************************************/
 /* Primary Machine */
 
+/*******************************************************************/
+/* Primary Machine Input and Context types */
 export interface IPrimaryMachineInput extends IAllMachinesBaseContext {
   queryService: IQueryService;
   data: IData;
@@ -720,6 +723,7 @@ export const primaryMachine = setup({
     queryMultipleEngineMachine: queryMultipleEngineMachine,
   },
 }).createMachine({
+  /** @xstate-layout N4IgpgJg5mDOIC5QAcBOBLAtgQ1QTwFlsBjAC3QDswA6Ae2TFWwBd1aKBlZlm9CAGzBceAYgCKAVQCSAYQDSABVlyA+hwAqAQQBK6gNoAGALqIUtWOlbtTIAB6IArAGYALNQAcAdicBGJ5-cXAE4nIJ93ABoQPERfJ2onADYAJkTEzwMDJwdk1KcAX3yotCxcQhJyKjoGJitObmZeASEGsHEJAFFtAE01LV1DEyQQZHNLNgobewQfLKDqFKCg9yd3HwcHWYcomIQnbIWNnzD3ByDU9yzC4owcfCIyShp6RhYJ4UbqPkEPtsku3oAEQA8gA5DqDGyjCx1KaIWYGTzUdb7ULJIKZYI7RCJHxI7yJc6eZIGZKbQnXEa3MoPSrPGpvdi-L7NX7tZRKeQqEHgyHDaHjazDaa+NzpRLZXFORHJFzbaKOS7UMIuYJpILErIFIpU0r3CpPaqvOrM74tUS2WCtagQdg0EjMWioagARwAruhiABrBSer20p58swwiZwhCqnwJFyi7yBVyebEIU4OaieOXrEkklwkhyUkp3cqPKovWrva2MVBOtlBkZjWHCxDJVwLbwuYkOUmywkJhVJwLUAznDuzbOecLam56wt0o2lpnW91+33e6vGKF10MNmaraiynzozwdhy4keJtOJBLuQLpUlXrw+PPU-VF+nGss8V1uxh4ShQVdDYNBUmLcfGjJEOwMS4XB8PxTmSRNZnceYHACZIfESQdzlyB8dXzGkDWLBkTWtN1kAgHhpDZf4em5MEITXfkNyFUBphglwLxHHIVg1NNzkTS4U0PRJo2yMlVQCR8pwDQi33nD9SPIxpKNadl5E5VQeXogDaxDZi7BxAIFmSJC5QMQklgMFwzxWXds1xIIUn8DYgkkgtpNfOd6nksiKKkf91104CWMQYl5iCTZ9mMuDoJ8BDZRTdjPDHOV0hglzcKfadDQgdBYGhc1PkoB10AANwKtpAT8hRgQ4Do+h0fQGMA+tgpmIIXAMahVRJfcYKvdDEkTMkkS8NNB1A5xs38Vz8JfG1cvy5kcrysYKD-FTKo4arapUGRgQIBQABkOnULSAqAsNjibDxfCSjrcgcslE1VeJ0ncXFCQMWC-ESQodQoWgIDgKFMvc86Wv08Nkls-cNSPE9LKs3s3Ee9UNTJRIVmzGbnxnEtGS8xpwc3VqMRhg94ZgyzE3OAdEUuFJ2P8WVPBxrKZM801WVaYm9OmMloaQ0JNhJVx0Se3s8XmAwcnagWvs8NI2fc2cCeZCsqx5xjAsulKEglC4zLbMlIl7K8kXa8I0MPQ90V+jKpIIjy1YXD1vWXL1fl5oLIezNwzJQ04sllEJ5V2fw3ByNDAhcd60gD5WndV4iP3db9fy97WLq3EI3GjCUrpPLxTfDkIB2cVxMnSZIkpwyc3KT-GU8+BTfMz5qSchxXI3CjESTCEO0gQ9CkSyUk5VGmu8UTublsWrWO75+E1kFhx3t75ZLOEmmLxCLJiSvGvglcGeZzn8xyq+ChirK9udOz1rjgcSPvAcuZLK+sPl-iOGOzCY8NjxlPtlBaF8lqgIsGtO+AoIasSvCjdq4VhLsR6k4RMkVUzLH8IiGWWRjiswdg3WeEDL7n1gGAGQtBMDIEEI0aBTEfZwIwh4NehIzib3YkjXYOQkRNhJJccI+5jIuD+vkIAA */
   id: "primaryMachine",
   context: ({ input }) => ({
     logger: new Logger(input.logger, "primaryMachine"),

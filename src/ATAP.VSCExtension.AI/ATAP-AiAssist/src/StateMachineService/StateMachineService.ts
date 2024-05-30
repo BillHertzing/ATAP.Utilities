@@ -33,13 +33,9 @@ import {
 
 import { IQueryService } from "@QueryService/index";
 
-// common type
-
-export type LoggerDataT = { logger: ILogger; data: IData };
-
 import {
   IQuickPickEventPayload,
-  IQueryEventPayload,
+  IQueryMultipleEngineEventPayload,
 } from "@StateMachineService/index";
 
 import { primaryMachine } from "./primaryMachine";
@@ -48,8 +44,8 @@ import { testMachine } from "./testMachine";
 
 export interface IStateMachineService {
   quickPick(data: IQuickPickEventPayload): void;
-  sendQuery(data: IQueryEventPayload): void;
-  sendTest(data: IQueryEventPayload): void;
+  sendQuery(data: IQueryMultipleEngineEventPayload): void;
+  sendTest(data: IQueryMultipleEngineEventPayload): void;
   start(): void;
   disposeAsync(): void;
 }
@@ -165,12 +161,12 @@ export class StateMachineService implements IStateMachineService {
     this.primaryActor!.send({ type: "QUICKPICK_START", payload: payload });
   }
   @logMethod(LogLevel.Debug)
-  sendQuery(payload: IQueryEventPayload): void {
+  sendQuery(payload: IQueryMultipleEngineEventPayload): void {
     this.primaryActor!.send({ type: "QUERY_START", payload: payload });
   }
 
   @logMethod(LogLevel.Debug)
-  sendTest(payload: IQueryEventPayload): void {
+  sendTest(payload: IQueryMultipleEngineEventPayload): void {
     this.testActor.send({ type: "QSE_START" });
   }
 

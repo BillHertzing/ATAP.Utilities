@@ -28,20 +28,20 @@ import { DetailedError, HandleError } from "@ErrorClasses/index";
 import {
   IAllMachinesBaseContext,
   IActorRefAndSubscription,
-  IAllMachinesCommonResults,
+  IAllMachinesBaseOutput,
 } from "@StateMachineService/index";
 
 // **********************************************************************************************************************
-// context type, input type, output type, and event payload types for the querySingleEngineActorLogic
-export interface IQuerySingleEngineActorLogicInput {
+// context type, input type, output type, and event payload types for the querySingleEngineMachineActorLogic
+export interface IQuerySingleEngineMachineActorLogicInput {
   logger: ILogger;
   queryService: IQueryService;
   queryString?: string;
   queryEngineName: QueryEngineNamesEnum;
   cTSToken: vscode.CancellationToken;
 }
-export interface IQuerySingleEngineActorLogicOutput
-  extends IAllMachinesCommonResults {
+export interface IQuerySingleEngineMachineActorLogicOutput
+  extends IAllMachinesBaseOutput {
   queryEngineName: QueryEngineNamesEnum;
   response?: string;
 }
@@ -67,20 +67,23 @@ export interface IQuerySingleEngineMachineInput
 }
 export interface IQuerySingleEngineMachineContext
   extends IQuerySingleEngineMachineInput,
-    IAllMachinesCommonResults {
+    IAllMachinesBaseOutput {
   response?: string;
 }
 export interface IQuerySingleEngineMachineOutput
-  extends IQuerySingleEngineActorLogicOutput {}
+  extends IQuerySingleEngineMachineActorLogicOutput {}
 
 export type QuerySingleEngineMachineStartEventsT = { type: "QSE_START" };
 
 export type QuerySingleEngineMachineCompletionEventsT =
   | {
-      type: "xstate.done.actor.querySingleEngineActor";
-      output: IQuerySingleEngineActorLogicOutput;
+      type: "xstate.done.actor.querySingleEngineMachineActor";
+      output: IQuerySingleEngineMachineActorLogicOutput;
     }
-  | { type: "xstate.error.actor.querySingleEngineActor"; message: string }
+  | {
+      type: "xstate.error.actor.querySingleEngineMachineActor";
+      message: string;
+    }
   | { type: "xstate.done.actor.disposeActor" }
   | { type: "xstate.error.actor.disposeActor"; message: string };
 
@@ -111,18 +114,18 @@ export interface IQuerySingleEngineMachineNotifyCompleteActionParameters {
 }
 
 // **********************************************************************************************************************
-// actor logic definition for the querySingleEngineActorLogic
-export const querySingleEngineActorLogic = fromPromise<
-  IQuerySingleEngineActorLogicOutput,
-  IQuerySingleEngineActorLogicInput
->(async ({ input }: { input: IQuerySingleEngineActorLogicInput }) => {
+// actor logic definition for the querySingleEngineMachineActorLogic
+export const querySingleEngineMachineActorLogic = fromPromise<
+  IQuerySingleEngineMachineActorLogicOutput,
+  IQuerySingleEngineMachineActorLogicInput
+>(async ({ input }: { input: IQuerySingleEngineMachineActorLogicInput }) => {
   input.logger.log(
-    `querySingleEngineActorLogic (testmachine) called`,
+    `querySingleEngineMachineActorLogic (testmachine) called`,
     LogLevel.Debug,
   );
   // always test the cancellation token on entry to the function to see if it has already been cancelled
   if (input.cTSToken?.isCancellationRequested) {
-    return { isCancelled: true } as IQuerySingleEngineActorLogicOutput;
+    return { isCancelled: true } as IQuerySingleEngineMachineActorLogicOutput;
   }
   let _qs = input.queryString;
   let _queryResponse: { result?: string; isCancelled: boolean };
@@ -140,27 +143,27 @@ export const querySingleEngineActorLogic = fromPromise<
     HandleError(
       e,
       "queryXXX",
-      "querySingleEngineActorLogic",
+      "querySingleEngineMachineActorLogic",
       "failed calling queryService.sendQueryAsync",
     );
   }
   // always test the cancellation token after returning from an await to see if the function being awaited was cancelled
   if (input.cTSToken?.isCancellationRequested) {
     input.logger.log(
-      `querySingleEngineActorLogic leaving after await queryService.sendQueryAsync with cancelled = true`,
+      `querySingleEngineMachineActorLogic leaving after await queryService.sendQueryAsync with cancelled = true`,
       LogLevel.Debug,
     );
-    return { isCancelled: true } as IQuerySingleEngineActorLogicOutput;
+    return { isCancelled: true } as IQuerySingleEngineMachineActorLogicOutput;
   }
   input.logger.log(
-    `querySingleEngineActorLogic leaving with response = ${_queryResponse.result}, cancelled = false`,
+    `querySingleEngineMachineActorLogic leaving with response = ${_queryResponse.result}, cancelled = false`,
     LogLevel.Debug,
   );
   return {
     queryEngineName: input.queryEngineName,
     queryResponse: _queryResponse.result,
     isCancelled: false,
-  } as IQuerySingleEngineActorLogicOutput;
+  } as IQuerySingleEngineMachineActorLogicOutput;
 });
 
 // **********************************************************************************************************************
@@ -173,11 +176,11 @@ const nameOfMachine2 = setup({
     output: IQuerySingleEngineMachineOutput;
     events: QuerySingleEngineMachineAllEventsT;
     children: {
-      querySingleEngineActor: "querySingleEngineActor";
+      querySingleEngineMachineActor: "querySingleEngineMachineActor";
     };
   },
   actors: {
-    querySingleEngineActor: querySingleEngineActorLogic,
+    querySingleEngineMachineActor: querySingleEngineMachineActorLogic,
   },
   actions: {
     debugMachineContext: ({ context, event }) => {
@@ -186,24 +189,29 @@ const nameOfMachine2 = setup({
         LogLevel.Debug,
       );
     },
-    assignQuerySingleEngineActorDoneOutputToQueryMachineContext: assign({
+    assignQuerySingleEngineMachineActorDoneOutputToQueryMachineContext: assign({
       response: ({ context, spawn, event, self }) => {
-        assertEvent(event, "xstate.done.actor.querySingleEngineActor");
+        assertEvent(event, "xstate.done.actor.querySingleEngineMachineActor");
         return event.output.response;
       },
       isCancelled: ({ context, spawn, event, self }) => {
-        assertEvent(event, "xstate.done.actor.querySingleEngineActor");
+        assertEvent(event, "xstate.done.actor.querySingleEngineMachineActor");
         return event.output.isCancelled;
       },
     }),
-    assignQuerySingleEngineActorErrorOutputToQueryMachineContext: assign({
-      response: undefined,
-      isCancelled: false,
-      errorMessage: ({ context, event }) => {
-        assertEvent(event, "xstate.error.actor.querySingleEngineActor");
-        return event.message;
+    assignQuerySingleEngineMachineActorErrorOutputToQueryMachineContext: assign(
+      {
+        response: undefined,
+        isCancelled: false,
+        errorMessage: ({ context, event }) => {
+          assertEvent(
+            event,
+            "xstate.error.actor.querySingleEngineMachineActor",
+          );
+          return event.message;
+        },
       },
-    }),
+    ),
     disposeCompleteStateEntryAction: ({ context, event }) => {
       context.logger.log(
         `disposeCompleteStateEntryAction, event type is ${event.type}`,
@@ -234,7 +242,7 @@ const nameOfMachine2 = setup({
             }
           | { type: "DISPOSE_COMPLETE" };
         switch (params.eventCausingTheTransitionIntoOuterDoneState.type) {
-          case "xstate.done.actor.querySingleEngineActor":
+          case "xstate.done.actor.querySingleEngineMachineActor":
             _eventToSend = {
               type: "QUERY.SINGLE_ENGINE_MACHINE_DONE",
               payload: {
@@ -245,7 +253,7 @@ const nameOfMachine2 = setup({
           case "xstate.done.actor.disposeActor":
             _eventToSend = { type: "DISPOSE_COMPLETE" };
             break;
-          // ToDo: add case legs for the two error events that come from the querySingleEngineActor and disposeActor
+          // ToDo: add case legs for the two error events that come from the querySingleEngineMachineActor and disposeActor
           default:
             throw new Error(
               `notifyCompleteAction received an unexpected event type: ${params.eventCausingTheTransitionIntoOuterDoneState.type}`,
@@ -292,10 +300,10 @@ const nameOfMachine2 = setup({
         "debugMachineContext",
       ],
       invoke: {
-        id: "querySingleEngineActor",
-        src: "querySingleEngineActor",
+        id: "querySingleEngineMachineActor",
+        src: "querySingleEngineMachineActor",
         input: ({ context }) => ({
-          logger: new Logger(context.logger, "querySingleEngineActor"),
+          logger: new Logger(context.logger, "querySingleEngineMachineActor"),
           // logger: context.logger,
           queryService: context.queryService,
           queryString: context.queryString,
@@ -306,13 +314,13 @@ const nameOfMachine2 = setup({
           target: "doneState",
           // set the context for response and isCancelled
           actions:
-            "assignQuerySingleEngineActorDoneOutputToQueryMachineContext",
+            "assignQuerySingleEngineMachineActorDoneOutputToQueryMachineContext",
         },
         onError: {
           // set the context for errorMessage and isCancelled
           target: "errorState",
           actions:
-            "assignQuerySingleEngineActorErrorOutputToQueryMachineContext",
+            "assignQuerySingleEngineMachineActorErrorOutputToQueryMachineContext",
         },
       },
     },

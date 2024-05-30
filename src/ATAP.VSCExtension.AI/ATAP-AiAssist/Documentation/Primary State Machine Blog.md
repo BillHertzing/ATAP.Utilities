@@ -103,12 +103,373 @@ each hild that implements the disposing state can also return the event <thename
 
 ### Conclusion
 
-Using state machines can handle the ordering of action sequences in response to stimuli (events) from outside the state machine. ATAP uses an opinionated semantics (verbose with long names) for defining the state machine. Each portion of a machine is assigned its own interface, and implementation of actual code is always delegated to actions. Most code execution happens in an entry action when a state is enetered.
+Using state machines can handle the ordering of action sequences in response to stimuli (events) from outside the state machine. ATAP uses an opinionated semantics (verbose with long names) for defining the state machine. Each portion of a machine is assigned its own interface, and implementation of actual code is always delegated to actions. Most code execution happens in an entry action when a state is entered.
 
----
+///// Below this is another chat-gpt gernerated sdpoucmenmt that is internded tpo discuss the archictecture of child actors. However the code examples are contrived and don't represent the ATAP VSC extension coding.
 
-Feel free to review and let me know if there are any additional details you'd like to include or any adjustments needed!
+Child Machine Actors Design
+May 29, 2024
+This conversation may reflect the link creator’s personalized data, which isn’t shared and can meaningfully change how the model responds.
+The primary machine always has input events. Child machines do not necessarily have input events. Any child machine who's sole purpose is to invoke an actor which runs in asynchronous function will simply return a done event
+ChatGPT
+Given your requirements, you might want to structure your state machines in such a way that the primary machine handles input events, while child machines handle asynchronous tasks and return done events. Here’s a way to conceptualize this in code using ex-state:
 
-```
+Primary Machine
+The primary machine handles input events and spawns child machines when needed.
 
-```
+javascript
+Copy code
+import { createMachine, interpret, assign } from 'xstate';
+
+const primaryMachine = createMachine({
+id: 'primary',
+initial: 'idle',
+context: {
+So the primary machine must include all child machine output events,
+ChatGPT
+Yes, the primary machine needs to account for all potential output events from its child machines. Here's an example of how you might set this up:
+
+Primary Machine
+The primary machine will handle input events and manage child machines that perform asynchronous tasks.
+
+javascript
+Copy code
+import { createMachine, interpret, assign } from 'xstate';
+
+// Define a child machine
+const childMachine = createMachine({
+id: 'child',
+
+Need a placeholder for events that come from a child machine back to the parent which represent a partial response or a progress report
+ChatGPT
+To handle partial responses or progress reports from a child machine, you can define custom events in the child machine that the primary machine can listen for. Here’s an example setup:
+
+Child Machine
+The child machine will send partial response events and a done event.
+
+javascript
+Copy code
+import { createMachine, sendParent } from 'xstate';
+
+const childMachine = createMachine({
+id: 'child',
+initial: 'running',
+states: {
+
+In the future when the asynchronous functions support chunking and the return of partial responses to calling function then there will be additional events for those features
+ChatGPT
+Understood. To accommodate future asynchronous functions that support chunking and partial responses, you can set up the primary and child machines to handle these events flexibly. Here's an example implementation:
+
+Child Machine
+This child machine sends partial response events and a done event.
+
+Copy code
+For a simple child actor which sorry for a simple child machine which has one child actor which invokes a asynchronous function that's defined in the child actor logic the events that are part of the machine include the actor done and actor error events The actor done event payload always includes a flag is canceled as well as whatever the results are but if actor done is raised then the fields of the actor sorry if actor error is raised the fields of act are done are undefined and should not be counted on
+ChatGPT
+Thank you for the clarification. Here’s a more concrete example considering the child machine with one child actor that handles asynchronous functions and the events (`done
+
+In order to support the disposed hierarchy within every child machine the actor state that has invoked the astrologic will transition to an internal done state which is appropriate just for that from there it will send it will transition to the outer done state both the operations state and the disposed state feed into the outer done state which is the final state of the machine child machine
+ChatGPT
+Given your requirements, let's structure a simple child machine with an actor invoking asynchronous logic. This child machine will handle the state transitions, including an internal done state for the actor's completion and an outer done state for the entire machine.
+
+Child Machine
+This child machine handles invoking an asynchronous function, managing transitions, and handling actor done and error events.
+
+javascript
+Copy code
+import { createMachine, sendParent, assign } from 'xstate';
+
+const childMachine = createMachine({
+id: 'child',
+initial: 'invokingActor',
+context: {
+isCanceled: false,
+result: null,
+error: null
+},
+states: {
+invokingActor:
+Some child machines may invoke two states if so there events must include the dot done and dot error events from both of the child states
+ChatGPT
+To handle multiple states invoking actors within a child machine, you can structure the child machine to manage the state transitions and events (done and error) from both child states. Here's how you can set this up:
+
+Child Machine with Multiple Actors
+This child machine handles invoking two asynchronous functions, managing transitions, and handling actor done and
+
+That's for the case where both childs invoke after logic both child's dates are actors which invoke actor logic
+ChatGPT
+Got it. Here's how you can design a child machine where both states invoke actor logic, handling their respective done and error events, and transitioning to an outer done state.
+
+Child Machine with Two Actor States
+This child machine will manage two actor states, handle their done and error events, and transition to an outer done state.
+
+javascript
+Copy code
+import { createMachine, sendParent, assign } from 'xstate';
+
+const childMachine = createMachine({
+id: 'child',
+initial: 'invokeFirstActor',
+context: {
+isCanceled: false,
+result1: null,
+result2: null,
+error1: null,
+error2: null
+},
+states: {
+invokeFirstActor: {
+invoke: {
+id: 'firstActor',
+src: (context, event) => (callback, onReceive) => {
+// Asynchronous function logic for the first actor
+someAsyncFunction1()
+.then(result => callback({ type: 'done.invoke.firstActor', result, isCanceled: false }))
+.catch(error => callback({ type: 'error.platform.firstActor', error }));
+},
+onDone: {
+target: 'firstActorDone',
+actions: assign({
+result1: (context, event) => event.data.result,
+isCanceled: (context, event) => event.data.isCanceled
+})
+},
+onError: {
+target: 'firstActorDone',
+actions: assign({
+error1: (context, event) => event.data.error
+})
+}
+}
+},
+firstActorDone: {
+always: [
+{ target: 'invokeSecondActor', cond: (context) => !context.error1 },
+{ target: 'outerDone' }
+]
+},
+invokeSecondActor: {
+invoke: {
+id: 'secondActor',
+src: (context, event) => (callback, onReceive) => {
+// Asynchronous function logic for the second actor
+someAsyncFunction2()
+.then(result => callback({ type: 'done.invoke.secondActor', result, isCanceled: false }))
+.catch(error => callback({ type: 'error.platform.secondActor', error }));
+},
+onDone: {
+target: 'secondActorDone',
+actions: assign({
+result2: (context, event) => event.data.result,
+isCanceled: (context, event) => event.data.isCanceled
+})
+},
+onError: {
+target: 'secondActorDone',
+actions: assign({
+error2: (context, event) => event.data.error
+})
+}
+}
+},
+secondActorDone: {
+always: 'outerDone'
+},
+outerDone: {
+type: 'final',
+entry: sendParent((context) => ({
+type: 'CHILD_DONE',
+isCanceled: context.isCanceled,
+result1: context.result1,
+result2: context.result2,
+error1: context.error1,
+error2: context.error2
+}))
+}
+}
+});
+
+// Example asynchronous functions
+function someAsyncFunction1() {
+return new Promise((resolve, reject) => {
+// Simulate async task
+setTimeout(() => resolve('result from first actor'), 1000);
+});
+}
+
+function someAsyncFunction2() {
+return new Promise((resolve, reject) => {
+// Simulate async task
+setTimeout(() => resolve('result from second actor'), 1000);
+});
+}
+Primary Machine
+The primary machine listens for CHILD_DONE events from the child machine.
+
+javascript
+Copy code
+const primaryMachine = createMachine({
+id: 'primary',
+initial: 'idle',
+context: {
+childResult1: null,
+childResult2: null,
+childError1: null,
+childError2: null,
+isCanceled: false
+},
+states: {
+idle: {
+on: {
+START_CHILD: 'invokeChild'
+}
+},
+invokeChild: {
+invoke: {
+id: 'child',
+src: childMachine,
+onDone: {
+target: 'completed',
+actions: assign((context, event) => ({
+childResult1: event.data.result1,
+childResult2: event.data.result2,
+childError1: event.data.error1,
+childError2: event.data.error2,
+isCanceled: event.data.isCanceled
+}))
+}
+}
+},
+completed: {
+type: 'final'
+}
+}
+});
+
+// Interpret and start the primary machine
+const primaryService = interpret(primaryMachine).start();
+
+// Simulate starting the child machine
+primaryService.send('START_CHILD');
+This setup allows the child machine to handle two asynchronous tasks, manage their done and error events, and transition to an outer done state. The primary machine listens for the CHILD_DONE event and updates its context accordingly.
+
+When a parent receives a child's done event at first checks the output error and copies that value to its own context using an assign. If error is false then it copies the result from the events sorry not the events but from the child machines output
+ChatGPT
+To implement the described logic where the parent machine handles the child's done event by first checking the output error and then copying the appropriate values to its
+
+The done events on a non-air condition includes is canceled which is a boolean that is in all child event output child machine output that is should be checked first and if true the machine should transition to its outer done space by the way
+ChatGPT
+Given your detailed requirements, here's a more comprehensive implementation of the primary machine and the child machine. The primary machine will handle CHILD_DONE events, checking for the isCanceled flag and transitioning accordingly. If isCanceled is true, it transitions to the outerDone state; otherwise, it checks for errors and updates its context.
+
+Child Machine with Two Actor States
+This child machine handles two asynchronous functions, manages transitions, and sends a CHILD_DONE event to the parent.
+
+javascript
+Copy code
+import { createMachine, sendParent, assign } from 'xstate';
+
+const childMachine = createMachine({
+id: 'child',
+initial: 'invokeFirstActor',
+context: {
+isCanceled: false,
+result1: null,
+result2: null,
+error1: null,
+error2: null
+},
+states: {
+invokeFirstActor: {
+invoke: {
+id: 'firstActor',
+src: (context, event) => (callback, onReceive) => {
+// Asynchronous function logic for the first actor
+someAsyncFunction1()
+.then(result => callback({ type: 'done.invoke.firstActor', data: { result, isCanceled: false } }))
+.catch(error => callback({ type: 'error.platform.firstActor', data: { error } }));
+},
+onDone: {
+target: 'firstActorDone',
+actions: assign({
+result1: (context, event) => event.data.result,
+isCanceled: (context, event) => event.data.isCanceled
+})
+},
+onError: {
+target: 'firstActorDone',
+actions: assign({
+error1: (context, event) => event.data.error
+})
+}
+}
+},
+firstActorDone: {
+always: [
+{ target: 'invokeSecondActor', cond: (context) => !context.error1 && !context.isCanceled },
+{ target: 'outerDone' }
+]
+},
+invokeSecondActor: {
+invoke: {
+id: 'secondActor',
+src: (context, event) => (callback, onReceive) => {
+// Asynchronous function logic for the second actor
+someAsyncFunction2()
+.then(result => callback({ type: 'done.invoke.secondActor', data: { result, isCanceled: false } }))
+.catch(error => callback({ type: 'error.platform.secondActor', data: { error } }));
+},
+onDone: {
+target: 'secondActorDone',
+actions: assign({
+result2: (context, event) => event.data.result,
+isCanceled: (context, event) => event.data.isCanceled
+})
+},
+onError: {
+target: 'secondActorDone',
+actions: assign({
+error2: (context, event) => event.data.error
+})
+}
+}
+},
+secondActorDone: {
+always: 'outerDone'
+},
+outerDone: {
+type: 'final',
+entry: sendParent((context) => ({
+type: 'CHILD_DONE',
+isCanceled: context.isCanceled,
+result1: context.result1,
+result2: context.result2,
+error1: context.error1,
+error2: context.error2
+}))
+}
+}
+});
+
+// Example asynchronous functions
+function someAsyncFunction1() {
+return new Promise((resolve, reject) => {
+// Simulate async task
+setTimeout(() => resolve('result from first actor'), 1000);
+});
+}
+
+function someAsyncFunction2() {
+return new Promise((resolve, reject) => {
+// Simulate async task
+setTimeout(() => resolve('result from second actor'),
+The child machine like query multiple engines has an initial state which converts the fragment collection into a token string that initial state action after logic calls a basis asynchronous function with dispose and with canceled not disposed
+ChatGPT
+To include an initial state that converts the fragment collection into a token string and calls a base asynchronous function, let's structure the child machine accordingly. This base function will handle the logic before transitioning to the states that invoke the actors.
+
+Modify the tone of the block so it goes through the progression from generics and abstract classes and interfaces to concrete examples of the classes to use cases to practical examples of the classes and interfaces
+ChatGPT
+Sure, I will modify the explanation to move from abstract concepts to concrete examples.
+
+Child Machine with Initial State, Multiple Actors, and Handling Cancelation
+Generic and Abstract Structure
+To design a robust state machine, we start with abstract concepts like states, transitions, and events. The child machine will have multiple states, each representing a phase in its operation. It will also include mechanisms to handle asynchronous logic, cancel

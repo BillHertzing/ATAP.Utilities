@@ -6,17 +6,41 @@ import { logConstructor, logMethod, logAsyncFunction } from "@Decorators/index";
 import { IData } from "@DataService/index";
 
 import {
-  QueryAgentCommandMenuItemEnum,
   ModeMenuItemEnum,
+  QueryAgentCommandMenuItemEnum,
+  QueryFragmentEnum,
   QuickPickEnumeration,
-  VCSCommandMenuItemEnum,
+  QueryEngineNamesEnum,
+  QueryEngineFlagsEnum,
 } from "@BaseEnumerations/index";
 
-import { LoggerDataT } from "@StateMachineService/index";
+import {
+  IChildMachineBaseInput,
+  IChildMachineBaseOutput,
+  IChildMachineBaseContext,
+  IActorRefAndSubscription,
+  IAllMachineNotifyCompleteActionParameters,
+} from "./allMachinesCommonTypes";
 
-export type QuickPickMachineComponentOfPrimaryMachineContextT = {
-  quickPickMachineActorRef?: ActorRef<any, any>;
-};
+export interface IQuickPickMachineInput extends IChildMachineBaseContext {
+  cTSToken: vscode.CancellationToken;
+  quickPickKindOfEnumeration: QuickPickEnumeration;
+  pickValue: QuickPickValueT;
+  pickItems: vscode.QuickPickItem[];
+  prompt: string;
+}
+export interface IQuickPickMachineOutput extends IChildMachineBaseOutput {
+  pickValue: QuickPickValueT;
+  isLostFocus: boolean;
+}
+export interface IQuickPickMachineContext
+  extends IQuickPickMachineInput,
+    IQuickPickMachineOutput {}
+export interface IQuickPickActorLogicInput
+  extends Omit<
+    IQuickPickMachineContext,
+    "parent" | "isCancelled" | "isLostFocus"
+  > {}
 
 export type QuickPickMachineSpecificContextT = {
   parent: ActorRef<any, any>;
@@ -36,19 +60,66 @@ export type QuickPickMachineContextT = {
   quickPickCancelled?: boolean;
 };
 
-//LoggerDataT & QuickPickMachineSpecificContextT;
-
 export type QuickPickEventPayloadT = {
   quickPickKindOfEnumeration: QuickPickEnumeration;
   quickPickCTSToken: vscode.CancellationToken;
 };
-
-export type QuickPickActorLogicInputT = LoggerDataT & QuickPickEventPayloadT;
 
 export type QuickPickActorLogicOutputT = {
   quickPickKindOfEnumeration: QuickPickEnumeration;
   pickLabel: string;
 };
 
-// the QuickPickMachine does not return any output
-export type QuickPickMachineOutputT = {};
+export interface IQuickPickTypeMapping {
+  [QuickPickEnumeration.ModeMenuItemEnum]: ModeMenuItemEnum;
+  [QuickPickEnumeration.QueryEnginesMenuItemEnum]: QueryEngineFlagsEnum;
+  [QuickPickEnumeration.QueryAgentCommandMenuItemEnum]: QueryAgentCommandMenuItemEnum;
+  //[QuickPickEnumeration.VCSCommandMenuItemEnum]: string;
+}
+export type QuickPickMappingKeysT = keyof IQuickPickTypeMapping;
+export type QuickPickValueT =
+  | [QuickPickEnumeration.ModeMenuItemEnum, ModeMenuItemEnum]
+  | [QuickPickEnumeration.QueryEnginesMenuItemEnum, QueryEngineFlagsEnum]
+  | [
+      QuickPickEnumeration.QueryAgentCommandMenuItemEnum,
+      QueryAgentCommandMenuItemEnum,
+    ];
+
+// **********************************************************************************************************************
+// types and interfaces for the quickPickMachine
+export interface IQuickPickMachineRefAndSubscription
+  extends IActorRefAndSubscription {
+  // replace the any with the specific type of the actorRef
+}
+// what the quickPickActor contributes to the primaryMachine's context
+export interface IQuickPickMachineComponentOfPrimaryMachineContext {
+  quickPickMachineActorRefAndSubscription?: IQuickPickMachineRefAndSubscription;
+  quickPickMachineOutput?: IQuickPickMachineOutput;
+}
+export interface IQuickPickEventPayload {
+  quickPickKindOfEnumeration: QuickPickEnumeration;
+  cTSToken: vscode.CancellationToken;
+}
+export interface IQuickPickActorLogicOutput {
+  pickValue: QuickPickValueT;
+  isCancelled: boolean;
+  isLostFocus: boolean;
+}
+export interface IQuickPickMachineNotifyCompleteActionParameters
+  extends IAllMachineNotifyCompleteActionParameters {
+  sendToTargetActorRef: ActorRef<any, any>; // Make this the actorRef for a primary machine
+  eventCausingTheTransitionIntoOuterDoneState: QuickPickMachineCompletionEventsUnionT;
+}
+export type QuickPickMachineCompletionEventsUnionT =
+  | {
+      type: "xstate.done.actor.quickPickActor";
+      output: IQuickPickActorLogicOutput;
+    }
+  | { type: "xstate.error.actor.quickPickActor"; message: string }
+  | { type: "xstate.done.actor.quickPickDisposeActor" }
+  | { type: "xstate.error.actor.quickPickDisposeActor"; message: string };
+
+export interface IAssignQuickPickActorDoneOutputToQuickPickMachineContextActionParameters
+  extends IQuickPickMachineOutput {
+  errorMessage?: string;
+}

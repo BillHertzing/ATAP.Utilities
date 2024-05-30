@@ -22,8 +22,7 @@ import { IQueryService } from "@QueryService/index";
 import {
   IStateMachineService,
   IQuickPickEventPayload,
-  createQuickPickValue,
-  IQueryEventPayload,
+  IQueryMultipleEngineEventPayload,
 } from "@StateMachineService/index";
 
 import { startCommand } from "./startCommand";
@@ -286,7 +285,8 @@ export class CommandsService {
           );
           try {
             this.stateMachineService.quickPick({
-              kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
+              quickPickKindOfEnumeration:
+                QuickPickEnumeration.QueryEnginesMenuItemEnum,
               cTSToken: cancellationTokenSource.token,
             });
           } catch (e) {
@@ -316,7 +316,8 @@ export class CommandsService {
           );
           try {
             this.stateMachineService.quickPick({
-              kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
+              quickPickKindOfEnumeration:
+                QuickPickEnumeration.QueryEnginesMenuItemEnum,
               cTSToken: cancellationTokenSource.token,
             });
           } catch (e) {
@@ -347,7 +348,8 @@ export class CommandsService {
           );
           try {
             this.stateMachineService.quickPick({
-              kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
+              quickPickKindOfEnumeration:
+                QuickPickEnumeration.QueryEnginesMenuItemEnum,
               cTSToken: cancellationTokenSource.token,
             });
           } catch (e) {
@@ -382,7 +384,7 @@ export class CommandsService {
               queryFragmentCollection:
                 this.data.fileManager.queryFragmentCollection,
               cTSToken: cancellationTokenSource.token,
-            } as IQueryEventPayload);
+            } as IQueryMultipleEngineEventPayload);
             // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);
           } catch (e) {
             // ToDo: // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
@@ -418,7 +420,7 @@ export class CommandsService {
               queryFragmentCollection:
                 this.data.fileManager.queryFragmentCollection,
               cTSToken: cancellationTokenSource.token,
-            } as IQueryEventPayload);
+            } as IQueryMultipleEngineEventPayload);
             // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);
           } catch (e) {
             // ToDo: // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them

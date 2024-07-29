@@ -34,8 +34,8 @@ The interface defining the StateMachineService is very simple.
 
 ```Typescript
 export interface IStateMachineService {
-  quickPick(data: QuickPickEventPayloadT): void;
-  sendQuery(data: QueryEventPayloadT): void;
+  quickPick(data: IQuickPickEventPayload): void;
+  sendQuery(data: IQueryEventPayload): void;
   start(): void;
   disposeAsync(): void;
 }

@@ -24,25 +24,26 @@ import {
 
 import {
   QuickPickValueT,
-  IQuickPickActorLogicInput,
-  IQuickPickActorLogicOutput,
-} from "./quickPickMachineTypes";
+  IQuickPickActorInput,
+  IQuickPickActorOutput,
+} from "./quickPickTypes";
 
 import { createQuickPickValue } from "./quickPickMachine";
 
-// **********************************************************************************************************************
+// *********************************************************************************************************************
 // Actor Logic for the quickPickMachine
 export const quickPickActorLogic = fromPromise(
-  async ({ input }: { input: IQuickPickActorLogicInput }) => {
-    input.logger.log(
-      `quickPickActorLogic called pickValue.quickPickKindOfEnumeration = ${input.pickValue[0]}, PickItems= ${input.pickItems}, prompt= ${input.prompt}`,
+  async ({ input }: { input: IQuickPickActorInput }) => {
+    const logger = new Logger(input.logger, "quickPickActorLogic");
+    logger.log(
+      `Starting. pickValue.kindOfEnumeration = ${input.pickValue[0]}, PickItems= ${input.pickItems}, prompt= ${input.prompt}`,
       LogLevel.Debug,
     );
     let _pick: vscode.QuickPickItem | undefined;
     let _isCancelled: boolean = false;
     let _isLostFocus: boolean = false;
     let _pickValue: QuickPickValueT = input.pickValue;
-    const quickPickKindOfEnumeration = input.pickValue[0];
+    const kindOfEnumeration = input.pickValue[0];
     _pick = await vscode.window.showQuickPick(
       input.pickItems,
       {
@@ -52,21 +53,21 @@ export const quickPickActorLogic = fromPromise(
     );
     if (input.cTSToken.isCancellationRequested) {
       _isCancelled = true;
-      _pickValue = createQuickPickValue(quickPickKindOfEnumeration, undefined);
+      _pickValue = createQuickPickValue(kindOfEnumeration, undefined);
     } else if (_pick === undefined) {
       _isLostFocus = true;
-      _pickValue = createQuickPickValue(quickPickKindOfEnumeration, undefined);
+      _pickValue = createQuickPickValue(kindOfEnumeration, undefined);
     } else {
-      switch (quickPickKindOfEnumeration) {
+      switch (kindOfEnumeration) {
         case QuickPickEnumeration.ModeMenuItemEnum:
           _pickValue = createQuickPickValue(
-            quickPickKindOfEnumeration,
+            kindOfEnumeration,
             _pick.label as ModeMenuItemEnum,
           );
           break;
         case QuickPickEnumeration.QueryAgentCommandMenuItemEnum:
           _pickValue = createQuickPickValue(
-            quickPickKindOfEnumeration,
+            kindOfEnumeration,
             _pick.label as QueryAgentCommandMenuItemEnum,
           );
           break;
@@ -87,23 +88,23 @@ export const quickPickActorLogic = fromPromise(
               _newQueryEngines ^= QueryEngineFlagsEnum.Bard;
               break;
             default:
-              throw new Error(
-                `quickPickActorLogic received an unexpected QueryEngineName: ${_pick.label}`,
-              );
+              const _errorMessage = `Received an unexpected QueryEngineName: ${_pick.label}`;
+              logger.log(_errorMessage, LogLevel.Error);
+              throw new Error(`${logger.scope} ` + _errorMessage);
           }
           _pickValue = createQuickPickValue(
-            quickPickKindOfEnumeration,
+            kindOfEnumeration,
             _newQueryEngines as QueryEngineFlagsEnum,
           );
           break;
         default:
-          throw new Error(
-            `quickPickActorLogic received an unexpected quickPickKindOfEnumeration: ${quickPickKindOfEnumeration}`,
-          );
+          const _errorMessage = `Received an unexpected kindOfEnumeration: ${kindOfEnumeration}`;
+          logger.log(_errorMessage, LogLevel.Error);
+          throw new Error(`${logger.scope} ` + _errorMessage);
       }
     }
-    input.logger.log(
-      `quickPickActorLogic returning pickValue ${_pickValue}, isCancelled= ${_isCancelled}, isLostFocus= ${_isLostFocus}`,
+    logger.log(
+      `Returning pickValue ${_pickValue}, isCancelled= ${_isCancelled}, isLostFocus= ${_isLostFocus}`,
       LogLevel.Debug,
     );
 
@@ -111,7 +112,7 @@ export const quickPickActorLogic = fromPromise(
       pickValue: _pickValue,
       isCancelled: _isCancelled,
       isLostFocus: _isLostFocus,
-    } as IQuickPickActorLogicOutput;
+    } as IQuickPickActorOutput;
   },
 );
 

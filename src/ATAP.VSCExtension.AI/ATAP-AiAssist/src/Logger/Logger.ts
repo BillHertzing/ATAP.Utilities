@@ -90,7 +90,7 @@ export class Logger implements ILogger {
   private static extensionName: string;
   private static pinoLogger: pino.Logger;
   private static staticOutputChannel: vscode.OutputChannel;
-  private static staticOutputChannelStream = {
+  public static staticOutputChannelStream = {
     write: (message) => {
       Logger.staticOutputChannel.append(message);
     },
@@ -207,10 +207,10 @@ export class Logger implements ILogger {
 
     // Logger.pinoLogger.info("test message from pinoLogger");
     // the base scope for the logger is the extension name
-    return new Logger(null, extensionName);
+    return new Logger(void 0, extensionName);
   }
 
-  constructor(logger: ILogger | null, scope: string) {
+  constructor(logger: ILogger | void, scope: string) {
     if (logger) {
       this.scope = logger.scope + "." + scope;
     } else {

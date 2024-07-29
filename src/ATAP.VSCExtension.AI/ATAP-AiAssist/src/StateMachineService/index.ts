@@ -3,37 +3,28 @@ export {
   StateMachineService,
 } from "./StateMachineService";
 
-export {
-  IAllMachinesBaseContext,
-  IActorRefAndSubscription,
-  IAllMachinesBaseOutput,
-  IAllMachineNotifyCompleteActionParameters,
-} from "./allMachinesCommonTypes";
-
-export {
-  IQuickPickEventPayload,
-  IQuickPickMachineOutput,
-} from "./quickPickMachineTypes";
+export { IQuickPickMachineOutput } from "./quickPickTypes";
 
 export { createQuickPickValue } from "./quickPickMachine";
 
-export {
-  IQueryMultipleEngineMachineOutput,
-  IQueryMultipleEngineEventPayload,
-} from "./queryMultipleEngineMachineTypes";
+export { IQueryMultipleEngineMachineOutput } from "./queryMultipleEngineTypes";
 
 export { queryMultipleEngineMachine } from "./queryMultipleEngineMachine";
 
 export {
+  IQuerySingleEngineActorInput,
+  IQuerySingleEngineActorOutput,
   IQuerySingleEngineMachineInput,
-  IQuerySingleEngineMachineContext,
   IQuerySingleEngineMachineOutput,
-  IQuerySingleEngineMachineActorLogicInput,
-  IQuerySingleEngineMachineActorLogicOutput,
+  IQuerySingleEngineMachineContext,
   IQuerySingleEngineMachineDoneEventPayload,
-} from "./querySingleEngineMachineTypes";
+} from "./querySingleEngineTypes";
 export { querySingleEngineMachine } from "./querySingleEngineMachine";
 
-export { inspector } from "./inspector";
-
+export {
+  IQuickPickEventPayload,
+  IQueryMultipleEngineEventPayload,
+} from "./primaryMachineTypes";
 export { primaryMachine } from "./primaryMachine";
+
+export { inspector } from "./inspector";

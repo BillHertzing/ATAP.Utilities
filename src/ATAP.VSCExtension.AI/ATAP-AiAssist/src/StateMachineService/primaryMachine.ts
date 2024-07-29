@@ -13,6 +13,8 @@ import {
   setup,
 } from "xstate";
 
+import { produce } from "immer";
+
 import {
   QueryAgentCommandMenuItemEnum,
   ModeMenuItemEnum,
@@ -20,27 +22,58 @@ import {
   VCSCommandMenuItemEnum,
 } from "@BaseEnumerations/index";
 
+// *********************************************************************************************************************
+// quickPickMachine types used in the primaryMachine
 import {
   QuickPickValueT,
-  IQuickPickMachineRefAndSubscription,
-  IQuickPickEventPayload,
-} from "./quickPickMachineTypes";
+  IQuickPickMachineInput,
+  IQuickPickMachineOutput,
+  IQuickPickMachineComponentOfParentMachineContext,
+  IAssignQuickPickMachineOutputToParentContextActionParameters,
+} from "./quickPickTypes";
+import { quickPickMachine, createQuickPickValue } from "./quickPickMachine";
 
+// *********************************************************************************************************************
+// gatheringMachine types used in the primaryMachine
+import {
+  IGatheringMachineInput,
+  IGatheringMachineOutput,
+  IGatheringMachineComponentOfParentMachineContext,
+} from "./gatheringTypes";
+//import { gatheringMachine } from "./gatheringMachine";
+
+// *********************************************************************************************************************
+// querySingleEngineMachine types used in the primaryMachine
+import {
+  IQuerySingleEngineMachineInput,
+  IQuerySingleEngineMachineOutput,
+  IQuerySingleEngineMachineComponentOfParentMachineContext,
+} from "./querySingleEngineTypes";
+import { querySingleEngineMachine } from "./querySingleEngineMachine";
+// *********************************************************************************************************************
+// queryMultipleEngineMachine types used in the primaryMachine
+import {
+  IQueryMultipleEngineMachineInput,
+  IQueryMultipleEngineMachineOutput,
+  IQueryMultipleEngineMachineComponentOfParentMachineContext,
+} from "./queryMultipleEngineTypes";
+import { queryMultipleEngineMachine } from "./queryMultipleEngineMachine";
+
+// *********************************************************************************************************************
+// AllMachine Event types used in the primaryMachine
+import {
+  AllMachineDisposeEventsUnionT,
+  AllMachineActorDisposeCompletionEventsUnionT,
+} from "./allMachinesCommonTypes";
+
+// *********************************************************************************************************************
+// primaryMachine types used in the primaryMachine
 import {
   IPrimaryMachineContext,
   IPrimaryMachineInput,
-} from "./primaryMachineTypes";
-
-// **********************************************************************************************************************
-// context type, input type, output type, and event{ type: 'QUERY_DONE' } | { type: 'DISPOSE_COMPLETE' } payload types for the QueryMultipleEngineMachine
-/*  Values imported from the queryMultipleEngineMachine*/
-import {
-  IQueryMultipleEngineMachineOutput,
+  IQuickPickEventPayload,
   IQueryMultipleEngineEventPayload,
-} from "./queryMultipleEngineMachineTypes";
-import { queryMultipleEngineMachine } from "./queryMultipleEngineMachine";
-
-import { createQuickPickValue } from "./quickPickMachine";
+} from "./primaryMachineTypes";
 
 /*******************************************************************/
 /* Primary Machine */
@@ -51,23 +84,47 @@ export const primaryMachine = setup({
     context: IPrimaryMachineContext;
     input: IPrimaryMachineInput;
     events:
-      | { type: "QUICKPICK_START"; payload: IQuickPickEventPayload }
-      | { type: "QUICKPICK_DONE" }
-      | { type: "QUERY_START"; payload: IQueryMultipleEngineEventPayload }
-      | { type: "QUERY_DONE" }
-      | { type: "DISPOSE_START" } // Can be called at any time. The machine must transition to the disposeState.disposingState, where any allocated resources will be freed.
-      | { type: "DISPOSE_COMPLETE" };
+      | {
+          type: "QUICKPICK_MACHINE.START";
+          payload: IQuickPickEventPayload;
+        }
+      | { type: "QUICKPICK_MACHINE.DONE" }
+      | {
+          type: "QUERY_MULTIPLE_ENGINE_MACHINE.START";
+          payload: IQueryMultipleEngineEventPayload;
+        }
+      | { type: "QUERY_MULTIPLE_ENGINE_MACHINE.DONE" }
+      | AllMachineDisposeEventsUnionT;
   },
+  actors: {
+    quickPickMachine: quickPickMachine,
+    queryMultipleEngineMachine: queryMultipleEngineMachine,
+  },
+
   actions: {
+    debugMachineContext: ({ context, event }) => {
+      context.logger.log(
+        // ToDo stringify the context.<various>Machine objects
+        `primaryMachineDebugMachineContext,
+          context.quickPickMachine: ${JSON.stringify(context.quickPickMachine)}
+          context.gatheringMachine: ${JSON.stringify(context.gatheringMachine)}
+          context.querySingleEngineMachine: ${JSON.stringify(context.querySingleEngineMachine)}
+          context.queryMultipleEngineMachine: ${JSON.stringify(context.queryMultipleEngineMachine)}
+          `,
+        LogLevel.Debug,
+      );
+    },
     spawnQuickPickMachine: assign(({ context, spawn, event, self }) => {
-      assertEvent(event, "QUICKPICK_START");
+      const logger = new Logger(context.logger, "spawnQuickPickMachine");
+      logger.log(`Started`, LogLevel.Debug);
+      assertEvent(event, "QUICKPICK_MACHINE.START");
       let _pickItems: vscode.QuickPickItem[];
       let _pickValue: QuickPickValueT;
       let _prompt = "";
-      switch (event.payload.quickPickKindOfEnumeration) {
+      switch (event.payload.kindOfEnumeration) {
         case QuickPickEnumeration.ModeMenuItemEnum:
           _pickValue = createQuickPickValue(
-            event.payload.quickPickKindOfEnumeration,
+            event.payload.kindOfEnumeration,
             context.data.stateManager.currentMode,
           );
           _pickItems = context.data.pickItems.modeMenuItems;
@@ -75,7 +132,7 @@ export const primaryMachine = setup({
           break;
         case QuickPickEnumeration.QueryAgentCommandMenuItemEnum:
           _pickValue = createQuickPickValue(
-            event.payload.quickPickKindOfEnumeration,
+            event.payload.kindOfEnumeration,
             context.data.stateManager.currentQueryAgentCommand,
           );
           _pickItems = context.data.pickItems.queryAgentCommandMenuItems;
@@ -83,7 +140,7 @@ export const primaryMachine = setup({
           break;
         case QuickPickEnumeration.QueryEnginesMenuItemEnum:
           _pickValue = createQuickPickValue(
-            event.payload.quickPickKindOfEnumeration,
+            event.payload.kindOfEnumeration,
             context.data.stateManager.currentQueryEngines,
           );
           _pickItems = context.data.pickItems.queryEnginesMenuItems;
@@ -91,7 +148,7 @@ export const primaryMachine = setup({
           break;
         default:
           throw new Error(
-            `primaryMachine received an unexpected quickPickKindOfEnumeration: ${event.payload.quickPickKindOfEnumeration}`,
+            `primaryMachine received an unexpected kindOfEnumeration: ${event.payload.kindOfEnumeration}`,
           );
       }
       const _actorRef = spawn("quickPickMachine", {
@@ -100,32 +157,36 @@ export const primaryMachine = setup({
         input: {
           logger: context.logger,
           parent: self,
+          kindOfEnumeration: event.payload.kindOfEnumeration,
           pickValue: _pickValue,
           pickItems: _pickItems,
           prompt: _prompt,
           cTSToken: event.payload.cTSToken,
         },
       });
-      const _subscription = _actorRef.subscribe((x) => {
-        context.logger.log(
-          `spawnQuickPickMachine subscription called with x = ${x}`,
-          LogLevel.Debug,
-        );
+      const _subscription = _actorRef.subscribe((state) => {
+        logger.log(`Subscription called with x = ${state}`, LogLevel.Debug);
       });
+      const _quickPickMachine = context.quickPickMachine;
+      _quickPickMachine.actorRef = _actorRef;
+      // ToDo: Subscribe and handle machine-level errors
+
+      logger.log(
+        `Leaving _actorRef = ${JSON.stringify(_actorRef)}, _subscription = ${JSON.stringify(_subscription)}`,
+        LogLevel.Debug,
+      );
       return {
-        quickPickMachineRefAndSubscription: {
-          actorRef: _actorRef,
-          subscription: _subscription,
-        },
+        quickPickMachine: _quickPickMachine,
       };
     }),
     spawnMultipleEngineQueryMachine: assign(
       ({ context, spawn, event, self }) => {
-        context.logger.log(
-          `spawnMultipleEngineQueryMachine called`,
-          LogLevel.Debug,
+        const logger = new Logger(
+          context.logger,
+          "spawnMultipleEngineQueryMachine",
         );
-        assertEvent(event, "QUERY_START");
+        logger.log(`Started`, LogLevel.Debug);
+        assertEvent(event, "QUERY_MULTIPLE_ENGINE_MACHINE.START");
         const _currentQueryEngines =
           context.data.stateManager.currentQueryEngines;
         const _actorRef = spawn("queryMultipleEngineMachine", {
@@ -142,92 +203,94 @@ export const primaryMachine = setup({
         });
         const _subscription = _actorRef.subscribe((state) => {
           context.logger.log(
-            `spawnMultipleEngineQueryMachine subscription called with x = ${state}`,
+            `spawnMultipleEngineQueryMachine subscription called with state = ${state}`,
             LogLevel.Debug,
           );
         });
+        const _queryMultipleEngineMachine = context.queryMultipleEngineMachine;
+        _queryMultipleEngineMachine.actorRef = _actorRef;
+        // ToDo: Subscribe and handle machine-level errors
+        logger.log(
+          `Leaving _actorRef = ${JSON.stringify(_actorRef)}, _subscription = ${JSON.stringify(_subscription)}`,
+          LogLevel.Debug,
+        );
         return {
-          queryMultipleEngineMachineActorRefAndSubscription: {
-            actorRef: _actorRef,
-            subscription: _subscription,
-          },
+          queryMultipleEngineMachine: _queryMultipleEngineMachine,
         };
       },
     ),
     // copy the results (output) from the quickPickMachine to the context
-    assignQuickPickMachineDoneOutputToPrimaryMachineContext: assign(
-      ({ context }) => {
-        context.logger.log(
-          `assignQuickPickMachineDoneOutputToPrimaryMachineContext called`,
-          LogLevel.Debug,
-        );
-        const _quickPickMachineActorRef =
-          context.quickPickMachineRefAndSubscription as IQuickPickMachineRefAndSubscription;
-        // confirm the quickPickMachineActor is done
-        if (
-          _quickPickMachineActorRef.actorRef.getSnapshot().status !== "done"
-        ) {
-          throw new Error(
-            "OMG how can this happen??!! Gotta submit an xState issue if this ever pops up",
+    assignQuickPickMachineDoneOutputToParentContext: assign({
+      quickPickMachine: ({ context, event }) =>
+        produce(context, (draftContext) => {
+          const logger = new Logger(
+            draftContext.logger,
+            "assignQuickPickMachineOutputToParentContext",
           );
-        }
-        // ToDo: unsubscribe from the quickPickMachineActorRef
-        // ToDo: set the actorRef to undefined
-        // Save the output of the quickPickMachine to the IData instance
-        return {
-          quickPickMachineOutput:
-            context.quickPickMachineRefAndSubscription!.actorRef.getSnapshot()
-              .output,
-          data: {
-            ...context.data,
-            stateManager: {
-              ...context.data.stateManager,
-              currentQueryEngines:
-                context.quickPickMachineRefAndSubscription!.actorRef.getSnapshot()
-                  .output.pickValue.value,
-            },
-          },
-          quickPickMachineRefAndSubscription: undefined,
-        };
-      },
-    ),
+          // confirm the _quickPickActor is done
+          // First confirm that a actorRef for a quickPickActor exists
+          const _quickPickActorRef = draftContext.quickPickMachine.actorRef;
+          if (_quickPickActorRef == undefined) {
+            const _message = `draftContext.quickPickMachine.actorRef is undefined`;
+            logger.log(_message, LogLevel.Error);
+            throw new Error(`${logger.scope} ` + _message);
+          }
+          // confirm that the status is "done"
+          if (_quickPickActorRef!.getSnapshot().status !== "done") {
+            const _message = `draftContext.quickPickMachine.actorRef.status is NOT done. This should never happen, contact xState`;
+            logger.log(_message, LogLevel.Error);
+            throw new Error(`${logger.scope} ` + _message);
+          }
+          // assign the output of the quickPickMachine to the primaryMachine context
+          draftContext.quickPickMachine.quickPickMachineOutput =
+            _quickPickActorRef.getSnapshot().output;
+          // ToDo: unsubscribe from the quickPickActorSubscription
+          // ToDo: remove the reference to the quickPickMachineRef
+          draftContext.quickPickMachine.actorRef = undefined;
+        }),
+    }),
+
     // copy the results (output) from the queryMultipleEngineMachine to the context
-    assignQueryMultipleEngineMachineDoneOutputToPrimaryMachineContext: assign(
-      ({ context }) => {
-        context.logger.log(
-          `assignQueryMultipleEngineMachineDoneOutputToPrimaryMachineContext called`,
-          LogLevel.Debug,
-        );
-        const _queryMultipleEngineMachineActorRef =
-          context.queryMultipleEngineMachineActorRefAndSubscription as IQueryMultipleEngineMachineActorRefAndSubscription;
-        // confirm the queryMultipleEngineMachineActor is done
-        if (
-          _queryMultipleEngineMachineActorRef.actorRef.getSnapshot().status !==
-          "done"
-        ) {
-          throw new Error(
-            "OMG how can this happen??!! Gotta submit an xState issue if this ever pops up",
+    assignQueryMultipleEngineMachineDoneOutputToParentContext: assign({
+      queryMultipleEngineMachine: ({ context, event }) =>
+        produce(context, (draftContext) => {
+          const logger = new Logger(
+            draftContext.logger,
+            " assignQueryMultipleEngineMachineDoneOutputToParentContext",
           );
-        }
-        // ToDo: unsubscribe from the quickPickMachineActorRef
-        // ToDo: set the actorRef to undefined
-        return {
-          quickPickMachineOutput:
-            context.quickPickMachineRefAndSubscription!.actorRef.getSnapshot()
-              .output,
-          quickPickMachineRefAndSubscription: undefined,
-        };
-      },
-    ),
-    updateUIStateEntryAction: (context) => {
-      context.context.logger.log(
-        `updateUIStateEntryAction, event type is ${context.event.type}`,
+          // confirm the _queryMultipleEngineMachine is done
+          // First confirm that a actorRef for a queryMultipleEngineActor exists
+          const _queryMultipleEngineActorRef =
+            draftContext.queryMultipleEngineMachine.actorRef;
+          if (_queryMultipleEngineActorRef == undefined) {
+            const _message = `draftContext.queryMultipleEngineMachine.actorRef is undefined`;
+            logger.log(_message, LogLevel.Error);
+            throw new Error(`${logger.scope} ` + _message);
+          }
+          // confirm that the status is "done"
+          if (_queryMultipleEngineActorRef.getSnapshot().status !== "done") {
+            const _message = `draftContext.queryMultipleEngineMachine.actorRef.status is NOT done. This should never happen, contact xState`;
+            logger.log(_message, LogLevel.Error);
+            throw new Error(`${logger.scope} ` + _message);
+          }
+          // assign the output of the quickPickMachine to the primaryMachine context
+          draftContext.queryMultipleEngineMachine.queryMultipleEngineMachineOutput =
+            _queryMultipleEngineActorRef.getSnapshot().output;
+          // ToDo: unsubscribe from the queryMultipleEngineSubscription
+          // ToDo: remove the reference to the queryMultipleEngineMachineRef
+          draftContext.queryMultipleEngineMachine.actorRef = undefined;
+        }),
+    }),
+
+    updateUIStateEntryAction: ({ context, event }) => {
+      context.logger.log(
+        `updateUIStateEntryAction, event type is ${event.type}`,
         LogLevel.Debug,
       );
     },
-    updateUIStateExitAction: (context) => {
-      context.context.logger.log(
-        `updateUIStateExitAction, event type is ${context.event.type}`,
+    updateUIStateExitAction: ({ context, event }) => {
+      context.logger.log(
+        `updateUIStateExitAction, event type is ${event.type}`,
         LogLevel.Debug,
       );
     },
@@ -237,15 +300,15 @@ export const primaryMachine = setup({
         LogLevel.Debug,
       );
       switch (event.type) {
-        case "QUERY_DONE":
+        case "QUERY_MULTIPLE_ENGINE_MACHINE.DONE":
           context.logger.log(
-            `updateUIStateEntry, received event type is ${event.type}, context.queryMultipleEngineMachineOutput is ${context.queryMultipleEngineOutput}`,
+            `updateUIStateEntry, received event type is ${event.type}, context.queryMultipleEngineMachineOutput is ${context.queryMultipleEngineMachine.queryMultipleEngineMachineOutput}`,
             LogLevel.Debug,
           );
           break;
-        case "QUICKPICK_DONE":
+        case "QUICKPICK_MACHINE.DONE":
           context.logger.log(
-            `updateUIStateEntry, received event type is ${event.type}, context.quickPickMachineOutput is ${context.quickPickMachineOutput}`,
+            `updateUIStateEntry, received event type is ${event.type}, context.quickPickMachineOutput is ${context.quickPickMachine.quickPickMachineOutput}`,
             LogLevel.Debug,
           );
           break;
@@ -257,7 +320,7 @@ export const primaryMachine = setup({
       // if queryMultipleEngineMachineOutput.isCancelled is true, clean up any small UI elements
       // if queryMultipleEngineMachineOutput.errorMessage is defined, display the error message in the UI
       // if queryMultipleEngineMachineOutput.isCancelled is false,
-      //  and also context.queryMultipleEngineMachineOutput!.querySingleEngineMachineActorOutputs.isCancelled is false for all keys, then update the UI
+      //  and also context.queryMultipleEngineMachineOutput!.queryMultipleSingleEngineMachineOutputs.isCancelled is false for all keys, then update the UI
       // ToDO: what if some are cancelled but others have returned responses?
     },
     disposingStateEntryAction: ({ context, event }) => {
@@ -265,45 +328,50 @@ export const primaryMachine = setup({
         `disposingStateEntryAction, event type is ${event.type}`,
         LogLevel.Debug,
       );
+      // Todo: add code to send the DISPOSE.START to any spawned MachineActorRef so that it can free any allocated resources
+      // ToDo: current machineActorRefs are queryMultipleEngineActorRefAndSubscription and quickPickActorRefAndSubscription
+      // ToDo: add code to dispose of any allocated resource
     },
     disposeCompleteStateEntryAction: ({ context, event }) => {
       context.logger.log(
         `disposeCompleteStateEntryAction, event type is ${event.type}`,
         LogLevel.Debug,
       );
-      // Todo: add code to send the DISPOSE_EVENT to any spawned MachineActorRef so that it can free any allocated resources
-      // ToDo: current machineActorRefs are queryMultipleEngineMachineMachineActorRefAndSubscription and quickPickMachineActorRefAndSubscription
-      // ToDo: add code to dispose of any allocated resource
     },
     debugPrimaryMachineContext: ({ context, event }) => {
       context.logger.log(
-        `debugPrimaryMachineContext, context.quickPickMachineOutput.pickValue: ${context.quickPickMachineOutput!.pickValue}, context.quickPickMachineOutput.isCancelled: ${context.quickPickMachineOutput!.isCancelled}, context.quickPickMachineOutput.isLostFocus: ${context.quickPickMachineOutput!.isLostFocus}, context.quickPickMachineOutput.errorMessage: ${context.quickPickMachineOutput!.errorMessage}, context.quickPickMachineActorRefAndSubscription: ${context.quickPickMachineRefAndSubscription}, context.queryMultipleEngineMachineOutput: ${context.queryMultipleEngineMachineOutput}, context.queryMultipleEngineMachineActorRefAndSubscription: ${context.queryMultipleEngineMachineActorRefAndSubscription}`,
+        `debugPrimaryMachineContext:
+        context.quickPickMachineOutput: ${JSON.stringify(context.quickPickMachine.quickPickMachineOutput)},
+        context.quickPickMachine.actorRef: ${JSON.stringify(context.quickPickMachine.actorRef)},
+         context.queryMultipleEngineMachine.queryMultipleEngineMachineOutput: ${JSON.stringify(context.queryMultipleEngineMachine.queryMultipleEngineMachineOutput)},
+         context.actorRef: ${JSON.stringify(context.queryMultipleEngineMachine.actorRef)}`,
         LogLevel.Debug,
       );
     },
     debugPrimaryMachineData: ({ context, event }) => {
       context.logger.log(
-        `debugPrimaryMachineContext, context.quickPickMachineOutput.pickValue: ${context.quickPickMachineOutput!.pickValue}, context.quickPickMachineOutput.isCancelled: ${context.quickPickMachineOutput!.isCancelled}, context.quickPickMachineOutput.isLostFocus: ${context.quickPickMachineOutput!.isLostFocus}, context.quickPickMachineOutput.errorMessage: ${context.quickPickMachineOutput!.errorMessage}, context.quickPickMachineActorRefAndSubscription: ${context.quickPickMachineRefAndSubscription}, context.queryMultipleEngineMachineOutput: ${context.queryMultipleEngineMachineOutput}, context.queryMultipleEngineMachineActorRefAndSubscription: ${context.queryMultipleEngineMachineActorRefAndSubscription}`,
+        `debugPrimaryMachineData Data: ${JSON.stringify(context.data)}`,
         LogLevel.Debug,
       );
     },
   },
-  actors: {
-    quickPickMachine: quickPickMachine,
-    queryMultipleEngineMachine: queryMultipleEngineMachine,
-  },
 }).createMachine({
+  // cspell:disable
   /** @xstate-layout N4IgpgJg5mDOIC5QAcBOBLAtgQ1QTwFlsBjAC3QDswA6Ae2TFWwBd1aKBlZlm9CAGzBceAYgCKAVQCSAYQDSABVlyA+hwAqAQQBK6gNoAGALqIUtWOlbtTIAB6IArAGYALNQAcAdicBGJ5-cXAE4nIJ93ABoQPERfJ2onADYAJkTEzwMDJwdk1KcAX3yotCxcQhJyKjoGJitObmZeASEGsHEJAFFtAE01LV1DEyQQZHNLNgobewQfLKDqFKCg9yd3HwcHWYcomIQnbIWNnzD3ByDU9yzC4owcfCIyShp6RhYJ4UbqPkEPtsku3oAEQA8gA5DqDGyjCx1KaIWYGTzUdb7ULJIKZYI7RCJHxI7yJc6eZIGZKbQnXEa3MoPSrPGpvdi-L7NX7tZRKeQqEHgyHDaHjazDaa+NzpRLZXFORHJFzbaKOS7UMIuYJpILErIFIpU0r3CpPaqvOrM74tUS2WCtagQdg0EjMWioagARwAruhiABrBSer20p58swwiZwhCqnwJFyi7yBVyebEIU4OaieOXrEkklwkhyUkp3cqPKovWrva2MVBOtlBkZjWHCxDJVwLbwuYkOUmywkJhVJwLUAznDuzbOecLam56wt0o2lpnW91+33e6vGKF10MNmaraiynzozwdhy4keJtOJBLuQLpUlXrw+PPU-VF+nGss8V1uxh4ShQVdDYNBUmLcfGjJEOwMS4XB8PxTmSRNZnceYHACZIfESQdzlyB8dXzGkDWLBkTWtN1kAgHhpDZf4em5MEITXfkNyFUBphglwLxHHIVg1NNzkTS4U0PRJo2yMlVQCR8pwDQi33nD9SPIxpKNadl5E5VQeXogDaxDZi7BxAIFmSJC5QMQklgMFwzxWXds1xIIUn8DYgkkgtpNfOd6nksiKKkf91104CWMQYl5iCTZ9mMuDoJ8BDZRTdjPDHOV0hglzcKfadDQgdBYGhc1PkoB10AANwKtpAT8hRgQ4Do+h0fQGMA+tgpmIIXAMahVRJfcYKvdDEkTMkkS8NNB1A5xs38Vz8JfG1cvy5kcrysYKD-FTKo4arapUGRgQIBQABkOnULSAqAsNjibDxfCSjrcgcslE1VeJ0ncXFCQMWC-ESQodQoWgIDgKFMvc86Wv08Nkls-cNSPE9LKs3s3Ee9UNTJRIVmzGbnxnEtGS8xpwc3VqMRhg94ZgyzE3OAdEUuFJ2P8WVPBxrKZM801WVaYm9OmMloaQ0JNhJVx0Se3s8XmAwcnagWvs8NI2fc2cCeZCsqx5xjAsulKEglC4zLbMlIl7K8kXa8I0MPQ90V+jKpIIjy1YXD1vWXL1fl5oLIezNwzJQ04sllEJ5V2fw3ByNDAhcd60gD5WndV4iP3db9fy97WLq3EI3GjCUrpPLxTfDkIB2cVxMnSZIkpwyc3KT-GU8+BTfMz5qSchxXI3CjESTCEO0gQ9CkSyUk5VGmu8UTublsWrWO75+E1kFhx3t75ZLOEmmLxCLJiSvGvglcGeZzn8xyq+ChirK9udOz1rjgcSPvAcuZLK+sPl-iOGOzCY8NjxlPtlBaF8lqgIsGtO+AoIasSvCjdq4VhLsR6k4RMkVUzLH8IiGWWRjiswdg3WeEDL7n1gGAGQtBMDIEEI0aBTEfZwIwh4NehIzib3YkjXYOQkRNhJJccI+5jIuD+vkIAA */
   id: "primaryMachine",
-  context: ({ input }) => ({
-    logger: new Logger(input.logger, "primaryMachine"),
-    data: input.data,
-    quickPickMachineRefAndSubscription: undefined,
-    quickPickMachineOutput: undefined,
-    queryService: input.queryService,
-    queryMultipleEngineMachineActorRefAndSubscription: undefined,
-    queryMultipleEngineMachineOutput: undefined,
-  }),
+  // cspell:enable
+  context: ({ input }) =>
+    ({
+      logger: new Logger(input.logger, "primaryMachine"),
+      data: input.data,
+      queryService: input.queryService,
+      quickPickMachine: {} as IQuickPickMachineComponentOfParentMachineContext,
+      gatheringMachine: {} as IGatheringMachineComponentOfParentMachineContext,
+      querySingleEngineMachine:
+        {} as IQuerySingleEngineMachineComponentOfParentMachineContext,
+      queryMultipleEngineMachine:
+        {} as IQueryMultipleEngineMachineComponentOfParentMachineContext,
+    }) as IPrimaryMachineContext,
   type: "parallel",
   states: {
     operationState: {
@@ -312,30 +380,29 @@ export const primaryMachine = setup({
       states: {
         idleState: {
           on: {
-            QUICKPICK_START: {
-              target: "quickPickState",
+            "QUICKPICK_MACHINE.START": {
+              target: "idleState",
+              reenter: true,
+              actions: ["debugPrimaryMachineContext", "spawnQuickPickMachine"],
             },
-            QUERY_START: {
-              target: "queryingState",
-            },
-            QUERY_DONE: {
-              target: "updateUIState",
-              // copy the results (output) from the queryMultipleEngineMachine to the context
-              actions: [
-                "assignQueryMultipleEngineMachineDoneOutputToPrimaryMachineContext",
-                "debugPrimaryMachineContext",
-              ],
-            },
-            QUICKPICK_DONE: {
+            "QUICKPICK_MACHINE.DONE": {
               target: "updateUIState",
               // copy the results (output) from the quickPickMachine to the context
               actions: [
-                "assignQuickPickMachineDoneOutputToPrimaryMachineContext",
+                "assignQuickPickMachineDoneOutputToParentContext",
                 "debugPrimaryMachineContext",
               ],
             },
-            "xstate.done.actor.quickPickMachine": {
+            "QUERY_MULTIPLE_ENGINE_MACHINE.START": {
+              target: "queryingState",
+            },
+            "QUERY_MULTIPLE_ENGINE_MACHINE.DONE": {
               target: "updateUIState",
+              // copy the results (output) from the queryMultipleEngineMachine to the context
+              actions: [
+                "assignQueryMultipleEngineMachineDoneOutputToParentContext",
+                "debugPrimaryMachineContext",
+              ],
             },
           },
         },
@@ -355,10 +422,10 @@ export const primaryMachine = setup({
           description:
             "A state that spawns a queryMultipleEngineMachine which encapsulates multiple states for handling parallel queries to multiple QueryAgents.",
           entry: [
-            "spawnMultipleEngineQueryMachine",
             ({ context }) => {
-              context.logger.log("queryingState entry", LogLevel.Debug);
+              context.logger.log("queryingState entry action", LogLevel.Debug);
             },
+            "spawnMultipleEngineQueryMachine",
           ], // spawn the queryMultipleEngineMachine and store the reference in the context
           always: "idleState",
         },
@@ -372,11 +439,11 @@ export const primaryMachine = setup({
           },
           // ToDo: all the various on... events
           on: {
-            QUERY_DONE: {
+            "QUERY_MULTIPLE_ENGINE_MACHINE.DONE": {
               target: "idleState",
               actions: "updateUIAction",
             },
-            QUICKPICK_DONE: {
+            "QUICKPICK_MACHINE.DONE": {
               target: "idleState",
             },
           },
@@ -385,19 +452,18 @@ export const primaryMachine = setup({
     },
 
     disposeState: {
-      // 2nd parallel state. This state can be transitioned to from any state
+      // 2nd parallel state. This state can be transitioned to regardless of any other state the machine might be in
       initial: "inactiveState",
       states: {
         inactiveState: {
           on: {
-            DISPOSE_START: "disposingState",
+            "DISPOSE.START": "disposingState",
           },
         },
         disposingState: {
           entry: "disposingStateEntryAction",
-
           on: {
-            DISPOSE_COMPLETE: {
+            "DISPOSE.COMPLETE": {
               target: "disposeCompleteState",
             },
           },

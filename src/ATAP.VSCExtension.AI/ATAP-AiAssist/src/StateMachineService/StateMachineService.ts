@@ -16,7 +16,6 @@ import {
   AnyActorLogic,
   createActor,
   assign,
-  createMachine,
   fromCallback,
   StateMachine,
   fromPromise,
@@ -38,14 +37,17 @@ import {
   IQueryMultipleEngineEventPayload,
 } from "@StateMachineService/index";
 
-import { primaryMachine } from "./primaryMachine";
+//import { IPrimaryMachineInput } from "./primaryMachineTypes";
+//import { primaryMachine } from "./primaryMachine";
+import { IC1STARTEventPayload } from "./parentChildDemoMachine";
+import { IPrimaryMachineInput } from "./parentChildDemoMachine";
+import { primaryMachine } from "./parentChildDemoMachine";
 import { inspector } from "@StateMachineService/inspector";
-import { testMachine } from "./testMachine";
 
 export interface IStateMachineService {
-  quickPick(data: IQuickPickEventPayload): void;
-  sendQuery(data: IQueryMultipleEngineEventPayload): void;
-  sendTest(data: IQueryMultipleEngineEventPayload): void;
+  quickPick(payload: IQuickPickEventPayload): void;
+  sendQuery(payload: IQueryMultipleEngineEventPayload): void;
+  sendTest(payload: IC1STARTEventPayload): void; // for parentChildDemoMachine
   start(): void;
   disposeAsync(): void;
 }
@@ -56,9 +58,9 @@ export class StateMachineService implements IStateMachineService {
   private readonly extensionName: string;
   private readonly primaryMachineInspector = createBrowserInspector();
   private readonly primaryMachineInspectorLogger: ILogger;
-  private readonly testMachineInspectorLogger: ILogger;
   private primaryActor: ActorRef<any, any, any> | undefined;
-  private testActor;
+  private primaryActorSubscription: any | undefined;
+  private primaryActorSubscriptionLogger: ILogger;
 
   private disposed = false;
 
@@ -72,102 +74,139 @@ export class StateMachineService implements IStateMachineService {
     this.extensionID = extensionContext.extension.id;
     this.extensionName = this.extensionID.split(".")[1];
     const primaryMachineInspector = createBrowserInspector(); // This line produces the errorMessage
+    // ToDo: get inspector window working for a xState machine used inside a vscode extension
+    // Workaround: Create a logger for the inspector
     this.primaryMachineInspectorLogger = new Logger(
       this.logger,
-      "Inspector(Primary)",
+      "primaryMachineInspector",
     );
     this.primaryActor = createActor(primaryMachine, {
-      input: {
-        logger: this.logger,
-        data: this.data,
-        queryService: this.queryService,
-      },
-      // for Debugging
+      // parentChildDemo has an input of IPrimaryMachineInput defined as {logger:ILogger}
+      input: { logger: this.logger } as IPrimaryMachineInput,
+      // primaryMachine has an input of type IPrimaryMachineInput defined in the file primaryMachineTypes as
+      //   { logger: ILogger;  queryService: IQueryService;  data: IData; }
+      // input: {
+      //   logger: this.logger,
+      //   data: this.data,
+      //   queryService: this.queryService,
+      // },
+      // Workaround: use a dedicated function (and scoped logger) to handle the inspection events for Debugging
       inspect: (inspEvent) => {
         inspector(this.primaryMachineInspectorLogger, inspEvent);
       },
     });
-    this.testMachineInspectorLogger = new Logger(
+    // need a logger for the primaryActor subscription
+    this.primaryActorSubscriptionLogger = new Logger(
       this.logger,
-      "Inspector(Test)",
+      "PrimaryActorSubscription",
     );
-    let cancellationTokenSource = new vscode.CancellationTokenSource();
-    this.testActor = createActor(testMachine, {
-      input: {
-        logger: this.logger,
-        queryEngineName: QueryEngineNamesEnum.ChatGPT,
-        queryString: "test",
-        queryService: this.queryService,
-        parent: this.primaryActor!,
-        cTSToken: cancellationTokenSource.token,
-      },
-      // for Debugging
-
-      inspect: (inspEvent) => {
-        inspector(this.testMachineInspectorLogger, inspEvent);
-        let _eventInput = "";
-        let _eventData = "";
-        let _eventOutput = "";
-        let _inspEventEventType = "";
-        if (inspEvent.type === "@xstate.snapshot") {
-          switch (inspEvent.event.type) {
-            case "queryEvent":
-            case "xstate.init":
-            case "xstate.done.actor.gatheringActor":
-            case "xstate.promise.resolve":
-              break;
-            default:
-              _inspEventEventType = "inspEvent.event.type is unknown";
-          }
-          this.logger.log(
-            `StateMachineService inspect received inspEvent type @xstate.snapshot. event.type: ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ""}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ""}${_inspEventEventType ? _inspEventEventType : ""}  snapshot.status: ${inspEvent.snapshot.status}`,
-            LogLevel.Trace,
-          );
-        } else if (inspEvent.type === "@xstate.actor") {
-          this.logger.log(
-            `StateMachineService inspect received inspEvent type @xstate.actor. actorRef.id: ${
-              inspEvent.actorRef.id
-            } rootId: ${inspEvent.rootId.toString()}`,
-            LogLevel.Trace,
-          );
-        } else if (inspEvent.type === "@xstate.event") {
-          const _preamble = `StateMachineService inspect received inspEvent type @xstate.event. event.type: ${inspEvent.event.type} ; actorRefID: ${inspEvent.actorRef.id} `;
-          switch (inspEvent.event.type) {
-            case "xstate.init":
-            case "queryEvent":
-            case "xstate.error.actor.queryMachine":
-            case "xstate.promise.resolve":
-            case "xstate.done.actor.gatheringActor":
-              break;
-            default:
-              _inspEventEventType = "inspEvent.event.type is unknown";
-          }
-          this.logger.log(
-            `${_preamble} ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ""}${inspEvent.event.data ? `event_data: ${inspEvent.event.data}` : ""}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ""}${_inspEventEventType ? _inspEventEventType : ""}`,
-            LogLevel.Trace,
-          );
-        } else {
-          this.logger.log(
-            `StateMachineService inspect received unexpected event type ${inspEvent}`,
-            LogLevel.Debug,
-          );
-        }
-      },
+    // print a snapshot of the primaryActor's state whenever it changes (LogLevel.Debug)
+    // ToDo: catch and print errors that bubble up from the primaryActor  (LogLevel.Error)
+    this.primaryActorSubscription = this.primaryActor.subscribe((s) => {
+      this.primaryActorSubscriptionLogger.log(
+        JSON.stringify(s),
+        LogLevel.Debug,
+      );
     });
+    // start the primary actor
+    this.primaryActor.start();
+    // // [Catch Machine-level Errors](https://discord.com/channels/795785288994652170/1215726223096029235/1216062378894954667)
+    // this.primaryActorSubscription = this.primaryActor.subscribe({
+    //   error: (err) => {
+    //     const _message = `StateMachineService primaryActor error: ${JSON.stringify(err)}`;
+    //     this.logger.log(_message, LogLevel.Error);
+    //     // ToDo:  investigate what to do with the error
+    //     console.error(err);
+    //   },
+    // });
+    // this.testMachineInspectorLogger = new Logger(
+    //   this.logger,
+    //   "Inspector(Test)",
+    // );
+    // let cancellationTokenSource = new vscode.CancellationTokenSource();
+    // this.testActor = createActor(testMachine, {
+    //   input: {
+    //     logger: this.logger,
+    //     queryEngineName: QueryEngineNamesEnum.ChatGPT,
+    //     queryString: "test",
+    //     queryService: this.queryService,
+    //     parent: this.primaryActor!,
+    //     cTSToken: cancellationTokenSource.token,
+    //   },
+    // for Debugging
+
+    //   inspect: (inspEvent) => {
+    //     inspector(this.testMachineInspectorLogger, inspEvent);
+    //     let _eventInput = "";
+    //     let _eventData = "";
+    //     let _eventOutput = "";
+    //     let _inspEventEventType = "";
+    //     if (inspEvent.type === "@xstate.snapshot") {
+    //       switch (inspEvent.event.type) {
+    //         case "queryEvent":
+    //         case "xstate.init":
+    //         case "xstate.done.actor.gatheringActor":
+    //         case "xstate.promise.resolve":
+    //           break;
+    //         default:
+    //           _inspEventEventType = "inspEvent.event.type is unknown";
+    //       }
+    //       this.logger.log(
+    //         `StateMachineService inspect received inspEvent type @xstate.snapshot. event.type: ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ""}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ""}${_inspEventEventType ? _inspEventEventType : ""}  snapshot.status: ${inspEvent.snapshot.status}`,
+    //         LogLevel.Trace,
+    //       );
+    //     } else if (inspEvent.type === "@xstate.actor") {
+    //       this.logger.log(
+    //         `StateMachineService inspect received inspEvent type @xstate.actor. actorRef.id: ${
+    //           inspEvent.actorRef.id
+    //         } rootId: ${inspEvent.rootId.toString()}`,
+    //         LogLevel.Trace,
+    //       );
+    //     } else if (inspEvent.type === "@xstate.event") {
+    //       const _preamble = `StateMachineService inspect received inspEvent type @xstate.event. event.type: ${inspEvent.event.type} ; actorRefID: ${inspEvent.actorRef.id} `;
+    //       switch (inspEvent.event.type) {
+    //         case "xstate.init":
+    //         case "queryEvent":
+    //         case "xstate.error.actor.queryMachine":
+    //         case "xstate.promise.resolve":
+    //         case "xstate.done.actor.gatheringActor":
+    //           break;
+    //         default:
+    //           _inspEventEventType = "inspEvent.event.type is unknown";
+    //       }
+    //       this.logger.log(
+    //         `${_preamble} ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ""}${inspEvent.event.data ? `event_data: ${inspEvent.event.data}` : ""}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ""}${_inspEventEventType ? _inspEventEventType : ""}`,
+    //         LogLevel.Trace,
+    //       );
+    //     } else {
+    //       this.logger.log(
+    //         `StateMachineService inspect received unexpected event type ${inspEvent}`,
+    //         LogLevel.Debug,
+    //       );
+    //     }
+    //   },
+    // });
     // this.testActor.start();
   }
   @logMethod(LogLevel.Debug)
   quickPick(payload: IQuickPickEventPayload): void {
-    this.primaryActor!.send({ type: "QUICKPICK_START", payload: payload });
+    this.primaryActor!.send({
+      type: "QUICKPICK_MACHINE.START",
+      payload: payload,
+    });
   }
   @logMethod(LogLevel.Debug)
   sendQuery(payload: IQueryMultipleEngineEventPayload): void {
-    this.primaryActor!.send({ type: "QUERY_START", payload: payload });
+    this.primaryActor!.send({
+      type: "QUERY_MULTIPLE_ENGINE_MACHINE.START",
+      payload: payload,
+    });
   }
 
   @logMethod(LogLevel.Debug)
-  sendTest(payload: IQueryMultipleEngineEventPayload): void {
-    this.testActor.send({ type: "QSE_START" });
+  // for parentChildDemoMachine
+  sendTest(payload: IC1STARTEventPayload): void {
+    this.primaryActor!.send({ type: "C1.START", payload: payload }); // for parentChildDemoMachine
   }
 
   @logMethod(LogLevel.Debug)
@@ -244,7 +283,7 @@ export class StateMachineService implements IStateMachineService {
   async disposeAsync() {
     if (!this.disposed) {
       // Dispose of the primary actor
-      this.primaryActor!.send({ type: "DISPOSE_START" });
+      this.primaryActor!.send({ type: "DISPOSE.START" });
       // ToDo: await the transition to the 'Done' state
       this.disposed = true;
     }

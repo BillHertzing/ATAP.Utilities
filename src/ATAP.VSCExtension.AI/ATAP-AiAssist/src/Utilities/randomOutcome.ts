@@ -1,5 +1,7 @@
-// **********************************************************************************************************************
-export function randomOutcome(strToReturn: string): Promise<{ isCancelled: boolean; result: string | undefined }> {
+// *********************************************************************************************************************
+export function randomOutcome(
+  strToReturn: string,
+): Promise<{ isCancelled: boolean; result: string | undefined }> {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       // Add a 1-second (1000 milliseconds) delay
@@ -13,7 +15,7 @@ export function randomOutcome(strToReturn: string): Promise<{ isCancelled: boole
         resolve({ result: undefined, isCancelled: true });
       } else {
         // Remaining 34% chance to throw an error
-        reject(new Error('An error occurred'));
+        reject(new Error("An error occurred"));
       }
     }, 1000); // Delay specified here
   });

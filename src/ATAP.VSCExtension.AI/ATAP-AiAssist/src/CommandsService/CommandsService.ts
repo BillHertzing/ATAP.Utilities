@@ -259,7 +259,7 @@ export class CommandsService {
 
           // try {
           //   this.stateMachineService.quickPick({
-          //     quickPickKindOfEnumeration: QuickPickEnumeration.VCSCommandMenuItemEnum,
+          //     kindOfEnumeration: QuickPickEnumeration.VCSCommandMenuItemEnum,
           //     quickPickPrompt: _prompt,
           //     cTSToken: cancellationTokenSource.token,
           //   } as IQuickPickEventPayload);
@@ -285,8 +285,7 @@ export class CommandsService {
           );
           try {
             this.stateMachineService.quickPick({
-              quickPickKindOfEnumeration:
-                QuickPickEnumeration.QueryEnginesMenuItemEnum,
+              kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
               cTSToken: cancellationTokenSource.token,
             });
           } catch (e) {
@@ -316,8 +315,7 @@ export class CommandsService {
           );
           try {
             this.stateMachineService.quickPick({
-              quickPickKindOfEnumeration:
-                QuickPickEnumeration.QueryEnginesMenuItemEnum,
+              kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
               cTSToken: cancellationTokenSource.token,
             });
           } catch (e) {
@@ -348,8 +346,7 @@ export class CommandsService {
           );
           try {
             this.stateMachineService.quickPick({
-              quickPickKindOfEnumeration:
-                QuickPickEnumeration.QueryEnginesMenuItemEnum,
+              kindOfEnumeration: QuickPickEnumeration.QueryEnginesMenuItemEnum,
               cTSToken: cancellationTokenSource.token,
             });
           } catch (e) {
@@ -416,11 +413,15 @@ export class CommandsService {
             new AiAssistCancellationTokenSource(cancellationTokenSource),
           );
           try {
-            this.stateMachineService.sendTest({
-              queryFragmentCollection:
-                this.data.fileManager.queryFragmentCollection,
-              cTSToken: cancellationTokenSource.token,
-            } as IQueryMultipleEngineEventPayload);
+            this.stateMachineService.sendTest(
+              // {
+              // queryFragmentCollection:
+              //   this.data.fileManager.queryFragmentCollection,
+              // cTSToken: cancellationTokenSource.token,
+              // } as IQueryMultipleEngineEventPayload
+              //{foo:"foo"} for testMachine
+              { foo: "foostring" },
+            ); // for minMachine
             // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);
           } catch (e) {
             // ToDo: // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them

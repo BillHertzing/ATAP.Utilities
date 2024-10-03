@@ -10,7 +10,11 @@ This package provides PowerShell goodies make it easier when developing for .Net
 
 The .psm1 file handles dot-sourcing all the .ps1 scripts in the `private` and `public` subdirectories. But for Autoload to work, the functions and cmdlets should be listed in the .psd1 file. Here's a one-liner that will get you the function names
 
-` (gci C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\*.ps1).basename -join,"','"`
+```Powershell
+
+ (gci C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\*.ps1).basename -join,"','"
+
+```
 
 ## Building/Installation Note
 
@@ -78,11 +82,11 @@ Remove-Item -path (join-path $targetScriptDirectory $scriptTargetName) -ErrorAct
 New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptTargetName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $scriptSourceName )
 }
 
-## Symbolic Links for VSC settings, tasks, launch configurations
+## Symbolic Links for VSC settings, tasks, launch configurations, and testing
 
 ### User Settings symbolic link
 
-The `settings.json` file at (e.g) `C:\Users\<username>\AppData\Roaming\Code\User` holds the final fallback to all VSC settings. It applies to all repositories and workspaces. Every developer on a host needs to link to the organizations common settings. to do this, run the following command:
+The `settings.json` file at (e.g) `C:\Users\<username>\AppData\Roaming\Code\User` holds the final fallback to all VSC settings. It applies to all repositories and workspaces. Every developer on a host needs to link to the organizations common settings. to do this,replace <username> with the actual user name in the following command and run it.
 
 ```Powershell
 
@@ -92,33 +96,39 @@ New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSetti
 
 ### Repository symbolic links
 
-The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a subirecory `.vscode`, which contains the three files
+The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a subdirectory `.vscode`, which contains these five files
 
 ```text
 Launch.json
 tasks.json
 settings.json
+cspell.json
+extensions.json
+iis.json (optional)
 ```
 
 This directory and these files need to be present at the root of each repository, and need to be source-controlled and versioned. Having multiple independent copies is prone to errors and misconfigurations. Therefore, we have created a repository named `SharedVSCode`, and placed the source-of-truth copies of these files in this git-versioned repository.
 
 We then create symbolic links from the files in this repository to symblinks that reside in the .vscode directory under every other repository.
 
-In every new repository, after runing `git init`, run these commands (as an administrator) in the root folder of the repository:
+In every new repository, after running `git init`, run these commands (as an administrator) in the root folder of the repository:
 
 ```Powershell
   $null = New-Item -ItemType Directory -Force '.vscode'
   # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
-  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\extensions.json"  -symbolicLinkPath ".\.vscode\extensions.json" -force
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\tasks.json"  -symbolicLinkPath ".\.vscode\tasks.json" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch.json"  -symbolicLinkPath ".\.vscode\launch.json" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\extensions.json"  -symbolicLinkPath ".\.vscode\extensions.json" -force
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\cspell.json"  -symbolicLinkPath ".\.vscode\cspell.json" -force
 ```
 
-## Symbolic Links for Prettier formatting rules, CSpell, eslint rules
+## Symbolic Links for Prettier formatting rules, CSpell, eslint rules, and Mocha
 
 The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a `.prettierrc.yml` with formatting rules and an `.eslintrc.js` with linting rules for Javascript at the repository base. We use the YAML format in order to support comments in the file.
 
 Every repository that uses Visual Studio Code as the IDE, needs a `cspell.json` with spelling rules ToDo: We use the YAML format in order to support comments in the file.
+
+Every repository that uses Mocha to test Javascript code, including repositories for VSC Extensions, needs a .mocharc.mjs file.
 
 In every new repository, after creating the .vscode directory and its contents, run this command (as an administrator) in the root folder of the repository:
 
@@ -126,6 +136,9 @@ In every new repository, after creating the .vscode directory and its contents, 
   # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.prettierrc.yml"  -symbolicLinkPath ".\.prettierrc.yml" -force
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.eslintrc.js"  -symbolicLinkPath ".\.eslintrc.js" -force
+  # this command only for repositories that use mocha for testing JavaScript
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.mocharc.yaml"  -symbolicLinkPath ".\.mocharc.yaml" -force
+
 ```
 
 ### project-specific symbolic links

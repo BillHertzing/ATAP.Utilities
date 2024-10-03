@@ -3,218 +3,228 @@
   hosts: all
   gather_facts: false
   tasks:
-  #   # BIOS settings (per host)
-  #   # utat022 - setup NCMe on PCIE ( PCIEX15(G4) Configuration ->Dual M.2 SSD
-  #   # utat022 - Advanced -> SA -? graphics Primary Dispaly from Auto to PCIE # setup simultaneous GPU card in PCIE slot and the Intel IRIS integerated graphics
-  #   # utat022 - Advanced->APM Configuration->Power On By PCI-E ->Enabled ## enables WakeOnLan
-  #   # check for and run Windows updates
-  #   - name: WindowsUpdateAndReboot
-  #     ansible.windows.win_updates:
-  #       name: WindowsUpdateAndReboot
-  #       state: installed
-  #       reboot: true
-  #   # Need to add a way to keep the remote computer from going to sleep
-  #  # selectHigh performance power plan (never sleeps)
-  #  # - name:PreventSleeping
-
-  #   # Windows Features
-  #   - name: Microsoft-Hyper-V-All
-  #     ansible.windows.win_optional_feature:
-  #       name: Microsoft-Hyper-V-All
-  #       state: present
-
-  #   - name: Install Microsoft Subsystem for Linux
-  #     ansible.windows.win_optional_feature:
-  #       name: Microsoft-Windows-Subsystem-Linux
-  #       state: present
-  #     register: wsl_status
-
-  #   - name: Reboot if installing Linux Subsystem as feature requires it
-  #     ansible.windows.win_reboot:
-  #     when:
-  #       wsl_status.reboot_required
-
-  #   # ToDo: set WSL2 as default
-
-  #   # base chocolatey package and configuration
-  #   - name: install chocolatey
-  #     win_chocolatey:
-  #       name: chocolatey
-  #       state: present
-  #   - name: configure chocolatey cache location
-  #     win_chocolatey_config:
-  #       name: cachelocation
-  #       state: present
-  #       value: "{{ chocolateycachelocation }}"
-  #   # configure chocolatey to allow community packages ()'allowglobalconfirmation,allowemptychecksums,allowemptychecksumssecure,allowinsecureconfirmation,allowmultipleversions')
-  #   - name: allow global confirmation when installing packages and their dependencies
-  #     win_chocolatey_feature:
-  #       name: allowglobalconfirmation
-  #       state: disabled
-  #   # configure chocolatey to install community extensions
-  #   - name: install chocolatey-core.extension
-  #     win_chocolatey:
-  #       name: chocolatey-core.extension
-  #       state: present
-
+    # BIOS settings (per host)
+    # utat022 - setup NCMe on PCIE ( PCIEX15(G4) Configuration ->Dual M.2 SSD
+    # utat022 - Advanced -> SA -? graphics Primary Dispaly from Auto to PCIE # setup simultaneous GPU card in PCIE slot and the Intel IRIS integerated graphics
+    # utat022 - Advanced->APM Configuration->Power On By PCI-E ->Enabled ## enables WakeOnLan
+    # check for and run Windows updates
+    - name: WindowsUpdateAndReboot
+      ansible.windows.win_updates:
+        name: WindowsUpdateAndReboot
+        state: installed
+        reboot: true
+    # base chocolatey package and configuration
+    - name: install chocolatey
+      win_chocolatey:
+        name: chocolatey
+        state: present
+    - name: configure chocolatey cache location
+      win_chocolatey_config:
+        name: cachelocation
+        state: present
+        value: "{{ chocolateycachelocation }}"
+    # configure chocolatey to allow community packages ()'allowglobalconfirmation,allowemptychecksums,allowemptychecksumssecure,allowinsecureconfirmation,allowmultipleversions')
+    - name: allow global confirmation when installing packages and their dependencies
+      win_chocolatey_feature:
+        name: allowglobalconfirmation
+        state: disabled
+    # configure chocolatey to install community extensions
+    - name: install chocolatey-core.extension
+      win_chocolatey:
+        name: chocolatey-core.extension
+        state: present
+    # Setup PKI Infrastructure
+    - name: Copy Root CA certificate to target system
+      win_copy:
+        src: /mnt/c/Dropbox/Security/Certificates/Certificates/CN_ATAPUtilities.org__O_ATAPUtilities.org__C_US-CACertificate.crt
+        dest: C:/Temp/CN_ATAPUtilities.org__O_ATAPUtilities.org__C_US-CACertificate.crt
+    # Install the organization's Root Certificate Authority (RootCA)
+    - name: Install Root CA
+      ansible.windows.win_certificate_store:
+        store_name: Root
+        path: C:/Temp/CN_ATAPUtilities.org__O_ATAPUtilities.org__C_US-CACertificate.crt
+        state: present
+    - name: SSL certificate to target system
+      win_copy:
+        src: /mnt/c/Dropbox/Security/Certificates/Certificates/CN_utat022__OU_Development__O_ATAPUtilities.org__C_US-SSLServerCertificate.crt
+        dest: C:/Temp/CN_utat022__OU_Development__O_ATAPUtilities.org__C_US-SSLServerCertificate.crt
+    # Install this hosts SSL Certificate
+    - name: Install SSL Cert
+      ansible.windows.win_certificate_store:
+        store_type: system # installs the certificate to the LocalMachine store
+        path: C:/Temp/CN_utat022__OU_Development__O_ATAPUtilities.org__C_US-SSLServerCertificate.crt
+        state: present
+    # Tell WinRM to use this certificate for its HTTPS listener
 
     # install the  chocolatey packages
-    # - name: install the chocolatey packages
-    #   win_chocolatey:
-    #     name: "{{ item.name }}"
-    #     # version: '{{ item.version }}'
-    #     allow_prerelease: "{{ 'true' if (item.allowprerelease == 'true') else 'false'}}"
-    #     state: "{{ 'absent' if (action_type == 'uninstall') else 'present'}}"
-    #     # {% if item.addedparameters is defined and item.addedparameters|length %}
-    #     # 'package_params: ' "{{ item.addedparameters }}"
-    #     # {% endif %}
-    #   failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
-    #   loop:
+    - name: install the chocolatey packages
+      win_chocolatey:
+        name: "{{ item.name }}"
+        # version: '{{ item.version }}'
+        allow_prerelease: "{{ 'true' if (item.allowprerelease == 'true') else 'false'}}"
+        state: "{{ 'absent' if (action_type == 'uninstall') else 'present'}}"
+        # {% if item.addedparameters is defined and item.addedparameters|length %}
+        # package_params: "{{ item.addedparameters }}"
+        # {% endif %}
+      failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
+      loop:
+        - {
+            name: sysinternals,
+            version: latest,
+            allowprerelease: false,
+            addedparameters,
+          }
+        - {
+            name: pester,
+            version: latest,
+            allowprerelease: false,
+            addedparameters,
+          } # move to a role so that obsolete version can be removed, settings and associations can be made per user
     #     # drivers for utat022
     #     - {name: nvidia-display-driver, version: latest, allowprerelease: false, addedparameters: ,  Notes:} # minimal set of nvidea display fdriver apps
-        # - { name: geforce-game-ready-driver, version: latest, allowprerelease: false, addedparameters: ,  Notes:} # bloatware, use nvidia-display-driver instead
-        # - {name: geforce-experience, version: latest, allowprerelease: false, addedparameters: ,  Notes:} # need to investigate if needed
-        #- {name: razer-synapse-3graph, version: latest, allowprerelease: false, addedparameters: ,  Notes:}
-        # drivers for ncat016
-        # - {name: logitechgaming, version: latest, allowprerelease: false, addedparameters:  } # for ncat016
+    # - { name: geforce-game-ready-driver, version: latest, allowprerelease: false, addedparameters: ,  Notes:} # bloatware, use nvidia-display-driver instead
+    # - {name: geforce-experience, version: latest, allowprerelease: false, addedparameters: ,  Notes:} # need to investigate if needed
+    #- {name: razer-synapse-3graph, version: latest, allowprerelease: false, addedparameters: ,  Notes:}
+    # drivers for ncat016
+    # - {name: logitechgaming, version: latest, allowprerelease: false, addedparameters:  } # for ncat016
 
-        # $pkgs = gc c:\dropbox\whertzing\github\atap.iac\chocolateypackageinfo.yml| convertfrom-yaml
-        # $pkgkeys = [system.collections.arraylist]($pkgs.keys)
-        # copy addedparamter scriptblock
-        # foreach ($pk in $pkgkeys) {"  - {name: $pk, version: latest, allowprerelease: false, addedparameters: $(. $addedparametersscriptblock $($p[$pk]).addedparamters)"}
+    # $pkgs = gc c:\dropbox\whertzing\github\atap.iac\chocolateypackageinfo.yml| convertfrom-yaml
+    # $pkgkeys = [system.collections.arraylist]($pkgs.keys)
+    # copy addedparamter scriptblock
+    # foreach ($pk in $pkgkeys) {"  - {name: $pk, version: latest, allowprerelease: false, addedparameters: $(. $addedparametersscriptblock $($p[$pk]).addedparamters)"}
 
-        # Things that have to happen first
-        # Install powershell core role
-        #- {name: powershell-core, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vcredist-all, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: pester, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that obsolete version can be removed, settings and associations can be made per user
-        #- {name: samsung-magician, version: latest, allowprerelease: false, addedparameters: , }
+    # Things that have to happen first
+    # Install powershell core role
+    #- {name: powershell-core, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vcredist-all, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: pester, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that obsolete version can be removed, settings and associations can be made per user
+    #- {name: samsung-magician, version: latest, allowprerelease: false, addedparameters: , }
 
-        # Things that make setting up a new computer easier if done first
-        #- {name: autoruns, version: latest, allowprerelease: false, addedparameters: , } # investigate - throwing a side-by-side error during installation - something about a broken manifest
-        #- {name: es, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that it can be run under a named service account, and configuration setting made per user
-        #- {name: everything, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: googlechrome, version: latest, allowprerelease: false, addedparameters: , } # needs to be a role, with selenium to click on 'login to google', 'turn on sync', and maybe "grant an extension access to the microphone"
-        #- {name: perfview, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: powertoys, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: sysinternals, version: latest, allowprerelease: false, addedparameters: , }
+    # Things that make setting up a new computer easier if done first
+    #- {name: autoruns, version: latest, allowprerelease: false, addedparameters: , } # investigate - throwing a side-by-side error during installation - something about a broken manifest
+    #- {name: es, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that it can be run under a named service account, and configuration setting made per user
+    #- {name: everything, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: googlechrome, version: latest, allowprerelease: false, addedparameters: , } # needs to be a role, with selenium to click on 'login to google', 'turn on sync', and maybe "grant an extension access to the microphone"
+    #- {name: perfview, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: powertoys, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: sysinternals, version: latest, allowprerelease: false, addedparameters: , }
 
-        # Get Visual Studio code (VSC) up and running
-        #- {name: visualstudio-installer, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
-        #- {name: vscode-codespellchecker, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-csharp, version: latest, allowprerelease: false, addedparameters: , }
-        #  # deprecated - {name: vscode-csharpextensions, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-drawio, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-editorconfig, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-gitattributes, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-gitignore, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-gitlens, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-icons, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-vsliveshare, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-markdownlint, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-mssql, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-powershell, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-prettier, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-ruby, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-test-explorer, version: latest, allowprerelease: false, addedparameters: , }
-        ## - { name: vscode-test-explorer-liveshare, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vscode-yaml, version: latest, allowprerelease: false, addedparameters: , }
+    # Get Visual Studio code (VSC) up and running
+    #- {name: visualstudio-installer, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
+    #- {name: vscode-codespellchecker, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-csharp, version: latest, allowprerelease: false, addedparameters: , }
+    #  # deprecated - {name: vscode-csharpextensions, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-drawio, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-editorconfig, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-gitattributes, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-gitignore, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-gitlens, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-icons, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-vsliveshare, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-markdownlint, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-mssql, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-powershell, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-prettier, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-ruby, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-test-explorer, version: latest, allowprerelease: false, addedparameters: , }
+    ## - { name: vscode-test-explorer-liveshare, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vscode-yaml, version: latest, allowprerelease: false, addedparameters: , }
 
-        # Things that are nice to have if done early
-        #- {name: steam, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
-        #- {name: steam-client, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
+    # Things that are nice to have if done early
+    #- {name: steam, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
+    #- {name: steam-client, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
 
-       # order irrelevant
-        #- {name: 7zip, version: latest, allowprerelease: false, addedparameters: , }  # move to a role so that associations can be made per user
-        ## - {name: adoptopenjdkjre, version: latest, allowprerelease: false, addedparameters: , } # this package needs to be moved to the JavascriptInterpreterWindows role
-        #- {name: audacity, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: audacity-ffmpeg, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: audacity-lame, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: autohotkey, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: beyondcompare, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that license can be added
-        #- {name: blender, version: latest, allowprerelease: false, addedparameters: , } # investigate why this seemsto have hanged when being run the first time
-        #- {name: brave, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: carbon, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: choco-package-list-backup, version: latest, allowprerelease: false, addedparameters: , }  # need to set configuration options
-        #- {name: cinebench, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: cpu-z, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: cura-new, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: dbachecks, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: dbatools, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: discord, version: latest, allowprerelease: false, addedparameters: , }  # move to a role so that it can do first login per user. as installed it autostarts.
-        #- {name: docfx, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: dotultimate, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that license can be added, configuration changes, and first login
-        #- {name: element-desktop, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: fiddler, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: firefox, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: flyway.commandline, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: freevideoeditor, version: latest, allowprerelease: false, addedparameters: , } # installs to 'FlashIntegro' see if there are package parameters to support installation to a different path : default to 'VSDC'
-        #- {name: fusionplusplus, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: gh, version: latest, allowprerelease: false, addedparameters: , } # move to a role to allow for configuration settings
-        #- {name: gimp, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: git, version: latest, allowprerelease: false, addedparameters: , } # move to a role to allow for configuration settings
-        #- {name: gitter, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: gopro-quik, version: latest, allowprerelease: false, addedparameters: , } # investigate - installation hung here
-        #- {name: gpg4win, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: gpu-z, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: grammarly, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: grammarly-chrome, version: latest, allowprerelease: false, addedparameters: , } # role with selenium to see if it has been installed from a sync, but needs to get installed if the networkd computers don't have it (assuming it is part of an Ansible group)
-        #- {name: grammarly-for-windows, version: latest, allowprerelease: false, addedparameters: , } # role with selenium to see if it has been installed from a sync, but needs to get installed if the networkd computers don't have it (assuming it is part of an Ansible group)  See chatgpt history. 'mic access via WebAPI'
-        #- {name: graphviz, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: hwinfo, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: ilspy, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that associations can be made per user
-        #- {name: invoke-build, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that symbolic links can be made per user
-        #- {name: jetbrains-rider, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that license can be added
-        #- {name: keep-chrome, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: keepass, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: linqpad, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: linqpad6, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: linqpad7, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: msbuild-structured-log-viewer, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: msys2, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: mysql, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: mysql.workbench, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: ngrok, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: nmap, version: latest, allowprerelease: false, addedparameters: , } # investiggate - installation hung here
-        #- {name: nordvpn, version: latest, allowprerelease: false, addedparameters: , } # requires restart and then login after installation
-        #- {name: notepadplusplus, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
-        #- {name: nssm, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: nuget.commandline, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: nugetpackageexplorer, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
-        #- {name: office365proplus, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that license can be added
-        #- {name: openssl.light, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: pdq-inventory, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: plantuml, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: plaster, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: postman, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: pushbullet, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
-        #- {name: putty, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: putty.portable, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: resharper-platform, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that license can be added
-        #- {name: ruby, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that multiple interpreters can be supported
-        #- {name: rufus, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: sentinel, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: sharex, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
-        #- {name: speedtest, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: sql-server-management-studio, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: sqlite, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: temurinjre, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that multiple interpreters can be supported
-        #- {name: tineye-chrome, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: vault, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
-        #- {name: vlc, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that associations can be made per user
-        #- {name: wireshark, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: xunit, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: xnviewmp, version: latest, allowprerelease: false, addedparameters: , }
-        #- {name: zoom, version: latest, allowprerelease: false, addedparameters: , }
+    # order irrelevant
+    #- {name: 7zip, version: latest, allowprerelease: false, addedparameters: , }  # move to a role so that associations can be made per user
+    ## - {name: adoptopenjdkjre, version: latest, allowprerelease: false, addedparameters: , } # this package needs to be moved to the JavascriptInterpreterWindows role
+    #- {name: audacity, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: audacity-ffmpeg, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: audacity-lame, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: autohotkey, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: beyondcompare, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that license can be added
+    #- {name: blender, version: latest, allowprerelease: false, addedparameters: , } # investigate why this seemsto have hanged when being run the first time
+    #- {name: brave, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: carbon, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: choco-package-list-backup, version: latest, allowprerelease: false, addedparameters: , }  # need to set configuration options
+    #- {name: cinebench, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: cpu-z, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: cura-new, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: dbachecks, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: dbatools, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: discord, version: latest, allowprerelease: false, addedparameters: , }  # move to a role so that it can do first login per user. as installed it autostarts.
+    #- {name: docfx, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: dotultimate, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that license can be added, configuration changes, and first login
+    #- {name: element-desktop, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: fiddler, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: firefox, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: flyway.commandline, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: freevideoeditor, version: latest, allowprerelease: false, addedparameters: , } # installs to 'FlashIntegro' see if there are package parameters to support installation to a different path : default to 'VSDC'
+    #- {name: fusionplusplus, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: gh, version: latest, allowprerelease: false, addedparameters: , } # move to a role to allow for configuration settings
+    #- {name: gimp, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: git, version: latest, allowprerelease: false, addedparameters: , } # move to a role to allow for configuration settings
+    #- {name: gitter, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: gopro-quik, version: latest, allowprerelease: false, addedparameters: , } # investigate - installation hung here
+    #- {name: gpg4win, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: gpu-z, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: grammarly, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: grammarly-chrome, version: latest, allowprerelease: false, addedparameters: , } # role with selenium to see if it has been installed from a sync, but needs to get installed if the networkd computers don't have it (assuming it is part of an Ansible group)
+    #- {name: grammarly-for-windows, version: latest, allowprerelease: false, addedparameters: , } # role with selenium to see if it has been installed from a sync, but needs to get installed if the networkd computers don't have it (assuming it is part of an Ansible group)  See chatgpt history. 'mic access via WebAPI'
+    #- {name: graphviz, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: hwinfo, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: ilspy, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that associations can be made per user
+    #- {name: invoke-build, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that symbolic links can be made per user
+    #- {name: jetbrains-rider, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that license can be added
+    #- {name: keep-chrome, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: keepass, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: linqpad, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: linqpad6, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: linqpad7, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: msbuild-structured-log-viewer, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: msys2, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: mysql, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: mysql.workbench, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: ngrok, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: nmap, version: latest, allowprerelease: false, addedparameters: , } # investiggate - installation hung here
+    #- {name: nordvpn, version: latest, allowprerelease: false, addedparameters: , } # requires restart and then login after installation
+    #- {name: notepadplusplus, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
+    #- {name: nssm, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: nuget.commandline, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: nugetpackageexplorer, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
+    #- {name: office365proplus, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that license can be added
+    #- {name: openssl.light, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: pdq-inventory, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: plantuml, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: plaster, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: postman, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: pushbullet, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
+    #- {name: putty, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: putty.portable, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: resharper-platform, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that license can be added
+    #- {name: ruby, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that multiple interpreters can be supported
+    #- {name: rufus, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: sentinel, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: sharex, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
+    #- {name: speedtest, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: sql-server-management-studio, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: sqlite, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: temurinjre, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that multiple interpreters can be supported
+    #- {name: tineye-chrome, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: vault, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
+    #- {name: vlc, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that associations can be made per user
+    #- {name: wireshark, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: xunit, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: xnviewmp, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: zoom, version: latest, allowprerelease: false, addedparameters: , }
 
-   # $mods = gc c:\dropbox\whertzing\github\atap.iac\powershellmoduleinfo.yml| convertfrom-yaml
-   # $modkeys = [system.collections.arraylist]($mods.keys) | sort
-   # foreach ($m in $modkeys) {"  - {name: $m, version: latest }"}
+    # $mods = gc c:\dropbox\whertzing\github\atap.iac\powershellmoduleinfo.yml| convertfrom-yaml
+    # $modkeys = [system.collections.arraylist]($mods.keys) | sort
+    # foreach ($m in $modkeys) {"  - {name: $m, version: latest }"}
 
-   # - name: Trust the PSGallery
-   # Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-   # ensure the win_psmodule uses the latest TLS protocol for downloading [Net.ServicePointManager]::SecurityProtocol = "tls12"
+    # - name: Trust the PSGallery
+    # Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+    # ensure the win_psmodule uses the latest TLS protocol for downloading [Net.ServicePointManager]::SecurityProtocol = "tls12"
 
     #- name: install the modules defined for each group
     #  community.windows.win_psmodule:
@@ -260,28 +270,28 @@
     #    - { name: sqlserver, version: latest, allowprerelease: false }
     #    - { name: threadjob, version: latest, allowprerelease: false }
 
-        # Define and Trust the ATAP.Utilities production repository
-        #  Set-PSRepository -Name ATAPProduction -InstallationPolicy Trusted -SourceLocation $global:settings[$global:configrootkeys['RepositoryNuGetFilesystemProductionPackagePathConfigRootKey']]
-        #  #  ISSUE: Set-PSRepository requires the  -SourceLocation and ScriptSourceLocation to tbe the same and requires '\'s ''
-        #  have to fix hostsettings
-        # - Add all production ATAP utilities modules
+    # Define and Trust the ATAP.Utilities production repository
+    #  Set-PSRepository -Name ATAPProduction -InstallationPolicy Trusted -SourceLocation $global:settings[$global:configrootkeys['RepositoryNuGetFilesystemProductionPackagePathConfigRootKey']]
+    #  #  ISSUE: Set-PSRepository requires the  -SourceLocation and ScriptSourceLocation to tbe the same and requires '\'s ''
+    #  have to fix hostsettings
+    # - Add all production ATAP utilities modules
 
-        # Create local users (real people)
-        # create whertzing
+    # Create local users (real people)
+    # create whertzing
 
-      # $rs = gc c:\dropbox\whertzing\github\atap.iac\registrysettingsinfo.yml| convertfrom-yaml
-      # $rskeys = [system.collections.arraylist]($rs.keys) | sort
-      # $user =  [system.collections.arraylist]::new()
-      # $machine =  [system.collections.arraylist]::new()
-      # foreach ($r in $rskeys) { if ($($rs[$r]).path -match 'hkcu'){$user += "      - $r"} else {$machine += "      - $r"}}
-      # write-output       "user"
-      # write-output       $user
-      # write-output       "machine"
-      # write-output       $machine
+    # $rs = gc c:\dropbox\whertzing\github\atap.iac\registrysettingsinfo.yml| convertfrom-yaml
+    # $rskeys = [system.collections.arraylist]($rs.keys) | sort
+    # $user =  [system.collections.arraylist]::new()
+    # $machine =  [system.collections.arraylist]::new()
+    # foreach ($r in $rskeys) { if ($($rs[$r]).path -match 'hkcu'){$user += "      - $r"} else {$machine += "      - $r"}}
+    # write-output       "user"
+    # write-output       $user
+    # write-output       "machine"
+    # write-output       $machine
 
     # - name: load registry settings information json file
     #   set_fact:
-    #     registry_properties: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.IAC.Ansible/public/DefaultRegistrySettingsInfo.yml') | from_yaml }}"
+    #     registry_properties: "{{ lookup('file', '/mnt/c/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.IAC.Ansible/public/ApprovedRegistrySettingsInfo.yml') | from_yaml }}"
     # - name: set registry values machine wide
     #   win_regedit:
     #     path: "{{ registry_properties[item]['path'] }}"
@@ -290,10 +300,10 @@
     #     type: "{{ registry_properties[item]['type'] | default('dword') }}"
     #   loop:
     #     - DisableCortana
-        #- DisableGameDVR
-        #- DisableTelemetry
-        #- EnableAutoTray
-        ##- LaunchEdgeInIncognitoByDefault
+    #- DisableGameDVR
+    #- DisableTelemetry
+    #- EnableAutoTray
+    ##- LaunchEdgeInIncognitoByDefault
 
     # [Stop Microsoft Edge from Opening on Startup: 4 Easy Ways](https://windowsreport.com/stop-microsoft-edge-from-opening-on-startup-windows-11/)
     # - disableEdgePreLoader
@@ -328,20 +338,20 @@
     #     - RemoveShortcutFromNewShortcutFileName
     #     - StopAutomaticInstallationOfSuggestedWindows11Apps
 
-        #- explorerdefaulttodetailsview
-        #- pin terminal to taskbar
-        #- pin VSC to taskbar
-        #- pin Explorer to taskbar
-        #- pin chrome to taskbar
-        #- pin Brave to taskbar
-        #- pin Everything to taskbar
-        #- pin Notepad++ to taskbar
-        #- pin Discord to taskbar
-        # - remove Microsoft Store from taskbar
-        # - remove Edge from Taskbar- remove teams/char from taskbar
-        # - remove Edge from Desktop
-        # - set UAC notification level
-        # - disable microsoft Teams
+    #- explorerdefaulttodetailsview
+    #- pin terminal to taskbar
+    #- pin VSC to taskbar
+    #- pin Explorer to taskbar
+    #- pin chrome to taskbar
+    #- pin Brave to taskbar
+    #- pin Everything to taskbar
+    #- pin Notepad++ to taskbar
+    #- pin Discord to taskbar
+    # - remove Microsoft Store from taskbar
+    # - remove Edge from Taskbar- remove teams/char from taskbar
+    # - remove Edge from Desktop
+    # - set UAC notification level
+    # - disable microsoft Teams
 
     # ansible roles
     - name: include the following role on all the hosts in windowshosts
@@ -447,47 +457,45 @@
         #      Start ComfyUI
         #        WAS Suite should uninstall legacy nodes automatically for you.
         #       Tools will be located in the WAS Suite menu.
-#
-        # Link downloaded models to comfyui locations
-        # Import or require ATAP.Utilities.Powershell package
-        # . C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1
-        # New-SymbolicLink -targetPath D:\BigDownloads\AI\Downloads\Models\sd_xl_base_1.0.safetensors -symbolicLinkPath D:\BigDownloads\AI\ComfyUI_windows_portable\ComfyUI\models/checkpoints/sd_xl_base_1.0.safetensors -force
-        # New-SymbolicLink -targetPath D:\BigDownloads\AI\Downloads\Models\sd_xl_refiner_1.0.safetensors -symbolicLinkPath D:\BigDownloads\AI\ComfyUI_windows_portable\ComfyUI\models/checkpoints/sd_xl_refiner_1.0.safetensors -force
-        # New-SymbolicLink -targetPath D:\BigDownloads\AI\Downloads\Models\vae/sdxl_vae.safetensors -symbolicLinkPath D:\BigDownloads\AI\ComfyUI_windows_portable\ComfyUI\models/vae/sdxl_vae.safetensors -force
+  #
+  # Link downloaded models to comfyui locations
+  # Import or require ATAP.Utilities.Powershell package
+  # . C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1
+  # New-SymbolicLink -targetPath D:\BigDownloads\AI\Downloads\Models\sd_xl_base_1.0.safetensors -symbolicLinkPath D:\BigDownloads\AI\ComfyUI_windows_portable\ComfyUI\models/checkpoints/sd_xl_base_1.0.safetensors -force
+  # New-SymbolicLink -targetPath D:\BigDownloads\AI\Downloads\Models\sd_xl_refiner_1.0.safetensors -symbolicLinkPath D:\BigDownloads\AI\ComfyUI_windows_portable\ComfyUI\models/checkpoints/sd_xl_refiner_1.0.safetensors -force
+  # New-SymbolicLink -targetPath D:\BigDownloads\AI\Downloads\Models\vae/sdxl_vae.safetensors -symbolicLinkPath D:\BigDownloads\AI\ComfyUI_windows_portable\ComfyUI\models/vae/sdxl_vae.safetensors -force
 
-        #- roles/xnviewmp   # tagging/viewing SW - best for showing metadata
-        #    download installer from "https://download.xnview.com/XnViewMP-win-x64.exe"
-        #    setup and activate venv
-        #    Run startup wizard
-        #    Add `Browse with XnViewMP context  menu' and run association tool
-        #    xnView settings in registry or under user's folder
-        #    Add `Browse with XnViewMP context menu' and run association tool
-        #    xnView settings in registry or under user's folder
+  #- roles/xnviewmp   # tagging/viewing SW - best for showing metadata
+  #    download installer from "https://download.xnview.com/XnViewMP-win-x64.exe"
+  #    setup and activate venv
+  #    Run startup wizard
+  #    Add `Browse with XnViewMP context  menu' and run association tool
+  #    xnView settings in registry or under user's folder
+  #    Add `Browse with XnViewMP context menu' and run association tool
+  #    xnView settings in registry or under user's folder
 
+  #- roles/sdTaggingHelperWindows # cropping/tagging/viewing SW (mostly cropping)
+  #    git clone https://github.com/arenasys/sd-tagging-helper.git
+  #    install and activate venv
+  #    pip3  install pillow pyqt5==5.15.7
+  #    Input image directory has to have pre-existing tag file; run this powershell script in the input directory
+  #      $tags = [system.collections.arraylist]::new();$( gci *.jpg) | %{$fh =$_;$base = $fh.basename;[void]$tags.clear();$tags.Add($(get-content "$base.txt" -ErrorAction SilentlyContinue));[void]$tags.Add('JoAnn2');$fh.fullname;$fh.basename;$tags;"$base.txt"} Set-Content -Path "$base.txt" -Value $tags}
+  #     start.bat in sd-tagging-helper
 
-        #- roles/sdTaggingHelperWindows # cropping/tagging/viewing SW (mostly cropping)
-        #    git clone https://github.com/arenasys/sd-tagging-helper.git
-        #    install and activate venv
-        #    pip3  install pillow pyqt5==5.15.7
-        #    Input image directory has to have pre-existing tag file; run this powershell script in the input directory
-        #      $tags = [system.collections.arraylist]::new();$( gci *.jpg) | %{$fh =$_;$base = $fh.basename;[void]$tags.clear();$tags.Add($(get-content "$base.txt" -ErrorAction SilentlyContinue));[void]$tags.Add('JoAnn2');$fh.fullname;$fh.basename;$tags;"$base.txt"} Set-Content -Path "$base.txt" -Value $tags}
-        #     start.bat in sd-tagging-helper
+  # - roles/pictureflowWindows
+  #  raw input directory  "camera uploads'"
+  #  move N latest files to "raw input directory"
+  #  input to Hydrus, tag with hydrus client
+  #  further tag with xnviewmp (optional)
+  #  import to hydrus DB and client files
+  #  backup and verify Hydrus DB and clientimages
 
-        # - roles/pictureflowWindows
-        #  raw input directory  "camera uploads'"
-        #  move N latest files to "raw input directory"
-        #  input to Hydrus, tag with hydrus client
-        #  further tag with xnviewmp (optional)
-        #  import to hydrus DB and client files
-        #  backup and verify Hydrus DB and clientimages
+  #- roles/LoraCreationWindows
+  #  curate images in Hydrus
+  #  export images and tags to F:AI/ImageDataset/<nameOfDataset>/0tagged
+  #  crop images, save to F:AI/ImageDataset/<nameOfDataset>/1cropped
 
-        #- roles/LoraCreationWindows
-        #  curate images in Hydrus
-        #  export images and tags to F:AI/ImageDataset/<nameOfDataset>/0tagged
-        #  crop images, save to F:AI/ImageDataset/<nameOfDataset>/1cropped
-
-        #- roles/SD.NextWindows  # AIArtCreator http://127/0/0/1:7860
-
+  #- roles/SD.NextWindows  # AIArtCreator http://127/0/0/1:7860
 
   ### Things to add
   # Powershell scripts to run
@@ -576,17 +584,16 @@
   # and also  differs per user pr machine wide (where the .lnk isplaced)
   # TBD - write the PS script, and deploy the contaning package to the target host before trying to pin anything - maybe make it a role, and have that role be a dependency for any rolethat wants t pin an app
 
-    # if needed to change a local user password
-    #   net user <username> <password>
-    # add local user to group
-    #    net localgroup <group_name> <UserLoginName> /add
-    # elevate a user to administrator and run a command
-    #    runas /user:<adminusername> "command to run" # e.g. "net localgroup Administrators <nonadmnusername> /add"
-    #  create a new local group
-    #    net localgroup <groupname> /add
+  # if needed to change a local user password
+  #   net user <username> <password>
+  # add local user to group
+  #    net localgroup <group_name> <UserLoginName> /add
+  # elevate a user to administrator and run a command
+  #    runas /user:<adminusername> "command to run" # e.g. "net localgroup Administrators <nonadmnusername> /add"
+  #  create a new local group
+  #    net localgroup <groupname> /add
 
-    #     selectHigh balanced power plan (never sleeps)
-
+  #     selectHigh balanced power plan (never sleeps)
 
   vars:
     chocolateycachelocation: "C:/Temp/ChocolateyCache"

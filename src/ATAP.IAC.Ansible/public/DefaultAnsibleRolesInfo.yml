@@ -11,20 +11,20 @@ hydrus-networkWindows:
       - Name: hydrus-network
         Version: latest
         Prerelease: false
-        AddedParameters:  # ToDO: package parmater to specify the installation location based on a HostSetting, by default it is "C:\Program Files\Hydrus Network"
+        AddedParameters:  # ToDO: package parameter to specify the installation location based on a HostSetting, by default it is "C:\Program Files\Hydrus Network"
       Notes: ''
     - Name: Create Hydrus-Network shortcut
       Kind: AnsiblePlayBlockShortcut
       Items:
       - Name: hydrus-network Shortcut
-        source: # ToDo: based on a hostsetting
-        destination: # ToDo: get Windows start folder location. appears to be "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\"
-        AddedParameters: # ToDo: get location of the databae files from the host settings
+        source: "C:/ProgramData/Chocolatey/bin/hydrusnetwork.exe" # ToDo: based on a hostsetting
+        destination: "C:/ProgramData/Microsoft/Windows/Start Menu/Programs/" # ToDo: get Windows start folder location. appears to be "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\"
+        AddedParameters: # ToDo: get location of the database files from the host settings
       Notes: ' Must create a shortcut that adds the location to the hydrus database on another drive or folder. Chocolatey creates a shortcut here: "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Hydrus Network"'
     - Name: Pin the Hydrus-Network shortcut to the task bar
       Kind: AnsiblePlayBlockPinToTaskBar
       Items:
-      - Name: hydrus-network Pin Shortcut to Taskbar}
+      - Name: hydrus-network Pin Shortcut to Taskbar
         source: # ToDO: get Windows start folder location "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Hydrus Network"
       Notes: ' Must create a shortcut that adds the location to the hydrus database on another drive or folder'
   Notes: "# Image database and tagger. only install on one machine, that has the image files database local on an SSD"
@@ -43,7 +43,7 @@ hydrus-networkWindows:
 #         Version: latest
 #         URL: https://www.cobiansoft.com/download.php?id=1
 #         Target: # ToDo Add host setting for location in which to place downloads
-#         AddedParameters:  # ToDO: package parmater to specify the installation location based on a HostSetting typically "C:\Program Files\Cobian Reflector"
+#         AddedParameters:  # ToDO: package parameter to specify the installation location based on a HostSetting typically "C:\Program Files\Cobian Reflector"
 #       Notes: 'download crSetup-2.4.00.exe from [CobianSoftDownloadPage](https://www.cobiansoft.com/download.php?id=1)'
 #     # - Name: create service account and all that entails
 #     - Name: Install program from EXE
@@ -60,7 +60,7 @@ hydrus-networkWindows:
 #       - Name: Cobian Reflector Shortcut
 #         source: # ToDo: based on a hostsetting
 #         destination: # ToDo: get Windows start folder location
-#         AddedParameters: # ToDo: get location of the databae files from the host settings
+#         AddedParameters: # ToDo: get location of the database files from the host settings
 #       Notes: ' Must create a shortcut that adds the location to the hydrus database on another drive or folder'
 #     - Name: Pin the Cobian Reflector shortcut to the task bar
 #       Kind: AnsiblePlayBlockPinToTaskBar
@@ -154,7 +154,7 @@ GitHubWindows:  # still requires a manual step to supply the Github account pass
     # - Name: Install GitHub Configuration File
     #   Kind: AnsiblePlayBlockFile
     #   Items:
-    #   - {Purpose: "Change the GitHub username", path: HKCU:\Software\Ditto, name: UserName, data: "LetMeIn",  type: SZ'} # not production, made up for now
+    #   - {Purpose: "Change the GitHub username", path: HKCU:\Software\GH, name: UserName, data: "{userName}",  type: SZ'} # not production, made up for now
 
 DropboxWindows: # still requires a manual step to enable LAN sync and to supply the dropbox account userid and password
   Name: DropboxWindows

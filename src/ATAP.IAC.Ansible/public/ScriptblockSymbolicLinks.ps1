@@ -19,8 +19,8 @@ function ScriptblockSymbolicLinks {
 "@)
   for ($index = 0; $index -lt $items.count; $index++) {
 
-    $target = SubstitueConfigRootKey $($items[$index])['target']
-    $original = SubstitueConfigRootKey $($items[$index])['source']
+    $target = SubstituteConfigRootKey $($items[$index])['target']
+    $original = SubstituteConfigRootKey $($items[$index])['source']
     [void]$sb.Append("    - {link: $target, original: $original}") # ToDo Owner and ACL
     [void]$sb.Append("`n")
   }

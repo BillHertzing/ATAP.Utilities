@@ -25,11 +25,13 @@ Add-Type -Path $assemblyFileInfo.FullName
 
 . .\ScriptblockChocolateyPackages.ps1
 . .\ScriptblockCopyFiles.ps1
+. .\ScriptblockPinToTaskbar.ps1
 . .\ScriptblockRegistrySettings.ps1
+. .\ScriptblockShortcut.ps1
 . .\ScriptblockSymbolicLinks.ps1
 . .\ScriptblockUserWindows.ps1
 
-. .\SubstitueConfigRootKey.ps1
+. .\SubstituteConfigRootKey.ps1
 
 # ToDo: These paths should come from an organization's vault
 # ToDo Validate the files exist and can be read
@@ -63,7 +65,7 @@ $vaultUnLocked = $null # TBD
 # [Use Molecule to test Ansible roles on Windows](https://gregorystorme.medium.com/use-molecule-to-test-ansible-roles-on-windows-5bd40db3e331)
 
 # ToDo move this to buildtooling package
-# This function returns the higest version number found in an array of dictionaries having fields both name and version
+# This function returns the highest version number found in an array of dictionaries having fields both name and version
 function Get-HighestVersionNumbers {
   param (
     [Parameter(Mandatory = $true)]
@@ -128,7 +130,7 @@ function Get-HighestVersionNumbers {
 
 # # Powershell module Roles are defined a-priori. There (will be) a script to read the get-module -ListAvailable, and create the existing installed modules  and assign them to groups (as roles)
 # $excludeRegexPattern = '^\s+$'
-# # The following line returns a version strucutre for the version, not just a simple string, so it needs to be converted to a [version] type, then to a string
+# # The following line returns a version structure for the version, not just a simple string, so it needs to be converted to a [version] type, then to a string
 # $powershellModules = Get-HighestVersionNumbers $(Get-Module -ListAvailable | Where-Object { $_.name -notmatch '^$' -and $_.name -notmatch $excludeRegexPattern })
 # $powershellModuleInfos = $powershellModules
 # $powershellModules.Keys | ForEach-Object{$moduleName = $_
@@ -142,8 +144,8 @@ function Get-HighestVersionNumbers {
 # end region
 
 # Create the ansibleInventory Powershell hashtable from the source file
-. $ansibleInventorySourcePath # dot source the ansibleinventory script
-$ansibleStructure = Get-AnsibleInventory
+. $ansibleInventorySourcePath # dot source the ansibleInventory script
+$ansibleStructure = Get-AnsibleInventory # found in the ansibleInventorySourcePath script file
 $ansibleInventory = $ansibleStructure.AnsibleInventory
 # end region
 
@@ -153,7 +155,7 @@ function convertFromYamlWithErrorHandling {
     [string]$path
   )
   # ToDo: error handling
-  ConvertFrom-Yaml -Yaml $(Get-Content -Path $defaultAnsibleRoleInfoPath -Raw )
+  ConvertFrom-Yaml -Yaml $(Get-Content -Path $path -Raw )
 }
 
 function Get-ClonedAndModifiedHashtableFromYamlWithErrorHandling {
@@ -173,22 +175,22 @@ function Get-ClonedAndModifiedHashtableFromYamlWithErrorHandling {
 
 
 # ToDo - put into global:settings
-$defaultChocolateyPackageInfoPath = '.\DefaultChocolateyPackageInfo.yml'
-$defaultPowershellModuleInfoPath = '.\DefaultRegistrySettingsInfo.yml'
-$defaultRegistrySettingsInfoPath = '.\DefaultPowershellModuleInfo.yml'
-$defaultWindowsFeatureInfoPath = '.\DefaultWindowsFeatureInfo.yml'
-$defaultAnsibleRoleInfoPath = '.\DefaultAnsibleRoleInfo.yml'
+$ApprovedChocolateyPackageInfoPath = '.\DefaultChocolateyPackageInfo.yml'
+$ApprovedPowershellModulesInfoPath = '.\DefaultPowershellModulesInfo.yml'
+$ApprovedRegistrySettingsInfoPath = '.\DefaultRegistrySettingsInfo.yml'
+$ApprovedWindowsFeaturesInfoPath = '.\DefaultWindowsFeaturesInfo.yml'
+$ApprovedAnsibleRolesInfoPath = '.\DefaultAnsibleRolesInfo.yml'
 
 # Create the structure that holds the allowed names and versions of the components
 # Combine the default information from this module with the organization's overriding specific non-default information
-# ToDo contnue to create defaults for each SWConfig type
+# ToDo continue to create defaults for each SWConfig type
 $SwCfgInfos = @{
   NuGetPackageInfos      = $nugetPackagesInfos
   ChocolateyPackageInfos = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultChocolateyPackageInfoPath) $ansibleStructure.SwCfgInfos.ChocolateyPackageInfos
-  PowershellModuleInfos  = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultPowershellModuleInfoPath) $ansibleStructure.SwCfgInfos.PowershellModuleInfos
+  PowershellModuleInfos  = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultPowershellModulesInfoPath) $ansibleStructure.SwCfgInfos.PowershellModuleInfos
   RegistrySettingsInfos  = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultRegistrySettingsInfoPath) $ansibleStructure.SwCfgInfos.RegistrySettingsInfos
-  WindowsFeatureInfos    = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultWindowsFeatureInfoPath) $ansibleStructure.SwCfgInfos.WindowsFeatureInfos
-  AnsibleRoleInfos       = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultAnsibleRoleInfoPath) $ansibleStructure.SwCfgInfos.AnsibleRoleInfos
+  WindowsFeatureInfos    = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultWindowsFeaturesInfoPath) $ansibleStructure.SwCfgInfos.WindowsFeatureInfos
+  AnsibleRoleInfos       = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultAnsibleRolesInfoPath) $ansibleStructure.SwCfgInfos.AnsibleRoleInfos
 }
 
 
@@ -217,7 +219,7 @@ $generatedProjectDirectoryPath = Join-Path $projectBaseDirectory $generatedDirec
 $lifecycleNames = @('DevelopmentLFC', 'QualityAssuranceLFC', 'StagingLFC', 'ProductionLFC')
 $actionNames = @('setup', 'update')
 
-# template for new .yml files
+# template (preamble) for new, empty .yml files
 $ymlTemplate = @'
 ---
 # code: language=ansible
@@ -250,13 +252,15 @@ New-Item -ItemType Directory -Path $generatedProjectDirectoryPath -ErrorAction S
 # Create base directory everything else is relative to this location
 $baseDirectory = Join-Path $generatedProjectDirectoryPath 'Ansible'
 New-Item -ItemType Directory -Path $baseDirectory -ErrorAction SilentlyContinue >$null
+# Create a generated package ATAP.Utilities.NewComputerSetup with the desired powershell functions
+
 
 # create the direct subdirectories of the $baseDirectory
 for ($ansibleSubdirectoryNameIndex = 0; $ansibleSubdirectoryNameIndex -lt $ansibleSubdirectoryNames.count; $ansibleSubdirectoryNameIndex++) {
   New-Item -ItemType Directory -Path $(Join-Path $baseDirectory $ansibleSubdirectoryNames[$ansibleSubdirectoryNameIndex]) -ErrorAction SilentlyContinue >$null
 }
 
-# Get the hostNames and ansibleGroupNames from the $ansibleInventory object
+# Get the hostNames and ansibleGroupNames from the $ansibleStructure object
 $hostNames = $ansibleStructure.HostNames
 $ansibleGroupNames = $ansibleStructure.AnsibleGroupNames
 
@@ -302,7 +306,7 @@ for ($index = 0; $index -lt $($vaultFileNames.Keys).count; $index++) {
 New-PlaybooksTop -Template $($($ymlTemplate -replace '\{1}', 'main AnsibleGroupNames Playbook') -replace '\{2}', 'all AnsibleGroups') -Path $(Join-Path $baseDirectory $mainPlaybookName) -InventoryStructure $ansibleStructure -ImportDirectory $playbooksSubdirectory -AnsibleGroupName 'yes'
 
 # Create the buildout playbook, which goes into the base directory. because the `roles` subdirectory and playbooks subdirectory should be relative to the main playbook
-New-PlaybooksTop -Template $($($ymlTemplate -replace '\{1}', 'main HostNames Playbook') -replace '\{2}', 'all Hosts') -Path $(Join-Path $baseDirectory $buildoutPlaybookName) -InventoryStructure $ansibleStructure -ImportDirectory $playbooksSubdirectory -HostName 'yes'
+New-PlaybooksTop -Template $($($ymlTemplate -replace '\{1}', 'HostNames Buildout Playbook') -replace '\{2}', 'all Hosts') -Path $(Join-Path $baseDirectory $buildoutPlaybookName) -InventoryStructure $ansibleStructure -ImportDirectory $playbooksSubdirectory -HostName 'yes'
 
 $playbooksDestinationDirectory = $(Join-Path $baseDirectory $playbooksSubdirectory)
 
@@ -323,9 +327,8 @@ for ($hostNameIndex = 0; $hostNameIndex -lt $hostNames.count; $hostNameIndex++) 
   New-PlaybooksNamed -Template $($($ymlTemplate -replace '\{1}', 'playbook') -replace '\{2}', $hostName) -Path $(Join-Path $playbooksDestinationDirectory "$($hostName)Playbook.yml") -InventoryStructure $ansibleStructure -HostName $hostName
 }
 
-# Create the playbook that gathers current infrastructure settings from each hosxt
+# Create the playbook that gathers current infrastructure settings from each host
 & "$projectBaseDirectory\New-PlaybookInfrastructureReporting.ps1" $($($ymlTemplate -replace '\{1}', 'reporting playbook') -replace '\{2}', 'all Hosts') $(Join-Path $playbooksDestinationDirectory 'InfrastructureReportingPlaybook.yml') $ansibleStructure $ansibleStructure.SwCfgInfos
-
 
 # Create roles (directories, subdirectories, and files)
 $roleNames = @()
@@ -336,7 +339,7 @@ if (-not $(Get-Command 'New-Role')) {
   Throw $message
 }
 # Loop over all the roles defined in the combined structure
-# This creates Role Directorys, so they can be created in no particular order
+# This creates Role Directories, so they can be created in no particular order
 $roleNames = [System.Collections.ArrayList]$($SwCfgInfos.AnsibleRoleInfos.Keys)
 for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) {
   $roleName = $roleNames[$roleNameIndex]
@@ -351,10 +354,83 @@ for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) 
     -RoleInfo $($SwCfgInfos.AnsibleRoleInfos[$roleName])
 }
 
+# create a hostSettings.ps1 file for every host
+$hostSettingsFilename = 'hostSettings.ps1'
+$hostSettingsFileScriptsSubdirectory = 'utat022'
+New-Item -ItemType Directory -Path $(Join-Path $baseDirectory 'scripts' $hostSettingsFileScriptsSubdirectory ) -ErrorAction SilentlyContinue >$null
+New-Item -ItemType File -Path $(Join-Path $baseDirectory 'scripts'  $hostSettingsFileScriptsSubdirectory, $hostSettingsFilename) -ErrorAction SilentlyContinue >$null
 
+# settings: Each ansibleGroupName in the ansibleInventory list the name of the settings needed to describe the groupName
+# The WindowsHost ansibleGroupName has settings for the Preamble, which is the initializer of a WindowsHost computer
+# every level of the Ansible inventory for the organization may contain a settings key
+# ToDo:
+# Create the settings specific for this host
+
+# parse the inventory for all the host names, parse the groupNames for the settings, loop for each hostname
+for ($hostNamesIndex = 0; $hostNamesIndex -lt $hostNames.Count; $hostNamesIndex++) {
+  $hostSpecificSettings = @{}
+  $hostSpecificDuplicates = @{}
+  $ansibleGroupNameAccumulator = @()
+  $hostName = $hostNames[$hostNamesIndex]
+  for ($ansibleGroupNamesIndex = 0; $ansibleGroupNamesIndex -lt $ansibleGroupNames.Count; $ansibleGroupNamesIndex++) {
+    $ansibleGroupName = $ansibleGroupNames[$ansibleGroupNamesIndex]
+    if ($($(inventory.hostNames[$hostName]).AnsibleGroupNames -contains $ansibleGroupName)) {
+      $ansibleGroupNameAccumulator += $ansibleGroupName
+    }
+    #  Loop over every groupname the ansibleGroupNameAccumulator contains looking for duplicates
+    for ($ansibleGroupNamesIndex = 0; $ansibleGroupNamesIndex -lt $ansibleGroupNameAccumulator.Count; $ansibleGroupNamesIndex++) {
+      $ansibleGroupName = $accumulator[$ansibleGroupNamesIndex]
+      if ($(inventory.ansiblegroupNames[$ansibleGroupName]).Settings -and $(inventory.ansibleGroupNames[$ansibleGroupName]).Settings.count .ge 0) {
+        for ($SettingsIndex = 0; $SettingsIndex -lt $Settings.Count; $SettingsIndex++) {
+          $Setting = $Settings[$SettingsIndex]
+          if ($SeenKey[$Setting]) {
+            # ToDO: parameterSet or argument to control first-or-last priority
+            if ($true) {
+              # Later settings override earlier ones
+              $SeenKey[$Setting] = ${'ansibleGroupName' = $ansibleGroupName;'ansibleGroupNamesIndex' = $ansibleGroupNamesIndex; 'Setting' = $Setting }
+            }
+            else {
+              # First one wins
+              $SeenKey[$Setting] = $SeenKey[$Setting]
+            }
+
+          }
+          else {
+            $SeenKey[$Setting] = ${'ansibleGroupName' = $ansibleGroupName;'ansibleGroupNamesIndex' = $ansibleGroupNamesIndex; 'Setting' = $Setting }
+          }
+        }
+      }
+    }
+    # Loop over every seenKey in groupnameOrder
+
+  }
+
+}
+#  make a new hostSettingsFileScriptsSubdirectory for each hostName
+#  The following algorithm has not been optimized for either speed or space.
+#  Walk every level of the ansible inventory where hostname appears, extract all the settings hashes that exist
+#    and order them.
+#  pass the ordered array of hashes to Create-AllUsersAllHostsSettings, with the destination being a temporary object
+#  write the destination as key value pairs, where key is a configRootKey, and value is a scalar, string, array, or hash
+#  write the destination to the file named settings.ps1 and into the hostname vars subdirectory
+# ToDo: if needed, write host_vars that are the key/value pair, as well
+#  starting with the earliest (lowest priority) setting hash cloneAndModify the current settings with the next settings hashess
+# ToDo: modify the CloneAndModify function to accept an -exclude parameter to remove unwanted settings
+#  return the new cloned object,
+#  store the return value in the accumulator
+# after the loop completion of all groupNames the hostName contains, the accumulator has a running copy of the settings hash every step of the loop
+# Select the last object in the array
+# Walk the hash and emit Names.
+#  look for duplicate.
+#  For each duplicate, identify the first / lowest place  and the latest / highest place in the hash where the setting exists.
+#  Based on a parameterset, select which setting location should be honored. This allows prioritization of the first encounter, or the last encounter, or any other prioritization scheme desired
+#  Remove duplicate settings that are not in effect on the named host
+#  write the settings to an file having the default encoding and consisting of the .ps1 script file found in the hostName subdirectroy below the scripts subdirectory
+cloneAndModify | Set-Content -Path
+#  get the union of the settings, ordered
 # The Windows group is affiliated with many roles. A large set of those roles have a one-to-one relationship with software package/versions installed by chocolatey
 
-# simalrly, the WSL2Ubuntu group is affiliated with a large set of roles that have a one-to-one rleationship with software package/versions installed by apt-get
+# similarly, the WSL2Ubuntu group is affiliated with a large set of roles that have a one-to-one relationship with software package/versions installed by apt-get
 # The Windows group has roles that are related to Windows Features
 # The Windows group has roles that are related to Powershell Package Management
 # The instersection of the Windows group and other groups, e.g. webserver or dbserver. invoke roles with

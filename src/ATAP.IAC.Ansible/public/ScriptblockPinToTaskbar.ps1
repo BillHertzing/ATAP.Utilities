@@ -1,4 +1,6 @@
-function ScriptblockShortcut  {
+function ScriptblockPinToTaskbar  {
+  # This is difficult in Win 10 and win 11. Here are some resources
+  # [PowerShell Commands for PinnedItem Item to Taskbar (This PC, User's Profile & Disk D:)](https://learn.microsoft.com/en-us/answers/questions/1309489/powershell-commands-for-pinneditem-item-to-taskbar)
 
   param (
     [string] $playName
@@ -7,7 +9,7 @@ function ScriptblockShortcut  {
     ,[System.Text.StringBuilder] $sb
   )
 
-  #$ShortcutInfos = $($ansibleInventoryStructure.SwCfgInfos).ShortcutInfos
+  #$PinToTaskbarInfos = $($ansibleInventoryStructure.SwCfgInfos).PinToTaskbarInfos
 
   [void]$sb.Append(@"
   - name: $playName
@@ -15,7 +17,8 @@ function ScriptblockShortcut  {
   "@)
 
   [void]$sb.Append(@'
-  ansible.windows.win_powershell:
+  # until packages are working, download the script
+  ansible.windows.win_powershell: # This method is currently suspect
     executable: pwsh.exe
     script:
     $WshShell = New-Object -ComObject WScript.Shell

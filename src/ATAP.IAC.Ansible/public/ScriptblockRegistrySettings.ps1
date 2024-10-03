@@ -18,7 +18,7 @@ function ScriptblockRegistrySettings  {
 
 "@)
   for ($index = 0; $index -lt $items.count; $index++) {
-    $data= $data -match $([regex]::Escape($items[$index]['Data'])) ? {SubstitueConfigRootKey $($items[$index]['Data'])} : $($items[$index]['Data'])
+    $data= $data -match $([regex]::Escape($items[$index]['Data'])) ? {SubstituteConfigRootKey $($items[$index]['Data'])} : $($items[$index]['Data'])
 
     [void]$sb.Append("  - {path: $($items[$index]['Path']), name: $($items[$index]['Name']), data: $data, type: $($items[$index]['Type']),}")
     [void]$sb.Append("`n")

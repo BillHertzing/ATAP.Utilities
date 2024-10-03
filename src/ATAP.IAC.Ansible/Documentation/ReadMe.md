@@ -63,7 +63,7 @@ Instructions from here to TBD are should be executed in a 'ubuntu-22.04' termina
 
 ```bash
 # add the default user to the sudoers file
-# TBD - seems tobe difficulat to do....
+# TBD - seems to be difficulat to do....
 
 # Upgrade ubuntu
 sudo apt update && sudo apt upgrade
@@ -440,6 +440,8 @@ ls ~/.ansible/collections/ansible_collections # note that the collections have b
 
 ### Hardening the remote host's WinRM connection
 
+see also [Understanding and troubleshooting WinRM connection and authentication: a thrill seeker's guide to adventure ](https://www.hurryupandwait.io/blog/understanding-and-troubleshooting-winrm-connection-and-authentication-a-thrill-seekers-guide-to-adventure)
+
 Future: TBD: Connect to the remote host using basic auth without CredSSP, and let ansible run the following commands
 Current: On any remote host that will be controlled by Ansible, run the following command
 `Enable-WSManCredSSP -Role Server -Force`
@@ -565,7 +567,7 @@ reboot
 Download the Powershell NTFS moduleterm
 S
  local admins run `Add-NTFSAccess -Path "C:\dropbox" -Account "utat022\whertzing" -AccessRights FullControl
-and that user has been added to the admnistrators group
+and that user has been added to the administrators group
 
 see also C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\MapUserShellFoldersToDropBox.ps1
 
@@ -631,7 +633,7 @@ After chocolatey install, configure as follows:
 
 ### Git Setup
 
-The Git configuration file `.gitconfig` is stored in the mapped cloud filesystem drive, under the user's 'Documents folder'/Git  An environment variable called $env:GIT_CONFIG_GLOBAL points to this file. That works for the pwsh terminal and for the Powershell Integrated Terminal in VSC, but it does NOT work for the VSC Git Extensions. Instead, the GIT VSC extension seems like it only reads whatever is in `"C:\Program Files\Git\etc\gitconfig"`. So you can either merge that file with what is below, or, you can modify that file to 
+The Git configuration file `.gitconfig` is stored in the mapped cloud filesystem drive, under the user's 'Documents folder'/Git  An environment variable called $env:GIT_CONFIG_GLOBAL points to this file. That works for the pwsh terminal and for the Powershell Integrated Terminal in VSC, but it does NOT work for the VSC Git Extensions. Instead, the GIT VSC extension seems like it only reads whatever is in `"C:\Program Files\Git\etc\gitconfig"`. So you can either merge that file with what is below, or, you can modify that file to
 
     -Setup Git
     in file ~/.gitconfig
@@ -711,16 +713,30 @@ Powershell packages are managed on a per-host nad per-group basis using Ansible
   - for installing any certificates via powershell
   `Import-Module -Name C:\Windows\System32\WindowsPowerShell\v1.0\Modules\PKI\pki.psd1`
 
-  - For NetTCIP functionslike `test-port`
+  - For NetTCPIP functions like `test-port`
   `Import-Module -Name "C:\Windows\System32\WindowsPowerShell\v1.0\Modules\NetTCPIP\NetTCPIP.psd1"`
 
 - Install the following ATAP.Utilities packages machine-wide
-  Before Package Management
-  After Package Management
 
-- Install the machine profile files
-  After Package Management
+  - ATAP.Utilities.Powershell
+    - Before Package Management
+      - install the PSFramework requiredPackage
+      - Install the machine profile files. Install them into $env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell\Resources\Profiles
+      - Install the package descriptor file. Install them into $env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell
+      - Install the package library file. Install them into $env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell
+      - Symlink the AllUsersAllHosts machine profile from Resources\Profiles\ to
 
+        ``` Powershell
+
+             Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' 'Modules' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue
+             New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' 'Modules' 'global_ConfigRootKeys.ps1')
+
+        ```
+
+      - Symlink the settings files global_ConfigRootKeys.ps1, HostSettings.ps1, global_EnvironmentVariables.ps1 from the powershell module to the global profile location
+      -
+    - After Package Management
+       - WinGet ATAP.Utilities.Powershell
 
   Before Package Management
 
@@ -765,7 +781,7 @@ Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) '.g
   Delete and rebuild index
   Disable windows indexing service "Windows Search" manually using services applet
 
-  It turns out that Avast has a problem with Powershell when Powershell starts with -EncodedCommand. Avast refuses to allow any mitigation or excpetion to stop Avast from halting Powershell. Windows Defender does not have this problem. So we will NOT replace Windows Defender with Avast.
+  It turns out that Avast has a problem with Powershell when Powershell starts with -EncodedCommand. Avast refuses to allow any mitigation or exception to stop Avast from halting Powershell. Windows Defender does not have this problem. So we will NOT replace Windows Defender with Avast.
 
 - Replace Windows Defender with AVAST # obsolete 2023-03-02
   stop Windows Defender Firewall
@@ -789,8 +805,7 @@ After uninstalling the Avast
 
 - remove the default version of Pester that comes with windows
 
-  ```Powershell
-  $module = "C:\Program Files\WindowsPowerShell\Modules\Pester"
+  ```Powershell  $module = "C:\Program Files\WindowsPowerShell\Modules\Pester"
   takeown /F $module /A /R
   icacls $module /reset
   icacls $module /grant "*S-1-5-32-544:F" /inheritance:d /T
@@ -854,6 +869,7 @@ ToDo: figure out how to do this with a published package instead of a symbolic l
 ToDo: Figure out how to handle drive/path differences for source
 
 #### Jenkins Agent Service account
+
 create the subdirectory `Powershell` in the Jenkins Agent Service Account User's home directory
 In the newly created Powershell subdirectory, run the following command
 `Remove-Item -path (join-path 'C:' 'Users' 'JenkinsAgentSrvAcct','PowerShell','Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path 'C:' 'Users' 'JenkinsAgentSrvAcct','PowerShell','Microsoft.PowerShell_profile.ps1') -Target (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','ProfileForServiceAccountUsers.ps1')`
@@ -866,26 +882,24 @@ In the newly created Powershell subdirectory, run the following command
 
 ### Setup Role-wide Autoruns and startups
 
-
-
 #### Role:Developer
 
 To ensure that nuget has a recognized endpoint for the public nuget servers, update the user's NuGetConfig file (C:\Users\{username}\AppData\Roaming\NuGet\nuget.config)
-run this command (per user) 
+run this command (per user)
 
-```Powershell 
+```Powershell
 dotnet nuget add source --name nuget.org https://api.nuget.org/v3/index.json
 ```
 
 Install the Powershell build tools. Run the following command:
 
-```Powershell 
+```Powershell
 install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser
 ```
 
 Install the Powershell script analysis tools. Run the following command:
 
-```Powershell 
+```Powershell
 install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser
 ```
 
@@ -893,7 +907,7 @@ install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser
 
 Install the Powershell script analysis tools. Run the following command:
 
-```Powershell 
+```Powershell
 install-module PSScriptAnalyzer -Repository PSGallery -Scope CurrentUser
 ```
 
@@ -1166,7 +1180,6 @@ $c= $a2 | %{if ($b2.contains($_)) {$\_}}
 From and elevated Powershell prompt:
 
 The `DISM` module provides the `Enable-WindowsOptionalFeature`, so it must be installed. However, it is not available as a standalone download, it has to be finessed . See this for instructions: [Install DISM powershell module on Windows 7](https://superuser.com/questions/1270094/install-dism-powershell-module-on-windows-7)
-
 
 [Use Command line to Enable IIS Web server on Windows 11](https://www.how2shout.com/how-to/use-command-line-to-enable-iis-web-server-on-windows-11.html)
 

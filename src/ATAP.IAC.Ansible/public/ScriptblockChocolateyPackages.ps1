@@ -1,10 +1,10 @@
-function ScriptblockChocolateyPackages  {
+function ScriptblockChocolateyPackages {
 
   param (
     [string] $name
-    ,[object[]] $items
-    ,[string[]] $tagnames
-    ,[System.Text.StringBuilder] $sb
+    , [object[]] $items
+    , [string[]] $tagnames
+    , [System.Text.StringBuilder] $sb
   )
 
   #$ChocolateyPackageInfos = $($ansibleInventoryStructure.SwCfgInfos).ChocolateyPackageInfos
@@ -29,9 +29,8 @@ function ScriptblockChocolateyPackages  {
     # version: '{{ item.version }}'
     allow_prerelease: "{{ 'true' if (item.allowprerelease == 'true') else 'false'}}"
     state: "{{ 'absent' if (action_type == 'uninstall') else 'present'}}"
-    # {% if item.addedparameters is defined and item.addedparameters|length %}
-    # 'package_params: ' "{{ item.addedparameters }}"
-    # {% endif %}
+    {{ "package_params: '{{ item.addedparameters }}'" if item.addedparameters is defined and item.addedparameters|length }}
+    # package_params: '{{ item.addedparameters }}'
   failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
   loop:
 

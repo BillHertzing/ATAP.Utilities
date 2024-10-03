@@ -1,5 +1,5 @@
-# The script that creates the Ditto Clipboard Manager Role
-function New-RoleDittoClipboardManagerWindows {
+# The script that sets up a host to participate in an organizations PKI
+function New-RoleAuthenticatedPKIHostWindows {
   param(
     # Template help description
     [Parameter(Mandatory = $true,
@@ -51,7 +51,6 @@ function New-RoleDittoClipboardManagerWindows {
     [ValidateNotNull()]
     [ValidateNotNullOrEmpty()]
     [hashtable] $swCfgInformation
-
   )
 
   # use a local StringBuilder
@@ -74,58 +73,28 @@ function New-RoleDittoClipboardManagerWindows {
 
   function ContentsTask {
     [void]$sb.Append(@"
-  - name: install the chocolatey packages
-    win_chocolatey:
-  	name: '{{ item.name }}'
-  	# version: '{{ item.version }}'
-  	allow_prerelease: "{{ 'true' if (item.allowprerelease == 'true') else 'false'}}"
-  	state: "{{ 'absent' if (action_type == 'uninstall') else 'present'}}"
-  	# {% if item.addedparameters is defined and item.addedparameters|length %}
-  	# 'package_params: ' "{{ item.addedparameters }}"
-  	# {% endif %}
-    failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behavior.
-    loop:
-  	- {name: ditto, version: latest, allowprerelease: false, addedparameters: "InstallDir:'C:\Program Files\PythonInterpreters\Python3.10.11" }
-  tags: [$roleName]
-  ignore_errors: yes
-  - name: set registry values per user
-    win_regedit:
-      path: "{{ item.path }}"
-      name: "{{ item.name }}"
-      data: "{{ item.data|default(none) }}"
-      type: "{{ item.type|default('dword') }}"
-    loop:
-      - {path: HKCU:\Software\Ditto, name: NetworkStringPassword, data: "LetMeIn", type: SZ}
-      - {path: HKCU:\Software\Ditto, name: CustomSendToList2, data: "<CustomFriends> </CustomFriends>", type: SZ}
-      # ToDo - loop over all host names that are members of the  UIHost AnsibleGroup
-      - {path: HKCU:\Software\Ditto, name: sendclient_ip_0, data: "utat01", type: SZ}
-      - {path: HKCU:\Software\Ditto, name: sendclient_autosend_0, data: "1", type: dword}
 
-        # set-itemproperty HKCU:\Software\Ditto -Name DBPath3 -value "{{ $($global:configRootKeys['DittoDBPathConfigRootKey'])}}'"
+- name: copy the organizations current RootCA to the host
+  win_copy:
+    src: "{{ ServiceAccountPowershellDesktopProfileSourcePath }}"
+    dest: C:\Users\{{ user }}\WindowsPowershell\profile.ps1
   tags: [$roleName]
-  ignore_errors: yes
 "@)
   }
 
   function ContentsVars {
-    [void]$sb.Append(@"
-  $global:configRootKeys['DittoDBPathConfigRootKey']: $global:settings[$($global:configRootKeys['DittoDBPathConfigRootKey'])]
-
-"@)
+    [void]$sb.Append(@'
+RubyName: ruby
+RubyVersion: 3.1.3.1
+RubyAllow_prerelease: false
+'@)
     # ToDo Fix AddedParameters for chocolatey installation
   }
 
   function ContentsMeta {
     [void]$sb.Append(@'
-galaxy_info:
-  author: William Hertzing for ATAP.org
-  description: Ansible role to install Ditto via Chocolatey and configure it
-  attribution:
-  company: ATAP.org
-  role_name: PythonInterpreterWindows
-  license: license (MIT)
-  min_ansible_version: 2.4
-  dependencies: []
+dependencies:
+  # - TBD
 '@)
   }
 

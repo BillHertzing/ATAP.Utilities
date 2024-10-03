@@ -69,7 +69,7 @@ for ($index = 0; $index -lt $keys.count; $index++) {
 #       }
 #       [void]$sb.Append(@"
 #       when: "'$ansibleGroupName' in group_names"
-#   tags: [$ansiblegroupname,RegistrySettings]
+#   tags: [$ansibleGroupName,RegistrySettings]
 # "@)
 #     }
 }

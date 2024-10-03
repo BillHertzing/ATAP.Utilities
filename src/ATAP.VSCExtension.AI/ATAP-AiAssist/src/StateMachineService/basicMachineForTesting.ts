@@ -3,15 +3,7 @@ import { createMachine } from "xstate";
 import { randomOutcome } from "@Utilities/index"; // ToDo: replace with a mocked iQueryService instead of using this import
 import * as vscode from "vscode";
 import { LogLevel, ILogger, Logger } from "@Logger/index";
-import {
-  ActorRef,
-  assertEvent,
-  assign,
-  fromPromise,
-  OutputFrom,
-  sendTo,
-  setup,
-} from "xstate";
+import { setup } from "xstate";
 
 import {
   QueryFragmentEnum,
@@ -28,8 +20,8 @@ import { DetailedError, HandleError } from "@ErrorClasses/index";
 interface IInput {
   logger: ILogger;
 }
-interface IContext extends IInput {}
 interface IOutput {}
+interface IContext extends IInput, IOutput {}
 type EventsT = { type: "START" } | { type: "FINISH" };
 
 export const primaryMachine = setup({

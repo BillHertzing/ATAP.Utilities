@@ -40,7 +40,7 @@ function ContentsEncryptedVars {
   $encryptedSettingsHash = Get-HostSettings $name
   [void]$sb.Append("user : whertzing")
   [void]$sb.Append("`n")
-  [void]$sb.Append('password : Su$$ess')
+  [void]$sb.Append('password : ChangeMe')
   [void]$sb.Append("`n")
 
 
@@ -65,11 +65,11 @@ for ($index = 0; $index -lt $namesList.count; $index++) {
   [void]$sb.Append($($ymlGenericTemplate -replace '\{2}', $name))
   [void]$sb.Append("`n")
   ContentsVars $name
-  Set-Content -Path $(Join-Path $hostSpecificVarsDirectory $varsFilename) -Value $($($sb.ToString()) -replace '`r`n','`r')
+  Set-Content -Path $(Join-Path $hostSpecificVarsDirectory $varsFilename) -Value $($($sb.ToString()) -replace '`r`n', '`r')
   # create an encrypted vars file for each host
   [void]$sb.Clear()
   [void]$sb.Append($($ymlGenericTemplate -replace '\{2}', $name))
   [void]$sb.Append("`n")
   ContentsEncryptedVars $name
-  Set-Content -Path $(Join-Path $hostSpecificVarsDirectory $encryptedVarsFilename) -Value $($($sb.ToString()) -replace '`r`n','`r')
+  Set-Content -Path $(Join-Path $hostSpecificVarsDirectory $encryptedVarsFilename) -Value $($($sb.ToString()) -replace '`r`n', '`r')
 }

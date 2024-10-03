@@ -156,7 +156,7 @@ $UserPSModulePaths = @(
   $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]
 )
 # Add the $UserPSModulePaths to the existing $env:PSModulePaths
-$existing = $UserPSModulePaths + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
+$existing = $UserPSModulePaths + $(variable -split [IO.Path]::PathSeparator)
 # Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
 [Environment]::SetEnvironmentVariable('PSModulePath', $existing -join [IO.Path]::PathSeparator, 'Process')
 
@@ -171,7 +171,7 @@ $existing = $UserPSModulePaths + $($Env:PSModulePath -split [IO.Path]::PathSepar
 
 #$Env:PSModulePath = (join-path $env:ProgramFiles "WindowsPowerShell\Modules") + [IO.Path]::PathSeparator + $Env:PSModulePath
 if ($VerbosePreference -eq 'Continue') { Show-context }
-Write-PSFMessage -Level Verbose -Message $('Final PSModulePath in AlluserAllshell profile is: ' + "`r`n`t" + (($Env:PSModulePath -split [IO.Path]::PathSeparator) -join "`r`n`t")) -Tag 'V5UserProfile'
+Write-PSFMessage -Level Verbose -Message $('Final PSModulePath in AlluserAllshell profile is: ' + "`r`n`t" + ((variable -split [IO.Path]::PathSeparator) -join "`r`n`t")) -Tag 'V5UserProfile'
 
 # Is this script elevated
 $elevatedSIDPattern = 'S-1-5-32-544|S-1-16-12288'

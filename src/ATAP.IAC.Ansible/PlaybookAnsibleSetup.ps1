@@ -127,9 +127,9 @@ $RolesForGroupNameScriptBlock = {
       loop:
 
 "@)
-        $roleNames = @($($parsedInventory.GroupNames[$groupName]).AnsibleRoleNames) #  # $parsedInventory.GroupNames[$groupName]).AnsibleRoleNames.keys
-        for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) {
-          $roleName = $roleNames[$roleNameIndex]
+        Directories = @($($parsedInventory.GroupNames[$groupName]).AnsibleRoleNames) #  # $parsedInventory.GroupNames[$groupName]).AnsibleRoleNames.keys
+        for ($roleNameIndex = 0; $roleNameIndex -lt Directories.count; $roleNameIndex++) {
+          $roleName = Directories[$roleNameIndex]
           [void]$sb.Append('        - ' + $roleName)
           [void]$sb.Append("`n")
         }

@@ -91,10 +91,8 @@ function Get-ChocolateyPackagesScriptBlock {
         version: '{{ item.version }}'
         allow_prerelease: "{{ 'True' if (item.AllowPrerelease == 'true') else 'false'}}"
         state: "{{ 'absent' if (action_type == 'Uninstall') else 'present'}}"
-        {% if item.AddedParameters is defined and item.AddedParameters|length %}
-        'package_params: ' "{{ item.AddedParameters }}"
-        {% endif %}
-      failed_when: false # Setting this means if one package fails, the loop will continue. You can remove it if you don't want that behaviour.
+        package_params: "{{ '{{ item.AddedParameters }}' if item.AddedParameters is defined and item.AddedParameters|length}}"
+      failed_when: false # Setting this means if one package fails, the loop will continue. You can remove it if you don't want that behavior.
       loop:
 '@)
 
@@ -111,7 +109,7 @@ function Get-ChocolateyPackagesScriptBlock {
     }
     [void]$sb.Append(@"
       # when: "'$ansibleGroupName' in group_names "
-  tags: [$ansiblegroupname, ChocolateyPackages]
+  tags: [$ansibleGroupName, ChocolateyPackages]
 "@)
 
 

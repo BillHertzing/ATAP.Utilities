@@ -47,7 +47,7 @@ function ContentsTask {
     Ensure: "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
     $(. $addedParametersScriptblock)
 
-- name: Create a CA with the organizations informationm
+- name: Create a CA with the organizations information
 
 
 # Deploy the root CA with this script, or a separate one?
@@ -58,7 +58,7 @@ function ContentsTask {
   $sb.ToString()
 }
 
-# These will be the global settings as setup for WSindowsHost that creates the Ansible Directory structure. It doesnt take into account any machine that has ProgramFiles anyplace other than C: It doesnt' account for varying locaiton sof the
+# These will be the global settings as setup for WSindowsHost that creates the Ansible Directory structure. It doesn't take into account any machine that has ProgramFiles anyplace other than C: It doesn't' account for varying location sof the
 function ContentsVars {
   $variablesToSet = @(
     , 'SECURE_CLOUD_BASE_PATHConfigRootKey'
@@ -128,5 +128,5 @@ for ($index = 0; $index -lt $subDirectoriesToBuild.count; $index++) {
   }
 }
 
- # name of JRE package should be a parameter
- # version of JRE package should be a parameter
+# name of JRE package should be a parameter
+# version of JRE package should be a parameter

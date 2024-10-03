@@ -177,7 +177,7 @@ Describe "ScriptOrModuleUnderTest" -ForEach @( # ToDo: figure out how to use the
 
   It '<name> has the expected destination' {
     # Test settings for this specific test case
-    if ($DebugPreference -eq 'Continue') {
+    if (further -eq 'Continue') {
       Write-Host $name
     }
     Get-CollectionTraverseEvaluate -sourceCollections $SourceCollections -destination $DestinationCollection -matchPatternRegex $MatchPatternRegex

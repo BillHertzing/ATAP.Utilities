@@ -28,11 +28,11 @@ ToDo: Need attribution for Console Settings
 $DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
 $VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
+Write-PSFMessage -Level Debug -Message ('Starting CurrentUsersAllHostsV7CoreProfile.ps1')
 
 #ToDo: document expected values when run under profile, Module cmdlet/function, script.
-Write-Verbose "Starting $($MyInvocation.Mycommand)"
-Write-Verbose ("WorkingDirectory = $pwd")
-Write-Verbose ("PSScriptRoot = $PSScriptRoot")
+Write-PSFMessage -Level Debug -Message  ("WorkingDirectory = $pwd")
+Write-PSFMessage -Level Debug -Message  ("PSScriptRoot = $PSScriptRoot")
 
 ########################################################
 # Individual PowerShell Profile
@@ -147,25 +147,25 @@ $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:
 # Expand upon the PSModulePath according to the roles this user has on this machine# ToDo: expand the use of PSModulepAth in the globals settings files
 # extract all the psmodulepath items from the global:Settings
 # The following ordered list of module paths come from ATAP and 3rd-party modules that correspond to roles of this user on this machine
-$UserPSModulePaths = @(
+#$UserPSModulePaths = @(
 
-  # ATAP Powershell is part of the machine profile
-  # 'Modules that are in DevelopmentLifecycle Phase, for which I am involved'
+# ATAP Powershell is part of the machine profile
+# 'Modules that are in DevelopmentLifecycle Phase, for which I am involved'
 
-  # 'Modules that are in Unit Test Lifecycle Phase, for which I am involved ("I" may be a user or a CI/CD service)'
-  # 'Modules that are in Integration Test Lifecycle Phase, for which I am involved'
-  # 'Modules that are in RTM Lifecycle Phase, for which I am involved'
-  # 'All Production modules for Scripts I use day-to-day' - These should reference modules in
-  # Image manipulation scripts for blog posts
-  # DropBox api scripts for blog posts
-  # Future: scripts to manipulate FreeVideoEditor VSDC
-  # the default location where chocolatey installs modules on this machine
-  # $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]
-)
+# 'Modules that are in Unit Test Lifecycle Phase, for which I am involved ("I" may be a user or a CI/CD service)'
+# 'Modules that are in Integration Test Lifecycle Phase, for which I am involved'
+# 'Modules that are in RTM Lifecycle Phase, for which I am involved'
+# 'All Production modules for Scripts I use day-to-day' - These should reference modules in
+# Image manipulation scripts for blog posts
+# DropBox api scripts for blog posts
+# Future: scripts to manipulate FreeVideoEditor VSDC
+# the default location where chocolatey installs modules on this machine
+# $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]
+#)
 # Add the $UserPSModulePaths to the exisiting $env:PSModulePaths
-$desiredPSModulePaths = $UserPSModulePaths + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
+#$desiredPSModulePaths = $UserPSModulePaths + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
 # Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
-[Environment]::SetEnvironmentVariable('PSModulePath', $desiredPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
+# [Environment]::SetEnvironmentVariable('PSModulePath', $desiredPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
 
 # Unlock the user's SecretStore for this session using an encrypted password and a data Encryption Certificate installed to the current machine
 # if the key exists in the global settings
@@ -236,7 +236,7 @@ $ModulesToLoadAsSymbolicLinks = @(
     usePreRelease = $true
   })
 
-# Create symbolic links to each of the modukles above in the user's default powershell module location
+# Create symbolic links to each of the modules above in the user's default powershell module location
 # The function uses Join-Path ([Environment]::GetFolderPath('MyDocuments')) '\PowerShell\Modules\' as the default PSModulePath path
 # $ModulesToLoadAsSymbolicLinks | Get-ModuleAsSymbolicLink
 
@@ -247,7 +247,7 @@ Function Show-context {
   Write-Verbose ('Framework being used: {0}' -f [Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory())
   Write-Verbose ('DropBoxBasePath: {0}' -f $global:Settings[$global:configRootKeys['DropBoxBasePathConfigRootKey']]) #  $global:DropBoxBasePath)
   Write-Verbose ('PSModulePath: {0}' -f $Env:PSModulePath)
-  Write-Verbose ('Elevated permisions:' -f (whoami /all) -match $elevatedSIDPattern)
+  Write-Verbose ('Elevated permissions:' -f (whoami /all) -match $elevatedSIDPattern)
   Write-Verbose ('Drops:{0}' -f $($drops | Format-Table | Out-String))
   # DebugPreference
   # VerbosePreference
@@ -305,12 +305,12 @@ Function FindFilesByES {
   [regex] $internalSearchRegex = ''
   switch ($PSCmdlet.ParameterSetName) {
     StringParameter {
-      # ToDo: continously improve validate user input for safety
+      # ToDo: continuously improve validate user input for safety
       $internalSearchStr = $searchStr
       es $internalSearchStr
     }
     RegExParameter {
-      # ToDo: continously improve validate user input for safety
+      # ToDo: continuously improve validate user input for safety
       $internalSearchRegex = $searchRE
       es regex: $internalSearchRegex
     }
@@ -341,7 +341,8 @@ Function Get-Attributions {
           }
         }
       }
-    } finally {
+    }
+    finally {
       $reader.Close()
       $FileStream.Close()
     }
@@ -370,7 +371,8 @@ Function Get-LinksFromDrafts {
       if ($matchResult.Success) {
         $Subject = $matchResult.captures.groups['Subject'].value
         #Write-PSFMessage -Level Debug -Message "Subject = $Subject"
-      } else {
+      }
+      else {
         $matchResult = [RegEx]::Matches($line, $findRegex2)
         if ($matchResult.Success) {
           $URL = $matchResult.captures.groups['URL'].value
@@ -388,7 +390,8 @@ Function Get-LinksFromDrafts {
         $URL = ''
       }
     }
-  } finally {
+  }
+  finally {
     $reader.Close()
     $Stream.Close()
   }
@@ -463,12 +466,12 @@ Function Open-FilteredLinksInBrave {
   [regex] $findRegex = ''
   switch ($PSCmdlet.ParameterSetName) {
     StringParameter {
-      # ToDo: continously improve validation of user input for safety
+      # ToDo: continuously improve validation of user input for safety
       $validatedStr = $reStr # [regex]::Escape($reStr)
       $findRegex = [regex] $validatedStr
     }
     RegExParameter {
-      # ToDo: continously improve validation of user input for safety
+      # ToDo: continuously improve validation of user input for safety
       $findRegex = $re
     }
   }
@@ -489,7 +492,8 @@ Function Open-BookmarksInBrave {
         foreach ($bookmark in $input) {
           $urlList += $bookmark.url
         }
-      } else {
+      }
+      else {
         $urlList = $URLs
       }
     }
@@ -549,7 +553,7 @@ Function WatchFile {
       # type of change:
       $ChangeType = $details.ChangeType
 
-      # when the change occured:
+      # when the change occurred:
       $Timestamp = $event.TimeGenerated
 
       # save information to a global variable for testing purposes
@@ -564,9 +568,10 @@ Function WatchFile {
       switch ($ChangeType) {
         'Changed' { 'CHANGE' }
         'Created' { 'CREATED' }
-        'Deleted' { 'DELETED'
+        'Deleted' {
+          'DELETED'
           # to illustrate that ALL changes are picked up even if
-          # handling an event takes a lot of time, we artifically
+          # handling an event takes a lot of time, we artificially
           # extend the time the handler needs whenever a file is deleted
           Write-Host 'Deletion Handler Start' -ForegroundColor Gray
           Start-Sleep -Seconds 4
@@ -610,7 +615,8 @@ Function WatchFile {
       Write-Host '.' -NoNewline
 
     } while ($true)
-  } finally {
+  }
+  finally {
     # this gets executed when user presses CTRL+C:
 
     # stop monitoring
@@ -706,8 +712,11 @@ Function ShutItAllDown {
 Set-Location -Path $storedInitialDir
 
 # Set the environment variables for this user
+Write-PSFMessage -Level Debug -Message ('setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
+
 . (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
 Set-EnvironmentVariablesProcess
+Write-PSFMessage -Level Debug -Message ('finished setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
 
 # Set the name of the VSC extension project under development
 # ToDo: put this in a vsc extension as a command , and trigger the command every time an editor is activated.
@@ -717,8 +726,11 @@ Set-EnvironmentVariablesProcess
 # [Environment]::SetEnvironmentVariable('VSCExtensionProjectName', 'ATAP-AiAssist', [EnvironmentVariableTarget]::User)
 # [Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', 'src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
 # [Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-[Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', '.', [EnvironmentVariableTarget]::User)
-[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+# Write-PSFMessage -Level Debug -Message ('line 729 in CurrentUsersAllHostsV7CoreProfile.ps1')
+#[Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', '.', [EnvironmentVariableTarget]::User)
+#Write-PSFMessage -Level Debug -Message ('line 731 in CurrentUsersAllHostsV7CoreProfile.ps1')
+#[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+#Write-PSFMessage -Level Debug -Message ('line 733 in CurrentUsersAllHostsV7CoreProfile.ps1')
 
 # Unlock the Hashicorp Vault
 
@@ -752,6 +764,7 @@ function Start-ExplorerWindowSet {
   FancyZones.exe apply -id '45BA8D3D-74C5-460B-AA17-97DAEF91780B'
 }
 
+Write-PSFMessage -Level Debug -Message ('line 764 in CurrentUsersAllHostsV7CoreProfile.ps1')
 
 <# To Be Moved Somewhere else #>
 
@@ -825,3 +838,4 @@ New-Alias graph New-PlantUML
 
 
 
+Write-PSFMessage -Level Debug -Message ('Ending CurrentUsersAllHostsV7CoreProfile.ps1')

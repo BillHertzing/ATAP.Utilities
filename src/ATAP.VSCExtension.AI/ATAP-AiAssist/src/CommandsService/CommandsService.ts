@@ -45,6 +45,9 @@ import {
   saveConversationCollectionAsync,
 } from "./saveCollectionAsync";
 
+// Used for the ParentChildDemoMachine only
+import { IParentChildDemoMachineC1STARTPayload } from "@StateMachineService/parentChildDemoMachine";
+
 export interface ICommandsService {
   readonly stateMachineService: IStateMachineService;
   getDisposables(): Disposable[];
@@ -412,6 +415,7 @@ export class CommandsService {
           this.data.aiAssistCancellationTokenSourceManager.aiAssistCancellationTokenSourceCollection?.value.push(
             new AiAssistCancellationTokenSource(cancellationTokenSource),
           );
+          // send first test, random outcome
           try {
             this.stateMachineService.sendTest(
               // {
@@ -420,12 +424,44 @@ export class CommandsService {
               // cTSToken: cancellationTokenSource.token,
               // } as IQueryMultipleEngineEventPayload
               //{foo:"foo"} for testMachine
-              { foo: "foostring" },
+              {
+                foo: "firstFoo",
+                cTSToken: cancellationTokenSource.token,
+                timeoutLimit: 100,
+                delayDurationForDemonstrationTesting: 10,
+              } as IParentChildDemoMachineC1STARTPayload,
             ); // for minMachine
             // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);
           } catch (e) {
             // ToDo: // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
 
+            HandleError(
+              e,
+              "commandsService",
+              "stateMachineService.sendTest",
+              "failed calling this.stateMachineService.sendTest",
+            );
+            // ToDo: display a visual error indicator to the user
+          }
+          // send second test, expect this to timeout
+          try {
+            this.stateMachineService.sendTest(
+              // {
+              // queryFragmentCollection:
+              //   this.data.fileManager.queryFragmentCollection,
+              // cTSToken: cancellationTokenSource.token,
+              // } as IQueryMultipleEngineEventPayload
+              //{foo:"foo"} for testMachine
+              {
+                foo: "secondFoo",
+                cTSToken: cancellationTokenSource.token,
+                timeoutLimit: 10,
+                delayDurationForDemonstrationTesting: 100,
+              } as IParentChildDemoMachineC1STARTPayload,
+            ); // for minMachine
+            // this.logger.log(`result.success = ${result.success}, result `, LogLevel.Trace);
+          } catch (e) {
+            // ToDo: // This is the top level of the command, so we need to catch any errors that are thrown and handle them, not rethrow them
             HandleError(
               e,
               "commandsService",

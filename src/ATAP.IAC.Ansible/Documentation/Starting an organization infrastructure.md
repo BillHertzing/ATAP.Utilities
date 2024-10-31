@@ -102,4 +102,52 @@ The
 
 
 
+Update 10-27-2024
+Using the ansible playbook for utat022, to build the whole machine from scratch:
+under ansibleAdmin:
+
+1) chocolatey package ngrok halts installation; windows defender claims there is a malware payload in the package
+
+2) Chocolatey package xxx reports an error
+
+3) Powershell modules that fail to install:
+
+assert
+chocolateyget
+computermanagementdsc
+microsoft.powershell.secretmanagement
+microsoft.powershell.secretstore
+nuget
+platyps
+powershell-yaml
+psdepend
+psdscresources
+psscriptanalyzersqlserver
+secretmanagement.hashicorp.vault.kv
+secretmanagement.keepass
+sqlserver
+threadjob
+
+Ditto - needs 'start on system startup' in global registryu setting
+
+per-user:
+profile links
+Ditto - needs friends setup to copy clips between computers / per user
+chrome extensions / settings:
+  Add VoiceIn Chrome extension; login as Google account bill.hertzing; allow microphone access while using the extension; pin extension to Chrome's address bar
+Turn on "Show recommended files in Start, recent files in FileExlorer, and item in Jump Lists", under Personalization->Start
+Setup VSCode per-User Settings to the SharedxCode
+
+per-serviceuser
+profile links
+
+VSC is not spell checking code files .ps1, .psm1, .psd1
+turn on Chrome memory Saver feature (TBD global or per-user)
+Download OpenAI ChatGPT application for Windows (beta as of 10/27/2024, cannot install, maybe related to Microsoft Appstore)
+Add VoiceIn Chrome extension; login as Google account bill.hertzing; allow microphone access while using the extension;; pin extension to Chrome's address bar
+SQL Server executable configuration
+SQL Server Management Server executable configuration
+Setup SQL Server,
+
+
 

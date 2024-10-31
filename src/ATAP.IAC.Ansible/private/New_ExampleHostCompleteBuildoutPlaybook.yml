@@ -68,27 +68,18 @@
         # {% endif %}
       failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
       loop:
-        - {
-            name: sysinternals,
-            version: latest,
-            allowprerelease: false,
-            addedparameters,
-          }
-        - {
-            name: pester,
-            version: latest,
-            allowprerelease: false,
-            addedparameters,
-          } # move to a role so that obsolete version can be removed, settings and associations can be made per user
-    #     # drivers for utat022
-    #     - {name: nvidia-display-driver, version: latest, allowprerelease: false, addedparameters: ,  Notes:} # minimal set of nvidea display fdriver apps
-    # - { name: geforce-game-ready-driver, version: latest, allowprerelease: false, addedparameters: ,  Notes:} # bloatware, use nvidia-display-driver instead
-    # - {name: geforce-experience, version: latest, allowprerelease: false, addedparameters: ,  Notes:} # need to investigate if needed
-    #- {name: razer-synapse-3graph, version: latest, allowprerelease: false, addedparameters: ,  Notes:}
+        - { name: sysinternals, version: latest, allowprerelease: false, addedparameters }
+        - { name: pester, version: latest, allowprerelease: false, addedparameters } # move to a role so that obsolete version can be removed, settings and associations can be made per user
+        #     # drivers for utat022
+        # Figure out how to make this conditional upon host
+        - { name: nvidia-display-driver, version: latest, allowprerelease: false, addedparameters, Notes } # minimal set of nvidea display fdriver apps
+        # - { name: geforce-game-ready-driver, version: latest, allowprerelease: false, addedparameters: ,  Notes:} # bloatware, use nvidia-display-driver instead
+        - { name: geforce-experience, version: latest, allowprerelease: false, addedparameters, Notes } # need to investigate if needed
+        - { name: razer-synapse-3graph, version: latest, allowprerelease: false, addedparameters, Notes }
     # drivers for ncat016
     # - {name: logitechgaming, version: latest, allowprerelease: false, addedparameters:  } # for ncat016
 
-    # $pkgs = gc c:\dropbox\whertzing\github\atap.iac\chocolateypackageinfo.yml| convertfrom-yaml
+    # $pkgs = gc c:\dropbox\whertzing\github\atap.iac\Resources\DefaultChocolateyPackagesInfo.yml| convertfrom-yaml
     # $pkgkeys = [system.collections.arraylist]($pkgs.keys)
     # copy addedparamter scriptblock
     # foreach ($pk in $pkgkeys) {"  - {name: $pk, version: latest, allowprerelease: false, addedparameters: $(. $addedparametersscriptblock $($p[$pk]).addedparamters)"}

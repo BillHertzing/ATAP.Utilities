@@ -1,5 +1,7 @@
 # ToDo comment based help
 $global:configRootKeys = @{
+	# IAC for Hosts having the C: drive as the systemdrive
+	'SYSTEMDRIVEConfigRootKey' ='C:'
   'ProgramFilesConfigRootKey'                                                                    = 'ProgramFiles'
   'ProgramDataConfigRootKey'                                                                     = 'ProgramData'
   'ATAPUtilitiesVersionConfigRootKey'                                                            = 'ATAPUtilitiesVersion'

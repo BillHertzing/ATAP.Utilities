@@ -1,6 +1,11 @@
-// Interface for AnsiblePlayBlockCopyFiles, derived from IAnsiblePlayBlockCommon
-public interface IAnsiblePlayBlockCopyFiles : IAnsiblePlayBlockCommon
+namespace ATAP.Utilities.IAC.Ansible.Interfaces
 {
-  string Source { get; set; }
-  string Destination { get; set; }
+
+
+  // Interface for AnsiblePlayBlockCopyFiles, derived from IAnsiblePlayBlockCommon
+  public interface IAnsiblePlayBlockCopyFiles : IAnsiblePlayBlockCommon
+  {
+    string Source { get; set; }
+    string Destination { get; set; }
+  }
 }

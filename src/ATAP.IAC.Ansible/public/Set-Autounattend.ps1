@@ -40,7 +40,7 @@ function Set-AutoUnattend {
       ValueFromRemainingArguments = $false)
     ]
     [ValidateScript({ Test-Path $_ })]
-    [string] $autoUnattendTemplatePath,
+    [string] $autoUnattendTemplatePath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.IAC.Ansible\Resources\ATAP autounattend for utat022 win 11 Template.xml',
     # ToDo: insert autoUnattendDestinationPath help description
     [Parameter(Mandatory = $true,
       ValueFromPipeline = $true,
@@ -71,8 +71,9 @@ function Set-AutoUnattend {
       Write-PSFMessage -Level Debug -Message 'Starting Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
       $modificationsKeys = [System.Collections.ArrayList]($modifications.Keys)
       for ($modificationsIndex = 0; $modificationsIndex -lt $modificationsKeys.Count; $modificationsIndex++) {
-        $modificationsKey = $modificationsKeys[$modificationsIndex]
-        $substitutionPatterns += ("(?<' + $modificationsKey + '>${modificationsKey}SubstitutionPattern)")
+        $modificationsKey = ('k' + $modificationsKeys[$modificationsIndex]).Replace('-', '')
+        $modificationPattern = $modificationsKeys[$modificationsIndex]
+        $substitutionPatterns += "(?<$modificationsKey>${modificationPattern})"
       }
       $substitutionPatternsString = $substitutionPatterns -join '|'
       # if ($pscmdlet.ShouldProcess("Target", "Operation")) {
@@ -88,21 +89,25 @@ function Set-AutoUnattend {
         while (!$reader.EndOfStream) {
           $l = $reader.ReadLine()
           # search for all occurrences of the placeholders patterns (public and secret)
-          if ($l -match ($substitutionPatternsString)) {
-            # loop over all the matches (except 0), each is a substitution to be made
-            for ($MatchsIndex = 1; $MatchsIndex -le $Matchs.Count; $MatchsIndex++) {
+          $result = ([regex]::Matches($l, $substitutionPatternsString))[0]
+          if ($result) {
+            # loop over all the match groups (except 0) where success is true, each is a substitution to be made
+            for ($MatchsIndex = 1; $MatchsIndex -le $result[0].groups.count; $MatchsIndex++) {
+              $possibleMatch = $result[0].groups[$MatchsIndex]
+              if ($possibleMatch.Success) {
+                $l = $l -replace $possibleMatch.Value , $modifications[$possibleMatch.Value ]
+              }
               # get the substutution text (or file) for the public placeholders from the modification's parameter
               # for the default parameterSetName
               # get the substutution text for the secret placeholders from the modification's parameter
-              $Match = $Matchs[$MatchsIndex]
-              $l -replace $Match , $modifications[$Match]
+              #$l -replace $Match , $modifications[$Match]
             }
           }
           # accumulate the lines for output
           $sb.AppendLine($l) > $null
         }
-      }
-      finally {
+
+      } finally {
         $reader.Close()
         $FileStream.Close()
       }
@@ -213,7 +218,6 @@ function Set-AutoUnattend {
     . ProcessBuffer
   }
   END {
-
     Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
   }
 }

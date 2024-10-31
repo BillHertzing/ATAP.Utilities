@@ -1,3 +1,5 @@
+namespace ATAP.Utilities.IAC.Ansible.Interfaces
+{
   public interface IAnsiblePlay
   {
     string Name { get; set; }
@@ -5,3 +7,4 @@
 
     List<IAnsiblePlayBlockCommon> Items { get; set; }
   }
+}

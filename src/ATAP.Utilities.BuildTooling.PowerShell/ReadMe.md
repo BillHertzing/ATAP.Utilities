@@ -145,7 +145,7 @@ In every new repository, after creating the .vscode directory and its contents, 
 
 #### VSC Extension development symbolic links
 
-Place these symbolic links in the .vscode subdirecotry of any project that builds a VSC extension.
+Place these symbolic links in the .vscode subdirectory of any project that builds a VSC extension.
 
 ```Powershell
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch4Extension.jsonc"  -symbolicLinkPath ".\.vscode\launch.json" -force

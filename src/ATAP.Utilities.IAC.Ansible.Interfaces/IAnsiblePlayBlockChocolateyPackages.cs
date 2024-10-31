@@ -1,7 +1,11 @@
-// Interface for AnsiblePlayBlockChocolateyPackages, derived from IAnsiblePlayBlockCommon
-public interface IAnsiblePlayBlockChocolateyPackages : IAnsiblePlayBlockCommon
+namespace ATAP.Utilities.IAC.Ansible.Interfaces
 {
-  string Version { get; set; }
-  bool Prerelease { get; set; }
-  List<string> AddedParameters { get; set; }
+
+  // Interface for AnsiblePlayBlockChocolateyPackages, derived from IAnsiblePlayBlockCommon
+  public interface IAnsiblePlayBlockChocolateyPackages : IAnsiblePlayBlockCommon
+  {
+    string Version { get; set; }
+    bool Prerelease { get; set; }
+    List<string> AddedParameters { get; set; }
+  }
 }

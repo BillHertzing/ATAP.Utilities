@@ -47,10 +47,10 @@ Enter-Build {
   $packageLifecycles = ('Development', 'QualityAssurance', 'Production')
   $StorageMechanisms = ('FileSystem', 'InternalWebServer', 'PublicWebServer')
 
-  $sourceDirectorys = @('./', 'public', 'private', 'Resources')
+  $sourceDirectories = @('./', 'public', 'private', 'Resources')
   $sourceExtensions = @('.ps1', '.clixml', '.dll')
   $sourceFiles = @()
-  $sourceDirectorys | ForEach-Object {
+  $sourceDirectories | ForEach-Object {
     $subDirectory = Join-Path $moduleroot $_
     if (Test-Path -Path $subDirectory -PathType Container) {
       $sourceExtensions | ForEach-Object {

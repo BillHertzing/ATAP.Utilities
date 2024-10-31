@@ -6,7 +6,7 @@ BeforeAll {
 
   # [The Assert framework functions for Powershell / Pester](https://github.com/nohwnd/Assert)
   # They must be installed, using (for all users) the command Install-Module -Name Assert
-  Install-Module -Name Assert
+  Install-Module -Name Assert -Force
 
   # ToDo: Move strings to a ConfigRootKey
   $srcName = 'src'
@@ -40,8 +40,7 @@ BeforeAll {
             SourceDirectory = Join-Path $CommonDirectory $SrcName $ModuleName
             TestsDirectory  = Join-Path $CommonDirectory $TestsName $ModuleName
           }
-        }
-        else {
+        } else {
           # ToDo: Logging
           throw 'A directory matching the module name must be found in both src and test directories'
         }
@@ -92,8 +91,7 @@ BeforeAll {
   if ($env:CI -eq $true -or $env:Environment -eq 'QualityAssurance' -or $env:Environment -eq 'Production') {
     # The full module / package is being tested, tests are found under the checked out module direcotry
     throw 'not implemented'
-  }
-  else {
+  } else {
     # when the test script is run from a development IDE environment
     # the location of the sUT is 'opinionated'
     $testDirectoryAbsolutePath = $PSScriptRoot
@@ -355,7 +353,7 @@ Describe 'Testing AnsiblePlayBlockRegistrySettings class' {
       $taskName = 'TaskName'
 
       # Constructing AnsiblePlayBlockRegistrySettings
-      $registrySettings = [ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings]::new('Purpose','Name', 'Path', 'Type', 'Value')
+      $registrySettings = [ATAP.IAC.Ansible.AnsiblePlayBlockRegistrySettings]::new('Purpose', 'Name', 'Path', 'Type', 'Value')
       # Constructing AnsiblePlay with a single AnsiblePlayBlockRegistrySettings
       $playName = 'PlayName'
       $playKind = [ATAP.IAC.Ansible.AnsiblePlayBlockKind]::AnsiblePlayBlockRegistrySettings

@@ -20,18 +20,18 @@ Add-Type -Path $assemblyFileInfo.FullName
 . .\New-PlaybooksTop.ps1
 . .\New-PlaybooksNamed.ps1
 . .\New-Role.ps1
-. .\RoleComponentMeta.ps1
-. .\RoleComponentTask.ps1
+. .\..\private\RoleComponentMeta.ps1
+. .\..\private\RoleComponentTask.ps1
 
-. .\ScriptblockChocolateyPackages.ps1
-. .\ScriptblockCopyFiles.ps1
-. .\ScriptblockPinToTaskbar.ps1
-. .\ScriptblockRegistrySettings.ps1
-. .\ScriptblockShortcut.ps1
-. .\ScriptblockSymbolicLinks.ps1
-. .\ScriptblockUserWindows.ps1
+. .\..\private\ScriptblockChocolateyPackages.ps1
+. .\..\private\ScriptblockCopyFiles.ps1
+. .\..\private\ScriptblockPinToTaskbar.ps1
+. .\..\private\ScriptblockRegistrySettings.ps1
+. .\..\private\ScriptblockShortcut.ps1
+. .\..\private\ScriptblockSymbolicLinks.ps1
+. .\..\private\ScriptblockUserWindows.ps1
 
-. .\SubstituteConfigRootKey.ps1
+. .\..\private\SubstituteConfigRootKey.ps1
 
 # ToDo: These paths should come from an organization's vault
 # ToDo Validate the files exist and can be read
@@ -80,8 +80,7 @@ function Get-HighestVersionNumbers {
       if ([version]$($version.version) -gt [version]$($packages[$version.name])) {
         $packages[$version.name] = $version.version
       }
-    }
-    else {
+    } else {
       $packages[$version.name] = $version.version
     }
   }
@@ -358,7 +357,7 @@ for ($roleNameIndex = 0; $roleNameIndex -lt $roleNames.count; $roleNameIndex++) 
 $hostSettingsFilename = 'hostSettings.ps1'
 $hostSettingsFileScriptsSubdirectory = 'utat022'
 New-Item -ItemType Directory -Path $(Join-Path $baseDirectory 'scripts' $hostSettingsFileScriptsSubdirectory ) -ErrorAction SilentlyContinue >$null
-New-Item -ItemType File -Path $(Join-Path $baseDirectory 'scripts'  $hostSettingsFileScriptsSubdirectory, $hostSettingsFilename) -ErrorAction SilentlyContinue >$null
+New-Item -ItemType File -Path $(Join-Path $baseDirectory 'scripts' $hostSettingsFileScriptsSubdirectory, $hostSettingsFilename) -ErrorAction SilentlyContinue >$null
 
 # settings: Each ansibleGroupName in the ansibleInventory list the name of the settings needed to describe the groupName
 # The WindowsHost ansibleGroupName has settings for the Preamble, which is the initializer of a WindowsHost computer
@@ -380,7 +379,7 @@ for ($hostNamesIndex = 0; $hostNamesIndex -lt $hostNames.Count; $hostNamesIndex+
     #  Loop over every groupname the ansibleGroupNameAccumulator contains looking for duplicates
     for ($ansibleGroupNamesIndex = 0; $ansibleGroupNamesIndex -lt $ansibleGroupNameAccumulator.Count; $ansibleGroupNamesIndex++) {
       $ansibleGroupName = $accumulator[$ansibleGroupNamesIndex]
-      if ($(inventory.ansiblegroupNames[$ansibleGroupName]).Settings -and $(inventory.ansibleGroupNames[$ansibleGroupName]).Settings.count .ge 0) {
+      if ($(inventory.ansiblegroupNames[$ansibleGroupName]).Settings -and $(inventory.ansibleGroupNames[$ansibleGroupName]).Settings.count -ge 0) {
         for ($SettingsIndex = 0; $SettingsIndex -lt $Settings.Count; $SettingsIndex++) {
           $Setting = $Settings[$SettingsIndex]
           if ($SeenKey[$Setting]) {
@@ -388,14 +387,12 @@ for ($hostNamesIndex = 0; $hostNamesIndex -lt $hostNames.Count; $hostNamesIndex+
             if ($true) {
               # Later settings override earlier ones
               $SeenKey[$Setting] = ${'ansibleGroupName' = $ansibleGroupName;'ansibleGroupNamesIndex' = $ansibleGroupNamesIndex; 'Setting' = $Setting }
-            }
-            else {
+            } else {
               # First one wins
               $SeenKey[$Setting] = $SeenKey[$Setting]
             }
 
-          }
-          else {
+          } else {
             $SeenKey[$Setting] = ${'ansibleGroupName' = $ansibleGroupName;'ansibleGroupNamesIndex' = $ansibleGroupNamesIndex; 'Setting' = $Setting }
           }
         }

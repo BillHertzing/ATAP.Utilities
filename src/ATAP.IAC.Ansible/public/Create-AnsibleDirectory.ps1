@@ -1,47 +1,83 @@
 
 # add the namespace for the custom types defined and used in this module
 using namespace ATAP.IAC.Ansible
-
+[CmdletBinding(DefaultParameterSetName = 'FromFilesystem')]
 param (
-  [string] $projectBaseDirectory = '.'
+  # ToDo: parameterSet and error handling
+  [string] $projectBaseDirectory = '.',
+  # ParameterSet information for InventorySource as a Powershell script file on the filesystem
+  [Parameter(ParameterSetName = 'FromFilesystem')]
+  [string] $ansibleInventorySourcePath = './'
+  # ParameterSet information for InventorySource as a Powershell script file from a vault
 )
-# ToDo: eventually the organization's IAC package will encapsulate this and import it all automatically
+# ToDo: move to powershell utilities
+function convertFromYamlWithErrorHandling {
+  param (
+    # ToDo: error handling
+    [string]$path
+  )
+  # ToDo: error handling
+  ConvertFrom-Yaml -Yaml $(Get-Content -Path $path -Raw )
+}
+
 $assemblyFileName = 'ATAP.IAC.Ansible.dll'
-$assemblyFilePath = Join-Path $projectBaseDirectory '..'  'Resources' $assemblyFileName
+# ToDo: figure out how to load from either the production package, QAPackage, or development filesystem
+$assemblyFilePath = Join-Path 'C:' 'Dropbox' 'whertzing' 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.IAC.Ansible' 'Resources' $assemblyFileName
 $assemblyFileInfo = Get-ChildItem $assemblyFilePath
 Add-Type -Path $assemblyFileInfo.FullName
 
-# Create the ansibleStructure hashtable from the Get-AnsibleInventory.ps1 script file
-$ansibleInventorySourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\Get-AnsibleInventory.ps1'
-# Get-AnsibleInventory.ps1 script file
-. $ansibleInventorySourcePath
-# execute the Get-AnsibleInventory function from the Get-AnsibleInventory.ps1 script file
-$ansibleStructure = Get-AnsibleInventory
+# Create the ansibleStructure hashtable from $ansibleInventorySourcePath script file
+$ansibleStructure = @{}
+if ( $PsCmdlet.ParameterSetName -eq 'FromFilesystem') {
+  # ToDo: use ATAP.IAC packaging
+  $ansibleInventorySourcePath = 'C:\Dropbox\whertzing\GitHub\ATAP.IAC\Get-AnsibleInventory.ps1'
+  # Get-AnsibleInventory.ps1 script file
+  . $ansibleInventorySourcePath
+  # execute the Get-AnsibleInventory function from the Get-AnsibleInventory.ps1 script file
+  $ansibleStructure = Get-AnsibleInventory
+} elseif ( $PsCmdlet.ParameterSetName -eq 'FromVault') {
+  $message = 'Inventory from vault not supported'
+  Write-PSFMessage -Level Error -Message $message -Tag 'Unsupported'
+  throw $message
+}
 
-# Get the built-in defaults for
+
+# Get the built-in defaults combined with the approved for
 #  - the Chocolatey packages (name, version, allowPreRelease, installationarguments, RegistrySettings, GlobalSettings, ScheduledJobs)
 #  - the NuGet Packages (name, version, allowPreRelease, installationarguments, RegistrySettings, GlobalSettings, ScheduledJobs)
 #  - the PowershellGet packages (name, version, allowPreRelease, installationarguments, RegistrySettings, GlobalSettings, ScheduledJobs)
 #  - the Powershell modules
 #  - the RegistrySetting (Key:string, name:string,type,value)
 #  - the GlobalSettings (Key:string, value: TBD)
+#  - the PKICertificates
+#  - the scheduled jobs
 
 # ToDo - the location and content of these files comes from the SWBOM reporting and updating processes
-$ApprovedChocolateyPackageInfoPath = '.\DefaultChocolateyPackageInfo.yml'
-$ApprovedPowershellModulesInfoPath = '.\DefaultPowershellModulesInfo.yml'
-$ApprovedRegistrySettingsInfoPath = '.\DefaultRegistrySettingsInfo.yml'
-$ApprovedWindowsFeaturesInfoPath = '.\DefaultWindowsFeaturesInfo.yml'
-$ApprovedAnsibleRolesInfoPath = '.\DefaultAnsibleRolesInfo.yml'
+$SWBOMResourcesPath = Join-Path 'C:' 'Dropbox' 'whertzing' 'GitHub' 'ATAP.IAC' 'Resources'
+$approvedChocolateyPackagesInfoPath = Join-Path $SWBOMResourcesPath 'ApprovedChocolateyPackagesInfo.yml'
+$approvedPowershellModulesInfoPath = Join-Path $SWBOMResourcesPath 'ApprovedPowershellModulesInfo.yml'
+$approvedRegistrySettingsInfoPath = Join-Path $SWBOMResourcesPath 'ApprovedRegistrySettingsInfo.yml'
+$approvedWindowsFeaturesInfoPath = Join-Path $SWBOMResourcesPath 'ApprovedWindowsFeaturesInfo.yml'
+$approvedAnsibleRolesInfoPath = Join-Path $SWBOMResourcesPath 'ApprovedAnsibleRolesInfo.yml'
+# ToDo: figure out how to load from either the production package, QAPackage, or development filesystem
+# Resources path
+$resourcesPath = Join-Path 'C:' 'Dropbox' 'whertzing' 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.IAC.Ansible' 'Resources'
+$defaultChocolateyPackagesInfoPath = Join-Path $resourcesPath 'DefaultChocolateyPackagesInfo.yml'
+$defaultPowershellModulesInfoPath = Join-Path $resourcesPath 'DefaultPowershellModulesInfo.yml'
+$defaultRegistrySettingsInfoPath = Join-Path $resourcesPath 'DefaultRegistrySettingsInfo.yml'
+$defaultWindowsFeaturesInfoPath = Join-Path $resourcesPath 'DefaultWindowsFeaturesInfo.yml'
+$defaultAnsibleRolesInfoPath = Join-Path $resourcesPath 'DefaultAnsibleRolesInfo.yml'
 
 # This internal structure holds union of the default values with the values that come from organization's inventory (Get-AnsibleInventory)
 #  the organization's inventory is transferred from <organizationName>.IAC package
+#  combine the default Infos with the approved Infos, with approved taking higher precedence
 $SwCfgInfos = @{
   NuGetPackageInfos      = $nugetPackagesInfos
-  ChocolateyPackageInfos = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultChocolateyPackageInfoPath) $ansibleStructure.SwCfgInfos.ChocolateyPackageInfos
-  PowershellModuleInfos  = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultPowershellModulesInfoPath) $ansibleStructure.SwCfgInfos.PowershellModuleInfos
-  RegistrySettingsInfos  = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultRegistrySettingsInfoPath) $ansibleStructure.SwCfgInfos.RegistrySettingsInfos
-  WindowsFeatureInfos    = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultWindowsFeaturesInfoPath) $ansibleStructure.SwCfgInfos.WindowsFeatureInfos
-  AnsibleRoleInfos       = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultAnsibleRolesInfoPath) $ansibleStructure.SwCfgInfos.AnsibleRoleInfos
+  ChocolateyPackageInfos = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultChocolateyPackagesInfoPath) $(convertFromYamlWithErrorHandling $approvedChocolateyPackagesInfoPath)
+  PowershellModuleInfos  = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultPowershellModulesInfoPath) $(convertFromYamlWithErrorHandling $approvedPowershellModulesInfoPath)
+  RegistrySettingsInfos  = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultRegistrySettingsInfoPath) $(convertFromYamlWithErrorHandling $approvedRegistrySettingsInfoPath)
+  WindowsFeatureInfos    = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultWindowsFeaturesInfoPath) $(convertFromYamlWithErrorHandling $approvedWindowsFeaturesInfoPath)
+  AnsibleRoleInfos       = Get-ClonedAndModifiedHashtable $(convertFromYamlWithErrorHandling $defaultAnsibleRolesInfoPath) $(convertFromYamlWithErrorHandling $approvedAnsibleRolesInfoPath)
 }
 
 # ToDo: eventually the organization's IAC package will encapsulate this and import it all automatically
@@ -65,7 +101,7 @@ $generatedDirectoryPath = '../_generated'
 # ToDo: the name and version of a specific generated subdirectory for an organization should be calculated from the organization's IAC package
 $organizationName = 'ATAP'
 $organizationsAnsibleSubdirectoryVersion = '0.0.1'
-$generatedProjectDirectoryPath = Join-Path $projectBaseDirectory $generatedDirectoryPath  $organizationName $organizationsAnsibleSubdirectoryVersion
+$generatedProjectDirectoryPath = Join-Path $projectBaseDirectory $generatedDirectoryPath $organizationName $organizationsAnsibleSubdirectoryVersion
 
 $lifecycleNames = @('DevelopmentLFC', 'QualityAssuranceLFC', 'StagingLFC', 'ProductionLFC')
 

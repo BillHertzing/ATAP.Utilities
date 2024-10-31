@@ -1,18 +1,22 @@
 
 # ToDo: Make this opinionated based on something in the parent tree
-$assemblyFileName = "ATAP.IAC.Ansible.dll"
-$outputFilePath = join-path ".." $assemblyFileName
+# ToDo: make this a function parameter, and localized
+$generatedSubdirectoryRelativePath = Join-Path '..' '_generated'
+$assemblyFileName = 'ATAP.IAC.Ansible.dll'
+$outputFilePath = Join-Path $generatedSubdirectoryRelativePath $assemblyFileName
+# ToDo: localize the file name
+$SourceForDebuggingFileName = 'SourceForDebugging.txt'
 
 [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
 
-$AnsibleTypeCodePreamble = @"
+$AnsibleTypeCodePreamble = @'
 using System.Collections.Generic;
 namespace ATAP.IAC.Ansible {
 
-"@
-$AnsibleTypeCodePostscript = @"
+'@
+$AnsibleTypeCodePostscript = @'
 }
-"@
+'@
 
 # add the preamble to the StringBuilder
 [void]$sb.Append($AnsibleTypeCodePreamble)
@@ -20,7 +24,7 @@ $AnsibleTypeCodePostscript = @"
 # load all the local .cs files into $sb
 $AnsibleTypeFiles = Get-ChildItem -Path $PSScriptRoot -Filter *.cs -Recurse
 foreach ($AnsibleTypeFile in $AnsibleTypeFiles) {
-    [void]$sb.Append($(Get-Content $AnsibleTypeFile -Raw))
+  [void]$sb.Append($(Get-Content $AnsibleTypeFile -Raw))
 }
 
 # add the postscript
@@ -28,12 +32,12 @@ foreach ($AnsibleTypeFile in $AnsibleTypeFiles) {
 
 # add references to external assemblies. Ensure the assemblies referenced are compatable with the current default DotNet framework
 $referencedAssemblies = @(
-    'System.Collections.dll'
+  'System.Collections.dll'
 )
 
 # ToDo make this controllable via an argument
 if ($true) {
-  set-content -path './SourceForDebugging.txt' -Value $sb.ToString()
+  Set-Content -Path (Join-Path $generatedSubdirectoryRelativePath $SourceForDebuggingFileName) -Value $sb.ToString()
 }
 
 # Compile and generate the DLL using Add-Type cmdlet

@@ -1,4 +1,4 @@
-namespace ATAP.Utilities.IAC.Ansible.Interfaces
+namespace ATAP.Utilities.IAC.Ansible
 {
   // AnsiblePlayBlockCommon interface capturing shared components
   public interface IAnsiblePlayBlockCommon

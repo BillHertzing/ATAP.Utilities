@@ -1,3 +1,5 @@
+namespace ATAP.Utilities.IAC.Ansible
+{
   public class AnsiblePlay : IAnsiblePlay
   {
     public string Name { get; set; }
@@ -10,3 +12,4 @@
       Kind = kind;
     }
   }
+}

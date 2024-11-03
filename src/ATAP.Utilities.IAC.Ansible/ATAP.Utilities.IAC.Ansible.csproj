@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
+        <!-- Set the  NuGet Package control for this assembly -->
+
     <DefaultNamespace>ATAP.Utilities.IAC.Ansible</DefaultNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
@@ -22,11 +24,15 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="TimePeriodLibrary.NET" />
+    <PackageReference Include="UnitsNet" />
   </ItemGroup>
 
   <ItemGroup>
   <!-- Enumerations used in this libraries -->
     <ProjectReference Include="..\ATAP.Utilities.IAC.Ansible.Enumerations\ATAP.Utilities.IAC.Ansible.Enumerations.csproj" />
+  <!-- Interfaces used in this libraries -->
+    <ProjectReference Include="..\ATAP.Utilities.IAC.Ansible.Interfaces\ATAP.Utilities.IAC.Ansible.Interfaces.csproj" />
   </ItemGroup>
 
   <ItemGroup>

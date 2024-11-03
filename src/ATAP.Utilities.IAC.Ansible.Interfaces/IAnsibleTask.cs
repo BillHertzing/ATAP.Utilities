@@ -1,4 +1,4 @@
-namespace ATAP.Utilities.IAC.Ansible.Interfaces
+namespace ATAP.Utilities.IAC.Ansible
 {
   public interface IAnsibleTask
   {

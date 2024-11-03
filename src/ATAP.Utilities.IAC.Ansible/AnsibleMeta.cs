@@ -1,6 +1,9 @@
-public class AnsibleMeta : IAnsibleMeta
+namespace ATAP.Utilities.IAC.Ansible
 {
-  public string DependentRoleNames { get; set; }
+  public class AnsibleMeta : IAnsibleMeta
+  {
+    public string DependentRoleNames { get; set; }
 
-  public AnsibleMeta() { }
+    public AnsibleMeta() { }
+  }
 }

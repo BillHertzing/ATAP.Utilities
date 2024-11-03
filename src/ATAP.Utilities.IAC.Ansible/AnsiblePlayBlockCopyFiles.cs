@@ -1,13 +1,16 @@
-public class AnsiblePlayBlockCopyFiles : IAnsiblePlayBlockCopyFiles
+namespace ATAP.Utilities.IAC.Ansible
 {
-  public string Name { get; set; }
-  public string Source { get; set; }
-  public string Destination { get; set; }
-
-  public AnsiblePlayBlockCopyFiles(string name, string source, string destination)
+  public class AnsiblePlayBlockCopyFiles : IAnsiblePlayBlockCopyFiles
   {
-    Name = name;
-    Source = source;
-    Destination = destination;
+    public string Name { get; set; }
+    public string Source { get; set; }
+    public string Destination { get; set; }
+
+    public AnsiblePlayBlockCopyFiles(string name, string source, string destination)
+    {
+      Name = name;
+      Source = source;
+      Destination = destination;
+    }
   }
 }

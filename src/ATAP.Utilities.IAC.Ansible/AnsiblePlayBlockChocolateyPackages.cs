@@ -1,15 +1,18 @@
-public class AnsiblePlayBlockChocolateyPackages : IAnsiblePlayBlockChocolateyPackages
+namespace ATAP.Utilities.IAC.Ansible
 {
-  public string Name { get; set; }
-  public string Version { get; set; }
-  public bool Prerelease { get; set; }
-  public List<string> AddedParameters { get; set; }
-
-  public AnsiblePlayBlockChocolateyPackages(string name, string version, bool prerelease, List<string> addedParameters)
+  public class AnsiblePlayBlockChocolateyPackages : IAnsiblePlayBlockChocolateyPackages
   {
-    Name = name;
-    Version = version;
-    Prerelease = prerelease;
-    AddedParameters = addedParameters;
+    public string Name { get; set; }
+    public string Version { get; set; }
+    public bool Prerelease { get; set; }
+    public List<string> AddedParameters { get; set; }
+
+    public AnsiblePlayBlockChocolateyPackages(string name, string version, bool prerelease, List<string> addedParameters)
+    {
+      Name = name;
+      Version = version;
+      Prerelease = prerelease;
+      AddedParameters = addedParameters;
+    }
   }
 }

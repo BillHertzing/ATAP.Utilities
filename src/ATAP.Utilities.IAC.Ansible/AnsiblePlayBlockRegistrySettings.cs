@@ -1,16 +1,19 @@
-public class AnsiblePlayBlockRegistrySettings : IAnsiblePlayBlockRegistrySettings
+namespace ATAP.Utilities.IAC.Ansible
 {
-  public string Name { get; set; }
-  public string Purpose { get; set; }
-  public string Path { get; set; }
-  public string Type { get; set; }
-  public string Value { get; set; }
-  public AnsiblePlayBlockRegistrySettings(string purpose, string name, string path, string type, string value)
+  public class AnsiblePlayBlockRegistrySettings : IAnsiblePlayBlockRegistrySettings
   {
-    Name = name;
-    Purpose = purpose;
-    Path = path;
-    Type = type;
-    Value = value;
+    public string Name { get; set; }
+    public string Purpose { get; set; }
+    public string Path { get; set; }
+    public string Type { get; set; }
+    public string Value { get; set; }
+    public AnsiblePlayBlockRegistrySettings(string purpose, string name, string path, string type, string value)
+    {
+      Name = name;
+      Purpose = purpose;
+      Path = path;
+      Type = type;
+      Value = value;
+    }
   }
 }

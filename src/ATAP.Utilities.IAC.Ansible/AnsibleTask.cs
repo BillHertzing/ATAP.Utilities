@@ -1,3 +1,5 @@
+namespace ATAP.Utilities.IAC.Ansible
+{
   public class AnsibleTask : IAnsibleTask
   {
     public string Name { get; set; }
@@ -9,3 +11,4 @@
       Items = items;
     }
   }
+}

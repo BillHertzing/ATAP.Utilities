@@ -1,13 +1,16 @@
-public class AnsibleRole : IAnsibleRole
+namespace ATAP.Utilities.IAC.Ansible
 {
-  public string Name { get; set; }
-  public IAnsibleMeta AnsibleMeta { get; set; }
-  public IAnsibleTask AnsibleTask { get; set; }
-
-  public AnsibleRole(string name, IAnsibleMeta ansibleMeta, IAnsibleTask ansibleTask)
+  public class AnsibleRole : IAnsibleRole
   {
-    Name = name;
-    AnsibleMeta = ansibleMeta;
-    AnsibleTask = ansibleTask;
+    public string Name { get; set; }
+    public IAnsibleMeta AnsibleMeta { get; set; }
+    public IAnsibleTask AnsibleTask { get; set; }
+
+    public AnsibleRole(string name, IAnsibleMeta ansibleMeta, IAnsibleTask ansibleTask)
+    {
+      Name = name;
+      AnsibleMeta = ansibleMeta;
+      AnsibleTask = ansibleTask;
+    }
   }
 }

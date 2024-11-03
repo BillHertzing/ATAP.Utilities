@@ -178,9 +178,10 @@
     #- {name: mysql.workbench, version: latest, allowprerelease: false, addedparameters: , }
     #- {name: ngrok, version: latest, allowprerelease: false, addedparameters: , }
     #- {name: nmap, version: latest, allowprerelease: false, addedparameters: , } # investiggate - installation hung here
-    #- {name: nordvpn, version: latest, allowprerelease: false, addedparameters: , } # requires restart and then login after installation
+    ##- {name: nordvpn, version: latest, allowprerelease: false, addedparameters: , } # requires restart and then login after installation
     #- {name: notepadplusplus, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
     #- {name: nssm, version: latest, allowprerelease: false, addedparameters: , }
+    #- {name: ntlite-free, version: latest, allowprerelease: false, addedparameters: , }
     #- {name: nuget.commandline, version: latest, allowprerelease: false, addedparameters: , }
     #- {name: nugetpackageexplorer, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that settings and associations can be made per user
     #- {name: office365proplus, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that license can be added

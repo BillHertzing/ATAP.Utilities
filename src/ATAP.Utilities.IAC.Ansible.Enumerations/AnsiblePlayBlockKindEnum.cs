@@ -1,8 +1,11 @@
-public enum AnsiblePlayBlockKind
+namespace ATAP.Utilities.IAC.Ansible
 {
-  AnsiblePlayBlockChocolateyPackages,
-  AnsiblePlayBlockCopyFiles,
-  AnsiblePlayBlockRegistrySettings,
-  AnsiblePlayBlockSymbolicLinks,
-  AnsiblePlayBlockUserWindows
+  public enum AnsiblePlayBlockKind
+  {
+    AnsiblePlayBlockChocolateyPackages,
+    AnsiblePlayBlockCopyFiles,
+    AnsiblePlayBlockRegistrySettings,
+    AnsiblePlayBlockSymbolicLinks,
+    AnsiblePlayBlockUserWindows
+  }
 }

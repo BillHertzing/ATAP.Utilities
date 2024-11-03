@@ -1,3 +1,6 @@
+namespace ATAP.Utilities.IAC.Ansible
+{
+
   public class AnsiblePlayBlockSymbolicLinks : IAnsiblePlayBlockSymbolicLinks
   {
     public string Name { get; set; }
@@ -10,3 +13,4 @@
       Destination = destination;
     }
   }
+}

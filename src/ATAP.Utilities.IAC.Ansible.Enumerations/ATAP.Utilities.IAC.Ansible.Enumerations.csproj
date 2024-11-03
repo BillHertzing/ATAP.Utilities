@@ -22,11 +22,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
-  </ItemGroup>
-
-  <ItemGroup>
-  <!-- Enumerations used in this libraries -->
-    <ProjectReference Include="..\ATAP.Utilities.IAC.Ansible.Enumerations\ATAP.Utilities.IAC.Ansible.Enumerations.csproj" />
+    <PackageReference Include="TimePeriodLibrary.NET" />
+    <PackageReference Include="UnitsNet" />
   </ItemGroup>
 
   <ItemGroup>

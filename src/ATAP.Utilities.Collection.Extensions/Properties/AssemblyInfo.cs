@@ -4,9 +4,9 @@ using System.ComponentModel;
 #endif
 
 // ATAP.Utilities.BuildTooling.targets will update the build (date), and revision fields each time a new build occurs
-[assembly:AssemblyFileVersion("0.1.7995.32994")]
+[assembly:AssemblyFileVersion("0.1.9078.28943")]
 // ATAP.Utilities.BuildTooling.targets will update the AssemblyInformationalVersion field each time a new build occurs
-[assembly:AssemblyInformationalVersion("0.1.0-Alpha-002")]
+[assembly:AssemblyInformationalVersion("0.1.0-Alpha-003")]
 [assembly:AssemblyVersion("0.1.0")]
 // When building with the Trace symbol defined, turn on ETW logging for Method Entry, Method Exit, and Exceptions
 #if TRACE

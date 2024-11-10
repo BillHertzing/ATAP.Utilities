@@ -322,6 +322,11 @@ OpenSSL.Light:
   AllowPreRelease: false
   Version: Latest
   AddedParameters:
+pdfgear:
+  Notes: ""
+  AllowPreRelease: false
+  Version: Latest
+  AddedParameters:
 pdq-inventory:
   Notes: ""
   AllowPreRelease: false

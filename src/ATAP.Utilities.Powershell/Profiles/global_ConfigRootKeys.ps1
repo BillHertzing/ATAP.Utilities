@@ -1,7 +1,7 @@
 # ToDo comment based help
 $global:configRootKeys = @{
-	# IAC for Hosts having the C: drive as the systemdrive
-	'SYSTEMDRIVEConfigRootKey' ='C:'
+  # IAC for Hosts having the C: drive as the systemdrive
+  'SYSTEMDRIVEConfigRootKey'                                                                     = 'C:'
   'ProgramFilesConfigRootKey'                                                                    = 'ProgramFiles'
   'ProgramDataConfigRootKey'                                                                     = 'ProgramData'
   'ATAPUtilitiesVersionConfigRootKey'                                                            = 'ATAPUtilitiesVersion'
@@ -61,6 +61,9 @@ $global:configRootKeys = @{
   'FP__projectNameConfigRootKey'                                                                 = 'FP__projectName'
   'FP__projectDescriptionConfigRootKey'                                                          = 'FP__projectDescription'
   'CommonJarsBasePathConfigRootKey'                                                              = 'CommonJarsBasePath'
+
+  #  # Allows Wireshark and other applications to capture the SSL Keys pre-negotiation, so HTTPS SSL traffic can be decrypted
+  'SSLKEYLOGFILEConfigRootKey'                                                                   = 'SSLKEYLOGFILE'
   # Location of Python interpreter
   'PythonInterpretersBaseDirectoryConfigRootKey'                                                 = 'PythonInterpretersBaseDirectory'
   'PythonInterpretersInstallDirectoryConfigRootKey'                                              = 'PythonInterpretersInstallDirectory'

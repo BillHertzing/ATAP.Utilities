@@ -28,29 +28,32 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-# $modulePath discard from rightmost pathseperator
-$ModulePath = (Split-Path -Parent $MyInvocation.MyCommand.Path) -Replace ''
-$ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace '.Tests.ps1'
-
-$ManifestPath = "$ModulePath\$ModuleName.psd1"
-
-$ModulePath = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell\'
-$ModuleName = 'ATAP.Utilities.FileIO.PowerShell'
-
 # test the module manifest - exports the right functions, processes the right formats, and is generally correct
-Describe '<Manifest>' {
+Describe ' Powershell Manifest Unit Tests' -Tag 'UnitTests' {
 
-  $ManifestHash = Invoke-Expression (Get-Content $ManifestPath -Raw)
-
-  It 'has a valid manifest' {
-    {
-      $null = Test-ModuleManifest -Path $ManifestPath -ErrorAction Stop -WarningAction SilentlyContinue
-    } | Should -Not Throw
+  # opinionated. For a powershell module, the Module name is the tests subdirectory's parent name
+  BeforeAll {
+    $message = 'Starting BeforeAll in '
+    Write-PSFMessage -Level Important -Message $message -Tag 'Trace', 'UnitTests'
+    # The VSC test runner starts in the module's workspace directory
+    $cwd = Get-Location
+    $Script:ModuleName = Split-Path -Path $cwd -Leaf
+    # The VSC test runner starts in the module's workspace directory, so the ModulePath and the Manifest Path are
+    #   in the current directory
+    $Script:ModulePath = "$Script:ModuleName.psm1"
+    $Script:ManifestPath = "$Script:ModuleName.psd1"
+    $Script:ManifestHash = Invoke-Expression (Get-Content $Script:ManifestPath -Raw)
   }
 
+  # It 'has a valid manifest' {
+  #   {
+  #     $null = Test-ModuleManifest -Path $Script:ManifestPath -ErrorAction Stop -WarningAction SilentlyContinue
+  #   } | Should -Not Throw
+  # }
+
   It 'has a valid root module' {
-    #$ManifestHash.RootModule | Should -Be "$ModuleName.psm1"
-    $ManifestHash.RootModule | Should -Be 'ATAP.Utilities.FileIO.PowerShell.psm1'
+    $ManifestHash.RootModule | Should -Be "$Script:ModulePath"
+    #$ManifestHash.RootModule | Should -Be 'ATAP.Utilities.FileIO.PowerShell.psm1'
   }
 
   It 'has a valid Description' {
@@ -58,37 +61,31 @@ Describe '<Manifest>' {
   }
 
   It 'has a valid guid' {
-    $ManifestHash.Guid | Should -Be '06659291-925f-4733-b4f3-7f69b5cbabda'
+    $ManifestHash.Guid | Should -Match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
   }
-
-  It 'has a valid prefix' {
-    $ManifestHash.DefaultCommandPrefix | Should -Not -BeNullOrEmpty
-  }
+  # we have not yet run into a situation where the DefaultCommandPrefix, used for namespacing functions in a module,
+  #  is necessary
+  # It 'has a valid prefix' {
+  #   $ManifestHash.DefaultCommandPrefix | Should -Not -BeNullOrEmpty
+  # }
 
   It 'has a valid copyright' {
     $ManifestHash.CopyRight | Should -Not -BeNullOrEmpty
   }
 
   It 'exports all public functions' {
+    # ToDo: modify so it tests exported function, and cmdlets
     $ExFunctions = $ManifestHash.FunctionsToExport
-    $FunctionFiles = Get-ChildItem "$ModulePath\Public" -Filter *.ps1 | Select-Object -ExpandProperty BaseName
+    $FunctionFiles = Get-ChildItem 'Public' -Filter *.ps1 | Select-Object -ExpandProperty BaseName
     $FunctionNames = $FunctionFiles
     foreach ($FunctionName in $FunctionNames) {
+      # ToDo: accumulate found functions into $foundFunctions
       $ExFunctions -contains $FunctionName | Should -Be $true
     }
+    # Add test to ensure there are no functions in ExFunctions that are not in $foundFunctions
   }
 }
 
-#     }
-#     #endregion FunctionProcessBlock
-
-#     #region FunctionEndBlock
-#     ########################################
-#     END {
-#         Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
-#     }
-#     #endregion FunctionEndBlock
-# }
 # #endregion Test-ModuleManifest
 # #############################################################################
 

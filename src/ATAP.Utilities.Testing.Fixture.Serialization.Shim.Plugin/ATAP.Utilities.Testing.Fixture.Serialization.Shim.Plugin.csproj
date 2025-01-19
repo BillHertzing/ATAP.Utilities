@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
@@ -77,9 +77,9 @@
     <ProjectReference Include="../ATAP.Utilities.Serializer\ATAP.Utilities.Serializer.csproj" />
   </ItemGroup>
 
-    <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
-    <!-- ETW is not used inTesting (yet), but ATAP libraries used by the testing package have a reference to this. UYnitl I can figure out how to include these as dependent packages in the appropriate `ATAP.Utilitiies.` librarirys, they are included specifically, here -->
-    <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
+  <!-- Packages and projects to implement IL Weaving using Fody during the build process -->
+  <!-- ETW is not used inTesting (yet), but ATAP libraries used by the testing package have a reference to this. UYnitl I can figure out how to include these as dependent packages in the appropriate `ATAP.Utilitiies.` librarirys, they are included specifically, here -->
+  <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
   <ItemGroup>
     <!-- Packages to implement ETW logging of method entry, method exit, and exceptions -->
     <PackageReference Include="MethodBoundaryAspect.Fody" />
@@ -101,7 +101,7 @@
     <PackageReference Include="ServiceStack.OrmLite.Sqlite.Core" />
   </ItemGroup>
 
-  <!-- Loader interfaces and actuals for any Assembly that may be loaded by the dynamic Loader, only works for TargetFramework NetCore -->
+  <!-- Loader interfaces and classes for any Assembly that may be loaded by the dynamic Loader, only works for TargetFramework NetCore -->
   <ItemGroup Condition="$(TargetFramework.Contains('5.0'))">
     <ProjectReference Include="..\ATAP.Utilities.Loader.Interfaces\ATAP.Utilities.Loader.Interfaces.csproj" />
     <ProjectReference Include="..\ATAP.Utilities.Loader\ATAP.Utilities.Loader.csproj" />

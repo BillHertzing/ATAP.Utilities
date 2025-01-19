@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -423,8 +423,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.StringConstants", "src\ATAP.Utilities.IAC.Ansible.StringConstants\ATAP.Utilities.IAC.Ansible.StringConstants.csproj", "{C9726115-B139-4EAA-AB18-851601E06A43}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.Enumerations", "src\ATAP.Utilities.IAC.Ansible.Enumerations\ATAP.Utilities.IAC.Ansible.Enumerations.csproj", "{B2F7EAF4-3FC2-4187-A990-A561DBFBCE10}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.DefaultConfiguration", "src\ATAP.Utilities.IAC.Ansible.DefaultConfiguration\ATAP.Utilities.IAC.Ansible.DefaultConfiguration.csproj", "{74745BF8-D3E4-4EED-86EC-9D5B1385CDBF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATAP.Utilities.IAC.Ansible.Models", "src\ATAP.Utilities.IAC.Ansible.Models\ATAP.Utilities.IAC.Ansible.Models.csproj", "{F44539E5-CA14-497B-BC96-DDAF327DCC8F}"
 EndProject
@@ -1218,12 +1216,6 @@ Global
 		{B2F7EAF4-3FC2-4187-A990-A561DBFBCE10}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B2F7EAF4-3FC2-4187-A990-A561DBFBCE10}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
 		{B2F7EAF4-3FC2-4187-A990-A561DBFBCE10}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
-		{74745BF8-D3E4-4EED-86EC-9D5B1385CDBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{74745BF8-D3E4-4EED-86EC-9D5B1385CDBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{74745BF8-D3E4-4EED-86EC-9D5B1385CDBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{74745BF8-D3E4-4EED-86EC-9D5B1385CDBF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{74745BF8-D3E4-4EED-86EC-9D5B1385CDBF}.ReleaseWithTrace|Any CPU.ActiveCfg = ReleaseWithTrace|Any CPU
-		{74745BF8-D3E4-4EED-86EC-9D5B1385CDBF}.ReleaseWithTrace|Any CPU.Build.0 = ReleaseWithTrace|Any CPU
 		{F44539E5-CA14-497B-BC96-DDAF327DCC8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F44539E5-CA14-497B-BC96-DDAF327DCC8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F44539E5-CA14-497B-BC96-DDAF327DCC8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1428,7 +1420,6 @@ Global
 		{0FCBB344-F507-4158-ADC1-FC0CE077295E} = {1a59a7c9-25b9-4a6b-ba1f-37c4e7e2c090}
 		{C9726115-B139-4EAA-AB18-851601E06A43} = {1a59a7c9-25b9-4a6b-ba1f-37c4e7e2c090}
 		{B2F7EAF4-3FC2-4187-A990-A561DBFBCE10} = {1a59a7c9-25b9-4a6b-ba1f-37c4e7e2c090}
-		{74745BF8-D3E4-4EED-86EC-9D5B1385CDBF} = {1a59a7c9-25b9-4a6b-ba1f-37c4e7e2c090}
 		{F44539E5-CA14-497B-BC96-DDAF327DCC8F} = {1a59a7c9-25b9-4a6b-ba1f-37c4e7e2c090}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

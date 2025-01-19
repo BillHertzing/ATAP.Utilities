@@ -41,11 +41,12 @@ Function Set-RepositoryPackageSources {
   #endregion FunctionParameters
   BEGIN {
     # $DebugPreference = 'SilentlyContinue'
-    Write-PSFMessage -Level Debug -Message "Starting Set-RepositoryPackageSources. PsCmdlet.ParameterSetName = $($PsCmdlet.ParameterSetName)"
+    Write-PSFMessage -Level Debug -Message "Starting Set-RepositoryPackageSources. PsCmdlet.ParameterSetName = $($PsCmdlet.ParameterSetName)" -Tag Trace
   }
   END {
     # ToDo: move the registration of repository locations into a seperate function. Invoke it on container or server creation / maintenance
     # Register repository locations
+    # ToDo: Replace with enumeration
      ('NuGet', 'PowershellGet', 'Chocolatey') | ForEach-Object { $ProviderName = $_
       # Validate each package provider is installed, else install it
       if (-not $(Get-PackageProvider -Name $ProviderName)) {

@@ -1,12 +1,12 @@
-function ScriptblockPinToTaskbar  {
+function ScriptblockPinToTaskbar {
   # This is difficult in Win 10 and win 11. Here are some resources
   # [PowerShell Commands for PinnedItem Item to Taskbar (This PC, User's Profile & Disk D:)](https://learn.microsoft.com/en-us/answers/questions/1309489/powershell-commands-for-pinneditem-item-to-taskbar)
 
   param (
     [string] $playName
-    ,[object[]] $items
-    ,[string[]] $tagnames
-    ,[System.Text.StringBuilder] $sb
+    , [object[]] $items
+    , [string[]] $tagnames
+    , [System.Text.StringBuilder] $sb
   )
 
   #$PinToTaskbarInfos = $($ansibleInventoryStructure.SwCfgInfos).PinToTaskbarInfos
@@ -26,7 +26,7 @@ function ScriptblockPinToTaskbar  {
     $Shortcut.TargetPath = "{{ item.targetpath }}"
     $Shortcut.Arguments = "{{ item.parameter }}"
     $Shortcut.Save()
-  failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
+  failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behavior.
   loop:
 
 '@)

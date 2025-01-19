@@ -43,6 +43,8 @@ $global:EnvVars = @{
   # related to the Hydrus-Network application
   $global:configRootKeys['HYDRUS_ACCESS_KEYConfigRootKey']      = $global:Settings[$global:configRootKeys['HYDRUS_ACCESS_KEYConfigRootKey']]
 
+  # Allows Wireshark and other applications to capture the SSL Keys pre-negotiation, so HTTPS SSL traffic can be decrypted
+  $global:configRootKeys['SSLKEYLOGFILEConfigRootKey']          = $global:Settings[$global:configRootKeys['SSLKEYLOGFILEConfigRootKey']]
 
 }
 

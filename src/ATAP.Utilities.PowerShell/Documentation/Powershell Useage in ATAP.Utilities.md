@@ -92,3 +92,42 @@ then
 
 When using powershell Core, Note that if the path to the Powershell Desktop modules appear in the $ENV:PsModulePath before the path to the Powershell Core moduls, then package management powershell commands will not work, The Desktop path contains a much older version of the PackageManagement module, one which does not use TLS 1.2
 
+## Logging
+
+Use PSFramework for logging
+use the GELF logging provider configured as follows:
+
+```Powershell
+$gelfLoggingProviderConfiguration =  @{Name='gelf'; gelfServer= '127.0.0.1'; port=12201;Encrypt=$false;AutoInstall=$true;Enabled=$true;Verbose=$true} # UDP is the default protocol
+Set-PSFLoggingProvider @gelfLoggingProviderConfiguration
+# Then explicitly initialize it
+$null = Wait-PSFMessage -Timeout 1
+# see if it has been initialized
+Get-PSFLoggingProvider -Name GELF
+```
+or
+
+```Powershell
+set-psfconfig 'LoggingProvider.gelf.AutoInstall' $true
+get-psfconfig 'LoggingProvider.gelf.AutoInstall'
+set-psfconfig 'LoggingProvider.gelf.Enabled' $true
+get-psfconfig 'LoggingProvider.gelf.Enabled'
+set-psfconfig 'PSFramework.Logging.GELF.Encrypt' $false
+get-psfconfig 'PSFramework.Logging.GELF.Encrypt'
+set-psfconfig 'PSFramework.Logging.GELF.GelfServer' '127.0.0.1'
+get-psfconfig 'PSFramework.Logging.GELF.GelfServer'
+set-psfconfig 'PSFramework.Logging.GELF.Port' '12201'
+get-psfconfig 'PSFramework.Logging.GELF.Port'
+set-psfconfig 'PSFramework.Logging.GELF.Verbose' $true
+get-psfconfig 'PSFramework.Logging.GELF.Verbose'
+Enable-PSFLoggingProvider -Name GELF
+```
+
+use SEQ to listen for GELF formated messages on udp://127.0.0.1:12201
+
+or this:
+``` powerShell
+# ToDo: variable instance name (?)
+$gelfLoggingProviderConfiguration =  @{Name='gelf';instanceName='powerShellScriptXYZ'; gelfserver= 'localhost'; port=12201;Enabled=$true;Encrypt=$false}
+Set-PSFLoggingProvider @gelfLoggingProviderConfiguration
+```

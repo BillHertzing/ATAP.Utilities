@@ -57,7 +57,7 @@ Function Clear-NuGetCaches {
     $path = join-path $env:USERPROFILE '.nuget/packages'
     Write-Verbose "Removing $path"
     if ((test-path $path) -AND ($path -match 'nuget')) {
-      if ($PSCmdlet.ShouldProcess("$path", "-Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
+      if ($PSCmdlet.ShouldProcess("$path", "Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
         Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference
       }
     } else {
@@ -66,7 +66,7 @@ Function Clear-NuGetCaches {
     $path = join-path $ENV:tmp 'NuGetScratch'
     Write-Verbose "Removing $path"
     if ((test-path $path) -AND ($path -match 'nuget')) {
-      if ($PSCmdlet.ShouldProcess("$path", "-Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
+      if ($PSCmdlet.ShouldProcess("$path", "Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
         Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference
       }
     } else {
@@ -75,7 +75,7 @@ Function Clear-NuGetCaches {
     $path = join-path $ENV:LOCALAPPDATA 'NuGet/v3-cache'
     Write-Verbose "Removing $path"
     if ((test-path $path) -AND ($path -match 'nuget')) {
-      if ($PSCmdlet.ShouldProcess("$path", "-Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
+      if ($PSCmdlet.ShouldProcess("$path", "Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
         Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference
       }
     } else {

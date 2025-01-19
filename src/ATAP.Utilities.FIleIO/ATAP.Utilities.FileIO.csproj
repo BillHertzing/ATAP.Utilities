@@ -16,9 +16,16 @@
     <PackageLabel>Alpha</PackageLabel>
   </PropertyGroup>
 
+  <!-- automatically generate binding redirects -->
+  <PropertyGroup>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+
   <!-- FileIO Extension to provide file and direcotry Globbing requires System.IO.Abstractions -->
   <ItemGroup>
     <PackageReference Include="System.IO.Abstractions" />
+    <PackageReference Include="System.IO.Abstractions.TestingHelpers" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ATAP.Utilities.Collection.Extensions\ATAP.Utilities.Collection.Extensions.csproj" />

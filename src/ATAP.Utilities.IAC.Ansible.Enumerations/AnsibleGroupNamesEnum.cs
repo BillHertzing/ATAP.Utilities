@@ -1,5 +1,5 @@
 namespace ATAP.Utilities.IAC.Ansible {
-  enum AnsibleGroupNamesEnum {
+  public enum AnsibleGroupNamesEnum {
     WindowsHost,
     BuildHosts,
     QualityAssuranceHosts,

@@ -57,7 +57,7 @@ function New-Role {
     $roleComponentName = $roleComponentNames[$roleComponentIndex]
     switch -regex ($roleComponentName) {
       '^Name$' {
-        break;
+        break
       }
       '^AnsibleTask$' {
         [void]$sb.AppendLine($($($template -replace '\{1}', $roleComponentName ) -replace '\{2}', "the Role $roleName"))
@@ -65,7 +65,7 @@ function New-Role {
         $taskInfo = $RoleInfo[$roleComponentName]
         $taskName = $taskInfo['Name']
         $playInfos = $taskInfo['Items']
-        $args = @{taskName = $taskName; taskInfo = $taskInfo; playInfos = $playInfos; tagnames =  @(,$roleName); sb = $sb }
+        $args = @{taskName = $taskName; taskInfo = $taskInfo; playInfos = $playInfos; tagnames = @(, $roleName); sb = $sb }
         &  RoleComponentTask @args
 
         # foreach ($play in $playInfos) {
@@ -79,7 +79,7 @@ function New-Role {
         $roleComponentMainYamlPath = Join-Path $roleComponentDirectory 'main.yml'
         Set-Content -Path $roleComponentMainYamlPath -Value $sb.ToString()
         [void]$sb.Clear()
-    }
+      }
       '^vars$' {
         [void]$sb.AppendLine($($($template -replace '\{1}', $roleComponentName ) -replace '\{2}', $roleName))
         # The vars RoleComponent are an araylist of strings in the form name:value
@@ -93,7 +93,7 @@ function New-Role {
         [void]$sb.AppendLine($($($template -replace '\{1}', $roleComponentName ) -replace '\{2}', $roleName))
         $metaInfo = $RoleInfo[$roleComponentName]
         $metaName = $metaInfo['Name']
-        $args = @{roleName = $roleName; description = $metaInfo['description']; dependencies = $metaInfo['dependencies']; tagnames =  @(,$roleName); sb = $sb }
+        $args = @{roleName = $roleName; description = $metaInfo['description']; dependencies = $metaInfo['dependencies']; tagnames = @(, $roleName); sb = $sb }
         &  RoleComponentMeta @args
         $roleComponentDirectory = $(Join-Path $baseRoleDirectoryPath $roleName 'meta')
         $null = New-Item -ItemType Directory -Force $roleComponentDirectory

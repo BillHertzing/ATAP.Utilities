@@ -122,11 +122,14 @@ In every new repository, after running `git init`, run these commands (as an adm
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\cspell.json"  -symbolicLinkPath ".\.vscode\cspell.json" -force
 ```
 
-## Symbolic Links for Prettier formatting rules, CSpell, eslint rules, and Mocha
+## Symbolic Links for Prettier formatting rules, CSpell, eslint rules, building Powershe;ll; modules (Invoke-Build) and Mocha
 
 The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a `.prettierrc.yml` with formatting rules and an `.eslintrc.js` with linting rules for Javascript at the repository base. We use the YAML format in order to support comments in the file.
 
 Every repository that uses Visual Studio Code as the IDE, needs a `cspell.json` with spelling rules ToDo: We use the YAML format in order to support comments in the file.
+
+EveryRepository that creates Powershell modules in a sub-project needs a `module.build.ps1` file. We create a symbolic link in the repository root to a copy of this file that is present in the module `ATAP.Utilities.Buildtooling.Powershell`. Installing this module brings in a read-only copy of that file. We create a symbolic link to this file
+ToDo: until the buildtooling package is created and installed, symblink to the source code
 
 Every repository that uses Mocha to test Javascript code, including repositories for VSC Extensions, needs a .mocharc.mjs file.
 
@@ -135,9 +138,13 @@ In every new repository, after creating the .vscode directory and its contents, 
 ```Powershell
   # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.prettierrc.yml"  -symbolicLinkPath ".\.prettierrc.yml" -force
+  # this command is only needed for respositories that have projects that use javascript or typescript
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.eslintrc.js"  -symbolicLinkPath ".\.eslintrc.js" -force
   # this command only for repositories that use mocha for testing JavaScript
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.mocharc.yaml"  -symbolicLinkPath ".\.mocharc.yaml" -force
+  # this command is only needed for repositories that have projects that create Powershell modules.
+  New-SymbolicLink -symbolicLinkPath './module.build.ps1' -targetPath "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\module.build.ps1"
+
 
 ```
 

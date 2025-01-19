@@ -1,5 +1,5 @@
 7zip:
-  Notes: 'Need to add associations '
+  Notes: "Need to add associations "
   AllowPreRelease: false
   Version: Latest
   AddedParameters:
@@ -128,10 +128,10 @@ Everything:
   AllowPreRelease: false
   Version: Latest
   AddedParameters:
-  - client-service
-  - efu-association
-  - run-on-system-startup
-  - folder-context-menu
+    - client-service
+    - efu-association
+    - run-on-system-startup
+    - folder-context-menu
 fiddler:
   Notes: ""
   AllowPreRelease: false
@@ -248,7 +248,7 @@ linqpad:
   Version: Latest
   AddedParameters:
 logitechgaming:
-  Notes: 'Only on ncat016 '
+  Notes: "Only on ncat016 "
   AllowPreRelease: false
   Version: Latest
   AddedParameters:
@@ -408,6 +408,11 @@ samsung-magician:
   Version: Latest
   AddedParameters:
 sentinel:
+  Notes: ""
+  AllowPreRelease: false
+  Version: Latest
+  AddedParameters:
+seq:
   Notes: ""
   AllowPreRelease: false
   Version: Latest
@@ -592,4 +597,3 @@ zoom:
   AllowPrerelease: false
   Version: Latest
   AddedParameters:
-

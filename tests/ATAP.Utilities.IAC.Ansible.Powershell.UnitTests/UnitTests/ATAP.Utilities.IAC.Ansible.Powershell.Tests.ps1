@@ -100,7 +100,7 @@ BeforeAll {
     $testScriptNameArray = $testScriptName -split "\$moduleNameSeperator"
     # the name of the modules under 'test' and the name of the module under 'src' must match exactly
     # the name of the module being tested is the leaf of the src and tests path that belong to the PSScriptRoot
-    # The following subroutine uses the current direcotry as the basis for finding the module name
+    # The following subroutine uses the current directory as the basis for finding the module name
     $commonParent = Find-SourceAndTestDirectory -InitialDirectory $(Get-Location) -SrcName $srcName -TestsName $testsName
     # remove  the last two elements of the array ('tests' and 'ps1') and rejoin the rest
     # Opinionated: the name of the script or custom assembly being tested matches the base name of the script

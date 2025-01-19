@@ -1,19 +1,18 @@
-namespace ATAP.Utilities.IAC.Ansible
-{
-  public interface IAnsibleGroup
-  {
-    AnsibleGroupEnum Name { get; set; }
-    IAnsibleChocolateyPackageDictionary ChocolateyPackages { get; }
-    string[] PowershellModuleNames
-    string[] NPMPackageNames
-    string[] AnsibleRoleNames
-    string[] RegistrySettingsNames
-    string[] GlobalSettingsNames
-    string[] WindowsFeatureNames
+using System.Collections.Generic;
 
-    string[] PKICertificatesNames
+namespace ATAP.Utilities.IAC.Ansible {
+  public interface IAnsibleGroup {
+    AnsibleGroupNamesEnum Name { get; }
+    //IAnsibleChocolateyPackage ChocolateyPackages { get; }
+    //#string[] PowershellModuleNames { get; }
+    //string[] NPMPackageNames { get; }
+    IDictionary<AnsibleRoleNamesEnum, IAnsibleRole> AnsibleRoles { get; }
+    string[] AnsibleRoleNames { get; }
+    //string[] RegistrySettingsNames { get; }
+    //string[] GlobalSettingsNames { get; }
+    //string[] WindowsFeatureNames { get; }
+    //string[] PKICertificatesNames { get; }
 
-
-    List<IAnsiblePlayBlockCommon> Items { get; set; }
+    IList<IAnsiblePlayBlockCommon> Items { get; set; }
   }
 }

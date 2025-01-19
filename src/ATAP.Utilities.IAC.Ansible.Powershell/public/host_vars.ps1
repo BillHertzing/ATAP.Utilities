@@ -36,9 +36,9 @@ function ContentsEncryptedVars {
     [ValidateNotNullOrEmpty()]
     [string] $name
   )
-  # ToDo: get from the Poweshell Secrets vault (today that is  keepass)
+  # ToDo: get from the Powershell Secrets vault (today that is  keepass)
   $encryptedSettingsHash = Get-HostSettings $name
-  [void]$sb.Append("user : whertzing")
+  [void]$sb.Append('user : whertzing')
   [void]$sb.Append("`n")
   [void]$sb.Append('password : ChangeMe')
   [void]$sb.Append("`n")

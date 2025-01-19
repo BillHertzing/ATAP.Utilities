@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-        <!-- Set the  NuGet Package control for this assembly -->
+    <!-- Set the  NuGet Package control for this assembly -->
 
     <DefaultNamespace>ATAP.Utilities.IAC.Ansible</DefaultNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -19,7 +19,7 @@
   </PropertyGroup>
 
 
-<ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" />
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
@@ -29,9 +29,11 @@
   </ItemGroup>
 
   <ItemGroup>
-  <!-- Enumerations used in this libraries -->
+    <!-- StringConstants used in this libraries -->
+    <ProjectReference Include="..\ATAP.Utilities.IAC.Ansible.StringConstants\ATAP.Utilities.IAC.Ansible.StringConstants.csproj" />
+    <!-- Enumerations used in this libraries -->
     <ProjectReference Include="..\ATAP.Utilities.IAC.Ansible.Enumerations\ATAP.Utilities.IAC.Ansible.Enumerations.csproj" />
-  <!-- Interfaces used in this libraries -->
+    <!-- Interfaces used in this libraries -->
     <ProjectReference Include="..\ATAP.Utilities.IAC.Ansible.Interfaces\ATAP.Utilities.IAC.Ansible.Interfaces.csproj" />
   </ItemGroup>
 

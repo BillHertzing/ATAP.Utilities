@@ -7,8 +7,8 @@
 
   <-- This project will run under the following target frameworks -->
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-    <TargetFrameworks>net5.0;</TargetFrameworks>
+    <TargetFramework>net48</TargetFramework>
+    <TargetFrameworks>net48;</TargetFrameworks>
   </PropertyGroup>
 
   <!-- The Assembly will be packed into a NuGet Package on every build -->

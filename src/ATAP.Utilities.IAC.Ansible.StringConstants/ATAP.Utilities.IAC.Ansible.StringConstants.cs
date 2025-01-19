@@ -1,22 +1,15 @@
-namespace ATAP.Utilities.IAC.Ansible
-{
-  public public static class StringConstants
-  {
+namespace ATAP.Utilities.IAC.Ansible {
+  public static class StringConstants {
     // ToDo: Localize the string constants
     #region Settings File Names
     public const string SettingsFileName = "ATAP.Utilities.IAC.Ansible.Settings";
-    public const string SettingsFileNameSuffix = "json";
+    public const string SettingsFileNameSuffix = "yml";
     #endregion
     #region File Names
     public const string TemporaryDirectoryBaseConfigRootKey = "TemporaryDirectoryBase";
-    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\ConsoleMonitor\\";
+    public const string TemporaryDirectoryBaseDefault = "D:\\Temp\\ATAP.Utilities.IAC.Ansible.Settings\\";
     #endregion
     #region ConfigRootKeys
-    public const string RootStringConfigRootKey = "RootString";
-    public const string RootStringDefault = "E:\\";
-    public const string AsyncFileReadBlockSizeConfigRootKey = "AsyncFileReadBlockSize";
-    public const string AsyncFileReadBlockSizeDefault = "4096";
-    public const string EnableHashBoolConfigRootKey = "EnableHash"; const string OrmLiteDialectProvider = "SqlServerOrmLiteDialectProvider";
     #endregion
   }
 }

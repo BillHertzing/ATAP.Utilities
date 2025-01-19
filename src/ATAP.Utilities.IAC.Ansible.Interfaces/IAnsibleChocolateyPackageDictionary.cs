@@ -1,7 +1,5 @@
-namespace ATAP.Utilities.IAC.Ansible
-{
-  public interface IAnsibleChocolateyPackage
-  {
+namespace ATAP.Utilities.IAC.Ansible {
+  public interface IAnsibleChocolateyPackage {
     string Name { get; set; }
     string Version { get; set; }
     string AdditionalParameters { get; set; }
@@ -9,7 +7,7 @@ namespace ATAP.Utilities.IAC.Ansible
     IRegistrySettings RegistrySettings { get; set; }
     IWindowsFeatures WindowsFeatures { get; set; }
     IPKICertificates PKICertificates { get; set; }
-    IScheduledJobs ScheduledJobs { get; set; }
+    ITaskDefinitions TaskDefinitions { get; set; }
     string Notes { get; set; }
 
     string[] PowershellModules { get; set; }

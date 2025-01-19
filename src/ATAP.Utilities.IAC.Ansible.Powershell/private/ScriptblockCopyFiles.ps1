@@ -1,4 +1,4 @@
-Function ScriptblockCopyFiles  {
+Function ScriptblockCopyFiles {
 
   param (
     [string] $playName
@@ -7,20 +7,20 @@ Function ScriptblockCopyFiles  {
     , [hashtable] $ansibleInventoryStructure
   )
 
-  [void]$sb.Append(@"
+  [void]$sb.Append(@'
 - name: Copy Source to Target (Copy Files)
   win_copy file:
   src: '{{ item.source }}'
   dest: '{{ item.destination }}'
-  failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
+  failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behavior.
   loop:
 
-"@)
+'@)
   for ($index = 0; $index -lt $items.count; $index++) {
     $source = $($items[$index]['Items'])['Source']
     if ($source -match 'ConfigRootKey') { $source = SubstituteConfigRootKey $source }
- $target = $($items[$index]['Items'])['Target']
-if ($target -match 'ConfigRootKey') { $target = SubstituteConfigRootKey $target }
+    $target = $($items[$index]['Items'])['Target']
+    if ($target -match 'ConfigRootKey') { $target = SubstituteConfigRootKey $target }
 
     [void]$sb.Append("      - {source: $source, target: $target") #Owner, #ACL
     [void]$sb.Append("`n")

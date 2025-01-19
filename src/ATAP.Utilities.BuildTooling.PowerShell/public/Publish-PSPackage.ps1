@@ -3,7 +3,7 @@
 #  SHould only be called on a computer that has the tools needed to perform the 'PowershellBuild' role
 #  Gathers the public and private functions into a .psm1 file and updates the exported information in the .psd1 file
 
-#region Get-ModuleHighestVersion
+#region Publish-PSPackage
 function Publish-PSPackage {
   # Packages called from Jenkins have no parameters, all parameters must be passed via environment variables
   #region BeginBlock
@@ -27,10 +27,12 @@ function Publish-PSPackage {
     Write-PSFMessage -Level Debug -Message "Environment Variable RelativeModulePath = $([System.Environment]::GetEnvironmentVariable('RelativeModulePath'))" -Tag 'Jenkins', 'Publish'
     Write-PSFMessage -Level Debug -Message "Environment Variable NU_GET_API_KEY_SECRET = $([System.Environment]::GetEnvironmentVariable('NU_GET_API_KEY_SECRET'))" -Tag 'Jenkins', 'Publish'
 
+    # you can alternatively use username: password  for the NuGetAPIKey parameter.
     $moduleName = [System.Environment]::GetEnvironmentVariable('ModuleName')
     $localSourceReproDirectory = [System.Environment]::GetEnvironmentVariable('LocalSourceReproDirectory')
     $branchName = [System.Environment]::GetEnvironmentVariable('BranchName')
     $relativeModulePath = [System.Environment]::GetEnvironmentVariable('RelativeModulePath')
+    # you can alternatively use username: password  for the NuGetAPIKey parameter.
     $nuGetApiKey = [System.Environment]::GetEnvironmentVariable('NU_GET_API_KEY_SECRET')
 
     $repoGitSubdirectoryPath = Join-Path $localSourceReproDirectory '.git'
@@ -65,7 +67,7 @@ function Publish-PSPackage {
         throw $Message
       }
     }
-    Write-Verbose ('PSRepositoryName = ' + $PSRepositoryName )
+    Write-PSFMessage -Level Debug -Message 'PSRepositoryName = ' + $PSRepositoryName
     Write-Verbose ('PSRepositorySourceLocation = ' + $PSRepositorySourceLocation )
     Write-Verbose ('PSRepositoryPublishLocation = ' + $PSRepositoryPublishLocation )
 
@@ -79,7 +81,7 @@ function Publish-PSPackage {
     }
     $VerbosePreference = $savedVerbosePreference
 
-    git init # initialize the empty local repo
+    exit; git init # initialize the empty local repo
 
     # Link the remote Git repro to the workspace repro as the origin
     # unless the jenkins workspace repository already links to the remote Git repro
@@ -125,7 +127,7 @@ function Publish-PSPackage {
   }
   #endregion EndBlock
 }
-#endregion Get-ModuleHighestVersion
+#endregion Publish-PSPackage
 #############################################################################
 
 

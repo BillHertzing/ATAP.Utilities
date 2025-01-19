@@ -1,0 +1,1 @@
+Write-Host "Starting Tests, hello from .Pester.ps1"

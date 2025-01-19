@@ -46,6 +46,7 @@
         state: present
     - name: SSL certificate to target system
       win_copy:
+        # "{{ host }}"
         src: /mnt/c/Dropbox/Security/Certificates/Certificates/CN_utat022__OU_Development__O_ATAPUtilities.org__C_US-SSLServerCertificate.crt
         dest: C:/Temp/CN_utat022__OU_Development__O_ATAPUtilities.org__C_US-SSLServerCertificate.crt
     # Install this hosts SSL Certificate
@@ -68,15 +69,44 @@
         # {% endif %}
       failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
       loop:
-        - { name: sysinternals, version: latest, allowprerelease: false, addedparameters }
-        - { name: pester, version: latest, allowprerelease: false, addedparameters } # move to a role so that obsolete version can be removed, settings and associations can be made per user
+        - {
+            name: sysinternals,
+            version: latest,
+            allowprerelease: false,
+            addedparameters,
+          }
+        - {
+            name: pester,
+            version: latest,
+            allowprerelease: false,
+            addedparameters,
+          } # move to a role so that obsolete version can be removed, settings and associations can be made per user
         #     # drivers for utat022
         # Figure out how to make this conditional upon host
-        - { name: nvidia-display-driver, version: latest, allowprerelease: false, addedparameters, Notes } # minimal set of nvidea display fdriver apps
+        - {
+            name: nvidia-display-driver,
+            version: latest,
+            allowprerelease: false,
+            addedparameters,
+            Notes,
+          } # minimal set of nvidea display fdriver apps
         # - { name: geforce-game-ready-driver, version: latest, allowprerelease: false, addedparameters: ,  Notes:} # bloatware, use nvidia-display-driver instead
-        - { name: geforce-experience, version: latest, allowprerelease: false, addedparameters, Notes } # need to investigate if needed
-        - { name: razer-synapse-3graph, version: latest, allowprerelease: false, addedparameters, Notes }
+        - {
+            name: geforce-experience,
+            version: latest,
+            allowprerelease: false,
+            addedparameters,
+            Notes,
+          } # need to investigate if needed
+        - {
+            name: razer-synapse-3graph,
+            version: latest,
+            allowprerelease: false,
+            addedparameters,
+            Notes,
+          }
     # drivers for ncat016
+    #"{{ host }}"
     # - {name: logitechgaming, version: latest, allowprerelease: false, addedparameters:  } # for ncat016
 
     # $pkgs = gc c:\dropbox\whertzing\github\atap.iac\Resources\DefaultChocolateyPackagesInfo.yml| convertfrom-yaml
@@ -85,7 +115,7 @@
     # foreach ($pk in $pkgkeys) {"  - {name: $pk, version: latest, allowprerelease: false, addedparameters: $(. $addedparametersscriptblock $($p[$pk]).addedparamters)"}
 
     # Things that have to happen first
-    # Install powershell core role
+    # Install powershell core role # deprecated; the ATAP ISO image includes this
     #- {name: powershell-core, version: latest, allowprerelease: false, addedparameters: , }
     #- {name: vcredist-all, version: latest, allowprerelease: false, addedparameters: , }
     #- {name: pester, version: latest, allowprerelease: false, addedparameters: , } # move to a role so that obsolete version can be removed, settings and associations can be made per user
@@ -351,6 +381,7 @@
         name: "{{ item }}"
       loop:
         - roles/DittoClipboardManagerWindows
+        - roles/RDPClientWindows
         #- roles/PythonInterpreterWindows
         #- roles/JavaInterpreterWindows
         #- roles/RubyInterpreterWindows

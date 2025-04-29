@@ -2,18 +2,18 @@
 # ToDo: figure out how to install the buildtooling powwershell module such that this file is found by default when invoke-build is run
 # ToDo: until then use the following to link it (run this command in the powershell project's base subdirectroy)
 
-# Remove-Item -path (join-path '.' 'Module.Build.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path '.' 'Module.Build.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.Buildtooling.PowerShell' 'Module.Build.ps1')
-#[CmdletBinding(SupportsShouldProcess=$true)]
+ # Remove-Item -path (join-path '.' 'Module.Build.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path '.' 'Module.Build.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.Buildtooling.PowerShell' 'Module.Build.ps1')
+ #[CmdletBinding(SupportsShouldProcess=$true)]
 param(
 
-  [ValidateSet('Debug', 'Production')]
-  [string] $Configuration = 'Production'
-  , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $False)]
-  [string] $Encoding # Often found in the $PSDefaultParameterValues preference variable
+    [ValidateSet('Debug', 'Production')]
+    [string] $Configuration = 'Production'
+    , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $False)]
+    [string] $Encoding # Often found in the $PSDefaultParameterValues preference variable
 )
-# Allow the DebugPreference to be set for this function and it's children
-$DebugPreference = 'Continue' # 'Continue' # 'SilentlyContinue'
-Write-PSFMessage -Level Debug -Message ('Starting Module.build.ps1'  )
+  # Allow the DebugPreference to be set for this function and it's children
+  $DebugPreference = 'Continue' # 'Continue' # 'SilentlyContinue'
+  Write-PSFMessage -Level Debug -Message ('Starting Module.build.ps1'  )
 
 Push-Location $PSScriptRoot
 
@@ -119,166 +119,166 @@ if (-not $(Get-Command -Name 'java.exe') ) { Throw 'java.exe not found' }
 #Write-PSFMessage -Level Debug -Message ('Environment variables at start of PSModule.build.ps1' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented 2 2) + [Environment]::NewLine )
 
 Task Clean {
-  # clean the generated powershell module and the generated powershell metadata
+    # clean the generated powershell module and the generated powershell metadata
 
-  Remove-Item -Path $(Join-Path $GeneratedModuleDestinationPath '*.*')
-  # Clean the Test Results
-  Remove-Item -Path $(Join-Path $GeneratedTestResultsPath '*.*')
-  Remove-Item -Path $(Join-Path $GeneratedUnitTestResultsPath '*.*')
-  Remove-Item -Path $(Join-Path $GeneratedIntegrationTestResultsPath '*.*')
-  Remove-Item -Path $(Join-Path $GeneratedTestCoverageResultsPath '*.*')
-  # Clean the generated Documentation
-  Remove-Item -Path $(Join-Path $GeneratedDocumentationDestinationPath '*.*')
-  Remove-Item -Path $(Join-Path $GeneratedStaticSiteDocumentationDestinationPath '*.*')
+    Remove-Item -Path $(Join-Path $GeneratedModuleDestinationPath '*.*')
+    # Clean the Test Results
+    Remove-Item -Path $(Join-Path $GeneratedTestResultsPath '*.*')
+    Remove-Item -Path $(Join-Path $GeneratedUnitTestResultsPath '*.*')
+    Remove-Item -Path $(Join-Path $GeneratedIntegrationTestResultsPath '*.*')
+    Remove-Item -Path $(Join-Path $GeneratedTestCoverageResultsPath '*.*')
+    # Clean the generated Documentation
+    Remove-Item -Path $(Join-Path $GeneratedDocumentationDestinationPath '*.*')
+    Remove-Item -Path $(Join-Path $GeneratedStaticSiteDocumentationDestinationPath '*.*')
 
-  # Clean the generated PlatyPS Clixml file
+    # Clean the generated PlatyPS Clixml file
 }
 
 Task Checkout {
-  # Execute only in pipeline build, not in developer's workspace...
-  # given a branch name, expect a Git repository's submodule
-  # Only when a CI agent is building the module
-  # Pull all the files found in the latest commit on that branch in that repository
+    # Execute only in pipeline build, not in developer's workspace...
+    # given a branch name, expect a Git repository's submodule
+    # Only when a CI agent is building the module
+    # Pull all the files found in the latest commit on that branch in that repository
 }
 
 Task BuildPSM1 -Inputs (Get-Item $(Join-Path $SourcePath '*' '*.ps1')) -Outputs $ModuleOutputPath {
-  Write-PSFMessage -Level Important -Message 'task = BuildPSM1'
-  [System.Text.StringBuilder]$PSM1text = [System.Text.StringBuilder]::new()
-  foreach ($folder in $imports ) {
-    [void]$PSM1text.AppendLine( "Write-Verbose 'Importing from [$(Join-Path $SourcePath $folder)]'" )
-    if (Test-Path $(Join-Path $SourcePath $folder)) {
-      Write-PFSMessage -Level Verbose -Message "Importing $(Join-Path $SourcePath $folder)"
-      $fileList = Get-ChildItem $(Join-Path $SourcePath $folder '*.ps1') # | Where-Object Name -NotLike '*.Tests.ps1'
-      foreach ($file in $fileList) {
-        $shortName = $file.fullname.replace($PSScriptRoot, '')
-        Write-PFSMessage -Level Verbose -Message "Importing [.$shortName]"
-        [void]$PSM1text.AppendLine( "# .$shortName" )
-        [void]$PSM1text.AppendLine( [System.IO.File]::ReadAllText($file.fullname) )
-      }
+    Write-PSFMessage -Level Important -Message 'task = BuildPSM1'
+    [System.Text.StringBuilder]$PSM1text = [System.Text.StringBuilder]::new()
+    foreach ($folder in $imports ) {
+        [void]$PSM1text.AppendLine( "Write-Verbose 'Importing from [$(Join-Path $SourcePath $folder)]'" )
+        if (Test-Path $(Join-Path $SourcePath $folder)) {
+            Write-PFSMessage -Level Verbose -Message "Importing $(Join-Path $SourcePath $folder)"
+            $fileList = Get-ChildItem $(Join-Path $SourcePath $folder '*.ps1') # | Where-Object Name -NotLike '*.Tests.ps1'
+            foreach ($file in $fileList) {
+                $shortName = $file.fullname.replace($PSScriptRoot, '')
+                Write-PFSMessage -Level Verbose -Message "Importing [.$shortName]"
+                [void]$PSM1text.AppendLine( "# .$shortName" )
+                [void]$PSM1text.AppendLine( [System.IO.File]::ReadAllText($file.fullname) )
+            }
+        }
     }
-  }
-  Write-PFSMessage -Level Verbose -Message "Creating module [$ModuleOutputPath]"
-  Set-Content -Path $ModuleOutputPath -Value $PSM1text.ToString()
+    Write-PFSMessage -Level Verbose -Message "Creating module [$ModuleOutputPath]"
+    Set-Content -Path $ModuleOutputPath -Value $PSM1text.ToString()
 }
 
 Task BuildPSD1 -inputs (Get-ChildItem $SourcePath -Recurse -File) -Outputs $ManifestOutputPath {
-  Write-PSFMessage -Level Debug -Message 'task = BuildPSD1'
-  # Copy-Item $ManifestCurrentPath -Destination $ManifestOutputPath
+    Write-PSFMessage -Level Debug -Message 'task = BuildPSD1'
+    # Copy-Item $ManifestCurrentPath -Destination $ManifestOutputPath
 
-  $bumpVersionType = 'Patch'
+    $bumpVersionType = 'Patch'
 
-  $functions = Get-ChildItem $(Join-Path $SourcePath 'public' '*.ps1') | Select-Object -ExpandProperty basename
+    $functions = Get-ChildItem $(Join-Path $SourcePath 'public' '*.ps1') | Select-Object -ExpandProperty basename
 
-  # ToDo turn this into a buildtool that understands the concept of empty oldfunctions
+    # ToDo turn this into a buildtool that understands the concept of empty oldfunctions
 
-  $oldFunctions = (Get-Metadata -Path $ManifestCurrentPath -PropertyName 'FunctionsToExport')
+    $oldFunctions = (Get-Metadata -Path $ManifestCurrentPath -PropertyName 'FunctionsToExport')
 
-  # use the Update-PackageVersion cmdlet in the ATAP.Utilities.BuildTooling.Powershell module
-  #  Major and Minor and Patch version number changes are made only when a new release branch is created. That release branch is 'Prerelease' until the very last commmit and CI/CD build
-  #  UpdatePackageVersion takes care of incrementing the prerelease version number during development and testing cycles
-  # at this point we are starting to generate the changed metadata manifest
-  Update-PackageVersion -Path $ManifestOutputPath
+    # use the Update-PackageVersion cmdlet in the ATAP.Utilities.BuildTooling.Powershell module
+    #  Major and Minor and Patch version number changes are made only when a new release branch is created. That release branch is 'Prerelease' until the very last commmit and CI/CD build
+    #  UpdatePackageVersion takes care of incrementing the prerelease version number during development and testing cycles
+    # at this point we are starting to generate the changed metadata manifest
+    Update-PackageVersion -Path $ManifestOutputPath
 
-  # are there and functions / cmdlets that are removed, or added, compared to the Current Manifest
-  $functions | Where-Object { $_ -notIn $oldFunctions } | ForEach-Object { $bumpVersionType = 'Minor' }
-  $oldFunctions | Where-Object { $_ -notIn $Functions } | ForEach-Object { $bumpVersionType = 'Major' }
+    # are there and functions / cmdlets that are removed, or added, compared to the Current Manifest
+    $functions | where { $_ -notIn $oldFunctions } | % { $bumpVersionType = 'Minor' }
+    $oldFunctions | where { $_ -notIn $Functions } | % { $bumpVersionType = 'Major' }
 
-  Set-ModuleFunctions -name $ManifestOutputPath -FunctionsToExport $functions
+    Set-ModuleFunctions -name $ManifestOutputPath -FunctionsToExport $functions
 
-  # ToDo: support for classes
+    # ToDo: support for classes
 
-  # # Bump the module version
-  # # But only if Not Prerelease
-  # $version = [version] (Get-Metadata -Path $ManifestOutputPath -PropertyName 'ModuleVersion')
-  # $galleryVersion = Import-Clixml -Path "$output\version.xml"
-  # if ( $version -lt $galleryVersion )
-  # {
-  # $version = $galleryVersion
-  # }
-  # Write-Output "  Stepping [$bumpVersionType] version [$version]"
-  # $version = [version] (Step-Version $version -Type $bumpVersionType)
-  # Write-Output "  Using version: $version"
+    # # Bump the module version
+    # # But only if Not Prerelease
+    # $version = [version] (Get-Metadata -Path $ManifestOutputPath -PropertyName 'ModuleVersion')
+    # $galleryVersion = Import-Clixml -Path "$output\version.xml"
+    # if ( $version -lt $galleryVersion )
+    # {
+    # $version = $galleryVersion
+    # }
+    # Write-Output "  Stepping [$bumpVersionType] version [$version]"
+    # $version = [version] (Step-Version $version -Type $bumpVersionType)
+    # Write-Output "  Using version: $version"
 
-  Update-Metadata -Path $ManifestOutputPath -PropertyName ModuleVersion -Value $version
+    Update-Metadata -Path $ManifestOutputPath -PropertyName ModuleVersion -Value $version
 }
 
 Task UnitTestPSModule {
-  Write-PSFMessage -Level Debug -Message 'task = UnitTestPSModule'
-  # [Pester Testing in Jenkins (Using NUNit)](https://sqlnotesfromtheunderground.wordpress.com/2017/01/20/pester-testing-in-jenkins-using-nunit/)
-  # ToDo: update this so it collects test results and coverage results and publishes them to
-  $TestResults = Invoke-Pester -Path $UnitTestsPath -PassThru -OutputFor JUnitXml mat -Tag Unit -ExcludeTag Slow
-  # If the test results are not within expectations/margin, fail the build
-  # ToDo: Xunit and perhaps Pester ? might be better tools for this step...
-  if ($TestResults.FailedCount -gt 0) {
-    # In a pipeline, return an exit code
-    # Invoked by a dev, from a terminal or from a task, write a message and stop processing
-    Write-Error "Failed [$($TestResults.FailedCount)] Pester tests"
-  }
+    Write-PSFMessage -Level Debug -Message 'task = UnitTestPSModule'
+    # [Pester Testing in Jenkins (Using NUNit)](https://sqlnotesfromtheunderground.wordpress.com/2017/01/20/pester-testing-in-jenkins-using-nunit/)
+    # ToDo: update this so it collects test results and coverage results and publishes them to
+    $TestResults = Invoke-Pester -Path $UnitTestsPath -PassThru -OutputFor JUnitXml mat -Tag Unit -ExcludeTag Slow
+    # If the test results are not within expectations/margin, fail the build
+    # ToDo: Xunit and perhaps Pester ? might be better tools for this step...
+    if ($TestResults.FailedCount -gt 0) {
+        # In a pipeline, return an exit code
+        # Invoked by a dev, from a terminal or from a task, write a message and stop processing
+        Write-Error "Failed [$($TestResults.FailedCount)] Pester tests"
+    }
 }
 
 Task IntegrationTestPSModule {
-  Write-PSFMessage -Level Debug -Message 'task = IntegrationTestPSModule'
-  # ToDo: update this so it collects test results and coverage results and publishes them to
-  $TestResults = Invoke-Pester -Path $IntegrationTestsPath -PassThru -Tag Integration -ExcludeTag Slow
-  # If the test results are not within expectations/margin, fail the build
-  # ToDo: Xunit and perhaps Pester ? might be better tools for this step...
-  if ($TestResults.FailedCount -gt 0) {
-    # In a pipeline, return an exit code
-    # Invoked by a dev, from a terminal or from a task, write a message and stop processing
-    Write-Error "Failed [$($TestResults.FailedCount)] Pester tests"
-  }
+    Write-PSFMessage -Level Debug -Message 'task = IntegrationTestPSModule'
+    # ToDo: update this so it collects test results and coverage results and publishes them to
+    $TestResults = Invoke-Pester -Path $IntegrationTestsPath -PassThru -Tag Integration -ExcludeTag Slow
+    # If the test results are not within expectations/margin, fail the build
+    # ToDo: Xunit and perhaps Pester ? might be better tools for this step...
+    if ($TestResults.FailedCount -gt 0) {
+        # In a pipeline, return an exit code
+        # Invoked by a dev, from a terminal or from a task, write a message and stop processing
+        Write-Error "Failed [$($TestResults.FailedCount)] Pester tests"
+    }
 }
 
 Task GenerateHelpForPSModule {
-  Write-PSFMessage -Level Debug -Message 'task = GenerateHelpForPSModule'
+    Write-PSFMessage -Level Debug -Message 'task = GenerateHelpForPSModule'
 }
 
 Task GenerateStaticSiteDocumentationForPSModule {
-  Write-PSFMessage -Level Debug -Message 'task = GenerateStaticSiteDocumentationForPSModule'
+    Write-PSFMessage -Level Debug -Message 'task = GenerateStaticSiteDocumentationForPSModule'
 
 }
 
 Task SignPSModule {
-  Write-PSFMessage -Level Debug -Message 'task = SignPSModule'
+    Write-PSFMessage -Level Debug -Message 'task = SignPSModule'
 }
 
 Task PackagePSModule {
-  Write-PSFMessage -Level Debug -Message 'task = PackagePSModule'
-  # create the source for the PowershellGallery package
-  Copy-Item $ModuleOutputPath $GeneratedPowershellGalleryModulesPath
-  Copy-Item $ManifestOutputPath $GeneratedPowershellGalleryModulesPath
-  # create the source for the Nuget package
-  Copy-Item $ModuleOutputPath $GeneratedNuGetPackageDestinationPath
-  Copy-Item $ManifestOutputPath $GeneratedNuGetPackageDestinationPath
-  # create the .nuspec file from the Manifest
-  Get-NuspecFromPSD1 -ManifestPath $ManifestOutputPath -DestinationFolder $GeneratedNuGetPackageDestinationPath
-  # create the .nupkg file
-  #T oDo: wrap in a try/catch
-  # Nuget.exe pack
-  # create the source for the chocolatey package
-  Copy-Item $ModuleOutputPath $GeneratedChocolateyPackageDestinationPath
-  Copy-Item $ManifestOutputPath $GenerateChocolateyPackageDestinationPath
-  # ToDo: add install.txt and uninstall.txt to a tools subdirectory
+    Write-PSFMessage -Level Debug -Message 'task = PackagePSModule'
+    # create the source for the PowershellGallery package
+    Copy-Item $ModuleOutputPath $GeneratedPowershellGalleryModulesPath
+    Copy-Item $ManifestOutputPath $GeneratedPowershellGalleryModulesPath
+    # create the source for the Nuget package
+    Copy-Item $ModuleOutputPath $GeneratedNuGetPackageDestinationPath
+    Copy-Item $ManifestOutputPath $GeneratedNuGetPackageDestinationPath
+    # create the .nuspec file from the Manifest
+    Get-NuspecFromPSD1 -ManifestPath $ManifestOutputPath -DestinationFolder $GeneratedNuGetPackageDestinationPath
+    # create the .nupkg file
+    #T oDo: wrap in a try/catch
+    # Nuget.exe pack
+    # create the source for the chocolatey package
+    Copy-Item $ModuleOutputPath $GeneratedChocolateyPackageDestinationPath
+    Copy-Item $ManifestOutputPath $GenerateChocolateyPackageDestinationPath
+    # ToDo: add install.txt and uninstall.txt to a tools subdirectory
 }
 
 Task PublishPSModule {
-  Write-PSFMessage -Level Debug -Message 'task = PublishPSModule'
-  # Switch on Environment
-  # Publish to FileSystem
-  Publish-Module -Path $relativeModulePath -Repository $PSRepositoryName -NuGetApiKey $nuGetApiKey
-  Publish-Module -Name $GeneratedPowershellGalleryModulesPath -Repository LocalDevelopmentPSRepository
-  # Copy last build artifacts into a .7zip file, name it after the ModuleName-Version-buildnumber (like C# project assemblies)
-  # Check the 7Zip file into the SCM repository
-  # Get SHA-256 and other CRC checksums, add that info to the SCM repository
-  # Publish the Production PSModule to the three repositories
-  # Publish the checksums to the internet
-  # Update the SCM repository metadata to associate the published Module
+    Write-PSFMessage -Level Debug -Message 'task = PublishPSModule'
+    # Switch on Environment
+    # Publish to FileSystem
+    Publish-Module -Path $relativeModulePath -Repository $PSRepositoryName -NuGetApiKey $nuGetApiKey
+    Publish-Module -Name $GeneratedPowershellGalleryModulesPath -Repository LocalDevelopmentPSRepository
+    # Copy last build artifacts into a .7zip file, name it after the ModuleName-Version-buildnumber (like C# project assemblies)
+    # Check the 7Zip file into the SCM repository
+    # Get SHA-256 and other CRC checksums, add that info to the SCM repository
+    # Publish the Production PSModule to the three repositories
+    # Publish the checksums to the internet
+    # Update the SCM repository metadata to associate the published Module
 }
 
 # Task Dependencies
 
 # Default task.
-Task . Clean, PublishPSModule
+Task . Clean,PublishPSModule
 
 Task BuildPSM1 Clean
 

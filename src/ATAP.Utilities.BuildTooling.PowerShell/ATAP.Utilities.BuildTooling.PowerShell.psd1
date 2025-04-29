@@ -7,7 +7,7 @@
   RootModule           = 'ATAP.Utilities.BuildTooling.Powershell.psm1'
 
   # Version number of this module.
-  ModuleVersion        = '0.0.3'
+  ModuleVersion        = '0.0.4'
 
   # Supported PSEditions
   CompatiblePSEditions = 'Desktop', 'Core'
@@ -46,7 +46,10 @@
   # ProcessorArchitecture = ''
 
   # Modules that must be imported into the global environment prior to importing this module
-  RequiredModules      = @('PSFramework', 'powershell-yaml')
+  RequiredModules      = @(
+    @{ ModuleName = 'PSFramework'; ModuleVersion = '1.10.0' },
+    @{ ModuleName = 'powershell-yaml'; ModuleVersion = '0.4.0' }
+  )
 
   # Assemblies that must be loaded prior to importing this module
   RequiredAssemblies   = @()
@@ -105,7 +108,7 @@
       # ReleaseNotes = ''
 
       # Prerelease string of this module
-      Prerelease = 'Alpha001'
+      # Prerelease = 'Alpha001'
 
       # Flag to indicate whether the module requires explicit user acceptance for install/update/save
       # RequireLicenseAcceptance = $false

@@ -560,8 +560,9 @@
   "settings": {
     "powershell.cwd": "ATAP.Utilities",
     "ansible.python.interpreterPath": "c:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\Python37_64\\python.exe",
+    "powershell.pester.codeLens": false,
     "powershell.pester.useLegacyCodeLens": false,
     "powershell.pester.outputVerbosity": "Diagnostic",
-    "powershell.pester.codeLens": false
+   
   }
 }

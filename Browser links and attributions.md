@@ -66,7 +66,7 @@ https://www.c-sharpcorner.com/article/net-core-load-environment-specific-custom-
 ### Ninject
 
 [Dependency Injection Using Ninject in .NET](https://www.c-sharpcorner.com/UploadFile/4d9083/dependency-injection-using-ninject-in-net/) Net 4.x tool but works with core
-[How to Refactor for Dependency Injection, Part 6: Binding by Convention](https://visualstudiomagazine.com/articles/2014/10/01/binding-by-convention.aspx) dynaic assembly loading and di BINDING
+[How to Refactor for Dependency Injection, Part 6: Binding by Convention](https://visualstudiomagazine.com/articles/2014/10/01/binding-by-convention.aspx) dynamic assembly loading and di BINDING
 
 ## Assembly binding and loading
 
@@ -190,7 +190,7 @@ https://lttng.org/
 
 [Simple and Easy Tracing in .NET](https://blog.stephencleary.com/2010/12/simple-and-easy-tracing-in-net.html) https://blog.stephencleary.com/2010/12/simple-and-easy-tracing-in-net.html older, references getting TraceLogging from other .Net builtin libraries, e.g.  System.Net.Sockets
 
-### Diagnsotics Logging
+### Diagnostics Logging
 https://andrewlock.net/logging-using-diagnosticsource-in-asp-net-core/
 
 [Using and extending System.Diagnostics trace logging](https://github.com/sgryphon/essential-diagnostics) https://github.com/sgryphon/essential-diagnostics (2 years old)
@@ -435,7 +435,7 @@ https://github.com/filipw/dotnet-script
 
 https://dzone.com/articles/using-objects-comparer-to-compare-complex-objects
 
-## Andriod Native:
+## Android Native:
 https://blogs.msdn.microsoft.com/vsappcenter/guest-blog-fixing-disasters-asap-with-instant-updates/
 
 https://visualstudio.microsoft.com/app-center/faq/
@@ -551,7 +551,7 @@ ILSpy vsix
 # Reactive Rx Framework (Progress Typos)
 
 [Introduction to Rx](Testable timers with Reactive Extensions for .Net) overview and introductory material
-[101 Rx Samples - a work in progress](http://rxwiki.wikidot.com/101samples#toc25) good overview of receipes for Rx
+[101 Rx Samples - a work in progress](http://rxwiki.wikidot.com/101samples#toc25) good overview of recipes for Rx
 [Reporting Progress from Async Tasks](https://blog.stephencleary.com/2012/02/reporting-progress-from-async-tasks.html) Stephen Cleary on Progress events and async tasks, includes reference to an Observer Progress Reporter Implementation
 [Testing and Debugging Observable Sequences](https://docs.microsoft.com/en-us/previous-versions/dotnet/reactive-extensions/hh242967(v=vs.103)) Testing Rx
 [Reactive Extensions Observables Versus Regular .NET Events Part 2]*https://markheath.net/post/reactive-extensions-observables-versus_24
@@ -567,11 +567,11 @@ ILSpy vsix
 [Creating and Subscribing to Simple Observable Sequences](https://www.reactiveui.net/reactive-extensions/creating/creating)
 
 [Reactive Extensions: The Power of T](https://www.davesexton.com/blog/)
-[LINQ to Cloud - IQbservable Over the Wire](https://www.davesexton.com/blog/post/LINQ-to-Cloud-IQbservable-Over-the-Wire.aspx)
+[LINQ to Cloud - IObservable Over the Wire](https://www.davesexton.com/blog/post/LINQ-to-Cloud-IQbservable-Over-the-Wire.aspx)
 
 # Code Generation From Expression Trees
 
-[Dave Sexton's Blog](https://www.davesexton.com/blog/) Theory on Monads, CoMonads, Iobservable, Ienumerable, and Rx. Underpinning of LINQ queries across both enumerables and observables, entrance amd exit. WOW!
+[Dave Sexton's Blog](https://www.davesexton.com/blog/) Theory on Monads, CoMonads, IObservable, IEnumerable, and Rx. Underpinning of LINQ queries across both enumerables and observables, entrance amd exit. WOW!
 [Using Code Analysis with Visual Studio 2019 to Improve Code Quality](https://azuredevopslabs.com/labs/devopsserver/codeanalysi) overview of Visual Studio  Analysis tools
 [Explore code with the Roslyn syntax visualizer in Visual Studio](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/syntax-visualizer?tabs=csharp) includes installation instructions
 [Overview of code analysis for managed code in Visual Studio](https://docs.microsoft.com/en-us/visualstudio/code-quality/static-code-analysis-for-managed-code-overview?view=vs-2019) How to enable CLI code analysis
@@ -580,10 +580,10 @@ ILSpy vsix
 [Creating Code Using the Syntax Factory](https://johnkoerner.com/csharp/creating-code-using-the-syntax-factory/) Code syntax visualizer
 [Splitting the Expression statements with Roslyn](https://stackoverflow.com/questions/27860876/splitting-the-expression-statements-with-roslyn) Example of Roslyn code gen
 [Get started with syntax analysis](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/get-started/syntax-analysis) How to setup visualstudio to provide the syntax visualizer and see a file
-[Expression Tree Visualizer](https://github.com/zspitz/ExpressionTreeVisualizer) addin library for Visual Studio
+[Expression Tree Visualizer](https://github.com/zspitz/ExpressionTreeVisualizer) add-in library for Visual Studio
 [Expression Tree To String](https://github.com/zspitz/ExpressionTreeToString) Provides a ToString extension method which returns a string representation of an expression tree
 [Reactive Testing Helper methods ](https://www.nuget.org/packages/Microsoft.Reactive.Testing/)
-[Testing Reactive Extension code using the TestScheduler](https://putridparrot.com/blog/testing-reactive-extension-code-using-the-testscheduler/)  also mentions Throttle as a way to only pickup user's typeing  after they pause for a period (for typeahead), or slecting in a multiselect (prefetching info about selected items if the user pauses
+[Testing Reactive Extension code using the TestScheduler](https://putridparrot.com/blog/testing-reactive-extension-code-using-the-testscheduler/)  also mentions Throttle as a way to only pickup user's typeing  after they pause for a period (for typeahead), or selecting in a multiselect (prefetching info about selected items if the user pauses
 [Testing Rx](http://introtorx.com/Content/v1.0.10621.0/16_TestingRx.html) more about testing Rx , and the Rx TestScheduler pattern
 
 # Graphviz for visualizing graph data structures
@@ -673,12 +673,12 @@ ILSpy vsix
 
 ## Identity Column
 
-[SQL Server Identity Insert to Keep Tables Synchronized](https://www.mssqltips.com/sqlservertip/1061/sql-server-identity-insert-to-keep-tables-synchronized/) Like tables in two different tables need to keep the Idenity value synchronized
+[SQL Server Identity Insert to Keep Tables Synchronized](https://www.mssqltips.com/sqlservertip/1061/sql-server-identity-insert-to-keep-tables-synchronized/) Like tables in two different tables need to keep the Identity value synchronized
 
 ## Connection Strings
 
 [Network Protocol for SQL Server Connection](https://www.connectionstrings.com/define-sql-server-network-protocol/) How to force TCP  protocol a the connection string
-[SQL Server Connection Strings](https://www.connectionstrings.com/sql-server/) Many examples of connection strings for various providerss, clits (MSDataShape, SQLClient .Net Framework, etc)
+[SQL Server Connection Strings](https://www.connectionstrings.com/sql-server/) Many examples of connection strings for various providers, clits (MSDataShape, SQLClient .Net Framework, etc)
 
 # Object-Object mapper
 

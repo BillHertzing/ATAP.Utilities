@@ -17,7 +17,7 @@ Function Invoke-Webserver {
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
 
     $Settings = @{
       Prefixes         = @('http://localhost:1010/')

@@ -37,7 +37,7 @@ Function Remove_VSComponentCache {
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
   }
   #endregion FunctionBeginBlock
   #region FunctionProcessBlock
@@ -54,7 +54,7 @@ Function Remove_VSComponentCache {
     if ($pscmdlet.shouldprocess("($env:appdata)\local\microsoft\visualstudio\15.0\componentmodelcache", 'delete')) {
       Write-Host "really would delete ($env:appdata)\local\microsoft\visualstudio\15.0\componentmodelcache"
     }
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Ending $($MyInvocation.MyCommand)"
   }
   #endregion FunctionEndBlock
 }

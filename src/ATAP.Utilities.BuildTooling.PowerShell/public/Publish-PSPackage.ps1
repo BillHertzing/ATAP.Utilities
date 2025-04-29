@@ -119,7 +119,7 @@ function Publish-PSPackage {
     # Publish the module
     Publish-Module -Path $relativeModulePath -Repository $PSRepositoryName -NuGetApiKey $nuGetApiKey
 
-    #$projFile = join-path 'src' 'ATAP.Utilities.BuildTooling.PowerShell' 'ATAP.Utilities.BuildTooling.PowerShell.pssproj'
+    #$projFile = join-path 'src' 'ATAP.Utilities.BuildTooling.PowerShell' 'ATAP.Utilities.BuildTooling.PowerShell.PSSProj'
     #write-host $projFile
     #nuget pack $projFile
 

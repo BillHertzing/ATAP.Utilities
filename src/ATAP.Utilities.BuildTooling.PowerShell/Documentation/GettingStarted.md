@@ -15,7 +15,7 @@ map transform {list of unique filenames sans `\(\d+). iterate this list
   rename the latest writetime to the base name
   copy attributes from the original to the latest copy
   remove ppi attributes
-  iterate for number of mediaquerys needed
+  iterate for number of mediaQuery needed
     create copies based on the width and height attributes, and the mediaquery parameter set's needs
     run the original through the VIP lib to resize it, and store the new image in a filename that follows the mediaquery convention for 'small', 'tablet', 'desktop', ...
   }
@@ -45,9 +45,10 @@ ToDo: Insert UML or draw.io source code for creation of documentation image, for
 ToDo: Insert UML or draw.io source for creation of documentation image, for process flow for Module development, testing, and deployment
 
  -- RepositoryRoot/src/ModuleName/
+   -- .vscode (junction to Shared .vscode in Common)
    -- ModuleName.psd1
    -- ModuleName.psm1 (just dot-sources all files listed in public and private)
-   -- ModuleName.pssproj
+   -- ModuleName.PSSProj
    -- public/
    --   script1.ps1
    -- private/
@@ -134,7 +135,7 @@ The PowerShell Gallery Filesystem development and test respoitory is a file syst
 
 For each developer machine and CI/CD pipeline machine define an intermediate location to which the
 
-  NOTE that the text below this line to end of file is obsolete 
+  NOTE that the text below this line to end of file is obsolete
 TBD - replace with current information
 During the build pipeline, copy the `ModuleName.psd1` and the `ModuleName.psm1` files to `_generated\Packages\PowerShell GalleryPackageSource\ModuleName`
 

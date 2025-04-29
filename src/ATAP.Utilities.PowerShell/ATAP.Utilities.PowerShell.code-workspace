@@ -6,6 +6,7 @@
   ],
   "settings": {
     "dotnet-test-explorer.testProjectPath": "{workspacefolder}/tests",
+    "pester.pesterModulePath": "{workspacefolder}",
     "powershell.pester.codeLens": false,
     "powershell.pester.useLegacyCodeLens": false,
     "powershell.pester.outputVerbosity": "Diagnostic",
@@ -18,8 +19,6 @@
     "powershell.codeFormatting.useConstantStrings": true,
     "powershell.codeFormatting.useCorrectCasing": true,
     "powershell.codeFormatting.whitespaceBetweenParameters": true,
-    "powershell.enableProfileLoading": true,
-    "pester.suppressCodeLensNotice": false,
-    "pester.testFilePath": []
+    "powershell.enableProfileLoading": true
   }
 }

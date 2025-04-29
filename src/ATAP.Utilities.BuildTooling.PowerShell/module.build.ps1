@@ -34,7 +34,7 @@ param(
 
 Enter-Build {
   # Allow the DebugPreference to be set for this script and it's children tasks
-  $DebugPreference = 'Continue' # 'Continue' # 'SilentlyContinue'
+  $DebugPreference = 'SilentlyContinue' # 'Continue' # 'SilentlyContinue'
   # For an unknown reason, the ConfirmPreference is set to High. Make it ignored, for this script
   $Script:ConfirmPreference = 'None'
   # Write-PSFMessage will write to its log file regardless of the value of $DebugPreference
@@ -54,10 +54,11 @@ Enter-Build {
   # ToDo: Move these strings to the global string constants file
   $moduleFilename = $moduleName + '.psm1'
   $manifestFilename = $moduleName + '.psd1'
-  $NuSpecFilename = $moduleName + '.nuspec'
-  $NuSpecFileSuffix = '.nupkg'
+  $script:NuSpecFilename = $moduleName + '.nuspec'
+  $script:NuSpecFileSuffix = '.nupkg'
+  $script:ChocolateyPackageFilename = $moduleName
 
-  $RepositoryStorageMechanisms = @('FileSystem', 'InternalWebServer', 'PublicWebServer')
+  $script:RepositoryStorageMechanisms = @('FileSystem', 'QualityAssuranceWebServer', 'ProductionWebServer')
 
   $sourceDirectories = @( 'public', 'private' ) # 'Resources')
   $sourceExtensions = @('.ps1', '.clixml', '.dll')
@@ -93,8 +94,7 @@ Enter-Build {
       if ((Test-Path -Path "$currentDir\$sourceName") -and (Test-Path -Path "$currentDir\$commonTestsDirectoryName")) {
         $commonParentDirectory = $currentDir
         break
-      }
-      else {
+      } else {
         #move up the directory tree
         $currentDir = (Get-Item -Path $currentDir).Parent
       }
@@ -115,7 +115,7 @@ Enter-Build {
       }
       default {
         $message = "ParameterSetName $PSCmdlet.ParameterSetName has not been implemented yet"
-        Write-PSFMessage -Level Error -Message $message
+        Write-PSFMessage -Level Error -Message $message -Tag 'Module.build.ps1'
         throw $message
       }
     }
@@ -147,13 +147,13 @@ Enter-Build {
   # The path to the generated powershell module .psm1 file
   $GeneratedModuleFilePath = Join-Path $GeneratedPowershellModulePackagingSourceDirectory $moduleFilename
   # The path to the generated powershell base module .psd1 file
-  $GeneratedBaseManifestFilePath = Join-Path $GeneratedPowershellModulePackagingSourceDirectory $manifestFilename
+  $script:GeneratedBaseManifestFilePath = Join-Path $GeneratedPowershellModulePackagingSourceDirectory $manifestFilename
   # The  directory for generated powershell module .psd1 files, nuspec files, readme files, test files, documentation files
-  $GeneratedPowershellModulePackagingIntermediateDirectory = Join-Path $GeneratedPowershellModulePackagingDirectory $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingIntermediateDirectoryConfigRootKey']]
+  $script:GeneratedPowershellModulePackagingIntermediateDirectory = Join-Path $GeneratedPowershellModulePackagingDirectory $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingIntermediateDirectoryConfigRootKey']]
   # The directory for generated powershell module finished package files
-  $GeneratedPowershellModulePackagingDistributionPackagesDirectory = Join-Path $GeneratedPowershellModulePackagingDirectory $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingDistributionPackagesDirectoryConfigRootKey']]
+  $script:GeneratedPowershellModulePackagingDistributionPackagesDirectory = Join-Path $GeneratedPowershellModulePackagingDirectory $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingDistributionPackagesDirectoryConfigRootKey']]
 
-  Function makeitup {
+  Function CrossProduct {
     param(
       [string] $prefix
       , [string] $suffix
@@ -172,12 +172,11 @@ Enter-Build {
     return $result
   }
 
-
   $sourceManifestPath = Join-Path $moduleRoot $manifestFilename
   # ToDo: replace 'ReadMe.md' with a string constant ($global:settings)
-  $sourceReadMePath = Join-Path $moduleRoot 'ReadMe.md'
+  $script:sourceReadMePath = Join-Path $moduleRoot 'ReadMe.md'
   # ToDo: replace 'ReleaseNotes.md' with a string constant ($global:settings)
-  $sourceReleaseNotesPath = Join-Path $moduleRoot 'ReleaseNotes.md'
+  $script:script:sourceReleaseNotesPath = Join-Path $moduleRoot 'ReleaseNotes.md'
   Write-PSFMessage -Level Debug -Message "sourceManifestPath = $sourceManifestPath; GeneratedModuleFilePath = $GeneratedModuleFilePath"
   Write-PSFMessage -Level Debug -Message "ModuleRoot = $ModuleRoot; moduleName = $moduleName"
   # Write-PSFMessage -Level Debug -Message "sourceFiles = $sourceFiles"
@@ -201,8 +200,6 @@ Enter-Build {
     throw $message
   }
 
-  # The PSRepositories required for packages destined for public powershell Repositories
-  # $RepositoryNamePowershellGetDevelopmentFilesystemName = $global:settings[$global:configRootKeys['RepositoryNamePowershellGetDevelopmentPackageFilesystemConfigRootKey']]
 
   # $TestFile = "$PSScriptRoot\output\TestResults_PS$PSVersion`_$TimeStamp.xml"
 
@@ -232,52 +229,58 @@ Enter-Build {
   # PlantUML
 
   # In Debug mode, write the environment variables
-  #Write-PSFMessage -Level Debug -Message ('Environment variables at start of PSModule.build.ps1' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented 2 2) + [Environment]::NewLine )
+  #Write-PSFMessage -Level Debug -Message ('Environment variables at start of module.build.ps1' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented 2 2) + [Environment]::NewLine )
 }
 
 Task Clean @{
   Inputs  = $sourceFiles
   Outputs = $GeneratedPowershellModulePackagingDirectory
   Jobs    = {
-    Write-PSFMessage -Level Debug -Message "Starting Task Clean; Configuration = $Configuration; BuildRoot = $BuildRoot; Encoding = $Encoding"
-    Write-PSFMessage -Level Debug -Message "OriginalLocation = $OriginalLocation; BuildFile = $BuildFile"
-    Write-PSFMessage -Level Debug -Message "WhatIf:$WhatIfPreference; -Verbose:$Verbosepreference; -Confirm:$ConfirmPreference"
-
-    # clean the GeneratedPowershellModulePackagingDirectory. Remove the subdirectory for $moduleName and all of its children
-    if ($PSCmdlet.ShouldProcess("$GeneratedPowershellModulePackagingDirectory", "Remove-Item -Force -Recurse -Path <target> -Verbose:$Verbosepreference -Confirm:$ConfirmPreference -ErrorAction SilentlyContinue")) {
-      # as a safety measure, ensure the directory name includes the pathpart \temp\
-      if ($GeneratedPowershellModulePackagingDirectory -notmatch '\\temp\\') {
-        $message = "GeneratedPowershellModulePackagingDirectory does not contain \temp\. GeneratedPowershellModulePackagingDirectory = $GeneratedPowershellModulePackagingDirectory"
-        Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
-        # toDo catch the errors, add to 'Problems'
-        Throw $message
-      }
-      if ($(Test-Path -Path $GeneratedPowershellModulePackagingDirectory -PathType Container)) {
-        # if it exists, delete it
-        Remove-Item -Force -Recurse -Path $GeneratedPowershellModulePackagingDirectory -Verbose:$Verbosepreference -Confirm:$ConfirmPreference -ErrorAction SilentlyContinue
-      }
-      # Create a new packaging directory
-      New-Item -ItemType Directory -Force $GeneratedPowershellModulePackagingDirectory >$null
+    Begin {
+      Write-PSFMessage -Level Debug -Message 'task (starting): Clean'
+      Write-PSFMessage -Level Debug -Message "Starting Task Clean; Configuration = $Configuration; BuildRoot = $BuildRoot; Encoding = $Encoding"
+      Write-PSFMessage -Level Debug -Message "OriginalLocation = $OriginalLocation; BuildFile = $BuildFile"
+      Write-PSFMessage -Level Debug -Message "WhatIf:$WhatIfPreference; -Verbose:$Verbosepreference; -Confirm:$ConfirmPreference"
     }
-    # create generated output paths for the module
-    New-Item -ItemType Directory -Force $GeneratedPowershellModulePackagingSourceDirectory >$null
-    New-Item -ItemType Directory -Force $GeneratedPowershellModulePackagingIntermediateDirectory >$null
-    New-Item -ItemType Directory -Force $GeneratedPowershellModulePackagingDistributionPackagesDirectory >$null
+    Process {
+      # clean the GeneratedPowershellModulePackagingDirectory. Remove the subdirectory for $moduleName and all of its children
+      if ($PSCmdlet.ShouldProcess("$GeneratedPowershellModulePackagingDirectory", "Remove-Item -Force -Recurse -Path <target> -Verbose:$Verbosepreference -Confirm:$ConfirmPreference -ErrorAction SilentlyContinue")) {
+        # as a safety measure, ensure the directory name includes the pathpart \temp\
+        if ($GeneratedPowershellModulePackagingDirectory -notmatch '\\temp\\') {
+          $message = "GeneratedPowershellModulePackagingDirectory does not contain \temp\. GeneratedPowershellModulePackagingDirectory = $GeneratedPowershellModulePackagingDirectory"
+          Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
+          # toDo catch the errors, add to 'Problems'
+          Throw $message
+        }
+        if ($(Test-Path -Path $GeneratedPowershellModulePackagingDirectory -PathType Container)) {
+          # if it exists, delete it
+          Remove-Item -Force -Recurse -Path $GeneratedPowershellModulePackagingDirectory -Verbose:$Verbosepreference -Confirm:$ConfirmPreference -ErrorAction SilentlyContinue
+        }
+        # Create a new packaging directory
+        New-Item -ItemType Directory -Force $GeneratedPowershellModulePackagingDirectory >$null
+      }
+      # create generated output paths for the module
+      New-Item -ItemType Directory -Force $GeneratedPowershellModulePackagingSourceDirectory >$null
+      New-Item -ItemType Directory -Force $script:GeneratedPowershellModulePackagingIntermediateDirectory >$null
+      New-Item -ItemType Directory -Force $script:GeneratedPowershellModulePackagingDistributionPackagesDirectory >$null
 
 
-    # Clean the Test Results and Text Coverage Results
-    if ($PSCmdlet.ShouldProcess("$GeneratedTestResultsPath", "Remove-Item -Force -Path <target> -Verbose:$Verbosepreference -Confirm:$ConfirmPreference -ErrorAction SilentlyContinue")) {
-      # Clean the Test Results
-      Remove-Item -Path $(Join-Path $GeneratedTestResultsPath '*.*')
-      Remove-Item -Path $(Join-Path $GeneratedUnitTestResultsPath '*.*')
-      Remove-Item -Path $(Join-Path $GeneratedIntegrationTestResultsPath '*.*')
-      Remove-Item -Path $(Join-Path $GeneratedTestCoverageResultsPath '*.*')
-      # Clean the generated Documentation
-      Remove-Item -Path $(Join-Path $GeneratedDocumentationDestinationPath '*.*')
-      Remove-Item -Path $(Join-Path $GeneratedStaticSiteDocumentationDestinationPath '*.*')
-
-      # Clean the generated PlatyPS CLIXML file
-      # Clean the generated PlantUML files
+      # Clean the Test Results and Text Coverage Results
+      if ($PSCmdlet.ShouldProcess("$GeneratedTestResultsPath", "Remove-Item -Force -Path <target> -Verbose:$Verbosepreference -Confirm:$ConfirmPreference -ErrorAction SilentlyContinue")) {
+        # Clean the Test Results
+        Remove-Item -Path $(Join-Path $GeneratedTestResultsPath '*.*')
+        Remove-Item -Path $(Join-Path $GeneratedUnitTestResultsPath '*.*')
+        Remove-Item -Path $(Join-Path $GeneratedIntegrationTestResultsPath '*.*')
+        Remove-Item -Path $(Join-Path $GeneratedTestCoverageResultsPath '*.*')
+        # Clean the generated Documentation
+        Remove-Item -Path $(Join-Path $GeneratedDocumentationDestinationPath '*.*')
+        Remove-Item -Path $(Join-Path $GeneratedStaticSiteDocumentationDestinationPath '*.*')
+        # Clean the generated PlatyPS CLIXML file
+        # Clean the generated PlantUML files
+      }
+    }
+    End {
+      Write-PSFMessage -Level Debug -Message 'task (done): Clean'
     }
   }
 }
@@ -324,7 +327,7 @@ Task BuildBasePSD1 @{
     $sourceManifestPath
     $GeneratedModuleFilePath
   }
-  Outputs = { $GeneratedBaseManifestFilePath }
+  Outputs = { $script:GeneratedBaseManifestFilePath }
   Jobs    = 'BuildPSM1', {
     Write-PSFMessage -Level Debug -Message "Starting Task BuildBasePSD1; Inputs = $Inputs; Outputs = $Outputs"
     $publicPathPattern = [Regex]::Escape([System.IO.Path]::DirectorySeparatorChar + 'public' + [System.IO.Path]::DirectorySeparatorChar)
@@ -334,29 +337,30 @@ Task BuildBasePSD1 @{
     $formatsPathPattern = [Regex]::Escape([System.IO.Path]::DirectorySeparatorChar + 'formats' + [System.IO.Path]::DirectorySeparatorChar)
     $assembliesPathPattern = '.dll$'
     # copy the current source manifest to the new generated manifest
-    Copy-Item $sourceManifestPath $GeneratedBaseManifestFilePath
+    Copy-Item $sourceManifestPath $script:GeneratedBaseManifestFilePath
     # update the version number
-    # Update-PackageVersion $GeneratedBaseManifestFilePath
-    # # read the current source manifest into a data structure
-    # $currentManifest = Import-PowerShellDataFile $GeneratedBaseManifestFilePath
-    # # calculate the appropriate next version
-    # # If privatedata include Prerelease, special treatment of version
-    # if ($currentManifest.PrivateData.PSData.ContainsKey('Prerelease')) {
-    #   $currentSemanticVersion = $currentManifest.ModuleVersion + '-' + $currentManifest.PrivateData.PSData.Prerelease
-    #   $nextSemanticVersion = [System.Management.Automation.SemanticVersion]::new(0, 0, 1, 'alpha003', '')
-    # } else {
-    #   $currentSemanticVersion = [System.Management.Automation.SemanticVersion]::new($currentManifest.ModuleVersion )
-    #   $nextSemanticVersion = [System.Management.Automation.SemanticVersion]::new($currentSemanticVersion)
-    # }
-    # #
-    # $nextSemanticVersion = [System.Management.Automation.SemanticVersion]::new(0, 0, 1, 'alpha003', '') # Get-NextSemanticVersionNumber $highestSemanticVersion $highestSemanticVersionPackage -manifest $GeneratedManifestFilePath
+    # Update-PackageVersion $script:GeneratedBaseManifestFilePath
+    # read the current source manifest into a data structure
+    $currentManifest = Import-PowerShellDataFile $script:GeneratedBaseManifestFilePath
+    # calculate the appropriate next version
+    # If privatedata include Prerelease, special treatment of version
+    $script:nextSemanticVersion = $null
+    if ($currentManifest.PrivateData.PSData.ContainsKey('Prerelease')) {
+      $currentSemanticVersion = $currentManifest.ModuleVersion + '-' + $currentManifest.PrivateData.PSData.Prerelease
+      $script:nextSemanticVersion = [System.Management.Automation.SemanticVersion]::new($currentSemanticVersion, '')
+    } else {
+      $currentSemanticVersion = [System.Management.Automation.SemanticVersion]::new($currentManifest.ModuleVersion )
+      $script:nextSemanticVersion = [System.Management.Automation.SemanticVersion]::new($currentSemanticVersion)
+    }
+    #
+    # $script:nextSemanticVersion = [System.Management.Automation.SemanticVersion]::new(0, 0, 1, 'alpha003', '') # Get-script:nextSemanticVersionNumber $highestSemanticVersion $highestSemanticVersionPackage -manifest $GeneratedManifestFilePath
     # $nextMicrosoftVersion = '0.0.3' # Get-NextMicrosoftVersion $currentManifest
 
     $newManifestParams = @{
-      Path = $GeneratedBaseManifestFilePath
-      #ModuleVersion = $nextMicrosoftVersion #$nextSemanticVersion
+      Path          = $script:GeneratedBaseManifestFilePath
+      ModuleVersion = $currentSemanticVersion
     }
-    # if ($nextSemanticVersion.PreReleaseLabel) { $newManifestParams['PreRelease'] = $nextSemanticVersion.PreReleaseLabel }
+    # if ($script:nextSemanticVersion.PreReleaseLabel) { $newManifestParams['PreRelease'] = $script:nextSemanticVersion.PreReleaseLabel }
     # Generate the data for the manifest depending on what is in the module subdirectory
     #region PSModuleContentsToExport
     #ToDo: replace the following arrays with a type [ATAP.Utilities.Powershell.PSModuleContentsToExport] and populate with a constructor that takes a path to the module subdirectory and looks for the .psm1 file and supporting
@@ -380,7 +384,7 @@ Task BuildBasePSD1 @{
     $formatFiles = @()
     $toolFiles = @()
     $assemblyFiles = @()
-    $requiredModuleFiles = @()
+    $script:requiredModuleFiles = @()
     foreach ($filePath in $($sourceFiles.fullname -match $dscResourcesPathPattern)) {
       $dscResourceFiles += Get-ChildItem $filePath | Select-Object -ExpandProperty basename
     }
@@ -406,12 +410,12 @@ Task BuildBasePSD1 @{
     #$oldPSModulePath = $env:PSModulePath
     # Add the module root to the PSModulePath so the Update-moduleManifest can find the assemblies
     # $env:PSModulePath = $moduleroot + ';' + $oldPSModulePath
-    #$requiredModuleFiles = @(,'C:\Dropbox\whertzing\PowerShell\Modules\platyPS\0.14.2\YamlDotNet.dll') # @("C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell\ATAP.Utilities.FileIO.PowerShell.psm1") #@(, 'platyPS')
-    #$requiredModuleFiles = @(,'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.dll') # @("C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell\ATAP.Utilities.FileIO.PowerShell.psm1") #@(, 'platyPS')
-    #$requiredModuleFiles = @(,'.\ATAP.Utilities.BuildTooling.PowerShell.dll') # @("C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell\ATAP.Utilities.FileIO.PowerShell.psm1") #@(, 'platyPS')
+    #$script:requiredModuleFiles = @(,'C:\Dropbox\whertzing\PowerShell\Modules\platyPS\0.14.2\YamlDotNet.dll') # @("C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell\ATAP.Utilities.FileIO.PowerShell.psm1") #@(, 'platyPS')
+    #$script:requiredModuleFiles = @(,'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\ATAP.Utilities.BuildTooling.PowerShell.dll') # @("C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell\ATAP.Utilities.FileIO.PowerShell.psm1") #@(, 'platyPS')
+    #$script:requiredModuleFiles = @(,'.\ATAP.Utilities.BuildTooling.PowerShell.dll') # @("C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.FileIO.PowerShell\ATAP.Utilities.FileIO.PowerShell.psm1") #@(, 'platyPS')
     #$assemblyfiles = @(,'.\ATAP.Utilities.BuildTooling.PowerShell.dll') #@(, 'platyPS\0.14.2\YamlDotNet.dll') #C:\Dropbox\whertzing\PowerShell\Modules\
-    # if ($requiredModuleFiles.count) { $newManifestParams['NestedModules'] = $requiredModuleFiles }
-    # if ($assemblyFiles.count -or $requiredModuleFiles.count) { $env:PSModulePath = $oldPSModulePath }
+    # if ($script:requiredModuleFiles.count) { $newManifestParams['NestedModules'] = $script:requiredModuleFiles }
+    # if ($assemblyFiles.count -or $script:requiredModuleFiles.count) { $env:PSModulePath = $oldPSModulePath }
     if ($assemblyFiles.count) {
       #$newManifestParams['RequiredAssemblies'] = $assemblyFiles
       #  $newManifestParams['RequiredModules'] = $currentManifest['RequiredModules'] + $assemblyFiles
@@ -420,45 +424,55 @@ Task BuildBasePSD1 @{
     Write-PSFMessage -Level Debug -Message "RequiredAssemblies = $($newManifestParams['RequiredAssemblies'])"
     Write-PSFMessage -Level Debug -Message "RequiredModules = $($newManifestParams['RequiredModules'])"
     Update-ModuleManifest @newManifestParams
+    # export the version
+    $script:ModuleVersion = $script:nextSemanticVersion
 
   }
 }
 
 Task BuildPackageSpecificPSD1 @{
-  Inputs  = $GeneratedBaseManifestFilePath
+  Inputs  = $script:GeneratedBaseManifestFilePath
   Outputs = {
-    foreach ($destination in $(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory)) {
+    foreach ($destination in $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory)) {
       Join-Path $destination $manifestFilename
     }
   }
   Jobs    = 'BuildBasePSD1', {
     # Each provider and PackageLifecycle needs its own .psd1 and .nuspec file, along with the basic .psm1 file, and additional files as appropriate for the provider and lifecycle
-    foreach ($destination in $(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory )) {
+    foreach ($destination in $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory )) {
       if (-not $(Test-Path $destination.Path -PathType Container)) { New-Item $destination.Path -ItemType Directory -Force >$null }
       # Copy the generated module file to each package intermediate directory
       Copy-Item $GeneratedModuleFilePath $destination.Path
       # copy the generated manifest file to each package intermediate directory
-      Copy-Item $GeneratedBaseManifestFilePath $destination.Path
+      Copy-Item $script:GeneratedBaseManifestFilePath $destination.Path
       # ToDo: modify psm1 or psd1 if needed for each specific package source directory
     }
   }
 }
 
-
 Task UnitTestPSModule @{
   Inputs  = $sourceFiles
   Outputs = $GeneratedModuleFilePath
   Jobs    = 'BuildPSM1', {
-    Write-PSFMessage -Level Debug -Message 'task = UnitTestPSModule'
-    # [Pester Testing in Jenkins (Using NUNit)](https://sqlnotesfromtheunderground.wordpress.com/2017/01/20/pester-testing-in-jenkins-using-nunit/)
-    # ToDo: update this so it collects test results and coverage results and publishes them to
-    $TestResults = Invoke-Pester -Path $UnitTestsPath -PassThru -OutputFor JUnitXml -Tag Unit -ExcludeTag Slow, Disabled
-    # If the test results are not within expectations/margin, fail the build
-    # ToDo: Xunit and perhaps Pester ? might be better tools for this step...
-    if ($TestResults.FailedCount -gt 0) {
-      # In a pipeline, return an exit code
-      # Invoked by a dev, from a terminal or from a task, write a message and stop processing
-      Write-Error "Failed [$($TestResults.FailedCount)] Pester tests"
+    Begin {
+      Write-PSFMessage -Level Debug -Message 'task (starting): UnitTestPSModule'
+    }
+
+    Process {
+      # [Pester Testing in Jenkins (Using NUNit)](https://sqlnotesfromtheunderground.wordpress.com/2017/01/20/pester-testing-in-jenkins-using-nunit/)
+      # ToDo: update this so it collects test results and coverage results and publishes them to
+      $TestResults = Invoke-Pester -Path $UnitTestsPath -PassThru -OutputFor JUnitXml -Tag Unit -ExcludeTag Slow, Disabled
+      # If the test results are not within expectations/margin, fail the build
+      # ToDo: Xunit and perhaps Pester ? might be better tools for this step...
+      if ($TestResults.FailedCount -gt 0) {
+        # In a pipeline, return an exit code
+        # Invoked by a dev, from a terminal or from a task, write a message and stop processing
+        Write-PSFMessage -Level Error -Message "Failed [$($TestResults.FailedCount)] Pester tests"
+        Write-Error "Failed [$($TestResults.FailedCount)] Pester tests"
+      }
+    }
+    End {
+      Write-PSFMessage -Level Debug -Message 'task (done): UnitTestPSModule'
     }
   }
 }
@@ -493,22 +507,21 @@ Task GenerateStaticSiteDocumentationForPSModule @{
   Outputs = $GeneratedModuleFilePath
   Jobs    = 'BuildPSM1', 'BuildPackageSpecificPSD1', 'UnitTestPSModule', 'IntegrationTestPSModule', 'GenerateReadMeMarkdownForPSModule', {
     Write-PSFMessage -Level Debug -Message 'task = GenerateStaticSiteDocumentationForPSModule'
-
   }
 }
 
 Task GenerateReadMeMarkdownForPSModule @{
-  Inputs  = { $sourceReadMePath }
+  Inputs  = { $script:sourceReadMePath }
   Outputs = {
     # ToDo: replace 'ReadMe.md' with a string constant ($global:settings)
-    foreach ($destination in $($(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory ))) {
+    foreach ($destination in $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory ))) {
       Join-Path $destination.Path 'ReadMe.md'
     }
   }
   Jobs    = {
     Begin {
-      Write-PSFMessage -Level Debug -Message 'task = GenerateReadMeMarkdownForPSModule'
-      $destinations = $(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory )
+      Write-PSFMessage -Level Debug -Message 'task (starting): GenerateReadMeMarkdownForPSModule'
+      $destinations = $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory )
     }
     Process {
       foreach ($sourcePath in $Inputs) {
@@ -517,24 +530,35 @@ Task GenerateReadMeMarkdownForPSModule @{
         }
       }
     }
+    End {
+      Write-PSFMessage -Level Debug -Message 'task (done): GenerateReadMeMarkdownForPSModule'
+    }
   }
 }
 
+
 Task GenerateReleaseNotesMarkdownForPSModule @{
-  Inputs  = { $sourceReleaseNotesPath }
+  Inputs  = { $script:script:sourceReleaseNotesPath }
   Outputs = {
-    # ToDo: replace 'ReadMe.md' with a string constant ($global:settings)
-    foreach ($destination in $($(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory ))) {
+    # ToDo: replace 'ReleaseNotes.md' with a string constant ($global:settings)
+    foreach ($destination in $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory ))) {
       Join-Path $destination.Path 'ReleaseNotes.md'
     }
   }
   Jobs    = {
-    Write-PSFMessage -Level Debug -Message 'task = GenerateReleaseNotesMarkdownForPSModule'
-    $destinations = $(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory )
-    foreach ($sourcePath in $Inputs) {
-      for ($destinationIndex = 0; $destinationIndex -lt $destinations.count; $destinationIndex++) {
-        Copy-Item $sourcePath $($destinations[$destinationIndex]).Path
+    Begin {
+      Write-PSFMessage -Level Debug -Message 'task (starting): GenerateReleaseNotesMarkdownForPSModule'
+      $destinations = $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory )
+    }
+    Process {
+      foreach ($sourcePath in $Inputs) {
+        for ($destinationIndex = 0; $destinationIndex -lt $destinations.count; $destinationIndex++) {
+          Copy-Item $sourcePath $($destinations[$destinationIndex]).Path
+        }
       }
+    }
+    End {
+      Write-PSFMessage -Level Debug -Message 'task (done): GenerateReleaseNotesMarkdownForPSModule'
     }
   }
 }
@@ -545,7 +569,7 @@ Task CopyTestFilesForPSModule @{
     # ToDo: would prefer to reference the $inputs instead of the contents of $inputs, but cant make it work
     # ToDo: replace 'QualityAssurance' with an Enumeration ToString()
     # ToDo: replace 'tests' with a string constant ($global:settings)
-    foreach ($destination in $($(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory -suffix 'tests')) | Where-Object { $_.PackageLifeCycle -match 'QualityAssurance' } ) {
+    foreach ($destination in $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix 'tests')) | Where-Object { $_.PackageLifeCycle -match 'QualityAssurance' } ) {
       foreach ($testfileInfo in  [System.Collections.Generic.List[System.IO.FileInfo]] $testFileInfos) {
         Join-Path $destination.Path $testFileInfo.Name
       }
@@ -553,10 +577,11 @@ Task CopyTestFilesForPSModule @{
   }
   Jobs    = {
     Begin {
-      Write-PSFMessage -Level Debug -Message 'task = CopyTestFilesForPSModule'
+      Write-PSFMessage -Level Debug -Message 'task (starting): CopyTestFilesForPSModule'
+
       # The Test files are only copied to the Quality Assurance packages
       # ToDo: move the subdirectory 'test' into string constants ($global:settings)
-      $destinations = $($(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory -suffix 'tests')) | Where-Object { $_.PackageLifeCycle -match 'QualityAssurance' }
+      $destinations = $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix 'tests')) | Where-Object { $_.PackageLifeCycle -match 'QualityAssurance' }
     }
     Process {
       # powershell will cast an array of a single element to  a string if
@@ -566,6 +591,11 @@ Task CopyTestFilesForPSModule @{
         }
       }
     }
+    End {
+      Write-PSFMessage -Level Debug -Message 'task (done): CopyTestFilesForPSModule'
+    }
+
+
   }
 }
 
@@ -579,16 +609,16 @@ Task CopyAssembliesForPSModule @{
     $assembliesPathPattern = '.dll$'
     $($sourceFiles.fullname -match $assembliesPathPattern) | ForEach-Object {
       $AssemblyPathInfo = $_
-      foreach ($destination in $($(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory )) ) {
+      foreach ($destination in $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory )) ) {
         Join-Path $destination.Path $AssemblyPathInfo.name
       }
     }
-    'test'
+
   }
   Jobs    = {
     Begin {
-      Write-PSFMessage -Level Debug -Message 'task = CopyAssembliesForPSModule'
-      $destinations = $($(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory ))
+      Write-PSFMessage -Level Debug -Message 'task (starting):CopyAssembliesForPSModule'
+      $destinations = $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory ))
     }
     Process {
       foreach ($AssemblyPathInfo in $Inputs) {
@@ -599,56 +629,67 @@ Task CopyAssembliesForPSModule @{
         }
       }
     }
+    End {
+      Write-PSFMessage -Level Debug -Message 'task (done):CopyAssembliesForPSModule'
+    }
   }
 }
 
 Task BuildNuSpecFromManifest @{
   Inputs  = {
-    $(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
+    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
   }
   Outputs = {
-    $(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory -suffix $NuSpecFilename).Path
+    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $script:NuSpecFilename).Path
   }
   Jobs    = 'BuildPackageSpecificPSD1', 'GenerateReleaseNotesMarkdownForPSModule', 'GenerateReadMeMarkdownForPSModule', 'CopyAssembliesForPSModule', 'CopyTestFilesForPSModule', 'CopyAssembliesForPSModule', {
-    Write-PSFMessage -Level Debug -Message 'task = BuildNuSpecFromManifest; inputs = $inputs ; outputs = $outputs'
-    $destinations = makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory
-    foreach ($destination in $destinations) {
-      # The NuSpec file is placed in the same directory as the manifest file
-      $GeneratedManifestFilePath = Join-Path $destination.Path $manifestFilename
-      try {
-        # ToDo: make this hashtable a type
-        # ToDo: remove after powershell package is installed
-        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-NuSpecFromManifest.ps1'
-        Get-NuSpecFromManifest -ManifestPath $GeneratedManifestFilePath -DestinationFolder $destination.Path -ProviderName $destination.Provider
-      }
-      catch {
-        $message = "calling Get-NuSpecFromManifest with -ManifestPath $GeneratedManifestFilePath -DestinationFolder $destination.Path -ProviderName $destination.ProviderName threw an error : $($error[0] | Select-Object * )"
-        Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'BuildNuSpecFromManifest'
-        # toDo catch the errors, add to 'Problems'
-        Throw $message
+    Begin {
+      Write-PSFMessage -Level Debug -Message 'task (starting):BuildNuSpecFromManifest inputs = $inputs ; outputs = $outputs'
+      $destinations = $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory ))
+    }
+    Process {
+      $destinations = CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory
+      foreach ($destination in $destinations) {
+        # The NuSpec file is placed in the same directory as the manifest file
+        $GeneratedManifestFilePath = Join-Path $destination.Path $manifestFilename
+        try {
+          # ToDo: make this hashtable a type
+          # ToDo: remove after powershell package is installed
+          . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-NuSpecFromManifest.ps1'
+          Get-NuSpecFromManifest -ManifestPath $GeneratedManifestFilePath -DestinationFolder $destination.Path -ProviderName $destination.Provider
+        } catch {
+          $message = "calling Get-NuSpecFromManifest with -ManifestPath $GeneratedManifestFilePath -DestinationFolder $destination.Path -ProviderName $destination.ProviderName threw an error : $($error[0] | Select-Object * )"
+          Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'BuildNuSpecFromManifest'
+          # toDo catch the errors, add to 'Problems'
+          Throw $message
+        }
       }
     }
+    End {
+      Write-PSFMessage -Level Debug -Message 'task (done):BuildNuSpecFromManifest'
+    }
+
   }
 }
 
 Task AddReadMeToNuSpec @{
   # this task modifies its inputs, so, there are no output dependencies, it has to run
   # Inputs  = {
-  #   $(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
+  #   $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
   # }
   # Outputs = $GeneratedModuleFilePath
   Jobs = 'BuildNuSpecFromManifest', {
-    Write-PSFMessage -Level Debug -Message 'task = BuildNuSpecFromManifest'
-    $destinations = makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory
+    Write-PSFMessage -Level Debug -Message 'task = AddReadMeToNuSpec'
+    $destinations = CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory
     for ($destinationIndex = 0; $destinationIndex -lt $destinations.count; $destinationIndex++) {
-      $nuSpecFilePath = Join-Path $destinations[$destinationIndex].Path $NuSpecFilename
+      $nuSpecFilePath = Join-Path $destinations[$destinationIndex].Path $script:NuSpecFilename
       # Read the NuSpec file
       $nuSpecLines = [System.Collections.ArrayList](Get-Content $nuSpecFilePath )
       # Add the readme and any other files. Add before the </metadata> line
       # ToDo - define a lambda that matches the </metadata> line without needing to rely on exactly four spaces
-      # then use the answer provided by dcastro in [Use regex inside Array.indexof in c#.net to find the index of element(https://stackoverflow.com/questions/18758262/use-regex-inside-array-indexof-in-c-net-to-find-the-index-of-element)]
+      # then use the answer provided by DCastro in [Use regex inside Array.indexOf in c#.net to find the index of element(https://stackoverflow.com/questions/18758262/use-regex-inside-array-indexof-in-c-net-to-find-the-index-of-element)]
       # myList.FindIndex(s => new Regex(@"3\s*\-\s*6").Match(s).Success);
-      # $insertIndex = $nuSpecLinest.FindIndex(s => new Regex("metadata").Match(s).Success)
+      # $insertIndex = $nuSpecLines.FindIndex(s => new Regex("metadata").Match(s).Success)
       # need the lambda that does the "s => new Regex("metadata").Match(s).Success" part of above
       # ToDo: wrap in a try/catch block if the IndexOf operation returns -1
       $insertIndex = $nuSpecLines.IndexOf('    </metadata>')
@@ -658,7 +699,7 @@ Task AddReadMeToNuSpec @{
       # $nuSpecLines.Insert(($insertIndex + 2), " "*$numberOfSpaces + '  <file src="readme.md" target="" />')
       # $nuSpecLines.Insert(($insertIndex + 3), " "*$numberOfSpaces + '</files>')
       # add before the </metadata> line
-      $nuSpecLines.Insert(($insertIndex ), ' ' * $numberOfSpaces + '  <readme>readme.md</readme>')
+      # temp why are there two lines?  $nuSpecLines.Insert(($insertIndex ), ' ' * $numberOfSpaces + '  <readme>readme.md</readme>')
 
       # <!-- Add files from an arbitrary folder that's not necessarily in the project -->
       # <file src="..\..\SomeRoot\**\*.*" target="" />
@@ -666,101 +707,171 @@ Task AddReadMeToNuSpec @{
       # write the modified nuSpac lines back out to the nuSpec file
       $nuSpecLines | Set-Content $nuSpecFilePath
     }
+    Write-PSFMessage -Level Debug -Message 'task (done):AddReadMeToNuSpec'
+
   }
 }
 
 Task BuildNuGetPackage @{
   Inputs  = {
-    $(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
-    $(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory -suffix $NuSpecFilename).Path
-    $(makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory -suffix $moduleFilename).Path
+    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
+    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $script:NuSpecFilename).Path
+    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $moduleFilename).Path
   }
 
   Outputs = {
-    $(makeitup -prefix $GeneratedPowershellModulePackagingDistributionPackagesDirectory -suffix $moduleFilename).Path
+    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingDistributionPackagesDirectory -suffix $moduleFilename).Path
   }
   Jobs    = 'AddReadMeToNuSpec', {
-    Write-PSFMessage -Level Debug -Message 'task = BuildNuGetPackage'
+    Write-PSFMessage -Level Debug -Message 'task = BuildNuGetPackage' -Tag 'Invoke-Build', 'BuildNuGetPackage'
     # ToDo: logic to select Dev, QA, Production package(s) to build
-    $destinations = makeitup -prefix $GeneratedPowershellModulePackagingIntermediateDirectory
+    $destinations = CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory
     for ($destinationIndex = 0; $destinationIndex -lt $destinations.count; $destinationIndex++) {
-      $nuSpecFilePath = Join-Path $destinations[$destinationIndex].Path $NuSpecFilename
-      $distributionPackagesDirectory = Join-Path $GeneratedPowershellModulePackagingDistributionPackagesDirectory $destinations[$destinationIndex].Provider $destinations[$destinationIndex].PackageLifeCycle
+      $nuSpecFilePath = Join-Path $destinations[$destinationIndex].Path $script:NuSpecFilename
+      $distributionPackagesDirectory = Join-Path $script:GeneratedPowershellModulePackagingDistributionPackagesDirectory $destinations[$destinationIndex].Provider $destinations[$destinationIndex].PackageLifeCycle
       # ensure the directory exists, silently create it if not
       if (-not $(Test-Path $distributionPackagesDirectory -PathType Container)) { New-Item $distributionPackagesDirectory -ItemType Directory -Force >$null }
       try {
         # Start-Process -FilePath $global:settings[$global:configRootKeys['NuGetExePathConfigRootKey']] -ArgumentList "-jar $jenkinsCliJarFile -groovy Get-JenkinsPlugins.groovy' -PassThru
         ## don't create window for this process.
-        #  ToDo: -NoPackageAnalysis silences the warnings regarding test files in the QA package, but it would be better if the single warning could be silenced and still fo package analysis to catch other errors
-        Start-Process NuGet -ArgumentList "pack $nuSpecFilePath -OutputDirectory $distributionPackagesDirectory -Verbosity quiet -NoPackageAnalysis" -NoNewWindow >$null
-      }
-      catch {
+        #  ToDo: -NoPackageAnalysis silences the warnings regarding test files in the QA package, but it would be better if the single warning could be silenced and still have package analysis to catch other errors
+        # use the .Net object
+        #Start-Process NuGet -ArgumentList "pack $nuSpecFilePath -OutputDirectory $distributionPackagesDirectory -Verbosity quiet -NoPackageAnalysis" -NoNewWindow
+        $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $processStartInfo.Arguments = 'pack', "$nuSpecFilePath", '-OutputDirectory', "$distributionPackagesDirectory"
+        $processStartInfo.FileName = 'nuget.exe'
+        $processStartInfo.RedirectStandardError = $true
+        $processStartInfo.RedirectStandardOutput = $true
+        $processStartInfo.UseShellExecute = $false
+        $process = New-Object System.Diagnostics.Process
+        $process.StartInfo = $processStartInfo
+        $process.Start() | Out-Null
+        $process.WaitForExit()
+        # Capture stdout and stderr
+        $stdout = $process.StandardOutput.ReadToEnd()
+        $stderr = $process.StandardError.ReadToEnd()
+        $message = "Nuget pack stdout : $stdout"
+        Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'BuildNuGetPackage'
+        $message = "Nuget pack stderr : $stderr"
+        Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'BuildNuGetPackage'
+      } catch {
         $message = "calling nuget with argument list pack $nuSpecFilePath -OutputDirectory $distributionPackagesDirectory threw an error "
         Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'BuildNuGetPackage'
         # toDo catch the errors, add to 'Problems'
         Throw $message
       }
     }
+    Write-PSFMessage -Level Debug -Message 'task (done): BuildNuGetPackage'
   }
 }
 
+Task BuildChocolateyPackage @{
+  Inputs  = {
+    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
+    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $script:ChocolateyPackageFilename).Path
+    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $moduleFilename).Path
+  }
+
+  Outputs = {
+    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingDistributionPackagesDirectory -suffix $moduleFilename).Path
+  }
+
+  Jobs    = 'BuildNuGetPackage', {
+    Write-PSFMessage -Level Debug -Message 'task = BuildChocolateyPackage' -Tag 'Invoke-Build', 'BuildChocolateyPackage'
+    Write-PSFMessage -Level Debug -Message 'task (done:) BuildChocolateyPackage' -Tag 'Invoke-Build', 'BuildChocolateyPackage'
+  }
+}
 
 Task SignPSPackages @{
   Inputs  = $sourceFiles
   Outputs = $GeneratedModuleFilePath
   Jobs    = 'BuildNuGetPackage', {
-    Write-PSFMessage -Level Debug -Message 'task = SignPSPackages'
+    Write-PSFMessage -Level Debug -Message 'task = SignPSPackages' -Tag 'Invoke-Build', 'SignPSPackages'
+    Write-PSFMessage -Level Debug -Message 'task (done:) SignPSPackages' -Tag 'Invoke-Build', 'SignPSPackages'
   }
 }
 
 Task PublishPSPackage @{
   Inputs  = $sourceFiles
   Outputs = $GeneratedModuleFilePath
-  Jobs    = 'SignPSPackages', { #
-    Write-PSFMessage -Level Debug -Message 'task = PublishPSPackage'
+  Jobs    = 'SignPSPackages', {
+    Write-PSFMessage -Level Debug -Message 'task = PublishPSPackage' -Tag 'Invoke-Build', 'PublishPSPackage'
     $providerNames | ForEach-Object { $ProviderName = $_
       $packageLifecycles | ForEach-Object { $PackageLifecycle = $_
-        # The NuPackage file has been generated to the same directory as the manifest file
-        $GeneratedFullPackageIntermediateDirectory = Join-Path $GeneratedPowershellModulePackagingIntermediateDirectory $ProviderName $PackageLifecycle
-        #temp
-        $moduleNameAndVersion = "${moduleName}.0.0.3-Alpha001"
-        $GeneratedFullPackageDestinationPath = Join-Path $GeneratedFullPackageIntermediateDirectory $($moduleNameAndVersion + $NuSpecFileSuffix)
+        # The Distrbution directory where the distribution package has been placed
+        $GeneratedFullPackageDistributionDirectory = Join-Path $script:GeneratedPowershellModulePackagingDistributionPackagesDirectory $ProviderName $PackageLifecycle
+        # The module manifest file
+        $currentManifest = Import-PowerShellDataFile $script:GeneratedBaseManifestFilePath
 
-        # Publish all packages to the FileSystem repositories
-        # Publish all packages to the InternalWebServer
+        $moduleNameAndVersion = $moduleName + '.' + $currentManifest.ModuleVersion
 
-        $RepositoryStorageMechanisms | ForEach-Object { $RepositoryStorageMechanism = $_
+        $script:RepositoryStorageMechanisms | ForEach-Object { $RepositoryStorageMechanism = $_
 
           # Lookup the details of the appropriate repository to publish to
           # ToDO: use global:settings or global:configrootKeys
-
-          $PSRepositoryKey = 'Repository' + $ProviderName + $PackageLifecycle + $RepositoryStorageMechanism + 'Package'
-          $PSRepositoryName = $global:settings.PackageRepositoriesCollection[$PSRepositoryKey]
-          $NuGetAPIKey = 'Repository' + $ProviderName + $PackageLifecycle + $RepositoryStorageMechanism + 'Package'
+          $PSRepositoryKey = 'Repository' + $ProviderName + $RepositoryStorageMechanism + $PackageLifecycle + 'Package'
+          $PSRepositoryFeed = $global:settings.PackageRepositoriesCollection[$PSRepositoryKey]
+          $NuGetAPIKey = 'whertzing'
           # ToDo: $nuGetApiValue = $global:settings[$global:configRootKeys['NuGetApiKeyConfigRootKey']]
           # Publish-Module below comes from the module PowerShellGet [How to Publish PowerShell Modules to a Private Repository](https://blog.inedo.com/powershell/private-repo/)
           switch ($RepositoryStorageMechanism) {
+            # Publish all packages to the FileSystem repositories
             'FileSystem' {
-              $PSRepositoryName = 'LocalDevelopmentPSRepository'
-              Publish-Module -Path $relativeModulePath -Repository $PSRepositoryName -NuGetApiKey $nuGetApiKey
+              switch ($providerNames) {
+                'NuGet' {
+                  # Location of the package to be published
+                  $packageName = $moduleNameAndVersion + '.nupkg'
+                  $packagePath = Join-Path $GeneratedFullPackageDistributionDirectory $packageName
+                  # use the .Net object
+                  $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo
+                  $processStartInfo.Arguments = 'add', "$packagePath", '-source', $PSRepositoryFeed
+                  $processStartInfo.FileName = 'nuget.exe'
+                  $processStartInfo.RedirectStandardError = $true
+                  $processStartInfo.RedirectStandardOutput = $true
+                  $processStartInfo.UseShellExecute = $false
+                  $process = New-Object System.Diagnostics.Process
+                  $process.StartInfo = $processStartInfo
+                  $process.Start() | Out-Null
+                  $process.WaitForExit()
+                  # Capture stdout and stderr
+                  $stdout = $process.StandardOutput.ReadToEnd()
+                  $stderr = $process.StandardError.ReadToEnd()
+                  $message = "Nuget add stdout : $stdout"
+                  Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+                  $message = "Nuget add stderr : $stderr"
+                  Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+                }
+                'PowershellGet' {
+                  $message = Publish-Module -Path $relativeModulePath -Repository $PSRepositoryFeed -NuGetApiKey $nuGetApiKey
+                  $message = 'Publish-Module  returned:' + $message
+                  Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+                }
+                'ChocolateyGet' {
+                  $message = ''
+                  $message = 'ChocolateyGet publish returned:' + $message
+                  Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+                }
+              }
+              $PSRepositoryFeed = 'LocalDevelopmentPSRepository'
 
             }
-            'InternalWebServer' {
-              $PSRepositoryName = 'InternalWebServerPSRepository'
+            'QualityAssuranceWebServer' {
+              $PSRepositoryFeed = 'InternalWebServerPSRepository'
             }
-            'PublicWebServer' {
-              $PSRepositoryName = 'PublicWebServerPSRepository'
+            'ProductionWebServer' {
+              $PSRepositoryFeed = 'PublicWebServerPSRepository'
             }
           }
           # Publish all packages to the FileSystem repositories
-          # Publish all packages to the InternalWebServer repositories
+          # Publish all packages to the QualityAssuranceWebServer
           # publish production packages for the PublicWebServer to a "FinalInspectionStagingArea"
         }
       }
     }
+
     # Switch on Environment
     # Publish to FileSystem
-    #Publish-Module -Path $relativeModulePath -Repository $PSRepositoryName -NuGetApiKey $nuGetApiKey
+    #Publish-Module -Path $relativeModulePath -Repository $PSRepositoryFeed -NuGetApiKey $nuGetApiKey
     #Publish-Module -Name $GeneratedPowershellGetModulesPath -Repository LocalDevelopmentPSRepository
     # Copy last build artifacts into a .7zip file, name it after the ModuleName-Version-buildnumber (like C# project assemblies)
     # Check the 7Zip file into the SCM repository
@@ -772,7 +883,7 @@ Task PublishPSPackage @{
 }
 
 # Default task.
-Task . BuildPSM1, BuildBasePSD1, BuildPackageSpecificPSD1, BuildNuSpecFromManifest, BuildNuGetPackage , PublishPSPackage # UnitTestPSModule, BuildNuGetPackage , PublishPSPackage #, BuildChocolateyPackage , PublishPSPackage
+Task . BuildPSM1, BuildBasePSD1, BuildPackageSpecificPSD1, BuildNuSpecFromManifest, BuildNuGetPackage , PublishPSPackage # BuildChocolateyPackage ,UnitTestPSModule,  PublishPSPackage #,  PublishPSPackage
 
 
 # Get-Next Version placeholder
@@ -801,7 +912,7 @@ Task . BuildPSM1, BuildBasePSD1, BuildPackageSpecificPSD1, BuildNuSpecFromManife
 # $highestProductionSemanticVersionPackage = $null
 # $highestProductionSemanticVersionManifest = $null
 # #Get-ModuleHighestVersion -moduleName $moduleName -Sources $RepositoryPackageSourceNames
-# $nextSemanticVersion = [System.Management.Automation.SemanticVersion]::new(0, 0, 1, 'alpha003', '') # Get-NextSemanticVersionNumber $highestSemanticVersion $highestSemanticVersionPackage -manifest $GeneratedManifestFilePath
+# $script:nextSemanticVersion = [System.Management.Automation.SemanticVersion]::new(0, 0, 1, 'alpha003', '') # Get-script:nextSemanticVersionNumber $highestSemanticVersion $highestSemanticVersionPackage -manifest $GeneratedManifestFilePath
 
 # # $foundOldModules = @{}
 # # $foundOldVersions = @{}
@@ -893,12 +1004,12 @@ Task . BuildPSM1, BuildBasePSD1, BuildPackageSpecificPSD1, BuildNuSpecFromManife
 # $highestVersionManifestPath = $null
 # if ($highestsemanticVersion) {
 #   # At least one version exists in Production / QA / Development repositories
-#   $nextSemanticVersion = '0.0.1-alpha001'
+#   $script:nextSemanticVersion = '0.0.1-alpha001'
 #   $highestVersionManifestPath = $allNugetFilesystemPackageVersions[0] # or a path to a file download from a webserver
 # }
 # else {
 #   # No Other version exists, edge case when a module in $ProductLifecycle = Development is published for the very first time
-#   $nextSemanticVersion = '0.0.1-alpha001'
+#   $script:nextSemanticVersion = '0.0.1-alpha001'
 # }
 
 # # Import the manifest from the highest version (including PreRelease) found across the Production / QA / Development repositories
@@ -918,7 +1029,7 @@ Task . BuildPSM1, BuildBasePSD1, BuildPackageSpecificPSD1, BuildNuSpecFromManife
 
 
 # $bumpVersionType = '' #InitialDeployment, NewMajor, ,NewMajorPreRelease, NewMinor, NewMinorPreRelease, Patch, PatchPreRelease
-# #$nextSemanticVersion
+# #$script:nextSemanticVersion
 
 # # create the version number from the bump, the highest version manifest, and the current source material
 
@@ -944,8 +1055,8 @@ Task . BuildPSM1, BuildBasePSD1, BuildPackageSpecificPSD1, BuildNuSpecFromManife
 # Update-PackageVersion -Path $ManifestOutputPath
 
 # are there any functions / cmdlets that are removed, or added, compared to the Current Manifest
-#if ($($publicFunctions | Where-Object { $_ -notin $oldPublicFunctions })) { $bumpVersionType = 'Minor' }
-#if ($($oldPublicFunctions | Where-Object { $_ -notin $publicFunctions })) { $bumpVersionType = 'Major' }
+#if ($($publicFunctions | Where-Object { $_ -notIn $oldPublicFunctions })) { $bumpVersionType = 'Minor' }
+#if ($($oldPublicFunctions | Where-Object { $_ -notIn $publicFunctions })) { $bumpVersionType = 'Major' }
 
 # Set-ModuleFunctions -Name $GeneratedManifestFilePath -FunctionsToExport $publicFunctions
 
@@ -957,6 +1068,39 @@ Task . BuildPSM1, BuildBasePSD1, BuildPackageSpecificPSD1, BuildNuSpecFromManife
 # $galleryVersion = Import-Clixml -Path "$output\version.xml"
 # if ( $version -lt $galleryVersion )
 # {
+# $version = $galleryVersion
+# }
+# Write-Output "  Stepping [$bumpVersionType] version [$version]"
+# $version = [version] (Step-Version $version -Type $bumpVersionType)
+# Write-Output "  Using version: $version"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # $version = $galleryVersion
 # }
 # Write-Output "  Stepping [$bumpVersionType] version [$version]"

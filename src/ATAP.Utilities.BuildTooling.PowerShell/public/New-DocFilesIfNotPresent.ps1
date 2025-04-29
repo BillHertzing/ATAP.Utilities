@@ -52,7 +52,7 @@ Function New-DocFilesIfNotPresent {
   # }
   #endregion FunctionProcessBlock
 
-  #region FunctionEndBlock 
+  #region FunctionEndBlock
   ########################################
   END {
 	   Write-Verbose "DocsPath is $DocsPath, error if not present"
@@ -69,7 +69,7 @@ Function New-DocFilesIfNotPresent {
       }
     }
 
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Ending $($MyInvocation.MyCommand)"
   }
   #endregion FunctionEndBlock
 }

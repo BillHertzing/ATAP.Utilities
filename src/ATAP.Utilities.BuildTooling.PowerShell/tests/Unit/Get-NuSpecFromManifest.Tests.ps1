@@ -4,14 +4,56 @@
 # Install-Module -Name Pester -Force -SkipPublisherCheck
 
 Describe 'Get-NuSpecFromManifest' {
-  # Mock the functions used within Get-NuSpecFromManifest
-  Mock -CommandName Test-Path -MockWith { return $true }
-  Mock -CommandName Test-ModuleManifest -MockWith { return @{ Name = 'TestModule'; Description = 'Test Description'; Version = '1.0.0'; Author = 'Test Author'; CompanyName = 'Test Company'; Copyright = 'Test Copyright'; ModuleBase = 'C:\TestModule' } }
-  Mock -CommandName Get-Content -MockWith { return @{} }
-  Mock -CommandName Set-Content -MockWith { return $null }
-  Mock -CommandName Remove-Item -MockWith { return $null }
-  Mock -CommandName Write-PSFMessage -MockWith { return $null }
+  BeforeAll {
+    $message = 'Starting BeforeAll in Get-NuSpecFromManifest.tests.ps1'
+    Write-PSFMessage -Level Debug -Message $message -Tag 'Trace', 'Tests'
 
+    $message = "cwd = ${pwd}; PSCommandPath = $PSCommandPath "
+    Write-PSFMessage -Level Debug -Message $message -Tag 'Trace', 'Tests'
+    function Get-ModuleBaseDirectory {
+      param (
+        [string] $initialDirectory = [System.IO.DirectoryInfo]::new((Get-Location).Path),
+        [string] $sourceName = 'public',
+        [string] $commonTestsDirectoryName = 'tests'
+      )
+      $currentDir = $initialDirectory
+      $commonParentDirectory = $null
+      while ( $null -ne $currentDir) {
+        # Look for peer $testsName and $sourceName directories
+        if ((Test-Path -Path "$currentDir\$sourceName") -and (Test-Path -Path "$currentDir\$commonTestsDirectoryName")) {
+          $commonParentDirectory = $currentDir
+          break
+        } else {
+          #move up the directory tree
+          $currentDir = (Get-Item -Path $currentDir).Parent
+        }
+      }
+      if ( $null -eq $commonParentDirectory) {
+        $message = "searching upward from $initialDirectory found no parent having both $sourceName and $commonTestsDirectoryName"
+        Write-PSFMessage -Level Error -Message $message
+        throw $message
+      }
+      # $currentdir is the path to the source of the module having this test
+      $message = "DevelopmentModulePath = $currentDir"
+      Write-PSFMessage -Level Debug -Message $message -Tag 'Trace', 'Tests'
+      # return the current directory
+      $currentdir
+    }
+    # Decide the place from which to load the module
+    # 1) The module is in prerelease;
+    # 1) the module path is provided when the by the developer
+
+    # the module under development may be prerelease, so must use absolute path
+    Import-Module -Name ${Get-ModuleBaseDirectory}
+
+    # Mock the functions used within Get-NuSpecFromManifest
+    Mock -CommandName Test-Path -MockWith { return $true }
+    Mock -CommandName Test-ModuleManifest -MockWith { return @{ Name = 'TestModule'; Description = 'Test Description'; Version = '1.0.0'; Author = 'Test Author'; CompanyName = 'Test Company'; Copyright = 'Test Copyright'; ModuleBase = 'C:\TestModule' } }
+    Mock -CommandName Get-Content -MockWith { return @{} }
+    Mock -CommandName Set-Content -MockWith { return $null }
+    Mock -CommandName Remove-Item -MockWith { return $null }
+    Mock -CommandName Write-PSFMessage -MockWith { return $null }
+  }
   Context 'Function Exists' {
     It 'Should exist' {
       Get-Command -Name Get-NuSpecFromManifest | Should -Not -BeNullOrEmpty

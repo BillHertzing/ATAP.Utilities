@@ -46,7 +46,7 @@ Function Invoke-MSBuildWithLists {
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
     # default values for settings
     $settings = @{
       Path                       = './'
@@ -89,7 +89,7 @@ Function Invoke-MSBuildWithLists {
   #region FunctionProcessBlock
   ########################################
   PROCESS {
-    Write-Verbose -Message "processing $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "processing $($MyInvocation.MyCommand)"
 
     # Crate an object to hold the rsults for each pipeline input
     $results = New-Object PSObject -Property @{
@@ -129,7 +129,7 @@ Function Invoke-MSBuildWithLists {
   #region FunctionEndBlock
   ########################################
   END {
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Ending $($MyInvocation.MyCommand)"
   }
   #endregion FunctionEndBlock
 }

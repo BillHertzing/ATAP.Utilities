@@ -12,9 +12,9 @@ function Invoke-GitPostCommitHook {
   $VerbosePreference = 'Continue' # Continue  SilentlyContinue
   $DebugPreference = 'Continue'
 
-  Write-PSFMessage -Level Debug -Message "Starting $($MyInvocation.Mycommand)"
+  Write-PSFMessage -Level Debug -Message "Starting $($MyInvocation.MyCommand)"
   Write-PSFMessage -Level Debug -Message "Current Working Directory = $(Get-Location)"
-  # Write-Debug ("Environment Variables at start of $($MyInvocation.Mycommand) = " + [Environment]::NewLine + $(Write-EnvironmentVariablesIndented 0 2 ))
+  # Write-Debug ("Environment Variables at start of $($MyInvocation.MyCommand) = " + [Environment]::NewLine + $(Write-EnvironmentVariablesIndented 0 2 ))
 
   $userName = [System.Environment]::GetEnvironmentVariable('USERNAME')
   Write-PSFMessage -Level Debug -Message "Environment Variable USERNAME = $userName"
@@ -22,7 +22,7 @@ function Invoke-GitPostCommitHook {
   # last portion of current location
   $moduleName = Split-Path -Path $(Get-Location) -Leaf
   Write-PSFMessage -Level Debug -Message "Environment Variable MODULE_NAME = $moduleName"
-  $moduleName = [System.Environment]::SetEnvironmentVariable('MODULE_NAME',$moduleName)
+  $moduleName = [System.Environment]::SetEnvironmentVariable('MODULE_NAME', $moduleName)
 
   $jenkinsURL = [Environment]::GetEnvironmentVariable($global:configRootKeys['JENKINS_URLConfigRootKey'])
   Write-PSFMessage -Level Debug -Message "Environment Variable JENKINS_URL = $jenkinsURL"
@@ -84,7 +84,7 @@ function Invoke-GitPostCommitHook {
   $headers = New-Object 'System.Collections.Generic.Dictionary[[String],[String]]'
   $headers.Add('Authorization', $authorization)
 
-  ### This commentred block is good example for using Authorization toget a crumb.
+  ### This commented block is good example for using Authorization toget a crumb.
   # $headers.Add('Authorization', $parameters.authorization)
   # $headers.Add('Content-Type', 'application/json')
   # $qs_data = @{}
@@ -130,8 +130,7 @@ function Invoke-GitPostCommitHook {
     try {
       $result = Invoke-Expression $command
       Write-Debug "result = $result"
-    }
-    catch {
+    } catch {
       $resultException = $_.Exception
       $ResultExceptionMessage = $resultException.Message
       Write-Error $ResultExceptionMessage

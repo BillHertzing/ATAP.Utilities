@@ -39,7 +39,7 @@ Function Update-PackageVersion {
   )
   ########################################
   BEGIN {
-    $message = "Starting Function $($MyInvocation.Mycommand) in module %ModuleName%"
+    $message = "Starting Function $($MyInvocation.MyCommand) in module %ModuleName%"
     Write-PSFMessage -Level Debug -Message $message -Tag 'Trace'
     $preReleasePatternExtractor = '(?<PreReleasePrefix>.*?)(?<PreReleaseNumber>\d{1,4})$'
     $results = @{}
@@ -67,7 +67,7 @@ Function Update-PackageVersion {
         }
         # Add one to the preReleaseNumber
         $newPreReleaseNumber = $preReleaseNumber + 1
-        # Reassmeble the PreRelease string
+        # Reassemble the PreRelease string
         $newPreReleaseStr = $preReleasePrefixStr + $newPreReleaseNumber.ToString($PreReleaseNumberFormat)
         if ($PSCmdlet.ShouldProcess(($path, "having current preReleasestring $preReleasePrefixStr $preReleaseNumber"), "Update-ModuleManifest -Path $path  -ModuleData $newPreReleaseStr")) {
           # Update the module manifest
@@ -101,9 +101,9 @@ Function Update-PackageVersion {
   }
   ########################################
   END {
-    $message = "Ending $($MyInvocation.Mycommand)"
+    $message = "Ending $($MyInvocation.MyCommand)"
     Write-PSFMessage -Level Debug -Message $message -Tag 'Trace'
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Ending $($MyInvocation.MyCommand)"
   }
 }
 #endregion Update-PackageVersion

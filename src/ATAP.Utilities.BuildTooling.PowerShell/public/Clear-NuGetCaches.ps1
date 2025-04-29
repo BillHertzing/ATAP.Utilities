@@ -39,7 +39,7 @@ Function Clear-NuGetCaches {
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
     Write-Verbose -Message "Caches may be locked! Stop any IDEs or CI processes. )"
   }
   #endregion FunctionBeginBlock
@@ -81,7 +81,7 @@ Function Clear-NuGetCaches {
     } else {
        Write-Output "Either $path does not exist or $path does not contain the case-insensitive substring nuget!"
     }
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Ending $($MyInvocation.MyCommand)"
   }
   #endregion FunctionEndBlock
 }

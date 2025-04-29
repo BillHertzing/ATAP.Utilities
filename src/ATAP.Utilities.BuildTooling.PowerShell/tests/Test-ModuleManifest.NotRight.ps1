@@ -33,7 +33,7 @@ Describe ' Powershell Manifest Unit Tests' -Tag 'UnitTests' {
 
   # opinionated. For a powershell module, the Module name is the tests subdirectory's parent name
   BeforeAll {
-    $message = 'Starting BeforeAll in '
+    $message = 'Starting BeforeAll in Test-ModuleManifest.Tests.ps1'
     Write-PSFMessage -Level Important -Message $message -Tag 'Trace', 'UnitTests'
     # The VSC test runner starts in the module's workspace directory
     $cwd = Get-Location

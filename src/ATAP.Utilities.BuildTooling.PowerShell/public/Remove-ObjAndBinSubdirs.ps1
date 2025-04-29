@@ -39,7 +39,7 @@ Function Remove-ObjAndBinSubdirs {
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
     $dirsToDelete = 'obj', 'bin'
     Write-Verbose "path = $path"
     # validate path exists

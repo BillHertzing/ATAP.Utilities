@@ -60,7 +60,7 @@ Function Confirm-RepositoryPackageSource {
   PROCESS {
     if (-not $(Get-PackageSource -Name $RepositoryPackageSourceName)) {
       # if it doesn't exists, register it
-      # ToDo - require an admin role and eleveted permisions to register one
+      # ToDo - require an admin role and elevated permissions to register one
       # ToDo : get ProviderName and provider repositorylifecycle from the TBD powershell class
       $providerName = ''
       $ProviderLifecycle = ''
@@ -100,11 +100,11 @@ Function Confirm-RepositoryPackageSource {
       "$($global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']][$RepositoryPackageSourceName])"
       if (-not $(Register-PackageSource -Force -ForceBootstrap -Trusted -Name $RepositoryPackageSourceName -ProviderName $providerName -Location $($global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']][$RepositoryPackageSourceName]))) {
         # ToDo better error logging
-      Write-PSFMessage -Level Error -Message "RepositoryPackageSourceName Not Found; RepositoryPackageSourceName = $RepositoryPackageSourceName" -Tag 'Validation'
-      # Throw Error
-      throw "RepositoryPackageSourceName Not Found; RepositoryPackageSourceName = $RepositoryPackageSourceName"
+        Write-PSFMessage -Level Error -Message "RepositoryPackageSourceName Not Found; RepositoryPackageSourceName = $RepositoryPackageSourceName" -Tag 'Validation'
+        # Throw Error
+        throw "RepositoryPackageSourceName Not Found; RepositoryPackageSourceName = $RepositoryPackageSourceName"
+      }
     }
-  }
 
   }
   #endregion FunctionProcessBlock

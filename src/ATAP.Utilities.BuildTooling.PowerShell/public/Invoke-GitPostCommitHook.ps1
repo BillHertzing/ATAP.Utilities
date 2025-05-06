@@ -48,12 +48,12 @@ function Invoke-GitPostCommitHook {
   $proxyAddress = 'http://127.0.0.1:8888'
   Write-Verbose ('Environment Variable PROXY_ADDRESS = ' + $proxyAddress)
 
-  # ToDo: User Powershell Secrets module instead of environment varibles (which may get logged)
+  # ToDo: User Powershell Secrets module instead of environment variables (which may get logged)
   $jenkinsAuthTokenForScript = [System.Environment]::GetEnvironmentVariable('JenkinsAuthTokenForScript')
   $jenkinsAuthTokenForScript = 'BuildFromScriptAuthToken'
   Write-Verbose ('Environment Variable jenkinsAuthTokenForScript = ' + $jenkinsAuthTokenForScript)
 
-  # ToDo: User Powershell Secrets module instead of environment varibles (which may get logged)
+  # ToDo: User Powershell Secrets module instead of environment variables (which may get logged)
   $jenkinsUserAPIToken = [System.Environment]::GetEnvironmentVariable('jenkinsUserAPIToken')
   $jenkinsUserAPIToken = '118c73f03d6e9eef937fcf25c757a1a3ac'
   Write-Verbose ('Environment Variable jenkinsUserAPIToken = ' + $jenkinsUserAPIToken)
@@ -84,7 +84,7 @@ function Invoke-GitPostCommitHook {
   $headers = New-Object 'System.Collections.Generic.Dictionary[[String],[String]]'
   $headers.Add('Authorization', $authorization)
 
-  ### This commented block is good example for using Authorization toget a crumb.
+  ### This commented block is good example for using Authorization to get a crumb.
   # $headers.Add('Authorization', $parameters.authorization)
   # $headers.Add('Content-Type', 'application/json')
   # $qs_data = @{}
@@ -130,7 +130,8 @@ function Invoke-GitPostCommitHook {
     try {
       $result = Invoke-Expression $command
       Write-Debug "result = $result"
-    } catch {
+    }
+    catch {
       $resultException = $_.Exception
       $ResultExceptionMessage = $resultException.Message
       Write-Error $ResultExceptionMessage

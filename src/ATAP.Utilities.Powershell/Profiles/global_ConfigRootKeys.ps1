@@ -20,12 +20,15 @@ $global:configRootKeys = @{
   'ChocolateyPackagesConfigRootKey'                                                              = 'ChocolateyPackages'
   # Ditto Clipboard Manager Settings
   'DittoDBPathConfigRootKey'                                                                     = 'DittoDBPath'
+  # Erlang settings
   'ErlangHomeDirConfigRootKey'                                                                   = 'ErlangHomeDir'
+  # GIT settings
   'GIT_CONFIG_GLOBALConfigRootKey'                                                               = 'GIT_CONFIG_GLOBAL'
   'GitExePathConfigRootKey'                                                                      = 'GitExePath'
+  # JAVA interpreter executable settings
   'JavaInstallDirRelativeSubdirectoryConfigRootKey'                                              = 'JavaInstallDirRelativeSubdirectory'
   'JavaExePathConfigRootKey'                                                                     = 'JavaExePath'
-  # Jenkins CI/CD confguration keys
+  # Jenkins CI/CD configuration keys
   'JenkinsNodeRolesConfigRootKey'                                                                = 'JenkinsNodeRoles'
   # Jenkins Environment Variables
   # JENKINS_HOME applies only to jenkins Controller nodes
@@ -34,6 +37,11 @@ $global:configRootKeys = @{
   'JENKINS_URLConfigRootKey'                                                                     = 'JENKINS_URL'
   'JENKINS_USER_IDConfigRootKey'                                                                 = 'JENKINS_USER_ID'
   'JENKINS_API_TOKENConfigRootKey'                                                               = 'JENKINS_API_TOKEN'
+  # ChatGPT settings
+  'CHATGPT_URLConfigRootKey'                                                                     = 'CHATGPT_URL'
+  'CHATGPT_USER_IDConfigRootKey'                                                                 = 'CHATGPT_USER_ID'
+  'CHATGPT_API_TOKENConfigRootKey'                                                               = 'CHATGPT_API_TOKEN'
+
   'ChocolateyInstallDirConfigRootKey'                                                            = 'ChocolateyInstall'
   'ChocolateyBinDirConfigRootKey'                                                                = 'ChocolateyBinDir'
   'ChocolateyLibDirConfigRootKey'                                                                = 'ChocolateyLibDir'

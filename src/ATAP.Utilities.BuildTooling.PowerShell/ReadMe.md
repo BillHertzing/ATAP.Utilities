@@ -114,22 +114,24 @@ We then create symbolic links from the files in this repository to symblinks tha
 In every new repository, after running `git init`, run these commands (as an administrator) in the root folder of the repository:
 
 ```Powershell
-  $null = New-Item -ItemType Directory -Force '.vscode'
-  # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
-  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\tasks.json"  -symbolicLinkPath ".\.vscode\tasks.json" -force
-  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch.json"  -symbolicLinkPath ".\.vscode\launch.json" -force
-  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\extensions.json"  -symbolicLinkPath ".\.vscode\extensions.json" -force
-  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\cspell.json"  -symbolicLinkPath ".\.vscode\cspell.json" -force
+# use a directory junction instead of individual symlinks
+$null = New-Item -Path ./.vscode -ItemType Junction -Target C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode
+  # $null = New-Item -ItemType Directory -Force '.vscode'
+  # # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
+  # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\tasks.json"  -symbolicLinkPath ".\.vscode\tasks.json" -force
+  # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch.json"  -symbolicLinkPath ".\.vscode\launch.json" -force
+  # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\extensions.json"  -symbolicLinkPath ".\.vscode\extensions.json" -force
+  # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\cspell.json"  -symbolicLinkPath ".\.vscode\cspell.json" -force
 ```
 
-## Symbolic Links for Prettier formatting rules, CSpell, eslint rules, building Powershe;ll; modules (Invoke-Build) and Mocha
+## Symbolic Links for Prettier formatting rules, CSpell, eslint rules, building Powershell; modules (Invoke-Build) and Mocha
 
 The organization has multiple GIT repositories. Every repository that uses Visual Studio Code as the IDE, needs a `.prettierrc.yml` with formatting rules and an `.eslintrc.js` with linting rules for Javascript at the repository base. We use the YAML format in order to support comments in the file.
 
 Every repository that uses Visual Studio Code as the IDE, needs a `cspell.json` with spelling rules ToDo: We use the YAML format in order to support comments in the file.
 
-EveryRepository that creates Powershell modules in a sub-project needs a `module.build.ps1` file. We create a symbolic link in the repository root to a copy of this file that is present in the module `ATAP.Utilities.Buildtooling.Powershell`. Installing this module brings in a read-only copy of that file. We create a symbolic link to this file
-ToDo: until the buildtooling package is created and installed, symblink to the source code
+Every Repository that creates Powershell modules in a sub-project needs a `module.build.ps1` file. We create a symbolic link in the repository root to a copy of this file that is present in the module `ATAP.Utilities.Buildtooling.Powershell`. Installing this module brings in a read-only copy of that file. We create a symbolic link to this file
+ToDo: until the buildtooling package is created and installed, symlink to the source code
 
 Every repository that uses Mocha to test Javascript code, including repositories for VSC Extensions, needs a .mocharc.mjs file.
 
@@ -138,16 +140,230 @@ In every new repository, after creating the .vscode directory and its contents, 
 ```Powershell
   # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.prettierrc.yml"  -symbolicLinkPath ".\.prettierrc.yml" -force
+  # Every projects in a repository needs a ReadMe.md
+  'ReadMe file for ' | write-file -path './ReadMe.md'
+
   # this command is only needed for repositories that have projects that use javascript or typescript
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.eslintrc.js"  -symbolicLinkPath ".\.eslintrc.js" -force
   # this command only for repositories that use mocha for testing JavaScript
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.mocharc.yaml"  -symbolicLinkPath ".\.mocharc.yaml" -force
-  # this command is only needed for repositories that have projects that create Powershell modules.
-  New-SymbolicLink -symbolicLinkPath './module.build.ps1' -targetPath "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\module.build.ps1"
-
 
 ```
 
+### Additional project-specific directories
+
+Projects are created under the 'src' directory of the repository. Projects are individual code workspaces.
+Put the project name into a local setting
+
+```Powershell
+  # set the local project name
+  $projectName = 'ATAP.Console.QueryChatGPT.Powershell'
+  # set the local project full path
+
+  $projectDirectory = . pwd
+  # the code-workspace file
+@'
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "dotnet-test-explorer.testProjectPath": "{workspacefolder}/tests",
+    "pester.pesterModulePath": "{workspacefolder}",
+    "powershell.pester.codeLens": false,
+    "powershell.pester.useLegacyCodeLens": false,
+    "powershell.pester.outputVerbosity": "Diagnostic",
+    "powershell.codeFormatting.autoCorrectAliases": true,
+    "powershell.codeFormatting.avoidSemicolonsAsLineTerminators": true,
+    "powershell.codeFormatting.newLineAfterCloseBrace": false,
+    "powershell.codeFormatting.newLineAfterOpenBrace": false,
+    "powershell.codeFormatting.pipelineIndentationStyle": "IncreaseIndentationForFirstPipeline",
+    "powershell.codeFormatting.trimWhitespaceAroundPipe": true,
+    "powershell.codeFormatting.useConstantStrings": true,
+    "powershell.codeFormatting.useCorrectCasing": true,
+    "powershell.codeFormatting.whitespaceBetweenParameters": true,
+    "powershell.enableProfileLoading": true
+  }
+}
+'@ | Out-File -FilePath "./$projectName.code-workspace" # UTF8 encoding via a parameter default
+```
+
+```Powershell
+  # the subdirectory where all generated files are placed
+  $null = New-Item -ItemType Directory -Force $global:settings[$global:configRootKeys['GeneratedRelativePathConfigRootKey']];
+  # the subdirectory for documentation source
+  $null = New-Item -ItemType Directory -Force './Documentation';
+  # The following are for Powershell specific projects
+  $null = New-Item -ItemType Directory -Force './public';
+  $null = New-Item -ItemType Directory -Force './private';
+  # Powershell tests are found as peers of powershell private and public subdirectories
+  $null = New-Item -ItemType Directory -Force './tests';
+  # these commands are only needed for repositories that have projects that create Powershell modules.
+# ToDo: use an installed package path for the latest (?) BuildTooling.Powershell module
+  New-SymbolicLink -Force -symbolicLinkPath './module.build.ps1' -targetPath "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\module.build.ps1";
+  $null = New-Item -ItemType Directory -Force './Releases';
+  "ReadMe file for $projectName" | Out-File -FilePath './ReadMe.md'
+  "Release Notes file for $projectName" | Out-File -FilePath './ReleaseNotes.md'
+# Create the development .psm1 file
+# ToDo: Make this a template somewhere...
+@'
+# ToDo : Module comment-based help
+
+# get the fileIO info for each file in the public and private subdirectories
+$publicFunctions = @(Get-ChildItem -Path $PSScriptRoot\public\*.ps1 -ErrorAction SilentlyContinue)
+
+$privateFunctions = @(Get-ChildItem -Path $PSScriptRoot\private\*.ps1 -ErrorAction SilentlyContinue)
+$allFunctions = $publicFunctions + $privateFunctions
+# Dot-source the public and private files.
+foreach ($import in $allFunctions) {
+    try {
+        Write-Verbose "Importing $($import.FullName)"
+        . $import.FullName
+    } catch {
+        Write-Error "Failed to import function $($import.FullName): $_"
+    }
+}
+# list the public cmdlet and function names for including into a .psd1 file (ToDo: automate the .psd1 file creation as part of the CI/CD/CD pipeline)
+# list the private cmdlet names for including into a .psd1 file (ToDo: automate the .psd1 file creation as part of the CI/CD/CD pipeline)
+'@ |Out-File -FilePath "./$projectName.psm1"
+
+# module manifest file ().psd1 file)
+# a new guid in the proper format for a .psd1 file
+$newGuid = [Guid]::NewGuid().ToString().ToUpper()
+# ToDo: make this come ro a template somewhere
+@"
+#
+# Module manifest for module 'ATAP.Utilities.Powershell'
+
+@{
+
+# Script module or binary module file associated with this manifest.
+RootModule = "$projectName.psm1"
+
+# Version number of this module.
+ModuleVersion = '0.0.1'
+
+# Supported PSEditions
+CompatiblePSEditions = 'Desktop', 'Core'
+
+# ID used to uniquely identify this module
+GUID = $newGuid
+
+# Author of this module
+Author = 'Bill Hertzing for ATAPUtilities.org'
+
+# Company or vendor of this module
+CompanyName = 'ATAPUtilities.org'
+
+# Copyright statement for this module
+Copyright = '(c) 2018 - 2025  Bill Hertzing . All rights reserved. All code is under the MIT license'
+
+# Description of the functionality provided by this module
+# Description = ''
+
+# Minimum version of the PowerShell engine required by this module
+PowerShellVersion = '5.1'
+
+# Name of the PowerShell host required by this module
+# PowerShellHostName = ''
+
+# Minimum version of the PowerShell host required by this module
+# PowerShellHostVersion = ''
+
+# Minimum version of Microsoft .NET Framework required by this module
+# DotNetFrameworkVersion = ''
+
+# Minimum version of the common language runtime (CLR) required by this module
+# CLRVersion = ''
+
+# Processor architecture (None, X86, Amd64) required by this module
+# ProcessorArchitecture = ''
+
+# Modules that must be imported into the global environment prior to importing this module
+# RequiredModules = @()
+
+# Assemblies that must be loaded prior to importing this module
+# RequiredAssemblies = @()
+
+# Script files (.ps1) that are run in the caller's environment prior to importing this module.
+# ScriptsToProcess = @()
+
+# Type files (.ps1xml) to be loaded when importing this module
+# TypesToProcess = @()
+
+# Format files (.ps1xml) to be loaded when importing this module
+# FormatsToProcess = @()
+
+# Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
+# NestedModules = @()
+
+# Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
+FunctionsToExport = '*'
+
+# Cmdlets to export from this module
+CmdletsToExport = '*'
+
+# Variables to export from this module
+VariablesToExport = '*'
+
+# Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
+AliasesToExport = @()
+
+# DSC resources to export from this module
+# DscResourcesToExport = @()
+
+# List of all modules packaged with this module
+# ModuleList = @()
+
+# List of all files packaged with this module
+# FileList = @()
+
+# Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
+PrivateData = @{
+
+    PSData = @{
+
+        # Tags applied to this module. These help with module discovery in online galleries.
+        # Tags = @()
+
+        # A URL to the license for this module.
+        # LicenseUri = ''
+
+        # A URL to the main website for this project.
+        # ProjectUri = ''
+
+        # A URL to an icon representing this module.
+        # IconUri = ''
+
+        # ReleaseNotes of this module
+        # ReleaseNotes = ''
+
+        # Prerelease string of this module
+        # Prerelease = 'Alpha001'
+
+        # Flag to indicate whether the module requires explicit user acceptance for install/update/save
+        # RequireLicenseAcceptance = $false
+
+        # External dependent modules of this module
+        # ExternalModuleDependencies = @()
+
+    } # End of PSData hashtable
+
+} # End of PrivateData hashtable
+
+# HelpInfo URI of this module
+# HelpInfoURI = ''
+
+# Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
+# DefaultCommandPrefix = ''
+
+}
+
+"@ |Out-File -FilePath "./$projectName.psd1"
+
+```
 ### project-specific symbolic links
 
 #### VSC Extension development symbolic links

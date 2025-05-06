@@ -19,7 +19,7 @@ param(
   # These are the providers for which the script will create a package
   # ToDo: replace with an enumeration type
   , [ValidateSet('NuGet', 'PowershellGet', 'ChocolateyGet')]
-  [string[]]$providerNames = @('NuGet', 'PowershellGet', 'ChocolateyGet')
+  [string[]]$providerNames = @('NuGet', 'ChocolateyGet') #'PowershellGet',
   # These are the lifecycle stages for which the script will create a package
   # ToDo: replace with an enumeration type
   , [ValidateSet('Development', 'QualityAssurance', 'Production')]
@@ -176,7 +176,7 @@ Enter-Build {
   # ToDo: replace 'ReadMe.md' with a string constant ($global:settings)
   $script:sourceReadMePath = Join-Path $moduleRoot 'ReadMe.md'
   # ToDo: replace 'ReleaseNotes.md' with a string constant ($global:settings)
-  $script:script:sourceReleaseNotesPath = Join-Path $moduleRoot 'ReleaseNotes.md'
+  $script:sourceReleaseNotesPath = Join-Path $moduleRoot 'ReleaseNotes.md'
   Write-PSFMessage -Level Debug -Message "sourceManifestPath = $sourceManifestPath; GeneratedModuleFilePath = $GeneratedModuleFilePath"
   Write-PSFMessage -Level Debug -Message "ModuleRoot = $ModuleRoot; moduleName = $moduleName"
   # Write-PSFMessage -Level Debug -Message "sourceFiles = $sourceFiles"
@@ -538,7 +538,7 @@ Task GenerateReadMeMarkdownForPSModule @{
 
 
 Task GenerateReleaseNotesMarkdownForPSModule @{
-  Inputs  = { $script:script:sourceReleaseNotesPath }
+  Inputs  = { $script:sourceReleaseNotesPath }
   Outputs = {
     # ToDo: replace 'ReleaseNotes.md' with a string constant ($global:settings)
     foreach ($destination in $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory ))) {
@@ -805,8 +805,8 @@ Task PublishPSPackage @{
 
         $moduleNameAndVersion = $moduleName + '.' + $currentManifest.ModuleVersion
 
-        $script:RepositoryStorageMechanisms | ForEach-Object { $RepositoryStorageMechanism = $_
-
+        $script:RepositoryStorageMechanisms | ForEach-Object {
+          $RepositoryStorageMechanism = $_
           # Lookup the details of the appropriate repository to publish to
           # ToDO: use global:settings or global:configrootKeys
           $PSRepositoryKey = 'Repository' + $ProviderName + $RepositoryStorageMechanism + $PackageLifecycle + 'Package'
@@ -822,6 +822,11 @@ Task PublishPSPackage @{
                   # Location of the package to be published
                   $packageName = $moduleNameAndVersion + '.nupkg'
                   $packagePath = Join-Path $GeneratedFullPackageDistributionDirectory $packageName
+                  # If the package already exists at the feed, it must be removed first
+                  $repositoryTargetPath = Join-Path $PSRepositoryFeed $moduleName $currentManifest.ModuleVersion
+                  if (Test-Path $repositoryTargetPath) {
+                    Remove-Item $repositoryTargetPath -Force -Recurse
+                  }
                   # use the .Net object
                   $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo
                   $processStartInfo.Arguments = 'add', "$packagePath", '-source', $PSRepositoryFeed
@@ -834,37 +839,54 @@ Task PublishPSPackage @{
                   $process.Start() | Out-Null
                   $process.WaitForExit()
                   # Capture stdout and stderr
-                  $stdout = $process.StandardOutput.ReadToEnd()
-                  $stderr = $process.StandardError.ReadToEnd()
-                  $message = "Nuget add stdout : $stdout"
-                  Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
-                  $message = "Nuget add stderr : $stderr"
-                  Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+                  # $stdout = $process.StandardOutput.ReadToEnd()
+                  # $message =  $stdout"
+                  Write-PSFMessage -Level Debug -Message "stdout from Nuget add : $($process.StandardOutput.ReadToEnd())" -Tag 'Invoke-Build', 'PublishPSPackage', 'FileSystem'
+                  # $stderr = $process.StandardError.ReadToEnd()
+                  # $message = "stderr from Nuget add : $stderr"
+                  Write-PSFMessage -Level Debug -Message "stderr from Nuget add : $($process.StandardError.ReadToEnd())" -Tag 'Invoke-Build', 'PublishPSPackage', 'FileSystem'
                 }
                 'PowershellGet' {
-                  $message = Publish-Module -Path $relativeModulePath -Repository $PSRepositoryFeed -NuGetApiKey $nuGetApiKey
-                  $message = 'Publish-Module  returned:' + $message
+                  $packageName = $moduleNameAndVersion + '.nupkg'
+                  $packagePath = Join-Path $GeneratedFullPackageDistributionDirectory $packageName
+
+                  $result = '' # Publish-Module -Path $packagePath -Repository $PSRepositoryFeed -NuGetApiKey $nuGetApiKey
+                  $message = 'Publish-Module  returned:' + $result
                   Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
                 }
                 'ChocolateyGet' {
-                  $message = ''
-                  $message = 'ChocolateyGet publish returned:' + $message
+                  $result = ''
+                  $message = 'ChocolateyGet publish returned:' + $result
                   Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
                 }
               }
-              $PSRepositoryFeed = 'LocalDevelopmentPSRepository'
 
             }
             'QualityAssuranceWebServer' {
+              # Publish all packages to the QualityAssuranceWebServer repositories
+              $message = "Publishing to QualityAssuranceWebServer, PSRepositoryFeed = $PSRepositoryFeed"
+              Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage' 'QualityAssuranceWebServer'
+              switch ($providerNames) {
+                'NuGet' {
+                  # Location of the package to be published
+                  $packageName = $moduleNameAndVersion + '.nupkg'
+                  $packagePath = Join-Path $GeneratedFullPackageDistributionDirectory $packageName
+
+                  Write-PSFMessage -Level Debug -Message "stderr from Nuget add : $process.StandardError.ReadToEnd()" -Tag 'Invoke-Build', 'PublishPSPackage', 'QualityAssuranceWebServer'
+                }
+                'PowershellGet' {
+                  Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+                }
+                'ChocolateyGet' {
+                }
+              }
               $PSRepositoryFeed = 'InternalWebServerPSRepository'
             }
             'ProductionWebServer' {
+              # publish production packages for the PublicWebServer to a "FinalInspectionStagingArea"
               $PSRepositoryFeed = 'PublicWebServerPSRepository'
             }
           }
-          # Publish all packages to the FileSystem repositories
-          # Publish all packages to the QualityAssuranceWebServer
-          # publish production packages for the PublicWebServer to a "FinalInspectionStagingArea"
         }
       }
     }

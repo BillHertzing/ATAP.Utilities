@@ -563,6 +563,6 @@
     "powershell.pester.codeLens": false,
     "powershell.pester.useLegacyCodeLens": false,
     "powershell.pester.outputVerbosity": "Diagnostic",
-   
+    "cSpell.words": ["ATAP"]
   }
 }

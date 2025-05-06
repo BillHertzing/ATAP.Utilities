@@ -31,8 +31,8 @@ $VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
 Write-PSFMessage -Level Debug -Message ('Starting CurrentUsersAllHostsV7CoreProfile.ps1')
 
 #ToDo: document expected values when run under profile, Module cmdlet/function, script.
-Write-PSFMessage -Level Debug -Message  ("WorkingDirectory = $pwd")
-Write-PSFMessage -Level Debug -Message  ("PSScriptRoot = $PSScriptRoot")
+Write-PSFMessage -Level Debug -Message ("WorkingDirectory = $pwd")
+Write-PSFMessage -Level Debug -Message ("PSScriptRoot = $PSScriptRoot")
 
 ########################################################
 # Individual PowerShell Profile
@@ -51,10 +51,45 @@ $storedInitialDir = Get-Location
 # TBD
 
 ##############################
+# Shared Powershell History
+# ChatGPT Prompt to explain: are there seperate command histories between pwsh and the powershell extension for VSC?
+##############################
+# Location where the command history is stored. Place it in a location that is sync'd between machines $global:settings['CloudBasePath']
+# ToDo:  use a global config root key and a global settings,
+# ToDo: test for history presence and create if not present (edge case for first use on a new shared location)
+# Number of commands to keep in the commandHistory
+$global:sharedTimestampedHistoryPath = Join-Path $global:settings['CloudBasePath'] 'whertzing' 'PowerShell', 'History', 'SharedTimestampedHistory.txt'
+$global:sharedPlainHistoryPath = Join-Path $global:settings['CloudBasePath'] 'whertzing' 'PowerShell', 'History', 'SharedPlainHistory.txt'
+# Commands to ignore (those issued by PowershellPro when loading into VSC)
+$global:CommandBlockPatterns = @(
+  'Start-PoshToolsServer',
+  'Import-Module .*powershellprotools'
+  'thisisatest'
+)
+# Register event hook for each executed command
+$null = Register-EngineEvent -SourceIdentifier PSReadLine.OnCommandExecuted -Action {
+  foreach ($pattern in $global:CommandBlockPatterns) {
+    if ($command -match $pattern) {
+      return  # Skip logging or saving
+    }
+  }
+  $timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+  $command = $event.Message
+  # ToDo: not working, just the message is appearing, not the
+  $hostLine = "$timestamp`t$global:HostName`t$command"
+  # Save to the shared timestamped history file
+  Add-Content -Path $global:sharedTimestampedHistoryPath -Value $hostLine
+  # Save to the shared plain history file
+  Add-Content -Path $global:sharedPlainHistoryPath -Value $command
+}
+# maximum number of commands to keep in the commandHistory
+$global:MaxHistoryCount = 5000
+# Tell PSReadline to use the shared plain history file
+Set-PSReadlineOption -HistorySavePath $global:sharedPlainHistoryPath
+
+##############################
 # Console Settings
 ##############################
-# Number of commands to keep in the commandHistory
-$global:MaxHistoryCount = 1000
 
 # Size of the console's user interface
 Function ConsoleSettings {
@@ -259,7 +294,53 @@ Function Show-context {
 
 # Set an alias to tail the latest PSFramework log file
 function TailLatestPSFrameworkLog {
-  (Get-Content ((Get-ChildItem C:\Users\whertzing\AppData\Roaming\PowerShell\PSFramework\Logs) | Sort-Object -Property 'lastwritetime' -desc)[0] )[-100..-1]
+  param(
+    [int] $lines = 100
+    , [string[]] $includeTags = @('Invoke-Build')
+    , [string[]] $excludeTags = @()
+    , [switch] $alltags
+  )
+  $headers = @(
+    'HostName',
+    'Timestamp',
+    'LogLevel',
+    'Message',
+    'Category',
+    'ScriptName',
+    'FunctionName',
+    'FilePath',
+    'LineNumber',
+    'Tags',
+    'Unused1',
+    'Unused2',
+    'CorrelationId'
+  )
+  $lastFile = ((Get-ChildItem C:\Users\whertzing\AppData\Roaming\PowerShell\PSFramework\Logs) | Sort-Object -Property 'lastwritetime' -desc)[0]
+  $nextToLastFile = ((Get-ChildItem C:\Users\whertzing\AppData\Roaming\PowerShell\PSFramework\Logs) | Sort-Object -Property 'lastwritetime' -desc)[1]
+  # ToDo: filter by various fields
+  $content = Get-Content $lastFile
+  # ToDo: keep adding files until total content is at least $lines
+  if ($content.count -lt $lines) {
+    $content = (Get-Content $nextToLastFile) + $content
+  }
+  #  Get just the last $lines lines
+  $content = $content[ - $lines..-1]
+  # objectify them
+  $objects = $content -join "`n" | ConvertFrom-Csv -Header $headers
+  #$objects
+  #$objects | Format-Table HostName, Timestamp, LogLevel, Message, ScriptName, LineNumber, Tags
+  # filter by tags
+  if ($includeTags) { # -or $excludeTags) {
+    $objects = $objects | Where-Object { $_.Tags -match $includeTags[0] }
+    #$tags = $objects | Select-Object -ExpandProperty Tags
+    # if ($alltags) {
+    #   $results = $objects | Where-Object { $_.Tags -match $includeTags }
+    # } else {
+    #   $results = $objects | Where-Object { $_.Tags -notmatch $excludeTags }
+    # }
+    #$results = $objects | Where-Object { -property 'Category ' }$tagged =
+  }
+  $objects | Format-Table HostName, ScriptName, LineNumber, Timestamp, LogLevel, Tags, Message -Wrap -AutoSize
 }
 Set-Alias -Name 'tail' -Value 'TailLatestPSFrameworkLog'
 
@@ -341,8 +422,7 @@ Function Get-Attributions {
           }
         }
       }
-    }
-    finally {
+    } finally {
       $reader.Close()
       $FileStream.Close()
     }
@@ -371,8 +451,7 @@ Function Get-LinksFromDrafts {
       if ($matchResult.Success) {
         $Subject = $matchResult.captures.groups['Subject'].value
         #Write-PSFMessage -Level Debug -Message "Subject = $Subject"
-      }
-      else {
+      } else {
         $matchResult = [RegEx]::Matches($line, $findRegex2)
         if ($matchResult.Success) {
           $URL = $matchResult.captures.groups['URL'].value
@@ -390,8 +469,7 @@ Function Get-LinksFromDrafts {
         $URL = ''
       }
     }
-  }
-  finally {
+  } finally {
     $reader.Close()
     $Stream.Close()
   }
@@ -492,8 +570,7 @@ Function Open-BookmarksInBrave {
         foreach ($bookmark in $input) {
           $urlList += $bookmark.url
         }
-      }
-      else {
+      } else {
         $urlList = $URLs
       }
     }
@@ -615,8 +692,7 @@ Function WatchFile {
       Write-Host '.' -NoNewline
 
     } while ($true)
-  }
-  finally {
+  } finally {
     # this gets executed when user presses CTRL+C:
 
     # stop monitoring
@@ -678,13 +754,13 @@ Set-Item -Path alias:stopVA -Value StopVoiceAttackProcess
 
 
 Function ShutItAllDown {
-	 $ComputerNameList = @('ncat016')#,'utat022')
-	 foreach ($cn in $ComputerNameList) {
+  $ComputerNameList = @('ncat016')#,'utat022')
+  foreach ($cn in $ComputerNameList) {
     $Session = New-PSSession -ComputerName $cn -ConfigurationName WithProfile
     Enter-Session $Session
     shutdown /s /t 20
     Close-Session $Session
-	 }
+  }
 }
 
 # A function to set an environment variable for a named user (at the user scope in the machine's registry)
@@ -804,7 +880,7 @@ $strary = @()
 $b | %{$t=$_
   $str = ''
   for ($j=0;$j -lt $numcolumns;$j++){
-    $str+= "{0,-$colwidth}" -f $t[$j]
+    $str+= "{ 0, - $colwidth }" -f $t[$j]
   }
   $strary +=$str
 }

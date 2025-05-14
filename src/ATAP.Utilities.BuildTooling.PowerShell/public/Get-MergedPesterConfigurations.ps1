@@ -23,13 +23,14 @@ function Set-PesterConfiguration {
     if (-not (Test-Path $settingsPath)) { return @{} }
     try {
       return Get-Content $settingsPath -Raw | ConvertFrom-Json -AsHashtable
-    } catch {
+    }
+    catch {
       Write-Warning "Invalid VS Code settings: $_"
       return @{}
     }
   }
 
-  function Map-VSCodeToPesterConfig {
+  function Get-MergedPesterConfigurations {
     param(
       [hashtable]$VSCodeSettings,
       [PesterConfiguration]$PesterConfig
@@ -49,17 +50,18 @@ function Set-PesterConfiguration {
   if ($isCICD) {
     # CI/CD Mode: Only check the module root (parent of Tests directory)
     $moduleRoot = Split-Path $currentDir -Parent
-    $configPath = Join-Path $moduleRoot 'pester.config.ps1'
+    $configPath = Join-Path $moduleRoot 'PesterConfiguration.psd1'
     if (Test-Path $configPath -PathType Leaf) {
       $configFiles += $configPath
     }
-  } else {
+  }
+  else {
     # Local/VS Code Mode: Search upward until .git or filesystem root
     do {
       $gitPath = Join-Path $currentDir '.git'
       $hasGit = Test-Path $gitPath -PathType Container
 
-      $configPath = Join-Path $currentDir 'pester.config.ps1'
+      $configPath = Join-Path $currentDir 'PesterConfiguration.psd1'
       if (Test-Path $configPath -PathType Leaf) {
         $configFiles += $configPath
       }
@@ -79,7 +81,7 @@ function Set-PesterConfiguration {
   $mergedConfig = [PesterConfiguration]::Default
   foreach ($file in $configFiles) {
     $config = . $file  # Load the config file
-    Merge-PesterConfiguration -MergedConfig $mergedConfig -ConfigToMerge $config
+    Get-MergedPesterConfigurations -MergedConfig $mergedConfig -ConfigToMerge $config
   }
 
   # --- Apply VS Code Overrides (if applicable) ---
@@ -96,15 +98,16 @@ function Set-PesterConfiguration {
 # Discover configurations based on environment
 $configFiles = if ($IsCICD) {
   # CI/CD: Only check module root
-  $configPath = Join-Path $ModuleRoot 'pester.config.ps1'
+  $configPath = Join-Path $ModuleRoot 'PesterConfiguration.psd1'
   if (Test-Path $configPath) { $configPath }
-} else {
+}
+else {
   # Local/VS Code: Search upward from test directory
   $currentDir = $TestDirectory
   $files = @()
   do {
     $gitPath = Join-Path $currentDir '.git'
-    $configPath = Join-Path $currentDir 'pester.config.ps1'
+    $configPath = Join-Path $currentDir 'PesterConfiguration.psd1'
     if (Test-Path $configPath) { $files += $configPath }
     if (Test-Path $gitPath -PathType Container) { break }
     $currentDir = Split-Path $currentDir -Parent
@@ -117,7 +120,7 @@ $configFiles = if ($IsCICD) {
 $mergedConfig = [PesterConfiguration]::Default
 foreach ($file in $configFiles) {
   $config = . $file
-  Merge-PesterConfiguration -BaseConfig $mergedConfig -OverrideConfig $config
+  Get-MergedPesterConfigurations -BaseConfig $mergedConfig -OverrideConfig $config
 }
 
 # Apply VS Code overrides

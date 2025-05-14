@@ -346,8 +346,11 @@ Function Get-NuSpecFromManifest {
         "PSCommand_$_"
       }
     }
-
+    # Suppress progress output
+    $storedProgressPreference = $ProgressPreference
+    $ProgressPreference = 'SilentlyContinue'
     $dscResourceNames = Get-ExportedDscResources -PSModuleInfo $PSModuleInfo
+    $ProgressPreference = $storedProgressPreference
     if ($dscResourceNames) {
       $Tags += 'PSIncludes_DscResource'
 

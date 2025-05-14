@@ -79,7 +79,7 @@ Function Confirm-Tools {
     # $testOutFn = $settings.OutDir + 'test.txt'
     # try { New-Item $testOutFn -Force -type file >$null
     # }
-    # catch { # if an exception ocurrs
+    # catch { # if an exception ocurs
     #   # handle the exception
     #   $where = $PSItem.InvocationInfo.PositionMessage
     #   $ErrorMessage = $_.Exception.Message
@@ -111,10 +111,10 @@ Function Confirm-Tools {
           $RepositoryPackageSourceName = $ProviderName + $ProviderLifecycle + $PackageLifecycle + 'Package'
           # Confirm-RepositoryPackageProvider will throw if the RepositoryPackageSourceName cannot be registered
           Confirm-RepositoryPackageSource -RepositoryPackageSourceName $RepositoryPackageSourceName
+        }
       }
     }
   }
-}
   #endregion FunctionProcessBlock
 
   #region FunctionEndBlock

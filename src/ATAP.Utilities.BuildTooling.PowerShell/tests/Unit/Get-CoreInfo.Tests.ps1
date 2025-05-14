@@ -18,7 +18,7 @@ Describe 'Get-CoreInfo' {
       $commonParentDirectory = $null
       while ( $null -ne $currentDir) {
         # Look for peer $testsName and $sourceName directories
-        if ((Test-Path -Path "$currentDir\$sourceName") -and (Test-Path -Path "$currentDir\$commonTestsDirectoryName")) {
+        if ((Test-Path -Path $(Join-Path $currentDir $sourceName)) -and (Test-Path -Path $(Join-Path $currentDir $commonTestsDirectoryName))) {
           $commonParentDirectory = $currentDir
           break
         } else {

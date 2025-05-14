@@ -7,7 +7,7 @@
   RootModule           = 'ATAP.Utilities.BuildTooling.Powershell.psm1'
 
   # Version number of this module.
-  ModuleVersion        = '0.0.4'
+  ModuleVersion        = '0.0.5'
 
   # Supported PSEditions
   CompatiblePSEditions = 'Desktop', 'Core'
@@ -108,7 +108,7 @@
       # ReleaseNotes = ''
 
       # Prerelease string of this module
-      # Prerelease = 'Alpha001'
+      Prerelease = '1'
 
       # Flag to indicate whether the module requires explicit user acceptance for install/update/save
       # RequireLicenseAcceptance = $false

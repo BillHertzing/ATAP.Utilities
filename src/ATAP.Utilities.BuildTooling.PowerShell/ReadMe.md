@@ -2,9 +2,17 @@
 
 If you are viewing this `ReadMe.md` in GitHub, [here is this same ReadMe on the documentation site]()
 
+## 🗪 Test Coverage & Results
+
+- **Coverage:** $Coverage% of code paths covered
+- **Tests run:** $Total total
+  - ✅ Passed: $Passed
+  - ❌ Failed: $Failed
+  - ⚠️ Skipped: $Skipped
+
 ## Introduction
 
-This package provides PowerShell goodies make it easier when developing for .Net, and especially inside of Visual Studio.
+This package provides PowerShell goodies make it easier when developing Powershell modules for .Net, and especially inside of Visual Studio Code.
 
 ## Autoloading
 
@@ -20,7 +28,7 @@ The .psm1 file handles dot-sourcing all the .ps1 scripts in the `private` and `p
 
 Production versions of the modules goes through testing and packaging, along with deployment to a local chocolatey Repository Server, from which the new production version of the package is deployed internally to the organization using Chocolatey.
 
-When developing new functions for the module, symbolic links make it easy to have the source development files linked to the production location of the module somewhere in the `$PSModulePath`, specifically in the user's Powershell modules directory. Doing so will ensure that the latest dev code is running when the module is autoloaded.
+When developing new functions for the module, on the developers workstation, symbolic links make it easy to have the source development files linked to the production location of the module somewhere in the `$PSModulePath`, specifically in the user's Powershell modules directory. Doing so will ensure that the latest dev code is running when the module is autoloaded.
 
 Work great, except... PowerShell will not autoload a symlinked .psd1 file. Its OK to symlink the .psm1 file, and the `public` and `private` subdirectories of the module, you just can't symlink the .psd1 file.
 
@@ -89,8 +97,11 @@ New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptT
 The `settings.json` file at (e.g) `C:\Users\<username>\AppData\Roaming\Code\User` holds the final fallback to all VSC settings. It applies to all repositories and workspaces. Every developer on a host needs to link to the organizations common settings. to do this,replace <username> with the actual user name in the following command and run it.
 
 ```Powershell
-
-New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSettings.jsonc" -symbolicLinkPath "C:\Users\<username>\AppData\Roaming\Code\User\settings.json" -force
+# ToDo: must get the username for the specific computer form a vault
+New-SymbolicLink -targetPath `
+$(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' `
+'GitHub', 'SharedVSCode', 'UserSettings.jsonc') `
+-symbolicLinkPath $(Join-Path 'C:' 'Users' 'whertzing56','AppData','Roaming','Code', 'User', 'UserSettings.jsonc') -force
 
 ```
 
@@ -115,8 +126,7 @@ In every new repository, after running `git init`, run these commands (as an adm
 
 ```Powershell
 # use a directory junction instead of individual symlinks
-$null = New-Item -Path ./.vscode -ItemType Junction -Target C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode
-  # $null = New-Item -ItemType Directory -Force '.vscode'
+$null = New-Item -Path ./.vscode -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'GitHub', 'SharedVSCode', '.vscode')  # $null = New-Item -ItemType Directory -Force '.vscode'
   # # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
   # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\tasks.json"  -symbolicLinkPath ".\.vscode\tasks.json" -force
   # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch.json"  -symbolicLinkPath ".\.vscode\launch.json" -force
@@ -175,15 +185,6 @@ Put the project name into a local setting
     "powershell.pester.codeLens": false,
     "powershell.pester.useLegacyCodeLens": false,
     "powershell.pester.outputVerbosity": "Diagnostic",
-    "powershell.codeFormatting.autoCorrectAliases": true,
-    "powershell.codeFormatting.avoidSemicolonsAsLineTerminators": true,
-    "powershell.codeFormatting.newLineAfterCloseBrace": false,
-    "powershell.codeFormatting.newLineAfterOpenBrace": false,
-    "powershell.codeFormatting.pipelineIndentationStyle": "IncreaseIndentationForFirstPipeline",
-    "powershell.codeFormatting.trimWhitespaceAroundPipe": true,
-    "powershell.codeFormatting.useConstantStrings": true,
-    "powershell.codeFormatting.useCorrectCasing": true,
-    "powershell.codeFormatting.whitespaceBetweenParameters": true,
     "powershell.enableProfileLoading": true
   }
 }
@@ -202,7 +203,8 @@ Put the project name into a local setting
   $null = New-Item -ItemType Directory -Force './tests';
   # these commands are only needed for repositories that have projects that create Powershell modules.
 # ToDo: use an installed package path for the latest (?) BuildTooling.Powershell module
-  New-SymbolicLink -Force -symbolicLinkPath './module.build.ps1' -targetPath "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\module.build.ps1";
+  New-SymbolicLink -Force -symbolicLinkPath './module.build.ps1' -targetPath $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'GitHub', 'ATAP.Utilities','src','ATAP.Utilities.BuildTooling.PowerShell','module.build.ps1');
+  New-SymbolicLink -Force -symbolicLinkPath './tests/PesterConfiguration.psd1' -targetPath  $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'GitHub', 'SharedVSCode', 'PesterConfiguration.psd1')
   $null = New-Item -ItemType Directory -Force './Releases';
   "ReadMe file for $projectName" | Out-File -FilePath './ReadMe.md'
   "Release Notes file for $projectName" | Out-File -FilePath './ReleaseNotes.md'
@@ -364,6 +366,7 @@ PrivateData = @{
 "@ |Out-File -FilePath "./$projectName.psd1"
 
 ```
+
 ### project-specific symbolic links
 
 #### VSC Extension development symbolic links

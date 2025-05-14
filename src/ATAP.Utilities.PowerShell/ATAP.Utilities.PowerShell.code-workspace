@@ -19,6 +19,7 @@
     "powershell.codeFormatting.useConstantStrings": true,
     "powershell.codeFormatting.useCorrectCasing": true,
     "powershell.codeFormatting.whitespaceBetweenParameters": true,
-    "powershell.enableProfileLoading": true
+    "powershell.enableProfileLoading": true,
+    "cSpell.ignoreWords": ["Sorens"]
   }
 }

@@ -64,7 +64,7 @@ $global:sharedPlainHistoryPath = Join-Path $global:settings['CloudBasePath'] 'wh
 $global:CommandBlockPatterns = @(
   'Start-PoshToolsServer',
   'Import-Module .*powershellprotools'
-  'thisisatest'
+  'ThisIsATest'
 )
 # Register event hook for each executed command
 $null = Register-EngineEvent -SourceIdentifier PSReadLine.OnCommandExecuted -Action {
@@ -180,7 +180,7 @@ $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:
 # if ($true) { Set-CloudDirectoryLocations }
 
 # Expand upon the PSModulePath according to the roles this user has on this machine# ToDo: expand the use of PSModulepAth in the globals settings files
-# extract all the psmodulepath items from the global:Settings
+# extract all the PSModulePath items from the global:Settings
 # The following ordered list of module paths come from ATAP and 3rd-party modules that correspond to roles of this user on this machine
 #$UserPSModulePaths = @(
 
@@ -197,7 +197,7 @@ $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:
 # the default location where chocolatey installs modules on this machine
 # $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]
 #)
-# Add the $UserPSModulePaths to the exisiting $env:PSModulePaths
+# Add the $UserPSModulePaths to the existing $env:PSModulePaths
 #$desiredPSModulePaths = $UserPSModulePaths + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
 # Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
 # [Environment]::SetEnvironmentVariable('PSModulePath', $desiredPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
@@ -213,7 +213,7 @@ $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:
 #   }
 # }
 
-# examples of subject # 'CN=$HostName,OU=$OrganizationalUnit,O=$Organisation,L=$Locality,S=$State,C=$CountryName,E=$Email'
+# examples of subject # 'CN=$HostName,OU=$OrganizationalUnit,O=$Organization,L=$Locality,S=$State,C=$CountryName,E=$Email'
 # $DataEncryptionCertificateTemplatePath = 'C:\DataEncryptionCertificate.template'  # Keep this out of the repository, but will be machine/user dependent
 
 # Create Data Encryption certificates for all the SecretManagement Extension Vaults (to be done once by admins,and updated on vault CRUD)
@@ -489,7 +489,7 @@ Function Get-AllBookmarks {
   }
 }
 
-# Get-Attributions -path 'C:\Dropbox\' -Recurse | convertto-json | out-file 'C:\Dropbox\AllAttributions.txt'
+# Get-Attributions -path 'C:\Dropbox\' -Recurse | ConvertTo-json | out-file 'C:\Dropbox\AllAttributions.txt'
 Function Get-LinksFiltered {
   Param(
     $path = 'C:\Dropbox\whertzing\'
@@ -587,7 +587,7 @@ Function Open-BookmarksInBrave {
 # Alias FindAndOpenLinks
 Set-Alias -Name FAOL -Value Open-FilteredLinksInBrave
 
-# faol $([regex] '(x509|signing|openssl|certificate)')
+# FAOL $([regex] '(x509|signing|openssl|certificate)')
 # A Function to use a FileWatcher asynchronously to detect when a file is changed
 Function WatchFile {
   params(
@@ -720,13 +720,13 @@ Function WatchFile {
 Function TailLog {
   param (
     [string] $file
-    , [int]$numlines = 20
+    , [int]$numLines = 20
     , [switch] $wait
   )
   # if file was not supplied, use the PSFramework logging filesystem logpath, and get the most recent file there
 
   $file = (Get-ChildItem $(Get-PSFConfigValue -FullName PSFramework.Logging.FileSystem.LogPath) | Sort-Object -Property LastWriteTime -Descending)[0]
-  $command = "Get-Content -Path $file -tail $numlines"
+  $command = "Get-Content -Path $file -tail $numLines"
   Invoke-Expression $command
   if ($wait) {
     # Create a callback function that will tail the last N lines of the file
@@ -831,7 +831,7 @@ Write-PSFMessage -Level Debug -Message ('finished setting environment variables 
 # Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
 # Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, Environment variables: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
 
-# start windows explorere with the current working set of directories and place them in a fancy zones layout
+# start windows explorer with the current working set of directories and place them in a fancy zones layout
 function Start-ExplorerWindowSet {
   explorer.exe C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.IAC.Ansible\Playbooks
   explorer.exe \\wsl.localhost\Ubuntu\etc\ansible
@@ -846,12 +846,12 @@ Write-PSFMessage -Level Debug -Message ('line 764 in CurrentUsersAllHostsV7CoreP
 
 <#
 Function list-music {
-param ($dir = 'D:\dropbox\music',$numcolumns = 1, $pagewidth=180)
+param ($dir = 'D:\dropbox\music',$numColumns = 1, $pagewidth=180)
 $r=@{discards=@();duplicates=@();keep=@()}
-$foundfns = @();
-$rawcnt=0
+$foundFNs = @();
+$rawCount=0
 gci -r $dir | ?{($_.PSisContainer -eq $false)} | %{$fh=$_
-  $rawcnt++;
+  $rawCount++;
   if ($_.name -match '(tunebite)') {
     $r.discards += $fh.fullname
   }
@@ -888,7 +888,7 @@ $strary
 }
 #>
 <#
-Function get-emptydirs {
+Function Get-EmptyDirs {
 param ($dir = 'D:\dropbox\music\')
   $a = Get-ChildItem $dir -recurse | Where-Object {$_.PSIsContainer -eq $True}
   $a | Where-Object {$_.GetFiles().Count -eq 0} | Select-Object Fullname

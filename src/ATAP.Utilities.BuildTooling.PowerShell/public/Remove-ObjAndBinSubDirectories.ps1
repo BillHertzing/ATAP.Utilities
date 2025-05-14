@@ -1,5 +1,5 @@
 #############################################################################
-#region Remove-ObjAndBinSubdirs
+#region Remove-ObjAndBinSubDirectories
 <#
 .SYNOPSIS
 ToDo: write Help SYNOPSIS For this function
@@ -28,7 +28,7 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 .SCM
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
-Function Remove-ObjAndBinSubdirs {
+Function Remove-ObjAndBinSubDirectories {
   #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
@@ -44,9 +44,9 @@ Function Remove-ObjAndBinSubdirs {
     Write-Verbose "path = $path"
     # validate path exists
     if (!(Test-Path -Path $path)) { throw "$path was not found" }
-    Write-Verbose "Removing obj and bin subdirs recursively below $path"
+    Write-Verbose "Removing obj and bin subdirectories recursively below $path"
     # build alternation (OR) pattern for directory names as returned by gci, anchored to the end : (\\obj|\\bin)$
-    $MatchRegex = '(' + (($dirstodelete | ForEach-Object { '\\' + $_ }) -Join ('|')) + ')$'
+    $MatchRegex = '(' + (($dirsToDelete | ForEach-Object { '\\' + $_ }) -Join ('|')) + ')$'
     $pathsToDelete = Get-ChildItem -Recurse -Directory $path | Where-Object { $_.psISContainer -and ($_.fullname -match $MatchRegex) }
   }
   #endregion FunctionBeginBlock
@@ -71,5 +71,5 @@ Function Remove-ObjAndBinSubdirs {
   }
   #endregion FunctionEndBlock
 }
-#endregion Remove-ObjAndBinSubdirs
+#endregion Remove-ObjAndBinSubDirectories
 #############################################################################

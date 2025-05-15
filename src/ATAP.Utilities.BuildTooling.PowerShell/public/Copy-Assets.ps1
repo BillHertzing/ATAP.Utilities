@@ -48,7 +48,7 @@ Function Copy-Assets {
 #region FunctionBeginBlock
 ########################################
 BEGIN {
-  Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+  Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
    $DebugPreference = 'Continue'
 
   # default values for settings
@@ -164,7 +164,7 @@ END {
     Create-Files-Private -currentPath $directory -pathTo $path
   }
 
-  Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+  Write-Verbose -Message "Ending $($MyInvocation.MyCommand)"
 }
 #endregion FunctionEndBlock
 }

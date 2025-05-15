@@ -11,23 +11,23 @@ Function Invoke-Webserver {
   param (
     # ToDo: two or more parameter sets, to deal with both Path and LiteralPath
     [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)][string[]] $Prefixes
-    , [parameter(Mandatory = $false)][string] $Wwwrooot
+    , [parameter(Mandatory = $false)][string] $WWWRoot
   )
   #endregion FunctionParameters
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
 
     $Settings = @{
-      Prefixes         = @('http://localhost:1010/')
-      Wwwrooot         = join-path Get-Location 'www'
+      Prefixes = @('http://localhost:1010/')
+      WWWRoot  = Join-Path Get-Location 'www'
 
     }
 
     # Things to be initialized after settings are processed
     if ($Prefixes) { $Settings.Prefixes = $Prefixes }
-    if ($Wwwrooot) { $Settings.Wwwrooot = $Wwwrooot }
+    if ($WWWRoot) { $Settings.WWWRoot = $WWWRoot }
 
     $SettingsAsString = $settings.Keys | ForEach-Object { $key = $_; $key.ToString() + ' : ' + $Settings[$key].ToString() }
     Write-Verbose -Message "BEGIN: Initial Settings: $SettingsAsString"
@@ -38,7 +38,7 @@ Function Invoke-Webserver {
   END {
 
     # This is a super **SIMPLE** example of how to create a very basic powershell webserver
-    # 2019-05-18 UPDATE — Created by me and and evalued by @jakobii and the comunity.
+    # 2019-05-18 UPDATE — Created by me and and evaluated by @jakobii and the comunity.
 
     # Http Server
     $http = [System.Net.HttpListener]::new()
@@ -60,7 +60,7 @@ Function Invoke-Webserver {
     }
 
 
-    # INFINTE LOOP
+    # infinite loop
     # Used to listen for requests
     while ($http.IsListening) {
 
@@ -82,9 +82,9 @@ Function Invoke-Webserver {
         [string]$html = '<h1>A Powershell Webserver</h1><p>home page</p>'
 
         #resposed to the request
-        $buffer = [System.Text.Encoding]::UTF8.GetBytes($html) # convert htmtl to bytes
+        $buffer = [System.Text.Encoding]::UTF8.GetBytes($html) # convert html to bytes
         $context.Response.ContentLength64 = $buffer.Length
-        $context.Response.OutputStream.Write($buffer, 0, $buffer.Length) #stream to broswer
+        $context.Response.OutputStream.Write($buffer, 0, $buffer.Length) #stream to browser
         $context.Response.OutputStream.Close() # close the response
 
       }

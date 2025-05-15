@@ -4,8 +4,8 @@
 .SYNOPSIS
 Confirm that all the 3rd party tools and scripts needed to build, analyze, test, package and deploy both c# and powershell code are present, configured, and accessable,
 .DESCRIPTION
-This function looks for the presence of Powershell Package Repository Sources
-  - deploy packages to internal and external location, to three public location (PowershellGet, Nuget, and Chocolotey)
+This function looks for the presence of a Powershell Package Repository Provider
+  - it expects to support three package providers Nuget, PowershellGet, ChocolateyGet
 
 .PARAMETER Name
 ToDo: write Help For the parameter X

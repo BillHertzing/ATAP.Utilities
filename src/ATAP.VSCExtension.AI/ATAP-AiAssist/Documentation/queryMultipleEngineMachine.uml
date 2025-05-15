@@ -1,0 +1,50 @@
+@startuml
+
+[*] --> queryMultipleEngineMachine : QSE_START
+
+state queryMultipleEngineMachine {
+    [*] --> startedState
+
+    state startedState {
+        [*] --> operationState : startedState entry
+        state operationState {
+            [*] --> gatheringState : entry
+            gatheringState --> fetchingState : onDone
+            gatheringState --> errorState : onError
+
+            state fetchingState {
+                [*] --> waitingForAllState : QUERY_SINGLE_ENGINE_MACHINE_DONE
+            }
+
+            state waitingForAllState {
+                waitingForAllState --> doneState : allQuerySingleEngineActorOutputsDefined
+                waitingForAllState --> fetchingState : not allQuerySingleEngineActorOutputsDefined
+            }
+
+            state errorState {
+                [*] --> doneState : always
+            }
+
+            state doneState {
+                [*] --> outerDoneState : sendQueryMachineDoneEvent
+            }
+        }
+
+        state disposeState {
+            [*] --> inactiveState
+            inactiveState --> disposingState : DISPOSE_START
+            disposingState --> disposeCompleteState : DISPOSE_COMPLETE
+
+            state disposeCompleteState {
+                [*] --> outerDoneState : entry
+            }
+        }
+    }
+
+    state outerDoneState {
+        [*] --> finalState : notifyCompleteAction
+        finalState --> [*] : debugMachineContext
+    }
+}
+
+@enduml

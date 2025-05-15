@@ -1,7 +1,12 @@
-import * as vscode from 'vscode';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { DetailedError } from '@ErrorClasses/index';
-import { logAsyncFunction } from '@Decorators/index';
+import * as vscode from "vscode";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError, HandleError } from "@ErrorClasses/index";
+import {
+  logConstructor,
+  logFunction,
+  logAsyncFunction,
+  logExecutionTime,
+} from "@Decorators/index";
 
 import {
   TagValueType,
@@ -43,11 +48,15 @@ import {
   QueryPairCollection,
   IConversationCollection,
   ConversationCollection,
-} from '@ItemWithIDs/index';
+} from "@ItemWithIDs/index";
 
-import { ModeMenuItemEnum, CommandMenuItemEnum } from '@StateMachineService/index';
+import {
+  ModeMenuItemEnum,
+  QueryAgentCommandMenuItemEnum,
+  QueryEngineFlagsEnum,
+} from "@BaseEnumerations/index";
 
-import { IConfigurationData } from './ConfigurationData';
+import { IConfigurationData } from "./ConfigurationData";
 
 export interface IStateManager {
   getsavedPromptDocumentData(): string | undefined;
@@ -65,11 +74,13 @@ export interface IStateManager {
   getCurrentAssociation(): IAssociation | undefined;
   setCurrentAssociation(value: IAssociation): Promise<void>;
 
+  currentQueryEngines: QueryEngineFlagsEnum;
+
   currentMode: ModeMenuItemEnum;
-  currentCommand: CommandMenuItemEnum;
+  currentQueryAgentCommand: QueryAgentCommandMenuItemEnum;
   currentSources: string[];
   priorMode: ModeMenuItemEnum;
-  priorCommand: CommandMenuItemEnum;
+  priorQueryAgentCommand: QueryAgentCommandMenuItemEnum;
   disposeAsync(): void;
 }
 
@@ -77,50 +88,70 @@ export class StateManager implements IStateManager {
   private readonly cache: GlobalStateCache;
   private disposed = false;
   constructor(
-    private logger: ILogger,
+    private readonly logger: ILogger,
     readonly extensionContext: vscode.ExtensionContext, //, // readonly folder: vscode.WorkspaceFolder,
     private readonly configurationData: IConfigurationData,
   ) {
+    this.logger = new Logger(this.logger, "StateManager");
     this.cache = new GlobalStateCache(extensionContext);
     // create new collections if there is no collection in GlobalState
-    if (!this.cache.getValue<TagCollection>('TagCollection')) {
-      // Immediately Invoked Async Function Expression (IIFE)
-      (() => {
-        this.cache.setValue<TagCollection>('TagCollection', new TagCollection([])).catch((e) => {
-          if (e instanceof Error) {
-            throw new DetailedError(`StateManager.constructor: failed to set TagCollection -> `, e);
-          } else {
-            throw new Error(
-              `StateManager .ctor: failed to set TagCollection and the instance of (e) returned is of type ${typeof e}`,
-            );
-          }
-        });
-      })();
-      // ToDo: possibly add validationthat the new collection was created
-    }
-    if (!this.cache.getValue<CategoryCollection>('CategoryCollection')) {
-      // Immediately Invoked Async Function Expression (IIFE)
-      (() => {
-        this.cache.setValue<CategoryCollection>('CategoryCollection', new CategoryCollection([])).catch((e) => {
-          if (e instanceof Error) {
-            throw new DetailedError(`StateManager.constructor: failed to set CategoryCollection -> `, e);
-          } else {
-            throw new Error(
-              `StateManager .ctor: failed to set CategoryCollection and the instance of (e) returned is of type ${typeof e}`,
-            );
-          }
-        });
-      })();
-      // ToDo: possibly add validationthat the new collection was created
-    }
-    if (!this.cache.getValue<AssociationCollection>('AssociationCollection')) {
+    if (!this.cache.getValue<TagCollection>("TagCollection")) {
       // Immediately Invoked Async Function Expression (IIFE)
       (() => {
         this.cache
-          .setValue<AssociationCollection>('AssociationCollection', new AssociationCollection([]))
+          .setValue<TagCollection>("TagCollection", new TagCollection([]))
           .catch((e) => {
             if (e instanceof Error) {
-              throw new DetailedError(`StateManager.constructor: failed to set AssociationCollection -> `, e);
+              throw new DetailedError(
+                `StateManager.constructor: failed to set TagCollection -> `,
+                e,
+              );
+            } else {
+              throw new Error(
+                `StateManager .ctor: failed to set TagCollection and the instance of (e) returned is of type ${typeof e}`,
+              );
+            }
+          });
+      })();
+      // ToDo: possibly add validation that the new collection was created
+    }
+    if (!this.cache.getValue<CategoryCollection>("CategoryCollection")) {
+      // Immediately Invoked Async Function Expression (IIFE)
+      (() => {
+        this.cache
+          .setValue<CategoryCollection>(
+            "CategoryCollection",
+            new CategoryCollection([]),
+          )
+          .catch((e) => {
+            if (e instanceof Error) {
+              throw new DetailedError(
+                `StateManager.constructor: failed to set CategoryCollection -> `,
+                e,
+              );
+            } else {
+              throw new Error(
+                `StateManager .ctor: failed to set CategoryCollection and the instance of (e) returned is of type ${typeof e}`,
+              );
+            }
+          });
+      })();
+      // ToDo: possibly add validation that the new collection was created
+    }
+    if (!this.cache.getValue<AssociationCollection>("AssociationCollection")) {
+      // Immediately Invoked Async Function Expression (IIFE)
+      (() => {
+        this.cache
+          .setValue<AssociationCollection>(
+            "AssociationCollection",
+            new AssociationCollection([]),
+          )
+          .catch((e) => {
+            if (e instanceof Error) {
+              throw new DetailedError(
+                `StateManager.constructor: failed to set AssociationCollection -> `,
+                e,
+              );
             } else {
               throw new Error(
                 `StateManager .ctor: failed to set AssociationCollection and the instance of (e) returned is of type ${typeof e}`,
@@ -129,7 +160,7 @@ export class StateManager implements IStateManager {
           });
       })();
     }
-    // ToDo: possibly add validationthat the new collection was created
+    // ToDo: possibly add validation that the new collection was created
     // if (!this.cache.getValue<QueryContextCollection>('QueryContextCollection')) {
     //   // Immediately Invoked Async Function Expression (IIFE)
     //   (() => {
@@ -145,7 +176,7 @@ export class StateManager implements IStateManager {
     //         }
     //       });
     //   })();
-    //   // ToDo: possibly add validationthat the new collection was created
+    //   // ToDo: possibly add validation that the new collection was created
     // }
     // if (!this.cache.getValue<ConversationCollection>('ConversationCollection')) {
     //   // Immediately Invoked Async Function Expression (IIFE)
@@ -162,57 +193,131 @@ export class StateManager implements IStateManager {
     //         }
     //       });
     //   })();
-    //   // ToDo: possibly add validationthat the new collection was created
+    //   // ToDo: possibly add validation that the new collection was created
     // }
 
-    let _currentMode = this.cache.getValue<ModeMenuItemEnum>('currentMode');
+    let _currentMode = this.cache.getValue<ModeMenuItemEnum>("currentMode");
     if (!_currentMode || (_currentMode && _currentMode === undefined)) {
-      logger.log(`StateManager.constructor: currentMode exists as undefined`, LogLevel.Debug);
+      logger.log(
+        `StateManager.constructor: currentMode exists as undefined`,
+        LogLevel.Debug,
+      );
       // Immediately Invoked Async Function Expression (IIFE)
       (() => {
-        this.cache.setValue<ModeMenuItemEnum>('currentMode', this.configurationData.currentMode).catch((e) => {
-          if (e instanceof Error) {
-            throw new DetailedError(`StateManager.constructor: failed to set currentMode -> `, e);
-          } else {
-            throw new Error(
-              `StateManager .ctor: failed to set currentMode and the instance of (e) returned is of type ${typeof e}`,
-            );
-          }
-        });
+        this.cache
+          .setValue<ModeMenuItemEnum>(
+            "currentMode",
+            this.configurationData.currentMode,
+          )
+          .catch((e) => {
+            if (e instanceof Error) {
+              throw new DetailedError(
+                `StateManager.constructor: failed to set currentMode -> `,
+                e,
+              );
+            } else {
+              throw new Error(
+                `StateManager .ctor: failed to set currentMode and the instance of (e) returned is of type ${typeof e}`,
+              );
+            }
+          });
       })();
       // At this point the cache will no longer be undefined
-      this.currentCommand = this.cache.getValue<CommandMenuItemEnum>('currentMode') as CommandMenuItemEnum;
+      this.currentMode = this.cache.getValue<ModeMenuItemEnum>(
+        "currentMode",
+      ) as ModeMenuItemEnum;
     }
-    // ToDo: possibly add validationthat the CurrentMode was correctly created and initialized
-    logger.log(`currentMode = ${this.currentMode}`, LogLevel.Debug);
+    // ToDo: possibly add validation that the CurrentMode was correctly created and initialized
+    // logger.log(`currentMode = ${this.currentMode}`, LogLevel.Debug);
 
-    let _currentCommand = this.cache.getValue<ModeMenuItemEnum>('currentMode');
-    if (!_currentCommand || (_currentCommand && _currentCommand === undefined)) {
-      logger.log(`StateManager.constructor: currentCommand exists as undefined`, LogLevel.Debug);
+    let _currentQueryAgentCommand = this.cache.getValue<ModeMenuItemEnum>(
+      "currentQueryAgentCommand",
+    );
+    if (
+      !_currentQueryAgentCommand ||
+      (_currentQueryAgentCommand && _currentQueryAgentCommand === undefined)
+    ) {
+      logger.log(
+        `StateManager.constructor: currentQueryAgentCommand exists as undefined`,
+        LogLevel.Debug,
+      );
       // Immediately Invoked Async Function Expression (IIFE)
       (() => {
-        this.cache.setValue<CommandMenuItemEnum>('currentCommand', this.configurationData.currentCommand).catch((e) => {
-          if (e instanceof Error) {
-            throw new DetailedError(`StateManager.constructor: failed to set currentCommand -> `, e);
-          } else {
-            throw new Error(
-              `StateManager .ctor: failed to set currentCommand and the instance of (e) returned is of type ${typeof e}`,
-            );
-          }
-        });
+        this.cache
+          .setValue<QueryAgentCommandMenuItemEnum>(
+            "currentQueryAgentCommand",
+            this.configurationData.currentQueryAgentCommand,
+          )
+          .catch((e) => {
+            if (e instanceof Error) {
+              throw new DetailedError(
+                `StateManager.constructor: failed to set currentQueryAgentCommand -> `,
+                e,
+              );
+            } else {
+              throw new Error(
+                `StateManager .ctor: failed to set currentQueryAgentCommand and the instance of (e) returned is of type ${typeof e}`,
+              );
+            }
+          });
       })();
       // At this point the cache will no longer be undefined
-      this.currentCommand = this.cache.getValue<CommandMenuItemEnum>('currentCommand') as CommandMenuItemEnum;
+      this.currentQueryAgentCommand =
+        this.cache.getValue<QueryAgentCommandMenuItemEnum>(
+          "currentQueryAgentCommand",
+        ) as QueryAgentCommandMenuItemEnum;
     }
-    // ToDo: possibly add validationthat the CurrentCommand was correctly created and initialized
-    logger.log(`currentCommand = ${this.currentCommand}`, LogLevel.Debug);
+    // ToDo: possibly add validation that the CurrentCommand was correctly created and initialized
+    //  logger.log(`currentQueryAgentCommand = ${this.currentQueryAgentCommand}`, LogLevel.Debug);
 
-    if (!this.cache.getValue<string>('CurrentSources')) {
+    let _currentQueryEngines = this.cache.getValue<QueryEngineFlagsEnum>(
+      "currentQueryEngines",
+    );
+    if (
+      !_currentQueryEngines ||
+      (_currentQueryEngines && _currentQueryEngines === undefined)
+    ) {
+      logger.log(
+        `StateManager.constructor: currentQueryEngines exists as undefined`,
+        LogLevel.Debug,
+      );
       // Immediately Invoked Async Function Expression (IIFE)
       (() => {
-        this.cache.setValue<string>('CurrentSources', 'all').catch((e) => {
+        this.cache
+          .setValue<QueryEngineFlagsEnum>(
+            "currentQueryAgentCommand",
+            this.configurationData.currentQueryEngines,
+          )
+          .catch((e) => {
+            if (e instanceof Error) {
+              throw new DetailedError(
+                `StateManager.constructor: failed to set currentQueryEngines -> `,
+                e,
+              );
+            } else {
+              throw new Error(
+                `StateManager .ctor: failed to set currentQueryEngines and the instance of (e) returned is of type ${typeof e}`,
+              );
+            }
+          });
+      })();
+      // At this point the cache will no longer be undefined
+      this.currentQueryEngines = this.cache.getValue<QueryEngineFlagsEnum>(
+        "currentQueryEngines",
+      ) as QueryEngineFlagsEnum;
+    }
+    // ToDo: possibly add validation that the currentQueryEngines was correctly created and initialized
+    //logger.log(`currentQueryEngines = ${this.currentQueryEngines}`, LogLevel.Debug);
+
+    if (!this.cache.getValue<string>("CurrentSources")) {
+      // Immediately Invoked Async Function Expression (IIFE)
+      (() => {
+        this.cache.setValue<string>("CurrentSources", "all").catch((e) => {
           if (e instanceof Error) {
-            throw new DetailedError(`StateManager.constructor: failed to set CurrentSources -> `, e);
+            throw new DetailedError(
+              `StateManager.constructor: failed to set CurrentSources -> `,
+              e,
+            );
           } else {
             throw new Error(
               `StateManager .ctor: failed to set CurrentSources and the instance of (e) returned is of type ${typeof e}`,
@@ -222,130 +327,165 @@ export class StateManager implements IStateManager {
       })();
     }
 
-    // ToDo: possibly add validationthat the CurrentMode was correctly created and initialized
-    logger.log(`CurrentSources = ${this.cache.getValue<string>('CurrentSources')}`, LogLevel.Debug);
+    // ToDo: possibly add validation that the CurrentMode was correctly created and initialized
+    // logger.log(`CurrentSources = ${this.cache.getValue<string>('CurrentSources')}`, LogLevel.Debug);
 
-    let _priorMode = this.cache.getValue<ModeMenuItemEnum>('priorMode');
+    let _priorMode = this.cache.getValue<ModeMenuItemEnum>("priorMode");
     if (!_priorMode || (_priorMode && _priorMode === undefined)) {
-      logger.log(`StateManager.constructor: priorMode exists as undefined`, LogLevel.Debug);
+      logger.log(
+        `StateManager.constructor: priorMode exists as undefined`,
+        LogLevel.Debug,
+      );
       // Immediately Invoked Async Function Expression (IIFE)
       (() => {
-        this.cache.setValue<ModeMenuItemEnum>('priorMode', this.configurationData.priorMode).catch((e) => {
-          if (e instanceof Error) {
-            throw new DetailedError(`StateManager.constructor: failed to set priorMode -> `, e);
-          } else {
-            throw new Error(
-              `StateManager .ctor: failed to set priorMode and the instance of (e) returned is of type ${typeof e}`,
-            );
-          }
-        });
+        this.cache
+          .setValue<ModeMenuItemEnum>(
+            "priorMode",
+            this.configurationData.priorMode,
+          )
+          .catch((e) => {
+            if (e instanceof Error) {
+              throw new DetailedError(
+                `StateManager.constructor: failed to set priorMode -> `,
+                e,
+              );
+            } else {
+              throw new Error(
+                `StateManager .ctor: failed to set priorMode and the instance of (e) returned is of type ${typeof e}`,
+              );
+            }
+          });
       })();
       // At this point the cache will no longer be undefined
-      this.priorCommand = this.cache.getValue<CommandMenuItemEnum>('priorMode') as CommandMenuItemEnum;
+      this.priorQueryAgentCommand =
+        this.cache.getValue<QueryAgentCommandMenuItemEnum>(
+          "priorMode",
+        ) as QueryAgentCommandMenuItemEnum;
     }
-    // ToDo: possibly add validationthat the PriorMode was correctly created and initialized
-    logger.log(`priorMode = ${this.priorMode}`, LogLevel.Debug);
+    // ToDo: possibly add validation that the PriorMode was correctly created and initialized
+    // logger.log(`priorMode = ${this.priorMode}`, LogLevel.Debug);
 
-    let _priorCommand = this.cache.getValue<ModeMenuItemEnum>('priorMode');
-    if (!_priorCommand || (_priorCommand && _priorCommand === undefined)) {
-      logger.log(`StateManager.constructor: priorCommand exists as undefined`, LogLevel.Debug);
+    let _priorQueryAgentCommand =
+      this.cache.getValue<ModeMenuItemEnum>("priorMode");
+    if (
+      !_priorQueryAgentCommand ||
+      (_priorQueryAgentCommand && _priorQueryAgentCommand === undefined)
+    ) {
+      logger.log(
+        `StateManager.constructor: priorQueryAgentCommand exists as undefined`,
+        LogLevel.Debug,
+      );
       // Immediately Invoked Async Function Expression (IIFE)
       (() => {
-        this.cache.setValue<CommandMenuItemEnum>('priorCommand', this.configurationData.priorCommand).catch((e) => {
-          if (e instanceof Error) {
-            throw new DetailedError(`StateManager.constructor: failed to set priorCommand -> `, e);
-          } else {
-            throw new Error(
-              `StateManager .ctor: failed to set priorCommand and the instance of (e) returned is of type ${typeof e}`,
-            );
-          }
-        });
+        this.cache
+          .setValue<QueryAgentCommandMenuItemEnum>(
+            "priorQueryAgentCommand",
+            this.configurationData.priorQueryAgentCommand,
+          )
+          .catch((e) => {
+            if (e instanceof Error) {
+              throw new DetailedError(
+                `StateManager.constructor: failed to set priorQueryAgentCommand -> `,
+                e,
+              );
+            } else {
+              throw new Error(
+                `StateManager .ctor: failed to set priorQueryAgentCommand and the instance of (e) returned is of type ${typeof e}`,
+              );
+            }
+          });
       })();
       // At this point the cache will no longer be undefined
-      this.priorCommand = this.cache.getValue<CommandMenuItemEnum>('priorCommand') as CommandMenuItemEnum;
+      this.priorQueryAgentCommand =
+        this.cache.getValue<QueryAgentCommandMenuItemEnum>(
+          "priorQueryAgentCommand",
+        ) as QueryAgentCommandMenuItemEnum;
     }
-    // ToDo: possibly add validationthat the PriorCommand was correctly created and initialized
-    logger.log(`priorCommand = ${this.priorCommand}`, LogLevel.Debug);
+    // ToDo: possibly add validation that the PriorCommand was correctly created and initialized
+    // logger.log(`priorQueryAgentCommand = ${this.priorQueryAgentCommand}`, LogLevel.Debug);
   }
 
   getsavedPromptDocumentData(): string | undefined {
-    return this.cache.getValue('savedPromptDocumentData');
+    return this.cache.getValue("savedPromptDocumentData");
   }
 
   async setSavedPromptDocumentData(value: string): Promise<void> {
-    await this.cache.setValue<string>('savedPromptDocumentData', value);
+    await this.cache.setValue<string>("savedPromptDocumentData", value);
   }
 
   getWorkspacePath(): string | undefined {
-    return this.cache.getValue('WorkspacePath');
+    return this.cache.getValue("WorkspacePath");
   }
 
   async setWorkspacePath(value: string): Promise<void> {
-    await this.cache.setValue<string>('WorkspacePath', value);
+    await this.cache.setValue<string>("WorkspacePath", value);
   }
 
   getWorkspaceName(): string | undefined {
-    return this.cache.getValue('WorkspaceName');
+    return this.cache.getValue("WorkspaceName");
   }
 
   async setWorkspaceName(value: string): Promise<void> {
-    await this.cache.setValue<string>('WorkspaceName', value);
+    await this.cache.setValue<string>("WorkspaceName", value);
   }
 
   getWorkspaceRootFolderPath(): string | undefined {
-    return this.cache.getValue('WorkspaceRootFolderPath');
+    return this.cache.getValue("WorkspaceRootFolderPath");
   }
 
   async setWorkspaceRootFolderPath(value: string): Promise<void> {
-    await this.cache.setValue<string>('WorkspaceRootFolderPath', value);
+    await this.cache.setValue<string>("WorkspaceRootFolderPath", value);
   }
 
   getCurrentTag(): ITag | undefined {
-    return this.cache.getValue<ITag>('Tag');
+    return this.cache.getValue<ITag>("Tag");
   }
 
   async setCurrentTag(value: ITag): Promise<void> {
-    await this.cache.setValue<ITag>('Tag', value);
+    await this.cache.setValue<ITag>("Tag", value);
   }
 
   getTagCollection(): ITagCollection | undefined {
-    return this.cache.getValue<ITagCollection>('TagCollection');
+    return this.cache.getValue<ITagCollection>("TagCollection");
   }
 
   async setTagCollection(value: ITagCollection): Promise<void> {
-    await this.cache.setValue<ITagCollection>('TagCollection', value);
+    await this.cache.setValue<ITagCollection>("TagCollection", value);
   }
 
   getCurrentCategory(): ICategory | undefined {
-    return this.cache.getValue<ICategory>('Category');
+    return this.cache.getValue<ICategory>("Category");
   }
 
   async setCurrentCategory(value: ICategory): Promise<void> {
-    await this.cache.setValue<ICategory>('Category', value);
+    await this.cache.setValue<ICategory>("Category", value);
   }
 
   getCategoryCollection(): ICategoryCollection | undefined {
-    return this.cache.getValue<ICategoryCollection>('CategoryCollection');
+    return this.cache.getValue<ICategoryCollection>("CategoryCollection");
   }
 
   async setCategoryCollection(value: ICategoryCollection): Promise<void> {
-    await this.cache.setValue<ICategoryCollection>('CategoryCollection', value);
+    await this.cache.setValue<ICategoryCollection>("CategoryCollection", value);
   }
 
   getCurrentAssociation(): IAssociation | undefined {
-    return this.cache.getValue<IAssociation>('Association');
+    return this.cache.getValue<IAssociation>("Association");
   }
 
   async setCurrentAssociation(value: IAssociation): Promise<void> {
-    await this.cache.setValue<IAssociation>('Association', value);
+    await this.cache.setValue<IAssociation>("Association", value);
   }
 
   getAssociationCollection(): IAssociationCollection | undefined {
-    return this.cache.getValue<IAssociationCollection>('AssociationCollection');
+    return this.cache.getValue<IAssociationCollection>("AssociationCollection");
   }
 
   async setAssociationCollection(value: IAssociationCollection): Promise<void> {
-    await this.cache.setValue<IAssociationCollection>('AssociationCollection', value);
+    await this.cache.setValue<IAssociationCollection>(
+      "AssociationCollection",
+      value,
+    );
   }
 
   // getCurrentQueryContext(): IQueryContext | undefined {
@@ -365,41 +505,74 @@ export class StateManager implements IStateManager {
   // }
 
   async handleCurrentModeChangedAsync(value: ModeMenuItemEnum): Promise<void> {
-    await this.cache.setValue<ModeMenuItemEnum>('currentMode', value);
+    await this.cache.setValue<ModeMenuItemEnum>("currentMode", value);
   }
-  async handleCurrentCommandChangedAsync(value: CommandMenuItemEnum): Promise<void> {
-    await this.cache.setValue<CommandMenuItemEnum>('currentCommand', value);
+  async handleCurrentQueryAgentCommandChangedAsync(
+    value: QueryAgentCommandMenuItemEnum,
+  ): Promise<void> {
+    await this.cache.setValue<QueryAgentCommandMenuItemEnum>(
+      "currentQueryAgentCommand",
+      value,
+    );
+  }
+
+  async handleCurrentQueryEnginesChangedAsync(
+    value: QueryEngineFlagsEnum,
+  ): Promise<void> {
+    await this.cache.setValue<QueryEngineFlagsEnum>(
+      "currentQueryEngines",
+      value,
+    );
   }
 
   async handleCurrentSourcesChangedAsync(value: string[]): Promise<void> {
-    await this.cache.setValue<string[]>('currentSources', value);
+    await this.cache.setValue<string[]>("currentSources", value);
   }
 
   async handlePriorModeChangedAsync(value: ModeMenuItemEnum): Promise<void> {
-    await this.cache.setValue<ModeMenuItemEnum>('priorMode', value);
+    await this.cache.setValue<ModeMenuItemEnum>("priorMode", value);
   }
-  async handlePriorCommandChangedAsync(value: CommandMenuItemEnum): Promise<void> {
-    await this.cache.setValue<CommandMenuItemEnum>('priorCommand', value);
+  async handlePriorQueryAgentCommandChangedAsync(
+    value: QueryAgentCommandMenuItemEnum,
+  ): Promise<void> {
+    await this.cache.setValue<QueryAgentCommandMenuItemEnum>(
+      "priorQueryAgentCommand",
+      value,
+    );
   }
 
   get currentMode(): ModeMenuItemEnum {
-    return this.cache.getValue<ModeMenuItemEnum>('currentMode') as ModeMenuItemEnum;
+    return this.cache.getValue<ModeMenuItemEnum>(
+      "currentMode",
+    ) as ModeMenuItemEnum;
   }
 
   set currentMode(value: ModeMenuItemEnum) {
     this.handleCurrentModeChangedAsync(value);
   }
 
-  get currentCommand(): CommandMenuItemEnum {
-    return this.cache.getValue<CommandMenuItemEnum>('currentCommand') as CommandMenuItemEnum;
+  get currentQueryAgentCommand(): QueryAgentCommandMenuItemEnum {
+    return this.cache.getValue<QueryAgentCommandMenuItemEnum>(
+      "currentQueryAgentCommand",
+    ) as QueryAgentCommandMenuItemEnum;
   }
 
-  set currentCommand(value: CommandMenuItemEnum) {
-    this.handleCurrentCommandChangedAsync(value);
+  set currentQueryAgentCommand(value: QueryAgentCommandMenuItemEnum) {
+    this.handleCurrentQueryAgentCommandChangedAsync(value);
+  }
+
+  get currentQueryEngines(): QueryEngineFlagsEnum {
+    return this.cache.getValue<QueryEngineFlagsEnum>(
+      "currentQueryEngines",
+    ) as QueryEngineFlagsEnum;
+  }
+
+  set currentQueryEngines(value: QueryEngineFlagsEnum) {
+    this.handleCurrentQueryEnginesChangedAsync(value);
   }
 
   get currentSources(): string[] {
-    return this.cache.getValue<string[]>('currentSources') as string[];
+    return this.cache.getValue<string[]>("currentSources") as string[];
   }
 
   set currentSources(value: string[]) {
@@ -408,19 +581,23 @@ export class StateManager implements IStateManager {
   }
 
   get priorMode(): ModeMenuItemEnum {
-    return this.cache.getValue<ModeMenuItemEnum>('priorMode') as ModeMenuItemEnum;
+    return this.cache.getValue<ModeMenuItemEnum>(
+      "priorMode",
+    ) as ModeMenuItemEnum;
   }
 
   set priorMode(value: ModeMenuItemEnum) {
     this.handlePriorModeChangedAsync(value);
   }
 
-  get priorCommand(): CommandMenuItemEnum {
-    return this.cache.getValue<CommandMenuItemEnum>('priorCommand') as CommandMenuItemEnum;
+  get priorQueryAgentCommand(): QueryAgentCommandMenuItemEnum {
+    return this.cache.getValue<QueryAgentCommandMenuItemEnum>(
+      "priorQueryAgentCommand",
+    ) as QueryAgentCommandMenuItemEnum;
   }
 
-  set priorCommand(value: CommandMenuItemEnum) {
-    this.handlePriorCommandChangedAsync(value);
+  set priorQueryAgentCommand(value: QueryAgentCommandMenuItemEnum) {
+    this.handlePriorQueryAgentCommandChangedAsync(value);
   }
 
   @logAsyncFunction
@@ -462,7 +639,10 @@ class GlobalStateCache {
       await this.extensionContext.globalState.update(key, value);
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError(`GlobalStateCache: failed to set ${key} -> `, e);
+        throw new DetailedError(
+          `GlobalStateCache: failed to set ${key} -> `,
+          e,
+        );
       } else {
         // ToDo:  investigation to determine what else might happen
         throw new Error(
@@ -480,7 +660,10 @@ class GlobalStateCache {
       this.extensionContext.globalState.update(key, undefined);
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError(`GlobalStateCache: failed to clear ${key} -> `, e);
+        throw new DetailedError(
+          `GlobalStateCache: failed to clear ${key} -> `,
+          e,
+        );
       } else {
         // ToDo:  investigation to determine what else might happen
         throw new Error(

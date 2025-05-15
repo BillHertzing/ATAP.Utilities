@@ -2,7 +2,7 @@
 # ToDo: figure out how to install the buildtooling powwershell module such that this file is found by default when invoke-build is run
 # ToDo: until then use the following to link it (run this command in the powershell project's base subdirectroy)
 
- # Remove-Item -path (join-path '.' 'Module.Build.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path '.' 'Module.Build.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.Buildtooling.PowerShell' 'Resources' 'Module.Build.ps1')
+ # Remove-Item -path (join-path '.' 'Module.Build.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path '.' 'Module.Build.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.Buildtooling.PowerShell' 'Module.Build.ps1')
  #[CmdletBinding(SupportsShouldProcess=$true)]
 param(
 
@@ -26,7 +26,7 @@ $ModuleName = 'PlaygroundPowershellModule'
 # NUGET_API = $env:NUGET_API
 
 # All utility and helper functions needed to build Powershell modules can be found in the ATAP.Utilities.BuildTooling.Powershel;l module, which should be found in one of the directories listed in the $env:PSMModulePath
-#  That module includes dependendcies on other modules,
+#  That module includes dependencies on other modules,
 # Include: build_utils, PFSMessage
 
 # ToDo: make this the ATAP.Utilities.BuildTooling.Powershell module
@@ -131,7 +131,7 @@ Task Clean {
     Remove-Item -Path $(Join-Path $GeneratedDocumentationDestinationPath '*.*')
     Remove-Item -Path $(Join-Path $GeneratedStaticSiteDocumentationDestinationPath '*.*')
 
-    # Clean the generated PlatyPS CLIXML file
+    # Clean the generated PlatyPS Clixml file
 }
 
 Task Checkout {
@@ -179,9 +179,9 @@ Task BuildPSD1 -inputs (Get-ChildItem $SourcePath -Recurse -File) -Outputs $Mani
     # at this point we are starting to generate the changed metadata manifest
     Update-PackageVersion -Path $ManifestOutputPath
 
-    # are there and functions / cmdlets taht are removed, or added, compared to the Current Manifest
-    $functions | where { $_ -notin $oldFunctions } | % { $bumpVersionType = 'Minor' }
-    $oldFunctions | where { $_ -notin $Functions } | % { $bumpVersionType = 'Major' }
+    # are there and functions / cmdlets that are removed, or added, compared to the Current Manifest
+    $functions | where { $_ -notIn $oldFunctions } | % { $bumpVersionType = 'Minor' }
+    $oldFunctions | where { $_ -notIn $Functions } | % { $bumpVersionType = 'Major' }
 
     Set-ModuleFunctions -name $ManifestOutputPath -FunctionsToExport $functions
 

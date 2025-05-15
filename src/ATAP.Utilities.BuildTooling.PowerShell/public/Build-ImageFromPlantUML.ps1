@@ -22,7 +22,7 @@ Function Build-ImageFromPlantUML {
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
 
     $Settings = [ordered] @{
       InDir                 = ''

@@ -688,3 +688,10 @@ ATAP.Utilities.Security.Powershell
 #### Git
 
 Store the remote repository URL and credentials
+
+## Using Wireshark with SSL
+
+```Powershell
+# Capture SSL keys needed to decrypt SSL traffic using wireshark, to do this manually, it requires elevated permission
+[Environment]::SetEnvironmentVariable( 'SSLKEYLOGFILE', '"C:\Dropbox\Security\SSLKeyLogFile.txt"', 'Machine' )
+```

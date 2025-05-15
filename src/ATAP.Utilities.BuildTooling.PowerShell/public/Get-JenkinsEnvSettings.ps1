@@ -40,7 +40,7 @@ Function Get-JenkinsEnvSettings {
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
     # default values for settings
     $settings = @{
       RIDList                    = $[]
@@ -82,7 +82,7 @@ Function Get-JenkinsEnvSettings {
 
     # In and out directory and file validations
     if (-not (Test-Path -Path $settings.InDir -PathType Container)) { throw "$settings.InDir is not a directory" }
-    if (-not(ls $settings.InDir | ? { $_ -match $settings.InBusinessName1FilePattern })) { throw 'there are no files matching {0} in directory {1}' -f $settings.InBusinessName1FilePattern, $settings.InDir }
+    if (-not(Get-ChildItem $settings.InDir | Where-Object { $_ -match $settings.InBusinessName1FilePattern })) { throw 'there are no files matching {0} in directory {1}' -f $settings.InBusinessName1FilePattern, $settings.InDir }
     #if (-not(ls $settings.InDir | ?{$_ -match $settings.InBusinessName2FilePattern})) {throw "there are no files matching {0} in directory {1}" -f $settings.InBusinessName2FilePattern,$settings.InDir}
 
     # Output tests
@@ -92,8 +92,7 @@ Function Get-JenkinsEnvSettings {
     # Validate that the $Settings.OutDir is writable
     $testOutFn = $settings.OutDir + 'test.txt'
     try { New-Item $testOutFn -Force -type file >$null
-    }
-    catch { # if an exception ocurrs
+    } catch { # if an exception occurs
       # handle the exception
       $where = $PSItem.InvocationInfo.PositionMessage
       $ErrorMessage = $_.Exception.Message
@@ -108,7 +107,7 @@ Function Get-JenkinsEnvSettings {
     $OutFnName2 = Join-Path $settings.OutDir $settings.OutFnBusinessName2
 
     #Get the latest of each file that matches an alternate
-    $InDataFile = (@(ls $settings.InDir | ? { $_ -match $settings.InBusinessName1FilePattern } | sort -Descending -Property 'LastWriteTime')[0]).Fullname
+    $InDataFile = (@(Get-ChildItem $settings.InDir | Where-Object { $_ -match $settings.InBusinessName1FilePattern } | Sort-Object -Descending -Property 'LastWriteTime')[0]).Fullname
 
     # Absolute path to copy files to and create folders in
     $absolutePath = @($copyTo + '/App_Config/Include')
@@ -130,7 +129,7 @@ Function Get-JenkinsEnvSettings {
   ########################################
   END {
     $path = $absolutePath
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Ending $($MyInvocation.MyCommand)"
   }
   #endregion FunctionEndBlock
 }

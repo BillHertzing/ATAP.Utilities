@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { LogLevel, Logger } from './Logger';
+import { LogLevel, ILogger } from './Logger';
 
 export class mainViewTreeItem extends vscode.TreeItem {
-  private readonly logger: Logger;
+  private readonly logger: ILogger;
 
   public Philote_ID: string;
   public pickedValue: string;
@@ -10,7 +10,7 @@ export class mainViewTreeItem extends vscode.TreeItem {
   constructor(
     label: string,
     collapsibleState: vscode.TreeItemCollapsibleState,
-    logger: Logger,
+    logger: ILogger,
     public readonly properties: any,
   ) {
     //guid: string, pickedValue: string,  public properties: any

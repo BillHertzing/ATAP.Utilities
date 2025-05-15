@@ -13,18 +13,24 @@ export interface IQueryResultBase {
 
 export interface IQueryResultOpenAPI extends IQueryResultBase {
   chatCompletion: any; // Replace 'any' with the actual type
-  resultContent: StringBuilder;
-  resultSnapshot: StringBuilder;
-  isValid: boolean;
-  errorMessage: string;
 }
 
-export class QueryResultOpenAPI implements IQueryResultOpenAPI {
-  chatCompletion: any; // Replace 'any' with the actual type
+export class QueryResultBase implements IQueryResultBase {
   resultContent: StringBuilder;
   resultSnapshot: StringBuilder;
   isValid: boolean;
   errorMessage: string;
+
+  constructor(resultContent: StringBuilder, resultSnapshot: StringBuilder, isValid: boolean, errorMessage: string) {
+    this.resultContent = resultContent;
+    this.resultSnapshot = resultSnapshot;
+    this.isValid = isValid;
+    this.errorMessage = errorMessage;
+  }
+}
+
+export class QueryResultOpenAPI extends QueryResultBase implements IQueryResultOpenAPI {
+  chatCompletion: any; // Replace 'any' with the actual type
 
   constructor(
     chatCompletion: any,
@@ -33,10 +39,7 @@ export class QueryResultOpenAPI implements IQueryResultOpenAPI {
     isValid: boolean,
     errorMessage: string,
   ) {
+    super(resultContent, resultSnapshot, isValid, errorMessage);
     this.chatCompletion = chatCompletion;
-    this.resultContent = resultContent;
-    this.resultSnapshot = resultSnapshot;
-    this.isValid = isValid;
-    this.errorMessage = errorMessage;
   }
 }

@@ -36,20 +36,20 @@ Function New-DocFilesIfNotPresent {
   [string]$DocsPath
   , [parameter(mandatory = $true)]
   [ValidateNotNullOrEmpty()]
-      [string[]]$DocFileNames
+  [string[]]$DocFileNames
   #endregion FunctionParameters
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
   }
   #endregion FunctionBeginBlock
 
   #region FunctionProcessBlock
   ########################################
-  PROCESS {
-    #
-  }
+  # PROCESS {
+  #   #
+  # }
   #endregion FunctionProcessBlock
 
   #region FunctionEndBlock
@@ -57,12 +57,11 @@ Function New-DocFilesIfNotPresent {
   END {
 	   Write-Verbose "DocsPath is $DocsPath, error if not present"
     if (!Test-Path -Path $DocsPath) { throw "$DocsPath is not present" }
-    $DocFileNames | % { $dfn = $_;
+    $DocFileNames | ForEach-Object { $dfn = $_
       $dfp = Join-Path $DocsPath $dfn
       if (Test-Path -Path $dfp) {
         Write-Verbose "DocFullPath $dfp already exists"
-      }
-      else {
+      } else {
         if ($PSCmdlet.ShouldProcess("$dfp", 'Create')) {
           Write-Verbose "Creating empty file $dfp, utf-8 encoding, no BOM"
           [io.file]::WriteAllText($dfp, '', (New-Object System.Text.UTF8Encoding($false)))
@@ -70,7 +69,7 @@ Function New-DocFilesIfNotPresent {
       }
     }
 
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Ending $($MyInvocation.MyCommand)"
   }
   #endregion FunctionEndBlock
 }

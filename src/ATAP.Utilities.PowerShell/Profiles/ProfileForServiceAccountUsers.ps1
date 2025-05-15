@@ -52,4 +52,4 @@ $UserPSModulePaths = @(
 Set-EnvironmentVariablesProcess # This function should be defined in the AllUsersAllHosts profile
 
 #testing
- Write-EnvironmentVariablesIndented | set-content -Path 'D:\temp\EnvVarsFromLastServiceAcctLogin.txt'
+Write-EnvironmentVariablesIndented | set-content -Path 'D:\temp\EnvVarsFromLastServiceAcctLogin.txt'

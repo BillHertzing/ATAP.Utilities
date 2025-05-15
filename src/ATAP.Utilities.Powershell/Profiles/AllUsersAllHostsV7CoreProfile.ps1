@@ -125,7 +125,8 @@ Function Write-EnvironmentVariablesIndented {
         if ($key -eq 'path') {
           $outstr += ' ' * $initialIndent + $key + ' (' + $scope + ') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
           $($($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) | Sort-Object) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) ) + [Environment]::NewLine
-        } else {
+        }
+        else {
           $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] + '  [' + $scope + ']' + [Environment]::NewLine
         }
       }
@@ -178,16 +179,30 @@ $PSDefaultParameterValues = @{
 # Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
 . $PSHOME/global_ConfigRootKeys.ps1
 # Print the global:ConfigRootKeys if Debug
-Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
+# Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
 
 # [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)
 
 # Until the organizations 'infrastructure-as-code (IAC)' is stored in a vault, import the HostSettings from the organizations current IAC directory
-. $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.IAC', 'Windows', 'HostSettings.ps1'))
+# during the transition to packaging, try first the computers local machine directory
+if (Test-Path -Path "$env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell\Resources\HostSettings.ps1") {
+  . "$env:ProgramFiles\Powershell\Modules\\ATAP.Utilities.Powershell\Resources\HostSettings.ps1"
+}
+elseif (Test-Path -Path "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1") {
+  . "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1"
+}
+else {
+  Write-PSFMessage -Level Debug -Message ("HostSettings.ps1 not found")
+}
+# . $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.IAC', 'Windows', 'HostSettings.ps1'))
 
 # ToDo: get packaging working
-. $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedAndModifiedHashtable.ps1'))
-# . $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedObject.ps1'))
+# During the transition to packaging, see if the function exists. If it does not, then dot-source the development copy from Dropbox
+if (!(get-command Get-ClonedAndModifiedHashtable -erroraction silentlycontinue)) {
+  # command not found, must be on a computer that does not have the ATAP.Utilities.Powershell module installed
+  . $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedAndModifiedHashtable.ps1'))
+  # . $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedObject.ps1'))
+}
 
 # Define a global settings hash based on the hostname
 $global:settings = Get-HostSettings $hostName
@@ -214,7 +229,8 @@ $inheritedEnvironmentVariable = [System.Environment]::GetEnvironmentVariable('En
 $inProcessEnvironmentVariable = ''
 if ($inheritedEnvironmentVariable) {
   $inProcessEnvironmentVariable = $inheritedEnvironmentVariable
-} else {
+}
+else {
   $inProcessEnvironmentVariable = 'Production' # default for all machines is Production, can be overwritten on a per-process basis if needed
 }
 $global:settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']] = $inProcessEnvironmentVariable
@@ -231,14 +247,14 @@ $global:settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']] = $inProces
 #  The reason? There are just too many cmdlets in the desktop modules that are needed for managing Windows hosts and netwokrs, for these modules to be left out
 # additional $PSModulePath locations depend on the user and the role the user has on the machine, so there are no more machine-specific values. See the individual user profiles for further additions to the $ENV:PSModulepath
 # Get the current $Env:PSModulePath (should be the values pre-populated by the engine, appended with the "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" PSModuleProperty )
-$modifiedPSModulePath = $env:PSModulePath
+$modifiedPSModulePath = $Env:PSModulePath
 # using New-PSSession -ConfigurationName WithProfile  failed with the following error message : Could not load file or assembly 'System.Security.Cryptography, Version=7.0.0.0
 # 'System.Security.Cryptography.dll' is in C:\Program Files\PowerShell\7, which is not in the PSModulepath by default, so, add it
 $modifiedPSModulePath += ';C:\Program Files\PowerShell\7'
 # Add the Desktop module path to the end of the string
 $modifiedPSModulePath += ';C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules'
-# Set the environment varialbe to the new value
-$env:PSModulePath = $modifiedPSModulePath
+# Set the environment variable to the new value
+$Env:PSModulePath = $modifiedPSModulePath
 # Load the JenkinsRoleSettings for this machine into the $global:settings
 # ($global:MachineAndNodeSettings[$hostname])[$global:configRootKeys['JenkinsNodeRolesConfigRootKey']] | ForEach-Object {
 #   $nodeName = $_
@@ -279,7 +295,8 @@ Function Set-CredentialFile {
     if ($force) {
       # ToDo: check for ACL permissions to create
       New-Item -Path $SharedSecureCredentialDirectory -ItemType Container > $null
-    } else {
+    }
+    else {
       throw "$SharedSecureCredentialDirectory does not exist"
     }
     if ($(Test-Path -Path $credentialFilePath -PathType Leaf)) {
@@ -303,11 +320,13 @@ Function Get-CredentialFile {
   $credential
 }
 
+Write-PSFMessage -Level Debug -Message ('Ending AllUsersAllHostsV7CoreProfile.ps1')
+
 # Set DebugPreference to Continue  to see the $global:settings and Environment variables at the completion of this profile
 # Print the $global:settings if Debug
 $DebugPreference = 'SilentlyContinue'
-Write-PSFMessage -Level Debug -Message ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
-Write-PSFMessage -Level Debug -Message ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
-$DebugPreference = 'SilentlyContinue'
+#Write-PSFMessage -Level Debug -Message ('global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
+#Write-PSFMessage -Level Debug -Message ('Environment variables AllUsersAllHosts are: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
+$VerbosePreference = 'SilentlyContinue'
 
 

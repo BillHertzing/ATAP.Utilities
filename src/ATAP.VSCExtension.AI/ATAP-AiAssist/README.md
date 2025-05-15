@@ -14,6 +14,8 @@ For example if there is an image subfolder under your extension project workspac
 
 ## Requirements
 
+All VSC extensions have to install the vscode extension's node.js and NPM packages, these can be done with the command TBD
+
 If you have any requirements or dependencies, add a section describing those and how to install and configure them.
 
 ## Extension Settings

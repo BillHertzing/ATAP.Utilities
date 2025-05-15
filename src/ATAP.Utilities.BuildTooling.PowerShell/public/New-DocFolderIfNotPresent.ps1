@@ -45,7 +45,7 @@ Function New-DocFolderIfNotPresent {
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
   }
   #endregion FunctionBeginBlock
 
@@ -64,7 +64,7 @@ Function New-DocFolderIfNotPresent {
       New-Item -Path "$ProjectPath\Docs" -ItemType Directory -Force
     }
 
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Ending $($MyInvocation.MyCommand)"
   }
   #endregion FunctionEndBlock
 }

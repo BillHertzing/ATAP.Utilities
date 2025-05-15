@@ -5,7 +5,7 @@ $PerHostSettingsKeys = @(
   , $global:configRootKeys['OneDriveBasePathConfigRootKey']
   # This is the default cloud provider's manifestation
   , $global:configRootKeys['CloudBasePathConfigRootKey']
-  # varous temporary directories
+  # various temporary directories
   , $global:configRootKeys['FastTempBasePathConfigRootKey']
   , $global:configRootKeys['BigTempBasePathConfigRootKey']
   , $global:configRootKeys['SecureTempBasePathConfigRootKey']
@@ -34,7 +34,7 @@ $defaultPerMachineSettings = @{
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
     $global:configRootKeys['CloudBasePathConfigRootKey']           = 'C:/Dropbox/'
-    # varous temporary directories
+    # various temporary directories
     $global:configRootKeys['FastTempBasePathConfigRootKey']        = 'C:/Temp/'
     $global:configRootKeys['BigTempBasePathConfigRootKey']         = 'C:/Temp/'
     $global:configRootKeys['SecureTempBasePathConfigRootKey']      = 'C:/Temp/Insecure/'
@@ -51,7 +51,7 @@ $defaultPerMachineSettings = @{
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
     $global:configRootKeys['CloudBasePathConfigRootKey']           = 'C:/Dropbox/'
-    # varous temporary directories
+    # various temporary directories
     $global:configRootKeys['FastTempBasePathConfigRootKey']        = 'C:/Temp/'
     $global:configRootKeys['BigTempBasePathConfigRootKey']         = 'C:/Temp/'
     $global:configRootKeys['SecureTempBasePathConfigRootKey']      = 'C:/Temp/Insecure/'
@@ -87,7 +87,7 @@ $defaultPerMachineSettings = @{
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
     $global:configRootKeys['CloudBasePathConfigRootKey']           = 'D:/Dropbox/'
-    # varous temporary directories
+    # various temporary directories
     $global:configRootKeys['FastTempBasePathConfigRootKey']        = 'D:/Temp/'
     $global:configRootKeys['BigTempBasePathConfigRootKey']         = 'D:/Temp/'
     $global:configRootKeys['SecureTempBasePathConfigRootKey']      = 'D:/Temp/Insecure/'
@@ -104,7 +104,7 @@ $defaultPerMachineSettings = @{
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
     $global:configRootKeys['CloudBasePathConfigRootKey']           = 'C:/Dropbox/'
-    # varous temporary directories
+    # various temporary directories
     $global:configRootKeys['FastTempBasePathConfigRootKey']        = 'C:/Temp/'
     $global:configRootKeys['BigTempBasePathConfigRootKey']         = 'C:/Temp/'
     $global:configRootKeys['SecureTempBasePathConfigRootKey']      = 'C:/Temp/Insecure/'
@@ -122,7 +122,7 @@ $defaultPerMachineSettings = @{
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
     $global:configRootKeys['CloudBasePathConfigRootKey']           = 'D:/Dropbox/'
-    # varous temporary directories
+    # various temporary directories
     $global:configRootKeys['FastTempBasePathConfigRootKey']        = 'D:/Temp/'
     $global:configRootKeys['BigTempBasePathConfigRootKey']         = 'D:/Temp/'
     $global:configRootKeys['SecureTempBasePathConfigRootKey']      = 'D:/Temp/Insecure/'
@@ -140,7 +140,7 @@ $defaultPerMachineSettings = @{
     $global:configRootKeys['OneDriveBasePathConfigRootKey']        = 'Dummy' # 'C:/OneDrive/'
     # This is the default cloud provider's manifestation
     $global:configRootKeys['CloudBasePathConfigRootKey']           = 'D:/Dropbox/'
-    # varous temporary directories
+    # various temporary directories
     $global:configRootKeys['FastTempBasePathConfigRootKey']        = 'D:/Temp/'
     $global:configRootKeys['BigTempBasePathConfigRootKey']         = 'D:/Temp/'
     $global:configRootKeys['SecureTempBasePathConfigRootKey']      = 'D:/Temp/Insecure/'
@@ -156,8 +156,7 @@ $defaultPerMachineSettings = @{
 # This supports the ability to have multiple files define these values
 if ($global:PerMachineSettings) {
   Write-PSFMessage -Level Debug -Message 'global:PerMachineSettings are already defined '
-}
-else {
+} else {
   Write-PSFMessage -Level Debug -Message 'global:PerMachineSettings are NOT defined'
   $global:PerMachineSettings = @{}
 }

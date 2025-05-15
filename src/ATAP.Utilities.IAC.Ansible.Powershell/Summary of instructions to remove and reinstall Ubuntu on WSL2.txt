@@ -1,0 +1,100 @@
+# Summary of instructions to remove and reinstall WSL 2
+
+
+# Elevated Windows Powershell terminal
+# This part can be a powershell script or scriptblock to create WSL on Windows using Ansible controller
+wsl --shutdown
+@(,$(wsl -l -v))
+$distroToRemove = Read-Host -Prompt 'Distro to remove'
+wsl --unregister $distroToRemove
+
+$distroToInstall = Read-Host -Prompt 'Distro to install'
+wsl --install $distroToInstall
+wsl --set-default-version 2
+
+enter
+Pause
+
+Ubuntu terminal
+
+# ToDO: Thispart is a script that runs insiode the new WSL container
+# Add the new user to the list of sudoers
+$newSuDoer = whertzing
+sudo adduser $newSuDoer sudo
+
+# Upgrade ubuntu
+sudo apt update && sudo apt upgrade
+
+# Update Python to latest
+sudo apt remove python3-apt -y
+sudo apt install software-properties-common -y
+sudo add-apt-repository ppa:deadsnakes/ppa
+
+# Update the list of packages
+sudo apt-get update
+# Install pre-requisite packages.
+sudo apt-get install -y wget apt-transport-https software-properties-common
+# Download the Microsoft repository GPG keys
+wget -q "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb"
+# Register the Microsoft repository GPG keys
+sudo dpkg -i packages-microsoft-prod.deb
+# Update the list of packages after we added packages.microsoft.com
+sudo apt-get update
+# Install PowerShell
+sudo apt-get install -y powershell
+# Start PowerShell
+pwsh
+
+### Invoke pwsh on login
+$lines = gc ~/.profile; $lines += 'pwsh'; Set-Content -path ~/.profile -Value $lines
+
+### Create a new group for Infrastructure admins to control access to ansible
+$InfrastructureAdminsGroupName = 'InfrastructureAdmins'
+sudo groupadd $InfrastructureAdminsGroupName
+
+### Ensure that the new administrative user just created is a member of the InfrastructureAdmins group
+sudo usermod -G $InfrastructureAdminsGroupName $newSuDoer
+
+# Create a new group to control access to Ansible playbooks and other infrastructure files. My organization used the group name InfrastructureAdmins
+sudo groupadd InfrastructureAdmins
+# Ensure that the new user just created is a member of the InfrastructureAdmins group
+sudo usermod -aG InfrastructureAdmins $newSuDoer
+
+# Install python3-pip
+sudo apt install python3-pip -y
+
+# Add Ansible repository
+sudo apt-add-repository ppa:ansible/ansible -y
+# Get any updates found in this new repository
+sudo apt-get update
+# install the library that allows pythin to communicate with windows over winrm
+sudo pip3 install pywinrm
+# install TBD - # toDo: what is thisused for
+sudo pip3 install pyvmomi
+# Install ansible
+sudo apt-get install ansible -y
+
+# setup the ansible configuration
+# make these paramters to the script
+$ansibleLatestAnsibleConfigFilename = 'LatestModifiedAnsibleConfig.cfg'
+$ansibleFinalConfigFilename = 'ansible.cfg'
+$destinationDirOnLinuxForModified = "/etc/ansible/"
+sudo mkdir $destinationDirOnLinuxForModified
+#ToDo: use Join-path
+$destinationPathOnLinuxForLatest = "$($destinationDirOnLinuxForModified)$($ansibleFinalConfigFilename)"
+# ToDo: make this a script parameter (the Powershell script running inside the WSL container on Ubuntu)
+$sourcePathOnWindowsForLatest = "/mnt/c/Dropbox/whertzing/GitHub/ATAP.IAC/Wsl2Ubuntu/etc/ansible/$($ansibleLatestAnsibleConfigFilename)"
+
+sudo cp $sourcePathOnWindowsForLatest $destinationPathOnLinuxForLatest
+
+# Make the location on Windows where the generated Ansible direcotry can be found, into a script parameter
+$sourcePathOnWindowsForGeneratedAnsibleDirectory = /mnt/c/dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.IAC.Ansible/_generated/ATAP_001/Ansible/'
+# Remove the Ansible direcoty on Ubuntu, recreate it, and set the user and group of the new directory to the user and group of the user that runs the script
+# ToDO: investigate using Ansible to do this, and see if ansibleAdmin is the user
+cd ~; rm -r ~/Ansible; sudo cp -r  $sourcePathOnWindowsForGeneratedAnsibleDirectory  ~; sudo chgrp -R "$(id -gn)" ~/Ansible;sudo chown -R "$(id -un)" ~/Ansible; cd Ansible
+
+# ping all the nonproduction hosts to verify connectivity
+ansible all -i ./nonproduction_inventory.yml -m win_ping
+
+# ToDO: replace the following with a playbook that collects facts from every host, or, an array of hostnames
+# ansible-playbook -l utat022 playbooks/WindowsHostsPlaybook.yml -i ./nonproduction_inventory.yml  --tags "Preamble"  -e 'user=whertzing password='

@@ -41,12 +41,13 @@ Function Set-RepositoryPackageSources {
   #endregion FunctionParameters
   BEGIN {
     # $DebugPreference = 'SilentlyContinue'
-    Write-PSFMessage -Level Debug -Message "Starting Set-RepositoryPackageSources. PsCmdlet.ParameterSetName = $($PsCmdlet.ParameterSetName)"
+    Write-PSFMessage -Level Debug -Message "Starting Set-RepositoryPackageSources. PsCmdlet.ParameterSetName = $($PsCmdlet.ParameterSetName)" -Tag Trace
   }
   END {
     # ToDo: move the registration of repository locations into a seperate function. Invoke it on container or server creation / maintenance
     # Register repository locations
-     ('NuGet', 'PowershellGet', 'Chocolatey') | ForEach-Object { $ProviderName = $_
+    # ToDo: Replace with enumeration
+     ('NuGet', 'PowershellGet', 'ChocolateyGet', 'ChocolateyCLI') | ForEach-Object { $ProviderName = $_
       # Validate each package provider is installed, else install it
       if (-not $(Get-PackageProvider -Name $ProviderName)) {
         if (-not $(Find-PackageProvider -Name $ProviderName)) {
@@ -54,8 +55,7 @@ Function Set-RepositoryPackageSources {
           Write-PSFMessage -Level Error -Message "Provider Not Found; ProviderName = $ProviderName"
           # Throw Error
           throw "Provider Not Found; ProviderName = $ProviderName"
-        }
-        else { Install-PackageProvider -Name $ProviderName -ForceBootstrap }
+        } else { Install-PackageProvider -Name $ProviderName -ForceBootstrap }
       }
       ('Filesystem', 'WebServerQualityAssurance', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
         ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $Lifecycle = $_

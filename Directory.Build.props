@@ -17,10 +17,10 @@
     <Configurations>Debug;Release;ReleaseWithTrace;</Configurations>
     <!-- When building against anything except net5.0 and higher, the c# V9 keyword 'init' throws errors. This is resolved in the AssemblyInfo.cs file for each project-->
     <!-- when targetframework is netstandard,
-    <TargetFrameworks>net47;net471;net472;net48;netcoreapp3.1;net5.0;net6.0;net7.0<</TargetFrameworks>
+    <TargetFrameworks>net47;net471;net472;net48;netcoreapp3.1;net5.0;net6.0;net9.0<</TargetFrameworks>
 	 -->
-	  <TargetFrameworks>net7.0;</TargetFrameworks>
-	  <RuntimeIdentifiers>win10-x64;linux-x64</RuntimeIdentifiers>
+    <TargetFrameworks>net9.0;</TargetFrameworks>
+    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
@@ -55,7 +55,7 @@
     <ATAPBuildToolingDebugVerbosity>Trace</ATAPBuildToolingDebugVerbosity>
     <ATAPUtilitiesBuildToolingTargetsPath>$(SolutionBuildToolsBaseDir)$(ATAPBuildToolingRelativeBasePath)</ATAPUtilitiesBuildToolingTargetsPath>
     <ATAPUtilitiesBuildToolingTasksPath>$(SolutionBuildToolsBaseDir)$(ATAPBuildToolingRelativeBasePath)</ATAPUtilitiesBuildToolingTasksPath>
-    <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\Release\net5.0\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
+    <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\Release\net9.0\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
     <ATAPUtilitiesBuildToolingTasksAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core'">$(ATAPUtilitiesBuildToolingTasksPath)\Release\net471\ATAP.Utilities.BuildTooling.CSharp.dll</ATAPUtilitiesBuildToolingTasksAssembly>
 
     <!-- The Roslyn Code Analyzers for FxCop Rules should be installed as a Nuget Package at the Solution level, per this article https://docs.microsoft.com/en-us/visualstudio/code-quality/install-fxcop-analyzers?view=vs-2019 -->
@@ -103,7 +103,7 @@
   <!-- Do not allow the compiler to generate Binding Redirects -->
   <PropertyGroup>
     <AutoGenerateBindingRedirects Condition=" '$(AutoGenerateBindingRedirects)' == '' ">false</AutoGenerateBindingRedirects>
-      <GenerateBindingRedirectsOutputType Condition=" '$(GenerateBindingRedirectsOutputType)' == '' ">true</GenerateBindingRedirectsOutputType>
+    <GenerateBindingRedirectsOutputType Condition=" '$(GenerateBindingRedirectsOutputType)' == '' ">true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
 
   <!-- Define the maximum number of CPUs to use when building in parallel. value of 1 indicates to not build anything in parallel, and makes reading the build log linear -->
@@ -117,7 +117,7 @@
     <NoWarn>$(NoWarn);8600;8601;8602;8603;8604;8605;8618;8625;8629</NoWarn>
   </PropertyGroup>
   <!-- Attribution: many posts about this on the internet, nobody seems to have solved the problem. At least, my attempts using the following flags fails -->
-    <!-- disable the nullable warnings when compiling
+  <!-- disable the nullable warnings when compiling
     <PropertyGroup Condition="'$(TargetFramework)' == 'net35' OR '$(TargetFramework)' == 'net461' OR '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'net5.0'">
     <NoWarn>$(NoWarn);8600;8601;8602;8603;8604</NoWarn>
     <Warninglevel>0</Warninglevel>
@@ -142,13 +142,14 @@
   <!-- Debug Configuration compilation symbols, flags and build options -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <!-- Using Fody for methodBoundryAspect messes up debugging symbols https://github.com/vescon/MethodBoundaryAspect.Fody/issues/71 -->
+    <!-- Using Fody for methodBoundaryAspect messes up debugging symbols https://github.com/vescon/MethodBoundaryAspect.Fody/issues/71 -->
+
     <!-- <DefineConstants>DEBUG;TRACE;</DefineConstants> -->
     <DefineConstants>$(DefineConstants);DEBUG;</DefineConstants>
   </PropertyGroup>
 
-    <!-- Any Core TargetFramework -->
-  <PropertyGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^(core|net[56])'))">
+  <!-- Any Core TargetFramework -->
+  <PropertyGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^(core|net[56789])'))">
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
   </PropertyGroup>
 

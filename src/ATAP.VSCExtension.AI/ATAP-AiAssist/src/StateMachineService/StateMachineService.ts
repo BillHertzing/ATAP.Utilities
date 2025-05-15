@@ -1,69 +1,53 @@
-import * as vscode from 'vscode';
-import { ILogger, Logger, LogLevel } from '@Logger/index';
-import { IData } from '@DataService/index';
-import { DetailedError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction } from '@Decorators/index';
-import { ISerializationStructure, fromJson, fromYaml } from '@Serializers/index';
-import { Actor, createActor, assign, createMachine, fromCallback, StateMachine, fromPromise } from 'xstate';
-import { resolve } from 'path';
-import { IPickItems, PickItems } from '@DataService/PickItems';
-import { primaryMachine } from './PrimaryMachine';
-import { QuickPickEnumeration } from './PrimaryMachine';
+import * as vscode from "vscode";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { IData } from "@DataService/index";
+import { DetailedError } from "@ErrorClasses/index";
+import { logConstructor, logMethod, logAsyncFunction } from "@Decorators/index";
+import {
+  ISerializationStructure,
+  stringifyWithCircularReference,
+  fromJson,
+  fromYaml,
+} from "@Serializers/index";
+import { QueryEngineNamesEnum } from "@BaseEnumerations/index";
+import {
+  Actor,
+  ActorRef,
+  AnyActorLogic,
+  createActor,
+  assign,
+  fromCallback,
+  StateMachine,
+  fromPromise,
+  AnyStateMachine,
+} from "xstate";
+import { createBrowserInspector } from "@statelyai/inspect";
 
-// Common interface for input to actor and action logic
-export interface ILoggerData {
-  readonly logger: ILogger;
-  readonly data: IData;
-}
-export class LoggerData implements ILoggerData {
-  constructor(
-    readonly logger: ILogger,
-    readonly data: IData,
-  ) {}
-}
-export interface IQuickPickInput extends ILoggerData {
-  kindOfEnumeration: QuickPickEnumeration;
-}
-export class QuickPickInput implements IQuickPickInput {
-  constructor(
-    readonly kindOfEnumeration: QuickPickEnumeration,
-    readonly logger: ILogger,
-    readonly data: IData,
-  ) {}
-}
+import {
+  QueryAgentCommandMenuItemEnum,
+  ModeMenuItemEnum,
+  QuickPickEnumeration,
+  VCSCommandMenuItemEnum,
+} from "@BaseEnumerations/index";
 
-// an enumeration to represent the StatusMenuItem choices
-export enum StatusMenuItemEnum {
-  Mode = 'Mode',
-  Command = 'Command',
-  Sources = 'Sources',
-  ShowLogs = 'ShowLogs',
-}
+import { IQueryService } from "@QueryService/index";
 
-// an enumeration to represent the ModeItem choices
-export enum ModeMenuItemEnum {
-  Workspace = 'Workspace',
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  VSCode = 'VSCode',
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  ChatGPT = 'ChatGPT',
-  Claude = 'Claude',
-}
+import {
+  IQuickPickEventPayload,
+  IQueryMultipleEngineEventPayload,
+} from "@StateMachineService/index";
 
-// an enumeration to represent the CommandItem choices
-export enum CommandMenuItemEnum {
-  Chat = 'Chat',
-  Fix = 'Fix',
-  Test = 'Test',
-  Document = 'Document',
-}
+//import { IPrimaryMachineInput } from "./primaryMachineTypes";
+//import { primaryMachine } from "./primaryMachine";
+import { IC1STARTEventPayload } from "./parentChildDemoMachine";
+import { IPrimaryMachineInput } from "./parentChildDemoMachine";
+import { primaryMachine } from "./parentChildDemoMachine";
+import { inspector } from "@StateMachineService/inspector";
 
-// The enumeration types for which the quickPickActorLogic can be used
-export type PickableEnumerationTypes = StatusMenuItemEnum | ModeMenuItemEnum | CommandMenuItemEnum;
-
-//
 export interface IStateMachineService {
-  quickPick(kindOfEnumeration: QuickPickEnumeration): void;
+  quickPick(payload: IQuickPickEventPayload): void;
+  sendQuery(payload: IQueryMultipleEngineEventPayload): void;
+  sendTest(payload: IC1STARTEventPayload): void; // for parentChildDemoMachine
   start(): void;
   disposeAsync(): void;
 }
@@ -72,104 +56,212 @@ export interface IStateMachineService {
 export class StateMachineService implements IStateMachineService {
   private readonly extensionID: string;
   private readonly extensionName: string;
-
-  private primaryActor;
+  private readonly primaryMachineInspector = createBrowserInspector();
+  private readonly primaryMachineInspectorLogger: ILogger;
+  private primaryActor: ActorRef<any, any, any> | undefined;
+  private primaryActorSubscription: any | undefined;
+  private primaryActorSubscriptionLogger: ILogger;
 
   private disposed = false;
 
   constructor(
     private readonly logger: ILogger,
     private readonly data: IData,
+    private readonly queryService: IQueryService,
     private readonly extensionContext: vscode.ExtensionContext,
   ) {
+    this.logger = new Logger(this.logger, "StateMachineService");
     this.extensionID = extensionContext.extension.id;
-    this.extensionName = this.extensionID.split('.')[1];
-
-    //attach a listener to the 'handleStatusMenuResults' event
-    this.data.eventManager.getEventEmitter().on('handleStatusMenuResults', (statusMenuItem: StatusMenuItemEnum) => {
-      this.logger.log(
-        `StateMachineService onHandleStatusMenuResults received ${statusMenuItem.toString()}`,
+    this.extensionName = this.extensionID.split(".")[1];
+    const primaryMachineInspector = createBrowserInspector(); // This line produces the errorMessage
+    // ToDo: get inspector window working for a xState machine used inside a vscode extension
+    // Workaround: Create a logger for the inspector
+    this.primaryMachineInspectorLogger = new Logger(
+      this.logger,
+      "primaryMachineInspector",
+    );
+    this.primaryActor = createActor(primaryMachine, {
+      // parentChildDemo has an input of IPrimaryMachineInput defined as {logger:ILogger}
+      input: { logger: this.logger } as IPrimaryMachineInput,
+      // primaryMachine has an input of type IPrimaryMachineInput defined in the file primaryMachineTypes as
+      //   { logger: ILogger;  queryService: IQueryService;  data: IData; }
+      // input: {
+      //   logger: this.logger,
+      //   data: this.data,
+      //   queryService: this.queryService,
+      // },
+      // Workaround: use a dedicated function (and scoped logger) to handle the inspection events for Debugging
+      inspect: (inspEvent) => {
+        inspector(this.primaryMachineInspectorLogger, inspEvent);
+      },
+    });
+    // need a logger for the primaryActor subscription
+    this.primaryActorSubscriptionLogger = new Logger(
+      this.logger,
+      "PrimaryActorSubscription",
+    );
+    // print a snapshot of the primaryActor's state whenever it changes (LogLevel.Debug)
+    // ToDo: catch and print errors that bubble up from the primaryActor  (LogLevel.Error)
+    this.primaryActorSubscription = this.primaryActor.subscribe((s) => {
+      this.primaryActorSubscriptionLogger.log(
+        JSON.stringify(s),
         LogLevel.Debug,
       );
-      this.handleStatusMenuResults(statusMenuItem);
     });
+    // start the primary actor
+    this.primaryActor.start();
+    // // [Catch Machine-level Errors](https://discord.com/channels/795785288994652170/1215726223096029235/1216062378894954667)
+    // this.primaryActorSubscription = this.primaryActor.subscribe({
+    //   error: (err) => {
+    //     const _message = `StateMachineService primaryActor error: ${JSON.stringify(err)}`;
+    //     this.logger.log(_message, LogLevel.Error);
+    //     // ToDo:  investigate what to do with the error
+    //     console.error(err);
+    //   },
+    // });
+    // this.testMachineInspectorLogger = new Logger(
+    //   this.logger,
+    //   "Inspector(Test)",
+    // );
+    // let cancellationTokenSource = new vscode.CancellationTokenSource();
+    // this.testActor = createActor(testMachine, {
+    //   input: {
+    //     logger: this.logger,
+    //     queryEngineName: QueryEngineNamesEnum.ChatGPT,
+    //     queryString: "test",
+    //     queryService: this.queryService,
+    //     parent: this.primaryActor!,
+    //     cTSToken: cancellationTokenSource.token,
+    //   },
+    // for Debugging
 
-    //attach a listener to the 'handleModeMenuResults' event
-    this.data.eventManager.getEventEmitter().on('handleModeMenuResults', (modeMenuItem: ModeMenuItemEnum) => {
-      this.logger.log(
-        `StateMachineService onHandleModeMenuResults received ${modeMenuItem.toString()}`,
-        LogLevel.Debug,
-      );
-      this.handleModeMenuResults(modeMenuItem);
-    });
-
-    //attach a listener to the 'handleCommandMenuResults' event
-    this.data.eventManager.getEventEmitter().on('handleCommandMenuResults', (commandMenuItem: CommandMenuItemEnum) => {
-      this.logger.log(
-        `StateMachineService onHandleCommandMenuResults received ${commandMenuItem.toString()}`,
-        LogLevel.Debug,
-      );
-      this.handleCommandMenuResults(commandMenuItem);
-    });
-
-    this.primaryActor = createActor(primaryMachine, { input: { loggerData: new LoggerData(this.logger, this.data) } });
+    //   inspect: (inspEvent) => {
+    //     inspector(this.testMachineInspectorLogger, inspEvent);
+    //     let _eventInput = "";
+    //     let _eventData = "";
+    //     let _eventOutput = "";
+    //     let _inspEventEventType = "";
+    //     if (inspEvent.type === "@xstate.snapshot") {
+    //       switch (inspEvent.event.type) {
+    //         case "queryEvent":
+    //         case "xstate.init":
+    //         case "xstate.done.actor.gatheringActor":
+    //         case "xstate.promise.resolve":
+    //           break;
+    //         default:
+    //           _inspEventEventType = "inspEvent.event.type is unknown";
+    //       }
+    //       this.logger.log(
+    //         `StateMachineService inspect received inspEvent type @xstate.snapshot. event.type: ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ""}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ""}${_inspEventEventType ? _inspEventEventType : ""}  snapshot.status: ${inspEvent.snapshot.status}`,
+    //         LogLevel.Trace,
+    //       );
+    //     } else if (inspEvent.type === "@xstate.actor") {
+    //       this.logger.log(
+    //         `StateMachineService inspect received inspEvent type @xstate.actor. actorRef.id: ${
+    //           inspEvent.actorRef.id
+    //         } rootId: ${inspEvent.rootId.toString()}`,
+    //         LogLevel.Trace,
+    //       );
+    //     } else if (inspEvent.type === "@xstate.event") {
+    //       const _preamble = `StateMachineService inspect received inspEvent type @xstate.event. event.type: ${inspEvent.event.type} ; actorRefID: ${inspEvent.actorRef.id} `;
+    //       switch (inspEvent.event.type) {
+    //         case "xstate.init":
+    //         case "queryEvent":
+    //         case "xstate.error.actor.queryMachine":
+    //         case "xstate.promise.resolve":
+    //         case "xstate.done.actor.gatheringActor":
+    //           break;
+    //         default:
+    //           _inspEventEventType = "inspEvent.event.type is unknown";
+    //       }
+    //       this.logger.log(
+    //         `${_preamble} ${inspEvent.event.type} ${inspEvent.event.input ? `event_input: ${inspEvent.event.input}` : ""}${inspEvent.event.data ? `event_data: ${inspEvent.event.data}` : ""}${inspEvent.event.output ? `event_output: ${inspEvent.event.output}` : ""}${_inspEventEventType ? _inspEventEventType : ""}`,
+    //         LogLevel.Trace,
+    //       );
+    //     } else {
+    //       this.logger.log(
+    //         `StateMachineService inspect received unexpected event type ${inspEvent}`,
+    //         LogLevel.Debug,
+    //       );
+    //     }
+    //   },
+    // });
+    // this.testActor.start();
   }
-  @logFunction
-  quickPick(kindOfEnumeration: QuickPickEnumeration): void {
-    this.primaryActor.send({ type: 'quickPickEvent', kindOfEnumeration });
+  @logMethod(LogLevel.Debug)
+  quickPick(payload: IQuickPickEventPayload): void {
+    this.primaryActor!.send({
+      type: "QUICKPICK_MACHINE.START",
+      payload: payload,
+    });
   }
-  @logFunction
+  @logMethod(LogLevel.Debug)
+  sendQuery(payload: IQueryMultipleEngineEventPayload): void {
+    this.primaryActor!.send({
+      type: "QUERY_MULTIPLE_ENGINE_MACHINE.START",
+      payload: payload,
+    });
+  }
+
+  @logMethod(LogLevel.Debug)
+  // for parentChildDemoMachine
+  sendTest(payload: IC1STARTEventPayload): void {
+    this.primaryActor!.send({ type: "C1.START", payload: payload }); // for parentChildDemoMachine
+  }
+
+  @logMethod(LogLevel.Debug)
   testActorsaveFile(): void {
     // placeholder
   }
 
-  static create(
-    logger: ILogger,
-    extensionContext: vscode.ExtensionContext,
-    data: IData,
-    callingModule: string,
-    initializationStructure?: ISerializationStructure,
-  ): StateMachineService {
-    Logger.staticLog(`StateMachineService.create called`, LogLevel.Debug);
+  // static create(
+  //   logger: ILogger,
+  //   extensionContext: vscode.ExtensionContext,
+  //   data: IData,
+  //   queryService: IQueryService,
+  //   callingModule: string,
+  //   initializationStructure?: ISerializationStructure,
+  // ): StateMachineService {
+  //   Logger.staticLog(`StateMachineService.create called`, LogLevel.Debug);
 
-    let _obj: StateMachineService | null;
-    if (initializationStructure) {
-      try {
-        // ToDo: deserialize based on contents of structure
-        _obj = StateMachineService.convertFrom_yaml(initializationStructure.value);
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(
-            `${callingModule}: create stateMachineService from initializationStructure using convertFrom_xxx -> }`,
-            e,
-          );
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(
-            `${callingModule}: create stateMachineService from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
-          );
-        }
-      }
-      if (_obj === null) {
-        throw new Error(
-          `${callingModule}: create stateMachineService from initializationStructure using convertFrom_xxx produced a null`,
-        );
-      }
-      return _obj;
-    } else {
-      try {
-        _obj = new StateMachineService(logger, data, extensionContext);
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(`${callingModule}: create stateMachineService from initializationStructure -> }`, e);
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(`${callingModule}: create stateMachineService from initializationStructure`);
-        }
-      }
-      return _obj;
-    }
-  }
+  //   let _obj: StateMachineService | null;
+  //   if (initializationStructure) {
+  //     try {
+  //       // ToDo: deserialize based on contents of structure
+  //       _obj = StateMachineService.convertFrom_yaml(initializationStructure.value);
+  //     } catch (e) {
+  //       if (e instanceof Error) {
+  //         throw new DetailedError(
+  //           `${callingModule}: create stateMachineService from initializationStructure using convertFrom_xxx -> }`,
+  //           e,
+  //         );
+  //       } else {
+  //         // ToDo:  investigation to determine what else might happen
+  //         throw new Error(
+  //           `${callingModule}: create stateMachineService from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
+  //         );
+  //       }
+  //     }
+  //     if (_obj === null) {
+  //       throw new Error(
+  //         `${callingModule}: create stateMachineService from initializationStructure using convertFrom_xxx produced a null`,
+  //       );
+  //     }
+  //     return _obj;
+  //   } else {
+  //     try {
+  //       _obj = new StateMachineService(logger, data, queryService, extensionContext);
+  //     } catch (e) {
+  //       if (e instanceof Error) {
+  //         throw new DetailedError(`${callingModule}: create stateMachineService from initializationStructure -> }`, e);
+  //       } else {
+  //         // ToDo:  investigation to determine what else might happen
+  //         throw new Error(`${callingModule}: create stateMachineService from initializationStructure`);
+  //       }
+  //     }
+  //     return _obj;
+  //   }
+  // }
 
   static convertFrom_json(json: string): StateMachineService {
     return fromJson<StateMachineService>(json);
@@ -179,100 +271,19 @@ export class StateMachineService implements IStateMachineService {
     return fromYaml<StateMachineService>(yaml);
   }
 
-  @logFunction
+  @logMethod(LogLevel.Trace)
   initialize(): void {}
 
-  @logFunction
+  @logMethod(LogLevel.Trace)
   start(): void {
-    this.primaryActor.start();
-  }
-
-  @logFunction
-  handleStatusMenuResults(statusMenuItem: StatusMenuItemEnum): void {
-    this.logger.log(`handleStatusMenuResults received ${statusMenuItem.toString()}`, LogLevel.Debug);
-    // switch on the statusMenuItem
-    switch (statusMenuItem) {
-      case StatusMenuItemEnum.Mode:
-        this.logger.log(`handle ${StatusMenuItemEnum.Mode}`, LogLevel.Debug);
-        // call showModeMenuAsync
-        vscode.commands.executeCommand(`${this.extensionName}.showModeMenuAsync`);
-        break;
-      case StatusMenuItemEnum.Command:
-        this.logger.log(`ToDo: handle ${StatusMenuItemEnum.Command}`, LogLevel.Debug);
-        // call showCommandMenuAsync
-        vscode.commands.executeCommand(`${this.extensionName}.showCommandMenuAsync`);
-
-        break;
-      case StatusMenuItemEnum.Sources:
-        this.logger.log(`ToDo: handle ${StatusMenuItemEnum.Sources}`, LogLevel.Debug);
-        break;
-      case StatusMenuItemEnum.ShowLogs:
-        this.logger.log(`handle ${StatusMenuItemEnum.ShowLogs}`, LogLevel.Debug);
-        this.logger.getChannelInfo('ATAP-AiAssist')?.outputChannel?.show(true);
-        break;
-      default:
-        // ToDo: investigate a better way than throwing inside an event handler....
-        throw new DetailedError(` onHandleStatusMenuResults received an unexpected statusMenuItem: ${statusMenuItem}`);
-        break;
-    }
-    // ToDo: is there anything we need to do after handling the statusMenuItem? Visual feedback? etc.
-  }
-
-  // handleModeMenuResults
-  @logFunction
-  handleModeMenuResults(modeMenuItem: ModeMenuItemEnum): void {
-    this.logger.log(`handleModeMenuResults received ${modeMenuItem.toString()}`, LogLevel.Debug);
-    // make this the currentMode
-    this.data.stateManager.currentMode = modeMenuItem;
-    // switch on the modeMenuItem
-    switch (modeMenuItem) {
-      case ModeMenuItemEnum.Workspace:
-        this.logger.log(`ToDo: handle ${ModeMenuItemEnum.Workspace}`, LogLevel.Debug);
-        break;
-      case ModeMenuItemEnum.VSCode:
-        this.logger.log(`ToDo: handle ${ModeMenuItemEnum.VSCode}`, LogLevel.Debug);
-        break;
-      case ModeMenuItemEnum.ChatGPT:
-        this.logger.log(`ToDo: handle ${ModeMenuItemEnum.ChatGPT}`, LogLevel.Debug);
-        break;
-      case ModeMenuItemEnum.Claude:
-        this.logger.log(`ToDo: handle ${ModeMenuItemEnum.Claude}`, LogLevel.Debug);
-        break;
-      default:
-    }
-    this.logger.log(`CurrentMode is now ${this.data.stateManager.currentMode}`, LogLevel.Debug);
-  }
-
-  // handleCommandMenuResults
-  @logFunction
-  handleCommandMenuResults(commandMenuItem: CommandMenuItemEnum): void {
-    this.logger.log(`handleCommandMenuResults received ${commandMenuItem.toString()}`, LogLevel.Debug);
-    // make this the currentMode
-    this.data.stateManager.currentCommand = commandMenuItem;
-    // switch on the commandMenuItem
-    switch (commandMenuItem) {
-      case CommandMenuItemEnum.Chat:
-        this.logger.log(`ToDo: handle ${CommandMenuItemEnum.Chat}`, LogLevel.Debug);
-        break;
-      case CommandMenuItemEnum.Fix:
-        this.logger.log(`ToDo: handle ${CommandMenuItemEnum.Fix}`, LogLevel.Debug);
-        break;
-      case CommandMenuItemEnum.Test:
-        this.logger.log(`ToDo: handle ${CommandMenuItemEnum.Test}`, LogLevel.Debug);
-        break;
-      case CommandMenuItemEnum.Document:
-        this.logger.log(`ToDo: handle ${CommandMenuItemEnum.Document}`, LogLevel.Debug);
-        break;
-      default:
-    }
-    this.logger.log(`CurrentCommand is now ${this.data.stateManager.currentCommand}`, LogLevel.Debug);
+    this.primaryActor!.start();
   }
 
   @logAsyncFunction
   async disposeAsync() {
     if (!this.disposed) {
       // Dispose of the primary actor
-      this.primaryActor.send({ type: 'disposeEvent' });
+      this.primaryActor!.send({ type: "DISPOSE.START" });
       // ToDo: await the transition to the 'Done' state
       this.disposed = true;
     }
@@ -297,7 +308,7 @@ export class StateMachineService implements IStateMachineService {
 // "Vet User Input": {
 //   invoke:{
 //     id:"Vet User Input Logic",
-//     src: commandMenuLogic,
+//     src: queryAgentCommandMenuLogic,
 //     onDone:{
 //       target:"UpdateMode",
 //       actions: assign({
@@ -339,7 +350,7 @@ export class StateMachineService implements IStateMachineService {
 //   },
 // },
 
-// @logFunction
+// @logMethod(LogLevel.Trace)
 // async queryAsync ():Promise<void> {
 //   return new Promise((resolve, reject) => {
 //     this.primaryActor.send({ type: 'query' });
@@ -354,7 +365,7 @@ export class StateMachineService implements IStateMachineService {
 // }
 
 // setup({
-//   actors: { commandMenuLogic }
+//   actors: { queryAgentCommandMenuLogic }
 // }).createMachine({
 //     // cspell:ignore-next-line
 //     id: 'primaryMachine',
@@ -377,7 +388,7 @@ export class StateMachineService implements IStateMachineService {
 //           COMMANDMENU: 'commandMenu',
 //         },
 //       },
-//       commandMenu: {
+//       queryAgentCommandMenu: {
 //         on: {
 //           ShowQuickPickAndWaitForCompletion: 'idle',
 //           COMMANDMENU: 'commandMenu',
@@ -406,8 +417,8 @@ export class StateMachineService implements IStateMachineService {
 // Create the primary actor and start it
 //this.primaryActor = createActor(this.primaryMachine).start();
 
-//  const commandMenuLogic = fromPromise(async () => {
-//   return CommandMenuItemEnum.Chat;
+//  const queryAgentCommandMenuLogic = fromPromise(async () => {
+//   return QueryAgentCommandMenuItemEnum.Chat;
 // });
 
 // interface IVetUnsafeData {

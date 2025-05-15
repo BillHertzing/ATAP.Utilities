@@ -1,11 +1,15 @@
-import * as vscode from 'vscode';
-import { GUID, Int, IDType } from '@IDTypes/index';
-import { DetailedError } from '@ErrorClasses/index';
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
-import { DefaultConfiguration } from './DefaultConfiguration';
+import * as vscode from "vscode";
+import { GUID, Int, IDType } from "@IDTypes/index";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError, HandleError } from "@ErrorClasses/index";
 import {
-  SupportedSerializersEnum,
+  logConstructor,
+  logFunction,
+  logAsyncFunction,
+  logExecutionTime,
+} from "@Decorators/index";
+import { DefaultConfiguration } from "./DefaultConfiguration";
+import {
   SerializationStructure,
   ISerializationStructure,
   isSerializationStructure,
@@ -13,16 +17,25 @@ import {
   fromJson,
   toYaml,
   fromYaml,
-} from '@Serializers/index';
+} from "@Serializers/index";
 
-import { IStateManager, StateManager } from './StateManager';
-import { SupportedSecretsVaultEnum, ISecretsManager, SecretsManager } from './SecretsManager';
-import { IConfigurationData, ConfigurationData } from './ConfigurationData';
-import { IEventManager, EventManager } from './EventManager';
-import { IFileManager, FileManager } from './FileManager';
-import { IPickItems, PickItems } from './PickItems';
+import { IStateManager, StateManager } from "./StateManager";
+import {
+  SupportedSecretsVaultEnum,
+  ISecretsManager,
+  SecretsManager,
+} from "./SecretsManager";
+import { IConfigurationData, ConfigurationData } from "./ConfigurationData";
+import { IEventManager, EventManager } from "./EventManager";
+import { IFileManager, FileManager } from "./FileManager";
+import {
+  IAiAssistCancellationTokenSourceManager,
+  AiAssistCancellationTokenSourceManager,
+} from "./AiAssistCancellationTokenSourceManager";
+import { IPickItems, PickItems } from "./PickItems"; // if pickitems is ESM (.ts / .js) then import it like this
+// const { IPickItems, PickItems } = require("./PickItems"); // if pickitems is commonJS (.cts / .cjs) then import it like this
 
-import { PathLike } from 'fs';
+import { PathLike } from "fs";
 
 export interface IData {
   getTemporaryPromptDocumentPath(): string | undefined;
@@ -35,6 +48,7 @@ export interface IData {
   readonly secretsManager: ISecretsManager;
   readonly eventManager: IEventManager;
   readonly fileManager: IFileManager;
+  readonly aiAssistCancellationTokenSourceManager: IAiAssistCancellationTokenSourceManager;
   readonly pickItems: IPickItems;
   disposeAsync(): void;
 }
@@ -46,6 +60,7 @@ export class Data {
   public readonly secretsManager: ISecretsManager;
   public readonly eventManager: IEventManager;
   public readonly fileManager: IFileManager;
+  public readonly aiAssistCancellationTokenSourceManager: IAiAssistCancellationTokenSourceManager;
   public readonly pickItems: IPickItems;
 
   // Data that does NOT get put into globalState
@@ -55,25 +70,28 @@ export class Data {
   private disposed = false;
 
   // constructor overload signatures to initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
-  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
+  // constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
+  // constructor(
+  //   logger: ILogger,
+  //   extensionContext: vscode.ExtensionContext,
+  //   userDataInitializationStructure: ISerializationStructure,
+  // );
   constructor(
-    logger: ILogger,
-    extensionContext: vscode.ExtensionContext,
-    userDataInitializationStructure: ISerializationStructure,
-  );
-
-  constructor(
-    private logger: ILogger,
+    private readonly logger: ILogger,
     private extensionContext: vscode.ExtensionContext,
     private userDataInitializationStructure?: ISerializationStructure,
     private configurationDataInitializationStructure?: ISerializationStructure,
   ) {
+    this.logger = new Logger(this.logger, "Data");
     // instantiate the configurationData
     try {
-      this.configurationData = new ConfigurationData(this.logger, this.extensionContext);
+      this.configurationData = new ConfigurationData(
+        this.logger,
+        this.extensionContext,
+      );
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create configurationData -> ', e);
+        throw new DetailedError("Data.ctor. create configurationData -> ", e);
       } else {
         // ToDo:  investigation to determine what else might happen
         throw new Error(
@@ -85,13 +103,19 @@ export class Data {
     // instantiate the stateManager
     // ToDo: figure out what StateManager is using folder for, and how to pass it in
     try {
-      this.stateManager = new StateManager(this.logger, this.extensionContext, this.configurationData); //, need a workspace folder passed into the constructor, see https://github.com/microsoft/vscode-cmake-tools/blob/main/src/state.ts
+      this.stateManager = new StateManager(
+        this.logger,
+        this.extensionContext,
+        this.configurationData,
+      ); //, need a workspace folder passed into the constructor, see https://github.com/microsoft/vscode-cmake-tools/blob/main/src/state.ts
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create stateManager -> ', e);
+        throw new DetailedError("Data.ctor. create stateManager -> ", e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`Data.ctor. create stateManager thew an object that was not of type Error -> `);
+        throw new Error(
+          `Data.ctor. create stateManager thew an object that was not of type Error -> `,
+        );
       }
     }
 
@@ -105,22 +129,30 @@ export class Data {
       ); //, need a workspace folder passed into the constructor?
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create secretsManager -> ', e);
+        throw new DetailedError("Data.ctor. create secretsManager -> ", e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`Data.ctor. create secretsManager thew an object that was not of type Error -> `);
+        throw new Error(
+          `Data.ctor. create secretsManager thew an object that was not of type Error -> `,
+        );
       }
     }
 
     // instantiate the eventManager
     try {
-      this.eventManager = new EventManager(this.logger, this.extensionContext, this.configurationData); //, need a workspace folder passed into the constructor?
+      this.eventManager = new EventManager(
+        this.logger,
+        this.extensionContext,
+        this.configurationData,
+      ); //, need a workspace folder passed into the constructor?
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create eventManager -> ', e);
+        throw new DetailedError("Data.ctor. create eventManager -> ", e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`Data.ctor. create eventManager thew an object that was not of type Error -> `);
+        throw new Error(
+          `Data.ctor. create eventManager thew an object that was not of type Error -> `,
+        );
       }
     }
 
@@ -129,22 +161,43 @@ export class Data {
       this.fileManager = new FileManager(this.logger, this.configurationData); //, need a workspace folder passed into the constructor?
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create fileManager -> ', e);
+        throw new DetailedError("Data.ctor. create fileManager -> ", e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`Data.ctor. create fileManager thew an object that was not of type Error -> `);
+        throw new Error(
+          `Data.ctor. create fileManager thew an object that was not of type Error -> `,
+        );
       }
     }
 
+    // instantiate the aiAssistCancellationTokenSourceManager
+    try {
+      this.aiAssistCancellationTokenSourceManager =
+        new AiAssistCancellationTokenSourceManager(this.logger);
+    } catch (e) {
+      if (e instanceof Error) {
+        throw new DetailedError(
+          "Data.ctor. create aiAssistCancellationTokenSourceManager -> ",
+          e,
+        );
+      } else {
+        // ToDo:  investigation to determine what else might happen
+        throw new Error(
+          `Data.ctor. create aiAssistCancellationTokenSourceManager thew an object that was not of type Error -> `,
+        );
+      }
+    }
     // Instantiate the pickItems
     try {
       this.pickItems = new PickItems(this);
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('Data.ctor. create pickItems -> ', e);
+        throw new DetailedError("Data.ctor. create pickItems -> ", e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`Data.ctor. create pickItems thew an object that was not of type Error -> `);
+        throw new Error(
+          `Data.ctor. create pickItems thew an object that was not of type Error -> `,
+        );
       }
     }
   }
@@ -153,13 +206,17 @@ export class Data {
     //await this.stateManager.in;
   }
   public getTemporaryPromptDocumentPath(): string | undefined {
-    return this.temporaryPromptDocumentPath ? this.temporaryPromptDocumentPath : undefined;
+    return this.temporaryPromptDocumentPath
+      ? this.temporaryPromptDocumentPath
+      : undefined;
   }
   public setTemporaryPromptDocumentPath(value: string) {
     this.temporaryPromptDocumentPath = value;
   }
   public getTemporaryPromptDocument(): vscode.TextDocument | undefined {
-    return this.temporaryPromptDocument ? this.temporaryPromptDocument : undefined;
+    return this.temporaryPromptDocument
+      ? this.temporaryPromptDocument
+      : undefined;
   }
   public setTemporaryPromptDocument(value: vscode.TextDocument) {
     this.temporaryPromptDocument = value;
@@ -190,12 +247,13 @@ export class DataService implements IDataService {
   public readonly data: Data;
   private disposed = false;
   // constructor overload signatures to initialize with various combinations of empty fields and fields initialized with one or more SerializationStructures
-  constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
+  // constructor(logger: ILogger, extensionContext: vscode.ExtensionContext);
 
   constructor(
-    private logger: ILogger,
+    private readonly logger: ILogger,
     private extensionContext: vscode.ExtensionContext, //dataInitializationStructure?: ISerializationStructure,
   ) {
+    this.logger = new Logger(this.logger, "DataService");
     // ToDo: version-aware configuration data loading; multiroot-workspace-aware
     this.version = DefaultConfiguration.version;
     // capture any errors and report them upward
@@ -206,62 +264,64 @@ export class DataService implements IDataService {
       //   : new Data(this.logger, this.extensionContext);
     } catch (e) {
       if (e instanceof Error) {
-        throw new DetailedError('DataService.ctor. create data -> }', e);
+        throw new DetailedError("DataService.ctor. create data -> }", e);
       } else {
         // ToDo:  investigation to determine what else might happen
-        throw new Error(`DataService.ctor. create data thew an object that was not of type Error ->`);
+        throw new Error(
+          `DataService.ctor. create data thew an object that was not of type Error ->`,
+        );
       }
     }
   }
 
   // ToDo: make data derive from ItemWithID, and keep track of multiple instances of data (to support profiles?)
   // ToDo: ensure compatability  between the dataService rehydrated from the Default Configuration with  actual version number of the extension
-  static create(
-    logger: ILogger,
-    extensionContext: vscode.ExtensionContext,
-    callingModule: string,
-    initializationStructure?: ISerializationStructure,
-  ): DataService {
-    Logger.staticLog(`DataService.create called`, LogLevel.Debug);
+  // static create(
+  //   logger: ILogger,
+  //   extensionContext: vscode.ExtensionContext,
+  //   callingModule: string,
+  //   initializationStructure?: ISerializationStructure,
+  // ): DataService {
+  //   Logger.staticLog(`DataService.create called`, LogLevel.Debug);
 
-    let _obj: DataService | null;
-    if (initializationStructure) {
-      try {
-        // ToDo: deserialize based on contents of structure
-        _obj = DataService.convertFrom_yaml(initializationStructure.value);
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(
-            `${callingModule}: create dataService from initializationStructure using convertFrom_xxx -> }`,
-            e,
-          );
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(
-            `${callingModule}: create dataService from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
-          );
-        }
-      }
-      if (_obj === null) {
-        throw new Error(
-          `${callingModule}: create dataService from initializationStructure using convertFrom_xxx produced a null`,
-        );
-      }
-      return _obj;
-    } else {
-      try {
-        _obj = new DataService(logger, extensionContext);
-      } catch (e) {
-        if (e instanceof Error) {
-          throw new DetailedError(`${callingModule}: create dataService from initializationStructure -> }`, e);
-        } else {
-          // ToDo:  investigation to determine what else might happen
-          throw new Error(`${callingModule}: create dataService from initializationStructure`);
-        }
-      }
-      return _obj;
-    }
-  }
+  //   let _obj: DataService | null;
+  //   if (initializationStructure) {
+  //     try {
+  //       // ToDo: deserialize based on contents of structure
+  //       _obj = DataService.convertFrom_yaml(initializationStructure.value);
+  //     } catch (e) {
+  //       if (e instanceof Error) {
+  //         throw new DetailedError(
+  //           `${callingModule}: create dataService from initializationStructure using convertFrom_xxx -> }`,
+  //           e,
+  //         );
+  //       } else {
+  //         // ToDo:  investigation to determine what else might happen
+  //         throw new Error(
+  //           `${callingModule}: create dataService from initializationStructure using convertFrom_xxx threw something other than a polymorphous Error`,
+  //         );
+  //       }
+  //     }
+  //     if (_obj === null) {
+  //       throw new Error(
+  //         `${callingModule}: create dataService from initializationStructure using convertFrom_xxx produced a null`,
+  //       );
+  //     }
+  //     return _obj;
+  //   } else {
+  //     try {
+  //       _obj = new DataService(logger, extensionContext);
+  //     } catch (e) {
+  //       if (e instanceof Error) {
+  //         throw new DetailedError(`${callingModule}: create dataService from initializationStructure -> }`, e);
+  //       } else {
+  //         // ToDo:  investigation to determine what else might happen
+  //         throw new Error(`${callingModule}: create dataService from initializationStructure`);
+  //       }
+  //     }
+  //     return _obj;
+  //   }
+  // }
 
   static convertFrom_json(json: string): DataService {
     return fromJson<DataService>(json);

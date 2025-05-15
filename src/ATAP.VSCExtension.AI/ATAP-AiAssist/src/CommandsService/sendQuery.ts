@@ -1,66 +1,78 @@
-// // ToDo: understand and document why globalThis is required. Failure to use globalThis results in the following error: the return type of an async function or method must be the global Promise<T> type. Did you mean to write 'Promise<string>'?
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import {
+  IDataService,
+  IData,
+  IStateManager,
+  IConfigurationData,
+} from "@DataService/index";
+import { StringBuilder } from "@Utilities/index";
 
-// // @logAsyncFunction
-// export async function sendQuery(logger: Logger.ILogger, data: IData): globalThis.Promise<void> {
-//   // Optional field for error message}> {
-//   logger.log('sendQuery', Logger.LogLevel.Debug);
-//   let textToSubmit = new StringBuilder();
-//   //
+// ToDo: understand and document why globalThis is required. Failure to use globalThis results in the following error: the return type of an async function or method must be the global Promise<T> type. Did you mean to write 'Promise<string>'?
 
-//   // Start with historical data from the previous query
+// @logAsyncFunction
+export async function sendQuery(
+  logger: ILogger,
+  data: IData,
+): globalThis.Promise<void> {
+  // Optional field for error message}> {
+  logger.log("sendQuery", LogLevel.Debug);
+  let textToSubmit = new StringBuilder();
+  //
 
-//   // Add text from the prompt document if it exists
-//   const tempFilePath = data.getTemporaryPromptDocumentPath();
-//   if (tempFilePath) {
-//     // ToDo: wrap in a try catch
-//     if (fs.existsSync(tempFilePath as string)) {
-//       // ToDo: wrap in a try catch
-//       const tempFileContent = fs.readFileSync(tempFilePath, 'utf8');
+  // Start with historical data from the previous query
 
-//       textToSubmit.append(tempFileContent);
+  // Add text from the prompt document if it exists
+  const tempFilePath = data.getTemporaryPromptDocumentPath();
+  //   if (tempFilePath) {
+  //     // ToDo: wrap in a try catch
+  //     if (fs.existsSync(tempFilePath as string)) {
+  //       // ToDo: wrap in a try catch
+  //       const tempFileContent = fs.readFileSync(tempFilePath, 'utf8');
 
-//       logger.log(`tempFilePath = ${tempFilePath} ; tempFileContent  = ${tempFileContent}`, Logger.LogLevel.Debug);
-//     }
-//   }
-//   // Retrieve and concatenate all text documents currently open in text editors
-//   let minifiedContent = '';
-//   for (const document of vscode.workspace.textDocuments) {
-//     logger.log(
-//       `document.uri  = ${document.uri}; document.uri.scheme  = ${document.uri.scheme}; document.uri.fsPath  = ${document.uri.fsPath} ; document.fileName = ${document.fileName}`,
-//       Logger.LogLevel.Debug,
-//     );
+  //       textToSubmit.append(tempFileContent);
 
-//     let content: string;
-//     if (document.uri.scheme === 'file') {
-//       try {
-//         content = await minifyCodeAsync(logger, document.getText(), path.extname(document.uri.fsPath));
-//       } catch (e) {
-//         if (e instanceof Error) {
-//           throw new DetailedError('sendQuery calling minifyCodeAsync failed -> ', e);
-//         } else {
-//           throw new Error(
-//             `sendQuery. calling minifyCodeAsync caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
-//           );
-//         }
-//       }
-//       minifiedContent += `Filename: ${document.uri.fsPath}:\n ${content}\n`;
-//     }
-//   }
-//   textToSubmit.append(minifiedContent);
+  //       logger.log(`tempFilePath = ${tempFilePath} ; tempFileContent  = ${tempFileContent}`, Logger.LogLevel.Debug);
+  //     }
+  //   }
+  //   // Retrieve and concatenate all text documents currently open in text editors
+  //   let minifiedContent = '';
+  //   for (const document of vscode.workspace.textDocuments) {
+  //     logger.log(
+  //       `document.uri  = ${document.uri}; document.uri.scheme  = ${document.uri.scheme}; document.uri.fsPath  = ${document.uri.fsPath} ; document.fileName = ${document.fileName}`,
+  //       Logger.LogLevel.Debug,
+  //     );
 
-//   //logger.log(`textToSubmit = ${textToSubmit}`, LogLevel.Debug);
+  //     let content: string;
+  //     if (document.uri.scheme === 'file') {
+  //       try {
+  //         content = await minifyCodeAsync(logger, document.getText(), path.extname(document.uri.fsPath));
+  //       } catch (e) {
+  //         if (e instanceof Error) {
+  //           throw new DetailedError('sendQuery calling minifyCodeAsync failed -> ', e);
+  //         } else {
+  //           throw new Error(
+  //             `sendQuery. calling minifyCodeAsync caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
+  //           );
+  //         }
+  //       }
+  //       minifiedContent += `Filename: ${document.uri.fsPath}:\n ${content}\n`;
+  //     }
+  //   }
+  //   textToSubmit.append(minifiedContent);
 
-//   // Repeat for all active LLModels (AI Engines)
-//   // for now, assume the query will be sent to a single endpoint, and hardcode the specific endpoint in here for now
-//   // let lLModel = LLModels.ChatGPT;
-//   // let endpointConfiguration = data.configurationData.getEndpointConfig()[lLModel];
-//   // get URL
-//   // Get json sections for the completions endpoint
-//   //let page = 'chat/completions';
-//   //let model = 'davinci';
+  //   //logger.log(`textToSubmit = ${textToSubmit}`, LogLevel.Debug);
 
-//   sendQueryOpenAIAsync(logger, textToSubmit.toString(), data);
-// }
+  //   // Repeat for all active LLModels (AI Engines)
+  //   // for now, assume the query will be sent to a single endpoint, and hardcode the specific endpoint in here for now
+  //   // let lLModel = LLModels.ChatGPT;
+  //   // let endpointConfiguration = data.configurationData.getEndpointConfig()[lLModel];
+  //   // get URL
+  //   // Get json sections for the completions endpoint
+  //   //let page = 'chat/completions';
+  //   //let model = 'davinci';
+
+  //   sendQueryOpenAIAsync(logger, textToSubmit.toString(), data);
+}
 
 // // Use Bluebird to wrap Axios call
 // // try {

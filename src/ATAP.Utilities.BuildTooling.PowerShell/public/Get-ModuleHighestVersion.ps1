@@ -37,7 +37,7 @@ Function Get-ModuleHighestVersion {
     [ValidateNotNullOrEmpty()]
     [string]  $moduleName
     , [Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
-    # ToDo: Make this an aarray of instances of a class with three fields instead of a string array
+    # ToDo: Make this an array of instances of a class with three fields instead of a string array
     [string[]] $Sources
     , [Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
     [switch] $PublicOnly
@@ -57,16 +57,15 @@ Function Get-ModuleHighestVersion {
     Write-PSFMessage -Level Debug -Message "Workspace = $([System.Environment]::GetEnvironmentVariable('Workspace'))" -Tag 'Jenkins', 'Publish'
 
     $highestSemanticVersion = $lowestSemanticVersion
-    $REPattern = '(?<ProviderName>NuGet|PowershellGet|Chocolatey)(?<ProviderLifecycle>Filesystem|QualityAssuranceWebServer|ProductionWebServer)(?<PackageLifecycle>Development|QualityAssurance|Production)'
+    $REPattern = '(?<ProviderName>NuGet|PowershellGet|ChocolateyGet)(?<ProviderLifecycle>Filesystem|QualityAssuranceWebServer|ProductionWebServer)(?<PackageLifecycle>QualityAssurance|Production)'
     for ($i = 0; $i -lt $sources.count; $i++) {
       $source = $sources[$i]
       # Split the source into its three parts
       if ($source -imatch $config[$REPattern]) {
-        $ProviderName = $matches['ProviderName'];
-        $ProviderLifecycle = $matches['ProviderLifecycle'];
-        $PackageLifecycle = $matches['PackageLifecycle'];
-      }
-      else {
+        $ProviderName = $matches['ProviderName']
+        $ProviderLifecycle = $matches['ProviderLifecycle']
+        $PackageLifecycle = $matches['PackageLifecycle']
+      } else {
         $message = "source = $source; it does not imatch $REPattern"
         Write-PSFMessage -Level Error -Message $message -Tag 'Jenkins', 'Publish'
         Throw $message

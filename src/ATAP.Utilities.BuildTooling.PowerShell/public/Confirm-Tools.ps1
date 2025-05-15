@@ -7,9 +7,9 @@ Confirm that all the 3rd party tools and scripts needed to build, analyze, test,
 This function looks for the presence of tools needed by the ATAP.Utilities to
   - compile and interpret c# and Powershell code (text files to executable production code)
   - automate testing of the powershell packages and c#-sourced libraries
-  - create documenation from code
+  - create documentation from code
   - generate class diagrams from code
-  - integrate the generated diagrams with the generated documentaion,
+  - integrate the generated diagrams with the generated documentation,
   - suports draw.io engineering drawings
   - generte a static documentation site from code, conceptual documentation, and diagram files
   - provide Source Code Management (SCM)
@@ -18,7 +18,7 @@ This function looks for the presence of tools needed by the ATAP.Utilities to
   - run the CI/CD pipeline
   - provide message queing and inter-computer messaging
   - create deployment package for .Net libraries and applications
-  - deploy packages to internal and external location, to three public location (PSGallery, Nuget, and Chocolotey)
+  - deploy packages to internal and external location, to three public location (PSGallery, Nuget, and Chocolatey)
 
 .PARAMETER Name
 ToDo: write Help For the parameter X
@@ -27,7 +27,7 @@ ToDo: write Help For the parameter X
 .INPUTS
 Environment variables drive the action that this Cmdlet takes.
 Machine and container nodes are grouped and assigned capabilities (roles).
-Roles imply a promise that certains tools will be avaialable in the environments that certain actions can occur.
+Roles imply a promise that certain tools will be available in the environments that certain actions can occur.
 
 Environments Production, Test, and Development are the 1st roots of the Environment Variables.
 he public locations, private locations, and the exact composition of the machine code and documentation package,
@@ -79,7 +79,7 @@ Function Confirm-Tools {
     # $testOutFn = $settings.OutDir + 'test.txt'
     # try { New-Item $testOutFn -Force -type file >$null
     # }
-    # catch { # if an exception ocurrs
+    # catch { # if an exception occurs
     #   # handle the exception
     #   $where = $PSItem.InvocationInfo.PositionMessage
     #   $ErrorMessage = $_.Exception.Message
@@ -102,19 +102,20 @@ Function Confirm-Tools {
   #region FunctionProcessBlock
   ########################################
   PROCESS {
-    ('NuGet', 'PowershellGet', 'Chocolatey') | ForEach-Object { $ProviderName = $_
+    # ToDo: Replace with enumeration
+    ('NuGet', 'PowershellGet', 'ChocolateyGet') | ForEach-Object { $ProviderName = $_
       # Confirm-RepositoryPackageProvider will throw if it cannot be installed
       Confirm-RepositoryPackageProvider -ProviderName $ProviderName
       ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $ProviderLifecycle = $_
-        ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $PackageLifecycle = $_
-          # validate each $ProviderName / ProviderLifecycle / LifPackageLifecycle cycle cross exists. (installing should be done during container setup)
+        ('QualityAssurance', 'Production') | ForEach-Object { $PackageLifecycle = $_
+          # validate each $ProviderName / ProviderLifecycle / PackageLifecycle cross exists. (installing should be done during container setup)
           $RepositoryPackageSourceName = $ProviderName + $ProviderLifecycle + $PackageLifecycle + 'Package'
           # Confirm-RepositoryPackageProvider will throw if the RepositoryPackageSourceName cannot be registered
           Confirm-RepositoryPackageSource -RepositoryPackageSourceName $RepositoryPackageSourceName
+        }
       }
     }
   }
-}
   #endregion FunctionProcessBlock
 
   #region FunctionEndBlock

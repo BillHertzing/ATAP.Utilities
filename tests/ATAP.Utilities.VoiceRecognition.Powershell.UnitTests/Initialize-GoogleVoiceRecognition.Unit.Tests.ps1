@@ -34,7 +34,7 @@
   $sUTAbsolutePath = Resolve-Path $(Join-Path $moduleAbsolutePath $sUTRelativeToModulePath $sUTFileName)
   # load the ScriptUnderTest to test into memory
   . $sUTAbsolutePath
-  
+
   $dataset = @(@{Name                          = 'EmptyHash'
     SourceCollections             = @(,
       @{}
@@ -44,7 +44,7 @@
 
   })
 	}
-  
+
     Describe "ScriptOrModuleUnderTest" -ForEach $dataset
 	{
   param(
@@ -60,7 +60,7 @@
 
   It '<name> has the expected destination' {
     # Test settings for this specific test case
-    if ($DebugPreference -eq 'Continue') {
+    if (further -eq 'Continue') {
       Write-Host $name
     }
     Get-CollectionTraverseEvaluate -sourceCollections $SourceCollections -destination $DestinationCollection -matchPatternRegex $MatchPatternRegex

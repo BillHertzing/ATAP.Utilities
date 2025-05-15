@@ -39,7 +39,7 @@ Function Clear-NuGetCaches {
   #region FunctionBeginBlock
   ########################################
   BEGIN {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
     Write-Verbose -Message "Caches may be locked! Stop any IDEs or CI processes. )"
   }
   #endregion FunctionBeginBlock
@@ -57,7 +57,7 @@ Function Clear-NuGetCaches {
     $path = join-path $env:USERPROFILE '.nuget/packages'
     Write-Verbose "Removing $path"
     if ((test-path $path) -AND ($path -match 'nuget')) {
-      if ($PSCmdlet.ShouldProcess("$path", "-Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
+      if ($PSCmdlet.ShouldProcess("$path", "Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
         Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference
       }
     } else {
@@ -66,7 +66,7 @@ Function Clear-NuGetCaches {
     $path = join-path $ENV:tmp 'NuGetScratch'
     Write-Verbose "Removing $path"
     if ((test-path $path) -AND ($path -match 'nuget')) {
-      if ($PSCmdlet.ShouldProcess("$path", "-Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
+      if ($PSCmdlet.ShouldProcess("$path", "Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
         Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference
       }
     } else {
@@ -75,13 +75,13 @@ Function Clear-NuGetCaches {
     $path = join-path $ENV:LOCALAPPDATA 'NuGet/v3-cache'
     Write-Verbose "Removing $path"
     if ((test-path $path) -AND ($path -match 'nuget')) {
-      if ($PSCmdlet.ShouldProcess("$path", "-Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
+      if ($PSCmdlet.ShouldProcess("$path", "Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference ")) {
         Remove-Item -Recurse -Force -Path $path -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference
       }
     } else {
        Write-Output "Either $path does not exist or $path does not contain the case-insensitive substring nuget!"
     }
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Ending $($MyInvocation.MyCommand)"
   }
   #endregion FunctionEndBlock
 }

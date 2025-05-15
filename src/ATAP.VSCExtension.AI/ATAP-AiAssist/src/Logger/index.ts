@@ -1,1 +1,1 @@
-export { LogLevel, ChannelInfo, ILogger, Logger } from './Logger';
+export { LogLevel, ILogger, Logger } from "./Logger";

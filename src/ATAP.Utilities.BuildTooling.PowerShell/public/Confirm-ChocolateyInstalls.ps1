@@ -43,7 +43,7 @@ Function Confirm-ChocolateyInstalls {
   ########################################
   BEGIN {
     # $DebugPreference = 'SilentlyContinue'
-    Write-Debug "Starting $($MyInvocation.Mycommand)"
+    Write-Debug "Starting $($MyInvocation.MyCommand)"
     Write-Debug "PsCmdlet.ParameterSetName = $($PsCmdlet.ParameterSetName)"
 
     $binDirList = $null
@@ -54,7 +54,7 @@ Function Confirm-ChocolateyInstalls {
         throw "Confirm-ChocolateyInstalls failed, directory does not exist. ChocolateyInstallDir = $([Environment]::GetEnvironmentVariable($global:configRootKeys['ChocolateyInstallDirConfigRootKey']))"
       }
     }
-    Write-Verbose "Ending $($MyInvocation.Mycommand)"
+    Write-Verbose "Ending $($MyInvocation.MyCommand)"
     # return a results object
     $results
   }

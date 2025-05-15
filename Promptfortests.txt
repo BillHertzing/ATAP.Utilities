@@ -1,0 +1,59 @@
+
+You are an expert in powershell and testing powershell using Pester. You are an expert in Visual Studio Code launch.json and task.json files. You are an expert in Visual studio code test runners. You are an expert in multiproject GIT repositories.
+Given a repository structure like this:
+/ATAP.Utilities
+- .vscode
+-- launch.json
+-- tasks.json
+- src
+-- ATAP.Utiities.A1.Powershell
+--- _generated
+--- private
+--- public
+---- FuncA1-F1.ps1
+---- FuncA1-F2.ps1
+--- Releases
+---- 0.0.1
+---- 0.1.0
+--- ATAP.Utilities.A1.Powershell.psd1
+--- ATAP.Utilities.A1.Powershell.psm1
+-- ATAP.Utilities.A2.Powershell
+--- _generated
+--- private
+--- public
+---- FuncA2-F1.ps1
+---- FuncA2-F2.ps1
+--- Releases
+---- 0.0.1
+---- 0.1.0
+--- ATAP.Utilities.A2.Powershell.psd1
+--- ATAP.Utilities.A2.Powershell.psm1
+- tests
+-- ATAP.Utiities.A1.Powershell
+--- UnitTests
+---- ATAP.Utilities.A1.Powershell.tests.ps1
+--- IntegrationTests
+---- ATAP.Utilities.A1.Powershell.tests.ps1
+-- ATAP.Utiities.A2.Powershell
+--- UnitTests
+---- ATAP.Utilities.A2.Powershell.tests.ps1
+--- IntegrationTests
+---- ATAP.Utilities.A2.Powershell.tests.ps1
+
+ provide the following functionality by creating entries for launch.json and tasks.json, and create a pester.ps1 file to accomplish the following:
+ 1) If a developer is using Visual Studio Code to edit the file FuncA1-F1.ps1, then every time the file is saved, run the tests found in the corresponding UnitTests subdirectory
+ 1) If a developer is using Visual Studio Code to edit the file UnitTests/ATAP.Utilities.A1.Powershell.tests.ps1, then every time the file is saved, run the tests in that file.
+ 3) Every tests.ps1 file should have a BeforeAll block that imports the module being tested. The BeforeAll block should use a function called Get-ModuleToBeTested that imports the module to be tested. Get-ModuleToBeTested should reside in the default pester.ps1 file that is automatically available to all pester tests.
+ 4) Get-ModuleToBeTested should look at the $global:settings['Environment'] variable, the $global:settings['RepositorySource'] variable and global:settings['PackageRepositoriesCollection'] to determine the location from which to import the module. the logic should be as follows: 
+   $locationOfModuleToBeTested = $global:settings['RepositorySource']['Repository' + $global:settings['Environment'] + $global:settings['RepositorySource']]
+
+
+   
+is there any file that pester will always load and execute before any tests are run?
+
+given a function called get-pesterconfiguration that returns a pester configuration object, how can I invoke pester and tell it to use this configuration object? how can I launch pester using this object? how can I invoke pester testing interactivly from VSC using F5 and get pester to use this configuration object?
+
+what if the powershell module is part of a multiroot repository, where source modules are under the root/src<modulename>, and tests are under root/tests/<modulename>? what needs to be done to tell VSC that a modules tests are "up and over" from the source module?
+
+how does visual studio code run tests for powershell modules
+

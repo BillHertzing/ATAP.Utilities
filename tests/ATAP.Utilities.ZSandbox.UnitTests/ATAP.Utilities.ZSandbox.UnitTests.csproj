@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net5.0;</TargetFrameworks>
+    <TargetFrameworks>net9.0;</TargetFrameworks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>false</IsPackable>
     <!-- Assembly, File, and Package Information for this assembly-->
@@ -17,16 +17,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentAssertions"/>
-    <PackageReference Include="Microsoft.NET.Test.Sdk"  />
-    <PackageReference Include="Moq"  />
-    <PackageReference Include="xunit"  />
-    <PackageReference Include="xunit.runner.visualstudio" >
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <DotNetCliToolReference Include="dotnet-xunit"  />
-   <PackageReference Include="coverlet.collector" >
+    <DotNetCliToolReference Include="dotnet-xunit" />
+    <PackageReference Include="coverlet.collector">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -43,23 +43,23 @@
   </ItemGroup>
 
   <ItemGroup>
-  <!-- 
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Enumerations\ATAP.Utilities.ComputerInventory.Enumerations.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Models.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ConcurrentObservableCollections.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Enumerations.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Extensions.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Models.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Enumerations.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Extensions.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Models.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.DateTime.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Enumeration.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.Http.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.String.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Services.TcpWithResilience.csproj"  />
-    <ProjectReference Include="..\..\src\ATAP.Utilities.ZSandbox.csproj"  />
+    <!--
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Enumerations\ATAP.Utilities.ComputerInventory.Enumerations.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Extensions\ATAP.Utilities.ComputerInventory.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ComputerInventory.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ConcurrentObservableCollections.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Enumerations.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoCoin.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Enumerations.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Extensions.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.CryptoMiner.Models.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.DateTime.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Enumeration.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.Http.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.String.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Services.TcpWithResilience.csproj" />
+    <ProjectReference Include="..\..\src\ATAP.Utilities.ZSandbox.csproj" />
     -->
   </ItemGroup>
 

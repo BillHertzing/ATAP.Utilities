@@ -29,7 +29,7 @@ function Clear-VSCCaches {
     [OutputType([Object])]
     Param (
         # Param1 help description
-        # ToDO: make this accept pipeline input for cachelocations
+        # ToDO: make this accept pipeline input for cache locations
         [Parameter(Mandatory = $false,
             Position = 0,
             ValueFromPipeline = $false,
@@ -60,7 +60,7 @@ function Clear-VSCCaches {
     PROCESS {
         #  ToDo: make this accept pipeline input for cachelocation
         if ($PSCmdlet.ShouldProcess("$cacheLocations", 'remove-item -recurse -force ')) {
-            Remove-Item -Recurse -Force $cacheLocations -WhatIf:$WhatIfPreference -Verbose:$Verbosepreference
+            Remove-Item -Recurse -Force $cacheLocations -WhatIf:$WhatIfPreference -Verbose:$VerbosePreference
         }
     }
 

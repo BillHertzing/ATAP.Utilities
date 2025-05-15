@@ -1,158 +1,62 @@
-import { randomOutcome } from '@Utilities/index'; // ToDo: replace with a mocked iQueryService instead of using this import
-import * as vscode from 'vscode';
-import { LogLevel, ILogger } from '@Logger/index';
-import { ActorRef, assertEvent, assign, fromPromise, OutputFrom, sendTo, setup } from 'xstate';
+import * as vscode from "vscode";
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { DetailedError, HandleError } from "@ErrorClasses/index";
+import {
+  ActorRef,
+  assertEvent,
+  assign,
+  fromPromise,
+  OutputFrom,
+  sendTo,
+  setup,
+} from "xstate";
 
-import { QueryFragmentEnum, QueryEngineNamesEnum, QueryEngineFlagsEnum } from '@BaseEnumerations/index';
-
-import { IQueryService } from '@QueryService/index';
-
-import { IQueryFragmentCollection } from '@ItemWithIDs/index';
-
-import { DetailedError, HandleError } from '@ErrorClasses/index';
+import { IQueryService } from "@QueryService/index";
 
 import {
-  IAllMachinesBaseContext,
-  IActorRefAndSubscription,
-  IAllMachinesCommonResults,
-} from '@StateMachineService/index';
+  IQuerySingleEngineActorInput,
+  IQuerySingleEngineActorOutput,
+  IQuerySingleEngineMachineInput,
+  IQuerySingleEngineMachineOutput,
+  IQuerySingleEngineMachineContext,
+  IQuerySingleEngineMachineNotifyCompleteActionParameters,
+  IQuerySingleEngineMachineDoneEventPayload,
+  QuerySingleEngineMachineCompletionEventsUnionT,
+  QuerySingleEngineMachineAllEventsUnionT,
+} from "./querySingleEngineTypes";
 
-// **********************************************************************************************************************
-// context type, input type, output type, and event payload types for the querySingleEngineMachine
+import { querySingleEngineActor } from "./querySingleEngineActorLogic";
 
-export interface IQuerySingleEngineMachineInput extends IAllMachinesBaseContext {
-  parent: ActorRef<any, any>;
-  queryService: IQueryService;
-  queryString: string;
-  queryEngineName: QueryEngineNamesEnum;
-  cTSToken: vscode.CancellationToken;
-}
-export interface IQuerySingleEngineMachineContext extends IQuerySingleEngineMachineInput, IAllMachinesCommonResults {
-  response?: string;
-}
-export interface IQuerySingleEngineMachineOutput extends IQuerySingleEngineActorLogicOutput {}
-// **********************************************************************************************************************
-// context type, input type, output type, and event payload types for the querySingleEngineActorLogic
-export interface IQuerySingleEngineActorLogicInput {
-  logger: ILogger;
-  queryService: IQueryService;
-  queryString?: string;
-  queryEngineName: QueryEngineNamesEnum;
-  cTSToken: vscode.CancellationToken;
-}
-export interface IQuerySingleEngineActorLogicOutput extends IAllMachinesCommonResults {
-  queryEngineName: QueryEngineNamesEnum;
-  response?: string;
-}
-export interface IQuerySingleEngineMachineDoneEventPayload {
-  queryEngineName: QueryEngineNamesEnum;
-}
-export interface INotifyCompleteActionParameters {
-  logger: ILogger;
-  sendToTargetActorRef: ActorRef<any, any>;
-  eventCausingTheTransitionIntoOuterDoneState: QuerySingleEngineMachineCompletionEventsT;
-  queryEngineName: QueryEngineNamesEnum;
-}
-
-// **********************************************************************************************************************
-// actor logic definition for the querySingleEngineActorLogic
-export const querySingleEngineActorLogic = fromPromise<
-  IQuerySingleEngineActorLogicOutput,
-  IQuerySingleEngineActorLogicInput
->(async ({ input }: { input: IQuerySingleEngineActorLogicInput }) => {
-  input.logger.log(`querySingleEngineActorLogic called`, LogLevel.Debug);
-  // always test the cancellation token on entry to the function to see if it has already been cancelled
-  if (input.cTSToken?.isCancellationRequested) {
-    return { isCancelled: true } as IQuerySingleEngineActorLogicOutput;
-  }
-  let _qs = input.queryString;
-  let _queryResponse: { result?: string; isCancelled: boolean };
-  // use the queryService to handle the query to the Bard queryEngine
-  try {
-    _queryResponse = await randomOutcome('Response FromBard');
-    // ToDo: use the queryService to handle the query to a queryEngine. For testing and development, pass an instance of queryService that uses a mock inside the sendQueryAsync
-    // _queryResponse = await input.queryService.sendQueryAsync(
-    //   input.queryString as string,
-    //   input.queryEngineName,
-    //   input.cTSToken,
-    // );
-  } catch (e) {
-    // Rethrow the error with a more detailed error message
-    HandleError(e, 'queryXXX', 'querySingleEngineActorLogic', 'failed calling queryService.sendQueryAsync');
-  }
-  // always test the cancellation token after returning from an await to see if the function being awaited was cancelled
-  if (input.cTSToken?.isCancellationRequested) {
-    input.logger.log(
-      `querySingleEngineActorLogic leaving after await queryService.sendQueryAsync with cancelled = true`,
-      LogLevel.Debug,
-    );
-    return { isCancelled: true } as IQuerySingleEngineActorLogicOutput;
-  }
-  input.logger.log(
-    `querySingleEngineActorLogic leaving with response = ${_queryResponse.result}, cancelled = false`,
-    LogLevel.Debug,
-  );
-  return {
-    queryEngineName: input.queryEngineName,
-    queryResponse: _queryResponse.result,
-    isCancelled: false,
-  } as IQuerySingleEngineActorLogicOutput;
-});
-
-// **********************************************************************************************************************
+// *********************************************************************************************************************
 // Machine definition for the querySingleEngineMachine
-export type QuerySingleEngineMachineCompletionEventsT =
-  | { type: 'xstate.done.actor.querySingleEngineActor'; output: IQuerySingleEngineActorLogicOutput }
-  | { type: 'xstate.error.actor.querySingleEngineActor'; message: string }
-  | { type: 'xstate.done.actor.disposeActor' }
-  | { type: 'xstate.error.actor.disposeActor'; message: string };
-export type QuerySingleEngineMachineNotifyEventsT =
-  | { type: 'QUERY.SINGLE_ENGINE_MACHINE_DONE'; payload: IQuerySingleEngineMachineDoneEventPayload }
-  | { type: 'DISPOSE_COMPLETE' };
-type AllQuerySingleEngineMachineEventsT =
-  | QuerySingleEngineMachineCompletionEventsT
-  | QuerySingleEngineMachineNotifyEventsT
-  | { type: 'DISPOSE_START' }; // Can be called at any time. The machine must transition to the disposeState.disposingState, where any allocated resources will be freed.
-
-type QuerySingleEngineMachineAllEventsT =
-  | QuerySingleEngineMachineCompletionEventsT
-  | QuerySingleEngineMachineNotifyEventsT
-  | { type: 'DISPOSE_START' }; // Can be called at any time. The machine must transition to the disposeState.disposingState, where any allocated resources will be freed.
-
-export interface IQuerySingleEngineMachineNotifyCompleteActionParameters {
-  logger: ILogger;
-  sendToTargetActorRef: ActorRef<any, any>;
-  eventCausingTheTransitionIntoOuterDoneState: QuerySingleEngineMachineCompletionEventsT;
-  queryEngineName: QueryEngineNamesEnum;
-}
 
 export const querySingleEngineMachine = setup({
   types: {} as {
     context: IQuerySingleEngineMachineContext;
     input: IQuerySingleEngineMachineInput;
     output: IQuerySingleEngineMachineOutput;
-    events: QuerySingleEngineMachineAllEventsT;
+    events: QuerySingleEngineMachineAllEventsUnionT;
     children: {
-      querySingleEngineActor: 'querySingleEngineActor';
+      querySingleEngineActor: "querySingleEngineActor";
     };
   },
   actors: {
-    querySingleEngineActor: querySingleEngineActorLogic,
+    querySingleEngineActor: querySingleEngineActor,
   },
   actions: {
     debugMachineContext: ({ context, event }) => {
       context.logger.log(
-        `QuerySingleEngineContext, context.queryEngineName: ${context.queryEngineName},   context.queryString: ${context.queryString}, context.response: ${context!.response}, context.isCancelled: ${context.isCancelled}`,
+        `debug QuerySingleEngineMachineContext, context.queryEngineName: ${context.queryEngineName},   context.queryString: ${context.queryString}, context.response: ${context!.response}, context.isCancelled: ${context.isCancelled}`,
         LogLevel.Debug,
       );
     },
     assignQuerySingleEngineActorDoneOutputToQueryMachineContext: assign({
       response: ({ context, spawn, event, self }) => {
-        assertEvent(event, 'xstate.done.actor.querySingleEngineActor');
+        assertEvent(event, "xstate.done.actor.querySingleEngineActor");
         return event.output.response;
       },
       isCancelled: ({ context, spawn, event, self }) => {
-        assertEvent(event, 'xstate.done.actor.querySingleEngineActor');
+        assertEvent(event, "xstate.done.actor.querySingleEngineActor");
         return event.output.isCancelled;
       },
     }),
@@ -160,73 +64,104 @@ export const querySingleEngineMachine = setup({
       response: undefined,
       isCancelled: false,
       errorMessage: ({ context, event }) => {
-        assertEvent(event, 'xstate.error.actor.querySingleEngineActor');
+        assertEvent(event, "xstate.error.actor.querySingleEngineActor");
         return event.message;
       },
     }),
-    disposeCompleteStateEntryAction: ({ context, event }) => {
-      context.logger.log(`disposeCompleteStateEntryAction, event type is ${event.type}`, LogLevel.Debug);
-      sendTo(context.parent, {
-        type: 'DISPOSE_COMPLETE',
-      });
-    },
+    // the sendTo(...) is a special action that can go wherever an action can go
+    //   it has two arguments, either or both of which can be a lambda that closes over their params argument
+    //   The first lambda returns an actorRef
+    //   The second lambda returns an event, thus satisfying the two argument types that sendTo expects
     notifyCompleteAction: sendTo(
       (_, params: IQuerySingleEngineMachineNotifyCompleteActionParameters) => {
-        params.logger.log(
-          `notifyCompleteAction, in the destination selector lambda, sendToTargetActorRef is ${params.sendToTargetActorRef.id}`,
+        const logger = new Logger(
+          params.logger,
+          "notifyCompleteAction.destinationSelectorLambda",
+        );
+        logger.log(
+          `sendToTargetActorRef is ${params.sendToTargetActorRef.id}`,
           LogLevel.Debug,
         );
         return params.sendToTargetActorRef;
       },
       (_, params: IQuerySingleEngineMachineNotifyCompleteActionParameters) => {
-        params.logger.log(
-          `notifyCompleteAction, in the event selector lambda, eventCausingTheTransitionIntoOuterDoneState is ${params.eventCausingTheTransitionIntoOuterDoneState.type}`,
+        const logger = new Logger(
+          params.logger,
+          "notifyCompleteAction.eventSelectorLambda",
+        );
+        logger.log(
+          `eventCausingTheTransitionIntoOuterDoneState is ${params.eventCausingTheTransitionIntoOuterDoneState.type}`,
           LogLevel.Debug,
         );
-        // discriminate on event that triggers this action and send QUICKPICK_DONE or DISPOSE_COMPLETE
+        // discriminate on event that triggers this action and send the appropriate completion notification event to the parent
         let _eventToSend:
-          | { type: 'QUERY.SINGLE_ENGINE_MACHINE_DONE'; payload: IQuerySingleEngineMachineDoneEventPayload }
-          | { type: 'DISPOSE_COMPLETE' };
+          | {
+              type: "QUERY_SINGLE_ENGINE_MACHINE.DONE";
+              payload: IQuerySingleEngineMachineDoneEventPayload;
+            }
+          | { type: "DISPOSE.COMPLETE" };
         switch (params.eventCausingTheTransitionIntoOuterDoneState.type) {
-          case 'xstate.done.actor.querySingleEngineActor':
+          case "xstate.done.actor.querySingleEngineActor":
+          case "xstate.error.actor.querySingleEngineActor":
             _eventToSend = {
-              type: 'QUERY.SINGLE_ENGINE_MACHINE_DONE',
-              payload: { queryEngineName: params.queryEngineName } as IQuerySingleEngineMachineDoneEventPayload,
+              type: "QUERY_SINGLE_ENGINE_MACHINE.DONE",
+              payload: {
+                queryEngineName: params.queryEngineName,
+              } as IQuerySingleEngineMachineDoneEventPayload,
             };
             break;
-          case 'xstate.done.actor.disposeActor':
-            _eventToSend = { type: 'DISPOSE_COMPLETE' };
+          case "xstate.done.actor.disposeActor":
+          case "xstate.error.actor.disposeActor": // ToDo: ensure the error from disposeActor is handled
+            _eventToSend = { type: "DISPOSE.COMPLETE" };
             break;
-          // ToDo: add case legs for the two error events that come from the querySingleEngineActor and disposeActor
           default:
-            throw new Error(
-              `notifyCompleteAction received an unexpected event type: ${params.eventCausingTheTransitionIntoOuterDoneState.type}`,
-            );
+            // since we don't know what event causes the error, we don't know that it has a .type property,
+            //   so use square brackets to attempt to access the property
+            const _eventType =
+              params.eventCausingTheTransitionIntoOuterDoneState["type"];
+            let _errorMessage: string;
+            if (_eventType == undefined) {
+              _errorMessage = `notifyCompleteAction received an event without a type`;
+            } else {
+              _errorMessage = `notifyCompleteAction received an unexpected event type: ${_eventType}`;
+            }
+            logger.log(_errorMessage, LogLevel.Error);
+            throw new Error(`${logger.scope}` + _errorMessage);
         }
-        params.logger.log(
+        logger.log(
           `notifyCompleteAction, in the event selector lambda, _eventToSend is ${_eventToSend.type}`,
           LogLevel.Debug,
         );
         return _eventToSend;
       },
     ),
-
-    sendQuerySingleEngineMachineDoneEvent: ({ context }) => {
-      sendTo(context.parent, {
-        type: 'QUERY.SINGLE_ENGINE_MACHINE_DONE',
-        payload: { queryEngineName: context.queryEngineName } as IQuerySingleEngineMachineDoneEventPayload,
-      });
+    disposingStateEntryAction: ({ context, event }) => {
+      context.logger.log(
+        `disposingStateEntryAction, event type is ${event.type}`,
+        LogLevel.Debug,
+      );
+      // Todo: add code to send the DISPOSE.START to all spawned child machine(s) so that they can free any resources
+      // if this machine is waiting on an async function to return data, we expect that the any calling machine
+      //   will have set the cancellationTokenSource token to cancelled, so that the async function will return early
+      // ToDo: add code to dispose of any resources allocated in this machine
+    },
+    disposeCompleteStateEntryAction: ({ context, event }) => {
+      context.logger.log(
+        `disposeCompleteStateEntryAction, event type is ${event.type}`,
+        LogLevel.Debug,
+      );
     },
   },
 }).createMachine({
+  id: "querySingleEngineMachine",
   context: ({ input }) => ({
-    logger: input.logger,
+    logger: new Logger(input.logger, "querySingleEngineMachine"),
     parent: input.parent,
     queryService: input.queryService,
-    queryString: '',
+    queryString: "",
     queryEngineName: input.queryEngineName,
-    isCancelled: false,
     cTSToken: input.cTSToken,
+    isCancelled: false,
   }),
   output: ({ context }) => ({
     queryEngineName: context.queryEngineName,
@@ -234,20 +169,27 @@ export const querySingleEngineMachine = setup({
     isCancelled: context.isCancelled,
     errorMessage: context.errorMessage,
   }),
-  id: 'querySingleEngineMachine',
-  initial: 'startedState',
+  initial: "startedState",
   states: {
     startedState: {
-      type: 'parallel',
+      entry: ({ context }) => {
+        context.logger.log(
+          `querySingleEngineMachineStartedState entry`,
+          LogLevel.Debug,
+        );
+      },
+      type: "parallel",
       states: {
         operationState: {
-          initial: 'querySingleEngineState',
+          // This state handles the main operation of the machine. First of two parallel states
+          initial: "querySingleEngineState",
           states: {
             querySingleEngineState: {
-              description: 'send a query to a single queryAgent and collect the result',
+              description:
+                "send a query to a single queryAgent and collect the result",
               invoke: {
-                id: 'querySingleEngineActor',
-                src: 'querySingleEngineActor',
+                id: "querySingleEngineActor",
+                src: "querySingleEngineActor",
                 input: ({ context }) => ({
                   logger: context.logger,
                   queryService: context.queryService,
@@ -256,80 +198,82 @@ export const querySingleEngineMachine = setup({
                   cTSToken: context.cTSToken,
                 }),
                 onDone: {
-                  target: 'doneState',
+                  target: "doneState",
                   // set the context for response and isCancelled
-                  actions: 'assignQuerySingleEngineActorDoneOutputToQueryMachineContext',
+                  actions:
+                    "assignQuerySingleEngineActorDoneOutputToQueryMachineContext",
                 },
                 onError: {
                   // set the context for errorMessage and isCancelled
-                  target: 'errorState',
-                  actions: 'assignQuerySingleEngineActorErrorOutputToQueryMachineContext',
+                  target: "errorState",
+                  actions:
+                    "assignQuerySingleEngineActorErrorOutputToQueryMachineContext",
                 },
               },
             },
             errorState: {
-              // ToDO: add code to attempt to remediate the error, otherwise transition to doneState
-              always: {
-                target: 'doneState',
-              },
+              description:
+                "querySingleEngineMachine encountered an error. Attempt remediation else transition to the outer doneState",
+              // ToDO: add code to attempt to remediate the error, otherwise transition to outer doneState
+              always: "#querySingleEngineMachine.doneState",
             },
             doneState: {
               description:
-                'querySingleEngineMachine  is done. send the QUERY.SINGLE_ENGINE_MACHINE_DONE event to the parent machine (queryMachine)',
-              entry: 'sendQuerySingleEngineMachineDoneEvent',
-              always: '#querySingleEngineMachine.doneState',
+                "querySingleEngineMachine is done. transition to the outer doneState",
+              always: "#querySingleEngineMachine.doneState",
             },
           },
         },
         disposeState: {
           // 2nd parallel state. This state can be transitioned to from any state
-          initial: 'inactiveState',
+          initial: "inactiveState",
           states: {
             inactiveState: {
               on: {
-                DISPOSE_START: 'disposingState',
+                "DISPOSE.START": "disposingState",
               },
             },
             disposingState: {
-              entry: ({ context, event }) => {
-                context.logger.log(`disposingStateEntryAction, event type is ${event.type}`, LogLevel.Debug);
-                // ToDo: add code to dispose of any allocated resource
-              },
+              // disposingStateEntryAction will dispose of any allocated resources,
+              //   ToDo need data structures and code to support multiple active child machines
+              //   call DISPOSE.START for any active child machines
+              //   wait for all child machines to return a DISPOSE.COMPLETE event
+              //   when all child machines have disposed of their resources, send a DISPOSE.COMPLETE event to the parent
+              entry: "disposingStateEntryAction",
               on: {
-                DISPOSE_COMPLETE: {
-                  target: 'disposeCompleteState',
+                "DISPOSE.COMPLETE": {
+                  // ToDo: add a guard to ensure that all child machines have returned a DISPOSE.COMPLETE event
+                  target: "disposeCompleteState",
                 },
               },
             },
             disposeCompleteState: {
-              entry: ({ context, event }) => {
-                context.logger.log(`disposeCompleteStateEntryAction, event type is ${event.type}`, LogLevel.Debug);
-                // ToDo: add code to dispose of any allocated resource
-              },
-              always: '#querySingleEngineMachine.doneState',
+              entry: "disposeCompleteStateEntryAction",
+              always: "#querySingleEngineMachine.doneState",
             },
           },
         },
       },
     },
     doneState: {
-      type: 'final',
+      description: "the outer doneState for the querySingleEngineMachine",
+      type: "final",
       entry: [
-        // call the notifyComplete action here, setting the value of the params' properties to values pulled from the context and the event
-        // that entered the outerDonestate.
-        // When notifyCompleteAction is called, the lambda's supplied as arguments to sendTo (because they close over params), will use the values
-        //  set into params here, when the lambdas run
+        // call the notifyCompleteAction here, setting the value of the params' properties to values
+        //   pulled from the context and the event that entered the outer doneState.
+        //   When notifyCompleteAction is called, the lambda's that are supplied as arguments to sendTo
+        //   in the action's definition will use the values that are set into the params here when the lambdas run
         {
-          type: 'notifyCompleteAction',
+          type: "notifyCompleteAction",
           params: ({ context, event }) =>
             ({
               logger: context.logger,
               sendToTargetActorRef: context.parent,
               eventCausingTheTransitionIntoOuterDoneState: event,
               queryEngineName: context.queryEngineName,
-            }) as INotifyCompleteActionParameters,
+            }) as IQuerySingleEngineMachineNotifyCompleteActionParameters,
         },
-        'debugMachineContext',
+        "debugMachineContext",
       ],
     },
   },

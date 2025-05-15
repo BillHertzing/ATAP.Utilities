@@ -1,7 +1,7 @@
 {
-  "extends": "tsconfig.json", // Inherit base settings
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "CommonJS"
+    "module": "commonjs"
   },
-  "include": ["src/extension.mts"]
+  "include": ["src/**/*.cts"]
 }

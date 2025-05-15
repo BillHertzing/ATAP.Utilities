@@ -1,0 +1,24 @@
+@startuml
+
+[*] --> querySingleEngineMachine : QSE_START
+
+state querySingleEngineMachine {
+    [*] --> querySingleEngineState
+
+    state querySingleEngineState {
+        [*] --> querySingleEngineActor : entry
+        querySingleEngineActor --> doneState : onDone
+        querySingleEngineActor --> errorState : onError
+
+        state errorState {
+            [*] --> doneState : always
+        }
+
+        state doneState {
+            [*] --> notifyCompleteAction : entry
+            notifyCompleteAction --> [*] : always
+        }
+    }
+}
+
+@enduml

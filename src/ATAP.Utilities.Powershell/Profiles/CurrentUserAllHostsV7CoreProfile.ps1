@@ -28,11 +28,11 @@ ToDo: Need attribution for Console Settings
 $DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
 $VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
+Write-PSFMessage -Level Debug -Message ('Starting CurrentUsersAllHostsV7CoreProfile.ps1')
 
 #ToDo: document expected values when run under profile, Module cmdlet/function, script.
-Write-Verbose "Starting $($MyInvocation.Mycommand)"
-Write-Verbose ("WorkingDirectory = $pwd")
-Write-Verbose ("PSScriptRoot = $PSScriptRoot")
+Write-PSFMessage -Level Debug -Message ("WorkingDirectory = $pwd")
+Write-PSFMessage -Level Debug -Message ("PSScriptRoot = $PSScriptRoot")
 
 ########################################################
 # Individual PowerShell Profile
@@ -51,10 +51,45 @@ $storedInitialDir = Get-Location
 # TBD
 
 ##############################
+# Shared Powershell History
+# ChatGPT Prompt to explain: are there seperate command histories between pwsh and the powershell extension for VSC?
+##############################
+# Location where the command history is stored. Place it in a location that is sync'd between machines $global:settings['CloudBasePath']
+# ToDo:  use a global config root key and a global settings,
+# ToDo: test for history presence and create if not present (edge case for first use on a new shared location)
+# Number of commands to keep in the commandHistory
+$global:sharedTimestampedHistoryPath = Join-Path $global:settings['CloudBasePath'] 'whertzing' 'PowerShell', 'History', 'SharedTimestampedHistory.txt'
+$global:sharedPlainHistoryPath = Join-Path $global:settings['CloudBasePath'] 'whertzing' 'PowerShell', 'History', 'SharedPlainHistory.txt'
+# Commands to ignore (those issued by PowershellPro when loading into VSC)
+$global:CommandBlockPatterns = @(
+  'Start-PoshToolsServer',
+  'Import-Module .*powershellprotools'
+  'ThisIsATest'
+)
+# Register event hook for each executed command
+$null = Register-EngineEvent -SourceIdentifier PSReadLine.OnCommandExecuted -Action {
+  foreach ($pattern in $global:CommandBlockPatterns) {
+    if ($command -match $pattern) {
+      return  # Skip logging or saving
+    }
+  }
+  $timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+  $command = $event.Message
+  # ToDo: not working, just the message is appearing, not the
+  $hostLine = "$timestamp`t$global:HostName`t$command"
+  # Save to the shared timestamped history file
+  Add-Content -Path $global:sharedTimestampedHistoryPath -Value $hostLine
+  # Save to the shared plain history file
+  Add-Content -Path $global:sharedPlainHistoryPath -Value $command
+}
+# maximum number of commands to keep in the commandHistory
+$global:MaxHistoryCount = 5000
+# Tell PSReadline to use the shared plain history file
+Set-PSReadlineOption -HistorySavePath $global:sharedPlainHistoryPath
+
+##############################
 # Console Settings
 ##############################
-# Number of commands to keep in the commandHistory
-$global:MaxHistoryCount = 1000
 
 # Size of the console's user interface
 Function ConsoleSettings {
@@ -145,27 +180,27 @@ $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:
 # if ($true) { Set-CloudDirectoryLocations }
 
 # Expand upon the PSModulePath according to the roles this user has on this machine# ToDo: expand the use of PSModulepAth in the globals settings files
-# extract all the psmodulepath items from the global:Settings
+# extract all the PSModulePath items from the global:Settings
 # The following ordered list of module paths come from ATAP and 3rd-party modules that correspond to roles of this user on this machine
-$UserPSModulePaths = @(
+#$UserPSModulePaths = @(
 
-  # ATAP Powershell is part of the machine profile
-  # 'Modules that are in DevelopmentLifecycle Phase, for which I am involved'
+# ATAP Powershell is part of the machine profile
+# 'Modules that are in DevelopmentLifecycle Phase, for which I am involved'
 
-  # 'Modules that are in Unit Test Lifecycle Phase, for which I am involved ("I" may be a user or a CI/CD service)'
-  # 'Modules that are in Integration Test Lifecycle Phase, for which I am involved'
-  # 'Modules that are in RTM Lifecycle Phase, for which I am involved'
-  # 'All Production modules for Scripts I use day-to-day' - These should reference modules in
-  # Image manipulation scripts for blog posts
-  # DropBox api scripts for blog posts
-  # Future: scripts to manipulate FreeVideoEditor VSDC
-  # the default location where chocolatey installs modules on this machine
-  # $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]
-)
-# Add the $UserPSModulePaths to the exisiting $env:PSModulePaths
-$desiredPSModulePaths = $UserPSModulePaths + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
+# 'Modules that are in Unit Test Lifecycle Phase, for which I am involved ("I" may be a user or a CI/CD service)'
+# 'Modules that are in Integration Test Lifecycle Phase, for which I am involved'
+# 'Modules that are in RTM Lifecycle Phase, for which I am involved'
+# 'All Production modules for Scripts I use day-to-day' - These should reference modules in
+# Image manipulation scripts for blog posts
+# DropBox api scripts for blog posts
+# Future: scripts to manipulate FreeVideoEditor VSDC
+# the default location where chocolatey installs modules on this machine
+# $global:Settings[$global:configRootKeys['ChocolateyLibDirConfigRootKey']]
+#)
+# Add the $UserPSModulePaths to the existing $env:PSModulePaths
+#$desiredPSModulePaths = $UserPSModulePaths + $($Env:PSModulePath -split [IO.Path]::PathSeparator)
 # Set the $Env:PsModulePath to the new value of $desiredPSModulePaths.
-[Environment]::SetEnvironmentVariable('PSModulePath', $desiredPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
+# [Environment]::SetEnvironmentVariable('PSModulePath', $desiredPSModulePaths -join [IO.Path]::PathSeparator, 'Process')
 
 # Unlock the user's SecretStore for this session using an encrypted password and a data Encryption Certificate installed to the current machine
 # if the key exists in the global settings
@@ -178,7 +213,7 @@ $desiredPSModulePaths = $UserPSModulePaths + $($Env:PSModulePath -split [IO.Path
 #   }
 # }
 
-# examples of subject # 'CN=$HostName,OU=$OrganizationalUnit,O=$Organisation,L=$Locality,S=$State,C=$CountryName,E=$Email'
+# examples of subject # 'CN=$HostName,OU=$OrganizationalUnit,O=$Organization,L=$Locality,S=$State,C=$CountryName,E=$Email'
 # $DataEncryptionCertificateTemplatePath = 'C:\DataEncryptionCertificate.template'  # Keep this out of the repository, but will be machine/user dependent
 
 # Create Data Encryption certificates for all the SecretManagement Extension Vaults (to be done once by admins,and updated on vault CRUD)
@@ -236,7 +271,7 @@ $ModulesToLoadAsSymbolicLinks = @(
     usePreRelease = $true
   })
 
-# Create symbolic links to each of the modukles above in the user's default powershell module location
+# Create symbolic links to each of the modules above in the user's default powershell module location
 # The function uses Join-Path ([Environment]::GetFolderPath('MyDocuments')) '\PowerShell\Modules\' as the default PSModulePath path
 # $ModulesToLoadAsSymbolicLinks | Get-ModuleAsSymbolicLink
 
@@ -247,7 +282,7 @@ Function Show-context {
   Write-Verbose ('Framework being used: {0}' -f [Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory())
   Write-Verbose ('DropBoxBasePath: {0}' -f $global:Settings[$global:configRootKeys['DropBoxBasePathConfigRootKey']]) #  $global:DropBoxBasePath)
   Write-Verbose ('PSModulePath: {0}' -f $Env:PSModulePath)
-  Write-Verbose ('Elevated permisions:' -f (whoami /all) -match $elevatedSIDPattern)
+  Write-Verbose ('Elevated permissions:' -f (whoami /all) -match $elevatedSIDPattern)
   Write-Verbose ('Drops:{0}' -f $($drops | Format-Table | Out-String))
   # DebugPreference
   # VerbosePreference
@@ -259,7 +294,53 @@ Function Show-context {
 
 # Set an alias to tail the latest PSFramework log file
 function TailLatestPSFrameworkLog {
-  (Get-Content ((Get-ChildItem C:\Users\whertzing\AppData\Roaming\PowerShell\PSFramework\Logs) | Sort-Object -Property 'lastwritetime' -desc)[0] )[-100..-1]
+  param(
+    [int] $lines = 100
+    , [string[]] $includeTags = @('Invoke-Build')
+    , [string[]] $excludeTags = @()
+    , [switch] $alltags
+  )
+  $headers = @(
+    'HostName',
+    'Timestamp',
+    'LogLevel',
+    'Message',
+    'Category',
+    'ScriptName',
+    'FunctionName',
+    'FilePath',
+    'LineNumber',
+    'Tags',
+    'Unused1',
+    'Unused2',
+    'CorrelationId'
+  )
+  $lastFile = ((Get-ChildItem C:\Users\whertzing\AppData\Roaming\PowerShell\PSFramework\Logs) | Sort-Object -Property 'lastwritetime' -desc)[0]
+  $nextToLastFile = ((Get-ChildItem C:\Users\whertzing\AppData\Roaming\PowerShell\PSFramework\Logs) | Sort-Object -Property 'lastwritetime' -desc)[1]
+  # ToDo: filter by various fields
+  $content = Get-Content $lastFile
+  # ToDo: keep adding files until total content is at least $lines
+  if ($content.count -lt $lines) {
+    $content = (Get-Content $nextToLastFile) + $content
+  }
+  #  Get just the last $lines lines
+  $content = $content[ - $lines..-1]
+  # objectify them
+  $objects = $content -join "`n" | ConvertFrom-Csv -Header $headers
+  #$objects
+  #$objects | Format-Table HostName, Timestamp, LogLevel, Message, ScriptName, LineNumber, Tags
+  # filter by tags
+  if ($includeTags) { # -or $excludeTags) {
+    $objects = $objects | Where-Object { $_.Tags -match $includeTags[0] }
+    #$tags = $objects | Select-Object -ExpandProperty Tags
+    # if ($alltags) {
+    #   $results = $objects | Where-Object { $_.Tags -match $includeTags }
+    # } else {
+    #   $results = $objects | Where-Object { $_.Tags -notmatch $excludeTags }
+    # }
+    #$results = $objects | Where-Object { -property 'Category ' }$tagged =
+  }
+  $objects | Format-Table HostName, ScriptName, LineNumber, Timestamp, LogLevel, Tags, Message -Wrap -AutoSize
 }
 Set-Alias -Name 'tail' -Value 'TailLatestPSFrameworkLog'
 
@@ -305,12 +386,12 @@ Function FindFilesByES {
   [regex] $internalSearchRegex = ''
   switch ($PSCmdlet.ParameterSetName) {
     StringParameter {
-      # ToDo: continously improve validate user input for safety
+      # ToDo: continuously improve validate user input for safety
       $internalSearchStr = $searchStr
       es $internalSearchStr
     }
     RegExParameter {
-      # ToDo: continously improve validate user input for safety
+      # ToDo: continuously improve validate user input for safety
       $internalSearchRegex = $searchRE
       es regex: $internalSearchRegex
     }
@@ -408,7 +489,7 @@ Function Get-AllBookmarks {
   }
 }
 
-# Get-Attributions -path 'C:\Dropbox\' -Recurse | convertto-json | out-file 'C:\Dropbox\AllAttributions.txt'
+# Get-Attributions -path 'C:\Dropbox\' -Recurse | ConvertTo-json | out-file 'C:\Dropbox\AllAttributions.txt'
 Function Get-LinksFiltered {
   Param(
     $path = 'C:\Dropbox\whertzing\'
@@ -463,12 +544,12 @@ Function Open-FilteredLinksInBrave {
   [regex] $findRegex = ''
   switch ($PSCmdlet.ParameterSetName) {
     StringParameter {
-      # ToDo: continously improve validation of user input for safety
+      # ToDo: continuously improve validation of user input for safety
       $validatedStr = $reStr # [regex]::Escape($reStr)
       $findRegex = [regex] $validatedStr
     }
     RegExParameter {
-      # ToDo: continously improve validation of user input for safety
+      # ToDo: continuously improve validation of user input for safety
       $findRegex = $re
     }
   }
@@ -506,7 +587,7 @@ Function Open-BookmarksInBrave {
 # Alias FindAndOpenLinks
 Set-Alias -Name FAOL -Value Open-FilteredLinksInBrave
 
-# faol $([regex] '(x509|signing|openssl|certificate)')
+# FAOL $([regex] '(x509|signing|openssl|certificate)')
 # A Function to use a FileWatcher asynchronously to detect when a file is changed
 Function WatchFile {
   params(
@@ -549,7 +630,7 @@ Function WatchFile {
       # type of change:
       $ChangeType = $details.ChangeType
 
-      # when the change occured:
+      # when the change occurred:
       $Timestamp = $event.TimeGenerated
 
       # save information to a global variable for testing purposes
@@ -564,9 +645,10 @@ Function WatchFile {
       switch ($ChangeType) {
         'Changed' { 'CHANGE' }
         'Created' { 'CREATED' }
-        'Deleted' { 'DELETED'
+        'Deleted' {
+          'DELETED'
           # to illustrate that ALL changes are picked up even if
-          # handling an event takes a lot of time, we artifically
+          # handling an event takes a lot of time, we artificially
           # extend the time the handler needs whenever a file is deleted
           Write-Host 'Deletion Handler Start' -ForegroundColor Gray
           Start-Sleep -Seconds 4
@@ -638,13 +720,13 @@ Function WatchFile {
 Function TailLog {
   param (
     [string] $file
-    , [int]$numlines = 20
+    , [int]$numLines = 20
     , [switch] $wait
   )
   # if file was not supplied, use the PSFramework logging filesystem logpath, and get the most recent file there
 
   $file = (Get-ChildItem $(Get-PSFConfigValue -FullName PSFramework.Logging.FileSystem.LogPath) | Sort-Object -Property LastWriteTime -Descending)[0]
-  $command = "Get-Content -Path $file -tail $numlines"
+  $command = "Get-Content -Path $file -tail $numLines"
   Invoke-Expression $command
   if ($wait) {
     # Create a callback function that will tail the last N lines of the file
@@ -672,13 +754,13 @@ Set-Item -Path alias:stopVA -Value StopVoiceAttackProcess
 
 
 Function ShutItAllDown {
-	 $ComputerNameList = @('ncat016')#,'utat022')
-	 foreach ($cn in $ComputerNameList) {
+  $ComputerNameList = @('ncat016')#,'utat022')
+  foreach ($cn in $ComputerNameList) {
     $Session = New-PSSession -ComputerName $cn -ConfigurationName WithProfile
     Enter-Session $Session
     shutdown /s /t 20
     Close-Session $Session
-	 }
+  }
 }
 
 # A function to set an environment variable for a named user (at the user scope in the machine's registry)
@@ -706,17 +788,25 @@ Function ShutItAllDown {
 Set-Location -Path $storedInitialDir
 
 # Set the environment variables for this user
+Write-PSFMessage -Level Debug -Message ('setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
+
 . (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
 Set-EnvironmentVariablesProcess
+Write-PSFMessage -Level Debug -Message ('finished setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
 
 # Set the name of the VSC extension project under development
 # ToDo: put this in a vsc extension as a command , and trigger the command every time an editor is activated.
 # The command has a collection set of project paths/names (populated by the list of files below src/ relative to the repository root)
 #  The command matches the editor's document path to (hopefully only one) element, which provide the value for this env var
 # ToDo: put this into a ConfigRootKeys keys tor Typescript and VSC Extension process
-[Environment]::SetEnvironmentVariable('VSCExtensionProjectName', 'ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-[Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', 'src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+# [Environment]::SetEnvironmentVariable('VSCExtensionProjectName', 'ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+# [Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', 'src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+# [Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+# Write-PSFMessage -Level Debug -Message ('line 729 in CurrentUsersAllHostsV7CoreProfile.ps1')
+#[Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', '.', [EnvironmentVariableTarget]::User)
+#Write-PSFMessage -Level Debug -Message ('line 731 in CurrentUsersAllHostsV7CoreProfile.ps1')
+#[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
+#Write-PSFMessage -Level Debug -Message ('line 733 in CurrentUsersAllHostsV7CoreProfile.ps1')
 
 # Unlock the Hashicorp Vault
 
@@ -741,7 +831,7 @@ Set-EnvironmentVariablesProcess
 # Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
 # Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, Environment variables: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
 
-# start windows explorere with the current working set of directories and place them in a fancy zones layout
+# start windows explorer with the current working set of directories and place them in a fancy zones layout
 function Start-ExplorerWindowSet {
   explorer.exe C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.IAC.Ansible\Playbooks
   explorer.exe \\wsl.localhost\Ubuntu\etc\ansible
@@ -750,17 +840,18 @@ function Start-ExplorerWindowSet {
   FancyZones.exe apply -id '45BA8D3D-74C5-460B-AA17-97DAEF91780B'
 }
 
+Write-PSFMessage -Level Debug -Message ('line 764 in CurrentUsersAllHostsV7CoreProfile.ps1')
 
 <# To Be Moved Somewhere else #>
 
 <#
 Function list-music {
-param ($dir = 'D:\dropbox\music',$numcolumns = 1, $pagewidth=180)
+param ($dir = 'D:\dropbox\music',$numColumns = 1, $pagewidth=180)
 $r=@{discards=@();duplicates=@();keep=@()}
-$foundfns = @();
-$rawcnt=0
+$foundFNs = @();
+$rawCount=0
 gci -r $dir | ?{($_.PSisContainer -eq $false)} | %{$fh=$_
-  $rawcnt++;
+  $rawCount++;
   if ($_.name -match '(tunebite)') {
     $r.discards += $fh.fullname
   }
@@ -789,7 +880,7 @@ $strary = @()
 $b | %{$t=$_
   $str = ''
   for ($j=0;$j -lt $numcolumns;$j++){
-    $str+= "{0,-$colwidth}" -f $t[$j]
+    $str+= "{ 0, - $colwidth }" -f $t[$j]
   }
   $strary +=$str
 }
@@ -797,7 +888,7 @@ $strary
 }
 #>
 <#
-Function get-emptydirs {
+Function Get-EmptyDirs {
 param ($dir = 'D:\dropbox\music\')
   $a = Get-ChildItem $dir -recurse | Where-Object {$_.PSIsContainer -eq $True}
   $a | Where-Object {$_.GetFiles().Count -eq 0} | Select-Object Fullname
@@ -823,3 +914,4 @@ New-Alias graph New-PlantUML
 
 
 
+Write-PSFMessage -Level Debug -Message ('Ending CurrentUsersAllHostsV7CoreProfile.ps1')

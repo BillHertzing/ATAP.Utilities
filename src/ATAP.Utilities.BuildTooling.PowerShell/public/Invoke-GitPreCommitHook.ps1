@@ -12,20 +12,20 @@ function Invoke-GitPreCommitHook {
   Write-PSFMessage -Level Debug -Message $(Write-HashIndented $global:settings)
 
   $branchName = git branch --show-current
-  Write-PSFMessage -Level Debug -Message "branchName = $branchName" -Tag 'GitPreCommtiHook'
+  Write-PSFMessage -Level Debug -Message "branchName = $branchName" -Tag 'GitPreCommitHook'
   [System.Environment]::SetEnvironmentVariable('BRANCHNAME', $branchName)
-  $moduleName = Get-ChildItem -include '*.psd1'
-  Write-PSFMessage -Level Debug -Message "ModuleName = $moduleName" -Tag 'GitPreCommtiHook'
+  $moduleName = Get-ChildItem -Include '*.psd1'
+  Write-PSFMessage -Level Debug -Message "ModuleName = $moduleName" -Tag 'GitPreCommitHook'
   [System.Environment]::SetEnvironmentVariable('MODULENAME', $moduleName)
   Write-PSFMessage -Level Debug -Message $(Write-EnvironmentVariablesIndented)
 
 
-  Write-PSFMessage -Level Debug -Message "Workspace = $([System.Environment]::GetEnvironmentVariable('Workspace'))" -Tag 'GitPreCommtiHook', 'Publish'
-  Write-PSFMessage -Level Debug -Message "Current Working Directory = $(Get-Location)" -Tag 'GitPreCommtiHook', 'Publish'
-  Write-PSFMessage -Level Debug -Message "Environment Variable Environment = $($global:configRootKeys['ENVIRONMENTConfigRootKey']) = $([System.Environment]::GetEnvironmentVariable($global:configRootKeys['ENVIRONMENTConfigRootKey']))" -Tag 'GitPreCommtiHook', 'Publish'
-  Write-PSFMessage -Level Debug -Message "Environment Variable LocalSourceReproDirectory = $([System.Environment]::GetEnvironmentVariable('LocalSourceReproDirectory'))" -Tag 'GitPreCommtiHook', 'Publish'
-  Write-PSFMessage -Level Debug -Message "Environment Variable RelativeModulePath = $([System.Environment]::GetEnvironmentVariable('RelativeModulePath'))" -Tag 'GitPreCommtiHook', 'Publish'
-  Write-PSFMessage -Level Debug -Message "Environment Variable NU_GET_API_KEY_SECRET = $([System.Environment]::GetEnvironmentVariable('NU_GET_API_KEY_SECRET'))" -Tag 'GitPreCommtiHook', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Workspace = $([System.Environment]::GetEnvironmentVariable('Workspace'))" -Tag 'GitPreCommitHook', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Current Working Directory = $(Get-Location)" -Tag 'GitPreCommitHook', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable Environment = $($global:configRootKeys['ENVIRONMENTConfigRootKey']) = $([System.Environment]::GetEnvironmentVariable($global:configRootKeys['ENVIRONMENTConfigRootKey']))" -Tag 'GitPreCommitHook', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable LocalSourceReproDirectory = $([System.Environment]::GetEnvironmentVariable('LocalSourceReproDirectory'))" -Tag 'GitPreCommitHook', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable RelativeModulePath = $([System.Environment]::GetEnvironmentVariable('RelativeModulePath'))" -Tag 'GitPreCommitHook', 'Publish'
+  Write-PSFMessage -Level Debug -Message "Environment Variable NU_GET_API_KEY_SECRET = $([System.Environment]::GetEnvironmentVariable('NU_GET_API_KEY_SECRET'))" -Tag 'GitPreCommitHook', 'Publish'
 
   $moduleName = [System.Environment]::GetEnvironmentVariable('ModuleName')
   $localSourceReproDirectory = [System.Environment]::GetEnvironmentVariable('LocalSourceReproDirectory')
@@ -43,7 +43,7 @@ function Invoke-GitPreCommitHook {
 
   # List of AddedChangedModifiedRenamed files in the commit
   $changedFiles = (git diff --name-only --cached --diff-filter=ACMR)
-  # ToDo: add error handling might be null on a brand new resoitory or after a git init, or if no files are in the commit
+  # ToDo: add error handling might be null on a brand new repository or after a git init, or if no files are in the commit
   if ($changedFiles.count -eq 0) {
     # ToDo: support --force-allow
     Write-Output "PrecommitHook not passing: Number of changed files = $($changedFiles.count)"
@@ -60,8 +60,8 @@ function Invoke-GitPreCommitHook {
 
   # Built-in checks per a project's language
   # Language: powershell: Project Subdirectory contains project manifest file (module's subdirectory name matches a file within having the same names and .psd1 suffix)
-  # Language: powershell: Project Subdirectory contains project Module file (module's subdirectory name matches a file within having the same names and .psd1 suffix)
-  # Language: powershell: Project Module File contains vlid Module file components and optional dot-sourcing commands for public and private subdirectories
+  # Language: powershell: Project Subdirectory contains project Module file (module's subdirectory name matches a file within having the same names and .psm1 suffix)
+  # Language: powershell: Project Module File contains valid Module file components and optional dot-sourcing commands for public and private subdirectories
   # Test-SheBangLine
 
   # Language: C#: Project Subdirectory contains .csproj file
@@ -71,31 +71,31 @@ function Invoke-GitPreCommitHook {
 
   # Language: All: Project Subdirectory contains Documentation subdirectory, which contains a ReadMe.md file
   # Test-GiantFiles
-# Test-GiantFiles
-# Test-AST
-# Test-CaseConflictForPlatforms
-# Test-JsonSyntax
-# Test-XMLSyntax
-# Test-XYAMLSyntax
-# Test-MergeConflict
-# Test-PrivateKeys
-# Test-PrettyJson
-# Test-PrettyXML
-# Test-PrettyCSharp
-# Test-PrettyPowershell
-# Test-PrettyJenkins
-# Test-TestNames
-# Test-Encoding
-# Test-ByteOrderMark
-# Test-LineEndings
+  # Test-GiantFiles
+  # Test-AST
+  # Test-CaseConflictForPlatforms
+  # Test-JsonSyntax
+  # Test-XMLSyntax
+  # Test-XAMLSyntax
+  # Test-MergeConflict
+  # Test-PrivateKeys
+  # Test-PrettyJson
+  # Test-PrettyXML
+  # Test-PrettyCSharp
+  # Test-PrettyPowershell
+  # Test-PrettyJenkins
+  # Test-TestNames
+  # Test-Encoding
+  # Test-ByteOrderMark
+  # Test-LineEndings
 
   # Platform: *nix
   # Test-ShebangScriptsAreExecutable
 
   # Kinds of Projects. Used to validate input that comes from git commands. Opinionated.
-  $projectKindStrs = @{'src' = 'src'; 'test' = 'test'; 'database' = 'database' }
+  $projectKindStrings = @{'src' = 'src'; 'test' = 'test'; 'database' = 'database' }
   # Project Languages. Used to classify projects based on the scriptblock
-  $projectLanguageStrs = @{'C#' = { Write-Debug 'C#' }; 'SQL' = 'SQL'; 'Powershell' = 'Powershell' }
+  $projectLanguageStrings = @{'C#' = { Write-Debug 'C#' }; 'SQL' = 'SQL'; 'Powershell' = 'Powershell' }
 
   # List of Projects in the commit (Source, Tests, or Database), and the language (C#, SQL (Database), and Powershell) of each project
   $changedFileCustomProperties = @{}
@@ -130,8 +130,7 @@ function Invoke-GitPreCommitHook {
       # ToDo: run validation tests on the SubdirectoryName
       $changedFileCustomProperties[$fn]['ProjectSubdirectoryName'] = $ProjectSubdirectoryName
 
-    }
-    else {
+    } else {
       # the changed file does not match the $ProjectKindAndNameExtractorPattern
       $changedFileCustomProperties[$fn]['UNEXPECTED'] = $true
       Write-Output "PrecommitHook not passing: committed file name did not match : $ProjectKindAndNameExtractorPattern"
@@ -158,7 +157,7 @@ function Invoke-GitPreCommitHook {
   # Do each kind test on the appropriate project
   $allowCommit = $true
 
-   # ToDo: figure out how to transaction this, in case any of the operations in the 'allow commit' region fails
+  # ToDo: figure out how to transaction this, in case any of the operations in the 'allow commit' region fails
   if ($allowCommit) {
     # For each Powershell module project having a file in the commit
     $relativePathsToPowershellModulesToValidate | ForEach-Object { $ModulePath = $_
@@ -170,7 +169,7 @@ function Invoke-GitPreCommitHook {
       # bump up the version (or prerelease string) number in the.psd1 file
       $returnedExitCode = 0
       try {
-      $returnedExitCode = Update-PackageVersion $ModulePath
+        $returnedExitCode = Update-PackageVersion $ModulePath
       } catch {
         $resultException = $_.Exception
         $ResultExceptionMessage = $resultException.Message
@@ -191,7 +190,7 @@ function Invoke-GitPreCommitHook {
 
 
   # For each DotNet project having a c#, csproj, or ResX file in the commit,
-  #   Validate all 1st level pre-commit requirementsm, fail the commit if any requirement is not met
+  #   Validate all 1st level pre-commit requirements, fail the commit if any requirement is not met
   #   bump up the version number (including prerelease string) in the AssemblyInfo file
   #   return success, let the commit proceed
 

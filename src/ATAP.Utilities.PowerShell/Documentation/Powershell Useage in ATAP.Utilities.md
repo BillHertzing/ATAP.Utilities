@@ -90,5 +90,66 @@ Prerequisite is `Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -
 then
 `Install-Module -Name PackageManagement -RequiredVersion 1.1.0.0`  Because version 1.0.0.1 will not use TLS 1.2, and that is required to use PowerShellGet
 
-When using powershell Core, Note that if the path to the Powershell Desktop modules appear in the $ENV:PsModulePath before the path to the Powershell Core moduls, then package management powershell commands will not work, The Desktop path contains a much older version of the PackageManagement module, one which does not use TLS 1.2
+When using powershell Core, Note that if the path to the Powershell Desktop modules appear in the $ENV:PsModulePath before the path to the Powershell Core modules, then package management powershell commands will not work, The Desktop path contains a much older version of the PackageManagement module, one which does not use TLS 1.2
 
+## Logging
+
+Use PSFramework for logging
+use the gelf logging provider configured as follows:
+
+```Powershell
+# ToDo: adding protocol = 'udp'; produces the error "A parameter cannot be found that matches parameter name 'protocol'."
+# ToDo:   since UDP is the default protocol this is not an issue. But both of these command swork correctly
+# ToDo:     Set-PSFConfig 'PSFramework.logging.gelf.protocol' 'udp'
+# ToDo:     Get-PSFConfig 'PSFramework.logging.gelf.protocol'  - return 'udp'
+$gelfLoggingProviderConfiguration =  @{Name='gelf'; instanceName = 'default'; GelfServer = '127.0.0.1'; port = 12201; Encrypt=$false; minlevel=1; maxlevel=9; Enabled=$true;Verbose=$true}
+Set-PSFLoggingProvider @gelfLoggingProviderConfiguration
+# Then explicitly initialize it
+$null = Wait-PSFMessage -Timeout 1
+# see if it has been initialized
+Get-PSFLoggingProvider -Name gelf
+```
+or
+
+```Powershell
+Set-PSFLoggingProvider -Name 'gelf' -Enabled $false -Verbose
+set-psfconfig 'LoggingProvider.gelf.AutoInstall' $true
+get-psfconfig 'LoggingProvider.gelf.AutoInstall'
+set-psfconfig 'PSFramework.Logging.gelf.encrypt' $false
+get-psfconfig 'PSFramework.Logging.gelf.encrypt'
+set-psfconfig 'PSFramework.Logging.gelf.gelfserver' '127.0.0.1'
+get-psfconfig 'PSFramework.Logging.gelf.gelfserver'
+set-psfconfig 'PSFramework.Logging.GELF.Port' '12201'
+get-psfconfig 'PSFramework.Logging.GELF.port'
+Set-PSFConfig 'PSFramework.logging.gelf.protocol' 'udp'
+Get-PSFConfig 'PSFramework.logging.gelf.protocol'
+set-psfconfig 'PSFramework.Logging.gelf.verbose' $true
+get-psfconfig 'PSFramework.Logging.gelf.verbose'
+set-psfconfig 'PSFramework.Logging.gelf.minlevel' 0
+get-psfconfig 'PSFramework.Logging.gelf.minlevel'
+set-psfconfig 'PSFramework.Logging.gelf.maxlevel' 9
+get-psfconfig 'PSFramework.Logging.gelf.maxlevel'
+set-psfconfig 'LoggingProvider.gelf.enabled' $true
+get-psfconfig 'LoggingProvider.gelf.enabled'
+Set-PSFLoggingProvider -Name 'gelf' -Enabled $true -Verbose
+# Then explicitly initialize it
+$null = Wait-PSFMessage -Timeout 1
+# see if it has been initialized
+Get-PSFLoggingProvider -Name gelf
+Write-PSFMessage -Level Debug -Message "Testing Write-PFSMessage to GelfServer"
+```
+Get-PSFConfig 'PSFramework.Logging.Console.MinLevel'
+Get-PSFConfig 'PSFramework.Logging.Console.MaxLevel'
+Get-PSFConfig  'LoggingProvider.Console.enabled'
+Get-PSFConfig 'PSFramework.Logging.Filesystem.MinLevel'
+Get-PSFConfig 'PSFramework.Logging.Filesystem.MaxLevel'
+Get-PSFConfig  'LoggingProvider.Filesystem.enabled'
+
+use SEQ to listen for gelf formated messages on udp://127.0.0.1:12201
+
+or this:
+``` powerShell
+# ToDo: variable instance name (?)
+$gelfLoggingProviderConfiguration =  @{Name='gelf';instanceName='powerShellScriptXYZ'; gelfserver= 'localhost'; port=12201;Enabled=$true;Encrypt=$false}
+Set-PSFLoggingProvider @gelfLoggingProviderConfiguration
+```

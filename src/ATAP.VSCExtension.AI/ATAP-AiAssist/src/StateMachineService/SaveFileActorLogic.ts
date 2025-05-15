@@ -1,26 +1,90 @@
-import * as vscode from 'vscode';
-import { ILogger, Logger, LogLevel } from '@Logger/index';
-import { Actor, createActor, assign, createMachine, fromCallback, StateMachine, fromPromise } from 'xstate';
-import { ILoggerData, StatusMenuItemEnum, ModeMenuItemEnum,CommandMenuItemEnum } from '@StateMachineService/index';
+import * as vscode from "vscode";
+import { ILogger, Logger, LogLevel } from "@Logger/index";
+import {
+  TagValueType,
+  CategoryValueType,
+  IAssociationValueType,
+  AssociationValueType,
+  QueryFragmentValueType,
+  QueryRequestValueType,
+  QueryResponseValueType,
+  IQueryPairValueType,
+  QueryPairValueType,
+  IQueryPairCollectionValueType,
+  QueryPairCollectionValueType,
+  ItemWithIDValueType,
+  ItemWithIDTypes,
+  //  MapTypeToValueType,
+  //  YamlData,
+  //  fromYamlForItemWithID,
+  IItemWithID,
+  ItemWithID,
+  ICollection,
+  Collection,
+  ITag,
+  Tag,
+  ITagCollection,
+  TagCollection,
+  ICategory,
+  Category,
+  ICategoryCollection,
+  CategoryCollection,
+  IAssociation,
+  Association,
+  IAssociationCollection,
+  AssociationCollection,
+  IQueryFragment,
+  QueryFragment,
+  IQueryFragmentCollection,
+  QueryFragmentCollection,
+  IQueryRequest,
+  QueryRequest,
+  IQueryResponse,
+  QueryResponse,
+  IQueryPair,
+  QueryPair,
+  IQueryPairCollection,
+  QueryPairCollection,
+  IConversationCollection,
+  ConversationCollection,
+} from "@ItemWithIDs/index";
 
-export enum SaveFileEnumeration {TagsCollection='TagsCollection',CategoryCollection='CategoryCollection',}
+import {
+  Actor,
+  createActor,
+  assign,
+  fromCallback,
+  StateMachine,
+  fromPromise,
+} from "xstate";
+import { IPrimaryMachineContext } from "./primaryMachineTypes";
 
-  interface ISaveFileInput extends ILoggerData {
-  filePath:string
-  collectionEnumeration:SaveFileEnumeration;
+export enum SaveFileEnumeration {
+  TagsCollection = "TagsCollection",
+  CategoryCollection = "CategoryCollection",
 }
-export const saveFileActorLogic = fromPromise(async ({ input }: { input: ISaveFileInput }) => {
-  input.logger.log(`saveFileActor called`, LogLevel.Debug);
-  switch(input.collectionEnumeration){
-    }
-//   let quickPickItems: vscode.QuickPickItem[] = input.data.pickItems.modeMenuItems;
-//   let prompt: string = `currentMode is ${input.data.stateManager.currentMode}, select from list below to change it`;
-//   const pick = await vscode.window.showQuickPick(quickPickItems, {
-//     placeHolder: prompt,
-//   });
-//   if (pick !== undefined) {
-//     input.data.stateManager.currentMode = pick.label as ModeMenuItemEnum;
-//   }
 
-await true;
-});
+export interface ISaveFileMachineActorLogicInput {
+  logger: ILogger;
+  filePath: string;
+  kindOfCollection: SaveFileEnumeration;
+  collection: ITagCollection | ICategoryCollection;
+}
+
+export interface ISaveFileMachineActorOutput {
+  isCancelled: boolean;
+}
+
+export const saveFileActorLogic = fromPromise(
+  async ({ input }: { input: ISaveFileMachineActorLogicInput }) => {
+    input.logger.log("Started", LogLevel.Debug);
+    // validate path exists and is writeable, raise error if not
+
+    switch (input.kindOfCollection) {
+    }
+
+    await true;
+
+    return { isCancelled: false } as ISaveFileMachineActorOutput;
+  },
+);

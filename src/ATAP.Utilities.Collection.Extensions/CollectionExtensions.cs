@@ -12,7 +12,7 @@ namespace ATAP.Utilities.Collection {
 #endif
   public static partial class Extensions {
     /// Will Throw an exception if a key duplicate occurs
-    public static Dictionary<TKey, TValue> Merge<TKey, TValue> (IEnumerable<Dictionary<TKey, TValue>> dictionaries)  where TKey : notnull{
+    public static Dictionary<TKey, TValue> Merge<TKey, TValue>(IEnumerable<Dictionary<TKey, TValue>> dictionaries) where TKey : notnull {
       return dictionaries.SelectMany(x => x)
         .ToDictionary(x => x.Key, y => y.Value);
     }
@@ -102,6 +102,7 @@ namespace ATAP.Utilities.Collection {
       }
     }
 
+    // attribution: [mganss/Glob.cs] (https://github.com/mganss/Glob.cs/blob/master/Glob/Glob.cs)
     public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source,
     Func<TSource, TKey> keySelector) {
       // ToDo: Localize the exception message
@@ -109,10 +110,8 @@ namespace ATAP.Utilities.Collection {
       // ToDo: Localize the exception message
       if (keySelector == null) { throw new ArgumentNullException(nameof(keySelector)); }
       var knownKeys = new HashSet<TKey>();
-      foreach (TSource element in source) {
-        if (knownKeys.Add(keySelector(element))) {
-          yield return element;
-        }
+      foreach (TSource element in source.Where(e => knownKeys.Add(keySelector(e)))) {
+        yield return element;
       }
     }
 
@@ -174,7 +173,7 @@ namespace ATAP.Utilities.Collection {
 
     public static IEnumerable<T> Traverse<T>(this IEnumerable<T> items,
       Func<T, IEnumerable<T>> childSelector) {
-              // ToDo: Localize the exception message
+      // ToDo: Localize the exception message
       if (childSelector == null) { throw new ArgumentNullException(nameof(childSelector)); }
       var stack = new Stack<T>(items);
       while (stack.Any()) {

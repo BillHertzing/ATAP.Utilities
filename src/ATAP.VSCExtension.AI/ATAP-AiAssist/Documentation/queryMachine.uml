@@ -1,0 +1,63 @@
+@startuml
+[*] --> QueryMachine
+
+state QueryMachine {
+
+  state "operationState" as operationState {
+    [*] --> waitingForSendQueryEventState
+    state "waitingForSendQueryEventState" as waitingForSendQueryEventState
+      waitingForSendQueryEventState --> gatherQueryFragmentsState : SendQueryEvent:SendQueryEventPayloadT
+
+    state "gatherQueryFragmentsState" as gatherQueryFragmentsState
+      gatherQueryFragmentsState --> parallelQueryState : GatherQueryFragmentsCompleteEvent:GatherQueryFragmentsCompleteEventPayloadT
+      gatherQueryFragmentsState -> cancelledState : GatherQueryFragmentCancelled
+      gatherQueryFragmentsState -> errorState : GatherQueryFragmentError:GatherQueryFragmentErrorPayloadT
+
+    state "parallelQueryState" as parallelQueryState {
+      state "queryBartState" as queryBartState {
+        state "waitForQueryBartState" as waitForQueryBartState
+          waitForQueryBartState --> fetchFromBartState : QueryBartEvent
+        state "fetchFromBartState" as fetchFromBartState
+          fetchFromBartState --> waitAllState : FetchCompletedEvent
+          fetchFromBartState -> cancelledState : FetchCancelledEvent
+          fetchFromBartState -> errorState : FetchErrorEvent
+       }
+       state "queryClaudeState" as queryClaudeState {
+         state "waitForQueryClaudeState" as waitForQueryClaudeState
+           waitForQueryClaudeState --> fetchFromClaudeState : QueryClaudeEvent
+         state "fetchFromClaudeState" as fetchFromClaudeState
+           fetchFromClaudeState -> waitAllState : FetchCompletedEvent
+           fetchFromClaudeState -> cancelledState : FetchCancelledEvent
+           fetchFromClaudeState --> errorState : FetchErrorEvent
+       }
+      }
+       state "waitAllState" as waitAllState
+         waitAllState --> formatAndReturnDataState : WaitAllCompletedEvent
+
+  state formatAndReturnDataState {
+      state "formatResultsState" as formatResultsState
+        formatResultsState --> returnResultsState : ResultsFormattedEvent
+      state "returnResultsState" as returnResultsState
+        returnResultsState --> waitingForSendQueryEventState  : ReturnResultsEvent
+  }
+
+  state "cancelledState" as cancelledState
+    cancelledState  --> formatAndReturnDataState
+
+  state "errorState" as errorState
+    errorState  --> formatAndReturnDataState
+
+  }
+state "disposeState" as disposeState {
+        [*] --> inactiveState
+        state "inactiveState" as inactiveState
+        inactiveState --> disposingState : disposingEvent
+        state "disposingState" as disposingState
+        disposingState --> disposedState : disposingStateCompleteEvent
+
+        state "disposedState" as disposedState
+        disposedState --> [*]
+    }
+}
+
+@enduml

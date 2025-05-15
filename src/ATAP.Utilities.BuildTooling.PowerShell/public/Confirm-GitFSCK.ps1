@@ -63,7 +63,7 @@ Function Confirm-GitFSCK {
     # Don't Print any verbose messages to the console
     $VerbosePreference = 'Continue' # SilentlyContinue Continue
 
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"
+    Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
     Write-Verbose "path =$Path"
     Write-Verbose "OutPath = $OutPath"
     # validate path exists

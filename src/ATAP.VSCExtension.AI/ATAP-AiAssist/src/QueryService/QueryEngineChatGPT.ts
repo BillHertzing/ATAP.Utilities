@@ -1,7 +1,9 @@
-import { LogLevel, ILogger, Logger } from '@Logger/index';
-import { PasswordEntryType, IData } from '@DataService/index';
-import { DetailedError } from '@ErrorClasses/index';
-import { logConstructor, logFunction, logAsyncFunction, logExecutionTime } from '@Decorators/index';
+import * as vscode from "vscode";
+
+import { LogLevel, ILogger, Logger } from "@Logger/index";
+import { PasswordEntryType, IData } from "@DataService/index";
+import { DetailedError, HandleError } from "@ErrorClasses/index";
+import { logConstructor, logMethod, logAsyncFunction } from "@Decorators/index";
 
 import {
   EndpointManager,
@@ -10,19 +12,27 @@ import {
   GrokEndpointConfig,
   CopilotEndpointConfig,
   LLModels,
-} from '@EndpointManager/index';
+} from "@EndpointManager/index";
 
-import { StringBuilder } from '@Utilities/index';
+import { StringBuilder } from "@Utilities/index";
 
-import { IQueryResultBase, QueryResultBase, IQueryEngine, QueryEngine } from '@QueryService/index';
+import {
+  IQueryResultBase,
+  QueryResultBase,
+  IQueryEngine,
+  QueryEngine,
+} from "@QueryService/index";
 
-import OpenAI from 'openai';
+import OpenAI from "openai";
 
 export interface IQueryResultChatGPT extends IQueryResultBase {
   chatCompletion: OpenAI.ChatCompletion;
 }
 
-export class QueryResultChatGPT extends QueryResultBase implements IQueryResultChatGPT {
+export class QueryResultChatGPT
+  extends QueryResultBase
+  implements IQueryResultChatGPT
+{
   chatCompletion: OpenAI.ChatCompletion;
 
   constructor(
@@ -38,7 +48,10 @@ export class QueryResultChatGPT extends QueryResultBase implements IQueryResultC
 }
 
 export interface IQueryEngineChatGPT extends IQueryEngine {
-  SendQueryAsync(textToSubmit: string): Promise<void>;
+  sendQueryAsync(
+    textToSubmit: string,
+    cTSToken: vscode.CancellationToken,
+  ): Promise<void>;
 }
 
 @logConstructor
@@ -46,7 +59,7 @@ export class QueryEngineChatGPT implements IQueryEngineChatGPT {
   private openai: OpenAI;
 
   constructor(
-    private logger: ILogger,
+    private readonly logger: ILogger,
     private readonly data: IData,
   ) {
     // get API Token from Keepass
@@ -56,27 +69,30 @@ export class QueryEngineChatGPT implements IQueryEngineChatGPT {
 
     // Immediately Invoked Async Function Expression (IIFE)
     (async () => {
-      aPIToken = await this.data.secretsManager.getAPITokenForChatGPTAsync().catch((e) => {
-        if (e instanceof Error) {
-          throw new DetailedError(`QueryEngineChatGPT .ctor: failed calling getAPITokenForChatGPTAsync -> `, e);
-        } else {
-          throw new Error(
-            `QueryEngineChatGPT .ctor: failed calling getAPITokenForChatGPTAsync and the instance of (e) returned is of type ${typeof e}`,
-          );
-        }
-      });
+      try {
+        aPIToken = await this.data.secretsManager.getAPITokenForChatGPTAsync();
+      } catch (e) {
+        HandleError(
+          e,
+          "QueryEngineChatGPT",
+          ".ctor",
+          "failed calling getAPITokenForChatGPTAsync",
+        );
+      }
     })();
 
     // Hmm I guess the extension should continue to operate with LLMs that do not have any authorization requirement
     // Every LLM is potentially different, the extension should have a defaultConfiguration structure for each LLM enumeration
     // but for now assume that an undefined aPIToken is an error
     if (!aPIToken) {
-      throw new Error(`QueryEngineChatGPT .ctor  aPIToken returned from getAPITokenForChatGPTAsync is undefined`);
+      throw new Error(
+        `QueryEngineChatGPT .ctor  aPIToken returned from getAPITokenForChatGPTAsync is undefined`,
+      );
     }
     aPIToken = aPIToken as Buffer;
     // Keep only the first line of the aPIToken
     // use a regular expression for the split to handle both \n (*nix and macOS) and \r\n (Windows)
-    aPIToken = Buffer.from(aPIToken.toString().split(/\r?\n/)[0], 'utf-8');
+    aPIToken = Buffer.from(aPIToken.toString().split(/\r?\n/)[0], "utf-8");
 
     try {
       this.openai = new OpenAI({
@@ -88,86 +104,76 @@ export class QueryEngineChatGPT implements IQueryEngineChatGPT {
       if (e instanceof OpenAI.APIError) {
         // ToDo: handle any extra data in the error
         throw new DetailedError(
-          'QueryEngineChatGPT .ctor OpenAI instance creation failed, APIError type was returned -> ',
+          "QueryEngineChatGPT .ctor failed getting new OpenAI instance, OpenAI.APIError type was returned -> ",
           e,
         );
       } else {
-        if (e instanceof Error) {
-          throw new DetailedError('QueryEngineChatGPT .ctor OpenAI instance creation failed -> ', e);
-        } else {
-          throw new Error(
-            `QueryEngineChatGPT .ctor OpenAI instance creation failed failed, caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
-          );
-        }
+        HandleError(
+          e,
+          "QueryEngineChatGPT",
+          ".ctor",
+          "failed getting new OpenAI instance",
+        );
       }
     }
   }
 
   @logAsyncFunction
-  async QueryAsync(): Promise<void> {}
-
-  @logAsyncFunction
-  async ConstructQueryAsync(): Promise<void> {}
-
-  @logAsyncFunction
-  async SendQueryAsync(textToSubmit: string): Promise<void> {
+  async sendQueryAsync(textToSubmit: string): Promise<void> {
     let stream: any; //OpenAI.ChatCompletionStream;
+    // ToDo: wrap in a resilience policy to handle transient errors
     try {
       stream = await this.openai.beta.chat.completions.stream({
-        messages: [{ role: 'user', content: textToSubmit.toString() }],
-        model: 'gpt-3.5-turbo',
+        messages: [{ role: "user", content: textToSubmit.toString() }],
+        model: "gpt-3.5-turbo",
         stream: true,
       });
     } catch (e) {
       if (e instanceof OpenAI.APIError) {
         // ToDo handle any extra data in the error
         throw new DetailedError(
-          'QueryEngineChatGPT SendQueryAsync openai.beta.chat.completions.stream() failed, APIError type was returned -> ',
+          "QueryEngineChatGPT sendQueryAsync openai.beta.chat.completions.stream() failed, OpenAI.APIError type was returned -> ",
           e,
         );
       } else {
-        if (e instanceof Error) {
-          throw new DetailedError(
-            'QueryEngineChatGPT SendQueryAsync openai.beta.chat.completions.stream() failed, Error was returned -> ',
-            e,
-          );
-        } else {
-          throw new Error(
-            `QueryEngineChatGPT SendQueryAsync openai.beta.chat.completions.stream() failed, function call caught an unknown object, and the instance of (e) returned is of type ${typeof e}`,
-          );
-        }
+        HandleError(
+          e,
+          "QueryEngineChatGPT",
+          ".sendQueryAsync",
+          "failed calling openai.beta.chat.completions.stream()",
+        );
       }
     }
 
     let resultContent: StringBuilder = new StringBuilder();
     let resultSnapshot: StringBuilder = new StringBuilder();
     let isValid = true;
-    let errorMessage = '';
+    let errorMessage = "";
 
     let chatCompletion: OpenAI.ChatCompletion;
 
     try {
       for await (const chunk of stream) {
-        resultContent.append(chunk.choices[0]?.delta?.content || '');
-        resultSnapshot.append(chunk.choices[0]?.snapshot?.content || '');
+        resultContent.append(chunk.choices[0]?.delta?.content || "");
+        resultSnapshot.append(chunk.choices[0]?.snapshot?.content || "");
       }
 
       chatCompletion = await stream.finalChatCompletion();
     } catch (e) {
       if (e instanceof OpenAI.APIError) {
         throw new DetailedError(
-          'QueryEngineChatGPT SendQueryAsync error occurred reading chunk of openai.beta.chat.completions.stream,  APIError type was returned -> ',
+          "QueryEngineChatGPT sendQueryAsync error occurred reading chunk of openai.beta.chat.completions.stream,  APIError type was returned -> ",
           e,
         );
       } else if (e instanceof Error) {
         throw new DetailedError(
-          'QueryEngineChatGPT SendQueryAsync error occurred reading chunk of openai.beta.chat.completions.stream, Error type was returned -> ',
+          "QueryEngineChatGPT sendQueryAsync error occurred reading chunk of openai.beta.chat.completions.stream, Error type was returned -> ",
           e,
         );
       } else {
         // Handle unknown error types
         throw new Error(
-          `QueryEngineChatGPT SendQueryAsync error occurred reading chunk of openai.beta.chat.completions.stream, and the instance of (e) returned is of type ${typeof e}`,
+          `QueryEngineChatGPT sendQueryAsync error occurred reading chunk of openai.beta.chat.completions.stream, and the instance of (e) returned is of type ${typeof e}`,
         );
       }
     }
@@ -175,18 +181,34 @@ export class QueryEngineChatGPT implements IQueryEngineChatGPT {
     // ToDo: handle incomplete and responses and other app-level error conditions that indicate the query was not successful
     if (false) {
       isValid = false;
-      errorMessage = 'Invalid data detected';
+      errorMessage = "Invalid data detected";
     }
 
     // ToDo: figure out process to vet data as a string, yet also return the data as a structure
     //logger.log(chatCompletion, Logger.LogLevel.Debug);
-    this.logger.log(`resultContent = ${resultContent.toString()}`, LogLevel.Debug);
-    this.logger.log(`resultSnapshot = ${resultSnapshot.toString()}`, LogLevel.Debug);
+    this.logger.log(
+      `resultContent = ${resultContent.toString()}`,
+      LogLevel.Debug,
+    );
+    this.logger.log(
+      `resultSnapshot = ${resultSnapshot.toString()}`,
+      LogLevel.Debug,
+    );
 
-    const results = new QueryResultChatGPT(chatCompletion, resultContent, resultSnapshot, isValid, errorMessage);
+    const results = new QueryResultChatGPT(
+      chatCompletion,
+      resultContent,
+      resultSnapshot,
+      isValid,
+      errorMessage,
+    );
     // Emit event after the stream is fully received
     this.data.eventManager
       .getEventEmitter()
-      .emit('ExternalDataReceived', results, 'QueryResultsChatGPTCompletelyReceived');
+      .emit(
+        "ExternalDataReceived",
+        results,
+        "QueryResultsChatGPTCompletelyReceived",
+      );
   }
 }

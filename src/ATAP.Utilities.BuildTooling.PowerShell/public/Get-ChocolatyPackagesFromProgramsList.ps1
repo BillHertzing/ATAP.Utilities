@@ -21,10 +21,10 @@ ToDo: write Help For example 1 of using this function
 $result = @();
 ("C:\Dropbox\ChocolateyPackageListBackup\NCAT-LTB1\chocoList.txt", "C:\Dropbox\ChocolateyPackageListBackup\UTAT022\chocoList.txt", "C:\Dropbox\ChocolateyPackageListBackup\UTAT01\chocoList.txt") | %{$result += Get-ChocolatyPackagesFromProgramsList $_}
 $result = $result | Select-Object -Property Name  | ?{$_.Name -notmatch '.commandline|.install|.portable' }  | Sort-Object -Property Name -uniq`
-$yaml = Convertto-yaml  $result
+$yaml = ConvertTo-yaml  $result
 $yaml = $yaml -replace '^','  '
-set-content -Path C:\Dropbox\whertzing\GitHub\ATAP.IAC\rawchocopackages.yml -Value $yaml
-gc C:\Dropbox\whertzing\GitHub\ATAP.IAC\rawchocopackages.yml
+set-content -Path C:\Dropbox\whertzing\GitHub\ATAP.IAC\RawChocoPackages.yml -Value $yaml
+gc C:\Dropbox\whertzing\GitHub\ATAP.IAC\RawChocoPackages.yml
 .EXAMPLE
 ToDo: write Help For example 2 of using this function
 .EXAMPLE
@@ -37,7 +37,7 @@ ToDo: insert link to internet articles that contributed ideas / code used in thi
 ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
 #>
 Function Get-ChocolatyPackagesFromProgramsList {
-  [CmdletBinding( DefaultParameterSetName ='DefaultParameterSetNameReplacementPattern' )]
+  [CmdletBinding( DefaultParameterSetName = 'DefaultParameterSetNameReplacementPattern' )]
   Param (
     [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
     # ToDo: add validation script to ensure proper keys and values exists
@@ -53,7 +53,7 @@ Function Get-ChocolatyPackagesFromProgramsList {
     # $DebugPreference = 'SilentlyContinue' # Continue SilentlyContinue
     # $VerbosePreference = 'SilentlyContinue' # Continue SilentlyContinue
     Write-PSFMessage -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
-    $REPattern = "^(?<Name>\S+)\s+(?<Version>\S+)\s*$"
+    $REPattern = '^(?<Name>\S+)\s+(?<Version>\S+)\s*$'
     $allPackages = @()
     $leftovers = @()
 
@@ -68,10 +68,9 @@ Function Get-ChocolatyPackagesFromProgramsList {
       if ($lines[$i] -imatch $REPattern) {
         $allPackages += [PSCustomObject] @{
           Name    = $($matches['Name']).Trim()
-          Version = $($($matches['Version']).Trim()) -replace '"','' # sometimes the version is surrounded by double-apostrophe character, have to remove it
+          Version = $($($matches['Version']).Trim()) -replace '"', '' # sometimes the version is surrounded by double-apostrophe character, have to remove it
         }
-      }
-      else {
+      } else {
         $leftovers += $lines[$i]
       }
     }
@@ -80,7 +79,7 @@ Function Get-ChocolatyPackagesFromProgramsList {
   #region EndBlock
   END {
     Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
-# ToDo: if leftovers are not empty, return the data in a structure along with the allpackages structure list
+    # ToDo: if leftovers are not empty, return the data in a structure along with the allpackages structure list
     $allPackages
 
   }

@@ -84,10 +84,10 @@ describe('Philote', function() {
     });
   });
 
-  describe('ToString', function() {
+  describe('toString', function() {
     it('should return a string containing the ID of the Philote', function() {
       const philote = new Philote();
-      const stringRepresentation = philote.ToString();
+      const stringRepresentation = philote.toString();
       expect(stringRepresentation).to.be.a('string');
       expect(stringRepresentation).to.contain(philote.ID);
     });

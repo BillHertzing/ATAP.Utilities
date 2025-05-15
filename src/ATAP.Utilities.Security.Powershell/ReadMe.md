@@ -2,12 +2,12 @@
 
 ## Overview
 
-Powershell scripts for managing an orgaization's computer systems' security
+Powershell scripts for managing an organization's computer systems' security
 
 
 ### Public Administration Functions
 
-- Install-VaultsInfrastructure - TBD: for bootstrap hosts. Setup the necessaary infrasructure. Can ansible do it? Yes, after preamble and before securing the communications channel
+- Install-VaultsInfrastructure - TBD: for bootstrap hosts. Setup the necessary infrastructure. Can ansible do it? Yes, after preamble and before securing the communications channel
 - Install-ModulesPerComputer (list of modules and list of computers, PSSession to computer -runas 'adminUserid', install list of modules with AllUsers scope) (SecretManagement and three vault extensions)
 - New-CACertificateRequest (Production Public-facing computers get a Response from a Commercial 3rd-party. Development, Testing, and Internal computer systems get a Response from an organization's CA server (or shard of a server cluster) internal to the organization)
 - Install-CACertificate  - installs the organization's root CA and subordinate CA's trust paths (or shard of trust paths)

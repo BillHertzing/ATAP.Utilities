@@ -48,42 +48,42 @@ function Create-AllUsersAllHostsV7CoreProfile {
 
 
   # Dot source the list of configuration keys
-# Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. "$PSScriptRoot/global_ConfigRootKeys.ps1"
-# Print the global:ConfigRootKeys if Debug
-Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
+  # Configuration root key .ps1 files should be a peer of the machine profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+  . "$PSScriptRoot/global_ConfigRootKeys.ps1"
+  # Print the global:ConfigRootKeys if Debug
+  Write-PSFMessage -Level Debug -Message ('global:configRootKeys:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:configRootKeys ($indent + $indentIncrement) $indentIncrement) + '}' )
 
-# [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)
+  # [Ansible: Understanding variable precedence](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#understanding-variable-precedence)
 
-# Dot source the Security and Secrets settings
-# Security and Secrets setting .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. "$PSScriptRoot/global_SecurityAndSecretsSettings.ps1"
-# Print the global:SecurityAndSecretsSettings if Debug
-Write-PSFMessage -Level Debug -Message ('global:SecurityAndSecretsSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:SecurityAndSecretsSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+  # Dot source the Security and Secrets settings
+  # Security and Secrets setting .ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+  . "$PSScriptRoot/global_SecurityAndSecretsSettings.ps1"
+  # Print the global:SecurityAndSecretsSettings if Debug
+  Write-PSFMessage -Level Debug -Message ('global:SecurityAndSecretsSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:SecurityAndSecretsSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 
-# Dot source the common machine settings
-# MachineAndNodeSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. $PSScriptRoot/global_MachineAndNodeSettings.ps1
-# Print the global:MachineAndNodeSettings if Debug
-Write-PSFMessage -Level Debug -Message ('global:MachineAndNodeSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:MachineAndNodeSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+  # Dot source the common machine settings
+  # MachineAndNodeSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+  . $PSScriptRoot/global_MachineAndNodeSettings.ps1
+  # Print the global:MachineAndNodeSettings if Debug
+  Write-PSFMessage -Level Debug -Message ('global:MachineAndNodeSettings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:MachineAndNodeSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 
-# Dot source the PerGroupSettings
-# PerGroupSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. $PSScriptRoot/global_PerGroupSettings.ps1
-# Print the global:PerGroupSettings FOR THIS HOST if Debug
-Write-PSFMessage -Level Debug -Message ('global:global_PerGroupSettings (for ' + $hostname + '):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerGroupSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+  # Dot source the PerGroupSettings
+  # PerGroupSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+  . $PSScriptRoot/global_PerGroupSettings.ps1
+  # Print the global:PerGroupSettings FOR THIS HOST if Debug
+  Write-PSFMessage -Level Debug -Message ('global:global_PerGroupSettings (for ' + $hostname + '):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerGroupSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 
-# Dot source the PerRoleSettings
-# PerRoleSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. $PSScriptRoot/global_PerRoleSettings.ps1
-# Print the global:PerRoleSettings FOR THIS HOST if Debug
-Write-PSFMessage -Level Debug -Message ('global:global_PerRoleSettings (for ' + $hostname + '):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerRoleSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+  # Dot source the PerRoleSettings
+  # PerRoleSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+  . $PSScriptRoot/global_PerRoleSettings.ps1
+  # Print the global:PerRoleSettings FOR THIS HOST if Debug
+  Write-PSFMessage -Level Debug -Message ('global:global_PerRoleSettings (for ' + $hostname + '):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerRoleSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 
-# Dot source the PerMachineSettings
-# PerMachineSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
-. $PSScriptRoot/global_PerMachineSettings.ps1
-# Print the global:PerMachineSettings FOR THIS HOST if Debug
-Write-PSFMessage -Level Debug -Message ('global:PerMachineSettings (for ' + $hostname + '):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerMachineSettings ($indent + $indentIncrement) $indentIncrement) + '}')
+  # Dot source the PerMachineSettings
+  # PerMachineSettings.ps1 files should be a peer of the profile. Its location is determined by the $PSScriptRoot variable, which is the location of the profile when the profile is executing
+  . $PSScriptRoot/global_PerMachineSettings.ps1
+  # Print the global:PerMachineSettings FOR THIS HOST if Debug
+  Write-PSFMessage -Level Debug -Message ('global:PerMachineSettings (for ' + $hostname + '):' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:PerMachineSettings ($indent + $indentIncrement) $indentIncrement) + '}')
 
 
 
@@ -163,7 +163,6 @@ function Join-PathNoResolve {
   }
   $result
 }
-
 
 function Write-ArrayIndented {
   param ($a, $indent, $indentIncrement)
@@ -268,14 +267,14 @@ Function ValidateTools {
   # dotnet tool install --global PlantUmlClassDiagramGenerator --version 1.2.4
 }
 
-#region Security Subsystem core functions (to be moved into a seperate ATAP.Utilities module)
+#region Security Subsystem core functions (to be moved into a separate ATAP.Utilities module)
 ##################################################################################
 
 # ToDo: write a script to be run once for each user that will setup SecretManagement
 # ToDo: write a script to be run (usually once for each user) that will setup access to specific SecretManagementExtensionVault
 # ToDo: write a script to be run on-demand that will revoke access to a specific SecretManagementExtensionVault
 # ToDo: write a script to be run once for each SecretManagementExtensionVault to create the vault
-# ToDo: put all the SecretManagememnt code into a dedicated ATAP.Utilities module
+# ToDo: put all the SecretManagement code into a dedicated ATAP.Utilities module
 
 .  $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Security.Powershell', 'public', 'Install-DataEncryptionCertificate.ps1'))
 
@@ -302,7 +301,7 @@ Function ValidateTools {
   -Force -Whatif
 #>
 
-#endregion Security Subsystem core functions (to be moved into a seperate ATAP.Utilities module)
+#endregion Security Subsystem core functions (to be moved into a separate ATAP.Utilities module)
 
 
 # indent and indentincrement used when printing debug and verbose messages

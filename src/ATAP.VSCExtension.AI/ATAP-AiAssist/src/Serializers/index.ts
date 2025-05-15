@@ -1,1 +1,10 @@
-export { SupportedSerializersEnum, SerializationStructure, ISerializationStructure, isSerializationStructure, toJson, fromJson, toYaml, fromYaml} from './Serializers';
+export {
+  SerializationStructure,
+  ISerializationStructure,
+  isSerializationStructure,
+  stringifyWithCircularReference,
+  toJson,
+  fromJson,
+  toYaml,
+  fromYaml,
+} from './Serializers';

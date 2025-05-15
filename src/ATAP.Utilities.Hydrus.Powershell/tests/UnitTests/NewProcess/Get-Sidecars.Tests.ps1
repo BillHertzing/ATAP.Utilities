@@ -35,7 +35,7 @@ Describe 'ScriptOrModuleUnderTest' -ForEach @( # ToDo: figure out how to use the
 
   It '<name> has the expected value' {
     # Test settings for this specific test case
-    if ($DebugPreference -eq 'Continue') {
+    if (further -eq 'Continue') {
       Write-Host $name
     }
     if (-not $skipTests) {

@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <DefaultNamespace>ATAP.Utilities.IAC.Ansible</DefaultNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <!-- Assembly, File, and Package Information for this assembly-->
+    <!-- Build and revision are created based on date-->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <!-- Current Lifecycle stage for this assembly-->
+    <PackageLifeCycleStage>Development</PackageLifeCycleStage>
+    <!-- NuGet Package Label for the Nuget Package if the LifeCyclestage is not Production-->
+    <!-- However, if the LifeCyclestage is Production, the NuGet Package Label is ignored, but MSBuild expects a non-null value  -->
+    <PackageLabel>Alpha</PackageLabel>
+  </PropertyGroup>
+
+
+<ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="TimePeriodLibrary.NET" />
+    <PackageReference Include="UnitsNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Extensions methods on File and Directory types, along with a Globbing library -->
+    <ProjectReference Include="..\ATAP.Utilities.FIleIO\ATAP.Utilities.FileIO.csproj" />
+  </ItemGroup>
+
+
+</Project>

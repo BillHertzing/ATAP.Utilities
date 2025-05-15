@@ -11,7 +11,7 @@
     "Other"
   ],
   "activationEvents": [],
-  "main": "./_generated/dist/extension.js",
+  "main": "./_generated/development/extension.js",
   "contributes": {
     "commands": [
       {
@@ -32,16 +32,8 @@
         "title": "ATAP-AiAssist: sendQuery (send the Query and all associated information to the server)"
       },
       {
-        "command": "atap-aiassist.showStatusMenuAsync",
-        "title": "ATAP-AiAssist: Show Status menu"
-      },
-      {
-        "command": "atap-aiassist.showModeMenuAsync",
-        "title": "ATAP-AiAssist: Show Mode menu"
-      },
-      {
-        "command": "atap-aiassist.showCommandMenuAsync",
-        "title": "ATAP-AiAssist: Show Command menu"
+        "command": "atap-aiassist.sendTest",
+        "title": "ATAP-AiAssist: sendTest (whatever the test command does)"
       },
       {
         "command": "atap-aiassist.saveTagCollectionAsync",
@@ -60,17 +52,22 @@
         "title": "ATAP-AiAssist: save the conversation collection to disk"
       },
       {
-        "command": "atap-aiassist.primaryActor.quickPickStatus",
+        "command": "atap-aiassist.quickPickVCSCommand",
         "title": "ATAP-AiAssist.quickPick",
         "icon": "$(wand)"
       },
       {
-        "command": "atap-aiassist.primaryActor.quickPickMode",
+        "command": "atap-aiassist.quickPickMode",
         "title": "ATAP-AiAssist.quickPick",
         "icon": "$(wand)"
       },
       {
-        "command": "atap-aiassist.primaryActor.quickPickCommand",
+        "command": "atap-aiassist.quickPickQueryAgentCommand",
+        "title": "ATAP-AiAssist.quickPick",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "atap-aiassist.quickPickQueryEngines",
         "title": "ATAP-AiAssist.quickPick",
         "icon": "$(wand)"
       },
@@ -213,7 +210,7 @@
         "contents": "Welcome to the ATAP AiAssist extension!\n[Start here](command:atap-aiassist.startCommand)",
         "commands": [
           {
-            "command": "ATAP-AiAssist.ChatGPT.AIKey",
+            "command": "atap-aiassist.ChatGPT.AIKey",
             "title": "Enter ChatGPT API Key",
             "when": "ATAP-AiAssist.ChatGPT.AIKey == ''"
           }
@@ -240,69 +237,98 @@
     ],
     "editor/title": [
       {
-        "command": "atap-aiassist.primaryActor.ET1",
+        "command": "atap-aiassist.ET1",
         "group": "navigation"
       }
     ],
     "editor/title/context": [
       {
-        "command": "atap-aiassist.primaryActor.ETC1",
+        "command": "atap-aiassist.ETC1",
         "group": "atap-aiassist"
       },
       {
-        "command": "atap-aiassist.primaryActor.ETC2",
+        "command": "atap-aiassist.ETC2",
         "group": "atap-aiassist"
       }
     ]
   },
   "scripts": {
+    "esbuild:checkTypes": "tsc -p . -noEmit",
+    "compile:development": "tsc -p . --outDir ./_generated/development",
+    "esbuild:development:bundle": "node ./scripts/esbuild.mjs --outDir=./_generated/development --env=development",
+    "esbuild:development:compile": "npm-run-all -s esbuild:checkTypes -s compile:development esbuild:development:bundle",
+    "esbuild:testing:compile": "npm-run-all -s esbuild:checkTypes -s compile:testing esbuild:testing:bundle",
+    "compile:testing": "tsc -p . --outDir ./_generated/testing",
+    "esbuild:testing:bundle": "node ./scripts/esbuild.mjs --outDir=./_generated/testing --env=testing",
+    "esbuild:production:bundle": "node ./scripts/esbuild.mjs --outDir=./_generated/production --env=production",
+    "esbuild:production:compile": "npm-run-all -p esbuild:checkTypes esbuild:production:bundle",
+    "build:development": "npx esbuild ./src/extension.ts --bundle --outfile=./_generated/development/extension.js --platform=node --target=node14 --external:vscode --sourcemap --minify=false",
+    "build:testing": "npx esbuild ./src/extension.ts --bundle --outfile=./_generated/testing/extension.js --platform=node --target=node14 --external:vscode --sourcemap --minify=false ",
+    "start:development": "node _generated/development/extension.js",
+    "start:testing": "node _generated/testing/extension.js",
+    "start:production": "node _generated/production/extension.js",
+    "build:production": "webpack --env.Environment=production ",
     "vscode:prepublish": "npm run package",
-    "compile": "webpack --devtool source-map --output-path=./_generated/dist/",
-    "watch": "webpack --watch --devtool source-map --output-path=./_generated/dist/",
-    "package": "webpack --mode production --devtool source-map",
-    "compile-tests": "tsc -p . --outDir ./_generated/out  && ts-node -p . -r tsconfig-paths/register --outDir ./_generated/out",
-    "watch-tests": "tsc -p . -w --outDir ./_generated/out && ts-node -p . -w -r tsconfig-paths/register --outDir ./_generated/out",
+    "typeCheck": "tsc -p . --noEmit",
+    "Webpack": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool no-source-map",
+    "compile-tests": "tsc -p . --outDir ./_generated/testing  && ts-node -p . -r tsconfig-paths/register --outDir ./_generated/testing",
+    "watch-tests": "tsc -p . -w --outDir ./_generated/testing && ts-node -p . -w -r tsconfig-paths/register --outDir ./_generated/testing",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "build-tests": "webpack --config webpack.test.config.js",
-    "test": "ts-node -p . -r tsconfig-paths/register ./_generated/out/test/runTest.js"
+    "test": "ts-node -p . -r tsconfig-paths/register ./_generated/testing/test/runTest.js"
   },
   "devDependencies": {
-    "@types/axios": "^0.14.0",
-    "@types/bluebird": "^3.5.42",
-    "@types/chai": "^4.3.11",
-    "@types/diff": "^5.0.9",
+    "@eslint/js": "^9.3.0",
+    "@types/chai": "^4.3.16",
+    "@types/diff": "^5.2.1",
     "@types/js-yaml": "^4.0.9",
-    "@types/kdbxweb": "^2.0.0",
     "@types/mocha": "^10.0.6",
-    "@types/node": "^20.10.5",
-    "@types/prettier": "^3.0.0",
-    "@types/sinon": "^17.0.2",
+    "@types/node": "^20.12.12",
+    "@types/sinon": "^17.0.3",
     "@types/strip-comments": "^2.0.4",
-    "@types/vscode": "^1.85.0",
-    "@typescript-eslint/eslint-plugin": "^6.16.0",
-    "@typescript-eslint/parser": "^6.16.0",
-    "@vscode/test-electron": "^2.3.8",
+    "@types/vscode": "^1.89.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^2.26.1",
     "assert": "^2.1.0",
-    "chai": "^5.0.0",
-    "eslint": "^8.56.0",
-    "glob": "^10.3.10",
-    "https-browserify": "^1.0.0",
-    "mocha": "^10.2.0",
+    "chai": "^5.1.1",
+    "cross-env": "^7.0.3",
+    "esbuild": "^0.21.3",
+    "mocha": "^10.4.0",
     "module-alias": "^2.2.3",
-    "os-browserify": "^0.3.0",
-    "path-browserify": "^1.0.1",
-    "sinon": "^17.0.1",
-    "stream-browserify": "^3.0.0",
+    "npm-run-all": "^4.1.5",
+    "pino-pretty": "^11.1.0",
+    "sinon": "^18.0.0",
+    "source-map-loader": "^5.0.0",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "tsconfig-paths-webpack-plugin": "^4.1.0",
-    "typescript": "^5.3.3",
-    "webpack": "^5.89.0",
+    "typescript": "^5.4.5",
+    "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4"
   },
+  "dependencies": {
+    "@statelyai/inspect": "^0.3.1",
+    "bufferutil": "^4.0.8",
+    "diff": "^5.2.0",
+    "encoding": "^0.1.13",
+    "fast-glob": "^3.3.2",
+    "immer": "^10.1.1",
+    "js-yaml": "^4.1.0",
+    "kdbxweb": "^2.1.1",
+    "openai": "^4.47.1",
+    "pino": "^9.1.0",
+    "prettier": "^3.2.5",
+    "strip-comments": "^2.0.1",
+    "utf-8-validate": "^6.0.4",
+    "xstate": "^5.13.0"
+  },
   "_moduleAliases": {
+    "@BaseEnumerations": "_generated/out/BaseEnumerations",
     "@CommandsService": "_generated/out/CommandsService",
     "@DataService": "_generated/out/DataService",
     "@Decorators": "_generated/out/Decorators",
@@ -319,18 +345,5 @@
     "@StateMachineService": "_generated/out/StateMachineService",
     "@TypeMap": "_generated/out/TypeMap",
     "@Utilities": "_generated/out/Utilities"
-  },
-  "dependencies": {
-    "axios": "^1.6.3",
-    "bluebird": "^3.7.2",
-    "diff": "^5.1.0",
-    "encoding": "^0.1.13",
-    "js-yaml": "^4.1.0",
-    "kdbxweb": "^2.1.1",
-    "openai": "^4.24.1",
-    "prettier": "^3.1.1",
-    "strip-comments": "^2.0.1",
-    "ts-node": "^10.9.2",
-    "xstate": "^5.4.1"
   }
 }

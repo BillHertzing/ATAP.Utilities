@@ -124,8 +124,3 @@ import {
 //   // Return a specific instance type using the new operator
 //   return new TypeConstructor(name) as ItemWithID;
 // }
-
-// The TypeMap represents a map to constructors.
-// Type casting to any is done to bypass the TypeScript compiler's checks. This should ideally be replaced with proper casting if your class constructors are correctly defined.
-// It's worth double-checking that your classes (Category, Tag, TagCollection) are defined in a way that their constructors are compliant with the new signature in TypeConstructor.
-// The explicit cast as InstanceType<TypeMap[K]> after new TypeConstructor(...args) tells TypeScript to trust our assertion that the type we are creating is indeed correct. This can be considered a type-safe cast since we have made checks for the existence of TypeConstructor.

@@ -4,9 +4,9 @@ using System.ComponentModel;
 #endif
 
 // ATAP.Utilities.BuildTooling.targets will update the build (date), and revision fields each time a new build occurs
-[assembly:AssemblyFileVersion("0.1.7998.36014")]
+[assembly:AssemblyFileVersion("0.1.9123.10684")]
 // ATAP.Utilities.BuildTooling.targets will update the AssemblyInformationalVersion field each time a new build occurs
-[assembly:AssemblyInformationalVersion("0.1.0-Alpha-016")]
+[assembly:AssemblyInformationalVersion("0.1.0-Alpha-017")]
 [assembly:AssemblyVersion("0.1.0")]
 #if TRACE
 [assembly: ATAP.Utilities.ETW.ETWLogAttribute()]

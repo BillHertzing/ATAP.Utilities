@@ -1,21 +1,21 @@
 {
-    "RoslynExtensionsOptions": {
-      "enableAnalyzersSupport": true
-    },
-    "FormattingOptions": {
-      "enableEditorConfigSupport": true
-    },
-    "RenameOptions": {
-      "RenameInComments": true,
-      "RenameOverloads": true,
-      "RenameInStrings": true
-    },
-    "ImplementTypeOptions": {
-        "PropertyGenerationBehavior": "PreferAutoProperties",
-        "InsertionBehavior": "WithOtherMembersOfTheSameKind"
-    },
+  "RoslynExtensionsOptions": {
+    "enableAnalyzersSupport": true
+  },
+  "FormattingOptions": {
+    "enableEditorConfigSupport": true
+  },
+  "RenameOptions": {
+    "RenameInComments": true,
+    "RenameOverloads": true,
+    "RenameInStrings": true
+  },
+  "ImplementTypeOptions": {
+    "PropertyGenerationBehavior": "PreferAutoProperties",
+    "InsertionBehavior": "WithOtherMembersOfTheSameKind"
+  },
   "script": {
     "enableScriptNuGetReferences": true,
-    "defaultTargetFramework": "net5.0"
+    "defaultTargetFramework": "net9.0"
   }
 }

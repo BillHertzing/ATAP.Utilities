@@ -1,0 +1,58 @@
+You are an expert in statemachine design and the xState Typescript library.
+Access the latest xState V5 documentation, examples, and library source code for instructions on how to create xState statemachines.
+Use best practices and common idioms for writing Typescript and for type, class, and instance naming.
+All xState event names should end with the string 'Event..
+All xState state names should end with the string 'State'
+Implement the machine completely, do not leave portions of the code to be implemented later
+you will receive a $200 tip for working complete responses.
+
+Write xState and Typescript code to create a machine with the following characteristics.
+
+Thee file has the following imports and enumerations
+import { ILogger, Logger, LogLevel } from '@Logger/index';
+import { IData } from '@DataService/index';
+import { DetailedError } from '@ErrorClasses/index';
+import { Actor, createActor, assign, createMachine, fromCallback, StateMachine, fromPromise, sendTo,raise } from 'xstate';
+import { quickPickActor, quickPickMachineLogic } from './quickPickMachineLogic';
+import { ILoggerData } from '@StateMachineService/index';
+import { IQuickPickInput } from './StateMachineService';
+import { showQuickPickActorLogic } from './showQuickPickActorLogic';
+import { changeQuickPickActorLogic } from './changeQuickPickActorLogic';
+import { StatusMenuItemEnum, ModeMenuItemEnum, CommandMenuItemEnum } from '@StateMachineService/index';
+
+
+// an enumeration of the kinds of enumerations that can be quickpicked
+export enum QuickPickEnumeration {
+  StatusMenuItemEnum = 'StatusMenuItemEnum',
+  ModeMenuItemEnum = 'ModeMenuItemEnum',
+  CommandMenuItemEnum = 'CommandMenuItemEnum',
+}
+
+The name of the machine is primaryMachine. The machine context uses an interface called IMachineContext which includes a logger instance that implements ILogger, and a data instance that implements IData.
+
+The primarymachine  has two parallel states, IdleState and DeactivatingState. IdleState is a parent state with multiple possible child states to be detailed later.
+
+The DeactivatingState can be transitioned to from IdleState or any of its descendents on receipt of the event deactivatingEvent
+
+The DeactivatingState transitions to a child DoneState on receipt of the DeactivationCompleteEvent
+
+The initial state of the primary machine is 'IdleState'
+
+From the IdleState, an event named QuickPickEnumsEvent transitions to the QuickPickEnumsState. QuickPickEnumsEvent has payload data quickPickInput conforming to IQuickPickInput. IQuickPickInput includes the field kindOfEnum of type QuickPickEnumeration
+
+QuickPickEnumsState is a parent state that has an initial child state showQuickPickEnumsState. showQuickPickEnumsState invokes fromPromise logic that
+1) switches on the value of kindOfEnum to
+  A) create a list of vscode.QuickPickItems by calling a getter at ```context.data.pickItems.<propertyname>``` where <propertyName> is one of modeMenuItems or commandMenuItems
+  B) create a prompt similar to ```prompt = `currentMode is ${context.data.stateManager.currentMode}, select from list below to change it`;```
+2) executes the following lines
+let pick: vscode.QuickPickItem | undefined;
+pick = await vscode.window.showQuickPick(quickPickItems, { placeHolder: prompt, });
+ If pick is returned as 'undefined', the QuickPickEnumsState transitions back to IdleState
+ otherwise QuickPickEnumsState transitions to a second child state updatingUIState using the event updatingUIEvent. Before it transitions, it uses assign to create an action that
+ 1) switches on the value of kindOfEnum to do the following two changes to context, (use the appropriate getters and setters corresponding to the kindOfEnum)
+  A) set context.data.stateManager.currentMode to context.data.stateManager.priorMode, and assigns pick.label to context.data.stateManager.currentMode
+
+  updatingUIState accepts the event updatingUIEvent and performs a switch on each possible pair of prior and current. The action of each case of the switch statements should be a transition to a child state, whose name follows the pattern <priorname>-<currentName>-State'placeholder'. Each child state invokes a fromPromise logic having a name following the pattern <priorname>-<currentName>-Logic.
+  When the child logic completes, the updatingUIState transitions back to IdleState.
+
+

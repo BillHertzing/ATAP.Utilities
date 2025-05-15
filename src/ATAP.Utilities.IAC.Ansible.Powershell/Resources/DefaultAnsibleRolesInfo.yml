@@ -1,0 +1,177 @@
+hydrus-networkWindows:
+  Name: hydrus-networkWindows
+  AnsibleMeta:
+    DependentRoleNames: ''
+  AnsibleTask:
+    Name: Install hydrus-networkWindows
+    Items:
+    - Name: Install hydrus-network Chocolatey Package
+      Kind: AnsiblePlayBlockChocolateyPackages
+      Items:
+      - Name: hydrus-network
+        Version: latest
+        Prerelease: false
+        AddedParameters:  # ToDO: package parameter to specify the installation location based on a HostSetting, by default it is "C:\Program Files\Hydrus Network"
+      Notes: ''
+    - Name: Create Hydrus-Network shortcut
+      Kind: AnsiblePlayBlockShortcut
+      Items:
+      - Name: hydrus-network Shortcut
+        source: "C:/ProgramData/Chocolatey/bin/hydrusnetwork.exe" # ToDo: based on a hostsetting
+        destination: "C:/ProgramData/Microsoft/Windows/Start Menu/Programs/" # ToDo: get Windows start folder location. appears to be "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\"
+        AddedParameters: # ToDo: get location of the database files from the host settings
+      Notes: ' Must create a shortcut that adds the location to the hydrus database on another drive or folder. Chocolatey creates a shortcut here: "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Hydrus Network"'
+    - Name: Pin the Hydrus-Network shortcut to the task bar
+      Kind: AnsiblePlayBlockPinToTaskBar
+      Items:
+      - Name: hydrus-network Pin Shortcut to Taskbar
+        source: # ToDO: get Windows start folder location "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Hydrus Network"
+      Notes: ' Must create a shortcut that adds the location to the hydrus database on another drive or folder'
+  Notes: "# Image database and tagger. only install on one machine, that has the image files database local on an SSD"
+
+# CobianReflectorBackupSoftwareWindows:
+#   Name: CobianReflectorBackupSoftwareWindows
+#   AnsibleMeta:
+#     DependentRoleNames: ''
+#   AnsibleTask:
+#     Name: Install Cobian Backup
+#     Items:
+#     - Name: Copy latest version from URL
+#       Kind: AnsiblePlayBlockFileFromURI
+#       Items:
+#       - Name: CobianReflector
+#         Version: latest
+#         URL: https://www.cobiansoft.com/download.php?id=1
+#         Target: # ToDo Add host setting for location in which to place downloads
+#         AddedParameters:  # ToDO: package parameter to specify the installation location based on a HostSetting typically "C:\Program Files\Cobian Reflector"
+#       Notes: 'download crSetup-2.4.00.exe from [CobianSoftDownloadPage](https://www.cobiansoft.com/download.php?id=1)'
+#     # - Name: create service account and all that entails
+#     - Name: Install program from EXE
+#       Kind: AnsiblePlayBlockInstallFromEXE
+#       Items:
+#       - Name: Install Cobian Reflector from EXE
+#         source: # ToDo: from the download location, see target above
+#         destination: # ToDo: get Windows start folder location
+#         AdministratorUser: # If set the AnsiblePlayBlockInstallFromEXE will run as this user
+#       Notes: 'Currently install as a service using System account, and autostart the interface. Will need a service account'
+#     - Name: Create Cobian Reflector shortcut
+#       Kind: AnsiblePlayBlockShortcut
+#       Items:
+#       - Name: Cobian Reflector Shortcut
+#         source: # ToDo: based on a hostsetting
+#         destination: # ToDo: get Windows start folder location
+#         AddedParameters: # ToDo: get location of the database files from the host settings
+#       Notes: ' Must create a shortcut that adds the location to the hydrus database on another drive or folder'
+#     - Name: Pin the Cobian Reflector shortcut to the task bar
+#       Kind: AnsiblePlayBlockPinToTaskBar
+#       Items:
+#       - Name: Cobian Reflector Pin Shortcut to Taskbar}
+#         source: # ToDO: get Windows start folder location
+#       Notes: ' Must create a shortcut that adds the location to the hydrus database on another drive or folder'
+#   Notes: "# Backup software, primarily for Hydrus database. Need to figure out how to get latest version or if to use a pinned version"
+
+DittoClipboardManagerWindows:
+  Name: DittoClipboardManagerWindows
+  AnsibleMeta:
+    DependentRoleNames: ''
+  AnsibleTask:
+    Name: Install Ditto Chocolatey Package
+    Items:
+    - Name: Chocolatey Package
+      Kind: AnsiblePlayBlockChocolateyPackages
+      Items:
+      - Name: ditto
+        Version: latest
+        Prerelease: false
+        AddedParameters:
+    - Name: Install Ditto Registry Settings
+      Kind: AnsiblePlayBlockRegistrySettings
+      Items:
+      - {Purpose: "Clear the custom SendTo list", path: HKCU:\Software\Ditto, name: CustomSendToList2, data: "<CustomFriends> </CustomFriends>", type: SZ'}
+      - {Purpose: Set Network Password, path: HKCU:\Software\Ditto, name: NetworkStringPassword, data: "LetMeIn", type: SZ}
+      - {Purpose: Set ditto DB path per host, path: HKCU:\Software\Ditto, name: DBPath3, data: "{{ $($global:configRootKeys['DittoDBPathConfigRootKey'])}}'", type: SZ}
+      # ToDo - Fix the hardcoded list, instead loop over all host names that are members of the UIHost AnsibleGroup
+      - {Purpose: Add a host to the Custom SendTo list, path: HKCU:\Software\Ditto, name: sendclient_ip_0, data: "utat01", type: SZ}
+      - {Purpose: Autosend a clip to the host specified, path: HKCU:\Software\Ditto, name: sendclient_autosend_0, data: "1", type: dword}
+      - {Purpose: Add a host to the Custom SendTo list, path: HKCU:\Software\Ditto, name: sendclient_ip_01 data, "utat022", type: SZ}
+      - {Purpose: Autosend a clip to the host specified, path: HKCU:\Software\Ditto, name: sendclient_autosend_1, data: "1", type: dword}
+      - {Purpose: Add a host to the Custom SendTo list, path: HKCU:\Software\Ditto, name: sendclient_ip_2, data: "ncat-016", type: SZ}
+      - {Purpose: Autosend a clip to the host specified, path: HKCU:\Software\Ditto, name: sendclient_autosend_2, data: "1", type: dword}
+      - {Purpose: Add a host to the Custom SendTo list, path: HKCU:\Software\Ditto, name: sendclient_ip_3, data: "ncat-ltb1", type: SZ}
+      - {Purpose: Autosend a clip to the host specified, path: HKCU:\Software\Ditto, name: sendclient_autosend_3, data: "1", type: dword}
+
+PythonInterpreterWindows:
+  Name: PythonInterpreterWindows
+  AnsibleMeta:
+    DependentRoleNames: ''
+  AnsibleTask:
+    Name: Install Python Interpreter Chocolatey Package
+    Items:
+    - Name: Install Python Interpreter Chocolatey Package
+      Kind: AnsiblePlayBlockChocolateyPackages
+      Items:
+      - Name: python310
+        Version: latest
+        Prerelease: false
+        AddedParameters:
+    - Name: Install Python Interpreter SymbolicLinks for python3
+      Kind: AnsiblePlayBlockSymbolicLinks
+      Items:
+      - Name: Install Python Interpreter SymbolicLinks for python3
+        Items:
+        - {source: '"{{ $global:configRootKeys["PythonInterpretersInstallDirectoryConfigRootKey"] }}"/python',  target: '"{{ $global:configRootKeys["PythonInterpretersInstallDirectoryConfigRootKey"] }}"/python3'}
+    # - name: reboot if needed
+    #  AnsibleBuiltin.RebootIfNeeded
+    - Name: Install pip Chocolatey Package
+      Kind: AnsiblePlayBlockChocolateyPackages
+      Items:
+      - Name: pip
+        Version: latest
+        Prerelease: false
+        AddedParameters:
+    - Name: Install Python Interpreter SymbolicLinks for python3
+      Kind: AnsiblePlayBlockSymbolicLinks
+      Items:
+      - Name: Install Python Interpreter SymbolicLinks for python3
+        Items:
+        - {source: '"{{ "$global:configRootKeys["PythonInterpretersInstallDirectoryConfigRootKey"] }}"/pip',  target: '"{{ "$global:configRootKeys["PythonInterpretersInstallDirectoryConfigRootKey"] }}"/pip3'}
+
+GitHubWindows:  # still requires a manual step to supply the Github account password
+  Name: GitHubWindows
+  AnsibleMeta:
+    DependentRoleNames: ''
+  AnsibleTask:
+    Name: Install GitHub
+    Items:
+    - Name: Install GitHub Chocolatey Package
+      Kind: AnsiblePlayBlockChocolateyPackages
+      Items:
+      - Name: gh
+        Version: latest
+        Prerelease: false
+        AddedParameters:
+
+    # - Name: Install GitHub Configuration File
+    #   Kind: AnsiblePlayBlockFile
+    #   Items:
+    #   - {Purpose: "Change the GitHub username", path: HKCU:\Software\GH, name: UserName, data: "{userName}",  type: SZ'} # not production, made up for now
+
+DropboxWindows: # still requires a manual step to enable LAN sync and to supply the dropbox account userid and password
+  Name: DropboxWindows
+  AnsibleMeta:
+    DependentRoleNames: ''
+  AnsibleTask:
+    Name: Install dropbox Chocolatey Package
+    Items:
+    - Name: Chocolatey Package
+      Kind: AnsiblePlayBlockChocolateyPackages
+      Items:
+      - Name: dropbox
+        Version: latest
+        Prerelease: false
+        AddedParameters:
+    - Name: Install Dropbox Registry Settings
+      Kind: AnsiblePlayBlockRegistrySettings
+      Items:
+      - {purpose: "Change the location where Dropbox is synchronizing files (the sync root)", path: HKCU:\Software\Dropbox\ks, name: LocationPath, data: {{ '$global:ConfigRootKeys[''DropboxBasePathConfigRootKey'']'}}, type: "String" }
+      - {purpose: Enable LAN sync, path: HKCU:\Software\Dropbox\ks, name: LocationPath, data: {{ '$global:ConfigRootKeys[''DropboxBasePathConfigRootKey'']'}}, type: String }

@@ -207,3 +207,16 @@ The Dropbox access token must be set in the environment for the dropbox link cre
 
 [System.Environment]::SetEnvironmentVariable('DropBoxAccessToken','<paste token here>',[System.EnvironmentVariableTarget]::User)
 ```
+
+### ConvertFrom-Mbox
+
+needs MimeKit dll installed
+using DotNet 8 version 2.5.0
+
+```powershell
+
+
+```
+
+Formatting - using PSScriptAnalyzer
+https://github.com/PowerShell/PSScriptAnalyzer/tree/main/Engine/Settings

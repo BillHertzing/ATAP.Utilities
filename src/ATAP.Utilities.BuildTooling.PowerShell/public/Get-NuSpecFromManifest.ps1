@@ -45,7 +45,8 @@ Function Get-NuSpecFromManifest {
     $ManifestPath,
 
     [Parameter(Mandatory = $true)]
-    [ValidateSet('NuGet', 'PowershellGet', 'ChocolateyGet')]
+    # ToDo: Replace with enumeration
+    [ValidateSet('NuGet', 'PowershellGet', 'ChocolateyGet', 'ChocolateyCLI')]
     [string]
     $ProviderName,
 

@@ -115,10 +115,10 @@ Delivery to each powershell package provider needs to be supported and tested. T
 The `invoke-build` script reads the module.build.ps1 file. In the module.build.ps1 file paths are created per-host that are based on the $global:Settings hash, specifically
 
 ```Powershell
- $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingDirectory']]
- $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingSourceDirectory']]
- $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingIntermediateDirectory']]
- $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingDistributionPackagesDirectory']]
+ $global:settings[$global:configRootKeys['TemporaryPowershellModulePackagingDirectory']]
+ $global:settings[$global:configRootKeys['TemporaryPowershellModulePackagingSourceDirectory']]
+ $global:settings[$global:configRootKeys['TemporaryPowershellModulePackagingIntermediateDirectory']]
+ $global:settings[$global:configRootKeys['TemporaryPowershellModulePackagingDistributionPackagesDirectory']]
 ```
 
 From these base locations, subdirectories are created for each powershell package provider, and below those, further subdirectories are created for each LifeCycle phase

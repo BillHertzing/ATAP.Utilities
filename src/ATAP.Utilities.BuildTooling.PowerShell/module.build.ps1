@@ -17,7 +17,8 @@ param(
   , [ValidateSet('Unit', 'Integration', 'Gui')]
   [string[]]$testClassifications = @('Unit', 'Integration', 'Gui')
   # These are the providers for which the script will create a package
-  # ToDo: replace with an enumeration type
+  # ToDO: Validation is done as follows:
+  # [ValidateScript( { [ProviderNamesEnum]::IsDefined([ProviderNamesEnum], $_) } )]
   , [ValidateSet('NuGet', 'PowershellGet', 'ChocolateyGet', 'ChocolateyCLI')]
   # ToDO: default to an array of enumeration values ($global:settings)
   [string[]]$providerNames = @('NuGet', 'PowershellGet', 'ChocolateyGet', 'ChocolateyCLI')
@@ -165,17 +166,17 @@ $script:ChocolateyPackageFilename = $script:ChocolateyPackageFilename
   }
 
   # The base directory for this module for generated powershell module packaging files
-  $GeneratedPowershellModulePackagingDirectory = Join-Path $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingDirectoryConfigRootKey']] $moduleName
+  $TemporaryPowershellModulePackagingDirectory = Join-Path $global:settings[$global:configRootKeys['TemporaryPowershellModulePackagingDirectoryConfigRootKey']] $moduleName
   # The  directory for generated powershell module .psm1 files
-  $GeneratedPowershellModulePackagingSourceDirectory = Join-Path $GeneratedPowershellModulePackagingDirectory $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingSourceDirectoryConfigRootKey']]
+  $TemporaryPowershellModulePackagingSourceDirectory = Join-Path $TemporaryPowershellModulePackagingDirectory $global:settings[$global:configRootKeys['TemporaryPowershellModulePackagingSourceDirectoryConfigRootKey']]
   # The path to the generated powershell module .psm1 file
-  $GeneratedModuleFilePath = Join-Path $GeneratedPowershellModulePackagingSourceDirectory $moduleFilename
+  $GeneratedModuleFilePath = Join-Path $TemporaryPowershellModulePackagingSourceDirectory $moduleFilename
   # The path to the generated powershell base module .psd1 file
-  $script:GeneratedBaseManifestFilePath = Join-Path $GeneratedPowershellModulePackagingSourceDirectory $manifestFilename
+  $script:GeneratedBaseManifestFilePath = Join-Path $TemporaryPowershellModulePackagingSourceDirectory $manifestFilename
   # The  directory for generated powershell module .psd1 files, nuspec files, readme files, test files, documentation files
-  $script:GeneratedPowershellModulePackagingIntermediateDirectory = Join-Path $GeneratedPowershellModulePackagingDirectory $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingIntermediateDirectoryConfigRootKey']]
+  $script:TemporaryPowershellModulePackagingIntermediateDirectory = Join-Path $TemporaryPowershellModulePackagingDirectory $global:settings[$global:configRootKeys['TemporaryPowershellModulePackagingIntermediateDirectoryConfigRootKey']]
   # The directory for generated powershell module finished package files
-  $script:GeneratedPowershellModulePackagingDistributionPackagesDirectory = Join-Path $GeneratedPowershellModulePackagingDirectory $global:settings[$global:configRootKeys['GeneratedPowershellModulePackagingDistributionPackagesDirectoryConfigRootKey']]
+  $script:TemporaryPowershellModulePackagingDistributionPackagesDirectory = Join-Path $TemporaryPowershellModulePackagingDirectory $global:settings[$global:configRootKeys['TemporaryPowershellModulePackagingDistributionPackagesDirectoryConfigRootKey']]
   $script:sourceManifestPath = Join-Path $moduleRoot $manifestFilename
   # ToDo: replace 'ReadMe.md' with a string constant ($global:settings)
   $readMeTextString = 'ReadMe.md'#
@@ -184,8 +185,8 @@ $script:ChocolateyPackageFilename = $script:ChocolateyPackageFilename
   $ReleaseNotesTextString = 'ReleaseNotes.md'
   $script:sourceReleaseNotesPath = Join-Path $moduleRoot $ReleaseNotesTextString
 
-  $message = "GeneratedPowershellModulePackagingDirectory = $GeneratedPowershellModulePackagingDirectory; `
-  GeneratedPowershellModulePackagingSourceDirectory = $GeneratedPowershellModulePackagingSourceDirectory; `
+  $message = "TemporaryPowershellModulePackagingDirectory = $TemporaryPowershellModulePackagingDirectory; `
+  TemporaryPowershellModulePackagingSourceDirectory = $TemporaryPowershellModulePackagingSourceDirectory; `
   GeneratedModuleFilePath = $GeneratedModuleFilePath; `
   GeneratedBaseManifestFilePath = $script:GeneratedBaseManifestFilePath"
   Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'Enter-Build'
@@ -259,26 +260,26 @@ Task Clean @{
       Write-PSFMessage -Level Debug -Message "WhatIf:$WhatIfPreference; -Verbose:$Verbosepreference; -Confirm:$ConfirmPreference"
     }
     Process {
-      # clean the GeneratedPowershellModulePackagingDirectory. Remove the subdirectory for $moduleName and all of its children
-      if ($PSCmdlet.ShouldProcess("$GeneratedPowershellModulePackagingDirectory", "Remove-Item -Force -Recurse -Path <target> -Verbose:$Verbosepreference -Confirm:$ConfirmPreference -ErrorAction SilentlyContinue")) {
+      # clean the TemporaryPowershellModulePackagingDirectory. Remove the subdirectory for $moduleName and all of its children
+      if ($PSCmdlet.ShouldProcess("$TemporaryPowershellModulePackagingDirectory", "Remove-Item -Force -Recurse -Path <target> -Verbose:$Verbosepreference -Confirm:$ConfirmPreference -ErrorAction SilentlyContinue")) {
         # as a safety measure, ensure the directory name includes the pathpart \temp\
-        if ($GeneratedPowershellModulePackagingDirectory -notmatch '\\temp\\') {
-          $message = "GeneratedPowershellModulePackagingDirectory does not contain \temp\. GeneratedPowershellModulePackagingDirectory = $GeneratedPowershellModulePackagingDirectory"
+        if ($TemporaryPowershellModulePackagingDirectory -notmatch '\\temp\\') {
+          $message = "TemporaryPowershellModulePackagingDirectory does not contain \temp\. TemporaryPowershellModulePackagingDirectory = $TemporaryPowershellModulePackagingDirectory"
           Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
           # toDo catch the errors, add to 'Problems'
           Throw $message
         }
-        if ($(Test-Path -Path $GeneratedPowershellModulePackagingDirectory -PathType Container)) {
+        if ($(Test-Path -Path $TemporaryPowershellModulePackagingDirectory -PathType Container)) {
           # if it exists, delete it
-          Remove-Item -Force -Recurse -Path $GeneratedPowershellModulePackagingDirectory -Verbose:$Verbosepreference -Confirm:$ConfirmPreference -ErrorAction SilentlyContinue
+          Remove-Item -Force -Recurse -Path $TemporaryPowershellModulePackagingDirectory -Verbose:$Verbosepreference -Confirm:$ConfirmPreference -ErrorAction SilentlyContinue
         }
         # Create a new packaging directory
-        New-Item -ItemType Directory -Force $GeneratedPowershellModulePackagingDirectory >$null
+        New-Item -ItemType Directory -Force $TemporaryPowershellModulePackagingDirectory >$null
       }
       # create generated output paths for the module
-      New-Item -ItemType Directory -Force $GeneratedPowershellModulePackagingSourceDirectory >$null
-      New-Item -ItemType Directory -Force $script:GeneratedPowershellModulePackagingIntermediateDirectory >$null
-      New-Item -ItemType Directory -Force $script:GeneratedPowershellModulePackagingDistributionPackagesDirectory >$null
+      New-Item -ItemType Directory -Force $TemporaryPowershellModulePackagingSourceDirectory >$null
+      New-Item -ItemType Directory -Force $script:TemporaryPowershellModulePackagingIntermediateDirectory >$null
+      New-Item -ItemType Directory -Force $script:TemporaryPowershellModulePackagingDistributionPackagesDirectory >$null
 
 
       # Clean the Test Results and Text Coverage Results
@@ -342,7 +343,7 @@ Task BuildPSM1 @{
       }
     }
     Write-PSFMessage -Level Debug -Message "Creating module [$GeneratedModuleFilePath]" -Tag 'Invoke-Build', 'BuildPSM1'
-    # $GeneratedPowershellModulePackagingSourceDirectory was created during enter-build, so does not need to be validated
+    # $TemporaryPowershellModulePackagingSourceDirectory was created during enter-build, so does not need to be validated
     Set-Content -Path $GeneratedModuleFilePath -Value $PSM1text.ToString() -Encoding $encoding
   }
 }
@@ -358,7 +359,7 @@ Task CopyAssembliesForPSModule @{
     $assembliesPathPattern = '.dll$'
     $($sourceFileHandles.fullname -match $assembliesPathPattern) | ForEach-Object {
       $AssemblyPathInfo = $_
-      foreach ($destination in $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory )) ) {
+      foreach ($destination in $($(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory )) ) {
         Join-Path $destination.Path $AssemblyPathInfo.name
       }
     }
@@ -367,7 +368,7 @@ Task CopyAssembliesForPSModule @{
   Jobs    = {
     Begin {
       Write-PSFMessage -Level Debug -Message 'task (starting):CopyAssembliesForPSModule'
-      $destinations = $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory ))
+      $destinations = $($(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory ))
     }
     Process {
       #ToDO: FIX THIS instead of $inputs, loop
@@ -413,7 +414,8 @@ Task BuildBasePSD1 @{
       $currentManifest = Import-PowerShellDataFile $script:GeneratedBaseManifestFilePath
       if ($currentManifest.PrivateData.PSData.ContainsKey('Prerelease')) {
         $currentSemanticVersion = [System.Management.Automation.SemanticVersion]::new($currentManifest.ModuleVersion + '-' + $currentManifest.PrivateData.PSData.Prerelease)
-      } else {
+      }
+      else {
         $currentSemanticVersion = [System.Management.Automation.SemanticVersion]::new($currentManifest.ModuleVersion )
       }
       $newManifestParams = @{
@@ -512,16 +514,16 @@ Task BuildPackageSpecificPSD1AndPSM1 @{
     $script:GeneratedBaseManifestFilePath
   }
   Outputs = {
-    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory $manifestFilename)
-    , $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory $moduleFilename)
+    $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory $manifestFilename)
+    , $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory $moduleFilename)
   }
-  #   foreach ($destination in $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory)) {
+  #   foreach ($destination in $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory)) {
   #     Join-Path $destination $manifestFilename
   #   }
   #  }
   Jobs    = {
     # Each provider and PackageLifecycle needs its own .psd1 and .nuspec file, along with the basic .psm1 file, and additional files as appropriate for the provider and lifecycle
-    foreach ($destination in $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory )) {
+    foreach ($destination in $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory )) {
       if (-not $(Test-Path $destination.Path -PathType Container)) { New-Item $destination.Path -ItemType Directory -Force >$null }
       # Copy the generated module file to each package intermediate directory
       Copy-Item $GeneratedModuleFilePath $destination.Path
@@ -578,9 +580,9 @@ Task IntegrationTestPSModule @{
 Task GenerateReadMeMarkdownForPSModule @{
   Inputs  = { $script:sourceReadMePath }
   Outputs = {
-    $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory $readMeTextString ))
+    $($(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory $readMeTextString ))
     # # ToDo: replace 'ReadMe.md' with a string constant ($global:settings)
-    # foreach ($destination in $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory ))) {
+    # foreach ($destination in $($(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory ))) {
     #   Join-Path $destination.Path 'ReadMe.md'
     # }
   }
@@ -599,7 +601,7 @@ Task GenerateReadMeMarkdownForPSModule @{
       > PowerShell module help build powershell modules.
 
 '@
-      $destinations = $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory )
+      $destinations = $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory )
     }
     Process {
       foreach ($sourcePath in $Inputs) {
@@ -618,16 +620,16 @@ Task GenerateReadMeMarkdownForPSModule @{
 Task GenerateReleaseNotesMarkdownForPSModule @{
   Inputs  = { $script:sourceReleaseNotesPath }
   Outputs = {
-    $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory $ReleaseNotesTextString))
+    $($(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory $ReleaseNotesTextString))
     #  # ToDo: replace 'ReleaseNotes.md' with a string constant ($global:settings)
-    #  foreach ($destination in $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory ))) {
+    #  foreach ($destination in $($(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory ))) {
     #   Join-Path $destination.Path 'ReleaseNotes.md'
     #  }
   }
   Jobs    = {
     Begin {
       Write-PSFMessage -Level Debug -Message 'task (starting): GenerateReleaseNotesMarkdownForPSModule'
-      $destinations = $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory )
+      $destinations = $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory )
     }
     Process {
       foreach ($sourcePath in $Inputs) {
@@ -662,10 +664,10 @@ Task CopyTestFilesForPSModule @{
   # ToDo: inputs should be the test files and the source files
   Inputs  = { $testFileHandles.fullname }
   Outputs = {
-    # ToDo: outputs should be the test files copied into the $script:GeneratedPowershellModulePackagingIntermediateDirectory
+    # ToDo: outputs should be the test files copied into the $script:TemporaryPowershellModulePackagingIntermediateDirectory
     # ToDo: replace 'QualityAssurance' with an Enumeration ToString()
     # ToDo: replace 'tests' with a string constant ($global:settings)
-    foreach ($destination in $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix 'tests')) | Where-Object { $_.PackageLifeCycle -match 'QualityAssurance' } ) {
+    foreach ($destination in $($(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix 'tests')) | Where-Object { $_.PackageLifeCycle -match 'QualityAssurance' } ) {
       foreach ($testfileInfo in  [System.Collections.Generic.List[System.IO.FileInfo]] $testFileHandles) {
         Join-Path $destination.Path $testFileInfo.Name
       }
@@ -677,7 +679,7 @@ Task CopyTestFilesForPSModule @{
 
       # The Test files are only copied to the Quality Assurance packages
       # ToDo: move the subdirectory 'test' into string constants ($global:settings)
-      $destinations = $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix 'tests')) | Where-Object { $_.PackageLifeCycle -match 'QualityAssurance' }
+      $destinations = $($(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix 'tests')) | Where-Object { $_.PackageLifeCycle -match 'QualityAssurance' }
     }
     Process {
       # powershell will cast an array of a single element to  a string if
@@ -696,18 +698,18 @@ Task CopyTestFilesForPSModule @{
 
 Task BuildNuSpecFromManifest @{
   Inputs  = {
-    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
+    $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
   }
   Outputs = {
-    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $script:NuSpecFilename).Path
+    $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix $script:NuSpecFilename).Path
   }
   Jobs    = {
     Begin {
       Write-PSFMessage -Level Debug -Message 'task (starting):BuildNuSpecFromManifest inputs = $inputs ; outputs = $outputs'
-      $destinations = $($(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory ))
+      $destinations = $($(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory ))
     }
     Process {
-      #$destinations = CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory
+      #$destinations = CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory
       foreach ($destination in $destinations) {
         # The NuSpec file is placed in the same directory as the manifest file
         $GeneratedManifestFilePath = Join-Path $destination.Path $manifestFilename
@@ -716,7 +718,8 @@ Task BuildNuSpecFromManifest @{
           # ToDo: remove after powershell package is installed
           . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-NuSpecFromManifest.ps1'
           Get-NuSpecFromManifest -ManifestPath $GeneratedManifestFilePath -DestinationFolder $destination.Path -ProviderName $destination.Provider
-        } catch {
+        }
+        catch {
           $message = "calling Get-NuSpecFromManifest with -ManifestPath $GeneratedManifestFilePath -DestinationFolder $destination.Path -ProviderName $destination.ProviderName threw an error : $($error[0] | Select-Object * )"
           Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'BuildNuSpecFromManifest'
           # toDo catch the errors, add to 'Problems'
@@ -734,12 +737,12 @@ Task BuildNuSpecFromManifest @{
 Task AddReadMeToNuSpec @{
   # this task modifies its inputs, so, there are no output dependencies, it has to run
   # Inputs  = {
-  #   $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
+  #   $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
   # }
   # Outputs = $GeneratedModuleFilePath
   Jobs = {
     Write-PSFMessage -Level Debug -Message 'task = AddReadMeToNuSpec'
-    $destinations = CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory
+    $destinations = CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory
     for ($destinationIndex = 0; $destinationIndex -lt $destinations.count; $destinationIndex++) {
       $nuSpecFilePath = Join-Path $destinations[$destinationIndex].Path $script:NuSpecFilename
       # Read the NuSpec file
@@ -773,29 +776,21 @@ Task AddReadMeToNuSpec @{
 
 Task BuildNuGetPackage @{
   Inputs  = {
-    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
-    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $script:NuSpecFilename).Path
-    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $moduleFilename).Path
+    $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
+    $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix $script:NuSpecFilename).Path
+    $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix $moduleFilename).Path
   }
 
   Outputs = {
-    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingDistributionPackagesDirectory -suffix $moduleFilename).Path
+    $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingDistributionPackagesDirectory -suffix $moduleFilename).Path
   }
   Jobs    = {
     Write-PSFMessage -Level Debug -Message "task = BuildNuGetPackage, index = $index" -Tag 'Invoke-Build', 'BuildNuGetPackage'
-    output[$index].packaged
-    $index = ($null -eq $index)? 0: $index + 1
-    $manifest = $Inputs[$index]
-    $ppair = $Inputs[$index].subString["$script:GeneratedPowershellModulePackagingIntermediateDirectory".Length]
-    $nuspec = $TaskInputs[$index + 6]           # 6-11
-    $module = $TaskInputs[$index + 12]          # 12-17
-    $output = $TaskOutputs[$index]
-
     # ToDo: logic to select Dev, QA, Production package(s) to build
-    $destinations = CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory
+    $destinations = CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory
     for ($destinationIndex = 0; $destinationIndex -lt $destinations.count; $destinationIndex++) {
       $nuSpecFilePath = Join-Path $destinations[$destinationIndex].Path $script:NuSpecFilename
-      $distributionPackagesDirectory = Join-Path $script:GeneratedPowershellModulePackagingDistributionPackagesDirectory $destinations[$destinationIndex].Provider $destinations[$destinationIndex].PackageLifeCycle
+      $distributionPackagesDirectory = Join-Path $script:TemporaryPowershellModulePackagingDistributionPackagesDirectory $destinations[$destinationIndex].Provider $destinations[$destinationIndex].PackageLifeCycle
       # ensure the directory exists, silently create it if not
       if (-not $(Test-Path $distributionPackagesDirectory -PathType Container)) { New-Item $distributionPackagesDirectory -ItemType Directory -Force >$null }
       try {
@@ -821,7 +816,8 @@ Task BuildNuGetPackage @{
         Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'BuildNuGetPackage'
         $message = "Nuget pack stderr : $stderr"
         Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'BuildNuGetPackage'
-      } catch {
+      }
+      catch {
         $message = "calling nuget with argument list pack $nuSpecFilePath -OutputDirectory $distributionPackagesDirectory threw an error "
         Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'BuildNuGetPackage'
         # toDo catch the errors, add to 'Problems'
@@ -926,13 +922,13 @@ Task BuildNuGetPackage @{
 
 Task BuildChocolateyPackage @{
   Inputs  = {
-    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
-    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $script:ChocolateyPackageFilename).Path
-    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingIntermediateDirectory -suffix $moduleFilename).Path
+    $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix $manifestFilename).Path
+    $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix $script:ChocolateyPackageFilename).Path
+    $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix $moduleFilename).Path
   }
 
   Outputs = {
-    $(CrossProduct -prefix $script:GeneratedPowershellModulePackagingDistributionPackagesDirectory -suffix $moduleFilename).Path
+    $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingDistributionPackagesDirectory -suffix $moduleFilename).Path
   }
 
   Jobs    = {
@@ -958,7 +954,7 @@ Task PublishPSPackage @{
     $providerNames | ForEach-Object { $ProviderName = $_
       $packageLifecycles | ForEach-Object { $PackageLifecycle = $_
         # The Distrbution directory where the distribution package has been placed
-        $GeneratedFullPackageDistributionDirectory = Join-Path $script:GeneratedPowershellModulePackagingDistributionPackagesDirectory $ProviderName $PackageLifecycle
+        $GeneratedFullPackageDistributionDirectory = Join-Path $script:TemporaryPowershellModulePackagingDistributionPackagesDirectory $ProviderName $PackageLifecycle
         # The module manifest file
         $currentManifest = Import-PowerShellDataFile $script:GeneratedBaseManifestFilePath
 

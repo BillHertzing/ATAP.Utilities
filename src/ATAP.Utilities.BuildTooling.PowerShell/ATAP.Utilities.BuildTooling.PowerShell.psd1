@@ -67,7 +67,7 @@
   # NestedModules = @()
 
   # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-  FunctionsToExport    = @('Build-ImageFromPlantUML', 'Clear-NuGetCaches', 'Copy-Assets', 'Get-BrokenGitSubDirs', 'Get-CoreInfo', 'Get-JenkinsEnvSettings', 'Get-ModuleAsSymbolicLink', 'Get-NumberOfFailingTestsFromTRX', 'Get-SLNParts', 'Get-ProjectsFromSLN', 'Invoke-MSBuildWithLists', 'Invoke-Webserver', 'New-AssemblyInfoFiles', 'New-DocFilesIfNotPresent', 'New-DocFolderIfNotPresent', 'Remove-ObjAndBinSubdirs', 'Remove-VSComponentCache', 'Start-DebugPowerShell', 'Update-BlocksInCsproj')
+  FunctionsToExport    = @('Build-ImageFromPlantUML', 'Clear-NuGetCaches', 'Copy-Assets', 'Get-BrokenGitSubDirs', 'Get-CoreInfo', 'Get-JenkinsEnvSettings', 'Get-ModuleAsSymbolicLink', 'Get-NumberOfFailingTestsFromTRX', 'Get-SLNParts', 'Get-ProjectsFromSLN', 'Invoke-MSBuildWithLists', 'Invoke-Webserver', 'New-AssemblyInfoFiles', 'New-DocFilesIfNotPresent', 'New-DocFolderIfNotPresent', 'Remove-ObjAndBinSubDirectories', 'Remove-VSComponentCache', 'Start-DebugPowerShell', 'Update-BlocksInCsproj')
 
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport      = '*'
@@ -108,7 +108,7 @@
       # ReleaseNotes = ''
 
       # Prerelease string of this module
-      Prerelease = '1'
+      Prerelease = 'alpha001'
 
       # Flag to indicate whether the module requires explicit user acceptance for install/update/save
       # RequireLicenseAcceptance = $false

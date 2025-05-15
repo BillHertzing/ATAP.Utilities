@@ -4,8 +4,8 @@
 .SYNOPSIS
 Confirm that all the 3rd party tools and scripts needed to build, analyze, test, package and deploy both c# and powershell code are present, configured, and accessable,
 .DESCRIPTION
-This function looks for the presence of Powershell Package Repository Sources
-  - deploy packages to internal and external location, to three public location (PowershellGet, Nuget, and Chocolatey)
+This function looks for the presence of Powershell Package Sources
+  - deploy packages to internal and external location, to three public location (Nuget, PowershellGet, ChocolateyGet)
 
 .PARAMETER Name
 ToDo: write Help For the parameter X
@@ -73,8 +73,8 @@ Function Confirm-RepositoryPackageSource {
           $providerName = 'PowershellGet'
           break
         }
-        'Chocolatey' {
-          $providerName = 'Chocolatey'
+        'ChocolateyGet' {
+          $providerName = 'ChocolateyGet'
           break
         }
       }

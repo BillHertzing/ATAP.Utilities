@@ -218,7 +218,7 @@ function New-PlaybooksNamed {
         dest: 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.Powershell\Resources'
     - name: workaround copy the requiredModules into the location for global modules
       ansible.windows.win_copy:
-        src: /mnt/c/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.Utilities.Powershell/Releases/Production/0.0.1/Resources/RequiredPackagesOfflineRepository/PSFramework
+        src: /mnt/c/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.Utilities.Powershell/Releases/Production/0.0.1/Resources/OfflinePackagesRepository/PSFramework
         dest: 'C:\Program Files\PowerShell\Modules'
     - name: workaround copy the package specification
       ansible.windows.win_copy:

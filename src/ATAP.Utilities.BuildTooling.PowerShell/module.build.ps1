@@ -1046,20 +1046,10 @@ Task PublishPSPackage @{
       }
     }
 
-    # Switch on Environment
-    # Publish to FileSystem
-    #Publish-Module -Path $relativeModulePath -Repository $PSRepositoryFeed -NuGetApiKey $nuGetApiKey
-    #Publish-Module -Name $GeneratedPowershellGetModulesPath -Repository LocalDevelopmentPSRepository
-    # Copy last build artifacts into a .7zip file, name it after the ModuleName-Version-buildnumber (like C# project assemblies)
-    # Check the 7Zip file into the SCM repository
-    # Get SHA-256 and other CRC checksums, add that info to the SCM repository
-    # Publish the Production PSModule to the three repositories
-    # Publish the checksums to the internet
-    # Update the SCM repository metadata to associate the published Module
   }
 }
 
-
+#######################################################################################################################
 # This function looks upwards from the module root until it finds a directory
 #  that contains both the source and tests directories
 #  and then looks down the directory tree to find the tests directory having a name that matches the modulename
@@ -1113,8 +1103,13 @@ Task PublishPSPackage @{
 #   }
 
 # }
+#######################################################################################################################
 
+#######################################################################################################################
 # Get-Next Version placeholder
+# This function looks across all known internal repositories for the highest version of the module
+#   and looks at the list of software assets in the QualityAssurance and Production types of SoftwarePackages
+#   to see if the current software assest differ from the highest version's SoftwarePackage list of assests
 # Validation of package repositories is handeled by confirm-tools when a container is started
 # create the in-memory manifest from the sourceManifestPath
 # $sourceManifest = Import-PowerShellDataFile -Path $sourceManifestPath
@@ -1149,27 +1144,8 @@ Task PublishPSPackage @{
 # $providerNames | ForEach-Object { $ProviderName = $_
 #   switch ($ProviderName) {
 #     'NuGet' {
-#       ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $ProviderLifecycle = $_
+#       ('QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $ProviderLifecycle = $_
 #         switch ($ProviderLifecycle) {
-#           'Filesystem' {
-#             $packageLifecycles  | ForEach-Object { $PackageLifecycle = $_
-#               $RepositoryPackageSourceName = $ProviderName + $ProviderLifecycle + $PackageLifecycle + 'Package'
-#               # Only the highest version .psd1 file is needed
-#               $allNugetFilesystemPackageVersions = Get-ChildItem -Recurse -Include "$moduleName*" -File -Path $global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']][$RepositoryPackageSourceName] | Sort-Object -Property BaseName -Desc
-#               $highestNugetFilesystemPackageVersion = $allNugetFilesystemPackageVersions[0]
-#               if ($allNugetFilesystemPackageVersions) {
-#                 #ToDo advanced Infrastructure as code : Turn the replacement pattern into a configuration thingy
-#                 $highestsemanticVersion = $allNugetFilesystemPackageVersions[0].basename -replace "^$modulename-", ''
-#                 # $foundOldModules[$ProviderName][$PackageSource][$Lifecycle] = $semanticVersion
-#                 # $foundOldVersions[$semanticVersion] = [PSCustomObject]@{
-#                 #   ProviderName     = $ProviderName
-#                 #   PackageSource = $PackageSource
-#                 #   Lifecycle          = $Lifecycle
-#                 # }
-#               }
-#               break
-#             }
-#           }
 #           'QualityAssuranceWebServer' {
 #             break
 #           }
@@ -1184,11 +1160,8 @@ Task PublishPSPackage @{
 #     }
 
 #     'PowershellGet' {
-#       ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $PackageSource = $_
+#       ('QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $PackageSource = $_
 #         switch ($PackageSource) {
-#           'Filesystem' {
-#             break
-#           }
 #           'QualityAssuranceWebServer' {
 #             break
 #           }
@@ -1202,11 +1175,8 @@ Task PublishPSPackage @{
 #       }
 #     }
 #     'ChocolateyGet' {
-#       ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $PackageSource = $_
+#       ('QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $PackageSource = $_
 #         switch ($PackageSource) {
-#           'Filesystem' {
-#             break
-#           }
 #           'QualityAssuranceWebServer' {
 #             break
 #           }

@@ -55,20 +55,50 @@ ToDo: Once installed, the path to the executable must be supplied to the databas
 
 ## Installing powershell modules on DevOps machines
 
-Powershell modules can be installed using Chocolatey, PowershellGet, or NuGet package providers
+Powershell modules can be installed using Filesystem, NuGet, PowershellGet, or ChocolateyGet package providers.
 
-The PackageSource (location) for each provider and Lifecycle stage is found at `$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]`
+The Uri for every permutation of is found at:
 
-DevOps machines are considered 'production' unless specifically assigned a development or test role. As such, all DevOps production machines should use only production modules. The PackageSource for production modules are found in found in `$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]` under the subkeys `$global:configRootKeys['RepositoryNuGetProductionWebServerProductionPackageNameConfigRootKey']`, `RepositoryPowershellGetProductionWebServerProductionPackageNameConfigRootKey`, and `RepositoryChocolateyProductionWebServerProductionPackageNameConfigRootKey`. Using the publicly published modules ensures that internally, the DevOps machines use the same cade that the public uses.
+- `$global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']]`
 
-Modules that are published only internally, not for general public consumption, can also be found under the subkeys `RepositoryNuGetFilesystemProductionPackageNameConfigRootKey`, `RepositoryPowershellGetFilesystemProductionPackageNameConfigRootKey`, and `RepositoryChocolateyFilesystemProductionPackageNameConfigRootKey`
+DevOps machines are considered 'production' unless specifically assigned a development or test role. As such, all DevOps production machines should use only production modules. All machines in the enterprise should get their software packages from approved internal PackageRepositories. Using the publicly published modules ensures that internally, the DevOps machines use the same code that the public uses.
 
-The Development repository is at:
-The QualityAssurance repositories are at locations matching this pattern:
-The Staging Repositories are at locations matching this pattern:
-The Production (Public) repositories are at: Chocolatey, PSGallery, NuGet
+The PackageSource Uri for the Released PackageVersions of ProductionPackage modules are found in found under the subkeys:
 
-Repository meta information is kept in the global data structures keyed for each machine.
+- `$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriConfigRootKey']`
+- `$global:configRootKeys['PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriConfigRootKey']`.
+
+The PackageSource Uri for the Released PackageVersions of QualityAssurancePackage modules are found under the subkeys:
+
+- `$global:configRootKeys['PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriConfigRootKey']`
+
+Production PackageVersions of modules that are published only internally, not for general public consumption, can also be found under the subkeys:
+
+- `$global:configRootKeys['PackageRepositoryInternalReleasedFilesystemProductionPackagePathNameConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryInternalReleasedFilesystemQualityAssurancePackagePathNameConfigRootKey']`
+
+The (External / Public) Production repositories for Released PackageVersions are at: Chocolatey Community Packages, PSGallery, NuGet. The PackageSource Uri for these can be found under the subkeys:
+
+- `$global:configRootKeys['PackageRepositoryExternalReleasedNuGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriConfigRootKey']`
+
+The (External / Public) Production repositories for Prerelease PackageVersions are varied, but there are a number of common ones at: TBD
+
+Prerelease PackageVersions can be pushed to external PackageRepositories for Prerelease PackageVersions like TBD.
+The PackageSource Uri for the the Prerelease PackageVersions of the QualityAssurance and Production packages are under the subkeys:
+
+- `$global:configRootKeys['PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriConfigRootKey']`,
+
+Ansible is responsible for ensuring that all host's `$global:Settings` are correct for that host's roles.
 
 ### Using NuGet Provider
 
@@ -78,8 +108,13 @@ see also [Common NuGet configurations:Config file locations and uses](https://le
 The IAC (official) version is stored in "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\Resources\NuGet.Config". After installing the module to machine scope using the production package from the ChocolateyGet provider, the installation will create a symbolic link from the installed NuGet.Config in the Resources subdir, to the root of the repository(s). Manually this looks like
 
 ```Powershell
+# During Development
 Remove-Item -path (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'NuGet.Config') -ErrorAction SilentlyContinue
 New-Item -ItemType SymbolicLink -path (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'NuGet.Config') -Target (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.BuildTooling.PowerShell','Resources','NuGet.Config')
+# After an IAC intervention
+# IAC will ensure the machin conforms to the NuGet client role. The NuGet client role will install a custom NuGet.config
+#  file in the default machine path, so it will provide the lowest level of the config stack
+
 ```
 
 ### Using PowershellGet provider

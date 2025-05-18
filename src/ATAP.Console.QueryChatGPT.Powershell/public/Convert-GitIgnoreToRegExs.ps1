@@ -31,7 +31,7 @@ function Convert-GitIgnoreToRegExs {
 
   # Convert patterns to regex (basic implementation)
   # Windows is file name case-insensitive, so we use [regex]::IgnoreCase
-  # We are only expecting a single .gitignore file in a multi-root repository (at the root of the repository)
+  # We are only expecting a single .gitignore file in a multi-root repository (at the root of the SoftwareRepository)
   function ConvertOneGitIgnoreLineToRegex($pattern) {
     # patterns that start with '\\' are locked relative to the location of .gitignore file
     # patterns that do not start with "/" match if the pattern appears anywhere in the FullPath of the file
@@ -76,7 +76,7 @@ function Convert-GitIgnoreToRegExs {
   # Converting .gitignore to regexes, and accounting for case and globs, is hard!
   # for now, hardcode the following regexes
   # This is formatted for Everything search
-  # file: path:github\ATAP !path:\.git\ !path:\.idea\ !path:\.vs\ !path:\_devLogs\ !path:\_generated\ !path:\_site\ !path:AutoDoc\ !path:ATAP.Utilities\Build\ !path:\bin\ !path:\docs\ !path:\node_modules\ !path:\MimeKit\ !path:\obj\ !path:\Releases\ !path:\Result_GenerateProgram\ !path:\Result_solution\ !path:\RequiredPackagesOfflineRepository\ !path:\wwwroot\ !endwith:bak !endwith:binlog !endwith:dll !endwith:pdb !fodyWeavers.xml$
+  # file: path:github\ATAP !path:\.git\ !path:\.idea\ !path:\.vs\ !path:\_devLogs\ !path:\_generated\ !path:\_site\ !path:AutoDoc\ !path:ATAP.Utilities\Build\ !path:\bin\ !path:\docs\ !path:\node_modules\ !path:\MimeKit\ !path:\obj\ !path:\Releases\ !path:\Result_GenerateProgram\ !path:\Result_solution\ !path:\OfflinePackagesRepository\ !path:\wwwroot\ !endwith:bak !endwith:binlog !endwith:dll !endwith:pdb !fodyWeavers.xml$
 
   # This is formatted for VSC search, in a settings file (userSettings.jsonc in SharedCode)
   # "search.exclude": {
@@ -98,7 +98,7 @@ function Convert-GitIgnoreToRegExs {
   #   "**/out": true,
   #   "**/packages": true,
   #   "**/Releases": true,
-  #   "**/Resources/RequiredPackagesOfflineRepository": true,
+  #   "**/Resources/OfflinePackagesRepository": true,
   #   "**/Result_GenerateProgram": true,
   #   "**/Result_solution": true,
   #   "**/TestResults": true,
@@ -112,7 +112,7 @@ function Convert-GitIgnoreToRegExs {
   #   "**/xrefmap.xml": true
   # }
 
-  # /.git/,/.idea/,/.vs/,/_devLogs/,/_generated/,/_site/,AutoDoc/,ATAP.Utilities/Build/,/bin/,/docs/,/node_modules/,/MimeKit/,/obj/,/Releases/,/Result_GenerateProgram/,/Result_solution/,/RequiredPackagesOfflineRepository/,/wwwroot/ endwith:bak endwith:binlog endwith:dll endwith:pdb fodyWeavers.xml$
+  # /.git/,/.idea/,/.vs/,/_devLogs/,/_generated/,/_site/,AutoDoc/,ATAP.Utilities/Build/,/bin/,/docs/,/node_modules/,/MimeKit/,/obj/,/Releases/,/Result_GenerateProgram/,/Result_solution/,/OfflinePackagesRepository/,/wwwroot/ endwith:bak endwith:binlog endwith:dll endwith:pdb fodyWeavers.xml$
 
   $ignoreRegexes = @(
     , '\\\.git\\'
@@ -134,7 +134,7 @@ function Convert-GitIgnoreToRegExs {
     , '\\Releases\\'
     , '\\Result_GenerateProgram\\'
     , '\\Result_solution\\'
-    , '\\RequiredPackagesOfflineRepository\\'
+    , '\\OfflinePackagesRepository\\'
     , '\\TestResults\\'
     , '\\www\\'
     , '\\wwwroot\\'

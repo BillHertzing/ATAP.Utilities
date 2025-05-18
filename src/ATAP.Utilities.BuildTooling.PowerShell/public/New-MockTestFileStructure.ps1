@@ -15,7 +15,7 @@ function New-MockTestFileStructure {
   # Define project subdirectories
   $subDirectories = @(
     'Documentation', 'private', 'public', '_generated', 'Releases',
-    'Resources', 'Resources/RequiredPackagesOfflineRepository',
+    'Resources', 'Resources/OfflinePackagesRepository',
     'tools', 'lib'
   )
   $testsubDirectories = @('tests/Unit', 'tests/Integration')
@@ -90,7 +90,7 @@ function New-MockTestFileStructure {
 *.pdb
 *.log
 *_generated/
-*Resources/RequiredPackagesOfflineRepository/
+*Resources/OfflinePackagesRepository/
 '@
 
   Set-Content -Path (Join-Path $testRoot 'toc.yml') -Value '- name: Root TOC'

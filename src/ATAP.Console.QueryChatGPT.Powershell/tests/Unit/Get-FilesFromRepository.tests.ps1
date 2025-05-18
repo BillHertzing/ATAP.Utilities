@@ -4,7 +4,7 @@ Describe 'Get Files From Repository' -Tag 'UnitTests' {
     # Assume $global:settings are correctly populated for this environment and lifecycle stage
     # Assume the buildtooling functions found in ATAP.Utilities.BuildTooling.psm1 are loaded (or can be autoloaded).
     # Set Pester configuration
-    $
+
     # Possible module location search path is set by $ENV:PSModulePath, which is set in profile
     # The function that finds all applicable PesterConfiguration.psd1 files, and merges them,
 

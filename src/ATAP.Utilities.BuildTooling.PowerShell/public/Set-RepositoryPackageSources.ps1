@@ -55,18 +55,14 @@ Function Set-RepositoryPackageSources {
           Write-PSFMessage -Level Error -Message "Provider Not Found; ProviderName = $ProviderName"
           # Throw Error
           throw "Provider Not Found; ProviderName = $ProviderName"
-        } else { Install-PackageProvider -Name $ProviderName -ForceBootstrap }
+        }
+        else { Install-PackageProvider -Name $ProviderName -ForceBootstrap }
       }
       ('Filesystem', 'WebServerQualityAssurance', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
         ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $Lifecycle = $_
           $PackageSourceID = $ProviderName + $PackageSource + $Lifecycle
           if (!$(Get-PackageSource -Name $PackageSourceID -ErrorAction SilentlyContinue)) {
             switch -regex ($PackageSourceID) {
-              'NuGetFilesystemDevelopment|NuGetFilesystemQualityAssurance|NuGetFilesystemProduction|PowerShellGetFilesystemDevelopment|PowerShellGetFilesystemQualityAssurance|PowerShellGetFilesystemProduction' {
-                # ToDo add try/catch error handling
-                Set-PackageSource -Name $PackageSourceID -ForceBootstrap -Trusted -Location $global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']][$PackageSourceID]
-                break
-              }
               'NuGetQualityAssuranceWebServerDevelopment' {
                 break
               }

@@ -1,5 +1,5 @@
-# The script that creates the Jenkins Controller Role
-function New-RoleJenkinsControllerWindows {
+# The script that creates the ProGetPackageRepositoryProvider Role
+function New-RoleProGetPackageRepositoryProviderWindows {
   param(
     # Template help description
     [Parameter(Mandatory = $true,
@@ -74,10 +74,10 @@ function New-RoleJenkinsControllerWindows {
     [void]$sb.Append(@'
 galaxy_info:
   author: William Hertzing for ATAP.org
-  description: Ansible role to setup a Jenkins Windows Controller installed as a service via Chocolatey
+  description: Ansible role to setup a ProGetPackageRepositoryProvider on Windows installed as a service via Chocolatey
   attribution:
   company: ATAP.org
-  role_name: JenkinsControllerWindows
+  role_name: ProGetPackageRepositoryProviderWindows
   license: license (MIT)
   min_ansible_version: 2.4
   dependencies: []
@@ -96,20 +96,18 @@ galaxy_info:
 
   function ContentsTask {
     # ToDo grant Login and LoginAsAService rights to the user
-    # ToDo: set a password expiry duration, and write a play/playbook to update the password for the Jenkins
+    # ToDo: set a password expiry duration, and write a play/playbook to update the password
+    #    ToDo: for the ProGetPackageRepositoryProvider Service Account
     # ToDO: support for pre-release version of ChocolateyPackage
     # ToDo: support for specific log file for the chocolatey package installation process
     # ToDo: installation arguments for the controller
     #  /InstallDir
-    #  /Jenkins_Root
     #  /Port
-    #  /Java_Home
     #  /Service_Username
     #  /Service_Password
     [void]$sb.Append(@"
 
-
-- name: Install the Jenkins Controller Service Account User, it's user directory, ACL permissions on the user directory, and Powershell Core and Desktop profiles
+- name: Install the ProGetPackageRepositoryProvider Service Account User, it's user directory, ACL permissions on the user directory, and Powershell Core and Desktop profiles
   block:
   - name: Call the Create-ServiceAccount.ps1 script found in the ATAP.Utilities.Buildtooling.Powershell module
     ansible.windows.win_powershell:
@@ -117,7 +115,7 @@ galaxy_info:
       script: |
         # Import-module  ATAP.Utilities.BuildTooling.Powershell
         . "D:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Create-ServiceAccount.ps1"
-        Create-ServiceAccount -ServiceAccount "{{ $($global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']) }}" -ServiceAccountPasswordKey "{{ $($global:configRootKeys['JenkinsControllerServiceAccountPasswordKeyConfigRootKey']) }}" -ServiceAccountFullname "{{ $($global:configRootKeys['JenkinsControllerServiceAccountFullnameConfigRootKey']) }}" -ServiceAccountDescription "'{{ $($global:configRootKeys['JenkinsControllerServiceAccountDescriptionConfigRootKey']) }}'" -ServiceAccountUserHomeDirectory "{{ $($global:configRootKeys['JenkinsControllerServiceAccountUserHomeDirectoryConfigRootKey']) }}" -ServiceAccountPowershellDesktopProfileSourcePath "{{ $($global:configRootKeys['JenkinsControllerServiceAccountPowershellDesktopProfileSourcePathConfigRootKey']) }}" -ServiceAccountPowershellCoreProfileSourcePath "{{ $($global:configRootKeys['JenkinsControllerServiceAccountPowershellCoreProfileSourcePathConfigRootKey']) }}" -State "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
+        Create-ServiceAccount -ServiceAccount "{{ $($global:configRootKeys['ProGetPackageRepositoryProviderServiceAccountConfigRootKey']) }}" -ServiceAccountPasswordKey "{{ $($global:configRootKeys['ProGetPackageRepositoryProviderServiceAccountPasswordKeyConfigRootKey']) }}" -ServiceAccountFullname "{{ $($global:configRootKeys['ProGetPackageRepositoryProviderServiceAccountFullnameConfigRootKey']) }}" -ServiceAccountDescription "'{{ $($global:configRootKeys['ProGetPackageRepositoryProviderServiceAccountDescriptionConfigRootKey']) }}'" -ServiceAccountUserHomeDirectory "{{ $($global:configRootKeys['ProGetPackageRepositoryProviderServiceAccountUserHomeDirectoryConfigRootKey']) }}" -ServiceAccountPowershellDesktopProfileSourcePath "{{ $($global:configRootKeys['ProGetPackageRepositoryProviderServiceAccountPowershellDesktopProfileSourcePathConfigRootKey']) }}" -ServiceAccountPowershellCoreProfileSourcePath "{{ $($global:configRootKeys['ProGetPackageRepositoryProviderServiceAccountPowershellCoreProfileSourcePathConfigRootKey']) }}" -State "{{ 'Absent' if (action_type == 'Uninstall') else 'Present'}}"
     register: CreateServiceAccountResultOutput
 
   - name: Parse the returned JSON string into a JSON object
@@ -128,7 +126,7 @@ galaxy_info:
     debug:
       var: CreateServiceAccountResultObject
 
-# - name: Manage Jenkins Controller Service Account User Home Directory Permissions
+# - name: Manage ProGetPackageRepositoryProvider Service Account User Home Directory Permissions
 #   win_acl:
 #     path: "{{ ServiceAccountUserHomeDirectory }}"
 #     propagation: "InheritOnly"
@@ -137,7 +135,7 @@ galaxy_info:
 #     user: "{{ ServiceAccountName }}"
 
 
-  - name: Install or Uninstall Jenkins Controller using chocolatey
+  - name: Install or Uninstall ProGetPackageRepositoryProvider using chocolatey
     win_dsc:
       resource_name: cChocoPackageInstaller
       Name: "{{ item.name }}"
@@ -146,21 +144,54 @@ galaxy_info:
       Params: "{{ item.AddedParameters if item.AddedParameters else omit }}"
     loop:
 
+    # The following is a task (not role) definition created by Gemini on 05/19/2025
+# - ProGetServerWindows:
+- name: Stop ProGet Service
+  win_service:
+    name: ProGet
+    state: stopped
+
+- name: Deploy ProGet Configuration
+  win_template:
+    src: "ProGetConfig.config.j2"
+    dest: "C:\\ProgramData\\Inedo\\ProGet\\ProGetConfig.config"
+  notify: Start ProGet Service
+
+- name: Deploy ProGet Web Application Configuration (if needed)
+  win_template:
+    src: "web.config.j2"
+    dest: "C:\\Program Files (x86)\\Inedo\\ProGet\\ProGetWebApp\\web.config"
+  notify: Restart IIS
+
+- name: Deploy ProGet Service Configuration (if needed)
+  win_template:
+    src: "ProGet.Service.exe.config.j2"
+    dest: "C:\\Program Files (x86)\\Inedo\\ProGet\\ProGet.Service.exe.config"
+  notify: Restart ProGet Service
+
+- name: Start ProGet Service
+  win_service:
+    name: ProGet
+    state: started
+  listen: "Start ProGet Service"
+
+
 "@)
 
-    $packageName = 'jenkins'
-    $packageVersion = '2.387.2'
+    $packageName = 'proget'
+    $packageVersion = '24.0.35'
     $allowPrerelease = $false
     # ToDo: lookup the password from a vault using the passwordKey
-    $ServiceUsernameParam = "Service_Username=""{{ $($global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']) }}"""
-    $ServicePasswordParam = "Service_Password=""{{ $($global:configRootKeys['JenkinsControllerServiceAccountPasswordKeyConfigRootKey']) }}"""
-    $addedParameters = . $addedParametersScriptblock @('PORT=8081', 'INSTALLDIR=''''C:/Program Files/JenkinsController2''''', 'JENKINS_ROOT=''''D:/Dropbox/JenkinsControllerRoot2''''', $ServiceUsernameParam, $ServicePasswordParam)
+    $ServiceUsernameParam = "Service_Username=""{{ $($global:configRootKeys['ProGetPackageRepositoryProviderServiceAccountConfigRootKey']) }}"""
+    $ServicePasswordParam = "Service_Password=""{{ $($global:configRootKeys['ProGetPackageRepositoryProviderServiceAccountPasswordKeyConfigRootKey']) }}"""
+    # ToD: remnants of prior role this is copied from, not accurate yet
+    $addedParameters = . $addedParametersScriptblock @('PORT=8081', 'INSTALLDIR=''''C:/Program Files/ProGetPackageRepositoryProvider2''''', 'JENKINS_ROOT=''''D:/Dropbox/ProGetPackageRepositoryProviderRoot2''''', $ServiceUsernameParam, $ServicePasswordParam)
 
     [void]$sb.AppendLine("      - {name: $packageName, version: $packageVersion, AllowPrerelease: $allowPrerelease, AddedParameters: $addedParameters}")
     [void]$sb.Append(@"
 
-  # Note that the Jenkins_Home environment variable is set via the Jenkins Controller Service Account's user profile
-  # If the host is the Active JenkinsController, set the appropriate environment variables
+  # Note that the TBD environment variable is set via the ProGetPackageRepositoryProvider Service Account's user profile
+  # If the host is the Active ProGetPackageRepositoryProvider, set the appropriate environment variables
   tags: [$roleName]
 
 "@)

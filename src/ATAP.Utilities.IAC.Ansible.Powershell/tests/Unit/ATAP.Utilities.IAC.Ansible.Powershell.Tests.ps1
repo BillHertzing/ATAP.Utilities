@@ -78,7 +78,7 @@ BeforeAll {
 
   # What to dot source for running a test against a "public" function in a powershell module
   #  uses the opinionated ATAP.Utilities expected directory structure for a monorepo with multiple Powershell modules
-  # Tests are found in the path <RepoRootPath>/Tests/<ModuleName>, and indivudaully named as <scriptName>[stage]Tests.ps1
+  # Tests are found in the path <RepoRootPath>/Tests/<ModuleName>, and individually named as <scriptName>[stage]Tests.ps1
   # stage refers to one of Unit, Integration, UI, Performance, etc. See [TBD](TBD) for the complete list of test stages
   # Powershell script code to be tested is found in <RepoRootPath>/src/<ModuleName>/public/<scriptname.ps1>
   # Custom assemblies created to be tested is found in <RepoRootPath>/<ModuleName>/<assemblyname.dll>
@@ -112,9 +112,9 @@ BeforeAll {
     # ToDo: move strings to a ConfigRootKey
     $sUTRelativeToModuleBasePaths = @('.', 'public', 'private')
     # ToDo: move strings to a ConfigRootKey
-    $sUTPotentialSuffixs = @('.ps1', '.dll')
+    $sUTPotentialSuffixes = @('.ps1', '.dll')
     # search the sUT potential paths to find a matching script or assembly
-    $foundFiles = Search-FilesBySubdirectories -BasePath $sUTModuleBaseDirectory -Subdirectories $sUTRelativeToModuleBasePaths -FileNameBase $sUTBaseName -PotentialSuffixes $sUTPotentialSuffixs
+    $foundFiles = Search-FilesBySubdirectories -BasePath $sUTModuleBaseDirectory -Subdirectories $sUTRelativeToModuleBasePaths -FileNameBase $sUTBaseName -PotentialSuffixes $sUTPotentialSuffixes
     switch ($foundFiles.count) {
       0 {
         #ToDo: logging
@@ -136,7 +136,7 @@ BeforeAll {
           Add-Type -Path $sUTAbsolutePath.FullName
           # ToDo: investigate dependnet assemblies - do they need to be explicitly loaded? OR  just ones not in GAC or PSModulePath?
           # add references to external assemblies. Ensure the assemblies referenced are compatable with the current default DotNet framework
-          # reference the YamlDotNet.dll assembly found in the parent directory. Paent should be the module's main packge direcotry, a peer of the .psm1 and .psd1 files.
+          # reference the YamlDotNet.dll assembly found in the parent directory. Parent should be the module's main package direcotry, a peer of the .psm1 and .psd1 files.
           # This allows access to the YamlDotNet library functions without the need to install it via the Powershell Gallery.
           # NOTE: the YamlDotNet.dll assembly must be compatable with the current default.Net framework version installed on the system
           # $referencedAssemblies = @(

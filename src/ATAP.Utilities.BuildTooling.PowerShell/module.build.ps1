@@ -19,14 +19,15 @@ param(
   # These are the providers for which the script will create a package
   # ToDO: Validation is done as follows:
   # [ValidateScript( { [ProviderNamesEnum]::IsDefined([ProviderNamesEnum], $_) } )]
-  , [ValidateSet('NuGet', 'PowershellGet', 'ChocolateyGet', 'ChocolateyCLI')]
+  #  , [ValidateSet('Filesystem', 'NuGet', 'PSResourceGet', 'ChocolateyGet', 'ChocolateyCLI')]
+  , [ValidateSet('Filesystem', 'NuGet', 'PSResourceGet', 'ChocolateyGet')]
   # ToDO: default to an array of enumeration values ($global:settings)
-  [string[]]$providerNames = @('NuGet', 'PowershellGet', 'ChocolateyGet', 'ChocolateyCLI')
+  [string[]]$packageProviderNames = @('Filesystem', 'PSResourceGet', 'ChocolateyGet')
   # These are the lifecycle stages for which the script will create a package
   # ToDo: replace with an enumeration type
   , [ValidateSet('QualityAssurance', 'Production')]
   # ToDO: default to an array of enumeration values ($global:settings)
-  [string[]]$packageLifecycles = @('QualityAssurance', 'Production')
+  [string[]]$SoftwarePackageTypes = @('QualityAssurance', 'Production')
   , [parameter(ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $True, Mandatory = $False)]
   # ToDO: default to a string array of constants ($global:settings)
   [string[]]$sourceDirectoriesNames = @( 'public', 'private', 'lib' )
@@ -54,10 +55,10 @@ Enter-Build {
   # Write-PSFMessage will write to its log file regardless of the value of $DebugPreference
   $message = @"
 Starting Module.Build.ps1; ModuleRoot = $ModuleRoot; BuildRoot = $BuildRoot;
-BuildFile = $BuildFile; providerNames = $providerNames; sourceDirectoriesNames = $sourceDirectoriesNames;
+BuildFile = $BuildFile; packageProviderNames = $packageProviderNames; sourceDirectoriesNames = $sourceDirectoriesNames;
 sourceExtensions = $($sourceExtensions -join ','); testDirectoriesNames = $testDirectoriesNames;
 testExtensions = $testExtensions; testClassifications = $testClassifications;
-packageLifecycles = $packageLifecycles; -WhatIf = $WhatIfPreference; -Verbose = $Verbosepreference;
+SoftwarePackageTypes = $SoftwarePackageTypes; -WhatIf = $WhatIfPreference; -Verbose = $Verbosepreference;
 -Confirm = $ConfirmPreference; Encoding = $Encoding
 "@
   Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'Enter-Build'
@@ -105,10 +106,6 @@ packageLifecycles = $packageLifecycles; -WhatIf = $WhatIfPreference; -Verbose = 
   # ToDo: get from a vault depending on the provider and lifecycle and user
   # NUGET_API = $env:NUGET_API
 
-  # ToDo: replace with an enumeration type
-  # ToDo: default to an array of enumeration values ($global:settings)
-  $script:RepositoryStorageMechanisms = @('FileSystem', 'QualityAssuranceWebServer', 'ProductionWebServer')
-
   # Validate the package repositories are mapped to a valid filesystem locations or web server URLs
   # Only check the ones needed for this run
   # if (-not $(Get-PSRepository -Name  )){
@@ -123,8 +120,9 @@ packageLifecycles = $packageLifecycles; -WhatIf = $WhatIfPreference; -Verbose = 
   $moduleName = Split-Path $ModuleRoot -Leaf
   $script:ChocolateyPackageFilename = $moduleName
 
+  #  RepositoryStorageMechanisms = $script:RepositoryStorageMechanisms;
   $message = @"
-RepositoryStorageMechanisms = $script:RepositoryStorageMechanisms; moduleFilename = $moduleFilename;
+moduleFilename = $moduleFilename;
 manifestFilename = $manifestFilename; NuSpecFilename = $script:NuSpecFilename;
 NuSpecFileSuffix = $script:NuSpecFileSuffix; moduleName = $moduleName;
 $script:ChocolateyPackageFilename = $script:ChocolateyPackageFilename
@@ -226,13 +224,13 @@ $script:ChocolateyPackageFilename = $script:ChocolateyPackageFilename
     )
     # ToDo: make it an arraylist of a new specific type
     $result = [System.Collections.ArrayList]::new()
-    $providerNames | ForEach-Object { $providerName = $_
-      $packageLifecycles | ForEach-Object { $packageLifecycle = $_
+    $packageProviderNames | ForEach-Object { $packageProviderName = $_
+      $SoftwarePackageTypes | ForEach-Object { $SoftwarePackageType = $_
         # ToDo: create a type (class) for this
         [void]$result.Add(@{
-            Path             = $(Join-Path $prefix $ProviderName $PackageLifecycle, $suffix)
-            Provider         = $providerName
-            PackageLifeCycle = $packageLifecycle
+            Path                = $(Join-Path $prefix $packageProviderName $SoftwarePackageType, $suffix)
+            PackageProviderName = $packageProviderName
+            SoftwarePackageType = $SoftwarePackageType
           })
       }
     }
@@ -414,8 +412,7 @@ Task BuildBasePSD1 @{
       $currentManifest = Import-PowerShellDataFile $script:GeneratedBaseManifestFilePath
       if ($currentManifest.PrivateData.PSData.ContainsKey('Prerelease')) {
         $currentSemanticVersion = [System.Management.Automation.SemanticVersion]::new($currentManifest.ModuleVersion + '-' + $currentManifest.PrivateData.PSData.Prerelease)
-      }
-      else {
+      } else {
         $currentSemanticVersion = [System.Management.Automation.SemanticVersion]::new($currentManifest.ModuleVersion )
       }
       $newManifestParams = @{
@@ -522,7 +519,7 @@ Task BuildPackageSpecificPSD1AndPSM1 @{
   #   }
   #  }
   Jobs    = {
-    # Each provider and PackageLifecycle needs its own .psd1 and .nuspec file, along with the basic .psm1 file, and additional files as appropriate for the provider and lifecycle
+    # Each provider and SoftwarePackageType needs its own .psd1 and .nuspec file, along with the basic .psm1 file, and additional files as appropriate for the provider and lifecycle
     foreach ($destination in $(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory )) {
       if (-not $(Test-Path $destination.Path -PathType Container)) { New-Item $destination.Path -ItemType Directory -Force >$null }
       # Copy the generated module file to each package intermediate directory
@@ -667,7 +664,7 @@ Task CopyTestFilesForPSModule @{
     # ToDo: outputs should be the test files copied into the $script:TemporaryPowershellModulePackagingIntermediateDirectory
     # ToDo: replace 'QualityAssurance' with an Enumeration ToString()
     # ToDo: replace 'tests' with a string constant ($global:settings)
-    foreach ($destination in $($(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix 'tests')) | Where-Object { $_.PackageLifeCycle -match 'QualityAssurance' } ) {
+    foreach ($destination in $($(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix 'tests')) | Where-Object { $_.SoftwarePackageType -match 'QualityAssurance' } ) {
       foreach ($testfileInfo in  [System.Collections.Generic.List[System.IO.FileInfo]] $testFileHandles) {
         Join-Path $destination.Path $testFileInfo.Name
       }
@@ -679,7 +676,7 @@ Task CopyTestFilesForPSModule @{
 
       # The Test files are only copied to the Quality Assurance packages
       # ToDo: move the subdirectory 'test' into string constants ($global:settings)
-      $destinations = $($(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix 'tests')) | Where-Object { $_.PackageLifeCycle -match 'QualityAssurance' }
+      $destinations = $($(CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory -suffix 'tests')) | Where-Object { $_.SoftwarePackageType -match 'QualityAssurance' }
     }
     Process {
       # powershell will cast an array of a single element to  a string if
@@ -717,10 +714,9 @@ Task BuildNuSpecFromManifest @{
           # ToDo: make this hashtable a type
           # ToDo: remove after powershell package is installed
           . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-NuSpecFromManifest.ps1'
-          Get-NuSpecFromManifest -ManifestPath $GeneratedManifestFilePath -DestinationFolder $destination.Path -ProviderName $destination.Provider
-        }
-        catch {
-          $message = "calling Get-NuSpecFromManifest with -ManifestPath $GeneratedManifestFilePath -DestinationFolder $destination.Path -ProviderName $destination.ProviderName threw an error : $($error[0] | Select-Object * )"
+          Get-NuSpecFromManifest -ManifestPath $GeneratedManifestFilePath -PackageProviderName $destination.PackageProviderName -SoftwarePackageType $destination.SoftwarePackageType -DestinationFolder $destination.Path
+        } catch {
+          $message = "calling Get-NuSpecFromManifest with -ManifestPath $GeneratedManifestFilePath -DestinationFolder $destination.Path -PackageProviderName $destination.PPackageProviderName threw an error : $($error[0] | Select-Object * )"
           Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'BuildNuSpecFromManifest'
           # toDo catch the errors, add to 'Problems'
           Throw $message
@@ -790,7 +786,7 @@ Task BuildNuGetPackage @{
     $destinations = CrossProduct -prefix $script:TemporaryPowershellModulePackagingIntermediateDirectory
     for ($destinationIndex = 0; $destinationIndex -lt $destinations.count; $destinationIndex++) {
       $nuSpecFilePath = Join-Path $destinations[$destinationIndex].Path $script:NuSpecFilename
-      $distributionPackagesDirectory = Join-Path $script:TemporaryPowershellModulePackagingDistributionPackagesDirectory $destinations[$destinationIndex].Provider $destinations[$destinationIndex].PackageLifeCycle
+      $distributionPackagesDirectory = Join-Path $script:TemporaryPowershellModulePackagingDistributionPackagesDirectory $destinations[$destinationIndex].PackageProviderName $destinations[$destinationIndex].SoftwarePackageType
       # ensure the directory exists, silently create it if not
       if (-not $(Test-Path $distributionPackagesDirectory -PathType Container)) { New-Item $distributionPackagesDirectory -ItemType Directory -Force >$null }
       try {
@@ -816,8 +812,7 @@ Task BuildNuGetPackage @{
         Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'BuildNuGetPackage'
         $message = "Nuget pack stderr : $stderr"
         Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'BuildNuGetPackage'
-      }
-      catch {
+      } catch {
         $message = "calling nuget with argument list pack $nuSpecFilePath -OutputDirectory $distributionPackagesDirectory threw an error "
         Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'BuildNuGetPackage'
         # toDo catch the errors, add to 'Problems'
@@ -853,7 +848,7 @@ Task BuildNuGetPackage @{
 #     -ModuleVersion $ModuleVersion `
 #     -Prerelease $Prerelease
 
-# # 1️⃣ PowerShellGet-compatible nupkg
+# # 1️⃣ PSResourceGet-compatible nupkg
 # Publish-Module -Path $moduleSrc -Repository LocalRepo -NuGetApiKey 'AnyKey' `
 #     -SkipPublisherCheck -AllowPrerelease -Force `
 #     -DestinationPath $repoPath
@@ -951,101 +946,120 @@ Task PublishPSPackage @{
   Outputs = $GeneratedModuleFilePath
   Jobs    = {
     Write-PSFMessage -Level Debug -Message 'task = PublishPSPackage' -Tag 'Invoke-Build', 'PublishPSPackage'
-    $providerNames | ForEach-Object { $ProviderName = $_
-      $packageLifecycles | ForEach-Object { $PackageLifecycle = $_
+    $packageProviderNames | ForEach-Object { $packageProviderName = $_
+      $SoftwarePackageTypes | ForEach-Object { $SoftwarePackageType = $_
         # The Distrbution directory where the distribution package has been placed
-        $GeneratedFullPackageDistributionDirectory = Join-Path $script:TemporaryPowershellModulePackagingDistributionPackagesDirectory $ProviderName $PackageLifecycle
+        $TemporaryFullPackageDistributionDirectory = Join-Path $script:TemporaryPowershellModulePackagingDistributionPackagesDirectory $packageProviderName $SoftwarePackageType
         # The module manifest file
         $currentManifest = Import-PowerShellDataFile $script:GeneratedBaseManifestFilePath
-
-        $moduleNameAndVersion = $moduleName + '.' + $currentManifest.ModuleVersion
-
-        $script:RepositoryStorageMechanisms | ForEach-Object {
-          $RepositoryStorageMechanism = $_
-          # Lookup the details of the appropriate repository to publish to
-          # ToDO: use global:settings or global:configrootKeys
-          $PSRepositoryKey = 'Repository' + $ProviderName + $RepositoryStorageMechanism + $PackageLifecycle + 'Package'
-          $PSRepositoryFeed = $global:settings.PackageRepositoriesCollection[$PSRepositoryKey]
-          $NuGetAPIKey = 'whertzing'
-          # ToDo: $nuGetApiValue = $global:settings[$global:configRootKeys['NuGetApiKeyConfigRootKey']]
-          # Publish-Module below comes from the module PowerShellGet [How to Publish PowerShell Modules to a Private Repository](https://blog.inedo.com/powershell/private-repo/)
-          switch ($RepositoryStorageMechanism) {
-            # Publish all packages to the FileSystem repositories
-            'FileSystem' {
-              switch ($providerNames) {
-                'NuGet' {
-                  # Location of the package to be published
-                  $packageName = $moduleNameAndVersion + '.nupkg'
-                  $packagePath = Join-Path $GeneratedFullPackageDistributionDirectory $packageName
-                  # If the package already exists at the feed, it must be removed first
-                  $repositoryTargetPath = Join-Path $PSRepositoryFeed $moduleName $currentManifest.ModuleVersion
-                  if (Test-Path $repositoryTargetPath) {
-                    Remove-Item $repositoryTargetPath -Force -Recurse
-                  }
-                  # use the .Net object
-                  $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo
-                  $processStartInfo.Arguments = 'add', "$packagePath", '-source', $PSRepositoryFeed
-                  $processStartInfo.FileName = 'nuget.exe'
-                  $processStartInfo.RedirectStandardError = $true
-                  $processStartInfo.RedirectStandardOutput = $true
-                  $processStartInfo.UseShellExecute = $false
-                  $process = New-Object System.Diagnostics.Process
-                  $process.StartInfo = $processStartInfo
-                  $process.Start() | Out-Null
-                  $process.WaitForExit()
-                  # Capture stdout and stderr
-                  # $stdout = $process.StandardOutput.ReadToEnd()
-                  # $message =  $stdout"
-                  Write-PSFMessage -Level Debug -Message "stdout from Nuget add : $($process.StandardOutput.ReadToEnd())" -Tag 'Invoke-Build', 'PublishPSPackage', 'FileSystem'
-                  # $stderr = $process.StandardError.ReadToEnd()
-                  # $message = "stderr from Nuget add : $stderr"
-                  Write-PSFMessage -Level Debug -Message "stderr from Nuget add : $($process.StandardError.ReadToEnd())" -Tag 'Invoke-Build', 'PublishPSPackage', 'FileSystem'
-                }
-                'PowershellGet' {
-                  $packageName = $moduleNameAndVersion + '.nupkg'
-                  $packagePath = Join-Path $GeneratedFullPackageDistributionDirectory $packageName
-
-                  $result = '' # Publish-Module -Path $packagePath -Repository $PSRepositoryFeed -NuGetApiKey $nuGetApiKey
-                  $message = 'Publish-Module  returned:' + $result
-                  Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
-                }
-                'ChocolateyGet' {
-                  $result = ''
-                  $message = 'ChocolateyGet publish returned:' + $result
-                  Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+        # initial package name
+        $temporaryFullPackageName = $moduleName + '.' + $currentManifest.ModuleVersion
+        $prereleaseString = ''
+        $versionPrerelease = 'Released'
+        if ($currentManifest.containsKey('PrivateData')) {
+          if ($currentManifest.PrivateData.containsKey('PSData')) {
+            if ($currentManifest.PrivateData.PSData.ContainsKey('Prerelease')) {
+              if (-not [string]::IsNullOrEmpty($currentManifest.PrivateData.PSData.Prerelease) ) {
+                $versionPrerelease = 'Prerelease'
+                $prereleaseString = $currentManifest.PrivateData.PSData.Prerelease
+                $temporaryFullPackageName += '-' + $prereleaseString
+                if ($SoftwarePackageType -eq 'QualityAssurance') {
+                  # ToDo: Move the string 'diagnostics' to a string constant ($global:configRootKeys) (QualityAssurance PackageKind PackageName suffix?)
+                  $temporaryFullPackageName += '-diagnostics'
                 }
               }
-
-            }
-            'QualityAssuranceWebServer' {
-              # Publish all packages to the QualityAssuranceWebServer repositories
-              $message = "Publishing to QualityAssuranceWebServer, PSRepositoryFeed = $PSRepositoryFeed"
-              Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage' 'QualityAssuranceWebServer'
-              switch ($providerNames) {
-                'NuGet' {
-                  # Location of the package to be published
-                  $packageName = $moduleNameAndVersion + '.nupkg'
-                  $packagePath = Join-Path $GeneratedFullPackageDistributionDirectory $packageName
-
-                  Write-PSFMessage -Level Debug -Message "stderr from Nuget add : $process.StandardError.ReadToEnd()" -Tag 'Invoke-Build', 'PublishPSPackage', 'QualityAssuranceWebServer'
-                }
-                'PowershellGet' {
-                  Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
-                }
-                'ChocolateyGet' {
-                }
-              }
-              $PSRepositoryFeed = 'InternalWebServerPSRepository'
-            }
-            'ProductionWebServer' {
-              # publish production packages for the PublicWebServer to a "FinalInspectionStagingArea"
-              $PSRepositoryFeed = 'PublicWebServerPSRepository'
             }
           }
         }
-      }
-    }
+        $temporaryFullPackageName += '.nupkg'
+        $temporaryFullPackagePath = Join-Path $TemporaryFullPackageDistributionDirectory $temporaryFullPackageName
+        #$moduleNameAndVersion = $moduleName + '.' + $currentManifest.ModuleVersion
 
+        # Lookup the details of the appropriate repository to publish to
+        # ToDO: use global:settings or global:configrootKeys
+        $PSRepositoryKey = 'PackageRepositoryInternal' + $versionPrerelease + $packageProviderName + $SoftwarePackageType + 'PackagePushUri'
+        $PSRepositoryFeed = $global:settings.PackageRepositoriesCollection[$PSRepositoryKey]
+        $NuGetAPIKey = 'whertzing'
+        # ToDo: $nuGetApiValue = $global:settings[$global:configRootKeys['NuGetApiKeyConfigRootKey']]
+        switch ($packageProviderName) {
+          # Publish all packages to the FileSystem repositories
+          'FileSystem' {
+            Write-PSFMessage -Level Debug -Message "Publishing to FileSystem, PSRepositoryFeed = $PSRepositoryFeed"
+            try {
+              Copy-Item $temporaryFullPackagePath -Destination $PSRepositoryFeed -Force
+            } catch {
+              Write-PSFMessage -Level Error -Message "Copying $temporaryFullPackagePath to $PSRepositoryFeed threw an error : $($error[0] | Select-Object * )"
+              # toDo catch the errors, add to 'Problems'
+              Throw "Copying $temporaryFullPackagePath to $PSRepositoryFeed threw an error : $($error[0] | Select-Object * )"
+            }
+          }
+
+          'NuGet' {
+            # If the package already exists at the feed, it must be removed first
+            # $repositoryTargetPath = Join-Path $PSRepositoryFeed $moduleName $currentManifest.ModuleVersion
+            # if (Test-Path $repositoryTargetPath) {
+            #   Remove-Item $repositoryTargetPath -Force -Recurse
+            # }
+            # use the .Net object
+            $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo
+            $processStartInfo.Arguments = 'push', "$temporaryFullPackagePath", '-source', $PSRepositoryFeed, '-ApiKey', $nuGetApiKey
+            $processStartInfo.FileName = 'nuget.exe'
+            $processStartInfo.RedirectStandardError = $true
+            $processStartInfo.RedirectStandardOutput = $true
+            $processStartInfo.UseShellExecute = $false
+            $process = New-Object System.Diagnostics.Process
+            $process.StartInfo = $processStartInfo
+            $process.Start() | Out-Null
+            $process.WaitForExit()
+            # Capture stdout and stderr
+            Write-PSFMessage -Level Debug -Message "stdout from Nuget add : $($process.StandardOutput.ReadToEnd())" -Tag 'Invoke-Build', 'PublishPSPackage', 'FileSystem'
+            Write-PSFMessage -Level Debug -Message "stderr from Nuget add : $($process.StandardError.ReadToEnd())" -Tag 'Invoke-Build', 'PublishPSPackage', 'FileSystem'
+          }
+          'PSResourceGet' {
+            try {
+              $result = Publish-PSResource -Path $temporaryFullPackagePath -Repository $PSRepositoryFeed
+              $message = 'Publish-PSResource returned:' + $result
+              Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+
+            } catch {
+              Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+            }
+          }
+          'ChocolateyGet' {
+            $result = ''
+            $message = 'ChocolateyGet publish returned:' + $result
+            Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+          }
+        }
+
+      }
+      #   'QualityAssuranceWebServer' {
+      #     # Publish all packages to the QualityAssuranceWebServer repositories
+      #     $message = "Publishing to QualityAssuranceWebServer, PSRepositoryFeed = $PSRepositoryFeed"
+      #     Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage' 'QualityAssuranceWebServer'
+      #     switch ($packageProviderNames) {
+      #       'NuGet' {
+      #         # Location of the package to be published
+      #         $packageName = $moduleNameAndVersion + '.nupkg'
+      #         $packagePath = Join-Path $TemporaryFullPackageDistributionDirectory $packageName
+
+      #         Write-PSFMessage -Level Debug -Message "stderr from Nuget add : $process.StandardError.ReadToEnd()" -Tag 'Invoke-Build', 'PublishPSPackage', 'QualityAssuranceWebServer'
+      #       }
+      #       'PSResourceGet' {
+      #         Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+      #       }
+      #       'ChocolateyGet' {
+      #       }
+      #     }
+      #     $PSRepositoryFeed = 'InternalWebServerPSRepository'
+      #   }
+      #   'ProductionWebServer' {
+      #     # publish production packages for the PublicWebServer to a "FinalInspectionStagingArea"
+      #     $PSRepositoryFeed = 'PublicWebServerPSRepository'
+      #   }
+      # }
+
+    }
   }
 }
 
@@ -1109,7 +1123,7 @@ Task PublishPSPackage @{
 # Get-Next Version placeholder
 # This function looks across all known internal repositories for the highest version of the module
 #   and looks at the list of software assets in the QualityAssurance and Production types of SoftwarePackages
-#   to see if the current software assest differ from the highest version's SoftwarePackage list of assests
+#   to see if the current software assest differ from the highest version's SoftwarePackage list of assets
 # Validation of package repositories is handeled by confirm-tools when a container is started
 # create the in-memory manifest from the sourceManifestPath
 # $sourceManifest = Import-PowerShellDataFile -Path $sourceManifestPath
@@ -1122,10 +1136,10 @@ Task PublishPSPackage @{
 # $highestSemanticVersion = $lowestSemanticVersion
 # # ToDo: Replace with a mechanism or cache that speeds this up
 # $RepositoryPackageSourceNames = @()
-# $providerNames | ForEach-Object { $ProviderName = $_
+# $packageProviderNames | ForEach-Object { $packageProviderName = $_
 #         ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $ProviderLifecycle = $_
-#     $packageLifecycles | ForEach-Object { $PackageLifecycle = $_
-#       $RepositoryPackageSourceNames += $ProviderName + $ProviderLifecycle + $PackageLifecycle + 'Package'
+#     $SoftwarePackageTypes | ForEach-Object { $SoftwarePackageType = $_
+#       $RepositoryPackageSourceNames += $packageProviderName + $ProviderLifecycle + $SoftwarePackageType + 'Package'
 #       # Get highest version number for Development and production, and get highest version production manifest
 #     } } }
 # # ToDo: this will not be needed as the function will be part of the installed module
@@ -1139,61 +1153,6 @@ Task PublishPSPackage @{
 
 # # $foundOldModules = @{}
 # # $foundOldVersions = @{}
-
-# # $ProviderName =(xxx).Keys
-# $providerNames | ForEach-Object { $ProviderName = $_
-#   switch ($ProviderName) {
-#     'NuGet' {
-#       ('QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $ProviderLifecycle = $_
-#         switch ($ProviderLifecycle) {
-#           'QualityAssuranceWebServer' {
-#             break
-#           }
-#           'ProductionWebServer' {
-#             break
-#           }
-#           default {
-#             # ToDo write error handling for missing location
-#           }
-#         }
-#       }
-#     }
-
-#     'PowershellGet' {
-#       ('QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $PackageSource = $_
-#         switch ($PackageSource) {
-#           'QualityAssuranceWebServer' {
-#             break
-#           }
-#           'ProductionWebServer' {
-#             break
-#           }
-#           default {
-#             # ToDo write error handling for missing location
-#           }
-#         }
-#       }
-#     }
-#     'ChocolateyGet' {
-#       ('QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $PackageSource = $_
-#         switch ($PackageSource) {
-#           'QualityAssuranceWebServer' {
-#             break
-#           }
-#           'ProductionWebServer' {
-#             break
-#           }
-#           default {
-#             # ToDo write error handling for missing location
-#           }
-#         }
-#       }
-#     }
-#     default {
-#       # ToDo write error handling for missing location
-#     }
-#   }
-# }
 
 # # Get the highest version of this module found in Production / QA / Development repositories and also the highest production version
 # # Check across all sources

@@ -164,7 +164,7 @@ TBD: this may not be needed - no real reason to access SMB from WSL, yet
 
 ## SSH Server for Windows
 
- [Configuring OpenSSH-Server (sshd) on Windows 11](https://erwin.co/configuring-openssh-server-sshd-on-windows-11/)
+[Configuring OpenSSH-Server (sshd) on Windows 11](https://erwin.co/configuring-openssh-server-sshd-on-windows-11/)
 
 From an elevated Powershell prompt, run the following commands
 
@@ -198,6 +198,7 @@ icacls.exe $aakPath /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"
 [Key-based authentication in OpenSSH for Windows](https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_keymanagement?source=recommendations)
 
 #### create keys
+
 Use ed25519 algorithm for secure keys, do not enter a passphrase
 `ssh-keygen -t ed25519`
 
@@ -234,7 +235,6 @@ ssh <username>@<servername> $remotePowershell
 ```
 
 For a different take on sharing SSH keys from a Windows container into the WSL 2 subsystem within, see also [Sharing SSH keys between Windows and WSL 2](https://devblogs.microsoft.com/commandline/sharing-ssh-keys-between-windows-and-wsl-2/)
-
 
 ### edit sshd_config
 
@@ -407,18 +407,17 @@ gc  $minimalInventoryPath
 
 Note that Ansible does not use the Python interpreter on the Windows host, it only uses powershel. So there is no need to specify a specific Python interpreter.
 
-
 ### Test Ansible connection to the Windows hosts
 
- in the WSL2 container
+in the WSL2 container
 
- ```Powershell
+```Powershell
 ansible all  -i $minimalInventoryPath -m win_ping
 ```
 
 Do not use te core module `ping`, as it will try to use a python interpreter on the Windows hosts, which is not supported.
 
-The correct response from Ansible,  after some status responses, ends with the string response 'pong'
+The correct response from Ansible, after some status responses, ends with the string response 'pong'
 
 ### Ansible for Windows collection
 
@@ -454,7 +453,6 @@ Now that the AnsibleController has been setup, the next step is to define and do
 
 TBD: generate the complete Ansible directory structure and files from the project database
 current: The main Powershell script is called `Create-AnsibleDirectoryStructure.ps1`. This script, and the scripts it calls will create a generated complete Ansible directory structure and files.
-
 
 ### Edit Ansible Playbook file
 
@@ -496,7 +494,6 @@ Documentation can be found [here; TBD]
   Development: yes
 
 ```
-
 
 ## Hardware Level setup for a new computer
 
@@ -559,20 +556,19 @@ create the primary user on the computer
 use settings account adduser and on screen prompts, or try
 
 If the primary user on the computer is 'AUserName',
-make AUserName a member of  the local administrators group
+make AUserName a member of the local administrators group
 `Add-LocalGroupMember -Group "Administrators" -Member 'AUserName' `
 reboot
 
- Give the primary user acccess to the C:\Dropbox directory created by FirstAdmin
+Give the primary user acccess to the C:\Dropbox directory created by FirstAdmin
 Download the Powershell NTFS moduleterm
 S
- local admins run `Add-NTFSAccess -Path "C:\dropbox" -Account "utat022\whertzing" -AccessRights FullControl
+local admins run `Add-NTFSAccess -Path "C:\dropbox" -Account "utat022\whertzing" -AccessRights FullControl
 and that user has been added to the administrators group
 
 see also C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\MapUserShellFoldersToDropBox.ps1
 
 Set Locations for MyDocuments, Pictures, Videos, Downloads to c:\Dropbox
-
 
 uninstall Everything
 
@@ -608,7 +604,7 @@ Reinstall all chocolatey packages
 - Notepad++ - use x86 version, many more plugins available
 - Add to List:
   Freevideoeditor
-powershell Invoke-Build module
+  powershell Invoke-Build module
 
 After chocolatey install, configure as follows:
 
@@ -633,46 +629,46 @@ After chocolatey install, configure as follows:
 
 ### Git Setup
 
-The Git configuration file `.gitconfig` is stored in the mapped cloud filesystem drive, under the user's 'Documents folder'/Git  An environment variable called $env:GIT_CONFIG_GLOBAL points to this file. That works for the pwsh terminal and for the Powershell Integrated Terminal in VSC, but it does NOT work for the VSC Git Extensions. Instead, the GIT VSC extension seems like it only reads whatever is in `"C:\Program Files\Git\etc\gitconfig"`. So you can either merge that file with what is below, or, you can modify that file to
+The Git configuration file `.gitconfig` is stored in the mapped cloud filesystem drive, under the user's 'Documents folder'/Git An environment variable called $env:GIT_CONFIG_GLOBAL points to this file. That works for the pwsh terminal and for the Powershell Integrated Terminal in VSC, but it does NOT work for the VSC Git Extensions. Instead, the GIT VSC extension seems like it only reads whatever is in `"C:\Program Files\Git\etc\gitconfig"`. So you can either merge that file with what is below, or, you can modify that file to
 
     -Setup Git
     in file ~/.gitconfig
 
-  ```text
-    [filter "lfs"]
-      smudge = git-lfs smudge -- %f
-      process = git-lfs filter-process
-      required = true
-      clean = git-lfs clean -- %f
-    [user]
-      name = Bill Hertzing
-      email = bill.hertzing@gmail.com
-    [diff]
-      tool = bc3
-    [difftool]
-      prompt = false
-    [merge]
-      tool = bc3
-    [mergetool]
-      prompt = false
-    [difftool "bc3"]
-      path = "C:/Program Files/Beyond Compare 4/bcomp.exe"
-    [mergetool "bc3"]
-      path = "C:/Program Files/Beyond Compare 4/bcomp.exe"
-    [mergetool "bc3"]
-      trustExitCode = true
-    [alias]
-      mydiff = difftool --dir-diff --tool=bc3 --no-prompt
-      bcreview = "!f() { local SHA=${1:-HEAD}; local BRANCH=${2:-master}; if [ $SHA == $BRANCH ]; then SHA=HEAD; fi; git difftool -y -t bc $BRANCH...$SHA; }; f"
-    [core]
-      autocrlf = true
-      editor = code --wait
-    [commit]
-      template = GitTemplates/git.commit.template.txt
-    [merge "keep-local-changes"]
-      name = A custom merge driver which always keeps the local changes
-      driver = true
-  ```
+```text
+  [filter "lfs"]
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+    required = true
+    clean = git-lfs clean -- %f
+  [user]
+    name = Bill Hertzing
+    email = bill.hertzing@gmail.com
+  [diff]
+    tool = bc3
+  [difftool]
+    prompt = false
+  [merge]
+    tool = bc3
+  [mergetool]
+    prompt = false
+  [difftool "bc3"]
+    path = "C:/Program Files/Beyond Compare 4/bcomp.exe"
+  [mergetool "bc3"]
+    path = "C:/Program Files/Beyond Compare 4/bcomp.exe"
+  [mergetool "bc3"]
+    trustExitCode = true
+  [alias]
+    mydiff = difftool --dir-diff --tool=bc3 --no-prompt
+    bcreview = "!f() { local SHA=${1:-HEAD}; local BRANCH=${2:-master}; if [ $SHA == $BRANCH ]; then SHA=HEAD; fi; git difftool -y -t bc $BRANCH...$SHA; }; f"
+  [core]
+    autocrlf = true
+    editor = code --wait
+  [commit]
+    template = GitTemplates/git.commit.template.txt
+  [merge "keep-local-changes"]
+    name = A custom merge driver which always keeps the local changes
+    driver = true
+```
 
 vault - Hashicorp free level Vault server
 
@@ -688,7 +684,7 @@ If the role specifies that the computer will be a primary or backup Hashicorp Va
 
   - Install-Module Microsoft.PowerShell.LocalAccounts
   - New-LocalUser -Name "HashicorpVaultSrv
-  Acct" -Description "Runs Vault Server task" -NoPassword # ToDo - if password where will it get the credential from?
+    Acct" -Description "Runs Vault Server task" -NoPassword # ToDo - if password where will it get the credential from?
   -
 
 ## Install Powershell Packages
@@ -702,31 +698,34 @@ Powershell packages are managed on a per-host nad per-group basis using Ansible
   `Get-PSRepository` # ToDo: validate that PSGallery appears
   `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`
 - Install the following 3rd-party packages machine-wide. Run the following as an administrator on the new computer
-   `Microsoft.PowerShell.SecretManagement`, `Microsoft.PowerShell.SecretStore` and `SecretManagement.Keepass` are for development credentials and secret,
-   `PSFramework` is for logging
-   ToDo: `SecretManagement.Hashicorp` is for an alternate secrets vault
-   ToDO: Keepass secret vault  is for an alternate secrets vault
-   ToDO: `DISM` is for enabling Windows Features, but it is not available for direct download. See
+  `Microsoft.PowerShell.SecretManagement`, `Microsoft.PowerShell.SecretStore` and `SecretManagement.Keepass` are for development credentials and secret,
+  `PSFramework` is for logging
+  ToDo: `SecretManagement.Hashicorp` is for an alternate secrets vault
+  ToDO: Keepass secret vault is for an alternate secrets vault
+  ToDO: `DISM` is for enabling Windows Features, but it is not available for direct download. See
   `@('Microsoft.PowerShell.SecretManagement', 'Microsoft.PowerShell.SecretStore', 'SecretManagement.Keepass', 'PSFramework', 'DISM') | ForEach-Object { if (-not (Get-Module -ListAvailable -Name  $_)) { Install-Module -Name $_ -Scope AllUsers}}`
 
 - 32-Bit powershel Desktop Modules will not import automatically, run the foillowing lines
+
   - for installing any certificates via powershell
-  `Import-Module -Name C:\Windows\System32\WindowsPowerShell\v1.0\Modules\PKI\pki.psd1`
+    `Import-Module -Name C:\Windows\System32\WindowsPowerShell\v1.0\Modules\PKI\pki.psd1`
 
   - For NetTCPIP functions like `test-port`
-  `Import-Module -Name "C:\Windows\System32\WindowsPowerShell\v1.0\Modules\NetTCPIP\NetTCPIP.psd1"`
+    `Import-Module -Name "C:\Windows\System32\WindowsPowerShell\v1.0\Modules\NetTCPIP\NetTCPIP.psd1"`
 
 - Install the following ATAP.Utilities packages machine-wide
 
   - ATAP.Utilities.Powershell
+
     - Before Package Management
+
       - install the PSFramework requiredPackage
       - Install the machine profile files. Install them into $env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell\Resources\Profiles
       - Install the package descriptor file. Install them into $env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell
       - Install the package library file. Install them into $env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell
       - Symlink the AllUsersAllHosts machine profile from Resources\Profiles\ to
 
-        ``` Powershell
+        ```Powershell
 
              Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' 'Modules' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue
              New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' 'Modules' 'global_ConfigRootKeys.ps1')
@@ -735,8 +734,9 @@ Powershell packages are managed on a per-host nad per-group basis using Ansible
 
       - Symlink the settings files global_ConfigRootKeys.ps1, HostSettings.ps1, global_EnvironmentVariables.ps1 from the powershell module to the global profile location
       -
+
     - After Package Management
-       - WinGet ATAP.Utilities.Powershell
+      - WinGet ATAP.Utilities.Powershell
 
   Before Package Management
 
@@ -750,7 +750,7 @@ Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.p
 Remove-Item -path $(join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')
 ```
 
-  Symlink the profile file for the first admin user on this machine It must be linked to both the standard terminal per user profile, and also to the VSCode special powershell terminal profile
+Symlink the profile file for the first admin user on this machine It must be linked to both the standard terminal per user profile, and also to the VSCode special powershell terminal profile
 
 ```Powershell
 
@@ -767,7 +767,7 @@ Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) '.g
 
 ```
 
-  Note: For development computer: Manually Symlink the Atap.Utilities.Building.Powershell module. TBD -install it as a package
+Note: For development computer: Manually Symlink the Atap.Utilities.Building.Powershell module. TBD -install it as a package
 
 ## Per machine configuration
 
@@ -791,21 +791,21 @@ Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) '.g
 
 - setup Windows Defender
 
-- Ensure that any service that starts  with 'wd' and include 'Windows Defender' in the description is set to Autostart WindowsDefender and WindowsDefenderFirewall is running
+- Ensure that any service that starts with 'wd' and include 'Windows Defender' in the description is set to Autostart WindowsDefender and WindowsDefenderFirewall is running
 - [Disable Windows Defender in Windows 10](https://superuser.com/questions/947873/disable-windows-defender-in-windows-10) has a deep dive into security settings and permissions for any service,
-    browse the registry to `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services`,
-a partial list of serices includes wdboot, wdfilter, wdnisdrv, wdnissvc, windefend. another that needs starting is `mpssvc` Windows Defender Firewall
-This script will show the Start property for all services with 'Defend' in their description
-`Get-ItemProperty -Name 'Start' -path $($((gci HKLM:\SYSTEM\CurrentControlSet\Services).name | ?{$(Get-ItemProperty -Path $($_-replace 'HKEY_LOCAL_MACHINE','HKLM:') -Name 'Description' -ErrorAction SilentlyContinue) -match 'defend'}) -replace 'HKEY_LOCAL_MACHINE','HKLM:')`
-Run this command while Avast is installed and it shows all Start key values = 3. Run the command after uninstalling AVASt, and the Start key values are 0 and 2
+  browse the registry to `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services`,
+  a partial list of serices includes wdboot, wdfilter, wdnisdrv, wdnissvc, windefend. another that needs starting is `mpssvc` Windows Defender Firewall
+  This script will show the Start property for all services with 'Defend' in their description
+  `Get-ItemProperty -Name 'Start' -path $($((gci HKLM:\SYSTEM\CurrentControlSet\Services).name | ?{$(Get-ItemProperty -Path $($_-replace 'HKEY_LOCAL_MACHINE','HKLM:') -Name 'Description' -ErrorAction SilentlyContinue) -match 'defend'}) -replace 'HKEY_LOCAL_MACHINE','HKLM:')`
+  Run this command while Avast is installed and it shows all Start key values = 3. Run the command after uninstalling AVASt, and the Start key values are 0 and 2
 
-- Windows Defender will complain that the hosts file has been modified. Manually allow that. TBD: figure out how to make it  happen with Ansible, so no manual step is required
+- Windows Defender will complain that the hosts file has been modified. Manually allow that. TBD: figure out how to make it happen with Ansible, so no manual step is required
 
 After uninstalling the Avast
 
 - remove the default version of Pester that comes with windows
 
-  ```Powershell  $module = "C:\Program Files\WindowsPowerShell\Modules\Pester"
+  ```Powershell $module = "C:\Program Files\WindowsPowerShell\Modules\Pester"
   takeown /F $module /A /R
   icacls $module /reset
   icacls $module /grant "*S-1-5-32-544:F" /inheritance:d /T
@@ -813,6 +813,7 @@ After uninstalling the Avast
   ```
 
 - Install Pester for PS V7
+
   - `Install-Module pester -scope 'AllUsers'`
   - Fix Pester installation and or path variable for PS V5 and PS V7
 
@@ -877,8 +878,6 @@ In the newly created Powershell subdirectory, run the following command
 #### MSSQL Service Account
 
 #### IIS Controller Service Account
-
-
 
 ### Setup Role-wide Autoruns and startups
 
@@ -945,7 +944,6 @@ Setup HP Printer
 
 Link Pushbullet to phone
 
-
 File Extension helpers
 
 setup gopro
@@ -968,7 +966,7 @@ Install-ChocolateyPinnedTaskBarItem "$env:windir\system32\eventvwr.msc"
 
 # Enable SQLServerAgent
 
-choco install MsSqlServer2012Express -ia '/SECURITYMODE=SQL'
+choco install sql-server-express -ia '/SECURITYMODE=SQL'
 Install-ChocolateyPinnedTaskBarItem "C:\Program Files (x86)\Microsoft SQL Server\110\Tools\Binn\ManagementStudio\Ssms.exe"
 
 C:\Dropbox\whertzing\Visual Studio 2013\Projects\CI\CI\DeveloperComputer.ps1
@@ -1038,9 +1036,9 @@ Run the following commands as a local admin on the new computer. Do this in both
 
 - `Enable-PSRemoting -Force`
 - in Powershell core, run `Get-PSSessionConfiguration`
-    validate a powershell 7 endpoint now exists
+  validate a powershell 7 endpoint now exists
 - The machine profile for Powershell Core () should have the line `$PSSessionConfigurationName = 'PowerShell.7'`
-    That will make PSRemoting on a client use the Powershell Core configuration endpoint on the server computer
+  That will make PSRemoting on a client use the Powershell Core configuration endpoint on the server computer
 
 ### Add the other computers in the group to existing trustedhosts for WinRM remote management
 
@@ -1068,9 +1066,7 @@ PSRemoting sessions do not run any `profile` files when starting. To do so requi
 
 ### Enable HTTPS on WSMan
 
-
 ### Generate a trusted SSL Certificate for this computer
-
 
 Until you get a SSL certificate for the new computer, you can TEMPORARILY use unencrypted, but you WILL be putting your password out on the network for any sniffer to see
 `winrm set winrm/config/client @{AllowUnencrypted="true"}` # run as admin on the new computer, and on any computer that you want to connect FROM
@@ -1108,7 +1104,7 @@ Also note that any errors in the profile file will cause the remote session init
 
 ## Setup Java
 
-Java setup is accomplished using the Ansible Role  `JavaInterpreter`. This is a foundational role, and is run against all of the hosts in the WindowsHost group. The Powershell script `RoleJavaInterpreter.ps1` generates the task, vars, and configuration file(s) for each version of Java installed. It also uses registry settings which sets the machine-level PATH environment variable, the JAVA_HOME and JAVA_EXE environment variable, and the JARPATH environment variable.
+Java setup is accomplished using the Ansible Role `JavaInterpreter`. This is a foundational role, and is run against all of the hosts in the WindowsHost group. The Powershell script `RoleJavaInterpreter.ps1` generates the task, vars, and configuration file(s) for each version of Java installed. It also uses registry settings which sets the machine-level PATH environment variable, the JAVA_HOME and JAVA_EXE environment variable, and the JARPATH environment variable.
 
 Many of the development and CI tools need Java. Jenkins, PlantUML, diagram generator TBD and TBD all use Java. Managing multiple versions of the Java engine is required because not all of these tools will work with just one version.
 
@@ -1119,11 +1115,11 @@ The Jenkins CI tool uses the Java interpreter. Currently (July 2023), the Jenkin
 The installation mechanism for Eclipse Adoptium places the executable and configuration files in the path `$global:settings[$global:configRootKeys['JavaEclipseAdoptiumFolderPathPattern'] -replace 'jre-.*?-hotspot', jre-$global:settings[$global:configRootKeys['JavaEclipseAdoptiumVersion']-hotspot"`
 
 Environment Variables
-The code is installed to "C:\Program Files\Eclipse Adoptium\jre-17.0.2.8-hotspot\bin\java.exe", and the PATH variable (Machine scope)  is modified to include `"C:\Program Files\Eclipse Adoptium\jre-17.0.2.8-hotspot\bin\"`
+The code is installed to "C:\Program Files\Eclipse Adoptium\jre-17.0.2.8-hotspot\bin\java.exe", and the PATH variable (Machine scope) is modified to include `"C:\Program Files\Eclipse Adoptium\jre-17.0.2.8-hotspot\bin\"`
 
 ## Setup Jenkins Controller
 
-Everything necessary  to run jenkins is found in the `$ENV:JENKINS_HOME` subdirectory. For any machine having the role of the Jenkins Controller, the value of `$ENV:JENKINS_HOME`is set to the machine' settings' path `$global:configRootKeys['CloudBasePathConfigRootKey']` and`JenkinsHome`. This is assigned at the machine level, so when the Jenkins Controller Service starts, it uses the data in this directory. Note that only one machine in the organization should be designated the active Jenkins Controller. (ToDo: add section on High-availability and scaling for the Jenkins Controller, also how to have a second or third machine act as a disconnected Jenkins Controller)
+Everything necessary to run jenkins is found in the `$ENV:JENKINS_HOME` subdirectory. For any machine having the role of the Jenkins Controller, the value of `$ENV:JENKINS_HOME`is set to the machine' settings' path `$global:configRootKeys['CloudBasePathConfigRootKey']` and`JenkinsHome`. This is assigned at the machine level, so when the Jenkins Controller Service starts, it uses the data in this directory. Note that only one machine in the organization should be designated the active Jenkins Controller. (ToDo: add section on High-availability and scaling for the Jenkins Controller, also how to have a second or third machine act as a disconnected Jenkins Controller)
 
 The resolvable machine name of the Jenkins Controller will be referred to in this document as `JenkinsControllerHostName`
 
@@ -1156,13 +1152,13 @@ PackageManagement for powershell
 
 [Catesta is a PowerShell module project generator](https://github.com/techthoughts2/Catesta)
 
-## $Path and $psmodulepath in Powershell V5 (Desktop) and V7 (Core)
+## $Path and $PSModulePath in Powershell V5 (Desktop) and V7 (Core)
 
 [about_PSModulePath](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_psmodulepath?view=powershell-7.2)
 
 [Differences between Windows PowerShell 5.1 and PowerShell 7.x](https://docs.microsoft.com/en-us/powershell/scripting/whats-new/differences-from-windows-powershell?view=powershell-7.2)
 
-## Placeholder for code to compare extensions in two instances of Visualstudiocode
+## Placeholder for code to compare extensions in two instances of VisualSstudio Code
 
 ```Powershell
 $a = ls C:\Dropbox\whertzing\ncat016-dotvscode\.vscode\extensions
@@ -1175,7 +1171,6 @@ $c= $a2 | %{if ($b2.contains($_)) {$\_}}
 ## Setup IIS WebServer
 
 ### Enable IIS on Windows 10 or 11
-
 
 From and elevated Powershell prompt:
 
@@ -1195,5 +1190,3 @@ To install IIS via the GUI, see
 ### Add SSLServer certificate to Jenkins
 
 [How can I set up Jenkins CI to use https on Windows?](https://stackoverflow.com/questions/5313703/how-can-i-set-up-jenkins-ci-to-use-https-on-windows)
-
-

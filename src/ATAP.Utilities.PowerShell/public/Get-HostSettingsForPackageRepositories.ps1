@@ -2,7 +2,7 @@
 
 $p1s = ('External' , 'Internal' )
 $p2s = ('Released' , 'Prerelease')
-$p3s = ( 'NuGet' , 'PowershellGet' , 'ChocolateyGet')
+$p3s = ( 'NuGet' , 'PSResourceGet' , 'ChocolateyGet')
 $p4s = ('Production' , 'QualityAssurance')
 $p5s = ('Pull' , 'Push')
 $p6s = ('Protocol', 'Server', 'Port', 'Path', 'QueryString')

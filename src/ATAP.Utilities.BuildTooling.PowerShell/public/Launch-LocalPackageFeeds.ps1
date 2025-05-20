@@ -5,10 +5,10 @@ param(
   # use the information in $global:settings['PackageRepositoriesCollection'].
   # These are the providers for which the script will create a package
   # ToDO: Validation is done as follows:
-  # [ValidateScript( { [ProviderNamesEnum]::IsDefined([ProviderNamesEnum], $_) } )]
-  [ValidateSet('NuGet', 'PowershellGet', 'ChocolateyGet', 'ChocolateyCLI')]
+  # [ValidateScript( { [PackageProviderNamesEnum]::IsDefined([PackageProviderNamesEnum], $_) } )]
+  [ValidateSet('NuGet', 'PSResourceGet', 'ChocolateyGet', 'ChocolateyCLI')]
   # ToDO: default to an array of enumeration values ($global:settings)
-  [string[]]$providerNames = @('NuGet', 'PowershellGet', 'ChocolateyGet', 'ChocolateyCLI')
+  [string[]]$packageProviderNames = @('NuGet', 'PSResourceGet', 'ChocolateyGet', 'ChocolateyCLI')
   # These are the lifecycle stages for which the script will create a package
   # ToDo: replace with an enumeration type
   , [ValidateSet('QualityAssurance', 'Production')]
@@ -17,7 +17,7 @@ param(
 )
 
 $feeds = [System.Collections.ArrayList]::new()
-$REPattern = '(?<ProviderName>NuGet|PowershellGet|ChocolateyGet)(?<ProviderLifecycle>Filesystem|QualityAssuranceWebServer|ProductionWebServer)(?<PackageLifecycle>QualityAssurance|Production)'
+$REPattern = '(?<PackageProviderName>NuGet|PSResourceGet|ChocolateyGet)(?<ProviderLifecycle>Filesystem|QualityAssuranceWebServer|ProductionWebServer)(?<PackageLifecycle>QualityAssurance|Production)'
 # ToDo: make this a hash table lookup, create additional local server computers to act as hosts for the other two provider lifecycles
 # ToDo, implement additional computers to host other providerLifecycles, put them in settings
 $providerLifecycleHosts = @{'Production' = 'utat022' }
@@ -26,17 +26,17 @@ $repositoryKeys = $repositories.Keys
 for ($repositoriesIndex = 0; $repositoriesIndex -lt $repositoryKeys.Count; $repositoriesIndex++) {
   $repository = $repositories[$($repositoryKeys)[$repositoriesIndex]]
   if ($repository -imatch $REPattern) {
-    $providerName = $matches['ProviderName']
+    $packageProviderName = $matches['PackageProviderName']
     $providerLifecycle = $matches['ProviderLifecycle']
     $providerLifecycleHost = $providerLifecycleHosts['Production']
     $packageLifecycle = $matches['PackageLifecycle']
     $feeds.Add([PSCustomObject]@{
-        Name   = $providerName + $packageLifecycle
+        Name   = $packageProviderName + $packageLifecycle
         Host   = $providerLifecycleHost # ToDo, implement additional computers to host other providerLifecycles
         Port   = $repository.Port
         Path   = $repository.Path
-        Db     = 'baGet.' + $providerName + '.' + $packageLifecycle + '.db'
-        ApiKey = 'UseVault' # based on providerName, providerLifecycle, packageLifecycle, and Host
+        Db     = 'baGet.' + $packageProviderName + '.' + $packageLifecycle + '.db'
+        ApiKey = 'UseVault' # based on packageProviderName, providerLifecycle, packageLifecycle, and Host
       })
   } else {
     $message = "repositoriesIndex = $repositoriesIndex; repository = $repository; it does not imatch $REPattern"
@@ -74,3 +74,34 @@ foreach ($feed in $feeds) {
 }
 
 Write-Host 'All BaGet feed instances launched.'
+
+# Alternative suggested by ChatGPT
+# Save this as: C:\Scripts\Start-LocalFeeds.ps1
+function Launch-LocalPackageFeeds2 {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$BaGetPath,
+    [Parameter(Mandatory = $true)]
+    [string]$ProGetPath
+  )
+
+  # Ensure log directory exists
+  $logRoot = 'C:\Scripts\Logs'
+  New-Item -ItemType Directory -Path $logRoot -Force | Out-Null
+
+  # Start BaGet Instance 1 (NuGet)
+  Start-Process -WindowStyle Hidden -FilePath 'dotnet' -ArgumentList 'BaGet.dll --urls http://localhost:50044' `
+    -WorkingDirectory "$BaGetPath\BaGet1" `
+    -RedirectStandardOutput "$logRoot\baget1-out.log" `
+    -RedirectStandardError "$logRoot\baget1-err.log"
+
+  # Start BaGet Instance 2 (PSResourceGet)
+  Start-Process -WindowStyle Hidden -FilePath 'dotnet' -ArgumentList 'BaGet.dll --urls http://localhost:50045' `
+    -WorkingDirectory "$BaGetPath\BaGet2" `
+    -RedirectStandardOutput "$logRoot\baget2-out.log" `
+    -RedirectStandardError "$logRoot\baget2-err.log"
+
+  # Start ProGet
+  Start-Process -WindowStyle Hidden -FilePath "$ProGetPath\ProGet.Service.exe" -ArgumentList 'start'
+}

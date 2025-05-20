@@ -1,5 +1,3 @@
-#Requires -Modules PowerShellGet
-#Requires -Version 5.0
 #region Get-NuSpecFromManifest
 <#
 .SYNOPSIS
@@ -46,9 +44,15 @@ Function Get-NuSpecFromManifest {
 
     [Parameter(Mandatory = $true)]
     # ToDo: Replace with enumeration
-    [ValidateSet('NuGet', 'PowershellGet', 'ChocolateyGet', 'ChocolateyCLI')]
+    [ValidateSet('Filesystem', 'NuGet', 'PSResourceGet', 'ChocolateyGet', 'ChocolateyCLI')]
     [string]
-    $ProviderName,
+    $PackageProviderName,
+
+    [Parameter(Mandatory = $true)]
+    # ToDo: Replace with enumeration
+    [ValidateSet('Production', 'QualityAssurance')]
+    [string]
+    $SoftwarePackageType,
 
     [Parameter(Mandatory = $false)]
     [ValidateScript({
@@ -291,6 +295,9 @@ Function Get-NuSpecFromManifest {
           $Version = [string]$Version + $psmoduleInfoPrereleaseString
         } else {
           $Version = [string]$Version + '-' + $psmoduleInfoPrereleaseString
+        }
+        if ($SoftwarePackageType -eq 'QualityAssurance') {
+          $Version = [string]$Version + '-diagnostics'
         }
       }
 

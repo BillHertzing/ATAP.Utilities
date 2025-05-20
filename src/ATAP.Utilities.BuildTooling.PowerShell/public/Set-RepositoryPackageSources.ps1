@@ -47,20 +47,20 @@ Function Set-RepositoryPackageSources {
     # ToDo: move the registration of repository locations into a seperate function. Invoke it on container or server creation / maintenance
     # Register repository locations
     # ToDo: Replace with enumeration
-     ('NuGet', 'PowershellGet', 'ChocolateyGet', 'ChocolateyCLI') | ForEach-Object { $ProviderName = $_
+     ('NuGet', 'PSResourceGet', 'ChocolateyGet', 'ChocolateyCLI') | ForEach-Object { $PackageProviderName = $_
       # Validate each package provider is installed, else install it
-      if (-not $(Get-PackageProvider -Name $ProviderName)) {
-        if (-not $(Find-PackageProvider -Name $ProviderName)) {
+      if (-not $(Get-PackageProvider -Name $PackageProviderName)) {
+        if (-not $(Find-PackageProvider -Name $PackageProviderName)) {
           # ToDo better error logging
-          Write-PSFMessage -Level Error -Message "Provider Not Found; ProviderName = $ProviderName"
+          Write-PSFMessage -Level Error -Message "Provider Not Found; PackageProviderName = $PackageProviderName"
           # Throw Error
-          throw "Provider Not Found; ProviderName = $ProviderName"
+          throw "Provider Not Found; PackageProviderName = $PackageProviderName"
         }
-        else { Install-PackageProvider -Name $ProviderName -ForceBootstrap }
+        else { Install-PackageProvider -Name $PackageProviderName -ForceBootstrap }
       }
       ('Filesystem', 'WebServerQualityAssurance', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
         ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $Lifecycle = $_
-          $PackageSourceID = $ProviderName + $PackageSource + $Lifecycle
+          $PackageSourceID = $PackageProviderName + $PackageSource + $Lifecycle
           if (!$(Get-PackageSource -Name $PackageSourceID -ErrorAction SilentlyContinue)) {
             switch -regex ($PackageSourceID) {
               'NuGetQualityAssuranceWebServerDevelopment' {
@@ -81,22 +81,22 @@ Function Set-RepositoryPackageSources {
               'NuGetProductionWebServerProduction' {
                 break
               }
-              'PowershellGetQualityAssuranceWebServerDevelopment' {
+              'PSResourceGetQualityAssuranceWebServerDevelopment' {
                 break
               }
-              'PowershellGetQualityAssuranceWebServerQualityAssurance' {
+              'PSResourceGetQualityAssuranceWebServerQualityAssurance' {
                 break
               }
-              'PowershellGetQualityAssuranceWebServerProduction' {
+              'PSResourceGetQualityAssuranceWebServerProduction' {
                 break
               }
-              'PowershellGetProductionWebServerDevelopment' {
+              'PSResourceGetProductionWebServerDevelopment' {
                 break
               }
-              'PowershellGetProductionWebServerQualityAssurance' {
+              'PSResourceGetProductionWebServerQualityAssurance' {
                 break
               }
-              'PowershellGetProductionWebServerProduction' {
+              'PSResourceGetProductionWebServerProduction' {
                 break
               }
               'ChocolateyFilesystemDevelopment' {

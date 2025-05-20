@@ -1,4 +1,4 @@
-$tasks =  @'
+$tasks = @'
 ---
 # code: language=ansible
 # Tasks to setup a Windows computer / container
@@ -17,7 +17,7 @@ $tasks =  @'
    # - tasks to setup a Powershell Secrets Management
    # - tasks to setup a Powershell Hashicorp vault
 
-   # - tasks to setup PackageManagement, NuGet, PowershellGet, and ChocolateyGet, repositories, and sources
+   # - tasks to setup PackageManagement, NuGet, PSResourceGet, and ChocolateyGet, repositories, and sources
    # - tasks to setup SSH Server
    # - tasks to setup SSH Client
    # - tasks to setup / recognize a Certificate Authority

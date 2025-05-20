@@ -51,7 +51,7 @@ function Get-HostSettings {
     [System.Text.StringBuilder]$sb = [System.Text.StringBuilder]::new()
     function ProcessBufferLocallyGet-HostSettings {
       Write-PSFMessage -Level Debug -Message 'Starting Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
-      if ($pscmdlet.ShouldProcess("Target", "Operation")) {
+      if ($PScmdlet.ShouldProcess("Target", "Operation")) {
 
         $script:inputObj
         # YOUR CODE HERE

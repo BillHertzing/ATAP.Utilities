@@ -432,6 +432,11 @@ sql-server-management-studio:
   AllowPreRelease: false
   Version: Latest
   AddedParameters:
+sql-server-express:
+  Notes: ""
+  AllowPreRelease: false
+  Version: Latest
+  AddedParameters:
 SQLite:
   Notes: ""
   AllowPreRelease: false

@@ -125,6 +125,14 @@ Function prompt {
 # Tell all GIT operations where to find the global configuration file
 $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:\Dropbox\whertzing\Git\.gitconfig'
 
+# # ToDo Unlock the Secrets vault for this user
+# ToDo: do not use env variables, instead modify the functions to get the API Key value based on its name form the secrets valid
+
+# Temporary Setup some API keys for the user.
+# These API keys are being checked in to GitHub, but these are only applicable to a
+#    local installations of their respective applications
+[Environment]::SetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], "07fc02c5d5366c0cabbdc125e86fdf47ffe1b5cf", "Process")
+
 
 # The following command must be run as an administrator on the machine, to install for 'AllUsers'
 # Install-ModulesPerComputer -modulesToInstall @('Microsoft.PowerShell.SecretManagement', 'Microsoft.PowerShell.SecretStore', 'SecretManagement.KeePass')
@@ -330,7 +338,8 @@ function TailLatestPSFrameworkLog {
   #$objects
   #$objects | Format-Table HostName, Timestamp, LogLevel, Message, ScriptName, LineNumber, Tags
   # filter by tags
-  if ($includeTags) { # -or $excludeTags) {
+  if ($includeTags) {
+    # -or $excludeTags) {
     $objects = $objects | Where-Object { $_.Tags -match $includeTags[0] }
     #$tags = $objects | Select-Object -ExpandProperty Tags
     # if ($alltags) {
@@ -422,7 +431,8 @@ Function Get-Attributions {
           }
         }
       }
-    } finally {
+    }
+    finally {
       $reader.Close()
       $FileStream.Close()
     }
@@ -451,7 +461,8 @@ Function Get-LinksFromDrafts {
       if ($matchResult.Success) {
         $Subject = $matchResult.captures.groups['Subject'].value
         #Write-PSFMessage -Level Debug -Message "Subject = $Subject"
-      } else {
+      }
+      else {
         $matchResult = [RegEx]::Matches($line, $findRegex2)
         if ($matchResult.Success) {
           $URL = $matchResult.captures.groups['URL'].value
@@ -469,7 +480,8 @@ Function Get-LinksFromDrafts {
         $URL = ''
       }
     }
-  } finally {
+  }
+  finally {
     $reader.Close()
     $Stream.Close()
   }
@@ -570,7 +582,8 @@ Function Open-BookmarksInBrave {
         foreach ($bookmark in $input) {
           $urlList += $bookmark.url
         }
-      } else {
+      }
+      else {
         $urlList = $URLs
       }
     }
@@ -692,7 +705,8 @@ Function WatchFile {
       Write-Host '.' -NoNewline
 
     } while ($true)
-  } finally {
+  }
+  finally {
     # this gets executed when user presses CTRL+C:
 
     # stop monitoring

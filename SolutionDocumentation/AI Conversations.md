@@ -1,6 +1,6 @@
-## Promt for creating powershell functions
+## Prompt for creating powershell functions
 
-When responding with powershell code, follow these guidelines
+When responding with powershell code or tests for PowerShell code, follow these guidelines
 
 1.  use approved verbs in the function names.
 2.  all functions should be cmdlets that support shouldProcess
@@ -8,7 +8,7 @@ When responding with powershell code, follow these guidelines
 4.  never log using -Level Info, use -Level Important
 5.  Log entry and exit of the function using -Level Verbose
 6.  wrap any code that might produce an exception in a try/catch block. In the catch block, log the exception using the following structure
-7.          catch {
+7.            catch {
          $errorMessage = "Failed <what failed>. Exception: $($_.Exception.Message)"
          Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception
          throw $_
@@ -25,6 +25,9 @@ $adminApiKey = [Environment]::GetEnvironmentVariable($global:configRootKeys['Pro
 
     8a. add the following comment '# ToDo: Fetch from Secrets vault instead of environment variable
     8b. Get the value from $env:<$global:configRootKeys['<SomeAPIKeyName>ConfigRootKey']
+
+9. use the casing PSCustomObject for pscustomobject
+10. when responding with unit tests, assume There is an environment variable $Env:IsCI which will be true if running under CI. When not running under CI, the location of the function to be tested is in $PSScriptRoot/../../src/<nameOfFunctionUnderTest>. When running under CI, the function should autoload based on PSPAth setup in the CI test environment
 
 ## default ChatGPT Conversation
 

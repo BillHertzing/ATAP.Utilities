@@ -8,7 +8,7 @@ When responding with powershell code or tests for PowerShell code, follow these 
 4.  never log using -Level Info, use -Level Important
 5.  Log entry and exit of the function using -Level Verbose
 6.  wrap any code that might produce an exception in a try/catch block. In the catch block, log the exception using the following structure
-7.            catch {
+7.              catch {
          $errorMessage = "Failed <what failed>. Exception: $($_.Exception.Message)"
          Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception
          throw $_
@@ -6784,246 +6784,246 @@ These are all the [ackageReepository URIs, and the components that make them up
   # Every push or pull Uri is made up of 'Protocol' + 'Server' + 'Port' + 'Path' + 'QueryString'. Path defaults to '/' and QueryString defaults to ''
   # Pull Uri individual components
   # External Pull Uri components
-  'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriProtocolConfigRootKey'                    = 'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriProtocol'
-  'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriServerConfigRootKey'                      = 'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriServer'
+  'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriSchemeConfigRootKey'                    = 'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriProtocol'
+  'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriHostConfigRootKey'                      = 'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriServer'
   'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriPortConfigRootKey'                        = 'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriPort'
   'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriPathConfigRootKey'                        = 'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriPath'
   'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriQueryStringConfigRootKey'                 = 'PackageRepositoryExternalReleasedNuGetProductionPackagePullUriQueryString'
-  'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriProtocolConfigRootKey'              = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriProtocol'
-  'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriServerConfigRootKey'                = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriServer'
+  'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriSchemeConfigRootKey'              = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriProtocol'
+  'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriHostConfigRootKey'                = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriServer'
   'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriPortConfigRootKey'                  = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriPort'
   'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriPathConfigRootKey'                  = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriPath'
   'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriQueryStringConfigRootKey'           = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriQueryString'
-  'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriProtocolConfigRootKey'            = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriProtocol'
-  'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriServerConfigRootKey'              = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriServer'
+  'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriSchemeConfigRootKey'            = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriProtocol'
+  'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriHostConfigRootKey'              = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriServer'
   'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriPortConfigRootKey'                = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriPort'
   'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriPathConfigRootKey'                = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriPath'
   'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriQueryStringConfigRootKey'         = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriQueryString'
-  'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriProtocolConfigRootKey'      = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriProtocol'
-  'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriServerConfigRootKey'        = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriServer'
+  'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriSchemeConfigRootKey'      = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriProtocol'
+  'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriHostConfigRootKey'        = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriServer'
   'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriPortConfigRootKey'          = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriPort'
   'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriPathConfigRootKey'          = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriPath'
   'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriQueryStringConfigRootKey'   = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriQueryString'
-  'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriProtocolConfigRootKey'            = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriProtocol'
-  'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriServerConfigRootKey'              = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriServer'
+  'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriSchemeConfigRootKey'            = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriProtocol'
+  'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriHostConfigRootKey'              = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriServer'
   'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriPortConfigRootKey'                = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriPort'
   'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriPathConfigRootKey'                = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriPath'
   'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriQueryStringConfigRootKey'         = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriQueryString'
-  'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriProtocolConfigRootKey'      = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriProtocol'
-  'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriServerConfigRootKey'        = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriServer'
+  'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriSchemeConfigRootKey'      = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriProtocol'
+  'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriHostConfigRootKey'        = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriServer'
   'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriPortConfigRootKey'          = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriPort'
   'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriPathConfigRootKey'          = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriPath'
   'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriQueryStringConfigRootKey'   = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriQueryString'
-  'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriProtocolConfigRootKey'                  = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriProtocol'
-  'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriServerConfigRootKey'                    = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriServer'
+  'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriSchemeConfigRootKey'                  = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriProtocol'
+  'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriHostConfigRootKey'                    = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriServer'
   'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriPortConfigRootKey'                      = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriPort'
   'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriPathConfigRootKey'                      = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriPath'
   'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriQueryStringConfigRootKey'               = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriQueryString'
-  'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriProtocolConfigRootKey'            = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriProtocol'
-  'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriServerConfigRootKey'              = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriServer'
+  'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriSchemeConfigRootKey'            = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriProtocol'
+  'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriHostConfigRootKey'              = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriServer'
   'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriPortConfigRootKey'                = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriPort'
   'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriPathConfigRootKey'                = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriPath'
   'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriQueryStringConfigRootKey'         = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriQueryString'
-  'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriProtocolConfigRootKey'          = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriProtocol'
-  'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriServerConfigRootKey'            = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriServer'
+  'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriSchemeConfigRootKey'          = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriProtocol'
+  'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriHostConfigRootKey'            = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriServer'
   'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriPortConfigRootKey'              = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriPort'
   'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriPathConfigRootKey'              = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriPath'
   'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriQueryStringConfigRootKey'       = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriQueryString'
-  'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriProtocolConfigRootKey'    = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriProtocol'
-  'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriServerConfigRootKey'      = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriServer'
+  'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriSchemeConfigRootKey'    = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriProtocol'
+  'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriHostConfigRootKey'      = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriServer'
   'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriPortConfigRootKey'        = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriPort'
   'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriPathConfigRootKey'        = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriPath'
   'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriQueryStringConfigRootKey' = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriQueryString'
-  'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriProtocolConfigRootKey'          = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriProtocol'
-  'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriServerConfigRootKey'            = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriServer'
+  'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriSchemeConfigRootKey'          = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriProtocol'
+  'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriHostConfigRootKey'            = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriServer'
   'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriPortConfigRootKey'              = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriPort'
   'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriPathConfigRootKey'              = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriPath'
   'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriQueryStringConfigRootKey'       = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriQueryString'
-  'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriProtocolConfigRootKey'    = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriProtocol'
-  'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriServerConfigRootKey'      = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriServer'
+  'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriSchemeConfigRootKey'    = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriProtocol'
+  'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriHostConfigRootKey'      = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriServer'
   'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriPortConfigRootKey'        = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriPort'
   'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriPathConfigRootKey'        = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriPath'
   'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriQueryStringConfigRootKey' = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriQueryString'
   # External Push Uri components
-  'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriProtocolConfigRootKey'                    = 'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriProtocol'
-  'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriServerConfigRootKey'                      = 'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriServer'
+  'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriSchemeConfigRootKey'                    = 'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriProtocol'
+  'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriHostConfigRootKey'                      = 'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriServer'
   'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriPortConfigRootKey'                        = 'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriPort'
   'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriPathConfigRootKey'                        = 'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriPath'
   'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriQueryStringConfigRootKey'                 = 'PackageRepositoryExternalReleasedNuGetProductionPackagePushUriQueryString'
-  'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriProtocolConfigRootKey'              = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriProtocol'
-  'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriServerConfigRootKey'                = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriServer'
+  'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriSchemeConfigRootKey'              = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriProtocol'
+  'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriHostConfigRootKey'                = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriServer'
   'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriPortConfigRootKey'                  = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriPort'
   'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriPathConfigRootKey'                  = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriPath'
   'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriQueryStringConfigRootKey'           = 'PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePushUriQueryString'
-  'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriProtocolConfigRootKey'            = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriProtocol'
-  'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriServerConfigRootKey'              = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriServer'
+  'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriSchemeConfigRootKey'            = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriProtocol'
+  'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriHostConfigRootKey'              = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriServer'
   'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriPortConfigRootKey'                = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriPort'
   'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriPathConfigRootKey'                = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriPath'
   'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriQueryStringConfigRootKey'         = 'PackageRepositoryExternalReleasedPowershellGetProductionPackagePushUriQueryString'
-  'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriProtocolConfigRootKey'      = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriProtocol'
-  'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriServerConfigRootKey'        = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriServer'
+  'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriSchemeConfigRootKey'      = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriProtocol'
+  'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriHostConfigRootKey'        = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriServer'
   'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriPortConfigRootKey'          = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriPort'
   'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriPathConfigRootKey'          = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriPath'
   'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriQueryStringConfigRootKey'   = 'PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePushUriQueryString'
-  'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriProtocolConfigRootKey'            = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriProtocol'
-  'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriServerConfigRootKey'              = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriServer'
+  'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriSchemeConfigRootKey'            = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriProtocol'
+  'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriHostConfigRootKey'              = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriServer'
   'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriPortConfigRootKey'                = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriPort'
   'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriPathConfigRootKey'                = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriPath'
   'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriQueryStringConfigRootKey'         = 'PackageRepositoryExternalReleasedChocolateyGetProductionPackagePushUriQueryString'
-  'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriProtocolConfigRootKey'      = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriProtocol'
-  'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriServerConfigRootKey'        = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriServer'
+  'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriSchemeConfigRootKey'      = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriProtocol'
+  'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriHostConfigRootKey'        = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriServer'
   'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriPortConfigRootKey'          = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriPort'
   'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriPathConfigRootKey'          = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriPath'
   'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriQueryStringConfigRootKey'   = 'PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePushUriQueryString'
-  'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriProtocolConfigRootKey'                  = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriProtocol'
-  'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriServerConfigRootKey'                    = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriServer'
+  'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriSchemeConfigRootKey'                  = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriProtocol'
+  'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriHostConfigRootKey'                    = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriServer'
   'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriPortConfigRootKey'                      = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriPort'
   'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriPathConfigRootKey'                      = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriPath'
   'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriQueryStringConfigRootKey'               = 'PackageRepositoryExternalPrereleaseNuGetProductionPackagePushUriQueryString'
-  'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriProtocolConfigRootKey'            = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriProtocol'
-  'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriServerConfigRootKey'              = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriServer'
+  'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriSchemeConfigRootKey'            = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriProtocol'
+  'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriHostConfigRootKey'              = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriServer'
   'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriPortConfigRootKey'                = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriPort'
   'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriPathConfigRootKey'                = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriPath'
   'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriQueryStringConfigRootKey'         = 'PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePushUriQueryString'
-  'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriProtocolConfigRootKey'          = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriProtocol'
-  'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriServerConfigRootKey'            = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriServer'
+  'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriSchemeConfigRootKey'          = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriProtocol'
+  'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriHostConfigRootKey'            = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriServer'
   'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriPortConfigRootKey'              = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriPort'
   'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriPathConfigRootKey'              = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriPath'
   'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriQueryStringConfigRootKey'       = 'PackageRepositoryExternalPrereleasePowershellGetProductionPackagePushUriQueryString'
-  'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriProtocolConfigRootKey'    = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriProtocol'
-  'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriServerConfigRootKey'      = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriServer'
+  'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriSchemeConfigRootKey'    = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriProtocol'
+  'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriHostConfigRootKey'      = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriServer'
   'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriPortConfigRootKey'        = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriPort'
   'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriPathConfigRootKey'        = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriPath'
   'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriQueryStringConfigRootKey' = 'PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePushUriQueryString'
-  'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriProtocolConfigRootKey'          = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriProtocol'
-  'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriServerConfigRootKey'            = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriServer'
+  'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriSchemeConfigRootKey'          = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriProtocol'
+  'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriHostConfigRootKey'            = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriServer'
   'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriPortConfigRootKey'              = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriPort'
   'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriPathConfigRootKey'              = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriPath'
   'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriQueryStringConfigRootKey'       = 'PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePushUriQueryString'
-  'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriProtocolConfigRootKey'    = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriProtocol'
-  'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriServerConfigRootKey'      = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriServer'
+  'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriSchemeConfigRootKey'    = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriProtocol'
+  'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriHostConfigRootKey'      = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriServer'
   'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriPortConfigRootKey'        = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriPort'
   'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriPathConfigRootKey'        = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriPath'
   'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriQueryStringConfigRootKey' = 'PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePushUriQueryString'
   # Internal Pull Uri components
-  'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriProtocolConfigRootKey'                    = 'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriProtocol'
-  'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriServerConfigRootKey'                      = 'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriServer'
+  'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriSchemeConfigRootKey'                    = 'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriProtocol'
+  'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriHostConfigRootKey'                      = 'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriServer'
   'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriPortConfigRootKey'                        = 'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriPort'
   'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriPathConfigRootKey'                        = 'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriPath'
   'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriQueryStringConfigRootKey'                 = 'PackageRepositoryInternalReleasedNuGetProductionPackagePullUriQueryString'
-  'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriProtocolConfigRootKey'              = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriProtocol'
-  'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriServerConfigRootKey'                = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriServer'
+  'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriSchemeConfigRootKey'              = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriProtocol'
+  'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriHostConfigRootKey'                = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriServer'
   'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriPortConfigRootKey'                  = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriPort'
   'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriPathConfigRootKey'                  = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriPath'
   'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriQueryStringConfigRootKey'           = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriQueryString'
-  'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriProtocolConfigRootKey'            = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriProtocol'
-  'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriServerConfigRootKey'              = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriServer'
+  'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriSchemeConfigRootKey'            = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriProtocol'
+  'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriHostConfigRootKey'              = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriServer'
   'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriPortConfigRootKey'                = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriPort'
   'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriPathConfigRootKey'                = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriPath'
   'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriQueryStringConfigRootKey'         = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriQueryString'
-  'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriProtocolConfigRootKey'      = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriProtocol'
-  'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriServerConfigRootKey'        = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriServer'
+  'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriSchemeConfigRootKey'      = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriProtocol'
+  'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriHostConfigRootKey'        = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriServer'
   'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriPortConfigRootKey'          = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriPort'
   'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriPathConfigRootKey'          = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriPath'
   'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriQueryStringConfigRootKey'   = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriQueryString'
-  'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriProtocolConfigRootKey'            = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriProtocol'
-  'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriServerConfigRootKey'              = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriServer'
+  'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriSchemeConfigRootKey'            = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriProtocol'
+  'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriHostConfigRootKey'              = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriServer'
   'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriPortConfigRootKey'                = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriPort'
   'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriPathConfigRootKey'                = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriPath'
   'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriQueryStringConfigRootKey'         = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriQueryString'
-  'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriProtocolConfigRootKey'      = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriProtocol'
-  'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriServerConfigRootKey'        = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriServer'
+  'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriSchemeConfigRootKey'      = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriProtocol'
+  'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriHostConfigRootKey'        = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriServer'
   'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriPortConfigRootKey'          = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriPort'
   'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriPathConfigRootKey'          = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriPath'
   'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriQueryStringConfigRootKey'   = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriQueryString'
-  'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriProtocolConfigRootKey'                  = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriProtocol'
-  'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriServerConfigRootKey'                    = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriServer'
+  'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriSchemeConfigRootKey'                  = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriProtocol'
+  'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriHostConfigRootKey'                    = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriServer'
   'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriPortConfigRootKey'                      = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriPort'
   'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriPathConfigRootKey'                      = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriPath'
   'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriQueryStringConfigRootKey'               = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriQueryString'
-  'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriProtocolConfigRootKey'            = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriProtocol'
-  'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriServerConfigRootKey'              = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriServer'
+  'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriSchemeConfigRootKey'            = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriProtocol'
+  'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriHostConfigRootKey'              = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriServer'
   'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriPortConfigRootKey'                = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriPort'
   'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriPathConfigRootKey'                = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriPath'
   'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriQueryStringConfigRootKey'         = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriQueryString'
-  'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriProtocolConfigRootKey'          = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriProtocol'
-  'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriServerConfigRootKey'            = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriServer'
+  'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriSchemeConfigRootKey'          = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriProtocol'
+  'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriHostConfigRootKey'            = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriServer'
   'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriPortConfigRootKey'              = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriPort'
   'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriPathConfigRootKey'              = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriPath'
   'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriQueryStringConfigRootKey'       = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriQueryString'
-  'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriProtocolConfigRootKey'    = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriProtocol'
-  'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriServerConfigRootKey'      = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriServer'
+  'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriSchemeConfigRootKey'    = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriProtocol'
+  'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriHostConfigRootKey'      = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriServer'
   'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriPortConfigRootKey'        = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriPort'
   'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriPathConfigRootKey'        = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriPath'
   'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriQueryStringConfigRootKey' = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriQueryString'
-  'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriProtocolConfigRootKey'          = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriProtocol'
-  'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriServerConfigRootKey'            = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriServer'
+  'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriSchemeConfigRootKey'          = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriProtocol'
+  'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriHostConfigRootKey'            = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriServer'
   'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriPortConfigRootKey'              = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriPort'
   'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriPathConfigRootKey'              = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriPath'
   'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriQueryStringConfigRootKey'       = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriQueryString'
-  'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriProtocolConfigRootKey'    = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriProtocol'
-  'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriServerConfigRootKey'      = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriServer'
+  'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriSchemeConfigRootKey'    = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriProtocol'
+  'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriHostConfigRootKey'      = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriServer'
   'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriPortConfigRootKey'        = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriPort'
   'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriPathConfigRootKey'        = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriPath'
   'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriQueryStringConfigRootKey' = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriQueryString'
   # Internal Push Uri components
-  'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriProtocolConfigRootKey'                    = 'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriProtocol'
-  'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriServerConfigRootKey'                      = 'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriServer'
+  'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriSchemeConfigRootKey'                    = 'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriProtocol'
+  'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriHostConfigRootKey'                      = 'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriServer'
   'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriPortConfigRootKey'                        = 'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriPort'
   'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriPathConfigRootKey'                        = 'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriPath'
   'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriQueryStringConfigRootKey'                 = 'PackageRepositoryInternalReleasedNuGetProductionPackagePushUriQueryString'
-  'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriProtocolConfigRootKey'              = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriProtocol'
-  'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriServerConfigRootKey'                = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriServer'
+  'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriSchemeConfigRootKey'              = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriProtocol'
+  'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriHostConfigRootKey'                = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriServer'
   'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriPortConfigRootKey'                  = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriPort'
   'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriPathConfigRootKey'                  = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriPath'
   'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriQueryStringConfigRootKey'           = 'PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePushUriQueryString'
-  'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriProtocolConfigRootKey'            = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriProtocol'
-  'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriServerConfigRootKey'              = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriServer'
+  'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriSchemeConfigRootKey'            = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriProtocol'
+  'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriHostConfigRootKey'              = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriServer'
   'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriPortConfigRootKey'                = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriPort'
   'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriPathConfigRootKey'                = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriPath'
   'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriQueryStringConfigRootKey'         = 'PackageRepositoryInternalReleasedPowershellGetProductionPackagePushUriQueryString'
-  'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriProtocolConfigRootKey'      = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriProtocol'
-  'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriServerConfigRootKey'        = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriServer'
+  'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriSchemeConfigRootKey'      = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriProtocol'
+  'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriHostConfigRootKey'        = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriServer'
   'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriPortConfigRootKey'          = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriPort'
   'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriPathConfigRootKey'          = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriPath'
   'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriQueryStringConfigRootKey'   = 'PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePushUriQueryString'
-  'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriProtocolConfigRootKey'            = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriProtocol'
-  'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriServerConfigRootKey'              = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriServer'
+  'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriSchemeConfigRootKey'            = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriProtocol'
+  'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriHostConfigRootKey'              = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriServer'
   'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriPortConfigRootKey'                = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriPort'
   'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriPathConfigRootKey'                = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriPath'
   'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriQueryStringConfigRootKey'         = 'PackageRepositoryInternalReleasedChocolateyGetProductionPackagePushUriQueryString'
-  'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriProtocolConfigRootKey'      = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriProtocol'
-  'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriServerConfigRootKey'        = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriServer'
+  'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriSchemeConfigRootKey'      = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriProtocol'
+  'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriHostConfigRootKey'        = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriServer'
   'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriPortConfigRootKey'          = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriPort'
   'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriPathConfigRootKey'          = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriPath'
   'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriQueryStringConfigRootKey'   = 'PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePushUriQueryString'
-  'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriProtocolConfigRootKey'                  = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriProtocol'
-  'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriServerConfigRootKey'                    = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriServer'
+  'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriSchemeConfigRootKey'                  = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriProtocol'
+  'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriHostConfigRootKey'                    = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriServer'
   'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriPortConfigRootKey'                      = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriPort'
   'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriPathConfigRootKey'                      = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriPath'
   'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriQueryStringConfigRootKey'               = 'PackageRepositoryInternalPrereleaseNuGetProductionPackagePushUriQueryString'
-  'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriProtocolConfigRootKey'            = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriProtocol'
-  'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriServerConfigRootKey'              = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriServer'
+  'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriSchemeConfigRootKey'            = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriProtocol'
+  'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriHostConfigRootKey'              = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriServer'
   'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriPortConfigRootKey'                = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriPort'
   'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriPathConfigRootKey'                = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriPath'
   'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriQueryStringConfigRootKey'         = 'PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePushUriQueryString'
-  'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriProtocolConfigRootKey'          = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriProtocol'
-  'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriServerConfigRootKey'            = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriServer'
+  'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriSchemeConfigRootKey'          = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriProtocol'
+  'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriHostConfigRootKey'            = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriServer'
   'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriPortConfigRootKey'              = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriPort'
   'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriPathConfigRootKey'              = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriPath'
   'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriQueryStringConfigRootKey'       = 'PackageRepositoryInternalPrereleasePowershellGetProductionPackagePushUriQueryString'
-  'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriProtocolConfigRootKey'    = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriProtocol'
-  'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriServerConfigRootKey'      = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriServer'
+  'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriSchemeConfigRootKey'    = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriProtocol'
+  'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriHostConfigRootKey'      = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriServer'
   'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriPortConfigRootKey'        = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriPort'
   'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriPathConfigRootKey'        = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriPath'
   'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriQueryStringConfigRootKey' = 'PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePushUriQueryString'
-  'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriProtocolConfigRootKey'          = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriProtocol'
-  'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriServerConfigRootKey'            = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriServer'
+  'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriSchemeConfigRootKey'          = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriProtocol'
+  'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriHostConfigRootKey'            = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriServer'
   'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriPortConfigRootKey'              = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriPort'
   'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriPathConfigRootKey'              = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriPath'
   'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriQueryStringConfigRootKey'       = 'PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePushUriQueryString'
-  'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriProtocolConfigRootKey'    = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriProtocol'
-  'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriServerConfigRootKey'      = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriServer'
+  'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriSchemeConfigRootKey'    = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriProtocol'
+  'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriHostConfigRootKey'      = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriServer'
   'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriPortConfigRootKey'        = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriPort'
   'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriPathConfigRootKey'        = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriPath'
   'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriQueryStringConfigRootKey' = 'PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePushUriQueryString'
@@ -7033,28 +7033,28 @@ Here is an example of how they are set to a value. I want you to create the code
 
 # PackageRepository values
 
-$HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriProtocolConfigRootKey']                     , 'http')
-$HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriServerConfigRootKey']                       , 'utat022')
+$HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriSchemeConfigRootKey']                     , 'http')
+$HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriHostConfigRootKey']                       , 'utat022')
 $HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriPortConfigRootKey']                         , '1100')
 $HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriPathConfigRootKey']                         , '/')
 $HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriQueryStringConfigRootKey']                  , '')
 $HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriURIConfigRootKey']                          ,
   [UriBuilder]::new(
-    $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriProtocolConfigRootKey']]),
-    $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriServerConfigRootKey']]),
+    $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriSchemeConfigRootKey']]),
+    $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriHostConfigRootKey']]),
     $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriPortConfigRootKey']]).ToString(),
     $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriPathConfigRootKey']]),
     $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriQueryStringConfigRootKey']])
   ))
-$HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriProtocolConfigRootKey']                     , 'http')
-$HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriServerConfigRootKey']                       , 'utat022')
+$HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriSchemeConfigRootKey']                     , 'http')
+$HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriHostConfigRootKey']                       , 'utat022')
 $HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriPortConfigRootKey']                         , '1101')
 $HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriPathConfigRootKey']                         , '/')
 $HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriQueryStringConfigRootKey']                  , '')
 $HostsType1.Add($global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriURIConfigRootKey']                          ,
   [UriBuilder]::new(
-    $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriProtocolConfigRootKey']]),
-    $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriServerConfigRootKey']]),
+    $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriSchemeConfigRootKey']]),
+    $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriHostConfigRootKey']]),
     $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriPortConfigRootKey']]).ToString(),
     $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriPathConfigRootKey']]),
     $($HostsType1[$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePushUriQueryStringConfigRootKey']])
@@ -7226,8 +7226,8 @@ You said:
 no,
 starting with $p6s = ('Protocol', 'Server', 'Port', 'Path', 'QueryString')
  i want the fianl results to look like [UriBuilder]::new(
-$($HostsType1[$global:configRootKeys['PackageRepository${p1}${p2}${p3}${p4}Package${p5}UriProtocolConfigRootKey,
-$($HostsType1[$global:configRootKeys['PackageRepository${p1}${p2}${p3}${p4}Package${p5}UriServerConfigRootKey,
+$($HostsType1[$global:configRootKeys['PackageRepository${p1}${p2}${p3}${p4}Package${p5}UriSchemeConfigRootKey,
+$($HostsType1[$global:configRootKeys['PackageRepository${p1}${p2}${p3}${p4}Package${p5}UriHostConfigRootKey,
 etc...
 )
 "@
@@ -7237,8 +7237,8 @@ Thanks for the clarification. You're aiming to loop over a set of suffixes (p6s)
 
 powershell
 [UriBuilder]::new(
-$($HostsType1[$global:configRootKeys['PackageRepository...UriProtocolConfigRootKey']]),
-$($HostsType1[$global:configRootKeys['PackageRepository...UriServerConfigRootKey']]),
+$($HostsType1[$global:configRootKeys['PackageRepository...UriSchemeConfigRootKey']]),
+$($HostsType1[$global:configRootKeys['PackageRepository...UriHostConfigRootKey']]),
 ...
 )
 Here’s the PowerShell code to do exactly that using string interpolation within a loop, but outputting a single here-doc style string:
@@ -7266,8 +7266,8 @@ $($uriLines -join ",`n")
 🔍 Output in $val:
 powershell
 [UriBuilder]::new(
-  $($HostsType1[$global:configRootKeys['PackageRepositoryExternalReleasedNuGetProductionPackagePullUriProtocolConfigRootKey']]),
-  $($HostsType1[$global:configRootKeys['PackageRepositoryExternalReleasedNuGetProductionPackagePullUriServerConfigRootKey']]),
+  $($HostsType1[$global:configRootKeys['PackageRepositoryExternalReleasedNuGetProductionPackagePullUriSchemeConfigRootKey']]),
+  $($HostsType1[$global:configRootKeys['PackageRepositoryExternalReleasedNuGetProductionPackagePullUriHostConfigRootKey']]),
   $($HostsType1[$global:configRootKeys['PackageRepositoryExternalReleasedNuGetProductionPackagePullUriPortConfigRootKey']]),
   $($HostsType1[$global:configRootKeys['PackageRepositoryExternalReleasedNuGetProductionPackagePullUriPathConfigRootKey']]),
   $($HostsType1[$global:configRootKeys['PackageRepositoryExternalReleasedNuGetProductionPackagePullUriQueryStringConfigRootKey']])

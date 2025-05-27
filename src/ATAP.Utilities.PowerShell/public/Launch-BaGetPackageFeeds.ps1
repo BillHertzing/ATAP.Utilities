@@ -1,8 +1,8 @@
-# Launch-LocalPackageFeeds.ps1
+# Launch-BaGetPackageFeeds.ps1
 
 param(
   # Configuration for BaGet feeds for multiple package types and lifecycles
-  # use the information in $global:settings['PackageRepositoriesCollection'].
+  # use the information in $global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']].
   # These are the providers for which the script will create a package
   # ToDO: Validation is done as follows:
   # [ValidateScript( { [PackageProviderNamesEnum]::IsDefined([PackageProviderNamesEnum], $_) } )]
@@ -38,9 +38,10 @@ for ($repositoriesIndex = 0; $repositoriesIndex -lt $repositoryKeys.Count; $repo
         Db     = 'baGet.' + $packageProviderName + '.' + $packageLifecycle + '.db'
         ApiKey = 'UseVault' # based on packageProviderName, providerLifecycle, packageLifecycle, and Host
       })
-  } else {
+  }
+  else {
     $message = "repositoriesIndex = $repositoriesIndex; repository = $repository; it does not imatch $REPattern"
-    Write-PSFMessage -Level Error -Message $message -Tag 'Launch-LocalPackageFeeds'
+    Write-PSFMessage -Level Error -Message $message -Tag 'Launch-BaGetPackageFeeds'
     Throw $message
   }
 }
@@ -77,7 +78,7 @@ Write-Host 'All BaGet feed instances launched.'
 
 # Alternative suggested by ChatGPT
 # Save this as: C:\Scripts\Start-LocalFeeds.ps1
-function Launch-LocalPackageFeeds2 {
+function Launch-BaGetPackageFeeds2 {
   [CmdletBinding()]
   param(
     [Parameter(Mandatory = $true)]

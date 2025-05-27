@@ -717,26 +717,27 @@ Powershell packages are managed on a per-host nad per-group basis using Ansible
 
   - ATAP.Utilities.Powershell
 
-    - Before Package Management
+        - Before Package Management
 
-      - install the PSFramework requiredPackage
-      - Install the machine profile files. Install them into $env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell\Resources\Profiles
-      - Install the package descriptor file. Install them into $env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell
-      - Install the package library file. Install them into $env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell
-      - Symlink the AllUsersAllHosts machine profile from Resources\Profiles\ to
+          - install the PSFramework requiredPackage
+          - Install the machine profile files. Install them into $env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell\Resources\Profiles
+          - Install the package descriptor file. Install them into $env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell
+          - Install the package library file. Install them into $env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell
+          - Symlink the AllUsersAllHosts machine profile from Resources\Profiles\ to
 
-        ```Powershell
+````Powershell
+    if (!${get-command New-SymbolicLink}) {
+    . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1"
+    }
+  #Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' 'Modules' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue
+  New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' 'Modules' 'global_ConfigRootKeys.ps1')
+```
 
-             Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' 'Modules' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue
-             New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' 'Modules' 'global_ConfigRootKeys.ps1')
+          - Symlink the settings files global_ConfigRootKeys.ps1, HostSettings.ps1, global_EnvironmentVariables.ps1 from the powershell module to the global profile location
+          -
 
-        ```
-
-      - Symlink the settings files global_ConfigRootKeys.ps1, HostSettings.ps1, global_EnvironmentVariables.ps1 from the powershell module to the global profile location
-      -
-
-    - After Package Management
-      - WinGet ATAP.Utilities.Powershell
+        - After Package Management
+          - WinGet ATAP.Utilities.Powershell
 
   Before Package Management
 
@@ -748,7 +749,7 @@ Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigR
 Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -Target $(join-path -path $([Environment]::GetFolderPath("MyDocuments")) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.IAC','Windows','HostSettings.ps1'))
 
 Remove-Item -path $(join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')
-```
+````
 
 Symlink the profile file for the first admin user on this machine It must be linked to both the standard terminal per user profile, and also to the VSCode special powershell terminal profile
 

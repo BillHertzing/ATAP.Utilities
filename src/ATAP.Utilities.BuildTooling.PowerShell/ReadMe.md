@@ -374,8 +374,9 @@ PrivateData = @{
 Place these symbolic links in the .vscode subdirectory of any project that builds a VSC extension.
 
 ```Powershell
-  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch4Extension.jsonc"  -symbolicLinkPath ".\.vscode\launch.json" -force
-  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\tasks4Extension.jsonc"  -symbolicLinkPath ".\.vscode\tasks.json" -force
+# OBSOLETE
+  # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch4Extension.jsonc"  -symbolicLinkPath ".\.vscode\launch.json" -force
+  # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\tasks4Extension.jsonc"  -symbolicLinkPath ".\.vscode\tasks.json" -force
 ```
 
 ## Symbolic Links and cloud-synchronization

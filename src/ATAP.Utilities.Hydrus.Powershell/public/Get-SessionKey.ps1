@@ -74,8 +74,8 @@ Function Get-SessionKey {
           Throw $message
         }
       }
-      $hydrusAPIProtocol = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIProtocol' $global:configRootKeys['hydrusAPIProtocolConfigRootKey'] $originalPSBoundParameters
-      $hydrusAPIServer = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIServer' $global:configRootKeys['hydrusAPIServerConfigRootKey'] $originalPSBoundParameters
+      $hydrusAPIProtocol = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIProtocol' $global:configRootKeys['hydrusAPISchemeConfigRootKey'] $originalPSBoundParameters
+      $hydrusAPIServer = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIServer' $global:configRootKeys['hydrusAPIHostConfigRootKey'] $originalPSBoundParameters
       $hydrusAPIPort = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIPort' $global:configRootKeys['hydrusAPIPortConfigRootKey'] $originalPSBoundParameters
     }
     else {
@@ -104,7 +104,7 @@ Function Get-SessionKey {
           if ($PassThru) {
             $result = @{
               SessionKey           = $sessionKey
-              HydrusSessionKey      = $hydrusSessionKey
+              HydrusSessionKey     = $hydrusSessionKey
               RequestedPermissions = $requestedPermissions
               HydrusAPIProtocol    = $hydrusAPIServer
               HydrusAPIServer      = $hydrusAPIServer
@@ -137,12 +137,13 @@ Function Get-SessionKey {
             Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
             # toDo catch the errors, add to 'Problems'
             Throw $message
-          } else {
-             # ToDo - Fix this block
-             $message = 'ToDo: pipelione process of objects with properties not yet supported'
-             Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
-             # toDo catch the errors, add to 'Problems'
-             Throw $message
+          }
+          else {
+            # ToDo - Fix this block
+            $message = 'ToDo: pipelione process of objects with properties not yet supported'
+            Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
+            # toDo catch the errors, add to 'Problems'
+            Throw $message
             # deconstruct the pipeline object's properties
             # $hydrusAccessKey = $obj.PSobject.Properties['hydrusAccessKey']
             # Write-Output $(InternalGetSessionKey)

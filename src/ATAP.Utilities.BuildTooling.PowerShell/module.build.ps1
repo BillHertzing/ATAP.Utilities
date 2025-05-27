@@ -412,7 +412,8 @@ Task BuildBasePSD1 @{
       $currentManifest = Import-PowerShellDataFile $script:GeneratedBaseManifestFilePath
       if ($currentManifest.PrivateData.PSData.ContainsKey('Prerelease')) {
         $currentSemanticVersion = [System.Management.Automation.SemanticVersion]::new($currentManifest.ModuleVersion + '-' + $currentManifest.PrivateData.PSData.Prerelease)
-      } else {
+      }
+      else {
         $currentSemanticVersion = [System.Management.Automation.SemanticVersion]::new($currentManifest.ModuleVersion )
       }
       $newManifestParams = @{
@@ -715,7 +716,8 @@ Task BuildNuSpecFromManifest @{
           # ToDo: remove after powershell package is installed
           . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.BuildTooling.PowerShell\public\Get-NuSpecFromManifest.ps1'
           Get-NuSpecFromManifest -ManifestPath $GeneratedManifestFilePath -PackageProviderName $destination.PackageProviderName -SoftwarePackageType $destination.SoftwarePackageType -DestinationFolder $destination.Path
-        } catch {
+        }
+        catch {
           $message = "calling Get-NuSpecFromManifest with -ManifestPath $GeneratedManifestFilePath -DestinationFolder $destination.Path -PackageProviderName $destination.PPackageProviderName threw an error : $($error[0] | Select-Object * )"
           Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'BuildNuSpecFromManifest'
           # toDo catch the errors, add to 'Problems'
@@ -812,7 +814,8 @@ Task BuildNuGetPackage @{
         Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'BuildNuGetPackage'
         $message = "Nuget pack stderr : $stderr"
         Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'BuildNuGetPackage'
-      } catch {
+      }
+      catch {
         $message = "calling nuget with argument list pack $nuSpecFilePath -OutputDirectory $distributionPackagesDirectory threw an error "
         Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'BuildNuGetPackage'
         # toDo catch the errors, add to 'Problems'
@@ -977,21 +980,21 @@ Task PublishPSPackage @{
 
         # Lookup the details of the appropriate repository to publish to
         # ToDO: use global:settings or global:configrootKeys
-        $PSRepositoryKey = 'PackageRepositoryInternal' + $versionPrerelease + $packageProviderName + $SoftwarePackageType + 'PackagePushUri'
-        $PSRepositoryFeed = $global:settings.PackageRepositoriesCollection[$PSRepositoryKey]
-        $NuGetAPIKey = 'whertzing'
-        # ToDo: $nuGetApiValue = $global:settings[$global:configRootKeys['NuGetApiKeyConfigRootKey']]
+        $PSRepositoryKey = 'PackageRepositoryInternal' + $versionPrerelease + $packageProviderName + $SoftwarePackageType + 'PushFeed'
+        $PSRepositoryFeed = $($global:settings[$global:configRootKeys['PackageRepositoriesCollectionConfigRootKey']])[$PSRepositoryKey]
+        #$PSRepositoryFeedAPIKeyName = $PSRepositoryFeed.ApiKeyName
+        # ToDo: Get the value of the Api Key into a secure string
         switch ($packageProviderName) {
           # Publish all packages to the FileSystem repositories
           'FileSystem' {
             Write-PSFMessage -Level Debug -Message "Publishing to FileSystem, PSRepositoryFeed = $PSRepositoryFeed"
-            try {
-              Copy-Item $temporaryFullPackagePath -Destination $PSRepositoryFeed -Force
-            } catch {
-              Write-PSFMessage -Level Error -Message "Copying $temporaryFullPackagePath to $PSRepositoryFeed threw an error : $($error[0] | Select-Object * )"
-              # toDo catch the errors, add to 'Problems'
-              Throw "Copying $temporaryFullPackagePath to $PSRepositoryFeed threw an error : $($error[0] | Select-Object * )"
-            }
+            # try {
+            #   Copy-Item $temporaryFullPackagePath -Destination $PSRepositoryFeed -Force
+            # } catch {
+            #   Write-PSFMessage -Level Error -Message "Copying $temporaryFullPackagePath to $PSRepositoryFeed threw an error : $($error[0] | Select-Object * )"
+            #   # toDo catch the errors, add to 'Problems'
+            #   Throw "Copying $temporaryFullPackagePath to $PSRepositoryFeed threw an error : $($error[0] | Select-Object * )"
+            # }
           }
 
           'NuGet' {
@@ -1000,9 +1003,19 @@ Task PublishPSPackage @{
             # if (Test-Path $repositoryTargetPath) {
             #   Remove-Item $repositoryTargetPath -Force -Recurse
             # }
+            # ToDo: Get the APIKey value from a secrets vault
+            # Get the APIKey value from an environment variable
+            $PSRepositoryFeedAPIKeyValue = [Environment]::GetEnvironmentVariable($PSRepositoryFeed.ApiKeyName)
+            # Check that the APIKey is not null or empty
+            if (-not $PSRepositoryFeedAPIKeyValue) {
+              $message = "The APIKey for $PSRepositoryFeed.ApiKeyName is not set in the environment variable $PSRepositoryFeed.ApiKeyName"
+              Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+              Throw $message
+            }
+
             # use the .Net object
             $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo
-            $processStartInfo.Arguments = 'push', "$temporaryFullPackagePath", '-source', $PSRepositoryFeed, '-ApiKey', $nuGetApiKey
+            $processStartInfo.Arguments = 'push', "$temporaryFullPackagePath", '-source', $PSRepositoryFeed, '-ApiKey', $PSRepositoryFeedAPIKeyValue
             $processStartInfo.FileName = 'nuget.exe'
             $processStartInfo.RedirectStandardError = $true
             $processStartInfo.RedirectStandardOutput = $true
@@ -1017,12 +1030,25 @@ Task PublishPSPackage @{
           }
           'PSResourceGet' {
             try {
-              $result = Publish-PSResource -Path $temporaryFullPackagePath -Repository $PSRepositoryFeed
+              # ToDo: Get the APIKey value from a secrets vault as a securestring
+              # Get the APIKey value from an environment variable
+              $PSRepositoryFeedAPIKeyValue = [Environment]::GetEnvironmentVariable($PSRepositoryFeed.ApiKeyName)
+              # Check that the APIKey is not null or empty
+              if (-not $PSRepositoryFeedAPIKeyValue) {
+                $message = "The APIKey for $PSRepositoryFeed.ApiKeyName is not set in the environment variable $PSRepositoryFeed.ApiKeyName"
+                Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+                Throw $message
+              }
+
+              $result = Publish-PSResource -Path $temporaryFullPackagePath -Repository $PSRepositoryFeed.Uri -ApiKey $PSRepositoryFeedAPIKeyValue
               $message = 'Publish-PSResource returned:' + $result
               Write-PSFMessage -Level Debug -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
 
-            } catch {
-              Write-PSFMessage -Level Error -Message $message -Tag 'Invoke-Build', 'PublishPSPackage'
+            }
+            catch {
+              $errorMessage = "Failed to publish  $temporaryFullPackagePath  to $($PSRepositoryFeed.Uri). Exception: $($_.Exception.Message)"
+              Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'Invoke-Build', 'PublishPSPackage'
+              throw $_
             }
           }
           'ChocolateyGet' {

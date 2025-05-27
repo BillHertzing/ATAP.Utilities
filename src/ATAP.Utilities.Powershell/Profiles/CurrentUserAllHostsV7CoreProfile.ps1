@@ -125,13 +125,12 @@ Function prompt {
 # Tell all GIT operations where to find the global configuration file
 $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:\Dropbox\whertzing\Git\.gitconfig'
 
-# # ToDo Unlock the Secrets vault for this user
-# ToDo: do not use env variables, instead modify the functions to get the API Key value based on its name form the secrets valid
-
+# ToDo Unlock the Secrets vault for this user
+# ToDo: do not use env variables, instead modify the functions to get the API Key value based on its name from the secrets valid
 # Temporary Setup some API keys for the user.
 # These API keys are being checked in to GitHub, but these are only applicable to a
 #    local installations of their respective applications
-[Environment]::SetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], "07fc02c5d5366c0cabbdc125e86fdf47ffe1b5cf", "Process")
+[Environment]::SetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], "bb7fa94f42a58c371c1dba38e7ba6f184afd839d", "Process")
 
 
 # The following command must be run as an administrator on the machine, to install for 'AllUsers'

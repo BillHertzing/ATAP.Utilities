@@ -154,7 +154,7 @@ galaxy_info:
 - name: Deploy ProGet Configuration
   win_template:
     src: "ProGetConfig.config.j2"
-    dest: "C:\\ProgramData\\Inedo\\ProGet\\ProGetConfig.config"
+    dest: "C:\\ProgramData\\Inedo\\SharedConfig\\ProGet.config"
   notify: Start ProGet Service
 
 - name: Deploy ProGet Web Application Configuration (if needed)

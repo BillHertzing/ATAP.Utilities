@@ -14,33 +14,33 @@ function New-SymbolicLink {
   )
 
   BEGIN {
-    Write-PSFMessage -Level Debug -Message 'Starting Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    Write-PSFMessage -Level Debug -Message 'Starting Function New-SymbolicLink in module %ModuleName%' -Tag 'Trace'
 
     if (-not $(Test-Path $targetPath -PathType Leaf)) {
       $message = "targetPath = $targetPath does not exist"
-      Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
+      Write-PSFMessage -Level Error -Message $message -Tag 'New-SymbolicLink'
       # toDo catch the errors, add to 'Problems'
       Throw $message
     }
 
     if (-not (Test-Path -Path $(Split-Path -Path $symbolicLinkPath -Parent ) -PathType Container)) {
       $message = "symbolicLinkPath = $symbolicLinkPath; the directory for the new symboliclink does not exist"
-      Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
+      Write-PSFMessage -Level Error -Message $message -Tag 'New-SymbolicLink'
       # toDo catch the errors, add to 'Problems'
       Throw $message
     }
 
     # TGoDo: switch on something like "heavyvalidation"
-    # ToDo vaidate the exisitng directory can be written to by this user
+    # ToDo validate the existing directory can be written to by this user
 
     function MainFunction {
-      Write-PSFMessage -Level Debug -Message "symbolicLinkPath $symbolicLinkPath  targetPath $targetPath  force: $force"
+      Write-PSFMessage -Level Debug -Message "symbolicLinkPath $symbolicLinkPath targetPath $targetPath  force: $force"
     }
     if (-not $force) {
       # fail if the symboliclink already exists
-      if ( - $(Test-Path $symbolicLinkPath -PathType Leaf)) {
+      if ( -not $(Test-Path $symbolicLinkPath -PathType Leaf)) {
         $message = "symbolicLinkPath = $symbolicLinkPath already exists, use -force to overwrite it"
-        Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
+        Write-PSFMessage -Level Error -Message $message -Tag 'New-SymbolicLink'
         Throw $message
       }
       else {
@@ -61,7 +61,7 @@ function New-SymbolicLink {
     MainFunction
   }
   END {
-    Write-PSFMessage -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    Write-PSFMessage -Level Debug -Message 'Leaving Function New-SymbolicLink in module %ModuleName%' -Tag 'Trace'
 
   }
 }

@@ -1,44 +1,83 @@
+# OBSOLETE FUNCTION
+# ProGet does NOT have a -config command line option.
+
+# Although obsolete, the code is useful in case another service needs to have it's startup command line changed
+
+# This function is used to set the ProGet service config path for the INEDOPROGETSVC and INEDOPROGETWEBSVC services.
+# It checks if the services exist, retrieves their current command line arguments, and updates the binPath to include the config path.
+# It also validates the file at the config path exists and handles errors appropriately.
 function Set-ProGetServiceConfigPath {
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
-    [string]$ConfigPath = "C:/Dropbox/Apps/ProGet/$env:COMPUTERNAME/ProGet.config"
+    [string]$ServicePath = $global:Settings[$global:configRootKeys['ProGetServiceExePathConfigRootKey']]
+    , [string]$ConfigPath = "C:/Dropbox/Apps/ProGet/$env:COMPUTERNAME/ProGet.config"
   )
 
   Write-PSFMessage -Level Verbose -Message "Entering function: Set-ProGetServiceConfigPath"
 
-  $progetServiceName = "INEDOPROGETSVC"
-  $hostName = $env:COMPUTERNAME
-  $configPath = "C:/Dropbox/Apps/ProGet/$hostName/ProGet.config"
-  $exePath = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\$progetServiceName").ImagePath
+  $serviceNames = ("INEDOPROGETSVC", "INEDOPROGETWEBSVC")
 
-  try {
-    if (-not (Test-Path $ConfigPath)) {
-      $errorMessage = "Configuration file does not exist at path: $ConfigPath"
-      Write-PSFMessage -Level Error -Message $errorMessage
-      throw $errorMessage
-    }
+  $serviceNames | ForEach-Object {
+    $serviceName = $_
+    Write-PSFMessage -Level Verbose -Message "Processing service: $serviceName"
 
-    if ($PSCmdlet.ShouldProcess("$progetServiceName", "Update ImagePath with config file path")) {
-      # Quote original exe path and append --config
-      $newImagePath = $exePath + " --config """ + $ConfigPath + '"'
-      $result = sc.exe config $progetServiceName binPath= $newImagePath
-
-      if ($result -match '\[SC\] ChangeServiceConfig SUCCESS') {
-        Write-PSFMessage -Level Important -Message "Updated '$progetServiceName' binPath to include config path: $ConfigPath"
-      }
-      else {
-        $errorMessage = "Failed to update service config. sc.exe result: $result"
+    try {
+      $service = Get-CimInstance -ClassName Win32_Service -Filter "Name = '$serviceName'"
+      if (-not $service) {
+        $errorMessage = "service $serviceName not found"
         Write-PSFMessage -Level Error -Message $errorMessage
         throw $errorMessage
       }
+      $exepath = ''
+      if ($service.PathName -match '^(\".*?\")(.*)$') {
+        $exePath = $matches[1]
+        $arguments = $matches[2]
+      }
+      else {
+        $parts = $service -split '\s+'
+        $exePath = $parts[0]
+        $arguments = $parts[1]
+      }
+
+      # until packaging works..
+      . $PSScriptRoot\Test-ProGetServiceConfigPath.ps1
+      $configArgument = '-config "{0}"' -f $ConfigPath
+      $configArgumentRegex = '-config\s+\"(?<path>.+?)\"'
+      # until packaging works..
+      . $PSScriptRoot\Test-ServiceBinPath.ps1
+      # ToDo: Return the matches
+      $exists = Test-ServiceBinPath $serviceName $configArgumentRegex
+      if (-not $exists ) {
+
+        $newImagePath = '{0}{1} {2}' -f $exePath, $arguments, $configArgument
+
+        if ($PSCmdlet.ShouldProcess($serviceName, "Update binPath to include config path")) {
+          $result = sc.exe config $serviceName binPath= $newImagePath
+
+          if ($result -match '\[SC\] ChangeServiceConfig SUCCESS') {
+            Write-PSFMessage -Level Important -Message "Updated '$serviceName' binPath to include config argument: $configArgument"
+          }
+          else {
+            $errorMessage = "Failed to update service config for service $serviceName. sc.exe result: $result"
+            Write-PSFMessage -Level Error -Message $errorMessage
+            throw $errorMessage
+          }
+        }
+      }
+
+      # until packaging works..
+      . $PSScriptRoot\Test-ProGetServiceConfigPath.ps1
+      # ToDo:expand for both service
+      $exists = Test-ServiceBinPath $serviceName $configArgumentRegex
+
     }
-  }
-  catch {
-    $errorMessage = "Failed to update service '$progetServiceName' binPath. Exception: $($_.Exception.Message)"
-    Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception
-    throw $_
-  }
-  finally {
-    Write-PSFMessage -Level Verbose -Message "Exiting function: Set-ProGetServiceConfigPath"
+    catch {
+      $errorMessage = "Failed to update service '$serviceName' binPath. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception
+      throw $_
+    }
+    finally {
+      Write-PSFMessage -Level Verbose -Message "Exiting function: Set-ProGetServiceConfigPath"
+    }
   }
 }

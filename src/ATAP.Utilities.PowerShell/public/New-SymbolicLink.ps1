@@ -38,12 +38,13 @@ function New-SymbolicLink {
     }
     if (-not $force) {
       # fail if the symboliclink already exists
-      if ( -not $(Test-Path $symbolicLinkPath -PathType Leaf)) {
+      if ( $(Test-Path $symbolicLinkPath -PathType Leaf)) {
         $message = "symbolicLinkPath = $symbolicLinkPath already exists, use -force to overwrite it"
         Write-PSFMessage -Level Error -Message $message -Tag 'New-SymbolicLink'
         Throw $message
       }
       else {
+        # ToDo: this fails if not running as administrative user, fix it
         New-Item -ItemType SymbolicLink -Path $symbolicLinkPath -Target $targetPath
       }
     }

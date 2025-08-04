@@ -1,36 +1,24 @@
-function New-ProGetApiKey {
+function List-ProGetApiKeys {
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
-    [Parameter(Mandatory)]
-    [string]$ApiKeyName,
-
-    [Parameter(Mandatory)]
-    [string]$FeedName,
-
-    [Parameter(Mandatory)]
-    [ValidateSet("view", "add", "delete", "promote")]
-    [string[]]$PackagePermissions ,
-    # If present, use it, but if not, let ProGet generate an API key
-    [Parameter(Mandatory = $false)]
-    [string]$apiKey,
-
     [Parameter(Mandatory = $false)]
     [ValidateSet('http', 'https')]
     [string]$proGetBaseScheme,
     [Parameter(Mandatory = $false)]
     [string]$proGetBaseHost,
     [Parameter(Mandatory = $false)]
-    [int]$proGetBasePort
+    [int]$proGetBasePort,
+    [switch] $useFeedSet
   )
-
   Begin {
-    Write-PSFMessage -Level Verbose -Message "Entering function: New-ProGetApiKey" -Tag 'New-ProGetApiKey', 'Trace'
+    Write-PSFMessage -Level Verbose -Message 'Entering function: List-ProGetApiKeys' -Tag 'List-ProGetApiKeys', 'Trace'
+
     # if not passed, get from the environment variable. If not an environment variable fall back to the $global: value
     if ([string]::IsNullOrWhiteSpace($proGetBaseScheme)) {
       if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminUriSchemeConfigRootKey'], 'Process')) ) {
         if ([string]::IsNullOrWhiteSpace($global:Settings[$global:configRootKeys['ProGetAdminUriSchemeConfigRootKey']])) {
           $errorMessage = 'ProGetBaseScheme is not available.'
-          Write-PSFMessage -Level Error -Message $errorMessage -Tag 'New-ProGetApiKey', 'Trace', 'Error'
+          Write-PSFMessage -Level Error -Message $errorMessage -Tag 'List-ProGetApiKeys', 'Trace', 'Error'
           throw $errorMessage
         }
         else {
@@ -47,7 +35,7 @@ function New-ProGetApiKey {
       if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminUriHostConfigRootKey'], 'Process')) ) {
         if ([string]::IsNullOrWhiteSpace($global:Settings[$global:configRootKeys['ProGetAdminUriHostConfigRootKey']])) {
           $errorMessage = 'proGetBaseHost is not available.'
-          Write-PSFMessage -Level Error -Message $errorMessage -Tag 'New-ProGetApiKey', 'Trace', 'Error'
+          Write-PSFMessage -Level Error -Message $errorMessage -Tag 'List-ProGetApiKeys', 'Trace', 'Error'
           throw $errorMessage
         }
         else {
@@ -64,7 +52,7 @@ function New-ProGetApiKey {
       if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminUriPortConfigRootKey'], 'Process')) ) {
         if ([string]::IsNullOrWhiteSpace($global:Settings[$global:configRootKeys['ProGetAdminUriPortConfigRootKey']])) {
           $errorMessage = 'proGetBasePort is not available.'
-          Write-PSFMessage -Level Error -Message $errorMessage -Tag 'New-ProGetApiKey', 'Trace', 'Error'
+          Write-PSFMessage -Level Error -Message $errorMessage -Tag 'List-ProGetApiKeys', 'Trace', 'Error'
           throw $errorMessage
         }
         else {
@@ -76,13 +64,14 @@ function New-ProGetApiKey {
       }
     }
 
-
+    # $adminApiKey is used to authenticate an admin role to ProGet
     # ToDo: Fetch from Secrets vault instead of environment variable
-    # TODo: Set and expiration date, and ensure a policy that rotates the key value before they expire
+    # ToDo: Set an expiration date, and ensure the organization implements a policy that rotates the key value before they expire
+    # ToDo: consider allowing this function to setup feeds on multiple proget hosts, would need a $adminApiKey in the settings for each
     $adminApiKey = [Environment]::GetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], 'Process')
     if (-not $adminApiKey) {
-      $errorMessage = "ProGet admin API key is not available in environment variable."
-      Write-PSFMessage -Level Error -Message $errorMessage -Tag 'New-ProGetApiKey', 'Trace', 'Error'
+      $errorMessage = 'ProGet adminApiKey is not available in environment variable.'
+      Write-PSFMessage -Level Error -Message $errorMessage -Tag 'List-ProGetApiKeys', 'Trace', 'Error'
       throw $errorMessage
     }
     # The elements of the requests's headers are constant, so define them here
@@ -91,44 +80,52 @@ function New-ProGetApiKey {
       "X-ApiKey" = $adminApiKey
     }
 
-    # The Page for the command to list all API keys in ProGet
-    # ToDo: Move the page for the command to create feeds into configroot and settings
-    $progetApiKeysCreatePage = 'api/api-keys/create'
-    $proGetAPIpage = $progetApiKeysCreatePage
-    # Construct the API endpoint URL to list all API keys
-    $apiEndPoint = [UriBuilder]::new($proGetBaseScheme, $proGetBaseHost, $proGetBasePort, $proGetAPIpage, $null ).URI
+    # The Page for the command to list all ApiKeys in ProGet
+    # ToDo: Move the page for the command to list all ApiKeys into configroot and settings
+    $progetListApisPage = 'api/api-keys/list'
+    $proGetApipage = $progetListApisPage
+    # Construct the Api endpoint URL
+    $apiEndPoint = [UriBuilder]::new($proGetBaseScheme, $proGetBaseHost, $proGetBasePort, $proGetApipage, $null ).URI
+
+    $response = $null
+    $results = @()
   }
+
   Process {
-
-    $body = @{
-      type               = 'Feed'
-      keyName            = $ApiKeyName
-      displayName        = $ApiKeyName
-      description        = "API key for $FeedName"
-      feed               = $FeedName
-      feedGroup          = $null
-      packagePermissions = $PackagePermissions
-    }
-    if ($null -ne $apiKey) {
-      $body.key = $apiKey
-    }
-
-    if ($PSCmdlet.ShouldProcess("ProGet", "Create API key '$ApiKeyName' for feed '$FeedName'")) {
-      try {
-        Write-PSFMessage -Level Verbose -Message "Calling ProGet API to create API key '$ApiKeyName' on port $ProGetBasePort" -Tag 'New-ProGetApiKey', 'Trace'
-        $response = Invoke-RestMethod -Uri $apiEndPoint.AbsoluteUri -Method Post -Headers $headers -Body ($body | ConvertTo-Json -Depth 3) -ContentType "application/json"
-        Write-PSFMessage -Level Important -Message "Successfully created API key '$ApiKeyName' for feed '$FeedName'" -Tag 'New-ProGetApiKey', 'Trace'
+    # Make the Api Call
+    try {
+      Write-PSFMessage -Level Verbose -Message "Attempting to get the list of ApiKeys" -Tag 'List-ProGetApiKeys', 'Trace'
+      $response = Invoke-RestMethod -Uri $apiEndPoint.AbsoluteUri -Headers $headers -Method Get
+      if ($response.count -eq 0) {
+        Write-PSFMessage -Level Warning -Message "No ApiKeys found at ProGet endpoint: $($apiEndpoint.AbsoluteUri )" -Tag 'List-ProGetApiKeys', 'Trace', 'Warning'
       }
-      catch {
-        $errorMessage = "Failed to create API key '$ApiKeyName'. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception
-        throw $_
+      else {
+        foreach ($apiKey in $response) {
+          Write-PSFMessage -Level Verbose -Message "Found apiKey $($apiKey.Name)" -Tag 'List-ProGetApiKeys', 'Trace'
+          $results += $feed
+        }
       }
-      Write-PSFMessage -Level Verbose -Message "Exiting function: New-ProGetApiKey" -Tag 'New-ProGetApiKey', 'Trace'
-      $response
+    }
+    catch {
+      $errorMessage = "Failed to retrieve ApiKeys from ProGet at $($apiEndpoint.AbsoluteUri ). Exception: $($_.Exception.Message)"
+      Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception -Tag 'List-ProGetApiKeys', 'Trace', 'Error'
+      throw $_
     }
   }
+
   End {
-    Write-PSFMessage -Level Verbose -Message 'Exiting function: New-ProGetApiKey' -Tag 'New-ProGetApiKey', 'Trace'
+    # either return the list of all ApiKeys, or just the ones assigned to the feedset
+    if ($useFeedSet) {
+      $shortNames = @($global:settings[$global:ConfigRootKeys['PackageRepositoriesCollectionConfigRootKey']].Values | forEach-Object { $_['shortName'] })
+      $results = $response | Where-Object {
+        $lastWord = ($_."description" -split '\s+')[-1]
+        $shortNames -contains $lastWord
+      }
+    }
+    else {
+      $results = $response
+    }
+    Write-PSFMessage -Level Verbose -Message 'Exiting function: List-ProGetApiKeys' -Tag 'List-ProGetApiKeys', 'Trace'
+    return $results
   }
 }

@@ -65,7 +65,7 @@ Remove-Item -path (join-path $targetScriptDirectory $targetScriptName) -ErrorAct
 
 $scriptName = 'Update-PackageVersion.ps1'; $moduleName ='ATAP.Utilities.BuildTooling.PowerShell';  $relativeScriptDirectory= join-path 'src' $ModuleName 'public';$localRepoRoot = join-path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities'; Remove-Item -path (join-path $env:Workspace $scriptname) -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path (join-path $env:Workspace $scriptname) -Target (join-path $localRepoRoot $relativeScriptDirectory $scriptName)
 
-## SymbolicLinks for Git Hooks
+## Symbolic Links for Git Hooks
 
 Script files called by Git Hooks must be in the `.git/hooks` subdirectory. (ToDo: explain why allowing arbitrary paths implies opinionated directory structures). But files here are not under SCM in the SoftwareRepository. But a symbolic link from a file somewhere in the repository (`ATAP.Utilities.BuildTooling.Powershell/public/Git-PreCommitHook.ps1`)
 
@@ -90,18 +90,51 @@ Remove-Item -path (join-path $targetScriptDirectory $scriptTargetName) -ErrorAct
 New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptTargetName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $scriptSourceName )
 }
 
+## Symbolic Links for CoPilot instruction files
+
+Every repository needs instruction files for GitHub Copilot. These are kept in a common location, and a directory junction is created in the root of the repository. As of July 2025, GitHub Copilot’s instruction file mechanism does not support hierarchical merging or overriding of instructions from multiple .copilot directories or from code-workspace files.
+
+run the following Powershell commands at the repository root to create a directory junction back to the shared VS Code directory.
+
+```powershell
+# ToDo: must get the username for the specific computer from a vault
+$username = 'whertzing'
+# ToDo: add test to ensure there is a peer .git subdirectory, which indicates a repository root
+$null = New-Item -Path ./.copilot -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username 'GitHub', 'SharedVSCode', '.copilot')
+```
+
 ## Symbolic Links for VSC settings, tasks, launch configurations, and testing
 
 ### User Settings symbolic link
 
-The `settings.json` file at (e.g) `C:\Users\<username>\AppData\Roaming\Code\User` holds the final fallback to all VSC settings. It applies to all repositories and workspaces. Every developer on a host needs to link to the organizations common settings. to do this,replace <username> with the actual user name in the following command and run it.
+The `settings.json` file at (e.g) `C:\Users\<username>\AppData\Roaming\Code\User` holds the final fallback to all VSC settings. It applies to all repositories and workspaces. Every developer on a host needs to link to the organization's common settings. to do this,replace <username> with the actual user name in the following command and run it.
+
+There are also language-specific snippets files stored on a per-user basis. These should be linked to the organization's common settings.
 
 ```Powershell
-# ToDo: must get the username for the specific computer form a vault
+# ToDo: must get the username for the specific computer from a vault
+$username = 'whertzing'
 New-SymbolicLink -targetPath `
-$(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' `
+$(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username `
 'GitHub', 'SharedVSCode', 'UserSettings.jsonc') `
--symbolicLinkPath $(Join-Path 'C:' 'Users' 'whertzing56','AppData','Roaming','Code', 'User', 'UserSettings.jsonc') -force
+-symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User', 'UserSettings.jsonc') -force
+New-SymbolicLink -targetPath `
+$(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username `
+'GitHub', 'SharedVSCode', 'UserSnippetsPowershell.jsonc') `
+-symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User',  'snippets','Powershell.json') -force
+# .yml and .yaml requires us to use two symlinks
+New-SymbolicLink -targetPath `
+$(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username `
+'GitHub', 'SharedVSCode', 'UserSnippetsYAML.jsonc') `
+-symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User',  'snippets','YAML.json') -force
+# New-SymbolicLink -targetPath `
+# $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username `
+# 'GitHub', 'SharedVSCode', 'UserSnippetsYAML.jsonc') `
+# -symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User',  'snippets','YML.json') -force
+New-SymbolicLink -targetPath `
+$(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username `
+'GitHub', 'SharedVSCode', 'UserSnippetsSQL.jsonc') `
+-symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User',  'snippets','SQL.json') -force
 
 ```
 
@@ -125,8 +158,10 @@ We then create symbolic links from the files in this repository to symblinks tha
 In every new repository, after running `git init`, run these commands (as an administrator) in the root folder of the repository:
 
 ```Powershell
-# use a directory junction instead of individual symlinks
-$null = New-Item -Path ./.vscode -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'GitHub', 'SharedVSCode', '.vscode')  # $null = New-Item -ItemType Directory -Force '.vscode'
+  # use a directory junction
+  $null = New-Item -Path ./.vscode -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] 'whertzing' 'GitHub', 'SharedVSCode', '.vscode')
+  # Don't use individual file symbolic links anymore
+  # $null = New-Item -ItemType Directory -Force '.vscode'
   # # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
   # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\tasks.json"  -symbolicLinkPath ".\.vscode\tasks.json" -force
   # New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.vscode\launch.json"  -symbolicLinkPath ".\.vscode\launch.json" -force

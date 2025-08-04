@@ -94,15 +94,17 @@ Function Get-NuSpecFromManifest {
         $env:PSModulePath = "$env:PSModulePath;$(Split-Path -Path $PSModuleInfo.ModuleBase -Parent)"
 
         $dscResources = PSDesiredStateConfiguration\Get-DscResource -ErrorAction SilentlyContinue -WarningAction SilentlyContinue |
-          Microsoft.PowerShell.Core\ForEach-Object {
-            if ($_.Module -and ($_.Module.Name -eq $PSModuleInfo.Name)) {
-              $_.Name
-            }
+        Microsoft.PowerShell.Core\ForEach-Object {
+          if ($_.Module -and ($_.Module.Name -eq $PSModuleInfo.Name)) {
+            $_.Name
           }
-      } finally {
+        }
+      }
+      finally {
         $env:PSModulePath = $OldPSModulePath
       }
-    } else {
+    }
+    else {
       $dscResourcesDir = Join-PathUtility -Path $PSModuleInfo.ModuleBase -ChildPath 'DscResources' -PathType Directory
       if (Test-Path $dscResourcesDir) {
         $dscResources = Get-ChildItem -Path $dscResourcesDir -Directory -Name
@@ -127,9 +129,9 @@ Function Get-NuSpecFromManifest {
     if (Test-Path -Path $RoleCapabilitiesDir -PathType Container) {
       $RoleCapabilityNames = Get-ChildItem -Path $RoleCapabilitiesDir `
         -Name -Filter *.psrc |
-        ForEach-Object -Process {
-          [System.IO.Path]::GetFileNameWithoutExtension($_)
-        }
+      ForEach-Object -Process {
+        [System.IO.Path]::GetFileNameWithoutExtension($_)
+      }
     }
 
     return $RoleCapabilityNames
@@ -166,18 +168,19 @@ Function Get-NuSpecFromManifest {
       }
       if ($PathType -eq 'File') {
         $GetChildItem_params['File'] = $true
-      } elseif ($PathType -eq 'Directory') {
+      }
+      elseif ($PathType -eq 'Directory') {
         $GetChildItem_params['Directory'] = $true
       }
 
       $FoundPath = Get-ChildItem @GetChildItem_params |
-        Where-Object -FilterScript {
-          $_.Name -eq $ChildPath
-        } |
-        ForEach-Object -Process {
-          $_.FullName
-        } |
-        Select-Object -First 1 -ErrorAction SilentlyContinue
+      Where-Object -FilterScript {
+        $_.Name -eq $ChildPath
+      } |
+      ForEach-Object -Process {
+        $_.FullName
+      } |
+      Select-Object -First 1 -ErrorAction SilentlyContinue
 
       if ($FoundPath) {
         $JoinedPath = $FoundPath
@@ -199,7 +202,8 @@ Function Get-NuSpecFromManifest {
 
     try {
       $Lines = Get-Content -Path $Path -Force
-    } catch {
+    }
+    catch {
       Throw "Unable to parse manifest file '$path'"
       Exit -1
     }
@@ -216,7 +220,8 @@ Function Get-NuSpecFromManifest {
 
     try {
       $scriptBlock.CheckRestrictedLanguage($allowedCommands, $allowedVariables, $allowEnvironmentVariables)
-    } catch {
+    }
+    catch {
       return
     }
 
@@ -293,12 +298,13 @@ Function Get-NuSpecFromManifest {
         $psmoduleInfoPrereleaseString = $PSModuleInfo.PrivateData.PSData.Prerelease
         if ($psmoduleInfoPrereleaseString -and $psmoduleInfoPrereleaseString.StartsWith('-')) {
           $Version = [string]$Version + $psmoduleInfoPrereleaseString
-        } else {
+        }
+        else {
           $Version = [string]$Version + '-' + $psmoduleInfoPrereleaseString
         }
-        if ($SoftwarePackageType -eq 'QualityAssurance') {
-          $Version = [string]$Version + '-diagnostics'
-        }
+      }
+      if ($SoftwarePackageType -eq 'QualityAssurance') {
+        $Version = [string]$Version + '-diagnostics'
       }
 
       if ($PSModuleInfo.PrivateData.PSData['RequireLicenseAcceptance']) {
@@ -319,7 +325,8 @@ Function Get-NuSpecFromManifest {
             $message = 'License.txt is empty.'
             Throw $message
           }
-        } elseif ($requireLicenseAcceptance -ne 'false') {
+        }
+        elseif ($requireLicenseAcceptance -ne 'false') {
           $InvalidValueForRequireLicenseAcceptance = "The specified value '{0}' for the parameter '{1}' is invalid. It should be $true or $false." -f ($requireLicenseAcceptance, 'requireLicenseAcceptance')
           Write-PSFMessage -Level Warning -Message $InvalidValueForRequireLicenseAcceptance
         }
@@ -398,11 +405,13 @@ Function Get-NuSpecFromManifest {
         if ($requiredModule.Keys -Contains 'RequiredVersion') {
           Write-PSFMessage -Level Debug -Message "'$ModuleName': Required version: $($requiredModule.RequiredVersion)"
           $DependentModuleDetail.add('RequiredVersion', $requiredModule.RequiredVersion)
-        } elseif ($requiredModule.Keys -Contains 'ModuleVersion') {
+        }
+        elseif ($requiredModule.Keys -Contains 'ModuleVersion') {
           Write-PSFMessage -Level Debug -Message "$ModuleName': Module version: $($requiredModule.ModuleVersion)"
           $DependentModuleDetail.add('ModuleVersion', $requiredModule.ModuleVersion)
         }
-      } else {
+      }
+      else {
         # Just module name was specified
         Write-PSFMessage -Level Debug -Message "'$ModuleName': Module version not specified."
         $ModuleName = $requiredModule.ToString()
@@ -428,13 +437,15 @@ Function Get-NuSpecFromManifest {
 
       if ($Dependency.Keys -Contains 'RequiredVersion') {
         $VersionString = "[$($Dependency.RequiredVersion)]"
-      } elseif ($Dependency.Keys -Contains 'ModuleVersion') {
+      }
+      elseif ($Dependency.Keys -Contains 'ModuleVersion') {
         $VersionString = "$($Dependency.ModuleVersion)"
       }
 
       if ([System.string]::IsNullOrWhiteSpace($VersionString)) {
         $dependencies += "<dependency id='$($ModuleName)'/>"
-      } else {
+      }
+      else {
         $dependencies += "<dependency id='$($ModuleName)' version='$($VersionString)' />"
       }
     }
@@ -511,7 +522,8 @@ Function Get-NuSpecFromManifest {
   $NuspecFile = New-NuSpecFile @param
   If ($NuspecFile) {
     Write-PSFMessage -Level Debug -Message "Nuspec file created: $NuspecFile"
-  } else {
+  }
+  else {
     Write-PSFMessage -Level Error -Message 'Failed to create Nuspec file.'
   }
   #endregion

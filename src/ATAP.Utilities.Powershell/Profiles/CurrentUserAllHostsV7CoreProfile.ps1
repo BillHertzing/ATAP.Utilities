@@ -85,14 +85,14 @@ $null = Register-EngineEvent -SourceIdentifier PSReadLine.OnCommandExecuted -Act
 # maximum number of commands to keep in the commandHistory
 $global:MaxHistoryCount = 5000
 # Tell PSReadline to use the shared plain history file
-Set-PSReadlineOption -HistorySavePath $global:sharedPlainHistoryPath
+Set-PSReadLineOption -HistorySavePath $global:sharedPlainHistoryPath
 
 ##############################
 # Console Settings
 ##############################
 
 # Size of the console's user interface
-Function ConsoleSettings {
+function ConsoleSettings {
   $console = $host.ui.Rawui
   ($console.BufferSize).width = 200
   ($console.BufferSize).height = 3000
@@ -103,7 +103,7 @@ Function ConsoleSettings {
 }
 if ($host.ui.Rawui.WindowTitle -notmatch 'ISE') { ConsoleSettings }
 
-Function prompt {
+function prompt {
   #Assign Windows Title Text
   $host.ui.RawUI.WindowTitle = "Current Folder: $pwd"
 
@@ -116,7 +116,7 @@ Function prompt {
   Write-Host $(if ($global:settings[$global:configRootKeys['IsElevatedConfigRootKey']]) { 'Elevated ' } else { '' }) -BackgroundColor DarkRed -ForegroundColor White -NoNewline
   Write-Host " HOST:$CmdPromptHost " -BackgroundColor DarkYellow -ForegroundColor White -NoNewline
   Write-Host " USER:$($CmdPromptUser.Name.split('\')[1]) " -BackgroundColor DarkBlue -ForegroundColor White -NoNewline
-  If ($CmdPromptCurrentFolder -like '*:*')
+  if ($CmdPromptCurrentFolder -like '*:*')
   { Write-Host " $CmdPromptCurrentFolder " -ForegroundColor White -BackgroundColor DarkGray -NoNewline }
   else { Write-Host ".\$CmdPromptCurrentFolder\ " -ForegroundColor White -BackgroundColor DarkGray -NoNewline }
   return '> '
@@ -130,7 +130,11 @@ $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:
 # Temporary Setup some API keys for the user.
 # These API keys are being checked in to GitHub, but these are only applicable to a
 #    local installations of their respective applications
-[Environment]::SetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], "bb7fa94f42a58c371c1dba38e7ba6f184afd839d", "Process")
+# This is for host utat022.
+# ToDO: implement secrets vault, and per-host API keys for Proget
+[Environment]::SetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], 'ce69d48aff2b9e2e2a7bc6f7a150f0de5b8ef450', 'Process')
+# Tell pgutil Where to  find the proget server
+[Environment]::SetEnvironmentVariable($global:configRootKeys['PGUTIL_SOURCEConfigRootKey'], 'http://localhost:50000', 'Process')
 
 
 # The following command must be run as an administrator on the machine, to install for 'AllUsers'
@@ -284,7 +288,7 @@ $ModulesToLoadAsSymbolicLinks = @(
 
 # Show environment/context information when the profile runs
 # ToDo reformat using YAML
-Function Show-context {
+function Show-context {
   # Print the version of the framework we are using
   Write-Verbose ('Framework being used: {0}' -f [Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory())
   Write-Verbose ('DropBoxBasePath: {0}' -f $global:Settings[$global:configRootKeys['DropBoxBasePathConfigRootKey']]) #  $global:DropBoxBasePath)
@@ -377,13 +381,13 @@ filter unlike( $glob ) {
 }
 
 # A function that will set-Location to 'MyDocuments`
-Function cdMy { $x = [Environment]::GetFolderPath('MyDocuments'); Set-Location -Path $x }
+function cdMy { $x = [Environment]::GetFolderPath('MyDocuments'); Set-Location -Path $x }
 
 # A function that will return files with names matching the string 'conflicted'
-Function getconflictedGCI { Get-ChildItem -Recurse . -Include *conflicted*.* }
-Function getconflictedES { es conflicted }
+function getconflictedGCI { Get-ChildItem -Recurse . -Include *conflicted*.* }
+function getconflictedES { es conflicted }
 
-Function FindFilesByES {
+function FindFilesByES {
   [CmdletBinding(DefaultParameterSetName = 'StringParameter')]
   param(
     [parameter(ParameterSetName = 'StringParameter', Mandatory = $true, Position = 1, ValueFromPipeline = $False, ValueFromPipelineByPropertyName = $True)] [string] $searchStr
@@ -407,8 +411,8 @@ Function FindFilesByES {
   es regex: $internalSearchRegex
 }
 
-Function Get-Attributions {
-  Param(
+function Get-Attributions {
+  param(
     $path = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\*'
     , $include = ('*.ps1', '*.md')
     , [switch] $Recurse
@@ -430,15 +434,14 @@ Function Get-Attributions {
           }
         }
       }
-    }
-    finally {
+    } finally {
       $reader.Close()
       $FileStream.Close()
     }
   }
 }
-Function Get-LinksFromDrafts {
-  Param(
+function Get-LinksFromDrafts {
+  param(
     $path = 'C:\Temp\gmaildrafts\Takeout\Mail\Drafts.mbox'
   )
   $DebugPreference = 'SilentlyContinue'
@@ -460,8 +463,7 @@ Function Get-LinksFromDrafts {
       if ($matchResult.Success) {
         $Subject = $matchResult.captures.groups['Subject'].value
         #Write-PSFMessage -Level Debug -Message "Subject = $Subject"
-      }
-      else {
+      } else {
         $matchResult = [RegEx]::Matches($line, $findRegex2)
         if ($matchResult.Success) {
           $URL = $matchResult.captures.groups['URL'].value
@@ -479,8 +481,7 @@ Function Get-LinksFromDrafts {
         $URL = ''
       }
     }
-  }
-  finally {
+  } finally {
     $reader.Close()
     $Stream.Close()
   }
@@ -490,7 +491,7 @@ if ($false) {
   $delegateDistinctURL = [Func[PSCustomObject, string]] { param([PSCustomObject]$o); return $o.URL }
   $a = [Linq.Enumerable]::ToArray([Linq.Enumerable]::DistinctBy([PSCustomObject[]]$(Get-LinksFromDrafts), $delegateDistinctURL ))
 }
-Function Get-AllBookmarks {
+function Get-AllBookmarks {
   foreach ($o in $($(Get-BrowserBookmarks '*' '*') | Sort-Object -Property URL -uniq)) {
     [PSCustomObject]@{
       Fullpath = 'BrowserBookmarksAllBrowsersAllBookmarks'
@@ -501,8 +502,8 @@ Function Get-AllBookmarks {
 }
 
 # Get-Attributions -path 'C:\Dropbox\' -Recurse | ConvertTo-json | out-file 'C:\Dropbox\AllAttributions.txt'
-Function Get-LinksFiltered {
-  Param(
+function Get-LinksFiltered {
+  param(
     $path = 'C:\Dropbox\whertzing\'
     , $include = ('*.ps1', '*.md')
     , [regex] $findRegex
@@ -543,10 +544,10 @@ Function Get-LinksFiltered {
 }
 
 # foreach ($o in $(Get-Attributions -Recurse)) {"[$($o.Title)]($($o.URL))" }
-Function Open-FilteredLinksInBrave {
+function Open-FilteredLinksInBrave {
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'StringParameter')]
 
-  Param(
+  param(
     [parameter(ParameterSetName = 'StringParameter', Mandatory = $true, Position = 1, ValueFromPipeline = $False, ValueFromPipelineByPropertyName = $True)] [string] $reStr
     , [parameter(ParameterSetName = 'RegExParameter', Mandatory = $true, Position = 1, ValueFromPipeline = $False, ValueFromPipelineByPropertyName = $True)] [Regex] $re
     , $path = 'C:\Dropbox\whertzing\'
@@ -568,10 +569,10 @@ Function Open-FilteredLinksInBrave {
   Start-Process 'brave.exe' -ArgumentList '--new-window', $($links -join ' ')
 }
 
-Function Open-BookmarksInBrave {
+function Open-BookmarksInBrave {
   [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'URLs')]
 
-  Param(
+  param(
     [parameter(ParameterSetName = 'URLs', Mandatory = $false, Position = 1, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $True)] [string[]] $urls
   )
   $urlList = @()
@@ -581,12 +582,11 @@ Function Open-BookmarksInBrave {
         foreach ($bookmark in $input) {
           $urlList += $bookmark.url
         }
-      }
-      else {
+      } else {
         $urlList = $URLs
       }
     }
-    Default {
+    default {
       $urlList = $URLs
     }
   }
@@ -601,7 +601,7 @@ Set-Alias -Name FAOL -Value Open-FilteredLinksInBrave
 
 # FAOL $([regex] '(x509|signing|openssl|certificate)')
 # A Function to use a FileWatcher asynchronously to detect when a file is changed
-Function WatchFile {
+function WatchFile {
   params(
     [ValidateScript({ Test-Path $_ })]
     [string] $path
@@ -704,8 +704,7 @@ Function WatchFile {
       Write-Host '.' -NoNewline
 
     } while ($true)
-  }
-  finally {
+  } finally {
     # this gets executed when user presses CTRL+C:
 
     # stop monitoring
@@ -730,7 +729,7 @@ Function WatchFile {
 }
 
 #  A Function to tail the last N lines of the PSFramework log
-Function TailLog {
+function TailLog {
   param (
     [string] $file
     , [int]$numLines = 20
@@ -766,7 +765,7 @@ function StopVoiceAttackProcess {
 Set-Item -Path alias:stopVA -Value StopVoiceAttackProcess
 
 
-Function ShutItAllDown {
+function ShutItAllDown {
   $ComputerNameList = @('ncat016')#,'utat022')
   foreach ($cn in $ComputerNameList) {
     $Session = New-PSSession -ComputerName $cn -ConfigurationName WithProfile

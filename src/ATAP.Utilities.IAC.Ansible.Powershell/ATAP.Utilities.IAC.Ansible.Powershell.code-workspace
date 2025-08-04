@@ -1,10 +1,12 @@
 {
   "folders": [
     {
-      "path": ".",
-    },
+      "path": "."
+    }
   ],
   "settings": {
-    ,
-  },
+    "accessibility.voice.ignoreCodeBlocks": true,
+    "accessibility.voice.speechTimeout": 2400,
+    "powershell.pester.codeLens": false
+  }
 }

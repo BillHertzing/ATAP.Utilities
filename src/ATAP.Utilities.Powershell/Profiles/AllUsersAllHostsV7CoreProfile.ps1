@@ -244,15 +244,15 @@ $global:settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']] = $inProces
 # Installing some software on a host may modify this registry key, for example...
 # Installing SQL Server 2019 adds the path ;C:\Program Files (x86)\Microsoft SQL Server\150\Tools\PowerShell\Modules\ to the Registry setting for the machine scoped $Env:PSModulePath
 # For all ATAP organization hosts, we have made the opinionated decision to include the powershell Desktop modules in the PSModulePath for Powershell Core.
-#  The reason? There are just too many cmdlets in the desktop modules that are needed for managing Windows hosts and netwokrs, for these modules to be left out
+#  The reason? There are just too many cmdlets in the desktop modules that are needed for managing Windows hosts and networks, for these modules to be left out
 # additional $PSModulePath locations depend on the user and the role the user has on the machine, so there are no more machine-specific values. See the individual user profiles for further additions to the $ENV:PSModulepath
 # Get the current $Env:PSModulePath (should be the values pre-populated by the engine, appended with the "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" PSModuleProperty )
 $modifiedPSModulePath = $Env:PSModulePath
 # using New-PSSession -ConfigurationName WithProfile  failed with the following error message : Could not load file or assembly 'System.Security.Cryptography, Version=7.0.0.0
 # 'System.Security.Cryptography.dll' is in C:\Program Files\PowerShell\7, which is not in the PSModulepath by default, so, add it
-$modifiedPSModulePath += ';C:\Program Files\PowerShell\7'
+# $modifiedPSModulePath += ';C:\Program Files\PowerShell\7'
 # Add the Desktop module path to the end of the string
-$modifiedPSModulePath += ';C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules'
+# $modifiedPSModulePath += ';C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules'
 # Set the environment variable to the new value
 $Env:PSModulePath = $modifiedPSModulePath
 # Load the JenkinsRoleSettings for this machine into the $global:settings

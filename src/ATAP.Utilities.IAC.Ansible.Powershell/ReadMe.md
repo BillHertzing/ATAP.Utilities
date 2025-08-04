@@ -1159,7 +1159,7 @@ PackageManagement for powershell
 
 [Differences between Windows PowerShell 5.1 and PowerShell 7.x](https://docs.microsoft.com/en-us/powershell/scripting/whats-new/differences-from-windows-powershell?view=powershell-7.2)
 
-## Placeholder for code to compare extensions in two instances of VisualSstudio Code
+## Placeholder for code to compare extensions in two instances of VisualStudio Code
 
 ```Powershell
 $a = ls C:\Dropbox\whertzing\ncat016-dotvscode\.vscode\extensions

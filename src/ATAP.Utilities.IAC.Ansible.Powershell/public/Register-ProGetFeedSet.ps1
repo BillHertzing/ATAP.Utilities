@@ -7,6 +7,9 @@ function Register-ProGetFeedSet {
   #  if (-not (Get-Command -Name 'Convert-ProGetFeedType' -CommandType Function -ErrorAction SilentlyContinue)) {
   . "$PSScriptRoot\..\private\Convert-ProGetFeedType.ps1"
   # }
+  #  if (-not (Get-Command -Name 'Build-ProGetFeedEndpointURL' -CommandType Function -ErrorAction SilentlyContinue)) {
+  . "$PSScriptRoot\..\private\Build-ProGetFeedEndpointURL.ps1"
+  # }
 
 
   # A RegEx Pattern that will break apart the NameKey into its components for creating the endpointURL
@@ -35,13 +38,14 @@ function Register-ProGetFeedSet {
     $feed = $($global:settings[$global:ConfigRootKeys['PackageRepositoriesCollectionConfigRootKey']][$feedName])
 
     # $endpointUrl = Build-ProGetFeedEndpointURL $feed.ShortName 'http' $feed.Uri.host $feed.Uri.port $proGetFeedType $VersionType $PackageType
-    $endpointUrl = Build-ProGetFeedEndpointURL $feed.ShortName 'http' $feed.Uri.host $feed.Uri.port $proGetFeedType
+    $endpointUrl = Build-ProGetFeedEndpointURL  $feed.Uri.Scheme $feed.Uri.host $feed.Uri.port "nuget/$($feed.ShortName)/v3/index.json"
+    # $endpointURL = 'http://' + 'utat022' + ':' + $feed.Uri.port + '/' + 'nuget' + '/' + $feed.ShortName + '/' # $feed.Uri.host
 
     if ($PSCmdlet.ShouldProcess("ProGet Feed [$endpointUrl]", "Register a PSRepository pull and push endpointUrl")) {
       try {
-        Write-PSFMessage -Level Verbose -Message "Attempting to register $endpointUrl)"
+        Write-PSFMessage -Level Verbose -Message "Attempting to register $endpointUrl"
         # ToDo: accumulate the results for each feed, and pass the set on down the pipeline
-        # $registrationResults = Register-PSRepository -Name $feed.ShortName -SourceLocation $endpointUrl
+        $registrationResults = Register-PSResourceRepository -Name $feed.ShortName -Uri $endpointUrl -ApiVersion 'V3' -Trusted -passthru
         Write-PSFMessage -Level Verbose -Message "Successfully registered  $endpointUrl"
       }
       catch {

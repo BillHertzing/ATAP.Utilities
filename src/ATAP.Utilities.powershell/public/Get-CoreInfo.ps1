@@ -1,40 +1,45 @@
 #############################################################################
-#region Get-CoreInfo
 <#
 .SYNOPSIS
-ToDo: write Help SYNOPSIS For this function
+Retrieves information about the installed .NET SDKs, runtimes, and operating system details.
+
 .DESCRIPTION
-ToDo: write Help DESCRIPTION For this function
-.PARAMETER Name
-ToDo: write Help For the parameter X
-.PARAMETER Extension
-ToDo: write Help For the parameter X
+The Get-CoreInfo function gathers and returns details about the .NET environment on the current system. It collects the installed .NET SDK and runtime versions, operating system name, version, platform, and runtime identifier (RID). This function is useful for diagnostics, environment validation, and reporting purposes.
+
+.PARAMETER None
+This function does not accept any parameters.
+
 .INPUTS
-ToDo: write Help For the function's inputs
+None. You cannot pipe objects to this function.
+
 .OUTPUTS
-ToDo: write Help For the function's outputs
+System.Management.Automation.PSCustomObject
+Returns a custom object containing .NET and OS information.
+
 .EXAMPLE
-ToDo: write Help For example 1 of using this function
+PS> Get-CoreInfo
+Returns a custom object with details about the .NET SDK, runtimes, and OS.
+
 .EXAMPLE
-ToDo: write Help For example 2 of using this function
-.EXAMPLE
-ToDo: write Help For example 2 of using this function
+PS> $coreInfo = Get-CoreInfo
+PS> $coreInfo.DotNetSDKVersion
+Displays the installed .NET SDK version.
+
 .ATTRIBUTION
-ToDo: write text describing the ideas and codes that are attributed to others
+Based on information and techniques from Microsoft documentation and community scripts.
+
 .LINK
-ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
+https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet --info
 .LINK
-ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
+https://docs.microsoft.com/en-us/powershell/
+
 .SCM
-ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
+$Id$
 #>
 Function Get-CoreInfo {
-  #region FunctionParameters
   param (
   )
-  #endregion FunctionParameters
-  #region FunctionBeginBlock
-  ########################################
+
   BEGIN {
     $message = "Starting Get-CoreInfo $($MyInvocation.MyCommand)"
     Write-PSFMessage -Level Important -Message $message -Tag 'Trace', 'Get-CoreInfo'
@@ -47,17 +52,11 @@ Function Get-CoreInfo {
     # validate InstalledPath exists
     if (!(Test-Path -Path $InstalledPath)) { throw "$InstalledPath was not found, verify at least one DotNet Runtime or SDK has been installed" }
   }
-  #endregion FunctionBeginBlock
 
-  #region FunctionProcessBlock
-  ########################################
   PROCESS {
     #
   }
-  #endregion FunctionProcessBlock
 
-  #region FunctionEndBlock
-  ########################################
   END {
     try {
 
@@ -106,7 +105,5 @@ Function Get-CoreInfo {
 
     Write-Verbose -Message "Ending $($MyInvocation.MyCommand)"
   }
-  #endregion FunctionEndBlock
 }
-#endregion Get-CoreInfo
 #############################################################################

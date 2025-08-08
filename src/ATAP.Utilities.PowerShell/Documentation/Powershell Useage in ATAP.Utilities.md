@@ -38,7 +38,7 @@ Lots of great information here:
 
 This will apply to all Cmdlets that support the -Encoding parameter. Place this line in the machine profile. It will affect all users of the machine and their scripts. Test it before releasing to production. It ensures that files and strings in the ATAP libraries will have the same encoding.
 
-`$PSDefaultParameterValues = @{ '*:Encoding' = 'utf8' }`  # ToDo: Benchmark the `'*'` vs a large list of specific Cmdlet names. `'*'` may be much longer....
+`$PSDefaultParameterValues = @{ '*:Encoding' = 'utf8' }` # ToDo: Benchmark the `'*'` vs a large list of specific Cmdlet names. `'*'` may be much longer....
 
 ### Default Encoding for all Cmdlets in Powershell Desktop
 
@@ -53,7 +53,7 @@ In the machine profile, we can setup a global variable using the .Net DNS name r
 
 ## Using classes defined in Powershell Modiles
 
-Since the ATAP.Utilities repository contains a robust CI pipeline, it is very feasible to write the classes and enumerations in C# and targeting .Net (cross-platform), compile them to a .dll, and include them in a package. That way, other modules that want to work with the same classes and enumerations can simply include the .dlls exported by the module. (ToDo: Check this works as explained.  Also ToDo: Versioning the enumerations )
+Since the ATAP.Utilities repository contains a robust CI pipeline, it is very feasible to write the classes and enumerations in C# and targeting .Net (cross-platform), compile them to a .dll, and include them in a package. That way, other modules that want to work with the same classes and enumerations can simply include the .dlls exported by the module. (ToDo: Check this works as explained. Also ToDo: Versioning the enumerations )
 
 The following two seemed a good idea, but the work has languished.
 
@@ -61,11 +61,9 @@ The following two seemed a good idea, but the work has languished.
 
 [PSClassUtils](https://github.com/Stephanevg/PSClassUtils)
 
-
 ## ATAP.Utilities Powershell Package structure
 
-Package structure hasa lot to do with the intention. A Production Package for a library, executable, or Script Module should have the stuff, and metadatat about the stuff. The ATAP.Utilities Packages also contain resources, installation tools, and authentication information. Testing packages include the production stuff, a version of stuff with tracing enabled, and a bunch of tests, and test results, test coverage, test benchmarks, and complexity metrics from the CI/CD run that built the package. There may be multiple Testing packages for a production package. A small library may have a single test package, while a large application or library may have e.g. Unittest, Integrationtest, BrowserTests, Databasetest etc. There may also be variations for each supported technology/platform/version.  Development packages include everything in the Production and all the Tests packages, along with things like debug symbols, Source Code pointers, development scripts etc.
-
+Package structure hasa lot to do with the intention. A Production Package for a library, executable, or Script Module should have the stuff, and metadatat about the stuff. The ATAP.Utilities Packages also contain resources, installation tools, and authentication information. Testing packages include the production stuff, a version of stuff with tracing enabled, and a bunch of tests, and test results, test coverage, test benchmarks, and complexity metrics from the CI/CD run that built the package. There may be multiple Testing packages for a production package. A small library may have a single test package, while a large application or library may have e.g. Unittest, Integrationtest, BrowserTests, Databasetest etc. There may also be variations for each supported technology/platform/version. Development packages include everything in the Production and all the Tests packages, along with things like debug symbols, Source Code pointers, development scripts etc.
 
 ## Using LINQ with PowershellFormat-GroupLikeLines
 
@@ -82,13 +80,13 @@ For getting a unique subset of a collection based on the values of a property of
 
 ## Update the Packagemanagement module
 
-[When PowerShellGet v1 fails to install the NuGet Provider](https://devblogs.microsoft.com/powershell/when-powershellget-v1-fails-to-install-the-nuget-provider/)
+[When PSResourceGet v1 fails to install the NuGet Provider](https://devblogs.microsoft.com/powershell/when-PSResourceGet-v1-fails-to-install-the-nuget-provider/)
 [PackageManagement 1.1.0.0](https://www.powershellgallery.com/packages/PackageManagement/1.1.0.0)
 
 Upgrade package management.
 Prerequisite is `Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force`
 then
-`Install-Module -Name PackageManagement -RequiredVersion 1.1.0.0`  Because version 1.0.0.1 will not use TLS 1.2, and that is required to use PowerShellGet
+`Install-Module -Name PackageManagement -RequiredVersion 1.1.0.0` Because version 1.0.0.1 will not use TLS 1.2, and that is required to use PSResourceGet
 
 When using powershell Core, Note that if the path to the Powershell Desktop modules appear in the $ENV:PsModulePath before the path to the Powershell Core modules, then package management powershell commands will not work, The Desktop path contains a much older version of the PackageManagement module, one which does not use TLS 1.2
 
@@ -109,6 +107,7 @@ $null = Wait-PSFMessage -Timeout 1
 # see if it has been initialized
 Get-PSFLoggingProvider -Name gelf
 ```
+
 or
 
 ```Powershell
@@ -138,17 +137,19 @@ $null = Wait-PSFMessage -Timeout 1
 Get-PSFLoggingProvider -Name gelf
 Write-PSFMessage -Level Debug -Message "Testing Write-PFSMessage to GelfServer"
 ```
+
 Get-PSFConfig 'PSFramework.Logging.Console.MinLevel'
 Get-PSFConfig 'PSFramework.Logging.Console.MaxLevel'
-Get-PSFConfig  'LoggingProvider.Console.enabled'
+Get-PSFConfig 'LoggingProvider.Console.enabled'
 Get-PSFConfig 'PSFramework.Logging.Filesystem.MinLevel'
 Get-PSFConfig 'PSFramework.Logging.Filesystem.MaxLevel'
-Get-PSFConfig  'LoggingProvider.Filesystem.enabled'
+Get-PSFConfig 'LoggingProvider.Filesystem.enabled'
 
 use SEQ to listen for gelf formated messages on udp://127.0.0.1:12201
 
 or this:
-``` powerShell
+
+```powerShell
 # ToDo: variable instance name (?)
 $gelfLoggingProviderConfiguration =  @{Name='gelf';instanceName='powerShellScriptXYZ'; gelfserver= 'localhost'; port=12201;Enabled=$true;Encrypt=$false}
 Set-PSFLoggingProvider @gelfLoggingProviderConfiguration

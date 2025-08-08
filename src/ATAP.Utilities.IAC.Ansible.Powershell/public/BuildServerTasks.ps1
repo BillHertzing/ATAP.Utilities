@@ -9,7 +9,7 @@ return @'
    # - tasks to setup Firewall Rules
    # - tasks to setup WinRM
    # - tasks to setup Powershell profile files
-   # - tasks to setup PackageManagement, NuGet, PowershellGet, and ChocolateyGet, repositories, and sources
+   # - tasks to setup PackageManagement, NuGet, PSResourceGet, and ChocolateyGet, repositories, and sources
    # - tasks to setup SSH Server
    # - tasks to setup SSH Client
    # - tasks to setup a Powershell Secrets Management

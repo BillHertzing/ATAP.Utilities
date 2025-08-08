@@ -245,8 +245,10 @@ function New-PlaybooksNamed {
           Import-Module PSFramework
           Write-PSFMessage -Level Important -Message 'PSHOME = "$PSHOME"' -Tag 'Dev'
           New-SymbolicLink -symbolicLinkPath "$PSHOME\\profile.ps1"                      -targetPath "$PSHOME\\..\\Modules\\ATAP.Utilities.Powershell\\Resources\Profiles\\AllUsersAllHostsV7CoreProfile.ps1" -force
-          New-SymbolicLink -symbolicLinkPath "$PSHOME\\\global_ConfigRootKeys.ps1"       -targetPath "$PSHOME\\..\\Modules\\ATAP.Utilities.Powershell\\Resources\Profiles\\global_ConfigRootKeys.ps1" -force
+          New-SymbolicLink -symbolicLinkPath "$PSHOME\\global_ConfigRootKeys.ps1"       -targetPath "$PSHOME\\..\\Modules\\ATAP.Utilities.Powershell\\Resources\Profiles\\global_ConfigRootKeys.ps1" -force
+          # ToDO: add the fragment files
           New-SymbolicLink -symbolicLinkPath "$PSHOME\\global_EnvironmentVariables.ps1"  -targetPath "$PSHOME\\..\\Modules\\ATAP.Utilities.Powershell\\Resources\Profiles\\global_EnvironmentVariables.ps1" -force
+          # ToDO: add the fragment files
           # ToDo: create a host-specific HostSettings and copy that
           #New-SymbolicLink -symbolicLinkPath 'C:\Program Files\PowerShell\HostSettings.ps1'                 -targetPath 'C:\Program Files\PowerShell\Modules\ATAP.Utilities.Powershell\Resources\Profiles\HostSettings.ps1' -force
 

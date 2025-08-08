@@ -31,7 +31,7 @@ function ScriptblockChocolateyPackages {
     state: "{{ 'absent' if (action_type == 'uninstall') else 'present'}}"
     {{ "package_params: '{{ item.addedparameters }}'" if item.addedparameters is defined and item.addedparameters|length }}
     # package_params: '{{ item.addedparameters }}'
-  failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
+  failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behavior.
   loop:
 
 "@)

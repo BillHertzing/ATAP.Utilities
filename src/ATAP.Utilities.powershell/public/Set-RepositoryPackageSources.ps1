@@ -1,0 +1,139 @@
+#############################################################################
+#region Set-RepositoryPackageSources
+<#
+.SYNOPSIS
+ToDo: write Help SYNOPSIS For this function
+.DESCRIPTION
+ToDo: write Help DESCRIPTION For this function
+.PARAMETER Name
+ToDo: write Help For the parameter X
+.PARAMETER Extension
+ToDo: write Help For the parameter X
+.INPUTS
+ToDo: write Help For the function's inputs
+.OUTPUTS
+ToDo: write Help For the function's outputs
+.EXAMPLE
+ToDo: write Help For example 1 of using this function
+.EXAMPLE
+ToDo: write Help For example 2 of using this function
+.EXAMPLE
+ToDo: write Help For example 2 of using this function
+.ATTRIBUTION
+ToDo: write text describing the ideas and codes that are attributed to others
+.LINK
+ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
+.LINK
+ToDo: insert link to internet articles that contributed ideas / code used in this function e.g. http://www.somewhere.com/attribution.html
+.SCM
+ToDo: insert SCM keywords markers that are automatically inserted <Configuration Management Keywords>
+#>
+Function Set-RepositoryPackageSources {
+  #region FunctionParameters
+  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'NoParameters' )]
+  param (
+    # Chocolatey install location
+    [Parameter(ParameterSetName = 'WithParameters')]
+    # [ValidateScript({ Test-Path $_ })]
+    [string] $Dummy
+  )
+
+  #endregion FunctionParameters
+  BEGIN {
+    # $DebugPreference = 'SilentlyContinue'
+    Write-PSFMessage -Level Debug -Message "Starting Set-RepositoryPackageSources. PsCmdlet.ParameterSetName = $($PsCmdlet.ParameterSetName)" -Tag Trace
+  }
+  END {
+    # ToDo: move the registration of repository locations into a seperate function. Invoke it on container or server creation / maintenance
+    # Register repository locations
+    # ToDo: Replace with enumeration
+     ('NuGet', 'PSResourceGet', 'ChocolateyGet', 'ChocolateyCLI') | ForEach-Object { $PackageProviderName = $_
+      # Validate each package provider is installed, else install it
+      if (-not $(Get-PackageProvider -Name $PackageProviderName)) {
+        if (-not $(Find-PackageProvider -Name $PackageProviderName)) {
+          # ToDo better error logging
+          Write-PSFMessage -Level Error -Message "Provider Not Found; PackageProviderName = $PackageProviderName"
+          # Throw Error
+          throw "Provider Not Found; PackageProviderName = $PackageProviderName"
+        }
+        else { Install-PackageProvider -Name $PackageProviderName -ForceBootstrap }
+      }
+      ('Filesystem', 'WebServerQualityAssurance', 'WebServerProduction') | ForEach-Object { $PackageSource = $_
+        ('Development', 'QualityAssurance', 'Production') | ForEach-Object { $Lifecycle = $_
+          $PackageSourceID = $PackageProviderName + $PackageSource + $Lifecycle
+          if (!$(Get-PackageSource -Name $PackageSourceID -ErrorAction SilentlyContinue)) {
+            switch -regex ($PackageSourceID) {
+              'NuGetQualityAssuranceWebServerDevelopment' {
+                break
+              }
+              'NuGetQualityAssuranceWebServerQualityAssurance' {
+                break
+              }
+              'NuGetQualityAssuranceWebServerProduction' {
+                break
+              }
+              'NuGetProductionWebServerDevelopment' {
+                break
+              }
+              'NuGetProductionWebServerQualityAssurance' {
+                break
+              }
+              'NuGetProductionWebServerProduction' {
+                break
+              }
+              'PSResourceGetQualityAssuranceWebServerDevelopment' {
+                break
+              }
+              'PSResourceGetQualityAssuranceWebServerQualityAssurance' {
+                break
+              }
+              'PSResourceGetQualityAssuranceWebServerProduction' {
+                break
+              }
+              'PSResourceGetProductionWebServerDevelopment' {
+                break
+              }
+              'PSResourceGetProductionWebServerQualityAssurance' {
+                break
+              }
+              'PSResourceGetProductionWebServerProduction' {
+                break
+              }
+              'ChocolateyFilesystemDevelopment' {
+                break
+              }
+              'ChocolateyFilesystemQualityAssurance' {
+                break
+              }
+              'ChocolateyFilesystemProduction' {
+                break
+              }
+              'ChocolateyQualityAssuranceWebServerDevelopment' {
+                break
+              }
+              'ChocolateyQualityAssuranceWebServerQualityAssurance' {
+                break
+              }
+              'ChocolateyQualityAssuranceWebServerProduction' {
+                break
+              }
+              'ChocolateyProductionWebServerDevelopment' {
+                break
+              }
+              'ChocolateyProductionWebServerQualityAssurance' {
+                break
+              }
+              'ChocolateyProductionWebServerProduction' {
+                break
+              }
+            }
+
+          }
+        } } }
+
+
+  }
+}
+#############################################################################
+
+

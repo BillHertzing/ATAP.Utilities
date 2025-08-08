@@ -51,20 +51,44 @@ If a developer is modifying these profile and settings files (and they are in a 
 
 ```powershell
 
+# link to the development copy if no package provide the function
+if (!${get-command New-SymbolicLink}) {
+  . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1"
+}
+
+# User's 'Microsoft.PowerShell_profile.ps1' linked to 'CurrentUserAllHostsV7CoreProfile.ps1'
 Remove-Item -path $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path ([Environment]::GetFolderPath("MyDocuments")) 'PowerShell' 'Microsoft.PowerShell_profile.ps1') -Target (join-path ([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'CurrentUserAllHostsV7CoreProfile.ps1')
 
+# Machine scope Powershell Core 'profile.ps1' linked to 'CurrentUserAllHostsV7CoreProfile.ps1'
 Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles  'PowerShell' '7' 'profile.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'AllUsersAllHostsV7CoreProfile.ps1')
 
-Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles  'PowerShell' '7' 'global_ConfigRootKeys.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1')
+# Machine scope Powershell Core 'global_ConfigRootKeys.ps1' linked to 'global_ConfigRootKeys.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeys.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeys.ps1') -force
 
-Remove-Item -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.IAC' 'Windows' 'HostSettings.ps1')
+# Machine scope Powershell Core 'global_ConfigRootKeysFragment.PackageRepositories.ps1' linked to 'global_ConfigRootKeysFragment.PackageRepositories.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeysFragment.PackageRepositories.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeysFragment.PackageRepositories.ps1') -force
 
-Remove-Item -path $(join-path ($env:ProgramFiles) 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1') -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1')
+# Machine scope Powershell Core 'HostSettings.ps1' linked to 'HostSettings.ps1'
+New-SymbolicLink -symbolicLinkPath $$(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.IAC' 'Windows' 'HostSettingsFragment.ps1') -force
+
+# Machine scope Powershell Core 'HostSettingsFragment.PackageRepositories.ps1' linked to 'HostSettingsFragment.PackageRepositories.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettingsFragment.PackageRepositories.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.IAC' 'Windows' 'HostSettingsFragment.PackageRepositories.ps1') -force
+
+# Machine scope Powershell Core 'global_EnvironmentVariables' linked to 'global_EnvironmentVariables'
+New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1') -force
 
 # Per User profile for Powershell Desktop aka Powershell V5
+# ToDo: V5 profile stuff needs work
 
-Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'profile.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'profile.ps1')  -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','CurrentUserAllHostsV5Profile.ps1')
-Remove-Item -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.ps1') -ErrorAction SilentlyContinue; New-Item -ItemType SymbolicLink -path $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.ps1')  -Target $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_ConfigRootKeys.ps1')
+# User Scope Powershell V5 Profile linked to 'CurrentUserAllHostsV5Profile.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'profile.ps1')  -targetPath (join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','CurrentUserAllHostsV5Profile.ps1') -force
+
+# ToDo: Move to machine scope V5 profile
+New-SymbolicLink -symbolicLinkPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeys.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities','src','ATAP.Utilities.PowerShell','profiles','global_ConfigRootKeys.ps1') -force
+
+# ToDo: Move to machine scope V5 profile
+# User scope Powershell Core 'global_ConfigRootKeysFragment.PackageRepositories.ps1' linked to 'global_ConfigRootKeysFragment.PackageRepositories.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeysFragment.PackageRepositories.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeysFragment.PackageRepositories.ps1') -force
 
 ```
 

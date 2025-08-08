@@ -250,7 +250,7 @@
     #    - { name: plaster, version: latest, allowprerelease: false }
     #    - { name: platyps, version: latest, allowprerelease: false }
     #    - { name: powershell-yaml, version: latest, allowprerelease: false }
-    #    - { name: powershellget, version: latest, allowprerelease: false }
+    #    - { name: PSResourceGet, version: latest, allowprerelease: false }
     #    - { name: psdepend, version: latest, allowprerelease: false }
     #    - { name: psdesiredstateconfiguration, version: latest , allowprerelease: false}
     #    - { name: psdiagnostics, version: latest, allowprerelease: false }

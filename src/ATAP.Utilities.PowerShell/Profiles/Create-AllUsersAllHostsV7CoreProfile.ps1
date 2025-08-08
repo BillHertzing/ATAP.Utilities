@@ -410,7 +410,7 @@ Get-CollectionTraverseEvaluate -SourceCollections $sourceCollections -destinatio
 
 # Installing SQL Server 2019 adds the path ;C:\Program Files (x86)\Microsoft SQL Server\150\Tools\PowerShell\Modules\ to the machine scoped $Env:PSModulePath
 
-# additional $PSModulePath locations depend on the user and the role the user has on the machine, so there are no more machine-specific values. See the individual user profiles for furhter additions to the $ENV:PSModulepath
+# additional $PSModulePath locations depend on the user and the role the user has on the machine, so there are no more machine-specific values. See the individual user profiles for further additions to the $ENV:PSModulepath
 
 # This machine is part of the CI/CD DevOps pipeline ecosystem
 # The global_MachineAndNodeSettings.ps1 file includes the settings for the CI/CD pipeline portions that this machine can participate in

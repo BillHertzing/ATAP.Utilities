@@ -55,7 +55,7 @@ ToDo: Once installed, the path to the executable must be supplied to the databas
 
 ## Installing powershell modules on DevOps machines
 
-Powershell modules can be installed using Filesystem, NuGet, PowershellGet, or ChocolateyGet package providers.
+Powershell modules can be installed using Filesystem, NuGet, PSResourceGet, or ChocolateyGet package providers.
 
 The Uri for every permutation of is found at:
 
@@ -67,13 +67,13 @@ The PackageSource Uri for the Released PackageVersions of ProductionPackage modu
 
 - `$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriConfigRootKey']`
 - `$global:configRootKeys['PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriConfigRootKey']`,
-- `$global:configRootKeys['PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriConfigRootKey']`.
+- `$global:configRootKeys['PackageRepositoryInternalReleasedPSResourceGetProductionPackagePullUriConfigRootKey']`.
 
 The PackageSource Uri for the Released PackageVersions of QualityAssurancePackage modules are found under the subkeys:
 
 - `$global:configRootKeys['PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriConfigRootKey']`,
-- `$global:configRootKeys['PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriConfigRootKey']`
+- `$global:configRootKeys['PackageRepositoryInternalReleasedPSResourceGetQualityAssurancePackagePullUriConfigRootKey']`
 
 Production PackageVersions of modules that are published only internally, not for general public consumption, can also be found under the subkeys:
 
@@ -84,7 +84,7 @@ The (External / Public) Production repositories for Released PackageVersions are
 
 - `$global:configRootKeys['PackageRepositoryExternalReleasedNuGetProductionPackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriConfigRootKey']`,
-- `$global:configRootKeys['PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriConfigRootKey']`
+- `$global:configRootKeys['PackageRepositoryExternalReleasedPSResourceGetProductionPackagePullUriConfigRootKey']`
 
 The (External / Public) Production repositories for Prerelease PackageVersions are varied, but there are a number of common ones at: TBD
 
@@ -92,10 +92,10 @@ Prerelease PackageVersions can be pushed to external PackageRepositories for Pre
 The PackageSource Uri for the the Prerelease PackageVersions of the QualityAssurance and Production packages are under the subkeys:
 
 - `$global:configRootKeys['PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriConfigRootKey']`,
-- `$global:configRootKeys['PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleasePSResourceGetProductionPackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriConfigRootKey']`,
-- `$global:configRootKeys['PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleasePSResourceGetQualityAssurancePackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriConfigRootKey']`,
 
 Ansible is responsible for ensuring that all host's `$global:Settings` are correct for that host's roles.
@@ -117,9 +117,9 @@ New-Item -ItemType SymbolicLink -path (join-path $([Environment]::GetFolderPath(
 
 ```
 
-### Using PowershellGet provider
+### Using PSResourceGet provider
 
-[Unofficial example of PowerShellGet-friendly package. How to create, publish and use](https://github.com/anpur/powershellget-module)
+[Unofficial example of PSResourceGet-friendly package. How to create, publish and use](https://github.com/anpur/PSResourceGet-module)
 
 `Install-Module '<ModuleName>' -Scope CurrentUser`
 

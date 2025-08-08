@@ -1,5 +1,3 @@
-#Requires -Modules PowerShellGet
-#Requires -Version 5.0
 #region Get-ModuleHighestVersion
 <#
 .SYNOPSIS
@@ -57,12 +55,12 @@ Function Get-ModuleHighestVersion {
     Write-PSFMessage -Level Debug -Message "Workspace = $([System.Environment]::GetEnvironmentVariable('Workspace'))" -Tag 'Jenkins', 'Publish'
 
     $highestSemanticVersion = $lowestSemanticVersion
-    $REPattern = '(?<ProviderName>NuGet|PowershellGet|ChocolateyGet)(?<ProviderLifecycle>Filesystem|QualityAssuranceWebServer|ProductionWebServer)(?<PackageLifecycle>QualityAssurance|Production)'
+    $REPattern = '(?<PackageProviderName>NuGet|PSResourceGet|ChocolateyGet)(?<ProviderLifecycle>Filesystem|QualityAssuranceWebServer|ProductionWebServer)(?<PackageLifecycle>QualityAssurance|Production)'
     for ($i = 0; $i -lt $sources.count; $i++) {
       $source = $sources[$i]
       # Split the source into its three parts
       if ($source -imatch $config[$REPattern]) {
-        $ProviderName = $matches['ProviderName']
+        $PackageProviderName = $matches['PackageProviderName']
         $ProviderLifecycle = $matches['ProviderLifecycle']
         $PackageLifecycle = $matches['PackageLifecycle']
       } else {

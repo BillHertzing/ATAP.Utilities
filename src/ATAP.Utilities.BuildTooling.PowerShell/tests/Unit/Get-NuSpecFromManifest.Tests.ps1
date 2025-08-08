@@ -23,7 +23,8 @@ Describe 'Get-NuSpecFromManifest' {
         if ((Test-Path -Path "$currentDir\$sourceName") -and (Test-Path -Path "$currentDir\$commonTestsDirectoryName")) {
           $commonParentDirectory = $currentDir
           break
-        } else {
+        }
+        else {
           #move up the directory tree
           $currentDir = (Get-Item -Path $currentDir).Parent
         }
@@ -62,31 +63,31 @@ Describe 'Get-NuSpecFromManifest' {
 
   Context 'Parameter Validation' {
     It 'Should throw an error if ManifestPath is missing' {
-      { Get-NuSpecFromManifest -ProviderName 'NuGet' } | Should -Throw
+      { Get-NuSpecFromManifest -PackageProviderName 'NuGet' } | Should -Throw
     }
 
-    It 'Should throw an error if ProviderName is missing' {
+    It 'Should throw an error if PackageProviderName is missing' {
       { Get-NuSpecFromManifest -ManifestPath 'C:\TestModule\TestModule.psd1' } | Should -Throw
     }
 
     It 'Should validate ManifestPath parameter' {
-      { Get-NuSpecFromManifest -ManifestPath 'C:\TestModule\TestModule.psd1' -ProviderName 'NuGet' } | Should -Not -Throw
+      { Get-NuSpecFromManifest -ManifestPath 'C:\TestModule\TestModule.psd1' -PackageProviderName 'NuGet' } | Should -Not -Throw
     }
 
     It 'Should validate DestinationFolder parameter' {
-      { Get-NuSpecFromManifest -ManifestPath 'C:\TestModule\TestModule.psd1' -ProviderName 'NuGet' -DestinationFolder 'C:\Output' } | Should -Not -Throw
+      { Get-NuSpecFromManifest -ManifestPath 'C:\TestModule\TestModule.psd1' -PackageProviderName 'NuGet' -DestinationFolder 'C:\Output' } | Should -Not -Throw
     }
   }
 
   Context 'Functionality' {
     It 'Should generate a .nuspec file correctly' {
-      $result = Get-NuSpecFromManifest -ManifestPath 'C:\TestModule\TestModule.psd1' -ProviderName 'NuGet' -DestinationFolder 'C:\Output'
+      $result = Get-NuSpecFromManifest -ManifestPath 'C:\TestModule\TestModule.psd1' -PackageProviderName 'NuGet' -DestinationFolder 'C:\Output'
       $result | Should -Be 'C:\Output\TestModule.nuspec'
     }
 
     It 'Should handle errors when .nuspec file cannot be created' {
       Mock -CommandName Set-Content -MockWith { throw 'Failed to create .nuspec file' }
-      { Get-NuSpecFromManifest -ManifestPath 'C:\TestModule\TestModule.psd1' -ProviderName 'NuGet' -DestinationFolder 'C:\Output' } | Should -Throw
+      { Get-NuSpecFromManifest -ManifestPath 'C:\TestModule\TestModule.psd1' -PackageProviderName 'NuGet' -DestinationFolder 'C:\Output' } | Should -Throw
     }
   }
 }

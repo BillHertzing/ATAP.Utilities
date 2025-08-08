@@ -92,14 +92,14 @@ Function Get-Files {
           Throw $message
         }
       }
-      $hydrusAPIProtocol = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIProtocol' $global:configRootKeys['hydrusAPIProtocolConfigRootKey'] $originalPSBoundParameters
-      $hydrusAPIServer = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIServer' $global:configRootKeys['hydrusAPIServerConfigRootKey'] $originalPSBoundParameters
+      $hydrusAPIProtocol = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIProtocol' $global:configRootKeys['hydrusAPISchemeConfigRootKey'] $originalPSBoundParameters
+      $hydrusAPIServer = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIServer' $global:configRootKeys['hydrusAPIHostConfigRootKey'] $originalPSBoundParameters
       $hydrusAPIPort = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIPort' $global:configRootKeys['hydrusAPIPortConfigRootKey'] $originalPSBoundParameters
     }
     else {
       $noArgumentsSupplied = $true
-      $hydrusAPIProtocol = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIProtocol' $global:configRootKeys['hydrusAPIProtocolConfigRootKey']
-      $hydrusAPIServer = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIServer' $global:configRootKeys['hydrusAPIServerConfigRootKey']
+      $hydrusAPIProtocol = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIProtocol' $global:configRootKeys['hydrusAPISchemeConfigRootKey']
+      $hydrusAPIServer = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIServer' $global:configRootKeys['hydrusAPIHostConfigRootKey']
       $hydrusAPIPort = Get-ParameterValueFromNeoConfigurationRoot 'hydrusAPIPort' $global:configRootKeys['hydrusAPIPortConfigRootKey']
 
     }
@@ -199,7 +199,8 @@ Function Get-Files {
                 'hydrusAPIPort' { $hydrusAPIPort = $obj.PSobject.Properties['hydrusAPIPort'].value; break }
                 'PassThru' { $PassThru = $obj.PSobject.Properties['PassThru'].value; break }
                 'computerNames' { $computerNames = $obj.PSobject.Properties['computerNames'].value; break }
-                default { # ignore any property names that are not parameters of this cmdlet}
+                default {
+                  # ignore any property names that are not parameters of this cmdlet}
                 }
               }
             }
@@ -254,7 +255,7 @@ Function Get-Files {
       if ($PassThru) {
         # If FileIDs or HashIDs passed as argument
         $result = @{
-          HydrusSessionKey   = $hydrusSessionKey
+          HydrusSessionKey  = $hydrusSessionKey
           FileIDs           = $fileIDs
           HashIDs           = $HashIDs
           Download          = $download

@@ -2,8 +2,10 @@
 
   <!-- import the non-default targets files -->
 
+  <!-- Import MSBuild tasks temporarily disabled for initial build
   <Import Project="$(MSBuildCommunityTasksPath)\MSBuildTasks.Targets" />
-  <Import Project="$(ATAPUtilitiesBuildToolingTargetsPath)\ATAP.Utilities.BuildTooling.Targets" />
+  <Import Project="$(ATAPUtilitiesBuildToolingTargetsPath)\ATAP.Utilities.BuildTooling.targets" />
+  -->
 
   <!-- ItemGroup for automatically generating Designer files and embedding resources in an assembly -->
   <!-- Attribution: https://stackoverflow.com/questions/46584499/how-to-add-a-glob-for-resx-files-for-new-sdk-csproj-file -->

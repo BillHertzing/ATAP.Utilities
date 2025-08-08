@@ -14,15 +14,16 @@ $tasks = @'
   # - tasks to setup Network adapter properties
   # - tasks to setup Powershell profile files
   # - tasks to setup Firewall Rules
-   # - tasks to setup a Powershell Secrets Management
-   # - tasks to setup a Powershell Hashicorp vault
+  # - tasks to setup a Powershell Secrets Management
+  # - tasks to setup a Powershell Hashicorp vault
 
-   # - tasks to setup PackageManagement, NuGet, PSResourceGet, and ChocolateyGet, repositories, and sources
-   # - tasks to setup SSH Server
-   # - tasks to setup SSH Client
-   # - tasks to setup / recognize a Certificate Authority
-# - common tasks for managing the users of the computer / container
-   # - tasks to assign security roles to a user
+  # - tasks to setup PackageManagement, NuGet, PSResourceGet, and ChocolateyGet, repositories, and sources
+  # - tasks to setup SSH Server
+  # - tasks to setup SSH Client
+  # - tasks to setup / recognize a Certificate Authority
+  # - common tasks for managing the users of the computer / container
+  # - tasks to assign security roles to a user
+  # - tasks to setup scheduled jobs
 '@
 
 set-content -path './OS_Windows/Tasks/main.yml' -Value $sample_conf

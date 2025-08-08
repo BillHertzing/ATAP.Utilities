@@ -8,11 +8,14 @@ function Register-StartupScheduledTask {
     [string]$ScriptPath,
 
     [Parameter(Mandatory)]
+    [string]$Description,
+
+    [Parameter(Mandatory)]
     [System.Management.Automation.PSCredential]$Credential
   )
 
   Write-PSFMessage -Level Verbose -Message 'Entering function: Register-StartupScheduledTask'
-  Write-PSFMessage -Level Information -Message "TaskName: $TaskName | ScriptPath: $ScriptPath | User: $($Credential.UserName)"
+  Write-PSFMessage -Level Information -Message "TaskName: $TaskName | ScriptPath: $ScriptPath | Description: $Description | User: $($Credential.UserName)"
 
   try {
     if (-not (Test-Path -Path $ScriptPath -PathType Leaf)) {
@@ -37,17 +40,19 @@ function Register-StartupScheduledTask {
         -Action $action `
         -Trigger $trigger `
         -Principal $principal `
-        -Description 'Startup task to launch local feed services' `
+        -Description $description `
         -User $Credential.UserName `
         -Password $Credential.GetNetworkCredential().Password
 
       Write-PSFMessage -Level Information -Message "Scheduled task '$TaskName' registered successfully."
     }
-  } catch {
+  }
+  catch {
     $errorMessage = "Failed to register scheduled task '$TaskName'. Exception: $($_.Exception.Message)"
     Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception
     throw $_
-  } finally {
+  }
+  finally {
     Write-PSFMessage -Level Verbose -Message 'Exiting function: Register-StartupScheduledTask'
   }
 }

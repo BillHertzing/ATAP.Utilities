@@ -75,7 +75,7 @@ $results.HostSettings += "`$HostsType1.Add(`$global:configRootKeys['PackageRepos
           $block1 = @"
 # $EI  $V  $PQ  $PP
 `$HostsType1.Add(`$global:configRootKeys['${LongFeedName}UriSchemeConfigRootKey'] , 'http')
-`$HostsType1.Add(`$global:configRootKeys['${LongFeedName}UriHostConfigRootKey'] , 'localhost')
+`$HostsType1.Add(`$global:configRootKeys['${LongFeedName}UriHostConfigRootKey'] , 'utat022')
 `$HostsType1.Add(`$global:configRootKeys['${LongFeedName}UriPortConfigRootKey'] , $port)
 `$HostsType1.Add(`$global:configRootKeys['${LongFeedName}UriPathConfigRootKey'] , 'nuget/$shortFeedName/')
 `$HostsType1.Add(`$global:configRootKeys['${LongFeedName}UriQueryStringConfigRootKey'] , '')

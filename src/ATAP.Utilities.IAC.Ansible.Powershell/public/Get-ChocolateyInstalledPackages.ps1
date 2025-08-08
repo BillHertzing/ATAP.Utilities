@@ -1,7 +1,7 @@
 function Get-ChocoInstalledPackages {
-  [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'Files')]
+  [CmdletBinding()]
   param (
-    [parameter(mandatory = $true)]
+    [parameter(mandatory = $false)]
     [ValidateNotNullOrEmpty()]
     [string]$path
     , [parameter(mandatory = $false, ParameterSetName = 'Files')]
@@ -11,17 +11,16 @@ function Get-ChocoInstalledPackages {
   )
   ########################################
   BEGIN {
-    Write-PSFMessage -Level Debug -Message 'Starting Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    Write-PSFMessage -Level Debug -Message 'Entering Function Get-ChocoInstalledPackages' -Tag 'Get-ChocoInstalledPackages', 'Trace'
 
     #$excludeRegexPattern = '\.install$|^KB\d|^dotnet|^vcredist|^vscode-|^netfx-|^chocolatey-|^version$'
     $excludeRegexPattern = '\.install$'
     $packages = @{}
-    
+
   }
 
   PROCESS {
-    # --lo is removed in chocolatey V2.0 +
-    $lines = choco list --lo --pre
+    $lines = choco list --pre
 
     # throw away the first and the last line of the choco output
     for ($index = 1; $index -lt $lines.count - 1; $index++) {
@@ -31,7 +30,7 @@ function Get-ChocoInstalledPackages {
           if ($matches[1] -notmatch $excludeRegexPattern) {
             $packages[$matches[1]] = @{Version = $validVersion; PreRelease = $false; AddedParameters = $null }
           }
-          else {Write-PSFMessage -Level Error -Message "$($matches[1]) matched the excludeRegexPattern. Line number $index was $($lines[$index])" }
+          else { Write-PSFMessage -Level Error -Message "$($matches[1]) matched the excludeRegexPattern. Line number $index was $($lines[$index])" }
         }
         else { Write-PSFMessage -Level Error -Message "$($matches[2]) did not parse as a [System.Version]. Line number $index was $($lines[$index])" }
       }

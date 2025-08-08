@@ -53,7 +53,7 @@ $hostsFileInformation = [PSCustomObject]@{
 
 # Information on the WinRM Service
 
-# PackageManagement, NuGet, PowershellGet, and ChocolateyGet, repositories, and sources
+# PackageManagement, NuGet, PSResourceGet, and ChocolateyGet, repositories, and sources
 
 # SSH Server and SSH Client. Any user or admin keys lodaed
 

@@ -83,7 +83,7 @@ function New-RoleJavaInterpreterWindows {
 		# {% if item.addedparameters is defined and item.addedparameters|length %}
 		# 'package_params: ' "{{ item.addedparameters }}"
 		# {% endif %}
-	  failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
+	  failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behavior.
 	  loop:
 		- {name: temurin17jre, version: 17.0.6.1000, allowprerelease: false, addedparameters: "InstallDir:'C:\Program Files\PythonInterpreters\Python3.10.11" }
   tags: [$roleName]

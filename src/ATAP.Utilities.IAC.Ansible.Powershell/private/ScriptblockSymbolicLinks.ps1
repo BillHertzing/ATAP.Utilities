@@ -13,7 +13,7 @@ function ScriptblockSymbolicLinks {
     script:
       Remove-Item -path {{ item.link }} -ErrorAction SilentlyContinue
       New-Item -ItemType SymbolicLink -path "{{ item.link }}" -Target "{{ item.original }}"
-  failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behaviour.
+  failed_when: false # setting this means if one package fails, the loop will continue. you can remove it if you don't want that behavior.
   loop:
 
 "@)

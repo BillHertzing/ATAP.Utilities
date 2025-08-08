@@ -139,13 +139,13 @@ NOTE that the text below this line to end of file is obsolete
 TBD - replace with current information
 During the build pipeline, copy the `ModuleName.psd1` and the `ModuleName.psm1` files to `_generated\Packages\PowerShell GalleryPackageSource\ModuleName`
 
-Define the Filesystem location, per machine and user, for the Development PowerShellGallery repository. Define this in the globals. for example `"C:/Dropbox/Repositories/[Nuget|PowershellGet|Chocolatey]/DevelopmentPackages"`
+Define the Filesystem location, per machine and user, for the Development PowerShellGallery repository. Define this in the globals. for example `"C:/Dropbox/Repositories/[Nuget|PSResourceGet|Chocolatey]/DevelopmentPackages"`
 
 Define a name for the filesystem development PowerShellGallery repository. define this in the globals. For example `DevelopmentFilesystemPowershellGalleryRepository `
 
 during the build,
 
-1. Ensure that PowerShellGet is a registered package provider (should be builtin and default), running `Get-PackageProvider` should return an entry whose names is `PowerShellGet`
+1. Ensure that PSResourceGet is a registered package provider (should be builtin and default), running `Get-PackageProvider` should return an entry whose names is `PSResourceGet`
 1. Ensure that the filesystem location exists. for example `//utat022/FS/PowerShell GalleryFileRepository
 1. Ensure that the filesystem location is a trusted PSRepository. Run the command `Set-PSRepository -Name "DevelopmentFilesystemPowershellGalleryRepository"   -InstallationPolicy Trusted -SourceLocation "\\utat022\fs\DevelopmentPackages"`
 1. Deliver the new module/version to the filesystem development PowerShellGallery repository. Run the command `Publish-Module -Path "_generated\Packages\PowerShell GalleryPackageSource\ModuleName" -Repository DevelopmentFilesystemPowershellGalleryRepository -NuGetApiKey 'any'`

@@ -5,7 +5,7 @@ This expects to be run at a root of a repo that has a child named Documentation
 
 #>
 
-Function Build-ImageFromPlantUML {
+function Build-ImageFromPlantUML {
   #region FunctionParameters
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
@@ -21,7 +21,7 @@ Function Build-ImageFromPlantUML {
   #endregion FunctionParameters
   #region FunctionBeginBlock
   ########################################
-  BEGIN {
+  begin {
     Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
 
     $Settings = [ordered] @{
@@ -61,24 +61,24 @@ Function Build-ImageFromPlantUML {
   #endregion FunctionBeginBlock
   #region FunctionProcessBlock
   ########################################
-  PROCESS {
+  process {
     if ($InDir -notmatch $settings.ExcludedSubDirPattern) {
       # plantuml jar wants a trailing slash in the InDir
       $InDir + '\'
       $InRelativeDir = [System.IO.Path]::GetRelativePath($Settings.InBaseDir, $InDir)
       # ToDo: better string representation for Linux (don't use double-quotes around paths, get the slashes correct)
-      $baseComdAsString = $cmdAsString = 'java -jar ' + '"' + $Settings.PlantUMLJarPath + '"' + ' -o ' + '"' + $OutputDirectoryAbsolute + '" '
+      $baseCmdAsString = $cmdAsString = 'java -jar ' + '"' + $Settings.PlantUMLJarPath + '"' + ' -o ' + '"' + $OutputDirectoryAbsolute + '" '
       # This command will search for @startXYZ and @endXYZ into .txt, .tex, .java, .htm, .html, .c, .h, .cpp, .apt, .pu, .puml, .hpp or .hh files of the $InRelativeDir directory
       # Run the command only if any files of the default suffix exist in InRelativeDir
-      $cmdAsString = $baseComdAsString + '"' + $InRelativeDir + '"'
+      $cmdAsString = $baseCmdAsString + '"' + $InRelativeDir + '"'
       if ($PSCmdlet.ShouldProcess("$InRelativeDir", $cmdAsString)) {
         #$InRelativeDir
         java -jar $($Settings.PlantUMLJarPath) -o $OutputDirectoryAbsolute $InRelativeDir
       }
-      # ToDo: grow this to accept a list of additional file suffixs
+      # ToDo: grow this to accept a list of additional file suffixes
       $InDirAdditionalPattern = $InRelativeDir + '**\*.md'
       # This command will search for @startXYZ and @endXYZ into .md files of the $InRelativeDir (as relative to InBaseDir) directory and subdirectories
-      $cmdAsString = $baseComdAsString + '"' + $InDirAdditionalPattern + '"'
+      $cmdAsString = $baseCmdAsString + '"' + $InDirAdditionalPattern + '"'
       if ($PSCmdlet.ShouldProcess("$InDirAdditionalPattern", $cmdAsString)) {
         # $($InRelativeDirMDPattern)
         java -jar $($Settings.PlantUMLJarPath) -o $OutputDirectoryAbsolute $InDirAdditionalPattern > null
@@ -88,7 +88,7 @@ Function Build-ImageFromPlantUML {
   #endregion FunctionProcessBlock
   #region FunctionEndBlock
   ########################################
-  END {
+  end {
   }
 }
 

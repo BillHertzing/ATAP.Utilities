@@ -14,25 +14,25 @@ A SoftwarePackage is a related set of software products (files) that can be inst
 
 ## Repositories and Repository Provider software
 
-PackageRepository is usually the term used for the physical computer / cloud that stores SoftwarePackages. The physical machine runs software that provides the features that allow for the storage, indexing, searching, and upload /download of the SoftwarePackages. ATAP.Utilities supports the following providers: Filesystem; NuGet, PowershellGet, ChocolateyGet, and ChocolateyCLI.
+PackageRepository is usually the term used for the physical computer / cloud that stores SoftwarePackages. The physical machine runs software that provides the features that allow for the storage, indexing, searching, and upload /download of the SoftwarePackages. ATAP.Utilities supports the following providers: Filesystem; NuGet, PSResourceGet, ChocolateyGet, and ChocolateyCLI.
 
 ## SoftwarePackages, Repositories, and Providers
 
-QualityAssurance and Production SoftwarePackages are distributed (pushed) to repositories, usually via the provider running on the repository. Filesystem providers do not require active provider software, just access to a location on the filesystem. The NuGet, PowershellGet, ChocolateyGet, providers provide endpoints defined as Universal Resource Locators (URIs) and specific API protocols to accept SoftwarePackages pushed to them.
+QualityAssurance and Production SoftwarePackages are distributed (pushed) to repositories, usually via the provider running on the repository. Filesystem providers do not require active provider software, just access to a location on the filesystem. The NuGet, PSResourceGet, ChocolateyGet, providers provide endpoints defined as Universal Resource Locators (URIs) and specific API protocols to accept SoftwarePackages pushed to them.
 
 ## External Package Repositories
 
-External package repositories are public-facing repositories. The purpose of the external SoftwarePackage repositories is twofold. They are the authoritative source of third-party SoftwarePackages. External SoftwarePackages are validated as part of the software BOM security validation process and are then moved to the internal package repositories. The second purpose of the external tax repositories is to be a location to which the Enterprise pushes its quality assurance and production SoftwarePackages to make them available to the public
+External package repositories are public-facing repositories. The purpose of the external SoftwarePackage repositories is twofold. They are the authoritative source of third-party SoftwarePackages. External SoftwarePackages are validated as part of the software BOM security validation process and are then moved to the internal package repositories. The second purpose of the external package repositories is to be a location to which the Enterprise pushes its quality assurance and production SoftwarePackages to make them available to the public
 
 ## Internal package Repositories
 
 Internal package repositories are intranet facing repositories that the enterprise accesses from its internal computers via an enterprise's Intranet.
 
-SoftwarePackages developed by the enterprise are pushed to the enterprise's internal production package repositories. Both the QualityAssurance and the Production versions of a SoftwarePackage are pushed, and then pulled and tested, to ensure that both packaging, delivery, and retrieval work as expected.
+SoftwarePackages developed by the enterprise are pushed to the enterprise's internal production package repositories. Both the QualityAssurance and the Production SoftwarePackageType instances of a SoftwarePackage are pushed, and then pulled and tested, to ensure that both packaging, delivery, and retrieval work as expected.
 
 Internal package repositories are themselves participants in a lifecycle. The repository software undergoes periodic maintenance and release, so an enterprise will need to stand up Development and QualityAssurance versions of the repository software, to ensure that updates to these PackageRepositories do not break the package delivery automation
 
-Package repositories may have a common URI for both uploading and downloading SoftwarePackages, or they may have separate URIs (usually different port numbers) for uploading and for downloading.
+PackageRepositories may have a common URI for both uploading and downloading SoftwarePackages, or they may have separate URIs (usually different port numbers) for uploading and for downloading.
 
 ## SoftwarePackage formats
 
@@ -62,7 +62,7 @@ ToDo: replace the crude line drawings below with a better graphic
 
 Same as SoftwarePackage structure for Filesystem providers
 
-### SoftwarePackage structure for PowershellGet providers
+### SoftwarePackage structure for PSResourceGet providers
 
 ### SoftwarePackage structure for ChocolateyGet and ChocolateyCLI providers
 
@@ -88,7 +88,7 @@ Version -> stored inside the `.nuspec` file. The presence of a non-null prerelea
 
 'PackageVersion Lifecycle' -> Prerelease (alpha, beta, QualityAssurance (QA), ReleaseCandidate (RC)) -> Released
 
-PackageProvider (FileSystem, NuGet, PowershellGet, ChocolateyGet, ChocolateyCLI)
+PackageProvider (FileSystem, NuGet, PSResourceGet, ChocolateyGet, ChocolateyCLI)
 SoftwarePackageType (QualityAssurance / Production)
 SoftwareLifeCycle(Prerelease or Released)
 
@@ -122,7 +122,7 @@ Package:
 - (b) pack both the QA and production packages for FilesystemGet NuGet
 - (c) generate a SHA256 hash for the QA and production `.nupkg` and record it
 - repeat steps (a) and (b) and (c) for NuGet packageprovider
-- repeat steps (a) and (b) and (c) for PowershellGet packageprovider (TBD - investigate limitations on prerelease version in PowershellGet)
+- repeat steps (a) and (b) and (c) for PSResourceGet packageprovider (TBD - investigate limitations on prerelease version in PSResourceGet)
 - repeat steps (a) for ChocolateyGet packageprovider (TBD - investigate limitations on prerelease version in ChocolateyGet)
 - - add the `tools` directory and `ChocolateyInstall.ps1` and `ChocolateyUninstall.ps1` files
 - repeat steps (b) for ChocolateyGet packageprovider (TBD - investigate limitations on prerelease version in ChocolateyGet)
@@ -149,11 +149,11 @@ Publish:
 - - - - prereleaseProduction to 'InternalPrereleaseNuGetProductionPushUri (a httpd URI)
 - - - - ReleasedQA to 'InternalReleasedNuGetQAPushUri' (a httpd URI)
 - - - - ReleasedProduction to 'InternalReleasedNuGetProductionPushUri(a httpd URI)
-- - - PowershellGet - write both packages.
-- - - - prereleaseQA to 'InternalPrereleasePowershellGetQAPushUri' (a httpd URI)
-- - - - prereleaseProduction to 'InternalPrereleasePowershellGetProductionPushUri (a httpd URI)
-- - - - ReleasedQA to 'InternalReleasedPowershellGetQAPushUri' (a httpd URI)
-- - - - ReleasedProduction to 'InternalReleasedPowershellGetProductionPushUri(a httpd URI)
+- - - PSResourceGet - write both packages.
+- - - - prereleaseQA to 'InternalPrereleasePSResourceGetQAPushUri' (a httpd URI)
+- - - - prereleaseProduction to 'InternalPrereleasePSResourceGetProductionPushUri (a httpd URI)
+- - - - ReleasedQA to 'InternalReleasedPSResourceGetQAPushUri' (a httpd URI)
+- - - - ReleasedProduction to 'InternalReleasedPSResourceGetProductionPushUri(a httpd URI)
 - - - ChocolateyGet - write both packages. QA to TBD, production to TBD
 - - - - prereleaseQA to 'InternalPrereleaseChocolateyGetQAPushUri' (a httpd URI)
 - - - - prereleaseProduction to 'InternalPrereleaseChocolateyGetProductionPushUri (a httpd URI)
@@ -163,11 +163,11 @@ Publish:
 going on to external repositories
 
 - Create scripts (or one-liners) that will publish to external repositories
-- - PowershellGet
-- - - prereleaseQA to 'ExternalPrereleasePowershellGetQAPushUri' (a httpd URI for external early access users)
-- - - prereleaseProduction to 'ExternalPrereleasePowershellGetProductionPushUri (a httpd URI for external early access users)
-- - - ReleasedQA to 'ExternalReleasedPowershellGetQAPushUri' (a httpd URI to the push api for the Powershell gallery)
-- - - ReleasedProduction to 'ExternalReleasedPowershellGetProductionPushUri' (a httpd URI to the push api for the Powershell gallery)
+- - PSResourceGet
+- - - prereleaseQA to 'ExternalPrereleasePSResourceGetQAPushUri' (a httpd URI for external early access users)
+- - - prereleaseProduction to 'ExternalPrereleasePSResourceGetProductionPushUri (a httpd URI for external early access users)
+- - - ReleasedQA to 'ExternalReleasedPSResourceGetQAPushUri' (a httpd URI to the push api for the Powershell gallery)
+- - - ReleasedProduction to 'ExternalReleasedPSResourceGetProductionPushUri' (a httpd URI to the push api for the Powershell gallery)
 - - ChocolateyGet
 - - - prereleaseQA to 'ExternalPrereleaseChocolateyGetQAPushUri' (a httpd URI to the push api for the public Chocolatey server (for prerelease packages))
 - - - prereleaseProduction to 'ExternalPrereleaseChocolateyGetProductionPushUri (a httpd URI for the public Chocolatey server (for prerelease packages))
@@ -198,12 +198,12 @@ Validate:
 - - - - ReleasedProduction to 'InternalReleasedNuGetProductionPullUri(a httpd URI)
 - - - Verify signing
 - - - Verify Hash
-- - PowerShellGet
+- - PSResourceGet
 - - - read both packages.
-- - - - prereleaseQA to 'InternalPrereleasePowerShellGetQAPullUri' (a httpd URI)
-- - - - prereleaseProduction to 'InternalPrereleasePowerShellGetProductionPullUri (a httpd URI)
-- - - - ReleasedQA to 'InternalReleasedPowerShellGetQAPullUri' (a httpd URI)
-- - - - ReleasedProduction to 'InternalReleasedPowerShellGetProductionPullUri(a httpd URI)
+- - - - prereleaseQA to 'InternalPrereleasePSResourceGetQAPullUri' (a httpd URI)
+- - - - prereleaseProduction to 'InternalPrereleasePSResourceGetProductionPullUri (a httpd URI)
+- - - - ReleasedQA to 'InternalReleasedPSResourceGetQAPullUri' (a httpd URI)
+- - - - ReleasedProduction to 'InternalReleasedPSResourceGetProductionPullUri(a httpd URI)
 - - - Verify signing
 - - - Verify Hash
 - - ChocolateyGet
@@ -227,18 +227,18 @@ InternalPrereleaseNuGetQAPushUri
 InternalPrereleaseNuGetProductionPushUri
 InternalReleasedNuGetQAPushUri
 InternalReleasedNuGetProductionPushUri
-InternalPrereleasePowershellGetQAPushUri
-InternalPrereleasePowershellGetProductionPushUri
-InternalReleasedPowershellGetQAPushUri
-InternalReleasedPowershellGetProductionPushUri
+InternalPrereleasePSResourceGetQAPushUri
+InternalPrereleasePSResourceGetProductionPushUri
+InternalReleasedPSResourceGetQAPushUri
+InternalReleasedPSResourceGetProductionPushUri
 InternalPrereleaseChocolateyGetQAPushUri
 InternalPrereleaseChocolateyGetProductionPushUri
 InternalReleasedChocolateyGetQAPushUri
 InternalReleasedChocolateyGetProductionPushUri
-ExternalPrereleasePowershellGetQAPushUri
-ExternalPrereleasePowershellGetProductionPushUri
-ExternalReleasedPowershellGetQAPushUri
-ExternalReleasedPowershellGetProductionPushUri
+ExternalPrereleasePSResourceGetQAPushUri
+ExternalPrereleasePSResourceGetProductionPushUri
+ExternalReleasedPSResourceGetQAPushUri
+ExternalReleasedPSResourceGetProductionPushUri
 ExternalPrereleaseChocolateyGetQAPushUri
 ExternalPrereleaseChocolateyGetProductionPushUri
 ExternalReleasedChocolateyGetQAPushUri
@@ -250,34 +250,34 @@ These identifiers are formed as follows
 Common Prefix = PackageRepository
 Internal (to the enterprise = Trusted and External (may be trusted for downloading, but not as a source for internal enterprise use))
 Prerelease or Released
-PackageProvider (Filesystem, NuGet, PowershellGet, ChocolateyGet)
+PackageProvider (Filesystem, NuGet, PSResourceGet, ChocolateyGet)
 SoftwarePackageType (QualityAssurance or Production)
 
 FullKey consists of
-'PackageRepository' + ('External' |'Internal' ) + ('Released' | 'Prerelease') + ('Filesystem' | 'NuGet' | 'PowershellGet' | 'ChocolateyGet') + ('Production' | 'QualityAssurance')
+'PackageRepository' + ('External' |'Internal' ) + ('Released' | 'Prerelease') + ('Filesystem' | 'NuGet' | 'PSResourceGet' | 'ChocolateyGet') + ('Production' | 'QualityAssurance')
 
 - `$global:configRootKeys['PackageRepositoryExternalReleasedNuGetProductionPackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryExternalReleasedNuGetQualityAssurancePackagePullUriConfigRootKey']`,
-- `$global:configRootKeys['PackageRepositoryExternalReleasedPowershellGetProductionPackagePullUriConfigRootKey']`
-- `$global:configRootKeys['PackageRepositoryExternalReleasedPowershellGetQualityAssurancePackagePullUriConfigRootKey']`
+- `$global:configRootKeys['PackageRepositoryExternalReleasedPSResourceGetProductionPackagePullUriConfigRootKey']`
+- `$global:configRootKeys['PackageRepositoryExternalReleasedPSResourceGetQualityAssurancePackagePullUriConfigRootKey']`
 - `$global:configRootKeys['PackageRepositoryExternalReleasedChocolateyGetProductionPackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryExternalReleasedChocolateyGetQualityAssurancePackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryExternalPrereleaseNuGetProductionPackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryExternalPrereleaseNuGetQualityAssurancePackagePullUriConfigRootKey']`,
-- `$global:configRootKeys['PackageRepositoryExternalPrereleasePowershellGetProductionPackagePullUriConfigRootKey']`,
-- `$global:configRootKeys['PackageRepositoryExternalPrereleasePowershellGetQualityAssurancePackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleasePSResourceGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryExternalPrereleasePSResourceGetQualityAssurancePackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryExternalPrereleaseChocolateyGetProductionPackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryExternalPrereleaseChocolateyGetQualityAssurancePackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryInternalReleasedNuGetProductionPackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryInternalReleasedNuGetQualityAssurancePackagePullUriConfigRootKey']`,
-- `$global:configRootKeys['PackageRepositoryInternalReleasedPowershellGetProductionPackagePullUriConfigRootKey']`
-- `$global:configRootKeys['PackageRepositoryInternalReleasedPowershellGetQualityAssurancePackagePullUriConfigRootKey']`
+- `$global:configRootKeys['PackageRepositoryInternalReleasedPSResourceGetProductionPackagePullUriConfigRootKey']`
+- `$global:configRootKeys['PackageRepositoryInternalReleasedPSResourceGetQualityAssurancePackagePullUriConfigRootKey']`
 - `$global:configRootKeys['PackageRepositoryInternalReleasedChocolateyGetProductionPackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryInternalReleasedChocolateyGetQualityAssurancePackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryInternalPrereleaseNuGetProductionPackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryInternalPrereleaseNuGetQualityAssurancePackagePullUriConfigRootKey']`,
-- `$global:configRootKeys['PackageRepositoryInternalPrereleasePowershellGetProductionPackagePullUriConfigRootKey']`,
-- `$global:configRootKeys['PackageRepositoryInternalPrereleasePowershellGetQualityAssurancePackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryInternalPrereleasePSResourceGetProductionPackagePullUriConfigRootKey']`,
+- `$global:configRootKeys['PackageRepositoryInternalPrereleasePSResourceGetQualityAssurancePackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryInternalPrereleaseChocolateyGetProductionPackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryInternalPrereleaseChocolateyGetQualityAssurancePackagePullUriConfigRootKey']`,
 - `$global:configRootKeys['PackageRepositoryInternalReleasedFilesystemProductionPackagePathNameConfigRootKey']`

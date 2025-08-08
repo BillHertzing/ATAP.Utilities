@@ -1,0 +1,271 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.0.6 Chrome/138.0.7204.100 Electron/37.2.3 Safari/537.36" version="28.0.6">
+  <diagram id="BVzVzya-SXd_rLKprMmf" name="Page-1">
+    <mxGraphModel dx="896" dy="834" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="3" value="Generated Files @ GeneratedRelativePathConfigRootKey" style="swimlane;" parent="1" vertex="1">
+          <mxGeometry x="1850" y="40" width="390" height="950" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="Module @ GeneratedPowershellModuleConfigRootKey" style="swimlane;startSize=23;" parent="3" vertex="1">
+          <mxGeometry x="20" y="40" width="350" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="Resources" style="swimlane;startSize=23;" parent="7" vertex="1">
+          <mxGeometry x="110" y="40" width="80" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="44" value="Required" style="swimlane;startSize=23;" parent="7" vertex="1">
+          <mxGeometry x="20" y="40" width="70" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="47" value="" style="group" parent="44" vertex="1" connectable="0">
+          <mxGeometry x="10" y="40" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="45" value=".psm1" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;" parent="47" vertex="1">
+          <mxGeometry width="50" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="46" value=".psd1" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;" parent="47" vertex="1">
+          <mxGeometry y="25" width="50" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="49" value="Tests" style="swimlane;startSize=23;" parent="7" vertex="1">
+          <mxGeometry x="210" y="40" width="60" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="50" value="Results&#xa;Reports" style="swimlane;startSize=40;" parent="7" vertex="1">
+          <mxGeometry x="290" y="40" width="60" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="39" value="Packages @ GeneratedPowershellPackagesConfigRootKey" style="swimlane;startSize=23;" parent="3" vertex="1">
+          <mxGeometry x="70" y="210" width="240" height="680" as="geometry" />
+        </mxCell>
+        <mxCell id="34" value="Powershell Gallery @ GeneratedPowershellGalleryPackageConfigRootKey" style="swimlane;startSize=23;" parent="39" vertex="1">
+          <mxGeometry x="20" y="260" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="35" value="" style="group" parent="34" vertex="1" connectable="0">
+          <mxGeometry x="20" y="30" width="150" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="36" value="Development" style="swimlane;" parent="35" vertex="1">
+          <mxGeometry width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="37" value="QA Testing" style="swimlane;" parent="35" vertex="1">
+          <mxGeometry y="60" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="38" value="Production" style="swimlane;" parent="35" vertex="1">
+          <mxGeometry y="120" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="29" value="Chocolatey" style="swimlane;startSize=23;" parent="39" vertex="1">
+          <mxGeometry x="20" y="40" width="200" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="30" value="" style="group" parent="29" vertex="1" connectable="0">
+          <mxGeometry x="20" y="30" width="150" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="31" value="Development" style="swimlane;" parent="30" vertex="1">
+          <mxGeometry width="150" height="42.5" as="geometry" />
+        </mxCell>
+        <mxCell id="32" value="QA Testing" style="swimlane;" parent="30" vertex="1">
+          <mxGeometry y="63.75" width="150" height="42.5" as="geometry" />
+        </mxCell>
+        <mxCell id="33" value="Production" style="swimlane;" parent="30" vertex="1">
+          <mxGeometry y="127.5" width="150" height="42.5" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="NuGet @ GeneratedPowershellNuGetPackageConfigRootKey" style="swimlane;startSize=23;" parent="39" vertex="1">
+          <mxGeometry x="20" y="470" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="25" value="" style="group" parent="21" vertex="1" connectable="0">
+          <mxGeometry x="20" y="30" width="150" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="26" value="Development" style="swimlane;" parent="25" vertex="1">
+          <mxGeometry width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="27" value="QA Testing" style="swimlane;" parent="25" vertex="1">
+          <mxGeometry y="60" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="28" value="Production" style="swimlane;" parent="25" vertex="1">
+          <mxGeometry y="120" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="51" value="Deployment locations" style="swimlane;" parent="1" vertex="1">
+          <mxGeometry x="1500" y="50" width="300" height="790" as="geometry" />
+        </mxCell>
+        <mxCell id="60" value="Packages" style="swimlane;startSize=23;" parent="51" vertex="1">
+          <mxGeometry x="20" y="40" width="230" height="720" as="geometry" />
+        </mxCell>
+        <mxCell id="79" value="Chocolatey" style="swimlane;startSize=23;" parent="60" vertex="1">
+          <mxGeometry x="20" y="40" width="190" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="80" value="" style="group;fontStyle=4" parent="79" vertex="1" connectable="0">
+          <mxGeometry x="20" y="30" width="180" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="81" value="FIlesystem" style="swimlane;" parent="80" vertex="1">
+          <mxGeometry y="10" width="150" height="42.5" as="geometry" />
+        </mxCell>
+        <mxCell id="82" value="Local Server" style="swimlane;" parent="80" vertex="1">
+          <mxGeometry y="70" width="150" height="42.5" as="geometry" />
+        </mxCell>
+        <mxCell id="83" value="Public Server" style="swimlane;" parent="80" vertex="1">
+          <mxGeometry y="130" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="84" value="Powershell Gallery" style="swimlane;startSize=23;" parent="60" vertex="1">
+          <mxGeometry x="20" y="280" width="190" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="85" value="" style="group;fontStyle=4" parent="84" vertex="1" connectable="0">
+          <mxGeometry x="20" y="30" width="180" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="86" value="FIlesystem" style="swimlane;" parent="85" vertex="1">
+          <mxGeometry y="10" width="150" height="42.5" as="geometry" />
+        </mxCell>
+        <mxCell id="87" value="Local Server" style="swimlane;" parent="85" vertex="1">
+          <mxGeometry y="70" width="150" height="42.5" as="geometry" />
+        </mxCell>
+        <mxCell id="88" value="Public Server" style="swimlane;" parent="85" vertex="1">
+          <mxGeometry y="130" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="66" value="NuGet" style="swimlane;startSize=23;" parent="60" vertex="1">
+          <mxGeometry x="20" y="510" width="190" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="67" value="" style="group;fontStyle=4" parent="66" vertex="1" connectable="0">
+          <mxGeometry x="20" y="30" width="180" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="68" value="FIlesystem" style="swimlane;" parent="67" vertex="1">
+          <mxGeometry y="10" width="150" height="42.5" as="geometry" />
+        </mxCell>
+        <mxCell id="69" value="Local Server" style="swimlane;" parent="67" vertex="1">
+          <mxGeometry y="70" width="150" height="42.5" as="geometry" />
+        </mxCell>
+        <mxCell id="70" value="Public Server" style="swimlane;" parent="67" vertex="1">
+          <mxGeometry y="130" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-88" value="Proget Server" style="swimlane;" vertex="1" parent="1">
+          <mxGeometry x="25" y="20" width="800" height="1060" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-151" value="External Connector Cluster" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-88">
+          <mxGeometry y="30" width="345" height="1030" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-137" value="ExtRelChoProPush" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-151">
+          <mxGeometry x="50" y="10" width="280" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-138" value="External Released Chocolatey Production Push" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-137">
+          <mxGeometry y="30" width="280" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-139" value="Connector to Chocolatey&lt;br&gt;&lt;a style=&quot;box-sizing: border-box; border: 0px solid rgb(229, 231, 235); scrollbar-color: auto; scrollbar-width: auto; --tw-border-spacing-x: 0; --tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246/0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; text-decoration-thickness: from-font; font-weight: 400; text-underline-offset: 1px; transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 0.3s; animation-duration: 0.3s; font-family: fkGroteskNeue, &amp;quot;fkGroteskNeue Fallback&amp;quot;, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, &amp;quot;Segoe UI&amp;quot;, Roboto, &amp;quot;Helvetica Neue&amp;quot;, Arial, &amp;quot;Noto Sans&amp;quot;, sans-serif, &amp;quot;Apple Color Emoji&amp;quot;, &amp;quot;Segoe UI Emoji&amp;quot;, &amp;quot;Segoe UI Symbol&amp;quot;, &amp;quot;Noto Color Emoji&amp;quot;; font-size: 14px; text-align: start; background-color: oklch(0.9902 0.004 106.47);&quot; href=&quot;https://community.chocolatey.org/api/v2/&quot; target=&quot;_blank&quot; class=&quot;break-word hover:text-super hover:decoration-super underline decoration-from-font underline-offset-1 transition-all duration-300&quot; rel=&quot;nofollow noopener&quot;&gt;https://community.chocolatey.org/api/v2/&lt;/a&gt;" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;startSize=40;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-137">
+          <mxGeometry y="60" width="240" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-140" value="UnApproved&amp;nbsp;" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-139">
+          <mxGeometry x="50" y="10" width="140" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-141" value="1. Choco Package Name and Version" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-140">
+          <mxGeometry y="30" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-142" value="2. Choco package Name and Version" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-140">
+          <mxGeometry y="60" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-143" value="Item 3" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-140">
+          <mxGeometry y="90" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-134" value="ExtRelPSRProPush" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-151">
+          <mxGeometry x="50" y="347.5" width="280" height="385" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-136" value="External Released PSResource Production Push" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-134">
+          <mxGeometry y="30" width="280" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-129" value="Connector to Powershell Gallery&lt;br&gt;&lt;span style=&quot;box-sizing: border-box; border: 0px solid rgb(229, 231, 235); scrollbar-color: auto; scrollbar-width: auto; --tw-border-spacing-x: 0; --tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246/0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; font-weight: 550; color: oklch(0.3039 0.04 213.68); font-family: fkGroteskNeue, &amp;quot;fkGroteskNeue Fallback&amp;quot;, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, &amp;quot;Segoe UI&amp;quot;, Roboto, &amp;quot;Helvetica Neue&amp;quot;, Arial, &amp;quot;Noto Sans&amp;quot;, sans-serif, &amp;quot;Apple Color Emoji&amp;quot;, &amp;quot;Segoe UI Emoji&amp;quot;, &amp;quot;Segoe UI Symbol&amp;quot;, &amp;quot;Noto Color Emoji&amp;quot;; font-size: 16px; text-align: start; background-color: oklch(0.9902 0.004 106.47);&quot;&gt;&lt;a style=&quot;box-sizing: border-box; border: 0px solid rgb(229, 231, 235); scrollbar-color: auto; scrollbar-width: auto; --tw-border-spacing-x: 0; --tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246/0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; text-decoration-thickness: from-font; text-underline-offset: 1px; transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 0.3s; animation-duration: 0.3s;&quot; href=&quot;https://www.powershellgallery.com/api/v2/&quot; target=&quot;_blank&quot; class=&quot;break-word hover:text-super hover:decoration-super underline decoration-from-font underline-offset-1 transition-all duration-300&quot; rel=&quot;nofollow noopener&quot;&gt;https://www.powershellgallery.com/api/v2/&lt;/a&gt;&lt;/span&gt;" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;startSize=40;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-134">
+          <mxGeometry y="60" width="240" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-130" value="UnApproved&amp;nbsp;" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-129">
+          <mxGeometry x="50" y="10" width="140" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-131" value="Item 1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-130">
+          <mxGeometry y="30" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-132" value="Item 2" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-130">
+          <mxGeometry y="60" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-133" value="Item 3" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-130">
+          <mxGeometry y="90" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-144" value="ExtRelNugProPush" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-151">
+          <mxGeometry x="55" y="750" width="290" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-145" value="External Released NuGet Production Push" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-144">
+          <mxGeometry y="30" width="290" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-146" value="Connector to NuGet.org&lt;br&gt;&lt;a style=&quot;box-sizing: border-box; border: 0px solid rgb(229, 231, 235); scrollbar-color: auto; scrollbar-width: auto; --tw-border-spacing-x: 0; --tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; --tw-pinch-zoom: ; --tw-scroll-snap-strictness: proximity; --tw-gradient-from-position: ; --tw-gradient-via-position: ; --tw-gradient-to-position: ; --tw-ordinal: ; --tw-slashed-zero: ; --tw-numeric-figure: ; --tw-numeric-spacing: ; --tw-numeric-fraction: ; --tw-ring-inset: ; --tw-ring-offset-width: 0px; --tw-ring-offset-color: #fff; --tw-ring-color: rgb(59 130 246/0.5); --tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; --tw-blur: ; --tw-brightness: ; --tw-contrast: ; --tw-grayscale: ; --tw-hue-rotate: ; --tw-invert: ; --tw-saturate: ; --tw-sepia: ; --tw-drop-shadow: ; --tw-backdrop-blur: ; --tw-backdrop-brightness: ; --tw-backdrop-contrast: ; --tw-backdrop-grayscale: ; --tw-backdrop-hue-rotate: ; --tw-backdrop-invert: ; --tw-backdrop-opacity: ; --tw-backdrop-saturate: ; --tw-backdrop-sepia: ; --tw-contain-size: ; --tw-contain-layout: ; --tw-contain-paint: ; --tw-contain-style: ; text-decoration-thickness: from-font; font-weight: 400; text-underline-offset: 1px; transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 0.3s; animation-duration: 0.3s; font-family: fkGroteskNeue, &amp;quot;fkGroteskNeue Fallback&amp;quot;, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, &amp;quot;Segoe UI&amp;quot;, Roboto, &amp;quot;Helvetica Neue&amp;quot;, Arial, &amp;quot;Noto Sans&amp;quot;, sans-serif, &amp;quot;Apple Color Emoji&amp;quot;, &amp;quot;Segoe UI Emoji&amp;quot;, &amp;quot;Segoe UI Symbol&amp;quot;, &amp;quot;Noto Color Emoji&amp;quot;; font-size: 14px; text-align: start; background-color: oklch(0.9902 0.004 106.47);&quot; href=&quot;https://api.nuget.org/v3/index.json&quot; target=&quot;_blank&quot; class=&quot;break-word hover:text-super hover:decoration-super underline decoration-from-font underline-offset-1 transition-all duration-300&quot; rel=&quot;nofollow noopener&quot;&gt;https://api.nuget.org/v3/index.json&lt;/a&gt;" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;startSize=40;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-144">
+          <mxGeometry y="60" width="240" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-147" value="UnApproved&amp;nbsp;" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-146">
+          <mxGeometry x="50" y="10" width="140" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-148" value="Item 1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-147">
+          <mxGeometry y="30" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-149" value="Item 2" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-147">
+          <mxGeometry y="60" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-150" value="Item 3" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-147">
+          <mxGeometry y="90" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-154" value="External Connector Cluster" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-88">
+          <mxGeometry x="455" y="30" width="345" height="1030" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-155" value="IntRelChoProPull" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-154">
+          <mxGeometry x="50" y="10" width="280" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-156" value="Internal Released Chocolatey Production Pull" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-155">
+          <mxGeometry y="30" width="280" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-157" value="Proget Storage" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;startSize=40;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-155">
+          <mxGeometry y="60" width="240" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-158" value="UnApproved&amp;nbsp;" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-157">
+          <mxGeometry x="50" y="10" width="140" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-159" value="Item 1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-158">
+          <mxGeometry y="30" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-160" value="Item 2" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-158">
+          <mxGeometry y="60" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-161" value="Item 3" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-158">
+          <mxGeometry y="90" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-162" value="IntRelPSRProPull" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-154">
+          <mxGeometry x="50" y="347.5" width="280" height="385" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-163" value="Internal Released PSResource Production Pull" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-162">
+          <mxGeometry y="30" width="280" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-164" value="" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;startSize=40;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-162">
+          <mxGeometry y="60" width="240" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-165" value="Approved&amp;nbsp;" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-164">
+          <mxGeometry x="50" y="10" width="140" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-166" value="Item 1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-165">
+          <mxGeometry y="30" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-167" value="Item 2" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-165">
+          <mxGeometry y="60" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-168" value="Item 3" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-165">
+          <mxGeometry y="90" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-169" value="IntRelNugProPull" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-154">
+          <mxGeometry x="55" y="750" width="290" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-170" value="Internal Released NuGet Production Pull" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-169">
+          <mxGeometry y="30" width="290" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-171" value="" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;startSize=40;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-169">
+          <mxGeometry y="60" width="240" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-172" value="Approved&amp;nbsp;" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-171">
+          <mxGeometry x="50" y="10" width="140" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-173" value="Item 1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-172">
+          <mxGeometry y="30" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-174" value="Item 2" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-172">
+          <mxGeometry y="60" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d8mV2e-Rz8UDTAi6iuYS-175" value="Item 3" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="d8mV2e-Rz8UDTAi6iuYS-172">
+          <mxGeometry y="90" width="140" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

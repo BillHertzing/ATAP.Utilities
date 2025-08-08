@@ -103,13 +103,13 @@ Function Confirm-Tools {
   ########################################
   PROCESS {
     # ToDo: Replace with enumeration
-    ('NuGet', 'PowershellGet', 'ChocolateyGet') | ForEach-Object { $ProviderName = $_
+    ('NuGet', 'PSResourceGet', 'ChocolateyGet') | ForEach-Object { $PackageProviderName = $_
       # Confirm-RepositoryPackageProvider will throw if it cannot be installed
-      Confirm-RepositoryPackageProvider -ProviderName $ProviderName
+      Confirm-RepositoryPackageProvider -PackageProviderName $PackageProviderName
       ('Filesystem', 'QualityAssuranceWebServer', 'ProductionWebServer') | ForEach-Object { $ProviderLifecycle = $_
         ('QualityAssurance', 'Production') | ForEach-Object { $PackageLifecycle = $_
-          # validate each $ProviderName / ProviderLifecycle / PackageLifecycle cross exists. (installing should be done during container setup)
-          $RepositoryPackageSourceName = $ProviderName + $ProviderLifecycle + $PackageLifecycle + 'Package'
+          # validate each $PackageProviderName / ProviderLifecycle / PackageLifecycle cross exists. (installing should be done during container setup)
+          $RepositoryPackageSourceName = $PackageProviderName + $ProviderLifecycle + $PackageLifecycle + 'Package'
           # Confirm-RepositoryPackageProvider will throw if the RepositoryPackageSourceName cannot be registered
           Confirm-RepositoryPackageSource -RepositoryPackageSourceName $RepositoryPackageSourceName
         }

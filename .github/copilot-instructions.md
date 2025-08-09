@@ -5,6 +5,7 @@
 ATAP.Utilities is a comprehensive collection of .NET utility libraries, PowerShell modules, and development tools designed to enhance productivity across multiple platforms. The repository contains over 150 C# projects and 11 PowerShell modules targeting enterprise development scenarios.
 
 **Key Technologies:**
+
 - C# targeting .NET 8.0+ (originally .NET 9.0)
 - PowerShell 7+ with Pester testing framework
 - MSBuild with custom build tooling
@@ -19,9 +20,11 @@ ATAP.Utilities is a comprehensive collection of .NET utility libraries, PowerShe
 ## Critical Build Requirements
 
 ### .NET Framework Compatibility Issue
+
 **IMPORTANT:** The repository targets .NET 9.0 but most environments only have .NET 8.0 SDK. You MUST make these changes before building:
 
 1. **Create global.json** (if missing):
+
 ```json
 {
   "sdk": {
@@ -31,21 +34,25 @@ ATAP.Utilities is a comprehensive collection of .NET utility libraries, PowerShe
 ```
 
 2. **Update Directory.Build.props** - Change target framework:
+
 ```xml
 <TargetFrameworks>net8.0;</TargetFrameworks>
 ```
 
 3. **Update tests/Directory.Build.props** - Change target framework:
+
 ```xml
 <TargetFrameworks>net8.0</TargetFrameworks>
 ```
 
 4. **Fix individual project files** that override with net9.0:
+
 ```bash
 find . -name "*.csproj" -exec grep -l "net9.0" {} \; | xargs sed -i 's/net9.0/net8.0/g'
 ```
 
 ### NuGet Configuration Fix
+
 The repository has a broken symlink for NuGet.Config. Always fix this first:
 
 ```bash
@@ -54,6 +61,7 @@ cp src/ATAP.Utilities.BuildTooling.PowerShell/Resources/NuGet.Config .
 ```
 
 For clean builds, use simplified NuGet.Config (original has unreachable feeds):
+
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
@@ -68,21 +76,15 @@ For clean builds, use simplified NuGet.Config (original has unreachable feeds):
 ```
 
 ### Build System Issues
-The custom MSBuild tooling requires careful handling:
 
-**Disable custom build imports temporarily** in Directory.Build.targets:
-```xml
-<!-- Import MSBuild tasks temporarily disabled for initial build
-<Import Project="$(MSBuildCommunityTasksPath)\MSBuildTasks.Targets" />
-<Import Project="$(ATAPUtilitiesBuildToolingTargetsPath)\ATAP.Utilities.BuildTooling.targets" />
--->
-```
+The custom MSBuild tooling requires careful handling:
 
 **Re-enable after building ATAP.Utilities.BuildTooling.CSharp project first.**
 
 ## Build Instructions
 
 ### Prerequisites
+
 - .NET 8.0 SDK
 - PowerShell 7+
 - Pester 5+ (`Install-Module -Name Pester -Force`)
@@ -91,6 +93,7 @@ The custom MSBuild tooling requires careful handling:
 ### Step-by-Step Build Process
 
 1. **Setup** (ALWAYS do this first):
+
 ```bash
 cd /path/to/ATAP.Utilities
 rm NuGet.Config
@@ -98,6 +101,7 @@ cp src/ATAP.Utilities.BuildTooling.PowerShell/Resources/NuGet.Config .
 ```
 
 2. **Fix .NET targeting** (for .NET 8.0 environments):
+
 ```bash
 # Create global.json
 echo '{"sdk":{"version":"8.0.118"}}' > global.json
@@ -110,14 +114,16 @@ sed -i 's/net9.0/net8.0/g' tests/Directory.Build.props
 ```
 
 3. **Disable custom build tooling temporarily**:
-Comment out imports in Directory.Build.targets
+   Comment out imports in Directory.Build.targets
 
 4. **Build individual projects** (solution has missing projects):
+
 ```bash
 dotnet build src/ATAP.Utilities.BuildTooling.CSharp/ATAP.Utilities.BuildTooling.CSharp.csproj
 ```
 
 5. **Test individual projects**:
+
 ```bash
 dotnet test tests/ATAP.Utilities.String.UnitTests/ATAP.Utilities.String.UnitTests.csproj
 ```
@@ -141,6 +147,7 @@ Invoke-Pester -Path tests/Unit/ATAP.Utilities.IAC.Ansible.Powershell.Tests.ps1 -
 ## Project Structure
 
 ### Source Organization
+
 ```
 src/
 ├── ATAP.Utilities.BuildTooling.CSharp/    # MSBuild custom tasks
@@ -159,6 +166,7 @@ SolutionDocumentation/                     # Comprehensive docs
 ```
 
 ### Key Configuration Files
+
 - **Directory.Build.props**: Solution-wide MSBuild properties
 - **Directory.Build.targets**: Custom build targets and tasks
 - **NuGet.Config**: Package sources (fix symlink first)
@@ -166,22 +174,25 @@ SolutionDocumentation/                     # Comprehensive docs
 - **global.json**: .NET SDK version pinning
 
 ### Important Dependencies
+
 - **Serilog**: Logging framework
 - **PSFramework**: PowerShell logging (`Write-PSFMessage`)
 - **ServiceStack**: Serialization and ORM
-- **Microsoft.Extensions.***: Configuration and DI
+- **Microsoft.Extensions.\***: Configuration and DI
 - **xUnit**: C# testing
 - **Pester**: PowerShell testing
 
 ## Development Workflow
 
 ### Making Changes
+
 1. **Always** verify NuGet.Config and .NET targeting before building
 2. **Build incrementally** - start with BuildTooling projects
 3. **Test early and often** - both C# (xUnit) and PowerShell (Pester)
 4. **Check for missing projects** in solution file before full solution builds
 
 ### Common Issues & Workarounds
+
 - **"Could not find NuGet.Config"**: Fix broken symlink
 - **".NET SDK does not support .NET 9.0"**: Update to net8.0 targeting
 - **"ATAP.Utilities.BuildTooling.Targets not found"**: Disable custom imports, build tooling first
@@ -189,6 +200,7 @@ SolutionDocumentation/                     # Comprehensive docs
 - **PowerShell "not implemented" errors**: Install required modules (Pester, PSFramework, Assert)
 
 ### Performance Notes
+
 - **Full solution build**: Can take 5-10 minutes due to custom tooling
 - **Individual project builds**: Usually complete in 10-60 seconds
 - **Test execution**: C# tests are fast, PowerShell tests may take longer
@@ -196,18 +208,21 @@ SolutionDocumentation/                     # Comprehensive docs
 ## Testing Strategy
 
 ### C# Testing
+
 - Uses xUnit framework
 - FluentAssertions for better test readability
 - Moq for mocking
 - Test projects follow naming: `ATAP.Utilities.*.UnitTests`
 
 ### PowerShell Testing
+
 - Uses Pester 5+ framework
 - PSFramework for logging (`Write-PSFMessage -Level Important`)
 - Custom test discovery in module.build.ps1
 - Tests located in `tests/Unit/` subdirectories
 
 ### Validation Commands
+
 ```bash
 # C# code analysis and build
 dotnet build --configuration Release

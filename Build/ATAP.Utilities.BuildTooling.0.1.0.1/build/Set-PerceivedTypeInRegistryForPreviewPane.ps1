@@ -1,28 +1,29 @@
 #
 # Set-PerceivedTypeInRegistryForPreviewPane.ps1
 #
-[CmdletBinding(SupportsShouldProcess=$true)]
+[CmdletBinding(SupportsShouldProcess = $true)]
 param (
 
 )
 
 function Set-PerceivedTypeInRegistryForPreviewPane {
-[CmdletBinding(SupportsShouldProcess=$true)]
-param (
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  param (
 
-)
-    $suffixes= @('.ps1','.psm1','.targets','.props','.psproj','.csproj','.sln')
-    $RegHiveType = [Microsoft.Win32.RegistryHive]::"ClassesRoot"
-    $OpenBaseRegKey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey($RegHiveType, $env:COMPUTERNAME)
-    $suffixes | %{$suffix = $_
-        $OpenRegSubKey = $OpenBaseRegKey.OpenSubKey($suffix)
-        If ($OpenRegSubKey) {
-            $GetRegKeyVal = Foreach($RegKeyValue in $OpenRegSubKey.GetValueNames()){$RegKeyValue}
-            $GetRegKeyVal
-        } else {
-            Write-Output "error, could not open registry class for suffix $suffix"
-        }
+  )
+  $suffixes = @('.ps1', '.psm1', '.targets', '.props', '.psproj', '.csproj', '.sln', '.md', '.uml', '.puml', '.yaml', '.yml', '.json', '.jsonc', '.xml', '.txt', '.bat', '.cmd', '.psd1', '.pssc', '.ps1xml', '.psd1', '*.ps1xml', '*.psd1', '*.pssc', '*.ps1xml', '*.psd1', '*.pssc')
+  $RegHiveType = [Microsoft.Win32.RegistryHive]::"ClassesRoot"
+  $OpenBaseRegKey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey($RegHiveType, $env:COMPUTERNAME)
+  $suffixes | % { $suffix = $_
+    $OpenRegSubKey = $OpenBaseRegKey.OpenSubKey($suffix)
+    If ($OpenRegSubKey) {
+      $GetRegKeyVal = Foreach ($RegKeyValue in $OpenRegSubKey.GetValueNames()) { $RegKeyValue }
+      $GetRegKeyVal
     }
+    else {
+      Write-Output "error, could not open registry class for suffix $suffix"
+    }
+  }
 }
 
 Set-PerceivedTypeInRegistryForPreviewPane

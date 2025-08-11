@@ -125,7 +125,7 @@ function List-ProGetApiKeys {
     else {
       $results = $response
     }
-    Write-PSFMessage -Level Verbose -Message 'Exiting function: List-ProGetApiKeys' -Tag 'List-ProGetApiKeys', 'Trace'
+    Write-PSFMessage -Level Verbose -Message 'Leaving function: List-ProGetApiKeys' -Tag 'List-ProGetApiKeys', 'Trace'
     return $results
   }
 }

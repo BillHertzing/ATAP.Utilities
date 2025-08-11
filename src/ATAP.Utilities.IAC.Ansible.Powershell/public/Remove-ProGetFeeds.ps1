@@ -205,7 +205,7 @@ function Remove-ProGetFeeds {
     if ($null -ne $savedErrorActionPreference) {
       $ErrorActionPreference = $savedErrorActionPreference
     }
-    Write-PSFMessage -Level Verbose -Message 'Exiting function: Remove-ProGetFeeds' -Tag 'Remove-ProGetFeeds', 'Trace'
+    Write-PSFMessage -Level Verbose -Message 'Leaving function: Remove-ProGetFeeds' -Tag 'Remove-ProGetFeeds', 'Trace'
     return $DeletedNames
   }
 }

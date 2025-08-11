@@ -11,7 +11,8 @@ Function Update-ChocolateyPackageInfo {
   )
   ########################################
   BEGIN {
-    Write-PSFMessage -Level Debug -Message 'Starting Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    Write-PSFMessage -FunctionName 'Update-ChocolateyPackageInfo' -ModuleName 'ATAP.Utilities.IAC.Ansible.Powershell' -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+
     # Validate sourcePath, read it into an object
     $existingPackageInfo = Get-Content $chocolateyPackageInfoPath | ConvertFrom-Yaml
     $hostpackageInfos = @{}
@@ -53,7 +54,7 @@ Function Update-ChocolateyPackageInfo {
     # Overall Success is now $true
     $mergedPackageInfo = $existingPackageInfo
     $mergedPackageInfoKeys = [System.Collections.ArrayList]$($mergedPackageInfo.Keys)
-    foreach ($key in $hostpackageInfos.keys){
+    foreach ($key in $hostpackageInfos.keys) {
       $packages = $hostpackageInfos[$key]
       foreach ($packageName in $packages.keys) {
         if (-not $mergedPackageInfoKeys.Contains($packageName)) {

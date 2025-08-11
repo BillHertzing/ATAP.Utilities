@@ -134,7 +134,7 @@ function ConvertTo-ProGetFeedNameAlternateForm {
     }
   }
   End {
-    Write-PSFMessage -Level Verbose -Message 'Exiting function: ConvertTo-ProGetFeedNameAlternateForm' -Tag 'ConvertTo-ProGetFeedNameAlternateForm', 'Trace'
+    Write-PSFMessage -Level Verbose -Message 'Leaving function: ConvertTo-ProGetFeedNameAlternateForm' -Tag 'ConvertTo-ProGetFeedNameAlternateForm', 'Trace'
     return $result
   }
 }

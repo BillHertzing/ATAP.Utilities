@@ -124,11 +124,11 @@ function New-ProGetApiKey {
         Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception
         throw $_
       }
-      Write-PSFMessage -Level Verbose -Message "Exiting function: New-ProGetApiKey" -Tag 'New-ProGetApiKey', 'Trace'
+      Write-PSFMessage -Level Verbose -Message "Leaving function: New-ProGetApiKey" -Tag 'New-ProGetApiKey', 'Trace'
       $response
     }
   }
   End {
-    Write-PSFMessage -Level Verbose -Message 'Exiting function: New-ProGetApiKey' -Tag 'New-ProGetApiKey', 'Trace'
+    Write-PSFMessage -Level Verbose -Message 'Leaving function: New-ProGetApiKey' -Tag 'New-ProGetApiKey', 'Trace'
   }
 }

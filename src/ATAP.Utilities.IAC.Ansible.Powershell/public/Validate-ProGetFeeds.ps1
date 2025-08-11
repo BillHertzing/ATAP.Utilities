@@ -37,6 +37,6 @@ function Validate-ProgetFeedSet {
     MissingFeeds = $missingFeeds
     ProGetFeeds  = $proGetFeeds
   }
-  Write-PSFMessage -Level Verbose -Message 'Exiting function: Validate-ProGetFeedSet' -Tag 'Validate-ProGetFeedSet', 'Trace'
+  Write-PSFMessage -Level Verbose -Message 'Leaving function: Validate-ProGetFeedSet' -Tag 'Validate-ProGetFeedSet', 'Trace'
   return $results
 }

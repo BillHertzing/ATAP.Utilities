@@ -36,6 +36,6 @@ function Set-ProGetServiceDependency {
     throw $_
   }
   finally {
-    Write-PSFMessage -Level Verbose -Message "Exiting function: Set-ProGetServiceDependency"
+    Write-PSFMessage -Level Verbose -Message "Leaving function: Set-ProGetServiceDependency"
   }
 }

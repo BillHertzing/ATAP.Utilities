@@ -131,6 +131,6 @@ function New-ProGetConnector {
   }
 
   End {
-    Write-PSFMessage -Level Verbose -Message 'Exiting function: New-ProGetConnector' -Tag 'New-ProGetConnector', 'Trace'
+    Write-PSFMessage -Level Verbose -Message 'Leaving function: New-ProGetConnector' -Tag 'New-ProGetConnector', 'Trace'
   }
 }

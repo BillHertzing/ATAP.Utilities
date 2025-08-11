@@ -194,7 +194,7 @@
 
     <!-- Packages to add resilience policies to async and synchronous operations which may have transient exceptions -->
     <PackageReference Update="Polly" Version="8.5.0" />
-    <!-- This package has been deprectaed in favor of Microsoft.Extensions.Http.Resilience
+    <!-- This package has been deprecated in favor of Microsoft.Extensions.Http.Resilience
     <PackageReference Update="Polly.Extensions.Http" Version="3.0.0" /> -->
     <PackageReference Update="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
 

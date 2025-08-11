@@ -28,7 +28,7 @@ ToDo: Need attribution for Console Settings
 $DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
 $VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
-Write-PSFMessage -Level Debug -Message ('Starting CurrentUsersAllHostsV7CoreProfile.ps1')
+Write-PSFMessage -FunctionName 'Profiles\CurrentUserAllHostsV7CoreProfile.ps1' -Level Verbose -Message ('Starting CurrentUsersAllHostsV7CoreProfile.ps1')
 
 #ToDo: document expected values when run under profile, Module cmdlet/function, script.
 Write-PSFMessage -Level Debug -Message ("WorkingDirectory = $pwd")
@@ -434,7 +434,8 @@ function Get-Attributions {
           }
         }
       }
-    } finally {
+    }
+    finally {
       $reader.Close()
       $FileStream.Close()
     }
@@ -462,8 +463,9 @@ function Get-LinksFromDrafts {
       $matchResult = [RegEx]::Matches($line, $findRegex1)
       if ($matchResult.Success) {
         $Subject = $matchResult.captures.groups['Subject'].value
-        #Write-PSFMessage -Level Debug -Message "Subject = $Subject"
-      } else {
+        Write-PSFMessage -Level Debug -Message "Subject = $Subject"
+      }
+      else {
         $matchResult = [RegEx]::Matches($line, $findRegex2)
         if ($matchResult.Success) {
           $URL = $matchResult.captures.groups['URL'].value
@@ -481,7 +483,8 @@ function Get-LinksFromDrafts {
         $URL = ''
       }
     }
-  } finally {
+  }
+  finally {
     $reader.Close()
     $Stream.Close()
   }
@@ -582,7 +585,8 @@ function Open-BookmarksInBrave {
         foreach ($bookmark in $input) {
           $urlList += $bookmark.url
         }
-      } else {
+      }
+      else {
         $urlList = $URLs
       }
     }
@@ -704,7 +708,8 @@ function WatchFile {
       Write-Host '.' -NoNewline
 
     } while ($true)
-  } finally {
+  }
+  finally {
     # this gets executed when user presses CTRL+C:
 
     # stop monitoring

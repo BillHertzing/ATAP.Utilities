@@ -177,7 +177,7 @@ function Remove-ProGetApiKeys {
     if ($null -ne $savedErrorActionPreference) {
       $ErrorActionPreference = $savedErrorActionPreference
     }
-    Write-PSFMessage -Level Verbose -Message 'Exiting function: Remove-ProGetApiKeys' -Tag 'Remove-ProGetApiKeys', 'Trace'
+    Write-PSFMessage -Level Verbose -Message 'Leaving function: Remove-ProGetApiKeys' -Tag 'Remove-ProGetApiKeys', 'Trace'
     return $DeletedIds
   }
 }

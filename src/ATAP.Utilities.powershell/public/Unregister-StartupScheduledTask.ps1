@@ -24,6 +24,6 @@ function Unregister-StartupScheduledTask {
     Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception
     throw $_
   } finally {
-    Write-PSFMessage -Level Verbose -Message 'Exiting function: Unregister-StartupScheduledTask'
+    Write-PSFMessage -Level Verbose -Message 'Leaving function: Unregister-StartupScheduledTask'
   }
 }

@@ -55,7 +55,7 @@ function Register-ProGetFeedSet {
       }
     }
   }
-  Write-PSFMessage -Level Verbose -Message 'Exiting function: Register-ProGetFeedSet'
+  Write-PSFMessage -Level Verbose -Message 'Leaving function: Register-ProGetFeedSet'
 }
 
 

@@ -77,7 +77,7 @@ function Set-ProGetServiceConfigPath {
       throw $_
     }
     finally {
-      Write-PSFMessage -Level Verbose -Message "Exiting function: Set-ProGetServiceConfigPath"
+      Write-PSFMessage -Level Verbose -Message "Leaving function: Set-ProGetServiceConfigPath"
     }
   }
 }

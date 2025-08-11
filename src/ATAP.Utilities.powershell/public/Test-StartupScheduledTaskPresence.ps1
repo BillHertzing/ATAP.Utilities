@@ -23,6 +23,6 @@ function Test-StartupScheduledTaskPresence {
     Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception
     throw $_
   } finally {
-    Write-PSFMessage -Level Verbose -Message 'Exiting function: Test-StartupScheduledTaskPresence'
+    Write-PSFMessage -Level Verbose -Message 'Leaving function: Test-StartupScheduledTaskPresence'
   }
 }

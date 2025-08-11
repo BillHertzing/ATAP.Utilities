@@ -38,7 +38,7 @@ function Test-ProGetServiceConfigPath {
       throw $_
     }
     finally {
-      Write-PSFMessage -Level Verbose -Message "Exiting function: Test-ProGetServiceConfigPath"
+      Write-PSFMessage -Level Verbose -Message "Leaving function: Test-ProGetServiceConfigPath"
     }
   }
 }

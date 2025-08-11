@@ -48,7 +48,7 @@ function Build-ProGetFeedEndpointURL {
       throw $errorMessage
     }
   }
-  Write-PSFMessage -Level Verbose -Message "Exiting function: Build-ProGetFeedEndpointURL with URL: $endpointUrl"
+  Write-PSFMessage -Level Verbose -Message "Leaving function: Build-ProGetFeedEndpointURL with URL: $endpointUrl"
   return $endpointUrl
 }
 

@@ -53,6 +53,6 @@ function Register-StartupScheduledTask {
     throw $_
   }
   finally {
-    Write-PSFMessage -Level Verbose -Message 'Exiting function: Register-StartupScheduledTask'
+    Write-PSFMessage -Level Verbose -Message 'Leaving function: Register-StartupScheduledTask'
   }
 }

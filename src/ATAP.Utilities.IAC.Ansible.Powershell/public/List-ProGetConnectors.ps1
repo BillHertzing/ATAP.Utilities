@@ -126,7 +126,7 @@ function List-ProGetConnectors {
         $uniqueConnectorNames -contains $connectorName
       }
     }
-    Write-PSFMessage -Level Verbose -Message 'Exiting function: List-ProGetConnectors' -Tag 'List-ProGetConnectors', 'Trace'
+    Write-PSFMessage -Level Verbose -Message 'Leaving function: List-ProGetConnectors' -Tag 'List-ProGetConnectors', 'Trace'
     return $results
   }
 }

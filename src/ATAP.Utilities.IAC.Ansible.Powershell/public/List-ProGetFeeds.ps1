@@ -136,7 +136,7 @@ function List-ProGetFeeds {
         }
       }
     }
-    Write-PSFMessage -Level Verbose -Message 'Exiting function: List-ProGetFeeds' -Tag 'List-ProGetFeeds', 'Trace'
+    Write-PSFMessage -Level Verbose -Message 'Leaving function: List-ProGetFeeds' -Tag 'List-ProGetFeeds', 'Trace'
     return $useFeedSet ? $proGetFeeds : $results
   }
 }

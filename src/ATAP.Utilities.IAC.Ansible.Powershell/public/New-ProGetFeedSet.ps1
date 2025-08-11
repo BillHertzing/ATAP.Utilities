@@ -213,6 +213,6 @@ function New-ProGetFeedSet {
     else {
       Write-PSFMessage -Level Verbose -Message "Created $counter feeds successfully." -Tag 'New-ProGetFeedSet', 'Trace'
     }
-    Write-PSFMessage -Level Verbose -Message 'Exiting function: New-ProGetFeedSet' -Tag 'New-ProGetFeedSet', 'Trace'
+    Write-PSFMessage -Level Verbose -Message 'Leaving function: New-ProGetFeedSet' -Tag 'New-ProGetFeedSet', 'Trace'
   }
 }

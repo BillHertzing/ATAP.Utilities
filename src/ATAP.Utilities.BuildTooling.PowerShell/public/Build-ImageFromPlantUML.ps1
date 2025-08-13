@@ -1,28 +1,43 @@
-
 <#
-Given an input directory, walk it and run the java Plantuml jar file against every default file extension and .md file, placing the results in a tree rooted at output directory
-This expects to be run at a root of a repo that has a child named Documentation
-
+.SYNOPSIS
+Walk a directory and generate PlantUML images for supported files.
+.DESCRIPTION
+Given an input directory, this cmdlet invokes the PlantUML jar on files with extensions txt, pu, puml, md, etc.,
+mirroring the directory structure under the specified output directory.
+.EXAMPLE
+Build-ImageFromPlantUML -InDir .\docs -OutBaseDir .\_site
+.INPUTS
+String (path to input directory)
+.OUTPUTS
+None
+.NOTES
+Requires Java and the PlantUML jar. Supports ShouldProcess for safe operations.
 #>
 
 function Build-ImageFromPlantUML {
-  #region FunctionParameters
-  [CmdletBinding(SupportsShouldProcess = $true)]
+  [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+  [Alias('New-PlantUmlImages')]
+  [OutputType([void])]
   param (
-    # ToDo: two or more parameter sets, to deal with both Path and LiteralPath
-    [parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)][string] $InDir
-    , [parameter(Mandatory = $false)][string] $InBaseDir
-    , [parameter(Mandatory = $false)][string] $ExcludedSubDirPattern
-    , [parameter(Mandatory = $false)][string] $OutBaseDir
-    , [parameter(Mandatory = $false)][string] $OutRelativeDir
-    , [parameter(Mandatory = $false)][string] $PlantUMLJarPath
-    , [parameter(Mandatory = $false)] [ValidateSet('SVG', 'PNG')][string] $OutType
+    [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$InDir,
+    [Parameter(Mandatory = $false)]
+    [string]$InBaseDir,
+    [Parameter(Mandatory = $false)]
+    [string]$ExcludedSubDirPattern,
+    [Parameter(Mandatory = $false)]
+    [string]$OutBaseDir,
+    [Parameter(Mandatory = $false)]
+    [string]$OutRelativeDir,
+    [Parameter(Mandatory = $false)]
+    [string]$PlantUMLJarPath,
+    [Parameter(Mandatory = $false)]
+    [ValidateSet('SVG', 'PNG')][string]$OutType
   )
-  #endregion FunctionParameters
-  #region FunctionBeginBlock
-  ########################################
+
   begin {
-    Write-Verbose -Message "Starting $($MyInvocation.MyCommand)"
+    Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Entering Function Build-ImageFromPlantUML"
 
     $Settings = [ordered] @{
       InDir                 = ''
@@ -58,9 +73,6 @@ function Build-ImageFromPlantUML {
     Write-Debug -Message "BEGIN: OutputDirectoryAbsolute: $OutputDirectoryAbsolute"
 
   }
-  #endregion FunctionBeginBlock
-  #region FunctionProcessBlock
-  ########################################
   process {
     if ($InDir -notmatch $settings.ExcludedSubDirPattern) {
       # plantuml jar wants a trailing slash in the InDir
@@ -78,17 +90,15 @@ function Build-ImageFromPlantUML {
       # ToDo: grow this to accept a list of additional file suffixes
       $InDirAdditionalPattern = $InRelativeDir + '**\*.md'
       # This command will search for @startXYZ and @endXYZ into .md files of the $InRelativeDir (as relative to InBaseDir) directory and subdirectories
-      $cmdAsString = $baseCmdAsString + '"' + $InDirAdditionalPattern + '"'
+      #$cmdAsString = $baseCmdAsString + '"' + $InDirAdditionalPattern + '"'
       if ($PSCmdlet.ShouldProcess("$InDirAdditionalPattern", $cmdAsString)) {
         # $($InRelativeDirMDPattern)
         java -jar $($Settings.PlantUMLJarPath) -o $OutputDirectoryAbsolute $InDirAdditionalPattern > null
       }
     }
   }
-  #endregion FunctionProcessBlock
-  #region FunctionEndBlock
-  ########################################
   end {
+    Write-PSFMessage -FunctionName 'Build-ImageFromPlantUML' -ModuleName 'ATAP.Utilities.BuildTooling.PowerShell' -Level Debug -Message "Leaving Function Build-ImageFromPlantUML"
   }
 }
 

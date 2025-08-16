@@ -41,19 +41,6 @@ Note: keep the actual return (if any) as the last statement.
 Required try/catch/finally pattern
 Whenever you catch an exception, you must set a local $\_errorMessage that describes the failing operation and includes the exception message. Then log it with -Level Error. Re-throw the original error object.
 
-powershell
-Copy
-Edit
-try { # risky operation here
-}
-catch {
-$_errorMessage = "<Description of the operation that was attempted and failed>. Exception: $($_.Exception.Message)"
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Error -Message $\_errorMessage -Exception $_.Exception -Tag <one of: 'RestCall' | 'WebRequestCall' | 'InvokeExpressionCall' | 'InvokeCommandCall'>
-throw $\_
-}
-finally {
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Verbose -Message "Exiting function: <functionName>"
-}
 Network & execution call conventions
 For the following cmdlets, always:
 
@@ -94,9 +81,6 @@ Tag: 'WebRequestCall'
 
 Messages as above (“Calling …” / “Successfully returned …”).
 
-powershell
-Copy
-Edit
 try {
 Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Tag 'WebRequestCall' -Message "Calling $uri"
 
@@ -122,9 +106,6 @@ Before: "Invoke-Expression <command>"
 
 After: "Successfully returned from Invoke-Expression <command>"
 
-powershell
-Copy
-Edit
 try {
 Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Tag 'InvokeExpressionCall' -Message "Invoke-Expression $command"
 

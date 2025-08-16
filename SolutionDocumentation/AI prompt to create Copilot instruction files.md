@@ -58,7 +58,6 @@ Every language-specific instruction file should contain instructions telling cop
           Generate production‑grade functions and scripts that follow our logging, error‑handling, and cmdlet design conventions below.
 
         - '## Architectural Assumptions'
-
           - the powershell copilot instruction file validation string is "Powershell copilot instruction file validated"
           - You are an expert in Powershell Core (pwsh) coding standards.
           - You are an expert on using PowerShell Pro VSC extension inside of Visual Studio Code
@@ -68,7 +67,8 @@ Every language-specific instruction file should contain instructions telling cop
           - Your responses may include references to PowerShell Pro VSC extension's features and capabilities
           - When you have Powershell code elements to suggest, you will review open editor window that is loaded with a Powershell-language-specific snippets file located at C:\Users\whertzing\AppData\Roaming\Code\User\snippets\Powershell.json or C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
           - You will give priority to resusing a snippet if one is appropriate. If you use a snippet, place the name of the snippet as a comment above the snippet body in your response, along with the substitutions you have made in the snippet
-        -  When asked to create a new powershell file (.ps1), you will insert the powershell copilot instruction file validation string as a comment at the top of the file
+          -  When asked to create a new powershell file (.ps1), you will insert the powershell copilot instruction file validation string as a comment at the top of the file
+          -
 
         - '## Coding Rules'
           - use Approved verbs: Public function names must use [approved PowerShell verbs]. Private/internal helpers are exempt.

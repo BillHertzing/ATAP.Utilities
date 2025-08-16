@@ -121,20 +121,20 @@ $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey'
 New-SymbolicLink -targetPath `
 $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username `
 'GitHub', 'SharedVSCode', 'UserSnippetsPowershell.jsonc') `
--symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User',  'snippets','Powershell.json') -force
+-symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User', 'snippets','powershell.json') -force
 # .yml and .yaml requires us to use two symlinks
 New-SymbolicLink -targetPath `
 $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username `
 'GitHub', 'SharedVSCode', 'UserSnippetsYAML.jsonc') `
--symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User',  'snippets','YAML.json') -force
+-symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User', 'snippets','yaml.json') -force
 # New-SymbolicLink -targetPath `
 # $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username `
 # 'GitHub', 'SharedVSCode', 'UserSnippetsYAML.jsonc') `
-# -symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User',  'snippets','YML.json') -force
+# -symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User', 'snippets','yml.json') -force
 New-SymbolicLink -targetPath `
 $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username `
 'GitHub', 'SharedVSCode', 'UserSnippetsSQL.jsonc') `
--symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User',  'snippets','SQL.json') -force
+-symbolicLinkPath $(Join-Path 'C:' 'Users' $username,'AppData','Roaming','Code', 'User', 'snippets','sql.json') -force
 
 ```
 

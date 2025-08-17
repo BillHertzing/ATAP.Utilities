@@ -8,6 +8,18 @@ instructions should be short, self-contained statements and broadly applicable t
 
 ## create a set of copilot instruction files for a multi-root repository
 
+Create them in the following order
+
+- .github/copilot-instructions.md
+- .github/instructions/CSharp.instructions.md
+- .github/instructions/TypeScript.instructions.md
+- .github/instructions/UML.instructions.md
+- .github/instructions/xunit.instructions.md
+- .github/instructions/pester.instructions.md
+- .github/instructions/ansible.instructions.md
+- .github/instructions/jenkins.instructions.md
+- .github/instructions/powershell.instructions.md
+
 ### the repository-wide file .github/copilot-instructions.md
 
 Create the contents of the file `.github/copilot-instructions.md` with the following sections
@@ -50,7 +62,7 @@ Create the contents of the file `.github/copilot-instructions.md` with the follo
 
 Every language-specific instruction file should contain instructions telling copilot to follow specific coding guidelines
 
-- powershell: .github/instructions/PowerShell.instructions.md and with frontmatter applyTo: "**/\*.ps1,**/_.psm1,\*\*/_.psd1"
+- powershell: .github/instructions/powershell.instructions.md and with frontmatter applyTo: "**/\*.ps1,**/_.psm1,\*\*/_.psd1"
 
   - ## Content: The instructions should contain these main sections
 
@@ -161,3 +173,13 @@ copilot should consider Instruction file
           - Use of parameter sets for paths in a pipeline as either string or filehandle
 
         - Use of WhatIf and Confirm
+
+This is the ATAP.Utilities repository purpose:
+
+- The repository creates dotnet library packages (.dll files inside NuGet packages).
+- The repository creates Powershell Packages.
+- The repository creates a VSC extension.
+- The repository creates the components of an Ansible server to maintain an organizations Infrastructure-as-code (IAC).
+- The repository creates a CI/CD pipeline using Jenkins.
+- All of the software components and hardware hosts used in the Jenkins CI/CD pipeline are managed by the Ansible instance
+- The repository creates a SQL database for managing all of the above code components.

@@ -53,15 +53,15 @@ function ConvertFrom-CopilotChatHistory {
     $moduleName = 'CopilotChatTools'
     Write-PSFMessage -FunctionName 'ConvertFrom-CopilotChatHistory' -ModuleName $moduleName -Level Debug -Message 'Entering Function ConvertFrom-CopilotChatHistory in module CopilotChatTools'
 
-    function _Normalize-Newlines {
+    function _Convert-Newline {
       param([string]$s)
       try { return ($s -replace "`r`n|`r", "`n") }
       catch {
         $_errorMessage = "Failed to normalize newlines. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName '_Normalize-Newlines' -ModuleName $moduleName -Level Error -Message $_errorMessage
+        Write-PSFMessage -FunctionName '_Convert-Newline' -ModuleName $moduleName -Level Error -Message $_errorMessage
         throw $_
       }
-      finally { Write-PSFMessage -FunctionName '_Normalize-Newlines' -ModuleName $moduleName -Level Verbose -Message "Leaving function: _Normalize-Newlines" }
+      finally { Write-PSFMessage -FunctionName '_Convert-Newline' -ModuleName $moduleName -Level Verbose -Message "Leaving function: _Convert-Newline" }
     }
 
     function _Collapse-BlankLines {
@@ -84,7 +84,7 @@ function ConvertFrom-CopilotChatHistory {
     function _Split-CodeAndText {
       param([string]$md)
       try {
-        $md = _Normalize-Newlines $md
+        $md = _Convert-Newline $md
         $pattern = '(?ms)```(\w+)?\n(.*?)\n```'
         $result = @(); $idx = 0
         foreach ($m in [Regex]::Matches($md, $pattern)) {
@@ -187,7 +187,7 @@ function ConvertFrom-CopilotChatHistory {
     function _Clean-JsoncText {
       param([string]$text)
       try {
-        $t = _Normalize-Newlines $text
+        $t = _Convert-Newline $text
         # Keep only from first "{" to last "}"
         $first = $t.IndexOf('{'); $last = $t.LastIndexOf('}')
         if ($first -lt 0 -or $last -lt 0 -or $last -lt $first) { throw "Could not locate JSON object boundaries." }
@@ -321,7 +321,7 @@ function ConvertFrom-CopilotChatHistory {
     function _Extract-PairsFromText {
       param([string]$text)
       try {
-        $t = _Normalize-Newlines $text
+        $t = _Convert-Newline $text
         $lines = $t -split "`n"
         $currentRole = $null; $buffers = @(); $buf = New-Object System.Text.StringBuilder
         function _Flush-Buffer {
@@ -375,11 +375,11 @@ function ConvertFrom-CopilotChatHistory {
 
         $text =
         if ($PSCmdlet.ParameterSetName -eq 'ByText' -and $PSBoundParameters.ContainsKey('RawText')) {
-          _Normalize-Newlines $RawText
+          _Convert-Newline $RawText
         }
         elseif ($PSCmdlet.ParameterSetName -eq 'ByPath' -and $PSBoundParameters.ContainsKey('Path')) {
           $raw = [System.IO.File]::ReadAllText((Resolve-Path $Path))
-          _Normalize-Newlines $raw
+          _Convert-Newline $raw
         }
         else { throw "You must provide either -Path or -RawText." }
 

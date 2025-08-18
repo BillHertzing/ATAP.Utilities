@@ -4,6 +4,9 @@ Your task is to act as an expert in GitHub Copilot instruction file management. 
 
 All generated instruction files must be in Markdown format and stored within the .github/instructions/ directory in the repository. Each .instructions.md file should include appropriate applyTo frontmatter using glob syntax to define its scope.
 
+The title of each markdown file should be "Copilot instructions for <purpose of file>"
+Right after the tit;le should be a line that says "This file was generated via an ai prompt. Changes made to this file will not be saved when it is regenerated.".
+
 instructions should be short, self-contained statements and broadly applicable to most requests.
 
 ## create a set of copilot instruction files for a multi-root repository
@@ -15,6 +18,10 @@ Create them in the following order
 - .github/instructions/TypeScript.instructions.md
 - .github/instructions/UML.instructions.md
 - .github/instructions/xunit.instructions.md
+- .github/instructions/pesterTest.instructions.md
+- .github/instructions/pesterData.instructions.md
+- .github/instructions/csharpTest.instructions.md
+- .github/instructions/csharpData.instructions.md
 - .github/instructions/pester.instructions.md
 - .github/instructions/ansible.instructions.md
 - .github/instructions/jenkins.instructions.md
@@ -24,37 +31,55 @@ Create them in the following order
 
 Create the contents of the file `.github/copilot-instructions.md` with the following sections
 
-- "## Repository Purpose:"
-  - place the purpose of the repository here. You can query the user for a quick description, Inspect everything in the repositroy to generate a purpose
-- "## Repository structure"
-  - summarize the structure of the repository and place that information here. Inspect everything in the repositroy to generate a structure
-    - The repository is a multi-root repository
-    - Individual projects under `src/` make up the majority of the repository structure
-      - Console Programs
-      - Services (in a DI sense of Services)
-      - Utilities
-      - Tests (Pester for Powershell .ps1) for powershell functions are found under the `tests/` directory of every powershell project
-    - Individual projects under `tests/` make up the XUnit tests for cSharp files
-    - Solution Documentation
-    - Build Tooling
-    - Databases/
-    - Third Party Development Tools configuration files
-      - .github/
-      - .editorconfig
-      - .gitignore
-      - .markdownlint.yml
-      - .prettierrc.yml
-      - .vault_password_file.txt
-      - ATAP.Utilities.code-workspace
-      - ATAP.Utilities.sln
-      - Directory.Build.Props
-      - Directory.Build.targets
-      - global.json
-      - Index.md
-      - NuGet.config (?)
-    - README.md
-    - Profiles (machine, host, and user) in ATAP.Utilities.Powershell/Resources
-    -
+"## Repository Purpose"
+
+The ATAP.Utilities repository is designed to create .NET libraries, PowerShell modules/packages, Ansible Infrastructure-as-Code (IAC) components, Jenkins CI/CD pipeline assets, a SQL database schema for managing code components, and a VS Code extension. It provides shared utilities, services, and tooling that integrate via configuration, dependency injection, and standardized logging.
+
+"## Repository structure"
+
+- summarize the structure of the repository and place that information here. Inspect everything in the repository to generate a structure. The following are facts about the repository you should place in the repository structure. You may expand on these.
+
+  - The repository is a multi-root repository
+  - Individual projects under `src/` make up the majority of the repository structure
+
+    - Libraries (e.g., serialization, messaging, logging, persistence, configuration, strongly-typed IDs, graph, reactive, voice, security, HTTP, database, timers, file IO, ETW, etc.)
+    - Console Programs
+    - Services (in a DI sense of Services)
+      - Service and interface pairing patterns (ServiceName + ServiceName.Interfaces + ServiceName.StringConstants where applicable)
+    - Utilities (usually written in Powershell, and packaged into powershell modules) for modules, build tooling, automation, security, speech, Neo4j, Hydrus, Ansible wrappers
+    - VS Code extension (ATAP.VSCExtension.AI) and AI assist components
+    - Build tooling subtrees (Cake, Chocolatey, Jenkins, CSharp, PowerShell, AutoDoc, GenerateProgram)
+    - IAC Ansible components (defaults, enumerations, models, PowerShell integration, string constants)
+
+  - Test files and test projects
+    - Pester Tests for Powershell functions are found under the `tests/` directory of every powershell project.
+    - Files ending in .Tests.ps1 are pester test files
+    - Files ending in TestData.ps1 or TestData.yml are pester testdata files
+    - xUnit Tests for CSharp libraries are found under `tests/` (a peer of `src/`) and the subdirectory structure for test projects mimics subdirectory structure for the CSharp library projects found under `src/`
+  - Solution Documentation
+  - Build Tooling
+  - Databases/
+  - Third Party Development Tools configuration files
+    - .github/
+      - .github/instructions
+      - .github/prompts
+      - .github/workflows
+      - .github/IssueTemplates
+    - .editorconfig
+    - .gitignore
+    - .markdownlint.yml
+    - .prettierrc.yml
+    - .vault_password_file.txt
+    - ATAP.Utilities.code-workspace
+    - ATAP.Utilities.sln
+    - Directory.Build.Props
+    - Directory.Build.targets
+    - global.json
+    - Index.md
+    - NuGet.config (?)
+  - README.md
+  - Profiles (machine, host, and user) in ATAP.Utilities.Powershell/Resources
+  -
 
 ## Interrelationships of the repository structures
 
@@ -88,10 +113,9 @@ Every language-specific instruction file should contain instructions telling cop
           - use Pascal Case for public parameters.
           - use camelCase with a '_'prefix for private/internal functions and cmdlets.
           - use camelCase with a '_'prefix for local variables.
-          - use Write-PSFMessage for logging, never Write-Host, Write-Verbose, Write-Debug or Write-Output.
-          - use -Level Debug for trace messages, -Level Verbose for lifecycle messages, -Level Important for notable operational messages, and -Level Error for failures.
-          - Never use -Level Info with Write-PSFMessage.
-          - include -FunctionName '<functionName>', -ModuleName '<moduleName>' in every Write-PSFMessage call inside a function. -
+          - use `Write-PSFMessage` for logging, never `Write-Host`, `Write-Verbose`, `Write-Debug` or `Write-Output`.
+          - use `-Level Debug` for trace messages, `-Level Verbose` for lifecycle messages, `-Level Important` for notable operational messages, and `-Level Error` for failures.
+          - Never use -Level Info with `Write-PSFMessage`.
           - Log using `Write-PSFMessage` - Every `Write-PSFMessage` inside a function should include the first parameter ◦ `-FunctionName '<functionName>'` where the <functionName> is replaced by the name of the function - Every `Write-PSFMessage` inside a function should include the second parameter ◦ `-ModuleName '<moduleName>'` where the <moduleName> is replaced by the name of the module
           - All calls to `Invoke-RestMethod` should have a log message just before and just after the line that calls `Invoke-RestMethod`. These log messages should have `-Level Debug`, and `-Tag 'RestCall'`. The message for the log before the call is "Calling <URLOfEndpoint>". The message for the log after the call is "Successfully returned from <URLOfEndpoint>"
           - All calls to `Invoke-WebRequest` should have a log message just before and just after the line that calls `Invoke-WebRequest`. These log messages should have `-Level Debug`, and `-Tag 'WebRequestCall'`. The message for the log before the call is "Calling <URLOfEndpoint>". The message for the log after the call is "Successfully returned from <URLOfEndpoint>"
@@ -107,20 +131,46 @@ Every language-specific instruction file should contain instructions telling cop
           - wrap any code that might produce an exception in a try/catch/finally block. use the Try-Catch-Finally snippet code block
           - When you are instructed to create a new cmdlet, or you are instructed to compare an existing Powershell file to the 'ideal' cmdlet structure, refer to the open snippet file and within that the snippet named "New-Cmdlet with String as primary input",
 
-- '## Testing (Pester)'
+- CSharp (C#): .github/instructions/cSharp.instructions.md and with frontmatter applyTo: "\*_/_.cs"
 
--
-- CSharp (C#): .github/instructions/CSharp.instructions.md and with frontmatter applyTo: "\*_/_.cs"
   - ## Coding Guidelines:
-- TypeScript: .github/instructions/TypeScript.instructions.md and with frontmatter applyTo: "**/\*.ts" or "**/\*.tsx"
-  - Coding Guidelines:
-- UML: .github/instructions/UML.instructions.md and with frontmatter applyTo: "**/\*.puml" or "**/\*.uml"
-  - Coding Guidelines:
+    - TBD
+
+- TypeScript: .github/instructions/typeScript.instructions.md and with frontmatter applyTo: "**/\*.ts" or "**/\*.tsx"
+
+  - ## Coding Guidelines:
+    - TBD
+
+- UML: .github/instructions/uML.instructions.md and with frontmatter applyTo: "**/\*.puml" or "**/\*.uml"
+
+  - ## Coding Guidelines:
+    - TBD
+
+- PesterDataFile: .github/instructions/pesterData.instructions.md and with frontmatter applyTo: "\<glob that gets files matching _.TestData.yml or _.DataForTests.ps1 anywhere>"
+
+  - ## Coding Guidelines:
+
+    - The validation string for DataForTests.ps1 is "D4T validation passed". When instructed to put the validation string into a data for tests file, place it as a comment at the top of the file if it doesn't exist.
+    - Arrange/Act/Assert with clear contexts; mock external processes, file IO, secrets vault.
+    - Use data‑driven tests for rules/state transitions; verify `-WhatIf`/`-Confirm` paths.
+    - Emit minimal, structured logs; ensure no secret values leak in output.
+
+- PesterTestFile: .github/instructions/pesterTest.instructions.md and with frontmatter applyTo: "<glob that gets files matching \*.Tests.ps1 anywhere>"
+
+  - ## Coding Guidelines:
+    - Arrange/Act/Assert with clear contexts; mock external processes, file IO, secrets vault.
+    - Use data‑driven tests for rules/state transitions; verify `-WhatIf`/`-Confirm` paths.
+    - Emit minimal, structured logs; ensure no secret values leak in output.
+    - use the module Shoudly in place of the native pester should
+
+- CSharpTestFile: .github/instructions/csharpTest.instructions.md and with frontmatter applyTo: "<glob that gets files matching \*.Test.cs anywhere>"
+
+- CSharpDataFile: .github/instructions/csharpData.instructions.md and with frontmatter applyTo: "<glob that gets files matching \*.TestData.cs anywhere>"
 
 ### Process-specific instruction files
 
 - pester: .github/instructions/pester.instructions.md and with frontmatter applyTo: "\*_/_.Tests.ps1"
-- xunit: .github/instructions/xunit.instructions.md and with frontmatter applyTo: "**/tests/**/\*.cs"
+- xunit: .github/instructions/xunit.instructions.md and with frontmatter applyTo: ""
 
 ### Third-party-application-specific instruction files
 

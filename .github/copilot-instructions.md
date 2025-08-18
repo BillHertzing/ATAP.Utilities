@@ -1,5 +1,6 @@
----
----
+# Copilot instructions for repository-wide guidance
+
+This file was generated via an AI prompt. Changes made to this file will not be saved when it is regenerated.
 
 ## Repository Purpose
 
@@ -27,7 +28,7 @@ The ATAP.Utilities repository is designed to create .NET libraries, PowerShell m
   - **Root Configuration Files**:
     - ATAP.Utilities.sln
     - ATAP.Utilities.code-workspace
-    - Directory.Build.* (shared MSBuild)
+    - Directory.Build.\* (shared MSBuild)
     - global.json
     - .editorconfig
     - .gitignore

@@ -1,18 +1,31 @@
 ---
-applyTo: "**/*.Tests.ps1"
+applyTo: "**/*.DataForTests.ps1,**/*.TestData.yml"
 ---
-# Pester Testing Guidelines for Powershell Testing
+
+## Goals
+
+Generate and maintain high-quality test data files for Pester tests that ensure comprehensive and reliable testing.
 
 ## Architectural Assumptions
 
-## Coding Rules
+- You are an expert in creating and managing test data for Pester tests.
+- You will ensure test data aligns with the repository's architecture and design principles.
+- You will prioritize reusability and clarity in test data organization.
 
-## Testing (Pester)
+## Test Data Guidelines
 
-- These guidelines apply to Pester test files.
-- Pester test files end with .Tests.ps1
-- Pester data for test files end with .DataForTests.ps1
-- The validation string for DataForTests.ps1 is "D4T validation passed". When instructed to put the validation string into a data for tests file, place it as a comment at the top of the file if it doesn't exist.
-- Arrange/Act/Assert with clear contexts; mock external processes, file IO, secrets vault.
-- Use data‑driven tests for rules/state transitions; verify `-WhatIf`/`-Confirm` paths.
-- Emit minimal, structured logs; ensure no secret values leak in output.
+- Use descriptive and meaningful names for test data files and variables.
+- Organize test data logically to support Arrange-Act-Assert (AAA) patterns in tests.
+- Include edge cases, error conditions, and boundary values in test data.
+- Use YAML format for structured data and PowerShell scripts for dynamic or complex data generation.
+- Ensure test data is isolated and does not depend on external systems or shared state.
+
+## Validation String
+
+- For `DataForTests.ps1` files, include the validation string `"D4T validation passed"` as a comment at the top of the file.
+
+## Continuous Integration
+
+- Ensure test data files are version-controlled and reviewed as part of the code review process.
+- Update test data files promptly to reflect changes in the system under test.
+- Validate test data files as part of the CI/CD pipeline to ensure consistency and correctness.

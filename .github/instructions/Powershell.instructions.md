@@ -2,161 +2,103 @@
 applyTo: ["**/*.ps1", "*/.ps1"]
 ```
 
-# PowerShell Guidelines
+# Copilot instructions for PowerShell files
+
+This file was generated via an AI prompt. Changes made to this file will not be saved when it is regenerated.
+This file was created by stiching together three different AI responses to the meta-prompt.
+
+---
 
 ## Goals
 
-Generate production‑grade functions and scripts that follow our logging, error‑handling, and cmdlet design conventions below.
+- Generate production-grade PowerShell functions and scripts that follow the repository's logging, error-handling, and cmdlet design conventions.
 
-## Coding Rules
+---
 
-use Approved verbs: Public function names must use [approved PowerShell verbs]. Private/internal helpers are exempt.
-use Pascal Case for public functions and cmdlets.
-use Pascal Case for public parameters.
-use camelCase with a '_'prefix for private/internal functions and cmdlets.
-use camelCase with a '_'prefix for local variables.
+## AI Guidelines
 
-use Write-PSFMessage for logging, never Write-Host, Write-Verbose, Write-Debug or Write-Output.
-use -Level Debug for trace messages, -Level Verbose for lifecycle messages, -Level Important for notable operational messages, and -Level Error for failures.
-Never use -Level Info with Write-PSFMessage.
-include -FunctionName '<functionName>', -ModuleName '<moduleName>' in every Write-PSFMessage call inside a function.
+- You are an expert in PowerShell Core (pwsh) coding standards.
+- You are an expert in the PowerShell Pro VS Code extension.
+- All PowerShell code must run on PowerShell Core (cross-platform).
+- You may use any .NET libraries or open-source libraries with an MIT license.
+- Your responses may include references to PowerShell Pro VS Code extension features and capabilities.
+- When generating PowerShell code, prioritize reusing snippets from:
+  - `C:\Users\whertzing\AppData\Roaming\Code\User\snippets\Powershell.json`
+  - `C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc`
+- If a snippet is used, include the snippet name as a comment above the snippet body, along with any substitutions made.
 
-Refer to the snippets file UserSnippetsPowershell.jsonc which should be open in an editor window as the source of truth for Powershell programming constructs.
+---
 
-Wrap risk points in Try/Catch/Finally using the snippet named "Try-Catch-Finally". Any call to Invoke-RestMethod, Invoke-WebRequest, Invoke-Expression, or Invoke-Command must be wrapped in Try { ... } Catch { ... } Finally { ... } with the logging pattern shown in the snippets file.
+## Validation String
 
-Cmdlet template: Use the Begin/Process/End skeleton below, including the standard entry/exit log lines.
+- For `*.ps1` files, include the validation string `"AI assisted using Powershell.instructions.md as guidelines"` under the `.NOTES` section of the comment-based help. If no comment-based help exists, include the validation string as a comment at the top of the file.
 
-WhatIf/Confirm: Public functions that change state must support -WhatIf and -Confirm, and use SupportsShouldProcess.
+---
 
-Parameter sets for path-like input: When accepting pipeline items that can be paths or streams, use parameter sets (e.g., Path vs InputObject or LiteralPath) and support pipeline binding.
+## Architectural Assumptions
 
-Entry/exit lines for cmdlets
-First executable line of Begin:
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%'
-Next‑to‑last executable line of End:
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%'
-Note: keep the actual return (if any) as the last statement.
+- All PowerShell cmdlets must follow the repository's conventions for logging, error handling, and modularity.
+- Use `Write-PSFMessage` for logging:
+  - `-Level Debug` for trace messages.
+  - `-Level Verbose` for lifecycle messages.
+  - `-Level Important` for notable operational messages.
+  - `-Level Error` for failures.
+- All calls to `Invoke-RestMethod`, `Invoke-WebRequest`, `Invoke-Expression`, and `Invoke-Command` must:
+  - Be wrapped in a `try/catch/finally` block.
+  - Include log messages before and after the call with appropriate tags (e.g., `RestCall`, `WebRequestCall`, `InvokeExpressionCall`, `InvokeCommandCall`).
 
-Required try/catch/finally pattern
-Whenever you catch an exception, you must set a local $\_errorMessage that describes the failing operation and includes the exception message. Then log it with -Level Error. Then throw the original error object. see the powershell snippet named "Try-Catch-Finally" for the canaconical template.
+---
 
-Network & execution call conventions
-For the following cmdlets, always:
+## Coding Rules for PowerShell
 
-Log before the call with -Level Debug and the required -Tag.
+- **Function Naming**:
+  - Use PascalCase for public functions and parameters.
+  - Use camelCase with a `_` prefix for private/internal functions and variables.
+- **Cmdlet Design**:
+  - Include `[CmdletBinding()]` and `param()` blocks with proper validation attributes.
+  - Ensure all cmdlets support `-WhatIf` and `-Confirm` parameters.
+- **Comment-Based Help**:
+  - Add `.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER`, `.EXAMPLE`, `.NOTES`, and `.LINK` sections for all public functions.
+  - Include log messages before and after calls to `Invoke-RestMethod`, `Invoke-WebRequest`, `Invoke-Expression`, and `Invoke-Command`.
+- **Error Handling**:
+  - Wrap all potentially failing operations in `try/catch/finally` blocks.
+  - Log errors using `Write-PSFMessage` with `-Level Error`.
+  - ToDO: work on metaprompt - there are many more rules there that did not get output into the language specific instructions.
+- **Logging**:
+  - Use `Write-PSFMessage` for logging:
+    - `-Level Debug` for trace messages.
+    - `-Level Verbose` for lifecycle messages.
+    - `-Level Important` for notable operational messages.
+    - `-Level Error` for failures.
 
-Perform the call inside try.
+---
 
-Log after a successful call with -Level Debug and the same -Tag.
+## Example Logging Patterns
 
-Use the try/catch/finally programming construct. see the powershell snippet named "Try-Catch-Finally" for the canaconical template..
+### `Invoke-RestMethod`
+```powershell
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message "Calling <URLOfEndpoint>" -Tag 'RestCall'
+$response = Invoke-RestMethod -Uri <URLOfEndpoint> -Method GET
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message "Successfully returned from <URLOfEndpoint>" -Tag 'RestCall'
+```
 
-Invoke-RestMethod
-Tag: 'RestCall'
+### `Invoke-Command`
+```powershell
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message "Calling Invoke-Command on $computerName" -Tag 'InvokeCommandCall'
+Invoke-Command -ComputerName $computerName -ScriptBlock { <scriptBlockToRun> }
+Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message "Successfully returned from Invoke-Command on $computerName" -Tag 'InvokeCommandCall'
+```
 
-Messages:
+## Using PowerShell Snippets
 
-Before: "Calling <URLOfEndpoint>"
-
-After: "Successfully returned from <URLOfEndpoint>"
-try {
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Tag 'RestCall' -Message "Calling $uri"
-
-    $response = Invoke-RestMethod -Uri $uri -Method $method -Headers $headers -Body $body -ContentType 'application/json' @irParams
-
-    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Tag 'RestCall' -Message "Successfully returned from $uri"
-
-}
-catch {
-$_errorMessage = "REST call to $uri failed. Exception: $($_.Exception.Message)"
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Error -Message $\_errorMessage -Exception $_.Exception -Tag 'RestCall'
-throw $\_
-}
-finally {
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Verbose -Message "Exiting function: <functionName>"
-}
-Invoke-WebRequest
-Tag: 'WebRequestCall'
-
-Messages as above (“Calling …” / “Successfully returned …”).
-
-try {
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Tag 'WebRequestCall' -Message "Calling $uri"
-
-    $result = Invoke-WebRequest -Uri $uri -Method $method -Headers $headers -Body $body @iwrParams
-
-    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Tag 'WebRequestCall' -Message "Successfully returned from $uri"
-
-}
-catch {
-$_errorMessage = "Web request to $uri failed. Exception: $($_.Exception.Message)"
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Error -Message $\_errorMessage -Exception $_.Exception -Tag 'WebRequestCall'
-throw $\_
-}
-finally {
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Verbose -Message "Exiting function: <functionName>"
-}
-Invoke-Expression
-Tag: 'InvokeExpressionCall'
-
-Messages:
-
-Before: "Invoke-Expression <command>"
-
-After: "Successfully returned from Invoke-Expression <command>"
-
-try {
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Tag 'InvokeExpressionCall' -Message "Invoke-Expression $command"
-
-    $invokeResult = Invoke-Expression -Command $command
-
-    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Tag 'InvokeExpressionCall' -Message "Successfully returned from Invoke-Expression $command"
-
-}
-catch {
-$_errorMessage = "Invoke-Expression failed for command '$command'. Exception: $($_.Exception.Message)"
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Error -Message $\_errorMessage -Exception $_.Exception -Tag 'InvokeExpressionCall'
-throw $\_
-}
-finally {
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Verbose -Message "Exiting function: <functionName>"
-}
-Invoke-Command
-Tag: 'InvokeCommandCall'
-
-Pre‑call log line must render the effective arguments including optional SSL and session options:
-
-Edit
-try {
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message (
-"Calling Invoke-Command " +
-$(
-            "-ComputerName $computerName -ScriptBlock {$scriptBlockToRun} -Credential $($credential.ToString())" +
-$(if ($useSSL) { " -UseSSL" } else { "" }) +
-$(if ($useSelfSignedCert) { " -SessionOption $(New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck)" } else { "" })
-)
-) -Tag 'InvokeCommandCall'
-
-    $icResult = Invoke-Command -ComputerName $computerName -ScriptBlock $scriptBlockToRun -Credential $credential @icParams
-
-    Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message "Successfully returned from Invoke-Command" -Tag 'InvokeCommandCall'
-
-}
-catch {
-$_errorMessage = "Invoke-Command failed on $computerName. Exception: $($_.Exception.Message)"
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Error -Message $\_errorMessage -Exception $_.Exception -Tag 'InvokeCommandCall'
-throw $\_
-}
-finally {
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Verbose -Message "Exiting function: <functionName>"
-}
-
-Additional notes for Copilot
-Prefer Write-PSFMessage -Level Debug for trace, -Level Verbose for lifecycle/finally, -Level Important for user‑notable events, and -Level Error for failures. Do not emit -Level Info.
-
-When emitting REST or web requests, include correlation data (IDs, resource names) in log messages when available, but never secrets or tokens.
-
-When adding new public functions, ensure approved verb usage and SupportsShouldProcess—and use parameter sets to distinguish mutually exclusive inputs cleanly.
+- **Snippet Files**:
+  - Snippets are stored in:
+    - `C:\Users\whertzing\AppData\Roaming\Code\User\snippets\Powershell.json`
+    - `C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc`
+- **Snippet Usage**:
+  - When generating PowerShell code, prioritize reusing snippets from the above files.
+  - If a snippet is used, include the snippet name as a comment above the snippet body, along with any substitutions made.
+- **Validation String**:
+  - For `*.ps1` files, include the validation string `"AI assisted using Powershell.instructions.md as guidelines"` under the `.NOTES` section of the comment-based help. If no comment-based help exists, include the validation string as a comment at the top of the file.
 
 End of instructions.

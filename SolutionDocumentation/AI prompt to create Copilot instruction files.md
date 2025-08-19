@@ -90,12 +90,22 @@ The ATAP.Utilities repository is designed to create .NET libraries, PowerShell m
 
 ### Language-specific instruction files
 
-Every language-specific instruction file should contain instructions telling copilot to follow specific coding guidelines
+Every language-specific instruction file should contain instructions that give Copilot an understanding of the repository architecture and where the file being created/regenerated/edited fits within the repository. The instruction file also instructs copilot to follow specific coding guidelines.
 
-You will create, or inspect and regenerate, the file .github/instructions/markdown.instructions.md. this file must follow these rules:
-It has the frontmatter applyTo: "\<glob that gets files matching \*.md anywhere>"
-It has a heading '## Goals' containing the following: - Generate production‑grade markdown documentation that follow our conventions below.
-It has a heading '## Coding Rules' containing the following: - All heading lines should be followed by a blank line
+Following is a list of the instruction files to generate. Each list item has a sublist of rules that must be followed.
+
+- Markdown: .github/instructions/Markdown.instructions.md and with frontmatter applyTo: "\<glob that gets files matching \*.md anywhere>"
+  - You AI prompt to create Copilot instruction files.md are an expert in the Markdown (.md) language
+  - You will create, or inspect and regenerate, the file .github/instructions/markdown.instructions.md.
+  - Your task will differ if you are creating the file or regenerating it.
+  - if You are creating a file:
+    - It has the frontmatter applyTo: "\<glob that gets files matching \*.md anywhere>"
+    - It has a heading '## Goals' containing the following list:
+      - Generate production‑grade markdown documentation that follow our conventions below.
+    - It has a heading '## Goals' containing the following list:
+    - It has a heading '## Coding Rules' containing the following :
+      - All heading lines should be followed by a blank line
+
 This end the instructions for the file .github/instructions/markdown.instructions.md.
 
 - powershell: .github/instructions/powershell.instructions.md and with frontmatter applyTo: "**/\*.ps1,**/_.psm1,\*\*/_.psd1"

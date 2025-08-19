@@ -1,33 +1,33 @@
 ---
-applyTo: "**/*.PesterTestData.ps1, **/*.TestData.yml, **/*.DataForTests.ps1"
+applyTo: "**/*.CSharpTestData.cs"
 ---
 
-# Copilot instructions for Pester test data files
+# Copilot instructions for C# test data files
 
 This file was generated via an AI prompt. Changes made to this file will not be saved when it is regenerated.
 
 ## Goals
 
-Generate and maintain high-quality test data files for Pester tests to ensure comprehensive and reliable testing of PowerShell scripts and modules.
+Generate and maintain high-quality test data files for C# unit tests to ensure comprehensive and reliable testing.
 
 ## AI Guidelines
 
-- You are an expert in creating and managing test data for Pester tests.
+- You are an expert in creating and managing test data for XUnit tests.
 - Ensure test data aligns with the repository's architecture and design principles.
 - Prioritize reusability and clarity in test data organization.
-- When generating PowerShell (.ps1) files for test data, refer to the file `.github/instructions/Powershell.instructions.md`.
+- When generating C# (.cs) files for test data, refer to the file `.github/instructions/CSharp.instructions.md`.
 
 ## Test Data Coding Guidelines
 
 - Use descriptive and meaningful names for test data files and variables.
 - Organize test data logically to support Arrange-Act-Assert (AAA) patterns in tests.
 - Include edge cases, error conditions, and boundary values in test data.
-- Use YAML format for structured data and PowerShell scripts for dynamic or complex data generation.
+- Use the TestDataGenerator pattern for complex data generation.
 - Ensure test data is isolated and does not depend on external systems or shared state.
 
 ## Validation String
 
-- For `DataForTests.ps1` files, include the validation string "Generated using PesterTestData.instructions.md as guidelines" as part of the heading 1 text.
+- For `*.CSharpTestData.cs` files, include the validation string "Generated using CSharpTestData.instructions.md as guidelines" as part of the heading 1 text.
 
 ## Continuous Integration
 

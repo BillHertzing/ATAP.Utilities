@@ -3,7 +3,6 @@ applyTo: "**/*.md"
 ---
 
 # Copilot instructions for Markdown files
-
 This file was generated via an AI prompt. Changes made to this file will not be saved when it is regenerated.
 
 ## Goals

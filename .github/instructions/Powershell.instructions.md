@@ -21,9 +21,9 @@ use -Level Debug for trace messages, -Level Verbose for lifecycle messages, -Lev
 Never use -Level Info with Write-PSFMessage.
 include -FunctionName '<functionName>', -ModuleName '<moduleName>' in every Write-PSFMessage call inside a function.
 
-Refer to the snippets file C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc which should be open in an editor window as the source of truth for Powershell programming constructs.
+Refer to the snippets file UserSnippetsPowershell.jsonc which should be open in an editor window as the source of truth for Powershell programming constructs.
 
-Wrap risk points in Try/Catch/Finally using the snippet named : Any call to Invoke-RestMethod, Invoke-WebRequest, Invoke-Expression, or Invoke-Command must be wrapped in Try { ... } Catch { ... } Finally { ... } with the logging pattern shown in the snippets file.
+Wrap risk points in Try/Catch/Finally using the snippet named "Try-Catch-Finally". Any call to Invoke-RestMethod, Invoke-WebRequest, Invoke-Expression, or Invoke-Command must be wrapped in Try { ... } Catch { ... } Finally { ... } with the logging pattern shown in the snippets file.
 
 Cmdlet template: Use the Begin/Process/End skeleton below, including the standard entry/exit log lines.
 
@@ -39,7 +39,7 @@ Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Leve
 Note: keep the actual return (if any) as the last statement.
 
 Required try/catch/finally pattern
-Whenever you catch an exception, you must set a local $\_errorMessage that describes the failing operation and includes the exception message. Then log it with -Level Error. Re-throw the original error object.
+Whenever you catch an exception, you must set a local $\_errorMessage that describes the failing operation and includes the exception message. Then log it with -Level Error. Then throw the original error object. see the powershell snippet named "Try-Catch-Finally" for the canaconical template.
 
 Network & execution call conventions
 For the following cmdlets, always:
@@ -50,7 +50,7 @@ Perform the call inside try.
 
 Log after a successful call with -Level Debug and the same -Tag.
 
-Use the try/catch/finally block above.
+Use the try/catch/finally programming construct. see the powershell snippet named "Try-Catch-Finally" for the canaconical template..
 
 Invoke-RestMethod
 Tag: 'RestCall'
@@ -127,8 +127,6 @@ Tag: 'InvokeCommandCall'
 
 Pre‑call log line must render the effective arguments including optional SSL and session options:
 
-powershell
-Copy
 Edit
 try {
 Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message (
@@ -153,45 +151,7 @@ throw $\_
 finally {
 Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Verbose -Message "Exiting function: <functionName>"
 }
-Cmdlet skeleton (use this as the default for public functions)
-powershell
-Copy
-Edit
-function Verb-Noun {
-[CmdletBinding(SupportsShouldProcess, ConfirmImpact='Medium')]
-param( # Path vs stream parameter sets for pipeline scenarios
-[Parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName='Path')]
-[ValidateNotNullOrEmpty()]
-[string] $Path,
 
-        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName='InputObject')]
-        [ValidateNotNull()]
-        [System.IO.Stream] $InputObject
-    )
-    begin {
-        Write-PSFMessage -FunctionName 'Verb-Noun' -ModuleName '<moduleName>' -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%'
-    }
-    process {
-        if ($PSCmdlet.ShouldProcess($Path ?? '<input>', 'Perform operation')) {
-            try {
-                # Do work here...
-                Write-PSFMessage -FunctionName 'Verb-Noun' -ModuleName '<moduleName>' -Level Important -Message 'Operation completed'
-            }
-            catch {
-                $_errorMessage = "Verb-Noun failed while processing '$($Path ?? '<stream>')'. Exception: $($_.Exception.Message)"
-                Write-PSFMessage -FunctionName 'Verb-Noun' -ModuleName '<moduleName>' -Level Error -Message $_errorMessage -Exception $_.Exception
-                throw $_
-            }
-            finally {
-                Write-PSFMessage -FunctionName 'Verb-Noun' -ModuleName '<moduleName>' -Level Verbose -Message "Exiting function: Verb-Noun"
-            }
-        }
-    }
-    end {
-        Write-PSFMessage -FunctionName 'Verb-Noun' -ModuleName '<moduleName>' -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%'
-    }
-
-}
 Additional notes for Copilot
 Prefer Write-PSFMessage -Level Debug for trace, -Level Verbose for lifecycle/finally, -Level Important for user‑notable events, and -Level Error for failures. Do not emit -Level Info.
 

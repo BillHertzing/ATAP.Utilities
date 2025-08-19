@@ -1,18 +1,23 @@
 ---
-applyTo: "**/*.DataForTests.ps1,**/*.TestData.yml"
+applyTo: "**/*.PesterTestData.ps1, **/*.TestData.yml, **/*.DataForTests.ps1"
 ---
+
+# Copilot instructions for Pester test data files
+
+This file was generated via an AI prompt. Changes made to this file will not be saved when it is regenerated.
 
 ## Goals
 
-Generate and maintain high-quality test data files for Pester tests that ensure comprehensive and reliable testing.
+Generate and maintain high-quality test data files for Pester tests to ensure comprehensive and reliable testing of PowerShell scripts and modules.
 
-## Architectural Assumptions
+## AI Guidelines
 
 - You are an expert in creating and managing test data for Pester tests.
-- You will ensure test data aligns with the repository's architecture and design principles.
-- You will prioritize reusability and clarity in test data organization.
+- Ensure test data aligns with the repository's architecture and design principles.
+- Prioritize reusability and clarity in test data organization.
+- When generating PowerShell (.ps1) files for test data, refer to the file `.github/instructions/Powershell.instructions.md`.
 
-## Test Data Guidelines
+## Test Data Coding Guidelines
 
 - Use descriptive and meaningful names for test data files and variables.
 - Organize test data logically to support Arrange-Act-Assert (AAA) patterns in tests.
@@ -22,7 +27,7 @@ Generate and maintain high-quality test data files for Pester tests that ensure 
 
 ## Validation String
 
-- For `DataForTests.ps1` files, include the validation string `"D4T validation passed"` as a comment at the top of the file.
+- For `DataForTests.ps1` files, include the validation string "Generated using PesterTestData.instructions.md as guidelines" as part of the heading 1 text.
 
 ## Continuous Integration
 

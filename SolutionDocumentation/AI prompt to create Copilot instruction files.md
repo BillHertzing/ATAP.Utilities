@@ -15,22 +15,22 @@ instructions should be short, self-contained statements and broadly applicable t
 
 ## create a set of copilot instruction files for a multi-root repository
 
-Create them in the following order
+The instruction files are described below, and are in alphabetical order. When creating or regenerating the instruction files do so in the following order
 
 - .github/copilot-instructions.md
-- .github/instructions/markdown.instructions.md
+- .github/instructions/Markdown.instructions.md
+- .github/instructions/Powershell.instructions.md
+- .github/instructions/PesterTestData.instructions.md
+- .github/instructions/PesterTest.instructions.md
 - .github/instructions/CSharp.instructions.md
-- .github/instructions/TypeScript.instructions.md
+- .github/instructions/CSharpTest.instructions.md
+- .github/instructions/CSharpTestData.instructions.md
+- .github/instructions/Xunit.instructions.md
 - .github/instructions/UML.instructions.md
-- .github/instructions/xunit.instructions.md
-- .github/instructions/pesterTest.instructions.md
-- .github/instructions/pesterData.instructions.md
-- .github/instructions/csharpTest.instructions.md
-- .github/instructions/csharpData.instructions.md
-- .github/instructions/pester.instructions.md
-- .github/instructions/ansible.instructions.md
-- .github/instructions/jenkins.instructions.md
-- .github/instructions/powershell.instructions.md
+- .github/instructions/Pester.instructions.md
+- .github/instructions/Ansible.instructions.md
+- .github/instructions/Jenkins.instructions.md
+- .github/instructions/TypeScript.instructions.md
 
 ### the repository-wide file .github/copilot-instructions.md
 
@@ -92,57 +92,52 @@ The ATAP.Utilities repository is designed to create .NET libraries, PowerShell m
 
 Every language-specific instruction file should contain instructions telling copilot to follow specific coding guidelines
 
-- markdown: .github/instructions/markdown.instructions.md and with frontmatter applyTo: "\<glob that gets files matching \*.md anywhere>"
-
-  - ## Content: The instructions should contain these main sections
-    - '## Goals'
-      Generate production‑grade markdown documentation that follow our conventions below.
-    - ## '## Coding Rules'
-      - All heading lines should be followed by a blank line
+You will create, or inspect and regenerate, the file .github/instructions/markdown.instructions.md. this file must follow these rules:
+It has the frontmatter applyTo: "\<glob that gets files matching \*.md anywhere>"
+It has a heading '## Goals' containing the following: - Generate production‑grade markdown documentation that follow our conventions below.
+It has a heading '## Coding Rules' containing the following: - All heading lines should be followed by a blank line
+This end the instructions for the file .github/instructions/markdown.instructions.md.
 
 - powershell: .github/instructions/powershell.instructions.md and with frontmatter applyTo: "**/\*.ps1,**/_.psm1,\*\*/_.psd1"
+  Include the following
 
-  - ## Content: The instructions should contain these main sections
-
-        - '## Goals'
-          Generate production‑grade functions and scripts that follow our logging, error‑handling, and cmdlet design conventions below.
-
-        - '## Architectural Assumptions'
-          - the powershell copilot instruction file validation string is "Powershell copilot instruction file validated"
-          - You are an expert in Powershell Core (pwsh) coding standards.
-          - You are an expert on using PowerShell Pro VSC extension inside of Visual Studio Code
-          - You will respond with Powershell syntax and cmdlets suitable for Powershell Core.
-          - You may use any dot net dotnet libraries or open source libraries having a MIT license in your responses.
-          - Your responses may include references to PowerShell Pro VSC features and capabilities
-          - Your responses may include references to PowerShell Pro VSC extension's features and capabilities
-          - When you have Powershell code elements to suggest, you will review open editor window that is loaded with a Powershell-language-specific snippets file located at C:\Users\whertzing\AppData\Roaming\Code\User\snippets\Powershell.json or C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
-          - You will give priority to resusing a snippet if one is appropriate. If you use a snippet, place the name of the snippet as a comment above the snippet body in your response, along with the substitutions you have made in the snippet
-          -  When asked to create a new powershell file (.ps1), you will insert the powershell copilot instruction file validation string as a comment at the top of the file
-          -
-
-        - '## Coding Rules'
-          - use Approved verbs: Public function names must use [approved PowerShell verbs]. Private/internal helpers are exempt.
-          - use Pascal Case for public functions and cmdlets.
-          - use Pascal Case for public parameters.
-          - use camelCase with a '_'prefix for private/internal functions and cmdlets.
-          - use camelCase with a '_'prefix for local variables.
-          - use `Write-PSFMessage` for logging, never `Write-Host`, `Write-Verbose`, `Write-Debug` or `Write-Output`.
-          - use `-Level Debug` for trace messages, `-Level Verbose` for lifecycle messages, `-Level Important` for notable operational messages, and `-Level Error` for failures.
-          - Never use -Level Info with `Write-PSFMessage`.
-          - Log using `Write-PSFMessage` - Every `Write-PSFMessage` inside a function should include the first parameter ◦ `-FunctionName '<functionName>'` where the <functionName> is replaced by the name of the function - Every `Write-PSFMessage` inside a function should include the second parameter ◦ `-ModuleName '<moduleName>'` where the <moduleName> is replaced by the name of the module
-          - All calls to `Invoke-RestMethod` should have a log message just before and just after the line that calls `Invoke-RestMethod`. These log messages should have `-Level Debug`, and `-Tag 'RestCall'`. The message for the log before the call is "Calling <URLOfEndpoint>". The message for the log after the call is "Successfully returned from <URLOfEndpoint>"
-          - All calls to `Invoke-WebRequest` should have a log message just before and just after the line that calls `Invoke-WebRequest`. These log messages should have `-Level Debug`, and `-Tag 'WebRequestCall'`. The message for the log before the call is "Calling <URLOfEndpoint>". The message for the log after the call is "Successfully returned from <URLOfEndpoint>"
-          - All calls to `Invoke-Expression` should have a log message just before and just after the line that calls `Invoke-Expression`. These log messages should have `-Level Debug`, and `-Tag 'InvokeExpressionCall'`. The message for the log before the call is "Invoke-Expression <command>". The message for the log after the call is "Successfully returned from Invoke-Expression <command>"
-          - All calls to `Invoke-Command` should have a log message just before and just after the line that calls `Invoke-Command`. These log messages should have `-Level Debug`, and `-Tag 'InvokeCommandCall'`. The message for the log before the call is
-             ``` Powershell
-             Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message $(Calling Invoke-Command $("-ComputerName $computername -ScriptBlock {$scriptBlockToRun} -Credential $credential.ToString() $(if($useSSL){ ' -useSSL '})") + $(if ($useSelfSignedCert) { ' -SessionOption $(New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck)' }))
-             ```
-          - All calls to `Invoke-RestMethod` should be wrapped in a try/catch/finally block
-          - All calls to `Invoke-WebRequest` should be wrapped in a try/catch/finally block
-          - All calls to `Invoke-Expression` should be wrapped in a try/catch/finally block
-          - All calls to `Invoke-Command` should be wrapped in a try/catch/finally block
-          - wrap any code that might produce an exception in a try/catch/finally block. use the Try-Catch-Finally snippet code block
-          - When you are instructed to create a new cmdlet, or you are instructed to compare an existing Powershell file to the 'ideal' cmdlet structure, refer to the open snippet file and within that the snippet named "New-Cmdlet with String as primary input",
+  - ## Goals
+    - Generate production‑grade functions and scripts that follow our logging, error‑handling, and cmdlet design conventions below.
+  - ## AI Guidelines
+    - You are an expert in the Powershell language.
+    - You are an expert in the PowerShell Pro VSC extension.
+    - All Powershell code will run on Powershell Core (pwsh).
+    - You may use any dot net dotnet libraries or open source libraries having a MIT license in your responses.
+    - Your responses may include references to VSC features and capabilities
+    - Your responses may include references to PowerShell Pro VSC extension's features and capabilities
+  - ## Validation String
+    - For `*.ps1` files, include the validation string `"Ai assisted using Powershell.instructions.md as guidelines"` under the .NOTES section of the comment-based help. If there is no comment-based help, you will include the validation string as a comment at the top of the file
+  - ## Architectural Assumptions
+    - When you have Powershell code elements to suggest, you will review open editor window that is loaded with a Powershell-language-specific snippets file located at C:\Users\whertzing\AppData\Roaming\Code\User\snippets\Powershell.json or C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc
+    - You will give priority to resusing a snippet if one is appropriate. If you use a snippet, place the name of the snippet as a comment above the snippet body in your response, along with the substitutions you have made in the snippet
+  - ## Coding Rules
+    - use Approved verbs: Public function names must use [approved PowerShell verbs]. Private/internal helpers are exempt.
+    - use Pascal Case for public functions and cmdlets.
+    - use Pascal Case for public parameters.
+    - use camelCase with a '\_'prefix for private/internal functions and cmdlets.
+    - use camelCase with a '\_'prefix for local variables.
+    - use `Write-PSFMessage` for logging, never `Write-Host`, `Write-Verbose`, `Write-Debug` or `Write-Output`.
+    - use `-Level Debug` for trace messages, `-Level Verbose` for lifecycle messages, `-Level Important` for notable operational messages, and `-Level Error` for failures.
+    - Never use -Level Info with `Write-PSFMessage`.
+    - Log using `Write-PSFMessage` - Every `Write-PSFMessage` inside a function should include the first parameter ◦ `-FunctionName '<functionName>'` where the <functionName> is replaced by the name of the function - Every `Write-PSFMessage` inside a function should include the second parameter ◦ `-ModuleName '<moduleName>'` where the <moduleName> is replaced by the name of the module
+    - All calls to `Invoke-RestMethod` should have a log message just before and just after the line that calls `Invoke-RestMethod`. These log messages should have `-Level Debug`, and `-Tag 'RestCall'`. The message for the log before the call is "Calling <URLOfEndpoint>". The message for the log after the call is "Successfully returned from <URLOfEndpoint>"
+    - All calls to `Invoke-WebRequest` should have a log message just before and just after the line that calls `Invoke-WebRequest`. These log messages should have `-Level Debug`, and `-Tag 'WebRequestCall'`. The message for the log before the call is "Calling <URLOfEndpoint>". The message for the log after the call is "Successfully returned from <URLOfEndpoint>"
+    - All calls to `Invoke-Expression` should have a log message just before and just after the line that calls `Invoke-Expression`. These log messages should have `-Level Debug`, and `-Tag 'InvokeExpressionCall'`. The message for the log before the call is "Invoke-Expression <command>". The message for the log after the call is "Successfully returned from Invoke-Expression <command>"
+    - All calls to `Invoke-Command` should have a log message just before and just after the line that calls `Invoke-Command`. These log messages should have `-Level Debug`, and `-Tag 'InvokeCommandCall'`. The message for the log before the call is
+      ```Powershell
+      Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message $(Calling Invoke-Command $("-ComputerName $computername -ScriptBlock {$scriptBlockToRun} -Credential $credential.ToString() $(if($useSSL){ ' -useSSL '})") + $(if ($useSelfSignedCert) { ' -SessionOption $(New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck)' }))
+      ```
+    - All calls to `Invoke-RestMethod` should be wrapped in a try/catch/finally block
+    - All calls to `Invoke-WebRequest` should be wrapped in a try/catch/finally block
+    - All calls to `Invoke-Expression` should be wrapped in a try/catch/finally block
+    - All calls to `Invoke-Command` should be wrapped in a try/catch/finally block
+    - wrap any code that might produce an exception in a try/catch/finally block. use the Try-Catch-Finally snippet code block
+    - When you are instructed to create a new cmdlet, or you are instructed to compare an existing Powershell file to the 'ideal' cmdlet structure, refer to the open snippet file and within that the snippet named "New-Cmdlet with String as primary input",
 
 - CSharp (C#): .github/instructions/cSharp.instructions.md and with frontmatter applyTo: "\*_/_.cs"
 
@@ -159,13 +154,34 @@ Every language-specific instruction file should contain instructions telling cop
   - ## Coding Guidelines:
     - TBD
 
-- PesterDataFile: .github/instructions/pesterData.instructions.md and with frontmatter applyTo: "\<glob that gets files matching _.TestData.yml or _.DataForTests.ps1 anywhere>"
+- PesterTestDataFile: .github/instructions/PesterTestData.instructions.md and with frontmatter applyTo: "\<glob that gets files matching _.PesterTestData.ps1 _.TestData.yml or \*.DataForTests.ps1 anywhere>"
 
-  - ## Coding Guidelines:
+  - ensure that all PesterTestData files follow the following
 
-    - The validation string for DataForTests.ps1 is "D4T validation passed". When instructed to put the validation string into a data for tests file, place it as a comment at the top of the file if it doesn't exist.
-    - Arrange/Act/Assert with clear contexts; mock external processes, file IO, secrets vault.
-    - Use data‑driven tests for rules/state transitions; verify `-WhatIf`/`-Confirm` paths.
+    ## AI Guidelines
+
+    - You are an expert in creating and managing test data for Pester tests.
+    - You will ensure test data aligns with the repository's architecture and design principles.
+    - You will prioritize reusability and clarity in test data organization.
+    - When generating powershell (.ps1) files for test data, you will refer to the file .github/instructions/Powershell.instructions.md
+
+    ## Validation String
+
+    - For `DataForTests.ps1` files, include the validation string `"Generated using PesterTestData.instructions.md as guidelines"` as part of the heading 1 text.
+
+    ## Test Data Coding Guidelines
+
+    - Use descriptive and meaningful names for test data files and variables.
+    - Organize test data logically to support Arrange-Act-Assert (AAA) patterns in tests.
+    - Include edge cases, error conditions, and boundary values in test data.
+    - Use YAML format for structured data and PowerShell scripts for dynamic or complex data generation.
+    - Ensure test data is isolated and does not depend on external systems or shared state.
+
+    ## Continuous Integration
+
+    - Ensure test data files are version-controlled and reviewed as part of the code review process.
+    - Update test data files promptly to reflect changes in the system under test.
+    - Validate test data files as part of the CI/CD pipeline to ensure consistency and correctness. - ## Coding Guidelines:
     - Emit minimal, structured logs; ensure no secret values leak in output.
 
 - PesterTestFile: .github/instructions/pesterTest.instructions.md and with frontmatter applyTo: "<glob that gets files matching \*.Tests.ps1 anywhere>"
@@ -174,11 +190,38 @@ Every language-specific instruction file should contain instructions telling cop
     - Arrange/Act/Assert with clear contexts; mock external processes, file IO, secrets vault.
     - Use data‑driven tests for rules/state transitions; verify `-WhatIf`/`-Confirm` paths.
     - Emit minimal, structured logs; ensure no secret values leak in output.
-    - use the module `Shoudly` in place of the native pester `should` assertations
+    - use the module `Shoudly` in place of the native pester `should` assertions
 
-- CSharpTestFile: .github/instructions/csharpTest.instructions.md and with frontmatter applyTo: "<glob that gets files matching \*.Test.cs anywhere>"
+- CSharpTestFile: .github/instructions/CSharpTestData.instructions.md and with frontmatter applyTo: "<glob that gets files matching \*.Test.cs anywhere>"
 
-- CSharpDataFile: .github/instructions/csharpData.instructions.md and with frontmatter applyTo: "<glob that gets files matching \*.TestData.cs anywhere>"
+- CSharpTestDataFile: .github/instructions/CSharpTestData.instructions.md and with frontmatter applyTo: "<glob that gets files matching \*.CSharpTestData.cs anywhere>"
+
+  - ensure that all CSharpTestData files follow the following
+
+    ## AI Guidelines
+
+    - You are an expert in creating and managing test data for XUnit tests.
+    - You will ensure test data aligns with the repository's architecture and design principles.
+    - You will prioritize reusability and clarity in test data organization.
+    - When generating CSharp (.cs) files for test data, you will refer to the file .github/instructions/CSharp.instructions.md
+
+    ## Validation String
+
+    - For `*.CSharpTestData.cs` files, include the validation string `"Generated using CSharpTestData.instructions.md as guidelines"` as part of the heading 1 text.
+
+    ## Test Data Coding Guidelines
+
+    - Use descriptive and meaningful names for test data files and variables.
+    - Organize test data logically to support Arrange-Act-Assert (AAA) patterns in tests.
+    - Include edge cases, error conditions, and boundary values in test data.
+    - Use TestDataGenerator pattern complex data generation.
+    - Ensure test data is isolated and does not depend on external systems or shared state.
+
+    ## Continuous Integration
+
+    - Ensure test data files are version-controlled and reviewed as part of the code review process.
+    - Update test data files promptly to reflect changes in the system under test.
+    - Validate test data files as part of the CI/CD pipeline to ensure consistency and correctness.
 
 ### Process-specific instruction files
 

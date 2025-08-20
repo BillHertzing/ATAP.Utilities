@@ -34,6 +34,15 @@ Generate high-quality Pester tests for PowerShell scripts that ensure functional
 - Use `try/catch` blocks in tests only when testing exception handling.
 - Avoid logging sensitive information in test output.
 
+## Coding Rules
+
+- **General Formatting**:
+  - Use the .editorconfig file in the root of the repository for formatting rules.
+  - Use spaces around operators and after commas.
+  - Use single quotes for strings unless interpolation is required.
+  - Avoid trailing whitespace at the end of lines.
+
+
 ## Continuous Integration
 
 - Ensure all tests pass before committing code.

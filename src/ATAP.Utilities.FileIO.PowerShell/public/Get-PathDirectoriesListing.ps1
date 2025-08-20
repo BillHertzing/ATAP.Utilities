@@ -7,6 +7,9 @@
 # .PARAMETER Paths
 # An array of paths to check. Defaults to the PATH environment variable split by the system's path separator.
 
+# .PARAMETER FileSuffixes
+# An array of file suffixes to consider as executable. Defaults to '.exe', '.cmd', '.bat', '.ps1'.
+
 #.OUTPUTS
 #  # It returns a hashtable with two arrays:
 # - PathDoesNotExist: arrays of paths that do not exist
@@ -16,13 +19,16 @@
 # Returns a listing of directories in the PATH environment variable that do not exist or do not contain executable files.
 
 # .NOTES
-# ToDo: pass a parameter to specify the list of file extensions to consider as executables, currently it is hardcoded to .exe
+# AI assisted using Powershell.instructions.md as guidelines
 
 function Get-PathDirectoriesListing {
-  [CmdletBinding(SupportsShouldProcess = $true)]
+  [CmdletBinding()]
   param (
     [Parameter(Mandatory = $false, ValueFromPipeline = $true)]
-    [string[]]$Paths = $env:PATH -split [IO.Path]::PathSeparator
+    [string[]]$Paths = $env:PATH -split [IO.Path]::PathSeparator,
+
+    [Parameter(Mandatory = $false)]
+    [string[]]$FileSuffixes = @('.exe', '.cmd', '.bat', '.ps1')
   )
 
   BEGIN {
@@ -30,18 +36,39 @@ function Get-PathDirectoriesListing {
   }
 
   PROCESS {
-    $results = @{ PathDoesNotExist = @(); PathHasNoExes = @() }
+    $results = @{ PathDoesNotExist = @(); PathHasNoExes = @(); ExesInPath = @{} ;NumTotalPathsChecked = 0;NumPathHasNoExes=0}
 
     foreach ($path in $Paths) {
       if (-not (Test-Path -Path $path)) {
         $results.PathDoesNotExist += $path
       }
-      elseif (-not (Get-ChildItem -Path $path -Filter *.exe -ErrorAction SilentlyContinue)) {
-        $results.PathHasNoExes += $path
+      else {
+        $hasFiles = $false
+        $filesInPath = @()
+        foreach ($suffix in $FileSuffixes) {
+          $files = Get-ChildItem -Path $path -Filter *$suffix -ErrorAction SilentlyContinue
+          if ($files) {
+            $filesInPath += $files.FullName
+            $hasFiles = $true
+          }
+        }
+        if ($hasFiles) {
+          $results.ExesInPath[$path] = $filesInPath
+        }
+        else {
+          $results.PathHasNoExes += $path
+        }
       }
     }
 
-    Write-Output $results
+    # Edge case: Check if all paths are non-existing
+    if ($results.PathDoesNotExist.Count -eq $Paths.Count) {
+      Write-PSFMessage -FunctionName 'Get-PathDirectoriesListing' -ModuleName 'ATAP.Utilities.FileIO.PowerShell' -Level Warning -Message 'All provided paths do not exist.'
+    }
+
+    $results.NumTotalPathsChecked = $Paths.Count
+    $results.NumPathHasNoExes = $($Results.PathHasNoExes).Count
+    return $results
   }
 
   END {

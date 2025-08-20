@@ -50,21 +50,21 @@ function ConvertFrom-CopilotChatHistory {
   )
 
   BEGIN {
-    $moduleName = 'CopilotChatTools'
+    $moduleName = 'ATAP.Utilities.Powershell'
     Write-PSFMessage -FunctionName 'ConvertFrom-CopilotChatHistory' -ModuleName $moduleName -Level Debug -Message 'Entering Function ConvertFrom-CopilotChatHistory in module CopilotChatTools'
 
-    function _Convert-Newline {
+    function Convert-Newline {
       param([string]$s)
       try { return ($s -replace "`r`n|`r", "`n") }
       catch {
         $_errorMessage = "Failed to normalize newlines. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName '_Convert-Newline' -ModuleName $moduleName -Level Error -Message $_errorMessage
+        Write-PSFMessage -FunctionName 'Convert-Newline' -ModuleName $moduleName -Level Error -Message $_errorMessage
         throw $_
       }
-      finally { Write-PSFMessage -FunctionName '_Convert-Newline' -ModuleName $moduleName -Level Verbose -Message "Leaving function: _Convert-Newline" }
+      finally { Write-PSFMessage -FunctionName 'Convert-Newline' -ModuleName $moduleName -Level Verbose -Message "Leaving function: Convert-Newline" }
     }
 
-    function _Collapse-BlankLines {
+    function Collapse-BlankLines {
       param([string]$s)
       try {
         ($s -split "`n" | ForEach-Object { $_.TrimEnd() }) `
@@ -75,16 +75,16 @@ function ConvertFrom-CopilotChatHistory {
       }
       catch {
         $_errorMessage = "Failed to collapse blank lines. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName '_Collapse-BlankLines' -ModuleName $moduleName -Level Error -Message $_errorMessage
+        Write-PSFMessage -FunctionName 'Collapse-BlankLines' -ModuleName $moduleName -Level Error -Message $_errorMessage
         throw $_
       }
-      finally { Write-PSFMessage -FunctionName '_Collapse-BlankLines' -ModuleName $moduleName -Level Verbose -Message "Leaving function: _Collapse-BlankLines" }
+      finally { Write-PSFMessage -FunctionName 'Collapse-BlankLines' -ModuleName $moduleName -Level Verbose -Message "Leaving function: Collapse-BlankLines" }
     }
 
-    function _Split-CodeAndText {
+    function Split-CodeAndText {
       param([string]$md)
       try {
-        $md = _Convert-Newline $md
+        $md = Convert-Newline $md
         $pattern = '(?ms)```(\w+)?\n(.*?)\n```'
         $result = @(); $idx = 0
         foreach ($m in [Regex]::Matches($md, $pattern)) {
@@ -99,10 +99,10 @@ function ConvertFrom-CopilotChatHistory {
       }
       catch {
         $_errorMessage = "Failed to split code/text. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName '_Split-CodeAndText' -ModuleName $moduleName -Level Error -Message $_errorMessage
+        Write-PSFMessage -FunctionName 'Split-CodeAndText' -ModuleName $moduleName -Level Error -Message $_errorMessage
         throw $_
       }
-      finally { Write-PSFMessage -FunctionName '_Split-CodeAndText' -ModuleName $moduleName -Level Verbose -Message "Leaving function: _Split-CodeAndText" }
+      finally { Write-PSFMessage -FunctionName 'Split-CodeAndText' -ModuleName $moduleName -Level Verbose -Message "Leaving function: Split-CodeAndText" }
     }
 
     $script:BoilerplatePatterns = @(
@@ -116,10 +116,10 @@ function ConvertFrom-CopilotChatHistory {
       # '^\s*i (can(\'t)?|cannot)\s+(access|browse).*$'
     )
 
-    function _Trim-BoilerplateLines {
+    function Trim-BoilerplateLines {
       param([string]$text, [switch]$Aggressive, [int]$MaxCodeFenceLines, [switch]$KeepAllCode)
       try {
-        $blocks = _Split-CodeAndText $text
+        $blocks = Split-CodeAndText $text
         $out = New-Object System.Text.StringBuilder
         foreach ($b in $blocks) {
           if ($b.type -eq 'code') {
@@ -141,14 +141,14 @@ function ConvertFrom-CopilotChatHistory {
             [void]$out.AppendLine(($kept -join "`n"))
           }
         }
-        (_Collapse-BlankLines ($out.ToString().Trim())).Trim()
+        (Collapse-BlankLines ($out.ToString().Trim())).Trim()
       }
       catch {
         $_errorMessage = "Failed to trim boilerplate. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName '_Trim-BoilerplateLines' -ModuleName $moduleName -Level Error -Message $_errorMessage
+        Write-PSFMessage -FunctionName 'Trim-BoilerplateLines' -ModuleName $moduleName -Level Error -Message $_errorMessage
         throw $_
       }
-      finally { Write-PSFMessage -FunctionName '_Trim-BoilerplateLines' -ModuleName $moduleName -Level Verbose -Message "Leaving function: _Trim-BoilerplateLines" }
+      finally { Write-PSFMessage -FunctionName 'Trim-BoilerplateLines' -ModuleName $moduleName -Level Verbose -Message "Leaving function: Trim-BoilerplateLines" }
     }
 
     function _Keep-ImportantMarkdown {
@@ -205,7 +205,7 @@ function ConvertFrom-CopilotChatHistory {
       finally { Write-PSFMessage -FunctionName '_Clean-JsoncText' -ModuleName $moduleName -Level Verbose -Message "Leaving function: _Clean-JsoncText" }
     }
 
-    function _Try-ParseJson {
+    function TryParse-Json {
       param([string]$text, [ref]$json)
       try {
         $json.Value = $text | ConvertFrom-Json -Depth 200
@@ -215,11 +215,11 @@ function ConvertFrom-CopilotChatHistory {
         # need logging here
         return $false
       }
-      finally { Write-PSFMessage -FunctionName '_Try-ParseJson' -ModuleName $moduleName -Level Verbose -Message "Leaving function: _Try-ParseJson" }
+      finally { Write-PSFMessage -FunctionName 'TryParse-Json' -ModuleName $moduleName -Level Verbose -Message "Leaving function: TryParse-Json" }
     }
 
     # --- NEW: Copilot panel extractor for your sample schema
-    function _Extract-PairsFromCopilotRequests {
+    function Get-PairsFromCopilotRequests {
       param($root)
       try {
         if (-not $root.requests) { return @() }
@@ -268,14 +268,14 @@ function ConvertFrom-CopilotChatHistory {
       }
       catch {
         $_errorMessage = "Failed to extract pairs from Copilot requests[]. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName '_Extract-PairsFromCopilotRequests' -ModuleName $moduleName -Level Error -Message $_errorMessage
+        Write-PSFMessage -FunctionName 'Get-PairsFromCopilotRequests' -ModuleName $moduleName -Level Error -Message $_errorMessage
         throw $_
       }
-      finally { Write-PSFMessage -FunctionName '_Extract-PairsFromCopilotRequests' -ModuleName $moduleName -Level Verbose -Message "Leaving function: _Extract-PairsFromCopilotRequests" }
+      finally { Write-PSFMessage -FunctionName 'Get-PairsFromCopilotRequests' -ModuleName $moduleName -Level Verbose -Message "Leaving function: Get-PairsFromCopilotRequests" }
     }
 
     # legacy/other formats
-    function _Extract-PairsFromJson {
+    function Get-PairsFromJson {
       param($json, [switch]$ExcludeSystem)
       try {
         $msgs = @()
@@ -312,19 +312,19 @@ function ConvertFrom-CopilotChatHistory {
       }
       catch {
         $_errorMessage = "Failed to extract pairs from generic JSON. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName '_Extract-PairsFromJson' -ModuleName $moduleName -Level Error -Message $_errorMessage
+        Write-PSFMessage -FunctionName 'Get-PairsFromJson' -ModuleName $moduleName -Level Error -Message $_errorMessage
         throw $_
       }
-      finally { Write-PSFMessage -FunctionName '_Extract-PairsFromJson' -ModuleName $moduleName -Level Verbose -Message "Leaving function: _Extract-PairsFromJson" }
+      finally { Write-PSFMessage -FunctionName 'Get-PairsFromJson' -ModuleName $moduleName -Level Verbose -Message "Leaving function: Get-PairsFromJson" }
     }
 
-    function _Extract-PairsFromText {
+    function Get-PairsFromText {
       param([string]$text)
       try {
         $t = _Convert-Newline $text
         $lines = $t -split "`n"
         $currentRole = $null; $buffers = @(); $buf = New-Object System.Text.StringBuilder
-        function _Flush-Buffer {
+        function Clear-Buffer {
           param([string]$role, [ref]$bufRef)
           try {
             $s = $bufRef.Value.ToString().Trim()
@@ -332,20 +332,20 @@ function ConvertFrom-CopilotChatHistory {
             $bufRef.Value.Clear() | Out-Null
           }
           catch {
-            $_errorMessage = "Failed to flush accumulation buffer. Exception: $($_.Exception.Message)"
-            Write-PSFMessage -FunctionName '_Flush-Buffer' -ModuleName $moduleName -Level Error -Message $_errorMessage
+            $_errorMessage = "Failed to clear accumulation buffer. Exception: $($_.Exception.Message)"
+            Write-PSFMessage -FunctionName 'Clear-Buffer' -ModuleName $moduleName -Level Error -Message $_errorMessage
             throw $_
           }
           finally {
-            Write-PSFMessage -FunctionName '_Flush-Buffer' -ModuleName $moduleName -Level Verbose -Message "Leaving function: _Flush-Buffer"
+            Write-PSFMessage -FunctionName 'Clear-Buffer' -ModuleName $moduleName -Level Verbose -Message "Leaving function: Clear-Buffer"
           }
         }
         foreach ($ln in $lines) {
-          if ($ln -match '^\s*(\*\*?(User|You)\*?\*?:|#\s*(User|You)\b|User\s*:|You\s*:)\s*$') { if ($currentRole) { _Flush-Buffer -role $currentRole ([ref]$buf) }; $currentRole = 'user'; continue }
-          if ($ln -match '^\s*(\*\*?(Assistant|Copilot)\*?\*?:|#\s*(Assistant|Copilot)\b|Assistant\s*:|Copilot\s*:)\s*$') { if ($currentRole) { _Flush-Buffer -role $currentRole ([ref]$buf) }; $currentRole = 'assistant'; continue }
+          if ($ln -match '^\s*(\*\*?(User|You)\*?\*?:|#\s*(User|You)\b|User\s*:|You\s*:)\s*$') { if ($currentRole) { Clear-Buffer -role $currentRole ([ref]$buf) }; $currentRole = 'user'; continue }
+          if ($ln -match '^\s*(\*\*?(Assistant|Copilot)\*?\*?:|#\s*(Assistant|Copilot)\b|Assistant\s*:|Copilot\s*:)\s*$') { if ($currentRole) { Clear-Buffer -role $currentRole ([ref]$buf) }; $currentRole = 'assistant'; continue }
           [void]$buf.AppendLine($ln)
         }
-        if ($currentRole) { _Flush-Buffer -role $currentRole ([ref]$buf) }
+        if ($currentRole) { Clear-Buffer -role $currentRole ([ref]$buf) }
 
         $pairs = @(); for ($i = 0; $i -lt $buffers.Count; $i++) {
           if ($buffers[$i].role -eq 'user') {
@@ -361,10 +361,10 @@ function ConvertFrom-CopilotChatHistory {
       }
       catch {
         $_errorMessage = "Failed to extract pairs from text. Exception: $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName '_Extract-PairsFromText' -ModuleName $moduleName -Level Error -Message $_errorMessage
+        Write-PSFMessage -FunctionName 'Get-PairsFromText' -ModuleName $moduleName -Level Error -Message $_errorMessage
         throw $_
       }
-      finally { Write-PSFMessage -FunctionName '_Extract-PairsFromText' -ModuleName $moduleName -Level Verbose -Message "Leaving function: _Extract-PairsFromText" }
+      finally { Write-PSFMessage -FunctionName 'Get-PairsFromText' -ModuleName $moduleName -Level Verbose -Message "Leaving function: Get-PairsFromText" }
     }
   }
 
@@ -390,8 +390,8 @@ function ConvertFrom-CopilotChatHistory {
         if ($text -match '\"requests\"\s*:') {
           try {
             $clean = _Clean-JsoncText $text
-            if (_Try-ParseJson -text $clean -json ([ref]$jsonRoot)) {
-              $pairs = _Extract-PairsFromCopilotRequests -root $jsonRoot
+            if (TryParse-Json -text $clean -json ([ref]$jsonRoot)) {
+              $pairs = Get-PairsFromCopilotRequests -root $jsonRoot
             }
           }
           catch {
@@ -403,11 +403,11 @@ function ConvertFrom-CopilotChatHistory {
 
         if (-not $pairs -or $pairs.Count -eq 0) {
           $jsonGeneric = $null
-          if (_Try-ParseJson -text $text -json ([ref]$jsonGeneric)) {
-            $pairs = _Extract-PairsFromJson -json $jsonGeneric -ExcludeSystem:$ExcludeSystem
+          if (TryParse-Json -text $text -json ([ref]$jsonGeneric)) {
+            $pairs = Get-PairsFromJson -json $jsonGeneric -ExcludeSystem:$ExcludeSystem
           }
           else {
-            $pairs = _Extract-PairsFromText -text $text
+            $pairs = Get-PairsFromText -text $text
           }
         }
 
@@ -416,7 +416,7 @@ function ConvertFrom-CopilotChatHistory {
           $user = ($p.UserRequest | Out-String).Trim()
           $assistant = ($p.CopilotResponse | Out-String).Trim()
 
-          $assistant = _Trim-BoilerplateLines -text $assistant -Aggressive:$AggressiveBoilerplateTrim `
+          $assistant = Trim-BoilerplateLines -text $assistant -Aggressive:$AggressiveBoilerplateTrim `
             -MaxCodeFenceLines:$MaxCodeFenceLines -KeepAllCode:$KeepAllCode
 
           $assistant = _Keep-ImportantMarkdown -md $assistant -maxChars $MaxResponseChars `

@@ -1,3 +1,7 @@
+'''
+THIS FILE IS NOW OBSOLETE, INDIVIDUAL INSTRUCTION FILES ARE HUMAN GENERATED. HOWEVER, THIS FILE WILL BE PRESERVED UNTIL ALL THE INFORMATION HEREIN HAS BEEN PORTED TO THE INDIVIDUAL INSTRUCTION FILES
+'''
+
 # Goal: create instruction files for copilot that will ensure copilot understands the purpose of the repository, the structure of the repository, and the key interrelationships of the members of the repository
 
 Your task is to act as an expert in GitHub Copilot instruction file management. Please generate a comprehensive set of custom instruction files for a development repository to effectively guide GitHub Copilot's behavior across various development environments and tasks.

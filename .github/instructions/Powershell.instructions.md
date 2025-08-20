@@ -43,6 +43,11 @@ This file is a set of instructions for Copilot to follow when generating or modi
 
 ## Coding Rules for PowerShell
 
+- **General Formatting**:
+  - Use the .editorconfig file in the root of the repository for formatting rules.
+  - Use spaces around operators and after commas.
+  - Use single quotes for strings unless interpolation is required.
+  - Avoid trailing whitespace at the end of lines.
 - **Function Naming**:
   - Use PascalCase for public functions and parameters.
   - Use camelCase with a `_` prefix for private/internal functions and variables.

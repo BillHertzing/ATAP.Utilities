@@ -12,12 +12,16 @@ Generate production-grade Markdown documentation that adheres to the repository'
 
 ## Coding Rules
 
+- **General Formatting**:
+  - Use the .editorconfig file in the root of the repository for formatting rules.
+  - Use spaces around operators and after commas.
+  - Use single quotes for strings unless interpolation is required.
+  - Avoid trailing whitespace at the end of lines.
 - All heading lines should be followed by a blank line.
 - Use consistent heading levels to organize content hierarchically.
 - Use bullet points or numbered lists for clarity when listing items.
 - Ensure proper indentation for nested lists.
 - Use fenced code blocks (```language) for code snippets, specifying the language where applicable.
-- Avoid trailing whitespace at the end of lines.
 - Images have special treatment:
   - Use relative paths for images to ensure portability.
   - Use `![alt text](image_path)` syntax for images.

@@ -16,6 +16,7 @@ Your task depends on how closely the input script already matches the powershell
 - If the PowerShell script **already uses the same structural elements** (e.g., `param()`, `BEGIN`, `PROCESS`, `END`) and resembles the Cmdlet pattern,
   → DO NOT rewrite the function entirely.
   → Instead, audit the script for **logic errors**, **param definitions**, and **style issues** (e.g., missing input validation or verbose messaging).
+  → Ensure the BEGIN{} PROCESS{} and END{} keywords are in Uppercase
   → Present just the corrections and your reasoning.
 
 ---
@@ -23,7 +24,7 @@ Your task depends on how closely the input script already matches the powershell
 ## 🔁 CASE 2: MISMATCHED STRUCTURE — NEEDS TRANSFORMATION
 
 - If the script is **not written in Cmdlet-style format** and is missing critical constructs present in the snippet (like `CmdletBinding`, `PROCESS {}`, etc.),
-  → Select the Cmdlet snippet whose parameters and function that most closely resembles the input script. the
+  → Select the Cmdlet snippet whose parameters and function that most closely resembles the input script.
   → Rewrite the entire function to follow the structure and conventions shown in the powershell language instructions file and powershell language snippets file, using the Cmdlet snippet selected above.
   → Include proper `CmdletBinding`, `param`, and the `BEGIN/PROCESS/END` blocks if they exist in the snippet.
   → Rewrite any Try-Catch blocks using the "Try-Catch-Finally" pattern in the powershell language snippets file.

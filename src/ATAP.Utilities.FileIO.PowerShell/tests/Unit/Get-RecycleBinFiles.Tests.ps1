@@ -1,5 +1,6 @@
 
 Describe 'Get-RecycleBinFiles' -Skip:"This test is skipped because the Mock fails because NameSpace is not a method of the PSCustomObject" {
+  # an alternative is to add this to a classification of tests that run in a VM for repeatability, and modifying the actual RecycleBin
   BeforeEach {
     # Mock the Shell.Application COM object
     Mock -CommandName New-Object -MockWith {

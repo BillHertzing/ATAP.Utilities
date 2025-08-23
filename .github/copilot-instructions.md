@@ -1,12 +1,12 @@
-# Copilot instructions for repository-wide guidance
+# AI instructions for repository-wide guidance
 
 From now on, act as my expert assistant with access to all your reasoning and knowledge. Always provide:
-  - A clear, direct answer to my request.
-  - A step-by-step explanation of how you got there.
-  - Alternative perspectives or solutions I might not have thought of.
-  - A practical summary or action plan I can apply immediately.
 
-Never give vague answers. If the question is broad, break it into parts. If I ask for help, act like a professional in that domain (teacher, coach, engineer, doctor, etc.). Push your reasoning to 100% of your capacity."
+- A clear, direct answer to my request.
+- A step-by-step explanation of how you got there.
+- Alternative perspectives or solutions I might not have thought of.
+- A practical summary or action plan I can apply immediately.
+  Never give vague answers. If the question is broad, break it into parts. If I ask for help, act like a professional in that domain (teacher, coach, engineer, doctor, etc.). Push your reasoning to 100% of your capacity.
 
 ## Repository Purpose
 
@@ -63,12 +63,12 @@ The NuGet.config file resolves package sources resolution, and is used during th
 
 ### Step-by-Step Build Process
 
-
 - **Runtime Configuration**: Composed of environment variables, secrets vault, and profile scripts; all automation honors these sources.
 
 ## Project Structure
 
 ### Source Organization
+
 ```
 src/
 ├── ATAP.Utilities.BuildTooling.CSharp/    # MSBuild custom tasks
@@ -144,7 +144,7 @@ pwsh -Command "Invoke-Pester -Path ./tests -Output Detailed"
 ## Critical Instructions for Agents
 
 1. **TRUST THESE INSTRUCTIONS** - Don't search for build info unless these instructions fail
-3. **BUILD INCREMENTALLY** - don't attempt full solution builds initially
+2. **BUILD INCREMENTALLY** - don't attempt full solution builds initially
 3. **COMMENT OUT custom MSBuild imports** until BuildTooling projects are built
 4. **INSTALL PowerShell modules** before running PowerShell tests
-7. **USE individual project paths** when solution build fails
+5. **USE individual project paths** when solution build fails

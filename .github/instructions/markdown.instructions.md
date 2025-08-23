@@ -2,9 +2,9 @@
 applyTo: "**/*.md"
 ---
 
-# Copilot instructions for Markdown files
+# AI instructions for Markdown files
 
-This file is a set of instructions for Copilot to follow when generating or modifying Markdown (.md) files in this repository.
+This file is a set of instructions for AI to follow when generating or modifying Markdown (.md) files in this repository.
 
 ## Goals
 

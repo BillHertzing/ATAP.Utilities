@@ -2,9 +2,9 @@
 applyTo: ["**/*.ps1", "*/.ps1"]
 ```
 
-# Copilot instructions for PowerShell files
+# AI instructions for PowerShell files
 
-This file is a set of instructions for Copilot to follow when generating or modifying PowerShell (.ps1) files in this repository.
+This file is a set of instructions for AI to follow when generating or modifying PowerShell (.ps1) files in this repository.
 
 ---
 

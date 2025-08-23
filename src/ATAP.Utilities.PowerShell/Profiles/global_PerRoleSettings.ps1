@@ -43,12 +43,12 @@ $defaultPerRoleSettings = @{
   }
 
   'DatabaseServers'          = @{
-    $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']       = 'filesystem:' + (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities' 'Databases' 'ATAPUtilities' 'Flyway' 'sql')
-    $global:configRootKeys['FLYWAY_URLConfigRootKey']             = 'jdbC:sqlserver: / / localhost:1433; databaseName = ATAPUtilities'
-    $global:configRootKeys['FLYWAY_USERConfigRootKey']            = 'AUADMIN'
-    $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']        = 'NotSecret'
-    $global:configRootKeys['FP__projectNameConfigRootKey']        = 'ATAPUtilities'
-    $global:configRootKeys['FP__projectDescriptionConfigRootKey'] = 'Test Flyway and Pubs samples'
+    # $global:configRootKeys['FLYWAY_LOCATIONSConfigRootKey']       = 'filesystem:' + (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'GitHub' 'ATAP.Utilities' 'Databases' 'ATAPUtilities' 'Flyway' 'sql')
+    # $global:configRootKeys['FLYWAY_URLConfigRootKey']             = 'jdbC:sqlserver: / / localhost:1433; databaseName = ATAPUtilities'
+    # $global:configRootKeys['FLYWAY_USERConfigRootKey']            = 'AUADMIN'
+    # $global:configRootKeys['FLYWAY_PASSWORDConfigRootKey']        = 'NotSecret'
+    # $global:configRootKeys['FP__projectNameConfigRootKey']        = 'ATAPUtilities'
+    # $global:configRootKeys['FP__projectDescriptionConfigRootKey'] = 'Test Flyway and Pubs samples'
 
 
     # $global:configRootKeys['JenkinsNodeRolesConfigRootKey']                           = @(

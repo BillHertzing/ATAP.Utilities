@@ -195,6 +195,17 @@ In every new repository, after creating the .vscode directory and its contents, 
 
 ```
 
+### additional cSpell dictionaries
+
+cSpell has many language-specific dictionaries with the language's keywords.. Run the following
+
+```Powershell
+# from your repo root
+npm i -D @cspell/dict-csharp  @cspell/dict-html @cspell/dict-markdown @cspell/dict-powershell @cspell/dict-python @cspell/dict-sql @cspell/dict-typescript
+```
+
+ToDo: add the ansible and jenkins specific dictionaries
+
 ### Additional project-specific directories
 
 Projects are created under the 'src' directory of the repository. Projects are individual code workspaces.

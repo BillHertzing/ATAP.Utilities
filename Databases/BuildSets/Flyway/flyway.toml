@@ -1,33 +1,69 @@
-
-
-# --- Connection (unencrypted, per your constraint)
-# the following is needed for connecting to the SQL server with a untrusted SSL certificate
-flyway.url=jdbc:sqlserver://utat022;databaseName=BuildSets;Encrypt=False;
-flyway.user=FlywayAsBuildSetsDBOwner
-flyway.password=ChangeMe_!234
-
+[flyway]
+# Shared (baseline) configuration
 # --- Locations for SQL migrations
-flyway.locations=filesystem:./sql, ../../_shared/sql;
-
-# Where SQL Server will read CSVs during BULK INSERT
-flyway.placeholders.data_dir=C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\Databases\\BuildSets\\Flyway\\DATA
-
-
-# --- Where to put the history table (default schema dbo)
-flyway.schemas=dbo
-
+locations = ["filesystem:./sql", "filesystem:../../_shared/sql"]
 # --- Safety
-flyway.cleanDisabled=true
-
+cleanDisabled = true
 # --- Idempotence
 # (Not required, but recommended defaults)
-flyway.outOfOrder=false
-flyway.validateOnMigrate=true
-flyway.validateMigrationNaming=true
+outOfOrder = false
+validateOnMigrate = true
+validateMigrationNaming = true
+# --- Where to put the history table (default schema dbo)
+# --- Locations for SQL migrations
+#schemas = "dbo"
 
+[flyway.placeholders]
+data_dir       = "C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\Databases\\BuildSets\\Flyway\\DATA"
 #  -- placeholders for manifest. Actual values at runtime will be placed in Env variables or command line overrides
-flyway.placeholders.PackageName=BuildSets.Functions
-flyway.placeholders.PackageVersion=0.0.00008
-flyway.placeholders.GitTag=v0.0.00008
-flyway.placeholders.GitCommit=abcdef1
-flyway.placeholders.ManifestValues=(N'V00.01.000010__Init.sql','V',N'4d2...'),(N'R__Permissions.sql','R',N'9ab...')
+PackageName    = "BuildSets.Functions"
+PackageVersion = "0.0.00008"
+GitTag         = "v0.0.00008"
+GitCommit      = "abcdef1"
+ManifestValues = "(N'V00.01.000010__Init.sql','V',N'4d2...'),(N'R__Permissions.sql','R',N'9ab...')"
+
+# ========================
+# Production environments
+# ========================
+[environments.prod_buildsets]
+url  = "jdbc:sqlserver://utat022;databaseName=BuildSets;Encrypt=False;"
+user = "FlywayAsDBOwnerForProductionBuildSets"
+# ToDo: use a secrets vault for all passwords
+password = "${FLYWAY_PROD_BUILDSETS_PWD}"
+
+# Example second production database
+[environments.prod_otherDB]
+url  = "jdbc:sqlserver://utat022;databaseName=otherDB;Encrypt=False;"
+user = "FlywayAsDBOwnerForProductionotherDB"
+# ToDo: use a secrets vault for all passwords
+password = "${FLYWAY_PROD_otherDB_PWD}"
+
+# ========================
+# Development environments
+# ========================
+[environments.dev_buildsets]
+url  = "jdbc:sqlserver://utat022;databaseName=BuildSets;Encrypt=False;"
+user = "FlywayAsDBOwnerForDevelopmentBuildSets"
+# ToDo: use a secrets vault for all passwords
+password = "${FLYWAY_DEV_BUILDSETS_PWD}"
+
+[environments.dev_otherDB]
+url  = "jdbc:sqlserver://utat022;databaseName=otherDB;Encrypt=False;"
+user = "FlywayAsDBOwnerForDevelopmentotherDB"
+# ToDo: use a secrets vault for all passwords
+password = "${FLYWAY_DEV_otherDB_PWD}"
+
+# ========================
+# Test environments
+# ========================
+[environments.test_buildsets]
+url  = "jdbc:sqlserver://utat022;databaseName=BuildSets;Encrypt=False;"
+user = "FlywayAsDBOwnerForTestingBuildSets"
+# ToDo: use a secrets vault for all passwords
+password = "${FLYWAY_TEST_BUILDSETS_PWD}"
+
+[environments.test_otherDB]
+url  = "jdbc:sqlserver://utat022;databaseName=otherDB;Encrypt=False;"
+user = "FlywayAsDBOwnerForTestingotherDB"
+# ToDo: use a secrets vault for all passwords
+password = "${FLYWAY_TEST_otherDB_PWD}"

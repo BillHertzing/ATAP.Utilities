@@ -14,9 +14,6 @@ Name of the database to create or update.
 .PARAMETER SqlInstance
 SQL Server instance (local or remote) to target (e.g. '.\SQLEXPRESS').
 
-.PARAMETER AdminUsername
-Administrative (SQL/Login) user to provision (login & database user).
-
 .PARAMETER ScriptDirectory
 Directory that contains the provisioning SQL scripts. Defaults to the directory of this script.
 
@@ -24,10 +21,10 @@ Directory that contains the provisioning SQL scripts. Defaults to the directory 
 If supplied, allows recreation steps (e.g., dropping existing database) inside scripts if they perform such logic.
 
 .EXAMPLE
-.\BuildSetsDatabaseProvisioning.ps1 -DatabaseName BuildSets -SqlInstance '.\SQLEXPRESS' -AdminUsername BuildSetsDBAdminName -WhatIf
+.\BuildSetsDatabaseProvisioning.ps1 -DatabaseName BuildSets -SqlInstance '.\SQLEXPRESS' -WhatIf
 
 .EXAMPLE
-.\BuildSetsDatabaseProvisioning.ps1 -DatabaseName BuildSets -SqlInstance '.\SQLEXPRESS' -AdminUsername BuildSetsDBAdminName -Confirm
+.\BuildSetsDatabaseProvisioning.ps1 -DatabaseName BuildSets -SqlInstance '.\SQLEXPRESS' -Confirm
 
 .OUTPUTS
 System.Object
@@ -48,13 +45,10 @@ AI assisted using Powershell.instructions.md as guidelines
     [string]$SqlInstance = 'utat022\SQLEXPRESS',
 
     [Parameter(Mandatory = $false)]
-    [ValidateNotNullOrEmpty()]
-    [string]$AdminUsername = 'FlywayAsBuildSetsDBOwner',
-
-    [Parameter(Mandatory = $false)]
     [ValidateScript({ Test-Path $_ })]
     [string]$ScriptDirectory = $PSScriptRoot,
 
+    # ToDo: add a parameter set for supporting a named user and credentials, instead of using a trusted connection and the windows user running this script
     [switch]$Force
   )
 
@@ -65,7 +59,7 @@ AI assisted using Powershell.instructions.md as guidelines
     $result = [ordered]@{
       DatabaseName    = $DatabaseName
       SqlInstance     = $SqlInstance
-      AdminUsername   = $AdminUsername
+      AdminUsername   = $env:username # ToDo: use something else if not using trusted connection; also use a real user name,, not something spoofable like an env variable
       ScriptsPlanned  = @()
       ScriptsExecuted = @()
       Success         = $false
@@ -75,7 +69,7 @@ AI assisted using Powershell.instructions.md as guidelines
     }
 
     # Collect script files in desired order
-    $plannedScripts = @{
+    $plannedScripts = [ordered]@{
       'DropAndCreateBuildSetsDatabase.sql' = @{
         ConnectionString = "Server=$SqlInstance;Integrated Security=True;Trusted_Connection=True;Encrypt=False"
         InputFile        = $scriptPath

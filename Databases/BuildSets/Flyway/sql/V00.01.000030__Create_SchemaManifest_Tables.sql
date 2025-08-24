@@ -15,3 +15,35 @@ CREATE TABLE dbo.SchemaManifestFile (
   FileType     char(1)       NOT NULL,      -- 'R' or 'V'
   Sha256Hex    varchar(64)   NOT NULL
 );
+
+
+  CREATE TYPE dbo.SchemaManifestFileType AS TABLE
+  (
+    FileName   nvarchar(260) NOT NULL,
+    FileType   char(1)       NOT NULL, -- 'V' or 'R'
+    Sha256Hex  char(64)      NOT NULL
+  );
+
+GO
+
+CREATE PROCEDURE dbo.RecordSchemaManifest
+  @PackageName    nvarchar(128),
+  @PackageVersion nvarchar(64),
+  @GitTag         nvarchar(128),
+  @GitCommit      nvarchar(40),
+  @Files          dbo.SchemaManifestFileType READONLY
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  INSERT dbo.SchemaManifest (PackageName, PackageVersion, GitTag, GitCommit)
+  VALUES (@PackageName, @PackageVersion, @GitTag, @GitCommit);
+
+  DECLARE @ManifestId int = SCOPE_IDENTITY();
+
+  INSERT dbo.SchemaManifestFile (ManifestId, FileName, FileType, Sha256Hex)
+  SELECT @ManifestId, f.FileName, f.FileType, f.Sha256Hex
+  FROM @Files f;
+END;
+GO
+GO

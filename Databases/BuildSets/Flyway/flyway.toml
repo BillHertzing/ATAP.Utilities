@@ -10,7 +10,6 @@ outOfOrder = false
 validateOnMigrate = true
 validateMigrationNaming = true
 # --- Where to put the history table (default schema dbo)
-# --- Locations for SQL migrations
 #schemas = "dbo"
 
 [flyway.placeholders]

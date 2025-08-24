@@ -9,17 +9,17 @@ Password: Supply via sqlcmd VARIABLE or Flyway placeholder:
 SET NOCOUNT ON;
 GO
 
--- Parameters (sqlcmd style) fall back to safe placeholders if not replaced
-DECLARE @LoginName sysname = N'FlywayAsBuildSetsDBOwner';
-DECLARE @DbName    sysname = N'BuildSets';
-DECLARE @Pwd       nvarchar(256) = N'$(BuildSetsLoginPwd)';
+-- Parameters (sqlcmd style)
+DECLARE @LoginName sysname;
+DECLARE @DbName    sysname;
+DECLARE @Pwd       nvarchar(256);
 -- EXPECTED TO BE REPLACED
 DECLARE @GrantDbOwner bit = 0;
 -- set to 1 only if absolutely required
 
-IF @Pwd LIKE '%$(BuildSetsLoginPwd)%'
+IF @Pwd LIKE '%$(LoginPwd)%'
 BEGIN
-  RAISERROR('Password variable $(BuildSetsLoginPwd) was not replaced. Aborting.',16,1);
+  RAISERROR('Password variable $(LoginPwd) was not replaced. Aborting.',16,1);
   RETURN;
 END;
 

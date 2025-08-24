@@ -23,13 +23,13 @@ function DatabaseProvisioning {
   The SQL/Login name to create or ensure (passed to the CreateBuildSetsLoginAndUser.sql script via sqlcmd variables).
 
   .PARAMETER LoginPasswordEnvVar
-  Name of the environment variable holding the password for the login. Its value is injected via the sqlcmd variable $(BuildSetsLoginPwd).
+  Name of the environment variable holding the password for the login. Its value is injected via the sqlcmd variable $(BuildSetsloginPassword).
 
   .PARAMETER Force
   If supplied, allows recreation steps (e.g., dropping existing database) inside scripts if they perform such logic.
 
   .EXAMPLE
-  $Env:BuildSetsLoginPwd='StrongP@ssw0rd!'; DatabaseProvisioning -DatabaseName BuildSets -SqlInstance '.\SQLEXPRESS' -LoginName 'FlywayAsBuildSetsDBOwner'
+  $Env:BuildSetsloginPassword='StrongP@ssw0rd!'; DatabaseProvisioning -DatabaseName BuildSets -SqlInstance '.\SQLEXPRESS' -LoginName 'FlywayAsBuildSetsDBOwner'
 
   .NOTES
   AI assisted using Powershell.instructions.md as guidelines
@@ -37,9 +37,13 @@ function DatabaseProvisioning {
 
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
   param(
-    [Parameter(Mandatory = $false)]
+    [Parameter(Mandatory = $true)]
+    [ValidateSet('Production', 'Testing', 'Development')]
+    [string]$Environment,
+
+    [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
-    [string]$DatabaseName = 'BuildSets',
+    [string]$DatabaseName,
 
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
@@ -47,15 +51,18 @@ function DatabaseProvisioning {
 
     [Parameter(Mandatory = $false)]
     [ValidateScript({ Test-Path $_ })]
-    [string]$ScriptDirectory = $PSScriptRoot,
+    # ToDo: get default from a global:settings value
+    [string]$ScriptDirectory = "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement\SharedSQL",
 
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
-    [string]$LoginName = 'FlywayAsBuildSetsDBOwner',
+    # ToDo: get default from a global:settings value, lookup by databaseName and environment
+    [string]$LoginName ,
 
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
-    [string]$LoginPasswordEnvVar = 'BuildSetsLoginPwd',
+    # ToDo: get from a vault, lookup by databaseName and environment
+    [Securestring]$LoginPasswordVaultKey ,
 
     [switch]$Force
   )
@@ -64,13 +71,17 @@ function DatabaseProvisioning {
     Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message "Entering script DatabaseProvisioning"
     $errors = [System.Collections.Generic.List[string]]::new()
     $scriptsRun = [System.Collections.Generic.List[string]]::new()
-    $loginPwd = (Get-Item -Path Env:$LoginPasswordEnvVar -ErrorAction SilentlyContinue).Value
+    # ToDo: if a value was passed, use it, else get from environment variable else get from global variable
+    # ToDo: add error checking to ensure it exists and is non-empty
+    $loginName = $global:DatabaseProperties[$environment][$databaseName].LoginName
+    # ToDo: if a value was passed, use it, else get from environment variable else get from global variable
+    # ToDo: add error checking to ensure it exists and is non-empty
+    $loginPasswordVaultKey = $global:DatabaseProperties[$environment][$databaseName].LoginPasswordVaultKey
+    # Lookup LoginPassword from environment variable
+    # ToDo: change this to lookup from a secure vault
+    # ToDo: add error checking to ensure it exists and is non-empty
+    [SecureString]$loginPassword = $global:DatabaseVaultPasswords[$environment][$databaseName].LoginPassword
 
-    if (-not $loginPwd) {
-      $msg = "Environment variable '$LoginPasswordEnvVar' not found or empty. Cannot continue."
-      Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Error -Message $msg
-      throw $msg
-    }
 
     $result = [ordered]@{
       DatabaseName     = $DatabaseName
@@ -88,12 +99,12 @@ function DatabaseProvisioning {
     # Ordered list of scripts with metadata
     $plannedScripts = @(
       @{
-        Name      = 'DropAndCreateBuildSetsDatabase.sql'
+        Name      = 'DropAndCreateDatabase.sql'
         RunDb     = 'master'              # run against master (creates DB)
         NeedsVars = $false
       },
       @{
-        Name      = 'CreateBuildSetsLoginAndUser.sql'
+        Name      = 'CreateLoginAndUser.sql'
         RunDb     = $DatabaseName         # run inside target DB
         NeedsVars = $true                 # pass sqlcmd variables
       }
@@ -119,7 +130,7 @@ function DatabaseProvisioning {
 
     # Stash script metadata in script scope for PROCESS
     $script:PlannedScriptsMetadata = $plannedScripts
-    $script:LoginPwdValue = $loginPwd
+    $script:loginPasswordValue = $loginPassword
   }
 
   PROCESS {
@@ -144,11 +155,11 @@ function DatabaseProvisioning {
 
             if ($meta.NeedsVars) {
               # These variable names must match those used in the SQL script:
-              # $(BuildSetsLoginPwd), $(DbName), $(LoginName)
+              # $(loginPassword), $(DbName), $(LoginName)
               $invokeParams.Variable = @{
-                BuildSetsLoginPwd = $script:LoginPwdValue
-                DbName            = $DatabaseName
-                LoginName         = $LoginName
+                loginPassword = $script:loginPasswordValue
+                DbName        = $DatabaseName
+                LoginName     = $LoginName
               }
             }
 
@@ -184,9 +195,9 @@ function DatabaseProvisioning {
     $result.ScriptsExecuted = $scriptsRun.ToArray()
     $result.Errors = $errors.ToArray()
     $result.Success = ($errors.Count -eq 0)
-    Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Important -Message ("Provisioning {0}" -f ($(if ($result.Success) { 'succeeded' } else { 'failed' })))
+    Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Important -Message ("Provisioning { 0 }" -f ($(if ($result.Success) { 'succeeded' } else { 'failed' })))
     if ($errors.Count -gt 0) {
-      Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Error -Message ("Errors:`n{0}" -f ($errors -join [Environment]::NewLine))
+      Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Error -Message ("Errors:`n { 0 }" -f ($errors -join [Environment]::NewLine))
     }
     Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message 'Leaving script DatabaseProvisioning'
     [PSCustomObject]$result

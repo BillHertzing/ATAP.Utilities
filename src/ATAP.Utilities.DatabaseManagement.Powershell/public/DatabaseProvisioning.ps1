@@ -1,38 +1,39 @@
-function BuildSetsDatabaseProvisioning {
+````powershell
+// filepath: c:\Dropbox\whertzing\GitHub\ATAP.Utilities\Databases\BuildSets\DatabaseProvisioning.ps1
+function DatabaseProvisioning {
 
   <#
-.SYNOPSIS
-Creates (or recreates) the BuildSets database and associated login/user objects.
+  .SYNOPSIS
+  Creates (or recreates) the BuildSets database and associated login/user objects.
 
-.DESCRIPTION
-Runs one or more SQL scripts (in a defined order) against a target SQL Server instance to provision
-the BuildSets database artifacts. Each script is executed with structured logging and robust error handling.
+  .DESCRIPTION
+  Runs one or more SQL scripts (in a defined order) against a target SQL Server instance to provision
+  the BuildSets database artifacts. Each script is executed with structured logging and robust error handling.
 
-.PARAMETER DatabaseName
-Name of the database to create or update.
+  .PARAMETER DatabaseName
+  Name of the database to create or update.
 
-.PARAMETER SqlInstance
-SQL Server instance (local or remote) to target (e.g. '.\SQLEXPRESS').
+  .PARAMETER SqlInstance
+  SQL Server instance (local or remote) to target (e.g. '.\SQLEXPRESS').
 
-.PARAMETER ScriptDirectory
-Directory that contains the provisioning SQL scripts. Defaults to the directory of this script.
+  .PARAMETER ScriptDirectory
+  Directory that contains the provisioning SQL scripts. Defaults to the directory of this script.
 
-.PARAMETER Force
-If supplied, allows recreation steps (e.g., dropping existing database) inside scripts if they perform such logic.
+  .PARAMETER LoginName
+  The SQL/Login name to create or ensure (passed to the CreateBuildSetsLoginAndUser.sql script via sqlcmd variables).
 
-.EXAMPLE
-.\BuildSetsDatabaseProvisioning.ps1 -DatabaseName BuildSets -SqlInstance '.\SQLEXPRESS' -WhatIf
+  .PARAMETER LoginPasswordEnvVar
+  Name of the environment variable holding the password for the login. Its value is injected via the sqlcmd variable $(BuildSetsLoginPwd).
 
-.EXAMPLE
-.\BuildSetsDatabaseProvisioning.ps1 -DatabaseName BuildSets -SqlInstance '.\SQLEXPRESS' -Confirm
+  .PARAMETER Force
+  If supplied, allows recreation steps (e.g., dropping existing database) inside scripts if they perform such logic.
 
-.OUTPUTS
-System.Object
-Returns a PSCustomObject summarizing provisioning results (Success flag, ScriptsExecuted, Errors).
+  .EXAMPLE
+  $Env:BuildSetsLoginPwd='StrongP@ssw0rd!'; DatabaseProvisioning -DatabaseName BuildSets -SqlInstance '.\SQLEXPRESS' -LoginName 'FlywayAsBuildSetsDBOwner'
 
-.NOTES
-AI assisted using Powershell.instructions.md as guidelines
-#>
+  .NOTES
+  AI assisted using Powershell.instructions.md as guidelines
+  #>
 
   [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
   param(
@@ -48,94 +49,133 @@ AI assisted using Powershell.instructions.md as guidelines
     [ValidateScript({ Test-Path $_ })]
     [string]$ScriptDirectory = $PSScriptRoot,
 
-    # ToDo: add a parameter set for supporting a named user and credentials, instead of using a trusted connection and the windows user running this script
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string]$LoginName = 'FlywayAsBuildSetsDBOwner',
+
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string]$LoginPasswordEnvVar = 'BuildSetsLoginPwd',
+
     [switch]$Force
   )
 
   BEGIN {
-    Write-PSFMessage -FunctionName 'BuildSetsDatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message "Entering script BuildSetsDatabaseProvisioning"
+    Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message "Entering script DatabaseProvisioning"
     $errors = [System.Collections.Generic.List[string]]::new()
     $scriptsRun = [System.Collections.Generic.List[string]]::new()
+    $loginPwd = (Get-Item -Path Env:$LoginPasswordEnvVar -ErrorAction SilentlyContinue).Value
+
+    if (-not $loginPwd) {
+      $msg = "Environment variable '$LoginPasswordEnvVar' not found or empty. Cannot continue."
+      Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Error -Message $msg
+      throw $msg
+    }
+
     $result = [ordered]@{
-      DatabaseName    = $DatabaseName
-      SqlInstance     = $SqlInstance
-      AdminUsername   = $env:username # ToDo: use something else if not using trusted connection; also use a real user name,, not something spoofable like an env variable
-      ScriptsPlanned  = @()
-      ScriptsExecuted = @()
-      Success         = $false
-      Errors          = @()
-      Force           = [bool]$Force
-      TimestampUTC    = (Get-Date).ToUniversalTime()
+      DatabaseName     = $DatabaseName
+      SqlInstance      = $SqlInstance
+      LoginName        = $LoginName
+      LoginPasswordVar = $LoginPasswordEnvVar
+      ScriptsPlanned   = @()
+      ScriptsExecuted  = @()
+      Success          = $false
+      Errors           = @()
+      Force            = [bool]$Force
+      TimestampUTC     = (Get-Date).ToUniversalTime()
     }
 
-    # Collect script files in desired order
-    $plannedScripts = [ordered]@{
-      'DropAndCreateBuildSetsDatabase.sql' = @{
-        ConnectionString = "Server=$SqlInstance;Integrated Security=True;Trusted_Connection=True;Encrypt=False"
-        InputFile        = $scriptPath
-        ErrorAction      = 'Stop'
+    # Ordered list of scripts with metadata
+    $plannedScripts = @(
+      @{
+        Name      = 'DropAndCreateBuildSetsDatabase.sql'
+        RunDb     = 'master'              # run against master (creates DB)
+        NeedsVars = $false
+      },
+      @{
+        Name      = 'CreateBuildSetsLoginAndUser.sql'
+        RunDb     = $DatabaseName         # run inside target DB
+        NeedsVars = $true                 # pass sqlcmd variables
       }
-      'CreateBuildSetsLoginAndUser.sql'    = @{
-        ConnectionString = "Server=$SqlInstance;Initial Catalog=BuildSets;Integrated Security=True;Trusted_Connection=True;Encrypt=False"
-        InputFile        = $scriptPath
-        ErrorAction      = 'Stop'
-      }
-    }
+    )
 
-    foreach ($s in $plannedScripts.keys) {
-      $full = Join-Path -Path $ScriptDirectory -ChildPath $s
+    foreach ($entry in $plannedScripts) {
+      $full = Join-Path -Path $ScriptDirectory -ChildPath $entry.Name
       if (-not (Test-Path $full)) {
         $msg = "Planned script not found: $full"
-        Write-PSFMessage -FunctionName 'BuildSetsDatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Error -Message $msg
+        Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Error -Message $msg
         $errors.Add($msg) | Out-Null
       }
       else {
+        $entry.FullPath = $full
         $result.ScriptsPlanned += $full
       }
     }
 
     if ($errors.Count -gt 0) {
-      Write-PSFMessage -FunctionName 'BuildSetsDatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Error -Message "Aborting before execution due to missing scripts."
-      throw "Provisioning aborted; missing scripts."
+      Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Error -Message 'Aborting before execution due to missing scripts.'
+      throw 'Provisioning aborted; missing scripts.'
     }
+
+    # Stash script metadata in script scope for PROCESS
+    $script:PlannedScriptsMetadata = $plannedScripts
+    $script:LoginPwdValue = $loginPwd
   }
 
   PROCESS {
-    foreach ($scriptPath in $result.ScriptsPlanned) {
-      $scriptLabel = [IO.Path]::GetFileName($scriptPath)
-      if ($PSCmdlet.ShouldProcess("$SqlInstance / $DatabaseName", "Execute $scriptLabel")) {
+    foreach ($meta in $script:PlannedScriptsMetadata) {
+      $scriptPath = $meta.FullPath
+      $scriptLabel = $meta.Name
+      $targetDb = $meta.RunDb
+
+      if ($PSCmdlet.ShouldProcess("$SqlInstance / $targetDb", "Execute $scriptLabel")) {
         try {
-          Write-PSFMessage -FunctionName 'BuildSetsDatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Verbose -Message "Starting script $scriptLabel"
-          # Try-Catch-Finally snippet (adapted)
+          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Verbose -Message "Starting script $scriptLabel"
+
           try {
-            # change SQLCMD variables as needed
-            $invokeParams = $plannedScripts[$scriptLabel]
-            $invokeParams['InputFile'] = $scriptPath
-            Write-PSFMessage -FunctionName 'BuildSetsDatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message "Calling Invoke-Sqlcmd $scriptLabel"
+            $invokeParams = @{
+              ServerInstance = $SqlInstance
+              InputFile      = $scriptPath
+              ErrorAction    = 'Stop'
+            }
+            if ($targetDb -and $targetDb -ne 'master') {
+              $invokeParams.Database = $targetDb
+            }
+
+            if ($meta.NeedsVars) {
+              # These variable names must match those used in the SQL script:
+              # $(BuildSetsLoginPwd), $(DbName), $(LoginName)
+              $invokeParams.Variable = @{
+                BuildSetsLoginPwd = $script:LoginPwdValue
+                DbName            = $DatabaseName
+                LoginName         = $LoginName
+              }
+            }
+
+            Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message "Calling Invoke-Sqlcmd $scriptLabel (DB=$targetDb)"
             Invoke-Sqlcmd @invokeParams
-            Write-PSFMessage -FunctionName 'BuildSetsDatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message "Successfully returned from Invoke-Sqlcmd $scriptLabel"
+            Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message "Successfully returned from Invoke-Sqlcmd $scriptLabel"
             $scriptsRun.Add($scriptPath) | Out-Null
           }
           catch {
             $errorMessage = "Failure executing $scriptLabel. Exception: $($_.Exception.Message)"
-            Write-PSFMessage -FunctionName 'BuildSetsDatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Error -Message $errorMessage
+            Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Error -Message $errorMessage
             if ($_.Exception.StackTrace) {
-              Write-PSFMessage -FunctionName 'BuildSetsDatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message "StackTrace: $($_.Exception.StackTrace)"
+              Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message "StackTrace: $($_.Exception.StackTrace)"
             }
             $errors.Add($errorMessage) | Out-Null
             throw
           }
           finally {
-            Write-PSFMessage -FunctionName 'BuildSetsDatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message "Finished attempt for $scriptLabel"
+            Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message "Finished attempt for $scriptLabel"
           }
         }
         catch {
-          # Continue to next script after logging
           continue
         }
       }
       else {
-        Write-PSFMessage -FunctionName 'BuildSetsDatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Important -Message "Skipped script $scriptLabel due to ShouldProcess decision"
+        Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Important -Message "Skipped script $scriptLabel due to ShouldProcess decision"
       }
     }
   }
@@ -144,11 +184,11 @@ AI assisted using Powershell.instructions.md as guidelines
     $result.ScriptsExecuted = $scriptsRun.ToArray()
     $result.Errors = $errors.ToArray()
     $result.Success = ($errors.Count -eq 0)
-    Write-PSFMessage -FunctionName 'BuildSetsDatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Important -Message ("Provisioning {0}" -f ($(if ($result.Success) { 'succeeded' } else { 'failed' })))
+    Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Important -Message ("Provisioning {0}" -f ($(if ($result.Success) { 'succeeded' } else { 'failed' })))
     if ($errors.Count -gt 0) {
-      Write-PSFMessage -FunctionName 'BuildSetsDatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Error -Message ("Errors:`n{0}" -f ($errors -join [Environment]::NewLine))
+      Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Error -Message ("Errors:`n{0}" -f ($errors -join [Environment]::NewLine))
     }
-    Write-PSFMessage -FunctionName 'BuildSetsDatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message "Leaving script BuildSetsDatabaseProvisioning"
+    Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.Databases' -Level Debug -Message 'Leaving script DatabaseProvisioning'
     [PSCustomObject]$result
   }
 }

@@ -212,6 +212,9 @@ Projects are created under the 'src' directory of the repository. Projects are i
 Put the project name into a local setting
 
 ```Powershell
+# ToDo: must get the username for the specific computer from a vault
+$username = 'whertzing'
+
   # set the local project name
   $projectName = 'ATAP.Console.QueryChatGPT.Powershell'
   # set the local project full path
@@ -235,9 +238,7 @@ Put the project name into a local setting
   }
 }
 '@ | Out-File -FilePath "./$projectName.code-workspace" # UTF8 encoding via a parameter default
-```
 
-```Powershell
   # the subdirectory where all generated files are placed
   $null = New-Item -ItemType Directory -Force $global:settings[$global:configRootKeys['GeneratedRelativePathConfigRootKey']];
   # the subdirectory for documentation source

@@ -64,7 +64,7 @@ function Invoke-FlywayManifest {
     [Parameter(Mandatory = $true)] [string[]]$Files,
     [Parameter(Mandatory = $true)] [string]$PackageName,
     [Parameter(Mandatory = $true)] [string]$PackageVersion,
-    [string]$ConfigPath = '.\flyway.conf',
+    [string]$ConfigPath = '.\flyway.toml',
     [string]$GitTag,
     [string]$GitCommit,
     [string]$FlywayPath = 'flyway',

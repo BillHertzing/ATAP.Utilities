@@ -238,6 +238,63 @@ $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:
 
 # Get the Vaults and Master Passwords for the Secrets that belong to my roles
 
+# Currently developing database management powershell modules
+# temporaroy create in teh environment a hashtable of databasenames and their properties
+<#
+# Flyway.TOML file uses
+[environments.prod_buildsets]
+url  = "jdbc:sqlserver://utat022;databaseName=BuildSets;Encrypt=False;"
+user = "FlywayAsDBOwnerForProductionBuildSets"
+# ToDo: use a secrets vault for all passwords
+password = "${FLYWAY_PROD_BUILDSETS_PWD}"[environments.dev_buildsets]
+url  = "jdbc:sqlserver://utat022;databaseName=BuildSets;Encrypt=False;"
+user = "FlywayAsDBOwnerForDevelopmentBuildSets"
+# ToDo: use a secrets vault for all passwords
+password = "${FLYWAY_DEV_BUILDSETS_PWD}"
+#>
+$global:DatabaseProperties = @{
+  'Production'  = @{
+    'BuildSets' = @{
+      SqlInstance           = 'utat022\SQLEXPRESS'
+      ScriptDirectory       = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+      LoginName             = 'ProductionBuildSetsDBOwner'
+      LoginPasswordVaultKey = 'ProductionBuildSetsDBPassword'
+    }
+  }
+  'Testing'     = @{
+    'BuildSets' = @{
+      SqlInstance           = 'utat022\SQLEXPRESS'
+      ScriptDirectory       = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+      LoginName             = 'TestingBuildSetsDBOwner'
+      LoginPasswordVaultKey = 'TestingBuildSetsDBPassword'
+    }
+  }
+  'Development' = @{
+    'BuildSets' = @{
+      SqlInstance           = 'utat022\SQLEXPRESS'
+      ScriptDirectory       = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
+      LoginName             = 'DevelopmentBuildSetsDBOwner'
+      LoginPasswordVaultKey = 'DevelopmentBuildSetsDBPassword'
+    }
+  }
+}
+$global:DatabaseVaultPasswords = @{
+  'Production'  = @{
+    'BuildSets' = @{
+      LoginPassword = "ChangeMe_!234"
+    }
+  }
+  'Testing'     = @{
+    'BuildSets' = @{
+      LoginPassword = "ChangeMe_!234"
+    }
+  }
+  'Development' = @{
+    'BuildSets' = @{
+      LoginPassword = "ChangeMe_!234"
+    }
+  }
+}
 
 
 

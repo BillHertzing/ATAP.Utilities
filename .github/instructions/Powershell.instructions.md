@@ -54,6 +54,7 @@ This file is a set of instructions for AI to follow when generating or modifying
 - **Cmdlet Design**:
   - Include `[CmdletBinding()]` and `param()` blocks with proper validation attributes.
   - Ensure all cmdlets support `-WhatIf` and `-Confirm` parameters.
+  - Ensure all cmdlets having optional parameters place the snippet "Check and populate optional parameter" in the cmdlet's BEGIN block. Substitute the parameter name into the snippet as `{1:ParameterName}`. look up the value of `{2:ParameterConfigRootKey}` from the file global_ConfigRootKeys.ps1
 - **Comment-Based Help**:
   - Add `.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER`, `.OUTPUTS`, `.EXAMPLE`, `.NOTES`, and `.LINK` sections for all public functions.
 - **Validation String**:

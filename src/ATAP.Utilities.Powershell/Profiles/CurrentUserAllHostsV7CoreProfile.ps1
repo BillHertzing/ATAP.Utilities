@@ -252,49 +252,6 @@ user = "FlywayAsDBOwnerForDevelopmentBuildSets"
 # ToDo: use a secrets vault for all passwords
 password = "${FLYWAY_DEV_BUILDSETS_PWD}"
 #>
-$global:DatabaseProperties = @{
-  'Production'  = @{
-    'BuildSets' = @{
-      SqlInstance           = 'utat022\SQLEXPRESS'
-      ScriptDirectory       = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
-      LoginName             = 'ProductionBuildSetsDBOwner'
-      LoginPasswordVaultKey = 'ProductionBuildSetsDBPassword'
-    }
-  }
-  'Testing'     = @{
-    'BuildSets' = @{
-      SqlInstance           = 'utat022\SQLEXPRESS'
-      ScriptDirectory       = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
-      LoginName             = 'TestingBuildSetsDBOwner'
-      LoginPasswordVaultKey = 'TestingBuildSetsDBPassword'
-    }
-  }
-  'Development' = @{
-    'BuildSets' = @{
-      SqlInstance           = 'utat022\SQLEXPRESS'
-      ScriptDirectory       = 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement\SharedSQL'
-      LoginName             = 'DevelopmentBuildSetsDBOwner'
-      LoginPasswordVaultKey = 'DevelopmentBuildSetsDBPassword'
-    }
-  }
-}
-$global:DatabaseVaultPasswords = @{
-  'Production'  = @{
-    'BuildSets' = @{
-      LoginPassword = "ChangeMe_!234"
-    }
-  }
-  'Testing'     = @{
-    'BuildSets' = @{
-      LoginPassword = "ChangeMe_!234"
-    }
-  }
-  'Development' = @{
-    'BuildSets' = @{
-      LoginPassword = "ChangeMe_!234"
-    }
-  }
-}
 
 
 
@@ -342,6 +299,9 @@ $ModulesToLoadAsSymbolicLinks = @(
 # Create symbolic links to each of the modules above in the user's default powershell module location
 # The function uses Join-Path ([Environment]::GetFolderPath('MyDocuments')) '\PowerShell\Modules\' as the default PSModulePath path
 # $ModulesToLoadAsSymbolicLinks | Get-ModuleAsSymbolicLink
+
+# Add the Database hostfragment here. Later will go into IAC
+. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\DaatabaseInfo.HostsFragment.ps1'
 
 # Show environment/context information when the profile runs
 # ToDo reformat using YAML

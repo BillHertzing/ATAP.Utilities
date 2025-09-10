@@ -300,9 +300,6 @@ $ModulesToLoadAsSymbolicLinks = @(
 # The function uses Join-Path ([Environment]::GetFolderPath('MyDocuments')) '\PowerShell\Modules\' as the default PSModulePath path
 # $ModulesToLoadAsSymbolicLinks | Get-ModuleAsSymbolicLink
 
-# Add the Database hostfragment here. Later will go into IAC
-. 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\DaatabaseInfo.HostsFragment.ps1'
-
 # Show environment/context information when the profile runs
 # ToDo reformat using YAML
 function Show-context {

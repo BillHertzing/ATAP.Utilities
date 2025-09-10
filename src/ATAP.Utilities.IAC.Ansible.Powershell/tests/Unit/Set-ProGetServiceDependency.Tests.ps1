@@ -6,11 +6,11 @@ Describe 'Set-ProGetServiceDependency' {
     . "$PSScriptRoot\..\Path\To\Your\Script\New-ProGetFunctions.ps1"
   }
 
-  Context 'When INEDOPROGETSVC already depends on MSSQL$SQLEXPRESS' {
+  Context 'When INEDOPROGETSVC already depends on MSSQL$PRODUCTION' {
     Mock Get-Service { @{ Name = 'INEDOPROGETSVC' } }
     Mock Get-ItemProperty {
       [PSCustomObject]@{
-        DependOnService = @('MSSQL$SQLEXPRESS')
+        DependOnService = @('MSSQL$PRODUCTION')
       }
     }
     Mock Write-PSFMessage {}

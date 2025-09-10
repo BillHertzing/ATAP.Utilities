@@ -207,6 +207,16 @@ if (!(get-command Get-ClonedAndModifiedHashtable -erroraction silentlycontinue))
 # Define a global settings hash based on the hostname
 $global:settings = Get-HostSettings $hostName
 
+# temporary - Use this structure for passwords that will eventually be stored in a vault
+# These are throwaway passwords, just for testing
+$global:VaultData = @{
+  'BuildSetsAdminProductionLoginPassword  VaultKeyValue' = "ChangeMe_!234"
+  'BuildSetsAdminTestingLoginPasswordVaultKeyValue'      = "ChangeMe_!234"
+  'BuildSetsAdminDevelopmentLoginPasswordVaultKeyValue'  = "ChangeMe_!234"
+  'BuildSetsAdminExperimentalLoginPasswordVaultKeyValue' = "ChangeMe_!234"
+}
+
+
 # 'Group Vars' 'Role Vars' 'Host Vars'
 #
 # Load the PerGroup, PerRole, and PerMachine settings for this computer into the $global:settings hash, evaluating any dependencies

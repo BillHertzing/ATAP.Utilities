@@ -5,7 +5,7 @@ function Set-ProGetServiceDependency {
   Write-PSFMessage -Level Verbose -Message "Entering function: Set-ProGetServiceDependency"
 
   $progetServiceName = "INEDOPROGETSVC"
-  $sqlServiceName = "MSSQL`$SQLEXPRESS"
+  $sqlServiceName = "MSSQL`$PRODUCTION"
 
   try {
     $progetService = Get-Service -Name $progetServiceName -ErrorAction Stop

@@ -68,11 +68,17 @@ New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7
 # Machine scope Powershell Core 'global_ConfigRootKeysFragment.PackageRepositories.ps1' linked to 'global_ConfigRootKeysFragment.PackageRepositories.ps1'
 New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeysFragment.PackageRepositories.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeysFragment.PackageRepositories.ps1') -force
 
+# Machine scope Powershell Core 'global_ConfigRootKeysFragment.Databases.ps1' linked to 'global_ConfigRootKeysFragment.Databases.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_ConfigRootKeysFragment.Databases.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeysFragment.Databases.ps1') -force
+
 # Machine scope Powershell Core 'HostSettings.ps1' linked to 'HostSettings.ps1'
 New-SymbolicLink -symbolicLinkPath $$(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettings.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.IAC' 'Windows' 'HostSettingsFragment.ps1') -force
 
 # Machine scope Powershell Core 'HostSettingsFragment.PackageRepositories.ps1' linked to 'HostSettingsFragment.PackageRepositories.ps1'
 New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettingsFragment.PackageRepositories.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.IAC' 'Windows' 'HostSettingsFragment.PackageRepositories.ps1') -force
+
+# Machine scope Powershell Core 'HostSettingsFragment.Databases.ps1' linked to 'HostSettingsFragment.Databases.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'HostSettingsFragment.Databases.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.IAC' 'Windows' 'HostSettingsFragment.Databases.ps1') -force
 
 # Machine scope Powershell Core 'global_EnvironmentVariables' linked to 'global_EnvironmentVariables'
 New-SymbolicLink -symbolicLinkPath $(join-path $env:ProgramFiles 'PowerShell' '7' 'global_EnvironmentVariables.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_EnvironmentVariables.ps1') -force
@@ -89,6 +95,9 @@ New-SymbolicLink -symbolicLinkPath $(join-path $([Environment]::GetFolderPath("M
 # ToDo: Move to machine scope V5 profile
 # User scope Powershell Core 'global_ConfigRootKeysFragment.PackageRepositories.ps1' linked to 'global_ConfigRootKeysFragment.PackageRepositories.ps1'
 New-SymbolicLink -symbolicLinkPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeysFragment.PackageRepositories.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeysFragment.PackageRepositories.ps1') -force
+
+# User scope Powershell Core 'global_ConfigRootKeysFragment.Databases.ps1' linked to 'global_ConfigRootKeysFragment.Databases.ps1'
+New-SymbolicLink -symbolicLinkPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'WindowsPowerShell' 'global_ConfigRootKeysFragment.Databases.ps1')  -targetPath $(join-path $([Environment]::GetFolderPath("MyDocuments")) 'GitHub' 'ATAP.Utilities' 'src' 'ATAP.Utilities.PowerShell' 'profiles' 'global_ConfigRootKeysFragment.Databases.ps1') -force
 
 ```
 

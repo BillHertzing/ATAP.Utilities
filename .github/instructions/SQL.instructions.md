@@ -18,13 +18,22 @@ This file is a set of instructions for AI to follow when generating or modifying
 
 - You are an expert in SQL coding standards.
 
+## Coding Guidelines for SQL
+
+## Coding Rules for PowerShell
+
+- **General Formatting**:
+  - Use the .editorconfig file in the root of the repository for formatting rules.
+- **Function Naming**:
+  - Use PascalCase for public functions and parameters.
+
 ## Database Architecture
 
 ### Database Design
 
 ### Filesystem Layout
 
-``` text
+```text
 <repo>/
   databases/
     _shared/
@@ -34,34 +43,40 @@ This file is a set of instructions for AI to follow when generating or modifying
       data/                            # shared CSVs (slow-changing)
         countries.csv
         currencies.csv
-    orders/
+    <NameOfDatabase01>/
       flyway/
-        flyway.conf
+        flyway.toml
         sql/
-          V1__baseline_schema.sql
-          V2__load_reference_data.sql      # uses BULK INSERT with ${data_dir}
-          R__functions_and_helpers.sql
-      data/                                # orders-specific CSVs (small, slow-changing)
-        order_status.csv
-    billing/
+          R__Functions.sql                # Function definitions (repeatable)
+          R__Verifications.sql            # Verification scripts (repeatable)
+          V00.01.000010_CreateSchemaManifestTables.sql  # Tables used to hold version information about the repeatables and data loads
+          V00.01.000020__Create<NameOfDatabase01>CoreSchema.sql  # Initial Tables for the core schema
+          V00.01.000030__Load<NameOfDatabase01>DataFromBCP.sql      # uses BULK INSERT with ${data_dir}
+      data/                                # small, slow-changing data for tables
+        <Table01Data>.csv
+        <Table02Data>.csv
+        <Table03Data>.csv
+    <NameOfDatabase02>/
       flyway/
-        flyway.conf
+        flyway.toml
         sql/
-          V1__baseline_schema.sql
-          V3__new_indexes.sql
-          R__functions_and_helpers.sql
+          R__Functions.sql                # Function definitions (repeatable)
+          R__Verifications.sql            # Verification scripts (repeatable)
+          V00.01.000010_CreateSchemaManifestTables.sql  # Tables used to hold version information about the repeatables and data loads
+          V00.01.000020__Create<NameOfDatabase03>CoreSchema.sql  # Initial Tables for the core schema
+          V00.01.000030__Load<NameOfDatabase02>DataFromBCP.sql      # uses BULK INSERT with ${data_dir}
       data/
-        tax_codes.csv
+        <Table01Data>.csv
+        <Table02Data>.csv
   ops/                                      # optional: CI scripts, env configs, secrets templates
-    flyway.dev.conf
-    flyway.prod.conf
+    flyway.dev.toml
+    flyway.prod.toml
 ```
-
-
 
 - Use a modular approach to database design, organizing SQL files by functionality or feature.
 
 ### Database Migration
+
 - Use versioned migrations for schema changes.
 - Use Flyway from Redgate Software for versioned migrations. Each migration should be a single SQL file with a descriptive name, following the format `V{version}__{description}.sql`. Ensure migrations are idempotent and can be applied multiple times without error.
 

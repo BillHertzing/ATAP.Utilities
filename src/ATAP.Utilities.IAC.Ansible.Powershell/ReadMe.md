@@ -965,7 +965,7 @@ Install-ChocolateyPinnedTaskBarItem "$env:windir\system32\eventvwr.msc"
 
 -ia '/value1=''some value'' '
 
-# Enable SQLServerAgent
+## Enable SQLServerAgent
 
 choco install sql-server-express -ia '/SECURITYMODE=SQL'
 Install-ChocolateyPinnedTaskBarItem "C:\Program Files (x86)\Microsoft SQL Server\110\Tools\Binn\ManagementStudio\Ssms.exe"

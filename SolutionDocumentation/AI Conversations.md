@@ -8,7 +8,7 @@ When responding with powershell code or tests for PowerShell code, follow these 
 4.  never log using -Level Info, use -Level Important
 5.  Log entry and exit of the function using -Level Verbose
 6.  wrap any code that might produce an exception in a try/catch block. In the catch block, log the exception using the following structure
-7.               catch {
+7.                catch {
          $errorMessage = "Failed <what failed>. Exception: $($_.Exception.Message)"
          Write-PSFMessage -Level Error -Message $errorMessage -Exception $_.Exception
          throw $_

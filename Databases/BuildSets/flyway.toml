@@ -20,12 +20,15 @@ validateMigrationNaming = true
 #  So we  want a placeholder here, which is replaced by the location to which Common/SQl has been installed
 # --- Locations for SQL migrations
 locations = [
-  "filesystem:./sql",
-  "filesystem:C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\src\\ATAP.Utilities.DatabaseManagement\\SharedSQL"]
+  "filesystem:./sql"
+  ]
+#  "filesystem:C:\\Dropbox\\whertzing\\GitHub\\ATAP.Utilities\\src\\ATAP.Utilities.DatabaseManagement\\SharedSQL"
 
 
 [flyway.placeholders]
-data_dir       = ".\\DATA"
+#data_dir       ='C:\Dropbox\whertzing\GitHub\ATAP.Utilities\Databases\BuildSets\DATA'
+data_dir       ='C:\Dropbox\whertzing\GitHub\PCMSC\Databases\DATA'
+#data_dir       = ".\\PCMSC\\Databases\\DATA"
 #  -- placeholders for manifest. Actual values at runtime will be placed in Env variables or command line overrides
 PackageName    = "BuildSets.Functions"
 PackageVersion = "0.0.00001"
@@ -33,33 +36,33 @@ GitTag         = "v0.0.00001"
 GitCommit      = "abcdef1"
 ManifestValues = "(N'V00.01.000010__Init.sql','V',N'4d2...'),(N'R__Permissions.sql','R',N'9ab...')"
 
-# Authentication and TLS flags will be provided by the environment:
-#   FLYWAY_INTEGRATED=true|false
-#   FLYWAY_DB_USER=...
-#   FLYWAY_DB_PASSWORD=...
-#   FLYWAY_ENCRYPT=true|false
-#   FLYWAY_TRUSTSERVERCERT=true|false
+# the process calling flyway should set environment  variables for
+# FLYWAY_URL
+# FLYWAY_USER
+# FLYWAY_PASSWORD
 
 [environments.production]
 # UTAT022\Production instance
-url  = "jdbc:sqlserver://UTAT022;instanceName=Production;databaseName=BuildSets;integratedSecurity=${FLYWAY_INTEGRATED};encrypt=${FLYWAY_ENCRYPT};trustServerCertificate=${FLYWAY_TRUSTSERVERCERT};"
-user = "${FLYWAY_DB_USER}"
-password = "${FLYWAY_DB_PASSWORD}"
+# url  = "jdbc:sqlserver://UTAT022;instanceName=Production;databaseName=BuildSets;integratedSecurity=${Env:FLYWAY_INTEGRATED};encrypt=false;trustServerCertificate=true;"
+#url  = "jdbc:sqlserver://UTAT022;instanceName=Production;databaseName=BuildSets;integratedSecurity=$env:FLYWAY_INTEGRATED;encrypt=${env:FLYWAY_ENCRYPT};trustServerCertificate=${env:FLYWAY_TRUSTSERVERCERT};"
+#user = "${env:FLYWAY_DB_USER}"
+#password = "${env:FLYWAY_DB_PASSWORD}"
 
 [environments.testing]
 # NCAT016\Testing instance
-url  = "jdbc:sqlserver://NCAT016;instanceName=Testing;databaseName=BuildSets;integratedSecurity=${FLYWAY_INTEGRATED};encrypt=${FLYWAY_ENCRYPT};trustServerCertificate=${FLYWAY_TRUSTSERVERCERT};"
-user = "${FLYWAY_DB_USER}"
-password = "${FLYWAY_DB_PASSWORD}"
+#url  = "jdbc:sqlserver://NCAT016;instanceName=Testing;databaseName=BuildSets;integratedSecurity=${env:FLYWAY_INTEGRATED};encrypt=${env:FLYWAY_ENCRYPT};trustServerCertificate=${env:FLYWAY_TRUSTSERVERCERT};"
+#user = "${env:FLYWAY_DB_USER}"
+#password = "${env:FLYWAY_DB_PASSWORD}"
 
 [environments.development]
 # UTAT022\Development instance
-url  = "jdbc:sqlserver://UTAT022;instanceName=Development;databaseName=BuildSets;integratedSecurity=${FLYWAY_INTEGRATED};encrypt=${FLYWAY_ENCRYPT};trustServerCertificate=${FLYWAY_TRUSTSERVERCERT};"
-user = "${FLYWAY_DB_USER}"
-password = "${FLYWAY_DB_PASSWORD}"
+ #url  = "jdbc:sqlserver://UTAT022;instanceName=Development;databaseName=BuildSets;integratedSecurity=${env:FLYWAY_INTEGRATED};encrypt=${env:FLYWAY_ENCRYPT};trustServerCertificate=${env:FLYWAY_TRUSTSERVERCERT};"
+# url  = "jdbc:sqlserver://UTAT022;instanceName=Development;databaseName=BuildSets;integratedSecurity=true;encrypt=false;trustServerCertificate=true;"
+# user = "${env:FLYWAY_DB_USER}"
+# password = "${env:FLYWAY_DB_PASSWORD}"
 
 [environments.experimental]
 # UTAT022\Testing used for Experimental in your current file; adjust host/instance as needed
-url  = "jdbc:sqlserver://UTAT022;instanceName=Testing;databaseName=BuildSets;integratedSecurity=${FLYWAY_INTEGRATED};encrypt=${FLYWAY_ENCRYPT};trustServerCertificate=${FLYWAY_TRUSTSERVERCERT};"
-user = "${FLYWAY_DB_USER}"
-password = "${FLYWAY_DB_PASSWORD}"
+# url  = "jdbc:sqlserver://UTAT022;instanceName=Testing;databaseName=BuildSets;integratedSecurity=${env:FLYWAY_INTEGRATED};encrypt=${env:FLYWAY_ENCRYPT};trustServerCertificate=${env:FLYWAY_TRUSTSERVERCERT};"
+# user = "${env:FLYWAY_DB_USER}"
+# password = "${env:FLYWAY_DB_PASSWORD}"

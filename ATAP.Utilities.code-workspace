@@ -563,6 +563,7 @@
   ],
   "settings": {
     "powershell.cwd": "ATAP.Utilities",
-    "cSpell.words": ["ATAP"]
+    "cSpell.words": ["ATAP"],
+    "powershell.pester.codeLens": false
   }
 }

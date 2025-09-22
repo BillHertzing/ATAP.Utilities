@@ -49,3 +49,4 @@ CREATE INDEX IX_RuleItem_Parent_PeerSort
 CREATE INDEX IX_RuleSetHavingRuleItem_Item
   ON dbo.RuleSetHavingRuleItem (RuleItemID);
 GO
+

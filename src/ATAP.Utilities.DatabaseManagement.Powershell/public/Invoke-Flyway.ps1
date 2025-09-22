@@ -96,7 +96,7 @@ function Invoke-Flyway {
 
     # Flyway command selector
     [Parameter(Mandatory = $false)]
-    [ValidateSet('validate', 'migrate', 'check -dryrun')]
+    [ValidateSet('validate', 'migrate', 'check', 'repair', 'info', 'baseline', 'clean', 'undo')]
     [string]$FlywayCommand = 'validate',
     [Parameter(Mandatory = $false)]
     [string]$SqlDir = '.\sql',
@@ -271,7 +271,7 @@ function Invoke-Flyway {
       }
 
       # If SQL login, require LoginPasswordVaultKey; if Windows login, it's optional/ignored
-      if (-not (Is-WindowsLoginName $LoginName)) {
+      if (-not (Test-WindowsLoginName $LoginName)) {
         if (Test-Blank $LoginPasswordVaultKey) {
           $envVal = Get-Env $global:configRootKeys['LoginPasswordVaultKeyConfigRootKey']
           if (Test-Blank $envVal) {
@@ -290,7 +290,8 @@ function Invoke-Flyway {
         Write-PSFMessage -FunctionName 'Invoke-Flyway' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Verbose -Message "LoginName '$LoginName' detected as Windows principal; LoginPasswordVaultKey not required."
       }
 
-      # Lookup LoginPassword (temporary clear text lookup)
+      # Lookup LoginPassword once; store in script scope for PROCESS to use
+      # ToDO: use SecureString when Bitwarden vault is implemented
       # [SecureString]$loginPassword = $null
       [string]$loginPassword = $null
       if (-not $global:VaultData.ContainsKey($LoginPasswordVaultKey)) {
@@ -300,8 +301,8 @@ function Invoke-Flyway {
       }
       else {
         if (-not (Test-Blank $global:VaultData[$LoginPasswordVaultKey])) {
-          # [SecureString]$loginPassword = $global:VaultData[$LoginPasswordVaultKey]
           $loginPassword = $global:VaultData[$LoginPasswordVaultKey]
+          $script:loginPassword = $loginPassword
         }
         else {
           $errorMessage = "LoginPasswordVaultKey '$LoginPasswordVaultKey' has blank value in vault."
@@ -309,12 +310,14 @@ function Invoke-Flyway {
           throw $errorMessage
         }
       }
-      else {
-        # If $UseNamedLogin is false, then LoginName and LoginPasswordVaultKey should not be present
-        $LoginName = $null
-        $LoginPasswordVaultKey = $null
-      }
     }
+    else {
+      # If $UseNamedLogin is false, then LoginName and LoginPasswordVaultKey should not be present
+      $LoginName = $null
+      $LoginPasswordVaultKey = $null
+      $script:loginPassword = $null
+    }
+
     # ParameterValidation snippet (templated) for ConfigPath
     try {
       if ([string]::IsNullOrWhiteSpace($ConfigPath)) { throw 'ConfigPath is null or empty.' }
@@ -358,7 +361,7 @@ function Invoke-Flyway {
       $script:errors.Add($msg) | Out-Null
     }
 
-    # Build manifest values list
+    # Pre-compute manifest values list (used later as env var)
     $values = @()
     try {
       foreach ($name in $Files) {
@@ -376,8 +379,12 @@ function Invoke-Flyway {
       $script:errors.Add($msg) | Out-Null
       throw
     }
-    $valuesList = ($values -join ',')
+    $script:valuesList = ($values -join ',')
 
+    # Ensure BEGIN contains only validation/preparation. Auth/env selection moved to PROCESS.
+  }
+
+  PROCESS {
     # Decide authentication mode and set env for Flyway/JDBC
     $isIntegrated = $false
     $flywayUser = ''
@@ -396,50 +403,58 @@ function Invoke-Flyway {
         # SQL-auth login
         $isIntegrated = $false
         $flywayUser = $LoginName
-        $flywayPwd = $loginPassword   # from your vault lookup
+        $flywayPwd = $script:loginPassword
       }
     }
 
-    # TLS defaults (adjust to your policy)
+    # TLS defaults (adjust to policy)
+    # ToDo: modify once trusted SSL certs are available
     $env:FLYWAY_ENCRYPT = 'false'
     $env:FLYWAY_TRUSTSERVERCERT = 'true'
-    $env:FLYWAY_INTEGRATED = $(if ($isIntegrated) { 'true' } else { 'false' })
-    $env:FLYWAY_DB_USER = $flywayUser
-    $env:FLYWAY_DB_PASSWORD = $flywayPwd
-  }
 
-  PROCESS {
-    # Export environment variables (Flyway placeholder form)
+    # Export placeholder env vars and auth vars
     Write-PSFMessage -FunctionName 'Invoke-Flyway' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Debug -Message 'Exporting Flyway placeholder environment variables'
-    $env:FLYWAY_PLACEHOLDERS_MANIFESTVALUES = $valuesList
+    $env:FLYWAY_PLACEHOLDERS_MANIFESTVALUES = $script:valuesList
     $env:FLYWAY_PLACEHOLDERS_PACKAGENAME = $PackageName
     $env:FLYWAY_PLACEHOLDERS_PACKAGEVERSION = $PackageVersion
     $env:FLYWAY_PLACEHOLDERS_GITTAG = $GitTag
     $env:FLYWAY_PLACEHOLDERS_GITCOMMIT = $GitCommit
-    #$env:FLYWAY_PROD_BUILDSETS_USER = $LoginName
-    # Lookup LoginPassword (temporary clear text lookup) with new key order
-    [string]$loginPassword = ''
-    if (-not [string]::IsNullOrWhiteSpace($global:VaultData.ContainsKey($LoginPasswordVaultKey))) {
-      # [SecureString]$loginPassword = $global:VaultData[$LoginPasswordVaultKey]
-      $loginPassword = $global:VaultData[$LoginPasswordVaultKey]
+
+    $env:FLYWAY_INTEGRATED = $(if ($isIntegrated) { 'true' } else { 'false' })
+    if ($isIntegrated) {
+      Remove-Item Env:FLYWAY_USER -ErrorAction SilentlyContinue | Out-Null
+      Remove-Item Env:FLYWAY_PASSWORD -ErrorAction SilentlyContinue | Out-Null
     }
     else {
-      $errorMessage = "LoginPasswordVaultKey '$LoginPasswordVaultKey' not found in vault."
-      Write-PSFMessage -FunctionName 'Invoke-Flyway' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
-      throw $errorMessage
+      $env:FLYWAY_USER = $flywayUser
+      $env:FLYWAY_PASSWORD = $flywayPwd
     }
+    $optionalIinstanceName = switch ($Environment) {
+      'Production' { 'instanceName=Production;' }
+      'Testing' { 'instanceName=Testing;' }
+      'Development' { 'instanceName=Development;' }
+      'Experimental' { '' }
+      default {
+        $message = "Unhandled environment '$Environment' in switch"
+        Write-PSFMessage -FunctionName 'Invoke-Flyway' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $message
+        throw $message
+      }
+    }
+    # Create the URL, ensuring all placeholders are replaced with actual values
+    $env:FLYWAY_URL = "jdbc:sqlserver://$($DatabaseHost);$optionalIinstanceName;databaseName=$($DatabaseName);integratedSecurity=$env:FLYWAY_INTEGRATED;encrypt=$($env:FLYWAY_ENCRYPT);trustServerCertificate=$($env:FLYWAY_TRUSTSERVERCERT);"
 
     Write-PSFMessage -FunctionName 'Invoke-Flyway' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Important -Message "Prepared placeholders for Package=$PackageName Version=$PackageVersion Tag=$GitTag Commit=$GitCommit Files=$($Files.Count)"
 
-    $message = (Get-ChildItem Env: | Where-Object { $_.Name -notlike 'Path' -and ($_.Name -like '*flyway*' -or $_.Value -like '*flyway*') } | Format-Table Name, Value ) -join "`r`n"
-
+    $message = (Get-ChildItem Env: | Where-Object { $_.Name -notlike 'Path' -and ($_.Name -like '*flyway*' -or $_.Value -like '*flyway*') }  ) -join "`r`n"
     Write-PSFMessage -FunctionName 'Invoke-Flyway' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Important -Message $message
 
-    $flywayParams = @("-configFiles=$ConfigPath", "-environment=$Environment")
+    # Build flyway parameters and execute (use lowercase environment key)
+    $environmentKey = $Environment.ToLowerInvariant()
+    $flywayParams = @("-configFiles=$ConfigPath", "-environment=$environmentKey")
     if ($FlywayAdditionalArgs) { $flywayParams += $FlywayAdditionalArgs }
     $flywayParams += $FlywayCommand
 
-    if ($PSCmdlet.ShouldProcess($ConfigPath, "flyway $FlywayCommand [$Environment]")) {
+    if ($PSCmdlet.ShouldProcess($ConfigPath, "flyway $FlywayCommand [$environmentKey]")) {
       try {
         Write-PSFMessage -FunctionName 'Invoke-Flyway' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Debug -Message "Calling flyway with args: $($flywayParams -join ' ')"
         & $FlywayPath @flywayParams
@@ -462,6 +477,7 @@ function Invoke-Flyway {
   }
 
   END {
+    # Build and return the summary object
     $summary = [PSCustomObject]@{
       PackageName    = $PackageName
       PackageVersion = $PackageVersion
@@ -475,7 +491,7 @@ function Invoke-Flyway {
       TimestampUTC   = (Get-Date).ToUniversalTime()
     }
     $level = if ($summary.Success) { 'Important' } else { 'Error' }
-    Write-PSFMessage -FunctionName 'Invoke-Flyway' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level $level -Message ("Manifest variables generation {0}" -f ($(if ($summary.Success) { 'succeeded' } else { 'failed' })))
+    Write-PSFMessage -FunctionName 'Invoke-Flyway' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level $level -Message ("Manifest variables generation {0}" -f $($summary.Success ? 'succeeded' :  'failed' ))
     if (-not $summary.Success) { Write-PSFMessage -FunctionName 'Invoke-Flyway' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message ("Errors:`n" + ($summary.Errors -join [Environment]::NewLine)) }
     Write-PSFMessage -FunctionName 'Invoke-Flyway' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Debug -Message 'Leaving function Invoke-Flyway'
     return $summary

@@ -2,6 +2,7 @@
 ## Databases keys. segment of global_ConfigRootKeys.ps1
 $global:configRootKeys.Add('DatabasesCollectionConfigRootKey', 'DatabasesCollection')
 $global:configRootKeys.Add('DatabaseBuildSetsNameConfigRootKey', 'BuildSets')
+$global:configRootKeys.Add('DatabasePCMSCNameConfigRootKey', 'PCMSC')
 $global:configRootKeys.Add('ProvisionForFlywayConfigRootKey', 'ProvisionForFlyway')
 
 $global:configRootKeys.Add('DatabaseBuildSetsProductionDatabaseHostConfigRootKey', 'DatabaseBuildSetsProductionDatabaseHost')
@@ -39,3 +40,12 @@ $global:configRootKeys.Add('DatabaseBuildSetsExperimentalScriptDirectoryConfigRo
 $global:configRootKeys.Add('DatabaseBuildSetsExperimentalUseNamedLoginConfigRootKey', 'DatabaseBuildSetsExperimentalUseNamedLogin')
 $global:configRootKeys.Add('DatabaseBuildSetsExperimentalLoginNameConfigRootKey', 'DatabaseBuildSetsExperimentalLoginName')
 $global:configRootKeys.Add('DatabaseBuildSetsExperimentalLoginPasswordVaultKeyConfigRootKey', 'DatabaseBuildSetsExperimentalLoginPasswordVaultKey')
+
+$global:configRootKeys.Add('DatabasePCMSCExperimentalDatabaseHostConfigRootKey', 'DatabasePCMSCExperimentalDatabaseHost')
+$global:configRootKeys.Add('DatabasePCMSCExperimentalConnectionMethodConfigRootKey', 'DatabasePCMSCExperimentalConnectionMethod')
+$global:configRootKeys.Add('DatabasePCMSCExperimentalSqlInstanceConfigRootKey', 'DatabasePCMSCExperimentalSqlInstance')
+$global:configRootKeys.Add('DatabasePCMSCExperimentalDatabasePathConfigRootKey', 'DatabasePCMSCExperimentalDatabasePath')
+$global:configRootKeys.Add('DatabasePCMSCExperimentalScriptDirectoryConfigRootKey', 'DatabasePCMSCExperimentalScriptDirectory')
+$global:configRootKeys.Add('DatabasePCMSCExperimentalUseNamedLoginConfigRootKey', 'DatabasePCMSCExperimentalUseNamedLogin')
+$global:configRootKeys.Add('DatabasePCMSCExperimentalLoginNameConfigRootKey', 'DatabasePCMSCExperimentalLoginName')
+$global:configRootKeys.Add('DatabasePCMSCExperimentalLoginPasswordVaultKeyConfigRootKey', 'DatabasePCMSCExperimentalLoginPasswordVaultKey')

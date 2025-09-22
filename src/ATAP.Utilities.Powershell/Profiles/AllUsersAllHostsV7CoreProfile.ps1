@@ -214,6 +214,7 @@ $global:VaultData = @{
   'BuildSetsAdminTestingLoginPasswordVaultKeyValue'      = "ChangeMe_!234"
   'BuildSetsAdminDevelopmentLoginPasswordVaultKeyValue'  = "ChangeMe_!234"
   'BuildSetsAdminExperimentalLoginPasswordVaultKeyValue' = "ChangeMe_!234"
+  'PCMSCAdminExperimentalLoginPasswordVaultKeyValue'     = "ChangeMe_!234"
 }
 
 

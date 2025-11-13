@@ -28,11 +28,11 @@ ToDo: Need attribution for Console Settings
 $DebugPreference = 'SilentlyContinue'
 # Don't Print any verbose messages to the console
 $VerbosePreference = 'SilentlyContinue' # SilentlyContinue Continue
-Write-PSFMessage -FunctionName 'Profiles\CurrentUserAllHostsV7CoreProfile.ps1' -Level Verbose -Message ('Starting CurrentUsersAllHostsV7CoreProfile.ps1')
-
+$fn = 'CurrentUserAllHostsV7CoreProfile'
+Write-PSFMessage -FunctionName $fn -Level Verbose -Message ('Starting CurrentUsersAllHostsV7CoreProfile.ps1')
 #ToDo: document expected values when run under profile, Module cmdlet/function, script.
-Write-PSFMessage -Level Debug -Message ("WorkingDirectory = $pwd")
-Write-PSFMessage -Level Debug -Message ("PSScriptRoot = $PSScriptRoot")
+Write-PSFMessage -FunctionName $fn -Level Debug -Message ("WorkingDirectory = $pwd")
+Write-PSFMessage -FunctionName $fn -Level Debug -Message ("PSScriptRoot = $PSScriptRoot")
 
 ########################################################
 # Individual PowerShell Profile
@@ -125,7 +125,31 @@ function prompt {
 # Tell all GIT operations where to find the global configuration file
 $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:\Dropbox\whertzing\Git\.gitconfig'
 
-# ToDo Unlock the Secrets vault for this user
+# Unlock the Secrets for this user
+# We use Bitwarden, and hopefully the user has already logged in interactively at least once, whihc sets the BW_Session
+# if not, use Initialize-BitwardenSession
+if (-not (Test-Path Env:BW_SESSION)) {
+  # Load required helper functions
+  try {
+    if (-not (Get-Command -Name 'Initialize-BitwardenSession' -CommandType Function -ErrorAction SilentlyContinue)) {
+      . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\Profiles\LoginScript.ps1'
+    }
+  }
+  catch {
+    $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+    throw
+  }
+
+  Initialize-BitwardenSession
+}
+if (-not (Test-Path Env:BW_SESSION)) {
+  Write-PSFMessage -FunctionName $fn -Level Warning -Message 'Bitwarden session could not be initialized, secrets will not be available'
+}
+else {
+  Write-PSFMessage -FunctionName $fn -Level Verbose -Message 'Bitwarden session initialized, secrets are available'
+}
+
 # ToDo: do not use env variables, instead modify the functions to get the API Key value based on its name from the secrets valid
 # Temporary Setup some API keys for the user.
 # These API keys are being checked in to GitHub, but these are only applicable to a
@@ -133,8 +157,21 @@ $global:Settings[$global:configRootKeys['GIT_CONFIG_GLOBALConfigRootKey']] = 'C:
 # This is for host utat022.
 # ToDO: implement secrets vault, and per-host API keys for Proget
 [Environment]::SetEnvironmentVariable($global:configRootKeys['ProGetAdminApiKeyConfigRootKey'], 'ce69d48aff2b9e2e2a7bc6f7a150f0de5b8ef450', 'Process')
-# Tell pgutil Where to  find the proget server
-[Environment]::SetEnvironmentVariable($global:configRootKeys['PGUTIL_SOURCEConfigRootKey'], 'http://localhost:50000', 'Process')
+
+# Set the console encoding to suport ASCII ;ine drawing characters in Playwright output
+# Set console output encoding to UTF-8
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+# Set console code page to UTF-8 (65001)
+chcp 65001 | Out-Null
+
+# Set environment variables for PLaywright and PCMSC project
+$env:PCMSC_CEUserID = 'admin'
+$env:PCMSC_CEPasswordVaultKey = 'PCMSC_CEPasswordVaultKey'
+$env:PW_JITTER_SEED = 0
+$env:PW_HUMANIZER_DEBUG = 'true'
+
+
 
 
 # The following command must be run as an administrator on the machine, to install for 'AllUsers'
@@ -321,8 +358,8 @@ function Show-context {
 function TailLatestPSFrameworkLog {
   param(
     [int] $lines = 100
-    , [string[]] $includeTags = @('Invoke-Build')
-    , [string[]] $excludeTags = @()
+    , [string[]] $includeTags
+    , [string[]] $excludeTags
     , [switch] $alltags
   )
   $headers = @(
@@ -350,10 +387,8 @@ function TailLatestPSFrameworkLog {
   }
   #  Get just the last $lines lines
   $content = $content[ - $lines..-1]
-  # objectify them
-  $objects = $content -join "`n" | ConvertFrom-Csv -Header $headers
-  #$objects
-  #$objects | Format-Table HostName, Timestamp, LogLevel, Message, ScriptName, LineNumber, Tags
+  # ob$objects = $content -join "`n" | ConvertFrom-Csv -Header $headers
+
   # filter by tags
   if ($includeTags) {
     # -or $excludeTags) {
@@ -460,6 +495,7 @@ function Get-LinksFromDrafts {
     $path = 'C:\Temp\gmaildrafts\Takeout\Mail\Drafts.mbox'
   )
   $DebugPreference = 'SilentlyContinue'
+  $fn = 'Get-LinksFromDrafts'
   $Stream = New-Object 'System.IO.FileStream' $path, Open, Read, ReadWrite
   $reader = New-Object 'System.IO.StreamReader' $Stream
   $findRegex1 = [Regex] '^Subject:\s*(?<Subject>.*?)$'
@@ -470,14 +506,14 @@ function Get-LinksFromDrafts {
   try {
     while (!$reader.EndOfStream) {
       # ToDO: add Progress Reporting
-      if (-not ($cnt % 100000)) { Write-PSFMessage -Level Debug -Message "cnt = $cnt" }
+      if (-not ($cnt % 100000)) { Write-PSFMessage -FunctionName $fn -Level Debug -Message "cnt = $cnt" }
       $cnt += 1
       #if ($cnt -gt 2000) {throw}
       $line = $reader.ReadLine()
       $matchResult = [RegEx]::Matches($line, $findRegex1)
       if ($matchResult.Success) {
         $Subject = $matchResult.captures.groups['Subject'].value
-        Write-PSFMessage -Level Debug -Message "Subject = $Subject"
+        Write-PSFMessage -FunctionName $fn -Level Debug -Message "Subject = $Subject"
       }
       else {
         $matchResult = [RegEx]::Matches($line, $findRegex2)
@@ -625,7 +661,7 @@ function WatchFile {
     [string] $path
   )
   # [FileSystemWatcher Monitoring Folders for File Changes](https://powershell.one/tricks/filesystem/filesystemwatcher)
-
+  $fn = 'WatchFile'
   # specify the path to the folder you want to monitor:
   $ParentPath = Split-Path $path
 
@@ -742,7 +778,7 @@ function WatchFile {
     $watcher.Dispose()
 
     # Caution - if tailing the debug log, this would cause an endless loop
-    Write-PSFMessage -Level Debug -Message ('Event Handler disabled, monitoring ends.')
+    Write-PSFMessage -FunctionName $fn -Level Debug -Message ('Event Handler disabled, monitoring ends.')
 
   }
 }
@@ -819,11 +855,11 @@ function ShutItAllDown {
 Set-Location -Path $storedInitialDir
 
 # Set the environment variables for this user
-Write-PSFMessage -Level Debug -Message ('setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
+Write-PSFMessage -FunctionName $fn -Level Debug -Message ('setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
 
 . (Join-Path -Path $PSHome -ChildPath 'global_EnvironmentVariables.ps1')
 Set-EnvironmentVariablesProcess
-Write-PSFMessage -Level Debug -Message ('finished setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
+Write-PSFMessage -FunctionName $fn -Level Debug -Message ('finished setting environment variables in CurrentUsersAllHostsV7CoreProfile.ps1')
 
 # Set the name of the VSC extension project under development
 # ToDo: put this in a vsc extension as a command , and trigger the command every time an editor is activated.
@@ -833,11 +869,11 @@ Write-PSFMessage -Level Debug -Message ('finished setting environment variables 
 # [Environment]::SetEnvironmentVariable('VSCExtensionProjectName', 'ATAP-AiAssist', [EnvironmentVariableTarget]::User)
 # [Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', 'src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
 # [Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-# Write-PSFMessage -Level Debug -Message ('line 729 in CurrentUsersAllHostsV7CoreProfile.ps1')
+# Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 729 in CurrentUsersAllHostsV7CoreProfile.ps1')
 #[Environment]::SetEnvironmentVariable('VSCExtensionProjectRelativePath', '.', [EnvironmentVariableTarget]::User)
-#Write-PSFMessage -Level Debug -Message ('line 731 in CurrentUsersAllHostsV7CoreProfile.ps1')
+#Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 731 in CurrentUsersAllHostsV7CoreProfile.ps1')
 #[Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:/Dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.VSCExtension.AI/ATAP-AiAssist', [EnvironmentVariableTarget]::User)
-#Write-PSFMessage -Level Debug -Message ('line 733 in CurrentUsersAllHostsV7CoreProfile.ps1')
+#Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 733 in CurrentUsersAllHostsV7CoreProfile.ps1')
 
 # Unlock the Hashicorp Vault
 
@@ -859,8 +895,8 @@ Write-PSFMessage -Level Debug -Message ('finished setting environment variables 
 # Print the $global:settings if Debug
 # $indent = 0
 # $indentIncrement = 2
-# Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
-# Write-PSFMessage -Level Debug -Message ('After CurrentUsersAllHosts profile executes, Environment variables: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
+# Write-PSFMessage -FunctionName $fn -Level Debug -Message ('After CurrentUsersAllHosts profile executes, global:settings:' + ' {' + [Environment]::NewLine + (Write-HashIndented $global:settings ($indent + $indentIncrement) $indentIncrement) + '}' + [Environment]::NewLine )
+# Write-PSFMessage -FunctionName $fn -Level Debug -Message ('After CurrentUsersAllHosts profile executes, Environment variables: ' + [Environment]::NewLine + (Write-EnvironmentVariablesIndented ($indent + $indentIncrement) $indentIncrement) + [Environment]::NewLine )
 
 # start windows explorer with the current working set of directories and place them in a fancy zones layout
 function Start-ExplorerWindowSet {
@@ -871,7 +907,7 @@ function Start-ExplorerWindowSet {
   FancyZones.exe apply -id '45BA8D3D-74C5-460B-AA17-97DAEF91780B'
 }
 
-Write-PSFMessage -Level Debug -Message ('line 764 in CurrentUsersAllHostsV7CoreProfile.ps1')
+Write-PSFMessage -FunctionName $fn -Level Debug -Message ('line 764 in CurrentUsersAllHostsV7CoreProfile.ps1')
 
 <# To Be Moved Somewhere else #>
 

@@ -19,46 +19,50 @@ function Get-OriginalPathFromRecycleBin {
 
   [CmdletBinding()]
   param (
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+
     [string]$RecycleBinPath
   )
 
   BEGIN {
-    Write-PSFMessage -FunctionName 'Get-OriginalPathFromRecycleBin' -ModuleName 'ATAP.Utilities.FileIO.PowerShell' -Level Debug -Message "Entering function Get-OriginalPathFromRecycleBin"
+    $fn = 'Get-OriginalPathFromRecycleBin'
+    $mn = 'ATAP.Utilities.Powershell'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+    $RecycleBinPath = Get-PVal 'RecycleBinPath' $PSBoundParameters
   }
 
   PROCESS {
     try {
       # Extract the SID from the Recycle Bin path
       $sid = ($RecycleBinPath -split '\\')[3]
-      Write-PSFMessage -FunctionName 'Get-OriginalPathFromRecycleBin' -ModuleName 'ATAP.Utilities.FileIO.PowerShell' -Level Debug -Message "Extracted SID: $sid"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn  -Level Debug -Message "Extracted SID: $sid"
 
       # Construct the registry path
       $registryPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\RecycleBin\$sid"
       if (-not (Test-Path $registryPath)) {
-        Write-PSFMessage -FunctionName 'Get-OriginalPathFromRecycleBin' -ModuleName 'ATAP.Utilities.FileIO.PowerShell' -Level Warning -Message "Registry path does not exist: $registryPath"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn  -Level Warning -Message "Registry path does not exist: $registryPath"
         return $null
       }
 
       # Query the registry for the original path
       $originalPath = Get-ItemProperty -Path $registryPath -Name OriginalPath -ErrorAction SilentlyContinue
       if ($null -ne $originalPath) {
-        Write-PSFMessage -FunctionName 'Get-OriginalPathFromRecycleBin' -ModuleName 'ATAP.Utilities.FileIO.PowerShell' -Level Debug -Message "Original path retrieved: $($originalPath.OriginalPath)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn  -Level Debug -Message "Original path retrieved: $($originalPath.OriginalPath)"
         return $originalPath.OriginalPath
       }
       else {
-        Write-PSFMessage -FunctionName 'Get-OriginalPathFromRecycleBin' -ModuleName 'ATAP.Utilities.FileIO.PowerShell' -Level Warning -Message "Original path not found in the registry for $RecycleBinPath"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn  -Level Warning -Message "Original path not found in the registry for $RecycleBinPath"
         return $null
       }
     }
     catch {
       $errorMessage = "An error occurred while retrieving the original path. Exception: $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName 'Get-OriginalPathFromRecycleBin' -ModuleName 'ATAP.Utilities.FileIO.PowerShell' -Level Error -Message $errorMessage
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn  -Level Error -Message $errorMessage
       throw
     }
   }
 
   END {
-    Write-PSFMessage -FunctionName 'Get-OriginalPathFromRecycleBin' -ModuleName 'ATAP.Utilities.FileIO.PowerShell' -Level Debug -Message "Leaving function Get-OriginalPathFromRecycleBin"
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn  -Level Debug -Message "Leaving function Get-OriginalPathFromRecycleBin"
   }
 }

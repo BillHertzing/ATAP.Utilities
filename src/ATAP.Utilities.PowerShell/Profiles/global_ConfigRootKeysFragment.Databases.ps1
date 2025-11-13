@@ -5,6 +5,15 @@ $global:configRootKeys.Add('DatabaseBuildSetsNameConfigRootKey', 'BuildSets')
 $global:configRootKeys.Add('DatabasePCMSCNameConfigRootKey', 'PCMSC')
 $global:configRootKeys.Add('ProvisionForFlywayConfigRootKey', 'ProvisionForFlyway')
 
+$global:configRootKeys.Add('DatabaseHostConfigRootKey', 'DatabaseHost')
+$global:configRootKeys.Add('ConnectionMethodConfigRootKey', 'ConnectionMethod') # for Get-PVal to work this must match the parameter name exactly
+$global:configRootKeys.Add('SqlInstanceConfigRootKey', 'SqlInstance')
+$global:configRootKeys.Add('DatabasePathConfigRootKey', 'DatabasePath')
+$global:configRootKeys.Add('ScriptDirectoryConfigRootKey', 'ScriptDirectory')
+$global:configRootKeys.Add('UseNamedLoginConfigRootKey', 'UseNamedLogin')
+$global:configRootKeys.Add('LoginNameConfigRootKey', 'LoginName')
+$global:configRootKeys.Add('LoginPasswordVaultKeyConfigRootKey', 'LoginPasswordVaultKey')
+
 $global:configRootKeys.Add('DatabaseBuildSetsProductionDatabaseHostConfigRootKey', 'DatabaseBuildSetsProductionDatabaseHost')
 $global:configRootKeys.Add('DatabaseBuildSetsProductionConnectionMethodConfigRootKey', 'DatabaseBuildSetsProductionConnectionMethod')
 $global:configRootKeys.Add('DatabaseBuildSetsProductionSqlInstanceConfigRootKey', 'DatabaseBuildSetsProductionSqlInstance')
@@ -49,3 +58,12 @@ $global:configRootKeys.Add('DatabasePCMSCExperimentalScriptDirectoryConfigRootKe
 $global:configRootKeys.Add('DatabasePCMSCExperimentalUseNamedLoginConfigRootKey', 'DatabasePCMSCExperimentalUseNamedLogin')
 $global:configRootKeys.Add('DatabasePCMSCExperimentalLoginNameConfigRootKey', 'DatabasePCMSCExperimentalLoginName')
 $global:configRootKeys.Add('DatabasePCMSCExperimentalLoginPasswordVaultKeyConfigRootKey', 'DatabasePCMSCExperimentalLoginPasswordVaultKey')
+
+$global:configRootKeys.Add('DatabasePCMSCDevelopmentDatabaseHostConfigRootKey', 'DatabasePCMSCDevelopmentDatabaseHost')
+$global:configRootKeys.Add('DatabasePCMSCDevelopmentConnectionMethodConfigRootKey', 'DatabasePCMSCDevelopmentConnectionMethod')
+$global:configRootKeys.Add('DatabasePCMSCDevelopmentSqlInstanceConfigRootKey', 'DatabasePCMSCDevelopmentSqlInstance')
+$global:configRootKeys.Add('DatabasePCMSCDevelopmentDatabasePathConfigRootKey', 'DatabasePCMSCDevelopmentDatabasePath')
+$global:configRootKeys.Add('DatabasePCMSCDevelopmentScriptDirectoryConfigRootKey', 'DatabasePCMSCDevelopmentScriptDirectory')
+$global:configRootKeys.Add('DatabasePCMSCDevelopmentUseNamedLoginConfigRootKey', 'DatabasePCMSCDevelopmentUseNamedLogin')
+$global:configRootKeys.Add('DatabasePCMSCDevelopmentLoginNameConfigRootKey', 'DatabasePCMSCDevelopmentLoginName')
+$global:configRootKeys.Add('DatabasePCMSCDevelopmentLoginPasswordVaultKeyConfigRootKey', 'DatabasePCMSCDevelopmentLoginPasswordVaultKey')

@@ -2,9 +2,9 @@
 
 ## PreRequisites
 
-* Windows 10 or higher
-* Powershell Core 7 or higher
-* Java Development Kit or runtime. As of JUly 2022, The options were for java 11 or Java 17. The ATAP.Utilities organization will use java 17 to
+- Windows 10 or higher
+- Powershell Core 7 or higher
+- Java Development Kit or runtime. As of JUly 2022, The options were for java 11 or Java 17. The ATAP.Utilities organization will use java 17 to
 
 ### Jenkins Service accounts and password
 
@@ -17,7 +17,7 @@ The Ansible Roles `RoleJenkinsController` and `RoleJenkinsAgent` will automate t
 The settings key for the name of the Jenkins Controller service account is `$settings[$global:configRootKeys['JenkinsControllerServiceAccountConfigRootKey']]`
 The host running the Jenkins Controller needs a local user (service account) under which the Jenkins Controller service will run.
 
-   run `lusrmgr.msc`
+run `lusrmgr.msc`
 
 I chose `JenkinsControllerSrvAcc` and password `Notsecret`. ToDo: implement Secrets file for recording the JenkinsServiceAccount password for each machine running Jenkins
 
@@ -25,7 +25,7 @@ Create the new user via `Computer Management->Local Users And Groups->Users->New
 
 The `JenkinsControllerSrvAcc` must be granted the `logon as a service` right. use `gpedit.msc`, drill down on ` Computer Configuration\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Log on as a service` and add the `JenkinsControllerSrvAcc` to the existing list of users
 
-#### Jenkins Controller service account
+#### Jenkins Agent service account
 
 The settings key for the name of the Jenkins Agent service account is `$settings[$global:configRootKeys['JenkinsAgentServiceAccountConfigRootKey']]`
 
@@ -41,28 +41,27 @@ The `JenkinsAgentSrvAcct` must be granted the `logon as a service` right. Run `g
 
 #### Controller Subdirectories
 
-The Controller service will create a subdirectory called `Jenkins` under the path `$env:AppDataLocal`  for the Controller Service account, e.g. `C:\Users\JenkinsControllerSrvAcc\AppData\Local\Jenkins`
+The Controller service will create a subdirectory called `Jenkins` under the path `$env:AppDataLocal` for the Controller Service account, e.g. `C:\Users\JenkinsControllerSrvAcc\AppData\Local\Jenkins`
 
 #### Agent Subdirectories
 
-The Agent service will create a subdirectory called `Jenkins` under the path `$env:AppDataLocal`  for the Agent Service account, e.g. `C:\Users\JenkinsAgentSrvAcct\AppData\Local\Jenkins`
+The Agent service will create a subdirectory called `Jenkins` under the path `$env:AppDataLocal` for the Agent Service account, e.g. `C:\Users\JenkinsAgentSrvAcct\AppData\Local\Jenkins`
 Create C:\JenkinsAgentNode
 
 ### Nodes
-
 
 ## Download Jenkins
 
 Go to [Jenkins Download Page](https://www.jenkins.io/download/) and select Windows, then select the Long-Term Support version of the installer listed there.
 Download it (and scan it for malware).
 Install it from the .msi download file
-  Service Login Credentials:
-  A) First Time and/or simple: Use your own local machine's login credentials
-  B) More Advanced: Create a new account on your local machine to be the user under whom Jenkins will run
-  C) Domain-users: Ask the domain administrators to create a domain-wide account under which Jenkins will run
+Service Login Credentials:
+A) First Time and/or simple: Use your own local machine's login credentials
+B) More Advanced: Create a new account on your local machine to be the user under whom Jenkins will run
+C) Domain-users: Ask the domain administrators to create a domain-wide account under which Jenkins will run
 
 Port Number: The default is the ubiquitous 8080, so use something else. I used 4040; The important things is that none of the other applications or services on the local machine use that port
-  Whichever port you chose, the local machine's firewall has to be modified to allow port (e.g. 4040) be opened for TCP traffic incoming.
+Whichever port you chose, the local machine's firewall has to be modified to allow port (e.g. 4040) be opened for TCP traffic incoming.
 
 Java Home directory: Enter the path to the directory where Java is installed. Mine was `C:\Program Files\Java\jdk1.8.0_291\`
 
@@ -87,10 +86,9 @@ I have setup jenkins controller running on port `4040` (becasue `8080` is too wi
 
 ### Environment variables for using the Jenkins-CLI
 
-1) `JENKINS_USER_ID` set to a username that is configured in Jenkins Security
+1. `JENKINS_USER_ID` set to a username that is configured in Jenkins Security
 
-1) `JENKINS_API_TOKEN` set to a Jenkins API token associated with a Jenkins user
-
+1. `JENKINS_API_TOKEN` set to a Jenkins API token associated with a Jenkins user
 
 ## Jenkins Agents
 
@@ -100,14 +98,14 @@ Identify the machines in the cluster which will run Jenkins Agents, and which pi
 
 #### Clean install
 
-  Configure Jenkins, add new nodes
-  Allow nodes to connect with jnlp protocol
+Configure Jenkins, add new nodes
+Allow nodes to connect with jnlp protocol
 
 #### Migration
- copy content of `nodes` subdirectory
- add/delete noed (directories) as required
- Allow nodes to connect with jnlp protocol
 
+copy content of `nodes` subdirectory
+add/delete noed (directories) as required
+Allow nodes to connect with jnlp protocol
 
 ### JenkinsSharedLibraries
 
@@ -118,7 +116,5 @@ Add ATAPCommonJenkinsLibrary.groovy as a shared library (ToDo: point to an insta
 #### Migrate
 
 ## Modify Jenkins to use SSL
-
-
 
 Edit the file `jenkins.xml` in the `$env:JENKINS_HOME` directory. Find the line `-httpPort:4040` (substitute the port your Jenkins Controller is listening to), and replace `-httpPort:4040` with `-httpPort:4040 -httpsPort:4041`. Restart the Jenkins controller service

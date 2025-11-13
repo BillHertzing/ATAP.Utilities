@@ -52,14 +52,18 @@ This file is a set of instructions for AI to follow when generating or modifying
   - Use PascalCase for public functions and parameters.
   - Use camelCase with a `_` prefix for private/internal functions and variables.
 - **Cmdlet Design**:
+
   - Include `[CmdletBinding()]` and `param()` blocks with proper validation attributes.
   - Ensure all cmdlets support `-WhatIf` and `-Confirm` parameters.
-  - Ensure all cmdlets having optional parameters place the snippet "Check and populate optional parameter" in the cmdlet's BEGIN block. Substitute the parameter name into the snippet as `{1:ParameterName}`. look up the value of `{2:ParameterConfigRootKey}` from the file global_ConfigRootKeys.ps1
-  - if you find parameter validation being done in the process block, hoist it to the BEGIN block and use the snippet "Parameter validation"
+  - The BEGIN{} block should start with the variables `$fn` and `$mn` and are populated with the Function Name and the Module Name. These variables are used in all logging statements.
+  - Ensure all cmdlets having parameters place one the snippets found in the snippets file under "Templates for checking and populating the value of an cmdlet parameter" in the cmdlet's BEGIN block for every Parameter. Select one of the parameter checking snippets from the set of {"Check and populate simple parameter", "Check and populate simple parameter as Type", "Check and populate Deep parameter", "Check and populate simple parameter as Type"}. Substitute the parameter name into the snippet as
+    `{1:ParameterName}`. If the parameter is of any type other than string, use one of the "...as Type" snippets and substitute the parameter type in `{2:ParameterType}` for Simple and `{4:ParameterType}` for Deep.
+  - if you find parameter validation being done in the process block, hoist it to the BEGIN block and use one the snippets found in the snippets file under "Templates for checking and populating the value of an cmdlet parameter" n"
+
 - **Comment-Based Help**:
+
   - Add `.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER`, `.OUTPUTS`, `.EXAMPLE`, `.NOTES`, and `.LINK` sections for all public functions.
-- **Validation String**:
-  - For `*.ps1` files, include the validation string `"AI assisted using Powershell.instructions.md as guidelines"` under the `.NOTES` section of the comment-based help. If no comment-based help exists, include the validation string as a comment at the top of the file.
+
 - **Function Returns**:
   - All functions should return a string, a filehandle, a dotnet type defined in a loaded .DLL, or a PSCustomObject.
 - **Error Handling**:
@@ -78,13 +82,13 @@ This file is a set of instructions for AI to follow when generating or modifying
     - use `Write-PSFMessage` for logging, never `Write-Host`, `Write-Verbose`, `Write-Debug` or `Write-Output`.
     - use `-Level Debug` for trace messages, `-Level Verbose` for lifecycle messages, `-Level Important` for notable operational messages, and `-Level Error` for failures.
     - Never use -Level Info with `Write-PSFMessage`.
-    - Log using `Write-PSFMessage` - Every `Write-PSFMessage` inside a function should include the first parameter ◦ `-FunctionName '<functionName>'` where the <functionName> is replaced by the name of the function - Every `Write-PSFMessage` inside a function should include the second parameter ◦ `-ModuleName '<moduleName>'` where the <moduleName> is replaced by the name of the module
+    - Log using `Write-PSFMessage` - Every `Write-PSFMessage` inside a function should include the first two parameters `-FunctionName $fn -ModuleName $mn`
     - All calls to `Invoke-RestMethod` should have a log message just before and just after the line that calls `Invoke-RestMethod`. These log messages should have `-Level Debug`, and `-Tag 'RestCall'`. The message for the log before the call is "Calling <URLOfEndpoint>". The message for the log after the call is "Successfully returned from <URLOfEndpoint>"
     - All calls to `Invoke-WebRequest` should have a log message just before and just after the line that calls `Invoke-WebRequest`. These log messages should have `-Level Debug`, and `-Tag 'WebRequestCall'`. The message for the log before the call is "Calling <URLOfEndpoint>". The message for the log after the call is "Successfully returned from <URLOfEndpoint>"
     - All calls to `Invoke-Expression` should have a log message just before and just after the line that calls `Invoke-Expression`. These log messages should have `-Level Debug`, and `-Tag 'InvokeExpressionCall'`. The message for the log before the call is "Invoke-Expression <command>". The message for the log after the call is "Successfully returned from Invoke-Expression <command>"
     - All calls to `Invoke-Command` should have a log message just before and just after the line that calls `Invoke-Command`. These log messages should have `-Level Debug`, and `-Tag 'InvokeCommandCall'`. The message for the log before the call is
       ```Powershell
-      Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message $(Calling Invoke-Command $("-ComputerName $computername -ScriptBlock {$scriptBlockToRun} -Credential $credential.ToString() $(if($useSSL){ ' -useSSL '})") + $(if ($useSelfSignedCert) { ' -SessionOption $(New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck)' }))
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message $(Calling Invoke-Command $("-ComputerName $computername -ScriptBlock {$scriptBlockToRun} -Credential $credential.ToString() $(if($useSSL){ ' -useSSL '})") + $(if ($useSelfSignedCert) { ' -SessionOption $(New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck)' }))
       ```
 
 ---
@@ -94,17 +98,17 @@ This file is a set of instructions for AI to follow when generating or modifying
 ### `Invoke-RestMethod`
 
 ```powershell
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message "Calling <URLOfEndpoint>" -Tag 'RestCall'
+Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling <URLOfEndpoint>" -Tag 'RestCall'
 $response = Invoke-RestMethod -Uri <URLOfEndpoint> -Method GET
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message "Successfully returned from <URLOfEndpoint>" -Tag 'RestCall'
+Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from <URLOfEndpoint>" -Tag 'RestCall'
 ```
 
 ### `Invoke-Command`
 
 ```powershell
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message "Calling Invoke-Command on $computerName" -Tag 'InvokeCommandCall'
+Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling Invoke-Command on $computerName" -Tag 'InvokeCommandCall'
 Invoke-Command -ComputerName $computerName -ScriptBlock { <scriptBlockToRun> }
-Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message "Successfully returned from Invoke-Command on $computerName" -Tag 'InvokeCommandCall'
+Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from Invoke-Command on $computerName" -Tag 'InvokeCommandCall'
 ```
 
 ## Using PowerShell Snippets

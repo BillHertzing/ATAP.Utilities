@@ -30,6 +30,12 @@ $global:EnvVars = @{
   # Where all things Security and Secrets related are stored
   $global:configRootKeys['SECURE_CLOUD_BASE_PATHConfigRootKey'] = $global:Settings[$global:configRootKeys['SECURE_CLOUD_BASE_PATHConfigRootKey']]
 
+
+  # Used by Bitwarden
+  $global:configRootKeys['BW_EMAILConfigRootKey']               = $global:Settings[$global:configRootKeys['BW_EMAILConfigRootKey']]
+  $global:configRootKeys['BW_APP_PASSWORDConfigRootKey']        = $global:Settings[$global:configRootKeys['BW_APP_PASSWORDConfigRootKey']]
+  $global:configRootKeys['BW_MASTER_PASSWORDConfigRootKey']     = $global:Settings[$global:configRootKeys['BW_MASTER_PASSWORDConfigRootKey']]
+
   # related to the Hashicorp Vault installation and operations
   $global:configRootKeys['VAULT_TOKENConfigRootKey']            = $global:Settings[$global:configRootKeys['VAULT_TOKENConfigRootKey']]
   $global:configRootKeys['VAULT_ADDRConfigRootKey']             = $global:Settings[$global:configRootKeys['VAULT_ADDRConfigRootKey']]

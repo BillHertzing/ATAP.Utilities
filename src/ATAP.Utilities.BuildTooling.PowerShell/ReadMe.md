@@ -90,17 +90,17 @@ Remove-Item -path (join-path $targetScriptDirectory $scriptTargetName) -ErrorAct
 New-Item -ItemType SymbolicLink -path (join-path $targetScriptDirectory $scriptTargetName) -Target (join-path $sourceRepoRoot $relativeScriptSourceDirectory $scriptSourceName )
 }
 
-## Symbolic Links for CoPilot instruction files
+## Symbolic Links for .Github instruction files
 
-Every repository needs instruction files for GitHub Copilot. These are kept in a common location, and a directory junction is created in the root of the repository. As of July 2025, GitHub Copilot’s instruction file mechanism does not support hierarchical merging or overriding of instructions from multiple .copilot directories or from code-workspace files.
+Every repository needs instruction files for GitHub Copilot. These are kept in the .github directory, and a directory junction is created in the root of the repository. Run the following Powershell commands at the repository root to create a directory junction back to the shared VS Code directory.
 
-run the following Powershell commands at the repository root to create a directory junction back to the shared VS Code directory.
+ToDo: must look at the other stuff in .github to see if they can be made to work for multiple repositories, or, if Issue Templates and workflows need to be specific to individual repositories
 
 ```powershell
 # ToDo: must get the username for the specific computer from a vault
 $username = 'whertzing'
 # ToDo: add test to ensure there is a peer .git subdirectory, which indicates a repository root
-$null = New-Item -Path ./.copilot -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username 'GitHub', 'SharedVSCode', '.copilot')
+$null = New-Item -Path ./.github -ItemType Junction -Target $(Join-Path $global:settings[$global:configRootKeys['CloudBasePathConfigRootKey']] $username 'GitHub', 'SharedVSCode', '.github')
 ```
 
 ## Symbolic Links for VSC settings, tasks, launch configurations, and testing
@@ -184,9 +184,14 @@ In every new repository, after creating the .vscode directory and its contents, 
 
 ```Powershell
   # The New-SymbolicLink cmdlet is found in the ATAP.Utilities.Powershell module
+if (!${get-command New-SymbolicLink}) {
+  . "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\New-SymbolicLink.ps1"
+}
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.prettierrc.yml"  -symbolicLinkPath ".\.prettierrc.yml" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.gitignore"  -symbolicLinkPath ".\.gitignore" -force
+  New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.editorconfig"  -symbolicLinkPath ".\.editorconfig" -force
   # Every projects in a repository needs a ReadMe.md
-  'ReadMe file for ' | write-file -path './ReadMe.md'
+  Set-Content -Path './ReadMe.md' -Value "ReadMe file for $(pwd | split-path -leaf)"
 
   # this command is only needed for repositories that have projects that use javascript or typescript
   New-SymbolicLink -targetPath "C:\Dropbox\whertzing\GitHub\SharedVSCode\.eslintrc.js"  -symbolicLinkPath ".\.eslintrc.js" -force
@@ -212,13 +217,12 @@ Projects are created under the 'src' directory of the repository. Projects are i
 Put the project name into a local setting
 
 ```Powershell
-# ToDo: must get the username for the specific computer from a vault
-$username = 'whertzing'
-
+  # ToDo: must get the username for the specific computer from a vault
+  $username = 'whertzing'
+  # be SURE you are in the new project's directory
   # set the local project name
-  $projectName = 'ATAP.Console.QueryChatGPT.Powershell'
+  $projectName = split-path $(pwd) -leaf
   # set the local project full path
-
   $projectDirectory = . pwd
   # the code-workspace file
 @'
@@ -234,7 +238,15 @@ $username = 'whertzing'
     "powershell.pester.codeLens": false,
     "powershell.pester.useLegacyCodeLens": false,
     "powershell.pester.outputVerbosity": "Diagnostic",
-    "powershell.enableProfileLoading": true
+    "powershell.enableProfileLoading": true,
+    "cSpell.customDictionaries": {
+      "custom": {
+        "name": "FinancialCustomDictionary",
+        "path": "${workspaceFolder}/FinancialCustomCustomDictionary.txt",
+        "addWords": true
+      }
+    },
+
   }
 }
 '@ | Out-File -FilePath "./$projectName.code-workspace" # UTF8 encoding via a parameter default

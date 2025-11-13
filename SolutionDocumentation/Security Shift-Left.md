@@ -292,12 +292,12 @@ The script `PKIForNewOrg.ps1` will create most of infrastructure needed to suppo
   - Create a CA Certificate
 - Confirm/Create the necessary directory structure for signing certificates with the CA at a secure cloud-synced location
 
-
 - Create WSMan SSL Certificate(s) (ServerAuth) for all computers in the organization's workgroup
-  - Define a DistinguishedNameHash for the WSMan SSL  Certificate Request for each computer
+
+  - Define a DistinguishedNameHash for the WSMan SSL Certificate Request for each computer
   - Create an EncryptionPassPhrase file
   - Create an EncryptedKey file
-  - Create a WSMan SSL  Certificate Request
+  - Create a WSMan SSL Certificate Request
   - Create a signed WSMan SSL Certificate
   - Copy the signed WSMan SSL Certificate from the signing certificate's directory structure to the organization's directory structure (vault)
 
@@ -307,13 +307,12 @@ The script `PKIForNewOrg.ps1` will create most of infrastructure needed to suppo
   - Create an EncryptedKey file
   - Create a SSL Server Certificate Request
   - Create a signed SSL Server Certificate
-  - Copy the signed SSL Server Certificate from the signing certificate's directory structure to the organization's directory structure  (vault)
+  - Copy the signed SSL Server Certificate from the signing certificate's directory structure to the organization's directory structure (vault)
 
 The following steps must be taken manually by a security administrator on any computer that does not have PSRemoting enabled
 
 - Deploy the Root CA to each computer in the workgroup (or each new host as it is added)
 - Deploy the appropriate WSMan SSL certificate to each computer in the organization's workgroup (or each new host as it is added))
-
 
 ##### Validating needed Tools, Environment variables and Directory Structure
 
@@ -328,7 +327,6 @@ The Root CA should have just a CN and an Organization, and they should be the sa
 Every organization needs a Root CA Certificate, to sign internal Certificates. The Root CA Certificate should be used to sign Intermediate Signing Certificates, and nothing else. Creation of a Root CA Certificate requires a PassPhrase File, an EncryptedeKeyFile, and an openSSL Configuration file.
 
 ###### Create an Encryption Key PassPhrase File
-
 
 ```Powershell
   $EncryptionKeyPassPhrasePath =  Get-DistinguishedNameQualifiedFilePath -DistinguishedNameHash $DNHash -BaseFileName $global:settings[$global:configRootKeys['SecureCertificatesCAPassPhraseFileBaseFileNameConfigRootKey'] -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesEncryptionPassPhraseFilesPathConfigRootKey']]
@@ -361,15 +359,14 @@ The Root CA Certificate can be generated without first needing a CertificateSign
 There are a few settings needed to sign a Certificate with a CA, that cannot be modified / set on the command line. These few settings MUST be configured in the OpenSSL configuration file. Luckily, they can be done with environment variables
 
 OPENSSL_SIGNINGCERTIFICATES_DIR
-dir		= C:/Dropbox/Security/Certificates/SigningCertificates/Root		# Where everything is kept
- #private_key	= $dir/PrivateKeys/cakey.pem # The private key
-serial		= $dir/serial 		# The current serial number
-database	= $dir/CertificatesIssued.txt	# database index file.
-new_certs_dir	= $dir/NewCertificates	# default place for new certs.
-certs		= $dir/Certificates		# Where the issued certs are kept
- #crl		= $dir/crl.pem 		# The current CRL
- #crl_dir		= $dir/crl		# Where the issued crl are kept
-
+dir = C:/Dropbox/Security/Certificates/SigningCertificates/Root # Where everything is kept
+#private_key = $dir/PrivateKeys/cakey.pem # The private key
+serial = $dir/serial # The current serial number
+database = $dir/CertificatesIssued.txt # database index file.
+new_certs_dir = $dir/NewCertificates # default place for new certs.
+certs = $dir/Certificates # Where the issued certs are kept
+#crl = $dir/crl.pem # The current CRL
+#crl_dir = $dir/crl # Where the issued crl are kept
 
 ##### Install the Root Certificate Authority Certificate
 
@@ -430,7 +427,6 @@ Example
 
 `CertMgr /add $CertificatePath /s /r localMachine root `
 
-
 - \*nix
 - MacOS
 - IOS
@@ -442,7 +438,7 @@ Example
 
 There are many scenarios that require a trusted SSL Certificate to authenticate a specific server. The examples below will create a SSL certificate for a server DN. Among other things, it can be used to support PSRemoting in a workgroup environment.
 
-Certificate creation starts with the DistinguishedNameHash  # Subject, SubjectAlternativeName, and the type of certificate (template)
+Certificate creation starts with the DistinguishedNameHash # Subject, SubjectAlternativeName, and the type of certificate (template)
 [Distinguished Names](https://ldapwiki.com/wiki/Distinguished%20Names).
 
 Also needed are the certificate's ValidityPeriod and ValidityPeriodUnits
@@ -516,13 +512,13 @@ Example
 
 ##### Create and sign the SSL Certificate
 
-````Powershell
+```Powershell
 $CertificatePath = Get-DistinguishedNameQualifiedFilePath  -BaseFileName 'SSLCertificate.crt' -OutDirectory $global:settings[$global:configRootKeys['SecureCertificatesCertificatesPathConfigRootKey']]
 $ValidityDays = 3650
 Create-CertificateAndSign -EncryptedPrivateKeyPath $EncryptedPrivateKeyPath -EncryptionKeyPassPhrasePath $EncryptionKeyPassPhrasePath -CertificateRequestPath $CertificateRequestPath -validityDays $validityDays -CertificatePath $CertificatePath -CACertificatePath $CACertificateInfo.CertificatePath -CAEncryptedPrivateKeyPath $CACertificateInfo.EncryptedPrivateKeyPath -CAEncryptionKeyPassPhrasePath $CACertificateInfo.EncryptionKeyPassPhrasePath
 $WinRMSSLCertificatePath -days 3650
 
-````
+```
 
 #### Save the SSL Certificate into a Vault
 
@@ -574,10 +570,7 @@ openssl x509 -req -in $WinRMSSLCertificateRequestPath -CA $RootCAPath -CAkey $Ro
 
 Combine the certificate and the key into a .pfx file
 
-
 Install the SSL Certificate onto every machine where PSRemoting is desired
-
-
 
 [How To Set up OpenSSL on Windows 10 (PowerShell)](https://adamtheautomator.com/openssl-windows-10/)
 [Create Your Own SSL Certificate Authority for Local HTTPS Development](https://deliciousbrains.com/ssl-certificate-authority-for-local-https-development/)
@@ -659,6 +652,93 @@ ATAP.Utilities.Security.Powershell
 
 `$global:SecurityAndSecrets.ps1`
 
+### Setting up the SecretManagement and Bitwarden
+
+Using Microsoft.PowerShell.SecretManagement with Bitwarden
+To retrieve secrets from Bitwarden using the Microsoft.PowerShell.SecretManagement module, follow these steps:
+
+Step-by-Step Guide
+
+1. Install Required Modules
+
+```Powershell
+# Install SecretManagement module
+Install-Module -Name Microsoft.PowerShell.SecretManagement -Repository PSGallery -Scope AllUsers
+# Install the Bitwarden SecretManagement extension vault
+Install-Module -Name SecretManagement.BitWarden -Repository PSGallery -Scope AllUsers
+```
+
+1. Register the Bitwarden Vault
+
+```Powershell
+# Register the Bitwarden vault with SecretManagement
+# The vault name can be anything you choose
+Register-SecretVault -Name 'BitwardenVault' -ModuleName 'SecretManagement.BitWarden' -DefaultVault
+
+# Verify the vault is registered
+Get-SecretVault
+```
+
+1. Authenticate with Bitwarden
+   Before you can retrieve secrets, you need to unlock your Bitwarden vault:
+
+````Powershell
+# Unlock the vault (you'll be prompted for your master password)
+Unlock-SecretVault -Name 'BitwardenVault'
+
+# Or use the Bitwarden CLI to login first
+bw login
+bw unlock
+```
+
+1. Retrieve Secrets from Bitwarden
+
+```Powershell
+# Get a secret by name
+$secret = Get-Secret -Name 'MySecretName' -Vault 'BitwardenVault'
+
+# Get a secret as plain text (use with caution)
+$secretPlainText = Get-Secret -Name 'MySecretName' -Vault 'BitwardenVault' -AsPlainText
+
+# List all secrets in the vault
+Get-SecretInfo -Vault 'BitwardenVault'
+
+# Get a specific credential (username/password pair)
+$credential = Get-Secret -Name 'MyLoginItem' -Vault 'BitwardenVault'
+Write-Host "Username: $($credential.UserName)"
+Write-Host "Password: $($credential.GetNetworkCredential().Password)"
+```
+
+1. Example Integration with ATAP.Utilities Functions
+
+Heres how to integrate this into an ATAP.Utilities function:
+Important Notes
+Bitwarden CLI Required: The SecretManagement.BitWarden extension requires the Bitwarden CLI (bw) to be installed and in your PATH.
+
+Session Management: The Bitwarden vault must be unlocked before retrieving secrets. The session expires after a period of inactivity.
+
+Secret Types: Bitwarden stores different types of items:
+
+Login items (username/password) → returned as PSCredential
+Secure notes → returned as SecureString or plain text
+Identity items → returned with multiple fields
+Alternative: Direct Bitwarden CLI: If you need more control, you can use the Bitwarden CLI directly instead of SecretManagement:
+
+```Powershell
+# Login and unlock
+bw login
+$sessionKey = bw unlock --raw
+
+# Set session key as environment variable
+$env:BW_SESSION = $sessionKey
+
+# Get a secret
+$secret = bw get password "MySecretName" | ConvertTo-SecureString -AsPlainText -Force
+
+# Or get full item details as JSON
+$item = bw get item "MySecretName" | ConvertFrom-Json
+```
+
 ## Secrets Used in the Development Process
 
 ### Secrets for the Development Database
@@ -694,4 +774,4 @@ Store the remote repository URL and credentials
 ```Powershell
 # Capture SSL keys needed to decrypt SSL traffic using wireshark, to do this manually, it requires elevated permission
 [Environment]::SetEnvironmentVariable( 'SSLKEYLOGFILE', '"C:\Dropbox\Security\SSLKeyLogFile.txt"', 'Machine' )
-```
+````

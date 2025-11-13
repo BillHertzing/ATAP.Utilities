@@ -92,6 +92,8 @@ When using powershell Core, Note that if the path to the Powershell Desktop modu
 
 ## Logging
 
+### logging per user or per serviceaccount
+
 Use PSFramework for logging
 use the gelf logging provider configured as follows:
 
@@ -154,3 +156,15 @@ or this:
 $gelfLoggingProviderConfiguration =  @{Name='gelf';instanceName='powerShellScriptXYZ'; gelfserver= 'localhost'; port=12201;Enabled=$true;Encrypt=$false}
 Set-PSFLoggingProvider @gelfLoggingProviderConfiguration
 ```
+
+### Logging during user login
+
+Some tasks run as scheduled tasks, and may not have a location to which to write their log files. For this, setup a custom logging provider, that sends logs to `C:\Temp\PSFramework\Logs` ToDo: change this to use a global setting
+
+```Powershell
+Set-PSFLoggingProvider -Name logfile `
+  -Enabled $true `
+  -FilePath 'C:\Temp\PSFramework\Logs\startup.log' `
+  -IncludeTags 'startup'
+```
+# ToDo:

@@ -268,7 +268,7 @@ instructions that provide a clear goal for CoPilot to take., each time copilot i
 Copilot should use the HostSettings.ps1 and hostSettings.\*.Fragment.ps1 files, all COnfigRootKey files,
 copilot should consider Instruction file
 
-`Powershell
+```Powershell
     catch {
       $errorMessage = "<A description of the operation that was attempted and failed>. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Error -Message $errorMessage -Exception $_.Exception -Tag <one of the following:'RestCall'|'WebRequestCall'|'InvokeExpressionCall'|'InvokeCommandCall'>
@@ -277,18 +277,18 @@ copilot should consider Instruction file
     finally {
       Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Verbose -Message "Exiting function: <functionName>"
     }
-    `
+```
 
-              - CmdLets Follow Snippets formating
+- CmdLets Follow Snippets form
+- The first executable line of the Begin block should be
+  ```Powershell
+      Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%'
+  ```
+- The next-to-last executable line of the End block should be
 
-            - The first executable line of the Begin block should be
-              ```Powershell
-                  Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message 'Entering Function %FunctionName% in module %ModuleName%'
-              ```
-            - The next-to-last executable line of the End block should be
-              ```Powershell
-                  Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%'
-              ```
+  ```Powershell
+      Write-PSFMessage -FunctionName '<functionName>' -ModuleName '<moduleName>' -Level Debug -Message 'Leaving Function %FunctionName% in module %ModuleName%'
+  ```
 
           - Use of parameter sets for paths in a pipeline as either string or filehandle
 

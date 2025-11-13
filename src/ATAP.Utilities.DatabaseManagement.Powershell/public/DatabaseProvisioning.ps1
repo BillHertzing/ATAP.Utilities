@@ -121,7 +121,7 @@ function DatabaseProvisioning {
     [string]$ScriptDirectory,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
-    [bool]$GrantDatabaseOwner = $false,
+    [bool]$GrantDatabaseOwner = $true,
 
     [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
     [bool]$GrantBulkAdmin = $true,
@@ -133,15 +133,36 @@ function DatabaseProvisioning {
   )
 
   BEGIN {
-    Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Debug -Message "Entering script DatabaseProvisioning"
+    $fn = 'DatbaseProvisioning'
+    $mn = 'ATAP.Utilities.Powershell'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
+
+    # Load required helper functions
+    try {
+      # Load utility functions
+      if (-not (Get-Command -Name 'Get-ParameterValueFromNeoConfigurationRoot' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
+      }
+      if (-not (Get-Command -Name 'Resolve-ParameterValueToList' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Resolve-ParameterValueToList.ps1'
+      }
+      if (-not (Get-Command -Name 'Initialize-SQLClient' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Initialize-SQLClient.ps1'
+      }
+      if (-not (Get-Command -Name 'Get-ConnectionString' -CommandType Function -ErrorAction SilentlyContinue)) {
+        . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.DatabaseManagement.Powershell\public\Get-ConnectionString.ps1'
+      }
+    }
+    catch {
+      $errorMessage = "Failed to load required functions. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw
+    }
+
     $errors = [System.Collections.Generic.List[string]]::new()
     $scriptsRun = [System.Collections.Generic.List[string]]::new()
 
     # ToDo maybe: Are there naming conventions for the database file names, if so enforce them here
-
-    function Get-Env([string]$key) {
-      [Environment]::GetEnvironmentVariable($key, 'Process')
-    }
 
     function Test-Blank([string]$s) { [string]::IsNullOrWhiteSpace($s) }
 
@@ -161,253 +182,36 @@ function DatabaseProvisioning {
       return ($name -match '\\') -or ($name -match '@')
     }
 
-    # --- Environment: param -> env -> $global:settings['Environment'] -> throw
-    if (Test-Blank $Environment) {
-      # Try environment variable first (e.g., via a configured key like 'EnvironmentConfigRootKey')
-      $envVal = Get-Env $global:configRootKeys['EnvironmentConfigRootKey']
-      if (Test-Blank $envVal) {
-        # Then try global settings at the top level: $global:settings['Environment']
-        $setVal = $null
-        if ($null -ne $global:settings -and $global:settings.ContainsKey('Environment')) {
-          $setVal = $global:settings['Environment']
-        }
+    # These may throw
+    # ToDo: write a wrapper that catches and logs
+    $Environment = Get-PVal 'Environment' $PSBoundParameters
+    $SqlInstance = Get-PVal -ParameterName "SqlInstance" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.SqlInstance" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+    $DatabaseHost = Get-PVal -ParameterName "DatabaseHost"  -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabaseHost" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+    $ConnectionMethod = Get-PVal -ParameterName "ConnectionMethod" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ConnectionMethod" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+    $DatabasePath = Get-PVal -ParameterName "DatabasePath" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.DatabasePath" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+    $ScriptDirectory = Get-PVal -ParameterName "ScriptDirectory" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ScriptDirectory" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+    $UseNamedLogin = Get-PVal -ParameterName "UseNamedLogin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.UseNamedLogin" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']] -AsType ([bool])
+    $LoginName = Get-PVal -ParameterName "LoginName" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.LoginName" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
+    $LoginPasswordVaultKey = Get-PVal -ParameterName "LoginPasswordVaultKey" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.LoginPasswordVaultKey" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']]
 
-        if (Test-Blank $setVal) {
-          $errorMessage = "Environment not found via parameter, env '$($global:configRootKeys['EnvironmentConfigRootKey'])', or global settings['Environment']."
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
-          throw $errorMessage
-        }
-        else {
-          $Environment = $setVal
-        }
-      }
-      else {
-        $Environment = $envVal
-      }
-    }
-    # Normalize to one of the allowed values (case-insensitive) and hard-validate
-    $allowedEnvs = 'Production', 'Testing', 'Development', 'Experimental'
-    $match = $allowedEnvs | Where-Object { $_.ToLowerInvariant() -eq $Environment.ToString().ToLowerInvariant() }
-
-    if ($null -ne $match) {
-      # Snap to canonical casing from $allowedEnvs
-      $Environment = $match
-    }
-    else {
-      $errorMessage = "Environment '$Environment' must be one of: $($allowedEnvs -join ', ')."
-      Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
-      throw $errorMessage
-    }
-
-    # --- DatabaseHost: param -> env -> settings -> throw
-    if (Test-Blank $DatabaseHost) {
-      $dbh = 'Database' + $DatabaseName + $Environment + 'DatabaseHostConfigRootKey'
-      $envVal = Get-Env $global:configRootKeys[$dbh]
-      if (Test-Blank $envVal) {
-        $setVal = Resolve-FromSettings -db $DatabaseName -env $Environment -leafKey 'DatabaseHost'
-        if (Test-Blank $setVal) {
-          $errorMessage = "DatabaseHost not found via parameter, env '$($global:configRootKeys[$dbh])', or settings for '$DatabaseName'/'$Environment'."
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
-          throw $errorMessage
-        }
-        else { $DatabaseHost = $setVal }
-      }
-      else { $DatabaseHost = $envVal }
-    }
-
-    # --- ConnectionMethod: param -> env -> settings -> throw
-    if (Test-Blank $ConnectionMethod) {
-      $envVal = Get-Env $global:configRootKeys['ConnectionMethodConfigRootKey']
-      if (Test-Blank $envVal) {
-        $setVal = Resolve-FromSettings -db $DatabaseName -env $Environment -leafKey 'ConnectionMethod'
-        if (Test-Blank $setVal) {
-          $errorMessage = "ConnectionMethod not found via parameter, env '$($global:configRootKeys['ConnectionMethodConfigRootKey'])', or settings for '$DatabaseName'/'$Environment'."
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
-          throw $errorMessage
-        }
-        else { $ConnectionMethod = $setVal }
-      }
-      else { $ConnectionMethod = $envVal }
-    }
-
-    # Normalize and hard-validate (defensive; complements [ValidateSet()])
-    $ConnectionMethod = $ConnectionMethod.ToString().ToLowerInvariant()
-    if ('tcp', 'np', 'lpc' -notcontains $ConnectionMethod) {
-      $errorMessage = "ConnectionMethod '$ConnectionMethod' must be one of: tcp, np, lpc."
-      Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
-      throw $errorMessage
-    }
-
-    # --- SqlInstance: param -> env -> settings -> throw
-    if (Test-Blank $SqlInstance) {
-      $envVal = Get-Env $global:configRootKeys['SqlInstanceConfigRootKey']
-      if (Test-Blank $envVal) {
-        $setVal = Resolve-FromSettings -db $DatabaseName -env $Environment -leafKey 'SqlInstance'
-        if (Test-Blank $setVal) {
-          $errorMessage = "SqlInstance not found via parameter, env '$($global:configRootKeys['SqlInstanceConfigRootKey'])', or settings for '$DatabaseName'/'$Environment'."
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
-          throw $errorMessage
-        }
-        else { $SqlInstance = $setVal }
-      }
-      else { $SqlInstance = $envVal }
-    }
-
-    if ($UseNamedLogin) {
-      # LoginName: param -> env -> settings -> throw
-      if (Test-Blank $LoginName) {
-        $envVal = Get-Env $global:configRootKeys['LoginNameConfigRootKey']
-        if (Test-Blank $envVal) {
-          $setVal = Resolve-FromSettings -db $DatabaseName -env $Environment -leafKey 'LoginName'
-          if (Test-Blank $setVal) {
-            $errorMessage = "UseNamedLogin is true but LoginName is not provided and was not found via env '$($global:configRootKeys['LoginNameConfigRootKey'])' or settings."
-            Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
-            throw $errorMessage
-          }
-          else { $LoginName = $setVal }
-        }
-        else { $LoginName = $envVal }
-      }
-
-      # If SQL login, require LoginPasswordVaultKey; if Windows login, it's optional/ignored
-      if (-not (Is-WindowsLoginName $LoginName)) {
-        if (Test-Blank $LoginPasswordVaultKey) {
-          $envVal = Get-Env $global:configRootKeys['LoginPasswordVaultKeyConfigRootKey']
-          if (Test-Blank $envVal) {
-            $setVal = Resolve-FromSettings -db $DatabaseName -env $Environment -leafKey 'LoginPasswordVaultKey'
-            if (Test-Blank $setVal) {
-              $errorMessage = "UseNamedLogin is true and LoginName '$LoginName' appears to be a SQL login, but LoginPasswordVaultKey was not provided and was not found via env '$($global:configRootKeys['LoginPasswordVaultKeyConfigRootKey'])' or settings."
-              Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
-              throw $errorMessage
-            }
-            else { $LoginPasswordVaultKey = $setVal }
-          }
-          else { $LoginPasswordVaultKey = $envVal }
-        }
-      }
-      else {
-        Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Verbose -Message "LoginName '$LoginName' detected as Windows principal; LoginPasswordVaultKey not required."
-      }
-
-      # Lookup LoginPassword (temporary clear text lookup)
-      # [SecureString]$loginPassword = $null
-      [string]$loginPassword = $null
-      if (-not $global:VaultData.ContainsKey($LoginPasswordVaultKey)) {
-        $errorMessage = "LoginPasswordVaultKey '$LoginPasswordVaultKey' not found in vault."
-        Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
-        throw $errorMessage
-      }
-      else {
-        if (-not (Test-Blank $global:VaultData[$LoginPasswordVaultKey])) {
-          # [SecureString]$loginPassword = $global:VaultData[$LoginPasswordVaultKey]
-          $loginPassword = $global:VaultData[$LoginPasswordVaultKey]
-        }
-        else {
-          $errorMessage = "LoginPasswordVaultKey '$LoginPasswordVaultKey' has blank value in vault."
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
-          throw $errorMessage
-        }
-      }
-    }
-    else {
-      # If $UseNamedLogin is false, then LoginName and LoginPasswordVaultKey should not be present
-      $LoginName = $null
-      $LoginPasswordVaultKey = $null
-    }
-
-    # --- DatabasePath: param -> env -> settings -> throw
-    if (Test-Blank $DatabasePath) {
-      $envVal = Get-Env $global:configRootKeys['DatabasePathConfigRootKey']
-      if (Test-Blank $envVal) {
-        $setVal = Resolve-FromSettings -db $DatabaseName -env $Environment -leafKey 'DatabasePath'
-        if (Test-Blank $setVal) {
-          $errorMessage = "DatabasePath not found via parameter, env '$($global:configRootKeys['DatabasePathConfigRootKey'])', or settings for '$DatabaseName'/'$Environment'."
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
-          throw $errorMessage
-        }
-        else { $DatabasePath = $setVal }
-      }
-      else { $DatabasePath = $envVal }
-    }
-
-    # --- ScriptDirectory: param -> env -> settings -> throw
-    if (Test-Blank $ScriptDirectory) {
-      $envVal = Get-Env $global:configRootKeys['ScriptDirectoryConfigRootKey']
-      if (Test-Blank $envVal) {
-        $setVal = Resolve-FromSettings -db $DatabaseName -env $Environment -leafKey 'ScriptDirectory'
-        if (Test-Blank $setVal) {
-          $errorMessage = "ScriptDirectory not found via parameter, env '$($global:configRootKeys['ScriptDirectoryConfigRootKey'])', or settings for '$DatabaseName'/'$Environment'."
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
-          throw $errorMessage
-        }
-        else { $ScriptDirectory = $setVal }
-      }
-      else { $ScriptDirectory = $envVal }
-    }
-
-    # --- GrantDatabaseOwner: only if not explicitly bound; env -> settings -> keep default ($false)
-    if (-not $PSBoundParameters.ContainsKey('GrantDatabaseOwner')) {
-      $envVal = Get-Env $global:configRootKeys['GrantDatabaseOwnerConfigRootKey']
-      if (-not (Test-Blank $envVal)) {
-        try {
-          $GrantDatabaseOwner = [System.Convert]::ToBoolean($envVal)
-        }
-        catch {
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Warning -Message "Invalid boolean in env '$($global:configRootKeys['GrantDatabaseOwnerConfigRootKey'])': '$envVal'. Keeping default: $GrantDatabaseOwner" -Tag 'Validation', 'Warning'
-        }
-      }
-      else {
-        $setVal = Resolve-FromSettings -db $DatabaseName -env $Environment -leafKey $global:configRootKeys['GrantDatabaseOwnerConfigRootKey']
-        if (-not (Test-Blank $setVal)) {
-          try {
-            $GrantDatabaseOwner = [bool]$setVal
-          }
-          catch {
-            Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Warning -Message "Invalid boolean in settings for '$($global:configRootKeys['GrantDatabaseOwnerConfigRootKey'])': '$setVal'. Keeping default: $GrantDatabaseOwner" -Tag 'Validation', 'Warning'
-          }
-        }
-      }
-    }
-
-    # --- GrantBulkAdmin: only if not explicitly bound; env -> settings -> keep default ($true)
-    if (-not $PSBoundParameters.ContainsKey('GrantBulkAdmin')) {
-      $envVal = Get-Env $global:configRootKeys['GrantBulkAdminConfigRootKey']
-      if (-not (Test-Blank $envVal)) {
-        try {
-          $GrantBulkAdmin = [System.Convert]::ToBoolean($envVal)
-        }
-        catch {
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Warning -Message "Invalid boolean in env '$($global:configRootKeys['GrantBulkAdminConfigRootKey'])': '$envVal'. Keeping default: $GrantBulkAdmin" -Tag 'Validation', 'Warning'
-        }
-      }
-      else {
-        $setVal = Resolve-FromSettings -db $DatabaseName -env $Environment -leafKey $global:configRootKeys['GrantBulkAdminConfigRootKey']
-        if (-not (Test-Blank $setVal)) {
-          try {
-            $GrantBulkAdmin = [bool]$setVal
-          }
-          catch {
-            Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Warning -Message "Invalid boolean in settings for '$($global:configRootKeys['GrantBulkAdminConfigRootKey'])': '$setVal'. Keeping default: $GrantBulkAdmin" -Tag 'Validation', 'Warning'
-          }
-        }
-      }
-    }
-
-    # --- ProvisionForFlyway: only if not explicitly bound; env -> settings -> keep default
-    if (-not $PSBoundParameters.ContainsKey('ProvisionForFlyway')) {
-      $envVal = Get-Env $global:configRootKeys['ProvisionForFlywayConfigRootKey']
-      if (-not (Test-Blank $envVal)) {
-        $ProvisionForFlyway = [System.Convert]::ToBoolean($envVal)
-      }
-      else {
-        $setVal = Resolve-FromSettings -db $DatabaseName -env $Environment -leafKey $global:configRootKeys['ProvisionForFlywayConfigRootKey']
-        if (-not (Test-Blank $setVal)) {
-          $ProvisionForFlyway = [bool]$setVal
-        }
-      }
-    }
+    # Validate Environment parameter
+    $Environment = Resolve-PVal $Environment 'Production', 'Testing', 'Development', 'Experimental'
+    # Validate ConnectionMethod parameter
+    $ConnectionMethod = Resolve-PVal $ConnectionMethod 'tcp', 'np', 'lpc'
 
 
+    # Check and populate optional parameter
+    $GrantDatabaseOwner = Get-PVal -ParameterName "GrantDatabaseOwner" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantDatabaseOwner" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']] -AsType ([bool]) -AllowMissing -Default $GrantDatabaseOwner
+    $GrantBulkAdmin = Get-PVal -ParameterName "GrantBulkAdmin" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.GrantBulkAdmin" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']] -AsType ([bool]) -AllowMissing -Default $GrantBulkAdmin
+    $ProvisionForFlyway = Get-PVal -ParameterName "ProvisionForFlyway" -originalPSBoundParameters $PSBoundParameters -dottedPath "$databaseName.$Environment.ProvisionForFlyway" -Settings $global:settings[$global:configRootKeys['DatabasesCollectionConfigRootKey']] -AsType ([bool]) -AllowMissing -Default $ProvisionForFlyway
+
+    # Set up SQL client types
+    $script:SqlTypes = Initialize-SQLClient
+
+    # Build up the connection string
+    $script:ConnectionString = Get-ConnectionString -DatabaseHost $DatabaseHost -DatabaseName $DatabaseName -ConnectionMethod $ConnectionMethod -SqlInstance $SqlInstance -UseNamedLogin $UseNamedLogin -LoginName $LoginName -LoginPasswordVaultKey $LoginPasswordVaultKey
+
+    # Initialize results tracking
     $result = [ordered]@{
       DatabaseName          = $DatabaseName
       Environment           = $Environment
@@ -450,7 +254,7 @@ function DatabaseProvisioning {
       $full = Join-Path -Path $ScriptDirectory -ChildPath $entry.Name
       if (-not (Test-Path $full)) {
         $msg = "Planned script not found: $full"
-        Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $msg
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $msg
         $errors.Add($msg) | Out-Null
       }
       else {
@@ -460,20 +264,20 @@ function DatabaseProvisioning {
     }
 
     if ($errors.Count -gt 0) {
-      Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message 'Aborting before execution due to missing scripts.'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message 'Aborting before execution due to missing scripts.'
       throw 'Provisioning aborted; missing scripts.'
     }
 
     # Create the server portion of the connection string for Invoke-Sqlcmd
     $serverForConnect = "${ConnectionMethod}:$DatabaseHost"
-    if (-not (Test-Blank $SqlInstance)) {
+    if (-not ([string]::IsNullOrWhiteSpace($SqlInstance) )) {
       $serverForConnect += "\$SqlInstance"
     } # else default instance: no suffixes
 
     # Test the connection to the SQL instance and check if the database already exists
     $dbExists = $false
     try {
-      Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Debug -Message ("Checking for existing database '{0}' on instance '{1}'" -f $DatabaseName, $serverForConnect)
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message ("Checking for existing database '{0}' on instance '{1}'" -f $DatabaseName, $serverForConnect)
 
       $safeDbName = $DatabaseName -replace "'", "''"
       $existsQuery = @"
@@ -498,20 +302,20 @@ ELSE
       if ($dbExists) {
         if (-not $Force) {
           $errorMessage = "Database '$DatabaseName' already exists on instance '$SqlInstance'. Use -Force to drop and recreate."
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
           throw $errorMessage
         }
         else {
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Warning -Message "Database '$DatabaseName' already exists on '$SqlInstance'. It will be dropped and recreated because -Force is set." -Tag 'Validation', 'Warning'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Database '$DatabaseName' already exists on '$SqlInstance'. It will be dropped and recreated because -Force is set." -Tag 'Validation', 'Warning'
         }
       }
       else {
-        Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Debug -Message "Database '$DatabaseName' does not exist on '$SqlInstance'. Proceeding with creation." -Tag 'Validation', 'Info'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Database '$DatabaseName' does not exist on '$SqlInstance'. Proceeding with creation." -Tag 'Validation', 'Info'
       }
     }
     catch {
       $errorMessage = "Failed checking database existence on '$SqlInstance': $($_.Exception.Message)"
-      Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
       $errors.Add($errorMessage) | Out-Null
       throw
     }
@@ -519,7 +323,7 @@ ELSE
     # if $dbExists and $force, drop the database
     if ($dbExists -and $Force) {
       try {
-        Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Warning -Message ("Dropping existing database '{0}' on instance '{1}'" -f $DatabaseName, $serverForConnect) -Tag 'Validation', 'Warning'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message ("Dropping existing database '{0}' on instance '{1}'" -f $DatabaseName, $serverForConnect) -Tag 'Validation', 'Warning'
 
         $safeDbName = $DatabaseName -replace "'", "''"
         $dropQuery = @"
@@ -540,11 +344,11 @@ END
         }
 
         Invoke-Sqlcmd @invokeDrop
-        Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Warning -Message "Successfully dropped existing database '$DatabaseName' on '$SqlInstance'." -Tag 'Validation', 'Warning'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Successfully dropped existing database '$DatabaseName' on '$SqlInstance'." -Tag 'Validation', 'Warning'
       }
       catch {
         $errorMessage = "Failed dropping existing database '$DatabaseName' on '$SqlInstance': $($_.Exception.Message)"
-        Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
         $errors.Add($errorMessage) | Out-Null
         throw
       }
@@ -561,11 +365,11 @@ END
       if (Test-Path $file) {
         try {
           Remove-Item -Path $file -Force -ErrorAction Stop
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Warning -Message "Deleted leftover database file '$file'." -Tag 'Validation', 'Warning'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Deleted leftover database file '$file'." -Tag 'Validation', 'Warning'
         }
         catch {
           $errorMessage = "Failed to delete leftover database file '$file': $($_.Exception.Message)"
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'Validation', 'Error'
           $errors.Add($errorMessage) | Out-Null
           throw
         }
@@ -588,7 +392,7 @@ END
 
       if ($PSCmdlet.ShouldProcess("$SqlInstance / $targetDb", "Execute $scriptLabel")) {
         try {
-          Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Verbose -Message "Starting script $scriptLabel"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Starting script $scriptLabel"
 
           try {
             # ToDo: revisit and fix when trusted SSL certificates for DB server access is available
@@ -618,22 +422,22 @@ END
             }
             #}
 
-            Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Debug -Message "Calling Invoke-Sqlcmd $scriptLabel (DB=$targetDb)"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Calling Invoke-Sqlcmd $scriptLabel (DB=$targetDb)"
             Invoke-Sqlcmd @invokeParams
-            Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Debug -Message "Successfully returned from Invoke-Sqlcmd $scriptLabel"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Successfully returned from Invoke-Sqlcmd $scriptLabel"
             $scriptsRun.Add($scriptPath) | Out-Null
           }
           catch {
             $errorMessage = "Failure executing $scriptLabel. Exception: $($_.Exception.Message)"
-            Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message $errorMessage
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
             if ($_.Exception.StackTrace) {
-              Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Debug -Message "StackTrace: $($_.Exception.StackTrace)"
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "StackTrace: $($_.Exception.StackTrace)"
             }
             $errors.Add($errorMessage) | Out-Null
             throw
           }
           finally {
-            Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Debug -Message "Finished attempt for $scriptLabel"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Finished attempt for $scriptLabel"
           }
         }
         catch {
@@ -641,7 +445,7 @@ END
         }
       }
       else {
-        Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Important -Message "Skipped script $scriptLabel due to ShouldProcess decision"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message "Skipped script $scriptLabel due to ShouldProcess decision"
       }
     }
   }
@@ -650,11 +454,11 @@ END
     $result.ScriptsExecuted = $scriptsRun.ToArray()
     $result.Errors = $errors.ToArray()
     $result.Success = ($errors.Count -eq 0)
-    Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Important -Message ("Provisioning {0}" -f ($(if ($result.Success) { 'succeeded' } else { 'failed' })))
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message ("Provisioning {0}" -f ($(if ($result.Success) { 'succeeded' } else { 'failed' })))
     if ($errors.Count -gt 0) {
-      Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Error -Message ("Errors:`n {0}" -f ($errors -join [Environment]::NewLine))
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message ("Errors:`n {0}" -f ($errors -join [Environment]::NewLine))
     }
-    Write-PSFMessage -FunctionName 'DatabaseProvisioning' -ModuleName 'ATAP.Utilities.DatabaseManagement.Powershell' -Level Debug -Message 'Leaving script DatabaseProvisioning'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Leaving script DatabaseProvisioning'
     [PSCustomObject]$result
   }
 }

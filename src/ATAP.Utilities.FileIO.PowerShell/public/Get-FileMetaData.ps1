@@ -33,14 +33,17 @@ function Get-FileMetaData {
   )
 
   BEGIN {
-    Write-PSFMessage -Level Debug -Message 'Starting Function %FunctionName% in module %ModuleName%' -Tag 'Trace'
+    $fn = 'Get-FileMetaData'
+    $mod = 'ATAP.Utilities.Powershell'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mod  -Level Debug -Message "Entering function $fn"
     $originalPSBoundParameters = $PSBoundParameters # to allow debugging
     # requires Get-ParameterValueFromNeoConfigurationRoot
     . 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Powershell\public\Get-ParameterValueFromNeoConfigurationRoot.ps1'
     # import ATAP.Utilities.Powershell
 
     # requires ATAP.Utilities.Images.Enumerations
-    Add-Type -Path $(Join-Path $env:localappdata 'PackageManagement' 'NuGet' 'Packages' 'ATAP.Utilities.Images.Enumerations.1.0.0' 'lib' 'net7.0' 'ATAP.Utilities.Images.Enumerations.dll')
+    # Add-Type -Path $(Join-Path $env:localappdata 'PackageManagement' 'NuGet' 'Packages' 'ATAP.Utilities.Images.Enumerations.1.0.0' 'lib' 'net7.0' 'ATAP.Utilities.Images.Enumerations.dll')
+    Add-Type -Path "C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.Utilities.Images.Enumerations\obj\Debug\net9.0\ATAP.Utilities.Images.Enumerations.dll"
 
     if ($Path -or $FileMetadataBlockSize -or $GetFileSignatureAsMetadata ) {
       # Not from pipeline
@@ -51,7 +54,7 @@ function Get-FileMetaData {
         # toDo catch the errors, add to 'Problems'
         Throw $message
       }
-      $GetFileSignatureAsMetadata = Get-ParameterValueFromNeoConfigurationRoot 'GetFileSignatureAsMetadata' $global:configRootKeys['GetFileSignatureAsMetadataConfigRootKey'] $originalPSBoundParameters
+      $GetFileSignatureAsMetadata = Get-ParameterValueFromNeoConfigurationRoot -Parameter 'GetFileSignatureAsMetadata' -  $global:configRootKeys['GetFileSignatureAsMetadataConfigRootKey'] -originalPSBoundParameters $originalPSBoundParameters
       $FileMetadataBlockSize = Get-ParameterValueFromNeoConfigurationRoot 'FileMetadataBlockSize' $global:configRootKeys['FileMetadataBlockSizeConfigRootKey'] $originalPSBoundParameters
     }
     else {
@@ -189,9 +192,10 @@ function Get-FileMetaData {
             $value = $splitLine[1].Trim()
             # Add the key and value to the current image data
             try {
-            $currentImageData[$key] = $value
-            }catch {
-              $message ='nope'
+              $currentImageData[$key] = $value
+            }
+            catch {
+              $message = 'nope'
               Write-PSFMessage -Level Error -Message $message -Tag '%FunctionName%'
               # toDo catch the errors, add to 'Problems'
               Throw $message
@@ -248,7 +252,8 @@ function Get-FileMetaData {
                 'FileMetadataBlockSize' { $FileMetadataBlockSize = $obj.PSobject.Properties['FileMetadataBlockSize'].value; break }
                 'PassThru' { $PassThru = $obj.PSobject.Properties['PassThru'].value; break }
                 'computerNames' { $computerNames = $obj.PSobject.Properties['computerNames'].value; break }
-                default { # ignore any property names that are not parameters of this cmdlet}
+                default {
+                  # ignore any property names that are not parameters of this cmdlet}
                 }
               }
             }

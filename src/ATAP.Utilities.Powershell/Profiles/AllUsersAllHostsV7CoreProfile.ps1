@@ -74,7 +74,7 @@ function Write-ArrayIndented {
   $outstr += $a -join [Environment]::NewLine
 }
 
-Function Write-HashIndented {
+function Write-HashIndented {
   param($hash
     , [int] $initialIndent = 0
     , [int] $indentIncrement = 2
@@ -114,7 +114,7 @@ function Write-KVPIndented {
   $outstr
 }
 
-Function Write-EnvironmentVariablesIndented {
+function Write-EnvironmentVariablesIndented {
   param(
     [int] $initialIndent = 0
     , [int] $indentIncrement = 2
@@ -125,8 +125,7 @@ Function Write-EnvironmentVariablesIndented {
         if ($key -eq 'path') {
           $outstr += ' ' * $initialIndent + $key + ' (' + $scope + ') = ' + [Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) + `
           $($($($envVarHashTable[$key] -split [IO.Path]::PathSeparator) | Sort-Object) -join $([Environment]::NewLine + ' ' * ($initialIndent + $indentIncrement) ) ) + [Environment]::NewLine
-        }
-        else {
+        } else {
           $outstr += ' ' * $initialIndent + $key + ' = ' + $envVarHashTable[$key] + '  [' + $scope + ']' + [Environment]::NewLine
         }
       }
@@ -138,7 +137,7 @@ Function Write-EnvironmentVariablesIndented {
 #endregion Functions needed by the machine profile, must be defined in the profile
 ##################################################################################
 
-Function ValidateTools {
+function ValidateTools {
   # validate dotnet
   # validate dotnet build
   # validate java
@@ -170,7 +169,8 @@ Write-PSFMessage -Level Debug -Message ("hostname = $hostName")
 
 # Define default values of common parameters that may be present in a cmdlet's parameter list
 $PSDefaultParameterValues = @{
-  '*:Encoding' = 'UTF8'
+  '*:Encoding' = 'UTF8' # This will be the default parameter value
+  '*:Settings' = { $global:settings } # this will be the default parparametermater value
 }
 # encoding : New-Object System.Text.UTF8Encoding($false) # UTF8 encoded with or without a ByteOrdermark(BOM) which results in System.Text.UTF8Encoding
 # encoding : [System.Text.Encoding]::UTF8 which results in System.Text.UTF8Encoding+UTF8EncodingSealed
@@ -187,18 +187,16 @@ $PSDefaultParameterValues = @{
 # during the transition to packaging, try first the computers local machine directory
 if (Test-Path -Path "$env:ProgramFiles\Powershell\Modules\ATAP.Utilities.Powershell\Resources\HostSettings.ps1") {
   . "$env:ProgramFiles\Powershell\Modules\\ATAP.Utilities.Powershell\Resources\HostSettings.ps1"
-}
-elseif (Test-Path -Path "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1") {
+} elseif (Test-Path -Path "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1") {
   . "$([Environment]::GetFolderPath('MyDocuments'))\GitHub\ATAP.IAC\Windows\HostSettings.ps1"
-}
-else {
-  Write-PSFMessage -Level Debug -Message ("HostSettings.ps1 not found")
+} else {
+  Write-PSFMessage -Level Debug -Message ('HostSettings.ps1 not found')
 }
 # . $(Join-Path -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.IAC', 'Windows', 'HostSettings.ps1'))
 
 # ToDo: get packaging working
 # During the transition to packaging, see if the function exists. If it does not, then dot-source the development copy from Dropbox
-if (!(get-command Get-ClonedAndModifiedHashtable -erroraction silentlycontinue)) {
+if (!(Get-Command Get-ClonedAndModifiedHashtable -ErrorAction silentlycontinue)) {
   # command not found, must be on a computer that does not have the ATAP.Utilities.Powershell module installed
   . $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedAndModifiedHashtable.ps1'))
   # . $(Join-PathNoResolve -Path $([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'GitHub' -AdditionalChildPath @('ATAP.Utilities', 'src', 'ATAP.Utilities.Powershell', 'public', 'Get-ClonedObject.ps1'))
@@ -210,11 +208,12 @@ $global:settings = Get-HostSettings $hostName
 # temporary - Use this structure for passwords that will eventually be stored in a vault
 # These are throwaway passwords, just for testing
 $global:VaultData = @{
-  'BuildSetsAdminProductionLoginPassword  VaultKeyValue' = "ChangeMe_!234"
-  'BuildSetsAdminTestingLoginPasswordVaultKeyValue'      = "ChangeMe_!234"
-  'BuildSetsAdminDevelopmentLoginPasswordVaultKeyValue'  = "ChangeMe_!234"
-  'BuildSetsAdminExperimentalLoginPasswordVaultKeyValue' = "ChangeMe_!234"
-  'PCMSCAdminExperimentalLoginPasswordVaultKeyValue'     = "ChangeMe_!234"
+  'BuildSetsAdminProductionLoginPassword  VaultKeyValue' = 'ChangeMe_!234'
+  'BuildSetsAdminTestingLoginPasswordVaultKeyValue'      = 'ChangeMe_!234'
+  'BuildSetsAdminDevelopmentLoginPasswordVaultKeyValue'  = 'ChangeMe_!234'
+  'BuildSetsAdminExperimentalLoginPasswordVaultKeyValue' = 'ChangeMe_!234'
+  'PCMSCAdminExperimentalLoginPasswordVaultKeyValue'     = 'ChangeMe_!234'
+  'PCMSC_CEPasswordVaultKey'                             = 'ChangeMe!'
 }
 
 
@@ -240,8 +239,7 @@ $inheritedEnvironmentVariable = [System.Environment]::GetEnvironmentVariable('En
 $inProcessEnvironmentVariable = ''
 if ($inheritedEnvironmentVariable) {
   $inProcessEnvironmentVariable = $inheritedEnvironmentVariable
-}
-else {
+} else {
   $inProcessEnvironmentVariable = 'Production' # default for all machines is Production, can be overwritten on a per-process basis if needed
 }
 $global:settings[$global:configRootKeys['ENVIRONMENTConfigRootKey']] = $inProcessEnvironmentVariable
@@ -293,7 +291,7 @@ $Env:PSModulePath = $modifiedPSModulePath
 ########################################################
 
 # TBD - move to powershell utilities
-Function Set-CredentialFile {
+function Set-CredentialFile {
   # Todo cmdlet
   param (
     # ToDo add whatif
@@ -306,8 +304,7 @@ Function Set-CredentialFile {
     if ($force) {
       # ToDo: check for ACL permissions to create
       New-Item -Path $SharedSecureCredentialDirectory -ItemType Container > $null
-    }
-    else {
+    } else {
       throw "$SharedSecureCredentialDirectory does not exist"
     }
     if ($(Test-Path -Path $credentialFilePath -PathType Leaf)) {
@@ -323,7 +320,7 @@ Function Set-CredentialFile {
   }
 }
 
-Function Get-CredentialFile {
+function Get-CredentialFile {
   param (
     [string] $Path
   )

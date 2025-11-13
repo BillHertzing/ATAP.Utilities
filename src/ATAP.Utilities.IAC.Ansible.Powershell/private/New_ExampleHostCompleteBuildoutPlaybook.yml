@@ -399,7 +399,7 @@
         #    For host utat022
         #      ToDo: figure out incremental backup and do it nightly, then delete after a full backup
         #      New Task -> HydrusBackupFull
-        #        File->Source->Directory -> H:\Hydrus\
+        #        File->Source->Directory -> E:\Hydrus\
         #        File->Destination->Directory -> C:\Dropbox\HydrusBackup
         #        Weekly on Monday at 01:16am
         #        Split the archive into 512MB chunks
@@ -412,12 +412,12 @@
         #      External programs C:\Users\whertzing\AppData\Local\BraveSoftware\Brave-Browser\Application\brave.exe "path%"
         #      (per host)
         #        for utat022
-        #        identify the location of the database folder $HydrusDatabaseDirectory (for utat022, that is H:\Hydrus\HydrusDatabase )
-        #        identify the location of the media files $HydrusMediaDirectory (for utat022, that is H:\HydrusThumbnailImages)
-        #        identify the location of the thumbnails folder $HydrusThumbnailsDirectory (for utat022, that is H:\Hydrus\HydrusThumbnailImages )
+        #        identify the location of the database folder $HydrusDatabaseDirectory (for utat022, that is E:\Hydrus\HydrusDatabase )
+        #        identify the location of the media files $HydrusMediaDirectory (for utat022, that is E:\HydrusThumbnailImages)
+        #        identify the location of the thumbnails folder $HydrusThumbnailsDirectory (for utat022, that is E:\Hydrus\HydrusThumbnailImages )
         #    Create a new shortcut in the start folder that will start hydrus pointing to the database and thumbnails location
         #    The following command must be run with elevated permission
-        #    New-ShortcutWithParameter -TargetPath "C:\Program Files\Hydrus Network\hydrus_client.exe" -ShortcutPath 'C:\Program Files\Hydrus Network\hydrus_client(utat022).lnk' -Parameter '-d H:\Hydrus\HydrusDatabase'
+        #    New-ShortcutWithParameter -TargetPath "C:\Program Files\Hydrus Network\hydrus_client.exe" -ShortcutPath 'C:\Program Files\Hydrus Network\hydrus_client(utat022).lnk' -Parameter '-d D:\Hydrus\HydrusDatabase'
         #    pin the shortcut to the taskbar
         #    eventually Allow incoming request to hydrus-network through host firewall and network router
         #    Backups done with Cobian Reflector
@@ -478,7 +478,7 @@
   #     start.bat in sd-tagging-helper
 
   # - roles/pictureflowWindows
-  #  raw input directory  "camera uploads'"
+  #  raw input directory  "camera uploads'"get-p
   #  move N latest files to "raw input directory"
   #  input to Hydrus, tag with hydrus client
   #  further tag with xnviewmp (optional)

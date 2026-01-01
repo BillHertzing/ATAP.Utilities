@@ -187,6 +187,7 @@ if ((whoami /all) -match $elevatedSIDPattern) { Write-PSFMessage -Level Verbose 
 [Environment]::SetEnvironmentVariable('VSCExtensionProjectAbsolutePath', 'C:\Dropbox\whertzing\GitHub\ATAP.Utilities\src\ATAP.VSCExtension.AI\ATAP-AiAssist', [EnvironmentVariableTarget]::User)
 
 # Capture SSL keys needed to decrypt SSL traffic using wireshark
+# use sparingly, because this file gets locked and won't sync with Dropbox
 # [Environment]::SetEnvironmentVariable( 'SSLKEYLOGFILE', '"C:\Dropbox\Security\SSLKeyLogFile.txt"', 'Machine' ) # Do this manually, it requires elevated permission
 
 # Show environment/context information when the profile runs

@@ -18,7 +18,7 @@
 
   <!-- The Loader only works with NetCore 3.1, Net5.0 and higher -->
   <PropertyGroup>
-    <TargetFrameworks>net9.0;</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

@@ -119,7 +119,6 @@
     #- {name: vscode-mssql, version: latest, allowprerelease: false, addedparameters: , }
     #- {name: vscode-powershell, version: latest, allowprerelease: false, addedparameters: , }
     #- {name: vscode-prettier, version: latest, allowprerelease: false, addedparameters: , }
-    #- {name: vscode-ruby, version: latest, allowprerelease: false, addedparameters: , }
     #- {name: vscode-test-explorer, version: latest, allowprerelease: false, addedparameters: , }
     ## - { name: vscode-test-explorer-liveshare, version: latest, allowprerelease: false, addedparameters: , }
     #- {name: vscode-yaml, version: latest, allowprerelease: false, addedparameters: , }

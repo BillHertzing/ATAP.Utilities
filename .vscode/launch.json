@@ -1,1 +1,327 @@
-C:/Dropbox/whertzing/GitHub/SharedVSCode/.vscode/launch.json
+// A launch configuration that
+//   Starts a Powershell script in a debugger
+//   Starts a Powershell script with -whatif in a debugger
+//   Starts a Powershell script in a temporary terminal (use this if the script loads a .dll)
+//   Starts a Powershell script (with arguments) in a debugger
+//   ToDO: Untested: Attach the Powershell debugger to a running process (pick a process)
+//   ToDO: Broken: Runs all the Pester tests (**.tests.ps1) in a workspace)
+//   ToDO: RunPSScriptAnalyzer against the current Powershell script
+//   ToDO: Broken: Runs Invoke-Build to package and deploy a Powershell module
+//   compiles a VSC extension and then opens it inside a new window
+//   runs VSC extension tests
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  // [Debug a .NET console application using Visual Studio Code](https://docs.microsoft.com/en-us/dotnet/core/tutorials/debugging-with-visual-studio-code)
+  //    use `integratedTerminal` instead of `internalConsole` if using this file to launch a Console program that uses terminal input
+  "version": "0.2.0",
+  "configurations": [
+    //  ************************************************************************
+    // VSC Extension development
+    //  These require an environment variable to tell the launch configurations the location of the source code and test code
+    //    env:VSCExtensionProjectAbsolutePath
+    {
+      "name": "Run Extension (Development)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        // specifies the directory of the project.json file
+        "--extensionDevelopmentPath=${env:VSCExtensionProjectAbsolutePath}",
+        "--disable-extension=dbaeumer.vscode-eslint",
+        // "--disable-extensions",
+        "${env:VSCExtensionProjectAbsolutePath}" // set the folder to open on startup
+      ],
+      "outFiles": ["${env:VSCExtensionProjectAbsolutePath}/_generated/development/**/*.js"],
+      "smartStep": true,
+      "preLaunchTask": "npm: build:development",
+      "sourceMaps": true,
+      "env": {
+        "Environment": "development",
+        "VSCODE_DEV": "1"
+      }
+    },
+    {
+      "name": "Run Extension (Production)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        // specifies the directory of the project.json file
+        "--extensionDevelopmentPath=${env:VSCExtensionProjectAbsolutePath}",
+        "--disable-extension=dbaeumer.vscode-eslint",
+        // "--disable-extensions",
+        "${env:VSCExtensionProjectAbsolutePath}" // set the folder to open on startup
+      ],
+      "outFiles": ["${env:VSCExtensionProjectAbsolutePath}/_generated/dist/**/*.js"],
+      "smartStep": true,
+      "preLaunchTask": "npm: build:production",
+      //"preLaunchTask": "${defaultBuildTask}",
+      "sourceMaps": true,
+      "env": {
+        "Environment": "production",
+        "VSCODE_DEV": "0"
+      }
+    },
+    {
+      "name": "Extension Tests (Combined)",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${env:VSCExtensionProjectAbsolutePath}",
+        "--extensionTestsPath=${env:VSCExtensionProjectAbsolutePath}/_generated/testing/test/runTests.js",
+        "--disable-extension=github.copilot",
+        "--disable-extension=dbaeumer.vscode-eslint",
+        "--disable-extension=GitHub.copilot-chat-extension",
+        "--disable-extension=eamodio.gitlens-extension",
+        //"--disable-extensions",  // This will disable ALL of the VSC  extensions installed in the VSC instance used to develop the extension
+        // another option is to individually disable specific extensions, but this can get very "wordy" if there are 83 extensions
+        //  There is no way to "disable all except for [abc,xyz]", which would be preferred, as then it would be possible to keep just a few extensions enabled
+        "${env:VSCExtensionProjectAbsolutePath}"
+      ],
+      "outFiles": ["${env:VSCExtensionProjectAbsolutePath}/_generated/testing/**/*.test.js", "${workspaceFolder}/_generated/testing/**/*.js"],
+      "preLaunchTask": "npm: build:testing",
+      "sourceMaps": true // Enable source maps
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Mocha Tests",
+      "program": "${env:VSCExtensionProjectAbsolutePath}/node_modules/mocha/bin/_mocha",
+      "args": ["-r", "ts-node/register", "-r", "tsconfig-paths/register", "-u", "tdd", "--timeout", "999999", "--colors", "--require esm", "${env:VSCExtensionProjectAbsolutePath}/_generated/testing/tests/**/*.test.js"],
+      "internalConsoleOptions": "openOnSessionStart",
+      "preLaunchTask": "tasks: watch-tests",
+      "sourceMaps": true // Enable source maps
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Webpack Debug",
+      "program": "${workspaceFolder}/node_modules/webpack/bin/webpack.js",
+      "args": ["--config", "webpack.config.js"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    //  ************************************************************************
+    // Powershell script and module development
+    {
+      "name": "PowerShell Launch Current File ",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${file}",
+      "args": ["-verbose"],
+      "cwd": "${file}"
+    },
+    {
+      "name": "PowerShell Launch Current File with -WhatIf",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${file}",
+      "args": ["-WhatIf", "-verbose"],
+      "cwd": "${file}"
+    },
+    {
+      "type": "PowerShell",
+      "request": "launch",
+      "name": "PowerShell Launch Current File in Temporary Console (if a .dll is used)",
+      "script": "${file}",
+      "args": ["-verbose"],
+      "cwd": "${file}",
+      "createTemporaryIntegratedConsole": true
+    },
+    {
+      "type": "PowerShell",
+      "request": "launch",
+      "name": "PowerShell Launch Current File w/Args Prompt",
+      "script": "${file}",
+      "args": ["-verbose", "${command:SpecifyScriptArgs}"],
+      "cwd": "${file}"
+    },
+    {
+      "name": "Run Pester Tests for Active File",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${file}",
+      "args": ["-verbose"],
+      "cwd": "${file}"
+    },
+    {
+      "type": "PowerShell",
+      "request": "launch",
+      "name": "PowerShell Pester Tests",
+      "script": "Invoke-Pester",
+      "args": ["-Path", "${workspaceFolder}", "-ExcludePath", "**/Resources/**", "**/Releases/**", "-OutputFormat", "NUnitXml", "-OutputFile", "${workspaceFolder}/_generated/TestResults/results.xml"],
+      "cwd": "${workspaceFolder}"
+    },
+
+    {
+      "type": "PowerShell",
+      "request": "launch",
+      "name": "PowerShell Pester Tests OLD",
+      "script": "Invoke-Pester",
+      "args": ["-Path", "${workspaceFolder}", "-ExcludePath", "*/Resources/*, */Releases/*", "-OutputFormat", "NUnitXml", "-OutputFile", "${workspaceFolder}/_generated/TestResults/results.xml"], //".[Tt]ests.ps1"
+      "cwd": "${workspaceFolder}"
+      // "console": "integratedTerminal"
+    },
+    {
+      "type": "PowerShell",
+      "request": "launch",
+      "name": "PowerShell Pester Tests Merged Configuration",
+      "script": "",
+      "args": ["-Path", "${workspaceFolder}", "-ExcludePath", "*/Resources/*, */Releases/*", "-OutputFormat", "NUnitXml", "-OutputFile", "${workspaceFolder}/_generated/TestResults/results.xml"], //".[Tt]ests.ps1"
+      "cwd": "${workspaceFolder}"
+      // "console": "integratedTerminal"
+    },
+    {
+      "name": "Invoke-Build Default Task (in workspaceRoot)",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "Invoke-Build",
+      "args": [".", "${file}"]
+      //"cwd": "${workspaceRoot}"
+    },
+    {
+      "name": "Invoke-Build Current Task",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "Invoke-TaskFromVSCode",
+      "args": [],
+      "cwd": "${workspaceRoot}"
+    },
+    // {
+    //   "type": "PowerShell",
+    //   "request": "attach",
+    //   "name": "PowerShell Attach to Host Process",
+    //   "processId": "${command:PickPSHostProcess}",
+    //   "runspaceId": 1
+    // },
+    //  ************************************************************************
+    // C# and dotnet development
+    {
+      "name": "Build C# Library Only",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "Write-Host 'Build completed successfully'",
+      "cwd": "${fileDirname}",
+      "preLaunchTask": "Build C# Project"
+    },
+    {
+      "name": "Build and Launch C# Project",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build C# Project",
+      "program": "${fileDirname}/bin/Debug/net9.0/${fileDirnameBasename}.dll",
+      "args": [],
+      "cwd": "${fileDirname}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    // {
+    //   "name": "Launch CodeAnalysis",
+    //   "type": "clr",
+    //   "request": "launch",
+    //   "preLaunchTask": "BuildCodeAnalysis",
+    //   "program": "${workspaceFolder}/src/ATAP.Console.CodeAnalysis/bin/Debug/net48/ATAP.Console.CodeAnalysis.exe",
+    //   "args": [
+    //     "C:/Dropbox/whertzing/GitHub/ATAP.Utilities/ATAP.Utilities.sln"
+    //   ],
+    //   "cwd": "${workspaceFolder}/src/ATAP.Console.CodeAnalysis/bin/Debug/net48/",
+    //   "console": "integratedTerminal",
+    //   "stopAtEntry": false
+    // },
+    {
+      "name": "Launch Console App",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/bin/Debug/net5.0/ATAP.Console.Console02.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/bin/Debug/net5.0/",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Launch HTMLParser App",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "buildHTMLParser",
+      "program": "${workspaceFolder}/src/HTMLParserApp/bin/Debug/net9.0/HtmlParserApp.exe",
+      "args": ["C:/Dropbox/whertzing/PCMSC/*.html", "${workspaceFolder}/_generated/output.csv", "golf,league,studio,swim,pool,spa,church,gym"],
+      "cwd": "${workspaceFolder}/src/, IParticipantCollectionHTMLParserApp/bin/Debug/net9.0/",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Launch ParticipantsParserApp",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "buildParticipantsParserApp",
+      "program": "${workspaceFolder}/src/ParticipantsParserApp/bin/Debug/net9.0/ParticipantsParserApp.exe",
+      "args": ["${workspaceFolder}/SourceData/Participants.mysql"],
+      "cwd": "${workspaceFolder}/src/ParticipantsParserApp/bin/Debug/net9.0/",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Run ParticipantsParserApp Tests",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "testParticipantsParserApp",
+      "program": "${workspaceFolder}/tests/ParticipantsParserApp/bin/Debug/net9.0/ParticipantsParserApp.Tests.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/tests/ParticipantsParserApp/bin/Debug/net9.0/",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": ".NET Core Attach",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickProcess}"
+    },
+    {
+      "name": ".NET Script Debug",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "dotnet",
+      "args": ["exec", "C:/Users/whertzing/.dotnet/tools/.store/dotnet-script/1.1.0/dotnet-script/1.1.0/tools/net5.0/any/dotnet-script.dll", "${file}"],
+      "cwd": "${workspaceRoot}",
+      "stopAtEntry": true
+    }
+    //{
+    //   "name": "BuildPublishPluginAndLaunchVA",
+    //   "type": "clr",
+    //   "request": "attach",
+    //   "preLaunchTask": "publishPluginAndStartVA",
+    //   "processName": "VoiceAttack.exe",
+    //   "stopAtEntry": true,
+    //   "postLaunchTask": "stopVA",
+    // }
+    //  ]
+
+    // "compounds": [
+    //   {
+    //     "name": "BuildPublishLaunchAndDriver",
+    //     "configurations": [
+    //       "BuildPublishPluginAndLaunchVA",
+    //       "Driver"
+    //     ],
+    //     "preLaunchTask": "publishPluginAndStartVA",
+    //     "postLaunchTask": "stopVA",
+    //   }
+    // ]
+  ],
+
+  "compounds": [
+    {
+      "name": "VSCExtensionDev",
+      "configurations": ["Run Extension (Development)"],
+      "preLaunchTask": "Set Env Var"
+    },
+    {
+      "name": "VSCExtensionProd",
+      "configurations": ["Run Extension (Production)"],
+      "preLaunchTask": "Set Env Var"
+    }
+  ]
+}

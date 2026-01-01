@@ -17,7 +17,7 @@ Pause
 
 Ubuntu terminal
 
-# ToDO: Thispart is a script that runs insiode the new WSL container
+# ToDO: This part is a script that runs inside the new WSL container
 # Add the new user to the list of sudoers
 $newSuDoer = whertzing
 sudo adduser $newSuDoer sudo
@@ -67,9 +67,9 @@ sudo apt install python3-pip -y
 sudo apt-add-repository ppa:ansible/ansible -y
 # Get any updates found in this new repository
 sudo apt-get update
-# install the library that allows pythin to communicate with windows over winrm
+# install the library that allows python to communicate with windows over winrm
 sudo pip3 install pywinrm
-# install TBD - # toDo: what is thisused for
+# install TBD - # toDo: what is this used for?
 sudo pip3 install pyvmomi
 # Install ansible
 sudo apt-get install ansible -y
@@ -89,7 +89,7 @@ sudo cp $sourcePathOnWindowsForLatest $destinationPathOnLinuxForLatest
 
 # Make the location on Windows where the generated Ansible direcotry can be found, into a script parameter
 $sourcePathOnWindowsForGeneratedAnsibleDirectory = /mnt/c/dropbox/whertzing/GitHub/ATAP.Utilities/src/ATAP.IAC.Ansible/_generated/ATAP_001/Ansible/'
-# Remove the Ansible direcoty on Ubuntu, recreate it, and set the user and group of the new directory to the user and group of the user that runs the script
+# Remove the Ansible directory on Ubuntu, recreate it, and set the user and group of the new directory to the user and group of the user that runs the script
 # ToDO: investigate using Ansible to do this, and see if ansibleAdmin is the user
 cd ~; rm -r ~/Ansible; sudo cp -r  $sourcePathOnWindowsForGeneratedAnsibleDirectory  ~; sudo chgrp -R "$(id -gn)" ~/Ansible;sudo chown -R "$(id -un)" ~/Ansible; cd Ansible
 

@@ -272,3 +272,243 @@ if ($MyInvocation.InvocationName -ne '.') {
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "✗ CRITICAL ERROR: $($_.Exception.Message)" -Tag 'startup'
   }
 }
+
+
+<#
+.SYNOPSIS
+Retrieves Context7 API key from Bitwarden vault and sets environment variable.
+
+.DESCRIPTION
+Uses Bitwarden CLI to retrieve the Context7 API key from the vault and stores it
+in both process and user-scope environment variables. Requires an active Bitwarden
+session (BW_SESSION environment variable must be set).
+
+.PARAMETER None
+This function does not accept parameters.
+
+.OUTPUTS
+PSCustomObject
+Returns an object with Success (bool) and Message (string) properties.
+
+.EXAMPLE
+Set-Context7APIKey
+
+Retrieves Context7 API key and stores it in CONTEXT7_API environment variable.
+
+.NOTES
+AI assisted using Powershell.instructions.md as guidelines
+Requires Bitwarden CLI (bw.exe) to be installed and in PATH.
+Requires active Bitwarden session (run Initialize-BitwardenSession first).
+
+.LINK
+https://github.com/whertzing/ATAP.Utilities
+#>
+function Set-Context7APIKey {
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  [OutputType([PSCustomObject])]
+  param()
+
+  BEGIN {
+    $fn = 'Set-Context7APIKey'
+    $mn = 'ATAP.Utilities.Powershell'
+
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started' -Tag 'startup'
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Attempting to retrieve Context7 API key from Bitwarden vault' -Tag 'startup'
+  }
+
+  PROCESS {
+    try {
+      # Check if Bitwarden CLI is available
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Checking if Bitwarden CLI (bw.exe) is available' -Tag 'startup'
+      $bwCommand = Get-Command -Name 'bw' -ErrorAction SilentlyContinue
+
+      if (-not $bwCommand) {
+        $errorMessage = 'Bitwarden CLI (bw.exe) not found in PATH. Please install Bitwarden CLI.'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'startup'
+        return [PSCustomObject]@{
+          Success = $false
+          Message = $errorMessage
+        }
+      }
+
+      # Check if BW_SESSION environment variable is set
+      $sessionKey = $env:BW_SESSION
+      if ([string]::IsNullOrWhiteSpace($sessionKey)) {
+        $errorMessage = 'BW_SESSION environment variable not set. Please run Initialize-BitwardenSession first.'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'startup'
+        return [PSCustomObject]@{
+          Success = $false
+          Message = $errorMessage
+        }
+      }
+
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Active Bitwarden session found' -Tag 'startup'
+
+      if ($PSCmdlet.ShouldProcess('Context7 API Key', 'Retrieve from Bitwarden and set environment variable')) {
+        # Search for Context7 API key item in Bitwarden
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Searching for Context7 API key in Bitwarden vault' -Tag 'startup'
+
+        $searchOutput = bw list items --search "Context7 API" --session $sessionKey 2>&1
+        $exitCode = $LASTEXITCODE
+
+        if ($exitCode -ne 0) {
+          $errorMessage = "Failed to search Bitwarden vault. Exit code: $exitCode. Output: $searchOutput"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'startup'
+          return [PSCustomObject]@{
+            Success = $false
+            Message = $errorMessage
+          }
+        }
+
+        try {
+          $items = $searchOutput | ConvertFrom-Json
+
+          if ($null -eq $items -or $items.Count -eq 0) {
+            $errorMessage = 'Context7 API key not found in Bitwarden vault. Please add an item with name "Context7 API".'
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'startup'
+            return [PSCustomObject]@{
+              Success = $false
+              Message = $errorMessage
+            }
+          }
+
+          # Get the first matching item
+          $item = $items[0]
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Found item: $($item.name) (ID: $($item.id))" -Tag 'startup'
+
+          # Extract the API key - check for different field types
+          $apiKey = $null
+          if ($item.login -and $item.login.password) {
+            # API key stored as password
+            $apiKey = $item.login.password
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'API key retrieved from login password field' -Tag 'startup'
+          }
+          elseif ($item.notes) {
+            # API key stored in notes
+            $apiKey = $item.notes.Trim()
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'API key retrieved from notes field' -Tag 'startup'
+          }
+          elseif ($item.fields) {
+            # API key stored in custom field
+            $apiKeyField = $item.fields | Where-Object { $_.name -eq 'apikey' -or $_.name -eq 'api_key' } | Select-Object -First 1
+            if ($apiKeyField) {
+              $apiKey = $apiKeyField.value
+              Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'API key retrieved from custom field' -Tag 'startup'
+            }
+          }
+
+          if ([string]::IsNullOrWhiteSpace($apiKey)) {
+            $errorMessage = 'Context7 API key value is empty or not found in expected fields (password, notes, or custom fields).'
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'startup'
+            return [PSCustomObject]@{
+              Success = $false
+              Message = $errorMessage
+            }
+          }
+
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "API key length: $($apiKey.Length)" -Tag 'startup'
+
+          # Store API key in process environment
+          $env:CONTEXT7_API = $apiKey
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'API key stored in process environment variable' -Tag 'startup'
+
+          # Store API key in user-scope environment for current login session
+          [System.Environment]::SetEnvironmentVariable('CONTEXT7_API', $apiKey, 'User')
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'API key stored in user-scope environment variable' -Tag 'startup'
+
+          # Verify the environment variables were set
+          $processApi = $env:CONTEXT7_API
+          $userApi = [System.Environment]::GetEnvironmentVariable('CONTEXT7_API', 'User')
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Process CONTEXT7_API length: $(if($processApi){$processApi.Length}else{'not set'})" -Tag 'startup'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "User CONTEXT7_API length: $(if($userApi){$userApi.Length}else{'not set'})" -Tag 'startup'
+
+          $successMessage = 'Context7 API key retrieved successfully and stored in environment variable'
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message $successMessage -Tag 'startup'
+
+          return [PSCustomObject]@{
+            Success = $true
+            Message = $successMessage
+          }
+        }
+        catch {
+          $errorMessage = "Failed to parse Bitwarden output or extract API key. Exception: $($_.Exception.Message)"
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'startup'
+          return [PSCustomObject]@{
+            Success = $false
+            Message = $errorMessage
+          }
+        }
+      }
+    }
+    catch {
+      $errorMessage = "Failed to retrieve Context7 API key. Exception: $($_.Exception.Message)"
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage -Tag 'startup'
+      throw
+    }
+    finally {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Leaving Function $fn in module $mn" -Tag 'startup'
+    }
+  }
+
+  END {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Function completed' -Tag 'startup'
+  }
+}
+
+
+# ============================================================================
+# Script execution block - runs when script is executed directly
+# ============================================================================
+
+# Only execute if script is run directly (not dot-sourced)
+if ($MyInvocation.InvocationName -ne '.') {
+  $fn = 'LoginScript-ExecutionBlock'
+  $mn = 'ATAP.Utilities.Powershell'
+
+  try {
+    # Initialize Bitwarden session first
+    $result = Initialize-BitwardenSession
+
+    # Write to Windows Event Log for scheduled task visibility
+    $eventLogParams = @{
+      LogName   = 'Application'
+      Source    = 'BitwardenLogin'
+      EntryType = if ($result.Success) { 'Information' } else { 'Error' }
+      EventId   = if ($result.Success) { 1000 } else { 2000 }
+      Message   = $result.Message
+    }
+
+    # Create event source if it doesn't exist (requires admin, do once)
+    if (-not [System.Diagnostics.EventLog]::SourceExists('BitwardenLogin')) {
+      try {
+        New-EventLog -LogName Application -Source 'BitwardenLogin'
+      }
+      catch {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Could not create event log source: $($_.Exception.Message)" -Tag 'startup'
+      }
+    }
+
+    Write-EventLog @eventLogParams
+
+    # Also log via PSFramework
+    if ($result.Success) {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $result.Message -Tag 'startup'
+
+      # If Bitwarden session was successful, retrieve Context7 API key
+      $apiKeyResult = Set-Context7APIKey
+
+      if ($apiKeyResult.Success) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Important -Message $apiKeyResult.Message -Tag 'startup'
+      }
+      else {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Context7 API key retrieval failed: $($apiKeyResult.Message)" -Tag 'startup'
+      }
+    }
+    else {
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $result.Message -Tag 'startup'
+    }
+  }
+  catch {
+    Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message "✗ CRITICAL ERROR: $($_.Exception.Message)" -Tag 'startup'
+  }
+}

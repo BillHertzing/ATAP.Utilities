@@ -108,6 +108,11 @@ docfx:
   AllowPreRelease: false
   Version: Latest
   AddedParameters:
+docker-desktop:
+  Notes: ""
+  AllowPreRelease: false
+  Version: Latest
+  AddedParameters:
 dotUltimate:
   Notes: ""
   AllowPreRelease: false

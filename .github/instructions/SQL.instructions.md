@@ -20,7 +20,7 @@ This file is a set of instructions for AI to follow when generating or modifying
 
 ## Coding Guidelines for SQL
 
-## Coding Rules for PowerShell
+- The SQL server version being used is SQL Server 2022 community edition. You may use all features available in this version.
 
 - **General Formatting**:
   - Use the .editorconfig file in the root of the repository for formatting rules.

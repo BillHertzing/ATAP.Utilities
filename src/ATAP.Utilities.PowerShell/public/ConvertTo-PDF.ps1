@@ -40,7 +40,7 @@ function ConvertTo-PDF {
 
   BEGIN {
     $fn = 'ConvertTo-PDF'
-    $mn = 'PCMSC'
+    $mn = 'ATAP.Utilities.Powershell'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Entering function $fn"
 

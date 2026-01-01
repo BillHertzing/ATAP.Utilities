@@ -22,9 +22,7 @@ This file is a set of instructions for AI to follow when generating or modifying
 - You may use any .NET libraries or open-source libraries with an MIT license.
 - Your responses may include references to PowerShell Pro VS Code extension features and capabilities.
 - When generating PowerShell code, prioritize reusing snippets from:
-  - `C:\Users\whertzing\AppData\Roaming\Code\User\snippets\Powershell.json`
   - `C:\Dropbox\whertzing\GitHub\SharedVSCode\UserSnippetsPowershell.jsonc`
-- If a snippet is used, include the snippet name as a comment above the snippet body, along with any substitutions made.
 
 ---
 
@@ -50,9 +48,8 @@ This file is a set of instructions for AI to follow when generating or modifying
   - Avoid trailing whitespace at the end of lines.
 - **Function Naming**:
   - Use PascalCase for public functions and parameters.
-  - Use camelCase with a `_` prefix for private/internal functions and variables.
+  - Use camelCase for private/internal functions and variables.
 - **Cmdlet Design**:
-
   - Include `[CmdletBinding()]` and `param()` blocks with proper validation attributes.
   - Ensure all cmdlets support `-WhatIf` and `-Confirm` parameters.
   - The BEGIN{} block should start with the variables `$fn` and `$mn` and are populated with the Function Name and the Module Name. These variables are used in all logging statements.
@@ -61,7 +58,6 @@ This file is a set of instructions for AI to follow when generating or modifying
   - if you find parameter validation being done in the process block, hoist it to the BEGIN block and use one the snippets found in the snippets file under "Templates for checking and populating the value of an cmdlet parameter" n"
 
 - **Comment-Based Help**:
-
   - Add `.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER`, `.OUTPUTS`, `.EXAMPLE`, `.NOTES`, and `.LINK` sections for all public functions.
 
 - **Function Returns**:

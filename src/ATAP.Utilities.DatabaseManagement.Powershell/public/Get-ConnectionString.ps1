@@ -149,12 +149,36 @@ function Get-ConnectionString {
         }
       }
 
+      # Determine if we should include the instance name
+      # Default instances (MSSQLSERVER) or empty instance names should not be included
+      $includeInstance = $false
+      if (-not [string]::IsNullOrWhiteSpace($SqlInstance)) {
+        # Check if it's not a default instance marker (case-insensitive comparison)
+        $defaultInstanceMarkers = @('MSSQLSERVER', 'Default', '(default)', 'DEFAULT', 'SQLEXPRESS')
+        if ($SqlInstance -notin $defaultInstanceMarkers -and $SqlInstance.ToLowerInvariant() -ne 'mssqlserver') {
+          $includeInstance = $true
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Using named instance: $SqlInstance"
+        }
+        else {
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Skipping default instance marker: $SqlInstance"
+        }
+      }
+      else {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "No instance name specified, connecting to default instance"
+      }
+
       if ($AsJDBC) {
         # Build JDBC connection string for Flyway
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Building JDBC connection string for Flyway'
 
         # Build server specification for JDBC
-        $serverSpec = if ($SqlInstance) { "$DatabaseHost\$SqlInstance" } else { "$DatabaseHost" }
+        # Only include instance name for named instances, not default instances
+        $serverSpec = if ($includeInstance) {
+          "${DatabaseHost};instanceName=$SqlInstance"
+        }
+        else {
+          $DatabaseHost
+        }
 
         $connStr = [System.Text.StringBuilder]::new()
         [void]$connStr.Append("jdbc:sqlserver://$serverSpec;databaseName=$DatabaseName;")
@@ -177,7 +201,14 @@ function Get-ConnectionString {
           'lpc' { 'lpc:' }
           default { '' }
         }
-        $serverSpec = if ($SqlInstance) { "$prefix$DatabaseHost\$SqlInstance" } else { "$prefix$DatabaseHost" }
+
+        # Only include instance name for named instances
+        $serverSpec = if ($includeInstance) {
+          "$prefix$DatabaseHost\$SqlInstance"
+        }
+        else {
+          "$prefix$DatabaseHost"
+        }
 
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Server specification: $serverSpec"
 

@@ -1,10 +1,9 @@
 Defender:
   version: Latest
   comments: ""
-Hyperviser:
+VirtualMachinePlatform:
   version: Latest
   comments: "Required for WSL"
 SSH.Server:
   version: latest
   comments: ""
-

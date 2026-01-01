@@ -27,6 +27,36 @@ function Register-StartupScheduledTask {
     $mn = 'ATAP.Utilities.Powershell'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
+
+    # Verify running on Windows
+    if ($PSVersionTable.PSVersion.Major -ge 6 -and -not $IsWindows) {
+      $errorMessage = 'This function requires Windows and the ScheduledTasks module'
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw $errorMessage
+    }
+
+    # Import ScheduledTasks module with compatibility fix for PowerShell 7+
+    try {
+      # For PowerShell 7+, use Windows PowerShell compatibility
+      if ($PSVersionTable.PSVersion.Major -ge 7) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'PowerShell 7+ detected, using Windows PowerShell compatibility mode'
+
+        # Use Windows PowerShell module path
+        Import-Module -Name ScheduledTasks -UseWindowsPowerShell -ErrorAction Stop -WarningAction SilentlyContinue
+      }
+      else {
+        # PowerShell 5.1 - normal import
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'Importing ScheduledTasks module'
+        Import-Module -Name ScheduledTasks -ErrorAction Stop
+      }
+
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'ScheduledTasks module imported successfully'
+    }
+    catch {
+      $errorMessage = "Failed to import ScheduledTasks module. Exception: $($_.Exception.Message). Note: This function requires Administrator privileges."
+      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+      throw
+    }
   }
 
   PROCESS {

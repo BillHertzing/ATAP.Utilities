@@ -1,3 +1,4 @@
+````instructions
 # AI instructions for repository-wide guidance
 
 From now on, act as my expert assistant with access to all your reasoning and knowledge. Always provide:
@@ -60,6 +61,55 @@ The ATAP.Utilities repository is designed to create .NET libraries, PowerShell m
 ### NuGet Configuration Fix
 
 The NuGet.config file resolves package sources resolution, and is used during the building of dotnet components. The configuration should point to the same package sources defined for powershell modules building, as defined $Global:settings[$global:ConfigRootKeys['PackageRepositoriesCollectionConfigRootKey']]. Both locations should specify the organization's internal approved package feeds as sources.
+
+### Database Configuration
+
+The PCMSC database uses Windows Integrated Authentication by default. Environment variables in `.env` files should be configured as:
+
+- **FLYWAY\_<ENV>\_URL**: Must include `integratedSecurity=true` for Windows Authentication
+- **FLYWAY\_<ENV>\_USER**: Leave empty when using Windows Authentication
+- **FLYWAY\_<ENV>\_PASSWORD**: Leave empty when using Windows Authentication
+
+**SQL Server Instance Configuration:**
+
+- For **default instances**, do NOT include `instanceName` in the JDBC URL
+- For **named instances** (SQLEXPRESS, Development, Testing, Production), include `;instanceName=InstanceName`
+- The SQL Server Browser service must be running for named instance connections
+- UDP port 1434 must be open for named instance discovery
+
+**Flyway Authentication Configuration:**
+
+- When using **Windows Integrated Authentication**, ensure NO `FLYWAY_<ENV>_USER` or `FLYWAY_<ENV>_PASSWORD` environment variables are set
+- Flyway requires the JDBC driver be configured for integrated authentication OR explicit user/password credentials
+- The presence of `${env:FLYWAY_<ENV>_USER}` placeholders in flyway.toml will cause Flyway to attempt SQL authentication
+- For integrated auth, either:
+  1. Remove user/password placeholders from flyway.toml configuration
+  2. Ensure the environment variables are explicitly cleared before running Flyway
+- The JDBC connection string `integratedSecurity=true` alone is NOT sufficient - Flyway authentication is configured separately
+
+**SSL/TLS Certificate Configuration:**
+
+- Add `encrypt=false` to disable encryption (not recommended for production)
+- Add `trustServerCertificate=true` to trust self-signed certificates
+- Both settings are needed for development environments with self-signed certificates
+
+Example for Experimental environment (default instance):
+
+```
+FLYWAY_EXP_URL=jdbc:sqlserver://UTAT01;databaseName=PCMSC;integratedSecurity=true;encrypt=false;trustServerCertificate=true
+FLYWAY_EXP_USER=
+FLYWAY_EXP_PASSWORD=
+```
+
+Example for Development environment (named instance):
+
+```
+FLYWAY_DEV_URL=jdbc:sqlserver://UTAT022;instanceName=Development;databaseName=PCMSC;integratedSecurity=true;encrypt=false;trustServerCertificate=true
+FLYWAY_DEV_USER=
+FLYWAY_DEV_PASSWORD=
+```
+
+**Note:** The `trustServerCertificate=true` setting in the JDBC URL is automatically parsed and applied to PowerShell `Invoke-Sqlcmd` commands via the `-TrustServerCertificate` parameter.
 
 ### Step-by-Step Build Process
 
@@ -148,3 +198,4 @@ pwsh -Command "Invoke-Pester -Path ./tests -Output Detailed"
 3. **COMMENT OUT custom MSBuild imports** until BuildTooling projects are built
 4. **INSTALL PowerShell modules** before running PowerShell tests
 5. **USE individual project paths** when solution build fails
+````

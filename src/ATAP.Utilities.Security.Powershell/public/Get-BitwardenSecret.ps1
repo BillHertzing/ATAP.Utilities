@@ -20,11 +20,11 @@ System.Security.SecureString or System.String
 Returns the secret value.
 
 .EXAMPLE
-$secret = Get-BitwardenSecretFromVault -SecretName 'MyApiKey'
+$secret = Get-BitwardenSecret -SecretName 'MyApiKey'
 Retrieves the secret as a SecureString.
 
 .EXAMPLE
-$apiKey = Get-BitwardenSecretFromVault -SecretName 'MyApiKey' -AsPlainText
+$apiKey = Get-BitwardenSecret -SecretName 'MyApiKey' -AsPlainText
 Retrieves the secret as plain text.
 
 .NOTES
@@ -33,31 +33,33 @@ AI assisted using Powershell.instructions.md as guidelines
 .LINK
 https://github.com/whertzing/ATAP.Utilities
 #>
-function Get-BitwardenSecretFromVault {
+function Get-BitwardenSecret {
   [CmdletBinding()]
   [OutputType([System.Security.SecureString], [string])]
   param(
     [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
+    [ValidateNotNullOrWhiteSpace()]
     [string]$SecretName,
 
     [Parameter(Mandatory = $false, Position = 1)]
-    [string]$VaultName = 'BitwardenVault',
+    [string]$VaultName = 'Bitwarden',
 
     [Parameter(Mandatory = $false)]
     [switch]$AsPlainText
   )
 
   BEGIN {
-    $fn = 'Get-BitwardenSecretFromVault'
+    $fn = 'Get-BitwardenSecret'
     $mn = 'ATAP.Utilities.Security.Powershell'
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Function started'
 
     # Snippet: Check and populate simple parameter - SecretName
-    $SecretName = Get-PVal SecretName $PSBoundParameters SecretName
+    # ToDo: Another kind of validation that doesn't look into global:settings?
+    #$SecretName = Get-PVal SecretName $PSBoundParameters SecretName
 
-    # Snippet: Check and populate simple parameter - VaultName
-    $VaultName = Get-PVal VaultName $PSBoundParameters VaultName
+    # ToDo: Another kind of validation that doesn't look into global:settings?
+    # $VaultName = Get-PVal VaultName $PSBoundParameters VaultName
 
     Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Retrieving secret '$SecretName' from vault '$VaultName'"
   }
@@ -77,12 +79,34 @@ function Get-BitwardenSecretFromVault {
 
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Vault '$VaultName' found and registered"
 
-      # Attempt to unlock the vault if needed
-      Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Attempting to unlock vault '$VaultName'"
-      $unlockResult = Unlock-SecretVault -Name $VaultName -ErrorAction SilentlyContinue
+      # Check if BW_SESSION environment variable is set (vault already unlocked via CLI)
+      if ($env:BW_SESSION) {
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message 'BW_SESSION environment variable detected'
 
-      if ($unlockResult) {
-        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Verbose -Message "Vault '$VaultName' unlocked successfully"
+        # Verify the vault is actually unlocked by checking status
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message 'Verifying vault unlock status via bw status'
+        try {
+          $statusJson = bw status 2>&1
+          $status = $statusJson | ConvertFrom-Json -ErrorAction SilentlyContinue
+          if ($status.status -ne 'unlocked') {
+            $errorMessage = "Bitwarden vault is not unlocked (status: $($status.status)). BW_SESSION may be stale. Run: `$env:BW_SESSION = (bw unlock --raw)"
+            Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+            throw $errorMessage
+          }
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Vault status confirmed: $($status.status)"
+        }
+        catch {
+          if ($_.Exception.Message -like '*Bitwarden vault is not unlocked*') {
+            throw
+          }
+          Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Warning -Message "Could not verify vault status: $($_.Exception.Message)"
+        }
+      }
+      else {
+        # BW_SESSION not set - vault is definitely not unlocked
+        $errorMessage = 'BW_SESSION environment variable is not set. The Bitwarden vault is not unlocked. Run: $env:BW_SESSION = (bw unlock --raw)'
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        throw $errorMessage
       }
 
       # Retrieve the secret
@@ -99,8 +123,15 @@ function Get-BitwardenSecretFromVault {
 
       $secret = Get-Secret @getSecretParams -ErrorAction Stop
 
+      # Check for Boolean return - indicates vault connection issue (usually locked vault)
+      if ($secret -is [bool]) {
+        $errorMessage = "Failed to retrieve secret '$SecretName'. The vault returned a Boolean ($secret) instead of a secret object. This typically means the vault is locked or the session has expired. Run: `$env:BW_SESSION = (bw unlock --raw)"
+        Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
+        throw $errorMessage
+      }
+
       if (-not $secret) {
-        $errorMessage = "Secret '$SecretName' not found in vault '$VaultName'"
+        $errorMessage = "Secret '$SecretName' not found in vault '$VaultName'. Verify the secret name is correct and exists in Bitwarden."
         Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
         throw $errorMessage
       }
@@ -110,10 +141,10 @@ function Get-BitwardenSecretFromVault {
       return $secret
     }
     catch {
-      $errorMessage = "Failed to retrieve secret from Bitwarden. Exception: $($_.Exception.Message)"
+      # Provide more context in the error message
+      $errorMessage = "Failed to retrieve secret '$SecretName' from vault '$VaultName'. Exception: $($_.Exception.Message)"
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Error -Message $errorMessage
-      # ToDo: accumulate the errors; potentially add to 'Problems'
-      throw # the unadorned throw will throw the $_ exception and keep the stack trace intact
+      throw
     }
     finally {
       Write-PSFMessage -FunctionName $fn -ModuleName $mn -Level Debug -Message "Leaving Function $fn in module $mn"

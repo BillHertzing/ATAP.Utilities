@@ -773,5 +773,6 @@ Store the remote repository URL and credentials
 
 ```Powershell
 # Capture SSL keys needed to decrypt SSL traffic using wireshark, to do this manually, it requires elevated permission
+# use sparingly, because this file gets locked and won't sync with Dropbox
 [Environment]::SetEnvironmentVariable( 'SSLKEYLOGFILE', '"C:\Dropbox\Security\SSLKeyLogFile.txt"', 'Machine' )
 ````
